@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-5f557262-1e18-4833-afc6-a1803a717459",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-16T10:05:46.703Z",
+    "epicCreatedAt": "2026-11-16T08:53:15.795Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "56343cf2a9c3b509",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Package the Ubuntu amd64 runtime",
+      "parent": {
+        "entityId": "STORY-56343cf2a9c3b509-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-56343cf2a9c3b509-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-56343cf2a9c3b509-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#189",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "49a34fde89c182f9fae3a6369d2e33972c06ed18892601032fbef75e79bb74e2",
+        "at": "2026-11-16T10:05:46.703Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-16T10:05:46.705Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Package the Ubuntu amd64 runtime",
+    "summary": "Package the approved Node version verified against pinned upstream bytes, daemon/CLI/MCP entrypoints, Linux process broker, watchdog, dependencies and workspace runtime assets. Use safe shared staging, canonical USTAR-compatible archive output and target-specific inventory.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "Verify source commit and build host; reject missing inputs, unsafe links, unsupported ELF or ABI, and unlisted dependencies.",
+      "Relocate the archive with the shared verifier and load required native modules using the bundled Node on the documented baseline."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Linux staging inventory, path safety and ELF dependency fixture checks"
+      },
+      {
+        "level": "smoke",
+        "name": "Local Ubuntu 24.04 amd64 package, relocate, verify fingerprint, load native modules and exercise required entry points"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

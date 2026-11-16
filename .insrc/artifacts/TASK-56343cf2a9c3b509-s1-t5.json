@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9ebb2f02-887d-4a98-b771-a720980dffda",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-16T10:05:46.713Z",
+    "epicCreatedAt": "2026-11-16T08:53:15.795Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "56343cf2a9c3b509",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Issue qualification grants and verify detached evidence",
+      "parent": {
+        "entityId": "STORY-56343cf2a9c3b509-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-56343cf2a9c3b509-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-56343cf2a9c3b509-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-56343cf2a9c3b509-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#192",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2c94cc621b22963e2a251c6363168f6223291b7f379f877dcf83e042fb344429",
+        "at": "2026-11-16T10:05:46.713Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-16T10:05:46.715Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Issue qualification grants and verify detached evidence",
+    "summary": "Add issuer-side qualification manifest preparation and validation of independently signed local evidence against trusted required test IDs, target, ABI, exact archive origin and applicable predecessor fingerprints. Keep qualification side effects isolated.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "Verify receipt and qualification grant using independent pinned trust. Reject missing, duplicate, failed or foreign-case evidence.",
+      "Bind predecessor evidence outside the manifest to avoid a digest cycle. Fixture keys cover qualification and absence of production privileges."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Fixture qualification grant and signed local evidence for exact artifact, host, required tests and predecessor"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

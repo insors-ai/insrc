@@ -70,8 +70,8 @@
         <tbody>
           <tr>
             <th scope="row">VS Code and storage</th>
-            <td>Chat-gated recent menu (five by modification time), New with a title prompt, Browse all with Name and Modified columns and delete, and a document tab. The extension host owns the flat <code>~/.insrc/scratches</code> Markdown store. It uses basename IDs, exclusive creation, and guarded reads. The document view renders plain text read-only. <a href="../../vscode-plugin/src/extension.ts">Extension wiring</a> · <a href="../../vscode-plugin/src/chat/scratch-store.ts">Store</a> · <a href="../../vscode-plugin/src/panels/scratch-panels.ts">Panels</a> · <a href="../standalone/vs-code-plugin-scratchpads-insrc-scratches-E202611134642d49a/S001/BUILD.md">Scratchpads build</a></td>
-            <td>Editing and saving are separately tracked in <code>ISSUE-01ac1e4b6a6c9c2f</code>. Notes currently lack explicit repository ownership, durable link identity, archive and restore, in-note and cross-note search, and dated entries within a scratchpad.</td>
+            <td>Chat-gated recent menu capped at ten pads by modification time (raised from five in this work) alongside the existing New and Browse all actions, an “insrc scratchpads” list panel that shows up to twenty pads newest-first with each pad’s first three lines and opens a pad on click, New with a title prompt, and a document tab. The extension host owns the flat <code>~/.insrc/scratches</code> Markdown store. It uses basename IDs, exclusive creation, and guarded reads. The document view renders plain text read-only in a custom webview, not VS Code’s own Markdown editor. <a href="../../vscode-plugin/src/extension.ts">Extension wiring</a> · <a href="../../vscode-plugin/src/chat/scratch-store.ts">Store</a> · <a href="../../vscode-plugin/src/panels/scratch-panels.ts">Panels</a> · <a href="../standalone/vs-code-plugin-scratchpads-insrc-scratches-E202611134642d49a/S001/BUILD.md">Scratchpads build</a></td>
+            <td>Editing and saving are separately tracked in <code>ISSUE-01ac1e4b6a6c9c2f</code>. Notes currently lack explicit repository ownership, durable link identity, archive and restore, in-note and cross-note search, and dated entries within a scratchpad. Opening a pad does not yet use VS Code’s built-in Markdown Editor (<code>vscode.markdown.editor</code>, shipped in <code>markdown-language-features</code>), which renders Markdown in place with inline click-to-edit, a lock toggle, and built-in link/image insertion — the richer editing surface this PRD now specifies instead of a bespoke editor.</td>
           </tr>
           <tr>
             <th scope="row">Indexing and graph</th>
@@ -101,19 +101,19 @@
   <section id="requirements">
     <h2>Product requirements</h2>
     <h3 id="sp-1">SP-1 · P0 · Author and resolve links</h3>
-    <p>From the scratchpad editor, developers can type an Obsidian-style <code>[[…]]</code> link or insert one through a target picker. The picker searches notes, repository files and indexed symbols, and readable workflow records such as a SPEC, ISSUE, HLD, LLD, or TASK. The rendered link shows a readable label and opens the exact target in the current scratchpad, editor, or artifact view. The picker commits a qualified target so duplicate titles and symbol names are safe. Ambiguous, unavailable, and missing targets are distinguishable and repairable. Treat example links in Markdown code spans and blocks as literal content.</p>
+    <p>Open a pad in VS Code’s built-in Markdown Editor (<code>vscode.markdown.editor</code>) on its real file, rendered in place with inline click-to-edit rather than a bespoke editor or a raw source view. From there, developers can type an Obsidian-style <code>[[…]]</code> link or insert one through a target picker. The picker searches notes, repository files and indexed symbols, and readable workflow records such as a SPEC, ISSUE, HLD, LLD, or TASK. The rendered link shows a readable label and opens the exact target in the current scratchpad, editor, or artifact view. The picker commits a qualified target so duplicate titles and symbol names are safe. Ambiguous, unavailable, and missing targets are distinguishable and repairable. Treat example links in Markdown code spans and blocks as literal content.</p>
 
     <h3 id="sp-2">SP-2 · P0 · Discover backlinks</h3>
     <p>Show outgoing links and incoming scratchpad backlinks in the note view. On an active file or chosen symbol, expose a VS Code “Show scratchpad backlinks” action. Show a matching section on the workflow artifact detail surface. Each inbound result names the note, shows a matching line or excerpt and its archived status where applicable, and opens the originating occurrence. Group repeated occurrences by source note and derive both views from the same directed relationship. Explicit note references have their own presentation alongside existing graph evidence.</p>
 
     <h3 id="sp-3">SP-3 · P0 · Find in a note and search across notes</h3>
-    <p><strong>Find in note.</strong> Provide an editor-local search action with Ctrl/Cmd+F when the scratchpad editor has focus. Search the current text, including unsaved edits and entries under collapsed dates. Highlight matches, show the active match and total count, and move to the previous or next match with wraparound. Reveal the active match by opening its date section when needed. Enter and Shift+Enter navigate. Escape closes Find without changing the document. A zero-match query shows an explicit empty state.</p>
-    <p><strong>Search all notes.</strong> Extend Browse all with case-insensitive lexical search over saved titles and full Markdown bodies within the supported note size. Group body hits by scratchpad. Show each matching entry’s date, when available, and a highlighted snippet. Selecting a body hit opens its scratchpad, expands the relevant date section, and jumps to the match. A scratchpad title hit opens the scratchpad. Clearing the query restores the regular Browse all list. Rank title matches ahead of body-only matches and use modification time and stable identity to order ties. Support filtering by linked target, plus an include-archived toggle. Query the active repository by default and expose a separate local, unassigned view for legacy and workspace-free notes. Lexical search and link matching work without a model or embeddings.</p>
+    <p><strong>Find in note</strong> is a separate, in-pad search: the find bar and match highlighting operate on the open scratchpad only (see the mock). Provide an editor-local search action with Ctrl/Cmd+F when the scratchpad editor has focus. Search the current text, including unsaved edits and entries under collapsed dates. Highlight matches, show the active match and total count, and move to the previous or next match with wraparound. Reveal the active match by opening its date section when needed. Enter and Shift+Enter navigate. Escape closes Find without changing the document. A zero-match query shows an explicit empty state.</p>
+    <p><strong>Search all notes.</strong> The search textbox lives at the top of the “insrc scratchpads” list panel — the page the chat panel’s list-scratchpads button opens — not in a separate navigation-panel view and not inside the open pad (with several panels open, an in-pane search section would take too much space). That panel lists up to twenty scratchpads ordered by recency with each pad’s first three lines; typing in the textbox filters this list by relevance over saved titles and full Markdown bodies within the supported note size, and clearing the query restores the unfiltered recency list. Title matches rank ahead of body-only matches; ties order by modification time and stable identity. Clicking a filtered or unfiltered pad opens it in VS Code’s built-in Markdown Editor. Lexical search works without a model or embeddings. The active repository is queried by default, with a separate local, unassigned view for legacy and workspace-free notes, a linked-target filter, and an include-archived toggle.</p>
 
     <h3 id="sp-4">SP-4 · P0 · Preserve scratchpad identity, dated entries, and lifecycle</h3>
     <p>Keep the existing Markdown files readable. Assign stable identity when a note joins the enhanced store and preserve it across title changes, supported moves, archive and restore. Existing notes remain visible and editable through the local view, and users explicitly associate an existing note with a registered repository. A note created for a clearly identified repository gets that scope up front. Support rename, reversible archive, and restore. Archived notes are hidden from recent, default search and default backlinks, and a direct link can still open the archived source. The existing delete flow remains available with an explicit permanent-delete decision. Permanent deletion removes the note from search and backlinks and renders surviving incoming links to it as missing.</p>
     <p><strong>Dated entries.</strong> A scratchpad can hold multiple Markdown entries. Provide a way to start a new entry in the open scratchpad. Record its creation timestamp on the first successful save and show its time under the corresponding local calendar date. Inside that scratchpad, list days newest first and entries newest first within a day, with a stable tie-breaker. Each date section has an entry count and expands or collapses independently using a keyboard-operable control. Editing or moving an entry within the scratchpad preserves its creation timestamp. Existing Markdown without entry timestamps remains readable and appears under Undated until the user supplies a date. The scratchpad’s filename timestamp describes the file and cannot establish dates for its entries.</p>
-    <p>Use the tracked editing work as the save path. Save and metadata changes must preserve the prior committed version on failure. A stale editor or another VS Code window must surface a conflict with the newer saved revision and retain the unsaved draft. Temporary writes are excluded from indexing. Supported external edits and deletions are picked up on reconciliation.</p>
+    <p><strong>Editing surface.</strong> Open a pad in VS Code’s built-in Markdown Editor custom editor (<code>vscode.markdown.editor</code>, shipped in the <code>markdown-language-features</code> built-in extension) on the scratchpad’s own file, in place of today’s read-only custom webview. The editor renders Markdown directly and supports inline click-to-edit on any block via its floating edit affordance, a lock toggle for a read-only view, paste/drop of an image into the note (<code>markdown.editor.filePaste.enabled</code> / <code>drop.enabled</code>, materialized into the workspace), pasting a URL as a formatted link, and the built-in insert-link/insert-image-from-workspace commands — all operating on the same file our save path already writes, so Ctrl/Cmd+S and external reconciliation are unchanged. Use the tracked editing work as the save path. Save and metadata changes must preserve the prior committed version on failure. A stale editor or another VS Code window must surface a conflict with the newer saved revision and retain the unsaved draft. Temporary writes are excluded from indexing. Supported external edits and deletions are picked up on reconciliation.</p>
 
     <h3 id="sp-5">SP-5 · P1 · Attach cited context to an agent turn</h3>
     <p>Keep existing Send to chat for text insertion. Add a distinct action to attach a saved note or selected excerpt to the active turn. Show a removable preview with source, saved revision, and any linked targets whose excerpts the user selects. At submission, adapt a bounded payload to the current controller or to a daemon analysis request where that workflow accepts context. Carry the scope, note ID and revision, source range, and readable citations. Flag unsupported routes, stale or missing sources, and omitted content in the preview or send flow. Queued turns must preserve the approved revision or ask the user to review the replacement before dispatch.</p>
@@ -128,8 +128,8 @@
 
   <section id="mockups">
     <h2>Interactive mockups</h2>
-    <p>Expand a date inside Queue retry policy to see its entries. Use Find in note to move through matches, including matches in collapsed sections. Search all notes for <code>retry</code> to see matching entries across scratchpads and open one at its source.</p>
-    <div id="insrc-scratchpad-mock" aria-label="insrc scratchpad search and dated entries">
+    <p>The first window is the “insrc scratchpads” list panel opened from the chat panel’s list-scratchpads button: a search textbox on top and up to twenty pads newest first, each with its first three lines and a delete button. Typing filters the list by relevance (title hits rank ahead, matches highlighted in the previews); clearing restores the recency list. Clicking any pad opens it in the second window — VS Code’s built-in Markdown Editor on that pad, rendered in place rather than as raw source. It opens locked (🔒); click the pencil to edit inline, click the lock to return to the rendered, read-only view. Find in note moves through matches, including matches in collapsed date sections, independently of that lock state. Expand a date inside Queue retry policy to see its entries, and use the ‹ button to return to the list.</p>
+    <div id="insrc-scratchpad-mock" aria-label="insrc scratchpad list panel with search, and the open pad with find in note">
       <style>
         #insrc-scratchpad-mock {
           color-scheme: light dark;
@@ -156,9 +156,25 @@
         #insrc-scratchpad-mock .sp-titlebar { border-bottom: 1px solid var(--sp-border); border-radius: 9px 9px 0 0; }
         #insrc-scratchpad-mock .sp-titlebar strong { font-weight: 600; }
         #insrc-scratchpad-mock .sp-slash, #insrc-scratchpad-mock .sp-project { color: var(--sp-muted); }
-        #insrc-scratchpad-mock .sp-layout { display: grid; grid-template-columns: minmax(220px, 32%) minmax(0, 1fr); min-height: 435px; }
-        #insrc-scratchpad-mock .sp-sidebar { min-width: 0; background: var(--sp-side); border-right: 1px solid var(--sp-border); padding-bottom: 14px; }
+        #insrc-scratchpad-mock #sp-editor-window .sp-titlebar { justify-content: space-between; }
+        #insrc-scratchpad-mock .sp-editor-mode { display: flex; align-items: center; gap: 2px; flex: none; }
+        #insrc-scratchpad-mock .sp-editor-mode #sp-lock[aria-pressed="true"] { color: var(--sp-blue); background: var(--sp-selected); }
+        #insrc-scratchpad-mock .sp-window + .sp-window { margin-top: 14px; }
         #insrc-scratchpad-mock .sp-side-head { display: grid; gap: 6px; padding: 16px 14px 10px; }
+        #insrc-scratchpad-mock .sp-list { padding-bottom: 8px; }
+        #insrc-scratchpad-mock .sp-pad { display: flex; align-items: flex-start; border-bottom: 1px solid var(--sp-border); }
+        #insrc-scratchpad-mock .sp-pad-open { display: grid; gap: 3px; flex: 1; min-width: 0; padding: 9px 6px 9px 14px; text-align: start; }
+        #insrc-scratchpad-mock .sp-pad-open:hover { background: var(--sp-hover); }
+        #insrc-scratchpad-mock .sp-pad-open[aria-current="true"] { background: var(--sp-selected); border-inline-start: 2px solid var(--sp-blue); }
+        #insrc-scratchpad-mock .sp-pad-top { display: flex; align-items: baseline; gap: 8px; }
+        #insrc-scratchpad-mock .sp-pad-name { font-weight: 600; overflow-wrap: anywhere; }
+        #insrc-scratchpad-mock .sp-pad-date { color: var(--sp-muted); font-size: 12px; white-space: nowrap; }
+        #insrc-scratchpad-mock .sp-pad-del { margin-inline: 6px; flex: none; align-self: center; display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; padding: 0; border-radius: 4px; color: var(--sp-muted); }
+        #insrc-scratchpad-mock .sp-pad-del:hover { color: var(--sp-text); background: var(--sp-hover); }
+        #insrc-scratchpad-mock .sp-pad-del svg { width: 14px; height: 14px; }
+        #insrc-scratchpad-mock .sp-pad-preview, #insrc-scratchpad-mock .sp-pad-snippet { display: grid; gap: 1px; color: var(--sp-muted); font-size: 12px; }
+        #insrc-scratchpad-mock .sp-pad-preview div, #insrc-scratchpad-mock .sp-pad-snippet div { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        #insrc-scratchpad-mock .sp-back { display: inline-flex; align-items: center; justify-content: center; width: 27px; height: 27px; color: var(--sp-muted); font-size: 15px; }
         #insrc-scratchpad-mock label { color: var(--sp-muted); font-size: 12px; font-weight: 500; }
         #insrc-scratchpad-mock .sp-query { position: relative; min-width: 0; }
         #insrc-scratchpad-mock .sp-query > :is(i,svg) { position: absolute; inline-size: 15px; block-size: 15px; inset: 10px auto auto 9px; color: var(--sp-muted); pointer-events: none; }
@@ -183,19 +199,8 @@
         #insrc-scratchpad-mock .sp-chevron { width: 7px; height: 7px; border-right: 1px solid; border-top: 1px solid; transform: rotate(45deg); }
         #insrc-scratchpad-mock .sp-group > button[aria-expanded="true"] .sp-chevron { transform: rotate(135deg); }
         #insrc-scratchpad-mock .sp-count { margin-inline-start: auto; color: var(--sp-muted); font-size: 12px; font-weight: 400; }
-        #insrc-scratchpad-mock .sp-note {
-          display: flex; width: 100%; padding: 7px 14px 7px 27px; align-items: center; gap: 8px; text-align: start; overflow-wrap: anywhere;
-        }
-        #insrc-scratchpad-mock .sp-note::before { content: "M↓"; flex: none; color: var(--sp-blue); font: 11px/1 ui-monospace, monospace; }
-        #insrc-scratchpad-mock .sp-note[aria-current="true"] { background: var(--sp-selected); border-inline-start: 2px solid var(--sp-blue); padding-inline-start: 26px; }
-        #insrc-scratchpad-mock .sp-result { display: grid; gap: 4px; width: 100%; padding: 9px 14px; text-align: start; overflow-wrap: anywhere; }
-        #insrc-scratchpad-mock .sp-result-group + .sp-result-group { border-top: 1px solid var(--sp-border); }
-        #insrc-scratchpad-mock .sp-result-entry { padding: 5px 14px 8px 23px; }
-        #insrc-scratchpad-mock .sp-result-name { font-weight: 600; }
-        #insrc-scratchpad-mock .sp-result-meta, #insrc-scratchpad-mock .sp-snippet { color: var(--sp-muted); font-size: 12px; }
         #insrc-scratchpad-mock .sp-editor { min-width: 0; }
-        #insrc-scratchpad-mock .sp-tabbar { background: var(--sp-side); border-bottom: 1px solid var(--sp-border); }
-        #insrc-scratchpad-mock .sp-tab { display: inline-block; max-width: 100%; padding: 9px 15px; border-top: 1px solid var(--sp-blue); background: var(--sp-editor); overflow-wrap: anywhere; }
+        #insrc-scratchpad-mock .sp-tab { display: inline-block; min-width: 0; flex: 1; overflow-wrap: anywhere; font-weight: 500; }
         #insrc-scratchpad-mock .sp-editor-head { padding: 16px 17px 11px; }
         #insrc-scratchpad-mock .sp-meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; color: var(--sp-muted); font-size: 12px; }
         #insrc-scratchpad-mock .sp-find-open { display: inline-flex; align-items: center; gap: 6px; padding: 4px 6px; color: var(--sp-text); font-size: 12px; }
@@ -205,7 +210,8 @@
         #insrc-scratchpad-mock .sp-find-actions { display: flex; gap: 2px; }
         #insrc-scratchpad-mock .sp-find-status { color: var(--sp-muted); font-size: 12px; white-space: nowrap; }
         #insrc-scratchpad-mock .sp-icon { display: grid; place-items: center; width: 27px; height: 30px; }
-        #insrc-scratchpad-mock .sp-code { padding: 2px 16px 19px; outline-offset: -2px; }
+        #insrc-scratchpad-mock .sp-code { padding: 2px 16px 19px; outline-offset: -2px; font: 14px/1.65 Inter, "Segoe UI", system-ui, sans-serif; }
+        #insrc-scratchpad-mock .sp-code.sp-editing { outline: 1px dashed var(--sp-blue); outline-offset: -1px; cursor: text; }
         #insrc-scratchpad-mock .sp-entry-group { border-top: 1px solid var(--sp-border); }
         #insrc-scratchpad-mock .sp-entry-list { padding: 0 0 8px; }
         #insrc-scratchpad-mock .sp-entry { padding: 6px 0 8px 8px; }
@@ -215,62 +221,66 @@
         #insrc-scratchpad-mock .sp-icon i { font-style: normal; }
         #insrc-scratchpad-mock .sp-query i, #insrc-scratchpad-mock .sp-find-open i { font-style: normal; }
         #insrc-scratchpad-mock .sp-date-caption { color: var(--sp-muted); font-size: 12px; margin: 0 0 7px; }
-        #insrc-scratchpad-mock .sp-line { display: grid; grid-template-columns: 45px minmax(0, 1fr); min-height: 23px; font: 13px/1.65 "IBM Plex Mono", Consolas, ui-monospace, monospace; }
-        #insrc-scratchpad-mock .sp-ln { text-align: end; color: var(--sp-muted); padding-inline-end: 12px; user-select: none; }
+        #insrc-scratchpad-mock .sp-line { min-height: 23px; padding-block: 2px; border-radius: 3px; }
+        #insrc-scratchpad-mock .sp-code.sp-editing .sp-line:hover, #insrc-scratchpad-mock .sp-code.sp-editing .sp-entry-title:hover { background: var(--sp-hover); }
         #insrc-scratchpad-mock .sp-line-text { white-space: pre-wrap; overflow-wrap: anywhere; }
         #insrc-scratchpad-mock :is(.sp-line,.sp-entry-title)[data-match] { background: var(--sp-selected); }
         #insrc-scratchpad-mock mark { color: var(--sp-text); background: var(--sp-match); border-radius: 2px; }
         #insrc-scratchpad-mock mark[data-current] { background: var(--sp-current); outline: 1px solid var(--sp-muted); }
         #insrc-scratchpad-mock .sp-status { justify-content: space-between; flex-wrap: wrap; border-top: 1px solid var(--sp-border); border-radius: 0 0 9px 9px; color: var(--sp-muted); font-size: 12px; padding-block: 5px; }
         @media (max-width: 590px) {
-          #insrc-scratchpad-mock .sp-layout { grid-template-columns: minmax(0, 1fr); }
-          #insrc-scratchpad-mock .sp-sidebar { border-right: 0; border-bottom: 1px solid var(--sp-border); }
-          #insrc-scratchpad-mock .sp-editor-head { padding-inline: 12px; }
+          #insrc-scratchpad-mock .sp-side-head, #insrc-scratchpad-mock .sp-editor-head { padding-inline: 12px; }
         }
         @media (pointer: coarse) {
           #insrc-scratchpad-mock :is(input,button) { min-height: 44px; }
           #insrc-scratchpad-mock .sp-icon { width: 38px; }
         }
       </style>
-      <div class="sp-window">
+      <div class="sp-window" id="sp-list-window">
         <header class="sp-titlebar">
           <strong>insrc</strong><span class="sp-slash" aria-hidden="true">/</span><span>Scratchpads</span>
         </header>
-        <div class="sp-layout">
-          <aside class="sp-sidebar" aria-label="Scratchpad browser">
-            <div class="sp-side-head">
-              <label for="sp-all-query">Search all notes</label>
-              <div class="sp-query">
-                <i data-lucide="search" aria-hidden="true">⌕</i>
-                <input type="search" id="sp-all-query" placeholder="Title or text" autocomplete="off" spellcheck="false">
-              </div>
-            </div>
-            <p class="sp-side-label" id="sp-list-status" role="status">Workspace notes</p>
-            <div id="sp-list"></div>
-          </aside>
-          <section class="sp-editor" aria-label="Open scratchpad">
-            <div class="sp-tabbar"><span class="sp-tab" id="sp-tab"></span></div>
-            <div class="sp-editor-head">
-              <div class="sp-meta">
-                <span id="sp-entry-count"></span>
-                <button class="sp-find-open" id="sp-find-open" type="button" aria-controls="sp-find-wrap" aria-expanded="true"><i data-lucide="search" aria-hidden="true">⌕</i>Find in note</button>
-              </div>
-              <div class="sp-find-wrap" id="sp-find-wrap" role="search" aria-label="Find in open note">
-                <label for="sp-find-query">Find in this note</label>
-                <div class="sp-find-row">
-                  <input type="text" id="sp-find-query" value="retry" placeholder="Find text" autocomplete="off" spellcheck="false">
-                  <span class="sp-find-status" id="sp-find-status" role="status"></span>
-                  <div class="sp-find-actions">
-                    <button class="sp-icon" type="button" id="sp-prev" aria-label="Previous match" data-tooltip="Previous match"><i data-lucide="arrow-up" aria-hidden="true">↑</i></button>
-                    <button class="sp-icon" type="button" id="sp-next" aria-label="Next match" data-tooltip="Next match"><i data-lucide="arrow-down" aria-hidden="true">↓</i></button>
-                    <button class="sp-icon" type="button" id="sp-close" aria-label="Close find" data-tooltip="Close find"><i data-lucide="x" aria-hidden="true">×</i></button>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="sp-code" id="sp-code" tabindex="0" aria-label="Markdown source"></div>
-          </section>
+        <div class="sp-side-head">
+          <label for="sp-all-query">Search all notes</label>
+          <div class="sp-query">
+            <i data-lucide="search" aria-hidden="true">⌕</i>
+            <input type="search" id="sp-all-query" placeholder="Title or text" autocomplete="off" spellcheck="false">
+          </div>
         </div>
+        <p class="sp-side-label" id="sp-list-status" role="status">Workspace notes</p>
+        <div class="sp-list" id="sp-list" aria-label="Scratchpads by recency"></div>
+        <footer class="sp-status"><span class="sp-project">Workspace · insrc</span><span>Markdown</span></footer>
+      </div>
+      <div class="sp-window" id="sp-editor-window" hidden>
+        <header class="sp-titlebar">
+          <button class="sp-back" id="sp-back" type="button" aria-label="Back to scratchpad list">‹</button>
+          <span class="sp-tab" id="sp-tab"></span>
+          <div class="sp-editor-mode">
+            <button class="sp-icon" type="button" id="sp-lock" aria-pressed="true" aria-label="Rendered (locked)" data-tooltip="Rendered — click the pencil to edit inline"><i data-lucide="lock" aria-hidden="true">🔒</i></button>
+            <button class="sp-icon" type="button" id="sp-edit" aria-label="Edit inline" data-tooltip="Edit inline"><i data-lucide="pencil" aria-hidden="true">✎</i></button>
+          </div>
+        </header>
+        <div class="sp-editor-head">
+          <div class="sp-meta">
+            <span id="sp-entry-count"></span>
+            <button class="sp-find-open" id="sp-find-open" type="button" aria-controls="sp-find-wrap" aria-expanded="true"><i data-lucide="search" aria-hidden="true">⌕</i>Find in note</button>
+          </div>
+          <div class="sp-find-wrap" id="sp-find-wrap" role="search" aria-label="Find in open note">
+            <label for="sp-find-query">Find in this note</label>
+            <div class="sp-find-row">
+              <input type="text" id="sp-find-query" value="retry" placeholder="Find text" autocomplete="off" spellcheck="false">
+              <span class="sp-find-status" id="sp-find-status" role="status"></span>
+              <div class="sp-find-actions">
+                <button class="sp-icon" type="button" id="sp-prev" aria-label="Previous match" data-tooltip="Previous match"><i data-lucide="arrow-up" aria-hidden="true">↑</i></button>
+                <button class="sp-icon" type="button" id="sp-next" aria-label="Next match" data-tooltip="Next match"><i data-lucide="arrow-down" aria-hidden="true">↓</i></button>
+                <button class="sp-icon" type="button" id="sp-close" aria-label="Close find" data-tooltip="Close find"><i data-lucide="x" aria-hidden="true">×</i></button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <section class="sp-editor" aria-label="Open scratchpad">
+          <div class="sp-code" id="sp-code" tabindex="0" aria-label="Rendered Markdown — click the pencil above to edit inline"></div>
+        </section>
         <footer class="sp-status"><span class="sp-project">Workspace · insrc</span><span>Markdown</span></footer>
       </div>
       <script>
@@ -279,7 +289,7 @@
           if (!root) return;
           const $ = (id) => root.querySelector('#' + id);
           const notes = [
-            { id: 'retry', title: 'Queue retry policy', entries: [
+            { id: 'retry', title: 'Queue retry policy', mtime: '2026-11-14T10:42:00Z', entries: [
               { day: '2026-11-14', time: '10:42 AM', title: 'Lease behavior', lines: [
                 'A retry may run twice after a worker restart.',
                 'Enforce one retry per lease.'
@@ -295,7 +305,7 @@
                 'Trace retry dispatch through the queue.'
               ] }
             ] },
-            { id: 'index', title: 'Index refresh notes', entries: [
+            { id: 'index', title: 'Index refresh notes', mtime: '2026-11-14T09:18:00Z', entries: [
               { day: '2026-11-14', time: '9:18 AM', title: 'Watcher behavior', lines: [
                 'Batch updates by repository root.'
               ] },
@@ -303,14 +313,24 @@
                 'Verify the retry window when the index is rebuilding.'
               ] }
             ] },
-            { id: 'handoff', title: 'Agent handoff checklist', entries: [
+            { id: 'handoff', title: 'Agent handoff checklist', mtime: '2026-11-11T17:03:00Z', entries: [
               { day: null, time: null, title: 'Checklist', lines: [
                 'Record the target branch.',
                 'Include the relevant LLD and failing test.'
               ] }
+            ] },
+            { id: 'lease', title: 'Lease renewal edge cases', mtime: '2026-11-10T08:12:00Z', entries: [
+              { day: '2026-11-10', time: '8:12 AM', title: 'Renewal before expiry', lines: [
+                'Renew when half the lease remains.'
+              ] }
             ] }
           ];
+          const notesByRecency = [...notes].sort((a, b) => String(b.mtime ?? '').localeCompare(String(a.mtime ?? '')));
+          const PREVIEW_LINES = 3;
+          const LIST_CAP = 20;
           const list = $('sp-list');
+          const listWindow = $('sp-list-window');
+          const editorWindow = $('sp-editor-window');
           const allQuery = $('sp-all-query');
           const findQuery = $('sp-find-query');
           const code = $('sp-code');
@@ -318,8 +338,13 @@
           const findOpen = $('sp-find-open');
           const prev = $('sp-prev');
           const next = $('sp-next');
+          const lockBtn = $('sp-lock');
+          const editBtn = $('sp-edit');
           const date = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+          const timeFmt = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'UTC' });
           const dayLabel = (day) => day ? date.format(new Date(day + 'T00:00:00Z')) : 'Undated';
+          const padDate = (note) => note.mtime ? timeFmt.format(new Date(note.mtime)) : 'Undated';
+          const bodyText = (note) => note.entries.flatMap((entry) => [entry.title, ...entry.lines]).join('\n');
           const openDays = new Map(notes.map(note => [note.id, new Set([note.entries[0].day])]));
           let active = notes[0];
           let matchIndex = 0;
@@ -353,43 +378,72 @@
           function renderList() {
             const query = allQuery.value.trim();
             list.replaceChildren();
+            const shown = notesByRecency.slice(0, LIST_CAP);
             if (!query) {
-              $('sp-list-status').textContent = 'Workspace notes';
-              notes.forEach(note => {
-                const item = node('button', 'sp-note', note.title);
-                item.dataset.note = note.id;
-                item.setAttribute('aria-current', String(note === active));
-                item.addEventListener('click', () => openNote(note));
-                list.append(item);
-              });
+              $('sp-list-status').textContent = shown.length + (shown.length === 1 ? ' scratchpad' : ' scratchpads') + ' · newest first';
+              shown.forEach(note => list.append(padCard(note, [])));
               return;
             }
-            const results = notes.flatMap(note => {
+            const results = notesByRecency.flatMap(note => {
               const titleHits = literalMatches(note.title, query);
-              const entries = note.entries.flatMap((entry, entryIndex) =>
-                [entry.title, ...entry.lines].flatMap((text, line) => {
-                  const hits = literalMatches(text, query);
-                  return hits.length ? [{ entry, entryIndex, line, text, hits }] : [];
-                }));
-              return titleHits.length || entries.length ? [{ note, titleHits, entries }] : [];
-            }).sort((a, b) => Number(Boolean(b.titleHits.length)) - Number(Boolean(a.titleHits.length)));
+              const body = bodyText(note);
+              const bodyHits = literalMatches(body, query);
+              return titleHits.length || bodyHits.length ? [{ note, titleHits, bodyHits, recency: notesByRecency.indexOf(note) }] : [];
+            }).sort((a, b) =>
+              Number(Boolean(b.titleHits.length)) - Number(Boolean(a.titleHits.length)) ||
+              a.recency - b.recency);
             $('sp-list-status').textContent = results.length ? results.length + (results.length === 1 ? ' scratchpad found' : ' scratchpads found') : 'No matching scratchpads';
-            results.forEach(({ note, titleHits, entries }) => {
-              const result = node('div', 'sp-result-group');
-              const title = node('button', 'sp-result sp-result-name');
-              highlight(title, note.title, titleHits);
-              title.addEventListener('click', () => openNote(note));
-              result.append(title);
-              entries.forEach(({ entry, entryIndex, line, text, hits }) => {
-                const row = node('button', 'sp-result sp-result-entry');
-                const snippet = node('span', 'sp-snippet');
-                highlight(snippet, text, hits);
-                row.append(node('span', 'sp-result-meta', dayLabel(entry.day) + ' · ' + entry.title), snippet);
-                row.addEventListener('click', () => openNote(note, { entryIndex, line }, query));
-                result.append(row);
-              });
-              list.append(result);
+            results.slice(0, LIST_CAP).forEach(({ note, titleHits, bodyHits }) => list.append(padCard(note, titleHits, bodyHits)));
+          }
+          function padCard(note, titleHits, bodyHits) {
+            const card = node('div', 'sp-pad');
+            card.dataset.note = note.id;
+            const open = node('button', 'sp-pad-open');
+            open.setAttribute('aria-current', String(note === active));
+            open.setAttribute('aria-label', 'Open ' + note.title);
+            const top = node('div', 'sp-pad-top');
+            const name = node('span', 'sp-pad-name');
+            if (titleHits && titleHits.length) highlight(name, note.title, titleHits);
+            else name.textContent = note.title;
+            top.append(name, node('span', 'sp-pad-date', padDate(note)));
+            open.append(top);
+            const preview = node('div', bodyHits && bodyHits.length ? 'sp-pad-snippet' : 'sp-pad-preview');
+            const previewLines = bodyText(note).split('\n').slice(0, PREVIEW_LINES);
+            previewLines.forEach((text) => {
+              const row = node('div');
+              if (bodyHits && bodyHits.length) {
+                const hits = literalMatches(text, allQuery.value.trim());
+                if (hits.length) highlight(row, text, hits);
+                else row.textContent = text;
+              } else row.textContent = text;
+              preview.append(row);
             });
+            open.append(preview);
+            open.addEventListener('click', () => openNote(note));
+            const del = node('button', 'sp-pad-del');
+            del.setAttribute('aria-label', 'Delete ' + note.title);
+            del.setAttribute('title', 'Delete ' + note.title);
+            del.innerHTML = '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" d="M3 4h10M6.5 4V2.8A.8.8 0 0 1 7.3 2h1.4a.8.8 0 0 1 .8.8V4M5 4l.6 9.2A.8.8 0 0 0 6.4 14h3.2a.8.8 0 0 0 .8-.8L11 4"/></svg>';
+            del.addEventListener('click', (event) => {
+              event.stopPropagation();
+              const index = notes.findIndex((n) => n.id === note.id);
+              if (index >= 0) notes.splice(index, 1);
+              const recency = notesByRecency.indexOf(note);
+              if (recency >= 0) notesByRecency.splice(recency, 1);
+              openDays.delete(note.id);
+              if (active === note) {
+                if (notes.length) openNote(notesByRecency[0]);
+                else { active = null; editorWindow.hidden = true; listWindow.hidden = false; }
+              }
+              renderList();
+            });
+            card.append(open, del);
+            return card;
+          }
+          function showList() {
+            editorWindow.hidden = true;
+            listWindow.hidden = false;
+            renderList();
           }
           function openGroup(groupList, toggle) {
             groupList.hidden = false;
@@ -442,9 +496,7 @@
                     row.append(content);
                     if (entry.time) row.append(node('span', 'sp-entry-time', entry.time));
                   } else {
-                    const number = node('span', 'sp-ln', line);
-                    number.setAttribute('aria-hidden', 'true');
-                    row.append(number, content);
+                    row.append(content);
                   }
                   article.append(row);
                 });
@@ -481,22 +533,27 @@
               if (show) findQuery.select();
             }
           }
-          function openNote(note, target, query = '') {
+          function setEditing(editing) {
+            code.classList.toggle('sp-editing', editing);
+            code.setAttribute('contenteditable', String(editing));
+            lockBtn.setAttribute('aria-pressed', String(!editing));
+            lockBtn.setAttribute('aria-label', editing ? 'Rendered (unlocked)' : 'Rendered (locked)');
+            editBtn.setAttribute('aria-pressed', String(editing));
+          }
+          function openNote(note) {
             active = note;
             matchIndex = 0;
-            if (target) {
-              findQuery.value = query;
-              showFind(true, false);
-            }
-            renderEditor(!target);
-            if (target) {
-              const hit = matches.findIndex(entry => entry.entryIndex === target.entryIndex && entry.line === target.line);
-              if (hit >= 0) setMatch(hit, true);
-            }
+            renderEditor(true);
+            setEditing(false);
+            listWindow.hidden = true;
+            editorWindow.hidden = false;
             list.querySelectorAll('[data-note]').forEach(button => button.setAttribute('aria-current', String(button.dataset.note === active.id)));
           }
 
           allQuery.addEventListener('input', renderList);
+          $('sp-back').addEventListener('click', showList);
+          editBtn.addEventListener('click', () => setEditing(true));
+          lockBtn.addEventListener('click', () => setEditing(false));
           findQuery.addEventListener('input', () => {
             matchIndex = 0;
             renderEditor();
@@ -527,8 +584,7 @@
               renderEditor();
             }
           });
-          renderList();
-          renderEditor();
+          showList();
         })();
       </script>
     </div>
@@ -562,7 +618,7 @@
         <tbody>
           <tr><th scope="row"><a href="#sp-1">SP-1</a></th><td>Create links to a note, file, indexed symbol, LLD and task in a registered workspace. Reopen after restart and navigate to each exact target. A duplicate title or symbol requires a choice, and a link inside a code sample produces no relationship. After reindexing, a verified rename opens the same logical symbol. A removed symbol or an unverified rename shows a repair state.</td></tr>
           <tr><th scope="row"><a href="#sp-2">SP-2</a></th><td>Open each target's backlink surface and navigate back to the source occurrence. Two links from the same note yield one grouped result with two locations. Editing the source to remove one link updates both directions and leaves one occurrence. The artifact document and existing code-graph relationships remain intact.</td></tr>
-          <tr><th scope="row"><a href="#sp-3">SP-3</a></th><td>In the open scratchpad, find an unsaved word with multiple matches, including a match inside a collapsed date section. Step in both directions across the wrap point and verify the section opens when its match becomes active. Test a zero-match query and close Find without editing the scratchpad. With the model unavailable, find a unique saved term beyond the existing 8,192-character document index cap and apply the linked-target filter. Open a result for a body hit and verify it reveals the matching entry and line in the correct date section. Clear the query and return to Browse all. Restart and recover the same search results. Repeat with two workspaces containing the same title, terms, and relative path. Search, backlinks, and previews expose only the chosen repository's data. Legacy unassigned data is still discoverable in its local view.</td></tr>
+          <tr><th scope="row"><a href="#sp-3">SP-3</a></th><td>In the open scratchpad, find an unsaved word with multiple matches, including a match inside a collapsed date section. Step in both directions across the wrap point and verify the section opens when its match becomes active. Test a zero-match query and close Find without editing the scratchpad. With the model unavailable, find a unique saved term beyond the existing 8,192-character document index cap and apply the linked-target filter. Open a filtered pad and verify the in-note find reveals the matching entry and line in the correct date section. Clear the list search and verify the unfiltered recency list returns. Restart and recover the same search results. Repeat with two workspaces containing the same title, terms, and relative path. Search, backlinks, and previews expose only the chosen repository's data. Legacy unassigned data is still discoverable in its local view.</td></tr>
           <tr><th scope="row"><a href="#sp-4">SP-4</a></th><td>Open a pre-existing Markdown note without changing its bytes. Associate it, link to it, rename it, archive it, follow its inbound link, and restore it. Verify stable identity and distinct search visibility at each step. In one scratchpad, save two entries on one day and a third on another day. Verify two independently collapsible sections, correct counts, and the creation time on each entry. Edit the older entry and verify it stays under its original date. Collapse one section with the keyboard, verify the other remains visible, then expand it. Open another scratchpad and verify it shows only its own entries. Existing content without entry timestamps appears under Undated and remains searchable. Delete it permanently and verify the index drops its hits while a surviving link shows it is missing. Rebuild the index and get the same answer. A failed write and two concurrent saves leave the last committed content intact or return a conflict, with the unsaved draft available for recovery.</td></tr>
           <tr><th scope="row"><a href="#sp-1">SP-1–SP-4</a></th><td>Use the normal VS Code entry points. Confirm the existing menu, create-and-open, Browse all, delete and plain Send to chat behavior still work. Attempt an outside-root or symlink target, rapidly switch documents during resolution, and interrupt an index refresh. There is no incorrect open, stale result on the new document, or lost Markdown. Show a degraded state while the graph is unavailable and recover after reconnect.</td></tr>
           <tr><th scope="row"><a href="#sp-5">SP-5</a></th><td>Preview a saved excerpt with one selected artifact, remove it, and see the turn payload omit it. Reattach and submit to the supported controller and daemon paths. Each receives the approved bounded content and citable revision exactly once. An edit between preview and dispatch preserves the approved snapshot or requires renewed review. A different workspace or a fresh turn receives no implicit note context.</td></tr>

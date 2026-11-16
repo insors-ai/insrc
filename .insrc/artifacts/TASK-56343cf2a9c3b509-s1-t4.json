@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-918618e9-2adf-43cb-8f27-f9d5ed6015c0",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-16T10:05:46.709Z",
+    "epicCreatedAt": "2026-11-16T08:53:15.795Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "56343cf2a9c3b509",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Verify protected candidate origin and archive retrieval",
+      "parent": {
+        "entityId": "STORY-56343cf2a9c3b509-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-56343cf2a9c3b509-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-56343cf2a9c3b509-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-56343cf2a9c3b509-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#191",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "450963fce8e5a8750ecaf43e619a29c937a6e2ef5772a15e6c3cc51e0a481e95",
+        "at": "2026-11-16T10:05:46.709Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-16T10:05:46.711Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Verify protected candidate origin and archive retrieval",
+    "summary": "Implement protected fetch validation against trusted repository IDs, workflow, event, run/attempt, ref, SHA, target, artifact and expiry before reading only bounded allowed output entries. Reject duplicate and foreign assets.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "Same-version Darwin and Linux outputs remain independently addressable. Rerun, workflow, fork, ID, target and transport/inner digest mismatches fail closed.",
+      "Validate inputs and extract only named bounded members, with directory and archive safety retained.",
+      "Verify authenticated artifact transport SHA-256 or an independently recorded protected expected inner SHA-256. Candidate metadata never supplies its own trust anchor."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "GitHub origin and validated download fixtures for Linux, Darwin, rerun, substituted origin, duplicate ZIP members and digest tampering"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

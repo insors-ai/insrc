@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e20f5ce1-71b8-4404-9ae6-6313b3d96172",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-16T10:05:46.699Z",
+    "epicCreatedAt": "2026-11-16T08:53:15.795Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "56343cf2a9c3b509",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Define and verify Linux release metadata",
+      "parent": {
+        "entityId": "STORY-56343cf2a9c3b509-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-56343cf2a9c3b509-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#188",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "49753fb04e1d711389fc1db00064050b77969d5726a5bccf658c1fa0f92a3dc6",
+        "at": "2026-11-16T10:05:46.699Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-16T10:05:46.702Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Define and verify Linux release metadata",
+    "summary": "Add a Linux-only strict v1 manifest, normalized candidate identity, host requirements, canonical repo/ref channel scope, and detached Ed25519 role grants. Expose the verified subject with the digest of exact original bytes. Keep Darwin callers on their current formats.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "Reject malformed UTF-8, duplicate or unknown fields, unsafe sequence/IDs, wrong target/scope/role/key, and mismatched final lane.",
+      "Verify qualification and final grants over identical raw bytes with independent role keys."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Linux manifest schema and digest boundaries"
+      },
+      {
+        "level": "unit",
+        "name": "Role-separated Ed25519 grants and configured channel scope"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

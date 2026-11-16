@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-58b0d867-97cd-4091-ad18-35f9a9003bab",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-16T10:05:46.706Z",
+    "epicCreatedAt": "2026-11-16T08:53:15.795Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "56343cf2a9c3b509",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add the isolated Linux candidate workflow",
+      "parent": {
+        "entityId": "STORY-56343cf2a9c3b509-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-56343cf2a9c3b509-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-56343cf2a9c3b509-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#190",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "54874534dcd90a6ecbd99262f42c1e73066d599a2e99b486f1cf7a56b9b4e340",
+        "at": "2026-11-16T10:05:46.707Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-16T10:05:46.708Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the isolated Linux candidate workflow",
+    "summary": "Add a dispatchable Ubuntu 24.04 amd64 candidate workflow with read-only permissions, pinned actions, exact requested full SHA, pinned runtime and target-qualified output coordinates. Record exact run/attempt/artifact identity.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "Allow a configured full development ref without a branch-name code change. Keep production on the protected configured release ref.",
+      "Build and upload exact outputs. The job has no signing credentials, write token, or hosted test step."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Linux workflow shape, credential isolation, exact revision and configured ref tests"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

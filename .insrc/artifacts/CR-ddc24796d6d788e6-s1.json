@@ -1,0 +1,3523 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "store-6cbfa974-f317-43d1-acd2-56e612aeb87d",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-16T05:46:32.517Z",
+    "epicCreatedAt": "2026-11-16T05:26:54.433Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 3,
+    "epicHash": "ddc24796d6d788e6",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicSlug": "unblock-macos-source-migration-when-legacy",
+    "standalone": true,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "500e3e72c3a328a737b54845334d51ac0665b3f012d4aeccf88cc02c81130707",
+        "at": "2026-11-16T06:17:24.824Z",
+        "by": {
+          "id": "insrc:code-review",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 2
+  },
+  "body": {
+    "kind": "code-review",
+    "format": "task-based",
+    "storyId": "s1",
+    "status": "incomplete",
+    "reviews": [
+      {
+        "reassessmentSummary": "Reassessed s1 against the pinned issue and attempt 2. The issue requires narrowly admitting the verified predecessor-owned esbuild helper, waiting for its verified exit before candidate activation, and preserving fail-closed behavior for unrelated or ambiguous processes. All listed changes and both supplied tests belong to this task; the unchanged run-guard regression verifies adjacent update compatibility without expanding finding scope.",
+        "reviewId": "legacy-esbuild-ddc24796",
+        "attempt": 2,
+        "storyId": "s1",
+        "taskId": "s1",
+        "reviewer": "daemon",
+        "status": "incomplete",
+        "finalScopeIdentity": "93c7a80a513d6f62e65334e1ee52c9ee1eebb0a464bb70049e871853d174516d",
+        "attributionIdentity": "cfc0f7378f1f2dde5b204aae1aa7673f0c9a00321839bbf3b1d051e6d66ee9ba",
+        "taskScopeIdentities": [
+          {
+            "taskId": "s1",
+            "identity": "a0d57c6e0306867dff01026be4f21bb9397a675bc3e13d6df4518bfe4c4d3bed"
+          }
+        ],
+        "scope": {
+          "reviewRevision": "d02fb640882dd3a89840871d1631398f6b69c8e4",
+          "finalScope": {
+            "revision": "d02fb640882dd3a89840871d1631398f6b69c8e4",
+            "identity": "93c7a80a513d6f62e65334e1ee52c9ee1eebb0a464bb70049e871853d174516d",
+            "entries": [
+              {
+                "originChangeIndex": 0,
+                "path": "src/daemon/__tests__/legacy-cutover-admission.test.ts",
+                "blobOid": "0b4f9d67b79bf2fe1c7df21f07a0afb7861c7b41",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      7,
+                      7
+                    ]
+                  },
+                  {
+                    "after": [
+                      16,
+                      16
+                    ]
+                  },
+                  {
+                    "after": [
+                      19,
+                      19
+                    ]
+                  },
+                  {
+                    "after": [
+                      224,
+                      224
+                    ]
+                  },
+                  {
+                    "after": [
+                      227,
+                      227
+                    ]
+                  },
+                  {
+                    "after": [
+                      234,
+                      287
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 1,
+                "path": "src/daemon/legacy-cutover-admission.ts",
+                "blobOid": "482f156b5db3f09107ce52dee7237222cccdf3b4",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      8,
+                      8
+                    ]
+                  },
+                  {
+                    "after": [
+                      10,
+                      10
+                    ]
+                  },
+                  {
+                    "after": [
+                      13,
+                      13
+                    ]
+                  },
+                  {
+                    "after": [
+                      193,
+                      212
+                    ]
+                  },
+                  {
+                    "after": [
+                      214,
+                      214
+                    ]
+                  },
+                  {
+                    "after": [
+                      216,
+                      217
+                    ]
+                  },
+                  {
+                    "after": [
+                      219,
+                      219
+                    ]
+                  },
+                  {
+                    "after": [
+                      221,
+                      222
+                    ]
+                  },
+                  {
+                    "after": [
+                      224,
+                      230
+                    ]
+                  },
+                  {
+                    "after": [
+                      244,
+                      249
+                    ]
+                  },
+                  {
+                    "after": [
+                      253,
+                      282
+                    ]
+                  },
+                  {
+                    "after": [
+                      297,
+                      297
+                    ]
+                  },
+                  {
+                    "after": [
+                      301,
+                      301
+                    ]
+                  },
+                  {
+                    "after": [
+                      307,
+                      308
+                    ]
+                  },
+                  {
+                    "after": [
+                      347,
+                      347
+                    ]
+                  },
+                  {
+                    "after": [
+                      351,
+                      352
+                    ]
+                  },
+                  {
+                    "deletionAt": 304
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 2,
+                "path": "src/daemon/managed-update-recovery.ts",
+                "blobOid": "57f8e69bd9756df78577ed6fdbbafa3cf268d098",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      25,
+                      25
+                    ]
+                  },
+                  {
+                    "after": [
+                      398,
+                      399
+                    ]
+                  },
+                  {
+                    "after": [
+                      428,
+                      430
+                    ]
+                  }
+                ]
+              }
+            ],
+            "dispositions": [
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    7,
+                    7
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      7,
+                      7
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    16,
+                    16
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      16,
+                      16
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    19,
+                    19
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      19,
+                      19
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    224,
+                    224
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      224,
+                      224
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 4
+                },
+                "sourcePart": {
+                  "after": [
+                    227,
+                    227
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      227,
+                      227
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 5
+                },
+                "sourcePart": {
+                  "after": [
+                    234,
+                    287
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      234,
+                      287
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    8,
+                    8
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      8,
+                      8
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    10,
+                    10
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      10,
+                      10
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    13,
+                    13
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      13,
+                      13
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    193,
+                    212
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      193,
+                      212
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 4
+                },
+                "sourcePart": {
+                  "after": [
+                    214,
+                    214
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      214,
+                      214
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 5
+                },
+                "sourcePart": {
+                  "after": [
+                    216,
+                    217
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      216,
+                      217
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 6
+                },
+                "sourcePart": {
+                  "after": [
+                    219,
+                    219
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      219,
+                      219
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 7
+                },
+                "sourcePart": {
+                  "after": [
+                    221,
+                    222
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      221,
+                      222
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 8
+                },
+                "sourcePart": {
+                  "after": [
+                    224,
+                    230
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      224,
+                      230
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 9
+                },
+                "sourcePart": {
+                  "after": [
+                    244,
+                    249
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      244,
+                      249
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 10
+                },
+                "sourcePart": {
+                  "after": [
+                    253,
+                    282
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      253,
+                      282
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 11
+                },
+                "sourcePart": {
+                  "after": [
+                    297,
+                    297
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      297,
+                      297
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 12
+                },
+                "sourcePart": {
+                  "after": [
+                    301,
+                    301
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      301,
+                      301
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 13
+                },
+                "sourcePart": {
+                  "deletionAt": 304
+                },
+                "kind": "deleted",
+                "finalSegments": [
+                  {
+                    "deletionAt": 304
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 14
+                },
+                "sourcePart": {
+                  "after": [
+                    307,
+                    308
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      307,
+                      308
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 15
+                },
+                "sourcePart": {
+                  "after": [
+                    347,
+                    347
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      347,
+                      347
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 16
+                },
+                "sourcePart": {
+                  "after": [
+                    351,
+                    352
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      351,
+                      352
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 2,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    25,
+                    25
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      25,
+                      25
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 2,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    398,
+                    399
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      398,
+                      399
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 2,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    428,
+                    430
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      428,
+                      430
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              }
+            ],
+            "selectedTaskIds": [
+              "s1"
+            ],
+            "testCount": 2,
+            "attributionIdentity": "cfc0f7378f1f2dde5b204aae1aa7673f0c9a00321839bbf3b1d051e6d66ee9ba",
+            "attributionState": "accepted",
+            "tasks": [
+              {
+                "taskId": "s1",
+                "changeIndexes": [
+                  0,
+                  1,
+                  2
+                ],
+                "testIndexes": [
+                  0,
+                  1
+                ],
+                "decision": {
+                  "action": "reassess",
+                  "reason": "Change 1 implements the constrained helper admission and quiescence checks; change 2 wires the verified-exit requirement into managed update recovery before activation. Change 0 covers those paths, including unrelated-helper rejection. The unchanged legacy-run-guard test is required compatibility evidence for the existing guard transfer and recovery behavior during updates. Required test witnesses: test 0 → source changes [1,2]; test 1 → source change [2]."
+                },
+                "identity": "a0d57c6e0306867dff01026be4f21bb9397a675bc3e13d6df4518bfe4c4d3bed"
+              }
+            ]
+          },
+          "storyId": "s1",
+          "taskId": "s1",
+          "documents": {
+            "issue": {
+              "path": "docs/standalone/unblock-macos-source-migration-when-legacy-E20261116ddc24796/ISSUE.md",
+              "commit": "733f0077ff7f3fa7c9d772e5a850719c9ec7c9c8"
+            }
+          },
+          "reviewSet": [
+            {
+              "commit": "d02fb640882dd3a89840871d1631398f6b69c8e4",
+              "parent": "733f0077ff7f3fa7c9d772e5a850719c9ec7c9c8",
+              "files": [
+                {
+                  "path": "src/daemon/__tests__/legacy-cutover-admission.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        7,
+                        7
+                      ]
+                    },
+                    {
+                      "after": [
+                        16,
+                        16
+                      ]
+                    },
+                    {
+                      "after": [
+                        19,
+                        19
+                      ]
+                    },
+                    {
+                      "after": [
+                        224,
+                        224
+                      ]
+                    },
+                    {
+                      "after": [
+                        227,
+                        227
+                      ]
+                    },
+                    {
+                      "after": [
+                        234,
+                        287
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/daemon/legacy-cutover-admission.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        8,
+                        8
+                      ]
+                    },
+                    {
+                      "after": [
+                        10,
+                        10
+                      ]
+                    },
+                    {
+                      "after": [
+                        13,
+                        13
+                      ]
+                    },
+                    {
+                      "after": [
+                        193,
+                        212
+                      ]
+                    },
+                    {
+                      "after": [
+                        214,
+                        214
+                      ]
+                    },
+                    {
+                      "after": [
+                        216,
+                        217
+                      ]
+                    },
+                    {
+                      "after": [
+                        219,
+                        219
+                      ]
+                    },
+                    {
+                      "after": [
+                        221,
+                        222
+                      ]
+                    },
+                    {
+                      "after": [
+                        224,
+                        230
+                      ]
+                    },
+                    {
+                      "after": [
+                        244,
+                        249
+                      ]
+                    },
+                    {
+                      "after": [
+                        253,
+                        282
+                      ]
+                    },
+                    {
+                      "after": [
+                        297,
+                        297
+                      ]
+                    },
+                    {
+                      "after": [
+                        301,
+                        301
+                      ]
+                    },
+                    {
+                      "deletionAt": 304
+                    },
+                    {
+                      "after": [
+                        307,
+                        308
+                      ]
+                    },
+                    {
+                      "after": [
+                        347,
+                        347
+                      ]
+                    },
+                    {
+                      "after": [
+                        351,
+                        352
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/daemon/managed-update-recovery.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        25,
+                        25
+                      ]
+                    },
+                    {
+                      "after": [
+                        398,
+                        399
+                      ]
+                    },
+                    {
+                      "after": [
+                        428,
+                        430
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "tasks": [
+          {
+            "taskId": "s1",
+            "status": "incomplete",
+            "summary": "Inspected the pinned issue, all three submitted change segments, and both relevant test files. The focused tests assert verified helper admission, rejection of an unrelated helper, and refusal to proceed while the admitted helper remains alive. The required disposable-VM acceptance checks are not established by the inspected pinned evidence, so the review is incomplete.",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "partial",
+              "explanation": "The focused regression bodies cover helper admission, unrelated-process rejection, and helper-exit quiescence. The unchanged legacy-run-guard tests exercise guard transfer and recovery, but do not directly verify the new managed-update wiring. The issue also requires rerunning signed source migration, managed restart, MCP readiness, and seeded-state checks on a disposable VM; I could not verify those checks against the reviewed commit.",
+              "evidenceReferences": [
+                "d02fb640882dd3a89840871d1631398f6b69c8e4:src/daemon/__tests__/legacy-cutover-admission.test.ts",
+                "d02fb640882dd3a89840871d1631398f6b69c8e4:src/daemon/__tests__/legacy-run-guard.test.ts",
+                "733f0077ff7f3fa7c9d772e5a850719c9ec7c9c8:docs/standalone/unblock-macos-source-migration-when-legacy-E20261116ddc24796/ISSUE.md"
+              ]
+            },
+            "limitations": [
+              "Could not verify the issue's disposable-VM acceptance checks (signed source migration, managed restart, MCP readiness, and seeded-state checks) against the reviewed commit. The supplied builder test report covers focused macOS tests only."
+            ],
+            "advice": [
+              "Optional execution: I did not run tests or integration checks. The supplied focused-test pass is builder-reported; I did not independently execute it. The supplied evidence does not establish the disposable-VM checks."
+            ],
+            "inspectedReferences": [
+              "733f0077ff7f3fa7c9d772e5a850719c9ec7c9c8:docs/standalone/unblock-macos-source-migration-when-legacy-E20261116ddc24796/ISSUE.md",
+              "d02fb640882dd3a89840871d1631398f6b69c8e4:src/daemon/legacy-cutover-admission.ts",
+              "d02fb640882dd3a89840871d1631398f6b69c8e4:src/daemon/managed-update-recovery.ts",
+              "d02fb640882dd3a89840871d1631398f6b69c8e4:src/daemon/__tests__/legacy-cutover-admission.test.ts",
+              "d02fb640882dd3a89840871d1631398f6b69c8e4:src/daemon/__tests__/legacy-run-guard.test.ts"
+            ],
+            "executedTests": []
+          }
+        ],
+        "summary": "1 selected task assessment(s): incomplete.",
+        "completedAt": "2026-11-16T05:46:31.273Z"
+      },
+      {
+        "reassessmentSummary": "Attribution complete for s1. All six listed change entries and both supplied tests concern the legacy cutover admission behavior or its guard compatibility evidence. No code findings are included.",
+        "reviewId": "legacy-esbuild-ddc24796",
+        "attempt": 3,
+        "storyId": "s1",
+        "taskId": "s1",
+        "reviewer": "daemon",
+        "status": "incomplete",
+        "finalScopeIdentity": "bd5a4fc88054af5d9c11dff9a4860f2c9f2e1b9c2e9218ae092845412493e824",
+        "attributionIdentity": "684614dee72bc836b80422d464b3c9e29b407db2cab3469b549f87d5db5077b8",
+        "taskScopeIdentities": [
+          {
+            "taskId": "s1",
+            "identity": "0f8dea20c332b6ac88fa2b69d9705a4ed1ba4495ea3a76ba6eed789d84225594"
+          }
+        ],
+        "scope": {
+          "reviewRevision": "ba9d1cc82ecd39fba270377a18938f56f1ad5bf3",
+          "finalScope": {
+            "revision": "ba9d1cc82ecd39fba270377a18938f56f1ad5bf3",
+            "identity": "bd5a4fc88054af5d9c11dff9a4860f2c9f2e1b9c2e9218ae092845412493e824",
+            "entries": [
+              {
+                "originChangeIndex": 0,
+                "path": "src/daemon/__tests__/legacy-cutover-admission.test.ts",
+                "blobOid": "0ec73e569ede67636dbb7fa7b53abde7129d229d",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      16,
+                      16
+                    ]
+                  },
+                  {
+                    "after": [
+                      19,
+                      19
+                    ]
+                  },
+                  {
+                    "after": [
+                      224,
+                      224
+                    ]
+                  },
+                  {
+                    "after": [
+                      227,
+                      227
+                    ]
+                  },
+                  {
+                    "after": [
+                      234,
+                      238
+                    ]
+                  },
+                  {
+                    "after": [
+                      240,
+                      240
+                    ]
+                  },
+                  {
+                    "after": [
+                      244,
+                      252
+                    ]
+                  },
+                  {
+                    "after": [
+                      254,
+                      267
+                    ]
+                  },
+                  {
+                    "after": [
+                      269,
+                      291
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 1,
+                "path": "src/daemon/legacy-cutover-admission.ts",
+                "blobOid": "8776ec39962df1474115799c9e81ba72e0eafab2",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      8,
+                      8
+                    ]
+                  },
+                  {
+                    "after": [
+                      10,
+                      10
+                    ]
+                  },
+                  {
+                    "after": [
+                      13,
+                      13
+                    ]
+                  },
+                  {
+                    "after": [
+                      193,
+                      193
+                    ]
+                  },
+                  {
+                    "after": [
+                      201,
+                      201
+                    ]
+                  },
+                  {
+                    "after": [
+                      204,
+                      204
+                    ]
+                  },
+                  {
+                    "after": [
+                      207,
+                      207
+                    ]
+                  },
+                  {
+                    "after": [
+                      219,
+                      220
+                    ]
+                  },
+                  {
+                    "after": [
+                      227,
+                      234
+                    ]
+                  },
+                  {
+                    "after": [
+                      236,
+                      236
+                    ]
+                  },
+                  {
+                    "after": [
+                      238,
+                      239
+                    ]
+                  },
+                  {
+                    "after": [
+                      241,
+                      241
+                    ]
+                  },
+                  {
+                    "after": [
+                      243,
+                      244
+                    ]
+                  },
+                  {
+                    "after": [
+                      246,
+                      252
+                    ]
+                  },
+                  {
+                    "after": [
+                      266,
+                      271
+                    ]
+                  },
+                  {
+                    "after": [
+                      275,
+                      304
+                    ]
+                  },
+                  {
+                    "after": [
+                      319,
+                      319
+                    ]
+                  },
+                  {
+                    "after": [
+                      323,
+                      323
+                    ]
+                  },
+                  {
+                    "after": [
+                      329,
+                      330
+                    ]
+                  },
+                  {
+                    "after": [
+                      369,
+                      369
+                    ]
+                  },
+                  {
+                    "after": [
+                      373,
+                      374
+                    ]
+                  },
+                  {
+                    "deletionAt": 326
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 2,
+                "path": "src/daemon/managed-update-recovery.ts",
+                "blobOid": "57f8e69bd9756df78577ed6fdbbafa3cf268d098",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      25,
+                      25
+                    ]
+                  },
+                  {
+                    "after": [
+                      398,
+                      399
+                    ]
+                  },
+                  {
+                    "after": [
+                      428,
+                      430
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 3,
+                "path": "src/daemon/__tests__/legacy-cutover-admission.test.ts",
+                "blobOid": "0ec73e569ede67636dbb7fa7b53abde7129d229d",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      7,
+                      7
+                    ]
+                  },
+                  {
+                    "after": [
+                      239,
+                      239
+                    ]
+                  },
+                  {
+                    "after": [
+                      241,
+                      243
+                    ]
+                  },
+                  {
+                    "after": [
+                      253,
+                      253
+                    ]
+                  },
+                  {
+                    "after": [
+                      268,
+                      268
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 4,
+                "path": "src/daemon/legacy-cutover-admission.ts",
+                "blobOid": "8776ec39962df1474115799c9e81ba72e0eafab2",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      194,
+                      196
+                    ]
+                  },
+                  {
+                    "after": [
+                      202,
+                      203
+                    ]
+                  },
+                  {
+                    "after": [
+                      205,
+                      206
+                    ]
+                  },
+                  {
+                    "after": [
+                      208,
+                      209
+                    ]
+                  },
+                  {
+                    "after": [
+                      211,
+                      211
+                    ]
+                  },
+                  {
+                    "after": [
+                      213,
+                      213
+                    ]
+                  },
+                  {
+                    "after": [
+                      215,
+                      217
+                    ]
+                  },
+                  {
+                    "after": [
+                      253,
+                      253
+                    ]
+                  },
+                  {
+                    "after": [
+                      261,
+                      261
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 5,
+                "path": "src/daemon/legacy-cutover-admission.ts",
+                "blobOid": "8776ec39962df1474115799c9e81ba72e0eafab2",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      197,
+                      200
+                    ]
+                  },
+                  {
+                    "after": [
+                      210,
+                      210
+                    ]
+                  },
+                  {
+                    "after": [
+                      212,
+                      212
+                    ]
+                  },
+                  {
+                    "after": [
+                      214,
+                      214
+                    ]
+                  },
+                  {
+                    "after": [
+                      218,
+                      218
+                    ]
+                  },
+                  {
+                    "after": [
+                      221,
+                      226
+                    ]
+                  }
+                ]
+              }
+            ],
+            "dispositions": [
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    7,
+                    7
+                  ]
+                },
+                "kind": "superseded",
+                "finalSegments": [],
+                "replacementWitnesses": [
+                  {
+                    "changeIndex": 3,
+                    "segmentIndex": 0
+                  }
+                ]
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    16,
+                    16
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      16,
+                      16
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    19,
+                    19
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      19,
+                      19
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    224,
+                    224
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      224,
+                      224
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 4
+                },
+                "sourcePart": {
+                  "after": [
+                    227,
+                    227
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      227,
+                      227
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 5
+                },
+                "sourcePart": {
+                  "after": [
+                    234,
+                    238
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      234,
+                      238
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 5
+                },
+                "sourcePart": {
+                  "after": [
+                    239,
+                    239
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      240,
+                      240
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 5
+                },
+                "sourcePart": {
+                  "after": [
+                    240,
+                    240
+                  ]
+                },
+                "kind": "superseded",
+                "finalSegments": [],
+                "replacementWitnesses": [
+                  {
+                    "changeIndex": 3,
+                    "segmentIndex": 2
+                  }
+                ]
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 5
+                },
+                "sourcePart": {
+                  "after": [
+                    241,
+                    249
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      244,
+                      252
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 5
+                },
+                "sourcePart": {
+                  "after": [
+                    250,
+                    250
+                  ]
+                },
+                "kind": "superseded",
+                "finalSegments": [],
+                "replacementWitnesses": [
+                  {
+                    "changeIndex": 3,
+                    "segmentIndex": 3
+                  }
+                ]
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 5
+                },
+                "sourcePart": {
+                  "after": [
+                    251,
+                    264
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      254,
+                      267
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 5
+                },
+                "sourcePart": {
+                  "after": [
+                    265,
+                    287
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      269,
+                      291
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    8,
+                    8
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      8,
+                      8
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    10,
+                    10
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      10,
+                      10
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    13,
+                    13
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      13,
+                      13
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    193,
+                    193
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      193,
+                      193
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    194,
+                    194
+                  ]
+                },
+                "kind": "superseded",
+                "finalSegments": [],
+                "replacementWitnesses": [
+                  {
+                    "changeIndex": 4,
+                    "segmentIndex": 0
+                  },
+                  {
+                    "changeIndex": 5,
+                    "segmentIndex": 0
+                  }
+                ]
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    195,
+                    195
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      201,
+                      201
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    196,
+                    196
+                  ]
+                },
+                "kind": "superseded",
+                "finalSegments": [],
+                "replacementWitnesses": [
+                  {
+                    "changeIndex": 4,
+                    "segmentIndex": 1
+                  }
+                ]
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    197,
+                    197
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      204,
+                      204
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    198,
+                    198
+                  ]
+                },
+                "kind": "superseded",
+                "finalSegments": [],
+                "replacementWitnesses": [
+                  {
+                    "changeIndex": 4,
+                    "segmentIndex": 2
+                  }
+                ]
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    199,
+                    199
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      207,
+                      207
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    200,
+                    201
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      219,
+                      220
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    202,
+                    204
+                  ]
+                },
+                "kind": "superseded",
+                "finalSegments": [],
+                "replacementWitnesses": [
+                  {
+                    "changeIndex": 5,
+                    "segmentIndex": 5
+                  }
+                ]
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    205,
+                    212
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      227,
+                      234
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 4
+                },
+                "sourcePart": {
+                  "after": [
+                    214,
+                    214
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      236,
+                      236
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 5
+                },
+                "sourcePart": {
+                  "after": [
+                    216,
+                    217
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      238,
+                      239
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 6
+                },
+                "sourcePart": {
+                  "after": [
+                    219,
+                    219
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      241,
+                      241
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 7
+                },
+                "sourcePart": {
+                  "after": [
+                    221,
+                    222
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      243,
+                      244
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 8
+                },
+                "sourcePart": {
+                  "after": [
+                    224,
+                    230
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      246,
+                      252
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 9
+                },
+                "sourcePart": {
+                  "after": [
+                    244,
+                    249
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      266,
+                      271
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 10
+                },
+                "sourcePart": {
+                  "after": [
+                    253,
+                    282
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      275,
+                      304
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 11
+                },
+                "sourcePart": {
+                  "after": [
+                    297,
+                    297
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      319,
+                      319
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 12
+                },
+                "sourcePart": {
+                  "after": [
+                    301,
+                    301
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      323,
+                      323
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 13
+                },
+                "sourcePart": {
+                  "deletionAt": 304
+                },
+                "kind": "deleted",
+                "finalSegments": [
+                  {
+                    "deletionAt": 326
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 14
+                },
+                "sourcePart": {
+                  "after": [
+                    307,
+                    308
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      329,
+                      330
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 15
+                },
+                "sourcePart": {
+                  "after": [
+                    347,
+                    347
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      369,
+                      369
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 16
+                },
+                "sourcePart": {
+                  "after": [
+                    351,
+                    352
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      373,
+                      374
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 2,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    25,
+                    25
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      25,
+                      25
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 2,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    398,
+                    399
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      398,
+                      399
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 2,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    428,
+                    430
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      428,
+                      430
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 3,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    7,
+                    7
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      7,
+                      7
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 3,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    239,
+                    239
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      239,
+                      239
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 3,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    241,
+                    243
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      241,
+                      243
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 3,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    253,
+                    253
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      253,
+                      253
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 3,
+                  "segmentIndex": 4
+                },
+                "sourcePart": {
+                  "after": [
+                    268,
+                    268
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      268,
+                      268
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 4,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    194,
+                    196
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      194,
+                      196
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 4,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    198,
+                    199
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      202,
+                      203
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 4,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    201,
+                    202
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      205,
+                      206
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 4,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    204,
+                    205
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      208,
+                      209
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 4,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    206,
+                    206
+                  ]
+                },
+                "kind": "superseded",
+                "finalSegments": [],
+                "replacementWitnesses": [
+                  {
+                    "changeIndex": 5,
+                    "segmentIndex": 1
+                  }
+                ]
+              },
+              {
+                "source": {
+                  "changeIndex": 4,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    207,
+                    207
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      211,
+                      211
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 4,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    208,
+                    212
+                  ]
+                },
+                "kind": "superseded",
+                "finalSegments": [],
+                "replacementWitnesses": [
+                  {
+                    "changeIndex": 5,
+                    "segmentIndex": 2
+                  }
+                ]
+              },
+              {
+                "source": {
+                  "changeIndex": 4,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    213,
+                    213
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      213,
+                      213
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 4,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    214,
+                    214
+                  ]
+                },
+                "kind": "superseded",
+                "finalSegments": [],
+                "replacementWitnesses": [
+                  {
+                    "changeIndex": 5,
+                    "segmentIndex": 3
+                  }
+                ]
+              },
+              {
+                "source": {
+                  "changeIndex": 4,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    215,
+                    217
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      215,
+                      217
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 4,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    218,
+                    218
+                  ]
+                },
+                "kind": "superseded",
+                "finalSegments": [],
+                "replacementWitnesses": [
+                  {
+                    "changeIndex": 5,
+                    "segmentIndex": 4
+                  }
+                ]
+              },
+              {
+                "source": {
+                  "changeIndex": 4,
+                  "segmentIndex": 4
+                },
+                "sourcePart": {
+                  "after": [
+                    250,
+                    250
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      253,
+                      253
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 4,
+                  "segmentIndex": 5
+                },
+                "sourcePart": {
+                  "after": [
+                    258,
+                    258
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      261,
+                      261
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 5,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    197,
+                    200
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      197,
+                      200
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 5,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    210,
+                    210
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      210,
+                      210
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 5,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    212,
+                    212
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      212,
+                      212
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 5,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    214,
+                    214
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      214,
+                      214
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 5,
+                  "segmentIndex": 4
+                },
+                "sourcePart": {
+                  "after": [
+                    218,
+                    218
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      218,
+                      218
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 5,
+                  "segmentIndex": 5
+                },
+                "sourcePart": {
+                  "after": [
+                    221,
+                    226
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      221,
+                      226
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              }
+            ],
+            "selectedTaskIds": [
+              "s1"
+            ],
+            "testCount": 2,
+            "attributionIdentity": "684614dee72bc836b80422d464b3c9e29b407db2cab3469b549f87d5db5077b8",
+            "attributionState": "accepted",
+            "tasks": [
+              {
+                "taskId": "s1",
+                "changeIndexes": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "testIndexes": [
+                  0,
+                  1
+                ],
+                "decision": {
+                  "action": "reassess",
+                  "reason": "The issue and attempt 3 summary attribute the admission logic, inode-alias verification, stable child identity checks, and managed-update recovery wiring to s1. The focused cutover tests cover helper admission and exit verification; the legacy-run-guard tests are required compatibility regressions. Changes 0, 1, and 4 retain their supplied required-witness mappings to source changes 3, 4, and 5, respectively."
+                },
+                "identity": "0f8dea20c332b6ac88fa2b69d9705a4ed1ba4495ea3a76ba6eed789d84225594"
+              }
+            ]
+          },
+          "storyId": "s1",
+          "taskId": "s1",
+          "documents": {
+            "issue": {
+              "path": "docs/standalone/unblock-macos-source-migration-when-legacy-E20261116ddc24796/ISSUE.md",
+              "commit": "733f0077ff7f3fa7c9d772e5a850719c9ec7c9c8"
+            }
+          },
+          "reviewSet": [
+            {
+              "commit": "d02fb640882dd3a89840871d1631398f6b69c8e4",
+              "parent": "733f0077ff7f3fa7c9d772e5a850719c9ec7c9c8",
+              "files": [
+                {
+                  "path": "src/daemon/__tests__/legacy-cutover-admission.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        7,
+                        7
+                      ]
+                    },
+                    {
+                      "after": [
+                        16,
+                        16
+                      ]
+                    },
+                    {
+                      "after": [
+                        19,
+                        19
+                      ]
+                    },
+                    {
+                      "after": [
+                        224,
+                        224
+                      ]
+                    },
+                    {
+                      "after": [
+                        227,
+                        227
+                      ]
+                    },
+                    {
+                      "after": [
+                        234,
+                        287
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/daemon/legacy-cutover-admission.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        8,
+                        8
+                      ]
+                    },
+                    {
+                      "after": [
+                        10,
+                        10
+                      ]
+                    },
+                    {
+                      "after": [
+                        13,
+                        13
+                      ]
+                    },
+                    {
+                      "after": [
+                        193,
+                        212
+                      ]
+                    },
+                    {
+                      "after": [
+                        214,
+                        214
+                      ]
+                    },
+                    {
+                      "after": [
+                        216,
+                        217
+                      ]
+                    },
+                    {
+                      "after": [
+                        219,
+                        219
+                      ]
+                    },
+                    {
+                      "after": [
+                        221,
+                        222
+                      ]
+                    },
+                    {
+                      "after": [
+                        224,
+                        230
+                      ]
+                    },
+                    {
+                      "after": [
+                        244,
+                        249
+                      ]
+                    },
+                    {
+                      "after": [
+                        253,
+                        282
+                      ]
+                    },
+                    {
+                      "after": [
+                        297,
+                        297
+                      ]
+                    },
+                    {
+                      "after": [
+                        301,
+                        301
+                      ]
+                    },
+                    {
+                      "deletionAt": 304
+                    },
+                    {
+                      "after": [
+                        307,
+                        308
+                      ]
+                    },
+                    {
+                      "after": [
+                        347,
+                        347
+                      ]
+                    },
+                    {
+                      "after": [
+                        351,
+                        352
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/daemon/managed-update-recovery.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        25,
+                        25
+                      ]
+                    },
+                    {
+                      "after": [
+                        398,
+                        399
+                      ]
+                    },
+                    {
+                      "after": [
+                        428,
+                        430
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "60a7c1cc885c104360a64a570f5134cbb2de6169",
+              "parent": "d02fb640882dd3a89840871d1631398f6b69c8e4",
+              "files": [
+                {
+                  "path": "src/daemon/__tests__/legacy-cutover-admission.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        7,
+                        7
+                      ]
+                    },
+                    {
+                      "after": [
+                        239,
+                        239
+                      ]
+                    },
+                    {
+                      "after": [
+                        241,
+                        243
+                      ]
+                    },
+                    {
+                      "after": [
+                        253,
+                        253
+                      ]
+                    },
+                    {
+                      "after": [
+                        268,
+                        268
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/daemon/legacy-cutover-admission.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        194,
+                        196
+                      ]
+                    },
+                    {
+                      "after": [
+                        198,
+                        199
+                      ]
+                    },
+                    {
+                      "after": [
+                        201,
+                        202
+                      ]
+                    },
+                    {
+                      "after": [
+                        204,
+                        218
+                      ]
+                    },
+                    {
+                      "after": [
+                        250,
+                        250
+                      ]
+                    },
+                    {
+                      "after": [
+                        258,
+                        258
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "ba9d1cc82ecd39fba270377a18938f56f1ad5bf3",
+              "parent": "60a7c1cc885c104360a64a570f5134cbb2de6169",
+              "files": [
+                {
+                  "path": "src/daemon/legacy-cutover-admission.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        197,
+                        200
+                      ]
+                    },
+                    {
+                      "after": [
+                        210,
+                        210
+                      ]
+                    },
+                    {
+                      "after": [
+                        212,
+                        212
+                      ]
+                    },
+                    {
+                      "after": [
+                        214,
+                        214
+                      ]
+                    },
+                    {
+                      "after": [
+                        218,
+                        218
+                      ]
+                    },
+                    {
+                      "after": [
+                        221,
+                        226
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "tasks": [
+          {
+            "taskId": "s1",
+            "status": "incomplete",
+            "summary": "Reviewed all three selected changed files, the pinned issue, and both relevant test bodies at the submitted revision. The code and focused tests support narrow admission of the verified esbuild child, rejection of an unrelated helper, and waiting for helper exit before candidate staging. The supplied VM summary reports signed migration, MCP readiness, and seeded-state checks passed, but managed restart failed twice during native shutdown; that acceptance check remains unresolved, so the task is incomplete.",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "Completed the coverage review of both relevant test files. The cutover tests assert helper admission, unrelated-process rejection, and refusal to proceed while the admitted helper remains alive; the alias case also exercises the two hard-linked binary paths. The run-guard tests assert identity-bound transfer and recovery around interruptions. These bodies do not directly exercise completeManagedLegacyMigration's wiring; the supplied VM summary provides integration evidence, including the failed restart, but no pinned test result establishes a successful managed restart.",
+              "evidenceReferences": [
+                "ba9d1cc82ecd39fba270377a18938f56f1ad5bf3:src/daemon/__tests__/legacy-cutover-admission.test.ts",
+                "ba9d1cc82ecd39fba270377a18938f56f1ad5bf3:src/daemon/__tests__/legacy-run-guard.test.ts",
+                "ba9d1cc82ecd39fba270377a18938f56f1ad5bf3:src/daemon/managed-update-recovery.ts"
+              ]
+            },
+            "limitations": [
+              "The required managed-restart acceptance check is not satisfied by the supplied VM summary: restart returned failure twice after the migrated Node process aborted during native shutdown. Although the supervisor reportedly restarted it, successful managed restart qualification is not established."
+            ],
+            "advice": [
+              "Optional execution: I did not run tests, integration checks, typechecks, or builds. The focused test pass is builder-reported; I did not independently execute it. The VM outcomes are supplied in the task summary, not independently verified from pinned logs."
+            ],
+            "inspectedReferences": [
+              "733f0077ff7f3fa7c9d772e5a850719c9ec7c9c8:docs/standalone/unblock-macos-source-migration-when-legacy-E20261116ddc24796/ISSUE.md",
+              "ba9d1cc82ecd39fba270377a18938f56f1ad5bf3:src/daemon/legacy-cutover-admission.ts",
+              "ba9d1cc82ecd39fba270377a18938f56f1ad5bf3:src/daemon/managed-update-recovery.ts",
+              "ba9d1cc82ecd39fba270377a18938f56f1ad5bf3:src/daemon/__tests__/legacy-cutover-admission.test.ts",
+              "ba9d1cc82ecd39fba270377a18938f56f1ad5bf3:src/daemon/__tests__/legacy-run-guard.test.ts",
+              "60a7c1cc885c104360a64a570f5134cbb2de6169:src/daemon/legacy-cutover-admission.ts",
+              "60a7c1cc885c104360a64a570f5134cbb2de6169:src/daemon/__tests__/legacy-cutover-admission.test.ts"
+            ],
+            "executedTests": [
+              {
+                "file": "src/daemon/__tests__/legacy-cutover-admission.test.ts",
+                "cases": [
+                  "Predecessor variants and backward decoding",
+                  "Old shell/helper concurrent with canonical launcher exchange and old child attempting to open stores",
+                  "Legacy cutover admits only the verified tsx esbuild child and waits for its exit"
+                ],
+                "command": "/opt/homebrew/opt/node@22/bin/node --import tsx --test src/daemon/__tests__/legacy-cutover-admission.test.ts src/daemon/__tests__/legacy-run-guard.test.ts",
+                "result": "pass",
+                "executionDetails": "Builder-reported pass on Apple Silicon macOS with Node 22; not executed by this review. The cited build record reports the focused file run at d02fb6408.",
+                "evidenceReferences": [
+                  "ba9d1cc82ecd39fba270377a18938f56f1ad5bf3:src/daemon/__tests__/legacy-cutover-admission.test.ts"
+                ]
+              },
+              {
+                "file": "src/daemon/__tests__/legacy-run-guard.test.ts",
+                "cases": [
+                  "Graceful, broker-denied and unknown drain evidence",
+                  "Guard adoption binds exact identities and recovers on either side of transfer"
+                ],
+                "command": "/opt/homebrew/opt/node@22/bin/node --import tsx --test src/daemon/__tests__/legacy-cutover-admission.test.ts src/daemon/__tests__/legacy-run-guard.test.ts",
+                "result": "pass",
+                "executionDetails": "Builder-reported pass on Apple Silicon macOS with Node 22; not executed by this review.",
+                "evidenceReferences": [
+                  "ba9d1cc82ecd39fba270377a18938f56f1ad5bf3:src/daemon/__tests__/legacy-run-guard.test.ts"
+                ]
+              }
+            ]
+          }
+        ],
+        "summary": "1 selected task assessment(s): incomplete.",
+        "completedAt": "2026-11-16T06:17:23.099Z"
+      }
+    ],
+    "admissionFailures": [
+      {
+        "reviewId": "legacy-esbuild-ddc24796",
+        "attempt": {
+          "phase": "admission",
+          "validation": "unverified",
+          "operation": "start",
+          "acceptedAt": "2026-11-16T05:44:24.836Z",
+          "header": {
+            "attempt": 1,
+            "reviewer": "daemon",
+            "status": "failed",
+            "createdAt": "2026-11-16T05:44:24.836Z",
+            "completedAt": "2026-11-16T05:44:26.700Z"
+          },
+          "submitted": {
+            "reviewRevision": "d02fb640882dd3a89840871d1631398f6b69c8e4",
+            "storyId": "s1",
+            "taskId": "s1",
+            "functionalSummary": "Admit only the verified legacy tsx daemon's direct, expected esbuild service child during the pre-drain macOS launcher fence. Verify pinned helper exit and rerun the process census before starting the candidate. Keep unrelated and unknown processes fail-closed.",
+            "documents": {
+              "issue": {
+                "path": "docs/standalone/unblock-macos-source-migration-when-legacy-E20261116ddc24796/ISSUE.md",
+                "commit": "733f0077ff7f3fa7c9d772e5a850719c9ec7c9c8"
+              }
+            },
+            "reviewSet": [
+              {
+                "commit": "d02fb640882dd3a89840871d1631398f6b69c8e4",
+                "parent": "733f0077ff7f3fa7c9d772e5a850719c9ec7c9c8",
+                "files": [
+                  {
+                    "path": "src/daemon/__tests__/legacy-cutover-admission.test.ts",
+                    "segments": [
+                      {
+                        "after": [
+                          7,
+                          7
+                        ]
+                      },
+                      {
+                        "after": [
+                          16,
+                          16
+                        ]
+                      },
+                      {
+                        "after": [
+                          19,
+                          19
+                        ]
+                      },
+                      {
+                        "after": [
+                          224,
+                          224
+                        ]
+                      },
+                      {
+                        "after": [
+                          227,
+                          227
+                        ]
+                      },
+                      {
+                        "after": [
+                          234,
+                          287
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "path": "src/daemon/legacy-cutover-admission.ts",
+                    "segments": [
+                      {
+                        "after": [
+                          8,
+                          8
+                        ]
+                      },
+                      {
+                        "after": [
+                          10,
+                          10
+                        ]
+                      },
+                      {
+                        "after": [
+                          13,
+                          13
+                        ]
+                      },
+                      {
+                        "after": [
+                          193,
+                          212
+                        ]
+                      },
+                      {
+                        "after": [
+                          214,
+                          214
+                        ]
+                      },
+                      {
+                        "after": [
+                          216,
+                          217
+                        ]
+                      },
+                      {
+                        "after": [
+                          219,
+                          219
+                        ]
+                      },
+                      {
+                        "after": [
+                          221,
+                          222
+                        ]
+                      },
+                      {
+                        "after": [
+                          224,
+                          230
+                        ]
+                      },
+                      {
+                        "after": [
+                          244,
+                          249
+                        ]
+                      },
+                      {
+                        "after": [
+                          253,
+                          282
+                        ]
+                      },
+                      {
+                        "after": [
+                          297,
+                          297
+                        ]
+                      },
+                      {
+                        "after": [
+                          301,
+                          301
+                        ]
+                      },
+                      {
+                        "deletionAt": 304
+                      },
+                      {
+                        "after": [
+                          307,
+                          308
+                        ]
+                      },
+                      {
+                        "after": [
+                          347,
+                          347
+                        ]
+                      },
+                      {
+                        "after": [
+                          351,
+                          352
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "path": "src/daemon/managed-update-recovery.ts",
+                    "segments": [
+                      {
+                        "after": [
+                          25,
+                          25
+                        ]
+                      },
+                      {
+                        "after": [
+                          398,
+                          399
+                        ]
+                      },
+                      {
+                        "after": [
+                          428,
+                          430
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "tests": [
+              {
+                "file": "src/daemon/__tests__/legacy-cutover-admission.test.ts",
+                "cases": [
+                  "Predecessor variants and backward decoding",
+                  "Old shell/helper concurrent with canonical launcher exchange and old child attempting to open stores",
+                  "Legacy cutover admits only the verified tsx esbuild child and waits for its exit"
+                ],
+                "command": "/opt/homebrew/opt/node@22/bin/node --import tsx --test src/daemon/__tests__/legacy-cutover-admission.test.ts src/daemon/__tests__/legacy-run-guard.test.ts",
+                "result": "pass",
+                "executionDetails": "Apple Silicon macOS with Node 22, outside sandbox for launchd and process identity calls. All three cases passed; the daemon validator also ran these three cases.",
+                "evidenceReferences": [
+                  "docs/standalone/unblock-macos-source-migration-when-legacy-E20261116ddc24796/S001/TESTS.md"
+                ]
+              },
+              {
+                "file": "src/daemon/__tests__/legacy-run-guard.test.ts",
+                "cases": [
+                  "Graceful, broker-denied and unknown drain evidence",
+                  "Guard adoption binds exact identities and recovers on either side of transfer"
+                ],
+                "command": "/opt/homebrew/opt/node@22/bin/node --import tsx --test src/daemon/__tests__/legacy-cutover-admission.test.ts src/daemon/__tests__/legacy-run-guard.test.ts",
+                "result": "pass",
+                "executionDetails": "Apple Silicon macOS with Node 22, outside sandbox. Both targeted guard cases passed.",
+                "evidenceReferences": []
+              }
+            ]
+          },
+          "progress": {
+            "schemaVersion": 1,
+            "executionId": "863280ae-60e1-4830-8ede-7a9747ad2256",
+            "sequence": 0,
+            "phase": "error",
+            "task": null,
+            "completedTasks": 0,
+            "reviewElapsedMs": 0,
+            "taskElapsedMs": null,
+            "observedAt": "2026-11-16T05:44:24.840Z",
+            "lastMeaningfulActivityAt": null,
+            "processState": "unknown",
+            "lastProcessObservedAt": null,
+            "activeToolCount": 0
+          },
+          "resourceGuard": {
+            "daemonInstance": "6f36ec7a-de25-4d29-b84c-c6d978cbe64c",
+            "openLeases": []
+          },
+          "error": {
+            "code": "code_review_admission_failed",
+            "field": "tests",
+            "summary": "tests: Reported execution needs provenance"
+          }
+        }
+      }
+    ]
+  },
+  "citations": []
+}

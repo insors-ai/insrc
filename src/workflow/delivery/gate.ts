@@ -1,4 +1,4 @@
-import { isStoredDesignReview } from '../review/report-log.js';
+import { isStoredDesignReview } from '../review-history/review/report-log.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -35,10 +35,10 @@ import { isStoredDesignReview } from '../review/report-log.js';
  * never throws, never reads or changes a stage.
  */
 
-import { reviewerPartyOf } from '../review/party.js';
-import { BLOCKING, effectiveReviewVerdict } from '../review/resolve.js';
+import { reviewerPartyOf } from '../review-history/review/party.js';
+import { BLOCKING, effectiveReviewVerdict } from '../review-history/review/resolve.js';
 import { signoffViewOf } from '../team/signoff.js';
-import type { Finding, ReviewReport } from '../review/types.js';
+import type { Finding, ReviewReport } from '../review-history/review/types.js';
 import { makeNotice, sortNotices } from './notice.js';
 import { asObject, storyOrdinalOf, taskOrdinalOf } from './read.js';
 import type {
@@ -197,13 +197,13 @@ function artifactGate(
 		const review = codeReview(record, builds);
 		if (review === null) return { artifactId: record.artifactId, approval, review: null, ...signoff };
 		const guardApproved = builds.some(b => b.approval.state === 'approved');
-		const blocking = review.effectiveVerdict === 'block' && !guardApproved && review.override === null;
+		const blocking = false; // Historical reviews are informational.
 		return { artifactId: record.artifactId, approval, review: { ...review, blocking }, ...signoff };
 	}
 
 	const review = designReview(record);
 	if (review === null) return { artifactId: record.artifactId, approval, review: null, ...signoff };
-	const blocking = review.effectiveVerdict === 'block' && record.approval.state !== 'approved' && review.override === null;
+	const blocking = false; // Historical reviews are informational.
 	return { artifactId: record.artifactId, approval, review: { ...review, blocking }, ...signoff };
 }
 

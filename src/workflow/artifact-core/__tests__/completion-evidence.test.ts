@@ -5,7 +5,6 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
 import { artifactJsonPath, buildArtifactId, codeReviewArtifactId, defineArtifactId, planArtifactId } from '../../storage.js';
-import { reviewedBuildFingerprint } from '../../code-review/build-freshness.js';
 import { createCompletionEvidence } from '../completion-evidence.js';
 import { rollUp } from '../lifecycle.js';
 import type { ChildStatusReader } from '../lifecycle.js';
@@ -21,59 +20,19 @@ function put(repo: string, id: string, head: object): void {
 }
 /** Authored by the controller, so the daemon review in `review()` is independent of it (8ebc81c96 requires a known, different author). */
 const buildRecord = (meta: object = {}) => ({ meta: { workflow: 'build', epicHash: H, storyId: 's1', createdAt: '2026-11-03T00:00:00.000Z', authoredBy: 'controller', ...meta }, body: { commit: 'abc1234', focus: 'Change it', summary: 'Changed', tasks: [{ id: 's1', passed: true }], changeLog: [{ target: { file: 'src/a.ts' } }] } });
-/** A task-based code review of `build`, passing unless its BUILD binding is `fingerprint`. */
-function review(build: unknown, story: string, meta: object = {}, fingerprint: string = reviewedBuildFingerprint(build)): object {
-	const commit = 'a'.repeat(40);
-	const scope = { storyId: story, documents: {}, reviewSet: [{ commit, parent: 'b'.repeat(40), files: [{ path: 'src/a.ts', segments: [{ after: [1, 1] }] }] }] };
-	const task = { taskId: 's1', status: 'passed', summary: 'Correct', findings: [], testCoverage: { assessment: 'verified', explanation: 'Covered', evidenceReferences: ['ref:test'] }, limitations: [], advice: [], inspectedReferences: ['ref:code'], executedTests: [] };
-	const summary = { reviewId: 'review-1', attempt: 1, storyId: story, reviewer: 'daemon', status: 'passed', scope, tasks: [task], summary: 'Reviewed', completedAt: '2026-11-03T01:00:00.000Z', buildFingerprint: fingerprint };
-	return { meta: { workflow: 'code-review', schemaVersion: 2, epicHash: H, storyId: story, reviewedBy: 'daemon', ...meta }, body: { kind: 'code-review', format: 'task-based', storyId: story, status: 'passed', reviews: [summary] } };
-}
 const round = (repo: string, n: number, result: 'pass' | 'fail', id: string): void => new FileSidecarStore(repo).appendRecordSync('log', {
 	artifactId: id,
 	entry: { id: `round-${id}-${n}`, actor: { id: 'insrc:build', kind: 'system', properties: {} }, timestamp: `2026-10-0${n}T00:00:00.000Z`, operation: 'update', outcome: { result, summary: 'round', data: { kind: 'build-round' } } },
 });
 
 describe('createCompletionEvidence', () => {
-	it('storyCodeReview maps the gate, an explicit override wins over a stored one, and an empty reason is not an override', async () => {
-		const repo = mkdtempSync(join(tmpdir(), 'evidence-'));
-		try {
-			const kind = async (story: string, overrideReview?: string) => createCompletionEvidence(repo, { overrideReview }).storyCodeReview(H, story);
-			const build = buildRecord();
-
-			// no record: missing
-			assert.deepEqual(await kind('s1'), { kind: 'missing' });
-			// a review bound to the current BUILD is clean
-			put(repo, buildArtifactId(H, 's1'), build);
-			put(repo, codeReviewArtifactId(H, 's1'), review(build, 's1'));
-			assert.deepEqual(await kind('s1'), { kind: 'clean' });
-			// a review of another BUILD is blocked; an explicit override makes it overridden
-			put(repo, codeReviewArtifactId(H, 's1'), review(build, 's1', {}, 'another-build'));
-			assert.deepEqual(await kind('s1'), { kind: 'blocked' });
-			assert.deepEqual(await kind('s1', 'known gap'), { kind: 'overridden', overrideReason: 'known gap' });
-
-			// the override a stored approval carries is used when the call carries none, and the explicit one wins over it
-			put(repo, buildArtifactId(H, 's2'), build);
-			put(repo, codeReviewArtifactId(H, 's2'), review(build, 's2', approvedMeta({ override: 'stored on the CR' }), 'another-build'));
-			assert.deepEqual(await kind('s2'), { kind: 'overridden', overrideReason: 'stored on the CR' });
-			assert.deepEqual(await kind('s2', 'explicit'), { kind: 'overridden', overrideReason: 'explicit' });
-			// the BUILD record's override counts too, and an empty reason does not
-			put(repo, buildArtifactId(H, 's3'), buildRecord(approvedMeta({ override: 'stored on the BUILD' })));
-			put(repo, codeReviewArtifactId(H, 's3'), review(build, 's3', {}, 'another-build'));
-			assert.deepEqual(await kind('s3'), { kind: 'overridden', overrideReason: 'stored on the BUILD' });
-			assert.deepEqual(await kind('s3', '  '), { kind: 'overridden', overrideReason: 'stored on the BUILD' });
-			put(repo, buildArtifactId(H, 's4'), build);
-			put(repo, codeReviewArtifactId(H, 's4'), review(build, 's4', approvedMeta({ override: ' ' }), 'another-build'));
-			assert.deepEqual(await kind('s4'), { kind: 'blocked' });
-			// an approval without an override, and the old stamp, are not overrides
-			put(repo, buildArtifactId(H, 's5'), build);
-			put(repo, codeReviewArtifactId(H, 's5'), review(build, 's5', approvedMeta(), 'another-build'));
-			assert.deepEqual(await kind('s5'), { kind: 'blocked' });
-			put(repo, buildArtifactId(H, 's6'), build);
-			put(repo, codeReviewArtifactId(H, 's6'), review(build, 's6', { reviewOverride: { reason: 'the stamp the conversion removes', at: 't' } }, 'another-build'));
-			assert.deepEqual(await kind('s6'), { kind: 'blocked' });
-		} finally { rmSync(repo, { recursive: true, force: true }); }
-	});
+	it('completion evidence does not read or classify historical code reviews', async () => {
+        const repo = mkdtempSync(join(tmpdir(), 'evidence-'));
+        try {
+            put(repo, codeReviewArtifactId(H, 's1'), { body: { malformed: 'unused historical data' } });
+            assert.equal(createCompletionEvidence(repo).storyCodeReview, undefined);
+        } finally { rmSync(repo, { recursive: true, force: true }); }
+    });
 
 	it('taskBuildPassed reads the Task own build rounds: the latest round decides, and no head has no round', async () => {
 		const repo = mkdtempSync(join(tmpdir(), 'evidence-rounds-'));
@@ -112,7 +71,6 @@ describe('createCompletionEvidence', () => {
 		function approved(repo: string, override?: string): void {
 			const build = buildRecord(approvedMeta(override === undefined ? {} : { override }));
 			put(repo, buildArtifactId(H, 's1'), build);
-			put(repo, codeReviewArtifactId(H, 's1'), review(build, 's1'));
 		}
 		const answer = (repo: string) => rollUp(STORY, reader(repo), createCompletionEvidence(repo));
 		const withRepo = async (run: (repo: string) => Promise<void>): Promise<void> => {

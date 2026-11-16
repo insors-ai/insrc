@@ -18,7 +18,7 @@ import { join } from 'node:path';
 import { getLogger } from '../../shared/logger.js';
 import { FileSidecarStore } from '../artifact-core/sidecar-store.js';
 import type { ChangeLogEntry, Feedback } from '../artifact-core/types.js';
-import { reviewRecordOf } from '../review/report-log.js';
+import { reviewRecordOf } from '../review-history/review/report-log.js';
 import { ARTIFACTS_DIR, TESTS_ID_PREFIX } from '../storage.js';
 import { asObject, asString, errorText, storyOrdinalOf } from './read.js';
 import {

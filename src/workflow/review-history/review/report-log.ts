@@ -1,0 +1,114 @@
+/** Read-only historical review compatibility. No live review execution. */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Procix Software India. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+/**
+ * Where a design review's full report lives now that the report is no longer stamped on the head (s9). The lifecycle `Review` keeps only the
+ * verdict, the counts and an optional `report` Reference; the report itself (findings, claims, model) and the
+ * resolutions of its findings are the outcome data of the artifact's 'review' change-log entries:
+ *
+ *   - the review entry: `outcome.data = { kind: 'review', report, resolutions }`;
+ *   - a later resolution: another 'review' entry with `outcome.data = { kind: 'review-resolution', findingId, resolution }`.
+ *
+ * `readReviewReport` is the one reader: the report with the resolutions applied in log order, ready for
+ * `effectiveReviewVerdict`.
+ */
+import type { Actor, ChangeLogEntry, Reference, Review } from "../../artifact-core/types.js";
+import type { History } from "../../artifact-core/history.js";
+import type { ReviewResolution } from "../../types.js";
+import type { ReviewReport } from "./types.js";
+import { validatePermanentDesignReview } from "./design-review/history.js";
+import type { PermanentDesignReview } from "./design-review/history.js";
+import type { DesignReviewConsolidated } from "./design-review/contracts.js";
+export interface ReviewEntryData {
+    readonly kind: 'review';
+    readonly report: ReviewReport;
+    readonly resolutions: Readonly<Record<string, ReviewResolution>>;
+}
+export interface ResolutionEntryData {
+    readonly kind: 'review-resolution';
+    readonly findingId: string;
+    readonly resolution: ReviewResolution;
+}
+/** A review as read back: the stored report and the resolutions in force. */
+export interface ReviewRecord {
+    readonly kind?: undefined;
+    readonly report: ReviewReport;
+    readonly resolutions: Readonly<Record<string, ReviewResolution>>;
+}
+export interface StoredDesignReviewRecord {
+    readonly kind: 'design-chunk-review';
+    readonly report: DesignReviewConsolidated;
+    readonly history: PermanentDesignReview;
+}
+export type StoredReviewRecord = ReviewRecord | StoredDesignReviewRecord;
+export function isStoredDesignReview(record: StoredReviewRecord): record is StoredDesignReviewRecord { return record.kind === 'design-chunk-review'; }
+export interface ReviewEntryInput {
+    readonly id: string;
+    readonly actor: Actor;
+    readonly timestamp: string;
+    readonly report: ReviewReport;
+    readonly resolutions?: Readonly<Record<string, ReviewResolution>> | undefined;
+}
+/** The 'review' log entry that holds a review's full report (and the resolutions it already had). */
+export function reviewEntryOf(input: ReviewEntryInput): ChangeLogEntry {
+    const data: ReviewEntryData = { kind: 'review', report: input.report, resolutions: input.resolutions ?? {} };
+    return {
+        id: input.id, actor: input.actor, timestamp: input.timestamp, operation: 'review',
+        outcome: { result: input.report.verdict, summary: `review: ${input.report.verdict}`, data },
+    };
+}
+/** The Reference a lifecycle Review carries to name its review entry. */
+export function reviewReference(artifactId: string, entryId: string): Reference {
+    return { entityId: artifactId, type: 'change-log-entry', relation: 'reviews', fragment: entryId };
+}
+function dataOf(e: ChangeLogEntry): {
+    kind?: unknown;
+} | undefined {
+    const d = e.outcome?.data;
+    return typeof d === 'object' && d !== null ? d as {
+        kind?: unknown;
+    } : undefined;
+}
+/**
+ * The report a lifecycle Review names, from a log already read, with the resolutions recorded since applied in log order (a later
+ * resolution of the same finding wins). `undefined` when the Review has no report Reference, the Reference names another
+ * artifact, or the entry is not in the log. For a reader that has the log in hand (the delivery snapshot reads it synchronously).
+ */
+export function reviewRecordOf(log: readonly ChangeLogEntry[], artifactId: string, review: Pick<Review, 'report'>): StoredReviewRecord | undefined {
+    const ref = review.report;
+    if (ref === undefined || ref.entityId !== artifactId || ref.type !== 'change-log-entry' || ref.fragment === undefined)
+        return undefined;
+    const at = log.findIndex(e => e.id === ref.fragment);
+    const entry = log[at];
+    const data = entry === undefined ? undefined : dataOf(entry);
+    if (entry?.operation === 'review' && data?.kind === 'design-chunk-review') {
+        const project = (data as {
+            project?: unknown;
+        }).project;
+        if (typeof project !== 'string')
+            throw new Error('Permanent design review has no project binding');
+        const history = validatePermanentDesignReview(data, { project, artifactId });
+        return { kind: 'design-chunk-review', report: history.attempts.find(a => a.number === history.applicableAttempt)!.report!, history };
+    }
+    if (entry === undefined || entry.operation !== 'review' || data?.kind !== 'review')
+        return undefined;
+    const first = data as unknown as ReviewEntryData;
+    const resolutions: Record<string, ReviewResolution> = { ...first.resolutions };
+    for (const later of log.slice(at + 1)) {
+        const d = dataOf(later);
+        if (later.operation !== 'review' || d?.kind !== 'review-resolution')
+            continue;
+        const r = d as unknown as ResolutionEntryData;
+        resolutions[r.findingId] = r.resolution;
+    }
+    return { report: first.report, resolutions };
+}
+/** {@link reviewRecordOf} over the artifact's log as the history reads it. */
+export async function readReviewReport(history: Pick<History, 'log'>, artifactId: string, review: Pick<Review, 'report'>): Promise<StoredReviewRecord | undefined> {
+    const ref = review.report;
+    if (ref === undefined || ref.entityId !== artifactId || ref.type !== 'change-log-entry' || ref.fragment === undefined)
+        return undefined;
+    return reviewRecordOf(await history.log(artifactId), artifactId, review);
+}

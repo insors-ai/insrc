@@ -26,8 +26,8 @@ import { backfillHead } from '../convert/backfill.js';
 import { FileSidecarStore } from '../artifact-core/sidecar-store.js';
 import { compareEntries } from '../artifact-core/sidecar-store.js';
 import type { Actor, ChangeLogEntry, Feedback, Lifecycle, Reference, Review, Status } from '../artifact-core/types.js';
-import { reviewEntryOf, reviewReference } from '../review/report-log.js';
-import type { ReviewReport } from '../review/types.js';
+import { reviewEntryOf, reviewReference } from '../review-history/review/report-log.js';
+import type { ReviewReport } from '../review-history/review/types.js';
 import { ARTIFACTS_DIR, artifactJsonPath, writeAtomic } from '../storage.js';
 
 export const FIXTURE_ACTOR: Actor = { id: 'github:fixture', kind: 'person', properties: {} };

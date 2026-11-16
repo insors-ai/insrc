@@ -33,7 +33,7 @@ import type { StepClient } from '../shared/step-context.js';
 import type { WorkflowPendingError, WorkflowPendingResult } from '../workflow/pending.js';
 import type { DocGenOutcome, RenderedDocumentShell, SerializableDocTypeRegistration } from '../docgen/types.js';
 import type { InsrcGuideResult } from '../daemon/guide-sections.js';
-import type { CodeReviewGrounding } from '../workflow/code-review/types.js';
+import type { CodeReviewGrounding } from '../workflow/review-history/code-review/types.js';
 import type { WorkflowReviewDone } from '../daemon/workflow-review-rpc.js';
 import {
 	codeReviewRequestParams, freshnessFromReply, groundingFromReply, reviewArtifactRequestParams, runReviewStream, unavailableFromError,

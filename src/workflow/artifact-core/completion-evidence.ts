@@ -12,7 +12,6 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 
 import { ArtifactIds } from '../artifact-ids.js';
-import { enforceCodeReviewGate } from '../code-review/gate.js';
 import { approvalOverrideReasonOf, approvalStateOf } from './approval-view.js';
 import { History } from './history.js';
 import { createFileSidecarStore } from './sidecar-store.js';
@@ -73,26 +72,6 @@ export function createCompletionEvidence(repoPath: string, options: CompletionEv
 			if (!existsSync(artifactJsonPath(repoPath, taskId))) return false;
 			const rounds = (await (options.history ?? new History(createFileSidecarStore(repoPath))).log(taskId)).filter(e => isRound(e.outcome?.data));
 			return rounds.at(-1)?.outcome?.result === 'pass';
-		},
-
-		async storyCodeReview(epicHash: string, storyId: string): Promise<CodeReviewEvidence> {
-			const explicit = options.overrideReview !== undefined && options.overrideReview.trim().length > 0 ? options.overrideReview : undefined;
-			const stored = storedOverride(readJson(artifactJsonPath(repoPath, codeReviewArtifactId(epicHash, storyId))))
-				?? storedOverride(readJson(artifactJsonPath(repoPath, buildArtifactId(epicHash, storyId))));
-			const reason = explicit ?? stored;
-			const result = enforceCodeReviewGate(repoPath, epicHash, storyId, {
-				...(reason !== undefined ? { overrideReview: reason } : {}),
-			});
-			switch (result.status) {
-				case 'no-review': return { kind: 'missing' };
-				case 'pass': return { kind: 'clean' };
-				case 'warn':
-					// A warn that is a demoted block (enforcement off) is not a clean review: it needs an override to complete.
-					if (result.advisory !== true) return { kind: 'clean' };
-					return reason !== undefined ? { kind: 'overridden', overrideReason: reason } : { kind: 'blocked' };
-				case 'overridden': return { kind: 'overridden', overrideReason: result.overrideReason };
-				case 'blocked': return { kind: 'blocked' };
-			}
 		},
 
 		async storyBuildApproved(epicHash: string, storyId: string): Promise<boolean> {

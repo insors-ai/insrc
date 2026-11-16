@@ -12,7 +12,7 @@
 import { createHash } from 'node:crypto';
 
 import { ArtifactIds, InvalidArtifactKeyError } from '../artifact-ids.js';
-import { IllegalTransitionError, ReviewRequiredError, TerminalArtifactError, UnreadableChildError } from './types.js';
+import { IllegalTransitionError, TerminalArtifactError, UnreadableChildError } from './types.js';
 import type {
 	Actor, Approval, Artifact, ChangeLogEntry, IntegrityReason, Lifecycle, Operation, Reference, Review, Signoff, Staleness, Status,
 } from './types.js';
@@ -190,7 +190,6 @@ export interface TransitionDetail {
 	readonly cascade?:       boolean | undefined;
 }
 
-const REVIEW_REQUIRED_KINDS: readonly string[] = ['DEF', 'HLD', 'LLD'];
 
 const isRecordValue = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 const hasText = (v: unknown): boolean => typeof v === 'string' && v.length > 0;
@@ -230,12 +229,6 @@ export function nextLifecycle(a: Pick<Artifact<unknown>, 'id' | 'lifecycle'>, op
 		}
 		case 'approve': {
 			const override = detail.override?.reason !== undefined && detail.override.reason.trim().length > 0 ? detail.override : undefined;
-			const kind = ArtifactIds.parse(a.id)?.kind;
-			if (kind !== undefined && REVIEW_REQUIRED_KINDS.includes(kind) && override === undefined) {
-				const rv = lc.review;
-				if (rv === undefined || rv.revision !== revision) throw new ReviewRequiredError(`${a.id} has no review of revision ${revision}; review it or approve with an override reason`);
-				if (rv.verdict === 'block') throw new ReviewRequiredError(`the review of ${a.id} blocks approval; resolve the findings or approve with an override reason`);
-			}
 			const approval: Approval = { revision, by, at, ...(override !== undefined ? { override: { reason: override.reason } } : {}) };
 			return { ...lc, status, approval };
 		}
@@ -309,7 +302,8 @@ export interface CodeReviewEvidence {
 /** What completion needs to know that is not in the heads. */
 export interface CompletionEvidence {
 	taskBuildPassed(taskId: string): Promise<boolean>;
-	storyCodeReview(epicHash: string, storyId: string): Promise<CodeReviewEvidence>;
+	/** Historical compatibility only; never consulted for completion. */
+	storyCodeReview?(epicHash: string, storyId: string): Promise<CodeReviewEvidence>;
 	/** Whether the Story's BUILD is approved or has moved on from approved. */
 	storyBuildApproved(epicHash: string, storyId: string): Promise<boolean>;
 	/** The explicit override reason on the approval of the Story's BUILD; a clean review is not one. */
@@ -377,7 +371,7 @@ const STORY_SETTLED: readonly Status[] = ['completed', 'withdrawn', 'superseded'
 
 /**
  * 'completed' when the unit's completion condition is true now, otherwise undefined. Reads only.
- * A Task: its latest build round passed. A Story: its BUILD is approved, its review is clean or overridden, and nothing holds it
+ * A Task: its latest build round passed. A Story: its BUILD is approved and nothing holds it
  * under storyTaskHolds unless the BUILD's approval carries an explicit override. An Epic: at least one counted Story, every counted
  * Story completed, and every Story its DEF declares settled. Withdrawn and superseded children are not counted. Any other kind answers undefined.
  */
@@ -388,8 +382,6 @@ export async function rollUp(id: string, reader: ChildStatusReader, evidence: Co
 	if (key.kind === 'STORY') {
 		const story = key.story ?? '';
 		if (!(await evidence.storyBuildApproved(key.epicHash, story))) return undefined;
-		const review = await evidence.storyCodeReview(key.epicHash, story);
-		if (review.kind !== 'clean' && review.kind !== 'overridden') return undefined;
 		const holds = await storyTaskHolds(id, key.epicHash, story, reader, evidence);
 		if (!holds.notCreated && holds.tasks.length === 0) return 'completed';
 		return (await evidence.storyApprovalOverride(key.epicHash, story)) !== undefined ? 'completed' : undefined;

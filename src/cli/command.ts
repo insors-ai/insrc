@@ -15,7 +15,7 @@ import type { ConfigWriteResult } from './services/config.js';
 import type { SteeringSelection } from '../shared/types.js';
 import type { UnitRef } from '../workflow/tracker/refs.js';
 import type { TrackerSetupStep } from '../workflow/tracker/setup.js';
-import type { ReviewArtifactResult } from '../workflow/review/index.js';
+import type { ReviewArtifactResult } from '../workflow/review-history/index.js';
 import { formatMcpOutcome } from './services/repo.js';
 import { describeStop } from './services/daemon.js';
 import { formatBytes, formatUptime } from './ui/format.js';

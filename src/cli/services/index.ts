@@ -61,9 +61,9 @@ export interface Services {
 		chain(repoPath: string, epicHash: string): ChainReport;
 		chainText(repoPath: string, epicHash: string): string;
 		approve(artifactPath: string, withTracker?: boolean, overrideReview?: string): Promise<ApproveOutcome>;
-		reviewArtifact(repoPath: string, artifactPath: string): Promise<import('../../workflow/review/index.js').ReviewArtifactResult>;
+		reviewArtifact(repoPath: string, artifactPath: string): Promise<import('../../workflow/review-history/index.js').ReviewArtifactResult>;
 		reviewFindings(artifactPath: string): import('./workflow.js').ReviewFindingsResult;
-		resolveFinding(artifactPath: string, findingId: string, action: import('../../workflow/review/index.js').ReviewAction, note?: string): Promise<import('../../workflow/review/index.js').ResolveReviewResult>;
+		resolveFinding(artifactPath: string, findingId: string, action: import('../../workflow/review-history/index.js').ReviewAction, note?: string): Promise<import('../../workflow/review-history/index.js').ResolveReviewResult>;
 		runWorkflowStreaming(repoPath: string, workflow: string, focus: string, params: Record<string, unknown>, onLine: (line: string) => void): Promise<import('./workflow.js').StreamRunResult>;
 		reject(artifactPath: string, reason: string): Promise<RejectionResult>;
 		ackStale(artifactPath: string, reason: string): Promise<{ readonly path: string; readonly ackedAt: string; readonly reason: string }>;

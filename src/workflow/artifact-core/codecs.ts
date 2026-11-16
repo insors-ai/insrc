@@ -17,7 +17,7 @@ import { ArtifactIds } from '../artifact-ids.js';
 import type { ArtifactIdKind, ArtifactKey } from '../artifact-ids.js';
 import { requireEpicAnchor, stampRootAnchor, storyRecordFolderArgs, folderIdentityMeta } from '../storage.js';
 import { ArtifactShapeError, UnknownArtifactKindError } from './types.js';
-import { validateTaskBody,taskBodyVersion } from '../code-review/task-review/record.js';
+import { validateTaskBody,taskBodyVersion } from '../review-history/code-review/task-review/record.js';
 import { checkTaskBody, checkTasksBody } from './task-bodies.js';
 
 /** The stored head, as `writeArtifact` and every raw reader see it. */

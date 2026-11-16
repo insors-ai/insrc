@@ -5,7 +5,7 @@
 
 import type { LLMProvider } from '../shared/types.js';
 import type { FamilyId } from '../daemon/model-catalog.js';
-import type { ReviewReport } from './review/types.js';
+import type { ReviewReport } from './review-history/review/types.js';
 import type { BugfixMagnitude, IssueKind, SizeClass } from './triage/types.js';
 
 /**

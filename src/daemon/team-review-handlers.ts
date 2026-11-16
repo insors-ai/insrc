@@ -8,17 +8,11 @@ import { reviewUnavailable } from '../workflow/review-unavailable.js';
 import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
 
-import { createRoleRouter } from '../analyze/context/role-router.js';
-import { runWithRoutingContext } from '../analyze/context/shaper-provider.js';
-import { loadAnalyzeConfig } from '../config/analyze.js';
-import { jsonPathForMd } from '../workflow/gates.js';
-import { reviewArtifactFile, resolveReviewFinding } from '../workflow/review/index.js';
-import type { ReviewAction, ReviewArtifactResult, ResolveReviewResult } from '../workflow/review/index.js';
+import type { ReviewAction, ReviewArtifactResult, ResolveReviewResult } from '../workflow/review-history/index.js';
 import { claim, describeOutcome, release, TeamGateRefusedError } from '../workflow/team/gate.js';
 import type { GateOutcome } from '../workflow/team/gate.js';
 import { refreshPolicy } from '../workflow/team/policy-refresh.js';
 import type { UnitRef } from '../workflow/tracker/refs.js';
-import { lifecycleFor } from './lifecycle-registry.js';
 
 const absPath = (path: string): string => resolve(path === '~' ? homedir() : path.startsWith('~/') ? join(homedir(), path.slice(2)) : path);
 
@@ -74,7 +68,7 @@ export async function handleTeamRelease(params: unknown): Promise<string> {
 
 /** What `workflow.reviewArtifact` reviews with; a test replaces them. */
 export interface ReviewArtifactDeps {
-	readonly review?: typeof reviewArtifactFile | undefined;
+	readonly review?: ((...args: readonly unknown[]) => Promise<ReviewArtifactResult>) | undefined;
 }
 
 /**

@@ -1,0 +1,112 @@
+/** Read-only historical review compatibility. No live review execution. */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Procix Software India. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+/**
+ * Review-cycle engine types.
+ *
+ * The workflow chain (define → design.epic → design.story → plan) emits
+ * artifacts whose load-bearing premises — counts, inventories, closed
+ * unions, `file:line` citations, external-contract assumptions,
+ * cross-artifact traces, ordering claims — are LLM-authored and can rest
+ * on truncated / mis-scoped source sweeps: plausible but wrong. A manual
+ * audit of a 37-task plan turned up four HIGH defects this way
+ * (`docs/reviews/2026-07-20-plan-audit-streaming.md`).
+ *
+ * The engine mirrors the analyze framework's split: gather EVIDENCE
+ * deterministically (re-run the cited greps / reads against the real
+ * repo), then let an LLM JUDGE the premise against that evidence. The
+ * LLM never asserts grounding it wasn't handed.
+ *
+ * `ClaimKind` maps 1:1 onto the audit's root-cause taxonomy:
+ *   - `inventory`          — counts + producer/member lists (stale/truncated sweeps)
+ *   - `citation`           — `file:line` / symbol anchors (wrong-referent citations)
+ *   - `closed-union`       — exhaustiveness / uniformity claims
+ *   - `external-contract`  — out-of-process SDK / API assumptions
+ *   - `cross-artifact`     — traces that span DEF / LLD / PLAN
+ *   - `semantic`           — "type X holds the data" claims (semantic gap)
+ *   - `ordering`           — "depends on" / sequencing claims
+ */
+export type ClaimKind = 'inventory' | 'citation' | 'closed-union' | 'external-contract' | 'cross-artifact' | 'semantic' | 'ordering';
+export type Severity = 'HIGH' | 'MED' | 'LOW';
+export type ReviewVerdict = 'pass' | 'warn' | 'block';
+/**
+ * How a finding can be remediated, so a downstream layer can auto-apply
+ * the safe corrections and route the rest to a user gate.
+ *   - `auto`     — a mechanical, evidence-derived text correction the
+ *                  engine can apply with high confidence.
+ *   - `assisted` — a fix is proposable but needs a human OK.
+ *   - `manual`   — needs a design decision; no safe auto-edit.
+ */
+export type Fixability = 'auto' | 'assisted' | 'manual';
+/** What a template-driven review found for one premise. `does-not-hold` means
+ *  the design is WRONG; `could-not-verify` means the reviewer could not confirm
+ *  it. The two are never merged: only `does-not-hold` blocks approval. Absent on
+ *  every finding the extract → probe → verify pipeline produces. */
+export type FindingOutcome = 'holds' | 'does-not-hold' | 'could-not-verify';
+/** An exact-string edit to the artifact markdown. `find` MUST be a
+ *  verbatim, unique substring of the artifact. */
+export interface ArtifactEdit {
+    readonly find: string;
+    readonly replace: string;
+}
+export interface ProposedFix {
+    readonly rationale: string;
+    /**
+     * Exact-string edits to the ARTIFACT markdown (each `find` must be a
+     * unique literal substring of the artifact). Present ONLY for `auto`
+     * (and optionally `assisted`).
+     */
+    readonly artifactEdits?: readonly ArtifactEdit[] | undefined;
+    /** For `assisted` / `manual`: 2–4 concrete choices to present to the user. */
+    readonly options?: readonly string[] | undefined;
+}
+export interface Finding {
+    readonly claimId: string;
+    readonly ref?: string | undefined;
+    readonly kind: ClaimKind;
+    readonly severity: Severity;
+    /** The premise as evaluated. */
+    readonly premise: string;
+    /** What the real gathered evidence showed, citing actual matches. */
+    readonly evidence: string;
+    /** The concrete remediation (or "none — verified sound" for LOW). */
+    readonly action: string;
+    readonly fixability: Fixability;
+    readonly proposedFix?: ProposedFix | undefined;
+    /** Template reviews only: what the reviewer found (see {@link FindingOutcome}). */
+    readonly outcome?: FindingOutcome | undefined;
+    /** Template reviews only: the id of the check item this finding answers. */
+    readonly item?: string | undefined;
+}
+export interface ReviewReport {
+    /** A short label for the reviewed artifact. */
+    readonly artifact: string;
+    readonly stage: string;
+    readonly verdict: ReviewVerdict;
+    readonly findings: readonly Finding[];
+    /** `unverified` counts the `could-not-verify` findings; present only on a
+     *  template review, so an older report's counts keep their shape. */
+    readonly counts: {
+        readonly high: number;
+        readonly med: number;
+        readonly low: number;
+        readonly unverified?: number | undefined;
+    };
+    /** The id of the review template used; absent on a pipeline review. */
+    readonly template?: string | undefined;
+    readonly reviewedAt: string;
+    readonly model: string;
+    /** The party that ran this review. Absent on reviews stamped before the
+     *  field existed — read it through `reviewerPartyOf` in `party.ts`, which
+     *  falls back to `model`. */
+    readonly reviewedBy?: 'controller' | 'daemon' | undefined;
+    /** Calls the review pipeline made per role when the review was divided (Epic
+     *  8315a11f). Absent on a single-chunk review. */
+    /** Present only when the repository's source roots could not be derived
+     *  from the index and the whole repository root was searched in their
+     *  place: the reason. The evidence of such a review is broader and slower
+     *  to gather, not wrong. */
+    readonly sourceRootFallback?: string | undefined;
+}

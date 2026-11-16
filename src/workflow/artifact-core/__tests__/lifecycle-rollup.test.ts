@@ -40,15 +40,15 @@ describe('rollUp', () => {
 		assert.equal(await rollUp(task(1), reader({}, {}), evidence([task(1)], clean)), 'completed');
 		assert.equal(await rollUp(task(2), reader({}, {}), evidence([task(1)], clean)), undefined);
 
-		// a Story needs an approved BUILD, a clean or overridden review and every listed Task's latest round to have passed
+		// a Story needs an approved BUILD, every listed Task's latest round to have passed
 		const kids = { [STORY]: [task(1), task(2), `TASKS-${H}-s1`, `DIAG-${H}-s1-1`, task(3), task(4)] };
 		const done = { [task(1)]: 'approved', [task(2)]: 'approved', [task(3)]: 'withdrawn', [task(4)]: 'superseded', [`TASKS-${H}-s1`]: 'draft', [`DIAG-${H}-s1-1`]: 'draft' } as const;
 		const all = listed(task(1), task(2), task(3), task(4));
 		const passed = [task(1), task(2)];
 		assert.equal(await rollUp(STORY, reader(kids, done), evidence(passed, clean, all)), 'completed');
 		assert.equal(await rollUp(STORY, reader(kids, done), evidence(passed, { kind: 'overridden', overrideReason: 'accepted' }, all)), 'completed');
-		assert.equal(await rollUp(STORY, reader(kids, done), evidence(passed, { kind: 'blocked' }, all)), undefined);
-		assert.equal(await rollUp(STORY, reader(kids, done), evidence(passed, { kind: 'missing' }, all)), undefined);
+		assert.equal(await rollUp(STORY, reader(kids, done), evidence(passed, { kind: 'blocked' }, all)), 'completed');
+		assert.equal(await rollUp(STORY, reader(kids, done), evidence(passed, { kind: 'missing' }, all)), 'completed');
 		assert.equal(await rollUp(STORY, reader(kids, done), evidence(passed, clean, { ...all, storyBuildApproved: async () => false })), undefined, 'the BUILD is not approved');
 		assert.equal(await rollUp(STORY, reader(kids, done), evidence([task(1)], clean, all)), undefined, 'an unfinished Task holds the Story');
 

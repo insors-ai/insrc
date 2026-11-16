@@ -16,7 +16,7 @@ import { dirname } from 'node:path';
 import { HistoryEntryError } from './types.js';
 import type { SidecarRecord } from './types.js';
 import { reviewJsonLimit } from '../../config/review.js';
-import { PermanentDesignReviewSchema } from '../review/design-review/history.js';
+import { PermanentDesignReviewSchema } from '../review-history/review/design-review/history.js';
 import { Value } from '@sinclair/typebox/value';
 
 /** The largest serialised record, in bytes, that a line file or the journal accepts. */

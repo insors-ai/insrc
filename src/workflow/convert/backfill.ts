@@ -21,10 +21,10 @@
 import { personOf } from '../amendments/store.js';
 import { contentHash } from '../artifact-core/lifecycle.js';
 import type { Actor, ChangeLogEntry, Lifecycle, Review, Status } from '../artifact-core/types.js';
-import { reviewerPartyOf } from '../review/party.js';
-import { reviewEntryOf, reviewReference } from '../review/report-log.js';
-import { effectiveReviewVerdict } from '../review/resolve.js';
-import type { ReviewReport } from '../review/types.js';
+import { reviewerPartyOf } from '../review-history/review/party.js';
+import { reviewEntryOf, reviewReference } from '../review-history/review/report-log.js';
+import { effectiveReviewVerdict } from '../review-history/review/resolve.js';
+import type { ReviewReport } from '../review-history/review/types.js';
 import type { ReviewResolution } from '../types.js';
 import { migratedEntryId } from './entry-ids.js';
 import type { MigratedPart } from './entry-ids.js';

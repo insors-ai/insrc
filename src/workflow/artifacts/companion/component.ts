@@ -20,7 +20,7 @@
  * Deterministic + provider-free. Mirrors ./er.ts.
  */
 
-import type { DimensionFinding } from '../../code-review/types.js';
+import type { DimensionFinding } from '../../review-history/code-review/types.js';
 import { MermaidIds, mermaidFlowText } from './mermaid-text.js';
 import type { CompanionPageContent, DescriptionCell } from './shell.js';
 import { completenessFindings, described } from './completeness.js';

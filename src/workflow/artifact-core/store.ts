@@ -1,4 +1,4 @@
-import { reviewJsonLimit, requireReview } from '../code-review/task-review/contracts.js';
+import { reviewJsonLimit, requireReview } from '../review-history/code-review/task-review/contracts.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.

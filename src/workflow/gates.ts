@@ -1,7 +1,4 @@
-import { cleanupDesignArtifact } from './review/design-review/cleanup.js';
-import { isStoredDesignReview } from './review/report-log.js';
-import { rpc } from '../shared/ipc-client.js';
-import type { CleanupResult } from './code-review/task-review/cleanup.js';
+import type { CleanupResult } from './review-history/compatibility.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -33,8 +30,6 @@ import { getEffectiveHld } from './amendments/effective.js';
 import { listApprovedAmendments } from './amendments/store.js';
 import { renderDefineMarkdown } from './artifacts/define.js';
 import type { DefineArtifact, DefineStory } from './artifacts/define.js';
-import { enforceCodeReviewGate } from './code-review/gate.js';
-import type { CodeReviewGateResult } from './code-review/gate.js';
 import type { HldArtifact }    from './artifacts/hld.js';
 import { computeHldEffectiveHash, extractHldContextSlice } from './artifacts/lld.js';
 import type { HldContextSlice, LldArtifact } from './artifacts/lld.js';
@@ -47,11 +42,6 @@ import type { Actor, IntegrityReason, Review } from './artifact-core/types.js';
 import { ArtifactIds } from './artifact-ids.js';
 import { isSpecBody } from './artifacts/spec.js';
 import type { SpecArtifact } from './artifacts/spec.js';
-import { authorPartyOf, reviewerPartyOf } from './review/party.js';
-import type { Party, PartyOrUnknown } from './review/party.js';
-import { readReviewRecordOf } from './review/report-file.js';
-import { effectiveReviewVerdict } from './review/resolve.js';
-import type { ReviewVerdict } from './review/types.js';
 import {
 	ARTIFACT_ID_MARKER_RE,
 	ARTIFACTS_DIR,
@@ -651,37 +641,9 @@ export async function approveArtifactByJsonPath(jsonPath: string, opts: ApproveO
 	const teamRefusal = await authorizeApproval(jsonPath);
 	if (teamRefusal !== undefined) throw new TeamGateRefusedError(teamRefusal.outcome, teamRefusal.subject);
 
-	// Review gate: refuses approval while any HIGH/MED finding is UNRESOLVED
-	// (the effective verdict, after the interactive resolutions in R3), unless
-	// an explicit override reason is supplied. The report and the resolutions are the entries of the artifact's log.
+	// Automated review is unavailable; historical verdicts do not gate human approval.
 	const override = opts.overrideReview;
-	const overridden = override !== undefined && override.length > 0;
-	const stored = readReviewRecordOf(jsonPath);
-	const lifecycleVerdict = seen?.lifecycle.review?.verdict;
-	const effective = stored !== undefined ? (isStoredDesignReview(stored)?(stored.report.status==='passed'?'pass':'block'):effectiveReviewVerdict(stored.report,stored.resolutions)) : lifecycleVerdict;
-	const standingApproval=seen!==undefined&&APPROVED_OR_BEYOND.includes(seen.status)&&seen.lifecycle.approval?.revision===seen.lifecycle.revision.number;
-	if (!standingApproval&&effective === 'block') {
-		if (!overridden) {
-			const legacy=stored&&!isStoredDesignReview(stored)?stored:undefined;
-   const res = legacy?.resolutions ?? {};
-			const pending = (legacy?.report.findings ?? []).filter(f => (f.severity === 'HIGH' || f.severity === 'MED') && res[f.claimId] === undefined);
-			const highs = pending.filter(f => f.severity === 'HIGH').length;
-			const meds = pending.filter(f => f.severity === 'MED').length;
-			const summary = stored !== undefined ? (isStoredDesignReview(stored)?`design review ${stored.report.status} (${stored.report.counts.HIGH} HIGH · ${stored.report.counts.MED} MED)`:`${highs} HIGH · ${meds} MED unresolved`) : 'the review verdict is block';
-			throw new ReviewBlockedError(
-				`Review blocks approval (${summary}). Resolve findings ('insrc workflow resolve <path> <id> <action>') or approve with an override reason.`,
-				summary,
-			);
-		}
-	}
-	// The other-party review rule: a DEF, HLD or LLD must have been reviewed, a
-	// BUILD record's Story must have a code review, and no review may have been
-	// done by the party that authored the work. An override reason approves past
-	// each and is recorded like any other override.
-	const missing = otherPartyReviewGap(jsonPath, artifact.meta, seen?.lifecycle.review);
-	if (!standingApproval&&missing !== undefined) {
-		if (!overridden) throw new ReviewBlockedError(`${missing.message} Or approve with an override reason.`, missing.summary);
-	}
+	const overridden = override !== undefined && override.trim().length > 0;
 
 	// The range base is read HERE, at approval, so it cannot depend on whether
 	// anyone later remembered to commit the artifact. Absent when HEAD is
@@ -698,20 +660,17 @@ export async function approveArtifactByJsonPath(jsonPath: string, opts: ApproveO
 		? priorBase
 		: stampsRangeBase(artifact.meta) ? (await headFullSha(dirname(jsonPath))) : undefined;
 
-	let designCleanup:CleanupResult|undefined;
 	let approvedAt: string;
 	if (seen !== undefined && APPROVED_OR_BEYOND.includes(seen.status)) {
 		// A later override of a standing BUILD approval is recorded on that approval, so it outlives this request.
 		if (overridden && override.trim().length > 0 && ArtifactIds.parse(id)?.kind === 'BUILD' && seen.lifecycle.approval?.override?.reason !== override) {
 			await lifecycle.apply(id, 'record-override', actor, { override: { reason: override } });
 		}
-		if(reviewRequiredFor(jsonPath)==='design')designCleanup=await cleanupDesignArtifact(lifecycle.store.repoPath,id,{store:lifecycle.store});
 		approvedAt = seen.lifecycle.approval?.at ?? new Date().toISOString();   // approved already: it stays as it is
 	} else {
 		if (seen !== undefined && seen.status !== 'draft') throw new IllegalTransitionError(`${id} cannot be approved from ${seen.status}`);
 		// an override the caller gave is recorded on the approval, whether or not this artifact needed it
 		const done = await lifecycle.apply(id, 'approve', actor, overridden ? { override: { reason: override as string } } : {}, { overrideReview: overridden ? override : undefined });
-		designCleanup=done.cleanup;
 		approvedAt = done.lifecycle.approval?.at ?? new Date().toISOString();
 	}
 	if (rangeBase !== undefined && priorBase !== rangeBase) {
@@ -719,90 +678,7 @@ export async function approveArtifactByJsonPath(jsonPath: string, opts: ApproveO
 		const current = JSON.parse(readFileSync(jsonPath, 'utf8')) as { meta: Record<string, unknown> };
 		writeArtifact(jsonPath, { ...current, meta: { ...current.meta, [RANGE_BASE_KEY]: rangeBase } }, 'meta-only');
 	}
-	let cleanup: CleanupResult | undefined=designCleanup;
-	const buildMeta = artifact.meta as ApprovableArtifactMeta & { epicHash?: unknown; storyId?: unknown };
-	if (buildMeta.workflow === 'build' && typeof buildMeta.epicHash === 'string' && typeof buildMeta.storyId === 'string') {
-	 const project = dirname(dirname(dirname(jsonPath)));
-	 try {
-	  cleanup = await (opts.afterBuildApproval ?? ((repo, epicHash, storyId) => rpc<CleanupResult>('codeReview.task.cleanup', { repo, epicHash, storyId }, undefined, { closeAware: true })))(project, buildMeta.epicHash, buildMeta.storyId);
-	 } catch (error) { cleanup = { deleted: [], retained: [join(project, '.insrc/tmp/code-review')], errors: [error instanceof Error ? error.message : String(error)] }; }
-	}
-	return { workflow: artifact.meta.workflow ?? 'unknown', path: jsonPath, approvedAt, ...(cleanup ? { cleanup } : {}) };
-}
-
-/** The artifact kinds whose approval requires a review, read from the
- *  hash-flat json's id prefix (the same key the BUILD completion check uses):
- *  a design review for DEF / HLD / LLD, a code review for BUILD. Every other
- *  kind (ISSUE, SPEC, PLAN, CR, EXT) is approved on the user's approval alone. */
-function reviewRequiredFor(jsonPath: string): 'design' | 'code' | undefined {
-	const id = basename(jsonPath);
-	if (/^(DEF|HLD|LLD)-/.test(id)) return 'design';
-	if (id.startsWith('BUILD-')) return 'code';
-	return undefined;
-}
-
-const PARTY_REVIEW_TOOL: Record<Party, string> = {
-	controller: 'a daemon review (run insrc_review_step: it sends controller-authored work to the daemon)',
-	daemon:     'a controller review (run insrc_review_step)',
-};
-
-/**
- * What stops this artifact from being approved under the other-party review
- * rule, or undefined when nothing does:
- *
- *   - a DEF, HLD or LLD that has no review;
- *   - a BUILD record whose Story has no code-review record;
- *   - a review (for a BUILD record, its code review) done by the party that
- *     authored the work, when BOTH parties are known.
- *
- * An unknown author or an unknown reviewer never withholds approval by itself.
- * The BUILD record's code review is read from the artifact store beside it.
- */
-function otherPartyReviewGap(jsonPath: string, meta: ApprovableArtifactMeta, lifecycleReview: Review | undefined): { readonly message: string; readonly summary: string } | undefined {
-	const required = reviewRequiredFor(jsonPath);
-	const author = authorPartyOf(meta);
-
-	let reviewer: PartyOrUnknown | undefined;   // undefined = there is no review to speak of
-	let what = 'review';
-	if (required === 'code') {
-		what = 'code review';
-		const m = meta as { epicHash?: unknown; storyId?: unknown };
-		const crPath = typeof m.epicHash === 'string' && typeof m.storyId === 'string'
-			? join(dirname(jsonPath), `${codeReviewArtifactId(m.epicHash, m.storyId)}.json`)
-			: undefined;
-		const cr = crPath !== undefined ? readJsonOrUndefined(crPath) as { meta?: unknown } | undefined : undefined;
-		if (cr === undefined) {
-			return {
-				message: 'Completion requires a code review of this Story, and none has been run. Run insrc_code_review_step first.',
-				summary: 'completion requires a code review; none was run',
-			};
-		}
-		// Use the same task-review validator as the outer approval gate.
-		const gate = enforceCodeReviewGate(dirname(dirname(dirname(jsonPath))), String(m.epicHash), String(m.storyId));
-		if (gate.status !== 'pass') return {
-			message: `Completion requires a current code review: ${gate.status === 'blocked' ? gate.message : 'No valid task-based review'}.`,
-			summary: 'code review is out of date or does not cover the BUILD',
-		};
-		reviewer = reviewerPartyOf(cr.meta);
-	} else if (lifecycleReview !== undefined) {
-		reviewer = reviewerPartyOf(lifecycleReview);
-	} else if (required === 'design') {
-		const need = author === 'unknown' ? 'a review (run insrc_review_step)' : PARTY_REVIEW_TOOL[author];
-		return {
-			message: `Approval requires a review of this artifact, and it has none. It needs ${need}.`,
-			summary: 'approval requires a review; none was run',
-		};
-	}
-
-	if (reviewer !== undefined && author !== 'unknown' && reviewer === author) {
-		return {
-			message:
-				`This artifact's ${what} was done by the ${author}, which also authored the work. ` +
-				`It needs ${what === 'code review' ? PARTY_REVIEW_TOOL[author].replace('insrc_review_step', 'insrc_code_review_step') : PARTY_REVIEW_TOOL[author]}.`,
-			summary: `the ${what} was done by the party that authored the work (${author})`,
-		};
-	}
-	return undefined;
+	return { workflow: artifact.meta.workflow ?? 'unknown', path: jsonPath, approvedAt };
 }
 
 function readJsonOrUndefined(path: string): unknown {
@@ -852,7 +728,7 @@ export interface WorkflowApproveRequest {
 export interface CodeReviewApprovalOutcome {
 	readonly path:    string;
 	readonly storyId: string;
-	readonly status:  CodeReviewGateResult['status'];
+	readonly status:  'no-review' | 'pass' | 'warn' | 'blocked' | 'overridden';
 	readonly message?: string;
 	readonly counts?:  { readonly high: number; readonly med: number; readonly low: number };
 	readonly overrideReason?: string;
@@ -1016,31 +892,7 @@ export async function approveWorkflowTarget(
 			return;
 		}
 		if (await refuseLogConflict(jsonPath)) return;
-		// Code-review gate: a SEPARATE check over the CODE review's body.verdict —
-		// runs BEFORE the review approval and never merges into it. Story-scoped
-		// artifacts (meta.epicHash && meta.storyId) only; a `blocked` verdict
-		// withholds completion (routed to skipped[], no approvedAt stamp). Every
-		// other status is advisory and falls through to the unchanged approve below.
-		const meta = readArtifactMeta(jsonPath);
-		if (meta !== undefined && meta.epicHash !== undefined && meta.storyId !== undefined) {
-			// A standing BUILD approval keeps the override it was given, so a retry need not repeat it; a draft BUILD is gated on the request alone.
-			const headMeta = (readJsonOrUndefined(jsonPath) as { meta?: unknown } | undefined)?.meta;
-			const gateOverride = req.overrideReview ?? (ArtifactIds.parse(artifactIdOf(jsonPath))?.kind === 'BUILD' && approvalStateOf(headMeta) === 'approved' ? approvalOverrideReasonOf(headMeta) : undefined);
-			const gate = enforceCodeReviewGate(req.repoPath, meta.epicHash, meta.storyId, {
-				checkBuildFreshness: reviewRequiredFor(jsonPath) === 'code',
-				...(gateOverride !== undefined ? { overrideReview: gateOverride } : {}),
-			});
-			codeReview.push(projectGateOutcome(jsonPath, meta.storyId, gate));
-			if (gate.status === 'blocked') {
-				skipped.push({ path: jsonPath, reason: gate.message });
-				return;   // withhold completion — no review approval, no approval record
-			}
-			// A BUILD record whose Story has NO code review (or a same-party one) is
-			// not decided here: approveArtifactByJsonPath refuses it, whatever the
-			// enforcement setting, and the catch below routes it to skipped[]. That
-			// function is the one every approval goes through (the TUI calls it
-			// directly), so the rule cannot be bypassed by skipping this one.
-		}
+		// No automated review or cleanup is performed during approval.
 		let completeAfter = false;
 		try {
 			approved.push({ path: jsonPath, result: await approveArtifactByJsonPath(jsonPath, { ...(approveOpts ?? {}), lifecycle, actor, ...(req.afterBuildApproval ? { afterBuildApproval: req.afterBuildApproval } : {}) }) });
@@ -1132,25 +984,6 @@ function buildRefFor(jsonPath: string): { epicHash: string; storyId: string } | 
 		return { epicHash: meta.epicHash, storyId: meta.storyId };
 	}
 	return parseBuildArtifactRef(jsonPath);
-}
-
-/** Project a {@link CodeReviewGateResult} into the presented
- *  {@link CodeReviewApprovalOutcome}, carrying `message`/`counts` where the arm
- *  has them and the override audit (`overrideReason`/`at`) on `overridden`. */
-function projectGateOutcome(path: string, storyId: string, gate: CodeReviewGateResult): CodeReviewApprovalOutcome {
-	const base = { path, storyId, status: gate.status };
-	switch (gate.status) {
-		case 'no-review':
-			return base;
-		case 'pass':
-			return { ...base, counts: gate.counts };
-		case 'warn':
-			return { ...base, counts: gate.counts, message: gate.message };
-		case 'blocked':
-			return { ...base, counts: gate.counts, message: gate.message };
-		case 'overridden':
-			return { ...base, counts: gate.counts, overrideReason: gate.overrideReason, at: gate.at };
-	}
 }
 
 export interface RejectionResult {

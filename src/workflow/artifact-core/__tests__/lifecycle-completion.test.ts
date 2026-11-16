@@ -23,16 +23,8 @@ describe('LifecycleService.completeIfRolledUp', () => {
 			const evidence = stubEvidence([T1, T2]);
 			const svc = service(k, evidence);
 
-			// a blocked or missing review holds the Story back even when every Task passed, and its Tasks stay as they are
-			evidence.review = { kind: 'blocked' };
-			assert.deepEqual((await svc.completeIfRolledUp(STORY, bob)).completed, []);
-			assert.equal(await status(k, STORY), 'draft');
-			assert.equal(await status(k, T1), 'draft');
-			evidence.review = { kind: 'missing' };
-			assert.deepEqual((await svc.completeIfRolledUp(STORY, bob)).completed, []);
-
-			// an overridden review completes it, and the reason goes on the Story's entry
-			evidence.review = { kind: 'overridden', overrideReason: 'accepted gap' };
+			// Completion must never inspect retired review evidence.
+			evidence.storyCodeReview = async () => { throw new Error('Retired review consulted'); };
 			assert.deepEqual((await svc.completeIfRolledUp(STORY, bob)).completed, [STORY, EPIC], 'the Story, then the Epic once the Story is done');
 
 			// every member was completed first, the Story and Epic last
@@ -43,7 +35,7 @@ describe('LifecycleService.completeIfRolledUp', () => {
 			const storyEntry = completes(await log(k, STORY));
 			assert.equal(storyEntry.length, 1);
 			assert.equal(storyEntry[0]?.outcome?.result, 'completed');
-			assert.deepEqual(storyEntry[0]?.outcome?.data, { codeReviewOverride: 'accepted gap' });
+			assert.equal(storyEntry[0]?.outcome?.data, undefined);
 			for (const member of [...RECORDS, T1, T2, TASKS, ...DIAGS]) {
 				assert.ok((completes(await log(k, member))[0]?.timestamp ?? '') < (storyEntry[0]?.timestamp ?? ''), `${member} is completed before the Story`);
 			}

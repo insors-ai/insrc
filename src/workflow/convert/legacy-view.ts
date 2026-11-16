@@ -15,8 +15,8 @@
  * unapproved and no override is recorded. A code review guards its story's BUILD.
  */
 
-import { effectiveReviewVerdict } from '../review/resolve.js';
-import type { Finding, ReviewReport } from '../review/types.js';
+import { effectiveReviewVerdict } from '../review-history/review/resolve.js';
+import type { Finding, ReviewReport } from '../review-history/review/types.js';
 import type { ReviewResolution } from '../types.js';
 import type { RawHead, UnitView } from './types.js';
 

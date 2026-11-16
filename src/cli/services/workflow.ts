@@ -1,5 +1,5 @@
-import { renderPermanentDesignReview } from '../../workflow/review/design-review/read.js';
-import { isStoredDesignReview } from '../../workflow/review/report-log.js';
+import { renderPermanentDesignReview } from '../../workflow/review-history/review/design-review/read.js';
+import { isStoredDesignReview } from '../../workflow/review-history/review/report-log.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -46,14 +46,14 @@ import type { LifecycleService } from '../../workflow/artifact-core/lifecycle-se
 import type { SyncResult as TaskSyncResult } from '../../workflow/tasks/task-set.js';
 import type { AttachUnitResult } from '../../workflow/tracker/attach-unit.js';
 import { getLogger } from '../../shared/logger.js';
-import type { ReviewArtifactResult } from '../../workflow/review/index.js';
-import { readReviewRecordOf } from '../../workflow/review/report-file.js';
+import type { ReviewArtifactResult } from '../../workflow/review-history/index.js';
+import { readReviewRecordOf } from '../../workflow/review-history/review/report-file.js';
 import { rpc } from '../client.js';
 import type { Socket } from 'node:net';
 import { runWorkflowStream, type RunWorkflowStreamDeps } from '../../mcp/daemon-stream.js';
 import type { ProgressEvent } from '../../shared/types.js';
-import { effectiveReviewVerdict, listPendingReviewFindings, type ReviewAction, type ResolveReviewResult } from '../../workflow/review/index.js';
-import type { Finding, ReviewVerdict } from '../../workflow/review/types.js';
+import { effectiveReviewVerdict, listPendingReviewFindings, type ReviewAction, type ResolveReviewResult } from '../../workflow/review-history/index.js';
+import type { Finding, ReviewVerdict } from '../../workflow/review-history/review/types.js';
 
 const log = getLogger('cli:workflow');
 
@@ -196,7 +196,7 @@ export async function reject(artifactPath: string, reason: string): Promise<Reje
 
 export interface ReviewFindingsResult {
  readonly designMarkdown?:string|undefined;
- readonly designReview?:import('../../workflow/review/design-review/contracts.js').DesignReviewConsolidated|undefined;
+ readonly designReview?:import('../../workflow/review-history/review/design-review/contracts.js').DesignReviewConsolidated|undefined;
 	readonly verdict:  ReviewVerdict;
 	readonly pending:  readonly Finding[];
 }

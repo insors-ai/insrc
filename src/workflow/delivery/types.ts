@@ -12,8 +12,8 @@
  */
 
 import type { Feedback, Status } from '../artifact-core/types.js';
-import type { StoredReviewRecord } from '../review/report-log.js';
-import type { ReviewVerdict } from '../review/types.js';
+import type { StoredReviewRecord } from '../review-history/review/report-log.js';
+import type { ReviewVerdict } from '../review-history/review/types.js';
 import type { SignoffView } from '../team/signoff.js';
 
 /** The one verdict language, shared with review/ and code-review/ (sc5). */

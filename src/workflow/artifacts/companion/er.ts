@@ -21,7 +21,7 @@
  */
 
 import type { DocumentIR, IrEdge, IrNode, IrSection } from '../../../docgen/types.js';
-import type { DimensionFinding } from '../../code-review/types.js';
+import type { DimensionFinding } from '../../review-history/code-review/types.js';
 import type { FunctionalDefinition } from '../functional-definition.js';
 import { validateAgainstSchema } from '../../../agent/providers/structured-output.js';
 import { loadLinkmlMetamodelSchema } from './metamodel.js';

@@ -47,7 +47,7 @@ import { startRun, resumeRun } from '../workflow/executor.js';
 import { resolveDraftDeps } from '../workflow/draft-deps.js';
 import type { BoundaryFinding } from '../workflow/synthesizer.js';
 import { appendProgressLog, appendRunLog, pathsForWorkflow, withWorkflowLifecycle, writeArtifact, writeAtomic } from '../workflow/storage.js';
-import type { ReviewReport } from '../workflow/review/types.js';
+import type { ReviewReport } from '../workflow/review-history/review/types.js';
 import { WORKFLOW_NAMES, type ArtifactMetaBase, type ArtifactModelAttribution, type OutputModelStamp, type WorkflowIntent, type WorkflowName, type WorkflowPlan } from '../workflow/types.js';
 import { modelSummary } from '../workflow/attribution.js';
 import { augmentStandaloneParams, epicKeyFor } from './steps/workflow-step/phases/start.js';

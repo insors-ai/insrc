@@ -13,7 +13,7 @@
  * array for a sound definition) and never return these.
  */
 
-import type { DimensionFinding, ReviewDimension } from '../../code-review/types.js';
+import type { DimensionFinding, ReviewDimension } from '../../review-history/code-review/types.js';
 
 /** How many undescribed elements a finding names before summarising the rest. */
 const NAMED_LIMIT = 8;

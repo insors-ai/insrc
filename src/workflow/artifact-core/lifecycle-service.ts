@@ -1,5 +1,4 @@
-import { cleanupDesignArtifact } from '../review/design-review/cleanup.js';
-import type { CleanupResult } from '../code-review/task-review/cleanup.js';
+import type { CleanupResult } from '../review-history/compatibility.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -23,8 +22,6 @@ import {
 } from './types.js';
 import type { Actor, ChangeLogEntry, Lifecycle, Operation, Reference, Status } from './types.js';
 import { emptyLifecycle } from './decode.js';
-import { withDesignArtifactFence } from '../review/design-review/fence.js';
-import { requireCurrentDesignApproval } from '../review/design-review/approval.js';
 
 const log = getLogger('lifecycle-service');
 
@@ -90,14 +87,6 @@ export class LifecycleService {
 
 	/** Apply one lifecycle operation. Writes and logs nothing when it throws before the write. */
 	async apply(id: string, op: Operation, by: Actor, detail: TransitionDetail = {}, ctx: EvidenceContext = {}): Promise<ApplyResult> {
-  const kind=ArtifactIds.parse(id)?.kind;
-  if(op==='approve'&&kind&&['DEF','HLD','LLD'].includes(kind)){
-   const result=await withDesignArtifactFence(this.deps.store.repoPath,id,()=>this.applyInQueue(id,op,by,detail,ctx));
-   const cleanup=await cleanupDesignArtifact(this.deps.store.repoPath,id,{store:this.deps.store});return {...result,cleanup};
-  }
-  return this.applyInQueue(id,op,by,detail,ctx);
- }
- private async applyInQueue(id:string,op:Operation,by:Actor,detail:TransitionDetail,ctx:EvidenceContext):Promise<ApplyResult>{
 		const evidence = this.evidenceFor(ctx);
 		if (!isLifecycleOperation(op)) throw new IllegalTransitionError(`'${op}' is a content operation, not a lifecycle operation`);
 		const store = this.deps.store;
@@ -127,13 +116,11 @@ export class LifecycleService {
 				}
 			}
 			if (op === 'reopen' && isUnit) await this.checkParentOpen(id);
-   let approvalProof:Pick<WriteOptions,'expectedHeadHash'|'expectedDocument'>|undefined;
    if(op==='approve'&&key&&['DEF','HLD','LLD'].includes(key.kind)){
     if(['approved','in-signoff','signed-off','completed'].includes(head.lifecycle.status)&&head.lifecycle.approval?.revision===head.lifecycle.revision.number){
      const prior=[...changeLog].reverse().find(e=>e.operation==='approve'&&e.revision?.number===head.lifecycle.revision.number);
      if(prior){standing={lifecycle:head.lifecycle,entry:prior};return undefined;}
     }
-    approvalProof=await requireCurrentDesignApproval(store.repoPath,head,changeLog,detail.override?.reason);
    }
 
 			// The unit's own transition is validated before any member is touched, so a refusal leaves everything as it was.
@@ -149,7 +136,7 @@ export class LifecycleService {
 			let outcome: WriteOptions['outcome'];
 			if (op === 'complete') {
 				for (const member of members) await this.completeMember(member, id, by);
-				outcome = await this.completionOutcome(id, evidence);
+				outcome = { result: 'completed', summary: 'completed' };
 			} else if (op === 'reopen') {
 				for (const member of members) await this.reopenMember(member, id, by);
 			} else if ((op === 'approve' || op === 'record-override') && detail.override !== undefined) {
@@ -171,7 +158,6 @@ export class LifecycleService {
 				next: { ...head, references, lifecycle },
 				options: {
 					operation: op,
-     ...approvalProof,
 					...(cascade ? { cascade } : {}),
 					...(outcome !== undefined ? { outcome } : {}),
 					...(detail.request !== undefined ? { references: [detail.request] } :
@@ -277,8 +263,6 @@ export class LifecycleService {
 		if (key.kind !== 'STORY' || key.story === undefined) return `${id} is waiting for its Stories`;
 		const evidence = this.evidenceFor(ctx);
 		if (!(await evidence.storyBuildApproved(key.epicHash, key.story))) return `${id} is waiting for its BUILD approval`;
-		const review = await evidence.storyCodeReview(key.epicHash, key.story);
-		if (review.kind !== 'clean' && review.kind !== 'overridden') return `${id} is waiting for its code review, which is ${review.kind}`;
 		const holds = await storyTaskHolds(id, key.epicHash, key.story, this.reader, evidence);
 		if (holds.notCreated) return `${id} is held: its Task set is not finished for the current plan`;
 		if (holds.tasks.length > 0) return `${id} is held by ${holds.tasks.join(', ')}: the latest build round did not pass`;
@@ -332,17 +316,6 @@ export class LifecycleService {
 		return undefined;
 	}
 
-	/** The outcome of a unit's complete entry; it carries the code-review override reason when the review was overridden. */
-	private async completionOutcome(id: string, evidence: CompletionEvidence): Promise<NonNullable<WriteOptions['outcome']>> {
-		const key = ArtifactIds.parse(id);
-		if (key?.kind === 'STORY' && key.story !== undefined) {
-			const review = await evidence.storyCodeReview(key.epicHash, key.story);
-			if (review.kind === 'overridden') {
-				return { result: 'completed', summary: `completed with a code-review override: ${review.overrideReason ?? ''}`, data: { codeReviewOverride: review.overrideReason ?? '' } };
-			}
-		}
-		return { result: 'completed', summary: 'completed' };
-	}
 
 	/** Complete one member with its unit; a member with no head or already terminal is skipped. */
 	private async completeMember(member: string, unit: string, by: Actor): Promise<void> {

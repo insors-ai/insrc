@@ -22,7 +22,7 @@ import { ArtifactIds } from '../artifact-ids.js';
 import type { LifecycleService } from '../artifact-core/lifecycle-service.js';
 import { createRepoLifecycle } from '../artifact-core/repo-lifecycle.js';
 import type { Actor, Reference } from '../artifact-core/types.js';
-import { authorPartyOf, reviewerPartyOf } from '../review/party.js';
+import { authorPartyOf, reviewerPartyOf } from '../review-history/review/party.js';
 import { loadTracker } from '../tracker/github-adapter.js';
 import { commitAndPush } from '../tracker/commit-and-push-registry.js';
 import type { Capability, IssueRef, PortResult, SignoffRequestRef, TrackerPort } from '../tracker/port.js';
@@ -428,23 +428,7 @@ function prerequisiteFailure(repo: string, unit: UnitRef, artifactId: string, st
 			? `${artifactId} is in changes-requested and its approval is not of its current revision ${revision}: review and approve it again first, or leave it out of the submission`
 			: `${artifactId} was approved at revision ${approvedRevision} but is at revision ${revision}: approve it again first`;
 	}
-	const author = authorPartyOf(meta);
-	if (stage === 'BUILD') {
-		if (unit.storyId === undefined) return `${artifactId} is a BUILD but its unit names no Story`;
-		const review = (d.readCodeReview ?? readCodeReviewRecord)(repo, unit.epicHash, unit.storyId);
-		if (review === undefined) return `${artifactId} has no code review: run the code review first (a BUILD's review is the Story's code-review record)`;
-		if (review.verdict !== 'pass' && review.verdict !== 'warn') return `the code review of ${artifactId} is ${review.verdict === 'block' ? 'blocking' : 'unreadable'}: resolve it first`;
-		if (author !== 'unknown' && review.party === author) return `the code review of ${artifactId} was run by the ${author}, who wrote the code: it needs the other party`;
-		return undefined;
-	}
-	const review = lifecycleReviewOf(meta);
-	if (review === undefined) return `${artifactId} has no other-party review: review it first`;
-	const reviewedRevision = review['revision'];
-	if (typeof reviewedRevision === 'number' && revision !== undefined && reviewedRevision !== revision) {
-		return `the review of ${artifactId} is of revision ${reviewedRevision} but it is at revision ${revision}: review it again first`;
-	}
-	const reviewer = reviewerPartyOf(review);
-	if (author !== 'unknown' && reviewer === author) return `the review of ${artifactId} was run by the ${author}, who wrote it: it needs the other party`;
+
 	return undefined;
 }
 

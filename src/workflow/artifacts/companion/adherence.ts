@@ -18,7 +18,7 @@
  * them without a cycle.
  */
 
-import type { ReviewDimension } from '../../code-review/types.js';
+import type { ReviewDimension } from '../../review-history/code-review/types.js';
 
 /** The selectable adherence dimensions an artifact body may record. The three
  *  `diagram-*` members all fold to the single 'diagram' ReviewDimension; 'ux' and

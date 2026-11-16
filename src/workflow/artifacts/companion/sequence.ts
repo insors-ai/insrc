@@ -22,7 +22,7 @@
  */
 
 import type { DocumentIR, IrEdge, IrNode, IrSection } from '../../../docgen/types.js';
-import type { DimensionFinding } from '../../code-review/types.js';
+import type { DimensionFinding } from '../../review-history/code-review/types.js';
 import { MermaidIds, mermaidLineText } from './mermaid-text.js';
 import type { CompanionPageContent, DescriptionBlock, TaggedCell } from './shell.js';
 import { completenessFindings, described } from './completeness.js';

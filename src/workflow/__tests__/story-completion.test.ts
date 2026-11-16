@@ -28,7 +28,6 @@ afterAll(async () => {
 
 import { approveOutcomeOf } from '../../cli/services/workflow.js';
 import { handleApprovePipeline, handleWorkflowApprove } from '../../daemon/workflow-approve.js';
-import { reviewedBuildFingerprint } from '../code-review/build-freshness.js';
 import { createCompletionEvidence } from '../artifact-core/completion-evidence.js';
 import { History } from '../artifact-core/history.js';
 import { LifecycleService } from '../artifact-core/lifecycle-service.js';
@@ -89,7 +88,7 @@ async function writeBuildAndReview(k: Kit, blocking: boolean): Promise<void> {
 	const commit = 'a'.repeat(40);
 	const scope = { storyId: 's1', documents: {}, reviewSet: [{ commit, parent: 'b'.repeat(40), files: [{ path: 'src/a.ts', segments: [{ after: [1, 1] }] }] }] };
 	const task = { taskId: 's1', status: 'passed', summary: 'Correct', findings: [], testCoverage: { assessment: 'verified', explanation: 'Covered', evidenceReferences: ['ref:test'] }, limitations: [], advice: [], inspectedReferences: ['ref:code'], executedTests: [] };
-	const fingerprint = blocking ? 'f'.repeat(64) : reviewedBuildFingerprint(headOf(k, BUILD));
+	const fingerprint = blocking ? 'f'.repeat(64) : 'c'.repeat(64);
 	const summary = { reviewId: 'review-1', attempt: 1, storyId: 's1', reviewer: 'daemon', status: 'passed', scope, tasks: [task], summary: 'Reviewed', completedAt: '2026-11-03T01:00:00.000Z', buildFingerprint: fingerprint };
 	await k.store.write({ ...(await k.store.read(CR)), payload: { body: { kind: 'code-review', format: 'task-based', storyId: 's1', status: 'passed', reviews: [summary] }, citations: [] } }, alice);
 	const cr = headOf(k, CR);
@@ -259,7 +258,7 @@ test('initial approval held, then re-approval with an override records it and co
 	} finally { k.done(); }
 });
 
-test('a BUILD approved over a blocking code review with an override, a failure injected in completion, then re-approval with no override in the request passes the outer gate on the stored override and completes', async () => {
+test('a BUILD approval retries completion without consulting historical review metadata', async () => {
 	const k = kit();
 	try {
 		await ready(k, { blocking: true });
@@ -273,14 +272,14 @@ test('a BUILD approved over a blocking code review with an override, a failure i
 		fault.fail = false;
 		const second = await approve(k, svc);
 		assert.equal(second.skipped.length, 0, JSON.stringify(second.skipped));
-		assert.equal(second.codeReview[0]?.status, 'overridden');
+		assert.deepEqual(second.codeReview, []);
 		assert.equal(completion(second).ok, true);
 		assert.equal(await statusOf(k, STORY), 'completed');
 		assert.equal((await k.store.readWithHistory(BUILD)).changeLog.filter(e => e.operation === 'record-override').length, 0, 'nothing new to record');
 	} finally { k.done(); }
 });
 
-test('a draft BUILD at a new revision is not passed by an earlier revision\'s override', async () => {
+test('a draft BUILD at a new revision gets a fresh human approval without inheriting an old review override', async () => {
 	const open = kit();
 	try {
 		await ready(open, { blocking: true });
@@ -293,10 +292,10 @@ test('a draft BUILD at a new revision is not passed by an earlier revision\'s ov
 
 		fault.fail = false;
 		const r = await approve(open, svc);
-		assert.equal(r.approved.length, 0, JSON.stringify(r));
-		assert.equal(r.skipped.length, 1);
-		assert.equal(r.codeReview[0]?.status, 'blocked');
-		assert.equal(await statusOf(open, BUILD), 'draft');
+		assert.equal(r.approved.length, 1, JSON.stringify(r));
+		assert.equal(r.skipped.length, 0);
+		assert.deepEqual(r.codeReview, []);
+		assert.equal((await open.store.read(BUILD)).lifecycle.approval?.override, undefined);
 	} finally { open.done(); }
 });
 

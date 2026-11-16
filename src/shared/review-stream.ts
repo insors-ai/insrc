@@ -12,7 +12,7 @@ import { reviewUnavailable } from '../workflow/review-unavailable.js';
  * c2ba6fa6, Story s11).
  */
 
-import type { CodeReviewArtifact, CodeReviewFallbackReason, CodeReviewGrounding } from '../workflow/code-review/types.js';
+import type { CodeReviewArtifact, CodeReviewFallbackReason, CodeReviewGrounding } from '../workflow/review-history/code-review/types.js';
 
 /** Why a review request did not produce a review. */
 export type ReviewStreamFailure =

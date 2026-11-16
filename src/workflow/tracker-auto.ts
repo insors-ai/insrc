@@ -1,5 +1,5 @@
-import { isStoredDesignReview } from './review/report-log.js';
-import { renderPermanentDesignReview } from './review/design-review/read.js';
+import { isStoredDesignReview } from './review-history/review/report-log.js';
+import { renderPermanentDesignReview } from './review-history/review/design-review/read.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -47,9 +47,9 @@ import type { UnitRef } from './tracker/refs.js';
 import { ensureUnitIssueDetailed, postMarker, resolveUnitIssueLocal, runUnitExtras, type ExtraStep } from './tracker/unit-issue.js';
 import { policyReader } from './team/policy-reader.js';
 import type { PolicyReader } from './team/types.js';
-import { renderReviewReport } from './review/index.js';
-import { readReviewRecordOf } from './review/report-file.js';
-import type { ReviewReport } from './review/types.js';
+import { renderReviewReport } from './review-history/index.js';
+import { readReviewRecordOf } from './review-history/review/report-file.js';
+import type { ReviewReport } from './review-history/review/types.js';
 import { renderResolvedQuestionsSection } from './questions.js';
 import { renderCitationBlock } from './synthesizer.js';
 import type { Citation, QuestionResolution } from './types.js';

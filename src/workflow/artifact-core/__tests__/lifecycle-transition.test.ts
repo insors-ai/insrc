@@ -2,7 +2,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { nextLifecycle, transition } from '../lifecycle.js';
-import { IllegalTransitionError, ReviewRequiredError } from '../types.js';
+import { IllegalTransitionError } from '../types.js';
 import type { Actor, Lifecycle, Status } from '../types.js';
 import { emptyLifecycle } from '../decode.js';
 
@@ -65,20 +65,15 @@ describe('transition', () => {
 		assert.equal((await transition(art('PLAN', lcOf('draft')), 'approve', by)).status, 'approved');
 	});
 
-	it('approve on a DEF, HLD or LLD needs a review bound to the current revision or an override, and a PLAN, ISSUE or SPEC needs none', () => {
-		for (const kind of ['DEF', 'HLD', 'LLD']) {
-			assert.throws(() => nextLifecycle(art(kind, lcOf('draft')), 'approve', by, at), ReviewRequiredError, `${kind} without a review`);
-			const stale = lcOf('draft', { review: { revision: 2, reviewer: rev, party: 'daemon', verdict: 'pass', counts: {}, at } });
-			assert.throws(() => nextLifecycle(art(kind, stale), 'approve', by, at), ReviewRequiredError, `${kind} with a review of an older revision`);
-			const blocked = lcOf('draft', { review: { revision: 3, reviewer: rev, party: 'daemon', verdict: 'block', counts: {}, at } });
-			assert.throws(() => nextLifecycle(art(kind, blocked), 'approve', by, at), ReviewRequiredError, `${kind} blocked`);
-			const ok = lcOf('draft', { review: { revision: 3, reviewer: rev, party: 'daemon', verdict: 'warn', counts: {}, at } });
-			assert.equal(nextLifecycle(art(kind, ok), 'approve', by, at).status, 'approved');
-			const overridden = nextLifecycle(art(kind, blocked), 'approve', by, at, { override: { reason: 'accepted' } });
-			assert.equal(overridden.approval?.override?.reason, 'accepted');
-		}
-		for (const kind of ['PLAN', 'ISSUE', 'SPEC']) {
-			assert.equal(nextLifecycle(art(kind, lcOf('draft')), 'approve', by, at).status, 'approved', kind);
-		}
-	});
+	it('human approval needs no automated review and preserves historical review metadata', () => {
+        for (const kind of ['DEF', 'HLD', 'LLD', 'PLAN', 'ISSUE', 'SPEC']) {
+            const draft = lcOf('draft');
+            assert.equal(nextLifecycle(art(kind, draft), 'approve', by, at).status, 'approved');
+            const historical = lcOf('draft', { review: { revision: 2, reviewer: rev, party: 'daemon', verdict: 'block', counts: {}, at } });
+            const result = nextLifecycle(art(kind, historical), 'approve', by, at);
+            assert.equal(result.status, 'approved');
+            assert.deepEqual(result.review, historical.review);
+            assert.equal(result.approval?.override, undefined);
+        }
+    });
 });

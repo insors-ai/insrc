@@ -18,7 +18,7 @@
 import { getLogger } from '../shared/logger.js';
 import type { ArtifactModelAttribution, Citation, WorkflowIntent, WorkflowName, WorkflowPlan } from './types.js';
 import { singleModelAttribution } from './attribution.js';
-import type { Party } from './review/party.js';
+import type { Party } from './review-history/review/party.js';
 import type { BoundaryFinding, ValidationResult } from './synthesizer.js';
 import type { Alternative } from './artifacts/hld.js';
 import { checkNonPathCitationRefs, renderCitationBlock, validateBodyAndCitations } from './synthesizer.js';

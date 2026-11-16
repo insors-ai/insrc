@@ -18,7 +18,19 @@
         "relation": "derived-from"
       },
       "references": [],
-      "attachments": [],
+      "attachments": [
+        {
+          "target": {
+            "entityId": "LLD-56343cf2a9c3b509-s1",
+            "type": "LLD",
+            "relation": "documents",
+            "fragment": "docs/epics/ship-signed-linux-x86-64-daemon-E2026111656343cf2/S001/LLD.md"
+          },
+          "revision": 2,
+          "at": "2026-11-16T09:56:32.338Z",
+          "externalId": "6913176323"
+        }
+      ],
       "binding": {
         "reference": {
           "entityId": "insors-ai/insrc#187",

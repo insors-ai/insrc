@@ -125,6 +125,13 @@
         "choice": "Add dedicated backlinks command",
         "rationale": "s6's ac2 needs a new command + file/symbol-scoped menu contribution in vscode-plugin/package.json; no existing command/menu covers that scope today.",
         "resolvedAt": "2026-11-16T09:37:52.050Z"
+      },
+      "q71053fb4": {
+        "question": "Story s2 (3-line preview + title-ranked search) needs real body content and a non-lossy title per pad; scratch-store.ts's listScratches() provides neither today (vscode-plugin/src/chat/scratch-store.ts). s2 currently depends only on s1, but a durable title/metadata source is s7's territory (its own lc1 already defers 'where scratchpad metadata lives' to design time). Design time must decide: make s2 depend on s7 for that metadata, or give s2 its own interim content/title-read approach (e.g. parsing each file's first heading on list) that s7 later supersedes. [[c16]]",
+        "status": "resolved",
+        "choice": "Sequence s2 after s7",
+        "rationale": "s2's 3-line preview and title-ranked search need a durable, non-lossy title/content source that listScratches() doesn't provide; sequencing s2 after s7's metadata layer avoids duplicate interim read logic. Flagged to and accepted by the user as a change from the original epic plan's rollout ordering.",
+        "resolvedAt": "2026-11-16T09:38:03.713Z"
       }
     }
   },

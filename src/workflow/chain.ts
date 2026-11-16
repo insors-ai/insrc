@@ -318,6 +318,47 @@ interface NextActionInput {
 }
 
 function computeNextAction(epicHash: string, s: NextActionInput): NextAction {
+	// ISSUE-149283b0d0455a43: an ISSUE head reuses the define-level NextAction
+	// kinds (user decision 2026-11-16: an ISSUE is equivalent to a define), but
+	// its commands name the ISSUE document / rerun the issue stage, and the
+	// chain never names an HLD, amendment, staleness or tracker step.
+	if (s.define.definitionKind === 'issue') {
+		if (!s.define.exists) {
+			return {
+				kind: 'run-define',
+				command: `insrc_workflow_step phase=start workflow=issue focus="<the defect>"`,
+			};
+		}
+		if (s.define.rejected) {
+			return {
+				kind: 'run-define',
+				command: `insrc_workflow_step phase=start workflow=issue focus="<re-framed defect; prior ISSUE was rejected>"`,
+			};
+		}
+		if (!s.define.approved) {
+			return {
+				kind: 'approve-define',
+				command: `insrc workflow approve ${s.define.path}`,
+			};
+		}
+		for (const story of s.stories) {
+			if (!story.hasLld) {
+				return {
+					kind: 'run-lld',
+					storyId: story.id,
+					command: `insrc_workflow_step phase=start workflow=design.story focus="LLD for ${story.id}" params={"standalone":true,"epicHash":"${epicHash}","storyId":"${story.id}","sizeClass":"bugfix"}`,
+				};
+			}
+			if (!story.approved) {
+				return {
+					kind: 'approve-lld',
+					storyId: story.id,
+					command: `insrc workflow approve ${story.path}`,
+				};
+			}
+		}
+		return { kind: 'chain-complete' };
+	}
 	// 1. Define isn't done or approved.
 	if (!s.define.exists) {
 		return {

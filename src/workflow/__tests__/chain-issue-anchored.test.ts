@@ -14,7 +14,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
@@ -134,4 +134,99 @@ test('formatChainReport labels an ISSUE head and leaves DEF output unchanged', (
 		assert.ok(defText.includes('## Define\n'), 'a DEF head keeps the Define heading');
 		assert.ok(!defText.includes('## Issue (bugfix)'), 'a DEF head never shows the Issue label');
 	} finally { issue.cleanup(); rmSync(defRepo, { recursive: true, force: true }); }
+});
+
+// ---------------------------------------------------------------------------
+// t5 — next-action rules for an ISSUE head
+// ---------------------------------------------------------------------------
+
+test('unapproved ISSUE yields approve-define naming the ISSUE document', () => {
+	const s = seedIssueRepo({ approved: false });
+	try {
+		const r = buildChainReport(s.repo, HASH);
+		assert.equal(r.nextAction.kind, 'approve-define');
+		if (r.nextAction.kind === 'approve-define') {
+			assert.ok(r.nextAction.command.includes(`ISSUE.md`), `names the ISSUE document, got ${r.nextAction.command}`);
+			assert.ok(r.nextAction.command.includes(SLUG), 'the command carries the ISSUE folder path');
+		}
+	} finally { s.cleanup(); }
+});
+
+test('rejected ISSUE yields run-define that reruns the issue stage', () => {
+	const s = seedIssueRepo({});
+	try {
+		// flip the seeded ISSUE to rejected
+		const json = artifactJsonPath(s.repo, issueArtifactId(HASH));
+		const a = JSON.parse(readFileSync(json, 'utf8')) as { meta: Record<string, unknown> };
+		a.meta['lifecycle'] = { status: 'rejected', revision: { number: 1 } };
+		writeFileSync(json, JSON.stringify(a, null, 2));
+		const r = buildChainReport(s.repo, HASH);
+		assert.equal(r.nextAction.kind, 'run-define');
+		if (r.nextAction.kind === 'run-define') {
+			assert.ok(r.nextAction.command.includes("workflow=issue"), `reruns the issue stage, got ${r.nextAction.command}`);
+			assert.ok(!r.nextAction.command.includes("workflow=define "), 'does not advise the define stage');
+		}
+	} finally { s.cleanup(); }
+});
+
+test('next actions follow run-lld, approve-lld, chain-complete and never name an HLD, amendment, stale or tracker step', () => {
+	// approved ISSUE, no LLD yet
+	const noLld = seedIssueRepo({ approved: true });
+	try {
+		const r = buildChainReport(noLld.repo, HASH);
+		assert.equal(r.nextAction.kind, 'run-lld');
+		if (r.nextAction.kind === 'run-lld') {
+			assert.equal(r.nextAction.storyId, 's1');
+			assert.ok(r.nextAction.command.includes('"storyId":"s1"'), 'targets the implied story explicitly');
+			assert.ok(r.nextAction.command.includes('"epicHash":"' + HASH + '"'), 'keeps the ISSUE anchor');
+		}
+	} finally { noLld.cleanup(); }
+
+	// approved ISSUE + unapproved LLD
+	const unapprovedLld = seedIssueRepo({ approved: true, lld: true, lldApproved: false });
+	try {
+		const r = buildChainReport(unapprovedLld.repo, HASH);
+		assert.equal(r.nextAction.kind, 'approve-lld');
+		if (r.nextAction.kind === 'approve-lld') assert.equal(r.nextAction.storyId, 's1');
+	} finally { unapprovedLld.cleanup(); }
+
+	// approved ISSUE + approved LLD
+	const done = seedIssueRepo({ approved: true, lld: true, lldApproved: true });
+	try {
+		const r = buildChainReport(done.repo, HASH);
+		assert.equal(r.nextAction.kind, 'chain-complete');
+	} finally { done.cleanup(); }
+
+	// the forbidden kinds never appear for an ISSUE head at any stage
+	for (const opts of [{}, { approved: true }, { approved: true, lld: true }, { approved: true, lld: true, lldApproved: true }]) {
+		const s = seedIssueRepo(opts);
+		try {
+			const r = buildChainReport(s.repo, HASH);
+			assert.ok(
+				!['run-hld', 'approve-hld', 'review-amendment', 'refresh-stale', 'push-tracker', 'sync-tracker'].includes(r.nextAction.kind),
+				`ISSUE head must never yield ${r.nextAction.kind}`,
+			);
+		} finally { s.cleanup(); }
+	}
+});
+
+test('the DEF-anchored next-action sequence is unchanged', () => {
+	const defRepo = mkdtempSync(join(tmpdir(), 'insrc-chain-def-seq-'));
+	try {
+		// no DEF at all -> run-define (define wording, not issue)
+		const none = buildChainReport(defRepo, HASH);
+		assert.equal(none.nextAction.kind, 'run-define');
+		if (none.nextAction.kind === 'run-define') assert.ok(none.nextAction.command.includes('workflow=define '));
+
+		// unapproved DEF -> approve-define naming the DEF md
+		writeDefine(defRepo, HASH);
+		const unapproved = buildChainReport(defRepo, HASH);
+		assert.equal(unapproved.nextAction.kind, 'approve-define');
+		if (unapproved.nextAction.kind === 'approve-define') assert.ok(unapproved.nextAction.command.includes('DEF.md'));
+
+		// approved DEF, no HLD -> run-hld (unchanged)
+		approveReviewed(artifactJsonPath(defRepo, defineArtifactId(HASH)));
+		const noHld = buildChainReport(defRepo, HASH);
+		assert.equal(noHld.nextAction.kind, 'run-hld');
+	} finally { rmSync(defRepo, { recursive: true, force: true }); }
 });

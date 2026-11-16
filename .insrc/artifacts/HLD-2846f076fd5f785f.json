@@ -77,6 +77,13 @@
         "choice": "Keep sc3 self-contained in s2",
         "rationale": "This is the only option consistent with the Epic's immutable dependsOn graph (s2.dependsOn=[s1] only); formally closes the loop the HLD's self-review already resolved.",
         "resolvedAt": "2026-11-16T11:14:10.778Z"
+      },
+      "q520ed625": {
+        "question": "Self-correction during HLD self-review: the first fix for the sc2-risk mitigation moved insrc.scratchpad.backlinks onto the whole of the original Phase B, which would have gated s2/s3/s4/s7 (none of which touch the new daemon index) behind a flag meant only for s5. Phase B is now split into B1 (s5 alone, flagged) and B2 (s2/s3/s4/s7, unflagged) to fix this.",
+        "status": "resolved",
+        "choice": "Keep the B1/B2 split",
+        "rationale": "Confines insrc.scratchpad.backlinks to s5 (the actual daemon-index risk), consistent with the HLD's own correction.",
+        "resolvedAt": "2026-11-16T11:14:29.372Z"
       }
     }
   },

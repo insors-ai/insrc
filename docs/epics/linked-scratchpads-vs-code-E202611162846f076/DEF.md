@@ -349,6 +349,8 @@ Pads can be tagged and filtered, and new pads can start from an investigation or
   - **resolved**: Bind at story design — Preserve the stated story-level governance; design.story is responsible for operationalizing s4/s5/s6's acceptance criteria against story-level requirements/localConstraints. _(2026-11-16T09:32:33.610Z)_
 - `q29be74c0` — PRD open decision blocking s5: Markdown syntax for qualified link targets, versioning, and alias escaping.
   - **resolved**: Escaped Markdown links — Keeps familiar Markdown link authoring for s5 while explicitly resolving qualified-target syntax, versioning, and alias escaping. _(2026-11-16T09:33:43.060Z)_
+- `q5412e625` — PRD open decision blocking s4 and s7: entry-boundary / timestamp / stable-anchor encoding and where scratchpad metadata lives.
+  - **resolved**: Structured entry records — Makes s4's entry boundary/timestamp/stable-anchor concerns explicit as structured record fields, with s7's scratchpad metadata attached per-entry. _(2026-11-16T09:34:48.042Z)_
 
 ## Citations
 

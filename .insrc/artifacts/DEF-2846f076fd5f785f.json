@@ -83,6 +83,13 @@
         "choice": "Escaped Markdown links",
         "rationale": "Keeps familiar Markdown link authoring for s5 while explicitly resolving qualified-target syntax, versioning, and alias escaping.",
         "resolvedAt": "2026-11-16T09:33:43.060Z"
+      },
+      "q5412e625": {
+        "question": "PRD open decision blocking s4 and s7: entry-boundary / timestamp / stable-anchor encoding and where scratchpad metadata lives.",
+        "status": "resolved",
+        "choice": "Structured entry records",
+        "rationale": "Makes s4's entry boundary/timestamp/stable-anchor concerns explicit as structured record fields, with s7's scratchpad metadata attached per-entry.",
+        "resolvedAt": "2026-11-16T09:34:48.042Z"
       }
     }
   },

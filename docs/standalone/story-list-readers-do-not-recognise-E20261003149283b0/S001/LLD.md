@@ -290,6 +290,8 @@ Leave the shared reader alone and edit each non-test caller (readPlanUpstream, f
   - **resolved**: Adopt + annotate provenance — ac1-ac7 derive from the approved ISSUE's regression coverage; keep that traceable. _(2026-11-16T08:28:48.327Z)_
 - `qcee90751` — alt2 (partial): alternatives were scored against four issue.* constraints written in s3, as the Story and Epic carry none.
   - **resolved**: Adopt s3's issue.* constraints as-is — Only constraints in the chain; inheritance noted. _(2026-11-16T08:29:40.023Z)_
+- `qa959ced3` — Decided (user, 2026-11-16): an ISSUE is equivalent to a define for the chain, so no new NextAction kinds are added; tracker handling is deferred to ISSUE-5f9d4ab4c90c0b4c.
+  - **resolved**: A. ISSUE = define-equivalent (decided) — User decision 2026-11-16; tracker handling deferred to ISSUE-5f9d4ab4c90c0b4c. _(2026-11-16T08:30:24.460Z)_
 
 ## Citations
 

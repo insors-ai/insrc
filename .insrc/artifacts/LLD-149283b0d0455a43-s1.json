@@ -88,6 +88,13 @@
         "choice": "Adopt s3's issue.* constraints as-is",
         "rationale": "Only constraints in the chain; inheritance noted.",
         "resolvedAt": "2026-11-16T08:29:40.023Z"
+      },
+      "qa959ced3": {
+        "question": "Decided (user, 2026-11-16): an ISSUE is equivalent to a define for the chain, so no new NextAction kinds are added; tracker handling is deferred to ISSUE-5f9d4ab4c90c0b4c.",
+        "status": "resolved",
+        "choice": "A. ISSUE = define-equivalent (decided)",
+        "rationale": "User decision 2026-11-16; tracker handling deferred to ISSUE-5f9d4ab4c90c0b4c.",
+        "resolvedAt": "2026-11-16T08:30:24.460Z"
       }
     }
   },

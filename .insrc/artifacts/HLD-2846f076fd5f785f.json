@@ -1,0 +1,404 @@
+{
+  "meta": {
+    "workflow": "design.epic",
+    "runId": "wf-1794821904095-ndy0d1",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-16T10:09:10.844Z",
+    "epicCreatedAt": "2026-11-16T07:56:36.838Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 1846456,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2846f076fd5f785f",
+    "epicSlug": "linked-scratchpads-vs-code",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 4,
+        "contentHash": "2dbf87a7a15a865a0b17ccb53f4f70f9c6c0d12d459e296b44bd2b2e11e4d18a",
+        "at": "2026-11-16T10:38:04.031Z",
+        "by": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "name": "claude-sonnet-5",
+          "properties": {
+            "reason": "HLD cleanup: fix stale sc2/Phase-B references left over from the B1/B2 split"
+          }
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 4,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-16T10:55:50.448Z",
+        "override": {
+          "reason": "Mandatory HLD design review (insrc_review_step) is unavailable this session (the same tool that paused on technical_retry_exhausted for the DEF). In its place, two rounds of controller-led critical self-review were run and applied directly to the HLD (now at content revision 5): round 1 found and fixed an internal contradiction between the design.epic resolve-questions record (\"Sequence s2 after s7\") and what the Epic's immutable dependsOn graph actually permits (recorded as an open question), plus moved the insrc.scratchpad.backlinks flag so it actually covers sc2's daemon code rather than only its consumers; round 2 caught that the flag fix over-broadened to s2/s3/s4/s7 and split Phase B into B1 (s5, flagged) / B2 (the rest, unflagged) to correct it, then cleaned up stale cross-references the split left behind. Two earlier-flagged gaps (f2: some reused module names under-cited within this stage's own analyze pass; nf1: no quantified non-functional targets, deferred to the DEF's own open question) remain recorded as open questions for s5/s6's design.story, not blockers on this artifact. User gave explicit in-chat approval (\"go ahead with approval\") after being presented this HLD."
+        }
+      }
+    },
+    "revision": 4,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    }
+  },
+  "body": {
+    "frameworkSummary": "The Epic adopts the daemon-owned link/backlink index (winning alternative a1): a new, private, repository-keyed scratchpad index lives in src/db alongside doc-relations.ts, built on the existing graph (entities.ts, relations.ts) and ArtifactIds, and becomes the single source of truth for link resolution, backlinks, and the list's title/preview read-model. vscode-plugin's chat/ and panels/ modules stay thin UI clients over daemon IPC for everything except the native editor's own file-opening mechanics, which remain entirely client-side.",
+    "architectureShape": "Three layers: (1) the native-editor substrate (s1; host-capability probe via hosts/specs.ts's getExtension; openWith on the real file) stays wholly client-side and establishes the Epic's one cross-cutting identity primitive, ScratchpadRef (sc1); (2) a new daemon-side scratchpad-link module, extending src/db alongside doc-relations.ts and reusing entities.ts/relations.ts/ArtifactIds, owns link-target resolution and the private repository-keyed backlink index (sc2, owned by s5, per k4's invariant); (3) a daemon-served list read-model (sc3, owned by s2) gives the list panel real title/preview/mtime data without per-render re-parsing, closing the content/title-source gap found when scratch-store.ts's listScratches() was shown to do no content reads. Every story's new command/menu/openWith registration lands through the same vscode-plugin/src/extension.ts activation wiring already dominant in both chat/ and panels/ import graphs.",
+    "summary": {
+      "audience": "product",
+      "prose": "The Epic builds the scratchpad into a daemon-backed knowledge surface: a new, private per-repository link index lets notes point at other notes, code, and tracked workflow artifacts, with backlinks visible from any of those targets. The scratchpad list becomes fast and searchable by relevance, and the pad itself opens in VS Code's own native Markdown editor instead of a bespoke webview."
+    },
+    "sharedContracts": [
+      {
+        "id": "sc1",
+        "name": "ScratchpadRef",
+        "purpose": "The one cross-cutting note-identity primitive every link-, lifecycle-, and citation-facing story needs: a stable reference to a scratchpad that survives rename/move/archive/restore. Owned at s1 (the Epic's root) because s2 — which depends only on s1, not on s7 where identity is semantically 'about' — also needs it for the k2 tie-break.",
+        "interfaceSketch": "interface ScratchpadRef {\n  readonly repo: string;     // absolute registered repo path, or the well-known home-dir scope\n  readonly stableId: string; // survives rename/move/archive/restore (s7)\n}",
+        "ownedByStory": "s1",
+        "consumedByStories": [
+          "s2",
+          "s5",
+          "s7",
+          "s8",
+          "s9"
+        ],
+        "assumptions": [
+          "c4",
+          "c16"
+        ]
+      },
+      {
+        "id": "sc2",
+        "name": "LinkResolutionAndBacklinks",
+        "purpose": "The daemon-backed, private, repository-keyed index k4 requires: qualified link-target identity across note/file/symbol/artifact, its resolution state (resolved/ambiguous/missing/unavailable), and the backlink query s6 reads. Owned by s5 (the authoring story), consumed by s6 (its direct dependent).",
+        "interfaceSketch": "type LinkTargetKind = 'note' | 'file' | 'symbol' | 'artifact';\n\ninterface QualifiedLinkTarget {\n  readonly kind: LinkTargetKind;\n  readonly repo: string;\n  readonly ref: string;       // stableId | path#qualifiedName | path | canonicalArtifactId\n  readonly version?: string;  // qualified-target syntax version marker\n}\n\ntype LinkResolutionState =\n  | { readonly status: 'resolved'; readonly target: QualifiedLinkTarget }\n  | { readonly status: 'ambiguous'; readonly candidates: readonly QualifiedLinkTarget[] }\n  | { readonly status: 'missing' }\n  | { readonly status: 'unavailable'; readonly reason: string };\n\ninterface BacklinkEntry {\n  readonly source: ScratchpadRef;\n  readonly target: QualifiedLinkTarget;\n}\n\ninterface BacklinkQuery {\n  readonly target: QualifiedLinkTarget;\n}\n\ninterface BacklinkQueryResult {\n  readonly entries: readonly BacklinkEntry[];\n}",
+        "ownedByStory": "s5",
+        "consumedByStories": [
+          "s6"
+        ],
+        "assumptions": [
+          "c4",
+          "c14"
+        ]
+      },
+      {
+        "id": "sc3",
+        "name": "ScratchpadListReadModel",
+        "purpose": "The daemon-served list/preview/title source s2 needs (closing the gap: listScratches() does no content reads today), extended by s10 with a tags field.",
+        "interfaceSketch": "interface ScratchpadListEntry {\n  readonly ref: ScratchpadRef;\n  readonly title: string;                     // non-lossy, distinct from the id slug\n  readonly previewLines: readonly string[];   // first 3 body lines, k2\n  readonly mtime: number;\n  readonly tags?: readonly string[];          // s10 extension point\n}\n\ninterface ScratchpadListQuery {\n  readonly limit: number;   // 10 (chat menu) or 20 (list panel), k2\n  readonly search?: string; // list-panel relevance query, k1\n}",
+        "ownedByStory": "s2",
+        "consumedByStories": [
+          "s10"
+        ],
+        "assumptions": [
+          "c1",
+          "c16"
+        ]
+      }
+    ],
+    "storyBoundaries": [
+      {
+        "storyId": "s1",
+        "owns": [
+          "sc1"
+        ],
+        "depends": [],
+        "internal": "The vscode.markdown.editor openWith integration, the host-capability probe (reusing hosts/specs.ts's getExtension) and its default-editor fallback UX, and the lock/pencil toggle UI are private to s1 — no other story needs the mechanics of how the editor opens, only the stable ScratchpadRef identity (sc1) it establishes for every pad."
+      },
+      {
+        "storyId": "s2",
+        "owns": [
+          "sc3"
+        ],
+        "depends": [
+          "sc1"
+        ],
+        "internal": "The chat-menu cap-10 rendering, the list panel's cap-20/3-line-preview/delete UI, and the relevance-ranking algorithm itself (title-first, tie-break via sc1's stableId) are private to s2; sc3 exposes only the read-model shape (title/preview/mtime), not the ranking logic."
+      },
+      {
+        "storyId": "s3",
+        "owns": [],
+        "depends": [],
+        "internal": "Find-in-note's match highlighting, wraparound navigation, and collapsed-section reveal operate entirely on the open editor's live text buffer — no cross-story data or contract is produced or consumed."
+      },
+      {
+        "storyId": "s4",
+        "owns": [],
+        "depends": [],
+        "internal": "The entry-boundary/timestamp Markdown convention, day-grouping, and the Undated bucket are private to how one note's content renders; no story downstream of s4 in the Epic's dependency graph consumes dated-entry structure, so it is not exposed as a shared contract."
+      },
+      {
+        "storyId": "s5",
+        "owns": [
+          "sc2"
+        ],
+        "depends": [
+          "sc1"
+        ],
+        "internal": "The link-target picker UI and the qualified-target Markdown syntax (percent-encoded target segments, versioned, per the HLD's resolved open question) are private to s5; sc2 exposes only the resolved-reference and backlink-query shape s6 consumes, not the authoring UI or syntax."
+      },
+      {
+        "storyId": "s6",
+        "owns": [],
+        "depends": [
+          "sc2"
+        ],
+        "internal": "The backlink view's grouping-by-source-note rendering, on the pad and on file/symbol surfaces, is private UI; no story is downstream of s6 in the Epic's graph, so it exposes no further contract."
+      },
+      {
+        "storyId": "s7",
+        "owns": [],
+        "depends": [
+          "sc1"
+        ],
+        "internal": "The archive/restore state machine, the permanent-delete confirmation flow, and the decision of where stable ID/repo-association/archive-state are actually persisted are private to s7; it extends sc1's bare ScratchpadRef with lifecycle state but does not re-expose that lifecycle representation as a further contract, since s8/s9/s10 only need sc1's identity."
+      },
+      {
+        "storyId": "s8",
+        "owns": [],
+        "depends": [
+          "sc1"
+        ],
+        "internal": "The attach-to-turn picker UI, the removable-preview rendering, and revision-pinning for a queued turn are private to s8; it consumes sc1 to cite the note and exposes no further contract, since only s9 depends on s8 and s9's own need (provenance link) is satisfied by sc1 directly."
+      },
+      {
+        "storyId": "s9",
+        "owns": [],
+        "depends": [
+          "sc1"
+        ],
+        "internal": "The promote-to-draft action's brainstorm/ISSUE routing and idempotent-retry handling are private to s9; no story is downstream of s9 in the Epic's graph."
+      },
+      {
+        "storyId": "s10",
+        "owns": [],
+        "depends": [
+          "sc3"
+        ],
+        "internal": "The tag-filter UI and starter-template catalog are private to s10; it extends sc3's list read-model with the tags field but no story is downstream of s10 in the Epic's graph."
+      }
+    ],
+    "nonFunctional": {
+      "performance": "The list panel (s2) must not re-parse every on-disk pad file per render; sc3's read-model is served from the daemon's index instead. Backlink-query latency targets and the note-size cap for sc2's new daemon IPC are explicitly an open PRD decision (DEF §8) to resolve before s2/s5/s6 build.",
+      "security": "The home-dir scratchpad store stays outside repo enrollment per k4; the daemon's new index only joins validated target identity (sc1/sc2), never widening default document search or repo registration to the store itself.",
+      "observability": "Not specified by the Epic; left to design.story.",
+      "durability": "sc1's stableId must survive rename/move/archive/restore (s7); the daemon index's reconciliation strategy against the home-dir store's actual file state (so it never serves a stale binding indefinitely) is a design.story decision."
+    },
+    "rolloutOverview": {
+      "phases": [
+        {
+          "name": "Phase A — Native editor foundation",
+          "includesStories": [
+            "s1"
+          ],
+          "rationale": "Establishes sc1 (ScratchpadRef) and retires the custom webview; every other story depends only on s1 in the Epic's graph and needs this surface + identity primitive before building on it.",
+          "backwardCompat": "Retires the custom scratchpad document webview and its scratch-save/scratch-saved protocol; the on-disk file contract in scratch-store.ts must stay byte-compatible so every existing pad opens correctly in the native editor with no migration step.",
+          "featureFlag": "insrc.scratchpad.nativeEditor"
+        },
+        {
+          "name": "Phase B1 — Link authoring + daemon backlink index",
+          "includesStories": [
+            "s5"
+          ],
+          "rationale": "Isolated from the rest of the P0 slice because s5 alone owns sc2, the Epic’s first new daemon-side persisted index and IPC contract; gating it separately lets the risky code ship behind insrc.scratchpad.backlinks without blocking s2/s3/s4/s7, which carry no daemon-index risk.",
+          "backwardCompat": "",
+          "featureFlag": "insrc.scratchpad.backlinks"
+        },
+        {
+          "name": "Phase B2 — List, find, dated entries, lifecycle",
+          "includesStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s7"
+          ],
+          "rationale": "These four depend only on s1 (not on each other) and can land in parallel once Phase A ships; together with Phase B1's s5, they deliver sc3 (owned by s2) — one of the two contracts Phase C's consumers need. sc2 (owned by s5) ships separately in Phase B1. Split from s5 because none of these four stories touch the new daemon index's risk surface, so they should not sit behind its flag.",
+          "backwardCompat": "s2 changes existing, relied-upon behavior: the chat menu cap moves from 5 to 10 and the list panel moves from an unbounded table to a 20-item cap with previews — users with more than 20 existing pads must still be able to reach older ones via search. s7's identity work must not orphan pads created before stable IDs existed.",
+          "featureFlag": null
+        },
+        {
+          "name": "Phase C — Backlinks, cited context, and tags",
+          "includesStories": [
+            "s6",
+            "s8",
+            "s10"
+          ],
+          "rationale": "s6 consumes sc2 (owned by s5, Phase B1); s8 consumes sc1 as extended by s7's lifecycle (Phase B2) and needs s5's resolution (Phase B1); s10 consumes sc3 (owned by s2, Phase B2) and s7's lifecycle (Phase B2). All three become buildable together only once Phase B1 and Phase B2's contract owners have shipped.",
+          "backwardCompat": "",
+          "featureFlag": "insrc.scratchpad.backlinks"
+        },
+        {
+          "name": "Phase D — Promote to workflow draft",
+          "includesStories": [
+            "s9"
+          ],
+          "rationale": "s9 depends on s8 (Phase C) for the attach/preview mechanics its promotion flow builds on.",
+          "backwardCompat": "",
+          "featureFlag": null
+        }
+      ],
+      "orderingRationale": "Phase order follows the Epic’s own dependsOn edges plus the HLD’s contract-ownership placement: s1 is the sole Phase A story because every other story depends on it (directly or transitively) and it owns sc1. Phase B1 isolates s5 (owner of sc2, the new daemon index/IPC) behind its own flag; Phase B2 groups the remaining stories whose only dependency is s1 and which carry no daemon-index risk (s2, owner of sc3; s3; s4; s7). Both B1 and B2 depend only on Phase A and can land in either order relative to each other, but both must precede Phase C. Phase C groups every story whose dependencies are fully satisfied once B1+B2 ship (s6→s5, s8→s5+s7, s10→s2+s7). Phase D is s9 alone, the only story depending on a Phase C story (s8). No phase contains a story whose dependency lands in a later phase.",
+      "riskyBits": [
+        {
+          "area": "New daemon IPC surface (sc2, the backlink index)",
+          "why": "s5/s6 introduce the Epic's first new daemon-side persisted index and IPC contract; the note-size cap, latency targets, and minimum daemon/extension version negotiation are still an open PRD decision (DEF §8), not yet resolved.",
+          "mitigation": "Resolve the note-size/latency/version-negotiation decision during s5's design.story before any daemon code is written; s5 ships in its own Phase B1 behind the insrc.scratchpad.backlinks flag (not mixed with the unrelated B2 stories), and Phase C's consumers stay behind the same flag until that decision is validated against real note counts."
+        },
+        {
+          "area": "Host-capability fallback for s1's native editor",
+          "why": "vscode.markdown.editor may not be registered on every host the plugin supports (vscode-plugin/src/hosts/specs.ts already treats Cursor as a distinct host); getting the fallback UX wrong blocks every downstream story, since s2 through s10 all depend on s1.",
+          "mitigation": "Resolve the getExtension probe and its default-editor fallback in s1's own design.story first, per the DEF's open question, and verify it on at least one non-standard host before approving s1's BUILD — nothing in Phase B1, B2, or later should start first."
+        },
+        {
+          "area": "sc1 owned at s1 rather than s7",
+          "why": "Stable identity is semantically s7's topic but sc1 is owned at s1 to satisfy s2's position in the dependency graph (the nearest-common-ancestor rule); a reviewer unfamiliar with that rule could try to move sc1 to s7, which would break s2's and s5's dependency chain to it.",
+          "mitigation": "This HLD's storyBoundaries documents the nearest-common-ancestor rationale explicitly; s1's and s7's design.story stages should cite this section rather than re-deciding contract ownership."
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Daemon-owned link/backlink index, client-only UI",
+        "oneLineSummary": "A new daemon-side scratchpad index (alongside doc-relations.ts) owns link resolution, backlinks, and validated target identity; vscode-plugin is a thin UI client over daemon IPC for everything beyond the native editor itself.",
+        "approach": "Extend src/db with a scratchpad-link module that joins the home-dir store's typed links (note/file/symbol/artifact) against the existing graph (entities.ts, relations.ts) and ArtifactIds, producing a private, repository-keyed index per k4's invariant. The daemon becomes the single source of truth for resolution state and for backlink aggregation on files, symbols, and (once available) workflow artifacts; vscode-plugin only renders what the daemon returns and calls back on authoring actions.\n\nMetadata that must be queryable cross-repo (stable ID, archive state, link graph) lives in this daemon index rather than only in the markdown files, directly addressing the s2 content/title-source gap by giving the list a durable, daemon-served source instead of a client-side interim parse.",
+        "pros": [
+          "Reuses the daemon's existing graph machinery (entities.ts, relations.ts, ArtifactIds) instead of building a second, client-side index from scratch.",
+          "One source of truth for resolution state means s2's list, s5's link authoring, and s6's backlinks all read the same daemon answer — no drift between surfaces.",
+          "Matches k4's invariant directly: a private, repository-keyed index is the daemon's natural shape, not a bolt-on."
+        ],
+        "cons": [
+          "Adds a new daemon IPC surface and a new persisted index the daemon must version/migrate going forward.",
+          "Every scratchpad read now has a round-trip dependency on the daemon being up; today's scratch-store.ts is pure client-side fs.",
+          "Backlink aggregation at daemon scale needs its own latency/size-cap decisions (already flagged as open) before this can ship."
+        ],
+        "costEstimate": "L"
+      },
+      {
+        "id": "a2",
+        "name": "Client-owned metadata, daemon-assisted resolution",
+        "oneLineSummary": "vscode-plugin extends scratch-store.ts with a metadata envelope (stable ID, archive state, tags, entry boundaries) per pad; the daemon is called only for the heavier cross-repo lookups (symbol/artifact target resolution), not for backlink storage.",
+        "approach": "scratch-store.ts grows a small metadata layer — frontmatter or a sidecar record — that carries the stable ID, archive/lifecycle state, tags, and dated-entry boundaries, read directly without a daemon round-trip. Link authoring still calls the daemon to resolve a symbol or workflow-artifact target, but the resulting resolved reference and backlink relationship are cached/stored client-side.\n\nThis keeps the home-dir store close to self-contained: listing/preview/lifecycle work without the daemon running, only losing live link-target validation and cross-note backlink views when it's down.",
+        "pros": [
+          "Scratchpad listing/preview/lifecycle keeps working with the daemon offline.",
+          "Smaller new daemon surface — the daemon answers resolution queries it's already positioned to answer.",
+          "Resolves the s2 content/title-source gap with a local, synchronous fix rather than a network round-trip."
+        ],
+        "cons": [
+          "Backlinks become a client-side aggregation, duplicating indexing logic the daemon already has for the main corpus.",
+          "Two sources of truth for the link graph can drift when a target is renamed/moved outside the scratchpad flow.",
+          "A sidecar/frontmatter schema change touches every existing scratchpad file or needs a lazy-migration path."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Only partially satisfies k4: target resolution goes through the daemon with validated identity, but the backlink graph itself is cached/stored client-side rather than daemon-backed through a private, repository-keyed index as k4 specifies — a real gap against an invariant, not a stylistic one."
+      },
+      {
+        "id": "a3",
+        "name": "Fully client-local, no new daemon surface",
+        "oneLineSummary": "vscode-plugin parses and indexes scratchpad links/backlinks/metadata entirely itself, in-memory or in a local cache file; the daemon is not extended at all.",
+        "approach": "All ten stories are delivered inside vscode-plugin: a client module re-parses scratch files to resolve links against a client-maintained map of known files/symbols and workflow-artifact ids (via read-only daemon queries). Backlinks, tags, and lifecycle state are computed and cached client-side; doc-relations.ts and the daemon's graph are left untouched.\n\nCheapest and fastest to build, adding no daemon migration risk or new IPC contract — but it re-implements, in miniature, indexing/relationship-tracking logic the daemon's src/db module already has for the main corpus.",
+        "pros": [
+          "No new daemon IPC surface, no daemon-side migration risk, no dependency on the daemon being up.",
+          "Fastest to ship — smallest blast radius, easiest to roll back.",
+          "Keeps k4's invariant trivially true for the store itself: nothing moves daemon-side."
+        ],
+        "cons": [
+          "Duplicates indexing/relationship logic the daemon's db module already solves for the main corpus.",
+          "Client-side re-parsing of all scratch files to keep links/backlinks current does not scale as note count grows.",
+          "No natural place for cross-session/cross-window consistency if the client cache goes stale."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Violates k4 outright: there is no daemon-backed, private, repository-keyed index for backlinks to join through, just client-side computation. Also only partially meets k2 at scale, since list rendering requires re-parsing every file."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "Item f2 (partial): architectureShape names entities.ts and relations.ts (present in s1's structural-map bundle's own summary/structure text for src/db, just not duplicated into that bundle's pathsCited array) and ArtifactIds (src/workflow/artifact-ids.ts, grounded only via the approved DEF's citation c14 and this controller's earlier direct repo verification, not via an insrc_analyze_step pass run during this HLD's own context.assemble). Nothing is fabricated, but design.story for s5/s6 should re-verify ArtifactIds' exact exported surface before building sc2 against it.",
+      "Item nf1 (partial): none of the four nonFunctional properties carries a quantified target (a latency figure, a size cap, an SLA) — performance explicitly defers the real numbers to the DEF's own unresolved open question (note-size cap, latency targets, minimum daemon/extension IPC version). design.story for s5/s6 must resolve concrete numbers before sc2's daemon IPC is built, not just before Phase C's rollout.",
+      "This HLD contradicts its own resolved design.epic open question: at the open-questions gate, the choice recorded for s2's content/title-source gap was 'Sequence s2 after s7' (make s2 depend on s7's durable metadata). What was actually built here is the opposite: sc3 (ScratchpadListReadModel) is owned by s2 alone, with no dependency on anything s7 owns, and Phase B places s2 and s7 in parallel, not sequenced. This is not an oversight in the architecture — the Epic's own dependsOn graph has s2.dependsOn = [s1] only, never s7, and framework.write cannot invent a new Epic dependency edge; 'Sequence s2 after s7' was not actually buildable under that graph, and what got built (sc3 self-contained at s2) was the only graph-consistent option, equivalent to the 'Interim file parsing' choice that was not selected at the gate. The resolve-question record itself was not corrected when this was discovered. design.story for s2 and s7 should treat this HLD, not that resolution record, as authoritative, and should not expect to depend on s7 for list/title data.",
+      "Self-correction during HLD self-review: the first fix for the sc2-risk mitigation moved insrc.scratchpad.backlinks onto the whole of the original Phase B, which would have gated s2/s3/s4/s7 (none of which touch the new daemon index) behind a flag meant only for s5. Phase B is now split into B1 (s5 alone, flagged) and B2 (s2/s3/s4/s7, unflagged) to fix this."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "docs/reqs/enhanced-scratchpad-prd.html",
+      "quotedText": "Settled mock UI decisions: menu cap 10; list panel 20 pads newest-first, 3-line previews, per-row delete, in-panel relevance search; pad = built-in Markdown Editor locked with pencil inline-edit; separate in-pad find."
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/db/doc-relations.ts",
+      "quotedText": "Daemon link extraction targets files only, strips fragments; no symbol/artifact resolution, no backlink projection."
+    },
+    {
+      "id": "c14",
+      "kind": "code",
+      "ref": "src/workflow/artifact-ids.ts",
+      "quotedText": "ArtifactIds is 'the one identity scheme for every artifact' — it already builds and parses every artifact id form (DEF-<h>, LLD-<h>-s1, TASK-<h>-s1-t3, AMD-<h>-2, ...) and RequirementIds does the same for FR ids."
+    },
+    {
+      "id": "c16",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/scratch-store.ts",
+      "quotedText": "ScratchEntry is {id, name, mtime, size} only; listScratches() is pure readdir+stat; it reads no file content. Neither a real title nor body preview text exists today for the list to show."
+    },
+    {
+      "id": "c20",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/scratch-host.ts"
+    },
+    {
+      "id": "c21",
+      "kind": "code",
+      "ref": "vscode-plugin/src/panels/scratch-panels.ts"
+    },
+    {
+      "id": "c22",
+      "kind": "code",
+      "ref": "vscode-plugin/src/hosts/specs.ts"
+    },
+    {
+      "id": "c23",
+      "kind": "code",
+      "ref": "vscode-plugin/src/hosts/types.ts"
+    },
+    {
+      "id": "c24",
+      "kind": "code",
+      "ref": "vscode-plugin/src/extension.ts"
+    },
+    {
+      "id": "c25",
+      "kind": "code",
+      "ref": "src/db/entities.ts"
+    },
+    {
+      "id": "c26",
+      "kind": "code",
+      "ref": "src/db/relations.ts"
+    },
+    {
+      "id": "c27",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-panel.ts"
+    }
+  ]
+}

@@ -104,6 +104,13 @@
         "choice": "Stable enqueue snapshot",
         "rationale": "Gives s8's queued turns stable, reviewable target/context/evidence-budget/preview semantics; a mid-queue target change affects only later-queued items.",
         "resolvedAt": "2026-11-16T09:36:24.598Z"
+      },
+      "q2bc9a82f": {
+        "question": "Story s1 must confirm vscode.markdown.editor is registered on the target host before opening with it; this reuses the plugin's existing by-extension capability check (HostEnv.getExtension — vscode-plugin/src/hosts/specs.ts, hosts/types.ts) rather than needing new detection machinery. Only the fallback/error UX for a host where the probe is negative (e.g. an editor fork — vscode-plugin/src/hosts/specs.ts already treats Cursor as distinct, and chat/group-lock.ts anticipates a capability missing in a fork) is an open design item. [[c9]] [[c12]]",
+        "status": "resolved",
+        "choice": "Fallback to default editor",
+        "rationale": "When s1's getExtension probe for vscode.markdown-language-features is negative (e.g. an editor fork), open with the host's default editor and surface a brief non-blocking notice, rather than failing or blocking the open.",
+        "resolvedAt": "2026-11-16T09:37:02.044Z"
       }
     }
   },

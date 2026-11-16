@@ -355,6 +355,8 @@ Pads can be tagged and filtered, and new pads can start from an investigation or
   - **resolved**: Balanced bounded rollout — Resolves all four blocking fields (backlink projection/lexical index, note-size cap, latency targets, minimum daemon/extension IPC version) as explicit, independently reviewable constraints for s2/s5/s6. _(2026-11-16T09:35:39.318Z)_
 - `qcaf02d53` — PRD open decision blocking s8: first controller/daemon context routes, evidence budgets, and preview behavior for a target that changes mid-queue.
   - **resolved**: Stable enqueue snapshot — Gives s8's queued turns stable, reviewable target/context/evidence-budget/preview semantics; a mid-queue target change affects only later-queued items. _(2026-11-16T09:36:24.598Z)_
+- `q2bc9a82f` — Story s1 must confirm vscode.markdown.editor is registered on the target host before opening with it; this reuses the plugin's existing by-extension capability check (HostEnv.getExtension — vscode-plugin/src/hosts/specs.ts, hosts/types.ts) rather than needing new detection machinery. Only the fallback/error UX for a host where the probe is negative (e.g. an editor fork — vscode-plugin/src/hosts/specs.ts already treats Cursor as distinct, and chat/group-lock.ts anticipates a capability missing in a fork) is an open design item. [[c9]] [[c12]]
+  - **resolved**: Fallback to default editor — When s1's getExtension probe for vscode.markdown-language-features is negative (e.g. an editor fork), open with the host's default editor and surface a brief non-blocking notice, rather than failing or blocking the open. _(2026-11-16T09:37:02.044Z)_
 
 ## Citations
 

@@ -32,6 +32,38 @@ function readBinding(git, head, path) {
 	return checkedBinding(readLinuxReleaseJson(bytes, maxLedgerRecord));
 }
 
+function readChannelHead(git, commitId, folder) {
+	const headPath = `${folder}/head.json`;
+	const current = readBinding(git, commitId, headPath);
+	const changes = git(['log', '--first-parent', '-m', '--format=', '--name-status', '--no-renames', commitId, '--', folder]).toString();
+	const recorded = new Set();
+	for (const line of changes.split('\n').filter(Boolean)) {
+		const [action, path] = line.split('\t');
+		if (path === headPath) continue;
+		if (action !== 'A' || !path?.startsWith(folder + '/sequence-') || recorded.has(path)) {
+			throw new Error('corrupt Linux signing ledger changed an immutable sequence binding');
+		}
+		recorded.add(path);
+	}
+	if (!current) {
+		if (changes) throw new Error('corrupt Linux signing ledger is missing its initialized channel head');
+		return undefined;
+	}
+
+	let highest = 0;
+	for (const path of recorded) {
+		const match = /^sequence-([1-9][0-9]*)\.json$/.exec(path.slice(folder.length + 1));
+		const sequence = Number(match?.[1]);
+		if (!Number.isSafeInteger(sequence)) throw new Error('invalid Linux signing ledger entry path');
+		highest = Math.max(highest, sequence);
+	}
+	const retained = readBinding(git, commitId, `${folder}/sequence-${highest}.json`);
+	if (current.sequence !== highest || retained?.sequence !== highest || retained?.manifestSha256 !== current.manifestSha256) {
+		throw new Error('corrupt Linux signing ledger head does not match its highest sequence binding');
+	}
+	return current;
+}
+
 export async function reserveLinuxSigningSequence({ remote, ref, channel, sequence, manifestSha256 }) {
 	requireLinuxBranchRef(ref);
 	if (typeof remote !== 'string' || !remote || remote.startsWith('-') || /[\x00-\x1f]/.test(remote) ||
@@ -50,19 +82,13 @@ export async function reserveLinuxSigningSequence({ remote, ref, channel, sequen
 			git(['fetch', '--no-tags', '--no-recurse-submodules', '--quiet', '--', remote, ref]);
 			const head = git(['rev-parse', '--verify', 'FETCH_HEAD^{commit}']).toString().trim();
 			if (!commit.test(head)) throw new Error('invalid Linux signing ledger head');
-			const current = readBinding(git, head, headPath);
+			const current = readChannelHead(git, head, folder);
 			if (current) {
-				const retained = readBinding(git, head, `${folder}/sequence-${current.sequence}.json`);
-				if (retained?.sequence !== current.sequence || retained?.manifestSha256 !== current.manifestSha256) {
-					throw new Error('corrupt Linux signing ledger head binding');
-				}
 				if (sequence < current.sequence) throw new Error('stale Linux signing sequence');
 				if (sequence === current.sequence) {
 					if (manifestSha256 !== current.manifestSha256) throw new Error('Linux signing sequence already bound to different bytes');
 					return current;
 				}
-			} else if (git(['log', '-1', '--format=%H', head, '--', folder]).length > 0) {
-				throw new Error('corrupt Linux signing ledger is missing its initialized channel head');
 			}
 			if (readBinding(git, head, entryPath)) throw new Error('corrupt Linux signing ledger has a future sequence binding');
 			const payload = Buffer.from(JSON.stringify(requested));
@@ -75,9 +101,9 @@ export async function reserveLinuxSigningSequence({ remote, ref, channel, sequen
 			const next = git(['-c', 'user.name=Insrc Linux Release Signer', '-c', 'user.email=release-signing@insrc.invalid',
 				'commit-tree', tree, '-p', head], `Reserve Linux release sequence ${sequence}\n`).toString().trim();
 			try {
-				// Both writers append to the same parent. The protected ref
-				// admits only a fast-forward update, so one proposal can win.
-				git(['push', '--porcelain', '--', remote, `${next}:${ref}`]);
+				// The proposal has the observed head as its parent. An explicit
+				// lease also refuses to recreate a ref deleted after the fetch.
+				git(['push', '--porcelain', `--force-with-lease=${ref}:${head}`, '--', remote, `${next}:${ref}`]);
 				return requested;
 			} catch (error) {
 				if (retry === 4) throw error;

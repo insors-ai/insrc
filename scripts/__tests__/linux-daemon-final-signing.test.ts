@@ -5,11 +5,12 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 import { encode, linuxQualificationFixture, sha256 } from './fixtures/linux-daemon-release.js';
+import { sign } from 'node:crypto';
 
 const ledgerModule = new URL('../linux-daemon-signing-ledger.mjs', import.meta.url);
 const { reserveLinuxSigningSequence } = await import(ledgerModule.href);
 const { issueLinuxFinalSignature } = await import(new URL('../sign-linux-daemon-candidate.mjs', import.meta.url).href);
-const { linuxReleaseChannel, verifyLinuxReleaseManifest } =
+const { linuxReleaseChannel, linuxManifestSigningBytes, verifyLinuxReleaseManifest } =
 	await import(new URL('../linux-daemon-metadata.mjs', import.meta.url).href);
 
 const ref = 'refs/heads/release-sequences';
@@ -17,6 +18,9 @@ const owner = ['-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.inva
 const channel = linuxReleaseChannel('42', 'development', 'refs/heads/team/v3');
 const otherChannel = linuxReleaseChannel('42', 'development', 'refs/heads/team/v4');
 type Binding = { channel: string; sequence: number; manifestSha256: string };
+const approvalFor = ({ bytes, evidence }: { bytes: Buffer; evidence: Buffer }) => ({
+	expectedManifestSha256: sha256(bytes), expectedEvidenceSha256: sha256(evidence),
+});
 
 function fixtureLedger() {
 	const root = mkdtempSync(join(tmpdir(), 'insrc-sequence-authority-'));
@@ -78,12 +82,35 @@ test('Protected Linux signing ledger serializes independent writers and preserve
 	} finally { cleanup(); }
 });
 
+test('Linux signing ledger refuses a valid older head or deleted latest binding', async () => {
+	const { remote, git, cleanup } = fixtureLedger();
+	try {
+		const reservation = { remote, ref, channel };
+		await reserveLinuxSigningSequence({ ...reservation, sequence: 1, manifestSha256: 'a'.repeat(64) });
+		await reserveLinuxSigningSequence({ ...reservation, sequence: 3, manifestSha256: 'c'.repeat(64) });
+		const folder = `linux-signing/${channel}`;
+		const head = git(['rev-parse', ref]);
+		const older = git(['rev-parse', `${head}:${folder}/sequence-1.json`]);
+		git(['read-tree', head]);
+		git(['update-index', '--cacheinfo', `100644,${older},${folder}/head.json`]);
+		const reverted = git([...owner, 'commit-tree', git(['write-tree']), '-p', head], 'Regressed head fixture\n');
+		git(['update-ref', ref, reverted, head]);
+		const stale = { ...reservation, sequence: 2, manifestSha256: 'b'.repeat(64) };
+		await assert.rejects(reserveLinuxSigningSequence(stale), /highest sequence binding/);
+		git(['update-index', '--index-info'], `0 ${'0'.repeat(40)}\t${folder}/sequence-3.json\n`);
+		const deleted = git([...owner, 'commit-tree', git(['write-tree']), '-p', reverted], 'Deleted binding fixture\n');
+		git(['update-ref', ref, deleted, reverted]);
+		await assert.rejects(reserveLinuxSigningSequence(stale), /immutable sequence binding/);
+		assert.equal(git(['rev-parse', ref]), deleted);
+	} finally { cleanup(); }
+});
+
 test('Linux final signing revalidates qualification, artifact and lane before allocating a signature', async () => {
 	const { remote, git, cleanup } = fixtureLedger();
 	try {
 		const { verifiedCandidate, inputs, release, qualifier, manifest } = linuxQualificationFixture();
 		const policy = { releaseRef: inputs.expected.ref, developmentRefs: ['refs/heads/v3'], releaseRefProtected: true };
-		const final = { verifiedCandidate, qualification: inputs, finalPrivateKey: release.privateKey,
+		const final = { verifiedCandidate, qualification: inputs, approval: approvalFor(inputs), finalPrivateKey: release.privateKey,
 			finalPublicKey: release.publicKey, policy, ledger: { remote, ref } };
 		const before = git(['rev-parse', ref]);
 		await assert.rejects(issueLinuxFinalSignature({ ...final, policy: { ...policy, releaseRefProtected: false } }), /candidate or ref/);
@@ -111,12 +138,31 @@ test('Linux final signing revalidates qualification, artifact and lane before al
 		assert.equal(git(['rev-parse', ref]), committed);
 		const development = linuxQualificationFixture(1, 'development');
 		const dev = await issueLinuxFinalSignature({ ...final, verifiedCandidate: development.verifiedCandidate,
-			qualification: development.inputs, finalPrivateKey: development.release.privateKey,
+			qualification: development.inputs, approval: approvalFor(development.inputs), finalPrivateKey: development.release.privateKey,
 			finalPublicKey: development.release.publicKey });
 		assert.equal(dev.role, 'development');
 		assert.equal(verifyLinuxReleaseManifest(dev.bytes, dev.signature,
 			{ ...development.inputs.expected, role: 'development', publicKey: development.release.publicKey }).channel,
 			development.manifest.channel);
+	} finally { cleanup(); }
+});
+
+test('Linux signing rejects independently qualified substitutions for the same approved archive', async () => {
+	const { remote, git, cleanup } = fixtureLedger();
+	try {
+		const { verifiedCandidate, inputs, release, qualifier, receipt, evidenceFor } = linuxQualificationFixture();
+		const final = { verifiedCandidate, qualification: inputs, approval: approvalFor(inputs), finalPrivateKey: release.privateKey,
+			finalPublicKey: release.publicKey, policy: { releaseRef: inputs.expected.ref, developmentRefs: [], releaseRefProtected: true },
+			ledger: { remote, ref } };
+		const before = git(['rev-parse', ref]);
+		const otherManifest = encode({ ...JSON.parse(inputs.bytes.toString()), sequence: 2 });
+		const qualificationSignature = sign(null, linuxManifestSigningBytes(otherManifest, 'qualification'), qualifier.privateKey);
+		const otherReceipt = evidenceFor({ ...receipt, subject: { ...receipt.subject, manifestSha256: sha256(otherManifest) } });
+		await assert.rejects(issueLinuxFinalSignature({ ...final,
+			qualification: { ...inputs, bytes: otherManifest, qualificationSignature, ...otherReceipt } }), /differs from protected approval/);
+		const otherEvidence = evidenceFor({ ...receipt, host: { ...receipt.host, deviceProfileDigest: '9'.repeat(64) } });
+		await assert.rejects(issueLinuxFinalSignature({ ...final, qualification: { ...inputs, ...otherEvidence } }), /differs from protected approval/);
+		assert.equal(git(['rev-parse', ref]), before);
 	} finally { cleanup(); }
 });
 
@@ -192,7 +238,7 @@ exec "$REAL_GIT" "$@"
 		writeFileSync(join(trustedKeys, 'production.key'), release.privateKey.export({ format: 'pem', type: 'pkcs8' }));
 		const approval = join(root, 'approval.json');
 		writeFileSync(approval, encode({ origin, lane: record.lane, version: record.version,
-			expectedArchiveSha256: record.archiveSha256, requiredTests: inputs.requiredTests }));
+			expectedArchiveSha256: record.archiveSha256, ...approvalFor(inputs), requiredTests: inputs.requiredTests }));
 		const cli = new URL('../sign-linux-daemon-candidate.mjs', import.meta.url).pathname;
 		const run = (output: string, artifactInfo = artifact, interrupt = false) => spawnSync(process.execPath,
 			[cli, approval, qualification, trustedKeys, output], { encoding: 'utf8', env: { ...process.env,

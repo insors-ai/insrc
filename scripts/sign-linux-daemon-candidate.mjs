@@ -12,8 +12,12 @@ import { linuxSigningKeyId, verifyLinuxQualification } from './linux-daemon-qual
 import { reserveLinuxSigningSequence } from './linux-daemon-signing-ledger.mjs';
 import { readBoundedRegular } from './verify-daemon-bundle.mjs';
 
-export async function issueLinuxFinalSignature({ verifiedCandidate, policy, qualification, finalPrivateKey, finalPublicKey, ledger }) {
-	const { manifest, evidenceSha256 } = verifyLinuxQualification(qualification);
+export async function issueLinuxFinalSignature({ verifiedCandidate, policy, qualification, approval, finalPrivateKey, finalPublicKey, ledger }) {
+	const bytes = Buffer.from(qualification.bytes);
+	const { manifest, evidenceSha256 } = verifyLinuxQualification({ ...qualification, bytes });
+	if (manifest.manifestSha256 !== approval.expectedManifestSha256 || evidenceSha256 !== approval.expectedEvidenceSha256) {
+		throw new Error('Linux final signing manifest or qualification evidence differs from protected approval');
+	}
 	const { record, origin } = verifiedCandidate;
 	const role = manifest.lane;
 	const sourceRef = manifest.origin.ref;
@@ -32,7 +36,7 @@ export async function issueLinuxFinalSignature({ verifiedCandidate, policy, qual
 	}
 	await reserveLinuxSigningSequence({ ...ledger, channel: manifest.channel,
 		sequence: manifest.sequence, manifestSha256: manifest.manifestSha256 });
-	return { bytes: qualification.bytes, signature: sign(null, linuxManifestSigningBytes(qualification.bytes, role), key),
+	return { bytes, signature: sign(null, linuxManifestSigningBytes(bytes, role), key),
 		role, manifestSha256: manifest.manifestSha256, evidenceSha256 };
 }
 
@@ -41,7 +45,11 @@ async function main([approvalPath, inputDir, keyDir, output, ...extra]) {
 		throw new Error('usage: sign-linux-daemon-candidate.mjs PROTECTED_APPROVAL QUALIFICATION_INPUT TRUSTED_KEY_DIRECTORY NEW_OUTPUT');
 	}
 	const approval = readLinuxReleaseJson(await readBoundedRegular(approvalPath, LINUX_MANIFEST_LIMIT));
-	requireLinuxFields(approval, ['origin', 'lane', 'version', 'expectedArchiveSha256', 'requiredTests'], 'protected signing approval');
+	requireLinuxFields(approval, ['origin', 'lane', 'version', 'expectedArchiveSha256', 'expectedManifestSha256',
+		'expectedEvidenceSha256', 'requiredTests'], 'protected signing approval');
+	for (const digest of [approval.expectedArchiveSha256, approval.expectedManifestSha256, approval.expectedEvidenceSha256]) {
+		if (typeof digest !== 'string' || !/^[a-f0-9]{64}$/.test(digest)) throw new Error('invalid protected Linux signing approval digest');
+	}
 	const policy = readLinuxBuildPolicy(process.env.LINUX_RELEASE_REF, process.env.LINUX_DEVELOPMENT_REFS);
 	const workspace = await mkdtemp(join(tmpdir(), 'insrc-linux-final-signing-'));
 	let created = false;
@@ -63,7 +71,7 @@ async function main([approvalPath, inputDir, keyDir, output, ...extra]) {
 		};
 		const result = await issueLinuxFinalSignature({
 			verifiedCandidate, policy: { ...policy, releaseRefProtected: approval.lane === 'production' },
-			qualification, finalPrivateKey: await key(`${approval.lane}.key`), finalPublicKey: await key(`${approval.lane}.pub`),
+			qualification, approval, finalPrivateKey: await key(`${approval.lane}.key`), finalPublicKey: await key(`${approval.lane}.pub`),
 			ledger: { remote: process.env.LINUX_SIGNING_LEDGER_REMOTE, ref: process.env.LINUX_SIGNING_LEDGER_REF },
 		});
 		await mkdir(output, { mode: 0o700 });

@@ -25,6 +25,8 @@ import { buildArtifactId } from '../../storage.js';
 import type { ReviewRuntime } from '../../../shared/review-preparation.js';
 import type { ReviewCleanupTarget } from '../cleanup-owner.js';
 import { upgradePreparationHistory } from '../preparation-migration.js';
+import { PreparedViewReader } from '../prepared-views.js';
+import { ReviewMemoryBudget } from '../preparation-memory.js';
 
 export async function runtime(source: ReadyContextReceipt, history: PreparationHistory) {
  const store = new ReviewRuntimeStore(), state: ReviewRuntime = { schemaVersion: 1, key: source.key, attempt: source.attempt,
@@ -54,7 +56,9 @@ export async function publishedCleanupFixture(family: 'code' | 'design', t: Hook
   const f = await fixture(true), key = { project: f.repo, family, reviewId: 'publication' };
   const limits = reviewPreparationLimits(join(f.repo, 'missing.json')), capacity = new ReviewPreparationCapacity(limits.cacheMaxBytes);
   const cold = await CodePreparation.create(key, f.deps.sources, limits, capacity);
-  const admitted = await cold.prepare(f.repo, key.reviewId, 1, undefined, 'daemon', cold.sources, { operation: 'resume', epicHash: hash }), source = await cold.seal(admitted);
+  const admitted = await cold.workerPrepare(f.repo, key.reviewId, 1, undefined, 'daemon', cold.sources, { operation: 'resume', epicHash: hash }), source = await cold.seal(admitted);
+  const reader = await PreparedViewReader.open(source, limits, new ReviewMemoryBudget(limits.memoryMaxBytes), async () => {}, async error => { throw error; });
+  const warm = await CodePreparation.reuse(key, reader, cold.sources, limits, capacity);
   const done: import('../preparation-checkpoint.js').CodePreparationCheckpoint = { ...f.checkpoint(), schemaVersion: 3 as const, runtime: { runtimeId: 'code-runtime', inputDigest: source.inputDigest } };
   let initial = structuredClone(done); const initialAttempt = initial.attempts[0]!; if (!('review-response' in initialAttempt)) throw Error('Qualified fixture required'); initialAttempt['review-response'].tasks = []; delete initialAttempt.header.completedAt;
   if (options.migrated) { initial = migrate(initial, source) as typeof initial; done.migration = initial.migration; }
@@ -62,9 +66,9 @@ export async function publishedCleanupFixture(family: 'code' | 'design', t: Hook
   const validate = codeHistoryFeedback(new Map([[1, admitted.prepared]]), cold.sources, async () => ({ publication: { artifactId: `CR-${hash}-s1`, preservationDigest: codeReviewPreservationDigest(await readTaskReviewHistory(f.repo, hash, 's1')) } }));
   const history = await HistoryBindingSession.open(source, initial, { authorize: async () => source, validate, limits, capacity, invalidateSource: async e => { throw e; } });
   await host.accept(history.latest()); done.attempts[0]!.header.status = 'passed'; await host.accept(await history.accept(done));
-  await publishTaskCheckpoint(f.repo, hash, key.reviewId, { ...f.deps, sources: cold.sources, preparation: { preparePacket: cold.publicationPacket,
+  await publishTaskCheckpoint(f.repo, hash, key.reviewId, { ...f.deps, sources: cold.sources, preparation: { preparePacket: warm.publicationPacket,
    authorize: cp => host.authorize(cp, history.latest()), save: async cp => { await host.accept(await history.accept(cp)); } } });
-  await cold.close();
+  await warm.close(); await cold.close();
   const store = f.deps.through.store!;
   await store.updateAndLog(buildArtifactId(hash, 's1'), actor, head => ({ next: { ...head, lifecycle: nextLifecycle(head, 'approve', actor, new Date().toISOString()) }, options: { operation: 'approve' } }));
   const target: ReviewCleanupTarget = { project: f.repo, family, epicHash: hash, storyId: 's1' };

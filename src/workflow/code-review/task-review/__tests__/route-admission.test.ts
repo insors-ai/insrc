@@ -14,8 +14,10 @@ import { saveCheckpoint } from '../checkpoint.js';
 import { CodePreparation } from '../../../review/code-preparation.js';
 import { reviewPreparationLimits } from '../../../../config/review.js';
 import { ReviewPreparationCapacity } from '../../../review/source-session.js';
-import { PreparedContextReader } from '../../../review/prepared-context.js';
+import { PreparedViewReader } from '../../../review/prepared-views.js';
+import { ReviewMemoryBudget } from '../../../review/preparation-memory.js';
 import { prepareReviewPacket } from '../packet.js';
+import { persistReviewWorkerAdmission } from '../../../../daemon/threads/review-worker-admission.js';
 
 registerGitTools();
 import { routeFixture as fixture, artifact, ISSUE_ONLY, LLD_ONLY, PLAN_STORY, NO_BUILD, BUILD_ONLY, DEF_STORY } from './helpers/route-fixture.js';
@@ -78,30 +80,25 @@ test('shared preparation retains route-qualified views for pinned recovery witho
   const key = { project: f.repo, family: 'code' as const, reviewId: 'shared-recovery' };
   const preparation = await CodePreparation.create(key, f.sources, limits, capacity);
   const packet = f.packetWith({ issue: f.at(`ISSUE-${ISSUE_ONLY}`) });
-  const admitted = await preparation.prepare(f.repo, key.reviewId, 1, packet, 'daemon', f.sources, { epicHash: ISSUE_ONLY });
+  await persistReviewWorkerAdmission({ key, incarnation: 'route-fixture', attempt: 1, actionId: 'shared-recovery', reviewer: 'daemon', submitted: packet, epicHash: ISSUE_ONLY });
+  const admitted = await preparation.workerPrepare(f.repo, key.reviewId, 1, packet, 'daemon', f.sources, { epicHash: ISSUE_ONLY });
   await saveCheckpoint(admitted.path, admitted.checkpoint);
   const expected = await prepareReviewPacket(admitted.attempt.submitted, preparation.sources, true, undefined, admitted.attempt.header.derived);
   const receipt = await preparation.seal(admitted);
   await preparation.close();
   rmSync(join(f.repo, artifact(`ISSUE-${ISSUE_ONLY}`)));
-  const reader = await PreparedContextReader.open(receipt, limits, async () => {}, async error => { throw error; });
+  const reader = await PreparedViewReader.open(receipt, limits, new ReviewMemoryBudget(limits.memoryMaxBytes), async () => {}, async error => { throw error; });
   let nativeCalls = 0;
   const sources: typeof f.sources = new Proxy(f.sources, { get() { return async () => { nativeCalls++; throw new Error('Native access forbidden on warm recovery'); }; } });
-  const cachedSources = {
-   commit: (oid: string) => reader.query('commit', [oid]),
-   file: (oid: string, path: string) => reader.query('file', [oid, path]),
-   isAncestor: (a: string, b: string) => reader.query('isAncestor', [a, b]),
-   changedRanges: (oid: string, parent: string | null, paths: readonly string[]) => reader.query('changedRanges', [oid, parent, paths]),
-   pathChanges: (a: string, b: string, path: string) => reader.query('pathChanges', [a, b, path]),
-  } as import('../sources.js').ReviewSources;
-  const recovered = await CodePreparation.reuse(key, reader, cachedSources, limits, capacity);
-  const resumed = await recovered.prepare(f.repo, key.reviewId, 1, undefined, 'daemon', sources, { operation: 'resume', epicHash: ISSUE_ONLY });
-  assert.deepEqual(resumed.prepared, structuredClone(expected));
-  const workerResumed = await recovered.workerPrepare(f.repo, key.reviewId, 1, undefined, 'daemon', sources, { operation: 'resume', epicHash: ISSUE_ONLY });
-  assert.deepEqual(workerResumed.prepared, resumed.prepared);
+  const recovered = await CodePreparation.reuse(key, reader, sources, limits, capacity);
+  const resumed = await recovered.workerPrepare(f.repo, key.reviewId, 1, undefined, 'daemon', sources, { operation: 'resume', epicHash: ISSUE_ONLY });
+  assert.deepEqual(resumed.prepared.tasks, expected.tasks);
+  assert.deepEqual(resumed.prepared.packet, expected.packet);
+  const locator = (entry: NonNullable<typeof expected.projection>['entries'][number]) => ({ commit: entry.commit, parent: entry.parent, path: entry.path, segments: entry.segments });
+  assert.deepEqual(resumed.prepared.projection?.entries.map(locator), expected.projection?.entries.map(locator));
   assert.equal(nativeCalls, 0);
   const changed = structuredClone(packet); changed.functionalSummary = 'changed pinned input';
-  await assert.rejects(recovered.prepare(f.repo, key.reviewId, 1, changed, 'daemon', sources, { operation: 'resume', epicHash: ISSUE_ONLY }), /pinned/);
+  await assert.rejects(recovered.workerPrepare(f.repo, key.reviewId, 1, changed, 'daemon', sources, { operation: 'resume', epicHash: ISSUE_ONLY }), /pinned/);
   await recovered.close();
  } finally { f.cleanup(); }
 });

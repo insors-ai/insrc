@@ -3,10 +3,8 @@ import type { ReviewAdmissionPreparer } from '../code-review/task-review/admissi
 import { isDeepStrictEqual as same } from 'node:util';
 import type { ReviewPreparationLimits } from '../../config/review.js';
 import type { ReviewKey } from '../../shared/review-resources.js';
-import { prepareReviewAdmission } from '../code-review/task-review/admission.js';
 import type { ReviewAdmissionContext } from '../code-review/task-review/admission.js';
 import { prepareWorkerCodeAdmission } from '../code-review/task-review/worker-checkpoint.js';
-import { prepareReviewPacket } from '../code-review/task-review/packet.js';
 import type { PreparedReviewPacket, PacketPreparer } from '../code-review/task-review/packet.js';
 import type { AdmittedReview } from '../code-review/task-review/execution.js';
 import type { ReviewSources, BatchReviewSources } from '../code-review/task-review/sources.js';
@@ -14,7 +12,7 @@ import { ReviewSourceSession } from './source-session.js';
 import type { SourceCapacity } from './source-session.js';
 import { preparationDigest } from './prepared-context.js';
 import type { ReadyContextReceipt, PreparedSourceIdentity } from './prepared-context.js';
-import { materializePreparedValue, PreparedViewReader, PreparedViewWriter } from './prepared-views.js';
+import { PreparedViewReader, PreparedViewWriter } from './prepared-views.js';
 import { ReviewMemoryBudget } from './preparation-memory.js';
 import { StagedPacketSources } from './staged-packet-sources.js';
 import type { StagedPacketBlob } from './staged-packet-sources.js';
@@ -30,14 +28,12 @@ import type { TaskAssignment } from '../code-review/task-review/packet.js';
  * remain in the existing admission/packet implementations. This object only
  * owns bounded source reuse and the immutable prepared views they produce. */
 export class CodePreparation {
- private readonly staged = new Set<string>();
  private readonly packetIds = new WeakMap<object, string>();
  private writer: PreparedViewWriter | undefined;
  private tail: Promise<void> = Promise.resolve();
  private failed = false;
  private sealed = false;
  private identity: PreparedSourceIdentity | undefined;
- private mode: 'eager' | 'source-light' | undefined;
  private stagedSources: StagedPacketSources | undefined;
  private construction: StagedPacketConstruction | undefined;
  private execution: StagedTaskExecution | undefined;
@@ -59,22 +55,6 @@ export class CodePreparation {
   if (key.family !== 'code' || !same(key, reader.receipt.key)) throw new Error('Code preparation context identity mismatch');
   return new CodePreparation(sources, key, undefined, reader, limits, capacity, undefined);
  }
- private readonly packet: PacketPreparer = async (input, sources, historical = false, route, stored) => {
-  if (this.failed) throw new Error('Code preparation owner fenced');
-  const id = preparationDigest([input, historical, route, stored]);
-  if (this.reader) {
-   const descriptor = await this.reader.descriptor(`packet-${id}`, 'packet');
-   const window = await this.reader.metadata(descriptor);
-   try {
-    const prepared = await materializePreparedValue(this.reader, window.value) as PreparedReviewPacket;
-    if (!prepared || typeof prepared !== 'object') throw new Error('Invalid qualified packet');
-    return structuredClone(prepared);
-   } finally { window.release(); }
-  }
-  const prepared = await prepareReviewPacket(input, this.sources, historical, route, stored);
-  this.packetIds.set(prepared, id);
-  return prepared;
- };
  private readonly sourceLightPacket: PacketPreparer<StagedPacketBlob> = async (input, sources, historical = false, route, stored) => {
   const id = canonicalTaskDigest(['staged-packet-v2', input, historical, route, stored]);
   if (this.reader) {
@@ -88,9 +68,8 @@ export class CodePreparation {
   const prepared = await this.construction.preparePacket(input, this.stagedSources, historical, route, stored);
   this.packetIds.set(prepared, id); return prepared;
  };
- private async begin(attempt: number, input: unknown, mode: 'eager' | 'source-light'): Promise<void> {
-  if (this.reader) { this.mode ??= mode; if (this.mode !== mode) throw new Error('Preparation mode changed'); return; }
-  if (this.writer) { if (this.mode !== mode) throw new Error('Preparation mode changed'); return; }
+ private async begin(attempt: number, input: unknown): Promise<void> {
+  if (this.reader || this.writer) return;
   if (!this.session) throw new Error('Code preparation construction source missing');
   const submitted = input && typeof input === 'object' ? input as Record<string, unknown> : {};
   const inputDigest = preparationDigest(input ?? null);
@@ -101,33 +80,14 @@ export class CodePreparation {
    testDocumentDigest: preparationDigest([submitted['tests'], submitted['documents']]) };
   this.writer = await PreparedViewWriter.create(identity, this.limits, this.capacity, this.session.workingMemory, this.session);
   this.identity = identity;
-  this.mode = mode;
-  if (mode === 'source-light') {
-   this.stagedSources = new StagedPacketSources(this.session, this.writer);
-   this.construction = new StagedPacketConstruction(this.stagedSources, this.writer);
-  }
+  this.stagedSources = new StagedPacketSources(this.session, this.writer);
+  this.construction = new StagedPacketConstruction(this.stagedSources, this.writer);
  }
- private async stage(prepared: PreparedReviewPacket): Promise<void> {
-  const id = this.packetIds.get(prepared);
-  if (!id || !this.writer) throw new Error('Foreign prepared packet');
-  if (this.staged.has(id)) return;
-  await this.writer.add(`packet-${id}`, 'packet', prepared);
-  this.staged.add(id);
- }
- /** Same signature used by both task/story coordinators and worker recovery. */
- readonly prepare: ReviewAdmissionPreparer = (project, id, attempt, input, reviewer, _sources, context = {}) => {
-  const work = this.tail.then(async () => {
-   if (this.failed || this.sealed || project !== this.key.project || id !== this.key.reviewId || this.reader && attempt !== this.reader.receipt.attempt) throw new Error('Code preparation unavailable or foreign');
-   try { await this.begin(attempt, input, 'eager'); return await prepareReviewAdmission(project, id, attempt, input, reviewer, this.sources, this.context(context)); }
-   catch (error) { this.failed = true; throw error; }
-  });
-  this.tail = work.then(() => {}, () => {}); return work;
- };
- /** Dedicated worker execution and explicit recovery use the same packet adapter. */
+ /** Dedicated worker execution and explicit recovery use the sole source-light packet adapter. */
  readonly workerPrepare: ReviewAdmissionPreparer = async (project, id, attempt, input, reviewer, _sources, context = {}) => {
   if (this.failed || this.sealed || project !== this.key.project || id !== this.key.reviewId || this.reader && attempt !== this.reader.receipt.attempt) throw new Error('Code preparation unavailable or foreign');
   try {
-   await this.begin(attempt, input, 'source-light');
+   await this.begin(attempt, input);
    const staged = this.stagedSources;
    if (!staged && !this.reader) throw new Error('Source-light worker source missing');
    const packetSources = (staged ?? this.sources) as ReviewSources<StagedPacketBlob>;
@@ -135,9 +95,6 @@ export class CodePreparation {
   }
   catch (error) { this.failed = true; throw error; }
  };
- /** Used by the durable-admission adapter without a second preparation path. */
- context(context: ReviewAdmissionContext = {}): ReviewAdmissionContext { return { ...context, preparePacket: this.packet,
-  afterHistoricalPacket: async (prepared, entry, retained) => { await context.afterHistoricalPacket?.(prepared, entry, retained); if (!retained) await this.stage(prepared); } }; }
  private sourceLightContext(context: ReviewAdmissionContext = {}): ReviewAdmissionContext<StagedPacketBlob> {
   if (this.construction) {
    const bound = this.construction.context(context as unknown as ReviewAdmissionContext<StagedPacketBlob>);
@@ -146,47 +103,37 @@ export class CodePreparation {
   if (this.reader) return { ...(context as unknown as ReviewAdmissionContext<StagedPacketBlob>), preparePacket: this.sourceLightPacket };
   throw new Error('Source-light construction missing');
  }
- /** Publication reads the same qualified historical views as recovery. */
+ /** Publication reads only source-light qualified history. A historical eager
+  * generation is an untrusted migration input and must be cold-requalified by
+  * the host; it is never an execution fallback. */
  readonly publicationPacket: PacketPreparer = async (...args) => {
-  if (!this.reader || !await this.reader.hasDescriptor('execution-packet', 'packet')) return this.packet(...args);
+  if (!this.reader || !await this.reader.hasDescriptor('execution-packet', 'packet')) throw new Error('Source-light publication context required; cold requalification is required');
   return this.sourceLightPacket(...(args as unknown as Parameters<typeof this.sourceLightPacket>)) as unknown as Awaited<ReturnType<PacketPreparer>>;
  };
  async seal(review: AdmittedReview): Promise<ReadyContextReceipt> {
   await this.tail;
   if (this.failed || this.sealed || !this.session || !this.writer || review.checkpoint.project !== this.key.project || review.checkpoint.reviewId !== this.key.reviewId
    || !this.packetIds.has(review.prepared)) throw new Error('Cannot seal unqualified code preparation');
-  if (this.mode === 'source-light') {
-   if (!this.construction || !this.stagedSources || !this.batch || !this.identity) throw new Error('Incomplete source-light construction');
-   const prepared = review.prepared as unknown as PreparedReviewPacket<StagedPacketBlob>;
-   const binding = { key: this.key, attempt: this.identity.attempt, generationId: this.writer.generationId(), inputDigest: this.identity.inputDigest, sourceIdentity: this.identity.sourceIdentity };
-   // Give execution a stable, reader-issued packet root. The construction
-   // object contains writer-issued leaf references and must never cross the
-   // qualification boundary into prompt assembly.
-   await this.writer.add('execution-packet', 'packet', { prepared });
-   const locators = await selectedChangeLocators(prepared, binding, this.batch, reviewJsonLimit());
-   await this.writer.add('source-locators', 'view', locators);
-   const workspace = await materializeBaselineWorkspace(locators, binding, this.batch, reviewJsonLimit(), undefined, this.writer.directory);
-   await this.writer.add('baseline-workspace', 'view', workspace);
-   await this.construction.release(prepared);
-   // Feedback and publication deliberately re-enter historical validation.
-   // Persist those exact packet identities as source-light metadata roots;
-   // otherwise the qualified reader would be forced to rebuild source scope.
-   for (const entry of review.checkpoint.attempts) {
-    const historical = await this.sourceLightPacket(entry.submitted, this.stagedSources, true, undefined, entry.header.derived);
-    await this.construction.release(historical);
-   }
-   this.construction.close(); this.construction = undefined; this.stagedSources = undefined;
-   this.sealed = true;
-   return this.writer.seal();
-  }
-  // Feedback/publication deliberately re-enters the historical validator
-  // signature. Stage that exact derived identity one attempt at a time; do
-  // not retain the reconstructed packets as a second history inventory.
+  if (!this.construction || !this.stagedSources || !this.batch || !this.identity) throw new Error('Incomplete source-light construction');
+  const prepared = review.prepared as unknown as PreparedReviewPacket<StagedPacketBlob>;
+  const binding = { key: this.key, attempt: this.identity.attempt, generationId: this.writer.generationId(), inputDigest: this.identity.inputDigest, sourceIdentity: this.identity.sourceIdentity };
+  // Give execution a stable, reader-issued packet root. The construction
+  // object contains writer-issued leaf references and must never cross the
+  // qualification boundary into prompt assembly.
+  await this.writer.add('execution-packet', 'packet', { prepared });
+  const locators = await selectedChangeLocators(prepared, binding, this.batch, reviewJsonLimit());
+  await this.writer.add('source-locators', 'view', locators);
+  const workspace = await materializeBaselineWorkspace(locators, binding, this.batch, reviewJsonLimit(), undefined, this.writer.directory);
+  await this.writer.add('baseline-workspace', 'view', workspace);
+  await this.construction.release(prepared);
+  // Feedback and publication deliberately re-enter historical validation.
+  // Persist those exact packet identities as source-light metadata roots;
+  // otherwise the qualified reader would be forced to rebuild source scope.
   for (const entry of review.checkpoint.attempts) {
-   const historical = await this.packet(entry.submitted, this.sources, true, undefined, entry.header.derived);
-   await this.stage(historical);
+   const historical = await this.sourceLightPacket(entry.submitted, this.stagedSources, true, undefined, entry.header.derived);
+   await this.construction.release(historical);
   }
-  await this.stage(review.prepared);
+  this.construction.close(); this.construction = undefined; this.stagedSources = undefined;
   this.sealed = true;
   return this.writer.seal();
  }

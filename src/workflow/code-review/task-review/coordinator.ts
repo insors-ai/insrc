@@ -36,9 +36,9 @@ export interface TaskReviewDeps {
  readonly save?: typeof saveCheckpoint;
  readonly read?: typeof loadCheckpoint;
  readonly prepare?:ReviewAdmissionPreparer|undefined;
- /** Production preparation can assemble selected after-blocks from its
-  * qualified private generation. Tests and legacy readers may omit this and
-  * use the in-memory packet adapter until the source-light cutover completes. */
+ /** Production preparation assembles selected after-blocks from its qualified
+  * private generation. Narrow coordinator unit tests may omit this hook; no
+  * production route may substitute eager source ownership. */
  readonly taskPrompt?: ((review: AdmittedReview, assignment: TaskAssignment, references: readonly string[]) => Promise<string>) | undefined;
  readonly publish?: ((project: string, reviewId: string, epicHash: string, baseline?: import('./capacity.js').CapacityBaseline) => Promise<unknown>) | undefined;
  readonly now?: () => number;

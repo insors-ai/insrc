@@ -2,7 +2,6 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { join } from 'node:path';
 import { fixture, hash } from '../../code-review/task-review/__tests__/publication-fixture.js';
-import { TaskReviewCoordinator } from '../../code-review/task-review/coordinator.js';
 import { CodeReviewWorker } from '../../code-review/task-review/worker-admission.js';
 import { persistReviewWorkerAdmission } from '../../../daemon/threads/review-worker-admission.js';
 import type { ReviewBootstrapInput } from '../../../daemon/threads/review-worker-contract.js';
@@ -15,9 +14,12 @@ import { preparationDigest } from '../prepared-context.js';
 import { PreparedViewReader } from '../prepared-views.js';
 import { ReviewMemoryBudget } from '../preparation-memory.js';
 
-for (const full of [false, true]) test(`shared preparation executes ${full ? 'story' : 'task'} through coordinator and fresh durable worker admission`, async t => {
- for (const workerMode of [false, true]) await t.test(workerMode ? 'worker' : 'coordinator', async () => {
-  const f = await fixture(full, full ? 2 : 1), id = workerMode ? 'shared-worker' : 'shared-coordinator';
+<<<<<<< Updated upstream
+for (const full of [false, true]) test(`source-light preparation executes ${full ? 'story' : 'task'} through fresh durable worker admission`, async () => {
+=======
+for (const full of [false, true]) test(`source-light preparation executes ${full ? 'story' : 'task'} through fresh durable worker admission`, async t => {
+>>>>>>> Stashed changes
+  const f = await fixture(full, full ? 2 : 1), id = 'shared-worker';
   const key = { project: f.repo, family: 'code' as const, reviewId: id };
   const limits = reviewPreparationLimits(join(f.repo, 'missing-config.json'));
   const preparation = await CodePreparation.create(key, f.deps.sources, limits, new ReviewPreparationCapacity(limits.cacheMaxBytes));
@@ -34,30 +36,23 @@ for (const full of [false, true]) test(`shared preparation executes ${full ? 'st
    assert.match(prompt, /Behavior/); assert.match(prompt, /not_run/); assert.match(prompt, /Schema\/queue fixture, not a model review/);
    return { ...structuredClone(f.result), taskId };
   } } as unknown as LLMProvider;
-  const prepare: typeof preparation.prepare = async (...args) => {
+  const prepare: typeof preparation.workerPrepare = async (...args) => {
    prepareCalls++;
-   prepared = await (workerMode ? preparation.workerPrepare : preparation.prepare)(...args);
-   if (workerMode) {
-    sealed = await preparation.seal(prepared);
-    const reader = await PreparedViewReader.open(sealed, limits, new ReviewMemoryBudget(limits.memoryMaxBytes), async () => {}, async error => { throw error; });
-    execution = await CodePreparation.reuse(key, reader, preparation.sources, limits, new ReviewPreparationCapacity(limits.cacheMaxBytes));
-   }
+   prepared = await preparation.workerPrepare(...args);
+   sealed = await preparation.seal(prepared);
+   const reader = await PreparedViewReader.open(sealed, limits, new ReviewMemoryBudget(limits.memoryMaxBytes), async () => {}, async error => { throw error; });
+   execution = await CodePreparation.reuse(key, reader, preparation.sources, limits, new ReviewPreparationCapacity(limits.cacheMaxBytes));
    return prepared;
   };
   try {
-   if (workerMode) {
-    const input: ReviewBootstrapInput = { key, incarnation: 'fixture-worker', attempt: 1, actionId: id, reviewer: 'daemon', submitted: f.packet, epicHash: hash, operation: 'start' };
-    await persistReviewWorkerAdmission(input);
-    const worker = new CodeReviewWorker(input, { sources: preparation.sources, provider: () => provider, prepare,
-     taskPrompt: (...args) => {
-      if (!execution) throw new Error('Source-light execution handoff missing');
-      return execution.taskPrompt(...args);
-     } }, hash);
-    worker.execute(); await worker.settled();
-   } else {
-    const coordinator = new TaskReviewCoordinator({ sources: preparation.sources, provider: () => provider, prepare });
-    await coordinator.start(f.repo, id, 1, f.packet, { epicHash: hash }); await coordinator.settled(f.repo, id);
-   }
+   const input: ReviewBootstrapInput = { key, incarnation: 'fixture-worker', attempt: 1, actionId: id, reviewer: 'daemon', submitted: f.packet, epicHash: hash, operation: 'start' };
+   await persistReviewWorkerAdmission(input);
+   const worker = new CodeReviewWorker(input, { sources: preparation.sources, provider: () => provider, prepare,
+    taskPrompt: (...args) => {
+     if (!execution) throw new Error('Source-light execution handoff missing');
+     return execution.taskPrompt(...args);
+    } }, hash);
+   worker.execute(); await worker.settled();
    assert.equal(prepareCalls, 1); assert.ok(prepared);
    const done = f.read(prepared.path), attempt = done.attempts.at(-1)!;
    assert.equal(attempt.header.status, 'passed', JSON.stringify(attempt));
@@ -71,5 +66,18 @@ for (const full of [false, true]) test(`shared preparation executes ${full ? 'st
    assert.equal(preparation.qualificationIdentity().key.reviewId, receipt.key.reviewId);
    assert.equal(receipt.attempt, 1); assert.equal(receipt.key.reviewId, id);
   } finally { await execution?.close(); await preparation.close(); f.cleanup(); }
- });
+<<<<<<< Updated upstream
+});
+
+test('code preparation exposes no eager admission or publication fallback', async () => {
+ const f = await fixture(false, 1), key = { project: f.repo, family: 'code' as const, reviewId: 'no-eager-fallback' };
+ const limits = reviewPreparationLimits(join(f.repo, 'missing-config.json'));
+ const preparation = await CodePreparation.create(key, f.deps.sources, limits, new ReviewPreparationCapacity(limits.cacheMaxBytes));
+ try {
+  assert.equal('prepare' in preparation, false);
+  assert.equal('context' in preparation, false);
+  await assert.rejects(preparation.publicationPacket(f.packet, preparation.sources), /cold requalification is required/);
+ } finally { await preparation.close(); f.cleanup(); }
+=======
+>>>>>>> Stashed changes
 });

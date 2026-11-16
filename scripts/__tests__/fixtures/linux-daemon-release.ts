@@ -7,20 +7,19 @@ const { verifyLinuxReleaseManifest } = await import(new URL('../../linux-daemon-
 export const sha256 = (bytes: Buffer) => createHash('sha256').update(bytes).digest('hex');
 export const encode = (value: object) => Buffer.from(JSON.stringify(value));
 
-export function linuxQualificationFixture(sequence = 1) {
+export function linuxQualificationFixture(sequence = 1, lane: 'production' | 'development' = 'production') {
 	const qualifier = generateKeyPairSync('ed25519');
 	const operator = generateKeyPairSync('ed25519');
 	const release = generateKeyPairSync('ed25519');
-	const origin = { repository: '123', ref: 'refs/heads/main', commit: 'a'.repeat(40), runId: '100',
+	const origin = { repository: '123', ref: lane === 'production' ? 'refs/heads/main' : 'refs/heads/v3', commit: 'a'.repeat(40), runId: '100',
 		runAttempt: 2, artifactId: '110' };
-	const lane = 'production';
-	const version = '0.2.1-pilot.1';
+	const version = lane === 'production' ? '0.2.1-pilot.1' : '0.2.1-dev.1';
 	const host = { distribution: 'ubuntu', version: '24.04', architecture: 'amd64', glibc: '2.39',
 		nodeVersion: '22.22.1', systemLibraries: ['libc.so.6'], pidfdRequired: true };
 	const archive = Buffer.from('release archive fixture');
 	const { artifactId: _, ...buildOrigin } = origin;
 	const record = { schemaVersion: 1, target: 'linux-x64', ...buildOrigin, lane, version,
-		archiveName: 'insrc-daemon-0.2.1-pilot.1-linux-x64.tar.gz', archiveBytes: archive.length,
+		archiveName: `insrc-daemon-${version}-linux-x64.tar.gz`, archiveBytes: archive.length,
 		archiveSha256: sha256(archive), runtimeFingerprint: 'b'.repeat(64), host };
 	const compatibility = { graphSchema: 1, formats: { lance: 'v1', repoAndIndexQueue: 'v1', config: 'v1', workflowAndSession: 'v1' } };
 	const predecessor = { commit: 'c'.repeat(40), manifestSha256: null, runtimeFingerprint: 'd'.repeat(64) };

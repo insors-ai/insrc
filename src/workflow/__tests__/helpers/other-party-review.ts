@@ -22,7 +22,7 @@ const historicalFingerprint = (..._args: unknown[]): string => 'historical-fixtu
 import { readFileSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 
-import { authorPartyOf, otherParty } from '../../review-history/review/party.js';
+import { authorPartyOf } from '../../review-history/review/party.js';
 import type { Party } from '../../review-history/review/party.js';
 import type { ReviewReport } from '../../review-history/review/types.js';
 import { codeReviewArtifactId } from '../../storage.js';
@@ -49,7 +49,7 @@ export interface StampedReview {
 export function stampOtherPartyReview(jsonPath: string): StampedReview {
 	const artifact = JSON.parse(readFileSync(jsonPath, 'utf8')) as { meta: Record<string, unknown>; body?: { changeLog?: { target: { file: string } }[] | undefined } | undefined };
 	const author = authorPartyOf(artifact.meta);
-	const reviewedBy: Party = author === 'unknown' ? 'daemon' : otherParty(author);
+	const reviewedBy: Party = author === 'unknown' ? 'daemon' : author === 'daemon' ? 'controller' : 'daemon';
 	const at = '2026-10-05T00:00:00.000Z';
 
 	if (basename(jsonPath).startsWith('BUILD-')) {

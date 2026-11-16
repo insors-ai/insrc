@@ -143,8 +143,8 @@ export const STANDALONE_MAPPING_RULE =
  *  main in the same window are not judged as this Story's. */
 export function storyTrailerRule(epicHash: string, storyId: string): string {
 	return 'End every commit message of this Story with a blank line and then the git trailer ' +
-		`\`Insrc-Story: ${epicHash}/${storyId}\`, exactly as written. The code review keeps only the ` +
-		'commits that carry it; a commit without it is not reviewed as this Story\'s.';
+		`\`Insrc-Story: ${epicHash}/${storyId}\`, exactly as written. Story accounting keeps only the ` +
+		'commits that carry it; a commit without it is not attributed to this Story.';
 }
 
 /** How upstream changes enter a Story during its build (ISSUE-f9ced66a). A

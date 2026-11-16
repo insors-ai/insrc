@@ -194,6 +194,10 @@ async function verifiedEsbuildChild(pid: number, parent: DarwinIncarnation, root
 	const names = ['node_modules/esbuild/bin/esbuild',
 		...['arm64', 'x64'].map(arch => `node_modules/@esbuild/darwin-${arch}/bin/esbuild`)];
 	const relativeBinary = (path: string) => names.find(name => roots.some(root => path === join(root, name)));
+	const inspect = (root: string, name: string) => lstat(join(root, name), { bigint: true }).catch(error => {
+		if ((error as NodeJS.ErrnoException).code === 'ENOENT') return undefined;
+		throw error;
+	});
 	const child = await readDarwinIncarnation(pid, helper);
 	const executable = relativeBinary(child.executable);
 	if (child.uid !== parent.uid || executable === undefined) return undefined;
@@ -203,24 +207,23 @@ async function verifiedEsbuildChild(pid: number, parent: DarwinIncarnation, root
 		|| !/^--service=\d+\.\d+\.\d+$/.test(argv[1]!) || argv[2] !== '--ping') return undefined;
 	// npm may hard-link the platform executable under the esbuild package. macOS
 	// can report either name after both launch and archive exchange.
-	let sameBinary = false;
+	let binary: { root: string; dev: bigint; ino: bigint } | undefined;
 	for (const root of roots) {
-		const inspect = (name: string) => lstat(join(root, name), { bigint: true }).catch(error => {
-			if ((error as NodeJS.ErrnoException).code === 'ENOENT') return undefined;
-			throw error;
-		});
-		const [actual, requested] = await Promise.all([inspect(executable), inspect(invoked)]);
+		const [actual, requested] = await Promise.all([inspect(root, executable), inspect(root, invoked)]);
 		if (actual?.isFile() && requested?.isFile() && actual.dev === requested.dev && actual.ino === requested.ino) {
-			sameBinary = true;
+			binary = { root, dev: actual.dev, ino: actual.ino };
 			break;
 		}
 	}
-	if (!sameBinary) return undefined;
+	if (binary === undefined) return undefined;
 	const { stdout } = await exec('/bin/ps', ['-p', String(pid), '-o', 'ppid='], { timeout: 2_000 });
 	if (stdout.trim() !== String(parent.pid)
-		|| !matchesDarwinPeer(parent, await readDarwinIncarnation(parent.pid, helper), parent)
-		|| !matchesDarwinPeer(child, await readDarwinIncarnation(pid, helper), child)) return undefined;
-	return child;
+		|| !matchesDarwinPeer(parent, await readDarwinIncarnation(parent.pid, helper), parent)) return undefined;
+	const current = await readDarwinIncarnation(pid, helper);
+	const currentName = relativeBinary(current.executable);
+	if (current.uid !== child.uid || current.startedAt !== child.startedAt || currentName === undefined) return undefined;
+	const currentFile = await inspect(binary.root, currentName);
+	return currentFile?.isFile() && currentFile.dev === binary.dev && currentFile.ino === binary.ino ? current : undefined;
 }
 
 async function requireNoLegacyMutator(

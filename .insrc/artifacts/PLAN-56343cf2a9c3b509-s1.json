@@ -1,0 +1,337 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1794823003733-d6e18l",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-16T09:58:23.747Z",
+    "epicCreatedAt": "2026-11-16T08:53:15.795Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 99689,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "56343cf2a9c3b509",
+    "epicSlug": "ship-signed-linux-x86-64-daemon",
+    "storyId": "s1",
+    "lldRunId": "wf-1794821285058-zmmrtl",
+    "lldEffectiveHash": "0bb14a0963d8466e973891dc87dcedf42b0ecce658182d4ef04078b1f645135c",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "74f8cc482be8d9e544549f646069c255d5dc099b4f6b2a33dd6159e52fc07ea9",
+        "at": "2026-11-16T09:58:23.841Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-16T10:05:44.613Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "c663da74ee19582e806e306a97a854d696368543"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Build and verify a signed Linux x86-64 daemon candidate from an exact source revision. Keep build credentials separate from signing, and require independent qualification evidence before final signing. Run task-specific tests locally as each task lands, then run the story sweep."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "order": 1,
+        "title": "Define and verify Linux release metadata",
+        "summary": "Add a Linux-only strict v1 manifest, normalized candidate identity, host requirements, canonical repo/ref channel scope, and detached Ed25519 role grants. Expose the verified subject with the digest of exact original bytes. Keep Darwin callers on their current formats.",
+        "size": "M",
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Reject malformed UTF-8, duplicate or unknown fields, unsafe sequence/IDs, wrong target/scope/role/key, and mismatched final lane.",
+          "Verify qualification and final grants over identical raw bytes with independent role keys."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Linux manifest schema and digest boundaries"
+          },
+          {
+            "level": "unit",
+            "name": "Role-separated Ed25519 grants and configured channel scope"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "order": 2,
+        "title": "Package the Ubuntu amd64 runtime",
+        "summary": "Package the approved Node version verified against pinned upstream bytes, daemon/CLI/MCP entrypoints, Linux process broker, watchdog, dependencies and workspace runtime assets. Use safe shared staging, canonical USTAR-compatible archive output and target-specific inventory.",
+        "size": "M",
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Verify source commit and build host; reject missing inputs, unsafe links, unsupported ELF or ABI, and unlisted dependencies.",
+          "Relocate the archive with the shared verifier and load required native modules using the bundled Node on the documented baseline."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Linux staging inventory, path safety and ELF dependency fixture checks"
+          },
+          {
+            "level": "smoke",
+            "name": "Local Ubuntu 24.04 amd64 package, relocate, verify fingerprint, load native modules and exercise required entry points"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "order": 3,
+        "title": "Add the isolated Linux candidate workflow",
+        "summary": "Add a dispatchable Ubuntu 24.04 amd64 candidate workflow with read-only permissions, pinned actions, exact requested full SHA, pinned runtime and target-qualified output coordinates. Record exact run/attempt/artifact identity.",
+        "size": "S",
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "Allow a configured full development ref without a branch-name code change. Keep production on the protected configured release ref.",
+          "Build and upload exact outputs. The job has no signing credentials, write token, or hosted test step."
+        ],
+        "derivedFrom": [
+          "c3",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Linux workflow shape, credential isolation, exact revision and configured ref tests"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "order": 4,
+        "title": "Verify protected candidate origin and archive retrieval",
+        "summary": "Implement protected fetch validation against trusted repository IDs, workflow, event, run/attempt, ref, SHA, target, artifact and expiry before reading only bounded allowed output entries. Reject duplicate and foreign assets.",
+        "size": "M",
+        "dependsOn": [
+          "t1",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "Same-version Darwin and Linux outputs remain independently addressable. Rerun, workflow, fork, ID, target and transport/inner digest mismatches fail closed.",
+          "Validate inputs and extract only named bounded members, with directory and archive safety retained.",
+          "Verify authenticated artifact transport SHA-256 or an independently recorded protected expected inner SHA-256. Candidate metadata never supplies its own trust anchor."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "GitHub origin and validated download fixtures for Linux, Darwin, rerun, substituted origin, duplicate ZIP members and digest tampering"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "order": 5,
+        "title": "Issue qualification grants and verify detached evidence",
+        "summary": "Add issuer-side qualification manifest preparation and validation of independently signed local evidence against trusted required test IDs, target, ABI, exact archive origin and applicable predecessor fingerprints. Keep qualification side effects isolated.",
+        "size": "M",
+        "dependsOn": [
+          "t1",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "Verify receipt and qualification grant using independent pinned trust. Reject missing, duplicate, failed or foreign-case evidence.",
+          "Bind predecessor evidence outside the manifest to avoid a digest cycle. Fixture keys cover qualification and absence of production privileges."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Fixture qualification grant and signed local evidence for exact artifact, host, required tests and predecessor"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "order": 6,
+        "title": "Guard final channel signing and sequence allocation",
+        "summary": "Build protected final signer orchestration from exact-candidate verification and evidence checks. Serialize durable sequence allocation per repository, target, final lane and channel before releasing the detached final signature. S3 consumes this signer contract to publish. Use a protected shared sequence authority with atomic compare-and-set for independent jobs and processes.",
+        "size": "M",
+        "dependsOn": [
+          "t4",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "Recheck authenticated qualification grant, evidence, exact bytes and ref policy. No signing job executes candidate code.",
+          "Competing manifests claiming one sequence cannot both be signed. Include exact retry across interruption, scope independence, and stale/corrupt ledger refusal.",
+          "Interrupt after durable binding and before delivery and retry the exact manifest. Race independent writers and verify at most one distinct digest obtains a binding."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c7",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Independent-writer sequence race, scoped ledger, stale and corrupt ledger, and interrupted exact retry"
+          },
+          {
+            "level": "integration",
+            "name": "Final signing role, evidence and origin checks across all Linux stages using fixtures"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "Strict manifest fields and branch/channel derivation",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "Detached grant namespaces",
+        "coveredByTaskIds": [
+          "t1",
+          "t5",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "Unknown, duplicate and malformed inputs",
+        "coveredByTaskIds": [
+          "t1",
+          "t4",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Exact GitHub origin response fixtures",
+        "coveredByTaskIds": [
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "Wrong run attempt or asset target",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "Required evidence, role separation and separate Darwin coordinates",
+        "coveredByTaskIds": [
+          "t1",
+          "t4",
+          "t5",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "Relocated native binary and addon loading",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "Signed manifest and verified staged fingerprint",
+        "coveredByTaskIds": [
+          "t1",
+          "t2",
+          "t5",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "Required daemon, CLI and MCP entrypoints",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/ship-signed-linux-x86-64-daemon-E2026111656343cf2/S001/LLD.md#23-qualificationevidenceref"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/ship-signed-linux-x86-64-daemon-E2026111656343cf2/S001/LLD.md#32-linux-manifest-v1-and-detached-roles--new"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/ship-signed-linux-x86-64-daemon-E2026111656343cf2/S001/LLD.md#21-stageruntime"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "scripts/stage-daemon-bundle.mjs"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/ship-signed-linux-x86-64-daemon-E2026111656343cf2/S001/LLD.md#31-linux-candidate-build--new"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "scripts/daemon-release-artifact.sh"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/ship-signed-linux-x86-64-daemon-E2026111656343cf2/S001/LLD.md#33-target-bound-qualification-proof--new"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/ship-signed-linux-x86-64-daemon-E2026111656343cf2/S001/LLD.md#6-error-paths"
+    }
+  ]
+}

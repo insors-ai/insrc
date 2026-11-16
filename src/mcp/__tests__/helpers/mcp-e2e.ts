@@ -22,6 +22,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 
 export const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..');
+const ISOLATE_STORES = join(REPO_ROOT, 'src', 'mcp', '__tests__', 'fixtures', 'close-inherited-stores.mjs');
 const TSX_ESM = fileURLToPath(import.meta.resolve('tsx/esm'));
 
 /** The environment of a child: HOME in `home`, no INSRC_REPO, and nothing of the test runner's. */
@@ -67,7 +68,7 @@ export interface RunningDaemon {
 /** Start the real daemon with HOME in `home`; resolves once its socket answers. */
 export async function startDaemon(home: string, options: { readonly preload?: string; readonly env?: Record<string, string> } = {}): Promise<RunningDaemon> {
 	const preload = options.preload === undefined ? [] : ['--import', options.preload];
-	const child: ChildProcess = spawn(process.execPath, ['--import', TSX_ESM, ...preload, join(REPO_ROOT, 'src', 'daemon', 'index.ts')], {
+	const child: ChildProcess = spawn(process.execPath, ['--import', ISOLATE_STORES, '--import', TSX_ESM, ...preload, join(REPO_ROOT, 'src', 'daemon', 'index.ts')], {
 		cwd: REPO_ROOT, env: { ...childEnv(home), ...options.env }, stdio: ['ignore', 'ignore', 'pipe'],
 	});
 	let stderr = '';
@@ -111,7 +112,7 @@ export interface RunningMcp {
 export async function startMcp(home: string, cwd: string, clientName = 'claude-code'): Promise<RunningMcp> {
 	const transport = new StdioClientTransport({
 		command: process.execPath,
-		args:    ['--import', TSX_ESM, join(REPO_ROOT, 'src', 'bin', 'insrc-mcp.ts')],
+		args:    ['--import', ISOLATE_STORES, '--import', TSX_ESM, join(REPO_ROOT, 'src', 'bin', 'insrc-mcp.ts')],
 		env:     childEnv(home),
 		cwd,
 		stderr:  'ignore',

@@ -134,6 +134,9 @@ export class PreparedViewWriter {
   readonly directory: string, private readonly root: string, private readonly generation: string,
   private readonly stamp: { dev: bigint; ino: bigint }, private readonly session: ReviewSourceSession | undefined,
   private readonly signal: AbortSignal | undefined, private readonly lifecycleOnly = false) {}
+ /** Construction-only identity used to bind sibling source-light manifests
+  * that are atomically published by this writer's final rename. */
+ generationId(): string { this.active(); return this.generation; }
  static async create(identity: PreparedSourceIdentity, limits: ReviewPreparationLimits, capacity: SourceCapacity,
   memory: ReviewMemoryBudget, session?: ReviewSourceSession, signal?: AbortSignal, lifecycleOnly = false): Promise<PreparedViewWriter> {
   sourceGeneration(identity);

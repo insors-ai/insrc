@@ -33,6 +33,7 @@ export interface ControllerFrame {
 }
 export interface ControllerDeps extends ReviewPersistence {
  readonly sources:ReviewSources;readonly now?:(()=>number)|undefined;readonly timer?:((callback:()=>void,ms:number)=>()=>void)|undefined;
+ readonly taskPrompt?:((review:AdmittedReview,assignment:TaskAssignment,references:readonly string[])=>Promise<string>)|undefined;
  readonly release:(drop:boolean)=>void;
 }
 const log=getLogger('task-review:controller');
@@ -211,7 +212,8 @@ export class ControllerTaskReview {
    await this.persist();return this.frame(owner);
   }
   if(this.progress.snapshot().phase==='scope_preparation'){this.progress.phase('task_review');this.progressPersistence.request(true);}
-  return{...this.base('task'),taskId:task.id,prompt:assignmentPrompt(this.review.prepared,assignment,refs,this.review.checkpoint.project,this.review),schema:assignmentResultSchema(assignment),executionId:this.executionId,nextSequence:this.sequence+1};
+  const prompt=this.deps.taskPrompt?await this.deps.taskPrompt(this.review,assignment,refs):assignmentPrompt(this.review.prepared,assignment,refs,this.review.checkpoint.project,this.review);
+  return{...this.base('task'),taskId:task.id,prompt,schema:assignmentResultSchema(assignment),executionId:this.executionId,nextSequence:this.sequence+1};
  }
  private base(kind:ControllerFrame['kind']):ControllerFrame{
   const response=this.review.attempt['review-response'];

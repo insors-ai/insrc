@@ -81,7 +81,7 @@ export async function runReviewWorker(init:ReviewWorkerInit,deps:{readonly code?
    sources,through:roundWriterFor(project,{id:'insrc:code-review',kind:'system',properties:{}}),
    preparation:{authorize:()=>preparation.authorizePublication(),preparePacket:(...args)=>preparation.publicationPacket(...args),save:cp=>preparation.savePublication(cp)},
    ...(baseline?{baseline}:{})});};
-  const code=init.review.key.family==='code'?new CodeReviewWorker(init.review,{...deps.code,sources,provider:deps.code?.provider??provider,publish:publishCode,prepare:preparation.prepareCode},init.review.epicHash):undefined;
+  const code=init.review.key.family==='code'?new CodeReviewWorker(init.review,{...deps.code,sources,provider:deps.code?.provider??provider,publish:publishCode,prepare:preparation.prepareCode,taskPrompt:preparation.taskPrompt},init.review.epicHash):undefined;
   const publishDesign:typeof publishDesignReview=async()=>{
    await preparation.preparePublication();
    const cp=await preparation.history.canonical();

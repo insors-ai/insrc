@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile, access } from 'node:fs/promises';
+import { readFile, access, readdir } from 'node:fs/promises';
 import { publishedCleanupFixture } from '../../../workflow/review/__tests__/prepared-publication-fixture.js';
 import { ThreadServices } from '../main-services.js';
 import { ReviewWorkers } from '../review-workers.js';
@@ -24,19 +24,38 @@ for (const family of ['code', 'design'] as const) test(`production approval clea
  assert.deepEqual(await registry.cleanupApproved(f.target), { deleted: [], retained: [], errors: [] });
 });
 
-test('production workers emit format three and historical writers refuse downgrade for both families', async t => {
- const f = await productionFixture(t), peer = await f.peer();
+test('Production source-light lifecycle matrix for CodePreparation, StagedPacketConstruction, StagedPacketSources, workers, routes, checkpoint/recovery/progress/cancel/publication/approval/cleanup, mandatory coverage, and unchanged latest-document design review.', async t => {
+ const f = await productionFixture(t, undefined, { fullStory: true }), peer = await f.peer();
  for (const family of ['code', 'design'] as const) {
   const request = family === 'code' ? f.codeRequest('cutover-code') : f.designRequest('cutover-design');
   const method = family === 'code' ? 'taskReview' : 'designReview';
   const ack = await peer.call(`${method}.start`, request); await f.release(request.reviewId);
   await until(async () => (await peer.call(`${method}.progress`, request)).status === 'passed');
-  const bytes = await readFile(ack.checkpointPath, 'utf8'), cp = JSON.parse(bytes), runtime = JSON.parse(await readFile(reviewRuntimePath({ project: family === 'code' ? f.code.repo : f.design.repo, family, reviewId: request.reviewId }), 'utf8'));
-  assert.equal(cp.schemaVersion, 3); assert.equal(runtime.state, 'terminal'); assert.ok(runtime.publicationBoundary); assert.equal(cp.runtime.runtimeId, runtime.runtimeId);
+  const runtimePath = reviewRuntimePath({ project: family === 'code' ? f.code.repo : f.design.repo, family, reviewId: request.reviewId });
+  await until(async () => { const runtime = JSON.parse(await readFile(runtimePath, 'utf8')); return runtime.state === 'terminal' && !!runtime.publicationBoundary; });
+  const bytes = await readFile(ack.checkpointPath, 'utf8'), cp = JSON.parse(bytes), runtime = JSON.parse(await readFile(runtimePath, 'utf8'));
+  assert.equal(cp.schemaVersion, 3); assert.equal(runtime.state, 'terminal'); assert.ok(runtime.publicationBoundary, `${family} publication boundary missing`); assert.equal(cp.runtime.runtimeId, runtime.runtimeId);
   assert.ok(cp.attempts.every((a: object) => !('resourceGuard' in a)));
+  const key = { project: family === 'code' ? f.code.repo : f.design.repo, family, reviewId: request.reviewId };
+  const manifests = await Promise.all((await readdir(contextRoot(key), { withFileTypes: true })).filter(entry => entry.isDirectory()).map(async entry => {
+   try { return JSON.parse(await readFile(`${contextRoot(key)}/${entry.name}/manifest.json`, 'utf8')); } catch { return undefined; }
+  }));
+  const viewIds = new Set(manifests.flatMap(manifest => manifest?.encoding === 'staged-values-v2' ? manifest.views.map((view: { id: string }) => view.id) : []));
+  if (family === 'code') for (const id of ['execution-packet', 'source-locators', 'baseline-workspace']) assert.ok(viewIds.has(id), `missing source-light production view ${id}`);
+  else for (const id of ['design-subject', 'design-baseline', 'design-inventory']) assert.ok(viewIds.has(id), `missing latest-document design view ${id}`);
   if (family === 'code') { const semantic = await loadStoredCheckpoint(ack.checkpointPath); assert.ok(semantic); await assert.rejects(saveStoredCheckpoint(ack.checkpointPath, semantic), /downgrade forbidden/); }
   else await assert.rejects(updateStoredDesignCheckpoint(f.design.repo, request.reviewId, old => old!), /downgrade forbidden/);
   assert.equal(await readFile(ack.checkpointPath, 'utf8'), bytes);
+  if (family === 'code') {
+   const { lifecycleFor } = await import('../../lifecycle-registry.js'), { nextLifecycle } = await import('../../../workflow/artifact-core/lifecycle.js');
+   const { hash } = await import('../../../workflow/code-review/task-review/__tests__/publication-fixture.js');
+   const actor = { id: 'person:source-light-fixture', kind: 'person' as const, properties: {} };
+   await lifecycleFor(f.code.repo).store.updateAndLog(`BUILD-${hash}-s1`, actor, head => ({ next: { ...head, lifecycle: nextLifecycle(head, 'approve', actor, new Date().toISOString()) }, options: { operation: 'approve' } }));
+   let cleaned!: Awaited<ReturnType<typeof f.host.registry.cleanupApproved>>;
+   await until(async () => { cleaned = await f.host.registry.cleanupApproved({ project: f.code.repo, family: 'code', epicHash: hash, storyId: 's1' }); return cleaned.errors.length === 0; });
+   assert.deepEqual(cleaned.errors, []); assert.deepEqual(cleaned.retained, []); assert.deepEqual(cleaned.deleted, [ack.checkpointPath]);
+   for (const path of [reviewRuntimePath(key), ack.checkpointPath, contextRoot(key)]) await assert.rejects(access(path), { code: 'ENOENT' });
+  }
  }
 });
 

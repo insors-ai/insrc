@@ -178,6 +178,10 @@ export class ReviewWorkerPreparation {
   }
   return review;
  };
+ readonly taskPrompt: NonNullable<TaskReviewDeps['taskPrompt']> = async (...args) => {
+  if (!this.code) throw new Error('Code preparation is not qualified');
+  return this.code.taskPrompt(...args);
+ };
  async initializeDesign(prepareSubject?:DesignCoordinatorDeps['prepare']): Promise<void> {
   await this.borrow();
   const cp=await this.history.canonical();

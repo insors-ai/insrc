@@ -6,6 +6,10 @@ import type { ReviewAttempt,ReviewCheckpoint,StoredReviewCheckpoint,AdmissionChe
 import { checkpointBytes,checkpointPath,loadStoredCheckpoint,updateStoredCodeCheckpoint } from './checkpoint.js';
 import { qualifyCodeAdmission } from './admission-checkpoint.js';
 import { prepareReviewAdmission,canonicalReviewStory } from './admission.js';
+import type { BlobIdentity, PinnedBlob, ReviewSources } from './sources.js';
+import type { ReviewAdmissionContext } from './admission.js';
+import type { AdmittedReview } from './execution.js';
+import type { ReviewerParty } from './contracts.js';
 
 /** Private execution view, never persisted or exposed as an approval artifact.
  * Technical-only attempts remain in the authoritative v2 file with their
@@ -41,7 +45,7 @@ export const saveWorkerCodeCheckpoint:typeof import('./checkpoint.js').saveCheck
 };
 /** Reuse the entire normal source/history/route/capacity qualification; only
  * replace its read-only starting history with the preaccepted worker input. */
-export const prepareWorkerCodeAdmission:ReviewAdmissionPreparer=async(project,id,attempt,input,reviewer,sources,context={})=>{
+export async function prepareWorkerCodeAdmission<Blob extends BlobIdentity = PinnedBlob>(project:string,id:string,attempt:number,input:unknown,reviewer:ReviewerParty,sources:ReviewSources<Blob>,context:ReviewAdmissionContext<Blob>={}):Promise<AdmittedReview<Blob>>{
  const stored=await loadStoredCheckpoint(checkpointPath(project,id));
  requireReview(stored,'checkpoint','Durable worker admission missing');
  const latest=stored.attempts.at(-1)!;
@@ -59,4 +63,4 @@ export const prepareWorkerCodeAdmission:ReviewAdmissionPreparer=async(project,id
  const admitted=await prepareReviewAdmission(project,id,attempt,input,reviewer,sources,{...context,operation:'start',accepted:{admission:latest,prior:qualifiedCodeView({...stored,attempts:stored.attempts.slice(0,-1)}),historyLength:stored.attempts.length-1}});
  admitted.attempt.progress=latest.progress;
  return admitted;
-};
+}

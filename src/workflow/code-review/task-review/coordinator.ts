@@ -36,6 +36,10 @@ export interface TaskReviewDeps {
  readonly save?: typeof saveCheckpoint;
  readonly read?: typeof loadCheckpoint;
  readonly prepare?:ReviewAdmissionPreparer|undefined;
+ /** Production preparation can assemble selected after-blocks from its
+  * qualified private generation. Tests and legacy readers may omit this and
+  * use the in-memory packet adapter until the source-light cutover completes. */
+ readonly taskPrompt?: ((review: AdmittedReview, assignment: TaskAssignment, references: readonly string[]) => Promise<string>) | undefined;
  readonly publish?: ((project: string, reviewId: string, epicHash: string, baseline?: import('./capacity.js').CapacityBaseline) => Promise<unknown>) | undefined;
  readonly now?: () => number;
  readonly timer?: (callback: () => void, ms: number) => () => void;
@@ -287,7 +291,8 @@ export class TaskReviewCoordinator {
      await commitResult(assessed);return{accepted:true};
     });
     const provider=resolveProvider();requireReviewActivity(provider);
-    const raw=await provider.runReviewSession!(assignmentPrompt(prepared,assignment,references,checkpoint.project,review),assignmentResultSchema(assignment),options('assessment',acceptTask));
+    const prompt=this.deps.taskPrompt?await this.deps.taskPrompt(review,assignment,references):assignmentPrompt(prepared,assignment,references,checkpoint.project,review);
+    const raw=await provider.runReviewSession!(prompt,assignmentResultSchema(assignment),options('assessment',acceptTask));
     if(!durable)await acceptTask(raw);
    })();
    try{await Promise.race([expired,flow]);}

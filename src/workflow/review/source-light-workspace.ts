@@ -64,13 +64,16 @@ function sameStrings(left: readonly string[], right: readonly string[]): boolean
  * parent of every selected change. Files are namespaced by parent and retain
  * their repository-relative path beneath that root. */
 export async function materializeBaselineWorkspace(input: unknown, binding: SourceLightBinding, sources: BatchReviewSources,
-	maxRecordBytes: number, signal?: AbortSignal): Promise<BaselineWorkspaceManifest> {
+	maxRecordBytes: number, signal?: AbortSignal, stagingGenerationRoot?: string): Promise<BaselineWorkspaceManifest> {
 	const selected = decodeSelectedChangeLocatorSet(input, binding, maxRecordBytes);
 	if (binding.key.family !== 'code') throw new Error('Baseline workspaces are code-review only');
 	cancelled(signal);
 	const reviewRoot = await preparedContextParents(binding.key);
-	const generationRoot = join(reviewRoot, binding.generationId);
-	await mkdir(generationRoot, { mode: 0o700 }).catch(error => { if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error; });
+	const generationRoot = stagingGenerationRoot ?? join(reviewRoot, binding.generationId);
+	if (stagingGenerationRoot) {
+		const canonical = await realpath(stagingGenerationRoot);
+		if (canonical !== stagingGenerationRoot || !canonical.startsWith(`${reviewRoot}/`)) throw new Error('Foreign source-light staging generation');
+	} else await mkdir(generationRoot, { mode: 0o700 }).catch(error => { if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error; });
 	const generationStat = await lstat(generationRoot);
 	if (!generationStat.isDirectory() || generationStat.isSymbolicLink() || await realpath(generationRoot) !== generationRoot) throw new Error('Unsafe source-light generation directory');
 	const target = join(generationRoot, 'baseline'), stage = join(generationRoot, `baseline.prepare-${randomUUID()}`);

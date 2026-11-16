@@ -44,6 +44,14 @@ export class StagedTaskExecution {
   try { return await this.buildCodePrompt(task.value.prepared, task.value.assignment, references, project, review); }
   finally { task.release(); }
  }
+ /** Production admission already owns the current qualified packet and learns
+  * task attribution only after the generation is sealed. Assemble that task
+  * directly from the packet's staged blob descriptors instead of requiring a
+  * pre-attribution task view. */
+ async codePromptFor(prepared: PreparedReviewPacket<StagedPacketBlob>, assignment: TaskAssignment<StagedPacketBlob>, references: readonly string[], project?: string, review?: AdmittedReview<StagedPacketBlob>): Promise<ReviewPromptWindow> {
+  if (!prepared.tasks.some(task => task.id === assignment.taskId) || assignment.changes.some(change => !prepared.changes.includes(change)) || assignment.tests.some(test => !prepared.packet.tests.includes(test))) throw new Error('Foreign qualified task prompt');
+  return this.buildCodePrompt(prepared, assignment, references, project, review);
+ }
  private async buildCodePrompt(prepared: PreparedReviewPacket<StagedPacketBlob>, assignment: TaskAssignment<StagedPacketBlob>, references: readonly string[], project?: string, review?: AdmittedReview<StagedPacketBlob>): Promise<ReviewPromptWindow> {
   await this.reader.verify();
   const indexLease = this.reader.memory.reserve(assignment.changes.length * 64 + assignment.tests.length * 16 + 1024, 'review task window index');

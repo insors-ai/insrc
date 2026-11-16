@@ -9,6 +9,7 @@ import { contextRoot, preparationDigest } from './prepared-context.js';
 import type { ReadyContextReceipt } from './prepared-context.js';
 import { readHistoryEvidenceManifest } from './history-evidence.js';
 import { cleanupBytes, cleanupStat, bytesDigest, inventoryCleanupContext } from './cleanup-claim-files.js';
+import { decodeBaselineWorkspaceManifest } from '../../shared/review-source-light.js';
 
 /** Cleanup ownership is narrower than a borrow: it grants no execution or
  * capacity capability, and can include an already-evicted old generation. */
@@ -30,6 +31,22 @@ export async function ownedCleanupContext(key: ReviewKey, receipts: readonly Cle
  const allow = (path: string, digest: string | null) => {
   const prior = allowed.get(path); if (allowed.has(path) && prior !== digest) throw new Error('Conflicting owned context bytes'); allowed.set(path, digest);
  };
+ const allowBaseline = async (generationId: string, manifest: PreparedContextManifest | StagedContextManifest) => {
+  if (!('encoding' in manifest) || manifest.encoding !== 'staged-values-v2' || !manifest.views.some(view => view.id === 'baseline-workspace' && view.kind === 'view')) return;
+  const relative = `${generationId}/baseline/manifest.json`, raw = await cleanupBytes(join(root, relative), reviewJsonLimit());
+  const input = JSON.parse(raw.bytes.toString('utf8')) as { locatorsDigest?: unknown };
+  if (typeof input.locatorsDigest !== 'string') throw new Error('Source-light baseline locator binding missing');
+  const baseline = decodeBaselineWorkspaceManifest(input, { key, attempt: manifest.attempt, generationId,
+   inputDigest: manifest.inputDigest, sourceIdentity: manifest.sourceIdentity, locatorsDigest: input.locatorsDigest }, reviewJsonLimit());
+  const directories = new Set<string>([`${generationId}/baseline`]);
+  allow(relative, bytesDigest(raw.bytes));
+  for (const file of baseline.files) {
+   const path = `${generationId}/baseline/parents/${file.parent}/${file.path}`;
+   const parts = path.split('/'); for (let i = 1; i < parts.length; i++) directories.add(parts.slice(0, i).join('/'));
+   allow(path, file.contentDigest);
+  }
+  for (const directory of directories) allow(directory, null);
+ };
  const allowLifecycle = async (binding: ReturnType<typeof decodeHistoryBinding>) => {
   const lifecycle = binding.lifecycle; if (!lifecycle) throw new Error('History binding has no staged lifecycle owner');
   const raw = await cleanupBytes(join(root, lifecycle.generationId, 'manifest.json'), reviewJsonLimit()), manifest = contextManifest(JSON.parse(raw.bytes.toString('utf8')), key);
@@ -39,6 +56,7 @@ export async function ownedCleanupContext(key: ReviewKey, receipts: readonly Cle
    || manifest.manifestDigest !== preparationDigest({ ...manifest, manifestDigest: '' })) throw new Error('Staged lifecycle manifest differs from history binding');
   allow(lifecycle.generationId, null); allow(`${lifecycle.generationId}/manifest.json`, bytesDigest(raw.bytes));
   for (const object of manifest.objects) allow(`${lifecycle.generationId}/${object.contentDigest}.data`, object.contentDigest);
+  await allowBaseline(lifecycle.generationId, manifest);
  };
  for (const source of receipts) {
   if (!same(source.key, key) || !Number.isSafeInteger(source.attempt) || source.attempt < 1 || !/^[a-f0-9]{64}$/.test(source.generationId)
@@ -50,6 +68,7 @@ export async function ownedCleanupContext(key: ReviewKey, receipts: readonly Cle
    || manifest.attempt !== source.attempt || manifest.validatorVersion !== source.validatorVersion) throw new Error('Context manifest differs from private ownership receipt');
   allow(source.generationId, null); allow(`${source.generationId}/manifest.json`, bytesDigest(raw.bytes));
   for (const object of manifest.objects) allow(`${source.generationId}/${object.contentDigest}.data`, object.contentDigest);
+  await allowBaseline(source.generationId, manifest);
  }
  const bindings = [...heads], seen = new Set<string>(), evidence = new Set<string>();
  while (bindings.length) {

@@ -69,6 +69,13 @@
         "choice": "Carry only unresolved assumptions",
         "rationale": "Keep settled PRD mock decisions settled; carry only the daemon link-target-resolution feasibility assumption forward to s4/s5/s7 local constraints, visible at design.story starts.",
         "resolvedAt": "2026-11-16T09:31:18.111Z"
+      },
+      "q77afa3a7": {
+        "question": "Item ac2: s4/s5/s6 acceptance criteria carry empty operationalizes by scoping (governed by story-level requirements/localConstraints, not epic kN); design.story should bind them.",
+        "status": "resolved",
+        "choice": "Bind at story design",
+        "rationale": "Preserve the stated story-level governance; design.story is responsible for operationalizing s4/s5/s6's acceptance criteria against story-level requirements/localConstraints.",
+        "resolvedAt": "2026-11-16T09:32:33.610Z"
       }
     }
   },

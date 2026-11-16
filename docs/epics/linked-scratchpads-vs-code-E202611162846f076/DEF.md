@@ -345,6 +345,8 @@ Pads can be tagged and filtered, and new pads can start from an investigation or
   - **deferred**: deferred for review — Not a design decision for this epic — it's a defect in the `define` workflow itself (auto-published a real GitHub issue, insors-ai/insrc#185, as a side effect of finishing `define`, bypassing tracker.push and approval). Deferred here; being logged as its own tracked bugfix via insrc_triage against the workflow framework, independent of linked-scratchpads' architecture. _(2026-11-16T09:28:49.285Z)_
 - `q7dfed83c` — Item a2: med-confidence assumptions (daemon link-target resolution feasibility; PRD mock decisions settled) map to design-time decisions carried on s4/s5/s7 local constraints and will surface at design.story starts.
   - **resolved**: Carry only unresolved assumptions — Keep settled PRD mock decisions settled; carry only the daemon link-target-resolution feasibility assumption forward to s4/s5/s7 local constraints, visible at design.story starts. _(2026-11-16T09:31:18.111Z)_
+- `q77afa3a7` — Item ac2: s4/s5/s6 acceptance criteria carry empty operationalizes by scoping (governed by story-level requirements/localConstraints, not epic kN); design.story should bind them.
+  - **resolved**: Bind at story design — Preserve the stated story-level governance; design.story is responsible for operationalizing s4/s5/s6's acceptance criteria against story-level requirements/localConstraints. _(2026-11-16T09:32:33.610Z)_
 
 ## Citations
 

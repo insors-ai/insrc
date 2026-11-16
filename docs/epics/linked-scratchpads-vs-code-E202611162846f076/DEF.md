@@ -353,6 +353,8 @@ Pads can be tagged and filtered, and new pads can start from an investigation or
   - **resolved**: Structured entry records — Makes s4's entry boundary/timestamp/stable-anchor concerns explicit as structured record fields, with s7's scratchpad metadata attached per-entry. _(2026-11-16T09:34:48.042Z)_
 - `qaa44f9d4` — PRD open decision blocking s2/s5/s6: private backlink projection + lexical index choice, note-size cap, latency targets, and minimum daemon/extension version negotiation for the new IPC.
   - **resolved**: Balanced bounded rollout — Resolves all four blocking fields (backlink projection/lexical index, note-size cap, latency targets, minimum daemon/extension IPC version) as explicit, independently reviewable constraints for s2/s5/s6. _(2026-11-16T09:35:39.318Z)_
+- `qcaf02d53` — PRD open decision blocking s8: first controller/daemon context routes, evidence budgets, and preview behavior for a target that changes mid-queue.
+  - **resolved**: Stable enqueue snapshot — Gives s8's queued turns stable, reviewable target/context/evidence-budget/preview semantics; a mid-queue target change affects only later-queued items. _(2026-11-16T09:36:24.598Z)_
 
 ## Citations
 

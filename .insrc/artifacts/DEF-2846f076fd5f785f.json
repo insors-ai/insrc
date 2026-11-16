@@ -97,6 +97,13 @@
         "choice": "Balanced bounded rollout",
         "rationale": "Resolves all four blocking fields (backlink projection/lexical index, note-size cap, latency targets, minimum daemon/extension IPC version) as explicit, independently reviewable constraints for s2/s5/s6.",
         "resolvedAt": "2026-11-16T09:35:39.318Z"
+      },
+      "qcaf02d53": {
+        "question": "PRD open decision blocking s8: first controller/daemon context routes, evidence budgets, and preview behavior for a target that changes mid-queue.",
+        "status": "resolved",
+        "choice": "Stable enqueue snapshot",
+        "rationale": "Gives s8's queued turns stable, reviewable target/context/evidence-budget/preview semantics; a mid-queue target change affects only later-queued items.",
+        "resolvedAt": "2026-11-16T09:36:24.598Z"
       }
     }
   },

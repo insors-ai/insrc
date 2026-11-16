@@ -6,7 +6,7 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "draft",
+      "status": "completed",
       "revision": {
         "number": 19,
         "contentHash": "22a836fb1064ccc6449b78ac985214041c1342842056f87337a31728abcfc56e",
@@ -17,7 +17,19 @@
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 19,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T16:46:38.558Z",
+        "override": {
+          "reason": "User-approved override 2026-11-14. Daemon code review board-common-model-s1 attempt 5 passed t1-t3 and t5-t10; its t4 MED (repo-rules writes under 'rename') fixed @8521b3819; attempt 6 failed reviewer-side (attribution rejected 3x, no Task reviewed). The fix and HEAD state are covered by the recorded controller self-review docs/standalone/make-delivery-board-read-common-artifact-E20261109eedc4519/S001/CR-SELF-REVIEW.md (F1 LLD RepairStep deviation recorded, F2 settle.ts inventory pin @e30a0e038, F3 completion-evidence fixture vs 8ebc81c96 @d73c4fb0d; 160/160 daemon + 80/80 plugin tests pass; no open MED/HIGH)."
+        }
+      }
     },
     "workflow": "build",
     "runId": "store-9fa6b652-e272-4d70-bd80-8020f47eab6c",

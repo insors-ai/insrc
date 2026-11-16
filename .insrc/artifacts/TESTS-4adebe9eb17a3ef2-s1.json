@@ -1,0 +1,268 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 13,
+        "contentHash": "cd9d5a3356cd6a06b99026b4ad888ee95b7794fd8ebbabc7a3d9e85eaad8b399",
+        "at": "2026-11-14T15:08:34.183Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "4adebe9eb17a3ef2",
+    "storyId": "s1",
+    "createdAt": "2026-11-14T14:11:00.315Z",
+    "updatedAt": "2026-11-14T15:08:34.140Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-14T13:09:02.500Z",
+    "epicSlug": "separate-daemon-development-release-build-lanes",
+    "revision": 13
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "c289b9a2a",
+        "ranAt": "2026-11-14T15:06:10.652Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Local branch routing and candidate metadata",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/package-daemon-candidate.test.ts",
+                "title": "candidate workflow accepts only the protected dispatch revision and has no test or publish jobs",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "scripts/__tests__/package-daemon-candidate.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 362,
+            "titles": [
+              {
+                "title": "candidate layout survives moving the runtime and rejects external links",
+                "result": "pass"
+              },
+              {
+                "title": "candidate workflow accepts only the protected dispatch revision and has no test or publish jobs",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "c289b9a2a",
+        "ranAt": "2026-11-14T15:06:46.604Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Exact attempt and signed archive provenance",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/daemon-release-artifact.test.ts",
+                "title": "release artifact retrieval rejects failed attempts, development refs, and cross-attempt substitution",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/promote-daemon-candidate.test.ts",
+                "title": "promotion admits only the approved manifest, archive and local evidence",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "scripts/__tests__/daemon-release-artifact.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 837,
+            "titles": [
+              {
+                "title": "release artifact retrieval rejects failed attempts, development refs, and cross-attempt substitution",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "scripts/__tests__/promote-daemon-candidate.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 419,
+            "titles": [
+              {
+                "title": "promotion admits only the approved manifest, archive and local evidence",
+                "result": "pass"
+              },
+              {
+                "title": "promotion requires protected approval and never rebuilds the candidate",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "c289b9a2a",
+        "ranAt": "2026-11-14T15:07:50.222Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Local environment policy and live disable checks",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/daemon-release-policy.test.ts",
+                "title": "live readiness and main-only signing policy fail closed after approval",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/daemon-release-policy.test.ts",
+                "title": "disabling readiness after signing aborts the next publication mutation",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "scripts/__tests__/daemon-release-policy.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 929,
+            "titles": [
+              {
+                "title": "live readiness and main-only signing policy fail closed after approval",
+                "result": "pass"
+              },
+              {
+                "title": "production publication rechecks policy before every mutation",
+                "result": "pass"
+              },
+              {
+                "title": "disabling readiness after signing aborts the next publication mutation",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "c289b9a2a",
+        "ranAt": "2026-11-14T15:08:34.140Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Local staged rollout and release sequence",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/promote-daemon-candidate.test.ts",
+                "title": "promotion admits only the approved manifest, archive and local evidence",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/stage-daemon-bundle.test.ts",
+                "title": "staging authenticates archive bytes and rejects links leaving the runtime",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/daemon-release-policy.test.ts",
+                "title": "disabling readiness after signing aborts the next publication mutation",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "scripts/__tests__/daemon-release-policy.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4179,
+            "titles": [
+              {
+                "title": "live readiness and main-only signing policy fail closed after approval",
+                "result": "pass"
+              },
+              {
+                "title": "production publication rechecks policy before every mutation",
+                "result": "pass"
+              },
+              {
+                "title": "disabling readiness after signing aborts the next publication mutation",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "scripts/__tests__/promote-daemon-candidate.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 449,
+            "titles": [
+              {
+                "title": "promotion admits only the approved manifest, archive and local evidence",
+                "result": "pass"
+              },
+              {
+                "title": "promotion requires protected approval and never rebuilds the candidate",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "scripts/__tests__/stage-daemon-bundle.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 619,
+            "titles": [
+              {
+                "title": "staging authenticates archive bytes and rejects links leaving the runtime",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

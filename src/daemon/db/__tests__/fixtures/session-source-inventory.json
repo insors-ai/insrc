@@ -16852,7 +16852,7 @@
       ],
       "siteCount": 9,
       "sitesDigest": "1e7bb14fd48ad72e07dbee82ecc94b42aeacf12a4b222be1eb1e6428180fcd68",
-      "sourceDigest": "0639f50d41bfb155f6927acc409d442852585ddd39f973b29aaea6ef75734260"
+      "sourceDigest": "a3c227ff847d6283694817ea3dc53f4e9478686d66e4c9c52d0863b2c21b33cc"
     },
     "src/daemon/steps/build-step/phases/validate.ts": {
       "classification": "forbidden-session-workflow",
@@ -16909,7 +16909,7 @@
       ],
       "siteCount": 12,
       "sitesDigest": "d278d3078697af076fb5b96944ca16da323a69f9f748b1e111f1a5dedee1d298",
-      "sourceDigest": "17f4b19cb5d500e55f1b157fe60e0b626be6a356ebaa5ae8a7efd0c2e14b51d3"
+      "sourceDigest": "40bacf758237e875551ebbef2b1f4c0038105badacd4b46877b3387eaee1c319"
     },
     "src/daemon/steps/build-step/render.ts": {
       "classification": "forbidden-session-workflow",
@@ -17108,7 +17108,7 @@
       ],
       "siteCount": 2,
       "sitesDigest": "b1c206eccefd2f3f3bbb0d263524897b7db306c9dee3c5868eae7a299e75f5f2",
-      "sourceDigest": "eb183a47f57ac5ad81576fb3801fc1e7185de2425e8d09d80e3b9e3827e00882"
+      "sourceDigest": "afa62e3f0e8c4719e42de1806672127edc3266e5ba46789707042acf8cd688f4"
     },
     "src/daemon/steps/triage-step/phases/start.ts": {
       "classification": "forbidden-session-workflow",
@@ -36865,7 +36865,7 @@
       ],
       "siteCount": 9,
       "sitesDigest": "a8ce25ee55e92f906c493216e179e3b5abc04a91e9e75964b94f8da3d38d913b",
-      "sourceDigest": "191650381dc15b888a99d737ce827f078547fd33b410ec2814c66737ffa2e817"
+      "sourceDigest": "8c8aa951cac7e9a9bf9bcb09a85c7f9a8880124d5780d6e8251e3a6182e450bc"
     },
     "src/mcp/session-bootstrap.ts": {
       "classification": "private-mcp-bootstrap",
@@ -40898,6 +40898,27 @@
       "sitesDigest": "dcc7428afc3a2ca6ef5082d2d597ef4b88ea0a877f328919725bd366bd105fd7",
       "sourceDigest": "6d268d8b29e0326dd6c7c531ed8e6d747b2a45591fe82d4f92ef257b8de076c9"
     },
+    "src/workflow/convert/backfill-issue.ts": {
+      "classification": "forbidden-session-service",
+      "rationale": "Writes the ISSUE a headless trivial build lacks and approves it through the lifecycle service during a repair. The records concern artifact conversion and are outside connection-session dispatch.",
+      "sites": [
+        [
+          "filesystem-write",
+          "mkdirSync"
+        ],
+        [
+          "serialization",
+          "writeArtifact"
+        ],
+        [
+          "serialization",
+          "writeAtomic"
+        ]
+      ],
+      "siteCount": 3,
+      "sitesDigest": "3af5bfe33c04849290c8c23be9c5b9d7398add7ed00ee7a2d13574b7434bdfea",
+      "sourceDigest": "37f665a9fc15a552ff43ee23fe3e5b6f3c3aa7d523b925f5e48e2c84fd71203a"
+    },
     "src/workflow/convert/backfill.ts": {
       "classification": "forbidden-session-service",
       "rationale": "Persistent workflow/document-generation/knowledge-service execution is outside supported session methods. Reject before dispatch; this inventory does not grant a temporary route into the service.",
@@ -41013,7 +41034,7 @@
       ],
       "siteCount": 3,
       "sitesDigest": "5e36449c0229d54e6b00ff031745947614900088ce0613d6c98b9e9a415e5136",
-      "sourceDigest": "b603b072781328299e3185bb5630f949058b4f45e30750e3519851a3e489d38b"
+      "sourceDigest": "16078142f0e8af480ec44a925a5a5aedc0ef2ccfb6d809eda3aae686d152e2c6"
     },
     "src/workflow/convert/raw-heads.ts": {
       "classification": "forbidden-session-service",
@@ -41173,7 +41194,7 @@
       ],
       "siteCount": 1,
       "sitesDigest": "a43a371ca3832b8c60ffe519c846336b83f2a2e7b27047d8d9d04af786442e39",
-      "sourceDigest": "9764523d4f1c2a80c00f73ca54bc56e91d90a94b29f7e18f505429a5cdf09303"
+      "sourceDigest": "c132f080e75cbb262b90b2b837b65faba545915b240fe81bab493a7ef2d503af"
     },
     "src/workflow/convert/stamps.ts": {
       "classification": "forbidden-session-service",
@@ -41813,6 +41834,10 @@
           "JSON.stringify"
         ],
         [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
           "diagnostic",
           "log.info"
         ],
@@ -41905,9 +41930,9 @@
           "writeAtomic"
         ]
       ],
-      "siteCount": 47,
-      "sitesDigest": "499b862f0c93c1bd67b76c77144e5db58008e7591bda1258e300f10a47dc2836",
-      "sourceDigest": "4a0dde67a2ede42fa26a5e4a923a90732d4848b479d60d2bbdd5d46b1b136582"
+      "siteCount": 48,
+      "sitesDigest": "ac8a7b35c8095766df20a37c4e5e55ddba534a52079bfe79d34b0b86b89a1aa0",
+      "sourceDigest": "c1a164ff247d3cc52b3f735fcf2f79af6d692e0a64a0e069f01ceb7583d2b901"
     },
     "src/workflow/path-scheme.ts": {
       "classification": "forbidden-session-service",
@@ -43093,12 +43118,20 @@
       "sites": [
         [
           "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
           "JSON.stringify"
+        ],
+        [
+          "filesystem-read",
+          "readFileSync"
         ]
       ],
-      "siteCount": 1,
-      "sitesDigest": "97b79a31587e07786852a7d17e4ef4600988fcc280b12944bca4d322da013f60",
-      "sourceDigest": "a3b3f1aeb22d547baf91c41e58929c90c0805d06c8ab871c1db888199a3c71bb"
+      "siteCount": 3,
+      "sitesDigest": "a8742f53aa4384ca9a0cee227d8e80910091be3e9e779ff9a9f9cb5522de75c9",
+      "sourceDigest": "8abe9b0d07edb11073d67d24bb6f73c0f69f1ea0dcf540b9e713aa577c21baf3"
     },
     "src/workflow/runners/build/changed-files.ts": {
       "classification": "forbidden-session-service",
@@ -43653,7 +43686,7 @@
       ],
       "siteCount": 1,
       "sitesDigest": "d445d7328dc2f46594ec7adf03aa4876dab12aeb957ec3ad144cd6a98b734397",
-      "sourceDigest": "9cd3fe19e5ec90eb8d1c56468e3ba31c919c04b82f8a8f5282040451a1e5fb28"
+      "sourceDigest": "a401f3f2d54952562f6e748c8f6f68b8535a680de78a7d975a00b9969307e1ab"
     },
     "src/workflow/runners/plan/index.ts": {
       "classification": "forbidden-session-service",

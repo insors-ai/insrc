@@ -1,0 +1,81 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e227606d-b408-49ff-8106-dacc181fd7be",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-15T05:00:05.887Z",
+    "epicCreatedAt": "2026-11-14T15:32:49.965Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "01ac1e4b6a6c9c2f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add ScratchStore.updateScratch with exclusive no-follow temp write + no-clobber publish",
+      "parent": {
+        "entityId": "STORY-01ac1e4b6a6c9c2f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-01ac1e4b6a6c9c2f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "bbf83506338b89b0ac24c767fddfd47d1f3a0f87f92bdbf03f53e20f7835cc5e",
+        "at": "2026-11-15T05:00:05.888Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-15T05:00:05.892Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add ScratchStore.updateScratch with exclusive no-follow temp write + no-clobber publish",
+    "summary": "Add ScratchStore.updateScratch(id, text) to vscode-plugin/src/chat/scratch-store.ts under the store's existing validation (inside ~/.insrc/scratches root, *.md basename, lstat regular file, symlink refused, O_NOFOLLOW) plus a new ScratchFs.writeFileExclusive for the exclusive no-follow temp write and unlink/link no-clobber publish (never rename, bounded retry); extend fake-scratch-fs.ts and the existing scratch-store.test.ts with the happy path, refusal/not-found/store-error cases, temp cleanup, and mtime-bump coverage.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "updateScratch(id, text) exists on the ScratchStore interface and nodeScratchFs implementation",
+      "happy path replaces file content with the full text, bumps mtime, leaves no temp file",
+      "id validation refusals: outside-root / non-.md / non-regular / symlink → ScratchRefused; missing file → ScratchNotFound; write/publish failure → ScratchStoreError with destination untouched and temp unlinked",
+      "temp file created exclusively and no-follow (O_CREAT|O_EXCL|O_NOFOLLOW; EEXIST/ELOOP on an occupied or symlinked temp name aborts the save)",
+      "publish is unlink(destination)+link(temp,destination)+unlink(temp) — never rename — with destination re-opened O_NOFOLLOW+fstat to confirm the validated inode before unlink, and bounded retry on link EEXIST",
+      "fake-scratch-fs.ts extended with writeFileExclusive EEXIST/ELOOP semantics plus link/unlink/open-fstat coverage"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "scratch-store.test.ts: updateScratch happy path writes full text and replaces content; id validation refusal (outside-root, symlink, non-.md) → ScratchRefused; missing file → ScratchNotFound; write failure leaves destination unchanged and unlinks temp; temp path occupied by a symlink or existing file → exclusive create fails (EEXIST/ELOOP) and nothing is written outside the root"
+      },
+      {
+        "level": "unit",
+        "name": "scratch-store.test.ts: updateScratch bumps mtime so listScratches reflects the save"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

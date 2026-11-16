@@ -10,7 +10,7 @@ All four tiers are functional end-to-end. 30 new tests green; tsc clean.
 - **Standalone `design.story`** — synthetic single-story `readUpstream` branch ([design-story/index.ts](../../src/workflow/runners/design-story/index.ts)) + `finalizeStandaloneLld` ([orchestrator.ts](../../src/workflow/orchestrator.ts)); stamps `meta.standalone` / `sizeClass` / `triageRationale`.
 - **Keying** — `augmentStandaloneParams` (self-minted hash + `S001`) on both the MCP `insrc_workflow_step` and daemon `workflow.run` entries.
 - **Gate** — `requireApprovedLld` skips HLD-staleness for a standalone LLD ([gates.ts](../../src/workflow/gates.ts)).
-- **No-plan build** — `admitStandaloneBuild` ([admission.ts](../../src/workflow/runners/build/admission.ts)) + a standalone implement path ([build-step/phases/implement.ts](../../src/mcp/build-step/phases/implement.ts)) sourcing the spec from the LLD (Small) or scope (Trivial); Trivial persists a `StandaloneBuildRecord` ([standalone-record.ts](../../src/workflow/runners/build/standalone-record.ts)) as its sole ledger entry.
+- **No-plan build** — `admitStandaloneBuild` ([admission.ts](../../src/workflow/runners/build/admission.ts)) + a standalone implement path ([build-step/phases/implement.ts](../../src/mcp/build-step/phases/implement.ts)) sourcing the spec from the LLD (Small) or scope (Trivial); Trivial persists a `StandaloneBuildRecord` ([standalone-record.ts](../../src/workflow/runners/build/standalone-record.ts)). Since ISSUE-c5b49ff953a9a295 a Trivial build runs only under an approved ISSUE (kind `change`), which heads the work item; the BUILD record is no longer its only record.
 - **Front door** — [`insrc_triage`](../../src/mcp/triage-step/) MCP tool (ground → classify → route), returns the pre-filled next call.
 
 ---
@@ -39,13 +39,13 @@ one-line change does not — but neither escapes the ledger.
 | **Epic**    | `define`               | define → epic → story → plan → build    | DEF+HLD+LLD+… |
 | **Feature** | `design.story` (standalone) | LLD → plan → build                 | LLD (standalone) |
 | **Small**   | `design.story` (standalone) | LLD → build                        | LLD (standalone) |
-| **Trivial** | `build` (standalone)   | build only                              | BUILD only (no LLD) |
+| **Trivial** | `issue` (standalone, kind `change`) | issue → build               | ISSUE + BUILD (no LLD) |
 
 `sizeClass → route`:
 - `epic`    → `{ startStage: 'define',       standalone: false, needsPlan: true  }`
 - `feature` → `{ startStage: 'design.story', standalone: true,  needsPlan: true  }`
 - `small`   → `{ startStage: 'design.story', standalone: true,  needsPlan: false }`
-- `trivial` → `{ startStage: 'build',        standalone: true,  needsPlan: false }`
+- `trivial` → `{ startStage: 'issue',        standalone: true,  needsPlan: false }` (was `'build'` before ISSUE-c5b49ff953a9a295)
 
 ## Components
 

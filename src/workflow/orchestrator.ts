@@ -155,7 +155,7 @@ import {
 	type FunctionalRequirement,
 } from './artifacts/functional-definition.js';
 import { assertEpicHash, computeEpicHash } from './hash.js';
-import { SIZE_CLASSES, type SizeClass } from './triage/types.js';
+import { SIZE_CLASSES, isIssueKind, type SizeClass } from './triage/types.js';
 import { isStandaloneParams, standaloneStoryContext } from './runners/design-story/standalone.js';
 import { deriveSlug } from './slug.js';
 import { PATH_FORM_RULE } from './runners/scope-prompts.js';
@@ -908,6 +908,10 @@ function finalizeIssue(
 	const issueHash = computeEpicHash(runId);
 	const slug      = headLabel(body.title, intent.focus);
 	const magnitude = intent.params['magnitude'];
+	const kind      = intent.params['kind'];
+	if (kind !== undefined && !isIssueKind(kind)) {
+		return { ok: false, failure: schemaFailure(`params.kind must be 'defect' or 'change' (got ${JSON.stringify(kind)})`) };
+	}
 	const issueCreatedAt = new Date().toISOString();
 	const artifact: IssueArtifact = {
 		meta: {
@@ -924,6 +928,7 @@ function finalizeIssue(
 			epicSlug:      slug,
 			standalone:    true,
 			...(magnitude === 'small' || magnitude === 'sized' ? { magnitude } : {}),
+			...(kind !== undefined ? { kind } : {}),
 		},
 		body,
 		citations,

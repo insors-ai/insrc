@@ -1,9 +1,10 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { execFileSync, spawn } from 'node:child_process';
 import { once } from 'node:events';
-import { mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readdirSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { after, before, test } from 'node:test';
@@ -39,6 +40,15 @@ function fixture(): { root: string; gate: InstallationMutationGate } {
 	return { root, gate: new InstallationMutationGate(root, helper) };
 }
 
+test('a fresh installation journal read leaves the trust-only state root pristine', options, async () => {
+	const { gate, root } = fixture();
+	mkdirSync(join(root, 'bundle-trust'), { mode: 0o700 });
+	assert.deepEqual(await gate.read(), { version: 1, root, active: null, outcome: null });
+	assert.deepEqual(readdirSync(root), ['bundle-trust']);
+	symlinkSync(join(root, 'bundle-trust'), join(root, 'managed-lifecycle'));
+	await assert.rejects(gate.read(), /journal directory is not private and owned/);
+});
+
 for (const trust of [
 	{ domain: 'production', channel: 'macos-arm64-pilot' },
 	{ domain: 'development', channel: 'development', repository: 'https://github.com/example/project.git' },
@@ -64,11 +74,34 @@ for (const trust of [
 		priorRelease: release, priorCommit: release, candidateRelease: candidate.releaseId, wasRunning: true,
 		pins: { prior: installation, candidate }, bundleProof: { priorBundle: proof, candidate: next },
 	} }, next.floor);
-	await gate.publishOutcome(update, 'rolled-back', 'kept pinned predecessor');
-	await gate.release(update);
+	const candidateGeneration = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+	const restoredGeneration = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+	const recordRollback = async (reservation: typeof update, candidateState: 'running' | 'exited') => {
+		for (const [step, intent, receipt] of [
+			['candidate-start', candidate.releaseId, JSON.stringify({ state: candidateState, generation: candidateGeneration })],
+			...(reservation.predecessor.developmentQualification ? [['development-qualification-write', candidateGeneration,
+				createHash('sha256').update(reservation.id).digest('hex')]] : []),
+			['rollback-candidate-stop', candidateGeneration, JSON.stringify({
+				state: 'exited', generation: candidateGeneration, exit: { kind: 'failed', code: null, signal: 9 },
+			})],
+			['rollback-candidate-job', candidate.releaseId, JSON.stringify({ absent: true })],
+			['rollback-start', release, restoredGeneration],
+		] as const) {
+			await gate.recordIntent(reservation, step!, intent!);
+			await gate.recordReceipt(reservation, step!, receipt!);
+		}
+		await gate.publishOutcome(reservation, 'rolled-back', 'kept pinned predecessor');
+		await gate.release(reservation);
+	};
+	await recordRollback(update, 'running');
 	const state = await gate.read();
 	assert.deepEqual(state.installedBundle, { releaseRoot: installation.releaseRoot, proof });
 	assert.deepEqual(state.daemonBundleFloors, [next.floor]);
+	assert.equal(state.active, null);
+	assert.deepEqual(state.outcome?.developmentRollback, trust.domain === 'development' ? {
+		candidateCommit: candidate.releaseId, predecessorCommit: release, candidateManifestSha256: next.floor.manifestSha256,
+		predecessorManifestSha256: proof.floor.manifestSha256, candidateGeneration, restoredGeneration,
+	} : undefined);
 	const request = { kind: 'update' as const, owner, predecessor: {
 		priorRelease: release, priorCommit: release, candidateRelease: candidate.releaseId, wasRunning: true,
 		pins: { prior: installation, candidate }, bundleProof: { priorBundle: proof, candidate: next },
@@ -79,7 +112,17 @@ for (const trust of [
 	} }, different.floor), /replay or replace/);
 	const retry = await gate.reserve(request, next.floor);
 	assert.deepEqual((await gate.read()).daemonBundleFloors, [next.floor]);
-	await gate.cancelUnstartedUpdate(retry);
+	await recordRollback(retry, 'exited');
+	assert.equal((await gate.read()).outcome?.developmentRollback, undefined);
+	if (trust.domain === 'development') {
+		const trial = await gate.reserve({ ...request, predecessor: {
+			...request.predecessor, developmentQualification: true,
+		} }, next.floor);
+		await rejects('ownership-conflict', gate.publishOutcome(trial, 'committed', 'trial must never commit'));
+		await recordRollback(trial, 'running');
+		assert.equal((await gate.read()).outcome?.developmentRollback?.fixtureSha256,
+			createHash('sha256').update(trial.id).digest('hex'));
+	}
 });
 
 async function rejects(code: SupervisorErrorCode, result: Promise<unknown>): Promise<void> {

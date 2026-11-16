@@ -18,6 +18,7 @@
  * (title/reproduction/rootCause/fixIntent) — the exact bytes rendered as the
  * GitHub issue body. The routing/linking fields ride on `meta`, NOT the body:
  *   - `meta.magnitude`  — carried from sc1 (read by the s4 router);
+ *   - `meta.kind`       — 'defect' (absent) or 'change' (a trivial change's record);
  *   - `meta.parentRef`  — stamped by the s3 locator once found (null = standalone);
  *   - `meta.issueHash`  — the canonical identity (peer of specHash);
  *   - `meta.lifecycle` — the approval, like every artifact's.
@@ -67,20 +68,18 @@ export function renderIssueMarkdown(artifact: IssueArtifact): string {
 	lines.push(`# ${body.title}`);
 	lines.push('');
 
-	lines.push('## Reproduction');
-	lines.push('');
-	lines.push(body.reproduction);
-	lines.push('');
-
-	lines.push('## Root cause');
-	lines.push('');
-	lines.push(body.rootCause);
-	lines.push('');
-
-	lines.push('## Fix intent');
-	lines.push('');
-	lines.push(body.fixIntent);
-	lines.push('');
+	// A change ISSUE (the record of a trivial change) keeps the same four body
+	// fields; only the headings say what they hold for a change.
+	const headings = artifact.meta.kind === 'change'
+		? ['What was asked', 'Why', 'Change']
+		: ['Reproduction', 'Root cause', 'Fix intent'];
+	const sections = [body.reproduction, body.rootCause, body.fixIntent];
+	for (let i = 0; i < sections.length; i++) {
+		lines.push(`## ${headings[i]}`);
+		lines.push('');
+		lines.push(sections[i] ?? '');
+		lines.push('');
+	}
 
 	return lines.join('\n');
 }

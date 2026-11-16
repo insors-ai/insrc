@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4b0dfd08-903d-40bd-9df9-1c3a6d3144d0",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-14T17:22:38.567Z",
+    "epicCreatedAt": "2026-11-14T15:54:38.285Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "234b9967599e56d9",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Managed development update and rollback",
+      "parent": {
+        "entityId": "STORY-234b9967599e56d9-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-234b9967599e56d9-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-234b9967599e56d9-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-234b9967599e56d9-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "5a04b7c10d83c986c00c1f0f68d7351f62b86ffa73ff12555d539d4b7060daa3",
+        "at": "2026-11-14T17:22:38.572Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T17:22:38.574Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Managed development update and rollback",
+    "summary": "Apply exact predecessor qualification, quiesced-store inspection, idle/running intent and durable update/rollback.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "Cross-ref upgrade preserves state and floor and requires an exact compatible predecessor.",
+      "Interrupted update restores authenticated exact predecessor offline or fails closed."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Exact predecessor, cross-branch state, idle intent and offline rollback"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

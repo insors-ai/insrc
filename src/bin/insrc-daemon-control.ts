@@ -1,8 +1,9 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 
 import { access, lstat, mkdir, readdir, realpath, rm } from 'node:fs/promises';
-import { spawn } from 'node:child_process';
-import { basename, join } from 'node:path';
+import { execFileSync, spawn } from 'node:child_process';
+import { basename, dirname, join } from 'node:path';
+import { userInfo } from 'node:os';
 import { stopDaemon } from '../cli/services/daemon.js';
 import { captureDaemon, cleanupStoppedDaemon } from '../cli/services/lifecycle.js';
 import { accepted, ManagedDaemonControl, openManagedSupervisorLink } from '../cli/services/managed-daemon-control.js';
@@ -18,7 +19,7 @@ import { admitManagedPreparation, prepareLegacyUpgrade, retainManagedReleaseVeri
 import { PATHS } from '../shared/paths.js';
 import { requestLegacyDrain, restoredLegacyDrainPath } from '../daemon/legacy-private-drain.js';
 import { stopRestoredLegacyProcess } from '../daemon/legacy-public-stop.js';
-import { readManagedBundleProof } from '../daemon/managed-bundle-proof.js';
+import { readManagedBundleProof, verifyManagedBundleManifest, verifyManagedBundleProof } from '../daemon/managed-bundle-proof.js';
 import { prepareBundleLegacyUpgrade, prepareInstalledBundleUpgrade } from '../daemon/managed-update-preparation.js';
 
 const NOT_MANAGED = 10;
@@ -58,7 +59,9 @@ async function stage(release: string | undefined, releaseId: string | undefined,
 }
 
 async function main(command: string): Promise<void> {
-	if (command === 'activate-bundle') {
+	if (command === 'activate-bundle' || command === 'activate-development-bundle' || command === 'qualify-development-bundle') {
+		const qualificationOnly = command === 'qualify-development-bundle';
+		const development = command !== 'activate-bundle';
 		const [release, releaseId, legacyRoot, legacyRuntime] = process.argv.slice(3);
 		if (process.platform !== 'darwin' || release === undefined || releaseId === undefined
 			|| !/^[a-f0-9]{40}$/.test(releaseId) || Boolean(legacyRoot) !== Boolean(legacyRuntime)) {
@@ -73,11 +76,56 @@ async function main(command: string): Promise<void> {
 			proofChunks.push(bytes);
 		}
 		const proof = readManagedBundleProof(JSON.parse(Buffer.concat(proofChunks).toString('utf8')));
-		if (proof.floor.domain === 'development') throw new Error('development proof requires the development installer');
-		await mkdir(PATHS.insrc, { mode: 0o700, recursive: true });
+		if ((proof.floor.domain === 'development') !== development) throw new Error('bundle proof requires its matching installer');
+		if (development) {
+			const { homedir: home, uid } = userInfo();
+			const guest = execFileSync('/usr/sbin/sysctl', ['-n', 'kern.hv_vmm_present'], { encoding: 'utf8', timeout: 5000 }).trim();
+			const marker = await lstat(join(home, '.insrc-development-guest'));
+			const releaseParent = join(home, '.insrc-daemon-development-releases');
+			const parentInfo = await lstat(releaseParent);
+			if (guest !== '1' || process.arch !== 'arm64' || process.versions.node !== '22.22.1' || uid === 0 ||
+				!marker.isFile() || marker.uid !== uid || (marker.mode & 0o077) !== 0 ||
+				!parentInfo.isDirectory() || parentInfo.uid !== uid || (parentInfo.mode & 0o077) !== 0 ||
+				legacyRoot !== undefined || PATHS.insrc !== join(home, '.insrc') ||
+				await realpath(PATHS.insrc) !== PATHS.insrc || await realpath(release) !== release ||
+				dirname(release) !== releaseParent) throw new Error('development activation requires an isolated guest installation');
+			const journal = await new InstallationMutationGate(PATHS.insrc).read();
+			if (journal.active !== null ||
+				(await readdir(join(PATHS.insrc, 'bundle-trust'))).some(name => name !== 'development.pem')) {
+				throw new Error('development activation requires exclusive development state');
+			}
+			const manifest = await verifyManagedBundleManifest(proof, releaseId, PATHS.insrc);
+			if ((manifest.qualificationOnly === true) !== qualificationOnly || (qualificationOnly && manifest.predecessor !== null)) {
+				throw new Error('development manifest does not match activation mode');
+			}
+			const installed = journal.installedBundle;
+			if (installed === undefined) {
+				if (qualificationOnly || manifest.predecessor !== null || (await readdir(PATHS.insrc)).some(name => name !== 'bundle-trust')) {
+					throw new Error('development activation requires the matching installation state');
+				}
+			} else {
+				if (proof.floor.domain !== 'development' || installed.proof.floor.domain !== 'development' ||
+					installed.proof.floor.repository !== proof.floor.repository) {
+					throw new Error('development activation requires a matching development installation');
+				}
+				if (!qualificationOnly && installed.proof.floor.manifestSha256 === proof.floor.manifestSha256 &&
+					installed.proof.floor.archiveSha256 === proof.floor.archiveSha256) {
+					const selected = await readInstallationSelector(PATHS.insrc);
+					if (selected?.releaseRoot !== installed.releaseRoot || selected.releaseId !== releaseId || !selected.enabled) {
+						throw new Error('installed development bundle selector disagrees with its receipt');
+					}
+					await verifyManagedBundleProof(selected, installed.proof);
+					process.stdout.write('Development bundle is already installed.\n');
+					return;
+				}
+				if (!qualificationOnly && manifest.predecessor === null) throw new Error('development update requires an exact predecessor');
+			}
+		} else await mkdir(PATHS.insrc, { mode: 0o700, recursive: true });
 		const stateRoot = await realpath(PATHS.insrc);
 		const rootInfo = await lstat(stateRoot);
-		if (rootInfo.uid !== process.getuid?.() || (rootInfo.mode & 0o022) !== 0) throw new Error('unsafe installation root');
+		if (rootInfo.uid !== process.getuid?.() || (rootInfo.mode & (development ? 0o077 : 0o022)) !== 0) {
+			throw new Error('unsafe installation root');
+		}
 		const installation = { version: 1 as const, stateRoot, releaseRoot: await realpath(release), releaseId,
 			runtime: await realpath(process.execPath), pathEnv: process.env['PATH'] ?? '/usr/bin:/bin', enabled: true };
 		if (legacyRoot !== undefined && legacyRuntime !== undefined) {
@@ -85,13 +133,54 @@ async function main(command: string): Promise<void> {
 			process.stdout.write(`${result.decision}: ${result.detail}\n`);
 			if (result.decision !== 'committed') process.exitCode = 4;
 		} else {
-			const { active, installedBundle } = await new InstallationMutationGate(stateRoot).read();
+			const gate = new InstallationMutationGate(stateRoot);
+			const { active, installedBundle } = await gate.read();
 			if (installedBundle !== undefined && active === null) {
-				const result = await prepareInstalledBundleUpgrade(installation, proof);
+				const prior = qualificationOnly ? await readInstallationSelector(stateRoot) : undefined;
+				const result = await prepareInstalledBundleUpgrade(installation, proof, qualificationOnly);
+				if (qualificationOnly && prior !== undefined && result.decision === 'rolled-back') {
+					const { outcome, active: reservation } = await gate.read();
+					const observation = outcome?.developmentRollback;
+					if (reservation !== null || outcome?.id !== result.id || observation?.fixtureSha256 === undefined ||
+						observation.candidateManifestSha256 !== proof.floor.manifestSha256 ||
+						observation.predecessorManifestSha256 !== installedBundle.proof.floor.manifestSha256) {
+						throw new Error('qualification trial lacks an observed candidate write and rollback');
+					}
+					const link = await openManagedSupervisorLink(prior);
+					let served: { transactionId?: string; release?: string; stateSha256?: string };
+					try {
+						const check = async () => {
+							const status = accepted(await link.call({ op: 'status', generation: observation.restoredGeneration }));
+							if (status.state !== 'running' || status.generation !== observation.restoredGeneration) {
+								throw new Error('qualification predecessor generation is no longer running');
+							}
+						};
+						await check();
+						served = await rpc('daemon.qualificationState', {}, undefined, { timeoutMs: 5_000 });
+						await check();
+					} finally { link.close(); }
+					if (served.transactionId !== result.id || served.release !== prior.releaseId ||
+						served.stateSha256 !== observation.fixtureSha256) throw new Error('qualification predecessor served different state');
+					const candidateManifest = await verifyManagedBundleManifest(proof, releaseId, stateRoot);
+					const predecessorManifest = await verifyManagedBundleManifest(installedBundle.proof, prior.releaseId, stateRoot);
+					process.stdout.write(JSON.stringify({
+						schemaVersion: 2, predecessorManifestSha256: observation.predecessorManifestSha256,
+						predecessorRuntimeFingerprint: installedBundle.proof.fingerprint, candidateCommit: releaseId,
+						candidateArchiveSha256: proof.floor.archiveSha256, candidateRuntimeFingerprint: proof.fingerprint,
+						predecessorCompatibility: predecessorManifest.compatibility, candidateCompatibility: candidateManifest.compatibility,
+						launchProfile: 'managed', candidateWriteObserved: true, candidateInterrupted: true, predecessorReopened: true,
+						managedRollback: { transactionId: result.id, outcome: result.decision,
+							candidateGeneration: observation.candidateGeneration, restoredGeneration: observation.restoredGeneration,
+							servedRelease: served.release, expectedStateSha256: observation.fixtureSha256, servedStateSha256: served.stateSha256 },
+					}) + '\n');
+					return;
+				}
+				if (qualificationOnly) throw new Error(`development qualification failed: ${result.detail}`);
 				process.stdout.write(`${result.decision}: ${result.detail}\n`);
 				if (result.decision !== 'committed') process.exitCode = 4;
 				return;
 			}
+			if (qualificationOnly) throw new Error('qualification requires an idle transaction journal and installed predecessor');
 			if (active === null && (await readdir(stateRoot)).some(name =>
 				!['bundle-trust', 'managed-lifecycle'].includes(name))) {
 				throw new Error('fresh bundle activation requires a pristine state root');

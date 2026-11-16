@@ -36,6 +36,7 @@ import { lifecycleFor } from '../../../lifecycle-registry.js';
 import { seedSidecarRules } from '../../../../workflow/artifact-core/__tests__/seed-rules.js';
 import { seedBoundTaskHead, seedBoundUnits } from '../../../../workflow/__tests__/helpers/task-heads.js';
 import '../../../../workflow/__tests__/helpers/converted-repos.js';
+import { seedIssue } from '../../../../workflow/__tests__/helpers/approved-issue.js';
 
 /** The judge's structured verdict, with the fields a test does not care about filled in. */
 function judgeVerdict(over: Record<string, unknown>): Record<string, unknown> {
@@ -611,6 +612,7 @@ async function runImplementThenValidate(repo: string, opts?: { readonly summary?
 		async runReviewSession<T>() { return judgeVerdict({ taskId: 's1', passed: true }) as T; },
 	});
 	try {
+		seedIssue(repo, HASH, { createdAt: CREATED_AT });   // a Trivial build runs under its approved ISSUE
 		const standalone = { standalone: true as const, epicHash: HASH, storyId: 's1', sizeClass: 'trivial', focus: 'Add a --json flag to the status subcommand.' };
 		const impl = outputOf(await handleBuildStep({ phase: 'implement', target: 's1', repo, standalone }));
 		assert.equal(impl['next'], 'implement', 'the standalone implement phase admitted the build');
@@ -1269,7 +1271,9 @@ test('0855311b — validate, LLD-only Small story: first write is standalone, si
 test('0855311b — validate, no head and no LLD: the route the standalone branch declared is what is written', async () => {
 	const repo = mkRepo();
 	try {
-		// A Trivial build: nothing on disk can say what it is, so the declaration must.
+		// A Trivial build: no LLD and no BUILD record says what it is, so the declaration
+		// must. Its only artifact is the approved ISSUE it runs under.
+		seedIssue(repo, HASH, { createdAt: CREATED_AT });
 		await validateWith(repo, { standalone: true, epicHash: HASH, storyId: 's1', sizeClass: 'trivial', focus: 'a guard' });
 		const rec = readBuildRecord(repo);
 		assert.equal(rec.meta['standalone'], true);
@@ -1479,10 +1483,11 @@ test('plan-driven and standalone validate each hand the check runner the plan fo
 	const trivial = mkRepo();
 	try {
 		seedStandaloneLldOnly(small);
+		seedIssue(trivial, HASH, { createdAt: CREATED_AT });
 		await withChecks(record, async () => {
 			await handleBuildStep({ phase: 'validate', target: 's1/t1', repo: planDriven });
 			await handleBuildStep({ phase: 'validate', target: 's1', repo: small, standalone: { standalone: true, epicHash: HASH, storyId: 's1', sizeClass: 'small' } });
-			await handleBuildStep({ phase: 'validate', target: 's1', repo: trivial, standalone: { standalone: true, storyId: 's1', sizeClass: 'trivial', focus: 'tidy a comment' } });
+			await handleBuildStep({ phase: 'validate', target: 's1', repo: trivial, standalone: { standalone: true, epicHash: HASH, storyId: 's1', sizeClass: 'trivial', focus: 'tidy a comment' } });
 		});
 		assert.equal(plans.length, 3);
 		// Plan-driven: the task's named test, which carries no '<file>.test.ts:' prefix.
@@ -1945,9 +1950,11 @@ const TRIVIAL = { standalone: true, epicHash: HASH, storyId: 's1', sizeClass: 't
 const failJudge = (): never => { throw new Error('the CLI exited with 1'); };
 
 test("a trivial standalone build validated with no implement turn before it, whose judge fails on the first turn and passes on a turn dated a day later, has its BUILD.md and TESTS.md in one folder; with an implement turn first, the BUILD record it wrote is the anchor and the test record follows it; and a small standalone build's test record carries the declared standalone flag before any BUILD record exists and the same when the first BUILD record is written by the completion path (mutation: anchor the BUILD record on its own time when a test record exists)", async () => {
-	// 1. Trivial, no implement turn: nothing anchors the folder but the records themselves.
+	// 1. Trivial, no implement turn: the folder is anchored by the approved ISSUE the build runs
+	//    under, created on DAY1 (Story c5b49ff953a9a295/s1: no Trivial build runs headless).
 	const bare = mkRepo();
 	try {
+		seedIssue(bare, HASH, { createdAt: DAY1 });
 		const first = await standaloneTurn(bare, DAY1, TRIVIAL, failJudge);
 		assert.equal((first['error'] as { code: string }).code, 'verdict-session-failed');
 		assert.deepEqual(recordDocs(bare).map(p => p.split('/').pop()), ['TESTS.md'], 'the first turn wrote the test record and no build record');
@@ -1969,6 +1976,7 @@ test("a trivial standalone build validated with no implement turn before it, who
 	// 2. Trivial, with the implement turn first: the build record it wrote is the anchor.
 	const implemented = mkRepo();
 	try {
+		seedIssue(implemented, HASH, { createdAt: DAY1 });
 		const { _setBuildValidateClockForTests } = await import('../phases/validate.js');
 		void _setBuildValidateClockForTests;
 		const impl = outputOf(await handleBuildStep({ phase: 'implement', target: 's1', repo: implemented, standalone: TRIVIAL as never }));
@@ -2000,6 +2008,7 @@ test("a trivial standalone build validated with no implement turn before it, who
 	// 4. Trivial, no implement turn, first build record written by the completion path a day later.
 	const completed = mkRepo();
 	try {
+		seedIssue(completed, HASH, { createdAt: DAY1 });
 		await standaloneTurn(completed, DAY1, TRIVIAL, failJudge);
 		const testsDoc = recordDocs(completed)[0]!;
 		const built = await ensureBuildRecordOnCompletion(completed, { epicHash: HASH, storyId: 's1' }, async () => []);
@@ -2124,6 +2133,7 @@ test("on the standalone routes: a wrong mapping on a small build is refused with
 		// A trivial build ignores `tests`, even a wrong one. This one has no range
 		// base, so its own files cannot be listed: the listing fails the tests check
 		// rather than running the HEAD commit's tests (ISSUE-b97752e9).
+		seedIssue(repo, 'c1c2c3c4d5d6e7e8', { createdAt: CREATED_AT });   // the approved ISSUE it runs under
 		const TRIVIAL_CTX = { standalone: true, epicHash: 'c1c2c3c4d5d6e7e8', storyId: 's1', sizeClass: 'trivial', focus: 'a guard' };
 		const trivial = await standalone({ standalone: TRIVIAL_CTX, tests: [{ name: 'no such subject', cases: [{ file: 'nowhere.test.ts', title: 't' }] }] });
 		assert.equal(trivial.out['next'], 'done', 'not refused');

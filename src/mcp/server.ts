@@ -629,13 +629,13 @@ export function buildInsrcMcpServerWithRegistry(options: { review?: ConstructorP
 					.optional(),
 				standalone: z.object({
 					standalone:      z.literal(true),
-					epicHash:        z.string().optional().describe('Standalone story identity (self-minted hash). Required for a Small build (locates the approved LLD).'),
+					epicHash:        z.string().optional().describe('Standalone story identity. Required: for a Small build the approved LLD\'s hash; for a Trivial or small-bugfix build (no LLD) the hash of its approved ISSUE, which the ISSUE approval\'s nextCall carries. A no-LLD build without an approved ISSUE is refused.'),
 					storyId:         z.string().optional().describe('Standalone story id; defaults to s1.'),
-					focus:           z.string().optional().describe('Scope statement — the spec for a Trivial (no-LLD) build.'),
+					focus:           z.string().optional().describe('Scope statement — the spec for a no-LLD (Trivial / small-bugfix) build, taken from its approved ISSUE.'),
 					sizeClass:       z.string().optional().describe('Triage size class (small / trivial).'),
 					triageRationale: z.string().optional().describe('The classifier\'s rationale, stamped on the standalone BUILD record.'),
 				})
-					.describe('Present for a triage-routed no-plan build (Small implements the approved standalone LLD; Trivial implements the scope). Bypasses task/tracker resolution.')
+					.describe('Present for a triage-routed no-plan build (Small implements the approved standalone LLD; Trivial or a small bugfix implements the scope of its approved ISSUE). Bypasses task/tracker resolution.')
 					.optional(),
 				summary: z.string()
 					.describe('Only for phase=validate. OPTIONAL narrative of what this build actually did, in a sentence or two — lands on the BUILD record\'s `body.summary` and renders as `## Summary`. Never synthesised: omit it and the record carries no summary rather than one invented from the task list. Empty / whitespace-only counts as omitted.')
@@ -690,7 +690,7 @@ export function buildInsrcMcpServerWithRegistry(options: { review?: ConstructorP
 	// build` ladder. This tool sizes the request (YOU classify, grounded on
 	// your own `insrc_analyze_step` passes) and routes it to the right start
 	// stage: Epic → define; Feature → standalone LLD → plan → build; Small →
-	// standalone LLD → build; Trivial → build. Server maps size → route and
+	// standalone LLD → build; Trivial → issue (a change) → build. Server maps size → route and
 	// pre-fills the exact next call. See `docs/plans/feature-triage-router.md`.
 	// -------------------------------------------------------------------
 	registerAndRecord(
@@ -704,7 +704,7 @@ export function buildInsrcMcpServerWithRegistry(options: { review?: ConstructorP
 				'a feature, instead of hand-picking `define` / `design.story` / `build`.\n\n' +
 				'Tiers: Epic → `define` (full chain); Feature → standalone `design.story` ' +
 				'(LLD) → plan → build; Small → standalone `design.story` → build; Trivial ' +
-				'→ `build` (no LLD).\n\n' +
+				'→ the `issue` stage as a change, then `build` (no LLD; the build runs under the ISSUE\'s hash). No tier starts at `build`.\n\n' +
 				'Two-turn loop:\n' +
 				'  1. phase=\'start\' with { focus, repo?, specHash? } (specHash: an approved SPEC to seed the routed stage). Server returns ' +
 				'{ next: \'emit_classification\', prompt, schema, state }.\n' +

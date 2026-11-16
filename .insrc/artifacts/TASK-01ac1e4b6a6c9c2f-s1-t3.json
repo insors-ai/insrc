@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-aabe9ce1-ee0e-41c4-a95a-56aec3b59d26",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-15T05:00:05.910Z",
+    "epicCreatedAt": "2026-11-14T15:32:49.965Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "01ac1e4b6a6c9c2f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Reshape the document view: pre→textarea, save wiring, gen-guarded replies, onScratchSave seam, replySaved",
+      "parent": {
+        "entityId": "STORY-01ac1e4b6a6c9c2f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-01ac1e4b6a6c9c2f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-01ac1e4b6a6c9c2f-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "bcd588d207046db9aba57d7606f937ebe4edbc1d9dc6f293b1b53bbe93f9a457",
+        "at": "2026-11-15T05:00:05.910Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-15T05:00:05.914Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Reshape the document view: pre→textarea, save wiring, gen-guarded replies, onScratchSave seam, replySaved",
+    "summary": "Reshape the scratchpad document view in vscode-plugin/src/panels/scratch-panels.ts: pre → CSP-safe textarea (content via .value), documentBootstrap(gen, id), dirty tracking with save button + title suffix, Ctrl/Cmd+S and click posting document-channel 'scratch-save', gen-guarded 'scratch-saved' handling, a new panels.replySaved(gen, msg) and a new ScratchPanelsDeps.onScratchSave seam, and send-to-chat re-read from the textarea's own selection; all pinned in scratch-panel.test.ts.",
+    "size": "L",
+    "order": 3,
+    "acceptanceChecks": [
+      "documentBodyHtml emits <textarea id=\"insrc-scratchdoc\" class=\"scratch-doc\"> (not pre) plus the hidden save button",
+      "scratch-content push sets doc.value, never innerHTML/textContent",
+      "documentBootstrap gains the id parameter — documentBootstrap(gen, id)",
+      "input → dirty (save button visible + panel title '•' suffix); keydown Ctrl/Cmd+S and save-button click post 'scratch-save' { id, gen: docGeneration, text: doc.value }",
+      "'scratch-saved' honored only when msg.gen === live docGeneration and id matches → clear dirty on ok / show error on ok=false; stale-gen replies ignored",
+      "send-to-chat re-pointed to the textarea selection API (selectionStart/selectionEnd over doc.value on select/keyup/mouseup), still capUtf8-capped",
+      "ScratchPanels gains replySaved(gen, msg) targeting the live document generation; the panel's onMessage exposes a new deps.onScratchSave seam validated against showingId + live docGeneration",
+      "singleton panel, docGeneration/epoch guards, pendingContent replay and wrap() drop logging unchanged",
+      "scratch-panel.test.ts source + behavioral pins cover all of the above"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "scratch-panel.test.ts: documentBodyHtml emits <textarea id=\"insrc-scratchdoc\"> and the save button; documentBootstrap pins the scratch-save post with gen + keydown Ctrl/Cmd+S + scratch-saved handler honoring only gen === docGeneration + textarea selectionStart/selectionEnd send-to-chat"
+      },
+      {
+        "level": "integration",
+        "name": "scratch-panel.test.ts behavioral: input event sets dirty (save button visible, title suffix via setTitle), 'scratch-saved' ok with matching gen clears dirty, ok=false keeps dirty and shows error, stale-gen reply ignored; scratch-content sets textarea .value (not textContent/innerHTML); send-to-chat reads selection from textarea selectionStart/selectionEnd over doc.value and posts capUtf8-capped text"
+      },
+      {
+        "level": "integration",
+        "name": "scratch-panel.test.ts: send-to-chat post via textarea selection (selectionStart/selectionEnd) present in the new bootstrap; capUtf8 behavior untouched (existing tests); existing ISSUE-3183af2a tests (wrap() drop logging, reveal(true), popup icons) still pass"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

@@ -1,0 +1,77 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-8a524a65-68a7-4bcd-8b8d-aeb8b07ceb7e",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-14T17:22:38.576Z",
+    "epicCreatedAt": "2026-11-14T15:54:38.285Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "234b9967599e56d9",
+    "storyId": "s1",
+    "envelope": {
+      "description": "First-install recovery",
+      "parent": {
+        "entityId": "STORY-234b9967599e56d9-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-234b9967599e56d9-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-234b9967599e56d9-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e8b27d01307948fa73975152ad8d1f5c8a3c1b0d144ec26bbbfb7563b654f6b6",
+        "at": "2026-11-14T17:22:38.581Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T17:22:38.583Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "First-install recovery",
+    "summary": "Recover authenticated orphaned first-install reservations without an installed receipt. Reconcile exact selector, process, job and state effects.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "Recover before selector, after launchd registration and after readiness. Refuse foreign state and retained live ownership."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Crash before selector, after job and before receipt, with foreign or live ownership refusal"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

@@ -11,10 +11,11 @@ import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
 import { ManagedDaemonControl, openManagedSupervisorLink } from '../../cli/services/managed-daemon-control.js';
 import { readDarwinIncarnation } from '../../shared/darwin-lifecycle.js';
+import { SupervisorLifecycleError } from '../../shared/daemon-supervisor-protocol.js';
 import { InstallationMutationGate } from '../../shared/installation-mutation-gate.js';
 import type { FreshActivation } from '../../shared/installation-mutation-gate.js';
 import { inspectManagedJob, installFreshSelectorMember, installationPaths, readInstallationSelector, removeManagedJob } from '../../shared/managed-daemon-installation.js';
-import { activateFreshManagedDaemon } from '../fresh-managed-activation.js';
+import { activateFreshManagedDaemon, verifyRequestedState } from '../fresh-managed-activation.js';
 import { captureManagedReleasePin } from '../managed-release-staging.js';
 
 const exec = promisify(execFile);
@@ -22,6 +23,34 @@ const darwin = process.platform === 'darwin' && (process.getuid?.() ?? 0) > 0;
 const platform = { skip: !darwin, timeout: 40_000 };
 const loader = import.meta.resolve('tsx/esm/api');
 const reference = (path: string) => JSON.stringify(new URL(path, import.meta.url).href);
+
+test('fresh activation reconnects after a lost start reply and retains the admitted generation', async () => {
+	const generation = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+	let connections = 0;
+	let starts = 0;
+	const result = await verifyRequestedState(async () => {
+		const connection = ++connections;
+		return {
+			async call(request) {
+				const base = { v: 1 as const, id: 'response', generation: null };
+				if (request.op === 'start') {
+					assert.equal(request.generation, null);
+					if (++starts === 1) throw new SupervisorLifecycleError('supervisor-unavailable', 'lost start reply');
+					if (starts === 2) return { ...base, ok: false, error: 'busy' };
+					return { ...base, ok: true, generation, state: 'starting' };
+				}
+				if (connection === 1) return { ...base, ok: true, state: 'idle' };
+				assert.equal(request.generation, generation);
+				return { ...base, ok: true, generation, state: 'running' };
+			},
+			close() {},
+		};
+	}, true);
+	assert.equal(connections, 2);
+	assert.equal(starts, 3);
+	assert.equal(result.generation, generation);
+	assert.equal(result.state, 'running');
+});
 
 async function connectFixture(installation: Parameters<typeof openManagedSupervisorLink>[0]) {
 	for (let attempt = 0;; attempt++) {
@@ -182,8 +211,8 @@ test('Explicit fresh activation start intent and owned partial publication', pla
 });
 
 test('Fresh controller activation reconciles partial selector and bootstrap', { ...platform, timeout: 100_000 }, async t => {
-	for (const interruption of ['descriptor', 'manifest-link', 'bootstrap', 'recorded-readiness']) {
-		const startChild = interruption === 'bootstrap' || interruption === 'recorded-readiness';
+	for (const interruption of ['reserved', 'descriptor', 'manifest-link', 'bootstrap', 'unrecorded-readiness', 'recorded-readiness']) {
+		const startChild = ['bootstrap', 'unrecorded-readiness', 'recorded-readiness'].includes(interruption);
 		const { activation, gate, installation, scratch, exitTrigger } = await fixture(t, startChild);
 		const helper = join(scratch, 'interrupt.mjs');
 		await writeFile(helper, `
@@ -198,6 +227,7 @@ const interruption = ${JSON.stringify(interruption)};
 const installation = activation.installation;
 const gate = new InstallationMutationGate(installation.stateRoot);
 const active = await gate.reserve({ kind: 'start', owner: await readDarwinIncarnation(process.pid), activation });
+if (interruption === 'reserved') process.exit(0);
 const admit = async () => { await gate.admit(active); };
 for (const member of ['descriptor', 'manifest']) {
   await gate.recordIntent(active, 'activation-' + member, installation.releaseId);
@@ -216,7 +246,7 @@ if (activation.startChild) {
   await gate.recordIntent(active, 'activation-job', installation.releaseId);
   await ensureManagedJob(installation, admit, { intent: async () => {}, receipt: async () => {} });
 }
-if (interruption === 'recorded-readiness') {
+if (interruption.endsWith('readiness')) {
   const job = await inspectManagedJob(installation);
   await gate.recordReceipt(active, 'activation-job', JSON.stringify({ target: job.target, incarnation: await readDarwinIncarnation(job.pid) }));
   await gate.recordIntent(active, 'activation-state', installation.releaseId);
@@ -231,7 +261,7 @@ if (interruption === 'recorded-readiness') {
     state = accepted(await link.call({ op: 'status', generation: state.generation }));
   }
   if (state.state !== 'running') throw new Error('fixture did not reach readiness');
-  await gate.recordReceipt(active, 'activation-state', JSON.stringify(state));
+  if (interruption === 'recorded-readiness') await gate.recordReceipt(active, 'activation-state', JSON.stringify(state));
   link.close();
 }
 `);

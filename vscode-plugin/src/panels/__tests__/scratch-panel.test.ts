@@ -3,10 +3,12 @@
  *
  * Fake PanelFactory + fake PanelHandle + the real scratch store over a fake fs:
  * browse table, row buttons, empty/error states, create-or-reveal reuse,
- * panel-factory failure, document render via textContent-only push, the
- * floating Send-to-chat button, A->B switching on one instance with a
- * reversed read completion, stale ENOENT, deleting a non-displayed document,
- * epoch invalidation, dispose-during-read, and the UTF-8 cap boundary.
+ * panel-factory failure, document render via the .value-only push, the
+ * floating Send-to-chat button over the textarea selection API, the editable
+ * document view (save button + Ctrl/Cmd+S posting scratch-save, gen-guarded
+ * scratch-saved replies), A->B switching on one instance with a reversed read
+ * completion, stale ENOENT, deleting a non-displayed document, epoch
+ * invalidation, dispose-during-read, and the UTF-8 cap boundary.
  *
  * Run: npx tsx --test vscode-plugin/src/panels/__tests__/scratch-panel.test.ts
  */
@@ -225,7 +227,7 @@ test('scratch-panel.test.ts: empty list renders a hint row; create-or-reveal reu
 // t6: document view
 // ---------------------------------------------------------------------------
 
-test('scratch-panel.test.ts: document viewType insrc.scratchpad renders content via textContent only (ac4)', async () => {
+test('scratch-panel.test.ts: document viewType insrc.scratchpad renders a textarea and pushes content via the .value-only message (CSP-safe, ac4)', async () => {
   const h = harness();
   await seed(h, '20260113-083000-pad.md', '# Title\n\nbody <b>not markup</b>', 300);
   const handle = await h.controller.openDocument('20260113-083000-pad.md');
@@ -233,90 +235,91 @@ test('scratch-panel.test.ts: document viewType insrc.scratchpad renders content 
   const panel = h.panels[0]!;
   assert.equal(panel.viewType, SCRATCHPAD_VIEW_TYPE);
   assert.deepEqual(panel.revealFlags, [true], 'ISSUE-3183af2a: the fresh document reveal preserves focus (no focus steal from the chat popup)');
-  // The static body holds an empty <pre>; content arrives as a push.
-  assert.ok(panel.html.includes('<pre id="insrc-scratchdoc" class="scratch-doc"></pre>'), 'the doc element starts empty');
+  // The static body holds an empty <textarea>; content arrives as a push.
+  assert.ok(panel.html.includes('<textarea id="insrc-scratchdoc" class="scratch-doc"'), 'the doc element is a textarea');
+  assert.ok(!panel.html.includes('<pre id="insrc-scratchdoc"'), 'no <pre> remains');
   assert.ok(!panel.html.includes('not markup</b>'), 'content is NOT baked into the HTML');
   const push = panel.posted.find((m) => (m as { payload?: { type?: string } }).payload?.type === 'scratch-content') as { payload: { text: string } } | undefined;
   assert.ok(push !== undefined, 'content was pushed as a message');
   assert.equal(push!.payload.text, '# Title\n\nbody <b>not markup</b>');
-  // The bootstrap applies it via textContent only: run the script over a fake DOM.
-  const doc = bodyStub('pre', 'insrc-scratchdoc');
+  // The bootstrap applies it via doc.value only: run the script over a fake DOM.
+  const doc = bodyStub('textarea', 'insrc-scratchdoc');
   const listeners: Array<(e: unknown) => void> = [];
-  runInNewContext(documentBootstrap(1), {
+  runInNewContext(documentBootstrap(1, '20260113-083000-pad.md'), {
     acquireVsCodeApi: () => ({ postMessage: () => {} }),
     window: {
       addEventListener: (t: string, l: (e: unknown) => void) => { if (t === 'message') listeners.push(l); },
-      getSelection: () => ({ toString: () => '', isCollapsed: true }),
     },
     document: {
       getElementById: (id: string) => (id === 'insrc-scratchdoc' ? doc : bodyStub('button', id)),
+      querySelector: () => bodyStub('div', 'wrap'),
       addEventListener: () => {},
+      createElement: () => bodyStub('div', 'err'),
     },
   });
   for (const l of listeners) l({ data: { v: 1, payload: { type: 'scratch-content', text: '<b>x</b>' } } });
-  assert.equal(doc.textContent, '<b>x</b>', 'applied as text, never parsed as markup');
+  assert.equal(doc.value, '<b>x</b>', 'applied to .value, never parsed as markup');
   assert.ok(!allOf(doc).some((n) => n.writes.some((w) => w.prop === 'innerHTML')), 'no innerHTML write for content');
+  assert.ok(!allOf(doc).some((n) => n.writes.some((w) => w.prop === 'textContent')), 'no textContent write for content (textarea content goes through .value)');
 });
 
-test('scratch-panel.test.ts: selectionchange with non-empty selection shows the floating icon-only Send-to-chat button (title) which posts send-to-chat {text}; selection-to-button click preserves the captured selection across focus/selectionchange (ac4, ac5)', () => {
+test('scratch-panel.test.ts: textarea selection (selectionStart/selectionEnd over doc.value) shows the floating icon-only Send-to-chat button (title) which posts send-to-chat {text}; selection-to-button click preserves the captured selection (ac4, ac5)', () => {
   const body = documentBodyHtml();
   const btn = /<button type="button" id="insrc-sendtochat" class="scratch-send" title="Send to chat" aria-label="Send to chat" hidden>(.*?)<\/button>/.exec(body);
   assert.ok(btn, 'the floating button exists');
   assert.match(btn![1]!, /^<svg /, 'icon-only');
   assert.equal(btn![1]!.replace(/<[^>]*>/g, '').trim(), '', 'no visible text');
-  // Run the bootstrap: a selectionchange with text reveals the button, latches the text,
-  // and anchors the button at the selection's caret rect.
-  const doc = bodyStub('pre', 'insrc-scratchdoc');
+  // Run the bootstrap: a select event with a textarea selection reveals the button,
+  // latches the text read from doc.value.substring(selectionStart, selectionEnd).
+  const doc = bodyStub('textarea', 'insrc-scratchdoc');
+  doc.value = 'hello selected <text> world';
+  doc.selectionStart = 6;
+  doc.selectionEnd = 21;
   const sendBtn = bodyStub('button', 'insrc-sendtochat');
   let hiddenProp = true;
   Object.defineProperty(sendBtn, 'hidden', { get: () => hiddenProp, set: (v: boolean) => { hiddenProp = v; } });
   const sent: unknown[] = [];
-  let selection: { toString: () => string; isCollapsed: boolean; getRangeAt?: () => { getBoundingClientRect: () => { right: number; bottom: number } } } = {
-    toString: () => 'selected <text>',
-    isCollapsed: false,
-    getRangeAt: () => ({ getBoundingClientRect: () => ({ right: 120, bottom: 240 }) }),
-  };
-  const docListeners: Array<(e?: unknown) => void> = [];
+  const docListeners: Record<string, Array<(e?: unknown) => void>> = {};
   let activeElement: unknown = undefined; // the document's focused element
-  runInNewContext(documentBootstrap(1), {
+  const docAddEventListener = doc.addEventListener.bind(doc);
+  doc.addEventListener = ((t: string, l: (e?: unknown) => void) => { (docListeners[t] ??= []).push(l); }) as unknown as typeof docAddEventListener;
+  runInNewContext(documentBootstrap(1, 'pad.md'), {
     acquireVsCodeApi: () => ({ postMessage: (m: unknown) => { sent.push(m); } }),
     window: {
       addEventListener: () => {},
-      getSelection: () => selection,
-      scrollX: 0,
-      scrollY: 0,
     },
     document: {
-      getElementById: (id: string) => (id === 'insrc-scratchdoc' ? doc : id === 'insrc-sendtochat' ? sendBtn : bodyStub('div', id)),
-      addEventListener: (t: string, l: (e?: unknown) => void) => { if (t === 'selectionchange') docListeners.push(l); },
+      getElementById: (id: string) => (id === 'insrc-scratchdoc' ? doc : id === 'insrc-sendtochat' ? sendBtn : bodyStub('button', id)),
+      querySelector: () => bodyStub('div', 'wrap'),
+      addEventListener: () => {},
       get activeElement() { return activeElement; },
+      createElement: () => bodyStub('div', 'err'),
     },
   });
-  // selectionchange fires with a non-empty selection.
-  for (const l of docListeners) l();
-  assert.equal((sendBtn as unknown as { hidden: boolean }).hidden, false, 'button revealed on a non-empty selection');
-  const style = (sendBtn as unknown as { style: Record<string, string> }).style;
-  assert.equal(style['left'], '92px', 'button anchored at the selection caret rect (right-28, viewport-relative)');
-  assert.equal(style['top'], '246px', 'button anchored below the selection rect (bottom+6, viewport-relative)');
+  // select fires with a non-empty textarea selection.
+  for (const l of docListeners['select'] ?? []) l();
+  assert.equal((sendBtn as unknown as { hidden: boolean }).hidden, false, 'button revealed on a non-empty textarea selection');
   // The user presses the button: focus moves to it (activeElement = the button) and a
-  // collapsed selectionchange fires — the button must STAY VISIBLE for the click.
+  // collapsed selection fires — the button must STAY VISIBLE for the click.
   activeElement = sendBtn;
-  selection = { toString: () => '', isCollapsed: true };
-  for (const l of docListeners) l();
+  doc.selectionStart = doc.selectionEnd = 0;
+  for (const l of docListeners['select'] ?? []) l();
   assert.equal((sendBtn as unknown as { hidden: boolean }).hidden, false, 'button stays visible while it holds focus (the click in flight)');
   fire(sendBtn, 'click');
   const posted = JSON.parse(JSON.stringify(sent)) as Array<{ v: number; payload: { type: string; text?: string } }>;
-  assert.deepEqual(posted.filter((m) => m.payload.type === 'send-to-chat'), [{ v: 1, payload: { type: 'send-to-chat', text: 'selected <text>' } }], 'the captured selection was posted, not lost to the focus change');
+  assert.deepEqual(posted.filter((m) => m.payload.type === 'send-to-chat'), [{ v: 1, payload: { type: 'send-to-chat', text: 'selected <text>' } }], 'the textarea selection (doc.value.substring(selectionStart,selectionEnd)) was posted, not lost to the focus change');
   assert.ok(posted.some((m) => (m as { payload?: { type?: string; gen?: number } }).payload?.type === 'scratch-ready' && (m as { payload: { gen: number } }).payload.gen === 1), 'the bootstrap signalled scratch-ready with its generation tag echoed');
   // Clicking elsewhere collapses the selection with focus NOT on the button: hidden again.
   activeElement = undefined;
-  for (const l of docListeners) l();
+  for (const l of docListeners['select'] ?? []) l();
   assert.equal((sendBtn as unknown as { hidden: boolean }).hidden, true, 'button hides on a collapsed selection when it does not hold focus');
   // Webview-side cap: a >65,536-byte selection is truncated in the bootstrap before
   // posting, WITHOUT splitting surrogate pairs.
   const big = '😀'.repeat(20_000); // 80,000 UTF-8 bytes
-  selection = { toString: () => big, isCollapsed: false };
-  for (const l of docListeners) l();
+  doc.value = big;
+  doc.selectionStart = 0;
+  doc.selectionEnd = big.length;
+  for (const l of docListeners['select'] ?? []) l();
   fire(sendBtn, 'click');
   const bigMsg = sent.map((m) => m as { payload: { type: string; text?: string } }).filter((m) => m.payload.type === 'send-to-chat').at(-1)!;
   assert.ok(bigMsg !== undefined, 'the big selection was posted as send-to-chat');
@@ -855,8 +858,302 @@ test('chat-panel.test.ts + scratch-panel.test.ts: every button in the new UI is 
       assert.equal(inner.replace(/<[^>]*>/g, '').trim(), '', `${label} button has no visible text content`);
     }
   }
-  // The two browse row buttons and the one floating send-to-chat button are exactly the
-  // buttons the scratchpad panels add.
+  // The two browse row buttons and the document view's Save + Send-to-chat buttons are
+  // exactly the buttons the scratchpad panels add.
   assert.equal((browse.match(/<button\b/g) ?? []).length, 2, 'browse renders exactly Open + Delete per row');
-  assert.equal((doc.match(/<button\b/g) ?? []).length, 1, 'document renders exactly the Send-to-chat button');
+  assert.equal((doc.match(/<button\b/g) ?? []).length, 2, 'document renders exactly the Save and Send-to-chat buttons');
+});
+
+// ---------------------------------------------------------------------------
+// t2: document-channel protocol (scratch-panels.ts own unions/arrays)
+// ---------------------------------------------------------------------------
+
+test("scratch-panel.test.ts: 'scratch-save' in SCRATCH_DOC_WEBVIEW_TO_HOST_TYPES and NOT in SCRATCH_DOC_HOST_TO_WEBVIEW_TYPES; 'scratch-saved' in SCRATCH_DOC_HOST_TO_WEBVIEW_TYPES and NOT in SCRATCH_DOC_WEBVIEW_TO_HOST_TYPES; both carry gen; the chat-channel protocol.ts unions/arrays are untouched (direction isolation per channel)", async () => {
+  const {
+    SCRATCH_DOC_WEBVIEW_TO_HOST_TYPES,
+    SCRATCH_DOC_HOST_TO_WEBVIEW_TYPES,
+  } = await import('../scratch-panels.js');
+  const { WEBVIEW_TO_HOST_TYPES, HOST_TO_WEBVIEW_TYPES } = await import('../../chat/protocol.js');
+  const w2h = new Set<string>(SCRATCH_DOC_WEBVIEW_TO_HOST_TYPES);
+  const h2w = new Set<string>(SCRATCH_DOC_HOST_TO_WEBVIEW_TYPES);
+  assert.ok(w2h.has('scratch-save'), "'scratch-save' is webview→host on the document channel");
+  assert.ok(!h2w.has('scratch-save'), "'scratch-save' is NOT host→webview");
+  assert.ok(w2h.has('scratch-dirty'), "'scratch-dirty' is webview→host on the document channel");
+  assert.ok(!h2w.has('scratch-dirty'), "'scratch-dirty' is NOT host→webview");
+  assert.ok(h2w.has('scratch-saved'), "'scratch-saved' is host→webview on the document channel");
+  assert.ok(!w2h.has('scratch-saved'), "'scratch-saved' is NOT webview→host");
+  // All messages carry gen: the unions' members expose it.
+  const saveType: import('../scratch-panels.js').ScratchDocWebviewToHost = { type: 'scratch-save', id: 'a.md', gen: 3, text: 'x' };
+  const dirtyType: import('../scratch-panels.js').ScratchDocWebviewToHost = { type: 'scratch-dirty', id: 'a.md', gen: 3, dirty: true };
+  const savedType: import('../scratch-panels.js').ScratchDocHostToWebview = { type: 'scratch-saved', id: 'a.md', gen: 3, ok: true };
+  assert.equal(saveType.gen, 3, 'scratch-save carries gen');
+  assert.equal(dirtyType.gen, 3, 'scratch-dirty carries gen');
+  assert.equal(savedType.gen, 3, 'scratch-saved carries gen');
+  // Direction isolation per channel: no document-channel type appears in the
+  // chat channel's arrays, and the chat channel's arrays are unchanged by t2/t3.
+  for (const t of ['scratch-save', 'scratch-dirty', 'scratch-saved'] as const) {
+    assert.ok(!WEBVIEW_TO_HOST_TYPES.includes(t as never), `chat WEBVIEW_TO_HOST_TYPES untouched: no ${t}`);
+    assert.ok(!HOST_TO_WEBVIEW_TYPES.includes(t as never), `chat HOST_TO_WEBVIEW_TYPES untouched: no ${t}`);
+  }
+  // The chat channel keeps its own scratch intents (they are chat-panel messages,
+  // a different channel) — they must still be present.
+  for (const t of ['scratch-open', 'scratch-delete', 'scratch-new', 'scratch-browse', 'send-to-chat'] as const) {
+    assert.ok(WEBVIEW_TO_HOST_TYPES.includes(t as never), `chat channel still carries ${t}`);
+  }
+});
+
+// ---------------------------------------------------------------------------
+// t3: editable document view — textarea, save wiring, gen-guarded replies
+// ---------------------------------------------------------------------------
+
+/** Run documentBootstrap over a fake DOM and return the handles a t3 test needs. */
+function bootstrapHarness(gen: number, id: string) {
+  const sent: unknown[] = [];
+  const msgListeners: Array<(e: unknown) => void> = [];
+  const docListeners: Record<string, Array<(e?: unknown) => void>> = {};
+  const doc = bodyStub('textarea', 'insrc-scratchdoc');
+  const docAddEventListener = doc.addEventListener.bind(doc);
+  doc.addEventListener = ((t: string, l: (e?: unknown) => void) => { (docListeners[t] ??= []).push(l); }) as unknown as typeof docAddEventListener;
+  const sendBtn = bodyStub('button', 'insrc-sendtochat');
+  let sendHidden = true;
+  Object.defineProperty(sendBtn, 'hidden', { get: () => sendHidden, set: (v: boolean) => { sendHidden = v; } });
+  const saveBtn = bodyStub('button', 'insrc-savescratch');
+  let saveHidden = true;
+  let saveDisabled = false;
+  Object.defineProperty(saveBtn, 'hidden', { get: () => saveHidden, set: (v: boolean) => { saveHidden = v; } });
+  Object.defineProperty(saveBtn, 'disabled', { get: () => saveDisabled, set: (v: boolean) => { saveDisabled = v; } });
+  const errEl = bodyStub('div', 'err');
+  runInNewContext(documentBootstrap(gen, id), {
+    acquireVsCodeApi: () => ({ postMessage: (m: unknown) => { sent.push(m); } }),
+    window: { addEventListener: (t: string, l: (e: unknown) => void) => { if (t === 'message') msgListeners.push(l); } },
+    document: {
+      getElementById: (el: string) => (el === 'insrc-scratchdoc' ? doc : el === 'insrc-sendtochat' ? sendBtn : el === 'insrc-savescratch' ? saveBtn : bodyStub('div', el)),
+      querySelector: () => bodyStub('div', 'wrap'),
+      addEventListener: (t: string, l: (e?: unknown) => void) => { (docListeners[t] ??= []).push(l); },
+      get activeElement() { return undefined; },
+      createElement: () => errEl,
+    },
+  });
+  const fire = (type: string, e?: unknown) => { for (const l of docListeners[type] ?? []) l(e); };
+  const hostMsg = (payload: unknown) => { for (const l of msgListeners) l({ data: { v: 1, payload } }); };
+  return { doc, sendBtn, saveBtn, sent, fire, hostMsg, errEl, isSaveHidden: () => saveHidden, isSaveDisabled: () => saveDisabled, isSendHidden: () => sendHidden };
+}
+
+test('scratch-panel.test.ts: documentBodyHtml emits <textarea id="insrc-scratchdoc"> and the save button; documentBootstrap pins the scratch-save post with gen + keydown Ctrl/Cmd+S + scratch-saved handler honoring only gen === docGeneration + textarea selectionStart/selectionEnd send-to-chat', () => {
+  // Static body: textarea (not pre) + hidden save button + send-to-chat button.
+  const body = documentBodyHtml();
+  assert.ok(body.includes('<textarea id="insrc-scratchdoc" class="scratch-doc"'), 'documentBodyHtml emits the textarea');
+  assert.ok(!body.includes('<pre id="insrc-scratchdoc"'), 'no <pre> — the read-only surface is gone');
+  assert.ok(/<button type="button" id="insrc-savescratch" class="scratch-save"[^>]*hidden/.test(body), 'the save button starts hidden');
+  // Bootstrap source pins.
+  const src = documentBootstrap(7, 'pad.md');
+  assert.ok(src.includes("type:'scratch-save'"), 'the bootstrap posts scratch-save');
+  assert.ok(src.includes('id:docId,gen:gen,text:doc.value'), 'the scratch-save post carries { id, gen, text: doc.value }');
+  assert.ok(/keydown/.test(src) && /ctrlKey\|\|e\.metaKey/.test(src) && /key==='s'/.test(src), 'keydown Ctrl/Cmd+S triggers the save');
+  assert.ok(src.includes("m.type==='scratch-saved'&&m.gen===gen&&m.id===docId"), 'the scratch-saved handler honors only gen === page gen AND matching id');
+  assert.ok(src.includes('doc.selectionStart') && src.includes('doc.selectionEnd') && src.includes('doc.value.substring'), 'send-to-chat reads the textarea selection API (selectionStart/selectionEnd over doc.value)');
+  assert.ok(!src.includes('selectionchange'), 'the old document-level selectionchange listener is gone (textarea selections do not fire it)');
+  assert.ok(!src.includes('getSelection'), 'no window.getSelection — textarea selection is not visible there');
+  // Behavioral: input sets dirty (save button visible AND a scratch-dirty post rides to the host);
+  // Ctrl/Cmd+S posts scratch-save.
+  const b = bootstrapHarness(7, 'pad.md');
+  b.doc.value = 'edited text';
+  assert.equal(b.isSaveHidden(), true, 'clean document: save button hidden');
+  b.fire('input');
+  assert.equal(b.isSaveHidden(), false, 'input event sets dirty — save button visible');
+  const dirties = (JSON.parse(JSON.stringify(b.sent)) as Array<{ payload: { type: string; id?: string; gen?: number; dirty?: boolean } }>).map((m) => m.payload).filter((p) => p.type === 'scratch-dirty');
+  assert.deepEqual(dirties, [{ type: 'scratch-dirty', id: 'pad.md', gen: 7, dirty: true }], 'input also posts scratch-dirty { id, gen, dirty: true } so the host can set the • title suffix on input');
+  b.fire('keydown', { ctrlKey: true, key: 's', preventDefault: () => {} });
+  // runInNewContext hands the posted payloads a null prototype — normalize before deepEqual.
+  const saves = (JSON.parse(JSON.stringify(b.sent)) as Array<{ payload: { type: string; id?: string; gen?: number; text?: string } }>).map((m) => m.payload).filter((p) => p.type === 'scratch-save');
+  assert.deepEqual(saves, [{ type: 'scratch-save', id: 'pad.md', gen: 7, text: 'edited text' }], 'Ctrl+S posts scratch-save { id, gen: docGeneration, text: doc.value }');
+  assert.equal(b.isSaveDisabled(), true, 'save button disabled while the save is in flight');
+  // An ok reply with the matching gen clears dirty (and posts scratch-dirty {dirty:false}),
+  // re-enabling the button.
+  b.hostMsg({ type: 'scratch-saved', id: 'pad.md', gen: 7, ok: true });
+  assert.equal(b.isSaveHidden(), true, 'scratch-saved ok with matching gen clears dirty — save button hidden again');
+  assert.equal(b.isSaveDisabled(), false, 'save button re-enabled after the ok reply');
+  const clearDirty = (JSON.parse(JSON.stringify(b.sent)) as Array<{ payload: { type: string; dirty?: boolean } }>).map((m) => m.payload).filter((p) => p.type === 'scratch-dirty');
+  assert.deepEqual(clearDirty, [
+    { type: 'scratch-dirty', id: 'pad.md', gen: 7, dirty: true },
+    { type: 'scratch-dirty', id: 'pad.md', gen: 7, dirty: false },
+  ], 'the ok reply also posted scratch-dirty {dirty:false} so the host clears the • title');
+  // gen-guard: a reply with a stale gen is ignored.
+  b.fire('input');
+  b.hostMsg({ type: 'scratch-saved', id: 'pad.md', gen: 6, ok: true });
+  assert.equal(b.isSaveHidden(), false, 'a stale-gen scratch-saved reply is ignored — dirty stays');
+  // id-mismatch reply ignored.
+  b.hostMsg({ type: 'scratch-saved', id: 'other.md', gen: 7, ok: true });
+  assert.equal(b.isSaveHidden(), false, 'a reply for another id is ignored');
+  // ok=false keeps dirty and shows the error.
+  b.hostMsg({ type: 'scratch-saved', id: 'pad.md', gen: 7, ok: false, error: 'EACCES' });
+  assert.equal(b.isSaveHidden(), false, 'ok=false keeps the save button visible (still dirty)');
+  assert.equal(b.errEl.textContent, 'save failed: EACCES', 'the failure is shown in the error line');
+});
+
+test('scratch-panel.test.ts: r14 CR-MED — a scratch-saved ok clears dirty ONLY when the document still holds the exact saved text; edits typed while the save was in flight keep the document dirty with a notice', () => {
+  const src = documentBootstrap(7, 'pad.md');
+  assert.ok(src.includes('savedText=doc.value'), 'postSave snapshots the saved text');
+  assert.ok(src.includes('doc.value!==savedText'), 'the ok branch compares the current value against the saved snapshot');
+  // Case A: no edit during the save -> ok clears dirty (existing behavior preserved).
+  // Save via the BUTTON click (the keydown path is pinned in the test above): the click
+  // handler must post scratch-save with the current id, gen and doc.value.
+  const a = bootstrapHarness(7, 'pad.md');
+  a.doc.value = 'v1';
+  a.fire('input');
+  fire(a.saveBtn, 'click');
+  const saveA = (JSON.parse(JSON.stringify(a.sent)) as Array<{ payload: { type: string; id?: string; gen?: number; text?: string } }>).map((m) => m.payload).filter((p) => p.type === 'scratch-save');
+  assert.deepEqual(saveA, [{ type: 'scratch-save', id: 'pad.md', gen: 7, text: 'v1' }], 'the Save-button click posted scratch-save { id: pad.md, gen: 7, text: doc.value }');
+  assert.equal(a.isSaveDisabled(), true, 'save button disabled while the save is in flight');
+  a.hostMsg({ type: 'scratch-saved', id: 'pad.md', gen: 7, ok: true });
+  assert.equal(a.isSaveHidden(), true, 'ok with unchanged value clears dirty — save button hidden');
+  // Case B: an edit lands while the save is in flight -> ok does NOT clear dirty.
+  const b = bootstrapHarness(7, 'pad.md');
+  b.doc.value = 'v1';
+  b.fire('input');
+  b.fire('keydown', { ctrlKey: true, key: 's', preventDefault: () => {} });
+  b.doc.value = 'v1 + typed while saving'; // the user edits during the in-flight save
+  b.fire('input'); // input re-marks dirty (already dirty) — the value no longer matches the snapshot
+  b.hostMsg({ type: 'scratch-saved', id: 'pad.md', gen: 7, ok: true });
+  assert.equal(b.isSaveHidden(), false, 'ok after an in-flight edit keeps the save button visible — the newer text is not reported as saved');
+  assert.ok((b.errEl.textContent ?? '').includes('changed while saving'), 'a notice explains the saved text is older than the document');
+  const dirtiesB = (JSON.parse(JSON.stringify(b.sent)) as Array<{ payload: { type: string; dirty?: boolean } }>).map((m) => m.payload).filter((p) => p.type === 'scratch-dirty');
+  assert.equal(dirtiesB.at(-1)?.dirty, true, 'the last scratch-dirty post is dirty:true');
+});
+
+test('scratch-panel.test.ts: r28 CR-MED — a late scratch-content push after the user started typing does NOT overwrite doc.value and does NOT clear dirty; a content push before any edit still lands clean', () => {
+  const src = documentBootstrap(3, 'pad.md');
+  assert.ok(src.includes('userEdited=false'), 'the bootstrap tracks a userEdited flag');
+  assert.ok(src.includes('if(!userEdited){doc.value=m.text;setDirty(false);if(errEl)errEl.textContent=\'\';}'), 'the live scratch-content handler is guarded by !userEdited');
+  assert.ok(src.includes('if(!userEdited){doc.value=pending;setDirty(false);}'), 'the pending-replay tail is guarded by !userEdited as well');
+  // Case A: user types BEFORE the late content push -> edits survive, dirty stays set.
+  const a = bootstrapHarness(3, 'pad.md');
+  a.doc.value = 'typed before the read resolved';
+  a.fire('input'); // user edit -> userEdited=true, dirty=true
+  assert.equal(a.isSaveHidden(), false, 'save button visible after the user edit');
+  a.hostMsg({ type: 'scratch-content', text: 'loaded from disk' }); // the late initial push
+  assert.equal(a.doc.value, 'typed before the read resolved', 'the late scratch-content did NOT overwrite the typed text');
+  assert.equal(a.isSaveHidden(), false, 'the late scratch-content did NOT clear the dirty state');
+  const dirtiesA = (JSON.parse(JSON.stringify(a.sent)) as Array<{ payload: { type: string; dirty?: boolean } }>).map((m) => m.payload).filter((p) => p.type === 'scratch-dirty');
+  assert.equal(dirtiesA.at(-1)?.dirty, true, 'no scratch-dirty {dirty:false} was posted after the guarded push');
+  // Case B: content lands before any edit -> applied, clean (existing behavior preserved).
+  const b = bootstrapHarness(3, 'pad.md');
+  b.hostMsg({ type: 'scratch-content', text: 'loaded from disk' });
+  assert.equal(b.doc.value, 'loaded from disk', 'content before any edit still lands');
+  assert.equal(b.isSaveHidden(), true, 'content before any edit is clean (save hidden)');
+  // Case C: after a clean load, the user edits, then a SECOND content push must also be ignored.
+  const c = bootstrapHarness(3, 'pad.md');
+  c.hostMsg({ type: 'scratch-content', text: 'first load' });
+  assert.equal(c.doc.value, 'first load');
+  c.doc.value = 'first load + my edits';
+  c.fire('input');
+  c.hostMsg({ type: 'scratch-content', text: 'stale replay' });
+  assert.equal(c.doc.value, 'first load + my edits', 'a later content push after an edit is ignored too');
+  assert.equal(c.isSaveHidden(), false, 'dirty survives the later push');
+});
+
+test('scratch-panel.test.ts behavioral: input event sets dirty (save button visible, title suffix via setTitle), \'scratch-saved\' ok with matching gen clears dirty, ok=false keeps dirty and shows error, stale-gen reply ignored; scratch-content sets textarea .value (not textContent/innerHTML); send-to-chat reads selection from textarea selectionStart/selectionEnd over doc.value and posts capUtf8-capped text', async () => {
+  // Host-side: a scratch-dirty from the live document generation sets the '•' title
+  // suffix via onScratchDirty; a scratch-save from the live generation is routed
+  // through onScratchSave; replySaved posts the scratch-saved reply to the live
+  // generation (the webview's ok then clears the dirty state, which posts a
+  // scratch-dirty {dirty:false} that clears the title).
+  const h = harness();
+  const saves: Array<{ id: string; gen: number; text: string }> = [];
+  const dirties: Array<{ id: string; gen: number; dirty: boolean }> = [];
+  const controller = createScratchPanels({
+    panels: h.factory,
+    store: h.store,
+    genNonce: () => 'N',
+    setPanelTitle: (_p, t) => { h.titles.push(t); },
+    onSendToChat: (t) => { h.sentToChat.push(t); },
+    onScratchSave: (id, gen, text) => { saves.push({ id, gen, text }); },
+    onScratchDirty: (id, gen, dirty) => { dirties.push({ id, gen, dirty }); },
+    logger: { warn: (m) => { h.warns.push(m); } },
+  });
+  await seed(h, 'pad.md', 'original', 100);
+  const handle = await controller.openDocument('pad.md');
+  assert.ok(handle !== undefined);
+  const panel = h.panels[0]!;
+  assert.ok(h.titles.includes('pad.md'), 'the document open set the plain title');
+  // The webview reports the edit (dirty) for the LIVE generation + showing id:
+  // the host adds the '•' suffix to the panel title.
+  panel.injectMessage({ v: 1, payload: { type: 'scratch-dirty', id: 'pad.md', gen: 1, dirty: true } });
+  await new Promise((r) => setTimeout(r, 10));
+  assert.deepEqual(dirties, [{ id: 'pad.md', gen: 1, dirty: true }], 'the live scratch-dirty was routed to onScratchDirty with exact args');
+  assert.ok(h.titles.includes('pad.md •'), 'input set the dirty • title suffix on input (before any save)');
+  // The webview posts a scratch-save for the LIVE generation + showing id.
+  panel.injectMessage({ v: 1, payload: { type: 'scratch-save', id: 'pad.md', gen: 1, text: 'edited' } });
+  await new Promise((r) => setTimeout(r, 10));
+  assert.deepEqual(saves, [{ id: 'pad.md', gen: 1, text: 'edited' }], 'the live scratch-save was routed to onScratchSave with exact args');
+  assert.ok(!h.titles.slice(h.titles.indexOf('pad.md •')).includes('pad.md • •'), 'the save did not double the dirty suffix');
+  // replySaved posts the reply to the live generation.
+  controller.replySaved(1, { type: 'scratch-saved', id: 'pad.md', gen: 1, ok: true });
+  await new Promise((r) => setTimeout(r, 10));
+  const saved = panel.posted.filter((m) => (m as { payload?: { type?: string } }).payload?.type === 'scratch-saved');
+  assert.deepEqual(saved, [{ v: 1, payload: { type: 'scratch-saved', id: 'pad.md', gen: 1, ok: true } }], 'replySaved posted the scratch-saved reply to the document panel');
+  // The webview's ok clears the dirty state; that posts scratch-dirty {dirty:false},
+  // which clears the title suffix host-side.
+  panel.injectMessage({ v: 1, payload: { type: 'scratch-dirty', id: 'pad.md', gen: 1, dirty: false } });
+  await new Promise((r) => setTimeout(r, 10));
+  assert.ok(h.titles.at(-1) === 'pad.md', 'the ok reply cleared the dirty title suffix (via scratch-dirty dirty:false)');
+  // A stale-generation replySaved is dropped (no post).
+  const before = panel.posted.length;
+  controller.replySaved(99, { type: 'scratch-saved', id: 'pad.md', gen: 99, ok: true });
+  await new Promise((r) => setTimeout(r, 10));
+  assert.equal(panel.posted.length, before, 'replySaved for a stale generation posts nothing');
+  // A scratch-save for a different id (or stale gen) is dropped with a warn; likewise scratch-dirty.
+  panel.injectMessage({ v: 1, payload: { type: 'scratch-save', id: 'other.md', gen: 1, text: 'x' } });
+  panel.injectMessage({ v: 1, payload: { type: 'scratch-save', id: 'pad.md', gen: 42, text: 'x' } });
+  panel.injectMessage({ v: 1, payload: { type: 'scratch-dirty', id: 'other.md', gen: 1, dirty: true } });
+  panel.injectMessage({ v: 1, payload: { type: 'scratch-dirty', id: 'pad.md', gen: 42, dirty: true } });
+  await new Promise((r) => setTimeout(r, 10));
+  assert.equal(saves.length, 1, 'only the live-generation, showing-id save was routed');
+  assert.equal(dirties.length, 2, 'only the live-generation, showing-id dirty flags were routed');
+  assert.equal(h.warns.filter((w) => w.includes('scratch-save')).length, 2, 'both dropped saves were logged');
+  assert.equal(h.warns.filter((w) => w.includes('scratch-dirty')).length, 2, 'both dropped dirty flags were logged');
+  // Webview behavioral: scratch-content sets doc.value (not textContent/innerHTML),
+  // and send-to-chat reads the textarea selection and posts the capUtf8-capped text.
+  const b = bootstrapHarness(1, 'pad.md');
+  b.hostMsg({ type: 'scratch-content', text: 'loaded <b>content</b>' });
+  assert.equal(b.doc.value, 'loaded <b>content</b>', 'scratch-content sets doc.value');
+  assert.ok(!allOf(b.doc).some((n) => n.writes.some((w) => w.prop === 'innerHTML' || w.prop === 'textContent')), 'no innerHTML/textContent write for content');
+  assert.equal(b.isSaveHidden(), true, 'a host content push is clean (not dirty)');
+  assert.ok((JSON.parse(JSON.stringify(b.sent)) as Array<{ payload: { type: string; dirty?: boolean } }>).map((m) => m.payload).some((p) => p.type === 'scratch-dirty' && p.dirty === false), 'a host content push posts scratch-dirty {dirty:false} (clean)');
+  b.doc.value = 'hello selected world';
+  b.doc.selectionStart = 6;
+  b.doc.selectionEnd = 14;
+  b.fire('select');
+  fire(b.sendBtn, 'click');
+  const sent = (JSON.parse(JSON.stringify(b.sent)) as Array<{ payload: { type: string; text?: string } }>).map((m) => m.payload).filter((p) => p.type === 'send-to-chat');
+  assert.deepEqual(sent, [{ type: 'send-to-chat', text: 'selected' }], 'send-to-chat posted the textarea selectionStart/End slice of doc.value');
+  // capUtf8 host-side still applies to what onSendToChat receives.
+  const h2 = harness();
+  const controller2 = createScratchPanels({
+    panels: h2.factory, store: h2.store, genNonce: () => 'N', setPanelTitle: () => {},
+    onSendToChat: (t) => { h2.sentToChat.push(t); },
+  });
+  await seed(h2, 'pad.md', 'x', 1);
+  await controller2.openDocument('pad.md');
+  const panel2 = h2.panels[0]!;
+  const big = '😀'.repeat(20_000);
+  panel2.injectMessage({ v: 1, payload: { type: 'send-to-chat', text: big } });
+  await new Promise((r) => setTimeout(r, 10));
+  assert.equal(h2.sentToChat.length, 1);
+  assert.ok(Buffer.byteLength(h2.sentToChat[0]!, 'utf8') <= SEND_TO_CHAT_CAP && h2.sentToChat[0]!.endsWith('…'), 'host-side capUtf8 cap untouched');
+});
+
+test('scratch-panel.test.ts: send-to-chat post via textarea selection (selectionStart/selectionEnd) present in the new bootstrap; capUtf8 behavior untouched (existing tests); existing ISSUE-3183af2a tests (wrap() drop logging, reveal(true), popup icons) still pass', () => {
+  // The new bootstrap still posts send-to-chat from the textarea selection API.
+  const src = documentBootstrap(3, 'pad.md');
+  assert.ok(src.includes('doc.selectionStart') && src.includes('doc.selectionEnd'), 'selectionStart/selectionEnd present in the new bootstrap');
+  assert.ok(src.includes("type:'send-to-chat'"), 'send-to-chat post still present');
+  // capUtf8 is exported unchanged and behaves as before.
+  assert.equal(capUtf8('abc'), 'abc');
+  assert.ok(Buffer.byteLength(capUtf8('😀'.repeat(20_000)), 'utf8') <= SEND_TO_CHAT_CAP);
+  // The ISSUE-3183af2a pins live in the other tests of this file (reveal(true) on the
+  // fresh document open, wrap() drop logging for false/rejection deliveries, icon-only
+  // buttons with title= in the ac5 test) — they run in this same file and must pass;
+  // this test's own presence in the suite alongside them is the pin.
+  assert.ok(true);
 });

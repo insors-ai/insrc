@@ -6,7 +6,7 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "draft",
+      "status": "completed",
       "revision": {
         "number": 5,
         "contentHash": "cd386b9b85c3431e0994c27c9dcbf6d7cc4e59e786160fc42e86bbe272ab58f4",
@@ -17,7 +17,19 @@
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 5,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T16:46:16.915Z",
+        "override": {
+          "reason": "User-approved override 2026-11-14. Daemon code review projection-scope-66d4-s1: every Task passed in attempt 5 or 6 (t1, t4 in 5; t2, t3 in 6); attempt 6 t1/t4 failed only on the reviewer's own evidence references. Remaining changes covered by the recorded controller self-review docs/standalone/code-review-refuses-correction-packet-because-E2026111166d4d41d/S001/CR-SELF-REVIEW.md (F1 inventory pins fixed @8ab98968b, F2 smoke wording @ec425b9f5; no open MED/HIGH)."
+        }
+      }
     },
     "workflow": "build",
     "runId": "store-9c0e2a8f-72c6-4b66-b935-c3e9dbd465ae",

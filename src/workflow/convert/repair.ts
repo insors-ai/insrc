@@ -21,6 +21,8 @@ import type { LifecycleService } from '../artifact-core/lifecycle-service.js';
 import type { Actor } from '../artifact-core/types.js';
 import { TaskSets } from '../tasks/task-set.js';
 import { amendmentRule, applyAmendments } from './amendments.js';
+import { applyBackfillIssues, backfillIssueRule } from './backfill-issue.js';
+import type { BackfillSeams } from './backfill-issue.js';
 import { migrateHeads } from './apply.js';
 import { applyFeedback, feedbackRule } from './feedback-rule.js';
 import type { MigratedHeadSeams } from './migrated-head.js';
@@ -48,13 +50,14 @@ export interface RepairOptions {
 	readonly writeHead?: ((path: string, bytes: string) => void) | undefined;
 	readonly headSeams?: MigratedHeadSeams | undefined;
 	readonly beforeRound?: ((taskId: string) => void) | undefined;
+	readonly backfill?: BackfillSeams | undefined;
 }
 
 /** A repair opens the repository's store, which adds the merge rules and the journal ignore entry it lacks: those are changes too. */
 const repoRulesRule: PlanRule = (ctx): RulePlan => (ctx.heads.length === 0 ? {} : { changes: missingSidecarRepoRules(ctx.repo).map(file => ({ rule: 'repo-rules' as const, artifactId: file, detail: 'add the sidecar merge and journal rules' })) });
 
 /** The conversion's rules, with the units and Tasks found from any record: a repair also serves a Story with no Define and a plan past approved. */
-const REPAIR_RULES: readonly PlanRule[] = [repoRulesRule, renameRule, stampRule, amendmentRule, feedbackRule, repairUnitsRule, repairTasksRule, repairStoryHistoryRule, repairSettleRule];
+const REPAIR_RULES: readonly PlanRule[] = [repoRulesRule, renameRule, stampRule, amendmentRule, feedbackRule, backfillIssueRule, repairUnitsRule, repairTasksRule, repairStoryHistoryRule, repairSettleRule];
 
 /** The plan of a repair: the conversion's rules at any schema version, with no requirement that the tree be clean. */
 export function planRepair(repo: string): Promise<ConversionPlan> {
@@ -76,7 +79,8 @@ function repairDeps(repo: string, record: RepairRecorder, options: RepairOptions
 	return { service, store, history, now: () => new Date(), actor: MIGRATION_ACTOR, taskSets: new TaskSets({ repoPath: repo, store, service, history, bindingWritten: id => record(id, 'binding') }) };
 }
 
-/** The steps in the order they have to run: renames first because History refuses an uppercase Story id, amendments before migration because it skips a record with no meta. */
+/** The steps in the order they have to run: renames first because History refuses an uppercase Story id, amendments before migration because it skips a record with no meta,
+ *  the ISSUE backfill before units because a Story's head is created only under an anchored head. */
 function stepsOf(repo: string, deps: ConversionDeps & { readonly service: LifecycleService }, record: RepairRecorder, options: RepairOptions, failed: UnitOutcome[], held: UnitOutcome[]): readonly { readonly step: RepairStep; readonly run: () => unknown }[] {
 	return [
 		{ step: 'rename',        run: () => applyRenames(repo, record) },
@@ -84,6 +88,7 @@ function stepsOf(repo: string, deps: ConversionDeps & { readonly service: Lifecy
 		{ step: 'amendments',    run: () => applyAmendments(repo, record) },
 		{ step: 'feedback',      run: () => applyFeedback(repo, deps) },
 		{ step: 'migrate',       run: () => migrateHeads(repo, deps, { ...options.headSeams, headWritten: id => record(id, 'head') }) },
+		{ step: 'backfill-issue', run: () => applyBackfillIssues(repo, deps, record, options.backfill) },
 		{ step: 'units',         run: () => applyUnits(repo, deps, record, knownEpicsOf) },
 		{ step: 'tasks',         run: async () => { const done: TasksResult = await applyTasks(repo, deps, { repair: true, beforeRound: options.beforeRound }); failed.push(...(done.failed ?? [])); } },
 		{ step: 'story-history', run: () => applyStoryHistory(repo, deps, knownEpicsOf) },

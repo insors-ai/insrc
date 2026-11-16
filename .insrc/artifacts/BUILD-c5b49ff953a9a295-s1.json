@@ -1,0 +1,356 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 8,
+        "contentHash": "ee20f3b8eea751c9fd70ff723d5e7cd89df3cef3156ce868883d77a1807d70e9",
+        "at": "2026-11-15T08:08:48.470Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 8,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-15T13:03:09.391Z",
+        "override": {
+          "reason": "User approved with override 2026-11-15. Code review trivial-issue-c5b4-s1 attempt 3: t1-t6 passed; t7 MED is a plan error — the plan says a pre-cutoff approval without an override is held, but settle.ts completes pre-cutoff approvals (they passed the gate of their time). The held case is tested as a post-cutoff approval with no code review. Full test sweep incomplete (stalled, 453/1077 files run per-file); compared failures are pre-existing."
+        }
+      }
+    },
+    "workflow": "build",
+    "runId": "store-6dd596fe-5902-4d38-b9ae-d692f67c03e2",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-15T06:48:26.527Z",
+    "epicCreatedAt": "2026-11-15T05:50:20.518Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c5b49ff953a9a295",
+    "storyId": "s1",
+    "revision": 8,
+    "updatedAt": "2026-11-15T08:08:16.889Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicSlug": "give-every-trivial-change-issue-record"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": false
+      },
+      {
+        "id": "t2",
+        "passed": false
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": false
+      },
+      {
+        "id": "t5",
+        "passed": false
+      },
+      {
+        "id": "t6",
+        "passed": false
+      },
+      {
+        "id": "t7",
+        "passed": false
+      }
+    ],
+    "summary": "Tests prove backfilled Stories settle by the completion rule (pre-cutoff completes, post-cutoff without a code review is held, draft not settled) and a part-way backfill is finished by the next run. Legacy approvedAt is now read as approved. Deviation: the plan's test name says a pre-cutoff approval is held; settle completes it, so the test is titled for the real rule. Post-deploy migration not run.",
+    "testRecord": {
+      "md": "docs/standalone/give-every-trivial-change-issue-record-E20261115c5b49ff9/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:08:16.889Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/issue-artifact.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:08:16.889Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifacts/issue.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:08:16.889Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/orchestrator.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:08:16.889Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/issue/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:08:16.889Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/triage/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:08:16.889Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:08:16.889Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/bugfix-orchestration.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:08:16.889Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/bugfix/next-after-issue.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:08:16.889Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/__tests__/build-start.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:08:16.889Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/__tests__/build-step.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:08:16.889Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/__tests__/gate-call-sites.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:08:16.889Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/__tests__/standalone-implement.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:08:16.889Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/__tests__/validate-anchor.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:08:16.889Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/phases/implement.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:08:16.889Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/phases/validate.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:08:16.889Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/helpers/approved-issue.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:08:16.889Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/standalone-story.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:08:16.889Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/admission.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:08:16.889Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/schemas.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:08:16.889Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/__tests__/trivial-change-e2e.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:08:16.889Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/triage-step/__tests__/handler.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:08:16.889Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/triage-step/phases/classify.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:08:16.889Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/triage/__tests__/classify.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:08:16.889Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/triage/classify.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:08:16.889Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/feature-triage-router.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:08:16.889Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/__tests__/fixtures/tool-surface.golden.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:08:16.889Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/__tests__/review-rule-text.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:08:16.889Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/server.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:08:16.889Z"
+      },
+      {
+        "target": {
+          "file": "src/prompts/steering-block.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:08:16.889Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/documents-contract.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:08:16.889Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/convert/__tests__/repair-backfill-issue.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:08:16.889Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/convert/__tests__/repair-settle.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:08:16.889Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/convert/backfill-issue.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:08:16.889Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/convert/plan.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:08:16.889Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/convert/repair.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:08:16.889Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/convert/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:08:16.889Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/convert/settle.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-15T08:08:16.889Z"
+      }
+    ],
+    "commit": "52fea3d7d"
+  },
+  "citations": []
+}

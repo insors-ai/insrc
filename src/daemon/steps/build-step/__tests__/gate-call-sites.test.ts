@@ -142,7 +142,7 @@ test('build implement and validate on a stage held by someone else are refused n
 		}
 		// a standalone build is refused the same way, on the Story
 		for (const phase of ['implement', 'validate'] as const) {
-			const res = out(await handleBuildStep({ phase, target: 's1', repo: fx.repo, standalone: { standalone: true, sizeClass: 'trivial', focus: 'fix a typo' } }));
+			const res = out(await handleBuildStep({ phase, target: 's1', repo: fx.repo, standalone: { standalone: true, epicHash: HASH, sizeClass: 'trivial', focus: 'fix a typo' } }));
 			assert.equal(errorOf(res).code, 'team-gate-refused', `standalone ${phase}`);
 			assert.match(errorOf(res).message ?? '', /held by bob/, `standalone ${phase}`);
 		}

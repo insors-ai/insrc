@@ -1,6 +1,7 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 
 import { join } from 'node:path';
+import { createHash } from 'node:crypto';
 import { isDeepStrictEqual } from 'node:util';
 import { accepted } from '../cli/services/managed-daemon-control.js';
 import type { ManagedSupervisorLink } from '../cli/services/managed-daemon-control.js';
@@ -25,6 +26,7 @@ import { discoverLegacyLaunch, fenceLegacyLauncher, restoreLegacyLauncher } from
 import { inspectLegacyJob, removeLegacyJob, restoreDirectLegacyService, restoreLegacyService, verifyDirectLegacyService, verifyLegacyService } from './legacy-launch-job.js';
 import { holdLegacyRunGuard, settleLegacyRunGuard } from './legacy-run-guard.js';
 import { qualifiedPairFromReservation } from './release-compatibility.js';
+import { rpc } from '../shared/ipc-client.js';
 
 type Update = Extract<MutationReservation, { kind: 'update' }>;
 type Purpose = 'lifecycle' | 'reconcile';
@@ -357,7 +359,22 @@ export async function completeManagedUpdate(
 ) {
 	return settleManagedUpdate(gate, update, {
 		stage: () => stage(gate, update, pins),
-		verifyCandidate: (receipt: HandoffReceipt) => verifyCandidate(pins.candidate, update, receipt, operations),
+		async verifyCandidate(receipt: HandoffReceipt) {
+			await verifyCandidate(pins.candidate, update, receipt, operations);
+			if (update.predecessor.developmentQualification) {
+				const expected = createHash('sha256').update(update.id).digest('hex');
+				const persisted = await rpc('daemon.qualificationWrite', {}, undefined, { timeoutMs: 5_000 });
+				if (persisted !== expected || receipt.generation === null) throw new Error('qualification fixture write was not acknowledged');
+				await gate.recordIntent(update, 'development-qualification-write', receipt.generation);
+				await gate.recordReceipt(update, 'development-qualification-write', expected);
+				await rpc('daemon.qualificationInterrupt', {}, undefined, { timeoutMs: 5_000 });
+				await withLink(operations, pins.candidate, async link => {
+					const exit = await waitForGeneration(link, receipt.generation!, 'exited', 10_000);
+					if (exit.exit?.signal !== 9) throw new Error('qualification candidate interruption was not observed');
+				});
+				throw new Error('qualification trial requires predecessor restoration');
+			}
+		},
 		rollback: () => new Rollback(gate, update, operations, 'lifecycle').run(),
 	});
 }

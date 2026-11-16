@@ -240,7 +240,31 @@ export async function prepareBundleLegacyUpgrade(candidate: ManagedInstallation,
 	return completeLegacyMigration(gate, reservation, { prior, candidate, compatibility, bundleProof });
 }
 
-export async function prepareInstalledBundleUpgrade(candidate: ManagedInstallation, proof: ManagedBundleProof) {
+export function selectInstalledBundlePredecessor(
+	manifest: Record<string, unknown>, proof: ManagedBundleProof, installed: ManagedBundleProof, priorRelease: string,
+): { compatibility: object } {
+	type Predecessor = { kind: string; commit: string; manifestSha256: string; compatibility: object;
+		launchProfiles: string[]; crashConsistentReopening: boolean; sequence?: number;
+		runtimeFingerprint?: string; qualificationProfile?: string };
+	let exact: Predecessor | undefined;
+	if (proof.floor.domain === 'development') {
+		const prior = manifest.predecessor as Predecessor | null;
+		if (installed.floor.domain === 'development' && installed.floor.repository === proof.floor.repository &&
+			prior?.qualificationProfile === 'managed-rollback-v1' && prior.sequence === installed.floor.sequence &&
+			prior.runtimeFingerprint === installed.fingerprint) exact = prior;
+	} else if (Array.isArray(manifest.predecessors)) {
+		exact = (manifest.predecessors as Predecessor[]).find(item => item.kind === 'bundle' &&
+			item.commit === priorRelease && item.manifestSha256 === installed.floor.manifestSha256 &&
+			item.crashConsistentReopening && item.launchProfiles.includes('managed'));
+	}
+	if (exact === undefined || exact.commit !== priorRelease || exact.manifestSha256 !== installed.floor.manifestSha256 ||
+		!exact.crashConsistentReopening || !exact.launchProfiles.includes('managed')) {
+		throw new Error('candidate does not qualify the installed bundle');
+	}
+	return exact;
+}
+
+export async function prepareInstalledBundleUpgrade(candidate: ManagedInstallation, proof: ManagedBundleProof, qualificationOnly = false) {
 	const root = candidate.stateRoot;
 	const prior = await readManagedInstallation(root);
 	const gate = new InstallationMutationGate(root);
@@ -252,11 +276,11 @@ export async function prepareInstalledBundleUpgrade(candidate: ManagedInstallati
 	await verifyManagedBundleProof(candidate, proof);
 	const manifest = await verifyManagedBundleManifest(proof, candidate.releaseId, root);
 	const previousManifest = await verifyManagedBundleManifest(installed.proof, prior.releaseId, root);
-	const predecessors = manifest.predecessors as Array<{ kind: string; commit: string; manifestSha256: string;
-		compatibility: object; launchProfiles: string[]; crashConsistentReopening: boolean }>;
-	const exact = predecessors.find(item => item.kind === 'bundle' && item.commit === prior.releaseId &&
-		item.manifestSha256 === installed.proof.floor.manifestSha256 && item.crashConsistentReopening && item.launchProfiles.includes('managed'));
-	if (exact === undefined) throw new Error('candidate does not qualify the installed bundle');
+	if ((manifest.qualificationOnly === true) !== qualificationOnly || (qualificationOnly &&
+		(proof.floor.domain !== 'development' || installed.proof.floor.domain !== 'development' ||
+		proof.floor.repository !== installed.proof.floor.repository))) throw new Error('development qualification proof does not match admission');
+	const exact = qualificationOnly ? { compatibility: previousManifest.compatibility as object }
+		: selectInstalledBundlePredecessor(manifest, proof, installed.proof, prior.releaseId);
 	const profile = (value: object, releaseId: string) =>
 		readReleaseCompatibility({ ...value, version: 1, startup: 'rollback-compatible', releaseId });
 	const priorProfile = profile(previousManifest.compatibility as object, prior.releaseId);
@@ -270,9 +294,11 @@ export async function prepareInstalledBundleUpgrade(candidate: ManagedInstallati
 	try {
 		const status = accepted(await link.call({ op: 'status', generation: null }));
 		if (!['idle', 'exited', 'running'].includes(status.state)) throw new Error('installed bundle is already changing state');
+		if (qualificationOnly && status.state !== 'running') throw new Error('qualification requires a running predecessor');
 		const reservation = await gate.reserve({ kind: 'update', owner: await readDarwinIncarnation(process.pid), predecessor: {
 			priorRelease: prior.releaseId, priorCommit: prior.releaseId, candidateRelease: candidate.releaseId,
 			wasRunning: status.state === 'running', generation: status.generation, pins: { prior, candidate }, bundleProof,
+			...(qualificationOnly ? { developmentQualification: true as const } : {}),
 		} }, proof.floor);
 		if (reservation.kind !== 'update') throw new Error('expected bundle update reservation');
 		try {

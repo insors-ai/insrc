@@ -26,7 +26,9 @@ import {
 import { issueArtifactId, issueArtifactPaths, pathsForWorkflow, writeAtomic } from '../storage.js';
 import { isStoryScopedKind, resolveArtifactMdPath, type ArtifactKind } from '../path-scheme.js';
 import { finalizeArtifact, prepareDecompose, prepareSynthesize } from '../orchestrator.js';
-import type { WorkflowIntent } from '../types.js';
+import type { StepRunnerContext, WorkflowIntent } from '../types.js';
+import { getRunner } from '../executor.js';
+import { registerIssueRunners } from '../runners/issue/index.js';
 
 const ISSUE_HASH   = 'abcd1234ef567890';
 const ISSUE_CREATED = '2026-09-18T10:00:00.000Z';
@@ -217,4 +219,92 @@ test('finalizeArtifact[issue]: a body failing isIssueBody is a retryable schemaF
 	assert.equal(result.ok, false);
 	if (result.ok) return;
 	assert.equal(result.failure.ok, false);
+});
+
+// ---------------------------------------------------------------------------
+// ISSUE kind — a change ISSUE is the record of a trivial change
+// (Story c5b49ff953a9a295/s1, t1)
+// ---------------------------------------------------------------------------
+
+/** The rendering of `issueArtifact()` before meta.kind existed, kept verbatim:
+ *  an ISSUE with no kind must render these exact bytes. */
+const PRE_KIND_GOLDEN = [
+	'<!-- insrc:artifact ISSUE-abcd1234ef567890 -->',
+	'',
+	'# Pager drops the final row on the last page',
+	'',
+	'## Reproduction',
+	'',
+	'Open a list with exactly one full page + 1 item; the last item is never shown.',
+	'',
+	'## Root cause',
+	'',
+	'An off-by-one in the page-slice bound in the pager component.',
+	'',
+	'## Fix intent',
+	'',
+	'Correct the slice bound so the final item renders on the last page.',
+	'',
+].join('\n');
+
+test('finalizeIssue: params.kind change is stored on the ISSUE meta and an unknown kind is refused', async () => {
+	const change: WorkflowIntent = { ...issueIntent('small'), params: { magnitude: 'small', kind: 'change' } };
+	const ok = await finalizeArtifact(change, convergedSteps(), 'wf-issue-run', 5, synthEmit(), 'client');
+	assert.equal(ok.ok, true, ok.ok ? '' : JSON.stringify(ok.failure));
+	if (!ok.ok) return;
+	const artifact = ok.finalized.artifact as IssueArtifact;
+	assert.equal(artifact.meta.kind, 'change');
+	assert.equal(artifact.meta.magnitude, 'small');
+
+	const plain = await finalizeArtifact(issueIntent('small'), convergedSteps(), 'wf-issue-run', 5, synthEmit(), 'client');
+	assert.equal(plain.ok, true);
+	if (!plain.ok) return;
+	assert.equal('kind' in (plain.finalized.artifact as IssueArtifact).meta, false, 'no params.kind stores no kind');
+
+	const unknown: WorkflowIntent = { ...issueIntent('small'), params: { magnitude: 'small', kind: 'feature' } };
+	const refused = await finalizeArtifact(unknown, convergedSteps(), 'wf-issue-run', 5, synthEmit(), 'client');
+	assert.equal(refused.ok, false, 'an unknown kind writes no ISSUE');
+	if (refused.ok) return;
+	assert.match(JSON.stringify(refused.failure), /params\.kind must be 'defect' or 'change'/);
+});
+
+test('renderIssueMarkdown: kind change renders What was asked, Why and Change', () => {
+	const base = issueArtifact();
+	const md = renderIssueMarkdown({ ...base, meta: { ...base.meta, kind: 'change' } });
+	const asked = md.indexOf('## What was asked\n\nOpen a list');
+	const why   = md.indexOf('## Why\n\nAn off-by-one');
+	const chg   = md.indexOf('## Change\n\nCorrect the slice');
+	assert.ok(asked >= 0 && why > asked && chg > why, md);
+	assert.doesNotMatch(md, /## Reproduction|## Root cause|## Fix intent/);
+});
+
+test('renderIssueMarkdown: an ISSUE with no kind renders byte-identically to before', () => {
+	assert.equal(renderIssueMarkdown(issueArtifact()), PRE_KIND_GOLDEN);
+	const base = issueArtifact();
+	assert.equal(renderIssueMarkdown({ ...base, meta: { ...base.meta, kind: 'defect' } }), PRE_KIND_GOLDEN);
+});
+
+test('issue capture prompt: a change run asks what was asked and why, not for a defect', async () => {
+	registerIssueRunners();
+	const runner = getRunner('issue', 'issue.capture');
+	const ctxFor = (params: Record<string, unknown>): StepRunnerContext => ({
+		intent: { ...issueIntent('small'), focus: 'Raise the chat turn limit to 6', params },
+		plan: { workflow: 'issue', steps: [] } as unknown as StepRunnerContext['plan'],
+		runId: 'wf-issue-run', stepOutputs: {}, params: {},
+	});
+	const change = await runner.run(ctxFor({ magnitude: 'small', kind: 'change', triageRationale: 'one constant' }));
+	assert.equal(change.type, 'llm-pause');
+	if (change.type !== 'llm-pause') return;
+	assert.match(change.prompt, /requested CHANGE, not a\s+defect/);
+	assert.match(change.prompt, /WHAT WAS ASKED/);
+	assert.match(change.prompt, /WHY/);
+	assert.doesNotMatch(change.prompt, /DIAGNOSED cause|how to trigger it/);
+	assert.match(change.userTurn, /Requested change \(the focus\): Raise the chat turn limit to 6/);
+	assert.match(change.userTurn, /Triage rationale: one constant/);
+
+	const defect = await runner.run(ctxFor({ magnitude: 'small' }));
+	assert.equal(defect.type, 'llm-pause');
+	if (defect.type !== 'llm-pause') return;
+	assert.match(defect.prompt, /DIAGNOSED cause/);
+	assert.doesNotMatch(defect.prompt, /WHAT WAS ASKED/);
 });

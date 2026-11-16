@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2f7b01a6-ef66-4163-b63f-ab59bd081dea",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-14T14:09:25.901Z",
+    "epicCreatedAt": "2026-11-14T13:09:02.500Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "4adebe9eb17a3ef2",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Enforce signing policy and live shutdown",
+      "parent": {
+        "entityId": "STORY-4adebe9eb17a3ef2-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-4adebe9eb17a3ef2-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-4adebe9eb17a3ef2-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "f1fce584145bfdda0af9bb276c35f1f51ac4adfcd5d780c22febff5ae08c6c47",
+        "at": "2026-11-14T14:09:25.906Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T14:09:25.908Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Enforce signing policy and live shutdown",
+    "summary": "Enforce main-only environment configuration and live readiness after approvals, before signing, and before each publish write. Preserve the two-key model and existing exact-archive checks.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "Both environment policies require main-only refs, designated reviewers and no self-approval/bypass. Missing or unverifiable live policy aborts.",
+      "Disabling readiness while awaiting approval or after signing refuses the next operation; v2 and tags never reach signing."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Local environment policy and live disable checks"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

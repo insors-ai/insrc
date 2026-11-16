@@ -1,0 +1,898 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 8,
+        "contentHash": "0c374dc42e54a351a45936af1049e0458f94f6c03a9a959f9c2cb8c4d83383e0",
+        "at": "2026-11-15T08:08:16.926Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "c5b49ff953a9a295",
+    "storyId": "s1",
+    "createdAt": "2026-11-15T06:48:26.527Z",
+    "updatedAt": "2026-11-15T08:08:16.889Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-15T05:50:20.518Z",
+    "epicSlug": "give-every-trivial-change-issue-record",
+    "revision": 8
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "ff81eef0b",
+        "ranAt": "2026-11-15T06:48:26.527Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "finalizeIssue: params.kind change is stored on the ISSUE meta and an unknown kind is refused",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/issue-artifact.test.ts",
+                "title": "finalizeIssue: params.kind change is stored on the ISSUE meta and an unknown kind is refused",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "renderIssueMarkdown: kind change renders What was asked, Why and Change",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/issue-artifact.test.ts",
+                "title": "renderIssueMarkdown: kind change renders What was asked, Why and Change",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "renderIssueMarkdown: an ISSUE with no kind renders byte-identically to before",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/issue-artifact.test.ts",
+                "title": "renderIssueMarkdown: an ISSUE with no kind renders byte-identically to before",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "issue capture prompt: a change run asks what was asked and why, not for a defect",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/issue-artifact.test.ts",
+                "title": "issue capture prompt: a change run asks what was asked and why, not for a defect",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/issue-artifact.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2531,
+            "titles": [
+              {
+                "title": "renderIssueMarkdown: emits the id-marker header + one section per body field, in order",
+                "result": "pass"
+              },
+              {
+                "title": "renderIssueMarkdown: NO routing/linking metadata leaks into the GH body (k4)",
+                "result": "pass"
+              },
+              {
+                "title": "isIssueBody: accepts a well-formed body, rejects any missing/empty prose field",
+                "result": "pass"
+              },
+              {
+                "title": "issueArtifactId / issueArtifactPaths: hash-named json, nested item-root ISSUE.md under docs/standalone",
+                "result": "pass"
+              },
+              {
+                "title": "ArtifactKind: ISSUE is an item-root singleton (NOT story-scoped); existing kinds unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "pathsForWorkflow: workflow \"issue\" routes to the ISSUE.md/json keyed by meta.issueHash",
+                "result": "pass"
+              },
+              {
+                "title": "writeAtomic round-trip: IssueArtifact json is deep-equal + idempotent",
+                "result": "pass"
+              },
+              {
+                "title": "prepareDecompose[issue]: a fixed 2-step plan (issue.capture -> checklist.verify)",
+                "result": "pass"
+              },
+              {
+                "title": "prepareSynthesize[issue]: supported (no throw) and grounds on the step outputs",
+                "result": "pass"
+              },
+              {
+                "title": "finalizeArtifact[issue]: converged output → exactly one IssueArtifact, magnitude on meta, approvedAt unset",
+                "result": "pass"
+              },
+              {
+                "title": "finalizeArtifact[issue]: a body failing isIssueBody is a retryable schemaFailure (no partial write)",
+                "result": "pass"
+              },
+              {
+                "title": "finalizeIssue: params.kind change is stored on the ISSUE meta and an unknown kind is refused",
+                "result": "pass"
+              },
+              {
+                "title": "renderIssueMarkdown: kind change renders What was asked, Why and Change",
+                "result": "pass"
+              },
+              {
+                "title": "renderIssueMarkdown: an ISSUE with no kind renders byte-identically to before",
+                "result": "pass"
+              },
+              {
+                "title": "issue capture prompt: a change run asks what was asked and why, not for a defect",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "440012778",
+        "ranAt": "2026-11-15T06:51:47.527Z",
+        "testsPassed": false,
+        "tests": [
+          {
+            "name": "nextAfterIssue: a small ISSUE routes to build with the ISSUE hash as standalone.epicHash",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/bugfix-orchestration.test.ts",
+                "title": "nextAfterIssue: a small ISSUE routes to build with the ISSUE hash as standalone.epicHash",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "nextAfterIssue: a sized ISSUE routes to design.story with params.epicHash set to the ISSUE hash",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/bugfix-orchestration.test.ts",
+                "title": "nextAfterIssue: a sized ISSUE routes to design.story with params.epicHash set to the ISSUE hash",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "nextAfterIssue: an ISSUE without a 16-hex issueHash is refused",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/bugfix-orchestration.test.ts",
+                "title": "nextAfterIssue: an ISSUE without a 16-hex issueHash is refused",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/bugfix-orchestration.test.ts",
+            "exitCode": 1,
+            "timedOut": false,
+            "durationMs": 3105,
+            "titles": [
+              {
+                "title": "nextAfterIssue: magnitude='small' -> standalone insrc_build_step (issue->build)",
+                "result": "pass"
+              },
+              {
+                "title": "nextAfterIssue: magnitude='sized' -> standalone insrc_workflow_step design.story (START)",
+                "result": "pass"
+              },
+              {
+                "title": "nextAfterIssue: the small build routes through the build-step NO-LLD path (sizeClass=trivial, consumable)",
+                "result": "pass"
+              },
+              {
+                "title": "nextAfterIssue: the sized design.story spec carries the full defect body, not just the title",
+                "result": "pass"
+              },
+              {
+                "title": "nextAfterIssue: emitted stage matches routeForSizeClass (small->build has no design.story)",
+                "result": "pass"
+              },
+              {
+                "title": "nextAfterIssue: magnitude absent/invalid -> throws invalid-magnitude",
+                "result": "pass"
+              },
+              {
+                "title": "nextAfterIssue: a small ISSUE routes to build with the ISSUE hash as standalone.epicHash",
+                "result": "pass"
+              },
+              {
+                "title": "nextAfterIssue: a sized ISSUE routes to design.story with params.epicHash set to the ISSUE hash",
+                "result": "pass"
+              },
+              {
+                "title": "nextAfterIssue: an ISSUE without a 16-hex issueHash is refused",
+                "result": "pass"
+              },
+              {
+                "title": "admitBugfixAdvance: approved + parentRef WorkItemRef -> admitted",
+                "result": "pass"
+              },
+              {
+                "title": "admitBugfixAdvance: approved + parentRef===null (standalone) -> admitted",
+                "result": "pass"
+              },
+              {
+                "title": "admitBugfixAdvance: approved + parentRef ABSENT -> not admitted",
+                "result": "pass"
+              },
+              {
+                "title": "bugfix-orchestration.test.ts: the bugfix chain advances from a lifecycle approval",
+                "result": "pass"
+              },
+              {
+                "title": "admitBugfixAdvance: not approved -> not admitted",
+                "result": "pass"
+              },
+              {
+                "title": "locateAndStampParent: WorkItemRef -> writeParentRef(ref); returns the ParentLocation",
+                "result": "pass"
+              },
+              {
+                "title": "locateAndStampParent: standalone (null) -> writeParentRef(null)",
+                "result": "pass"
+              },
+              {
+                "title": "locateAndStampParent: readIssue null -> throws issue-not-found, no write",
+                "result": "pass"
+              },
+              {
+                "title": "locateAndStampParent: not approved -> throws not-approved, no write",
+                "result": "pass"
+              },
+              {
+                "title": "locateAndStampParent: locateParent rejects -> propagates, no write",
+                "result": "pass"
+              },
+              {
+                "title": "locateAndStampParent: defectDescription is built from the issue body; touchedPaths empty",
+                "result": "pass"
+              },
+              {
+                "title": "defaultStampDeps: writeParentRef patches meta.parentRef only, body byte-unchanged (k4)",
+                "result": "pass"
+              },
+              {
+                "title": "advanceBugfixAfterIssue: bugfix issue -> stamps, admits, returns nextCall",
+                "result": "pass"
+              },
+              {
+                "title": "advanceBugfixAfterIssue: non-issue artifact -> skipped, nothing routed",
+                "result": "pass"
+              },
+              {
+                "title": "advanceBugfixAfterIssue: bugfixCategory flag off -> skipped",
+                "result": "pass"
+              },
+              {
+                "title": "ac3: a bugfix BUILD + enforce + CR pass -> completes via approveWorkflowTarget (reused gate)",
+                "result": "fail"
+              },
+              {
+                "title": "ac3: a bugfix BUILD + enforce + absent CR -> withheld into skipped[], not approved",
+                "result": "pass"
+              },
+              {
+                "title": "ac3: a bugfix BUILD + enforce OFF + absent CR -> withheld too (no separate path for a bugfix)",
+                "result": "fail"
+              }
+            ],
+            "otherFailures": [
+              "ac3: a bugfix BUILD + enforce + CR pass -> completes via approveWorkflowTarget (reused gate)",
+              "ac3: a bugfix BUILD + enforce OFF + absent CR -> withheld too (no separate path for a bugfix)"
+            ]
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "01679bad9",
+        "ranAt": "2026-11-15T07:08:59.019Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "build implement: a no-LLD standalone call without epicHash is refused with no-identity and writes nothing",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/build-step/__tests__/standalone-implement.test.ts",
+                "title": "build implement: a no-LLD standalone call without epicHash is refused with no-identity and writes nothing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "build implement: a no-LLD standalone call whose epicHash has no approved ISSUE is refused",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/build-step/__tests__/standalone-implement.test.ts",
+                "title": "build implement: a no-LLD standalone call whose epicHash has no approved ISSUE is refused",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/build-step/__tests__/standalone-implement.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2882,
+            "titles": [
+              {
+                "title": "admitStandaloneBuild: trivial (no LLD) is admitted under an approved ISSUE",
+                "result": "pass"
+              },
+              {
+                "title": "admitStandaloneBuild: Small with a missing LLD refuses (plan-missing)",
+                "result": "pass"
+              },
+              {
+                "title": "trivial standalone build: admits, renders a scope-driven prompt, and persists a BUILD record",
+                "result": "pass"
+              },
+              {
+                "title": "build implement: a no-LLD standalone call without epicHash is refused with no-identity and writes nothing",
+                "result": "pass"
+              },
+              {
+                "title": "build implement: a no-LLD standalone call whose epicHash has no approved ISSUE is refused",
+                "result": "pass"
+              },
+              {
+                "title": "trivial standalone build without a focus is an error (no-scope)",
+                "result": "pass"
+              },
+              {
+                "title": "Small standalone build without an epicHash is an error (no-identity)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "2f419637e",
+        "ranAt": "2026-11-15T07:19:17.832Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "routeForSizeClass: trivial routes to the issue stage with no LLD",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/triage/__tests__/classify.test.ts",
+                "title": "routeForSizeClass: trivial routes to the issue stage with no LLD",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "routeForSizeClass: no tier starts at build",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/triage/__tests__/classify.test.ts",
+                "title": "routeForSizeClass: no tier starts at build",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "triage nextCall: trivial starts the issue workflow with sizeClass trivial, magnitude small and kind change",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/triage-step/__tests__/handler.test.ts",
+                "title": "triage nextCall: trivial starts the issue workflow with sizeClass trivial, magnitude small and kind change",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a trivial change: ISSUE approved, build under its hash, BUILD approved completes STORY and EPIC",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/build-step/__tests__/trivial-change-e2e.test.ts",
+                "title": "a trivial change: ISSUE approved, build under its hash, BUILD approved completes STORY and EPIC",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/build-step/__tests__/trivial-change-e2e.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4216,
+            "titles": [
+              {
+                "title": "a trivial change: ISSUE approved, build under its hash, BUILD approved completes STORY and EPIC",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/triage-step/__tests__/handler.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1750,
+            "titles": [
+              {
+                "title": "start: returns emit_classification with a schema, prompt, and state token",
+                "result": "pass"
+              },
+              {
+                "title": "start: errors without a focus",
+                "result": "pass"
+              },
+              {
+                "title": "feature → standalone design.story with plan; nextCall pre-fills standalone params",
+                "result": "pass"
+              },
+              {
+                "title": "small → standalone design.story, no plan",
+                "result": "pass"
+              },
+              {
+                "title": "triage nextCall: trivial starts the issue workflow with sizeClass trivial, magnitude small and kind change",
+                "result": "pass"
+              },
+              {
+                "title": "epic → define, full chain, no standalone params",
+                "result": "pass"
+              },
+              {
+                "title": "bugfix (small) → issue → build; nextCall enters the issue workflow with the magnitude",
+                "result": "pass"
+              },
+              {
+                "title": "bugfix (sized) → issue → design → plan → build",
+                "result": "pass"
+              },
+              {
+                "title": "classify: rejects a bugfix emitted WITHOUT a magnitude (no unhandled throw)",
+                "result": "pass"
+              },
+              {
+                "title": "classify: rejects an unknown sizeClass emitted by the controller",
+                "result": "pass"
+              },
+              {
+                "title": "classify: rejects a tampered/undecodable state token",
+                "result": "pass"
+              },
+              {
+                "title": "c00559b7 — start with an approved specHash forwards it into the design.story nextCall",
+                "result": "pass"
+              },
+              {
+                "title": "c00559b7 — an epic routed with an approved specHash forwards it into the define call",
+                "result": "pass"
+              },
+              {
+                "title": "c00559b7 — start with an UNAPPROVED spec errors and hands back no state",
+                "result": "pass"
+              },
+              {
+                "title": "c00559b7 — start with a MISSING spec errors and hands back no state",
+                "result": "pass"
+              },
+              {
+                "title": "c00559b7 — without a specHash the nextCall is unchanged (no specHash key anywhere)",
+                "result": "pass"
+              },
+              {
+                "title": "c00559b7 — the triage state token round-trips specHash, and omits it when absent",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/triage/__tests__/classify.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1380,
+            "titles": [
+              {
+                "title": "routeForSizeClass: epic enters at define, in-Epic, full chain",
+                "result": "pass"
+              },
+              {
+                "title": "routeForSizeClass: feature is a standalone LLD with plan",
+                "result": "pass"
+              },
+              {
+                "title": "routeForSizeClass: small is a standalone LLD, no plan",
+                "result": "pass"
+              },
+              {
+                "title": "routeForSizeClass: trivial routes to the issue stage with no LLD",
+                "result": "pass"
+              },
+              {
+                "title": "routeForSizeClass: no tier starts at build",
+                "result": "pass"
+              },
+              {
+                "title": "routeForSizeClass: every non-epic tier is standalone (the enabling invariant)",
+                "result": "pass"
+              },
+              {
+                "title": "routeForSizeClass: only trivial (and a small bugfix) skips the LLD",
+                "result": "pass"
+              },
+              {
+                "title": "routeForSizeClass: bugfix small routes issue -> build (no design, no plan)",
+                "result": "pass"
+              },
+              {
+                "title": "routeForSizeClass: bugfix sized routes issue -> design -> plan -> build",
+                "result": "pass"
+              },
+              {
+                "title": "routeForSizeClass: a bugfix with no magnitude throws (authoritative guard)",
+                "result": "pass"
+              },
+              {
+                "title": "routeForSizeClass: magnitude is ignored for the four fixed tiers (ac1)",
+                "result": "pass"
+              },
+              {
+                "title": "CLASSIFY_SCHEMA: accepts a well-formed result",
+                "result": "pass"
+              },
+              {
+                "title": "CLASSIFY_SCHEMA: rejects an unknown sizeClass",
+                "result": "pass"
+              },
+              {
+                "title": "CLASSIFY_SCHEMA: rejects missing storyTitle",
+                "result": "pass"
+              },
+              {
+                "title": "CLASSIFY_SCHEMA: rejects an unknown signal kind",
+                "result": "pass"
+              },
+              {
+                "title": "CLASSIFY_SCHEMA: sizeClass enum includes bugfix (auto-derived from SIZE_CLASSES)",
+                "result": "pass"
+              },
+              {
+                "title": "CLASSIFY_SCHEMA: accepts a bugfix with magnitude sized",
+                "result": "pass"
+              },
+              {
+                "title": "CLASSIFY_SCHEMA: rejects a bugfix with NO magnitude (conditional required)",
+                "result": "pass"
+              },
+              {
+                "title": "CLASSIFY_SCHEMA: rejects an out-of-enum magnitude",
+                "result": "pass"
+              },
+              {
+                "title": "CLASSIFY_SCHEMA: a non-bugfix tier needs no magnitude (four-tier unchanged)",
+                "result": "pass"
+              },
+              {
+                "title": "sc1 contract: a bugfix TriageResult carries magnitude and startStage issue",
+                "result": "pass"
+              },
+              {
+                "title": "sc1 contract: a fixed-tier TriageResult omits magnitude and keeps its route",
+                "result": "pass"
+              },
+              {
+                "title": "buildClassifyPrompt: request + grounding trail, grounding after the request",
+                "result": "pass"
+              },
+              {
+                "title": "buildClassifyPrompt: empty grounding is flagged for conservative classification",
+                "result": "pass"
+              },
+              {
+                "title": "buildClassifyPrompt: declaredBugfix adds bugfix+magnitude guidance to the system prompt",
+                "result": "pass"
+              },
+              {
+                "title": "buildClassifyPrompt: WITHOUT declaredBugfix the system prompt is the unchanged four-tier prompt",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "f89add1c5",
+        "ranAt": "2026-11-15T07:31:42.037Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "the steering text routes trivial work through the issue stage and no longer calls a BUILD record a ledger entry",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/review-rule-text.test.ts",
+                "title": "the steering text routes trivial work through the issue stage and no longer calls a BUILD record a ledger entry",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/mcp/__tests__/review-rule-text.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5610,
+            "titles": [
+              {
+                "title": "T13 the steering source no longer states the old rule",
+                "result": "pass"
+              },
+              {
+                "title": "T13 the insrc_review_step description no longer states the old rule",
+                "result": "pass"
+              },
+              {
+                "title": "T13 the insrc_code_review_step description no longer states the old rule",
+                "result": "pass"
+              },
+              {
+                "title": "T13 the insrc_workflow_approve description no longer states the old rule",
+                "result": "pass"
+              },
+              {
+                "title": "T13 design-review guidance describes durable review without retired fallback",
+                "result": "pass"
+              },
+              {
+                "title": "T13 current code-review guidance preserves both parties and explicit task protocol",
+                "result": "pass"
+              },
+              {
+                "title": "T13 the steering build guide says completion requires a code review whatever the enforcement setting",
+                "result": "pass"
+              },
+              {
+                "title": "T13 the steering tool table describes both review tools by the other-party rule",
+                "result": "pass"
+              },
+              {
+                "title": "T13 design-review tool routes the other party with live paths",
+                "result": "pass"
+              },
+              {
+                "title": "T13 current code-review description routes both parties without retired protocol",
+                "result": "pass"
+              },
+              {
+                "title": "T13 the insrc_workflow_approve description says what approval requires",
+                "result": "pass"
+              },
+              {
+                "title": "T13 canonical guide sections are independently addressable",
+                "result": "pass"
+              },
+              {
+                "title": "the review guide says how to wait for progress without sleeping",
+                "result": "pass"
+              },
+              {
+                "title": "the code-review guide says how to wait for progress without sleeping",
+                "result": "pass"
+              },
+              {
+                "title": "docs/design-review-execution.md says how to wait for progress without sleeping",
+                "result": "pass"
+              },
+              {
+                "title": "the steering text routes trivial work through the issue stage and no longer calls a BUILD record a ledger entry",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "8c8f59a1b",
+        "ranAt": "2026-11-15T07:47:51.022Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "repair-preview lists one backfill-issue change per headless standalone trivial BUILD and writes nothing",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/convert/__tests__/repair-backfill-issue.test.ts",
+                "title": "repair-preview lists one backfill-issue change per headless standalone trivial BUILD and writes nothing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "repair writes a kind change ISSUE for each headless BUILD, approved by the migration actor, and a second repair lists none",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/convert/__tests__/repair-backfill-issue.test.ts",
+                "title": "repair writes a kind change ISSUE for each headless BUILD, approved by the migration actor, and a second repair lists none",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/convert/__tests__/repair-backfill-issue.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 6786,
+            "titles": [
+              {
+                "title": "repair-preview lists one backfill-issue change per headless standalone trivial BUILD and writes nothing",
+                "result": "pass"
+              },
+              {
+                "title": "repair writes a kind change ISSUE for each headless BUILD, approved by the migration actor, and a second repair lists none",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "52fea3d7d",
+        "ranAt": "2026-11-15T08:08:16.889Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "repair settles a backfilled Story by the completion rule: one completes, one approved before the cutoff without an override is held, and a draft BUILD is not settled",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/convert/__tests__/repair-backfill-issue.test.ts",
+                "title": "repair settles a backfilled Story by the completion rule: one approved before the cutoff completes, one approved after it with no code review is held, and a draft BUILD is not settled",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a failure injected during the backfill lists the ISSUEs written and the next repair writes only the rest",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/convert/__tests__/repair-backfill-issue.test.ts",
+                "title": "a failure injected during the backfill lists the ISSUEs written and the next repair writes only the rest",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/convert/__tests__/repair-backfill-issue.test.ts",
+                "title": "a backfilled ISSUE whose approval did not happen is approved by the next run, and is not written again",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/convert/__tests__/repair-backfill-issue.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 6198,
+            "titles": [
+              {
+                "title": "repair-preview lists one backfill-issue change per headless standalone trivial BUILD and writes nothing",
+                "result": "pass"
+              },
+              {
+                "title": "repair writes a kind change ISSUE for each headless BUILD, approved by the migration actor, and a second repair lists none",
+                "result": "pass"
+              },
+              {
+                "title": "repair settles a backfilled Story by the completion rule: one approved before the cutoff completes, one approved after it with no code review is held, and a draft BUILD is not settled",
+                "result": "pass"
+              },
+              {
+                "title": "a failure injected during the backfill lists the ISSUEs written and the next repair writes only the rest",
+                "result": "pass"
+              },
+              {
+                "title": "a backfilled ISSUE whose approval did not happen is approved by the next run, and is not written again",
+                "result": "pass"
+              },
+              {
+                "title": "a legacy trivial BUILD not migrated yet: its approvedAt counts as approved, and its ISSUE is written under the renamed record",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

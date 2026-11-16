@@ -42,6 +42,8 @@ const seed = (fake: ReturnType<typeof fakeScratchFs>, name: string, content: str
   fake.files.set(path, Buffer.from(content, 'utf8'));
   fake.kinds.set(path, 'file');
   fake.mtimes.set(path, mtime);
+  // A fresh inode per seeded entry: a swap-in afterwards reports a different ino.
+  if (fake.inos.get(path) === undefined) fake.inos.set(path, 9_000 + fake.files.size);
 };
 
 test('scratch-store.test.ts: listScratches returns entries sorted by mtime desc with id/name/mtime/size (ENOENT->[], non-.md skipped, limit cap, ties id asc)', async () => {
@@ -361,6 +363,414 @@ test('scratch-store.test.ts: listScratches skips entries whose lstat fails betwe
   const list = await store.listScratches();
   assert.deepEqual(list.map((e) => e.id), ['20260101-000000-a.md']);
   fake.failOn = undefined;
+});
+
+test('scratch-store.test.ts: updateScratch happy path writes full text and replaces content; id validation refusal (outside-root, symlink, non-.md) → ScratchRefused; missing file → ScratchNotFound; write failure leaves destination unchanged and unlinks temp; temp path occupied by a symlink or existing file → exclusive create fails (EEXIST/ELOOP) and nothing is written outside the root', async () => {
+  const { fake, store } = setup();
+  await fake.fs.mkdir(ROOT);
+  seed(fake, '20260101-000000-a.md', 'old content', 10);
+
+  // Happy path: full replacement via exclusive temp write + unlink/link publish (never rename).
+  await store.updateScratch('20260101-000000-a.md', 'brand new body\nwith lines\n');
+  assert.equal(Buffer.from(fake.files.get(`${ROOT}/20260101-000000-a.md`) ?? []).toString('utf8'), 'brand new body\nwith lines\n');
+  const excl = fake.ops('writeFileExclusive');
+  assert.equal(excl.length, 1);
+  const tempPath = excl[0]?.path ?? '';
+  assert.equal(tempPath.startsWith(`${ROOT}/.tmp-`), true);
+  assert.equal(/\.md$/.test(tempPath), false);
+  // Publish sequence: backup link(path, .bak) taken before unlink(destination), then
+  // link(temp, destination), unlink(temp), unlink(backup) — never rename.
+  const unlinks = fake.ops('unlink');
+  const links = fake.ops('link');
+  const publishLink = links.find((c) => c.path === tempPath);
+  const backupLink = links.find((c) => c.path === `${ROOT}/20260101-000000-a.md` && (c.to ?? '').endsWith('.bak'));
+  assert.ok(publishLink, 'temp was linked over the destination');
+  assert.equal(publishLink?.to, `${ROOT}/20260101-000000-a.md`);
+  assert.ok(backupLink, 'a backup hard link of the validated destination was taken before the unlink');
+  const backupPath = backupLink?.to ?? '';
+  assert.deepEqual(unlinks.map((c) => c.path).sort(), [`${ROOT}/20260101-000000-a.md`, tempPath, backupPath].sort());
+  // No temp or backup left behind; destination re-opened O_NOFOLLOW + fstat before unlink.
+  assert.equal(fake.files.has(tempPath), false);
+  assert.equal(fake.files.has(backupPath), false);
+  assert.equal(fake.ops('open').filter((c) => c.path.endsWith('a.md')).length, 1);
+  assert.equal(fake.ops('fstat').filter((c) => c.path.endsWith('a.md')).length, 1);
+
+  // Id validation refusal: same bad ids as read/delete, plus symlink and directory targets.
+  fake.kinds.set(`${ROOT}/evil.md`, 'symlink');
+  fake.linkTargets.set(`${ROOT}/evil.md`, '/etc/passwd');
+  fake.dirs.add(`${ROOT}/dir.md`);
+  fake.kinds.set(`${ROOT}/dir.md`, 'dir');
+  const mark = fake.calls.length;
+  for (const bad of ['.', '..', 'a/b.md', '../x.md', 'noext', '.md', 'x.MD', '20260101-a.md/../../evil.md', '', 'x y.md']) {
+    await assert.rejects(store.updateScratch(bad, 'x'), (e: unknown) => e instanceof ScratchRefused, `update ${JSON.stringify(bad)}`);
+  }
+  await assert.rejects(store.updateScratch('evil.md', 'x'), (e: unknown) => e instanceof ScratchRefused);
+  await assert.rejects(store.updateScratch('dir.md', 'x'), (e: unknown) => e instanceof ScratchRefused);
+  await assert.rejects(store.updateScratch('20260101-000000-a.md', 42 as unknown as string), (e: unknown) => e instanceof ScratchRefused);
+  // Refusals never wrote anything outside the root (zero mutations at all).
+  assert.deepEqual(fake.mutationsSince(mark), []);
+
+  // Missing file at save time -> ScratchNotFound.
+  await assert.rejects(store.updateScratch('20260101-000000-gone.md', 'x'), (e: unknown) => e instanceof ScratchNotFound);
+
+  // Temp path occupied by a symlink -> exclusive create ELOOP, nothing written outside root,
+  // and the occupied temp entry is left strictly alone (we did not create it).
+  seed(fake, '20260101-000001-b.md', 'keep', 20);
+  const realWrite = fake.fs.writeFileExclusive;
+  fake.fs.writeFileExclusive = async (p, data) => {
+    fake.kinds.set(p, 'symlink');
+    fake.linkTargets.set(p, '/etc/passwd');
+    fake.inos.set(p, 777);
+    await realWrite(p, data); // the fake then throws ELOOP for the symlink
+    return undefined;
+  };
+  const markOcc = fake.calls.length;
+  await assert.rejects(store.updateScratch('20260101-000001-b.md', 'evil'), (e: unknown) => e instanceof ScratchStoreError);
+  assert.equal(Buffer.from(fake.files.get(`${ROOT}/20260101-000001-b.md`) ?? []).toString('utf8'), 'keep', 'destination untouched');
+  assert.equal(fake.kinds.get(fake.calls.slice(markOcc).find((c) => c.op === 'writeFileExclusive')?.path ?? ''), 'symlink', 'occupied temp entry left untouched, never unlinked');
+  assert.equal(fake.calls.slice(markOcc).some((c) => c.op === 'unlink'), false, 'no unlink at all after the occupied-temp refusal');
+  fake.fs.writeFileExclusive = realWrite;
+
+  // Temp path occupied by an existing regular file -> EEXIST, same refusal, occupier intact.
+  fake.fs.writeFileExclusive = async (p, data) => {
+    fake.files.set(p, Buffer.from('occupier'));
+    fake.kinds.set(p, 'file');
+    fake.inos.set(p, 778);
+    await realWrite(p, data); // fake throws EEXIST for the existing entry
+    return undefined;
+  };
+  const markOcc2 = fake.calls.length;
+  await assert.rejects(store.updateScratch('20260101-000001-b.md', 'evil2'), (e: unknown) => e instanceof ScratchStoreError);
+  assert.equal(Buffer.from(fake.files.get(`${ROOT}/20260101-000001-b.md`) ?? []).toString('utf8'), 'keep', 'destination untouched');
+  const occPath = fake.calls.slice(markOcc2).find((c) => c.op === 'writeFileExclusive')?.path ?? '';
+  assert.equal(Buffer.from(fake.files.get(occPath) ?? []).toString('utf8'), 'occupier', 'occupier intact');
+  assert.equal(fake.calls.slice(markOcc2).some((c) => c.op === 'unlink'), false, 'no unlink after the EEXIST refusal');
+  fake.fs.writeFileExclusive = realWrite;
+
+  // Temp write failure (ENOSPC) -> ScratchStoreError, destination unchanged, temp unlinked.
+  fake.failOn = (c) => (c.op === 'writeFileExclusive' ? Object.assign(new Error('ENOSPC'), { code: 'ENOSPC' }) : undefined);
+  const markFail = fake.calls.length;
+  await assert.rejects(store.updateScratch('20260101-000001-b.md', 'no room'), (e: unknown) => e instanceof ScratchStoreError);
+  fake.failOn = undefined;
+  assert.equal(Buffer.from(fake.files.get(`${ROOT}/20260101-000001-b.md`) ?? []).toString('utf8'), 'keep', 'destination unchanged on temp-write failure');
+  // The failed temp write left no .md and the temp was unlinked again (best-effort cleanup ran).
+  assert.equal(fake.calls.slice(markFail).some((c) => c.op === 'unlink' && c.path.includes('.tmp-')), true, 'temp cleanup attempted after the failed write');
+
+  // Destination deleted between validation and save -> ScratchNotFound, temp unlinked.
+  fake.failOn = (c) => (c.op === 'open' && c.path.endsWith('20260101-000001-b.md') ? enoentOf(c.path) : undefined);
+  await assert.rejects(store.updateScratch('20260101-000001-b.md', 'gone'), (e: unknown) => e instanceof ScratchNotFound);
+  fake.failOn = undefined;
+
+  // link() EEXIST race (destination recreated between unlink and link) -> bounded retry:
+  // the next attempt re-validates the recreated entry (lstat + O_NOFOLLOW open + fstat
+  // inode equality) and publishes over it — update replaces by name, the recreated
+  // entry was a regular file inside the root, so replacing it is the update semantic.
+  seed(fake, '20260101-000002-c.md', 'orig', 30);
+  let linkAttempts = 0;
+  const realLink = fake.fs.link;
+  fake.fs.link = async (from, to) => {
+    if (to.endsWith('20260101-000002-c.md') && linkAttempts++ === 0) {
+      // A concurrent actor recreated the destination after our unlink.
+      fake.files.set(`${ROOT}/20260101-000002-c.md`, Buffer.from('recreated', 'utf8'));
+      fake.kinds.set(`${ROOT}/20260101-000002-c.md`, 'file');
+      fake.mtimes.set(`${ROOT}/20260101-000002-c.md`, 31);
+      fake.inos.set(`${ROOT}/20260101-000002-c.md`, 555000);
+      throw eexist(to);
+    }
+    return realLink(from, to);
+  };
+  await store.updateScratch('20260101-000002-c.md', 'won the retry');
+  assert.equal(linkAttempts, 2, 'first link EEXIST, retry re-validated and published');
+  assert.equal(Buffer.from(fake.files.get(`${ROOT}/20260101-000002-c.md`) ?? []).toString('utf8'), 'won the retry');
+  fake.fs.link = realLink;
+
+  // Destination swapped for a different regular file between validation and unlink:
+  // the re-open fstat reports a different inode -> ScratchRefused, swap target untouched.
+  seed(fake, '20260101-000003-d.md', 'original', 40);
+  fake.failOn = (c) => {
+    if (c.op === 'open' && c.path.endsWith('20260101-000003-d.md')) {
+      fake.files.set(`${ROOT}/20260101-000003-d.md`, Buffer.from('swapped', 'utf8'));
+      fake.inos.set(`${ROOT}/20260101-000003-d.md`, 424242);
+    }
+    return undefined;
+  };
+  await assert.rejects(store.updateScratch('20260101-000003-d.md', 'new'), (e: unknown) => e instanceof ScratchRefused);
+  fake.failOn = undefined;
+  assert.equal(Buffer.from(fake.files.get(`${ROOT}/20260101-000003-d.md`) ?? []).toString('utf8'), 'swapped', 'swapped-in file left untouched');
+
+  // Publish failure (non-EEXIST link error after the destination was unlinked): the
+  // original content is restored from the backup hard link, temp+backup are cleaned,
+  // and the caller sees ScratchStoreError with the destination UNTOUCHED (the plan's
+  // acceptance check: "write/publish failure → ScratchStoreError with destination
+  // untouched and temp unlinked").
+  seed(fake, '20260101-000004-e.md', 'precious original', 50);
+  // Fail only the temp->destination publish link (source is the .tmp- temp), not the
+  // backup->destination restore link (source ends .bak).
+  fake.failOn = (c) => (c.op === 'link' && c.to === `${ROOT}/20260101-000004-e.md` && !c.path.endsWith('.bak') ? Object.assign(new Error('EIO'), { code: 'EIO' }) : undefined);
+  const markPub = fake.calls.length;
+  await assert.rejects(store.updateScratch('20260101-000004-e.md', 'should not land'), (e: unknown) => e instanceof ScratchStoreError);
+  fake.failOn = undefined;
+  assert.equal(Buffer.from(fake.files.get(`${ROOT}/20260101-000004-e.md`) ?? []).toString('utf8'), 'precious original', 'destination untouched (restored from backup) after publish failure');
+  const pubCalls = fake.calls.slice(markPub);
+  assert.equal(pubCalls.some((c) => c.op === 'link' && c.path === `${ROOT}/20260101-000004-e.md` && (c.to ?? '').endsWith('.bak')), true, 'backup link was taken before the unlink');
+  assert.equal(pubCalls.some((c) => c.op === 'link' && c.path.endsWith('.bak') && c.to === `${ROOT}/20260101-000004-e.md`), true, 'backup was linked back over the destination name on restore');
+  assert.equal(pubCalls.some((c) => c.op === 'unlink' && c.path.includes('.tmp-')), true, 'temp cleaned up after the failed publish');
+  assert.equal(pubCalls.some((c) => c.op === 'unlink' && c.path.endsWith('.bak')), true, 'backup cleaned up after the failed publish');
+
+  // Retry-path failure (the r14 CR MED at scratch-store.ts: a publish EEXIST retry whose
+  // LATER validation fails must still restore the original from the backup, not just
+  // unlink temp+backup): the first link() loses an EEXIST race, then the next attempt's
+  // lstat fails with EIO -> the destination (already unlinked once) is restored from the
+  // backup, temp+backup are cleaned, and the caller sees ScratchStoreError.
+  seed(fake, '20260101-000005-f.md', 'retry-path original', 60);
+  let retryLinkAttempts = 0;
+  const realLink2 = fake.fs.link;
+  fake.fs.link = async (from, to) => {
+    if (to.endsWith('20260101-000005-f.md') && !from.endsWith('.bak') && retryLinkAttempts++ === 0) {
+      fake.calls.push({ op: 'link', path: from, to } as never);
+      // Lost an EEXIST race: by the time the retry re-validates, the destination name is
+      // free again (the racing entry is gone), but the retry's lstat fails EIO below.
+      throw eexist(to);
+    }
+    return realLink2(from, to);
+  };
+  // The retry attempt's lstat of the destination fails with EIO — but only once an
+  // unlink of the destination was actually recorded (the pre-loop validation lstat and
+  // attempt 0's lstat must pass; attempt 1's lstat, after attempt 0 unlinked, throws).
+  const realLstat = fake.fs.lstat;
+  fake.fs.lstat = async (p) => {
+    if (p === `${ROOT}/20260101-000005-f.md` && fake.calls.some((c) => c.op === 'unlink' && c.path === p)) {
+      const err = Object.assign(new Error('EIO'), { code: 'EIO' });
+      fake.calls.push({ op: 'lstat', path: p } as never);
+      throw err;
+    }
+    return realLstat(p);
+  };
+  const markRetry = fake.calls.length;
+  await assert.rejects(store.updateScratch('20260101-000005-f.md', 'never lands'), (e: unknown) => e instanceof ScratchStoreError);
+  fake.fs.link = realLink2;
+  fake.fs.lstat = realLstat;
+  fake.failOn = undefined;
+  const retryCalls = fake.calls.slice(markRetry);
+  assert.equal(Buffer.from(fake.files.get(`${ROOT}/20260101-000005-f.md`) ?? []).toString('utf8'), 'retry-path original', 'retry-path failure restored the original from the backup');
+  assert.equal(retryCalls.some((c) => c.op === 'link' && c.path.endsWith('.bak') && c.to === `${ROOT}/20260101-000005-f.md`), true, 'backup was linked back over the destination on the retry-path failure');
+  assert.equal(retryCalls.some((c) => c.op === 'unlink' && c.path.includes('.tmp-')), true, 'temp cleaned up after the retry-path failure');
+  assert.equal(retryCalls.some((c) => c.op === 'unlink' && c.path.endsWith('.bak')), true, 'backup cleaned up after the retry-path failure');
+
+  // Backup-link ownership (the r26 CR MED): when the backup link itself fails (the random
+  // .bak name is already occupied -> EEXIST), fail() must NOT unlink that backup path — it
+  // is an entry this operation never created, so deleting it would clobber another file.
+  seed(fake, '20260101-000006-g.md', 'owned original', 70);
+  const ownedBak = `${ROOT}/.tmp-owned.bak`;
+  seed(fake, '.tmp-owned.bak', 'foreign backup entry', 71);
+  const realLink3 = fake.fs.link;
+  let backupLinkHits = 0;
+  fake.fs.link = async (from, to) => {
+    // Fail ONLY the destination->backup link (to ends with a generated .bak name) with
+    // EEXIST, simulating a collision on the random backup name.
+    if (to.endsWith('.bak') && from === `${ROOT}/20260101-000006-g.md`) {
+      backupLinkHits++;
+      fake.calls.push({ op: 'link', path: from, to } as never);
+      throw eexist(to);
+    }
+    return realLink3(from, to);
+  };
+  const markBak = fake.calls.length;
+  await assert.rejects(store.updateScratch('20260101-000006-g.md', 'never lands'), (e: unknown) => e instanceof ScratchStoreError);
+  fake.fs.link = realLink3;
+  const bakCalls = fake.calls.slice(markBak);
+  assert.equal(backupLinkHits, 1, 'backup link was attempted exactly once');
+  assert.equal(bakCalls.some((c) => c.op === 'unlink' && c.path.endsWith('.bak')), false, 'no .bak path was unlinked — the failed backup link was never owned');
+  assert.equal(Buffer.from(fake.files.get(`${ROOT}/20260101-000006-g.md`) ?? []).toString('utf8'), 'owned original', 'destination untouched when the backup link fails');
+  assert.equal(Buffer.from(fake.files.get(ownedBak) ?? []).toString('utf8'), 'foreign backup entry', 'the foreign .bak entry survives a failed backup link');
+  assert.equal(bakCalls.some((c) => c.op === 'unlink' && c.path.includes('.tmp-')), true, 'temp still cleaned up when the backup link fails');
+});
+
+test('scratch-store.test.ts: r29 CR-MED — when the backup->destination restore link itself fails persistently, the restore RETRIES link() and then gives up WITHOUT any rename, leaving the backup on disk (original inode preserved) — the destination name is simply left absent, never clobbered', async () => {
+  const { fake, store } = setup();
+  await fake.fs.mkdir(ROOT);
+  // Publish link (temp->dest) fails EIO, AND every backup->dest restore link fails EIO:
+  // the restore must retry link() PUBLISH_ATTEMPTS times and then stop — no rename.
+  seed(fake, '20260101-000007-h.md', 'restore-fallback original', 80);
+  fake.failOn = (c) => (c.op === 'link' && c.to === `${ROOT}/20260101-000007-h.md` ? Object.assign(new Error('EIO'), { code: 'EIO' }) : undefined);
+  const markFb = fake.calls.length;
+  await assert.rejects(store.updateScratch('20260101-000007-h.md', 'never lands'), (e: unknown) => e instanceof ScratchStoreError);
+  fake.failOn = undefined;
+  const fbCalls = fake.calls.slice(markFb);
+  const restoreLinks = fbCalls.filter((c) => c.op === 'link' && c.path.endsWith('.bak') && c.to === `${ROOT}/20260101-000007-h.md`);
+  assert.ok(restoreLinks.length >= 2, `restore link was retried (${restoreLinks.length} attempts) before giving up`);
+  assert.equal(fbCalls.some((c) => c.op === 'rename'), false, 'NO rename is ever used to restore — link-only restore');
+  assert.equal(fake.files.has(`${ROOT}/20260101-000007-h.md`), false, 'the destination name is absent after the failed restore (never clobbered, never half-restored)');
+  const leftoverBak = [...fake.files.keys()].find((k) => k.endsWith('.bak') && k.includes('.tmp-'));
+  assert.ok(leftoverBak !== undefined && Buffer.from(fake.files.get(leftoverBak) ?? []).toString('utf8') === 'restore-fallback original', 'the backup hard link is LEFT in place and still holds the ORIGINAL content (inode preserved for manual recovery)');
+  assert.equal(fbCalls.some((c) => c.op === 'unlink' && c.path.includes('.tmp-')), true, 'temp still cleaned up');
+});
+
+test('scratch-store.test.ts: r30 CR-MED — the link-only restore NEVER clobbers a concurrently recreated destination: every backup->destination link fails EEXIST once the name is back, the restore stops at the first EEXIST, and the other writer\'s file survives; no rename exists to race', async () => {
+  const { fake, store } = setup();
+  await fake.fs.mkdir(ROOT);
+  // Publish link fails EIO; the first restore-link attempts fail EIO too, then a
+  // concurrent writer recreates the destination name — the next restore link must see
+  // EEXIST and stop immediately, leaving the concurrent file intact.
+  seed(fake, '20260101-000008-i.md', 'race original', 90);
+  let restoreLinkAttempts = 0;
+  const realLink = fake.fs.link;
+  fake.fs.link = async (from, to) => {
+    if (to === `${ROOT}/20260101-000008-i.md`) {
+      if (!from.endsWith('.bak')) {
+        // publish link (temp->dest): always fail EIO so we reach the restore path
+        fake.calls.push({ op: 'link', path: from, to } as never);
+        throw Object.assign(new Error('EIO'), { code: 'EIO' });
+      }
+      restoreLinkAttempts++;
+      fake.calls.push({ op: 'link', path: from, to } as never);
+      if (restoreLinkAttempts <= 2) {
+        throw Object.assign(new Error('EIO'), { code: 'EIO' });
+      }
+      // The race: the destination name was recreated concurrently right after this
+      // attempt — model the next link observing EEXIST.
+      seed(fake, '20260101-000008-i.md', 'concurrent writer content', 91);
+      throw eexist(to);
+    }
+    return realLink(from, to);
+  };
+  const markRace = fake.calls.length;
+  await assert.rejects(store.updateScratch('20260101-000008-i.md', 'never lands'), (e: unknown) => e instanceof ScratchStoreError);
+  fake.fs.link = realLink;
+  const raceCalls = fake.calls.slice(markRace);
+  assert.equal(Buffer.from(fake.files.get(`${ROOT}/20260101-000008-i.md`) ?? []).toString('utf8'), 'concurrent writer content', 'the concurrently recreated destination is NOT clobbered — link-only restore leaves it intact');
+  assert.equal(raceCalls.some((c) => c.op === 'rename'), false, 'no rename ran (the fs surface has none)');
+  const restoreLinks = raceCalls.filter((c) => c.op === 'link' && c.path.endsWith('.bak') && c.to === `${ROOT}/20260101-000008-i.md`);
+  assert.equal(restoreLinks.length, 3, 'restore stopped at the first EEXIST (3 link attempts: 2x EIO + 1x EEXIST)');
+  assert.ok(raceCalls.some((c) => c.op === 'unlink' && c.path.includes('.tmp-')), 'temp still cleaned up');
+});
+
+test('scratch-store.test.ts: r32 CR-MED — the backup is taken at the PER-ATTEMPT validated inode, not once up front: when the destination is replaced A→B after the initial lstat but before the loop validates it, a failed publish restores B (the inode the loop actually validated and unlinked), never the stale A', async () => {
+  const { fake, store } = setup();
+  await fake.fs.mkdir(ROOT);
+  const dest = `${ROOT}/20260101-000009-j.md`;
+  // Inode A seeded; the swap below installs inode B with different content + ino.
+  seed(fake, '20260101-000009-j.md', 'inode A original', 110);
+  fake.inos.set(dest, 9001);
+  // Swap A→B on the SECOND lstat of the destination (the first is the pre-loop
+  // validation; the second is publish attempt 0's revalidation): attempt 0 must then
+  // validate, back up, and unlink inode B — so a later failure must restore B.
+  let lstatCalls = 0;
+  const realLstat = fake.fs.lstat;
+  fake.fs.lstat = async (p) => {
+    if (p === dest) {
+      lstatCalls++;
+      if (lstatCalls === 2) {
+        fake.files.set(dest, Buffer.from('inode B replacement', 'utf8'));
+        fake.inos.set(dest, 9002);
+      }
+    }
+    return realLstat(p);
+  };
+  // Publish link (temp->dest) fails EIO — non-EEXIST, so the loop breaks to the
+  // restore path after having unlinked the validated inode B.
+  fake.failOn = (c) => (c.op === 'link' && c.to === dest && !c.path.endsWith('.bak') ? Object.assign(new Error('EIO'), { code: 'EIO' }) : undefined);
+  const markR32 = fake.calls.length;
+  await assert.rejects(store.updateScratch('20260101-000009-j.md', 'never lands'), (e: unknown) => e instanceof ScratchStoreError);
+  fake.fs.lstat = realLstat;
+  fake.failOn = undefined;
+  const r32Calls = fake.calls.slice(markR32);
+  assert.equal(Buffer.from(fake.files.get(dest) ?? []).toString('utf8'), 'inode B replacement', 'the restored content is inode B — the inode the loop validated and unlinked — NOT the stale inode A');
+  assert.equal(fake.inos.get(dest), 9002, 'the restored destination is B\'s inode');
+  // The backup link dest->.bak must have been taken AFTER attempt 0's revalidation
+  // lstat (the 2nd lstat of dest — the pre-loop validation is the 1st), i.e. of inode
+  // B, and the restore must link that same backup back over dest.
+  const idxLstat2 = r32Calls.findIndex((c, i) => c.op === 'lstat' && c.path === dest && r32Calls.slice(0, i + 1).filter((x) => x.op === 'lstat' && x.path === dest).length === 2);
+  assert.ok(idxLstat2 >= 0, 'the loop revalidated the destination (2nd lstat)');
+  const backupLinkIdx = r32Calls.findIndex((c) => c.op === 'link' && c.path === dest && (c.to ?? '').endsWith('.bak'));
+  assert.ok(backupLinkIdx > idxLstat2, `backup link taken after the loop's revalidation lstat (revalidation@${idxLstat2}, backup@${backupLinkIdx}) — backup of the validated inode B, not stale A`);
+  const backupPath = r32Calls[backupLinkIdx]?.to ?? '';
+  assert.ok(backupPath.endsWith('.bak'));
+  const restoreIdx = r32Calls.findIndex((c) => c.op === 'link' && c.path === backupPath && c.to === dest);
+  assert.ok(restoreIdx > backupLinkIdx, 'the B backup was linked back over the destination name on restore');
+  assert.equal(r32Calls.some((c) => c.op === 'unlink' && c.path === backupPath), true, 'the B backup was cleaned up after the failed publish');
+  assert.equal(r32Calls.some((c) => c.op === 'unlink' && c.path.includes('.tmp-') && !c.path.endsWith('.bak')), true, 'temp still cleaned up');
+  assert.equal(r32Calls.some((c) => c.op === 'rename'), false, 'no rename anywhere');
+});
+
+test('scratch-store.test.ts: r33 CR-MED — a replacement swapped in AFTER the fd fstat but before the backup link (or before the unlink) is refused: the backup inode is checked against the fd-validated inode and the name is re-lstat\'d immediately before the unlink, so the wrong inode is never backed up and never unlinked', async () => {
+  // Scenario 1: dest swapped A->B between the fd fstat and link(path, backup). The
+  // backup link then captures B, the backup lstat's ino !== fst.ino -> refuse; dest
+  // (B) untouched, dest never unlinked, mismatched backup dropped.
+  {
+    const { fake, store } = setup();
+    await fake.fs.mkdir(ROOT);
+    const dest = `${ROOT}/20260101-000010-k.md`;
+    seed(fake, '20260101-000010-k.md', 'inode A original', 120);
+    fake.inos.set(dest, 9101);
+    const realLink = fake.fs.link;
+    fake.fs.link = async (from, to) => {
+      if (from === dest && (to ?? '').endsWith('.bak')) {
+        // The race window: the name is replaced right before the backup link runs.
+        fake.files.set(dest, Buffer.from('inode B swapped', 'utf8'));
+        fake.inos.set(dest, 9102);
+      }
+      return realLink(from, to);
+    };
+    const mark = fake.calls.length;
+    await assert.rejects(store.updateScratch('20260101-000010-k.md', 'new text'), (e: unknown) => e instanceof ScratchRefused);
+    fake.fs.link = realLink;
+    const calls = fake.calls.slice(mark);
+    assert.equal(Buffer.from(fake.files.get(dest) ?? []).toString('utf8'), 'inode B swapped', 'the swapped-in file B survives — never unlinked, never overwritten');
+    assert.equal(fake.inos.get(dest), 9102, 'destination is still B\'s inode');
+    assert.equal(calls.some((c) => c.op === 'unlink' && c.path === dest), false, 'the destination was NEVER unlinked after the swap (refused before any unlink)');
+    assert.equal(calls.some((c) => c.op === 'unlink' && (c.path ?? '').endsWith('.bak')), true, 'the mismatched backup was dropped');
+    assert.equal(calls.some((c) => c.op === 'unlink' && c.path.includes('.tmp-') && !c.path.endsWith('.bak')), true, 'temp still cleaned up');
+  }
+  // Scenario 2: dest swapped A->C between the backup link and the final pre-unlink
+  // lstat. st3.ino !== fst.ino -> refuse; C untouched, dest never unlinked, and the
+  // backup of A is cleaned up without restoring over C.
+  {
+    const { fake, store } = setup();
+    await fake.fs.mkdir(ROOT);
+    const dest = `${ROOT}/20260101-000011-l.md`;
+    seed(fake, '20260101-000011-l.md', 'inode A original', 130);
+    fake.inos.set(dest, 9201);
+    let destLstats = 0;
+    const realLstat = fake.fs.lstat;
+    fake.fs.lstat = async (p) => {
+      if (p === dest) {
+        destLstats++;
+        // lstat #1 = pre-loop validation, #2 = attempt revalidation, #3 = final
+        // pre-unlink revalidation: swap in C just before #3 observes it.
+        if (destLstats === 3) {
+          fake.files.set(dest, Buffer.from('inode C swapped', 'utf8'));
+          fake.inos.set(dest, 9202);
+        }
+      }
+      return realLstat(p);
+    };
+    const mark = fake.calls.length;
+    await assert.rejects(store.updateScratch('20260101-000011-l.md', 'new text'), (e: unknown) => e instanceof ScratchRefused);
+    fake.fs.lstat = realLstat;
+    const calls = fake.calls.slice(mark);
+    assert.equal(Buffer.from(fake.files.get(dest) ?? []).toString('utf8'), 'inode C swapped', 'the swapped-in file C survives — refused at the final pre-unlink revalidation');
+    assert.equal(fake.inos.get(dest), 9202);
+    assert.equal(calls.some((c) => c.op === 'unlink' && c.path === dest), false, 'the destination was NEVER unlinked');
+    assert.equal(calls.some((c) => c.op === 'link' && c.path === dest && (c.to ?? '').endsWith('.bak')), true, 'the backup of the validated inode A was still taken');
+    assert.equal(calls.some((c) => c.op === 'unlink' && (c.path ?? '').endsWith('.bak')), true, 'the A backup was cleaned up (no restore needed — nothing was unlinked)');
+    assert.equal(calls.some((c) => c.op === 'unlink' && c.path.includes('.tmp-') && !c.path.endsWith('.bak')), true, 'temp still cleaned up');
+  }
+});
+
+test('scratch-store.test.ts: updateScratch bumps mtime so listScratches reflects the save', async () => {
+  const { fake, store } = setup();
+  await fake.fs.mkdir(ROOT);
+  seed(fake, '20260101-000000-a.md', 'before', 100);
+  seed(fake, '20260101-000001-b.md', 'other', 200);
+  assert.equal((await store.listScratches())[0]?.id, '20260101-000001-b.md');
+
+  fake.clock += 50;
+  await store.updateScratch('20260101-000000-a.md', 'after');
+  const list = await store.listScratches();
+  assert.equal(list[0]?.id, '20260101-000000-a.md', 'the saved scratchpad moved to the list head');
+  assert.equal(list[0]?.size, Buffer.byteLength('after', 'utf8'));
+  assert.ok((list[0]?.mtime ?? 0) > 100, 'mtime bumped past the seeded value');
 });
 
 test('scratch-store.test.ts: writeFile/copyFile-style symlink seeding helper not used — deleteScratch on a symlink refuses and the symlink target is untouched', async () => {

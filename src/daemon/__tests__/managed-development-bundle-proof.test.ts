@@ -11,6 +11,7 @@ import { verifyManagedBundleProof, verifyManagedDevelopmentLaunch } from '../man
 import { advanceDaemonBundleReleaseFloor, readDaemonBundleReleaseFloor } from '../../shared/daemon-bundle-release-floor.js';
 import { ManagedDaemonControl } from '../../cli/services/managed-daemon-control.js';
 import type { InstallationMutationGate, MutationReservation } from '../../shared/installation-mutation-gate.js';
+import { selectInstalledBundlePredecessor } from '../managed-update-preparation.js';
 
 test('development admission floor survives rollback and only permits exact equal-sequence retry', () => {
 	const prior = { domain: 'development' as const, channel: 'development' as const, sequence: 1,
@@ -56,6 +57,17 @@ test('managed development proof revalidates signed identity and pinned runtime',
 		};
 		const install = { version: 1 as const, stateRoot, releaseRoot, runtime, releaseId: commit, pathEnv: '/usr/bin:/bin', enabled: true };
 		await verifyManagedBundleProof(install, proof);
+		const candidate = { ...proof, floor: { ...proof.floor, sequence: 3 } };
+		const predecessor = {
+			qualificationProfile: 'managed-rollback-v1', commit, manifestSha256: proof.floor.manifestSha256,
+			runtimeFingerprint: fingerprint, sequence: proof.floor.sequence, compatibility: {},
+			crashConsistentReopening: true, launchProfiles: ['managed'],
+		};
+		assert.equal(selectInstalledBundlePredecessor({ predecessor }, candidate, proof, commit), predecessor);
+		for (const invalid of [null, { ...predecessor, sequence: 1 }, { ...predecessor, runtimeFingerprint: 'wrong' }]) {
+			assert.throws(() => selectInstalledBundlePredecessor({ predecessor: invalid }, candidate, proof, commit),
+				/does not qualify/);
+		}
 		await assert.rejects(verifyManagedBundleProof(install, {
 			...proof, floor: { ...proof.floor, repository: 'https://github.com/example/other.git' },
 		}), /identity changed/);

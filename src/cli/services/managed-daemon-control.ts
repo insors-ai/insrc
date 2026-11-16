@@ -21,6 +21,7 @@ import { verifyManagedBundleProof } from '../../daemon/managed-bundle-proof.js';
 type Request = Pick<SupervisorRequest, 'op' | 'generation' | 'deadlineMs' | 'updateId'>;
 type Reply = Extract<SupervisorReply, { ok: true }>;
 const CALL_TIMEOUT_MS = 3_500;
+const START_ADMISSION_TIMEOUT_MS = 300_000;
 const START_TIMEOUT_MS = 70_000;
 const STOP_TIMEOUT_MS = 40_000;
 const POLL_MS = 125;
@@ -49,10 +50,10 @@ class SupervisorLink implements ManagedSupervisorLink {
 		socket.once('close', () => this.close());
 	}
 
-	private exchange(frame: SupervisorHello | SupervisorRequest): Promise<unknown> {
+	private exchange(frame: SupervisorHello | SupervisorRequest, timeoutMs = CALL_TIMEOUT_MS): Promise<unknown> {
 		if (this.socket.destroyed || this.waiting !== undefined) return Promise.reject(unavailable('supervisor connection is unavailable'));
 		return new Promise((resolve, reject) => {
-			const timeout = setTimeout(() => this.close(), CALL_TIMEOUT_MS);
+			const timeout = setTimeout(() => this.close(unavailable('supervisor request timed out')), timeoutMs);
 			this.waiting = {
 				resolve: value => { clearTimeout(timeout); resolve(value); },
 				reject: error => { clearTimeout(timeout); reject(error); },
@@ -72,14 +73,15 @@ class SupervisorLink implements ManagedSupervisorLink {
 
 	async call(request: Request): Promise<SupervisorReply> {
 		const frame: SupervisorRequest = { v: 1, id: randomUUID(), ...request };
-		try { return readSupervisorReply(await this.exchange(frame), frame); }
+		// Start can verify the entire pinned bundle before admitting a generation.
+		try { return readSupervisorReply(await this.exchange(frame, request.op === 'start' ? START_ADMISSION_TIMEOUT_MS : CALL_TIMEOUT_MS), frame); }
 		catch (error) { this.close(); throw error; }
 	}
 
-	close(): void {
+	close(error = unavailable('supervisor closed before confirming the operation')): void {
 		const next = this.waiting;
 		this.waiting = undefined;
-		next?.reject(unavailable('supervisor closed before confirming the operation'));
+		next?.reject(error);
 		this.frames.discardPartial();
 		this.socket.destroy();
 	}

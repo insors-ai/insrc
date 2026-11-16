@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-32756773-42ef-4bb9-868e-cae96bba8268",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-15T06:40:22.825Z",
+    "epicCreatedAt": "2026-11-15T05:50:20.518Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c5b49ff953a9a295",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Record and render an ISSUE's kind",
+      "parent": {
+        "entityId": "STORY-c5b49ff953a9a295-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c5b49ff953a9a295-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "ba73748d0865f4eaa7c2ee318c9ce0b3a60567cbfefa431639fe01c61dd813a0",
+        "at": "2026-11-15T06:40:22.828Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-15T06:40:22.841Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Record and render an ISSUE's kind",
+    "summary": "Add optional meta.kind ('defect' | 'change') to IssueArtifact; finalizeIssue stores params.kind beside magnitude and refuses an unknown value; renderIssueMarkdown uses What was asked / Why / Change for 'change'; the issue.capture prompt asks for a change's request and reason when the run's kind is 'change'.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "An issue run with params.kind 'change' stores meta.kind 'change'; an unknown kind writes no ISSUE.",
+      "An ISSUE with no kind renders byte-identically to before.",
+      "A change ISSUE renders What was asked, Why and Change."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "finalizeIssue: params.kind change is stored on the ISSUE meta and an unknown kind is refused"
+      },
+      {
+        "level": "unit",
+        "name": "renderIssueMarkdown: kind change renders What was asked, Why and Change"
+      },
+      {
+        "level": "unit",
+        "name": "renderIssueMarkdown: an ISSUE with no kind renders byte-identically to before"
+      },
+      {
+        "level": "unit",
+        "name": "issue capture prompt: a change run asks what was asked and why, not for a defect"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

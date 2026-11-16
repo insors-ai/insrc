@@ -2,8 +2,9 @@
 
 import { setTimeout as delay } from 'node:timers/promises';
 import { realpath } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import { getDb } from '../db/client.js';
-import { SCHEMA_VERSION } from '../db/graph/store.js';
+import { getGraphStore, SCHEMA_VERSION } from '../db/graph/store.js';
 import { IndexerService } from '../indexer/index.js';
 import { Watcher } from '../indexer/watcher.js';
 import { InstallationMutationGate } from '../shared/installation-mutation-gate.js';
@@ -53,9 +54,27 @@ export async function startManagedDaemonProbation(
 		repos: [], queueDepth: 0, embeddingsPending: 0,
 		installedCommit: await readPublicInstalledCommit(gate, updateId),
 	});
+	const qualificationHandlers = active.predecessor.developmentQualification === true ? {
+		'daemon.qualificationWrite': async () => {
+			const current = await gate.read();
+			if (current.active?.id !== updateId || current.outcome?.id === updateId) throw new Error('qualification trial is no longer active');
+			await (await getGraphStore()).meta.put(`development-qualification:${updateId}`, updateId);
+			return createHash('sha256').update(updateId).digest('hex');
+		},
+		'daemon.qualificationInterrupt': async () => {
+			const current = await gate.read();
+			if (current.active?.id !== updateId || current.outcome?.id === updateId ||
+				(await getGraphStore()).meta.get(`development-qualification:${updateId}`) !== updateId) {
+				throw new Error('qualification requires a persisted fixture before interruption');
+			}
+			setTimeout(() => process.kill(process.pid, 'SIGKILL'), 25);
+			return true;
+		},
+	} : {};
 	let forward = directDispatch({
 		'daemon.status': probationStatus,
 		'daemon.updateOutcome': async () => readPublicUpdateOutcome(gate),
+		...qualificationHandlers,
 	});
 	const server = new IpcServer((request, deliver) => forward(request, deliver));
 	writePid();

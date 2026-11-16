@@ -1,7 +1,7 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 
 import { spawn } from 'node:child_process';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { constants } from 'node:fs';
 import { lstat, mkdir, open, realpath, rename, rm } from 'node:fs/promises';
 import { isAbsolute, join } from 'node:path';
@@ -30,6 +30,7 @@ export interface UpdatePredecessor {
 	readonly candidateRelease: string;
 	readonly priorCommit: string;
 	readonly wasRunning: boolean;
+	readonly developmentQualification?: true;
 	readonly generation?: string | null;
 	readonly pins?: { readonly prior: ManagedInstallation; readonly candidate: ManagedInstallation };
 	readonly launch?: LegacyLaunchPin;
@@ -86,11 +87,22 @@ export type MutationReservation = MutationRequest & {
 
 export type UpdateDecision = 'committed' | 'rolled-back' | 'operator-recovery';
 
+export interface DevelopmentRollbackObservation {
+	readonly candidateCommit: string;
+	readonly predecessorCommit: string;
+	readonly candidateManifestSha256: string;
+	readonly predecessorManifestSha256: string;
+	readonly candidateGeneration: string;
+	readonly restoredGeneration: string;
+	readonly fixtureSha256?: string;
+}
+
 export interface DurableUpdateOutcome {
 	readonly id: string;
 	readonly decision: UpdateDecision;
 	readonly detail: string;
 	readonly finishedAt?: string;
+	readonly developmentRollback?: DevelopmentRollbackObservation;
 }
 
 export interface InstallationJournal {
@@ -225,6 +237,10 @@ function validPredecessor(value: unknown): value is UpdatePredecessor {
 		|| typeof value.priorCommit !== 'string' || typeof value.wasRunning !== 'boolean'
 		|| (value.generation !== undefined && value.generation !== null && !text(value.generation))) return false;
 	if (value.selectorAbsent !== undefined && (value.selectorAbsent !== true || value.launch === undefined)) return false;
+	if (value.developmentQualification !== undefined && (value.developmentQualification !== true ||
+		!value.wasRunning || !object(value.bundleProof) ||
+		readManagedBundleProof(value.bundleProof.candidate).floor.domain !== 'development' ||
+		readManagedBundleProof(value.bundleProof.priorBundle).floor.domain !== 'development')) return false;
 	if (value.bundleProof !== undefined && (!object(value.bundleProof) || value.pins === undefined
 		|| (value.bundleProof.priorBundle === undefined
 			? typeof value.bundleProof.priorSourceFingerprint !== 'string' || !/^[a-f0-9]{64}$/.test(value.bundleProof.priorSourceFingerprint)
@@ -297,6 +313,61 @@ function validDecision(value: unknown): value is UpdateDecision {
 	return value === 'committed' || value === 'rolled-back' || value === 'operator-recovery';
 }
 
+function validDevelopmentRollback(value: unknown): value is DevelopmentRollbackObservation {
+	if (!object(value) || Object.keys(value).length !== (value.fixtureSha256 === undefined ? 6 : 7)) return false;
+	const oid = /^[0-9a-f]{40}$/;
+	const digest = /^[0-9a-f]{64}$/;
+	const generation = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/;
+	const matches = (pattern: RegExp, field: unknown) => typeof field === 'string' && pattern.test(field);
+	return matches(oid, value.candidateCommit) && matches(oid, value.predecessorCommit) &&
+		matches(digest, value.candidateManifestSha256) && matches(digest, value.predecessorManifestSha256) &&
+		matches(generation, value.candidateGeneration) && matches(generation, value.restoredGeneration) &&
+		(value.fixtureSha256 === undefined || matches(digest, value.fixtureSha256)) &&
+		value.candidateCommit !== value.predecessorCommit && value.candidateGeneration !== value.restoredGeneration;
+}
+
+function observeDevelopmentRollback(
+	active: Extract<MutationReservation, { kind: 'update' }>,
+): DevelopmentRollbackObservation | undefined {
+	const { bundleProof, candidateRelease, priorRelease, wasRunning } = active.predecessor;
+	const candidate = bundleProof?.candidate.floor;
+	const prior = bundleProof?.priorBundle?.floor;
+	if (!wasRunning || candidate?.domain !== 'development' || prior?.domain !== 'development' ||
+		candidate.repository !== prior.repository) return undefined;
+	const entry = (step: string) => active.entries.find(row => row.step === step);
+	const started = entry('candidate-start');
+	const stopped = entry('rollback-candidate-stop');
+	const removed = entry('rollback-candidate-job');
+	const restored = entry('rollback-start');
+	if (started?.intent !== candidateRelease || started.receipt === undefined || stopped?.receipt === undefined ||
+		removed?.intent !== candidateRelease || removed.receipt === undefined ||
+		restored?.intent !== priorRelease || restored.receipt === undefined) return undefined;
+	let start: unknown;
+	let stop: unknown;
+	let removal: unknown;
+	try { start = JSON.parse(started.receipt); stop = JSON.parse(stopped.receipt); removal = JSON.parse(removed.receipt); }
+	catch { return undefined; }
+	if (!object(start) || start.state !== 'running' || !object(stop) || stop.state !== 'exited' ||
+		start.generation !== stop.generation ||
+		stopped.intent !== start.generation || !object(removal) || removal.absent !== true ||
+		!object(stop.exit) || (stop.exit.kind !== 'forced' && stop.exit.kind !== 'failed') ||
+		stop.exit.code !== null || typeof stop.exit.signal !== 'number' || !Number.isSafeInteger(stop.exit.signal) ||
+		stop.exit.signal <= 0) return undefined;
+	const recorded = {
+		candidateCommit: candidateRelease, predecessorCommit: priorRelease, candidateManifestSha256: candidate.manifestSha256,
+		predecessorManifestSha256: prior.manifestSha256, candidateGeneration: start.generation,
+		restoredGeneration: restored.receipt,
+	};
+	if (active.predecessor.developmentQualification) {
+		const write = entry('development-qualification-write');
+		const expected = createHash('sha256').update(active.id).digest('hex');
+		if (write?.intent !== start.generation || write.receipt !== expected || stop.exit.signal !== 9) return undefined;
+		const trial = { ...recorded, fixtureSha256: expected };
+		return validDevelopmentRollback(trial) ? trial : undefined;
+	}
+	return validDevelopmentRollback(recorded) ? recorded : undefined;
+}
+
 function readJournal(bytes: string, root: string, uid: number): InstallationJournal {
 	let parsed: unknown;
 	try { parsed = JSON.parse(bytes); } catch { conflict('invalid installation journal'); }
@@ -306,6 +377,8 @@ function readJournal(bytes: string, root: string, uid: number): InstallationJour
 		|| (active.recovery !== undefined && active.recovery !== true)
 		|| !validRequest(active) || active.owner.uid !== uid)) conflict('invalid installation reservation');
 	if (outcome !== null && (!object(outcome) || !text(outcome.id) || !validDecision(outcome.decision)
+		|| (outcome.developmentRollback !== undefined &&
+			(outcome.decision !== 'rolled-back' || !validDevelopmentRollback(outcome.developmentRollback)))
 		|| !text(outcome.detail) || (outcome.finishedAt !== undefined
 			&& (typeof outcome.finishedAt !== 'string' || !Number.isFinite(Date.parse(outcome.finishedAt)))))) conflict('invalid installation outcome');
 	const journal = parsed as unknown as InstallationJournal;
@@ -379,23 +452,33 @@ export class InstallationMutationGate {
 		this.journalPath = join(this.directory, 'journal.json');
 	}
 
-	private async directoryOwner(): Promise<number> {
+	private async owner(): Promise<number> {
 		const uid = process.getuid?.();
 		if (process.platform !== 'darwin' || uid === undefined || uid <= 0) conflict('managed lifecycle requires a macOS user');
 		if (await realpath(this.root) !== this.root) conflict('installation root must be canonical');
-		try { await mkdir(this.directory, { mode: 0o700 }); }
-		catch (error) { if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error; }
-		const identity = await lstat(this.directory);
+		return uid;
+	}
+
+	private async hasOwnedDirectory(uid: number): Promise<boolean> {
+		const identity = await lstat(this.directory).catch((error: NodeJS.ErrnoException) => {
+			if (error.code === 'ENOENT') return undefined;
+			throw error;
+		});
+		if (identity === undefined) return false;
 		if (!identity.isDirectory() || identity.uid !== uid || (identity.mode & 0o077) !== 0) {
 			conflict('installation journal directory is not private and owned');
 		}
-		return uid;
+		return true;
+	}
+
+	private emptyJournal(): InstallationJournal {
+		return { version: 1, root: this.root, active: null, outcome: null };
 	}
 
 	private async readOwned(uid: number): Promise<InstallationJournal> {
 		const file = await open(this.journalPath, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK)
 			.catch((error: NodeJS.ErrnoException) => { if (error.code !== 'ENOENT') throw error; });
-		if (file === undefined) return { version: 1, root: this.root, active: null, outcome: null };
+		if (file === undefined) return this.emptyJournal();
 		try {
 			const identity = await file.stat();
 			if (!identity.isFile() || identity.uid !== uid || identity.nlink !== 1 || (identity.mode & 0o077) !== 0
@@ -408,7 +491,8 @@ export class InstallationMutationGate {
 	}
 
 	async read(): Promise<InstallationJournal> {
-		return this.readOwned(await this.directoryOwner());
+		const uid = await this.owner();
+		return await this.hasOwnedDirectory(uid) ? this.readOwned(uid) : this.emptyJournal();
 	}
 
 	private async write(state: InstallationJournal): Promise<void> {
@@ -428,7 +512,10 @@ export class InstallationMutationGate {
 	}
 
 	private async arbitrate<T>(change: (state: InstallationJournal, uid: number) => Promise<T>): Promise<T> {
-		const uid = await this.directoryOwner();
+		const uid = await this.owner();
+		try { await mkdir(this.directory, { mode: 0o700 }); }
+		catch (error) { if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error; }
+		if (!await this.hasOwnedDirectory(uid)) conflict('installation journal directory disappeared');
 		const path = join(this.directory, 'arbitration.lock');
 		const file = await open(path, constants.O_RDWR | constants.O_CREAT | constants.O_NOFOLLOW | constants.O_NONBLOCK, 0o600);
 		try {
@@ -594,10 +681,14 @@ export class InstallationMutationGate {
 			const active = this.admitted(state, authority);
 			const last = active.entries.at(-1);
 			if (active.kind !== 'update' || !validDecision(decision) || !text(detail)
+				|| (active.predecessor.developmentQualification === true && decision === 'committed')
 				|| state.outcome?.id === active.id || (last !== undefined && last.receipt === undefined && decision !== 'operator-recovery')) {
 				conflict('installation outcome cannot be published');
 			}
-			await this.write({ ...state, outcome: { id: active.id, decision, detail, finishedAt: new Date().toISOString() } });
+			const developmentRollback = decision === 'rolled-back' ? observeDevelopmentRollback(active) : undefined;
+			await this.write({ ...state, outcome: { id: active.id, decision, detail, finishedAt: new Date().toISOString(),
+				...(developmentRollback === undefined ? {} : { developmentRollback }),
+			} });
 		});
 	}
 

@@ -1,11 +1,44 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { fetchDevelopmentCheckout, measureDevelopmentCandidate, packageDevelopmentCandidate, requireCleanDevelopmentCheckout } from '../package-daemon-development.mjs';
+import { archiveDevelopmentRuntime, fetchDevelopmentCheckout, measureDevelopmentCandidate, packageDevelopmentCandidate, requireCleanDevelopmentCheckout } from '../package-daemon-development.mjs';
 import { sha256 } from '../daemon-bundle-metadata.mjs';
+
+async function createFixtureRuntime(stage: string) {
+	await mkdir(join(stage, 'tools'));
+	await mkdir(join(stage, 'out', 'daemon'), { recursive: true });
+	await writeFile(join(stage, 'tools', 'node'), 'pinned runtime', { mode: 0o700 });
+	await writeFile(join(stage, 'out', 'daemon', 'index.js'), 'candidate runtime');
+}
+
+test('development archives omit overlong SDK metadata and reject lost runtime files', async () => {
+	const root = await realpath(await mkdtemp(join(tmpdir(), 'insrc-development-archive-test-')));
+	try {
+		const stage = join(root, 'stage');
+		const archive = join(root, 'development.tar.gz');
+		await mkdir(stage);
+		await createFixtureRuntime(stage);
+		const operations = 'node_modules/@mistralai/mistralai/esm/models/operations';
+		const longName = 'model-operation-'.repeat(7);
+		await mkdir(join(stage, operations), { recursive: true });
+		await writeFile(join(stage, operations, longName + '.js.map'), 'source map');
+		await writeFile(join(stage, operations, longName + '.d.ts'), 'declarations');
+		await writeFile(join(stage, operations, 'normal.js'), 'code');
+		const commit = 'a'.repeat(40);
+		const identity = await archiveDevelopmentRuntime(stage, archive, root, commit);
+		const entries = execFileSync('/usr/bin/tar', ['-tzf', archive], { encoding: 'utf8' }).split('\n');
+		assert(entries.includes(`${operations}/normal.js`));
+		assert(!entries.some(entry => entry.includes(longName)));
+		assert.deepEqual(await measureDevelopmentCandidate(stage, archive), identity);
+		await writeFile(join(stage, operations, longName + '.js'), 'required runtime');
+		await assert.rejects(archiveDevelopmentRuntime(stage, archive, root, commit), /fingerprint|Pathname too long/);
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
 
 test('local development packaging pins a configured ref and measures candidate bytes', async () => {
 	const root = await mkdtemp(join(tmpdir(), 'insrc-development-candidate-test-'));
@@ -49,6 +82,12 @@ test('local development packaging pins a configured ref and measures candidate b
 		await writeFile(join(candidate.checkout, 'source'), 'dirty');
 		assert.throws(() => requireCleanDevelopmentCheckout(candidate.checkout, commit), /dirty/);
 		await assert.rejects(fetchDevelopmentCheckout(policy, ref, unrelated, await fresh()), /unreachable/);
+		await assert.rejects(fetchDevelopmentCheckout(policy, ref, '0'.repeat(40), await fresh()), /unreachable/);
+		const deletedRef = 'refs/heads/preview/deleted';
+		git('branch', 'preview/deleted', tip);
+		git('branch', '-D', 'preview/deleted');
+		await assert.rejects(fetchDevelopmentCheckout({ ...policy, developmentRefs: [ref, deletedRef] },
+			deletedRef, commit, await fresh()), /git.*fetch/s);
 		await assert.rejects(fetchDevelopmentCheckout(policy, 'refs/heads/unrelated', unrelated, await fresh()), /not approved/);
 		await assert.rejects(fetchDevelopmentCheckout(policy, 'refs/tags/preview', commit, await fresh()), /full branch ref/);
 
@@ -67,7 +106,7 @@ test('local development packaging pins a configured ref and measures candidate b
 		await packageDevelopmentCandidate({ policy, ref, commit, outputPath, version: '1.0.0-dev.1' }, {
 			async buildRuntime(checkout: string, staging: string) {
 				assert.equal(await readFile(join(checkout, 'source'), 'utf8'), 'first');
-				await writeFile(join(staging, 'runtime'), 'candidate runtime');
+				await createFixtureRuntime(staging);
 			},
 		});
 		const handoff = JSON.parse(await readFile(join(outputPath, 'candidate.json'), 'utf8'));

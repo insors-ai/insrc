@@ -26,7 +26,8 @@ export interface RawHead {
 /** The rules of the conversion, in the order the applier runs them. */
 export type ConversionRule =
 	| 'repo-rules' | 'rename-id' | 'stamp-epic-created-at' | 'convert-amendment' | 'convert-feedback' | 'migrate-head'
-	| 'create-epic' | 'create-story' | 'create-tasks' | 'backfill-round' | 'move-binding' | 'set-parent' | 'move-story-history' | 'settle-unit' | 'relabel-issue';
+	| 'create-epic' | 'create-story' | 'create-tasks' | 'backfill-round' | 'move-binding' | 'set-parent' | 'move-story-history' | 'settle-unit' | 'relabel-issue'
+	| 'backfill-issue';
 
 /** One change the plan would make: the rule, the artifact and the stored state that makes the rule apply. */
 export interface ConversionChange {
@@ -143,7 +144,8 @@ export type RepairRecorder = (artifactId: string, action: string) => void;
 
 /** The steps of a repair: the conversion's, without the marker, then the settling of units. */
 /** `repo-rules` covers the repository rule files added when the repair opens the store, before the first step runs. */
-export type RepairStep = 'repo-rules' | 'rename' | 'stamp' | 'amendments' | 'feedback' | 'migrate' | 'units' | 'tasks' | 'story-history' | 'settle';
+/** `backfill-issue` writes the ISSUE a headless trivial build lacks (ISSUE-c5b49ff953a9a295), before `units` needs it as the head. */
+export type RepairStep = 'repo-rules' | 'rename' | 'stamp' | 'amendments' | 'feedback' | 'migrate' | 'backfill-issue' | 'units' | 'tasks' | 'story-history' | 'settle';
 
 /** One committed write of a repair. */
 export interface RepairWrite {

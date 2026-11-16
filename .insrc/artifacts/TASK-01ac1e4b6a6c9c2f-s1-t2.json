@@ -1,0 +1,75 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c7dbe00b-b067-4a8c-aafd-ad2765107316",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-15T05:00:05.895Z",
+    "epicCreatedAt": "2026-11-14T15:32:49.965Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "01ac1e4b6a6c9c2f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add document-channel scratch-save / scratch-saved message contract in scratch-panels.ts",
+      "parent": {
+        "entityId": "STORY-01ac1e4b6a6c9c2f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-01ac1e4b6a6c9c2f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "25deb1b2292a92bf0a070607c5c01019f2790be50e310b45400ed15b0fcfc15c",
+        "at": "2026-11-15T05:00:05.895Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-15T05:00:05.898Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add document-channel scratch-save / scratch-saved message contract in scratch-panels.ts",
+    "summary": "Add the new document-channel protocol in vscode-plugin/src/panels/scratch-panels.ts: the scratch-save/scratch-saved message types with their const arrays, leaving the chat-channel protocol.ts unions untouched; pin direction isolation and gen carriage in scratch-panel.test.ts / protocol.test.ts.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "ScratchDocWebviewToHost gains { type: 'scratch-save'; id; gen; text } and ScratchDocHostToWebview gains { type: 'scratch-saved'; id; gen; ok; error? } in scratch-panels.ts, each with its own const array (SCRATCH_DOC_WEBVIEW_TO_HOST_TYPES / SCRATCH_DOC_HOST_TO_WEBVIEW_TYPES)",
+      "chat-channel protocol.ts unions/arrays are untouched (direction isolation asserted in the panel/protocol tests)",
+      "both messages carry gen so the reply is generation-guarded end to end",
+      "scratch-panel.test.ts asserts 'scratch-save' is only webview→host and 'scratch-saved' only host→webview"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "scratch-panel.test.ts: 'scratch-save' in SCRATCH_DOC_WEBVIEW_TO_HOST_TYPES and NOT in SCRATCH_DOC_HOST_TO_WEBVIEW_TYPES; 'scratch-saved' in SCRATCH_DOC_HOST_TO_WEBVIEW_TYPES and NOT in SCRATCH_DOC_WEBVIEW_TO_HOST_TYPES; both carry gen; the chat-channel protocol.ts unions/arrays are untouched (direction isolation per channel)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

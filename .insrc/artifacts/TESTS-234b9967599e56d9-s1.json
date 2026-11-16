@@ -1,0 +1,493 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 17,
+        "contentHash": "f51fc1ae863b7def400f85196193aa0f10c5612446f3b78a8b11772aca9eb9a5",
+        "at": "2026-11-15T08:40:26.092Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "234b9967599e56d9",
+    "storyId": "s1",
+    "createdAt": "2026-11-14T17:25:48.338Z",
+    "updatedAt": "2026-11-15T08:40:25.501Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-14T15:54:38.285Z",
+    "epicSlug": "install-signed-v2-daemon-development-bundles",
+    "revision": 17
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "20e5965cc",
+        "ranAt": "2026-11-14T17:29:43.827Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Canonical development manifest, branch policy and wrong-domain proof rejection",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/daemon-development-metadata.test.ts",
+                "title": "development verification accepts a configured ref and canonical manifest",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/daemon-development-metadata.test.ts",
+                "title": "development verification rejects invalid branch policy, signatures and host before staging",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "scripts/__tests__/daemon-development-metadata.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 872,
+            "titles": [
+              {
+                "title": "development verification accepts a configured ref and canonical manifest",
+                "result": "pass"
+              },
+              {
+                "title": "development verification rejects invalid branch policy, signatures and host before staging",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "dc9eb4190",
+        "ranAt": "2026-11-15T07:28:22.605Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Local clean branch fetch, exact commit and measured candidate with no main dispatch",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/package-daemon-development.test.ts",
+                "title": "local development packaging pins a configured ref and measures candidate bytes",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/package-daemon-development.test.ts",
+                "title": "development archives omit overlong SDK metadata and reject lost runtime files",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "scripts/__tests__/package-daemon-development.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 7419,
+            "titles": [
+              {
+                "title": "development archives omit overlong SDK metadata and reject lost runtime files",
+                "result": "pass"
+              },
+              {
+                "title": "local development packaging pins a configured ref and measures candidate bytes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "f20d9071f",
+        "ranAt": "2026-11-14T17:42:03.707Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Authenticated signing handoff, sequence allocation, writable format and crash-reopen qualification",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/sign-daemon-development.test.ts",
+                "title": "development signer binds the authenticated archive, sequence and exact qualified predecessor",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "scripts/__tests__/sign-daemon-development.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2078,
+            "titles": [
+              {
+                "title": "development signer binds the authenticated archive, sequence and exact qualified predecessor",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "b456ee688",
+        "ranAt": "2026-11-14T17:51:02.627Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Development proof and reservation floor, rollback and equal-sequence byte identity",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/managed-development-bundle-proof.test.ts",
+                "title": "development admission floor survives rollback and only permits exact equal-sequence retry",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/managed-development-bundle-proof.test.ts",
+                "title": "managed development proof revalidates signed identity and pinned runtime",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/managed-development-bundle-proof.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1091,
+            "titles": [
+              {
+                "title": "development admission floor survives rollback and only permits exact equal-sequence retry",
+                "result": "pass"
+              },
+              {
+                "title": "managed development proof revalidates signed identity and pinned runtime",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "c9b65182b",
+        "ranAt": "2026-11-15T07:30:46.352Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Authenticated bootstrap fixture and host, archive and foreign-state refusal",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/daemon-development-metadata.test.ts",
+                "title": "development first-install preflight refuses existing state and symlink markers",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/daemon-development-metadata.test.ts",
+                "title": "development verification rejects invalid branch policy, signatures and host before staging",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/installation-mutation-gate.test.ts",
+                "title": "a fresh installation journal read leaves the trust-only state root pristine",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "scripts/__tests__/daemon-development-metadata.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3982,
+            "titles": [
+              {
+                "title": "qualification manifest requires an explicit qualification verifier",
+                "result": "pass"
+              },
+              {
+                "title": "development verification accepts a configured ref and canonical manifest",
+                "result": "pass"
+              },
+              {
+                "title": "development verification rejects invalid branch policy, signatures and host before staging",
+                "result": "pass"
+              },
+              {
+                "title": "development first-install preflight refuses existing state and symlink markers",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/shared/__tests__/installation-mutation-gate.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 10324,
+            "titles": [
+              {
+                "title": "a fresh installation journal read leaves the trust-only state root pristine",
+                "result": "pass"
+              },
+              {
+                "title": "production bundle activation retains proof and admission floor on rollback",
+                "result": "pass"
+              },
+              {
+                "title": "development bundle activation retains proof and admission floor on rollback",
+                "result": "pass"
+              },
+              {
+                "title": "Durable update reservation blocks competing mutations and binds the owner",
+                "result": "pass"
+              },
+              {
+                "title": "Admission rejects foreign update IDs, owner PID reuse and connections opened before lease publication",
+                "result": "pass"
+              },
+              {
+                "title": "Recovery classification distinguishes uncommitted, committed, rolled-back and fenced transactions",
+                "result": "pass"
+              },
+              {
+                "title": "Two independent processes cannot reserve the same installation or clear an unverified orphan reservation",
+                "result": "pass"
+              },
+              {
+                "title": "Controller death releases short arbitration but preserves the durable reservation",
+                "result": "pass"
+              },
+              {
+                "title": "Public lifecycle admission remains busy while an update owns the installation",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "f836bc655",
+        "ranAt": "2026-11-15T08:34:58.627Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Exact predecessor, cross-branch state, idle intent and offline rollback",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/daemon-development-metadata.test.ts",
+                "title": "development bootstrap admits a cross-ref upgrade only with the exact installed predecessor",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/managed-development-bundle-proof.test.ts",
+                "title": "managed development proof revalidates signed identity and pinned runtime",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/managed-development-bundle-proof.test.ts",
+                "title": "development admission floor survives rollback and only permits exact equal-sequence retry",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "scripts/__tests__/daemon-development-metadata.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 16953,
+            "titles": [
+              {
+                "title": "development bootstrap admits a cross-ref upgrade only with the exact installed predecessor",
+                "result": "pass"
+              },
+              {
+                "title": "qualification manifest requires an explicit qualification verifier",
+                "result": "pass"
+              },
+              {
+                "title": "development verification accepts a configured ref and canonical manifest",
+                "result": "pass"
+              },
+              {
+                "title": "development verification rejects invalid branch policy, signatures and host before staging",
+                "result": "pass"
+              },
+              {
+                "title": "development first-install preflight refuses existing state and symlink markers",
+                "result": "pass"
+              },
+              {
+                "title": "development bootstrap authenticates an orphaned first activation without an installed receipt",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/managed-development-bundle-proof.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 7515,
+            "titles": [
+              {
+                "title": "development admission floor survives rollback and only permits exact equal-sequence retry",
+                "result": "pass"
+              },
+              {
+                "title": "managed development proof revalidates signed identity and pinned runtime",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "4e9d67267",
+        "ranAt": "2026-11-15T08:40:25.501Z",
+        "testsPassed": false,
+        "tests": [
+          {
+            "name": "Crash before selector, after job and before receipt, with foreign or live ownership refusal",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/daemon-development-metadata.test.ts",
+                "title": "development bootstrap authenticates an orphaned first activation without an installed receipt",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/fresh-managed-activation.test.ts",
+                "title": "fresh activation reconnects after a lost start reply and retains the admitted generation",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/fresh-managed-activation.test.ts",
+                "title": "Fresh controller activation reconciles partial selector and bootstrap",
+                "result": "fail"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "scripts/__tests__/daemon-development-metadata.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 7086,
+            "titles": [
+              {
+                "title": "development bootstrap admits a cross-ref upgrade only with the exact installed predecessor",
+                "result": "pass"
+              },
+              {
+                "title": "qualification manifest requires an explicit qualification verifier",
+                "result": "pass"
+              },
+              {
+                "title": "development verification accepts a configured ref and canonical manifest",
+                "result": "pass"
+              },
+              {
+                "title": "development verification rejects invalid branch policy, signatures and host before staging",
+                "result": "pass"
+              },
+              {
+                "title": "development first-install preflight refuses existing state and symlink markers",
+                "result": "pass"
+              },
+              {
+                "title": "development bootstrap authenticates an orphaned first activation without an installed receipt",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/fresh-managed-activation.test.ts",
+            "exitCode": 1,
+            "timedOut": false,
+            "durationMs": 115373,
+            "titles": [
+              {
+                "title": "fresh activation reconnects after a lost start reply and retains the admitted generation",
+                "result": "pass"
+              },
+              {
+                "title": "Fresh install and verified ordinary restart",
+                "result": "fail"
+              },
+              {
+                "title": "Fresh --no-start and later supervisor start",
+                "result": "fail"
+              },
+              {
+                "title": "Explicit fresh activation start intent and owned partial publication",
+                "result": "pass"
+              },
+              {
+                "title": "Fresh controller activation reconciles partial selector and bootstrap",
+                "result": "fail"
+              }
+            ],
+            "otherFailures": [
+              "Fresh install and verified ordinary restart",
+              "Fresh --no-start and later supervisor start"
+            ]
+          }
+        ],
+        "note": "named test cases that did not pass: fail: 'Fresh controller activation reconciles partial selector and bootstrap' in src/daemon/__tests__/fresh-managed-activation.test.ts"
+      }
+    ]
+  },
+  "citations": []
+}

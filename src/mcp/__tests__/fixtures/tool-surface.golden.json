@@ -351,7 +351,7 @@
 							"const": true
 						},
 						"epicHash": {
-							"description": "Standalone story identity (self-minted hash). Required for a Small build (locates the approved LLD).",
+							"description": "Standalone story identity. Required: for a Small build the approved LLD's hash; for a Trivial or small-bugfix build (no LLD) the hash of its approved ISSUE, which the ISSUE approval's nextCall carries. A no-LLD build without an approved ISSUE is refused.",
 							"type": "string"
 						},
 						"storyId": {
@@ -359,7 +359,7 @@
 							"type": "string"
 						},
 						"focus": {
-							"description": "Scope statement — the spec for a Trivial (no-LLD) build.",
+							"description": "Scope statement — the spec for a no-LLD (Trivial / small-bugfix) build, taken from its approved ISSUE.",
 							"type": "string"
 						},
 						"sizeClass": {
@@ -374,7 +374,7 @@
 					"required": [
 						"standalone"
 					],
-					"description": "Present for a triage-routed no-plan build (Small implements the approved standalone LLD; Trivial implements the scope). Bypasses task/tracker resolution."
+					"description": "Present for a triage-routed no-plan build (Small implements the approved standalone LLD; Trivial or a small bugfix implements the scope of its approved ISSUE). Bypasses task/tracker resolution."
 				},
 				"summary": {
 					"type": "string",
@@ -2395,7 +2395,7 @@
 	{
 		"name": "insrc_triage",
 		"title": "insrc triage (classify size → route workflow entry)",
-		"description": "Classify a feature request by SIZE and route it to the right workflow start stage, so every feature — big or small — is tracked without the smallest ones drowning in ceremony. Call this FIRST when asked to build a feature, instead of hand-picking `define` / `design.story` / `build`.\n\nTiers: Epic → `define` (full chain); Feature → standalone `design.story` (LLD) → plan → build; Small → standalone `design.story` → build; Trivial → `build` (no LLD).\n\nTwo-turn loop:\n  1. phase='start' with { focus, repo?, specHash? } (specHash: an approved SPEC to seed the routed stage). Server returns { next: 'emit_classification', prompt, schema, state }.\n  2. GROUND the sizing on `insrc_analyze_step` passes (which modules/files it touches, caller counts, new-vs-reuse), emit a TriageResult JSON matching the schema, then phase='classify' with result=<your JSON> + state. Server returns { next: 'done', result, route, nextCall, summary } — `nextCall` is the exact pre-filled call to make next.\n\nPreserve `state` verbatim between the two calls.",
+		"description": "Classify a feature request by SIZE and route it to the right workflow start stage, so every feature — big or small — is tracked without the smallest ones drowning in ceremony. Call this FIRST when asked to build a feature, instead of hand-picking `define` / `design.story` / `build`.\n\nTiers: Epic → `define` (full chain); Feature → standalone `design.story` (LLD) → plan → build; Small → standalone `design.story` → build; Trivial → the `issue` stage as a change, then `build` (no LLD; the build runs under the ISSUE's hash). No tier starts at `build`.\n\nTwo-turn loop:\n  1. phase='start' with { focus, repo?, specHash? } (specHash: an approved SPEC to seed the routed stage). Server returns { next: 'emit_classification', prompt, schema, state }.\n  2. GROUND the sizing on `insrc_analyze_step` passes (which modules/files it touches, caller counts, new-vs-reuse), emit a TriageResult JSON matching the schema, then phase='classify' with result=<your JSON> + state. Server returns { next: 'done', result, route, nextCall, summary } — `nextCall` is the exact pre-filled call to make next.\n\nPreserve `state` verbatim between the two calls.",
 		"inputSchema": {
 			"type": "object",
 			"properties": {

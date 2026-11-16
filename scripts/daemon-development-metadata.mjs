@@ -37,8 +37,10 @@ export function requireDevelopmentRef(ref) {
 
 // The policy must come from the authenticated bootstrap or protected build configuration.
 export function readDevelopmentPolicy(value) {
-	requireKeys(value, ['repository', 'releaseRef', 'developmentRefs'], 'policy fields');
-	const { repository, releaseRef, developmentRefs } = value;
+	const hasQualifier = value !== null && typeof value === 'object' && Object.hasOwn(value, 'qualificationKeyId');
+	requireKeys(value, ['repository', 'releaseRef', 'developmentRefs', ...(hasQualifier ? ['qualificationKeyId'] : [])], 'policy fields');
+	const { repository, releaseRef, developmentRefs, qualificationKeyId } = value;
+	requireField(!hasQualifier || matches(digest, qualificationKeyId), 'qualification key identity');
 	requireField(typeof repository === 'string' && repository.length <= 2048, 'repository');
 	const remote = URL.parse(repository);
 	requireField(remote?.protocol === 'https:' && !remote.username && !remote.password &&
@@ -50,13 +52,15 @@ export function readDevelopmentPolicy(value) {
 		requireDevelopmentRef(ref);
 		requireField(ref !== releaseRef, 'release ref cannot be a development ref');
 	}
-	return { repository, releaseRef, developmentRefs: [...developmentRefs] };
+	return { repository, releaseRef, developmentRefs: [...developmentRefs], ...(hasQualifier ? { qualificationKeyId } : {}) };
 }
 
 function requireDevelopmentIdentity(manifest) {
+	const trial = manifest !== null && typeof manifest === 'object' && Object.hasOwn(manifest, 'qualificationOnly');
 	requireKeys(manifest, ['schemaVersion', 'channel', 'repository', 'sourceRef', 'fetchedTip', 'commit', 'target',
 		'minimumMacOS', 'nodeVersion', 'version', 'sequence', 'archiveName', 'archiveBytes', 'archiveSha256',
-		'runtimeFingerprint', 'keyId', 'compatibility', 'predecessor'], 'manifest fields');
+		'runtimeFingerprint', 'keyId', 'compatibility', 'predecessor', ...(trial ? ['qualificationOnly'] : [])], 'manifest fields');
+	requireField(!trial || (manifest.qualificationOnly === true && manifest.predecessor === null), 'qualification-only manifest');
 	requireField(manifest.schemaVersion === 1 && manifest.channel === 'development' && positive(manifest.sequence), 'channel or sequence');
 	requireField(typeof manifest.repository === 'string' && matches(oid, manifest.fetchedTip) &&
 		matches(oid, manifest.commit) && matches(version, manifest.version), 'source identity or version');
@@ -70,12 +74,13 @@ function requireDevelopmentIdentity(manifest) {
 	if (manifest.predecessor === null) return;
 	const p = manifest.predecessor;
 	requireKeys(p, ['manifestSha256', 'commit', 'sequence', 'runtimeFingerprint', 'compatibility',
-		'crashConsistentReopening', 'launchProfiles', 'qualificationEvidenceSha256'], 'predecessor fields');
+		'crashConsistentReopening', 'launchProfiles', 'qualificationProfile', 'qualificationEvidenceSha256'], 'predecessor fields');
 	requireField(matches(oid, p.commit) && p.commit !== manifest.commit && positive(p.sequence) &&
 		p.sequence < manifest.sequence && [p.manifestSha256, p.runtimeFingerprint, p.qualificationEvidenceSha256]
 			.every(value => matches(digest, value)), 'predecessor identity');
 	requireField(p.crashConsistentReopening === true && Array.isArray(p.launchProfiles) &&
-		p.launchProfiles.length === 1 && p.launchProfiles[0] === 'managed', 'predecessor launch profile');
+		p.launchProfiles.length === 1 && p.launchProfiles[0] === 'managed' &&
+		p.qualificationProfile === 'managed-rollback-v1', 'predecessor launch profile');
 	requireBundleCompatibility(p.compatibility);
 }
 
@@ -111,9 +116,11 @@ function requireSignature(signed, signature, key, description) {
 		verify(null, signed, key, signature), description);
 }
 
-export async function verifyAndStageDevelopmentBundle({ bytes, signature, publicKey, policyBytes, policySignature, host, archive, releaseParent }) {
+export async function verifyAndStageDevelopmentBundle({ bytes, signature, publicKey, policyBytes, policySignature, host, archive, releaseParent,
+	qualificationOnly = false }) {
 	const trusted = verifyDevelopmentPolicy(policyBytes, policySignature, publicKey);
 	const { manifest, manifestSha256 } = verifyDevelopmentManifest(bytes, signature, publicKey);
+	requireField((manifest.qualificationOnly === true) === qualificationOnly, 'qualification-only mode');
 	requireField(trusted.repository === manifest.repository && trusted.developmentRefs.includes(manifest.sourceRef), 'branch policy');
 	requireField(host.nodeVersion === DEVELOPMENT_NODE_VERSION, 'bootstrap Node version');
 	requireBundleTarget(manifest, host);

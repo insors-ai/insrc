@@ -43,7 +43,7 @@ const BUILD_ID = /^BUILD-([0-9a-f]{16})-([sS]\d+)$/;
 const storyOf = (raw: string): string => `s${Number(/\d+/.exec(raw)?.[0] ?? '0')}`;
 
 /** The approval of a BUILD head as stored, whether or not it has been migrated yet. */
-function buildApproval(head: RawHead): { readonly approved: boolean; readonly at: string | undefined } {
+export function buildApproval(head: RawHead): { readonly approved: boolean; readonly at: string | undefined } {
 	const meta = metaOf(head);
 	if (isObj(meta['lifecycle'])) return { approved: approvalStateOf(meta) === 'approved', at: approvedAtOf(meta) };
 	const at = text(meta['approvedAt']);

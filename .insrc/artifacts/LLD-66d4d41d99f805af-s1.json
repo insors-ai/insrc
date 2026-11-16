@@ -30,7 +30,7 @@
     "triageRationale": "Sized bugfix ISSUE-66d4d41d99f805af, approved 2026-11-11; revised after design review rounds 1 and 2.",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "approved",
+      "status": "completed",
       "revision": {
         "number": 3,
         "contentHash": "2f76646db408d06d1e617726b6f302482dbb47c3538b58979ab909a1448ed16b",

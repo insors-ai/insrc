@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2d57dadf-c263-4c6c-8917-408a81b73fa6",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-14T17:22:44.952Z",
+    "epicCreatedAt": "2026-11-14T15:54:38.285Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "234b9967599e56d9",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Later rollout of hosted candidate publication",
+      "parent": {
+        "entityId": "STORY-234b9967599e56d9-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-234b9967599e56d9-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-234b9967599e56d9-s1-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "20a614b7ab7fba6eb101a5fc98dc60e0ebe207482e08eb698de20654283f30a3",
+        "at": "2026-11-14T17:22:44.962Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T17:22:44.970Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Later rollout of hosted candidate publication",
+    "summary": "Add protected workflow admission and separate fresh-runner publication of unsigned artifacts. Enable after protected workflow deployment and rollout verification.",
+    "size": "M",
+    "order": 9,
+    "acceptanceChecks": [
+      "Official receipt binds run, attempt, admitted ref and SHA, artifact ID, and independent digest without running candidate code.",
+      "Branch-local runs, forged receipts and wrong-attempt artifacts are rejected.",
+      "Hosted rollout checks run locally against fixtures. Deployment and enablement are separate from the local install gate."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Hosted provenance fixture checks protected ref, isolated publisher, exact run attempt, artifact ID and measured digest"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

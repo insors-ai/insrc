@@ -40,18 +40,23 @@ import { approveTarget } from './helpers/approve.js';
 
 // --- fixtures --------------------------------------------------------------
 
+const ISSUE_HASH = '0123456789abcdef';
+
 function issue(over: {
 	magnitude?: BugfixMagnitude | undefined;
 	approvedAt?: string | undefined;
 	parentRef?: WorkItemRef | null | undefined;
 	workflow?: string;
 	hasParentRef?: boolean;
+	issueHash?: string | null;
 } = {}): IssueArtifact {
 	const meta: Record<string, unknown> = {
 		workflow:      over.workflow ?? 'issue',
 		runId:         'r', repoPath: '/repo', createdAt: '2026-01-01T00:00:00.000Z',
 		elapsedMs:     1, repoIndexedAt: null, schemaVersion: 1,
 	};
+	// null = deliberately absent; default is a valid 16-hex identity.
+	if (over.issueHash !== null) meta['issueHash'] = over.issueHash ?? ISSUE_HASH;
 	if (over.magnitude !== undefined)  meta['magnitude']  = over.magnitude;
 	if (over.approvedAt !== undefined) Object.assign(meta, approvedMeta({ at: over.approvedAt }));
 	// distinguish "absent" from "explicit null": only set when hasParentRef or a value given
@@ -115,6 +120,28 @@ test('nextAfterIssue: emitted stage matches routeForSizeClass (small->build has 
 
 test('nextAfterIssue: magnitude absent/invalid -> throws invalid-magnitude', () => {
 	assert.throws(() => nextAfterIssue(issue({ magnitude: undefined }), '/repo'), /invalid-magnitude/);
+});
+
+test('nextAfterIssue: a small ISSUE routes to build with the ISSUE hash as standalone.epicHash', () => {
+	const nc = nextAfterIssue(issue({ magnitude: 'small', approvedAt: APPROVED }), '/repo');
+	assert.equal(nc.tool, 'insrc_build_step');
+	const st = nc.params['standalone'] as { epicHash?: string };
+	assert.equal(st.epicHash, ISSUE_HASH, 'the build lands under the ISSUE, not a focus-minted hash');
+});
+
+test('nextAfterIssue: a sized ISSUE routes to design.story with params.epicHash set to the ISSUE hash', () => {
+	const nc = nextAfterIssue(issue({ magnitude: 'sized', approvedAt: APPROVED }), '/repo');
+	assert.equal(nc.params['workflow'], 'design.story');
+	const p = nc.params['params'] as { epicHash?: string };
+	assert.equal(p.epicHash, ISSUE_HASH, 'the LLD is authored under the ISSUE');
+});
+
+test('nextAfterIssue: an ISSUE without a 16-hex issueHash is refused', () => {
+	for (const magnitude of ['small', 'sized'] as const) {
+		assert.throws(() => nextAfterIssue(issue({ magnitude, issueHash: null }), '/repo'), /invalid-issue-hash/);
+		assert.throws(() => nextAfterIssue(issue({ magnitude, issueHash: 'not-a-hash' }), '/repo'), /invalid-issue-hash/);
+		assert.throws(() => nextAfterIssue(issue({ magnitude, issueHash: '0123456789ABCDEF' }), '/repo'), /invalid-issue-hash/);
+	}
 });
 
 // --- admitBugfixAdvance ----------------------------------------------------

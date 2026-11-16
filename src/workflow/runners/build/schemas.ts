@@ -29,7 +29,9 @@
 // ---------------------------------------------------------------------------
 
 /** The flat set of reasons the `build` admission gate refuses. */
-export type BuildRefusalReason = 'plan-missing' | 'plan-unapproved' | 'plan-stale';
+export type BuildRefusalReason = 'plan-missing' | 'plan-unapproved' | 'plan-stale'
+	/** A no-design (Trivial / small-bugfix) build whose epicHash has no approved ISSUE. */
+	| 'no-head';
 
 /** The thin accepted pointer — id + hash + storyId only, never the full
  *  PlanArtifact. Downstream re-resolves the plan from the id; the hash lets

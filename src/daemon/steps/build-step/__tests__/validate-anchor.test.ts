@@ -26,6 +26,8 @@ import {
 } from '../phases/validate.js';
 import type { ValidationCheckResults } from '../validation-checks.js';
 import '../../../../workflow/__tests__/helpers/converted-repos.js';
+import { seedIssue } from '../../../../workflow/__tests__/helpers/approved-issue.js';
+import { approvedMeta } from '../../../../workflow/__tests__/lifecycle-fixtures.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
 const DAY1 = '2026-03-01T23:50:00.000Z';
@@ -42,6 +44,10 @@ const verdict = (): Record<string, unknown> => ({ taskId: 's1', passed: true, ch
 const failJudge = (): never => { throw new Error('the CLI exited with 1'); };
 
 function mkRepo(): string { return mkdtempSync(join(tmpdir(), 'insrc-validate-anchor-')); }
+
+/** A Trivial build validates only under its approved ISSUE (Story c5b49ff953a9a295/s1). "Headless" in the
+ *  titles below means no TESTS or BUILD record exists yet; the ISSUE, created on DAY1, anchors the folder. */
+function mkIssueRepo(): string { const repo = mkRepo(); seedIssue(repo, HASH, { createdAt: DAY1 }); return repo; }
 const artifacts = (repo: string): string => { const d = join(repo, '.insrc', 'artifacts'); mkdirSync(d, { recursive: true }); return d; };
 const readJson = (repo: string, id: string): { meta: Record<string, unknown>; body: Record<string, unknown> } =>
 	JSON.parse(readFileSync(join(artifacts(repo), `${id}.json`), 'utf8')) as { meta: Record<string, unknown>; body: Record<string, unknown> };
@@ -76,7 +82,7 @@ async function turn(repo: string, at: string, judge: () => unknown = verdict): P
 }
 
 test('the first headless validate call writes TESTS first, a failing judge leaves the evidence, and a retry on a later day files BUILD in the same folder', async () => {
-	const repo = mkRepo();
+	const repo = mkIssueRepo();
 	try {
 		const first = await turn(repo, DAY1, failJudge);
 		assert.equal((first['error'] as { code: string }).code, 'verdict-session-failed');
@@ -92,7 +98,7 @@ test('the first headless validate call writes TESTS first, a failing judge leave
 });
 
 test('the first headless validate call with an injected TESTS write failure and a successful judge returns the verdict and writes a stamped BUILD', async () => {
-	const repo = mkRepo();
+	const repo = mkIssueRepo();
 	try {
 		_setBuildValidateTestRecordWriterForTests(() => { throw new Error('disk full'); });
 		const out = await turn(repo, DAY1);
@@ -109,9 +115,11 @@ test('the first headless validate call with an injected TESTS write failure and 
 });
 
 test('a read-intent MissingAnchorError returns the missing-anchor error and an ordinary ledger write failure still returns the verdict', async () => {
-	// A test record on disk that carries no stamp, with no head: no anchor can place it.
+	// A test record on disk that carries no stamp, under an approved ISSUE that records no
+	// creation time: no anchor can place it.
 	const stranded = mkRepo();
 	try {
+		writeFileSync(join(artifacts(stranded), `ISSUE-${HASH}.json`), JSON.stringify({ meta: { issueHash: HASH, epicSlug: 'a-fix', standalone: true, ...approvedMeta() }, body: {} }));
 		writeFileSync(join(artifacts(stranded), `TESTS-${HASH}-s1.json`), JSON.stringify({
 			meta: { workflow: 'tests', epicHash: HASH, storyId: 's1', createdAt: DAY1, updatedAt: DAY1, standalone: true },
 			body: { tasks: [] },
@@ -125,7 +133,7 @@ test('a read-intent MissingAnchorError returns the missing-anchor error and an o
 	// The same ordinary failure with an anchor on disk is only noted: the verdict stands.
 	const anchored = mkRepo();
 	try {
-		writeFileSync(join(artifacts(anchored), `ISSUE-${HASH}.json`), JSON.stringify({ meta: { issueHash: HASH, createdAt: DAY1, epicSlug: 'a-fix', standalone: true }, body: {} }));
+		writeFileSync(join(artifacts(anchored), `ISSUE-${HASH}.json`), JSON.stringify({ meta: { issueHash: HASH, createdAt: DAY1, epicSlug: 'a-fix', standalone: true, ...approvedMeta() }, body: {} }));
 		_setBuildValidateTestRecordWriterForTests(() => { throw new Error('disk full'); });
 		const out = await turn(anchored, DAY2);
 		assert.equal(out['next'], 'done');
@@ -134,7 +142,7 @@ test('a read-intent MissingAnchorError returns the missing-anchor error and an o
 });
 
 test('a BUILD record that cannot be stored through the service is named in the verdict\'s evidence, and the verdict stands', async () => {
-	const repo = mkRepo();
+	const repo = mkIssueRepo();
 	try {
 		const first = await turn(repo, DAY1);
 		assert.equal(first['next'], 'done');

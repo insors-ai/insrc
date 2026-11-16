@@ -29,7 +29,8 @@ import { mergeInProgressError, renderValidatePrompt, renderStandaloneValidatePro
 import { storyWorkflowFiles } from '../../../../workflow/runners/build/own-files.js';
 import { roundWriterFor } from '../../../lifecycle-registry.js';
 import { recordTaskRound } from '../../../tasks-sync.js';
-import { headShortSha, persistBuildRecord, standaloneEpicHashFromFocus } from '../../../../workflow/runners/build/standalone-record.js';
+import { headShortSha, persistBuildRecord } from '../../../../workflow/runners/build/standalone-record.js';
+import { refuseWithoutApprovedIssue } from '../../../../workflow/runners/build/admission.js';
 import { resolveStoryRangeBase } from '../../../../workflow/runners/build/range-base.js';
 import {
 	persistTestRecordTask, readTestRecord, storedMappingFor, testRecordPaths, testRecordState,
@@ -330,12 +331,19 @@ async function handleStandaloneValidate(
 ): Promise<BuildStepDone | BuildStepError> {
 	const sizeClass = ctx.sizeClass ?? 'small';
 	const producesLld = sizeClass !== 'trivial';
-	const epicHash = ctx.epicHash ?? (producesLld ? undefined : standaloneEpicHashFromFocus(ctx.focus ?? ''));
+	const epicHash = ctx.epicHash;
 	if (epicHash === undefined) {
-		return err('no-identity', `insrc_build_step[validate]: a standalone Small validate requires \`standalone.epicHash\` + \`storyId\` (the approved LLD identity).`);
+		return err('no-identity', producesLld
+			? `insrc_build_step[validate]: a standalone Small validate requires \`standalone.epicHash\` + \`storyId\` (the approved LLD identity).`
+			: `insrc_build_step[validate]: a build with no design requires \`standalone.epicHash\`, the hash of its approved ISSUE.`);
 	}
 	const storyId = ctx.storyId ?? 's1';
 	await assertMayBuild(repoPath, { epicHash, storyId });   // team gate: before any check runs or record is written
+	if (!producesLld) {
+		// As at implement: a build with no design runs only under its approved ISSUE.
+		const refusal = refuseWithoutApprovedIssue(repoPath, epicHash, storyId);
+		if (refusal !== undefined) return err(refusal.reason, `insrc_build_step[validate]: ${refusal.message}`);
+	}
 
 	// Point the verdict gate at the standalone LLD when one exists (Small), and take
 	// its test strategy as the tests to run. A missing / unreadable LLD omits the

@@ -106,7 +106,7 @@ async function main([priorDir, candidateDir, issuerKey, builderKey, output, ...e
 		const evidence = Buffer.from(JSON.stringify({
 			schemaVersion: 1, predecessorManifestSha256: priorProof.manifestSha256, predecessorRuntimeFingerprint: prior.fingerprint,
 			candidateCommit: manifest.commit, candidateArchiveSha256: manifest.archiveSha256, candidateRuntimeFingerprint: candidate.fingerprint,
-			predecessorCompatibility, candidateCompatibility, launchProfile: 'managed',
+			predecessorCompatibility, candidateCompatibility, launchProfile: 'graph-store-probe',
 			candidateWriteObserved: true, candidateInterrupted: true, predecessorReopened: true,
 		}));
 		await writeFile(output, evidence, { flag: 'wx', mode: 0o600 });

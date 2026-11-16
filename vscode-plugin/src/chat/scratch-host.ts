@@ -13,7 +13,7 @@
 
 import type { ScratchEntry, ScratchStore } from './scratch-store.js';
 import type { HostToWebview, WebviewToHost } from './protocol.js';
-import { capUtf8, type ScratchPanels } from '../panels/scratch-panels.js';
+import { capUtf8, type ScratchDocWebviewToHost, type ScratchPanels } from '../panels/scratch-panels.js';
 
 /** The six scratchpad webview->host intents the chat channel routes here. */
 export const SCRATCH_INTENT_TYPES: ReadonlySet<string> = new Set([
@@ -23,6 +23,14 @@ export const SCRATCH_INTENT_TYPES: ReadonlySet<string> = new Set([
   'scratch-delete',
   'scratch-browse',
   'send-to-chat',
+]);
+
+/** The document-panel channel's intents (Story 01ac1e4b6a6c9c2f/s1 t2/t4): these arrive on
+ * the scratchpad DOCUMENT webview's own onMessage, NOT the chat channel, so the chat-side
+ * SCRATCH_INTENT_TYPES interception cannot see them — extension.ts routes them straight here. */
+export const SCRATCH_DOC_INTENT_TYPES: ReadonlySet<string> = new Set<ScratchDocWebviewToHost['type']>([
+  'scratch-save',
+  'scratch-dirty',
 ]);
 
 /** Acquire the new scratchpad's title (VS Code's input box; undefined on cancel). */
@@ -51,6 +59,9 @@ export interface ScratchHostDeps {
 export interface ScratchHost {
   /** Handle one webview->host message; non-scratch types and malformed fields are ignored. */
   onMessage(msg: WebviewToHost): void;
+  /** Handle one DOCUMENT-channel message from the scratchpad document webview
+   * (scratch-save / scratch-dirty — these never arrive on the chat channel). */
+  onDocMessage(msg: ScratchDocWebviewToHost): void;
 }
 
 /** The recent-list cap for the chat status-bar menu (top 5 by mtime). */
@@ -168,5 +179,60 @@ export function createScratchHost(deps: ScratchHostDeps): ScratchHost {
     }
   };
 
-  return { onMessage };
+  /** Document-channel route (Story 01ac1e4b6a6c9c2f/s1 t4). The document webview's
+   * 'scratch-save' is validated (string id/text, finite number gen — anything else is
+   * warned + dropped), persisted via store.updateScratch, and answered through
+   * panels.replySaved with the SAME gen so the webview's gen-guard accepts it; the
+   * browse table and the chat menu list both refresh so the mtime shows the save.
+   * 'scratch-dirty' carries no payload to persist — it is accepted (and ignored beyond
+   * validation) so a malformed one is still surfaced in the log. */
+  const onDocMessage = (msg: ScratchDocWebviewToHost): void => {
+    if (msg === null || typeof msg !== 'object' || !SCRATCH_DOC_INTENT_TYPES.has(msg.type)) {
+      log.warn('[scratches] dropped malformed document message: unknown type');
+      return;
+    }
+    switch (msg.type) {
+      case 'scratch-dirty': {
+        if (typeof msg.id !== 'string' || typeof msg.dirty !== 'boolean' || typeof msg.gen !== 'number' || !Number.isFinite(msg.gen)) {
+          log.warn('[scratches] dropped malformed scratch-dirty: non-string id, non-boolean dirty or non-number gen');
+          return;
+        }
+        return; // dirty state rides the panel title host-side; nothing to persist
+      }
+      case 'scratch-save': {
+        if (typeof msg.id !== 'string' || typeof msg.text !== 'string' || typeof msg.gen !== 'number' || !Number.isFinite(msg.gen)) {
+          log.warn('[scratches] dropped malformed scratch-save: non-string id/text or non-number gen');
+          return;
+        }
+        const gen = Math.floor(msg.gen);
+        void (async (): Promise<void> => {
+          let ok = true;
+          let error: string | undefined;
+          try {
+            await deps.store.updateScratch(msg.id, msg.text);
+          } catch (err) {
+            ok = false;
+            error = String(err);
+            log.warn(`[scratches] save failed for ${msg.id}: ${String(err)}`);
+          }
+          // Answer through the live-generation guard so a stale page load's save reply
+          // is dropped by replySaved instead of reaching a superseded webview.
+          deps.panels.replySaved(gen, { type: 'scratch-saved', id: msg.id, gen, ok, ...(error !== undefined ? { error } : {}) });
+          // Refresh the browse table and the chat menu list even on failure so the
+          // mtime/state stays truthful (a failed save leaves the file unchanged).
+          try {
+            await deps.panels.refreshBrowse();
+          } catch (err) {
+            log.warn(`[scratches] browse refresh failed after save: ${String(err)}`);
+          }
+          void sendScratchList();
+        })();
+        return;
+      }
+      default:
+        return;
+    }
+  };
+
+  return { onMessage, onDocMessage };
 }

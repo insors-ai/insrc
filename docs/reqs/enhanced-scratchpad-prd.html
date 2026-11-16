@@ -1,0 +1,587 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>insrc · Linked scratchpads PRD</title>
+  <style>
+    :root { color-scheme: light dark; --ink: #19281f; --paper: #f6f9f4; --panel: #e9f1e5; --line: #bdcbbd; --accent: #2d612e; }
+    @media (prefers-color-scheme: dark) {
+      :root { --ink: #e4ede2; --paper: #111915; --panel: #1c2a22; --line: #425549; --accent: #b9df85; }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.6 system-ui, sans-serif; }
+    main { max-width: 65rem; margin: auto; padding: clamp(1.25rem, 5vw, 4rem); }
+    header { border-bottom: 1px solid var(--line); padding-bottom: 1rem; }
+    h1, h2, h3 { line-height: 1.2; }
+    h1 { font-size: clamp(2rem, 6vw, 3.4rem); margin: .35em 0; letter-spacing: -.035em; }
+    h2 { margin-top: 2.2rem; }
+    h3 { margin-bottom: .4rem; }
+    a { color: var(--accent); text-underline-offset: .18em; }
+    nav, .table { background: var(--panel); border: 1px solid var(--line); border-radius: .5rem; }
+    nav { margin-top: 1.5rem; padding: .75rem 1rem; }
+    nav ul { display: flex; flex-wrap: wrap; gap: .35rem 1.2rem; list-style: none; margin: 0; padding: 0; }
+    .table { overflow-x: auto; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { text-align: left; vertical-align: top; padding: .65rem .85rem; }
+    thead, tbody tr + tr { border-bottom: 1px solid var(--line); }
+    li + li { margin-top: .35rem; }
+    nav li + li { margin-top: 0; }
+    code { overflow-wrap: anywhere; }
+    @media print { :root { color-scheme: light; --ink: #111; --paper: #fff; --panel: #fff; --line: #999; --accent: #25492c; } main { padding: 0; } h2, h3 { break-after: avoid; } tr { break-inside: avoid; } }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <p>insrc · Product requirements · Draft · 14 November 2026</p>
+    <h1>Linked scratchpads in VS Code</h1>
+    <p>A developer can record an investigation, connect it to the code and workflow records it concerns, and recover that reasoning from either direction. Selected scratchpad evidence can accompany an agent turn or seed a workflow draft.</p>
+  </header>
+  <nav aria-label="Contents">
+    <ul>
+      <li><a href="#scope">Scope</a></li>
+      <li><a href="#baseline">Current capabilities</a></li>
+      <li><a href="#requirements">Requirements</a></li>
+      <li><a href="#mockups">Interactive mockups</a></li>
+      <li><a href="#integration">Integration and identity</a></li>
+      <li><a href="#acceptance">Acceptance and rollout</a></li>
+      <li><a href="#decisions">Open decisions</a></li>
+    </ul>
+  </nav>
+
+  <section id="scope">
+    <h2>Problem and scope</h2>
+    <p>Today a scratchpad is easy to find when it is recent. A developer returning to a design or symbol later has no comparable way to find the scratchpads that explain it. Pasting text into chat also loses the connection to the originating note and its supporting references.</p>
+    <p><strong>Primary journey.</strong> In VS Code, a developer writes a retry-policy investigation and links a related scratchpad, the queue symbol, and its LLD. A later visit to the LLD or the symbol reveals that investigation. The developer finds a discarded option by searching the note body, sends an excerpt and selected evidence to the current agent, and uses the conclusion to seed a workflow draft when ready.</p>
+    <ul>
+      <li><strong>P0</strong> covers explicit repository-scoped links, backlinks, search in the open note and across saved notes, dated entries within each scratchpad, and basic note lifecycle in the supported VS Code extension. Existing in-plugin Markdown editing work is a dependency.</li>
+      <li><strong>P1</strong> adds cited agent context and explicit promotion to a workflow draft. Tags and starter templates can follow the link and lifecycle work.</li>
+      <li><strong>Out of scope</strong> includes vault import and sync, shared note editing, a general-purpose canvas or graph browser, unlinked mention suggestions, arbitrary transclusion, automatic project-memory ingestion, and new client surfaces for the CLI or JetBrains. Semantic scratchpad search and ephemeral analyzer-output links are candidates for later work.</li>
+    </ul>
+  </section>
+
+  <section id="baseline">
+    <h2>Current capabilities and gaps</h2>
+    <p>Implementation baseline is the <code>v2</code> checkout at <code>d3372e83b</code>. The source and tracked build records below describe the current standalone extension and daemon.</p>
+    <div class="table" role="region" aria-label="Current capabilities and gaps" tabindex="0">
+      <table>
+        <thead><tr><th scope="col">Area</th><th scope="col">Implemented and reusable</th><th scope="col">Scratchpad gap</th></tr></thead>
+        <tbody>
+          <tr>
+            <th scope="row">VS Code and storage</th>
+            <td>Chat-gated recent menu (five by modification time), New with a title prompt, Browse all with Name and Modified columns and delete, and a document tab. The extension host owns the flat <code>~/.insrc/scratches</code> Markdown store. It uses basename IDs, exclusive creation, and guarded reads. The document view renders plain text read-only. <a href="../../vscode-plugin/src/extension.ts">Extension wiring</a> · <a href="../../vscode-plugin/src/chat/scratch-store.ts">Store</a> · <a href="../../vscode-plugin/src/panels/scratch-panels.ts">Panels</a> · <a href="../standalone/vs-code-plugin-scratchpads-insrc-scratches-E202611134642d49a/S001/BUILD.md">Scratchpads build</a></td>
+            <td>Editing and saving are separately tracked in <code>ISSUE-01ac1e4b6a6c9c2f</code>. Notes currently lack explicit repository ownership, durable link identity, archive and restore, in-note and cross-note search, and dated entries within a scratchpad.</td>
+          </tr>
+          <tr>
+            <th scope="row">Indexing and graph</th>
+            <td>The daemon watches registered roots and indexes files, symbols, structural relations, and Markdown documents and sections. LMDB supports typed inbound and outbound traversal. Markdown extraction already builds <code>REFERENCES</code> for in-repo path and filename references. <code>search.doc_relations</code> reads both directions and distinguishes extracted evidence from optional model proposals. <a href="../../src/indexer/index.ts">Indexer</a> · <a href="../../src/indexer/parser/markdown-links.ts">Link extraction</a> · <a href="../../src/db/graph/edges.ts">Graph traversal</a> · <a href="../../src/db/doc-relations.ts">Document relations</a> · <a href="../../src/daemon/doc-relations-rpc.ts">IPC</a></td>
+            <td>The home-directory store sits outside registered roots. Current extraction targets files and strips fragments. It has no typed scratchpad, symbol, or workflow-ID resolution contract. Graph traversal alone therefore cannot produce scratchpad backlinks.</td>
+          </tr>
+          <tr>
+            <th scope="row">Search</th>
+            <td>Code lookup uses indexed entities and LanceDB vector search. Analyze document retrieval combines keyword matching on indexed bodies with vectors when available, and provides snippets and citations. Indexed bodies have an 8,192-character cap. <code>search.query</code> searches across registered repositories eligible for search. <a href="../../src/db/search.ts">Entity search</a> · <a href="../../src/analyze/docs-retrieval.ts">Document retrieval</a> · <a href="../../src/indexer/parser/artifact.ts">Indexed body limits</a> · <a href="../../src/daemon/handler-runtime.ts">Search IPC</a></td>
+            <td>There is no scratchpad corpus, lexical search over whole notes, or private repository filter for scratch results. The general search RPC is too broad for this surface.</td>
+          </tr>
+          <tr>
+            <th scope="row">Workflow artifacts and navigation</th>
+            <td>Workflow records have canonical IDs and guarded repository-scoped readers. VS Code can open code references and reuse the artifact review or read-only evidence surface for workflow documents and supported companions. <a href="../../src/workflow/artifact-ids.ts">Workflow IDs</a> · <a href="../../src/workflow/artifact-content.ts">Artifact reader</a> · <a href="../../src/workflow/delivery/handlers.ts">Delivery evidence</a> · <a href="../../vscode-plugin/src/chat/docs-review-client.ts">Review client</a> · <a href="../../vscode-plugin/src/chat/link-opener.ts">Code link opener</a></td>
+            <td>No scratchpad references appear on these surfaces. The daemon's <code>artifact.get</code> and <code>artifact.search</code> read session analysis outputs with a separate identity and retention model. <a href="../../src/db/lance/artifact-vec.ts">Session output storage</a></td>
+          </tr>
+          <tr>
+            <th scope="row">Agent context</th>
+            <td>Send to chat inserts selected scratchpad text into the composer and leaves submission to the user. Chat already has a separate attachment flow. Analyze assembles scoped, citation-bearing context bundles. <a href="../../vscode-plugin/src/chat/scratch-host.ts">Composer insertion</a> · <a href="../../vscode-plugin/src/chat/attachment-store.ts">Attachments</a> · <a href="../../src/analyze/context/types.ts">Analyze context</a></td>
+            <td>There is no scratchpad identity, revision, or resolved evidence in that insertion. No workflow draft can be seeded from the note through the scratchpad UI.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="requirements">
+    <h2>Product requirements</h2>
+    <h3 id="sp-1">SP-1 · P0 · Author and resolve links</h3>
+    <p>From the scratchpad editor, developers can type an Obsidian-style <code>[[…]]</code> link or insert one through a target picker. The picker searches notes, repository files and indexed symbols, and readable workflow records such as a SPEC, ISSUE, HLD, LLD, or TASK. The rendered link shows a readable label and opens the exact target in the current scratchpad, editor, or artifact view. The picker commits a qualified target so duplicate titles and symbol names are safe. Ambiguous, unavailable, and missing targets are distinguishable and repairable. Treat example links in Markdown code spans and blocks as literal content.</p>
+
+    <h3 id="sp-2">SP-2 · P0 · Discover backlinks</h3>
+    <p>Show outgoing links and incoming scratchpad backlinks in the note view. On an active file or chosen symbol, expose a VS Code “Show scratchpad backlinks” action. Show a matching section on the workflow artifact detail surface. Each inbound result names the note, shows a matching line or excerpt and its archived status where applicable, and opens the originating occurrence. Group repeated occurrences by source note and derive both views from the same directed relationship. Explicit note references have their own presentation alongside existing graph evidence.</p>
+
+    <h3 id="sp-3">SP-3 · P0 · Find in a note and search across notes</h3>
+    <p><strong>Find in note.</strong> Provide an editor-local search action with Ctrl/Cmd+F when the scratchpad editor has focus. Search the current text, including unsaved edits and entries under collapsed dates. Highlight matches, show the active match and total count, and move to the previous or next match with wraparound. Reveal the active match by opening its date section when needed. Enter and Shift+Enter navigate. Escape closes Find without changing the document. A zero-match query shows an explicit empty state.</p>
+    <p><strong>Search all notes.</strong> Extend Browse all with case-insensitive lexical search over saved titles and full Markdown bodies within the supported note size. Group body hits by scratchpad. Show each matching entry’s date, when available, and a highlighted snippet. Selecting a body hit opens its scratchpad, expands the relevant date section, and jumps to the match. A scratchpad title hit opens the scratchpad. Clearing the query restores the regular Browse all list. Rank title matches ahead of body-only matches and use modification time and stable identity to order ties. Support filtering by linked target, plus an include-archived toggle. Query the active repository by default and expose a separate local, unassigned view for legacy and workspace-free notes. Lexical search and link matching work without a model or embeddings.</p>
+
+    <h3 id="sp-4">SP-4 · P0 · Preserve scratchpad identity, dated entries, and lifecycle</h3>
+    <p>Keep the existing Markdown files readable. Assign stable identity when a note joins the enhanced store and preserve it across title changes, supported moves, archive and restore. Existing notes remain visible and editable through the local view, and users explicitly associate an existing note with a registered repository. A note created for a clearly identified repository gets that scope up front. Support rename, reversible archive, and restore. Archived notes are hidden from recent, default search and default backlinks, and a direct link can still open the archived source. The existing delete flow remains available with an explicit permanent-delete decision. Permanent deletion removes the note from search and backlinks and renders surviving incoming links to it as missing.</p>
+    <p><strong>Dated entries.</strong> A scratchpad can hold multiple Markdown entries. Provide a way to start a new entry in the open scratchpad. Record its creation timestamp on the first successful save and show its time under the corresponding local calendar date. Inside that scratchpad, list days newest first and entries newest first within a day, with a stable tie-breaker. Each date section has an entry count and expands or collapses independently using a keyboard-operable control. Editing or moving an entry within the scratchpad preserves its creation timestamp. Existing Markdown without entry timestamps remains readable and appears under Undated until the user supplies a date. The scratchpad’s filename timestamp describes the file and cannot establish dates for its entries.</p>
+    <p>Use the tracked editing work as the save path. Save and metadata changes must preserve the prior committed version on failure. A stale editor or another VS Code window must surface a conflict with the newer saved revision and retain the unsaved draft. Temporary writes are excluded from indexing. Supported external edits and deletions are picked up on reconciliation.</p>
+
+    <h3 id="sp-5">SP-5 · P1 · Attach cited context to an agent turn</h3>
+    <p>Keep existing Send to chat for text insertion. Add a distinct action to attach a saved note or selected excerpt to the active turn. Show a removable preview with source, saved revision, and any linked targets whose excerpts the user selects. At submission, adapt a bounded payload to the current controller or to a daemon analysis request where that workflow accepts context. Carry the scope, note ID and revision, source range, and readable citations. Flag unsupported routes, stale or missing sources, and omitted content in the preview or send flow. Queued turns must preserve the approved revision or ask the user to review the replacement before dispatch.</p>
+    <p>Treat note text as user-selected evidence with draft or archived status. Normal provider routing, intent, and tool permissions continue to apply. Restrict each submission to the currently approved excerpts. Carrying evidence into another turn or workflow requires a new selection, and linked excerpts always require individual selection. If the approved excerpt entered a transcript or artifact, subsequent note edits or deletion leave that historical snapshot intact.</p>
+
+    <h3 id="sp-6">SP-6 · P1 · Promote a conclusion into a workflow draft</h3>
+    <p>Let the user choose a saved selection, review it, select an existing workflow entry point, and seed a draft through the established flow. The first supported destinations are a SPEC via brainstorm or an ISSUE for a defect. Direct links to existing HLDs and LLDs work in P0. A successful promotion adds an ordinary outgoing link to the resulting workflow record and a visible provenance entry on the note. Use the note ID and revision in provenance where the target's visibility permits it. For shareable artifacts, preview the exported text and omit private local paths and inaccessible backlinks. The workflow retains its existing review, approval, and write rules. Cancelling or failing the draft must leave the note usable without a false promotion record. Retrying the same operation after a lost response should recover the existing result without creating a duplicate draft.</p>
+
+    <h3 id="sp-7">SP-7 · P1 · Organize and start related notes</h3>
+    <p>Offer optional tags with a Browse all filter and a small set of templates for investigations and decision candidates. A template populates normal editable Markdown. Scratchpad metadata and headings preserve the existing workflow's ownership of official decisions and approvals.</p>
+  </section>
+
+  <section id="mockups">
+    <h2>Interactive mockups</h2>
+    <p>Expand a date inside Queue retry policy to see its entries. Use Find in note to move through matches, including matches in collapsed sections. Search all notes for <code>retry</code> to see matching entries across scratchpads and open one at its source.</p>
+    <div id="insrc-scratchpad-mock" aria-label="insrc scratchpad search and dated entries">
+      <style>
+        #insrc-scratchpad-mock {
+          color-scheme: light dark;
+          --sp-editor: light-dark(#fff, #1f1f1f);
+          --sp-side: light-dark(#f8f8f8, #181818);
+          --sp-input: light-dark(#fff, #252526);
+          --sp-border: light-dark(#dedede, #343434);
+          --sp-text: light-dark(#252526, #e4e4e4);
+          --sp-muted: light-dark(#55565b, #a9a9ae);
+          --sp-blue: light-dark(#005fb8, #8bc4fb);
+          --sp-selected: light-dark(#e4edf8, #213448);
+          --sp-hover: light-dark(#ececec, #2a2d2e);
+          --sp-match: light-dark(#ffedb3, #5c471e);
+          --sp-current: light-dark(#ffc864, #81551a);
+          color: var(--sp-text);
+          font: 14px/1.45 Inter, "Segoe UI", system-ui, sans-serif;
+        }
+        #insrc-scratchpad-mock *, #insrc-scratchpad-mock *::before { box-sizing: border-box; }
+        #insrc-scratchpad-mock [hidden] { display: none !important; }
+        #insrc-scratchpad-mock .sp-window { background: var(--sp-editor); border: 1px solid var(--sp-border); border-radius: 9px; }
+        #insrc-scratchpad-mock .sp-titlebar, #insrc-scratchpad-mock .sp-status {
+          display: flex; align-items: center; gap: 8px; padding: 9px 14px; background: var(--sp-side);
+        }
+        #insrc-scratchpad-mock .sp-titlebar { border-bottom: 1px solid var(--sp-border); border-radius: 9px 9px 0 0; }
+        #insrc-scratchpad-mock .sp-titlebar strong { font-weight: 600; }
+        #insrc-scratchpad-mock .sp-slash, #insrc-scratchpad-mock .sp-project { color: var(--sp-muted); }
+        #insrc-scratchpad-mock .sp-layout { display: grid; grid-template-columns: minmax(220px, 32%) minmax(0, 1fr); min-height: 435px; }
+        #insrc-scratchpad-mock .sp-sidebar { min-width: 0; background: var(--sp-side); border-right: 1px solid var(--sp-border); padding-bottom: 14px; }
+        #insrc-scratchpad-mock .sp-side-head { display: grid; gap: 6px; padding: 16px 14px 10px; }
+        #insrc-scratchpad-mock label { color: var(--sp-muted); font-size: 12px; font-weight: 500; }
+        #insrc-scratchpad-mock .sp-query { position: relative; min-width: 0; }
+        #insrc-scratchpad-mock .sp-query > :is(i,svg) { position: absolute; inline-size: 15px; block-size: 15px; inset: 10px auto auto 9px; color: var(--sp-muted); pointer-events: none; }
+        #insrc-scratchpad-mock input {
+          display: block; width: 100%; min-width: 0; color: var(--sp-text); background: var(--sp-input);
+          border: 1px solid var(--sp-border); border-radius: 5px; font: inherit; padding: 7px 9px;
+        }
+        #insrc-scratchpad-mock input::placeholder { color: var(--sp-muted); }
+        #insrc-scratchpad-mock .sp-query input { padding-inline-start: 30px; }
+        #insrc-scratchpad-mock button {
+          appearance: none; color: inherit; border: 1px solid transparent; background: transparent;
+          font: inherit; border-radius: 4px; cursor: pointer;
+        }
+        #insrc-scratchpad-mock button:not(:disabled):hover { background: var(--sp-hover); }
+        #insrc-scratchpad-mock button:disabled { opacity: .4; cursor: default; }
+        #insrc-scratchpad-mock :is(input,button):focus-visible { outline: 2px solid var(--sp-blue); outline-offset: -2px; }
+        #insrc-scratchpad-mock .sp-side-label { margin: 7px 14px 6px; color: var(--sp-muted); font-size: 12px; }
+        #insrc-scratchpad-mock .sp-group { margin: 1px 0; }
+        #insrc-scratchpad-mock .sp-group > button {
+          display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; padding: 7px 14px; font-weight: 600;
+        }
+        #insrc-scratchpad-mock .sp-chevron { width: 7px; height: 7px; border-right: 1px solid; border-top: 1px solid; transform: rotate(45deg); }
+        #insrc-scratchpad-mock .sp-group > button[aria-expanded="true"] .sp-chevron { transform: rotate(135deg); }
+        #insrc-scratchpad-mock .sp-count { margin-inline-start: auto; color: var(--sp-muted); font-size: 12px; font-weight: 400; }
+        #insrc-scratchpad-mock .sp-note {
+          display: flex; width: 100%; padding: 7px 14px 7px 27px; align-items: center; gap: 8px; text-align: start; overflow-wrap: anywhere;
+        }
+        #insrc-scratchpad-mock .sp-note::before { content: "M↓"; flex: none; color: var(--sp-blue); font: 11px/1 ui-monospace, monospace; }
+        #insrc-scratchpad-mock .sp-note[aria-current="true"] { background: var(--sp-selected); border-inline-start: 2px solid var(--sp-blue); padding-inline-start: 26px; }
+        #insrc-scratchpad-mock .sp-result { display: grid; gap: 4px; width: 100%; padding: 9px 14px; text-align: start; overflow-wrap: anywhere; }
+        #insrc-scratchpad-mock .sp-result-group + .sp-result-group { border-top: 1px solid var(--sp-border); }
+        #insrc-scratchpad-mock .sp-result-entry { padding: 5px 14px 8px 23px; }
+        #insrc-scratchpad-mock .sp-result-name { font-weight: 600; }
+        #insrc-scratchpad-mock .sp-result-meta, #insrc-scratchpad-mock .sp-snippet { color: var(--sp-muted); font-size: 12px; }
+        #insrc-scratchpad-mock .sp-editor { min-width: 0; }
+        #insrc-scratchpad-mock .sp-tabbar { background: var(--sp-side); border-bottom: 1px solid var(--sp-border); }
+        #insrc-scratchpad-mock .sp-tab { display: inline-block; max-width: 100%; padding: 9px 15px; border-top: 1px solid var(--sp-blue); background: var(--sp-editor); overflow-wrap: anywhere; }
+        #insrc-scratchpad-mock .sp-editor-head { padding: 16px 17px 11px; }
+        #insrc-scratchpad-mock .sp-meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; color: var(--sp-muted); font-size: 12px; }
+        #insrc-scratchpad-mock .sp-find-open { display: inline-flex; align-items: center; gap: 6px; padding: 4px 6px; color: var(--sp-text); font-size: 12px; }
+        #insrc-scratchpad-mock .sp-find-open :is(i,svg), #insrc-scratchpad-mock .sp-icon :is(i,svg) { inline-size: 15px; block-size: 15px; }
+        #insrc-scratchpad-mock .sp-find-wrap { margin: 10px 0 2px; padding: 9px; border: 1px solid var(--sp-border); border-radius: 5px; background: var(--sp-side); }
+        #insrc-scratchpad-mock .sp-find-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 7px; margin-top: 4px; }
+        #insrc-scratchpad-mock .sp-find-actions { display: flex; gap: 2px; }
+        #insrc-scratchpad-mock .sp-find-status { color: var(--sp-muted); font-size: 12px; white-space: nowrap; }
+        #insrc-scratchpad-mock .sp-icon { display: grid; place-items: center; width: 27px; height: 30px; }
+        #insrc-scratchpad-mock .sp-code { padding: 2px 16px 19px; outline-offset: -2px; }
+        #insrc-scratchpad-mock .sp-entry-group { border-top: 1px solid var(--sp-border); }
+        #insrc-scratchpad-mock .sp-entry-list { padding: 0 0 8px; }
+        #insrc-scratchpad-mock .sp-entry { padding: 6px 0 8px 8px; }
+        #insrc-scratchpad-mock .sp-entry + .sp-entry { border-top: 1px solid var(--sp-border); }
+        #insrc-scratchpad-mock .sp-entry-title { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 0 0 4px; font-size: 13px; font-weight: 600; }
+        #insrc-scratchpad-mock .sp-entry-time { color: var(--sp-muted); font-size: 12px; font-weight: 400; }
+        #insrc-scratchpad-mock .sp-icon i { font-style: normal; }
+        #insrc-scratchpad-mock .sp-query i, #insrc-scratchpad-mock .sp-find-open i { font-style: normal; }
+        #insrc-scratchpad-mock .sp-date-caption { color: var(--sp-muted); font-size: 12px; margin: 0 0 7px; }
+        #insrc-scratchpad-mock .sp-line { display: grid; grid-template-columns: 45px minmax(0, 1fr); min-height: 23px; font: 13px/1.65 "IBM Plex Mono", Consolas, ui-monospace, monospace; }
+        #insrc-scratchpad-mock .sp-ln { text-align: end; color: var(--sp-muted); padding-inline-end: 12px; user-select: none; }
+        #insrc-scratchpad-mock .sp-line-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+        #insrc-scratchpad-mock :is(.sp-line,.sp-entry-title)[data-match] { background: var(--sp-selected); }
+        #insrc-scratchpad-mock mark { color: var(--sp-text); background: var(--sp-match); border-radius: 2px; }
+        #insrc-scratchpad-mock mark[data-current] { background: var(--sp-current); outline: 1px solid var(--sp-muted); }
+        #insrc-scratchpad-mock .sp-status { justify-content: space-between; flex-wrap: wrap; border-top: 1px solid var(--sp-border); border-radius: 0 0 9px 9px; color: var(--sp-muted); font-size: 12px; padding-block: 5px; }
+        @media (max-width: 590px) {
+          #insrc-scratchpad-mock .sp-layout { grid-template-columns: minmax(0, 1fr); }
+          #insrc-scratchpad-mock .sp-sidebar { border-right: 0; border-bottom: 1px solid var(--sp-border); }
+          #insrc-scratchpad-mock .sp-editor-head { padding-inline: 12px; }
+        }
+        @media (pointer: coarse) {
+          #insrc-scratchpad-mock :is(input,button) { min-height: 44px; }
+          #insrc-scratchpad-mock .sp-icon { width: 38px; }
+        }
+      </style>
+      <div class="sp-window">
+        <header class="sp-titlebar">
+          <strong>insrc</strong><span class="sp-slash" aria-hidden="true">/</span><span>Scratchpads</span>
+        </header>
+        <div class="sp-layout">
+          <aside class="sp-sidebar" aria-label="Scratchpad browser">
+            <div class="sp-side-head">
+              <label for="sp-all-query">Search all notes</label>
+              <div class="sp-query">
+                <i data-lucide="search" aria-hidden="true">⌕</i>
+                <input type="search" id="sp-all-query" placeholder="Title or text" autocomplete="off" spellcheck="false">
+              </div>
+            </div>
+            <p class="sp-side-label" id="sp-list-status" role="status">Workspace notes</p>
+            <div id="sp-list"></div>
+          </aside>
+          <section class="sp-editor" aria-label="Open scratchpad">
+            <div class="sp-tabbar"><span class="sp-tab" id="sp-tab"></span></div>
+            <div class="sp-editor-head">
+              <div class="sp-meta">
+                <span id="sp-entry-count"></span>
+                <button class="sp-find-open" id="sp-find-open" type="button" aria-controls="sp-find-wrap" aria-expanded="true"><i data-lucide="search" aria-hidden="true">⌕</i>Find in note</button>
+              </div>
+              <div class="sp-find-wrap" id="sp-find-wrap" role="search" aria-label="Find in open note">
+                <label for="sp-find-query">Find in this note</label>
+                <div class="sp-find-row">
+                  <input type="text" id="sp-find-query" value="retry" placeholder="Find text" autocomplete="off" spellcheck="false">
+                  <span class="sp-find-status" id="sp-find-status" role="status"></span>
+                  <div class="sp-find-actions">
+                    <button class="sp-icon" type="button" id="sp-prev" aria-label="Previous match" data-tooltip="Previous match"><i data-lucide="arrow-up" aria-hidden="true">↑</i></button>
+                    <button class="sp-icon" type="button" id="sp-next" aria-label="Next match" data-tooltip="Next match"><i data-lucide="arrow-down" aria-hidden="true">↓</i></button>
+                    <button class="sp-icon" type="button" id="sp-close" aria-label="Close find" data-tooltip="Close find"><i data-lucide="x" aria-hidden="true">×</i></button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="sp-code" id="sp-code" tabindex="0" aria-label="Markdown source"></div>
+          </section>
+        </div>
+        <footer class="sp-status"><span class="sp-project">Workspace · insrc</span><span>Markdown</span></footer>
+      </div>
+      <script>
+        (() => {
+          const root = document.getElementById('insrc-scratchpad-mock');
+          if (!root) return;
+          const $ = (id) => root.querySelector('#' + id);
+          const notes = [
+            { id: 'retry', title: 'Queue retry policy', entries: [
+              { day: '2026-11-14', time: '10:42 AM', title: 'Lease behavior', lines: [
+                'A retry may run twice after a worker restart.',
+                'Enforce one retry per lease.'
+              ] },
+              { day: '2026-11-14', time: '9:18 AM', title: 'Failure reproduction', lines: [
+                'Restart the worker after the job is claimed.'
+              ] },
+              { day: '2026-11-13', time: '4:55 PM', title: 'First alternative', lines: [
+                'Keep a retry counter on the job record.',
+                'Check the existing lease before changing the policy.'
+              ] },
+              { day: '2026-11-12', time: '2:31 PM', title: 'Initial investigation', lines: [
+                'Trace retry dispatch through the queue.'
+              ] }
+            ] },
+            { id: 'index', title: 'Index refresh notes', entries: [
+              { day: '2026-11-14', time: '9:18 AM', title: 'Watcher behavior', lines: [
+                'Batch updates by repository root.'
+              ] },
+              { day: '2026-11-13', time: '11:08 AM', title: 'Rebuild behavior', lines: [
+                'Verify the retry window when the index is rebuilding.'
+              ] }
+            ] },
+            { id: 'handoff', title: 'Agent handoff checklist', entries: [
+              { day: null, time: null, title: 'Checklist', lines: [
+                'Record the target branch.',
+                'Include the relevant LLD and failing test.'
+              ] }
+            ] }
+          ];
+          const list = $('sp-list');
+          const allQuery = $('sp-all-query');
+          const findQuery = $('sp-find-query');
+          const code = $('sp-code');
+          const findWrap = $('sp-find-wrap');
+          const findOpen = $('sp-find-open');
+          const prev = $('sp-prev');
+          const next = $('sp-next');
+          const date = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+          const dayLabel = (day) => day ? date.format(new Date(day + 'T00:00:00Z')) : 'Undated';
+          const openDays = new Map(notes.map(note => [note.id, new Set([note.entries[0].day])]));
+          let active = notes[0];
+          let matchIndex = 0;
+          let matches = [];
+          function node(tag, className, text) {
+            const element = document.createElement(tag);
+            if (className) element.className = className;
+            if (text !== undefined) element.textContent = text;
+            if (tag === 'button') element.type = 'button';
+            return element;
+          }
+
+          function literalMatches(text, query) {
+            if (!query.trim()) return [];
+            const escaped = [...query.trim()].map((char) => '\\^$.*+?()[]{}|'.includes(char) ? '\\' + char : char).join('');
+            return [...text.matchAll(new RegExp(escaped, 'giu'))];
+          }
+
+          function highlight(element, text, hits, makeMark = () => node('mark')) {
+            let from = 0;
+            hits.forEach((hit) => {
+              element.append(document.createTextNode(text.slice(from, hit.index)));
+              const mark = makeMark();
+              mark.textContent = hit[0];
+              element.append(mark);
+              from = hit.index + hit[0].length;
+            });
+            element.append(document.createTextNode(text.slice(from)));
+          }
+
+          function renderList() {
+            const query = allQuery.value.trim();
+            list.replaceChildren();
+            if (!query) {
+              $('sp-list-status').textContent = 'Workspace notes';
+              notes.forEach(note => {
+                const item = node('button', 'sp-note', note.title);
+                item.dataset.note = note.id;
+                item.setAttribute('aria-current', String(note === active));
+                item.addEventListener('click', () => openNote(note));
+                list.append(item);
+              });
+              return;
+            }
+            const results = notes.flatMap(note => {
+              const titleHits = literalMatches(note.title, query);
+              const entries = note.entries.flatMap((entry, entryIndex) =>
+                [entry.title, ...entry.lines].flatMap((text, line) => {
+                  const hits = literalMatches(text, query);
+                  return hits.length ? [{ entry, entryIndex, line, text, hits }] : [];
+                }));
+              return titleHits.length || entries.length ? [{ note, titleHits, entries }] : [];
+            }).sort((a, b) => Number(Boolean(b.titleHits.length)) - Number(Boolean(a.titleHits.length)));
+            $('sp-list-status').textContent = results.length ? results.length + (results.length === 1 ? ' scratchpad found' : ' scratchpads found') : 'No matching scratchpads';
+            results.forEach(({ note, titleHits, entries }) => {
+              const result = node('div', 'sp-result-group');
+              const title = node('button', 'sp-result sp-result-name');
+              highlight(title, note.title, titleHits);
+              title.addEventListener('click', () => openNote(note));
+              result.append(title);
+              entries.forEach(({ entry, entryIndex, line, text, hits }) => {
+                const row = node('button', 'sp-result sp-result-entry');
+                const snippet = node('span', 'sp-snippet');
+                highlight(snippet, text, hits);
+                row.append(node('span', 'sp-result-meta', dayLabel(entry.day) + ' · ' + entry.title), snippet);
+                row.addEventListener('click', () => openNote(note, { entryIndex, line }, query));
+                result.append(row);
+              });
+              list.append(result);
+            });
+          }
+          function openGroup(groupList, toggle) {
+            groupList.hidden = false;
+            toggle.setAttribute('aria-expanded', 'true');
+          }
+          function renderEditor(selectMatch = true) {
+            $('sp-tab').textContent = active.title + '.md';
+            $('sp-entry-count').textContent = active.entries.length + ' entries';
+            matches = [];
+            code.replaceChildren(node('p', 'sp-date-caption', 'Entries by creation date'));
+            const days = [...new Set(active.entries.map(entry => entry.day))];
+            days.forEach((day, dayIndex) => {
+              const group = node('section', 'sp-group sp-entry-group');
+              const toggle = node('button');
+              const groupList = node('div', 'sp-entry-list');
+              const dayEntries = active.entries.flatMap((entry, entryIndex) => entry.day === day ? [{ entry, entryIndex }] : []);
+              const chevron = node('span', 'sp-chevron');
+              chevron.setAttribute('aria-hidden', 'true');
+              groupList.id = 'sp-entry-day-' + dayIndex;
+              toggle.setAttribute('aria-controls', groupList.id);
+              toggle.append(chevron, node('span', null, dayLabel(day)), node('span', 'sp-count', dayEntries.length));
+              const expanded = openDays.get(active.id);
+              const applyOpen = () => {
+                groupList.hidden = !expanded.has(day);
+                toggle.setAttribute('aria-expanded', String(!groupList.hidden));
+              };
+              toggle.addEventListener('click', () => {
+                if (groupList.hidden) {
+                  expanded.add(day);
+                  openGroup(groupList, toggle);
+                } else {
+                  expanded.delete(day);
+                  applyOpen();
+                }
+              });
+              dayEntries.forEach(({ entry, entryIndex }) => {
+                const article = node('div', 'sp-entry');
+                [entry.title, ...entry.lines].forEach((text, line) => {
+                  const row = node('div', line === 0 ? 'sp-entry-title' : 'sp-line');
+                  row.dataset.entryIndex = String(entryIndex);
+                  row.dataset.line = String(line);
+                  const content = node('span', line === 0 ? 'sp-entry-name' : 'sp-line-text');
+                  const hits = findWrap.hidden ? [] : literalMatches(text, findQuery.value);
+                  highlight(content, text, hits, () => {
+                    const mark = node('mark');
+                    matches.push({ mark, row, line, entryIndex, groupList, toggle });
+                    return mark;
+                  });
+                  if (line === 0) {
+                    row.append(content);
+                    if (entry.time) row.append(node('span', 'sp-entry-time', entry.time));
+                  } else {
+                    const number = node('span', 'sp-ln', line);
+                    number.setAttribute('aria-hidden', 'true');
+                    row.append(number, content);
+                  }
+                  article.append(row);
+                });
+                groupList.append(article);
+              });
+              applyOpen();
+              group.append(toggle, groupList);
+              code.append(group);
+            });
+            if (selectMatch) setMatch(matchIndex, false);
+          }
+          function setMatch(index, reveal) {
+            matches.forEach(({ mark, row }) => {
+              delete mark.dataset.current;
+              delete row.dataset.match;
+            });
+            const count = matches.length;
+            matchIndex = count ? (index % count + count) % count : 0;
+            const hit = matches[matchIndex];
+            if (hit) {
+              hit.mark.dataset.current = '';
+              hit.row.dataset.match = '';
+              openGroup(hit.groupList, hit.toggle);
+              if (reveal) hit.mark.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+            }
+            $('sp-find-status').textContent = !findQuery.value.trim() ? '' : hit ? (matchIndex + 1) + ' of ' + count : 'No matches';
+            prev.disabled = next.disabled = count < 2;
+          }
+          function showFind(show, focus) {
+            findWrap.hidden = !show;
+            findOpen.setAttribute('aria-expanded', String(show));
+            if (focus) {
+              (show ? findQuery : findOpen).focus();
+              if (show) findQuery.select();
+            }
+          }
+          function openNote(note, target, query = '') {
+            active = note;
+            matchIndex = 0;
+            if (target) {
+              findQuery.value = query;
+              showFind(true, false);
+            }
+            renderEditor(!target);
+            if (target) {
+              const hit = matches.findIndex(entry => entry.entryIndex === target.entryIndex && entry.line === target.line);
+              if (hit >= 0) setMatch(hit, true);
+            }
+            list.querySelectorAll('[data-note]').forEach(button => button.setAttribute('aria-current', String(button.dataset.note === active.id)));
+          }
+
+          allQuery.addEventListener('input', renderList);
+          findQuery.addEventListener('input', () => {
+            matchIndex = 0;
+            renderEditor();
+            setMatch(0, true);
+          });
+          const moveMatch = (direction) => {
+            setMatch(matchIndex + direction, true);
+          };
+          prev.addEventListener('click', () => moveMatch(-1));
+          next.addEventListener('click', () => moveMatch(1));
+          findOpen.addEventListener('click', () => { showFind(true, true); renderEditor(); });
+          const closeFind = () => {
+            showFind(false, true);
+            renderEditor();
+          };
+          $('sp-close').addEventListener('click', closeFind);
+          findWrap.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') { event.preventDefault(); closeFind(); }
+            if (event.target === findQuery && event.key === 'Enter') {
+              event.preventDefault();
+              moveMatch(event.shiftKey ? -1 : 1);
+            }
+          });
+          root.querySelector('.sp-editor').addEventListener('keydown', (event) => {
+            if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'f') {
+              event.preventDefault();
+              showFind(true, true);
+              renderEditor();
+            }
+          });
+          renderList();
+          renderEditor();
+        })();
+      </script>
+    </div>
+  </section>
+
+  <section id="integration">
+    <h2>Integration and identity</h2>
+    <p><strong>Scope and ownership.</strong> Keep notes local to the user. Keep Markdown authoritative for note text and explicit authored links. Store stable scratchpad ID, scope, title, and archive state in durable local note metadata. Give dated entries stable anchors and persist their creation timestamps with the scratchpad so search locations and dated sections can be rebuilt from saved content. The encoding must keep standard Markdown readable. Derived search and backlink records can be rebuilt from the saved files and metadata. Use the registered root associated with the active VS Code resource. In multi-root windows without an unambiguous active root, ask the user which repository to use. Validate scope before lookup or context assembly. P0 link discovery stays within that repository and its active checkout. Unassigned notes can be read and searched in their local view and only become eligible for graph joins and linked agent context after explicit association.</p>
+    <p><strong>Reference contract.</strong> One note owns zero or more directed authored references. A target has zero or more incoming references, with one presentation row per source note and one or more source occurrences. Keep a source revision and current locations for those occurrences. A linkable target has the following logical address.</p>
+    <div class="table" role="region" aria-label="Scratchpad link target identities" tabindex="0">
+      <table>
+        <thead><tr><th scope="col">Target</th><th scope="col">Identity and resolution</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Scratchpad</th><td>Repository scope and stable note ID. A title or alias serves as the display label. A deleted ID remains unresolved even if another note takes the same title.</td></tr>
+          <tr><th scope="row">File or symbol</th><td>Registered checkout and repository-relative path, plus symbol identity with a qualified name and kind when relevant. Resolve against the current graph and use the current location for navigation. The current graph IDs include the path and name, so a refactor can invalidate them. A verified rename can preserve resolution. Otherwise show a repair action and let the user confirm a replacement. <a href="../../src/indexer/parser/base.ts">Entity ID scheme</a></td></tr>
+          <tr><th scope="row">Workflow artifact</th><td>Repository and canonical workflow artifact ID. Resolve its current readable record through existing delivery and artifact readers. A generated companion can be opened through its parent artifact's validated companion list. Use the parent record as the P0 backlink target. <a href="../../src/workflow/artifact-ids.ts">Workflow ID scheme</a> · <a href="../../vscode-plugin/src/chat/docs-review-panel.ts">Review surface</a></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p><strong>Graph and indexing boundary.</strong> Reuse existing path and symbol resolution, artifact readers, evidence labels, and inbound/outbound query patterns. Start with a private, repository-keyed scratchpad index that joins by validated target identity. Compatible storage can be selected in design. The home store stays outside repository enrollment and default document search. Scratchpad references are distinct from code dependency edges and model-suggested relations. Keep database access in the daemon and serve the VS Code extension through typed IPC. The host can continue local file actions if daemon-based resolution is unavailable and must show that status without fabricating results. <a href="../../AGENTS.md">Repository and IPC contracts</a> · <a href="../../src/indexer/watcher.ts">Repository watcher</a></p>
+    <p><strong>Consistency and rendering.</strong> Reindex only affected notes on save, archive, restore, scope change and delete. Revalidate affected endpoints when the registered checkout changes or an artifact becomes unavailable. Reconcile from disk on startup, after missed events, and after index rebuild. Guard path containment and refuse symlink escapes on read and write. Treat note text and link labels as untrusted content, preserve webview isolation, and route navigation through the host's validated handlers. Use bounded and paginated searches and follow the existing provider and connection-execution constraints. <a href="../../vscode-plugin/src/chat/scratch-store.ts">Local file validation</a> · <a href="../../vscode-plugin/src/chat/link-opener.ts">Host navigation</a> · <a href="../../src/daemon/threads/method-class.ts">IPC execution classification</a></p>
+    <p>Scratchpads operate independently of the proposed shared project-memory system. Promotion creates evidence for a chosen workflow record. Any future project-memory ingestion must make its own capture and review decisions. <a href="shared-project-memory.html">Shared project memory requirements</a></p>
+  </section>
+
+  <section id="acceptance">
+    <h2>Acceptance and rollout</h2>
+    <p>Land the separately tracked save path first. Deliver SP-1 through SP-4 together so a new link works through both the note and its target surface. Add SP-5 and SP-6 after reference identity and lifecycle pass the VS Code integration checks. SP-7 can ship independently after the metadata contract is in place.</p>
+    <div class="table" role="region" aria-label="Acceptance scenarios" tabindex="0">
+      <table>
+        <thead><tr><th scope="col">Requirement</th><th scope="col">Observable result</th></tr></thead>
+        <tbody>
+          <tr><th scope="row"><a href="#sp-1">SP-1</a></th><td>Create links to a note, file, indexed symbol, LLD and task in a registered workspace. Reopen after restart and navigate to each exact target. A duplicate title or symbol requires a choice, and a link inside a code sample produces no relationship. After reindexing, a verified rename opens the same logical symbol. A removed symbol or an unverified rename shows a repair state.</td></tr>
+          <tr><th scope="row"><a href="#sp-2">SP-2</a></th><td>Open each target's backlink surface and navigate back to the source occurrence. Two links from the same note yield one grouped result with two locations. Editing the source to remove one link updates both directions and leaves one occurrence. The artifact document and existing code-graph relationships remain intact.</td></tr>
+          <tr><th scope="row"><a href="#sp-3">SP-3</a></th><td>In the open scratchpad, find an unsaved word with multiple matches, including a match inside a collapsed date section. Step in both directions across the wrap point and verify the section opens when its match becomes active. Test a zero-match query and close Find without editing the scratchpad. With the model unavailable, find a unique saved term beyond the existing 8,192-character document index cap and apply the linked-target filter. Open a result for a body hit and verify it reveals the matching entry and line in the correct date section. Clear the query and return to Browse all. Restart and recover the same search results. Repeat with two workspaces containing the same title, terms, and relative path. Search, backlinks, and previews expose only the chosen repository's data. Legacy unassigned data is still discoverable in its local view.</td></tr>
+          <tr><th scope="row"><a href="#sp-4">SP-4</a></th><td>Open a pre-existing Markdown note without changing its bytes. Associate it, link to it, rename it, archive it, follow its inbound link, and restore it. Verify stable identity and distinct search visibility at each step. In one scratchpad, save two entries on one day and a third on another day. Verify two independently collapsible sections, correct counts, and the creation time on each entry. Edit the older entry and verify it stays under its original date. Collapse one section with the keyboard, verify the other remains visible, then expand it. Open another scratchpad and verify it shows only its own entries. Existing content without entry timestamps appears under Undated and remains searchable. Delete it permanently and verify the index drops its hits while a surviving link shows it is missing. Rebuild the index and get the same answer. A failed write and two concurrent saves leave the last committed content intact or return a conflict, with the unsaved draft available for recovery.</td></tr>
+          <tr><th scope="row"><a href="#sp-1">SP-1–SP-4</a></th><td>Use the normal VS Code entry points. Confirm the existing menu, create-and-open, Browse all, delete and plain Send to chat behavior still work. Attempt an outside-root or symlink target, rapidly switch documents during resolution, and interrupt an index refresh. There is no incorrect open, stale result on the new document, or lost Markdown. Show a degraded state while the graph is unavailable and recover after reconnect.</td></tr>
+          <tr><th scope="row"><a href="#sp-5">SP-5</a></th><td>Preview a saved excerpt with one selected artifact, remove it, and see the turn payload omit it. Reattach and submit to the supported controller and daemon paths. Each receives the approved bounded content and citable revision exactly once. An edit between preview and dispatch preserves the approved snapshot or requires renewed review. A different workspace or a fresh turn receives no implicit note context.</td></tr>
+          <tr><th scope="row"><a href="#sp-6">SP-6</a></th><td>Seed a draft from a selected conclusion. Verify its existing workflow state, the source note's link, and the reviewed export. Cancel and retry with an interrupted response. There is no false success or duplicate draft, and the artifact follows the usual approval path.</td></tr>
+          <tr><th scope="row"><a href="#sp-7">SP-7</a></th><td>Use a template, edit the Markdown, and filter by one of its tags after restart. Confirm existing notes remain searchable when no tag is selected.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>During the pilot, measure time to reopen an investigation from its target, search latency, save-to-backlink visibility, and the frequency of broken or ambiguous links. Prove the model-independent paths with model services disabled. Record the note corpus size and machine configuration before setting latency targets.</p>
+  </section>
+
+  <section id="decisions">
+    <h2>Open implementation decisions</h2>
+    <ul>
+      <li>Choose user-readable Markdown syntax for qualified targets, versioning and alias escaping. Decide how within-scratchpad entry boundaries, timestamps and stable anchors are encoded, and where scratchpad metadata lives.</li>
+      <li>Select the private backlink projection and lexical index. Establish supported note size, update visibility and search latency targets from representative corpora. Determine the minimum daemon version and extension version negotiation for new IPC.</li>
+      <li>Choose the first controller and daemon context routes, evidence budgets and the preview behavior for targets that change during a queued turn. Confirm the SPEC and ISSUE draft entry points can carry the selected evidence under their existing ownership and approval rules.</li>
+    </ul>
+  </section>
+</main>
+</body>
+</html>

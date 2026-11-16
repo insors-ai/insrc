@@ -1,0 +1,205 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "3ef22e39cbd6a7a7c5a554ed431e350638ee94187a9591c3c19e141708533751",
+        "at": "2026-11-14T17:31:55.145Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "d6eb2fb5ac627b66",
+    "storyId": "s1",
+    "createdAt": "2026-11-14T17:31:55.097Z",
+    "updatedAt": "2026-11-14T17:31:55.097Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-14T17:29:44.599Z",
+    "revision": 1
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "180fc0b05",
+        "ranAt": "2026-11-14T17:31:55.097Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "vscode-plugin/src/chat/__tests__/chat-outbox.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "vscode-plugin/src/chat/__tests__/chat-outbox.test.ts"
+            ]
+          },
+          {
+            "name": "vscode-plugin/src/chat/__tests__/chat-queue-routing.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "vscode-plugin/src/chat/__tests__/chat-queue-routing.test.ts"
+            ]
+          },
+          {
+            "name": "vscode-plugin/src/chat/__tests__/chat-queue-store.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "vscode-plugin/src/chat/__tests__/chat-queue-store.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/chat-outbox.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 459,
+            "titles": [
+              {
+                "title": "wait reason uses shared eligibility for FIFO, retries, origin and capacity",
+                "result": "pass"
+              },
+              {
+                "title": "outbox projection: with a turn running, the chat's two waiting messages show places 2 and 3, one message from another chat is ahead, and the running chat is named",
+                "result": "pass"
+              },
+              {
+                "title": "outbox projection: processing rows are dropped, failed and not-delivered rows have no place, blockedBy comes from another chat's processing row, attachments are counted and the note is carried",
+                "result": "pass"
+              },
+              {
+                "title": "a retrying row carries attempt and nextAttemptAt",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/chat/__tests__/chat-queue-routing.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1387,
+            "titles": [
+              {
+                "title": "waiting approval or retry in A allows B and full capacity queues C",
+                "result": "pass"
+              },
+              {
+                "title": "chat host: a message sent while a turn runs waits in the queue, the running turn keeps reporting, and the message runs when the turn ends; a typed message no longer denies the running turn's waiting approval",
+                "result": "pass"
+              },
+              {
+                "title": "chat host: a queued message that starts after the previous turn ended tells the webview it is running, so Stop is offered; Stop ends the running turn, its message becomes failed with 'stopped by the user' and a resend even though the stopped CLI reports a terminal error, and the next waiting message runs",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/chat/__tests__/chat-queue-store.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1262,
+            "titles": [
+              {
+                "title": "two connections enforce session FIFO, the per-repository slot limit and immutable lease fencing",
+                "result": "pass"
+              },
+              {
+                "title": "initial claim preserves attempts and all three retry delays",
+                "result": "pass"
+              },
+              {
+                "title": "chat queue store: enqueue, head, acknowledge and finish keep seq order, acknowledge a message at most once and only with the lease free, delete a done message, turn a stopped one into failed with a resend, and refuse an enqueue with a note at 500 live rows",
+                "result": "pass"
+              },
+              {
+                "title": "chat queue store: two processes on one database file acknowledging the same head at the same moment: exactly one succeeds and the message is processing once",
+                "result": "pass"
+              },
+              {
+                "title": "schema 2: a fresh queue file is created with the waiting_on column at version 2, and a processing row can be marked waiting",
+                "result": "pass"
+              },
+              {
+                "title": "schema upgrade: a version-1 queue file opens as version 2 with its rows kept and waitingOn empty, and a newer file is still refused",
+                "result": "pass"
+              },
+              {
+                "title": "markWaiting sets and clears waitingOn on a processing row only",
+                "result": "pass"
+              },
+              {
+                "title": "resendFrom: a failed or not-delivered message joins the back with its text and attachments under the given window key; any other state is refused",
+                "result": "pass"
+              },
+              {
+                "title": "presenceOf returns the row, and undefined when there is none",
+                "result": "pass"
+              },
+              {
+                "title": "markNotDeliveredIfHead marks the head, the next row becomes the head, and a row acknowledged first by another connection is not marked",
+                "result": "pass"
+              },
+              {
+                "title": "markNotDeliveredIfHead marks a retrying head whose window closed and the next row becomes the head",
+                "result": "pass"
+              },
+              {
+                "title": "takeOver takes a stale lease of another windowKey only after LEASE_TAKEOVER_MS and fails its message, and refuses when holderGone is false, absent or the heartbeat is fresh",
+                "result": "pass"
+              },
+              {
+                "title": "takeOver takes a lease of the claim's own windowKey at once when holderGone is true",
+                "result": "pass"
+              },
+              {
+                "title": "two connections racing takeOver on one stale lease, exactly one returns true",
+                "result": "pass"
+              },
+              {
+                "title": "reclaim rewrites pid and keeps seq and cliPid for the same windowKey, and refuses another windowKey",
+                "result": "pass"
+              },
+              {
+                "title": "at QUEUE_RECORD_BOUND enqueue is refused with FULL_NOTE, a resend replaces its own old row, and no row is lost",
+                "result": "pass"
+              },
+              {
+                "title": "an infrastructure failure before acting becomes retrying with attempts 1 and nextAttemptAt now plus 10 s, keeps its seq and error, and releases the lease",
+                "result": "pass"
+              },
+              {
+                "title": "attempts 1 and 2 use 1 min and 5 min, and a failure at attempts 3 becomes failed with the error",
+                "result": "pass"
+              },
+              {
+                "title": "acted true, cause auth, cause other or a missing cause becomes failed with the error and is never retrying",
+                "result": "pass"
+              },
+              {
+                "title": "retryNow makes a retrying row due at once with attempts unchanged and returns false for any other row",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

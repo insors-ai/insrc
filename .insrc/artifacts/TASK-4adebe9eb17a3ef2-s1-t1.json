@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-981f669b-8637-4970-ae58-e6d3301daf12",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-14T14:09:25.885Z",
+    "epicCreatedAt": "2026-11-14T13:09:02.500Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "4adebe9eb17a3ef2",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Implement branch and readiness admission",
+      "parent": {
+        "entityId": "STORY-4adebe9eb17a3ef2-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-4adebe9eb17a3ef2-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "e851938e141215ae5fa1f72409fcf9ea290cd3908b60d4f61a8846a2705340ba",
+        "at": "2026-11-14T14:09:25.891Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T14:09:25.892Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement branch and readiness admission",
+    "summary": "Update the build workflow and candidate packager to derive branch/lane from the dispatch ref and emit run-attempt metadata. Keep main default off.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "Protected and ready main builds a release candidate; unsigned v2 builds a development candidate even when release readiness is off.",
+      "Unsupported refs, incorrect dispatch SHA and missing main readiness fail before a job. No signing credentials or hosted tests are available to the v2 job."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Local branch routing and candidate metadata"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

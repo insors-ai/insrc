@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { once } from 'node:events';
 import { sha256 } from '../daemon-bundle-metadata.mjs';
-import { developmentPolicySigningBytes, verifyDevelopmentManifest } from '../daemon-development-metadata.mjs';
+import { developmentManifestSigningBytes, developmentPolicySigningBytes, verifyDevelopmentManifest } from '../daemon-development-metadata.mjs';
 import { measureBundleRuntime } from '../stage-daemon-bundle.mjs';
 import { developmentHandoffSigningBytes, developmentQualificationSigningBytes, signDevelopmentCandidate } from '../sign-daemon-development.mjs';
 import { closeGraphStore, getGraphStore, SCHEMA_VERSION, setGraphStorePath } from '../../src/db/graph/store.js';
@@ -23,7 +23,10 @@ test('development signer binds the authenticated archive, sequence and exact qua
 		const pem = issuer.publicKey.export({ type: 'spki', format: 'pem' });
 		const repository = 'https://github.com/example/daemon.git';
 		const sourceRef = 'refs/heads/preview';
-		const policyBytes = Buffer.from(JSON.stringify({ repository, releaseRef: 'refs/heads/main', developmentRefs: [sourceRef] }));
+		const policyBytes = Buffer.from(JSON.stringify({
+			repository, releaseRef: 'refs/heads/main', developmentRefs: [sourceRef],
+			qualificationKeyId: sha256(qualifier.publicKey.export({ type: 'spki', format: 'der' })),
+		}));
 		const ledgerDirectory = join(root, 'ledger');
 		await mkdir(ledgerDirectory, { mode: 0o700 });
 		const compatibility = { graphSchema: SCHEMA_VERSION, formats: { lance: '1', repoAndIndexQueue: '1', config: '1', workflowAndSession: '1' } };
@@ -58,6 +61,11 @@ test('development signer binds the authenticated archive, sequence and exact qua
 			policySignature: sign(null, developmentPolicySigningBytes(policyBytes), issuer.privateKey), compatibility };
 		const prior = await signDevelopmentCandidate({ ...common, directory: first.directory, sequence: 1 });
 		assert.deepEqual(await signDevelopmentCandidate({ ...common, directory: first.directory, sequence: 1 }), prior);
+		const trial = await signDevelopmentCandidate({ ...common, directory: next.directory, sequence: 2, qualificationOnly: true });
+		const trialManifest = verifyDevelopmentManifest(trial.bytes, trial.signature, pem).manifest;
+		assert.equal(trialManifest.qualificationOnly, true);
+		assert.equal(trialManifest.predecessor, null);
+		await assert.rejects(readFile(join(next.directory, 'manifest.json')), /ENOENT/);
 		await assert.rejects(signDevelopmentCandidate({ ...common, directory: next.directory, sequence: 1 }), /conflicting.*record/);
 		await assert.rejects(signDevelopmentCandidate({ ...common, directory: next.directory, sequence: 3 }), /ENOENT/);
 		await assert.rejects(signDevelopmentCandidate({ ...common, builderKey: pem, directory: next.directory, sequence: 2 }), /handoff signature/);
@@ -94,25 +102,61 @@ test('development signer binds the authenticated archive, sequence and exact qua
 			graph.meta.get('development-test-candidate') === 'candidate';
 		assert.equal(predecessorReopened, true);
 		await closeGraphStore();
-		const record = { schemaVersion: 1, predecessorManifestSha256: sha256(prior.bytes),
+		const graphProbe = { schemaVersion: 1, predecessorManifestSha256: sha256(prior.bytes),
 			predecessorRuntimeFingerprint: first.candidate.runtimeFingerprint, candidateCommit: next.candidate.commit,
 			candidateArchiveSha256: next.candidate.archiveSha256, candidateRuntimeFingerprint: next.candidate.runtimeFingerprint,
 			predecessorCompatibility: compatibility, candidateCompatibility: compatibility,
-			launchProfile: 'managed', candidateWriteObserved, candidateInterrupted: exitSignal === 'SIGKILL', predecessorReopened };
+			launchProfile: 'graph-store-probe', candidateWriteObserved, candidateInterrupted: exitSignal === 'SIGKILL', predecessorReopened };
+		// This receipt is a contract fixture. Live managed rollback must come from the VM.
+		const expectedStateSha256 = sha256(Buffer.from('prior and candidate fixture records'));
+		const record = { ...graphProbe, schemaVersion: 2, launchProfile: 'managed', managedRollback: {
+			transactionId: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', outcome: 'rolled-back',
+			candidateGeneration: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+			restoredGeneration: 'cccccccc-cccc-cccc-cccc-cccccccccccc',
+			servedRelease: first.candidate.commit, expectedStateSha256, servedStateSha256: expectedStateSha256,
+		} };
 		const upgrade = { ...common, directory: next.directory, sequence: 2, prior,
 			qualificationKey: qualifier.publicKey.export({ type: 'spki', format: 'pem' }) };
-		const attest = (value: typeof record) => {
+		const attest = (value: typeof graphProbe | typeof record) => {
 			const evidence = Buffer.from(JSON.stringify(value));
 			return { evidence, evidenceSignature: sign(null, developmentQualificationSigningBytes(evidence), qualifier.privateKey) };
 		};
 		const qualification = attest(record);
+		const graphReport = join(root, 'graph-report.json');
+		const qualifierKeyPath = join(root, 'qualifier.pem');
+		await writeFile(graphReport, JSON.stringify(graphProbe));
+		await writeFile(qualifierKeyPath, qualifier.privateKey.export({ type: 'pkcs8', format: 'pem' }), { mode: 0o600 });
+		assert.throws(() => execFileSync(process.execPath, [
+			new URL('../sign-daemon-development.mjs', import.meta.url).pathname,
+			'attest-qualification', graphReport, qualifierKeyPath,
+		], { stdio: 'pipe' }), /usage: sign-daemon-development/);
+		await assert.rejects(signDevelopmentCandidate({ ...upgrade, ...qualification,
+			qualificationKey: builder.publicKey.export({ type: 'spki', format: 'pem' }),
+			evidenceSignature: sign(null, developmentQualificationSigningBytes(qualification.evidence), builder.privateKey),
+		}), /qualifier key differs/);
+		const unpinnedPolicy = Buffer.from(JSON.stringify({ repository, releaseRef: 'refs/heads/main', developmentRefs: [sourceRef] }));
+		await assert.rejects(signDevelopmentCandidate({ ...upgrade, ...qualification, policyBytes: unpinnedPolicy,
+			policySignature: sign(null, developmentPolicySigningBytes(unpinnedPolicy), issuer.privateKey),
+		}), /qualifier pinned in signed development policy/);
 		await assert.rejects(signDevelopmentCandidate({ ...upgrade, ...qualification, evidenceSignature: Buffer.alloc(64) }), /qualification signature/);
+		await assert.rejects(signDevelopmentCandidate({ ...upgrade, ...attest(graphProbe) }), /requires a managed rollback receipt/);
+		await assert.rejects(signDevelopmentCandidate({ ...upgrade, ...attest({ ...graphProbe, launchProfile: 'managed' }) }),
+			/requires a managed rollback receipt/);
+		await assert.rejects(signDevelopmentCandidate({ ...upgrade, ...attest({ ...record, managedRollback: {
+			...record.managedRollback, servedStateSha256: 'f'.repeat(64),
+		} }) }), /crash-reopen/);
 		await assert.rejects(signDevelopmentCandidate({ ...upgrade, ...attest({ ...record, predecessorReopened: false }) }), /crash-reopen/);
 		await assert.rejects(signDevelopmentCandidate({ ...upgrade, ...qualification, compatibility: { ...compatibility, graphSchema: 2 } }), /writable formats/);
 		const signed = await signDevelopmentCandidate({ ...upgrade, ...qualification });
 		const { manifest } = verifyDevelopmentManifest(signed.bytes, signed.signature, pem);
 		assert.equal(manifest.predecessor?.manifestSha256, sha256(prior.bytes));
+		assert.equal(manifest.predecessor?.qualificationProfile, 'managed-rollback-v1');
 		assert.equal(manifest.predecessor?.qualificationEvidenceSha256, sha256(qualification.evidence));
+		const legacy = JSON.parse(signed.bytes.toString());
+		delete legacy.predecessor.qualificationProfile;
+		const legacyBytes = Buffer.from(JSON.stringify(legacy));
+		assert.throws(() => verifyDevelopmentManifest(legacyBytes,
+			sign(null, developmentManifestSigningBytes(legacyBytes), issuer.privateKey), pem), /predecessor fields/);
 	} finally {
 		await closeGraphStore();
 		await rm(root, { recursive: true, force: true });

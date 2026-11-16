@@ -51,6 +51,9 @@ import { claudeModels, modelDefinitions, resolveRoleWire } from './model-definit
 import { approveCheck, checkModel, rejectCheck } from './model-check.js';
 import { sharedAdminHandlers } from './admin-handlers.js';
 import { getGraphStore } from '../db/graph/store.js';
+import { createHash } from 'node:crypto';
+import { InstallationMutationGate } from '../shared/installation-mutation-gate.js';
+import { readManagedInstallation } from '../shared/managed-daemon-installation.js';
 import { readPublicInstalledCommit } from './managed-update-ipc.js';
 
 import { getModelState } from './lifecycle.js';
@@ -976,6 +979,19 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 			});
 			const reviewThreads=deps.reviewThreads?.();
    return reviewThreads?.length?{...status,threads:reviewThreads}:status;
+		},
+		'daemon.qualificationState': async () => {
+			const journal = await new InstallationMutationGate(PATHS.insrc).read();
+			const outcome = journal.outcome;
+			const observed = outcome?.developmentRollback;
+			const installed = await readManagedInstallation(PATHS.insrc);
+			if (journal.active !== null || outcome?.decision !== 'rolled-back' || observed?.fixtureSha256 === undefined ||
+				installed?.releaseId !== observed.predecessorCommit || installed.releaseRoot !== process.env['INSRC_DAEMON_ROOT']) {
+				throw new Error('no completed development qualification on this daemon');
+			}
+			const value = (await getGraphStore()).meta.get(`development-qualification:${outcome.id}`);
+			if (value !== outcome.id) throw new Error('restored daemon could not read the qualification fixture');
+			return { transactionId: outcome.id, release: installed.releaseId, stateSha256: createHash('sha256').update(value).digest('hex') };
 		},
 
 		// Story s4: read-only diagnostic — the daemon's own list of currently-attached

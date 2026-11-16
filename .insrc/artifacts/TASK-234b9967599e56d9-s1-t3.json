@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2ae5830a-8720-4bf1-8d91-b99c3c10a16f",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-14T17:22:38.541Z",
+    "epicCreatedAt": "2026-11-14T15:54:38.285Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "234b9967599e56d9",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Local signing and upgrade qualification",
+      "parent": {
+        "entityId": "STORY-234b9967599e56d9-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-234b9967599e56d9-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-234b9967599e56d9-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c6e6bf558375b700d1e9173ade2042b68093b2180f9c5a89b99066eec208c9a4",
+        "at": "2026-11-14T17:22:38.546Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T17:22:38.547Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Local signing and upgrade qualification",
+    "summary": "Bind signing handoff and allocated sequence to exact bytes. Qualify predecessor and candidate writable formats and interrupted reopen before signing.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "Signing refuses mismatched authenticated provenance or duplicate sequence bindings.",
+      "Upgrade proof binds exact predecessor, candidate and local compatibility evidence."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Authenticated signing handoff, sequence allocation, writable format and crash-reopen qualification"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

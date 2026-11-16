@@ -41,12 +41,14 @@
  */
 
 import { createHash } from 'node:crypto';
+import { existsSync, readFileSync } from 'node:fs';
 
 import { ArtifactMissingError, ArtifactNotApprovedError, readLldArtifact, requireApprovedLld, requireApprovedPlan } from '../../gates.js';
 import { assertEpicHash } from '../../hash.js';
-import { planArtifactId } from '../../storage.js';
+import { approvalStateOf } from '../../artifact-core/approval-view.js';
+import { artifactJsonPath, issueArtifactId, planArtifactId } from '../../storage.js';
 import type { PlanArtifact } from '../../artifacts/plan.js';
-import type { BuildAdmissionResult } from './schemas.js';
+import type { BuildAdmissionRefusal, BuildAdmissionResult } from './schemas.js';
 
 export type {
 	BuildAdmissionAccepted,
@@ -242,8 +244,11 @@ export function admitStandaloneBuild(
 	assertEpicHash(epicHash, `admitStandaloneBuild requires a well-formed epicHash`);
 
 	if (!producesLld) {
-		// Trivial — no upstream artifact to gate on. Admit; the scope statement
-		// is the spec. `planArtifactHash` is empty (there is no plan).
+		// No design (Trivial / small bugfix) — the approved ISSUE under this hash
+		// is the work item's head and its record of what was asked and why. The
+		// scope statement is the spec. `planArtifactHash` is empty (no plan).
+		const refusal = refuseWithoutApprovedIssue(repoPath, epicHash, storyId);
+		if (refusal !== undefined) return { admitted: false, refusal };
 		return { admitted: true, plan: { planArtifactId: '(standalone-trivial)', planArtifactHash: '', storyId } };
 	}
 
@@ -279,4 +284,45 @@ export function admitStandaloneBuild(
 	}
 
 	return { admitted: true, plan: { planArtifactId: '(standalone-lld)', planArtifactHash: '', storyId } };
+}
+
+/** The refusal for a no-design build whose `epicHash` names no approved ISSUE,
+ *  or `undefined` when the ISSUE exists and is approved. A no-design build has
+ *  no LLD, so without the ISSUE it would have no head: its Story could never
+ *  complete and nothing would record what was asked. Shared by implement and
+ *  validate. */
+export function refuseWithoutApprovedIssue(
+	repoPath: string,
+	epicHash: string,
+	storyId:  string,
+): BuildAdmissionRefusal | undefined {
+	const path = artifactJsonPath(repoPath, issueArtifactId(epicHash));
+	let meta: unknown;
+	if (existsSync(path)) {
+		try {
+			meta = (JSON.parse(readFileSync(path, 'utf8')) as { meta?: unknown }).meta;
+		} catch {
+			meta = undefined;
+		}
+	}
+	if (meta === undefined) {
+		return {
+			reason: 'no-head',
+			message:
+				`Build refused for standalone Story '${storyId}': no ISSUE exists under ${epicHash}. ` +
+				`A build with no design starts from an approved ISSUE: run the \`issue\` workflow ` +
+				`(triage routes trivial work there), approve it, and build under its hash.`,
+			treeUntouched: true,
+		};
+	}
+	if (approvalStateOf(meta) !== 'approved') {
+		return {
+			reason: 'no-head',
+			message:
+				`Build refused for standalone Story '${storyId}': ISSUE-${epicHash} is not approved. ` +
+				`Approve the ISSUE before build.`,
+			treeUntouched: true,
+		};
+	}
+	return undefined;
 }

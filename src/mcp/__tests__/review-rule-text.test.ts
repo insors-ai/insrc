@@ -144,3 +144,39 @@ for (const [name, text] of [
 		assert.ok(!t.includes('10–30 seconds'), `${name} no longer gives a timed poll interval`);
 	});
 }
+
+// Story c5b49ff953a9a295/s1, t5: trivial work starts with an ISSUE.
+test('the steering text routes trivial work through the issue stage and no longer calls a BUILD record a ledger entry', () => {
+	const steering = flat(STEERING);
+	const triage = guide('triage');
+	const build = guide('build');
+	const bugfix = guide('bugfix');
+	const codeReview = guide('code-review');
+
+	// Triage: the trivial tier enters at the issue stage, as a change, before its build.
+	assert.match(triage, /\*\*trivial\*\* → `issue` stage as a change \(`kind: 'change'`, no LLD\) → `build`/);
+	assert.match(triage, /The ISSUE records what was asked and why and heads the work item/);
+	// Build: a no-LLD build runs under its approved ISSUE's hash, and is refused without one.
+	assert.match(build, /after its ISSUE is approved: pass the ISSUE's hash as `standalone\.epicHash`/);
+	assert.match(build, /A no-LLD build without an approved ISSUE is refused/);
+	// Bugfix: the small route builds under the ISSUE, and a trivial change still starts with one.
+	assert.match(bugfix, /\*\*small\*\* → `issue` → `build` \(no LLD; the build runs under the ISSUE's hash\)/);
+	assert.match(bugfix, /A change the user scoped as trivial still starts with an ISSUE/);
+	// Code review: a trivial change pins its ISSUE like a bugfix.
+	assert.match(codeReview, /a bugfix or a trivial change with only an ISSUE pins that `issue`/);
+
+	// Nowhere does the text send trivial work straight to build or call a BUILD record the ledger entry.
+	for (const [name, text] of [['steering', steering], ['insrc_build_step', description('insrc_build_step')], ['insrc_triage', description('insrc_triage')]] as const) {
+		assert.doesNotMatch(text, /ledger entry/, `${name} calls a BUILD record a ledger entry`);
+		assert.doesNotMatch(text, /Trivial → `?build`? \(no LLD\)|trivial\*\* → `build`|goes straight here/i, `${name} routes trivial work straight to build`);
+		assert.doesNotMatch(text, /pins none and is reviewed against the BUILD's focus/, `${name} says a trivial change pins nothing`);
+	}
+	assert.match(description('insrc_triage'), /Trivial → the `issue` stage as a change, then `build` .*No tier starts at `build`/);
+	// The build tool's standalone fields say a no-LLD build carries its approved ISSUE's hash.
+	const standalone = schemaRegistry.get('insrc_build_step')?.rawShape['standalone'] as unknown as { unwrap(): { description?: string; shape: Record<string, { description?: string }> } };
+	const fields = standalone.unwrap().shape;
+	assert.match(fields['epicHash']?.description ?? '', /for a Trivial or small-bugfix build \(no LLD\) the hash of its approved ISSUE/);
+	assert.match(fields['focus']?.description ?? '', /taken from its approved ISSUE/);
+	assert.match(standalone.unwrap().description ?? '', /Trivial or a small bugfix implements the scope of its approved ISSUE/);
+	assert.doesNotMatch(fields['epicHash']?.description ?? '', /self-minted/);
+});

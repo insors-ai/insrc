@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e5004979-932a-4e34-90fe-3e44cdc4339d",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-14T17:22:38.585Z",
+    "epicCreatedAt": "2026-11-14T15:54:38.285Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "234b9967599e56d9",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Local deployment verification and operator docs",
+      "parent": {
+        "entityId": "STORY-234b9967599e56d9-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-234b9967599e56d9-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-234b9967599e56d9-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-234b9967599e56d9-s1-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9a8a5165e9f944ec92e56c8cb921383d5dd39cd54e584a7d8a7727a2e26f4f73",
+        "at": "2026-11-14T17:22:38.589Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-14T17:22:44.942Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Local deployment verification and operator docs",
+    "summary": "Document policy configuration, VM, build/sign, install, update, recovery and hosted rollout boundary. Run local acceptance tests against signed bundles.",
+    "size": "M",
+    "order": 8,
+    "acceptanceChecks": [
+      "Fresh install, restart and branch switch work in a dedicated VM.",
+      "Offline rollback, incompatible upgrade and protected-state refusal are verified locally."
+    ],
+    "tests": [
+      {
+        "level": "live",
+        "name": "Dedicated Apple Silicon macOS VM build, install, MCP/CLI readiness, restart, upgrade and rollback"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

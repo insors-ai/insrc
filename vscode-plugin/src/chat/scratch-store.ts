@@ -42,9 +42,17 @@ export interface ScratchEntry {
 export interface ScratchFs {
   mkdir(path: string): Promise<void>;
   readdir(path: string): Promise<string[]>;
-  lstat(path: string): Promise<{ readonly isFile: boolean; readonly isSymbolicLink: boolean; readonly size: number; readonly mtimeMs: number }>;
+  lstat(path: string): Promise<{ readonly isFile: boolean; readonly isSymbolicLink: boolean; readonly size: number; readonly mtimeMs: number; readonly ino: number }>;
   writeFile(path: string, data: Uint8Array): Promise<void>;
-  /** Hard link — fails with EEXIST when `to` exists. Never replaced by rename. */
+  /**
+   * Exclusive, no-follow write for the update path: creates `path` ONLY when it
+   * does not exist and is not a symlink — fails with EEXIST on an occupied name
+   * and ELOOP on a symlink (O_CREAT|O_EXCL|O_NOFOLLOW).
+   */
+  writeFileExclusive(path: string, data: Uint8Array): Promise<void>;
+  /** Hard link — fails with EEXIST when `to` exists. The ONLY way the store publishes or
+ * restores a name: link() is the atomic create-if-absent, so it can never clobber a
+ * concurrently recreated destination. There is deliberately no rename in this surface. */
   link(from: string, to: string): Promise<void>;
   unlink(path: string): Promise<void>;
   open(path: string): Promise<ScratchFsHandle>;
@@ -52,7 +60,7 @@ export interface ScratchFs {
 
 export interface ScratchFsHandle {
   read(): Promise<{ bytes: Uint8Array; bytesRead: number }>;
-  stat(): Promise<{ readonly isFile: boolean; readonly size: number; readonly mtimeMs: number }>;
+  stat(): Promise<{ readonly isFile: boolean; readonly size: number; readonly mtimeMs: number; readonly ino: number }>;
   close(): Promise<void>;
 }
 
@@ -67,9 +75,18 @@ export const nodeScratchFs: ScratchFs = {
   },
   lstat: async (p) => {
     const s = await lstat(p);
-    return { isFile: s.isFile(), isSymbolicLink: s.isSymbolicLink(), size: s.size, mtimeMs: s.mtimeMs };
+    return { isFile: s.isFile(), isSymbolicLink: s.isSymbolicLink(), size: s.size, mtimeMs: s.mtimeMs, ino: s.ino };
   },
   writeFile: (p, data) => writeFile(p, data),
+  writeFileExclusive: async (p, data) => {
+    // O_CREAT|O_EXCL|O_NOFOLLOW: EEXIST on an occupied name, ELOOP on a symlink — never followed.
+    const h = await open(p, constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | constants.O_NOFOLLOW);
+    try {
+      await h.writeFile(data);
+    } finally {
+      await h.close();
+    }
+  },
   link: (from, to) => link(from, to),
   unlink: (p) => unlink(p),
   open: async (p) => {
@@ -84,7 +101,7 @@ export const nodeScratchFs: ScratchFs = {
       },
       stat: async () => {
         const s = await h.stat();
-        return { isFile: s.isFile(), size: s.size, mtimeMs: s.mtimeMs };
+        return { isFile: s.isFile(), size: s.size, mtimeMs: s.mtimeMs, ino: s.ino };
       },
       close: () => h.close(),
     };
@@ -127,6 +144,18 @@ export interface ScratchStore {
   createScratch(title: string, body?: string | undefined): Promise<ScratchEntry>;
   readScratch(id: string): Promise<{ entry: ScratchEntry; content: string }>;
   deleteScratch(id: string): Promise<void>;
+  /**
+   * Replace the whole content of an existing scratchpad. Same id validation as
+   * read/delete (strictly inside root, *.md basename, regular file, symlink
+   * refused, O_NOFOLLOW). The new content is written to a temp file created
+   * EXCLUSIVELY and no-follow, then published over the destination with
+   * unlink(destination) + link(temp, destination) + unlink(temp) — never rename.
+   * The destination is re-opened O_NOFOLLOW and fstat'd before its unlink, so a
+   * symlink swapped in after the lstat is never removed; a link() EEXIST (the
+   * destination recreated concurrently) is re-validated and retried a bounded
+   * number of times. Throws ScratchRefused / ScratchNotFound / ScratchStoreError.
+   */
+  updateScratch(id: string, text: string): Promise<void>;
 }
 
 /** The shape a scratchpad id must have: a single safe *.md file name. */
@@ -315,6 +344,229 @@ export function createScratchStore(deps: ScratchStoreDeps): ScratchStore {
     }
   };
 
+  /** Bounded retries when a concurrent recreate surfaces as link() EEXIST on the destination. */
+  const PUBLISH_ATTEMPTS = 5;
+
+  const updateScratch = async (id: string, text: string): Promise<void> => {
+    if (typeof text !== 'string') throw new ScratchRefused('the scratchpad content must be a string');
+    const path = resolveInside(id);
+    // Same validation as delete: lstat-confirm a regular file, symlink refused.
+    let st;
+    try {
+      st = await fs.lstat(path);
+    } catch (e) {
+      if (errCode(e) === 'ENOENT') throw new ScratchNotFound(`'${id}' does not exist`);
+      throw storeError(e);
+    }
+    if (!st.isFile || st.isSymbolicLink) throw new ScratchRefused(`'${id}' is not a regular file and is refused`);
+
+    // Exclusive no-follow temp write: O_CREAT|O_EXCL|O_NOFOLLOW — an occupied or
+    // symlinked temp name fails with EEXIST/ELOOP instead of being followed. On
+    // failure the temp was never created by us, so it is left strictly alone.
+    const temp = join(root, `.tmp-${process.pid}-${randomBytes(6).toString('hex')}`);
+    const content = Buffer.from(text, 'utf8');
+    const unlinkTemp = async (): Promise<void> => {
+      try { await fs.unlink(temp); } catch (rmErr) { log.warn(`[scratches] could not remove temp ${temp}: ${String(rmErr)}`); }
+    };
+    try {
+      await fs.writeFileExclusive(temp, content);
+    } catch (e) {
+      const code = errCode(e);
+      if (code === 'EEXIST' || code === 'ELOOP') {
+        // The exclusive create never happened: the entry at the temp name is NOT
+        // ours — leave it strictly alone (it may be a pre-existing file or symlink).
+        throw new ScratchStoreError(`scratchpad update refused: temp name is occupied (${String(e)})`);
+      }
+      // The create succeeded but the write failed (e.g. ENOSPC leaves a partial temp
+      // this call created): clean up the temp we own.
+      await unlinkTemp();
+      throw storeError(e);
+    }
+
+    /** Abandon the save: if any attempt already unlinked the destination, put the
+     * ORIGINAL content back from the backup hard link first (the destination must be
+     * untouched by a failed save, even on the retry path), then clean up temp+backups.
+     * The restore is link-only: link() is the atomic create-if-absent, so it can never
+     * clobber a concurrently recreated destination (EEXIST => leave that file alone).
+     * There is deliberately NO rename fallback — rename would race a concurrent
+     * recreation between any existence check and the rename itself. If every restore
+     * link fails non-EEXIST, the backup is simply left in place (logged) and the store
+     * error still reports the failure; the original inode is never destroyed.
+     * Backups are unlinked only if this operation created them — a failed backup-link
+     * must never delete an entry it does not own. */
+    let unlinkedSoFar = false;
+    // One backup name per publish attempt, in order: backups[i] hard-links the inode
+    // that attempt i validated and unlinked. The LATEST backup is the one whose inode
+    // is currently missing from the destination name and must be restored on failure.
+    const backups: string[] = [];
+    const backupName = (): string => join(root, `.tmp-${process.pid}-${randomBytes(6).toString('hex')}.bak`);
+    const dropBackup = async (b: string): Promise<void> => {
+      try { await fs.unlink(b); } catch (rmErr) { log.warn(`[scratches] could not remove backup ${b}: ${String(rmErr)}`); }
+    };
+    const unlinkBackups = async (): Promise<void> => {
+      for (const b of backups) await dropBackup(b);
+    };
+    // restoreFromBackup returns true when every restore link failed non-EEXIST (the
+    // backup is intentionally left on disk — it still hard-links the original inode —
+    // because no rename fallback exists to force it back safely).
+    const restoreFromBackup = async (): Promise<boolean> => {
+      const backup = backups[backups.length - 1];
+      if (backup === undefined) return false;
+      for (let rAttempt = 0; rAttempt < PUBLISH_ATTEMPTS; rAttempt++) {
+        try {
+          await fs.link(backup, path);
+          return false;
+        } catch (rmErr) {
+          if (errCode(rmErr) === 'EEXIST') {
+            // The name was recreated concurrently after our unlink: leave that actor's
+            // file alone (never clobber it) — the destination is not missing.
+            log.warn(`[scratches] restore of ${id} skipped: the name was recreated concurrently: ${String(rmErr)}`);
+            return false;
+          }
+          log.warn(`[scratches] could not restore ${id} from the backup link (attempt ${rAttempt + 1}): ${String(rmErr)}`);
+        }
+      }
+      // Every restore link failed for a non-EEXIST reason and the name is still absent:
+      // do NOT rename the backup over the name — a check-then-rename race could clobber
+      // a destination recreated in between. Leave the backup on disk (original inode
+      // preserved) and report via the caller's ScratchStoreError.
+      log.warn(`[scratches] could not restore ${id} from the backup link; leaving ${backup} in place (original inode preserved, no rename fallback)`);
+      return true;
+    };
+    const fail = async (e: unknown): Promise<unknown> => {
+      const gaveUp = unlinkedSoFar ? await restoreFromBackup() : false;
+      await unlinkTemp();
+      if (!gaveUp) await unlinkBackups();
+      return e;
+    };
+
+    // No-clobber publish: unlink(destination) + link(temp, destination) + unlink(temp).
+    // Never rename — rename would clobber a destination created after the probe above.
+    // Each attempt re-validates the destination (lstat), then re-opens it O_NOFOLLOW and
+    // fstats the SAME fd and only proceeds when that fd's inode is the one just lstat'd —
+    // a symlink swapped in between is refused, never removed. The fd stays OPEN through
+    // the critical section, the backup link's own inode is checked against the
+    // fd-validated inode, and the name is re-lstat'd immediately before the unlink, so a
+    // replacement swapped in at ANY point before the unlink is refused (r33 CR-MED) —
+    // never backed up as the wrong inode, never removed.
+    let unlinked = false;
+    let publishErr: unknown;
+    for (let attempt = 0; ; attempt++) {
+      let st2;
+      try {
+        st2 = await fs.lstat(path);
+      } catch (e) {
+        throw await fail(errCode(e) === 'ENOENT' ? new ScratchNotFound(`'${id}' disappeared before the save`) : storeError(e));
+      }
+      if (!st2.isFile || st2.isSymbolicLink) {
+        throw await fail(new ScratchRefused(`'${id}' is not a regular file and is refused`));
+      }
+      let handle;
+      try {
+        handle = await fs.open(path);
+      } catch (e) {
+        const code = errCode(e);
+        if (code === 'ENOENT') throw await fail(new ScratchNotFound(`'${id}' disappeared before the save`));
+        if (code === 'ELOOP' || code === 'EISDIR') throw await fail(new ScratchRefused(`'${id}' is not a regular file and is refused`));
+        throw await fail(storeError(e));
+      }
+      try {
+        let fst;
+        try {
+          fst = await handle.stat();
+        } catch (e) {
+          throw await fail(errCode(e) === 'ENOENT' ? new ScratchNotFound(`'${id}' disappeared before the save`) : storeError(e));
+        }
+        if (!fst.isFile || fst.ino !== st2.ino) {
+          throw await fail(new ScratchRefused(`'${id}' changed between validation and unlink and is refused`));
+        }
+
+        // Back up the EXACT inode validated on the fd, so a later restore puts back
+        // precisely what this attempt removes. The previous attempt's backup (a stale,
+        // already-unlinked inode) is dropped only AFTER this link succeeds, so a restore
+        // backup always exists once anything has been unlinked. A single backup linked
+        // once up front could instead preserve a stale inode A while the loop unlinks a
+        // replacement inode B, and a failed publish would restore A over the path, losing
+        // B (r32 CR-MED).
+        const backup = backupName();
+        try {
+          await fs.link(path, backup);
+        } catch (e) {
+          throw await fail(errCode(e) === 'ENOENT' ? new ScratchNotFound(`'${id}' disappeared before the save`) : storeError(e));
+        }
+        // The backup hard link must share the fd-validated inode. If the name was
+        // swapped between the fstat and this link, the backup captured the WRONG inode —
+        // refuse (nothing has been unlinked yet, so no restore is needed) and drop the
+        // mismatched backup we just created.
+        let bst;
+        try {
+          bst = await fs.lstat(backup);
+        } catch (e) {
+          throw await fail(storeError(e));
+        }
+        if (bst.ino !== fst.ino) {
+          await dropBackup(backup);
+          throw await fail(new ScratchRefused(`'${id}' changed between validation and backup and is refused`));
+        }
+        backups.push(backup);
+        if (backups.length > 1) await dropBackup(backups[backups.length - 2] ?? '');
+
+        // Final revalidation immediately before the unlink: the name must still be the
+        // fd-validated inode, or the unlink could remove a concurrent writer's file.
+        let st3;
+        try {
+          st3 = await fs.lstat(path);
+        } catch (e) {
+          throw await fail(errCode(e) === 'ENOENT' ? new ScratchNotFound(`'${id}' disappeared before the save`) : storeError(e));
+        }
+        if (!st3.isFile || st3.ino !== fst.ino) {
+          throw await fail(new ScratchRefused(`'${id}' changed between backup and unlink and is refused`));
+        }
+
+        // The validated inode is confirmed on the fd, backed up, and still at the name:
+        // unlink it, then link the temp over the name.
+        try {
+          await fs.unlink(path);
+        } catch (e) {
+          // Deleted between the final validation and the unlink: nothing to publish over.
+          throw await fail(errCode(e) === 'ENOENT' ? new ScratchNotFound(`'${id}' disappeared before the save`) : storeError(e));
+        }
+        unlinked = true;
+        unlinkedSoFar = true;
+        try {
+          await fs.link(temp, path);
+        } catch (e) {
+          if (errCode(e) === 'EEXIST' && attempt + 1 < PUBLISH_ATTEMPTS) {
+            // The destination was recreated between our unlink and link: the next attempt
+            // re-validates it (lstat + O_NOFOLLOW fstat inode check) before unlinking again.
+            continue;
+          }
+          publishErr = e;
+          break;
+        }
+        // Published: the destination now holds the new content; remove the temp and the backups.
+        try {
+          await fs.unlink(temp);
+        } catch (rmErr) {
+          log.warn(`[scratches] could not remove temp ${temp}: ${String(rmErr)}`);
+        }
+        await unlinkBackups();
+        return;
+      } finally {
+        try { await handle.close(); } catch { /* closing the probe fd is best-effort */ }
+      }
+    }
+    // The publish never landed (non-EEXIST link failure, or retries exhausted). Put the
+    // ORIGINAL content back under the original name from the latest backup hard link
+    // (link-only restore — never a rename, which could clobber a concurrently recreated
+    // name). If even the restore links all fail non-EEXIST, the backup is deliberately
+    // LEFT on disk (it still hard-links the original inode) instead of forcing a rename.
+    const restoreGaveUp = unlinked ? await restoreFromBackup() : false;
+    await unlinkTemp();
+    if (!restoreGaveUp) await unlinkBackups();
+    throw storeError(publishErr);
+  };
+
   const deleteScratch = async (id: string): Promise<void> => {
     const path = resolveInside(id);
     let st;
@@ -333,5 +585,5 @@ export function createScratchStore(deps: ScratchStoreDeps): ScratchStore {
     }
   };
 
-  return { listScratches, createScratch, readScratch, deleteScratch };
+  return { listScratches, createScratch, readScratch, deleteScratch, updateScratch };
 }

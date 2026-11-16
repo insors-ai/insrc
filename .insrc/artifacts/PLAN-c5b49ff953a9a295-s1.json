@@ -1,0 +1,451 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1794722992219-rvcnrc",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-15T06:13:06.442Z",
+    "epicCreatedAt": "2026-11-15T05:50:20.518Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 193316,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c5b49ff953a9a295",
+    "epicSlug": "give-every-trivial-change-issue-record",
+    "storyId": "s1",
+    "lldRunId": "wf-1794722626308-qelw3o",
+    "lldEffectiveHash": "41010cddc063ac34f1afee305932bd8662bc5dc919a2a848b8976afdbc727e12",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "4aed347234beb80969d86b5053471e5beb127ffc170898b15e47cce082d84dc8",
+        "at": "2026-11-15T06:13:06.755Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-15T06:40:16.828Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "ba58fc286e33a2f112c9215a9c0e692890dae83e"
+  },
+  "body": {
+    "summary": {
+      "prose": "Building this Story changes four places that together decide how small work is tracked: the ISSUE record learns to describe a change, the issue-approval advance carries the ISSUE's hash forward, the build refuses work without an ISSUE, and triage sends trivial work to the issue stage. The agent-facing text is updated to match. A new repair step then gives the 16 existing trivial builds an ISSUE and lets the completion rule settle their Stories.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Record and render an ISSUE's kind",
+        "summary": "Add optional meta.kind ('defect' | 'change') to IssueArtifact; finalizeIssue stores params.kind beside magnitude and refuses an unknown value; renderIssueMarkdown uses What was asked / Why / Change for 'change'; the issue.capture prompt asks for a change's request and reason when the run's kind is 'change'.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "An issue run with params.kind 'change' stores meta.kind 'change'; an unknown kind writes no ISSUE.",
+          "An ISSUE with no kind renders byte-identically to before.",
+          "A change ISSUE renders What was asked, Why and Change."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "finalizeIssue: params.kind change is stored on the ISSUE meta and an unknown kind is refused"
+          },
+          {
+            "level": "unit",
+            "name": "renderIssueMarkdown: kind change renders What was asked, Why and Change"
+          },
+          {
+            "level": "unit",
+            "name": "renderIssueMarkdown: an ISSUE with no kind renders byte-identically to before"
+          },
+          {
+            "level": "unit",
+            "name": "issue capture prompt: a change run asks what was asked and why, not for a defect"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Hand the ISSUE's hash to the next stage",
+        "summary": "nextAfterIssue puts issue.meta.issueHash in the small build call (standalone.epicHash) and the sized design.story call (params.epicHash), and refuses an ISSUE without a 16-hex issueHash.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "A small ISSUE's advance call carries standalone.epicHash equal to the ISSUE hash.",
+          "A sized ISSUE's advance call carries params.epicHash equal to the ISSUE hash.",
+          "An ISSUE without a valid issueHash makes the advance fail."
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "nextAfterIssue: a small ISSUE routes to build with the ISSUE hash as standalone.epicHash"
+          },
+          {
+            "level": "unit",
+            "name": "nextAfterIssue: a sized ISSUE routes to design.story with params.epicHash set to the ISSUE hash"
+          },
+          {
+            "level": "unit",
+            "name": "nextAfterIssue: an ISSUE without a 16-hex issueHash is refused"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Refuse a headless no-design build",
+        "summary": "The standalone no-LLD build stops minting a hash from the focus: implement and validate refuse a call without epicHash (no-identity) or whose epicHash has no approved ISSUE (no-head). Small (LLD) builds are unchanged.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "A no-LLD call without epicHash is refused with no-identity and writes nothing.",
+          "A no-LLD call whose epicHash has no approved ISSUE is refused.",
+          "A no-LLD call under an approved ISSUE builds as before."
+        ],
+        "derivedFrom": [
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "build implement: a no-LLD standalone call without epicHash is refused with no-identity and writes nothing"
+          },
+          {
+            "level": "integration",
+            "name": "build implement: a no-LLD standalone call whose epicHash has no approved ISSUE is refused"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Route trivial work to the issue stage",
+        "summary": "routeForSizeClass('trivial') returns startStage 'issue'; buildNextCall starts the issue workflow with sizeClass trivial, magnitude small, kind change (and kind defect for a bugfix); no tier starts at build.",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "Triage of a trivial request returns an issue-workflow nextCall with kind change and magnitude small.",
+          "No size class routes to build.",
+          "A trivial change runs issue, approval, build and BUILD approval and its Story completes."
+        ],
+        "derivedFrom": [
+          "c7",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "routeForSizeClass: trivial routes to the issue stage with no LLD"
+          },
+          {
+            "level": "unit",
+            "name": "routeForSizeClass: no tier starts at build"
+          },
+          {
+            "level": "unit",
+            "name": "triage nextCall: trivial starts the issue workflow with sizeClass trivial, magnitude small and kind change"
+          },
+          {
+            "level": "integration",
+            "name": "a trivial change: ISSUE approved, build under its hash, BUILD approved completes STORY and EPIC"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Update the steering and tool descriptions",
+        "summary": "Steering block lines 231, 341-342, 463, 536 and 557 and the insrc_build_step / insrc_triage descriptions say trivial work and a small bugfix start with an ISSUE and that the code-review packet pins it; refresh the plugin asset copy.",
+        "size": "S",
+        "order": 5,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "No steering or tool description routes trivial work straight to build or calls a BUILD record a ledger entry."
+        ],
+        "derivedFrom": [
+          "c9",
+          "c10"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "the steering text routes trivial work through the issue stage and no longer calls a BUILD record a ledger entry"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Backfill rule: preview and ISSUE write",
+        "summary": "Add the repair rule and step 'backfill-issue' before 'units': the preview lists one change per standalone trivial BUILD with no DEF, ISSUE or LLD head; repair writes a kind 'change' ISSUE under the BUILD's hash from its focus, triage rationale and summary, anchored at its epicCreatedAt, approved by the migration actor with the reason recorded, or left pending when the BUILD is not approved. Each write is reported under 'backfill-issue'.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "repair-preview lists one backfill-issue change per headless BUILD and writes nothing.",
+          "repair writes the ISSUEs; a second run lists none.",
+          "The ISSUE of a BUILD that is not approved stays pending."
+        ],
+        "derivedFrom": [
+          "c11"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "repair-preview lists one backfill-issue change per headless standalone trivial BUILD and writes nothing"
+          },
+          {
+            "level": "integration",
+            "name": "repair writes a kind change ISSUE for each headless BUILD, approved by the migration actor, and a second repair lists none"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Settle backfilled Stories and recover a part-way run",
+        "summary": "Prove that after the backfill the existing units and settle steps complete, hold or leave unsettled each Story by the completion rule, and that a failure during the backfill is reported and finished by the next run. Post-deploy (not code): back up the records, run repair-preview on this repository, expect 16 backfill-issue changes, then run repair and read written, held and failed.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "Settle completes a backfilled Story with a qualifying approval, holds one approved before the cutoff without an override, and leaves the draft BUILD's Story unsettled.",
+          "A part-way failure lists what was written and the next run finishes without writing any ISSUE twice."
+        ],
+        "derivedFrom": [
+          "c11",
+          "c12"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "repair settles a backfilled Story by the completion rule: one completes, one approved before the cutoff without an override is held, and a draft BUILD is not settled"
+          },
+          {
+            "level": "integration",
+            "name": "a failure injected during the backfill lists the ISSUEs written and the next repair writes only the rest"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "routeForSizeClass: trivial routes to the issue stage with no LLD",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "routeForSizeClass: no tier starts at build",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "triage nextCall: trivial starts the issue workflow with sizeClass trivial, magnitude small and kind change",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "finalizeIssue: params.kind change is stored on the ISSUE meta and an unknown kind is refused",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "nextAfterIssue: a small ISSUE routes to build with the ISSUE hash as standalone.epicHash",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "nextAfterIssue: a sized ISSUE routes to design.story with params.epicHash set to the ISSUE hash",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "nextAfterIssue: an ISSUE without a 16-hex issueHash is refused",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "renderIssueMarkdown: kind change renders What was asked, Why and Change",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "renderIssueMarkdown: an ISSUE with no kind renders byte-identically to before",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "issue capture prompt: a change run asks what was asked and why, not for a defect",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "build implement: a no-LLD standalone call without epicHash is refused with no-identity and writes nothing",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "build implement: a no-LLD standalone call whose epicHash has no approved ISSUE is refused",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "a trivial change: ISSUE approved, build under its hash, BUILD approved completes STORY and EPIC",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "the steering text routes trivial work through the issue stage and no longer calls a BUILD record a ledger entry",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "repair-preview lists one backfill-issue change per headless standalone trivial BUILD and writes nothing",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "repair writes a kind change ISSUE for each headless BUILD, approved by the migration actor, and a second repair lists none",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "repair settles a backfilled Story by the completion rule: one completes, one approved before the cutoff without an override is held, and a draft BUILD is not settled",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "a failure injected during the backfill lists the ISSUEs written and the next repair writes only the rest",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 data model: IssueArtifact meta.kind in src/workflow/artifacts/issue.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 API: finalizeIssue stores params.kind in src/workflow/orchestrator.ts:900-935"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 API: issue.capture runner prompt for a change"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 API: nextAfterIssue carries the ISSUE hash in src/workflow/bugfix/next-after-issue.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 API: handleStandaloneImplement refuses a headless call in src/daemon/steps/build-step/phases/implement.ts:142"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 API: build admission requires an approved ISSUE head (no-head refusal)"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 API: routeForSizeClass trivial to issue in src/workflow/triage/classify.ts"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 API: buildNextCall starts the issue workflow in src/daemon/steps/triage-step/phases/classify.ts"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 steering update in src/prompts/steering-block.md"
+    },
+    {
+      "id": "c10",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 tool descriptions in src/mcp/server.ts:634-706 (self-review f4)"
+    },
+    {
+      "id": "c11",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 migration: backfill-issue repair rule in src/workflow/convert/repair.ts"
+    },
+    {
+      "id": "c12",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 migration: settle and units steps in src/workflow/convert/settle.ts and src/workflow/convert/units.ts"
+    }
+  ]
+}

@@ -10,6 +10,7 @@ import { stageRuntime } from './package-daemon-candidate.mjs';
 import { measureBundleRuntime, stageVerifiedBundle } from './stage-daemon-bundle.mjs';
 import { LINUX_ARCHIVE_LIMIT, LINUX_NODE_VERSION, LINUX_RELEASE_TARGET, linuxArchiveName } from './linux-daemon-metadata.mjs';
 import { sha256 } from './daemon-bundle-metadata.mjs';
+import { readBoundedRegular } from './verify-daemon-bundle.mjs';
 
 const nodeArchiveSha256 = '9a6bc82f9b491279147219f6a18add1e18424dce90d41d2a5fcd69d4924ba3aa';
 const hostLibraries = new Set([
@@ -135,12 +136,14 @@ async function requireNativeBuildHost(source, commit) {
 }
 
 async function readPinnedNode(nodeArchive, workspace) {
-	const node = await digestFile(nodeArchive, 64 * 1024 ** 2);
-	if (node.sha256 !== nodeArchiveSha256) throw new Error('pinned Linux Node archive digest mismatch');
+	const bytes = await readBoundedRegular(nodeArchive, 64 * 1024 ** 2);
+	if (sha256(bytes) !== nodeArchiveSha256) throw new Error('pinned Linux Node archive digest mismatch');
+	const snapshot = join(workspace, 'verified-node.tar.xz');
+	await writeFile(snapshot, bytes, { flag: 'wx', mode: 0o600 });
 	const runtime = join(workspace, 'node');
 	await mkdir(runtime, { mode: 0o700 });
 	const upstreamName = `node-v${LINUX_NODE_VERSION}-linux-x64`;
-	run('/usr/bin/tar', ['-xJf', nodeArchive, '--strip-components=1', '-C', runtime,
+	run('/usr/bin/tar', ['-xJf', snapshot, '--strip-components=1', '-C', runtime,
 		`${upstreamName}/bin/node`, `${upstreamName}/LICENSE`]);
 	return join(runtime, 'bin/node');
 }

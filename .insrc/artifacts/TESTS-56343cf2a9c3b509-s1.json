@@ -1,0 +1,383 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 13,
+        "contentHash": "ca84ee832e01b021b63b6829edefa842d9bbb208e02d8bc674498db68b04961d",
+        "at": "2026-11-16T11:52:44.577Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "56343cf2a9c3b509",
+    "storyId": "s1",
+    "createdAt": "2026-11-16T10:09:36.480Z",
+    "updatedAt": "2026-11-16T11:52:44.564Z",
+    "epicCreatedAt": "2026-11-16T08:53:15.795Z",
+    "epicSlug": "ship-signed-linux-x86-64-daemon",
+    "revision": 13
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "7e5d189f2",
+        "ranAt": "2026-11-16T10:09:36.480Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Linux manifest schema and digest boundaries",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/linux-daemon-metadata.test.ts",
+                "title": "Linux manifest rejects noncanonical, malformed, oversized and mismatched metadata",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Role-separated Ed25519 grants and configured channel scope",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/linux-daemon-metadata.test.ts",
+                "title": "Linux qualification and channel grants authenticate identical scoped bytes with separate keys",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "scripts/__tests__/linux-daemon-metadata.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 735,
+            "titles": [
+              {
+                "title": "Linux manifest rejects noncanonical, malformed, oversized and mismatched metadata",
+                "result": "pass"
+              },
+              {
+                "title": "Linux qualification and channel grants authenticate identical scoped bytes with separate keys",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "14599ab17",
+        "ranAt": "2026-11-16T11:52:44.564Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Linux staging inventory, path safety and ELF dependency fixture checks",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/package-linux-daemon-candidate.test.ts",
+                "title": "Linux packaging rejects wrong ELF architecture and runtime ABI floors",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/package-linux-daemon-candidate.test.ts",
+                "title": "Linux staging requires Linux entry points, retains matching native dependencies and refuses escaping links",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/package-linux-daemon-candidate.test.ts",
+                "title": "Linux native dependency inventory rejects missing libraries and escaping ELF search paths",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Local Ubuntu 24.04 amd64 package, relocate, verify fingerprint, load native modules and exercise required entry points",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "/tmp/insrc-linux-x64-lifecycle-smoke.log lines 29–48. Ubuntu 24.04 amd64 OrbStack guest, translated user space. Packaged at 11f65c779, relocated and measured fingerprint, loaded ten staged native dependencies, verified CLI, daemon and MCP. Actual packaged broker captured and terminated a disposable target and confirmed exit. Actual packaged watchdog reported ready and disarmed, then terminated a blocked disposable parent on deadline and recorded the cause."
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "scripts/__tests__/package-linux-daemon-candidate.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 408,
+            "titles": [
+              {
+                "title": "Linux packaging rejects wrong ELF architecture and runtime ABI floors",
+                "result": "pass"
+              },
+              {
+                "title": "Linux native dependency inventory rejects missing libraries and escaping ELF search paths",
+                "result": "pass"
+              },
+              {
+                "title": "Linux staging requires Linux entry points, retains matching native dependencies and refuses escaping links",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "d9aefe07e",
+        "ranAt": "2026-11-16T10:39:48.453Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Linux workflow shape, credential isolation, exact revision and configured ref tests",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/linux-daemon-dispatch.test.ts",
+                "title": "Linux candidate workflow isolates the Ubuntu build and has only pinned read-only Actions",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/linux-daemon-dispatch.test.ts",
+                "title": "Linux dispatch uses configured full refs and records the exact target-qualified candidate",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "scripts/__tests__/linux-daemon-dispatch.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 565,
+            "titles": [
+              {
+                "title": "Linux candidate workflow isolates the Ubuntu build and has only pinned read-only Actions",
+                "result": "pass"
+              },
+              {
+                "title": "Linux dispatch uses configured full refs and records the exact target-qualified candidate",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "902ec06ef",
+        "ranAt": "2026-11-16T10:46:59.983Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "GitHub origin and validated download fixtures for Linux, Darwin, rerun, substituted origin, duplicate ZIP members and digest tampering",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/fetch-linux-daemon-candidate.test.ts",
+                "title": "Linux candidate origin distinguishes exact workflow attempt and artifact from Darwin and other revisions",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/fetch-linux-daemon-candidate.test.ts",
+                "title": "Linux retrieval verifies both digests and rejects duplicate or foreign ZIP members",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/fetch-linux-daemon-candidate.test.ts",
+                "title": "GitHub fetch path separates same-version Linux and Darwin artifacts by workflow and exact attempt",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "scripts/__tests__/fetch-linux-daemon-candidate.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3746,
+            "titles": [
+              {
+                "title": "Linux candidate origin distinguishes exact workflow attempt and artifact from Darwin and other revisions",
+                "result": "pass"
+              },
+              {
+                "title": "Linux retrieval verifies both digests and rejects duplicate or foreign ZIP members",
+                "result": "pass"
+              },
+              {
+                "title": "GitHub fetch path separates same-version Linux and Darwin artifacts by workflow and exact attempt",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "fab6b555c",
+        "ranAt": "2026-11-16T10:49:52.973Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Fixture qualification grant and signed local evidence for exact artifact, host, required tests and predecessor",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/linux-daemon-qualification.test.ts",
+                "title": "Linux qualification authenticates exact immutable subject and separate signer privileges",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/linux-daemon-qualification.test.ts",
+                "title": "Linux qualification rejects foreign host, artifact, test and predecessor evidence",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "scripts/__tests__/linux-daemon-qualification.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 380,
+            "titles": [
+              {
+                "title": "Linux qualification authenticates exact immutable subject and separate signer privileges",
+                "result": "pass"
+              },
+              {
+                "title": "Linux qualification rejects foreign host, artifact, test and predecessor evidence",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "14599ab17",
+        "ranAt": "2026-11-16T11:47:41.425Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Independent-writer sequence race, scoped ledger, stale and corrupt ledger, and interrupted exact retry",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/linux-daemon-final-signing.test.ts",
+                "title": "Protected Linux signing ledger serializes independent writers and preserves exact interrupted retries",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/linux-daemon-final-signing.test.ts",
+                "title": "Linux signing ledger refuses a valid older head or deleted latest binding",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/linux-daemon-final-signing.test.ts",
+                "title": "Linux dispatch, qualification and protected signer CLI preserve hosted origin through interrupted delivery",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Final signing role, evidence and origin checks across all Linux stages using fixtures",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/linux-daemon-final-signing.test.ts",
+                "title": "Linux final signing revalidates qualification, artifact and lane before allocating a signature",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/linux-daemon-final-signing.test.ts",
+                "title": "Linux signing rejects independently qualified substitutions for the same approved archive",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/linux-daemon-final-signing.test.ts",
+                "title": "Linux dispatch, qualification and protected signer CLI preserve hosted origin through interrupted delivery",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "scripts/__tests__/linux-daemon-final-signing.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4502,
+            "titles": [
+              {
+                "title": "Protected Linux signing ledger serializes independent writers and preserves exact interrupted retries",
+                "result": "pass"
+              },
+              {
+                "title": "Linux signing ledger refuses a valid older head or deleted latest binding",
+                "result": "pass"
+              },
+              {
+                "title": "Linux final signing revalidates qualification, artifact and lane before allocating a signature",
+                "result": "pass"
+              },
+              {
+                "title": "Linux signing rejects independently qualified substitutions for the same approved archive",
+                "result": "pass"
+              },
+              {
+                "title": "Linux dispatch, qualification and protected signer CLI preserve hosted origin through interrupted delivery",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

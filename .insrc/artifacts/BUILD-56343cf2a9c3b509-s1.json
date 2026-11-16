@@ -1,0 +1,185 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 13,
+        "contentHash": "dec36e3a7048fb1ee65ee709f92f022d00c3bcdf51b42b92377b3ddca06f2a7e",
+        "at": "2026-11-16T11:53:14.282Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-6f2de116-2d55-432c-a702-eb4a78e098ae",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-16T10:09:36.480Z",
+    "epicCreatedAt": "2026-11-16T08:53:15.795Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "56343cf2a9c3b509",
+    "storyId": "s1",
+    "revision": 13,
+    "updatedAt": "2026-11-16T11:52:44.564Z",
+    "authoredBy": "controller",
+    "epicSlug": "ship-signed-linux-x86-64-daemon"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": false
+      },
+      {
+        "id": "t3",
+        "passed": false
+      },
+      {
+        "id": "t4",
+        "passed": false
+      },
+      {
+        "id": "t5",
+        "passed": false
+      },
+      {
+        "id": "t6",
+        "passed": false
+      }
+    ],
+    "summary": "Recorded direct packaged native lifecycle smoke evidence. The exact packager is unchanged between guest fixture 11f65c779 and signing fix 14599ab17.",
+    "testRecord": {
+      "md": "docs/epics/ship-signed-linux-x86-64-daemon-E2026111656343cf2/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "scripts/__tests__/linux-daemon-metadata.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T11:52:44.564Z"
+      },
+      {
+        "target": {
+          "file": "scripts/linux-daemon-metadata.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T11:52:44.564Z"
+      },
+      {
+        "target": {
+          "file": "scripts/__tests__/package-linux-daemon-candidate.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T11:52:44.564Z"
+      },
+      {
+        "target": {
+          "file": "scripts/package-daemon-candidate.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T11:52:44.564Z"
+      },
+      {
+        "target": {
+          "file": "scripts/package-linux-daemon-candidate.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T11:52:44.564Z"
+      },
+      {
+        "target": {
+          "file": ".github/workflows/daemon-linux-candidate.yml"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T11:52:44.564Z"
+      },
+      {
+        "target": {
+          "file": "scripts/__tests__/linux-daemon-dispatch.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T11:52:44.564Z"
+      },
+      {
+        "target": {
+          "file": "scripts/linux-daemon-dispatch.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T11:52:44.564Z"
+      },
+      {
+        "target": {
+          "file": "scripts/__tests__/fetch-linux-daemon-candidate.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T11:52:44.564Z"
+      },
+      {
+        "target": {
+          "file": "scripts/fetch-linux-daemon-candidate.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T11:52:44.564Z"
+      },
+      {
+        "target": {
+          "file": "scripts/__tests__/fixtures/linux-daemon-release.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T11:52:44.564Z"
+      },
+      {
+        "target": {
+          "file": "scripts/__tests__/linux-daemon-qualification.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T11:52:44.564Z"
+      },
+      {
+        "target": {
+          "file": "scripts/linux-daemon-qualification.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T11:52:44.564Z"
+      },
+      {
+        "target": {
+          "file": "scripts/__tests__/linux-daemon-final-signing.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T11:52:44.564Z"
+      },
+      {
+        "target": {
+          "file": "scripts/linux-daemon-signing-ledger.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T11:52:44.564Z"
+      },
+      {
+        "target": {
+          "file": "scripts/sign-linux-daemon-candidate.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T11:52:44.564Z"
+      }
+    ],
+    "commit": "14599ab17"
+  },
+  "citations": []
+}

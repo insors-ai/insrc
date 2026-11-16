@@ -24,7 +24,7 @@
     "magnitude": "sized",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 1,
         "contentHash": "d05508187292a341c9856f6e76ccbf2edc57b4eadd6b3503348f0b8ee7474e9d",
@@ -35,9 +35,27 @@
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-15T17:53:25.309Z"
+      }
     },
-    "revision": 1
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "parentRef": {
+      "epicHash": "2f12980837f2595d",
+      "slug": "EPIC-2f12980837f2595d"
+    }
   },
   "body": {
     "title": "Stop a stuck review cleanup from blocking BUILD approval and Story completion",

@@ -1,0 +1,61 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "unit-EPIC-2846f076fd5f785f",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-16T07:56:36.967Z",
+    "epicCreatedAt": "2026-11-16T07:56:36.838Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2846f076fd5f785f",
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": [
+        {
+          "target": {
+            "entityId": "HLD-2846f076fd5f785f",
+            "type": "HLD",
+            "relation": "documents",
+            "fragment": "docs/epics/linked-scratchpads-vs-code-E202611162846f076/HLD.md"
+          },
+          "revision": 4,
+          "at": "2026-11-16T10:56:03.865Z",
+          "externalId": "6914451724"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#185",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": [
+          {
+            "kind": "design",
+            "at": "2026-11-16T10:55:57.131Z"
+          }
+        ]
+      }
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "7f67311f00c6101c952763f219208b46e606b381c765f6354708dffd623980a3",
+        "at": "2026-11-16T07:56:36.967Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

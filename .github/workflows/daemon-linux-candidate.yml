@@ -1,0 +1,77 @@
+name: Build Linux x86-64 daemon candidate
+
+on:
+  workflow_dispatch:
+    inputs:
+      lane:
+        description: Signing lane for this candidate
+        required: true
+        type: choice
+        options: [development, production]
+      commit:
+        description: Exact commit of the selected ref
+        required: true
+        type: string
+      version:
+        description: Version with the lane suffix dev.NUMBER or pilot.NUMBER
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    if: inputs.commit == github.sha
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      CXXFLAGS: -std=c++17
+      REQUESTED_COMMIT: ${{ inputs.commit }}
+      RELEASE_VERSION: ${{ inputs.version }}
+      RELEASE_LANE: ${{ inputs.lane }}
+      LINUX_RELEASE_REF: ${{ vars.INSRC_DAEMON_LINUX_RELEASE_REF || 'refs/heads/main' }}
+      LINUX_DEVELOPMENT_REFS: ${{ vars.INSRC_DAEMON_LINUX_DEVELOPMENT_REFS || '[]' }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Prepare the pinned Linux runtime
+        run: |
+          [[ "$(uname -m)" == x86_64 && "$(dpkg --print-architecture)" == amd64 ]]
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends binutils libsecret-1-dev patchelf xz-utils
+          cd "$RUNNER_TEMP"
+          curl --fail --silent --show-error --location --retry 2 \
+            https://nodejs.org/dist/v22.22.1/node-v22.22.1-linux-x64.tar.xz --output linux-node.tar.xz
+          printf '%s  %s\n' 9a6bc82f9b491279147219f6a18add1e18424dce90d41d2a5fcd69d4924ba3aa linux-node.tar.xz | sha256sum -c -
+          tar -xJf linux-node.tar.xz
+          printf '%s\n' "$RUNNER_TEMP/node-v22.22.1-linux-x64/bin" >> "$GITHUB_PATH"
+      - name: Validate candidate source
+        run: node scripts/linux-daemon-dispatch.mjs check
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build
+      - run: npm prune --omit=dev --no-audit --no-fund
+      - name: Package candidate and bind its build coordinates
+        id: package
+        run: |
+          node scripts/package-linux-daemon-candidate.mjs "$RELEASE_LANE" "$RELEASE_VERSION" \
+            "$REQUESTED_COMMIT" "$RUNNER_TEMP/linux-node.tar.xz" "$RUNNER_TEMP/daemon-linux-candidate"
+          node scripts/linux-daemon-dispatch.mjs record "$RUNNER_TEMP/daemon-linux-candidate" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        id: upload
+        with:
+          name: ${{ steps.package.outputs.artifact_name }}
+          path: ${{ runner.temp }}/daemon-linux-candidate/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+      - name: Record exact build attempt and artifact
+        env:
+          ARTIFACT_ID: ${{ steps.upload.outputs.artifact-id }}
+          ARTIFACT_DIGEST: ${{ steps.upload.outputs.artifact-digest }}
+          ARCHIVE_SHA256: ${{ steps.package.outputs.archive_sha256 }}
+        run: |
+          printf 'Linux target: linux-x64\nRun: %s (attempt %s)\nArtifact ID: %s\nTransport SHA-256: %s\nArchive SHA-256: %s\n' \
+            "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$ARTIFACT_ID" "$ARTIFACT_DIGEST" "$ARCHIVE_SHA256" >> "$GITHUB_STEP_SUMMARY"

@@ -22,7 +22,7 @@ import { connectManagedSupervisor, recordManagedUpdatePins, stageManagedCandidat
 import type { HandoffEffects, HandoffReceipt, ManagedUpdatePins } from './managed-update-handoff.js';
 import { recoverManagedTransaction, settleManagedUpdate } from './managed-update-transaction.js';
 import { drainLegacyDaemonForCutover, observeLegacyDrain } from './legacy-daemon-cutover.js';
-import { discoverLegacyLaunch, fenceLegacyLauncher, restoreLegacyLauncher } from './legacy-cutover-admission.js';
+import { discoverLegacyLaunch, fenceLegacyLauncher, requireLegacyCheckoutQuiescent, restoreLegacyLauncher } from './legacy-cutover-admission.js';
 import { inspectLegacyJob, removeLegacyJob, restoreDirectLegacyService, restoreLegacyService, verifyDirectLegacyService, verifyLegacyService } from './legacy-launch-job.js';
 import { holdLegacyRunGuard, settleLegacyRunGuard } from './legacy-run-guard.js';
 import { qualifiedPairFromReservation } from './release-compatibility.js';
@@ -395,10 +395,8 @@ export async function completeLegacyMigration(
 			await verifyManagedUpdateInventory(pins);
 			const signed = pins.sourceRelease !== undefined || pins.bundleProof !== undefined;
 			if (signed) await recordManagedUpdatePins(gate, update, pins);
-			if (launch !== undefined) {
-				const archive = await fenceLegacyLauncher(gate, update, legacyOperations.helper);
-				await verifyManagedUpdateInventory(pins, archive);
-			}
+			const fence = launch === undefined ? undefined : await fenceLegacyLauncher(gate, update, legacyOperations.helper);
+			if (fence !== undefined) await verifyManagedUpdateInventory(pins, fence.archive);
 			if (!signed) await recordManagedUpdatePins(gate, update, pins);
 			await gate.recordIntent(update, 'predecessor-stop', entry);
 			let guard: RunFileGuard | undefined;
@@ -427,6 +425,9 @@ export async function completeLegacyMigration(
 			await gate.recordIntent(update, 'predecessor-job-removal', legacy?.job.label ?? 'no registered legacy job');
 			if (legacy !== undefined) await legacyOperations.remove(legacy, authorize);
 			await gate.recordReceipt(update, 'predecessor-job-removal', 'saved legacy LaunchAgent verified absent');
+			if (fence !== undefined) {
+				await requireLegacyCheckoutQuiescent(prior.releaseRoot, fence.archive, fence.children, legacyOperations.helper);
+			}
 			return stageManagedCandidate(gate, update, pins, handoff, guard);
 		},
 		verifyCandidate: receipt => verifyCandidate(pins.candidate, update, receipt, operations),

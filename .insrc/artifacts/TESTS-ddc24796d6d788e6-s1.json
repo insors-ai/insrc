@@ -1,0 +1,76 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "7b89c2dd91aaabcffc801fb96e6eefc7b17e4a9ec2c5ca631815c7208c6cec50",
+        "at": "2026-11-16T05:47:34.308Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "ddc24796d6d788e6",
+    "storyId": "s1",
+    "createdAt": "2026-11-16T05:42:21.976Z",
+    "updatedAt": "2026-11-16T05:47:34.229Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-16T05:26:54.433Z",
+    "epicSlug": "unblock-macos-source-migration-when-legacy",
+    "revision": 2
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "d02fb6408",
+        "ranAt": "2026-11-16T05:47:34.229Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/__tests__/legacy-cutover-admission.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/daemon/__tests__/legacy-cutover-admission.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/legacy-cutover-admission.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 11232,
+            "titles": [
+              {
+                "title": "Predecessor variants and backward decoding",
+                "result": "pass"
+              },
+              {
+                "title": "Old shell/helper concurrent with canonical launcher exchange and old child attempting to open stores",
+                "result": "pass"
+              },
+              {
+                "title": "Legacy cutover admits only the verified tsx esbuild child and waits for its exit",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

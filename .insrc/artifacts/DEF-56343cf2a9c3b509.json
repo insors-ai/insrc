@@ -1,0 +1,498 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "wf-1794819065127-ppujxu",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-16T08:53:15.795Z",
+    "epicCreatedAt": "2026-11-16T08:53:15.795Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 130666,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "56343cf2a9c3b509",
+    "epicSlug": "ship-signed-linux-x86-64-daemon",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 2,
+        "contentHash": "1065f6e23b12e87dc9a5a67cb0aff4779f798a22d232149c05fad9abacad8e37",
+        "at": "2026-11-16T09:08:22.028Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-16T09:10:23.937Z",
+        "override": {
+          "reason": "User explicitly approved the manual review override for DEF-56343cf2a9c3b509. Automated design review exhausted coverage-planning retries. A second critical self-review of revision 2 verified closure of five findings; no definition-level blockers remained."
+        }
+      }
+    },
+    "revision": 2,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    }
+  },
+  "body": {
+    "title": "Ship signed Linux x86-64 daemon builds",
+    "flavor": "enhancement",
+    "problem": "Linux x86-64 daemon users currently install and update by fetching source and compiling it locally. They cannot install a prebuilt daemon with authenticated provenance or use such an artifact to update while retaining their existing state. Existing signed bundle releases target macOS. [[c1]] [[c2]] [[c3]]",
+    "nonGoals": [
+      {
+        "text": "Signed Linux ARM builds in this rollout",
+        "rationale": "Linux ARM stays on the existing source-sync path at the user's direction. [[c1]]"
+      },
+      {
+        "text": "Changes to the existing macOS release formats, activation contract, or default release branch policy",
+        "rationale": "The requested new target is Linux x86-64. Existing release lanes may share reusable signing tools and tests. [[c2]] [[c3]]"
+      }
+    ],
+    "assumptions": [
+      {
+        "text": "Linux x86 denotes 64-bit amd64.",
+        "confidence": "high",
+        "source": "c1"
+      }
+    ],
+    "constraints": [
+      {
+        "id": "k1",
+        "text": "Linux x86-64 only for new signed artifacts. Preserve Linux ARM source checkout and code sync.",
+        "type": "stakeholder",
+        "source": "c1"
+      },
+      {
+        "id": "k2",
+        "text": "Development signing uses configured allowed refs and a distinct trust domain. Production promotion retains protected release-branch and independent qualification controls.",
+        "type": "contract",
+        "source": "c2"
+      },
+      {
+        "id": "k3",
+        "text": "Qualify exact artifact bytes locally. Hosted workflows may build, sign and promote under existing release policy.",
+        "type": "stakeholder",
+        "source": "c4"
+      },
+      {
+        "id": "k4",
+        "text": "Linux lifecycle must retain existing process identity and safe shutdown guarantees, including protection from PID reuse.",
+        "type": "invariant",
+        "source": "c5"
+      },
+      {
+        "id": "k5",
+        "type": "contract",
+        "source": "c13",
+        "text": "Initial support is Ubuntu 24.04 LTS amd64 with its stock glibc and kernel, working pidfd operations, and documented system libraries. Pin and verify the bundled Node 22.22.1 runtime for the initial build [[c14]]. Build native components for that baseline and qualify on a clean host at the baseline without host Node, Git, npm, or a compiler. Record distro, kernel architecture, user-space architecture, glibc, native dependencies, and virtualization mode. Validate lifecycle and native shutdown on an x86-64 Linux kernel with an isolated local state directory. Translated amd64 user-space evidence is admissible for the behaviors it exercises."
+      },
+      {
+        "id": "k6",
+        "type": "contract",
+        "source": "c2",
+        "text": "Authenticate the first-install bootstrap independently of the downloaded candidate. Use pinned, separate development, qualification, and production trust. A development scope binds the configured ref so a release or another ref cannot satisfy it. Keep a durable accepted release floor per trust domain and channel, including the signed manifest and archive identity. Reject lower sequences, changed identity at the same sequence, and unreadable or missing previously initialized floors. Allow exact retry after interruption and offline recovery only to the pinned predecessor without lowering the floor."
+      },
+      {
+        "id": "k7",
+        "type": "invariant",
+        "source": "c8",
+        "text": "Before cutover, require evidence that the exact predecessor can reopen the durable state after a failed candidate startup, including after the first durable write, or that the pre-update state can be restored safely. Reject an unqualified pair before disruption. Serialize competing mutations and recover the pinned runtime, compatible durable state, and running or stopped intent after interruption."
+      },
+      {
+        "id": "k8",
+        "type": "contract",
+        "source": "c9",
+        "text": "Route daemon start, stop, restart, status, and update through the installed delivery mode in both the shell control and TUI wherever exposed. For signed installs, missing or corrupt required release state must fail closed. Git source actions must remain usable for Linux ARM and cannot silently switch signed installs to source."
+      },
+      {
+        "id": "k9",
+        "type": "contract",
+        "source": "c12",
+        "text": "Bind target, channel, version, exact source, build run and attempt, artifact ID, and signed manifest and archive digests through candidate lookup, local evidence, and promotion. Keep publication and discovery collision-free across macOS and Linux for the same version. A qualification credential can authorize isolated testing only. Publication uses the same qualified manifest and archive bytes under the channel signature."
+      }
+    ],
+    "stories": [
+      {
+        "id": "s1",
+        "title": "Build and sign Linux x86-64 daemon artifacts",
+        "userValue": "Release engineers can produce a verifiable artifact from an identified source revision for an authorized release channel.",
+        "sizeEstimate": "M",
+        "existingCapabilityRefs": [
+          "c6",
+          "c7",
+          "c11"
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "Build jobs emit a Linux x86-64 archive whose bundled native components match the target."
+          },
+          {
+            "statement": "Release signing binds the exact source revision, artifact bytes and target to the selected development or production trust domain."
+          },
+          {
+            "statement": "Candidates carry the documented Ubuntu 24.04 amd64 runtime baseline and an independently retrievable target identity."
+          }
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "An exact approved source revision for the Linux x86-64 target",
+            "when": "a candidate build completes",
+            "then": "the archive contains the runtime and required Linux x86-64 native components and carries provenance and artifact digests matching that revision, and all shipped executables and required native modules run on the declared Ubuntu 24.04 amd64 baseline with the bundled Node and declared system libraries",
+            "operationalizes": [
+              "k1",
+              "k5"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "Candidates from a configured development ref and the protected production release ref with controlled signing fixtures",
+            "when": "the signing contracts are exercised independently of live promotion",
+            "then": "qualification access cannot publish or authorize an ordinary install, and the intended channel can sign only the exact verified manifest bound to the archive digest. An additional configured development ref works without a code change, and unconfigured refs and wrong trust domains are refused",
+            "operationalizes": [
+              "k2",
+              "k3",
+              "k6",
+              "k9"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "Linux and macOS candidates share a version",
+            "when": "the packaging jobs record candidate identity",
+            "then": "the Linux artifact can be retrieved by exact target, run, attempt and artifact ID independently from the macOS artifact",
+            "operationalizes": [
+              "k9"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "s2",
+        "title": "Install and update the signed Linux x86-64 daemon",
+        "userValue": "Operators can install the verified daemon and migrate a supported existing x86-64 daemon with persistent state and recovery.",
+        "sizeEstimate": "L",
+        "dependsOn": [
+          "s1"
+        ],
+        "existingCapabilityRefs": [
+          "c5",
+          "c2",
+          "c8",
+          "c9",
+          "c10"
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "A signed installation provides the usual daemon and MCP entry points on a supported Linux x86-64 host."
+          },
+          {
+            "statement": "Updates keep the current installation recoverable until the verified candidate is ready and compatible."
+          },
+          {
+            "statement": "A clean host can establish trust independently, and an enrolled host rejects replays even after recovering an already admitted predecessor."
+          },
+          {
+            "statement": "Signed lifecycle and update commands retain the verified delivery mode and recover both runtime and durable state after interrupted or failed cutover."
+          }
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "A clean Ubuntu 24.04 amd64 host with the documented system dependencies and no host Node, Git, npm, or compiler",
+            "when": "the operator verifies the independently authenticated bootstrap and installs and starts the artifact",
+            "then": "daemon status and MCP identify the exact signed revision and the bootstrap rejects missing trust pins or substituted bootstrap bytes before executing candidate code",
+            "operationalizes": [
+              "k1",
+              "k4",
+              "k5",
+              "k6"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "A supported existing x86-64 source or signed installation with representative durable state",
+            "when": "the operator updates to a qualified successor",
+            "then": "state remains readable after activation and restart. Failure immediately after the candidate first mutates durable state restores the exact predecessor and its prior running or stopped intent. A pair with no safe state-reopen or state-restoration path is rejected before stopping the incumbent",
+            "operationalizes": [
+              "k4",
+              "k7"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "An unsupported host, bad signature, tampered archive, wrong target or channel, or stale release",
+            "when": "the operator requests install or update",
+            "then": "the request is rejected before any candidate code runs or the incumbent is disturbed. Host checks cover glibc, required native libraries, and working pidfd support",
+            "operationalizes": [
+              "k1",
+              "k2",
+              "k4",
+              "k5",
+              "k6"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "A signed installation reached through the shell or TUI",
+            "when": "the operator uses the exposed lifecycle or update controls, including with a damaged or missing required release record",
+            "then": "normal controls use the verified artifact. A signed enrollment remains identifiable if a required selector or release record goes missing, so corrupt or missing required state blocks mutation. Concurrent update or restart cannot bypass the admitted transaction",
+            "operationalizes": [
+              "k4",
+              "k7",
+              "k8"
+            ]
+          },
+          {
+            "id": "ac5",
+            "given": "A candidate was admitted and activation was interrupted before or after the runtime switch",
+            "when": "the operator retries or recovers with the network unavailable",
+            "then": "the exact admitted candidate can be retried from verified local bytes, or the recorded predecessor can be restored offline. Recovery retains the release floor and a later admission rejects a lower sequence, changed identity at the same sequence, or a missing or unreadable previously initialized floor",
+            "operationalizes": [
+              "k6",
+              "k7"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "s3",
+        "title": "Qualify and publish the Linux x86-64 release channel",
+        "userValue": "Release operators can prove an artifact works locally and promote its exact verified bytes under the established branch policies.",
+        "sizeEstimate": "M",
+        "dependsOn": [
+          "s1",
+          "s2"
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "The release owner can bind local x86-64 qualification results to the candidate bytes before authorizing promotion."
+          },
+          {
+            "statement": "The existing Linux ARM developer source workflow stays available."
+          },
+          {
+            "statement": "Qualification and publication bind evidence to exact target-specific bytes, and both platforms remain independently discoverable."
+          }
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "A qualification-signed candidate and a disposable local host at the Ubuntu 24.04 amd64 baseline",
+            "when": "the release owner qualifies clean install, source migration, signed update, interrupted or failed cutover after a durable write, restart, retained state and MCP",
+            "then": "evidence records the exact manifest and archive digests, target, build origin, and host profile. A local lifecycle run on an x86-64 Linux kernel proves pidfd handling and native shutdown, and missing, failed or mismatched evidence prevents publication",
+            "operationalizes": [
+              "k2",
+              "k3",
+              "k4",
+              "k5",
+              "k7",
+              "k9"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "A Linux ARM source checkout on a configured development branch",
+            "when": "the developer uses shell and TUI source update and restart",
+            "then": "the daemon builds and serves the selected Git revision and both controls work without any signed bundle or signing trust configuration",
+            "operationalizes": [
+              "k1",
+              "k3",
+              "k8"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "Linux and macOS releases share a version",
+            "when": "the release owner tries each target’s qualified evidence against both publication paths and publishes both correctly qualified artifacts",
+            "then": "Linux evidence cannot authorize macOS or vice versa, each published archive and manifest is byte-identical to its qualified candidate, both targets remain independently discoverable, and publishing Linux leaves the existing macOS tag and assets intact",
+            "operationalizes": [
+              "k2",
+              "k3",
+              "k9"
+            ]
+          }
+        ],
+        "existingCapabilityRefs": [
+          "c12"
+        ]
+      }
+    ],
+    "summary": {
+      "audience": "product",
+      "prose": "Add signed daemon builds for Linux x86-64 on the existing development and release channels. Linux x86-64 users can verify, install, update, and restart the exact artifact approved for their channel. Linux ARM continues to use source sync."
+    },
+    "openQuestions": [],
+    "functionalDefinition": {
+      "requirements": [
+        {
+          "id": "E2026111656343cf2:FR001",
+          "statement": "A Linux x86-64 daemon artifact identifies its exact source revision, target, version, trust domain, payload digest, and runtime requirements.",
+          "scope": "doc"
+        },
+        {
+          "id": "E2026111656343cf2:FR002",
+          "statement": "The trusted install and update routes authenticate the exact artifact before launching it and preserve the incumbent when acceptance fails.",
+          "scope": "doc"
+        },
+        {
+          "id": "E2026111656343cf2:FR003",
+          "statement": "The source-sync developer path continues to work on Linux ARM, with the existing development and production branch policies retained.",
+          "scope": "doc"
+        },
+        {
+          "id": "E2026111656343cf2:S001:FR001",
+          "statement": "Build jobs emit a Linux x86-64 archive whose bundled native components match the target.",
+          "scope": "item",
+          "itemRef": "s1"
+        },
+        {
+          "id": "E2026111656343cf2:S001:FR002",
+          "statement": "Release signing binds the exact source revision, artifact bytes and target to the selected development or production trust domain.",
+          "scope": "item",
+          "itemRef": "s1"
+        },
+        {
+          "id": "E2026111656343cf2:S002:FR001",
+          "statement": "A signed installation provides the usual daemon and MCP entry points on a supported Linux x86-64 host.",
+          "scope": "item",
+          "itemRef": "s2"
+        },
+        {
+          "id": "E2026111656343cf2:S002:FR002",
+          "statement": "Updates keep the current installation recoverable until the verified candidate is ready and compatible.",
+          "scope": "item",
+          "itemRef": "s2"
+        },
+        {
+          "id": "E2026111656343cf2:S003:FR001",
+          "statement": "The release owner can bind local x86-64 qualification results to the candidate bytes before authorizing promotion.",
+          "scope": "item",
+          "itemRef": "s3"
+        },
+        {
+          "id": "E2026111656343cf2:S003:FR002",
+          "statement": "The existing Linux ARM developer source workflow stays available.",
+          "scope": "item",
+          "itemRef": "s3"
+        },
+        {
+          "id": "E2026111656343cf2:S001:FR003",
+          "statement": "Candidates carry the documented Ubuntu 24.04 amd64 runtime baseline and an independently retrievable target identity.",
+          "scope": "item",
+          "itemRef": "s1"
+        },
+        {
+          "id": "E2026111656343cf2:S002:FR003",
+          "statement": "A clean host can establish trust independently, and an enrolled host rejects replays even after recovering an already admitted predecessor.",
+          "scope": "item",
+          "itemRef": "s2"
+        },
+        {
+          "id": "E2026111656343cf2:S002:FR004",
+          "statement": "Signed lifecycle and update commands retain the verified delivery mode and recover both runtime and durable state after interrupted or failed cutover.",
+          "scope": "item",
+          "itemRef": "s2"
+        },
+        {
+          "id": "E2026111656343cf2:S003:FR003",
+          "statement": "Qualification and publication bind evidence to exact target-specific bytes, and both platforms remain independently discoverable.",
+          "scope": "item",
+          "itemRef": "s3"
+        }
+      ]
+    }
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "stakeholder",
+      "ref": "Implement signed build for Linux x86. ARM continues with code sync."
+    },
+    {
+      "id": "c2",
+      "kind": "doc",
+      "ref": "docs/standalone/pilot-prebuilt-macos-daemon-releases-E202611148a036e64/S001/LLD.md"
+    },
+    {
+      "id": "c3",
+      "kind": "doc",
+      "ref": "docs/standalone/install-signed-v2-daemon-development-bundles-E20261114234b9967/S001/LLD.md"
+    },
+    {
+      "id": "c4",
+      "kind": "stakeholder",
+      "ref": "Run release tests locally. CI can build and sign artifacts."
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/shared/daemon-process-client.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "analyze-bundle",
+      "ref": "scripts/daemon-bundle-metadata.mjs"
+    },
+    {
+      "id": "c7",
+      "kind": "analyze-bundle",
+      "ref": "scripts/daemon-development-metadata.mjs"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "src/db/graph/store.ts"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "scripts/daemon-ctl.sh"
+    },
+    {
+      "id": "c10",
+      "kind": "code",
+      "ref": "src/cli/services/maintenance.ts"
+    },
+    {
+      "id": "c11",
+      "kind": "code",
+      "ref": "scripts/package-daemon-candidate.mjs"
+    },
+    {
+      "id": "c12",
+      "kind": "code",
+      "ref": ".github/workflows/daemon-promotion.yml"
+    },
+    {
+      "id": "c13",
+      "kind": "doc",
+      "ref": "https://releases.ubuntu.com/24.04/"
+    },
+    {
+      "id": "c14",
+      "kind": "doc",
+      "ref": "https://nodejs.org/en/blog/release/v22.22.1"
+    }
+  ]
+}

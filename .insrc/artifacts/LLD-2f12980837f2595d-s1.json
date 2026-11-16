@@ -1,0 +1,357 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1794766449788-6lowkb",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-15T18:17:37.030Z",
+    "epicCreatedAt": "2026-11-15T16:37:01.425Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 206952,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f12980837f2595d",
+    "epicSlug": "stop-stuck-review-cleanup-from-blocking",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1794766449788-6lowkb",
+    "hldEffectiveHash": "904db00a2fb8a874fb64eed4aae8b7a24b8dd03e561cb49845d5d27ba1c1c878",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "Stop a stuck review cleanup from blocking BUILD approval and Story completion",
+    "standalone": true,
+    "sizeClass": "bugfix",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "ba3ac7488b6f9e44719bca62352136323e1461b99f8b293b40dd0dc7db3ca01e",
+        "at": "2026-11-15T18:17:37.120Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "summary": {
+      "prose": "A BUILD approval stops waiting for ever on the code-review cleanup that runs after it. The approval gives the cleanup a fixed time; if the daemon has not answered by then, the approval returns with the cleanup reported as retained and an error that says the approval stands and how to retry, and the Story and Epic completion runs as it does after any approval. The cleanup's own waits inside the daemon are not changed here, because another Story is reworking that code.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Stop a stuck review cleanup from blocking BUILD approval and Story completion"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "approveArtifactByJsonPath",
+          "signature": "approveArtifactByJsonPath(jsonPath: string, opts: ApproveOptions): Promise<ApprovalResult>",
+          "parameters": [
+            {
+              "name": "jsonPath",
+              "type": "string",
+              "purpose": "The artifact to approve; a BUILD triggers the code-review cleanup.",
+              "optional": false
+            },
+            {
+              "name": "opts.afterBuildApproval",
+              "type": "(repo: string, hash: string, story: string) => Promise<CleanupResult>",
+              "purpose": "Test seam replacing the cleanup; when absent the default calls codeReview.task.cleanup with a deadline.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "ApprovalResult",
+            "meaning": "Unchanged shape. For a BUILD, cleanup is the daemon's CleanupResult, or, when the cleanup throws or does not answer within BUILD_CLEANUP_TIMEOUT_MS, { deleted: [], retained: [<project>/.insrc/tmp/code-review], errors: [<reason>] } where a timeout's reason names the bound, says the approval stands and that approving the BUILD again retries the cleanup."
+          },
+          "errors": [],
+          "preconditions": [
+            "The approval write has completed (or the BUILD was already approved) before the cleanup starts."
+          ],
+          "postconditions": [
+            "The call returns within BUILD_CLEANUP_TIMEOUT_MS of the cleanup starting, plus the approval's own work.",
+            "A cleanup timeout never turns into a thrown error or a skipped approval.",
+            "The cleanup's start, its outcome and a timeout are logged with the BUILD id."
+          ]
+        },
+        {
+          "name": "approveWorkflowTarget",
+          "signature": "approveWorkflowTarget(req: WorkflowApproveRequest, opts?: ApproveWorkflowOptions): Promise<WorkflowApproveResult>",
+          "parameters": [
+            {
+              "name": "req",
+              "type": "WorkflowApproveRequest",
+              "purpose": "Unchanged.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "WorkflowApproveResult",
+            "meaning": "Unchanged; because approveArtifactByJsonPath now returns after a bounded cleanup, completeThroughService always runs for an approved BUILD and its story-completion entry is in followOn."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "An approved BUILD's Story and Epic are completed when their roll-up holds, whether the cleanup finished, failed or timed out."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "CleanupResult",
+        "change": "invariant-change",
+        "details": "Shape unchanged ({ deleted, retained, errors }). New producer case: a cleanup that does not answer in time yields retained=[<project>/.insrc/tmp/code-review] and one error naming the timeout, the same form the existing catch already uses for a thrown cleanup.",
+        "callSites": [
+          "src/workflow/gates.ts:711-720",
+          "src/workflow/code-review/task-review/cleanup.ts:15"
+        ]
+      },
+      {
+        "entity": "BUILD_CLEANUP_TIMEOUT_MS",
+        "change": "new",
+        "details": "A named constant (60 000 ms) beside the default cleanup call in src/workflow/gates.ts; passed as the rpc client's existing timeoutMs.",
+        "callSites": [
+          "src/workflow/gates.ts:716",
+          "src/shared/ipc-client.ts:66-130"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The daemon accepts codeReview.task.cleanup but never answers (a stuck review-worker wait).",
+          "detection": "The rpc call's timeoutMs fires and it rejects with 'daemon did not reply within N ms (timeout)'.",
+          "response": "The existing catch returns a CleanupResult with retained=[<project>/.insrc/tmp/code-review] and an error naming the bound, saying the approval stands and that approving the BUILD again retries the cleanup; the approval returns and completion runs.",
+          "userImpact": "The approval answers within the bound; the checkpoint stays until a retry or restart cleans it.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The daemon drops the connection during the cleanup.",
+          "detection": "The rpc client's close/error handling rejects (closeAware behaviour, kept).",
+          "response": "Same catch: retained with the disconnect reason; completion runs.",
+          "userImpact": "As today, the approval stands and the cleanup is retained.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The cleanup answers with retained entries or errors (busy, unsafe directory).",
+          "detection": "The daemon's CleanupResult carries retained/errors.",
+          "response": "Returned unchanged; completion runs.",
+          "userImpact": "Unchanged from today.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "The BUILD is already approved and the user approves it again.",
+          "expected": "The approved-already branch runs the bounded cleanup again (the retry path); no new approval is written."
+        },
+        {
+          "input": "A cleanup that answers just before the deadline.",
+          "expected": "Its result is returned as is; no timeout error is added."
+        },
+        {
+          "input": "A non-BUILD artifact approval.",
+          "expected": "No cleanup call and no change."
+        },
+        {
+          "input": "A test or caller passes afterBuildApproval.",
+          "expected": "The seam replaces the default call as today; the bound applies only to the default RPC."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "A cleanup failure never fails or withholds the BUILD approval; it is reported in ApprovalResult.cleanup.",
+          "source": "c1"
+        },
+        {
+          "text": "completeThroughService runs after approveArtifactByJsonPath returns for an approved BUILD, and its own failures surface as a story-completion followOn entry.",
+          "source": "c3"
+        },
+        {
+          "text": "Approving an already-approved BUILD again retries the cleanup without writing a new approval.",
+          "source": "c5"
+        },
+        {
+          "text": "The rpc client's closeAware handling of a dropped connection is kept.",
+          "source": "c2"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test (npx tsx --test), as the existing src/workflow/__tests__ and src/workflow/code-review/task-review/__tests__ files",
+      "testLevels": [
+        {
+          "level": "integration",
+          "purpose": "Prove the default cleanup call is bounded and that a stuck cleanup no longer blocks the approval or the Story/Epic completion.",
+          "subjects": [
+            "approval cleanup: a cleanup RPC that never answers returns after the bound with the cleanup retained and the timeout reason, and the BUILD stays approved",
+            "approval cleanup: a BUILD approval whose cleanup never answers still completes the Story and the Epic",
+            "approval cleanup: approving the BUILD again after a timed-out cleanup retries the cleanup and records no new approval",
+            "approval cleanup: a cleanup that answers in time is returned unchanged with no timeout error"
+          ],
+          "fixturesNeeded": [
+            "a daemon socket stand-in that accepts codeReview.task.cleanup and never replies (rpc connect seam or a listening Unix socket under a temporary HOME)",
+            "the story-completion fixture with a task-based passing code review"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "approval cleanup: a cleanup RPC that never answers returns after the bound with the cleanup retained and the timeout reason, and the BUILD stays approved"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "approval cleanup: a BUILD approval whose cleanup never answers still completes the Story and the Epic"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "approval cleanup: approving the BUILD again after a timed-out cleanup retries the cleanup and records no new approval"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "approval cleanup: a cleanup that answers in time is returned unchanged with no timeout error"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "A BUILD approval awaits codeReview.task.cleanup with closeAware and no timer (src/workflow/gates.ts:711-720); a cleanup that never answers holds the approval response and the Story/Epic completion that runs after it (src/workflow/gates.ts:1033-1052).",
+      "stateAfter": "The default cleanup call carries BUILD_CLEANUP_TIMEOUT_MS; a timeout is reported as a retained cleanup with its reason, the approval returns, and completion runs. Re-approving the BUILD retries the cleanup as before.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add BUILD_CLEANUP_TIMEOUT_MS beside the default cleanup call and pass it as the rpc timeout; word the timeout error to say the approval stands and how to retry; log the cleanup's start, outcome and timeout with the BUILD id.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Deploy with the next daemon update; no stored record changes, and nothing to backfill.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "ApprovalResult and CleanupResult keep their shapes; callers that pass afterBuildApproval are unaffected. The only visible change is that a cleanup taking longer than the bound is reported as retained instead of waited on.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Bound the cleanup call in the approval gate",
+        "oneLineSummary": "The default cleanup RPC gets a deadline; on timeout the approval reports the cleanup as retained with the reason, and completion runs as usual.",
+        "approach": "The default afterBuildApproval call to codeReview.task.cleanup uses the rpc client's existing timeoutMs instead of closeAware alone. A timeout is caught by the existing catch, so the approval returns its CleanupResult with retained=[<project>/.insrc/tmp/code-review] and an error naming the timeout; approveWorkflowTarget then runs completeThroughService unchanged. The bound is one named constant beside the call. The approval logs the start, the outcome and a timeout of the cleanup with the BUILD id. A retained cleanup is retried by approving the BUILD again (the existing already-approved branch), which the response names in its error text.",
+        "pros": [
+          "One file, no new contract: the catch and the CleanupResult shape already exist.",
+          "Completion and the answer no longer depend on the daemon's cleanup path at all.",
+          "Does not touch src/daemon/threads/review-workers.ts, which another active Story is changing."
+        ],
+        "cons": [
+          "The daemon-side cleanup may keep running after the caller gave up; it is not cancelled.",
+          "The worker waits inside the cleanup stay unbounded, so a stuck worker stays stuck until restart (but no longer blocks approval)."
+        ],
+        "costEstimate": "S"
+      },
+      {
+        "id": "a2",
+        "name": "a1 plus deadlines on the cleanup's worker waits",
+        "oneLineSummary": "Bound the gate as in a1, and also put deadlines on review.worker.assertIdle, closeEntry and releaseCleaned inside ReviewWorkers.cleanupApproved.",
+        "approach": "As a1 in the gate. In ReviewWorkers.cleanupApproved, each await on a worker (assertIdle via this.call, closeEntry, preparation.releaseCleaned) races a deadline; a miss adds the root to retained with an error naming the step and releases the cleanup scope so a later attempt can run. Each step logs before and after.",
+        "pros": [
+          "A stuck worker no longer leaves the cleanup scope held, so a retry can proceed without a restart.",
+          "The log names which step stalled, which the ISSUE could not."
+        ],
+        "cons": [
+          "Edits src/daemon/threads/review-workers.ts while another session's Story is changing it; high conflict risk.",
+          "Abandoning a worker call part-way can leave fenced review state; needs care with the existing fence and reclaim rules.",
+          "Larger test surface (real worker threads)."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Meets all five fix-intent points, but edits src/daemon/threads/review-workers.ts while another session's Story is changing it, and abandoning worker calls part-way interacts with the fence and reclaim rules that Story is reworking; the conflict risk outweighs closing fi3 here."
+      },
+      {
+        "id": "a3",
+        "name": "Run the cleanup in the background after completion",
+        "oneLineSummary": "The approval stops awaiting the cleanup; it is started without waiting, after the Story completion, and its result is logged.",
+        "approach": "approveArtifactByJsonPath starts the cleanup and returns without its result; approveWorkflowTarget runs completion first. The cleanup outcome is written to the log and not returned.",
+        "pros": [
+          "The approval never waits on the cleanup."
+        ],
+        "cons": [
+          "The response loses the cleanup result that callers and tests read today (cleanup on ApprovalResult).",
+          "A failure is only visible in the log; the user cannot see that a retry is needed.",
+          "Changes an existing contract for no gain over a bounded wait."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Loses the cleanup result callers read today and gains nothing over a bounded wait; a failure would be visible only in the log, so the user could not see a retry is needed."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "The ISSUE's fix intent also asks for deadlines on the cleanup's review-worker waits (review.worker.assertIdle, closeEntry, releaseCleaned in src/daemon/threads/review-workers.ts) and for the daemon-side cleanup to log which step it is on. a1 leaves both, because another session's Story is changing that file now. Defer them to a follow-up after that Story lands (a1), or take them in this Story now (a2)?"
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/gates.ts:711-720"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/shared/ipc-client.ts:66-130"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/gates.ts:1033-1052"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/daemon/threads/review-workers.ts:511-545"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/__tests__/cleanup.test.ts:60-75"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/workflow/__tests__/story-completion.test.ts:50"
+    }
+  ]
+}

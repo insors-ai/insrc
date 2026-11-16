@@ -5,10 +5,12 @@ import { once } from 'node:events';
 import { lstat, mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import { createConnection } from 'node:net';
 import type { Socket } from 'node:net';
+import { constants } from 'node:os';
 import { basename, dirname, isAbsolute, join, relative, sep } from 'node:path';
+import { setTimeout as delay } from 'node:timers/promises';
 import { promisify } from 'node:util';
 import {
-	matchesDarwinPeer, readDarwinIncarnation, readDarwinLaunchContext, readDarwinPeerCredentials, readDarwinWorkingDirectories, swapDarwinDirectories,
+	matchesDarwinPeer, observeDarwinExit, readDarwinIncarnation, readDarwinLaunchContext, readDarwinPeerCredentials, readDarwinWorkingDirectories, swapDarwinDirectories,
 } from '../shared/darwin-lifecycle.js';
 import type { DarwinIncarnation } from '../shared/darwin-lifecycle.js';
 import { runFileIdentity, sameRunFile } from '../shared/daemon-run-files.js';
@@ -188,18 +190,67 @@ async function layout(fence: Fence): Promise<'original' | 'fenced'> {
 	return fail('launcher exchange identities no longer match');
 }
 
-async function requireNoLegacyMutator(roots: readonly string[], allowed: DarwinIncarnation | undefined, helper?: string): Promise<void> {
-	const { stdout } = await exec('/bin/ps', ['-axww', '-o', 'uid=,pid=,stat=,command='], { encoding: 'utf8', timeout: 5_000, maxBuffer: 1024 * 1024 });
+async function verifiedEsbuildChild(pid: number, parent: DarwinIncarnation, roots: readonly string[], helper?: string) {
+	const names = ['node_modules/esbuild/bin/esbuild',
+		...['arm64', 'x64'].map(arch => `node_modules/@esbuild/darwin-${arch}/bin/esbuild`)];
+	const relativeBinary = (path: string) => names.find(name => roots.some(root => path === join(root, name)));
+	const inspect = (root: string, name: string) => lstat(join(root, name), { bigint: true }).catch(error => {
+		if ((error as NodeJS.ErrnoException).code === 'ENOENT') return undefined;
+		throw error;
+	});
+	const child = await readDarwinIncarnation(pid, helper);
+	const executable = relativeBinary(child.executable);
+	if (child.uid !== parent.uid || executable === undefined) return undefined;
+	const { cwd, argv } = await readDarwinLaunchContext(pid, helper);
+	const invoked = relativeBinary(argv[0] ?? '');
+	if (!roots.includes(cwd) || argv.length !== 3 || invoked === undefined
+		|| !/^--service=\d+\.\d+\.\d+$/.test(argv[1]!) || argv[2] !== '--ping') return undefined;
+	// npm may hard-link the platform executable under the esbuild package. macOS
+	// can report either name after both launch and archive exchange.
+	let binary: { root: string; dev: bigint; ino: bigint } | undefined;
+	for (const root of roots) {
+		const [actual, requested] = await Promise.all([inspect(root, executable), inspect(root, invoked)]);
+		if (actual?.isFile() && requested?.isFile() && actual.dev === requested.dev && actual.ino === requested.ino) {
+			binary = { root, dev: actual.dev, ino: actual.ino };
+			break;
+		}
+	}
+	if (binary === undefined) return undefined;
+	const { stdout } = await exec('/bin/ps', ['-p', String(pid), '-o', 'ppid='], { timeout: 2_000 });
+	if (stdout.trim() !== String(parent.pid)
+		|| !matchesDarwinPeer(parent, await readDarwinIncarnation(parent.pid, helper), parent)) return undefined;
+	const current = await readDarwinIncarnation(pid, helper);
+	const currentName = relativeBinary(current.executable);
+	if (current.uid !== child.uid || current.startedAt !== child.startedAt || currentName === undefined) return undefined;
+	const currentFile = await inspect(binary.root, currentName);
+	return currentFile?.isFile() && currentFile.dev === binary.dev && currentFile.ino === binary.ino ? current : undefined;
+}
+
+async function requireNoLegacyMutator(
+	roots: readonly string[],
+	allowed?: { readonly process: DarwinIncarnation; readonly argv: readonly string[] },
+	helper?: string,
+): Promise<DarwinIncarnation[]> {
+	const { stdout } = await exec('/bin/ps', ['-axww', '-o', 'uid=,pid=,ppid=,stat=,command='], { encoding: 'utf8', timeout: 5_000, maxBuffer: 1024 * 1024 });
 	const pids: number[] = [];
+	const children: DarwinIncarnation[] = [];
 	for (const line of stdout.split('\n')) {
-		const match = /^\s*(\d+)\s+(\d+)\s+(\S+)\s+(.+)$/.exec(line);
-		if (match === null || Number(match[1]) !== process.getuid?.() || match[3]!.startsWith('Z')) continue;
+		const match = /^\s*(\d+)\s+(\d+)\s+(\d+)\s+(\S+)\s+(.+)$/.exec(line);
+		if (match === null || Number(match[1]) !== process.getuid?.() || match[4]!.startsWith('Z')) continue;
 		const pid = Number(match[2]);
+		const parent = allowed?.process;
 		if (pid === process.pid) continue;
-		if (pid === allowed?.pid && matchesDarwinPeer(allowed, await readDarwinIncarnation(pid, helper), allowed)) continue;
-		const command = match[4]!;
+		if (pid === parent?.pid && matchesDarwinPeer(parent, await readDarwinIncarnation(pid, helper), parent)) continue;
+		const command = match[5]!;
 		if (roots.some(root => command.includes(`${root}/`) || command.endsWith(` ${root}`))) {
-			fail('an older launcher, updater or daemon still references the legacy checkout');
+			if (parent !== undefined && Number(match[3]) === parent.pid && allowed?.argv[1] === '--import' && allowed.argv[2] === 'tsx/esm') {
+				const child = await verifiedEsbuildChild(pid, parent, roots, helper);
+				if (child !== undefined) {
+					children.push(child);
+					continue;
+				}
+			}
+			fail(`an older launcher, updater or daemon still references the legacy checkout (PID ${pid})`);
 		}
 		pids.push(pid);
 	}
@@ -207,20 +258,50 @@ async function requireNoLegacyMutator(roots: readonly string[], allowed: DarwinI
 		const observations = await readDarwinWorkingDirectories(pids.slice(first, first + 256), helper);
 		for (const { pid, cwd, errno } of observations) {
 			if (cwd !== undefined) {
-				if (roots.some(root => inside(root, cwd))) fail('an older launcher, updater or daemon still references the legacy checkout');
+				if (roots.some(root => inside(root, cwd))) fail(`an older launcher, updater or daemon still references the legacy checkout (PID ${pid})`);
 				continue;
 			}
 			try { process.kill(pid, 0); }
 			catch (probe) { if ((probe as NodeJS.ErrnoException).code === 'ESRCH') continue; }
-			const state = await exec('/bin/ps', ['-p', String(pid), '-o', 'stat='], { timeout: 2_000 }).catch(probe => {
-				const failed = probe as { code?: number; stdout?: string; stderr?: string };
-				if (failed.code === 1 && failed.stdout?.trim() === '' && failed.stderr?.trim() === '') return null;
-				throw probe;
-			});
-			if (state === null || state.stdout.trim().startsWith('Z')) continue;
+			if (!await isLiveProcess(pid)) continue;
+			// A process can lose its cwd while exiting, before ps stops reporting it.
+			if (errno === constants.errno.ESRCH) {
+				await delay(100);
+				if (!await isLiveProcess(pid)) continue;
+			}
 			fail(`cannot establish the working directory of process ${pid} (errno ${errno})`);
 		}
 	}
+	return children;
+}
+
+async function isLiveProcess(pid: number): Promise<boolean> {
+	try {
+		const { stdout } = await exec('/bin/ps', ['-p', String(pid), '-o', 'stat='], { timeout: 2_000 });
+		return !stdout.trim().startsWith('Z');
+	} catch (error) {
+		const result = error as { code?: number; stdout?: string; stderr?: string };
+		if (result.code === 1 && result.stdout?.trim() === '' && result.stderr?.trim() === '') return false;
+		throw error;
+	}
+}
+
+export async function requireLegacyCheckoutQuiescent(
+	canonical: string, archive: string, children: readonly DarwinIncarnation[], helper?: string,
+): Promise<void> {
+	for (const child of children) {
+		if (!await isLiveProcess(child.pid)) continue;
+		try {
+			const current = await readDarwinIncarnation(child.pid, helper);
+			if (current.startedAt !== child.startedAt) continue;
+			const observer = await observeDarwinExit(current, 3_000, helper);
+			if (!await observer.exited) fail('the verified legacy esbuild helper did not exit during drain');
+		} catch (error) {
+			// The helper may exit between ps, identity lookup and attaching the observer.
+			if (await isLiveProcess(child.pid)) throw error;
+		}
+	}
+	await requireNoLegacyMutator([canonical, archive], undefined, helper);
 }
 
 function fenceIntent(reservation: MutationReservation): Fence | undefined {
@@ -235,17 +316,18 @@ function fenceIntent(reservation: MutationReservation): Fence | undefined {
 }
 
 /** Fence every supported canonical launcher before predecessor shutdown. Resume from the exact two directory identities. */
-export async function fenceLegacyLauncher(gate: Gate, update: Extract<MutationReservation, { kind: 'update' }>, helper?: string): Promise<string> {
+export async function fenceLegacyLauncher(gate: Gate, update: Extract<MutationReservation, { kind: 'update' }>, helper?: string) {
 	const prior = update.predecessor.pins?.prior;
 	const launch = update.predecessor.launch;
 	if (prior === undefined || launch === undefined) fail('migration has no verified legacy route');
-	const predecessor = launch.kind === 'stopped' ? undefined : launch.process;
+	const predecessor = launch.kind === 'stopped' ? undefined : launch;
 	const canonical = prior.releaseRoot;
 	const marker = installationPaths(prior.stateRoot).updateLock;
 	if (runFileIdentity(marker) !== undefined) fail('an older updater owns the installation');
-	await requireNoLegacyMutator([canonical], predecessor, helper);
 	let active = await gate.admit(update);
 	let fence = fenceIntent(active);
+	const roots = fence === undefined ? [canonical] : [canonical, fence.displaced];
+	const children = await requireNoLegacyMutator(roots, predecessor, helper);
 	if (fence === undefined) {
 		const displaced = await mkdtemp(join(dirname(canonical), '.insrc-launcher-'));
 		try {
@@ -284,11 +366,12 @@ export async function fenceLegacyLauncher(gate: Gate, update: Extract<MutationRe
 		fail('canonical dispatcher permits a legacy launch or update');
 	}
 	if (runFileIdentity(marker) !== undefined) fail('an older updater started before the launcher fence');
-	await requireNoLegacyMutator([canonical, fence.displaced], predecessor, helper);
+	const fencedChildren = await requireNoLegacyMutator([canonical, fence.displaced], predecessor, helper);
 	if (active.entries.find(entry => entry.step === 'legacy-launcher-fence')?.receipt === undefined) {
 		await gate.recordReceipt(update, 'legacy-launcher-fence', 'canonical dispatcher verified; legacy checkout retained');
 	}
-	return fence.displaced;
+	const pinnedChildren = new Map([...children, ...fencedChildren].map(child => [`${child.pid}:${child.startedAt}`, child]));
+	return { archive: fence.displaced, children: [...pinnedChildren.values()] };
 }
 
 /** Restore the old canonical directory without following or replacing a foreign path. */

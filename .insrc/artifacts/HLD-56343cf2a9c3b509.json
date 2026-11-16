@@ -1,0 +1,496 @@
+{
+  "meta": {
+    "workflow": "design.epic",
+    "runId": "wf-1794820231282-r7vnd2",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-16T09:14:15.431Z",
+    "epicCreatedAt": "2026-11-16T08:53:15.795Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 223863,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "56343cf2a9c3b509",
+    "epicSlug": "ship-signed-linux-x86-64-daemon",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 2,
+        "contentHash": "01c127caae7eb8f54017b3faca497e894efce7156e2ab5d8945dc7d4b025f101",
+        "at": "2026-11-16T09:16:11.651Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-16T09:27:46.414Z",
+        "override": {
+          "reason": "User approved HLD-56343cf2a9c3b509 with override while automated design/code review is known broken. Critical self-review tightened exact-asset evidence authentication and pre-commit rollback compatibility. Both generated diagrams rendered in Chrome."
+        }
+      }
+    },
+    "revision": 2,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    }
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Signed Linux x86-64 releases use target-specific artifacts and a user-scoped installation. An independently authenticated installer verifies the release before changing the active daemon. Normal controls use the selected verified runtime, and a durable recovery record retains the predecessor. Linux ARM continues to use source sync."
+    },
+    "frameworkSummary": "Add a versioned Linux x86-64 bundle and target-specific publication path. Reuse signed manifest verification and safe staging primitives where compatible, and retain distinct development, qualification and production trust. Use a user-scoped Linux lifecycle coordinator with retained process identity and an offline recoverable selector.",
+    "architectureShape": "Release production has three privilege boundaries. The unprivileged build pins source, runtime version and upstream runtime digest, builds Linux ELF binaries and Node native modules on the Ubuntu 24.04 amd64 ABI baseline, and records complete target and provenance. Protected qualification signing independently retrieves the immutable build origin and authenticates the exact archive and manifest without executing candidate code. Local qualification drives the same parser and cutover with isolated trust and state. Final signing verifies a release-owner-approved qualification record from protected control. That record binds independently authenticated test outcomes, host and predecessor profiles, the raw manifest digest and original archive digest before final signing and publication of those unchanged bytes. Development authorization uses configured full refs with per-ref channel identity, and production retains protected release-branch policy. Use explicit target-qualified artifact names and a separate Linux publication coordinate with target-specific asset lookup. Keep existing Darwin tags and artifact schemas intact.\n\nA separately authenticated bootstrap pins the verifier and trust roots and installs a stable per-user controller independent of the candidate's mutable checkout. At first install or legacy migration it resolves the explicit channel, authenticates and bounds the manifest, checks host eligibility, verifies the archive, stages privately with an allowlist, and verifies relocated runtime identity without executing archive code. The host contract identifies architecture, OS/ABI, declared system libraries, pinned bundled Node, and functional pidfd support. Shell and TUI route signed enrollment through the same coordinator for all exposed actions. Signed enrollment is recorded durably before signed activation, independently of the active selector. Before enrollment, the original source commands remain available. After enrollment, an independently persisted mode anchor identifies signed ownership even if a selector, floor or journal is damaged or missing. A missing required record, a conflicting anchor or a partial enrollment blocks source fallback, and the controller reports whether exact retry or explicit repair is needed. ARM source and existing Darwin paths retain their current routing.\n\nFor an update, one user-private mutation lock serializes admission, lifecycle operations and recovery. After verifying the staged bytes, the coordinator checks the exact candidate/predecessor compatibility, including source installations. Initial rollout accepts only release pairs whose predecessor can reopen every durable change possible through durable commit, including interrupted startup changes across persistent stores. The candidate cannot accept normal mutable workload before commit. The compatibility rule applies through the final pre-commit write so a crash between readiness and commit can still restore the predecessor. Unproven or incompatible pairs are refused before stopping the incumbent. The controller persists the admission record and accepted replay floor before it marks the transaction prepared or disrupts the incumbent. An interruption before the prepared phase leaves the incumbent intact and recovery completes admission from verified local bytes or reconciles the incomplete admission with the accepted floor before considering a newer release. The journal pins the predecessor, candidate and prior running intent. Use the existing Linux retained-process and pidfd path for stop, confirm predecessor exit, switch the selector atomically, and validate the candidate's process identity, expected revision and live daemon and MCP readiness before commit. An update to a stopped installation can start a validation process on the actual installed state under the same compatibility and identity rules. Confirm it has exited before committing stopped intent. On failure, stop the candidate by verified identity and confirm exit before restoring the pinned offline predecessor. Never leave a failed first installation selected. If no predecessor exists, return to the stopped state under the signed enrollment anchor and retain the floor for retry. On interruption recover by journal phase. When exit, state safety or runtime proof cannot be verified, retain the record and block further launch. Power loss must not author a new channel state, reset an enrolled floor, or activate two daemon instances.",
+    "sharedContracts": [
+      {
+        "id": "sc1",
+        "name": "Linux artifact identity and trust",
+        "purpose": "S1 defines the signed subject and host compatibility envelope used by S2 admission and S3 promotion. One build origin supplies one exact manifest and archive for a target and channel. Qualification, development and production signature grants stay separate and cannot satisfy one another. LinuxReleaseIdentity is the verified envelope. The controller calculates manifestSha256 from the exact manifest bytes and compares it to the protected evidence. The digest is external to the signed manifest payload.",
+        "interfaceSketch": "type ReleaseTarget = 'linux-x64';\ntype TrustRole = 'qualification' | 'development' | 'production';\ninterface CandidateOrigin { repository: string; ref: string; commit: string; runId: string; runAttempt: number; artifactId: string; }\ninterface LinuxReleaseIdentity { target: ReleaseTarget; channel: string; version: string; sequence: number; origin: CandidateOrigin; manifestSha256: string; archiveSha256: string; archiveBytes: number; runtimeFingerprint: string; }\ninterface LinuxHostContract { distribution: string; abi: string; nodeVersion: string; systemLibraries: readonly string[]; pidfdRequired: boolean; }",
+        "ownedByStory": "s1",
+        "consumedByStories": [
+          "s2",
+          "s3"
+        ],
+        "assumptions": [
+          "c1"
+        ]
+      },
+      {
+        "id": "sc2",
+        "name": "Admission and recoverable installation",
+        "purpose": "S2 owns the delivery mode, lifecycle dispatch and transaction evidence that S3 qualifies. An enrollment owns one active pin, at most one pending transaction and a floor per enrolled channel and trust domain. A transaction references one candidate pin and at most one predecessor, absent only for first install. The floor is independent of the current selector and survives recovery.",
+        "interfaceSketch": "type PriorIntent = 'running' | 'stopped';\ntype InstallPhase = 'prepared' | 'incumbent-stopped' | 'candidate-selected' | 'committed' | 'recovery-required';\ninterface ReleaseFloor { domain: string; channel: string; sequence: number; manifestSha256: string; archiveSha256: string; }\ninterface RuntimePin { kind: 'source' | 'signed'; releaseId: string; runtimeFingerprint: string; root: string; }\ninterface LinuxCutover { phase: InstallPhase; candidate: RuntimePin; predecessor?: RuntimePin; priorIntent: PriorIntent; floor: ReleaseFloor; compatibilityEvidenceId?: string; }",
+        "ownedByStory": "s2",
+        "consumedByStories": [
+          "s3"
+        ],
+        "assumptions": []
+      },
+      {
+        "id": "sc3",
+        "name": "Target-bound release qualification",
+        "purpose": "S1 owns the subject binding used by the qualification signer, installer and publication consumer. Each promotion requires complete evidence for one exact target subject and the applicable compatibility pair. S3 defines the runner, validates and records the local evidence, and authorizes exact-byte promotion. Promotion validates required test IDs and outcomes against independently authenticated release-owner evidence. The artifact build cannot issue this evidence. Each compatibility proof binds exact candidate and predecessor fingerprints plus the covered state contract.",
+        "interfaceSketch": "interface QualificationSubject { target: ReleaseTarget; manifestSha256: string; archiveSha256: string; origin: CandidateOrigin; channel: string; }\ninterface QualificationEvidenceRef { subject: QualificationSubject; deviceProfileDigest: string; testEvidenceDigests: readonly string[]; predecessorEvidenceId?: string; }",
+        "ownedByStory": "s1",
+        "consumedByStories": [
+          "s2",
+          "s3"
+        ],
+        "assumptions": []
+      }
+    ],
+    "storyBoundaries": [
+      {
+        "storyId": "s1",
+        "owns": [
+          "sc1",
+          "sc3"
+        ],
+        "depends": [],
+        "internal": "Linux packaging, versioned metadata and protected signing primitives. Use controlled fixtures for verifier and policy tests so implementing S1 does not require live publication or a completed S2."
+      },
+      {
+        "storyId": "s2",
+        "owns": [
+          "sc2"
+        ],
+        "depends": [
+          "sc1",
+          "sc3"
+        ],
+        "internal": "User-scoped bootstrap and stable dispatcher, host admission, immutable local releases, enrollment, locking, durable recovery, state-compatibility checks and daemon readiness. Local fixtures exercise source and signed predecessors."
+      },
+      {
+        "storyId": "s3",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3"
+        ],
+        "internal": "Local exact-asset qualification harness and evidence attestation, publication and discovery wiring, cross-target checks, and source-mode ARM regression. S3 consumes S1 signing and S2 lifecycle contracts."
+      }
+    ],
+    "nonFunctional": {
+      "security": "A build can never read deployment keys. Signing jobs consume bounded inputs from trusted workflows, never execute candidate files, and bind exact origin and policy. Reject substituted trust roots, unsafe archives, unsupported host or ABI, missing enrolled metadata, replays, and nonmatching process ownership before live mutation. The private state directory and signed installation require no root or system service changes.",
+      "durability": "Select a staged immutable release only after verified admission. Persist the floor and recovery record with file and parent-directory durability and use identity-bound process operations. Retain exact signed inputs, predecessor proof and state-compatibility proof for offline retry and recovery.",
+      "observability": "Report platform, target, release identity, selected delivery mode and safe recovery status through existing surfaces. Keep trust secrets and absolute evidence details out of user-facing status. Qualification records actual kernel and user-space architecture, virtualization mode and test evidence digests.",
+      "performance": "Stage, verify, and check compatibility while the incumbent runs. Downtime begins only at verified drain and ends at candidate readiness or safe recovery. No release tests run in hosted signing workflows."
+    },
+    "rolloutOverview": {
+      "phases": [
+        {
+          "name": "A — Build and sign candidates",
+          "includesStories": [
+            "s1"
+          ],
+          "rationale": "Establish signed Linux subject, host metadata and protected signing primitives.",
+          "backwardCompat": "Keep Darwin format and origin rules and Linux ARM source flows.",
+          "featureFlag": null
+        },
+        {
+          "name": "B — Verify and activate locally",
+          "includesStories": [
+            "s2"
+          ],
+          "rationale": "Wire authenticated bootstrapping, controls and recoverable user-scoped cutover before publication.",
+          "backwardCompat": "Existing Linux source installs keep their mode until deliberate enrollment. Keep Darwin selection and assets.",
+          "featureFlag": null
+        },
+        {
+          "name": "C — Qualify and publish",
+          "includesStories": [
+            "s3"
+          ],
+          "rationale": "Run local same-byte qualification, then enable opt-in target-specific discovery and publication.",
+          "backwardCompat": "Keep macOS tags and assets and verify ARM shell and TUI source workflows.",
+          "featureFlag": null
+        }
+      ],
+      "orderingRationale": "S1 owns signed subject and trust contracts consumed by S2. S3 requires both S1 artifact identity and a complete S2 cutover path before qualifying or publishing live artifacts.",
+      "riskyBits": [
+        {
+          "area": "State survives switching runtimes",
+          "why": "The candidate can mutate state before readiness and a predecessor can refuse a newer schema.",
+          "mitigation": "Require exact predecessor compatibility evidence before stopping it. Inject failure after durable writes and at cutover boundaries. Recovery alone may restore the pinned predecessor without lowering the floor."
+        },
+        {
+          "area": "Subject identity and trust",
+          "why": "Wrong-platform, wrong-ref or replaced artifacts can share display version and origin fields.",
+          "mitigation": "Bind immutable run attempt, artifact ID, target, ref, channel and digests at signing, evidence and publish boundaries. Separate protected signatures from isolated qualification."
+        },
+        {
+          "area": "Linux host baseline",
+          "why": "Translated user space and the minimum host kernel exercise different native lifecycle behaviors.",
+          "mitigation": "Run on a clean Ubuntu 24.04 amd64 profile and record native ABI, actual kernel architecture and Linux shutdown behavior. Complete kernel-sensitive tests on an x86-64 Linux kernel."
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Target-specific bundles with shared trust primitives",
+        "oneLineSummary": "Add a Linux bundle contract and lifecycle adapter while preserving Darwin formats and release paths.",
+        "approach": "Package and qualify Linux artifacts independently. Share bounded manifest verification, safe staging, exact-byte publication principles, and branch-policy semantics with existing release lanes.\n\nInstall via a pinned bootstrap and private release store. A Linux lifecycle coordinator selects the signed runtime, uses the current process-identity helpers, and journals cutover and rollback without affecting ARM source selection.",
+        "pros": [
+          "Linux and macOS can publish the same version independently while retaining existing asset contracts.",
+          "Supports user-scoped installation and rollback without a system package manager."
+        ],
+        "cons": [
+          "Linux owns an additional durable lifecycle implementation and compatibility matrix."
+        ],
+        "costEstimate": "L",
+        "assumptionsRelied": [
+          "c1"
+        ]
+      },
+      {
+        "id": "a2",
+        "name": "Native distribution package",
+        "oneLineSummary": "Use signed apt repository metadata and Debian packages for Ubuntu.",
+        "approach": "Publish the packaged daemon through an authenticated apt repository with distro-native version and dependency management.\n\nAdd user-scoped lifecycle and compatibility checks around package upgrades and implement production and development policy as separate apt channels.",
+        "pros": [
+          "Apt can resolve Ubuntu system dependencies and track installed files."
+        ],
+        "cons": [
+          "Typical system package operations require administrator privileges and update shared files.",
+          "Per-user daemon state and exact predecessor recovery still require their own transaction around package changes."
+        ],
+        "costEstimate": "L",
+        "assumptionsRelied": [
+          "c1"
+        ],
+        "reasonRejected": "System package lifecycle leaves user-scoped rollback and dispatch integration open."
+      },
+      {
+        "id": "a3",
+        "name": "Common cross-platform bundle and supervisor",
+        "oneLineSummary": "Converge both existing macOS lanes and Linux on one new lifecycle and manifest model.",
+        "approach": "Replace the parallel bundle shapes with one versioned target-aware delivery contract. Move promotion, signature checks and release selection behind a common lifecycle abstraction.\n\nMigrate Darwin prebuilt users to the new format and host adapter while introducing the Linux adapter.",
+        "pros": [
+          "One protocol can represent artifact identity and admission across targets."
+        ],
+        "cons": [
+          "Changing existing macOS enrollment and bundle formats expands scope and adds cutover risk."
+        ],
+        "costEstimate": "L",
+        "assumptionsRelied": [
+          "c1"
+        ],
+        "reasonRejected": "Satisfies lifecycle requirements but increases risk to the existing macOS contract."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [],
+    "sequenceDefinition": {
+      "id": "linux-signed-cutover",
+      "narrative": "This diagram follows a successful cutover through durable commit. The note at candidate readiness describes the separate failure and interruption branch.",
+      "participants": [
+        {
+          "id": "operator",
+          "label": "Operator",
+          "description": "Uses shell or TUI controls and selects an enrolled channel."
+        },
+        {
+          "id": "controller",
+          "label": "Linux controller",
+          "description": "Authenticates release admission and holds the mutation lock during cutover."
+        },
+        {
+          "id": "store",
+          "label": "Private installation store",
+          "description": "Owns immutable runtime directories, durable floor, active selector and journal."
+        },
+        {
+          "id": "incumbent",
+          "label": "Incumbent daemon",
+          "description": "Existing verified process or a recorded stopped installation."
+        },
+        {
+          "id": "candidate",
+          "label": "Candidate daemon",
+          "description": "Verified replacement with the declared temporary startup compatibility."
+        }
+      ],
+      "messages": [
+        {
+          "from": "operator",
+          "to": "controller",
+          "label": "Request signed update",
+          "description": "The installed mode and explicit channel determine the route."
+        },
+        {
+          "from": "controller",
+          "to": "store",
+          "label": "Verify staged candidate and pinned predecessor",
+          "description": "Authenticate raw manifest bytes and compute their digest, verify the archive, host ABI and rollback compatibility."
+        },
+        {
+          "from": "controller",
+          "to": "store",
+          "label": "Persist accepted floor and prepared transaction",
+          "description": "Durably record both release pins and prior running intent before live changes."
+        },
+        {
+          "from": "controller",
+          "to": "incumbent",
+          "label": "Drain verified incumbent",
+          "description": "Use retained Linux process identity and confirm exit. Skip drain for a predecessor already stopped."
+        },
+        {
+          "from": "controller",
+          "to": "store",
+          "label": "Select candidate and record cutover",
+          "description": "Switch the active pointer atomically after confirming incumbent exit."
+        },
+        {
+          "from": "controller",
+          "to": "candidate",
+          "label": "Launch candidate from the selected runtime",
+          "description": "Validate ownership of the serving process and launch identity."
+        },
+        {
+          "from": "candidate",
+          "to": "controller",
+          "label": "Report readiness",
+          "description": "Confirm the expected revision, daemon and MCP readiness. Restore stopped intent if needed.",
+          "kind": "return",
+          "note": "Failure or interruption before commit follows the journal. The controller stops the verified candidate, restores the pinned predecessor when present, and keeps the replay floor."
+        },
+        {
+          "from": "controller",
+          "to": "store",
+          "label": "Commit only on success",
+          "description": "Commit only after readiness and the required running intent are verified."
+        }
+      ]
+    },
+    "componentDependencyDefinition": {
+      "id": "linux-signed-release-boundaries",
+      "narrative": "Release jobs and the installed controller consume the same target-specific subject. The local qualification report flows to protected promotion, while daemon process control stays local to the enrolled workstation.",
+      "components": [
+        {
+          "id": "build",
+          "label": "Unprivileged build",
+          "description": "Produces a native, immutable build output for one exact source revision.",
+          "path": "scripts/package-daemon-candidate.mjs"
+        },
+        {
+          "id": "signer",
+          "label": "Protected qualification signing",
+          "description": "Retrieves and signs an exact manifest and archive digest for isolated qualification.",
+          "path": ".github/workflows/daemon-qualification-sign.yml"
+        },
+        {
+          "id": "qualifier",
+          "label": "Local qualification",
+          "description": "Uses a disposable local environment and records exact subject-bound test evidence."
+        },
+        {
+          "id": "promotion",
+          "label": "Protected promotion",
+          "description": "Verifies evidence and publishes the same manifest and archive under channel trust.",
+          "path": ".github/workflows/daemon-promotion.yml"
+        },
+        {
+          "id": "controller",
+          "label": "Linux signed release controller",
+          "description": "Admits verified artifacts, journals cutover and dispatches process lifecycle."
+        },
+        {
+          "id": "process",
+          "label": "Linux process identity helpers",
+          "description": "Existing retained process verification and signaling boundary.",
+          "path": "src/shared/daemon-process-client.ts"
+        }
+      ],
+      "dependencies": [
+        {
+          "from": "signer",
+          "to": "build",
+          "label": "Retrieves exact build run, attempt and artifact"
+        },
+        {
+          "from": "qualifier",
+          "to": "signer",
+          "label": "Consumes isolated manifest authorization"
+        },
+        {
+          "from": "qualifier",
+          "to": "controller",
+          "label": "Exercises the same eligibility and cutover contracts locally"
+        },
+        {
+          "from": "promotion",
+          "to": "qualifier",
+          "label": "Verifies target-specific qualification evidence"
+        },
+        {
+          "from": "promotion",
+          "to": "build",
+          "label": "Retrieves original archive bytes"
+        },
+        {
+          "from": "controller",
+          "to": "promotion",
+          "label": "Verifies the selected channel’s final signed artifact"
+        },
+        {
+          "from": "controller",
+          "to": "process",
+          "label": "Uses identity-bound drain, exit and recovery"
+        }
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/ship-signed-linux-x86-64-daemon-E2026111656343cf2/sequence-diagram.html",
+        "title": "Sequence diagram"
+      },
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/ship-signed-linux-x86-64-daemon-E2026111656343cf2/component-dependency.html",
+        "title": "Component dependencies"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "scripts/package-daemon-candidate.mjs"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "scripts/package-daemon-development.mjs"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "scripts/stage-daemon-bundle.mjs"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "scripts/verify-daemon-bundle.mjs"
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "scripts/daemon-bundle-metadata.mjs"
+    },
+    {
+      "id": "c6",
+      "kind": "analyze-bundle",
+      "ref": "scripts/daemon-development-metadata.mjs"
+    },
+    {
+      "id": "c7",
+      "kind": "analyze-bundle",
+      "ref": "src/cli/services/daemon.ts"
+    },
+    {
+      "id": "c8",
+      "kind": "analyze-bundle",
+      "ref": "src/cli/services/lifecycle.ts"
+    },
+    {
+      "id": "c9",
+      "kind": "analyze-bundle",
+      "ref": "src/shared/daemon-process-client.ts"
+    },
+    {
+      "id": "c10",
+      "kind": "analyze-bundle",
+      "ref": "src/shared/daemon-process.ts"
+    },
+    {
+      "id": "c11",
+      "kind": "analyze-bundle",
+      "ref": ".github/workflows/daemon-candidate.yml"
+    },
+    {
+      "id": "c12",
+      "kind": "analyze-bundle",
+      "ref": ".github/workflows/daemon-qualification-sign.yml"
+    },
+    {
+      "id": "c13",
+      "kind": "analyze-bundle",
+      "ref": ".github/workflows/daemon-promotion.yml"
+    },
+    {
+      "id": "c14",
+      "kind": "analyze-bundle",
+      "ref": "src/bin/insrc-release-bootstrap.ts"
+    },
+    {
+      "id": "c15",
+      "kind": "analyze-bundle",
+      "ref": "src/shared/managed-daemon-installation.ts"
+    }
+  ]
+}

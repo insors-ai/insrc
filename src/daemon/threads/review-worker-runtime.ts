@@ -41,10 +41,15 @@ import { publishDesignReview } from '../../workflow/review/design-review/publica
 import { roundWriterFor } from '../lifecycle-registry.js';
 import { recordDesignAdmission } from '../../workflow/review/design-review/approval.js';
 import { familyForClient } from '../model-registry.js';
+import type { HubClient } from './channel.js';
+import type { ReviewPreparationClient } from './review-preparation-client.js';
+import type { ReviewAdmissionReceipt } from './review-worker-contract.js';
+
+export interface ReviewWorkerPreboot {readonly hub:HubClient;readonly client:ReviewPreparationClient;readonly receipt:ReviewAdmissionReceipt;}
 
 /** A dedicated instance, never the class singleton/session runtime. Source
  * qualification and controller authority adapters are integrated by t9/t10. */
-export async function runReviewWorker(init:ReviewWorkerInit,deps:{readonly code?:TaskReviewDeps|undefined;readonly design?:DesignCoordinatorDeps|undefined}={}):Promise<void>{
+export async function runReviewWorker(init:ReviewWorkerInit,deps:{readonly code?:TaskReviewDeps|undefined;readonly design?:DesignCoordinatorDeps|undefined}={},preboot?:ReviewWorkerPreboot):Promise<void>{
  if(!parentPort||init.role!=='review')throw new Error('Dedicated review worker required');
  assertReviewIdentity(init.review);
  if(init.review.key.family==='code'&&init.review.operation==='resume'&&init.review.submitted===undefined){
@@ -52,7 +57,7 @@ export async function runReviewWorker(init:ReviewWorkerInit,deps:{readonly code?
   if(!last||last.header.attempt!==init.review.attempt)throw new Error('Pinned resume attempt missing');
   init={...init,review:{...init.review,submitted:last.submitted}};
  }
- const hub=startDaemonWorker(init),board=new StatusBoardClient(hub);
+ const hub=preboot?.hub??startDaemonWorker(init),board=new StatusBoardClient(hub);
  setRunBoard(board);setIndexRunSource(pushedIndexRun);
  setLiveRunPublisher((runId,live)=>board.markAnalyzeRun(runId,threadId,live));
  registerBuiltinTools();registerBuiltinTemplates();registerBuiltinRuntimes();
@@ -62,7 +67,12 @@ export async function runReviewWorker(init:ReviewWorkerInit,deps:{readonly code?
  await withReviewNativeTransport(transport,async()=>{
   const rawSources=new RegistryReviewSources({repoPath:init.review.key.project,sessionId:`review:${init.review.key.reviewId}`,requestId:0,send:()=>{}});
   const adapter=deps.code?.sources;
-  const preparation=await ReviewWorkerPreparation.open(init.review,init.preparation,adapter?{commit:(...a)=>adapter.commit(...a),file:(...a)=>adapter.file(...a),isAncestor:(...a)=>adapter.isAncestor(...a),changedRanges:(...a)=>adapter.changedRanges(...a),pathChanges:(...a)=>adapter.pathChanges(...a),objectInventory:(...a)=>rawSources.objectInventory(...a),objects:(...a)=>rawSources.objects(...a)}:rawSources);
+  const preparation=await ReviewWorkerPreparation.open(init.review,init.preparation,adapter?{commit:(...a)=>adapter.commit(...a),file:(...a)=>adapter.file(...a),isAncestor:(...a)=>adapter.isAncestor(...a),changedRanges:(...a)=>adapter.changedRanges(...a),pathChanges:(...a)=>adapter.pathChanges(...a),objectInventory:(...a)=>rawSources.objectInventory(...a),objects:(...a)=>rawSources.objects(...a)}:rawSources,preboot?.client);
+  // The lightweight preboot has already activated main's compact runtime,
+  // but the full preparation owner must still enter its active state before
+  // any semantic save. Otherwise accepted feedback bypasses source/history
+  // binding and publication later has no private borrow to authorize it.
+  if(preboot)await preparation.activate(true);
   await preparation.run(async()=>{
   const router=()=>createRoleRouter({clientDefault:familyForClient(init.review.route?.client),cliTimeoutMs:900000});
   const provider=()=>router().resolveProviderForRole('review',loadAnalyzeConfig(),init.review.key.project).provider;
@@ -245,16 +255,18 @@ export async function runReviewWorker(init:ReviewWorkerInit,deps:{readonly code?
   };
   const dispatch=directDispatch(handlers);
   serveRequests(parentPort!,(request,deliver)=>withReviewNativeTransport(transport,()=>preparation.run(()=>dispatch(request,deliver))));
-  parentPort!.postMessage('worker-ready');
-  let receipt;
-  if(init.review.maintenance){
-   const cp=code?await loadStoredCheckpoint(reviewWorkerCheckpoint(init.review.key)):await loadStoredDesignCheckpoint(init.review.key.project,init.review.key.reviewId);
-   const last=cp?.attempts.at(-1);const attempt=last&&('header'in last?last.header.attempt:last.number);
-   if(!cp||attempt!==init.review.attempt)throw new Error('Stored review attempt does not match maintenance request');
-   receipt={kind:'review-admission-saved' as const,key:init.review.key,incarnation:init.review.incarnation,attempt:init.review.attempt,checkpointPath:reviewWorkerCheckpoint(init.review.key)};
-  }else receipt=await persistReviewWorkerAdmission(init.review);
-  await preparation.activate();
-  parentPort!.postMessage({...receipt,progress:await snapshot()});
+  if(!preboot){
+   parentPort!.postMessage('worker-ready');
+   let receipt;
+   if(init.review.maintenance){
+    const cp=code?await loadStoredCheckpoint(reviewWorkerCheckpoint(init.review.key)):await loadStoredDesignCheckpoint(init.review.key.project,init.review.key.reviewId);
+    const last=cp?.attempts.at(-1);const attempt=last&&('header'in last?last.header.attempt:last.number);
+    if(!cp||attempt!==init.review.attempt)throw new Error('Stored review attempt does not match maintenance request');
+    receipt={kind:'review-admission-saved' as const,key:init.review.key,incarnation:init.review.incarnation,attempt:init.review.attempt,checkpointPath:reviewWorkerCheckpoint(init.review.key)};
+   }else receipt=await persistReviewWorkerAdmission(init.review);
+   await preparation.activate();
+   parentPort!.postMessage({...receipt,progress:await snapshot()});
+  }else parentPort!.postMessage(await snapshot());
   setInterval(()=>{void publish();},500).unref();
   });
  });

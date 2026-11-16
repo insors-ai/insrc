@@ -4,6 +4,7 @@ import { open, mkdir, lstat, realpath } from 'node:fs/promises';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { isDeepStrictEqual as same } from 'node:util';
+import { reviewPreparationLimits } from '../../config/review.js';
 import type { ReviewPreparationLimits } from '../../config/review.js';
 import { HistoryEvidenceStore, verifyHistoryEvidenceChain } from './history-evidence.js';
 import type { CapturedHistoryEvidence } from './history-evidence.js';
@@ -18,6 +19,10 @@ import type { CodePreparationCheckpoint, DesignPreparationCheckpoint } from './p
 import { preparationDigest, contextRoot } from './prepared-context.js';
 import type { ReadyContextReceipt } from './prepared-context.js';
 import type { SourceCapacity } from './source-session.js';
+import type { ReviewMemoryBudget } from './preparation-memory.js';
+import { ReviewMemoryBudget as MemoryBudget } from './preparation-memory.js';
+import { PreparedViewWriter } from './prepared-views.js';
+import { stageLifecycleRecord, StagedLifecycleView } from './staged-lifecycle.js';
 import { designActionEvolution } from './design-review/action-state.js';
 import type { DesignAttempt } from './design-review/contracts.js';
 
@@ -27,6 +32,7 @@ export interface HistoryBoundaryReceipt {
  readonly key: ReviewKey; readonly attempt: number; readonly runtimeId: string; readonly inputDigest: string;
  readonly binding: HistoryBinding; readonly checkpointDigest: string; readonly completedUnits: number;
  readonly publication?: HistoryValidation['publication'];
+ readonly lifecycle?: ReadyContextReceipt | undefined;
  /** Explicit cold qualification can cross the one committed checkpoint whose
   * acknowledgment was lost. This is immutable binding metadata, not feedback. */
  readonly requalifiedFrom?: HistoryBinding | undefined;
@@ -38,10 +44,30 @@ export interface HistoryBindingDeps {
  validate(next: PreparationHistory, previous?: PreparationHistory): Promise<HistoryValidation>;
  capacity: SourceCapacity;
  limits: ReviewPreparationLimits;
+ memory?: ReviewMemoryBudget | undefined;
  invalidateSource(error: unknown): Promise<void>;
  write?: typeof writeReviewBytes | undefined;
 }
 const digest = (bytes: string) => createHash('sha256').update(bytes).digest('hex');
+export function lifecycleHistoryRecord(cp: PreparationHistory): unknown {
+ return { schemaVersion: cp.schemaVersion, history: preparationHistorySnapshot(cp) };
+}
+export const lifecycleHistoryDigest = (cp: PreparationHistory): string => digest(JSON.stringify(lifecycleHistoryRecord(cp)));
+function lifecycleReference(receipt: ReadyContextReceipt): NonNullable<HistoryBinding['lifecycle']> {
+ const { generationId, identityDigest, inputDigest, sourceIdentity, validatorVersion, manifestDigest, storedBytes } = receipt;
+ return { generationId, identityDigest, inputDigest, sourceIdentity, validatorVersion, manifestDigest, storedBytes };
+}
+export function lifecycleReceipt(key: ReviewKey, attempt: number, binding: HistoryBinding, capacityToken: string): ReadyContextReceipt {
+ if (!binding.lifecycle) throw new Error('History binding has no staged lifecycle record');
+ return { key, attempt, ...binding.lifecycle, capacityToken };
+}
+export async function verifyStagedLifecycleHistory(receipt: ReadyContextReceipt, cp: PreparationHistory,
+ authorize: () => Promise<void> = async () => {}, limits = reviewPreparationLimits(), memory = new MemoryBudget(limits.memoryMaxBytes)): Promise<void> {
+ const authority = { borrow: async () => receipt, qualify: async () => { throw new Error('Staged lifecycle requires explicit cold qualification'); }, authorize: async () => authorize(), invalidate: async (_receipt: ReadyContextReceipt, error: unknown) => { throw error; } };
+ const { view } = await StagedLifecycleView.open(limits, memory, authority);
+ try { if (await view.digest('history') !== lifecycleHistoryDigest(cp)) throw new Error('Staged lifecycle history differs from durable checkpoint'); }
+ finally { view.close(); }
+}
 export function preparationHistorySnapshot(cp: PreparationHistory): unknown {
  const { runtime: _runtime, context: _context, schemaVersion: _version, attempts, ...root } = cp;
  return { ...root, attempts: attempts.map(a => {
@@ -124,6 +150,8 @@ export async function verifyHistoryBoundaryReceipt(receipt: HistoryBoundaryRecei
   || digest(raw) !== receipt.checkpointDigest || receipt.completedUnits !== completed(cp) || binding.attempt !== expectedSource.attempt || binding.generationId !== expectedSource.generationId
   || binding.historyPrefixDigest !== preparationDigest(snapshot(cp)) || binding.bindingDigest !== preparationDigest({ ...binding, bindingDigest: '' })
   || cp.context?.generationId !== binding.generationId || cp.context.manifestDigest !== expectedSource.manifestDigest || cp.context.historyBindingDigest !== binding.bindingDigest) throw new Error('Unverified durable history boundary');
+ if (!receipt.lifecycle || !binding.lifecycle || !same(lifecycleReference(receipt.lifecycle), binding.lifecycle)) throw new Error('Unverified staged lifecycle boundary');
+ await verifyStagedLifecycleHistory(receipt.lifecycle, cp);
  await verifyHistoryEvidenceChain(expectedSource, binding.evidenceManifestDigest);
  const stored = decodeHistoryBinding(JSON.parse(await bounded(join(contextRoot(expectedSource.key), 'history-bindings', `${binding.bindingDigest}.json`))), expectedSource.key, reviewJsonLimit());
  if (!same(stored, binding)) throw new Error('Durable history binding replaced');
@@ -144,7 +172,7 @@ export class HistoryBindingSession {
  private previous: PreparationHistory | undefined;
  private binding: HistoryBinding | undefined;
  private receipt: HistoryBoundaryReceipt | undefined;
- private pending: { checkpoint: PreparationHistory; binding: HistoryBinding; validation: HistoryValidation } | undefined;
+ private pending: { checkpoint: PreparationHistory; binding: HistoryBinding; validation: HistoryValidation; lifecycle: ReadyContextReceipt } | undefined;
  private evidence!: HistoryEvidenceStore;
  private requalifiedFrom: HistoryBinding | undefined;
  private failed = false;
@@ -159,13 +187,13 @@ export class HistoryBindingSession {
    if (cp.context.generationId !== source.generationId || cp.context.manifestDigest !== source.manifestDigest) throw new Error('History needs explicit source requalification/rebind');
    const binding = await session.readBinding(cp.context.historyBindingDigest);
    session.verifyBinding(cp, binding);
-   session.evidence = await HistoryEvidenceStore.open(source, deps.capacity, deps.limits, deps.authorize, deps.invalidateSource, binding.evidenceManifestDigest);
+   session.evidence = await HistoryEvidenceStore.open(source, deps.capacity, deps.limits, deps.authorize, deps.invalidateSource, binding.evidenceManifestDigest, deps.memory);
    const validation = await deps.validate(cp);
    if (await session.evidence.append(validation.evidence) !== binding.evidenceManifestDigest) throw new Error('Accepted history evidence was not preserved');
    session.previous = structuredClone(cp); session.binding = binding;
-   session.receipt = await session.observe(cp, binding, validation); return session;
+   session.receipt = await session.observe(cp, binding, validation, await session.restoreLifecycle(binding)); return session;
   }
-  session.evidence = await HistoryEvidenceStore.open(source, deps.capacity, deps.limits, deps.authorize, deps.invalidateSource);
+  session.evidence = await HistoryEvidenceStore.open(source, deps.capacity, deps.limits, deps.authorize, deps.invalidateSource, source.manifestDigest, deps.memory);
   await session.commit(cp); return session;
  }
  /** Explicit cold qualification only. A fresh private source receipt has
@@ -192,7 +220,7 @@ export class HistoryBindingSession {
   // commit() receives no previous validation cache and checks every result.
   session.binding = previous;
   session.requalifiedFrom = previous;
-  session.evidence = await HistoryEvidenceStore.open(source, deps.capacity, deps.limits, deps.authorize, deps.invalidateSource);
+  session.evidence = await HistoryEvidenceStore.open(source, deps.capacity, deps.limits, deps.authorize, deps.invalidateSource, source.manifestDigest, deps.memory);
   await session.commit(cp); return session;
  }
  private async authorize(): Promise<void> { if (!same(await this.deps.authorize(), this.source)) throw new Error('History source borrow changed'); }
@@ -206,14 +234,20 @@ export class HistoryBindingSession {
  private async readBinding(id: string): Promise<HistoryBinding> {
   await this.directory();return readPreparationHistoryBinding(this.source.key,id);
  }
+ private async restoreLifecycle(binding: HistoryBinding): Promise<ReadyContextReceipt> {
+  if (!binding.lifecycle) throw new Error('Accepted history predates staged lifecycle qualification');
+  const token = await this.deps.capacity.reserve(binding.lifecycle.storedBytes);
+  try { await this.deps.capacity.commit(token, binding.lifecycle.storedBytes); return lifecycleReceipt(this.source.key, this.source.attempt, binding, token); }
+  catch (error) { await this.deps.capacity.release(token).catch(() => {}); throw error; }
+ }
  private verifyBinding(cp: PreparationHistory, binding: HistoryBinding): void {
   if (binding.attempt !== this.source.attempt || binding.generationId !== this.source.generationId || binding.historyPrefixDigest !== preparationDigest(snapshot(cp))) throw new Error('History binding disagrees with preserved feedback');
  }
- private async observe(cp: PreparationHistory, binding: HistoryBinding, validation: HistoryValidation): Promise<HistoryBoundaryReceipt> {
+ private async observe(cp: PreparationHistory, binding: HistoryBinding, validation: HistoryValidation, lifecycle: ReadyContextReceipt): Promise<HistoryBoundaryReceipt> {
   const raw = await bounded(reviewWorkerCheckpoint(this.source.key));
   if (!same(JSON.parse(raw), cp)) throw new Error('History changed after commit');
   const prior = this.requalifiedFrom;
-  return { key: this.source.key, attempt: this.source.attempt, runtimeId: cp.runtime.runtimeId, inputDigest: this.source.inputDigest, binding: structuredClone(binding), checkpointDigest: digest(raw), completedUnits: completed(cp), ...(validation.publication ? { publication: validation.publication } : {}),
+  return { key: this.source.key, attempt: this.source.attempt, runtimeId: cp.runtime.runtimeId, inputDigest: this.source.inputDigest, binding: structuredClone(binding), lifecycle: structuredClone(lifecycle), checkpointDigest: digest(raw), completedUnits: completed(cp), ...(validation.publication ? { publication: validation.publication } : {}),
    ...(prior && binding.priorBindingDigest === prior.bindingDigest && binding.semanticSequence === prior.semanticSequence + 1 ? { requalifiedFrom: structuredClone(prior) } : {}) };
  }
  private async commit(input: PreparationHistory): Promise<HistoryBoundaryReceipt> {
@@ -227,19 +261,27 @@ export class HistoryBindingSession {
   }
   const validation = await this.deps.validate(cp, this.previous && structuredClone(this.previous));
   const evidenceHead = await this.evidence.append(validation.evidence);
+  const memory = this.deps.memory ?? new MemoryBudget(this.deps.limits.memoryMaxBytes);
+  const lifecycleIdentity = { key: this.source.key, attempt: this.source.attempt, inputDigest: this.source.inputDigest, validatorVersion: 2,
+   routeDigest: this.source.manifestDigest, sourceIdentity: this.source.sourceIdentity,
+   scopeDigest: preparationDigest(snapshot(cp)), testDocumentDigest: evidenceHead };
+  const writer = await PreparedViewWriter.create(lifecycleIdentity, this.deps.limits, this.deps.capacity, memory, undefined, undefined, true);
+  let lifecycle: ReadyContextReceipt;
+  try { await stageLifecycleRecord(writer, 'history', lifecycleHistoryRecord(cp)); lifecycle = await writer.seal(); }
+  catch (error) { await writer.discard().catch(() => {}); throw error; }
   const binding: HistoryBinding = { schemaVersion: 1, key: this.source.key, attempt: this.source.attempt, generationId: this.source.generationId,
    priorBindingDigest: this.binding?.bindingDigest ?? null, semanticSequence: this.binding ? this.binding.semanticSequence + 1 : 0,
-   historyPrefixDigest: preparationDigest(snapshot(cp)), evidenceManifestDigest: evidenceHead, bindingDigest: '' };
+   historyPrefixDigest: preparationDigest(snapshot(cp)), evidenceManifestDigest: evidenceHead, lifecycle: lifecycleReference(lifecycle), bindingDigest: '' };
   binding.bindingDigest = preparationDigest(binding); decodeHistoryBinding(binding, this.source.key, reviewJsonLimit());
   cp.context = { generationId: this.source.generationId, manifestDigest: this.source.manifestDigest, historyBindingDigest: binding.bindingDigest };
   current(cp, this.source); const path = join(await this.directory(), `${binding.bindingDigest}.json`), bytes = JSON.stringify(binding) + '\n';
   let token: string | undefined;
-  this.pending = { checkpoint: cp, binding, validation };
+  this.pending = { checkpoint: cp, binding, validation, lifecycle };
   try {
    token = await this.deps.capacity.reserve(Buffer.byteLength(bytes) * 2 + 512);
    await (this.deps.write ?? writeReviewBytes)(path, bytes, reviewJsonLimit()); await this.deps.capacity.commit(token, Buffer.byteLength(bytes));
    await (this.deps.write ?? writeReviewBytes)(reviewWorkerCheckpoint(this.source.key), JSON.stringify(cp) + '\n', reviewJsonLimit());
-   const receipt = await this.observe(cp, binding, validation);
+   const receipt = await this.observe(cp, binding, validation, lifecycle);
    this.previous = structuredClone(cp); this.binding = binding; this.receipt = receipt; this.pending = undefined; return structuredClone(receipt);
   } catch (error) { this.failed = true; throw new HistoryBindingSaveError(error, path, token); }
  }
@@ -249,6 +291,10 @@ export class HistoryBindingSession {
   this.tail = work.then(() => {}, () => {}); return work;
  }
  latest(): HistoryBoundaryReceipt { if (!this.receipt || this.failed) throw new Error('History boundary unavailable/fenced'); return structuredClone(this.receipt); }
+ async verifyLifecycle(cp: PreparationHistory): Promise<void> {
+  const receipt = this.latest(); if (!receipt.lifecycle) throw new Error('Staged lifecycle boundary unavailable');
+  await verifyStagedLifecycleHistory(receipt.lifecycle, cp, () => this.authorize(), this.deps.limits, this.deps.memory ?? new MemoryBudget(this.deps.limits.memoryMaxBytes));
+ }
  /** Explicit recovery only: accepted feedback was already validated before
   * the failed save. Compare actual files; do not rerun a provider or sources. */
  async reconcile(): Promise<HistoryBoundaryReceipt> {
@@ -258,7 +304,7 @@ export class HistoryBindingSession {
   if (!same(actual, pending.checkpoint)) throw new Error('Candidate feedback was not committed; explicit recovery/new attempt required');
   const binding = await this.readBinding(pending.binding.bindingDigest); this.verifyBinding(actual, binding);
   await this.evidence.restore(binding.evidenceManifestDigest);
-  const receipt = await this.observe(actual, binding, pending.validation);
+  const receipt = await this.observe(actual, binding, pending.validation, pending.lifecycle);
   this.previous = structuredClone(actual); this.binding = binding; this.receipt = receipt; this.pending = undefined; this.failed = false; return structuredClone(receipt);
  }
 }

@@ -22,7 +22,7 @@
           "entityId": "PLAN-470a1f61b26b12c6-s1",
           "type": "PLAN",
           "relation": "derived-from",
-          "fragment": "revision 3"
+          "fragment": "revision 4"
         }
       ],
       "attachments": []
@@ -30,9 +30,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 3,
-        "contentHash": "89f16b83323a4d634e0afecdc699ab7785ceb6b76f9c3a173c7855b929213967",
-        "at": "2026-11-14T14:53:03.928Z",
+        "number": 4,
+        "contentHash": "89bd547d2b18411504a637efe63cf358d7ea812e45fa8216fd9c56da82d930a0",
+        "at": "2026-11-15T13:12:54.015Z",
         "by": {
           "id": "insrc:approval",
           "kind": "system",
@@ -41,10 +41,10 @@
       },
       "signoffs": []
     },
-    "revision": 3
+    "revision": 4
   },
   "body": {
-    "planRevision": 3,
+    "planRevision": 4,
     "taskIds": [
       "t1",
       "t2",
@@ -59,9 +59,15 @@
       "t11",
       "t12",
       "t13",
-      "t14"
+      "t14",
+      "t15",
+      "t16",
+      "t17",
+      "t18",
+      "t19",
+      "t20"
     ],
-    "nextNumber": 15
+    "nextNumber": 21
   },
   "citations": []
 }

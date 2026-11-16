@@ -1,4 +1,5 @@
 import type { AdmittedReview } from './execution.js';
+import type { BlobIdentity } from './sources.js';
 import type { ReviewAttempt } from './contracts.js';
 import type { FailureDiagnostic } from './diagnostic-schema.js';
 
@@ -30,7 +31,7 @@ function correction(code: string, field: string): string {
 const resolved = (entry: ReviewAttempt, taskId: string) => entry['review-response'].tasks.some(task => task.taskId === taskId && ['passed', 'changes_requested'].includes(task.status));
 
 /** Derive prompt data without mutating saved history or guessing old errors. */
-export function previousRoundFeedback(review?: AdmittedReview, onlyTaskId?: string): PreviousRoundFeedback {
+export function previousRoundFeedback(review?: AdmittedReview<BlobIdentity>, onlyTaskId?: string): PreviousRoundFeedback {
  const output: PreviousRoundFeedback = { previousRoundFeedback: [] };
  if (!review) return output;
  const history = review.checkpoint.attempts.filter(entry => entry.header.attempt < review.attempt.header.attempt && entry.header.reviewer === review.attempt.header.reviewer);

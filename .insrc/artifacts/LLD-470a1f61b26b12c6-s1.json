@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "design.story",
-    "runId": "wf-1794738660757-dh2adn",
+    "runId": "wf-1794817146336-3c95t8",
     "repoPath": "/home/subho/work/dev/insors/insrc",
-    "createdAt": "2026-11-15T10:36:58.303Z",
+    "createdAt": "2026-11-16T08:20:45.494Z",
     "epicCreatedAt": "2026-11-14T08:55:28.320Z",
     "attribution": {
       "outputs": [
@@ -11,18 +11,18 @@
           "role": "(client)",
           "tier": "core",
           "runner": "cli-codex",
-          "model": "unknown"
+          "model": "gpt-6.1-sol"
         }
       ]
     },
-    "elapsedMs": 352716,
+    "elapsedMs": 92962,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "470a1f61b26b12c6",
     "epicSlug": "rework-review-preparation-context-lifecycle-end",
     "storyId": "s1",
-    "hldBaseRunId": "wf-1794738660757-dh2adn",
-    "hldEffectiveHash": "c990be2b3102c4689ac10509c7511de8fa68638f5b91f1d164c5a2fe23486811",
+    "hldBaseRunId": "wf-1794817146336-3c95t8",
+    "hldEffectiveHash": "ccb16f2a6299fe21a28e42430ed7e6b2dd5280544c47bdea8464e5c18ef5cedf",
     "hldAmendmentsApplied": [],
     "storyTitle": "Rework review preparation and context lifecycle end to end",
     "standalone": true,
@@ -31,9 +31,9 @@
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 4,
-        "contentHash": "e8ef19d741844acdad653a2960d7a19660bbd2e056e103353cac2692ce2698c6",
-        "at": "2026-11-15T10:37:00.330Z",
+        "number": 8,
+        "contentHash": "158ec0fa6532e06f9f9fc86c6b907754df56fce556ac828e4f1b1df4d62781d3",
+        "at": "2026-11-16T08:20:48.048Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
@@ -41,40 +41,16 @@
         }
       },
       "signoffs": [],
-      "review": {
-        "revision": 4,
-        "reviewer": {
-          "id": "agent:design-review-daemon",
-          "kind": "agent",
-          "properties": {
-            "party": "daemon"
-          }
-        },
-        "party": "daemon",
-        "verdict": "block",
-        "counts": {
-          "HIGH": 0,
-          "MED": 0,
-          "LOW": 0
-        },
-        "at": "2026-11-15T10:50:09.553Z",
-        "report": {
-          "entityId": "LLD-470a1f61b26b12c6-s1",
-          "type": "change-log-entry",
-          "relation": "reviews",
-          "fragment": "fcc899dc8b617568e31bc7bbf74ea9840e921ecbddf98973aa09fd71171ec19c"
-        }
-      },
       "approval": {
-        "revision": 4,
+        "revision": 8,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-11-15T13:02:02.423Z",
+        "at": "2026-11-16T08:27:43.545Z",
         "override": {
-          "reason": "User explicitly approved revision4 after presentation of complete independent six-chunk review with0 HIGH/MED/LOW findings and incomplete verification only: workflow analysis outputs were not resolvable during review and browser host unavailable for actual diagram rendering. Source/contracts assessed; analyzer evidence retained /tmp/review-preparation-analysis-470a1f61.json, measurements /tmp/insrc-review-performance-cold.json. Accept these stated verification limits and proceed to PLAN revision; no implementation/performance/deployment qualification is implied."
+          "reason": "Daemon design-review framework is currently broken and unusable for this correction. LLD revision 8 received a critical manual self-review with explicit assertions covering holistic scope retention, removal of contradictory eager-source models, exact API signatures, ac1-ac8 mapping, delta-before-t14 migration ordering, separate design-review semantics, duplicate reconciliation, and generated diagram presence; no HIGH or MED findings remained."
         }
       }
     },
@@ -83,13 +59,13 @@
       "references": [],
       "attachments": []
     },
-    "revision": 4,
-    "rangeBase": "f1cde2996ac939ba83e8307e8b31578d6ac1da2c"
+    "revision": 8,
+    "rangeBase": "1b56cde9087e674c9664513c41bd6e7602e9e78c"
   },
   "body": {
     "summary": {
-      "audience": "technical",
-      "prose": "Preparation becomes one lifecycle-wide responsibility for both code and design review. Complete qualified context is reused under a private daemon-owned generation, while author, workflow and artifact freshness remain independently checked. Pinned input/feedback history stays in the review checkpoint; bounded live process/progress state moves out of the large history file, removing per-command rewrite amplification. Cold recovery, cancellation and publication use the same authority and durability rules as normal execution. The T14 revision makes prepared views bounded during construction and every lifecycle read: complete packets and history are staged as immutable descriptors and leaves rather than retained or decoded together. The existing memory/disk limits and full-workload release gates remain unchanged."
+      "prose": "This Story retains the existing end-to-end review lifecycle—admission, isolated execution, compact durability, cancellation, progress, publication, approval cleanup, historical compatibility, and measured qualification—while replacing only code-review source ownership. Code review durably stores exact locators and immutable identities, transiently supplies selected pinned after blocks, and exposes relevant files from each applicable commit parent through an attempt-owned sealed workspace; design review remains latest-document based. The duplicate ISSUE/LLD lineage is explicitly superseded without deleting history.",
+      "audience": "technical"
     },
     "hldContextSlice": {
       "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
@@ -106,7 +82,7 @@
       "nonFunctional": {}
     },
     "contractDetails": {
-      "surfaceLevel": "internal-shared",
+      "surfaceLevel": "internal",
       "api": [
         {
           "name": "prepareReviewAdmission",
@@ -157,7 +133,7 @@
           ],
           "returns": {
             "type": "Promise<AdmittedReview>",
-            "meaning": "Complete qualified admission and a private context binding; no selected task inventory before qualification."
+            "meaning": "Complete qualified admission bound to source-light code descriptors and baseline manifests, or to the latest captured design subject; no selected task inventory before qualification."
           },
           "errors": [
             {
@@ -174,67 +150,97 @@
             "The host owns the exact review/attempt and has durably acknowledged input plus runtime initialization."
           ],
           "postconditions": [
-            "One preparation session covers historical and current source requests; each immutable query is physically fetched once per session unless a bounded retry is explicitly recorded.",
-            "Already qualified immutable generations may be consumed through a current host receipt; mutable author/route/BUILD/permanent-history checks run anew.",
+            "One preparation session covers only the submitted historical/current source requests; each relevant immutable query is physically fetched once unless a bounded retry is recorded.",
+            "Code preparation persists exact locators and manifests rather than aggregate source bodies; current authority, author, route, BUILD and permanent-history checks run anew.",
             "No native work or reviewer invocation is authorized by a disk manifest alone."
           ]
         },
         {
           "name": "prepareReviewPacket",
-          "signature": "prepareReviewPacket(input: unknown, sources: ReviewSources, historical?: boolean, route?: StoryRoute, stored?: StoredDerived): Promise<PreparedReviewPacket>",
+          "signature": "prepareReviewPacket<Blob extends BlobIdentity = PinnedBlob>(input: unknown, sources: ReviewSources<Blob>, historical?: boolean, route?: StoryRoute, stored?: StoredDerived, access?: ReviewPacketAccess<Blob>): Promise<PreparedReviewPacket<Blob>>",
           "parameters": [
             {
               "name": "input",
               "type": "unknown",
-              "purpose": "Exact packet; selected after-segments/deletion anchors remain sole scope",
+              "purpose": "Submitted review packet at an untrusted validation boundary.",
               "optional": false
             },
             {
               "name": "sources",
-              "type": "ReviewSources",
-              "purpose": "One admission source session with bounded query planning, batching and memoized verified results",
+              "type": "ReviewSources<Blob>",
+              "purpose": "Pinned review sources and resolvers.",
               "optional": false
             },
             {
               "name": "historical",
               "type": "boolean",
-              "purpose": "Existing historical input interpretation",
+              "purpose": "Historical compatibility mode.",
               "optional": true
             },
             {
               "name": "route",
               "type": "StoryRoute",
-              "purpose": "Current host-derived workflow route",
+              "purpose": "Resolved Story route.",
               "optional": true
             },
             {
               "name": "stored",
               "type": "StoredDerived",
-              "purpose": "Existing derived-scope evidence",
+              "purpose": "Previously derived checkpoint data.",
+              "optional": true
+            },
+            {
+              "name": "access",
+              "type": "ReviewPacketAccess<Blob>",
+              "purpose": "Blob access seam.",
               "optional": true
             }
           ],
           "returns": {
-            "type": "Promise<PreparedReviewPacket>",
-            "meaning": "The existing full projection, tasks, committed route documents and tests, represented by an immutable prepared generation."
+            "type": "Promise<PreparedReviewPacket<Blob>>",
+            "meaning": "A validated source-light packet whose code scope is exact and pinned."
           },
           "errors": [
             {
-              "type": "TaskReviewInputError",
-              "condition": "Typed family input/context validation rejects identity, scope, capability, capacity or freshness; unknown wire input is intentional and must pass exact decoding."
-            },
-            {
-              "type": "CheckpointSaveError | Error",
-              "condition": "Existing code atomic writer reports a definitive/uncertain save outcome; design/host/native adapters preserve their concrete Error subclasses and pointed reason, never convert unavailable proof into success."
+              "type": "ReviewError",
+              "condition": "Submitted changes, commits, parents, or pinned objects are missing or inconsistent."
             }
           ],
           "preconditions": [
-            "Every requested object/ref is explicit and pinned; no HEAD/generic diff fallback.",
-            "Historical packets retain original submitted spelling and commit provenance."
+            "Every selected change belongs to one of the submitted commits."
           ],
           "postconditions": [
-            "Current projection identity, selected spans, replacement witnesses, rename/delete lineage and test bytes match the existing correctness oracle.",
-            "Logical per-packet projection budgets are charged even on physical cache hits; batching does not relax scope or byte limits."
+            "No aggregate source body is persisted in the prepared packet.",
+            "Selected object identities and exact locators are stable for the attempt."
+          ]
+        },
+        {
+          "name": "selectedCode",
+          "signature": "selectedCode<Blob extends BlobIdentity>(change: ReviewChange<Blob>): SelectedCode",
+          "parameters": [
+            {
+              "name": "change",
+              "type": "ReviewChange<Blob>",
+              "purpose": "One pinned selected change.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "SelectedCode",
+            "meaning": "Only the submitted after ranges or blocks decoded transiently from the pinned after object."
+          },
+          "errors": [
+            {
+              "type": "ReviewError",
+              "condition": "The pinned after object or requested range cannot be read exactly."
+            }
+          ],
+          "preconditions": [
+            "The change has passed scope and object qualification."
+          ],
+          "postconditions": [
+            "No unrelated line is returned.",
+            "Decoded bytes are not retained after reviewer input construction."
           ]
         },
         {
@@ -660,6 +666,71 @@
             "Latest artifact checks remain distinct from immutable evidence reuse.",
             "Delete derived temp state only after complete permanent preservation; unrelated targets/reviews remain unaffected."
           ]
+        },
+        {
+          "name": "CodePreparation",
+          "signature": "class CodePreparation",
+          "parameters": [],
+          "returns": {
+            "type": "PreparedCodeContext",
+            "meaning": "Coordinates exact code qualification, locator persistence, baseline workspace ownership, and transient selected after-block delivery."
+          },
+          "errors": [
+            {
+              "type": "ReviewPreparationError",
+              "condition": "Qualification or workspace materialization fails."
+            }
+          ],
+          "preconditions": [
+            "The task has a submitted review packet and isolated worker context."
+          ],
+          "postconditions": [
+            "Durable state is source-light.",
+            "Owned temporary resources are registered for cleanup."
+          ]
+        },
+        {
+          "name": "StagedPacketConstruction",
+          "signature": "class StagedPacketConstruction",
+          "parameters": [],
+          "returns": {
+            "type": "PreparedReviewPacket",
+            "meaning": "Constructs the qualified packet in lifecycle stages without broad source hydration."
+          },
+          "errors": [
+            {
+              "type": "ReviewPreparationError",
+              "condition": "A lifecycle stage cannot validate or persist its source-light output."
+            }
+          ],
+          "preconditions": [
+            "The attempt lifecycle is active."
+          ],
+          "postconditions": [
+            "Checkpoints contain locators, identities, manifests, and progress only."
+          ]
+        },
+        {
+          "name": "StagedPacketSources",
+          "signature": "class StagedPacketSources",
+          "parameters": [],
+          "returns": {
+            "type": "ReviewSources",
+            "meaning": "Supplies immutable object reads and parent workspace access to staged packet construction."
+          },
+          "errors": [
+            {
+              "type": "ReviewPreparationError",
+              "condition": "Pinned objects or applicable parents are unavailable."
+            }
+          ],
+          "preconditions": [
+            "Selected commits are pinned."
+          ],
+          "postconditions": [
+            "Only relevant parent files are materialized.",
+            "Design artifacts continue through their latest-document path."
+          ]
         }
       ]
     },
@@ -667,7 +738,7 @@
       {
         "entity": "Review preparation lifecycle and scope matrix",
         "change": "invariant-change",
-        "details": "IR1-IR8 derive from approved ISSUE-470a1f61b26b12c6. Stages are: durable input admission; validate current authority; inventory required evidence; fetch/qualify unique sources; construct complete task/chunk views; publish ready context; assess; preserve result; publish CR; approve; clean temp state. Every entrypoint uses this same preparation owner, not its own reconstruction loop. Code matrix: epic planned story pins DEF/story+LLD+PLAN where produced; standalone planned story pins LLD+PLAN; LLD-only story pins LLD; issue-only fix pins ISSUE; trivial/no-document scope uses tracked BUILD focus. Existing route resolver remains the authority. Story review retains all tasks; task review selects the exact task and dependencies without granting findings outside selected source. Design matrix: DEF, HLD and LLD resolve latest target/ancestry under their actual epic/standalone/issue route; no artificial HLD/DEF requirement for standalone/issues. Both daemon and controller reviewers consume equivalent prepared scope. Index impact data may augment analysis but never defines source scope or permits omission. All code refs remain committed/pinned; design target edits invalidate and require the existing user-approved restart, while unrelated repository edits are ignored.",
+        "details": "IR1-IR8 derive from approved ISSUE-470a1f61b26b12c6. Stages are: durable input admission; validate current authority; inventory required evidence; fetch/qualify unique sources; construct complete source-light task/task-chunk descriptors and applicable-parent baseline manifests; publish ready context; assess; preserve result; publish CR; approve; clean temp state. Every entrypoint uses this same preparation owner, not its own reconstruction loop. Code matrix: epic planned story pins DEF/story+LLD+PLAN where produced; standalone planned story pins LLD+PLAN; LLD-only story pins LLD; issue-only fix pins ISSUE; trivial/no-document scope uses tracked BUILD focus. Existing route resolver remains the authority. Story review retains all tasks; task review selects the exact task and dependencies without granting findings outside selected source. Design matrix: DEF, HLD and LLD resolve latest target/ancestry under their actual epic/standalone/issue route; no artificial HLD/DEF requirement for standalone/issues. Both daemon and controller reviewers consume equivalent prepared scope. Index impact data may augment analysis but never defines source scope or permits omission. All code refs remain committed/pinned; design target edits invalidate and require the existing user-approved restart, while unrelated repository edits are ignored.",
         "callSites": [
           "src/workflow/code-review/task-review/admission.ts",
           "src/workflow/code-review/task-review/packet.ts",
@@ -677,37 +748,13 @@
         ]
       },
       {
-        "entity": "Prepared context generation (proposed)",
-        "change": "new",
-        "details": "Stable source generation identity binds canonical project/family/review, pinned attempt input, validator version, route, selected scope, source revision or captured latest-design identity, projection, tests and documents. Accepted feedback is excluded from this source key. Current authority/freshness remains independently checked. Exact source/input/subject changes require a new immutable generation. A separate immutable HistoryBindingV1 binds generationId, priorBindingDigest, semanticSequence, validated historyPrefixDigest, attribution/actions/results and evidenceManifestDigest. Initial qualification validates the complete prefix. Each accepted result validates new feedback/origins and any new evidence, then creates a successor history binding reusing already qualified source evidence. New evidence extends immutable evidence storage without mutating existing manifests. Earlier-history changes revoke descendant bindings and require explicit revalidation. All required projection/witness/test bytes remain complete. Storage stays in .insrc/tmp/review-context/<family>/<review-id>/ with staged-to-ready atomic publication; files alone grant no authority. Design prompts retain canonical document links rather than copied bodies.",
-        "callSites": [
-          "src/workflow/code-review/task-review/packet.ts",
-          "src/workflow/code-review/task-review/sources.ts",
-          "src/workflow/review/design-review/subject.ts",
-          "src/daemon/threads/review-worker-runtime.ts"
-        ],
-        "schemaDiff": "PreparedContextManifestV1 {key,generationId,inputDigest,validatorVersion,sourceIdentity,manifestDigest,objects[],views[],byteTotals}; HistoryBindingV1 {generationId,priorBindingDigest,semanticSequence,historyPrefixDigest,evidenceManifestDigest,bindingDigest}. Checkpoints reference stable source generation plus current immutable history binding."
-      },
-      {
         "entity": "Private qualification receipt and context borrow (proposed)",
         "change": "new",
-        "details": "Main host retains only compact process-local metadata binding an exact manifest digest/generation to the qualifying registered worker incarnation and daemon epoch. A ready receipt is accepted only over the private worker channel after current input/subject reservation checks; caller/model JSON can never supply one. Its referenced immutable bytes are verified against this expected digest when reopened. A new authorized phase worker can borrow matching context after fresh authority checks without retaining a finished execution worker. Borrow ownership is exact review/phase/incarnation; active model/native readers retain a borrow until process disposal, not merely until candidate feedback arrives. Warm reuse checks validator version, packet/history/source/route binding and immutable file identity; missing or corrupted files revoke the receipt and require controlled rebuild or a pointed failure. On daemon restart all receipts are lost: disk manifests are untrusted hints and cold qualification recomputes correctness from authoritative inputs using the batched source session. No persistent signature, HMAC, trust key or stored digest alone confers trust. An LRU/byte-cap eviction may remove only unborrowed derived context; it never deletes review inputs/results or clears resources. Same-context acquisition coalesces under one review owner; other reviews have independent context authority. Receipts separately bind stable source generation and validated history binding. Accepted result progression and publication bookkeeping advance the latter without source requalification. Fresh author/route/approval checks remain mandatory; history tampering revokes descendant bindings. Cold receipts still require qualification, never disk-digest trust.",
+        "details": "Main host retains only compact process-local metadata binding an exact manifest digest/generation to the qualifying registered worker incarnation and daemon epoch. A ready receipt is accepted only over the private worker channel after current input/subject reservation checks; caller/model JSON can never supply one. Its referenced locator, descriptor, baseline-manifest and relevant workspace-file identities are verified against this expected digest when reopened. A new authorized phase worker can borrow matching context after fresh authority checks without retaining a finished execution worker. Borrow ownership is exact review/phase/incarnation; active model/native readers retain a borrow until process disposal, not merely until candidate feedback arrives. Warm reuse checks validator version, packet/history/source/route binding and immutable file identity; missing or corrupted files revoke the receipt and require controlled rebuild or a pointed failure. On daemon restart all receipts are lost: disk manifests are untrusted hints and cold qualification recomputes correctness from authoritative inputs using the batched source session. No persistent signature, HMAC, trust key or stored digest alone confers trust. An LRU/byte-cap eviction may remove only unborrowed derived context; it never deletes review inputs/results or clears resources. Same-context acquisition coalesces under one review owner; other reviews have independent context authority. Receipts separately bind stable source generation and validated history binding. Accepted result progression and publication bookkeeping advance the latter without source requalification. Fresh author/route/approval checks remain mandatory; history tampering revokes descendant bindings. Cold receipts still require qualification, never disk-digest trust.",
         "callSites": [
           "src/daemon/threads/review-workers.ts",
           "src/daemon/threads/review-worker-runtime.ts",
           "src/workflow/code-review/task-review/admission.ts"
-        ]
-      },
-      {
-        "entity": "Verified source session (proposed)",
-        "change": "new",
-        "details": "A bounded source session spans all prior/current packets and reference checks required by one preparation operation. Keys include canonical project/Git identity and the complete immutable operation arguments: commit OID; commit:path; ancestor pair; diff origin/parent/exact paths/options; full-history path interval. Only successfully verified results are cached; retry/absence/error semantics are explicit, and no mutable HEAD/ref name is accepted as a reusable key. Concurrent duplicate requests coalesce, but no Promise.all is used for provider calls. Plan object reads across the inventory and use existing git_cat_file revs batches; batch independent diff/path/ancestry work only where the current validators can preserve exactly the same proof. Keep complete merge/path/delete/rename/replacement witnesses; no first-parent or lossy lineage shortcut. Discovery can add bounded queries to the plan; total stays unknown until determined. Share raw verified reads across packets; retain independent logical source/fragment/byte accounting for each packet so reuse never bypasses existing ProjectionBudget or scope checks. Query output order and error field attribution remain deterministic. Configuration is limited to review.preparation batchMaxObjects(default256), batchMaxBytes(default4MiB), memoryMaxBytes(default64MiB) and cacheMaxBytes(default256MiB), all validated positive safe bounds and clamped by existing per-object/tool/projection limits; configurable lower values may split work or cause explicit capacity failure, never truncate evidence. A single valid object above a batch target is read alone within existing object/remaining-total limits. Existing review.maxJsonBytes continues governing JSON envelopes. Source work stays isolated/read-only through existing host authorization; pooling does not create a worker-local native bypass. Per-session retention: successfully verified query results are durably staged with an exact query index and immutable payload before memory eviction. Memory LRU drops decoded bytes only; subsequent consumers verify/reopen retained staging, never refetch Git. Pin all evidence needed by unfinished packet consumers against disk eviction. Session staging, manifests, ready context and temporary duplicate bytes all count against cacheMaxBytes; decoded bytes count against memoryMaxBytes. A serialized per-project capacity allocator accounts concurrent sessions, reserves bounded space before each batch and grows reservations incrementally for unknown inventory; it may evict only inactive unborrowed generations. If pinned evidence plus next batch cannot fit, fail precisely before discarding evidence or spawning the batch. No indefinite capacity wait, silent refetch, truncation or implicit limit increase. Release abandoned staging only after exact owned readers/resources are disposed. This makes the zero-duplicate guarantee hold under memory pressure.",
-        "callSites": [
-          "src/workflow/code-review/task-review/sources.ts",
-          "src/workflow/code-review/task-review/packet.ts",
-          "src/workflow/code-review/task-review/admission.ts",
-          "src/daemon/threads/review-native-host.ts",
-          "src/daemon/threads/review-processes.ts"
         ]
       },
       {
@@ -751,7 +798,7 @@
       {
         "entity": "Ownership, retention and cleanup relationships",
         "change": "invariant-change",
-        "details": "One ReviewSession owns one full checkpoint with1..N immutable numbered attempts and at most1 active runtime writer/worker incarnation. Each attempt may reference0..1 stable ready source generation and, once qualified,1..N immutable successor history bindings; no ready context is required before unverified admission. One generation contains1..N bounded immutable evidence objects/views and may have0..N phase borrows. A daemon receipt references exactly1 generation/digest and is not persisted as an authorization credential. Current runtime references exactly1 current attempt; resource leases are owned by its exact worker incarnation and may outlive worker loss as a recovery fence. Context retention does not retain subject admission exclusions or terminal execution workers. Cleanup first acquires the existing target scope fence and checks approval/permanent preservation, no active owner/borrow/publication and no uncertain leases. It then releases receipt/borrows, removes inactive derived files and runtime after required audit preservation, and deletes working checkpoints last; failed partial cleanup is idempotently retriable with retained diagnostics. Permanent CR must retain complete submitted scopes, feedback, origins and admission/technical failures and bounded final operational audit, not references to deletable temp bytes. Proposed code CR format4 and design CR format3 carry the new runtime audit/binding capability; historical supported CR formats remain read-only. Post-cleanup progress reads permanent history with explicit locator and no model/rebuild. Completion of this correction's BUILD does not complete or approve BUILD-e4af63128c7cbec2-s1. The existing committed worker implementation is a dependency under qualification, not declared independently approved. After deployment, an explicitly authorized next attempt must use a newly committed packet/current source pin if sources changed, including relevant selected replacement witnesses; the canceled attempt4 input remains immutable. These explicit cardinalities are normative. The optional ER rendering is omitted because the current companion renderer draws required-many edges as optional-many despite source minima; the sequence and component views plus this complete ownership/cardinality contract are sufficient to assess the model without a misleading ER view. Cleanup requires a durable CleanupClaimV1 before deleting any runtime/context/checkpoint file, extending existing design private claims to both families. Under the target fence, first preserve exact closed resource audit and cleanup eligibility in permanent history; atomically persist/sync the claim binding project/family/review, checkpoint digest/file identity, runtimeId/closed-audit digest, source/history bindings, approval revision, permanent preservation receipt/digest and bounded exact deletion inventory. Claim ownership permits cleanup only, never execution/admission. Delete disposable context/runtime and then claimed checkpoint last, syncing affected directories; delete the claim last. After a crash an explicit cleanup retry validates current approval, permanent preservation and claim, then finishes only its exact remaining deletions without source/model calls. Missing runtime is accepted exclusively in this cleanup-only path with matching claim and permanent closed audit; normal execution/recovery still fences missing runtime. Replaced/mismatched files are retained. A crash after checkpoint deletion is recoverable from claim plus permanent record. No new trust keys/event store.",
+        "details": "One ReviewSession owns one full checkpoint with1..N immutable numbered attempts and at most1 active runtime writer/worker incarnation. Each attempt may reference0..1 stable ready source generation and, once qualified,1..N immutable successor history bindings; no ready context is required before unverified admission. One generation contains1..N bounded immutable locator/manifest records and attempt-owned relevant baseline files and may have0..N phase borrows. A daemon receipt references exactly1 generation/digest and is not persisted as an authorization credential. Current runtime references exactly1 current attempt; resource leases are owned by its exact worker incarnation and may outlive worker loss as a recovery fence. Context retention does not retain subject admission exclusions or terminal execution workers. Cleanup first acquires the existing target scope fence and checks approval/permanent preservation, no active owner/borrow/publication and no uncertain leases. It then releases receipt/borrows, removes inactive derived files and runtime after required audit preservation, and deletes working checkpoints last; failed partial cleanup is idempotently retriable with retained diagnostics. Permanent CR must retain complete submitted scopes, feedback, origins and admission/technical failures and bounded final operational audit, not references to deletable temp bytes. Proposed code CR format4 and design CR format3 carry the new runtime audit/binding capability; historical supported CR formats remain read-only. Post-cleanup progress reads permanent history with explicit locator and no model/rebuild. Completion of this correction's BUILD does not complete or approve BUILD-e4af63128c7cbec2-s1. The existing committed worker implementation is a dependency under qualification, not declared independently approved. After deployment, an explicitly authorized next attempt must use a newly committed packet/current source pin if sources changed, including relevant selected replacement witnesses; the canceled attempt4 input remains immutable. These explicit cardinalities are normative. The optional ER rendering is omitted because the current companion renderer draws required-many edges as optional-many despite source minima; the sequence and component views plus this complete ownership/cardinality contract are sufficient to assess the model without a misleading ER view. Cleanup requires a durable CleanupClaimV1 before deleting any runtime/context/checkpoint file, extending existing design private claims to both families. Under the target fence, first preserve exact closed resource audit and cleanup eligibility in permanent history; atomically persist/sync the claim binding project/family/review, checkpoint digest/file identity, runtimeId/closed-audit digest, source/history bindings, approval revision, permanent preservation receipt/digest and bounded exact deletion inventory. Claim ownership permits cleanup only, never execution/admission. Delete disposable context/runtime and then claimed checkpoint last, syncing affected directories; delete the claim last. After a crash an explicit cleanup retry validates current approval, permanent preservation and claim, then finishes only its exact remaining deletions without source/model calls. Missing runtime is accepted exclusively in this cleanup-only path with matching claim and permanent closed audit; normal execution/recovery still fences missing runtime. Replaced/mismatched files are retained. A crash after checkpoint deletion is recoverable from claim plus permanent record. No new trust keys/event store.",
         "callSites": [
           "src/workflow/code-review/task-review/publication.ts",
           "src/workflow/review/design-review/publication.ts",
@@ -786,25 +833,6 @@
         ]
       },
       {
-        "entity": "Bounded prepared packet views and working-set ownership (revision)",
-        "change": "invariant-change",
-        "details": "Replace CodePreparation's eager Map<string,PreparedReviewPacket> payloads and whole 'code-packets' view with a bounded digest index and staged per-packet/task/file metadata plus content-addressed text/binary leaves in the existing review-context generation. One generation owns many packet descriptors; one descriptor identifies exactly one submitted/historical/route/derived tuple; task descriptors reference every selected change and exact provenance witness, tests and document refs without copying leaf payloads. Leaves can be referenced by many descriptors; generation owns immutable leaf lifetime, phase borrows pin generation until disposal. No reference crosses a generation's digest allowlist. Disk alone remains non-authoritative. Descriptor order, explicit null/undefined, array order, Unicode, Uint8Array and exact source OIDs survive round-trip. Hash canonical metadata with digest references, never JSON numeric-array encodings of payloads. No eager aggregate packets/inputs/clone just to derive source/scope/test identities: fold ordered descriptors incrementally with explicit domain/version and verify the same logical inputs. No changed selection, generic HEAD scope, history prefix or result omission. Stage each qualified validation window before retaining the next; validate current/historical packets and all feedback/origins in sequence. Pure final-scope/projection validators consume pinned source handles and bounded windows, retaining only bounded indexes/lineage metadata; after/before blobs and replacement/merge witnesses stay staged and are opened as required. Before/after provenance witnesses are not added to reviewer prompt scope. Execution/prompt/test coverage/publication/recovery consume task/file windows and release before the next; whole-story scope is traversed completely, not sampled. Do not implement a lazy wrapper that later materializes an oversized task or packet. Code and design readers share bounded codec/accounting. Existing small caller shape may be adapted but there is one qualified implementation and no unbounded compatibility fallback. memoryMaxBytes remains64MiB by default and bounds charged preparation buffers/decoded leaves/strings/indexes/descriptors/active consumer allocations together per phase; binary byteLength once per shared backing allocation, text conservative UTF-16 plus encoding/transient copies, bounded metadata overhead, reserve before allocate/read/clone/parse. Include writer/decoder scratch and concurrent source/consumer reservations; evict only unborrowed decoded data, keep reserved disk evidence. Release charges after last owner/reference, not while views remain reachable. Reject genuinely unrepresentable atomic units before allocation with a pointed capacity error; do not raise caps or drop content. Report memory high-water charged bytes versus actual heap/external/RSS separately; RSS is diagnostic, not falsely described as the configured whole-process cap. Streaming encoder/decoder chunks and descriptor index shards stay within batchMaxBytes and memoryMaxBytes. Reserve new disk objects before writes through existing host aggregate capacity, dedup content once; context sealing promotes/reuses staged leaves instead of copying the entire history twice. Manifest/index schemas explicitly version changed encoding; old derived generations are disposable and cold-requalified with exact history/native recovery gates, never accepted by an older decoder. No checkpoint/CR schema bump merely for derived storage. Per-view hashes, structural limits/depth/count checks, safe paths, atomic stage-to-ready, partial-write cleanup, no source/model side effects before proof, receipt/epoch checks and cleanup claims remain normative.",
-        "callSites": [
-          "src/workflow/review/code-preparation.ts",
-          "src/workflow/review/prepared-context.ts",
-          "src/workflow/review/source-session.ts",
-          "src/workflow/code-review/task-review/packet.ts",
-          "src/workflow/code-review/task-review/projection.ts",
-          "src/workflow/code-review/task-review/admission.ts",
-          "src/workflow/code-review/task-review/worker-checkpoint.ts",
-          "src/workflow/code-review/task-review/execution.ts",
-          "src/workflow/code-review/task-review/publication.ts",
-          "src/workflow/review/history-binding.ts",
-          "src/workflow/review/history-evidence.ts",
-          "src/daemon/threads/review-worker-preparation.ts"
-        ]
-      },
-      {
         "entity": "Measured admission latency and durable acknowledgement (revision)",
         "change": "invariant-change",
         "details": "The2831ms observed admission exceeds2s but does not establish cause. Instrument monotonic segments for public request parsing/registration, stored guard inventory, route/author scope, worker startup, checkpoint/runtime bind, activation and acknowledgement; capture cold/warm overhead separately. Keep exact current owner/author/input fencing and durable input+active runtime before ack. Source acquisition/projection/history qualification occurs asynchronously in the dedicated registered review worker after ack, never the main daemon or chat-session thread; unavoidable pre-ack recovery checks use existing registered metadata workers and bounded DTOs. Optimize the measured slow segment with equivalent checks; no provisional success response, skipped guard checks, duplicate worker, detached unowned work or deferred durability. Pre-ack cancel races retain exact attempt/action ownership. Re-run supported-host controlled admission/cancel<=2s and progress-gap<=2s under two independent reviews. If the preserved bound cannot be met, report and stop rather than widen it.",
@@ -813,6 +841,43 @@
           "src/daemon/threads/review-workers.ts",
           "src/daemon/threads/review-worker-bootstrap.ts",
           "src/daemon/threads/review-runtime-store.ts"
+        ]
+      },
+      {
+        "entity": "Prepared code review context",
+        "change": "invariant-change",
+        "details": "Replace eager or aggregate source-body ownership with exact selected-change locators, pinned after-object identities, a sealed baseline-workspace manifest, test details, and existing lifecycle metadata. Design-review prepared subjects remain latest-document references.",
+        "callSites": [
+          "src/workflow/review/code-preparation.ts:23-124",
+          "src/workflow/review/staged-packet-construction.ts:23-97"
+        ]
+      },
+      {
+        "entity": "SelectedChangeLocator",
+        "change": "new",
+        "details": "Identifies one submitted file and its after ranges or blocks, selected commit/object identity, applicable parent identity, rename/delete metadata, and ordering. It contains no source body.",
+        "callSites": [
+          "src/workflow/code-review/task-review/packet.ts:144-262",
+          "src/daemon/threads/__tests__/review-preparation-baseline.test.ts"
+        ]
+      },
+      {
+        "entity": "BaselineWorkspaceManifest",
+        "change": "new",
+        "details": "Records an attempt-owned sealed temporary directory, applicable parent identities, materialized relevant paths, integrity metadata, and cleanup state. One attempt owns one manifest; files are derived from each change's actual commit parent, not origin by default.",
+        "callSites": [
+          "src/daemon/threads/__tests__/review-preparation-baseline.test.ts",
+          "src/daemon/threads/__tests__/review-worker-isolation.test.ts"
+        ]
+      },
+      {
+        "entity": "Duplicate artifact reconciliation",
+        "change": "invariant-change",
+        "details": "Explicitly transition ISSUE-163e7bc3d6f0ccba and its unapproved LLD to lifecycle superseded, record their replacement by the primary issue/LLD lineage, preserve logs, and verify they are non-routable. Do not rely on delivery-chain automatic supersession because ISSUE records are excluded.",
+        "callSites": [
+          "src/workflow/storage.ts:185",
+          "src/workflow/delivery/gate.ts:223",
+          "src/workflow/delivery/graph.ts:410-443"
         ]
       }
     ],
@@ -958,6 +1023,34 @@
           "response": "Release unborrowed decoded data or split the semantic traversal without dropping witnesses; retain complete staged evidence. If an atomic unit cannot be bounded, fail with stage/chargedBytes/limit before allocation. Partial generation never becomes ready; canceled/fenced consumers release exact reservations only after disposal.",
           "userImpact": "Pointed capacity failure instead of large JSON allocation or false complete scope; no provider call before readiness.",
           "recoverable": true
+        },
+        {
+          "scenario": "A selected file/range is not contained in any submitted commit.",
+          "detection": "Qualification resolves each locator against the submitted commit packet and finds no matching pinned after object or range.",
+          "response": "Reject preparation before workspace creation and persist a concise scope error.",
+          "userImpact": "The review does not start until the packet is corrected.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A pinned commit, after object, or applicable parent disappears or is rewritten.",
+          "detection": "Git object verification fails for the stored immutable identity or returns content with a mismatched object id.",
+          "response": "Fail the attempt without falling back to workspace HEAD or origin; require a new attempt.",
+          "userImpact": "The attempt stops with reproducibility preserved.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Baseline workspace materialization conflicts or is partially written.",
+          "detection": "Manifest sealing detects duplicate ownership, unexpected existing paths, missing files, or integrity mismatch.",
+          "response": "Quarantine and clean the attempt workspace, leave the checkpoint recoverable, and require retry or a new attempt according to lifecycle state.",
+          "userImpact": "Review is delayed; no mixed baseline reaches the reviewer.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Explicit duplicate lifecycle reconciliation fails.",
+          "detection": "Post-transition readback shows the duplicate ISSUE or LLD is not superseded, remains routable, or lacks replacement provenance.",
+          "response": "Stop before PLAN/build migration and retain both histories for operator correction.",
+          "userImpact": "Primary work cannot proceed until duplicate routing is unambiguous.",
+          "recoverable": true
         }
       ],
       "edgeCases": [
@@ -1024,6 +1117,30 @@
         {
           "input": "Admission takes2831ms on the controlled host.",
           "expected": "Attribute time by monotonic admission segment, correct the measured cause and retain durable input/runtime activation before ack; do not assume Git/model work caused delay or relax2s gate."
+        },
+        {
+          "input": "A newly added file has no parent blob.",
+          "expected": "Represent the baseline as absent; provide selected after blocks only."
+        },
+        {
+          "input": "A deleted file has no after blob.",
+          "expected": "Materialize the parent file and carry deletion metadata; selected after content is empty."
+        },
+        {
+          "input": "A rename spans different old and new paths.",
+          "expected": "Materialize the old path from the applicable parent and deliver only selected ranges from the pinned new path."
+        },
+        {
+          "input": "Selected commits are stacked and not yet on origin.",
+          "expected": "Resolve each change against its actual selected commit and that commit's parent, never origin by default."
+        },
+        {
+          "input": "A design review runs concurrently.",
+          "expected": "It continues to read the latest artifact document and does not use the code baseline workspace."
+        },
+        {
+          "input": "Two code reviews run concurrently.",
+          "expected": "Each attempt owns a disjoint workspace, manifest, checkpoint, transient bytes, and cleanup lifecycle."
         }
       ],
       "invariantsToPreserve": [
@@ -1037,27 +1154,27 @@
         },
         {
           "text": "Review work remains independent from the author, isolated by review identity and separate from chat-session scheduling.",
-          "source": "c2"
+          "source": "c5"
         },
         {
           "text": "Durable native intent precedes spawn and host-confirmed disposal precedes durable closure; old or uncertain leases cannot be silently cleared.",
-          "source": "c2"
+          "source": "c5"
         },
         {
           "text": "Full per-attempt input, metadata and feedback stay pinned; failed/incomplete attempts and existing explicit recovery/re-review rules are preserved.",
-          "source": "c3"
+          "source": "c5"
         },
         {
           "text": "Only actual committed feedback advances completion; approval remains a human gate and cleanup requires permanent complete preservation.",
-          "source": "c1"
+          "source": "c5"
         },
         {
           "text": "Existing provider abstraction and local CLI cloud access remain; no REST calls, new trust keys, activation flags or retired review-engine fallback.",
-          "source": "c2"
+          "source": "c5"
         },
         {
           "text": "The incident's microbenchmarks are evidence of overhead, not a complete attribution or a claim that the new performance targets already pass.",
-          "source": "c4"
+          "source": "c5"
         },
         {
           "text": "Approved ISSUE-470a1f61b26b12c6 takes priority; no review restart or implementation approval is implied by issue approval.",
@@ -1065,12 +1182,27 @@
         },
         {
           "text": "Full171-file/four-attempt workload and64MiB memory,256MiB cache,4MiB batch defaults remain; no JSON expansion estimate substitutes for actual budget ownership or permission to remove a guard.",
-          "source": "c44"
+          "source": "c5"
+        },
+        {
+          "text": "prepareReviewPacket and selectedCode retain their generic blob contracts while the three preparation classes remain non-generic.",
+          "source": "c1"
+        },
+        {
+          "text": "Existing review preparation tests remain the extension points for checkpoint, migration, progress, isolation, recovery, and cleanup behavior.",
+          "source": "c4"
+        },
+        {
+          "text": "Superseded lifecycle records remain preserved as history and excluded from active downstream views.",
+          "source": "c3"
+        },
+        {
+          "text": "Design-review latest-document behavior remains unchanged by the code-review preparation correction.",
+          "source": "c4"
         }
       ]
     },
     "testStrategy": {
-      "testFramework": "Node node:test and node:assert/strict executed with tsx, as confirmed by direct inspection of existing workflow/worker tests after the broad graph test.locate returned off-topic IDE methods. Use the repository's supported Node22/native build and current TypeScript strict settings; keep current VS Code/JetBrains wire fixture conventions for affected DTO checks. ac1-ac8 below are local design acceptance labels corresponding respectively to IR1-IR8 from the approved issue; the standalone upstream has no Epic acceptance list. No live hosted model is required to qualify preparation performance: use real isolated Git/native process paths and deterministic provider stubs, asserting provider calls remain0 until ready.",
       "testLevels": [
         {
           "level": "unit",
@@ -1167,18 +1299,52 @@
         },
         {
           "level": "integration",
-          "purpose": "Close the measured T14 prepared-view and admission gaps before re-running release qualification.",
+          "purpose": "Close the measured t14 source-light preparation and admission gaps before re-running release qualification.",
           "subjects": [
-            "Single-packet payload and four-attempt history larger than decoded memory budget but within reserved disk qualify with exact original scope/provenance/tests/feedback and zero repeated physical reads; both cold and warm publication/recovery consume bounded windows.",
-            "Instrument reserve-before-allocation and ownership high-water across source acquisition, projection/witness validation, packet descriptor staging, seal, reader, prompt/test-coverage traversal and publication; binary/text/metadata/transient copies included. No full-packet JSON stringify or whole-history view/clone reachable in production.",
-            "Versioned descriptor/index round-trip for Unicode, byte arrays, null/undefined, ordered scope, rename/deletion/replacement/merge/binary; missing/sharded/tampered digest or borrow revocation fails before use. Old derived encoding triggers explicit cold requalification, never old decoder acceptance.",
-            "Memory and aggregate disk pressure with two sessions, cancellation while window borrowed, interrupted stage/seal/promote/reopen/cleanup retain correct leases and reservations; no pinned eviction or duplicate evidence.",
-            "Monotonic admission segment traces distinguish request/guard/scope/startup/binding/activation; durable input/runtime acknowledgement, failure/cancel races and independent sessions retain exact authority while meeting<=2s on controlled host.",
-            "Re-run complete retained171-file/four-attempt coldx3/warm/history1,4,max gates with existing bounds and no hosted models; report charged-memory high-water, stagedbytes, heap/external/RSS, all stage durations and writer/query counters. A failed run blocks release; do not replace scope or raise limits."
+            "Single-packet and four-attempt histories larger than the decoded memory budget but within reserved disk qualify with exact scope, provenance, tests, feedback, selected after blocks, and applicable parent workspaces; cold and warm lifecycle consumers never build an aggregate packet body.",
+            "Instrument reserve-before-allocation and ownership high-water across locator validation, Git object verification, parent-file materialization, manifest sealing, transient selected-block decoding, prompt/test traversal, publication, and cleanup. No full-packet JSON stringify or whole-history source clone is reachable in production.",
+            "Versioned locator and BaselineWorkspaceManifest round-trip ordered scope, Unicode paths, add/delete/rename/replacement/merge/binary metadata, selected object ids, applicable parent ids, and integrity fields. Missing, tampered, cross-attempt, or stale manifests fail before reviewer use; old eager derived state triggers cold requalification.",
+            "New files produce an absent parent baseline; deletions expose the parent file and empty after content; renames expose the old parent path and selected new after blocks; stacked unpushed commits resolve against each selected commit's actual parent rather than origin.",
+            "Memory and aggregate disk pressure with two attempts, cancellation during workspace materialization or transient block use, interrupted seal/reopen/cleanup, and restart retain correct ownership, reservations, fences, and cleanup claims without pinned eviction or duplicate Git reads.",
+            "Monotonic admission segment traces distinguish request, guard, route/scope, worker startup, runtime binding, and acknowledgement. Source qualification runs in the isolated review worker after durable admission; independent sessions retain exact authority while controlled admit/cancel acknowledgement remains within the existing bound.",
+            "Re-run the retained 171-file/four-attempt cold x3, warm, and history 1/4/max gates with no hosted models; report locator count, unique Git reads, workspace bytes, transient charged-memory high-water, heap/external/RSS, stage durations, and writer counters. A failed run blocks release and cannot be hidden by higher limits or reduced scope."
           ],
           "fixturesNeeded": [
-            "Extend src/daemon/threads/__tests__/review-preparation-performance.test.ts and src/daemon/threads/__tests__/helpers/review-performance-worker.ts.",
-            "Extend existing prepared-context/source-session/code-preparation tests under src/workflow/review/__tests__/ and production-route tests under src/daemon/threads/__tests__/. New test paths in the plan remain explicitly proposed."
+            "Extend src/daemon/threads/__tests__/review-preparation-performance.test.ts, src/daemon/threads/__tests__/review-preparation-baseline.test.ts, and the existing performance worker fixture.",
+            "Extend source-light preparation, checkpoint, migration, isolation, cleanup, and production-route tests under src/workflow/review/__tests__/ and src/daemon/threads/__tests__/."
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove locator validation, exact after selection, parent resolution, manifest sealing, and duplicate transition rules.",
+          "subjects": [
+            "prepareReviewPacket",
+            "selectedCode",
+            "SelectedChangeLocator",
+            "BaselineWorkspaceManifest",
+            "artifact lifecycle reconciliation"
+          ],
+          "fixturesNeeded": [
+            "Pinned commit graphs",
+            "renames, deletions, and new files",
+            "stacked local commits",
+            "missing objects"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove production preparation through isolated workers and existing lifecycle facilities.",
+          "subjects": [
+            "CodePreparation",
+            "StagedPacketConstruction",
+            "StagedPacketSources",
+            "checkpoint, recovery, progress, cleanup, and publication",
+            "unchanged design-review preparation"
+          ],
+          "fixturesNeeded": [
+            "Temporary Git repositories",
+            "attempt workspaces",
+            "concurrent code and design reviews"
           ]
         }
       ],
@@ -1187,14 +1353,16 @@
           "criterionId": "ac1",
           "provingTests": [
             "Exact scope/projection/evidence equivalence oracle over all171files and selected after/deletion spans.",
-            "Pinned code versus latest-design capture/target-monitor matrix; fresh independence/route checks despite warm context."
+            "Pinned code versus latest-design capture/target-monitor matrix; fresh independence/route checks despite warm context.",
+            "Exact submitted files, ranges, and blocks are selected from pinned commits and unrelated committed changes are excluded."
           ]
         },
         {
           "criterionId": "ac2",
           "provingTests": [
             "Production lifecycle from admission through assessment, retry/resume, publication, approval and cleanup consumes one context contract.",
-            "Every code story/task and workflow route and every design artifact route is exercised; repeated publication uses saved feedback with0modelcalls."
+            "Every code story/task and workflow route and every design artifact route is exercised; repeated publication uses saved feedback with0modelcalls.",
+            "Code review provides selected after blocks plus immutable parent workspace paths; design review still resolves the latest artifact document."
           ]
         },
         {
@@ -1203,21 +1371,24 @@
             "Counting source plan proves physical duplicate count0 across historical/current inputs; batched Git verifies identical object/projection witnesses.",
             "Budget hits, batch splitting, per-object oversize and missing refs fail precisely without omitted scope;1/4/max supported history scaling.",
             "Memory-pressure/disk-reservation and interleaved-session retention fixtures.",
-            "Construction, staged packet inventory and every warm/cold lifecycle consumer obey the combined memory reservation high-water; no aggregate hydration."
+            "Construction, staged packet inventory and every warm/cold lifecycle consumer obey the combined memory reservation high-water; no aggregate hydration.",
+            "Retained-workload instrumentation proves no aggregate source-body retention and no duplicate blob fetches."
           ]
         },
         {
           "criterionId": "ac4",
           "provingTests": [
             "Writer instrumentation proves0full-historywrites per nativecommand, bounded runtime bytes, and complete checkpoint writes at result boundaries.",
-            "Crash injection proves durable open-before-spawn and confirmed-disposal-before-close without asynchronous durability shortcuts."
+            "Crash injection proves durable open-before-spawn and confirmed-disposal-before-close without asynchronous durability shortcuts.",
+            "Checkpoint and recovery tests prove source bodies are absent from durable state and bounded execution remains recoverable."
           ]
         },
         {
           "criterionId": "ac5",
           "provingTests": [
             "Two independent production review sessions: cancel one and prove the other's worker/resources/history unchanged.",
-            "Cold restart/tamper/migration and all cross-store commit windows retain uncertain guards and avoid duplicate completed review work."
+            "Cold restart/tamper/migration and all cross-store commit windows retain uncertain guards and avoid duplicate completed review work.",
+            "Concurrent review, cancellation, retry, and cleanup tests prove attempt isolation and no workspace reuse."
           ]
         },
         {
@@ -1225,7 +1396,8 @@
           "provingTests": [
             "Preparation counters change only with actual work; totals remain null until known and zero assessed tasks is not shown as completion.",
             "Controlled native workload observation gap and admit/cancel acknowledgement<=2s; lost observers/storage show stale/unavailable honestly.",
-            "Admission per-segment trace and durable-ack race matrix with controlled<=2s acknowledgements."
+            "Admission per-segment trace and durable-ack race matrix with controlled<=2s acknowledgements.",
+            "Progress events expose qualification, workspace materialization, reviewer execution, and terminal state without source payloads."
           ]
         },
         {
@@ -1233,482 +1405,473 @@
           "provingTests": [
             "Full per-attempt packet/actions/feedback round-trip unchanged across migration, publication and cleanup; unsupported capabilities retain working evidence.",
             "After terminal worker reclamation, private receipt permits authorized warm handoff; after daemon restart disk cache grants no authority and cold qualification is required.",
-            "Successor history binding and durable cleanup-claim crash matrices."
+            "Successor history binding and durable cleanup-claim crash matrices.",
+            "Historical records remain readable; duplicate ISSUE and LLD are explicitly superseded, linked to the primary lineage, and non-routable."
           ]
         },
         {
           "criterionId": "ac8",
           "provingTests": [
             "Three controlled full native cold runs median<=120s and warm phase handoff median<=10s with detailed stage/operation/write metrics and identical required scope.",
-            "Build/package and both-family production smoke remain separate from optional model-driven test execution and post-deployment original-story retry."
+            "Build/package and both-family production smoke remain separate from optional model-driven test execution and post-deployment original-story retry.",
+            "Delta tasks execute before retained qualification; independent code review and human approval gate activation."
           ]
         }
-      ]
+      ],
+      "testFramework": "Node node:test and node:assert/strict executed with tsx, as confirmed by direct inspection of existing workflow/worker tests after the broad graph test.locate returned off-topic IDE methods. Use the repository's supported Node22/native build and current TypeScript strict settings; keep current VS Code/JetBrains wire fixture conventions for affected DTO checks. ac1-ac8 below are local design acceptance labels corresponding respectively to IR1-IR8 from the approved issue; the standalone upstream has no Epic acceptance list. No live hosted model is required to qualify preparation performance: use real isolated Git/native process paths and deterministic provider stubs, asserting provider calls remain0 until ready."
     },
     "migration": {
-      "stateBefore": "As established by s1.analyzeBundles[0]-[2], code admission/publication/cleanup reconstruct historical source packets, design preparation captures latest target/ancestry, and native resource mutations use full family checkpoint writers. Existing stored code/design formats include qualified v1 and admission-aware v2 with embedded guards; permanent CR capability readers distinguish supported history versions. Progress stays at scope_preparation while source work executes. s1.analyzeBundles[3] records the actual stopped attempt4 and measured overhead. That stopped checkpoint and all other review histories must remain intact. Revision baseline: t1-t13 implementation and passing focused records exist; t14 failed the retained production workload before provider readiness at98328304 estimated packet bytes with64MiB cap and2831ms admission. Compact native durability and source dedup passed their observed checks; this is not full qualification.",
-      "stateAfter": "New executions use one preparation/context lifecycle and new family checkpoint format3, bounded RuntimeV1 and a versioned derived PreparedContextManifest whose new staged packet/index encoding is distinguished from the former eager-view encoding. The main host owns compact runtime writes and private current-epoch qualification receipts; immutable files alone grant no trust. Existing coordinators, complete pinned input/response history, code scope proof, latest-design invalidation, process-intent durability and human approval remain. Supported old formats are read-only inputs to explicit migration/qualification, not another execution engine. Permanent publication uses explicit new code CR4/design CR3 capability records when new runtime audit/binding data is present; old completed records remain unchanged. Stable source qualification is separate from successor history bindings; per-session disk staging retains verified queries under memory pressure; durable CleanupClaimV1 permits cleanup-only crash reconciliation. Prepared descriptors and leaves are staged during construction and consumed in bounded windows throughout lifecycle; existing source/history/runtime authority is unchanged. Revision does not reset completed task records or turn their prior evidence into proof of new behavior.",
+      "stateBefore": "As grounded by c1-c5 and the retained revision-4 design, code admission, publication, and cleanup reconstruct source packets; design captures latest target and ancestry; the main host owns compact operational durability; and the stopped attempt plus completed task evidence remain preserved. The t14 retained workload exposed aggregate prepared-view memory and admission gaps. Revision 6 corrected source ownership but accidentally dropped valid lifecycle, persistence, cancellation, publication, cleanup, performance, and compatibility design. The duplicate ISSUE is not automatically superseded by delivery-chain precedence.",
+      "stateAfter": "The holistic lifecycle remains intact: exact admission, isolated workers, compact runtime/checkpoint durability, cancellation and progress, publication, approval cleanup, historical readers, native fencing, and measured release qualification. Code preparation now persists exact locators and immutable identities, transiently supplies only selected pinned after blocks, and materializes only relevant files from each change's applicable commit parent in an attempt-owned sealed workspace; no aggregate code source body or eager whole-packet view is durable. Design review remains latest-document based. The duplicate ISSUE/LLD lineage is explicitly superseded and non-routable, completed task evidence is retained, and delta work runs before t14.",
       "migrationSteps": [
         {
           "order": 1,
-          "action": "Retain a reproducible controlled fixture manifest and baseline measurements from the171-file/four-attempt workload and approved issue before relying on temporary profiling files. Inventory supported checkpoint/CR variants, current live owners and exact unresolved guards. Do not restart the stopped worker-isolation review.",
+          "action": "Retain the reproducible 171-file/four-attempt fixture, revision-4 holistic design baseline, completed task/build evidence, historical records, current owners, and unresolved guards; do not restart the stopped review.",
           "rollbackable": true
         },
         {
           "order": 2,
-          "action": "Deliver exact versioned decoders, common operational-proof reads and context authority contracts before enabling new writes in the same final cutover. Preserve existing supported historical records and reject unknown/mismatched capabilities. Add production-route, byte-preservation and fault-window fixtures; no compatibility execution engine or feature/activation flag.",
-          "rollbackable": true
+          "action": "Explicitly transition ISSUE-163e7bc3d6f0ccba and LLD-163e7bc3d6f0ccba-s1 to lifecycle superseded, bind replacement provenance to the primary ISSUE/LLD lineage, and verify both are preserved but non-routable; stop if readback fails.",
+          "rollbackable": false
         },
         {
           "order": 3,
-          "action": "Implement unified source/context acquisition, compact runtime durability, lifecycle consumers and supported cancel/progress surfaces together in the tracked build sequence. During development validate new behavior in isolated source/compiled fixtures; do not partially deploy cache-only or writer-only changes to the user's daemon. Include successor history binding, aggregate disk reservation/staging retention, and both-family durable cleanup claims in the same cutover; no feedback-key or missing-runtime cleanup fallback.",
+          "action": "Finalize versioned source-light selected-change locators, applicable-parent baseline-workspace manifests, historical readers, common operational-proof reads, and context authority contracts before enabling new writes; reject unknown capabilities.",
           "rollbackable": true
         },
         {
           "order": 4,
-          "action": "Before final performance qualification, extend the same approved LLD/PLAN with sequenced corrective tasks for bounded typed codec/index storage, incremental projection/packet consumers, all lifecycle reads, admission attribution/correction and regression tests. Preserve t1-t13 ids/history; keep t14 qualification incomplete until corrections pass. No production implementation before revised artifacts are reviewed/presented and explicitly approved.",
+          "action": "Implement the existing unified admission/context, compact runtime durability, lifecycle consumers, cancellation and progress surfaces together with transient exact pinned after-block extraction and attempt-owned relevant parent-file workspaces; retain design latest-document capture.",
           "rollbackable": true
         },
         {
           "order": 5,
-          "action": "Cut over prepared-view writer and every cold/warm consumer together in isolated fixtures. Explicitly version the changed derived manifest/index encoding. Reject old derived views as qualification; retain history/runtime and exact unresolved leases and require normal cold requalification under existing authority. Do not transform pinned checkpoint inputs/results or permanent CRs, add an old eager fallback, trust persisted hashes after restart or erase an active borrow. Remove only proven inactive disposable generations under existing cleanup/capacity rules.",
+          "action": "Revise the PLAN with only delta contract, implementation, migration, and regression tasks before retained t14; preserve t1-t13 and t15-t20 identities and evidence, and keep t14 incomplete until the corrections pass.",
           "rollbackable": true
         },
         {
           "order": 6,
-          "action": "Qualify exact scope equivalence and all failure/route matrices, then the managed native cold/warm/history-growth/concurrent performance gates. Complete the required independent code review and human BUILD approval before publishing. A failed performance or correctness gate blocks returning to worker-isolation qualification.",
+          "action": "Cut over the source-light locator/manifest writer and every cold/warm code consumer together in isolated fixtures. Remove eager aggregate code packet/source-body views; preserve exact history, runtime authority, feedback, provenance, tests, recovery, publication, and cleanup semantics.",
           "rollbackable": true
         },
         {
           "order": 7,
-          "action": "Coordinate other active reviews and retain their checkpoints before the explicit approved daemon update/restart. Update daemon and required MCP/IPC/IDE DTO readers together and reconnect consumers; advertise supported new preparation/runtime/cancel capabilities. This needs a coordinated restart and does not promise zero downtime or in-flight completion.",
+          "action": "Qualify exact scope and evidence equivalence, add/delete/rename/stacked-parent behavior, both-family route matrices, retained workload memory/query/write amplification, concurrency, cancellation, cleanup, recovery, progress, and admission attribution. Then require independent code review and human BUILD approval.",
           "rollbackable": true
         },
         {
           "order": 8,
-          "action": "On explicit use of a supported old inactive review, acquire its exact owner/target fence, validate old input/history and all embedded resource guards, create an initializing RuntimeV1, commit the upgraded format3 reference preserving submitted/results/actions byte values, then activate only a proven common binding. Preserve original migration evidence until successful completion/cleanup. Any unresolved old/native guard or uncertain write blocks activation and requires existing explicit resource recovery; never replace it with an empty guard. No automatic bulk rewrite of completed permanent CRs.",
+          "action": "Coordinate active reviews, publish approved changes, update or restart the daemon and current MCP/IDE DTO readers together, and advertise supported source-light preparation/runtime/cancel capabilities; do not promise zero downtime.",
           "rollbackable": true
         },
         {
           "order": 9,
-          "action": "At cold daemon startup invalidate private qualification receipts. Treat retained manifests as untrusted hints; first authorized phase reconstructs/qualifies required immutable evidence once through the bounded source session and refreshes current authority/content. Reconcile a committed result/publication boundary from preserved checkpoint/CR evidence without invoking a model solely for bookkeeping. No automatic resume or new attempt.",
+          "action": "For an explicitly resumed supported old inactive review, acquire its exact owner and target fence, validate old input/history and guards, create initializing runtime state, preserve submitted/results/actions bytes, and activate only a proven binding. Never replace an unresolved guard with an empty one.",
           "rollbackable": true
         },
         {
           "order": 10,
-          "action": "Perform post-deployment controlled code/design smoke: preparation progress, cancel one review while another proceeds, resource fence/recovery, publication and approved cleanup. Then explicitly resolve the stopped worker-isolation review's retained guard through supported recovery and obtain the user decision to retrigger the appropriate attempt; do not count its canceled run as a completed review. If code/input changed, submit a newly committed packet and new pinned attempt; never mutate canceled attempt4. This fix's approval does not automatically complete the older BUILD.",
+          "action": "At cold startup invalidate private qualification receipts. Treat retained locator/workspace manifests only as untrusted hints; the first authorized phase verifies required immutable objects and applicable parents once, refreshes mutable authority, and never auto-resumes or creates an attempt.",
           "rollbackable": true
         },
         {
           "order": 11,
-          "action": "Rollback before new-format emission can restore the previous binary. After format3/runtime/new-CR records exist, do not run old-only readers or reverse-transform live records: roll forward or use a state-preserving rollback build that retains new readers and leaves incomplete reviews explicitly interrupted. Permanent approved history is never rewritten as rollback; deleting unborrowed derived cache is safe but may require cold requalification.",
+          "action": "Run authorized post-deployment code and design smoke covering preparation progress, concurrent reviews, targeted cancellation, resource fencing/recovery, publication, approval cleanup, and workspace deletion. Only then seek explicit user direction for the stopped worker-isolation review.",
+          "rollbackable": true
+        },
+        {
+          "order": 12,
+          "action": "Before new-format emission rollback may restore the previous binary. After new runtime, locator/manifest, or CR capability records exist, roll forward or use a state-preserving reader build; never reverse-transform permanent history. Disposable unborrowed workspace/derived state may be cleaned and cold-requalified.",
           "rollbackable": false
         }
       ],
-      "backwardCompat": "Historical supported checkpoint/CR data stays readable and immutable unless an explicit inactive-checkpoint migration is required for new execution. New code/design cancel phases and optional preparation progress fields are additive for discovery-capable consumers; required new storage/runtime authority must be understood end to end. Unknown required format/capability fails clearly, never masquerades as an empty guard or older engine. Maintain aligned supported VS Code/JetBrains IPC DTOs and MCP schemas; no deprecated insrc-ide requirement. Keep full per-attempt packets and accepted feedback exactly; aliases and old action/publication history are not normalized away. No new trust keys, compatibility flags or parallel legacy execution path. A raw persisted manifest/hash is not a cross-restart qualification credential. Once new runtime/CR formats are emitted, old-only reader rollback is unsupported. This revision changes disposable prepared-view encoding only: no extra checkpoint/CR schema change solely for staging. Old eager derived views cannot be read as the new format; compatible history/runtime readers remain required for explicit cold recovery.",
+      "backwardCompat": "Preserve existing public MCP/IPC status and progress semantics, generic prepareReviewPacket/selectedCode helper surfaces, non-generic preparation classes, exact per-attempt packets and feedback, supported checkpoint/CR readers, native fencing, current VS Code and JetBrains DTOs, and latest-document design-review invalidation. New code attempts use only source-light locators/manifests and transient selected blocks; old eager derived views are untrusted disposable inputs to cold requalification, not a fallback engine. Unknown or ambiguous required state fails explicitly. No new trust keys, feature flags, direct REST provider, or deprecated insrc-ide requirement.",
       "zeroDowntime": false,
       "dataRewriteRequired": true
     },
     "alternativesConsidered": [
       {
         "id": "a1",
-        "name": "Bounded prepared-view staging in the existing context store",
-        "oneLineSummary": "Stream packet metadata and content-addressed leaves to the existing reserved context files; access only the current task or validation window.",
-        "approach": "Reuse existing typed-byte content codec, private qualification receipt, source staging and host capacity reservation. Replace eager packet inventory/whole-view loading with digest-indexed metadata and demand-loaded bounded task/file windows across preparation, history verification, execution, publication and recovery. Admission timing is traced and expensive derivation stays in registered worker paths; acknowledgement never grants qualified authority.",
+        "name": "Holistic lifecycle with source-light code delta",
+        "oneLineSummary": "Retain the established end-to-end lifecycle and replace only eager code-source ownership with exact locators, transient selected after blocks, and commit-parent baseline workspaces.",
+        "approach": "Merge the source-light correction into admission, worker, durability, cancellation, progress, publication, cleanup, compatibility, and qualification design. Explicitly supersede duplicate artifacts and insert delta tasks before t14.",
         "pros": [
-          "Smallest coherent extension preserving current lifecycle and complete scope",
-          "Binary/text content deduplicates without JSON numeric-array expansion",
-          "Cold and warm consumers obey the same working-set bound"
+          "Meets the owning issue and source-light requirement",
+          "Preserves completed lifecycle work",
+          "Keeps design-review semantics distinct"
         ],
         "cons": [
-          "All eager consumers must be converted together",
-          "Transient projection/clone/serialization allocations need explicit budget ownership and tests"
+          "Requires coordinated migration",
+          "Requires explicit duplicate reconciliation"
         ],
         "costEstimate": "M"
       },
       {
         "id": "a2",
-        "name": "Dedicated disk-backed packet database",
-        "oneLineSummary": "Store packets and leaf references in a separate embedded transactional database.",
-        "approach": "Introduce a worker-local persistent database and typed records for packet indexes, scoped leaves and bounded cursor queries, retaining existing host qualification and generation identities.",
+        "name": "Replace both review families",
+        "oneLineSummary": "Rebuild code and design review around one shared source workspace.",
+        "approach": "Route code and design preparation through a common materialization contract, replacing established latest-document design capture and much of the lifecycle design.",
         "pros": [
-          "Native bounded cursors and indexed retrieval",
-          "Transactional record boundaries"
+          "Uniform surface"
         ],
         "cons": [
-          "Adds storage dependency/lifecycle/migration and packaging complexity alongside an existing adequate context store",
-          "Does not by itself fix eager projection or admission work"
+          "Unnecessary scope expansion",
+          "Breaks valid design semantics",
+          "Discards established work"
         ],
         "costEstimate": "L",
-        "reasonRejected": "Duplicates existing immutable context store and adds storage/migration complexity while still requiring bounded consumer conversion."
+        "reasonRejected": "Replaces valid lifecycle and latest-document design contracts while broadening scope."
+      },
+      {
+        "id": "a3",
+        "name": "Compress existing hydration",
+        "oneLineSummary": "Keep eager prepared source bodies and add compression or spill.",
+        "approach": "Retain broad prepared views and mitigate memory through compression, eviction, or disk spill while leaving source ownership unchanged.",
+        "pros": [
+          "Smaller immediate code delta"
+        ],
+        "cons": [
+          "Does not remove duplicate work",
+          "Retains aggregate source-size dependence",
+          "Does not meet commit-parent workspace requirement"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Retains aggregate source ownership and does not meet exact commit-parent workspace requirements."
       }
     ],
     "chosenAlternative": "a1",
     "openQuestions": [],
     "sequenceDefinition": {
-      "id": "review-preparation-order",
-      "narrative": "The cold path makes input admission, native intent durability, context readiness and committed feedback distinct boundaries. Warm reuse skips source reconstruction only with a current private qualification receipt plus fresh authority checks; cancellation can fence the host/native owner at any phase and never invents rollback of a committed result. Revised packet staging occurs as each semantic validation window completes; no whole packet inventory is hydrated on readiness or warm borrow.",
+      "id": "source-light-code-review",
+      "narrative": "The sequence shows the retained admission and durability lifecycle with source-light code preparation: exact pinned after blocks are transient, relevant before files come from each change's applicable commit parent, and checkpoints contain metadata rather than source bodies. Attempt workspace cleanup follows terminal execution, while review checkpoint cleanup remains gated by permanent CR preservation and human BUILD approval.",
       "participants": [
         {
           "id": "controller",
-          "label": "Human / controller",
-          "description": "Controller submits exact input and carries explicit human approval/recovery decisions."
+          "label": "Controller",
+          "description": "Submits the task review packet and observes progress."
         },
         {
           "id": "host",
-          "label": "Main review host",
-          "description": "Owns exact scope, small runtime writer, private receipts and native process authority."
+          "label": "Review host",
+          "description": "Admits and dispatches an isolated review attempt."
         },
         {
           "id": "worker",
-          "label": "Dedicated review worker",
-          "description": "Performs qualification/projection and runs the existing family coordinator."
-        },
-        {
-          "id": "files",
-          "label": "Project durable files",
-          "description": "Separate history, compact runtime, derived context and permanent CR; each has its declared writer."
+          "label": "Preparation worker",
+          "description": "Qualifies exact scope and owns attempt resources."
         },
         {
           "id": "git",
-          "label": "Isolated native Git",
-          "description": "Bounded pinned source operations under durable host process leases."
+          "label": "Git object store",
+          "description": "Provides immutable selected commits, after objects, and applicable parents."
+        },
+        {
+          "id": "workspace",
+          "label": "Baseline workspace",
+          "description": "Contains only relevant parent files for this attempt."
+        },
+        {
+          "id": "checkpoint",
+          "label": "Checkpoint store",
+          "description": "Persists source-light metadata, progress, and terminal results."
         },
         {
           "id": "reviewer",
-          "label": "Independent reviewer",
-          "description": "Existing daemon CLI or trusted controller; scope and mandatory coverage remain unchanged."
+          "label": "Reviewer",
+          "description": "Assesses the Story and task against exact changes and tests."
         }
       ],
       "messages": [
         {
           "from": "controller",
           "to": "host",
-          "label": "Submit exact review / attempt",
-          "description": "No arbitrary source authority, PID or cached approval is accepted.",
-          "kind": "call"
-        },
-        {
-          "from": "host",
-          "to": "files",
-          "label": "Create initializing RuntimeV1",
-          "description": "Empty and inactive; cannot authorize native work.",
-          "kind": "call"
+          "label": "Submit task packet",
+          "kind": "call",
+          "description": "Send functional context, artifact paths, exact selected changes, commit pointers, and complete test details."
         },
         {
           "from": "host",
           "to": "worker",
-          "label": "Reserve input writer for exact owner",
-          "description": "No source or model work yet.",
-          "kind": "call"
+          "label": "Dispatch isolated preparation",
+          "kind": "call",
+          "description": "Start the attempt in its own review worker."
         },
         {
           "from": "worker",
-          "to": "files",
-          "label": "Commit full attempt input + runtime reference",
-          "description": "Keep complete pinned packet and history.",
-          "kind": "call"
-        },
-        {
-          "from": "worker",
-          "to": "host",
-          "label": "Return durable input binding",
-          "description": "Private acknowledged checkpoint identity.",
-          "kind": "call"
-        },
-        {
-          "from": "host",
-          "to": "files",
-          "label": "Activate matching runtime",
-          "description": "Both stores must agree before acknowledgement.",
-          "kind": "call"
-        },
-        {
-          "from": "host",
-          "to": "controller",
-          "label": "Acknowledge admission",
-          "description": "Preparation runs in background.",
-          "kind": "return"
-        },
-        {
-          "from": "host",
-          "to": "worker",
-          "label": "Acquire / prepare context",
-          "description": "Refresh author, route and family-specific subject authority.",
-          "kind": "call"
-        },
-        {
-          "from": "worker",
-          "to": "host",
-          "label": "Request bounded pinned source batch",
-          "description": "A shared source session covers history/current input.",
-          "kind": "call"
-        },
-        {
-          "from": "host",
-          "to": "files",
-          "label": "Persist exact open intent",
-          "description": "No spawn before confirmed durable intent.",
-          "kind": "call"
-        },
-        {
-          "from": "host",
           "to": "git",
-          "label": "Run isolated bounded batch",
-          "description": "No generic HEAD diff, inherited unsafe Git environment or native bypass.",
-          "kind": "call"
+          "label": "Verify commits, parents, and objects",
+          "kind": "call",
+          "description": "Resolve every selected change to immutable after and applicable parent identities."
         },
         {
           "from": "git",
-          "to": "host",
-          "label": "Return bytes and confirmed disposal",
-          "description": "Missing/truncated/unverifiable output is not accepted as proof.",
-          "kind": "return"
-        },
-        {
-          "from": "host",
-          "to": "files",
-          "label": "Persist exact closure",
-          "description": "Uncertainty retains the resource fence.",
-          "kind": "call"
-        },
-        {
-          "from": "host",
           "to": "worker",
-          "label": "Deliver bounded source result",
-          "description": "Worker verifies complete scope/objects/projection.",
-          "kind": "return"
+          "label": "Return pinned identities",
+          "kind": "return",
+          "description": "Return verified identities without broad repository hydration."
         },
         {
           "from": "worker",
-          "to": "files",
-          "label": "Stage bounded packet/task descriptors and leaves",
-          "description": "Charge all live buffers/indexes/scratch before allocation; release each validation window, retain complete staged evidence under aggregate disk reservation.",
-          "kind": "call"
+          "to": "workspace",
+          "label": "Materialize relevant parent files",
+          "kind": "call",
+          "description": "Create ordinary paths only for files needed by the submitted changes."
         },
         {
-          "from": "worker",
-          "to": "files",
-          "label": "Commit immutable ready context",
-          "description": "Complete derived bytes and manifest, not approval authority.",
-          "kind": "call"
-        },
-        {
-          "from": "worker",
-          "to": "host",
-          "label": "Register qualified generation digest",
-          "description": "Private current owner/epoch only.",
-          "kind": "call"
-        },
-        {
-          "from": "host",
+          "from": "workspace",
           "to": "worker",
-          "label": "Issue context capability / borrow",
-          "description": "Main retains compact expected digest, not large source objects.",
-          "kind": "return"
+          "label": "Return sealed manifest",
+          "kind": "return",
+          "description": "Return attempt ownership, paths, parent identities, and integrity metadata."
+        },
+        {
+          "from": "worker",
+          "to": "git",
+          "label": "Read exact selected after blocks",
+          "kind": "call",
+          "description": "Decode only submitted after ranges from pinned after objects."
+        },
+        {
+          "from": "git",
+          "to": "worker",
+          "label": "Return transient selected blocks",
+          "kind": "return",
+          "description": "Return bounded code content that is released after reviewer input construction."
+        },
+        {
+          "from": "worker",
+          "to": "checkpoint",
+          "label": "Persist source-light preparation",
+          "kind": "call",
+          "description": "Store locators, identities, workspace manifest, tests, and progress without source bodies."
+        },
+        {
+          "from": "worker",
+          "to": "checkpoint",
+          "label": "Durably acknowledge ready context",
+          "kind": "call",
+          "description": "Persist locator, manifest, runtime binding, and honest progress before reviewer invocation."
         },
         {
           "from": "worker",
           "to": "reviewer",
-          "label": "Review task or chunk using context",
-          "description": "Only qualified selected scope and current design paths; no copied design body.",
-          "kind": "call"
+          "label": "Review exact task scope",
+          "kind": "call",
+          "description": "Provide requirements and design paths, exact after blocks, baseline paths, prior feedback, and test details."
         },
         {
           "from": "reviewer",
           "to": "worker",
-          "label": "Return feedback and coverage assessment",
-          "description": "Existing independent judge/result semantics.",
-          "kind": "return"
+          "label": "Return findings and verdict",
+          "kind": "return",
+          "description": "Return structured feedback for the attempt."
         },
         {
           "from": "worker",
-          "to": "files",
-          "label": "Commit full accepted result",
-          "description": "Validate feedback/origins and new evidence; commit accepted history plus immutable successor history binding, reusing stable source qualification.",
-          "kind": "call"
-        },
-        {
-          "from": "worker",
-          "to": "host",
-          "label": "Confirm committed result boundary",
-          "description": "Late or canceled generations cannot advance it.",
-          "kind": "call"
-        },
-        {
-          "from": "host",
-          "to": "files",
-          "label": "Advance compact progress boundary",
-          "description": "Actual durable completion only.",
-          "kind": "call"
-        },
-        {
-          "from": "worker",
-          "to": "files",
-          "label": "Publish self-contained permanent CR",
-          "description": "No model call on publication-only retry.",
-          "kind": "call"
+          "to": "checkpoint",
+          "label": "Commit terminal result",
+          "kind": "call",
+          "description": "Persist result and final progress atomically."
         },
         {
           "from": "host",
           "to": "controller",
-          "label": "Report complete result; await approval",
-          "description": "A checkpoint or private receipt is not human approval.",
-          "kind": "return"
+          "label": "Report completion",
+          "kind": "return",
+          "description": "Return checkpoint or review output metadata for approval."
+        },
+        {
+          "from": "host",
+          "to": "workspace",
+          "label": "Clean attempt resources",
+          "kind": "call",
+          "description": "Delete the attempt workspace after terminal cleanup."
         },
         {
           "from": "controller",
           "to": "host",
-          "label": "Explicit human approval",
-          "description": "Normal workflow gate only.",
-          "kind": "call"
+          "label": "Record human BUILD approval",
+          "kind": "call",
+          "description": "After independent code review, apply the explicit human approval gate."
         },
         {
           "from": "host",
-          "to": "files",
-          "label": "Verify preservation and dispose inactive temp state",
-          "description": "Preserve closed audit, durably sync exact cleanup-only claim, remove disposable state then checkpoint, and remove claim last; explicit crash retry uses permanent proof.",
-          "kind": "call"
+          "to": "checkpoint",
+          "label": "Preserve permanent CR and cleanup claim",
+          "kind": "call",
+          "description": "Bind complete submitted scope, feedback, operational audit, approval revision, and exact deletion inventory."
+        },
+        {
+          "from": "host",
+          "to": "checkpoint",
+          "label": "Clean temporary review checkpoint",
+          "kind": "call",
+          "description": "Delete temporary review state only after permanent preservation, closed resources, and cleanup-claim validation."
         }
       ]
     },
     "componentDependencyDefinition": {
-      "id": "review-preparation-components",
-      "narrative": "Existing family coordinators consume one preparation boundary. The main host keeps only current authority/receipts and small runtime state; full history and immutable context remain project files, and every native source operation still crosses existing host process control.",
+      "id": "review-preparation-dependencies",
+      "narrative": "The component view keeps design review on latest-document capture and code review on exact Git locators plus an attempt baseline workspace. It also retains compact runtime durability, publication, human approval, and cleanup ownership so the source-light delta does not replace the holistic lifecycle.",
       "components": [
         {
-          "id": "surface",
-          "label": "MCP / supported IPC",
-          "description": "Submit, progress, cancel and explicit recovery contracts.",
+          "id": "controller",
+          "label": "Controller/MCP",
+          "description": "Submits and polls review attempts.",
           "path": "src/mcp"
         },
         {
           "id": "host",
-          "label": "Review ownership and receipts",
-          "description": "Existing main registry with compact private preparation capabilities.",
-          "path": "src/daemon/threads/review-workers.ts"
-        },
-        {
-          "id": "runtime",
-          "label": "Compact runtime authority",
-          "description": "Proposed host-owned small state writer, replacing hot full-history mutations.",
-          "path": "src/daemon/threads/review-worker-resources.ts"
-        },
-        {
-          "id": "worker",
-          "label": "Family coordinator workers",
-          "description": "Existing isolated code/design execution and judging policy.",
-          "path": "src/daemon/threads/review-worker-runtime.ts"
+          "label": "Review host",
+          "description": "Admits and dispatches isolated workers.",
+          "path": "src/daemon/threads"
         },
         {
           "id": "preparation",
-          "label": "Shared preparation contract",
-          "description": "Proposed common lifecycle adapter around existing family validators; no replacement judge.",
+          "label": "Code preparation",
+          "description": "Qualifies exact code scope and coordinates source-light resources.",
+          "path": "src/workflow/review/code-preparation.ts"
+        },
+        {
+          "id": "packet",
+          "label": "Task review packet",
+          "description": "Validates submitted scope and pinned change locators.",
+          "path": "src/workflow/code-review/task-review/packet.ts"
+        },
+        {
+          "id": "git",
+          "label": "Git object access",
+          "description": "Reads immutable selected and parent objects."
+        },
+        {
+          "id": "workspace",
+          "label": "Attempt baseline workspace",
+          "description": "Owns relevant parent files and its sealed manifest."
+        },
+        {
+          "id": "checkpoint",
+          "label": "Review checkpoint lifecycle",
+          "description": "Persists metadata, progress, recovery, and results without source bodies.",
           "path": "src/workflow/review"
         },
         {
-          "id": "source",
-          "label": "Verified source planning",
-          "description": "Existing ReviewSources/projection extended with bounded shared query sessions and batching.",
-          "path": "src/workflow/code-review/task-review/sources.ts"
+          "id": "reviewer",
+          "label": "Reviewer runner",
+          "description": "Receives exact code scope, requirements, and tests."
         },
         {
-          "id": "native",
-          "label": "Host native leases",
-          "description": "Existing intent-before-spawn, disposal and cancellation authority.",
-          "path": "src/daemon/threads/review-native-host.ts"
+          "id": "design",
+          "label": "Design subject preparation",
+          "description": "Keeps resolving the latest artifact document independently.",
+          "path": "src/workflow/review"
         },
         {
-          "id": "history",
-          "label": "Full review history",
-          "description": "Existing project checkpoint writers at semantic input/result boundaries.",
+          "id": "runtime",
+          "label": "Compact runtime",
+          "description": "Owns bounded leases, progress, cancellation, and durable semantic boundaries.",
+          "path": "src/daemon/threads"
+        },
+        {
+          "id": "publication",
+          "label": "CR publication",
+          "description": "Builds permanent review evidence from terminal checkpoint data.",
           "path": "src/workflow"
         },
         {
-          "id": "context",
-          "label": "Immutable context bytes",
-          "description": "Stable verified source generation, separately versioned history bindings and retained query staging under aggregate capacity accounting. Includes digest-indexed staged packet descriptors and typed leaves; bounded writer and consumer windows, no eager inventory."
+          "id": "approval",
+          "label": "Human approval gate",
+          "description": "Authorizes BUILD completion and temporary checkpoint cleanup."
         },
         {
-          "id": "lifecycle",
-          "label": "Publication / approval / cleanup",
-          "description": "Existing lifecycle gates consume the same qualified context and runtime proof.",
-          "path": "src/workflow"
+          "id": "cleanup",
+          "label": "Cleanup owner",
+          "description": "Uses exact fences and durable claims to remove only owned temporary state.",
+          "path": "src/workflow/review"
         }
       ],
       "dependencies": [
         {
-          "from": "surface",
+          "from": "controller",
           "to": "host",
-          "label": "exact review control"
+          "label": "submit/poll"
+        },
+        {
+          "from": "host",
+          "to": "preparation",
+          "label": "isolated dispatch"
+        },
+        {
+          "from": "preparation",
+          "to": "packet",
+          "label": "qualify exact scope"
+        },
+        {
+          "from": "packet",
+          "to": "git",
+          "label": "verify pinned objects"
+        },
+        {
+          "from": "preparation",
+          "to": "workspace",
+          "label": "materialize relevant parents"
+        },
+        {
+          "from": "preparation",
+          "to": "checkpoint",
+          "label": "persist locators/manifest/progress"
+        },
+        {
+          "from": "preparation",
+          "to": "reviewer",
+          "label": "selected after blocks + baseline paths"
+        },
+        {
+          "from": "design",
+          "to": "reviewer",
+          "label": "latest artifact document"
+        },
+        {
+          "from": "reviewer",
+          "to": "checkpoint",
+          "label": "findings/result"
         },
         {
           "from": "host",
           "to": "runtime",
-          "label": "sole hot-state writer"
+          "label": "lease/progress/cancel durability"
         },
         {
-          "from": "host",
-          "to": "worker",
-          "label": "dedicated owner / cancellation"
+          "from": "checkpoint",
+          "to": "publication",
+          "label": "terminal review evidence"
         },
         {
-          "from": "worker",
-          "to": "preparation",
-          "label": "acquire complete context"
+          "from": "publication",
+          "to": "approval",
+          "label": "present independent review"
         },
         {
-          "from": "preparation",
-          "to": "source",
-          "label": "qualify immutable evidence"
+          "from": "approval",
+          "to": "cleanup",
+          "label": "authorize temporary cleanup"
         },
         {
-          "from": "source",
-          "to": "native",
-          "label": "isolated bounded Git"
+          "from": "cleanup",
+          "to": "workspace",
+          "label": "delete owned workspace"
         },
         {
-          "from": "native",
-          "to": "runtime",
-          "label": "durable intent / closure"
-        },
-        {
-          "from": "preparation",
-          "to": "context",
-          "label": "write / read immutable generation"
-        },
-        {
-          "from": "preparation",
-          "to": "host",
-          "label": "private ready receipt / borrow"
-        },
-        {
-          "from": "worker",
-          "to": "history",
-          "label": "input and accepted feedback"
-        },
-        {
-          "from": "lifecycle",
-          "to": "preparation",
-          "label": "reuse or cold qualify once"
-        },
-        {
-          "from": "lifecycle",
-          "to": "runtime",
-          "label": "current resource / cancellation proof"
-        },
-        {
-          "from": "lifecycle",
-          "to": "history",
-          "label": "preserve before cleanup"
+          "from": "cleanup",
+          "to": "checkpoint",
+          "label": "delete after permanent preservation"
         }
       ]
     },
     "adherence": {
       "dimensions": [
+        "functional-coverage",
         "diagram-sequence",
-        "diagram-component",
-        "functional-coverage"
+        "diagram-component"
       ]
     },
     "companions": [
@@ -1727,238 +1890,28 @@
   "citations": [
     {
       "id": "c1",
-      "kind": "code",
-      "ref": "src/workflow/code-review/task-review/admission.ts"
+      "kind": "analyze-bundle",
+      "ref": "symbol.locate: current review preparation declarations and signatures"
     },
     {
       "id": "c2",
-      "kind": "code",
-      "ref": "src/daemon/threads/review-workers.ts"
+      "kind": "analyze-bundle",
+      "ref": "usage.example: preparation admission and packet usage"
     },
     {
       "id": "c3",
-      "kind": "code",
-      "ref": "src/workflow/review/preparation-checkpoint.ts"
+      "kind": "analyze-bundle",
+      "ref": "search.text: artifact superseded lifecycle and delivery behavior"
     },
     {
       "id": "c4",
-      "kind": "step-output",
-      "ref": "s1.analyzeBundles[1]"
+      "kind": "analyze-bundle",
+      "ref": "test.locate: preparation, durability, performance, isolation, recovery, cleanup, and publication suites"
     },
     {
       "id": "c5",
       "kind": "prior-artifact",
-      "ref": ".insrc/artifacts/ISSUE-470a1f61b26b12c6.json"
-    },
-    {
-      "id": "c6",
-      "kind": "code",
-      "ref": "src/workflow/code-review/task-review/admission.ts"
-    },
-    {
-      "id": "c7",
-      "kind": "code",
-      "ref": "src/workflow/code-review/task-review/packet.ts"
-    },
-    {
-      "id": "c8",
-      "kind": "code",
-      "ref": "src/workflow/code-review/task-review/worker-checkpoint.ts"
-    },
-    {
-      "id": "c9",
-      "kind": "code",
-      "ref": "src/workflow/code-review/task-review/publication.ts"
-    },
-    {
-      "id": "c10",
-      "kind": "code",
-      "ref": "src/workflow/code-review/task-review/cleanup.ts"
-    },
-    {
-      "id": "c11",
-      "kind": "code",
-      "ref": "src/workflow/review/design-review/subject.ts"
-    },
-    {
-      "id": "c12",
-      "kind": "code",
-      "ref": "src/workflow/review/design-review/approval.ts"
-    },
-    {
-      "id": "c13",
-      "kind": "code",
-      "ref": "src/workflow/review/design-review/publication.ts"
-    },
-    {
-      "id": "c14",
-      "kind": "code",
-      "ref": "src/workflow/review/design-review/cleanup.ts"
-    },
-    {
-      "id": "c15",
-      "kind": "code",
-      "ref": "src/daemon/threads/review-workers.ts"
-    },
-    {
-      "id": "c16",
-      "kind": "code",
-      "ref": "src/daemon/threads/review-native-host.ts"
-    },
-    {
-      "id": "c17",
-      "kind": "code",
-      "ref": "src/daemon/threads/review-processes.ts"
-    },
-    {
-      "id": "c18",
-      "kind": "code",
-      "ref": "src/daemon/threads/review-worker-resources.ts"
-    },
-    {
-      "id": "c19",
-      "kind": "code",
-      "ref": "src/daemon/threads/review-worker-runtime.ts"
-    },
-    {
-      "id": "c20",
-      "kind": "code",
-      "ref": "src/shared/review-process-bridge.ts"
-    },
-    {
-      "id": "c21",
-      "kind": "code",
-      "ref": "src/daemon/review-service.ts"
-    },
-    {
-      "id": "c22",
-      "kind": "code",
-      "ref": "src/workflow/code-review/task-review/contracts.ts"
-    },
-    {
-      "id": "c23",
-      "kind": "code",
-      "ref": "src/workflow/code-review/task-review/sources.ts"
-    },
-    {
-      "id": "c24",
-      "kind": "code",
-      "ref": "src/workflow/code-review/task-review/coordinator.ts"
-    },
-    {
-      "id": "c25",
-      "kind": "code",
-      "ref": "src/workflow/code-review/task-review/progress.ts"
-    },
-    {
-      "id": "c26",
-      "kind": "code",
-      "ref": "src/workflow/code-review/task-review/checkpoint.ts"
-    },
-    {
-      "id": "c27",
-      "kind": "code",
-      "ref": "src/workflow/review/design-review/contracts.ts"
-    },
-    {
-      "id": "c28",
-      "kind": "code",
-      "ref": "src/workflow/review/design-review/coordinator.ts"
-    },
-    {
-      "id": "c29",
-      "kind": "code",
-      "ref": "src/workflow/review/design-review/checkpoint.ts"
-    },
-    {
-      "id": "c30",
-      "kind": "code",
-      "ref": "src/workflow/code-review/task-review/__tests__/projection-lineage.test.ts"
-    },
-    {
-      "id": "c31",
-      "kind": "code",
-      "ref": "src/workflow/code-review/task-review/__tests__/route-admission.test.ts"
-    },
-    {
-      "id": "c32",
-      "kind": "code",
-      "ref": "src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts"
-    },
-    {
-      "id": "c33",
-      "kind": "code",
-      "ref": "src/daemon/threads/__tests__/review-worker-isolation.test.ts"
-    },
-    {
-      "id": "c34",
-      "kind": "code",
-      "ref": "src/daemon/threads/__tests__/review-worker-recovery.test.ts"
-    },
-    {
-      "id": "c35",
-      "kind": "code",
-      "ref": "src/daemon/threads/__tests__/review-worker-publication.test.ts"
-    },
-    {
-      "id": "c36",
-      "kind": "code",
-      "ref": "src/daemon/threads/__tests__/review-worker-cleanup.test.ts"
-    },
-    {
-      "id": "c37",
-      "kind": "code",
-      "ref": "src/workflow/review/design-review/__tests__/subject-monitor.test.ts"
-    },
-    {
-      "id": "c38",
-      "kind": "prior-artifact",
-      "ref": ".insrc/artifacts/ISSUE-470a1f61b26b12c6.json"
-    },
-    {
-      "id": "c39",
-      "kind": "prior-artifact",
-      "ref": ".insrc/artifacts/LLD-e4af63128c7cbec2-s1.json"
-    },
-    {
-      "id": "c40",
-      "kind": "prior-artifact",
-      "ref": ".insrc/artifacts/PLAN-e4af63128c7cbec2-s1.json"
-    },
-    {
-      "id": "c41",
-      "kind": "code",
-      "ref": "design/review-worker-isolation-e4af6312.packet.json"
-    },
-    {
-      "id": "c42",
-      "kind": "doc",
-      "ref": "/tmp/review-preparation-profile.json"
-    },
-    {
-      "id": "c43",
-      "kind": "doc",
-      "ref": "/tmp/profile-review-admission.mts"
-    },
-    {
-      "id": "c44",
-      "kind": "step-output",
-      "ref": "s1.analyzeBundles[1]"
-    },
-    {
-      "id": "c45",
-      "kind": "step-output",
-      "ref": "s1.analyzeBundles[0]"
-    },
-    {
-      "id": "c46",
-      "kind": "code",
-      "ref": "src/workflow/review/code-preparation.ts"
-    },
-    {
-      "id": "c47",
-      "kind": "code",
-      "ref": "src/workflow/review/prepared-context.ts"
+      "ref": "LLD-470a1f61b26b12c6-s1 revision 4 holistic lifecycle baseline plus approved ISSUE-470a1f61b26b12c6 and stakeholder source-light correction"
     }
   ]
 }

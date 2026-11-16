@@ -1,5 +1,6 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { createHash } from 'node:crypto';
+import { isDeepStrictEqual as same } from 'node:util';
 import { createRepoLifecycle } from '../../artifact-core/repo-lifecycle.js';
 import type { ArtifactStore } from '../../artifact-core/store.js';
 import type { Actor, ChangeLogEntry } from '../../artifact-core/types.js';
@@ -20,6 +21,7 @@ import { decodeArtifactHead } from '../../artifact-core/decode.js';
 import { decodePreparationCheckpoint } from '../preparation-checkpoint.js';
 import type { DesignPreparationCheckpoint } from '../preparation-checkpoint.js';
 import type { QualifiedPublication } from '../publication-proof.js';
+import type { ReviewResourceGuard } from '../../../shared/review-resources.js';
 
 const sha=(raw:string)=>createHash('sha256').update(raw).digest('hex');
 /** Lifecycle writers retain the source head and may add its default envelope.
@@ -106,7 +108,13 @@ export async function publishDesignReview(submitted:StoredDesignCheckpoint | Des
  requireDesign(attempt.report,'publication_incomplete','No consolidated report to publish');
  const proof = preparation ? await deps.preparation!.authorize(preparation) : undefined;
  const preservation=designPreservationDigest(input),id=sha(`design-review-v1\0${cp.project}\0${cp.artifactId}\0${cp.reviewId}\0${attempt.number}\0${preservation}`);
- await persistReviewResourceAudit(store,cp.artifactId,{project:cp.project,family:'design',reviewId:cp.reviewId},input.attempts.flatMap(a=>'resourceGuard' in a&&a.resourceGuard?[{attempt:a.number,resourceGuard:a.resourceGuard}]:[]));
+ const guards=new Map<number,ReviewResourceGuard>();
+ for(const entry of input.attempts)if('resourceGuard'in entry&&entry.resourceGuard)guards.set(entry.number,entry.resourceGuard);
+ for(const migrated of preparation?.migration?.guards??[]){
+  const prior=guards.get(migrated.attempt);if(prior&&!same(prior,migrated.guard))throw new Error('Conflicting migrated resource audit');
+  guards.set(migrated.attempt,migrated.guard);
+ }
+ await persistReviewResourceAudit(store,cp.artifactId,{project:cp.project,family:'design',reviewId:cp.reviewId},[...guards].map(([number,resourceGuard])=>({attempt:number,resourceGuard})));
  const author=authorPartyOf(JSON.parse(attempt.baseline.reviewedContent.canonical).meta);
  requireDesign(author!=='unknown'&&author!==cp.subject.reviewer,'publication_party','Unknown or non-independent author');
  const actor:Actor={id:`agent:design-review-${cp.subject.reviewer}`,kind:'agent',properties:{party:cp.subject.reviewer}};

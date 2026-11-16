@@ -2,14 +2,16 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { isDeepStrictEqual } from 'node:util';
 import { createHash } from 'node:crypto';
-import { readFile, writeFile, rename, rm, mkdir, chmod, access } from 'node:fs/promises';
+import { readFile, writeFile, rename, rm, mkdir, chmod, access, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { productionRoutes } from './helpers/review-production-routes.js';
 import { until, workerRpc } from './helpers/review-clearance-fixture.js';
 import { routeFixture, ISSUE_ONLY, LLD_ONLY, PLAN_STORY, BUILD_ONLY, DEF_STORY } from '../../../workflow/code-review/task-review/__tests__/helpers/route-fixture.js';
 import { fixture as codeFixture, hash } from '../../../workflow/code-review/task-review/__tests__/publication-fixture.js';
 import { prepareReviewAdmission } from '../../../workflow/code-review/task-review/admission.js';
-import { PreparedContextReader, contextRoot } from '../../../workflow/review/prepared-context.js';
+import { contextRoot } from '../../../workflow/review/prepared-context.js';
+import { materializePreparedValue, PreparedViewReader } from '../../../workflow/review/prepared-views.js';
+import { ReviewMemoryBudget } from '../../../workflow/review/preparation-memory.js';
 import { reviewPreparationLimits } from '../../../config/review.js';
 import type { PreparedReviewPacket } from '../../../workflow/code-review/task-review/packet.js';
 import { subjectFixture } from '../../../workflow/review/design-review/__tests__/helpers/subject-fixture.js';
@@ -25,9 +27,15 @@ import { decodeStoredDesignCheckpoint } from '../../../workflow/review/design-re
 
 async function packets(path: string) {
  const cp = JSON.parse(await readFile(path, 'utf8')), key = { project: cp.project, family: 'code' as const, reviewId: cp.reviewId };
+ assert.ok(cp.context, `missing prepared context: ${JSON.stringify(cp)}`);
  const manifest = JSON.parse(await readFile(join(contextRoot(key), cp.context.generationId, 'manifest.json'), 'utf8'));
- const reader = await PreparedContextReader.open({ ...manifest, storedBytes: manifest.byteTotals.stored, capacityToken: 'inspection-only' }, reviewPreparationLimits(join(cp.project, 'no-config.json')), async () => {}, async error => { throw error; });
- return (await reader.view('code-packets') as [string, PreparedReviewPacket][]).map(([, p]) => p);
+ const limits=reviewPreparationLimits(join(cp.project, 'no-config.json'));
+ const reader = await PreparedViewReader.open({ key:manifest.key,attempt:manifest.attempt,generationId:manifest.generationId,identityDigest:manifest.identityDigest,inputDigest:manifest.inputDigest,sourceIdentity:manifest.sourceIdentity,validatorVersion:manifest.validatorVersion,manifestDigest:manifest.manifestDigest,storedBytes:manifest.byteTotals.stored,capacityToken:'inspection-only' }, limits, new ReviewMemoryBudget(limits.memoryMaxBytes), async () => {}, async error => { throw error; });
+ const result:PreparedReviewPacket[]=[];
+ for(const view of manifest.views as {id:string;kind:string}[])if(view.kind==='packet'){
+  const window=await reader.metadata(await reader.descriptor(view.id,'packet'));try{result.push(structuredClone(await materializePreparedValue(reader, window.value)) as PreparedReviewPacket);}finally{window.release();}
+ }
+ reader.close();return result;
 }
 
 test('production defaults preserve all code routes story aliases task selection and complete pinned packet views', async t => {
@@ -63,6 +71,27 @@ test('production defaults preserve all code routes story aliases task selection 
   } });
   assert.equal(done.crPublication, 'complete', JSON.stringify(done));
  }
+});
+
+test('instrumented actual-source managed code cutover stays bounded and preserves qualified and permanent results', async t => {
+ const f=await productionFixture(t,undefined,{holdProvider:true}),peer=await f.peer(),reviewId='instrumented-cutover',request=f.codeRequest(reviewId);
+ const oracle=await prepareReviewAdmission(f.code.repo,'instrumented-oracle',1,f.code.packet,'controller',f.code.deps.sources,{epicHash:hash});
+ const ack=await peer.call('taskReview.start',request);await f.release(reviewId);
+ await until(()=>Atomics.load(f.barriers.get(reviewId)!,5)>0);
+ const owner=f.started.get(reviewId)!,metrics=await workerRpc(owner,'fixture.stats') as {physicalQueries:number;physicalDuplicates:number;memoryHighWaterBytes:number;nativeCommands:number;fullCheckpointNativeWrites:number;qualifiedBeforeProvider:boolean};
+ const limits=reviewPreparationLimits(join(f.code.repo,'missing-review-config.json'));
+ assert.ok(metrics.physicalQueries>0);assert.equal(metrics.physicalDuplicates,0);
+ assert.ok(metrics.memoryHighWaterBytes<=limits.memoryMaxBytes,`${metrics.memoryHighWaterBytes} exceeds ${limits.memoryMaxBytes}`);
+ assert.equal(metrics.nativeCommands,0);assert.equal(metrics.fullCheckpointNativeWrites,0);assert.equal(metrics.qualifiedBeforeProvider,true);
+ const runtime=await stat(reviewRuntimePath({project:f.code.repo,family:'code',reviewId}));assert.ok(runtime.size<=256*1024,`runtime record ${runtime.size} exceeds 256KiB`);
+ assert.ok((await packets(ack.checkpointPath)).some(packet=>isDeepStrictEqual(packet,structuredClone(oracle.prepared))));
+ await workerRpc(owner,'fixture.releaseProvider');
+ await until(async()=>{const progress=await peer.call('taskReview.progress',request);return progress.crPublication==='complete';});
+ const checkpoint=JSON.parse(await readFile(ack.checkpointPath,'utf8')),attempt=checkpoint.attempts.at(-1);
+ assert.deepEqual(attempt.submitted,f.code.packet);assert.deepEqual(attempt['review-response'].tasks,[f.code.result]);
+ const permanent=JSON.parse(await readFile(join(f.code.repo,`.insrc/artifacts/CR-${hash}-s1.json`),'utf8'));
+ const recorded=permanent.body.reviews.find((review:{reviewId:string})=>review.reviewId===reviewId);
+ assert.deepEqual(recorded.tasks,[f.code.result]);
 });
 
 test('production design defaults preserve DEF HLD epic standalone and issue LLD latest targets and ignore unrelated edits', async t => {

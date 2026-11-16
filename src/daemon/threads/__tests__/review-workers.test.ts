@@ -51,7 +51,8 @@ test('canonical identities own one incarnation and preserve subject and cleanup 
  const b=await f.registry.admit(f.submit('design-b','design'),observer.context);
  assert.notEqual(a.incarnation,b.incarnation);assert.equal(f.tracked.size,2);
  const alias=join(f.root,'alias');await symlink(f.repo,alias);
- assert.deepEqual(await f.registry.admit(f.submit('code-a','code',alias),observer.context),a);
+ const replay=await f.registry.admit(f.submit('code-a','code',alias),observer.context);
+ assert.deepEqual({...replay,timing:undefined},{...a,timing:undefined});assert.equal(replay.timing?.mode,'warm');
  await assert.rejects(f.registry.admit({...f.submit('code-a'),submitted:{...packet(),functionalSummary:'changed'}},observer.context),/Conflicting/);
  await assert.rejects(f.registry.admit(f.submit('design-c','design'),observer.context),/subject or cleanup busy/);
  assert.throws(()=>f.registry.claimCleanup(`${f.repo}:s1`),/cleanup busy/);
@@ -118,4 +119,31 @@ test('foreign controller cannot retire an owner through next-attempt admission',
  await assert.rejects(f.registry.admit({...input,attempt:2,actionId:'foreign-next'},foreign.context),/owner mismatch/);
  assert.equal(f.registry.identity(ack.key)!.incarnation,ack.incarnation);
  assert.notEqual(worker.worker.threadId,-1,'foreign request must not close the incumbent worker');
+});
+
+test('Measured admission segment attribution and durable-ack two-session race matrix: controlled admit/cancel<=2s, progress gap<=2s, complete owner/guard/binding checks and no duplicate dispatch.',async t=>{
+ const f=await fixture(t,'controller'),one=context('measured-one'),two=context('measured-two'),foreign=context('measured-foreign');
+ const began=performance.now();
+ const [a,b]=await Promise.all([f.registry.admit(f.submit('measured-a'),one.context),f.registry.admit(f.submit('measured-b'),two.context)]);
+ const admissionMs=performance.now()-began;
+ assert.ok(admissionMs<=2000,`two-review admission took ${admissionMs.toFixed(1)}ms`);
+ for(const receipt of [a,b]){
+  assert.equal(receipt.timing?.mode,'cold');assert.ok(receipt.timing!.totalMs<=2000);
+  assert.deepEqual(new Set(receipt.timing!.segments.map(s=>s.name)),new Set(['request','scope','runtime_binding','worker_registration','checkpoint_persistence','checkpoint_binding','runtime_activation','acknowledgement']));
+  assert.ok(receipt.timing!.segments.every(s=>Number.isFinite(s.durationMs)&&s.durationMs>=0));
+  const runtime=await loadReviewRuntime(receipt.key),checkpoint=JSON.parse(await readFile(receipt.checkpointPath,'utf8'));
+  assert.equal(runtime?.state,'active');assert.equal(checkpoint.schemaVersion,3);assert.equal(checkpoint.runtime.runtimeId,runtime?.runtimeId);assert.equal(checkpoint.runtime.inputDigest,runtime?.checkpointBinding.inputDigest);
+ }
+ const workers=f.tracked.size,warmAt=performance.now(),warm=await f.registry.admit(f.submit('measured-a'),one.context);
+ assert.ok(performance.now()-warmAt<=2000);assert.equal(warm.timing?.mode,'warm');assert.equal(warm.incarnation,a.incarnation);assert.equal(f.tracked.size,workers,'warm replay must not dispatch another worker');
+ assert.deepEqual(warm.timing?.segments.map(segment=>segment.name),['request','scope','runtime_binding','acknowledgement'],'warm replay timing must not reuse cold worker-start segments');
+ await assert.rejects(f.registry.progress(a.key,foreign.context),/owner mismatch/);
+ const progressAt=performance.now();
+ await until(async()=>{try{return !!await f.registry.progress(b.key,two.context);}catch{return false;}});
+ assert.ok(performance.now()-progressAt<=2000,'first genuine progress exceeded the observation gap');
+ const cancelAt=performance.now(),cancel=await f.registry.cancel(a.key,1,'cancel-measured-a','controlled cancellation',one.context);
+ assert.ok(performance.now()-cancelAt<=2000);assert.equal(cancel.key.reviewId,'measured-a');
+ await assert.rejects(f.registry.cancel(b.key,1,'foreign-cancel','foreign cancellation',foreign.context),/owner mismatch/);
+ assert.ok(await f.registry.progress(b.key,two.context),'the independent review remains observable');
+ assert.equal(f.tracked.size,2,'failure/cancel races must not duplicate dispatch');
 });

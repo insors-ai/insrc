@@ -1,3 +1,4 @@
+import type { ReviewAdmissionPreparer } from '../code-review/task-review/admission.js';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { isDeepStrictEqual as same } from 'node:util';
 import type { ReviewPreparationLimits } from '../../config/review.js';
@@ -6,64 +7,82 @@ import { prepareReviewAdmission } from '../code-review/task-review/admission.js'
 import type { ReviewAdmissionContext } from '../code-review/task-review/admission.js';
 import { prepareWorkerCodeAdmission } from '../code-review/task-review/worker-checkpoint.js';
 import { prepareReviewPacket } from '../code-review/task-review/packet.js';
-import type { PreparedReviewPacket } from '../code-review/task-review/packet.js';
+import type { PreparedReviewPacket, PacketPreparer } from '../code-review/task-review/packet.js';
 import type { AdmittedReview } from '../code-review/task-review/execution.js';
 import type { ReviewSources, BatchReviewSources } from '../code-review/task-review/sources.js';
 import { ReviewSourceSession } from './source-session.js';
 import type { SourceCapacity } from './source-session.js';
-import { preparationDigest, writePreparedContext } from './prepared-context.js';
-import type { PreparedContextReader, ReadyContextReceipt, PreparedSourceIdentity } from './prepared-context.js';
+import { preparationDigest } from './prepared-context.js';
+import type { ReadyContextReceipt, PreparedSourceIdentity } from './prepared-context.js';
+import { materializePreparedValue, PreparedViewReader, PreparedViewWriter } from './prepared-views.js';
+import { ReviewMemoryBudget } from './preparation-memory.js';
 
 /** One private preparation phase. Route resolution and every semantic check
  * remain in the existing admission/packet implementations. This object only
  * owns bounded source reuse and the immutable prepared views they produce. */
 export class CodePreparation {
- private readonly packets = new Map<string, PreparedReviewPacket>();
- private readonly routes = new Map<string, unknown>();
+ private readonly staged = new Set<string>();
+ private readonly packetIds = new WeakMap<object, string>();
+ private writer: PreparedViewWriter | undefined;
  private tail: Promise<void> = Promise.resolve();
  private failed = false;
  private sealed = false;
- private packetBytes = 0;
  private identity: PreparedSourceIdentity | undefined;
  private constructor(readonly sources: ReviewSources, private readonly key: ReviewKey,
   private readonly session: ReviewSourceSession | undefined,
-  private readonly reader: PreparedContextReader | undefined,
+  private readonly reader: PreparedViewReader | undefined,
   private readonly limits: ReviewPreparationLimits, private readonly capacity: SourceCapacity) {}
- static async create(key: ReviewKey, sources: BatchReviewSources, limits: ReviewPreparationLimits, capacity: SourceCapacity): Promise<CodePreparation> {
+ static async create(key: ReviewKey, sources: BatchReviewSources, limits: ReviewPreparationLimits, capacity: SourceCapacity, memory = new ReviewMemoryBudget(limits.memoryMaxBytes)): Promise<CodePreparation> {
   if (key.family !== 'code') throw new Error('Code preparation required');
-  const session = await ReviewSourceSession.create(key, sources, limits, capacity);
+  const session = await ReviewSourceSession.create(key, sources, limits, capacity, memory);
   return new CodePreparation(session, key, session, undefined, limits, capacity);
  }
  /** Reader must come from a live host-issued borrow. Disk alone grants no access. */
- static async reuse(key: ReviewKey, reader: PreparedContextReader, sources: ReviewSources, limits: ReviewPreparationLimits, capacity: SourceCapacity): Promise<CodePreparation> {
+ static async reuse(key: ReviewKey, reader: PreparedViewReader, sources: ReviewSources, limits: ReviewPreparationLimits, capacity: SourceCapacity): Promise<CodePreparation> {
   if (key.family !== 'code' || !same(key, reader.receipt.key)) throw new Error('Code preparation context identity mismatch');
-  const result = new CodePreparation(sources, key, undefined, reader, limits, capacity);
-  const inventory = await reader.view('code-packets') as [string, PreparedReviewPacket][];
-  if (!Array.isArray(inventory) || inventory.length > 10000) throw new Error('Invalid qualified packet inventory');
-  for (const [id, prepared] of inventory) {
-   if (!/^[a-f0-9]{64}$/.test(id) || result.packets.has(id)) throw new Error('Invalid qualified packet key');
-   result.packets.set(id, prepared);
-  }
-  return result;
+  return new CodePreparation(sources, key, undefined, reader, limits, capacity);
  }
- private readonly packet: typeof prepareReviewPacket = async (input, sources, historical = false, route, stored) => {
+ private readonly packet: PacketPreparer = async (input, sources, historical = false, route, stored) => {
   if (this.failed) throw new Error('Code preparation owner fenced');
   const id = preparationDigest([input, historical, route, stored]);
-  const cached = this.packets.get(id);
-  if (cached) { if (this.reader) await this.reader.verify(); return structuredClone(cached); }
-  if (this.reader) throw new Error('Prepared packet identity changed; explicit source requalification required');
-  if (this.packets.size >= 10000) throw new Error('Prepared packet inventory exceeds capacity');
+  if (this.reader) {
+   const descriptor = await this.reader.descriptor(`packet-${id}`, 'packet');
+   const window = await this.reader.metadata(descriptor);
+   try {
+    const prepared = await materializePreparedValue(this.reader, window.value) as PreparedReviewPacket;
+    if (!prepared || typeof prepared !== 'object') throw new Error('Invalid qualified packet');
+    return structuredClone(prepared);
+   } finally { window.release(); }
+  }
   const prepared = await prepareReviewPacket(input, this.sources, historical, route, stored);
-  this.packetBytes += Buffer.byteLength(JSON.stringify(prepared));
-  if (this.packetBytes > this.limits.memoryMaxBytes) throw new Error('Prepared packet views exceed memory capacity');
-  this.packets.set(id, prepared); if (route) this.routes.set(preparationDigest(route), structuredClone(route));
+  this.packetIds.set(prepared, id);
   return prepared;
  };
+ private async begin(attempt: number, input: unknown): Promise<void> {
+  if (this.reader || this.writer) return;
+  if (!this.session) throw new Error('Code preparation construction source missing');
+  const submitted = input && typeof input === 'object' ? input as Record<string, unknown> : {};
+  const inputDigest = preparationDigest(input ?? null);
+  const identity: PreparedSourceIdentity = { key: this.key, attempt, inputDigest, validatorVersion: 2,
+   routeDigest: preparationDigest(['stored-route', submitted['storyId'], submitted['taskId']]),
+   sourceIdentity: preparationDigest([submitted['reviewRevision'], submitted['reviewSet']]),
+   scopeDigest: preparationDigest([submitted['storyId'], submitted['taskId'], submitted['reviewSet']]),
+   testDocumentDigest: preparationDigest([submitted['tests'], submitted['documents']]) };
+  this.writer = await PreparedViewWriter.create(identity, this.limits, this.capacity, this.session.workingMemory, this.session);
+  this.identity = identity;
+ }
+ private async stage(prepared: PreparedReviewPacket): Promise<void> {
+  const id = this.packetIds.get(prepared);
+  if (!id || !this.writer) throw new Error('Foreign prepared packet');
+  if (this.staged.has(id)) return;
+  await this.writer.add(`packet-${id}`, 'packet', prepared);
+  this.staged.add(id);
+ }
  /** Same signature used by both task/story coordinators and worker recovery. */
- readonly prepare: typeof prepareReviewAdmission = (project, id, attempt, input, reviewer, _sources, context = {}) => {
+ readonly prepare: ReviewAdmissionPreparer = (project, id, attempt, input, reviewer, _sources, context = {}) => {
   const work = this.tail.then(async () => {
    if (this.failed || this.sealed || project !== this.key.project || id !== this.key.reviewId || this.reader && attempt !== this.reader.receipt.attempt) throw new Error('Code preparation unavailable or foreign');
-   try { return await prepareReviewAdmission(project, id, attempt, input, reviewer, this.sources, { ...context, preparePacket: this.packet }); }
+   try { await this.begin(attempt, input); return await prepareReviewAdmission(project, id, attempt, input, reviewer, this.sources, this.context(context)); }
    catch (error) { this.failed = true; throw error; }
   });
   this.tail = work.then(() => {}, () => {}); return work;
@@ -71,28 +90,28 @@ export class CodePreparation {
  /** Dedicated worker execution and explicit recovery use the same packet adapter. */
  readonly workerPrepare: typeof prepareWorkerCodeAdmission = async (project, id, attempt, input, reviewer, _sources, context = {}) => {
   if (this.failed || this.sealed || project !== this.key.project || id !== this.key.reviewId || this.reader && attempt !== this.reader.receipt.attempt) throw new Error('Code preparation unavailable or foreign');
-  try { return await prepareWorkerCodeAdmission(project, id, attempt, input, reviewer, this.sources, this.context(context)); }
+  try { await this.begin(attempt, input); return await prepareWorkerCodeAdmission(project, id, attempt, input, reviewer, this.sources, this.context(context)); }
   catch (error) { this.failed = true; throw error; }
  };
  /** Used by the durable-admission adapter without a second preparation path. */
- context(context: ReviewAdmissionContext = {}): ReviewAdmissionContext { return { ...context, preparePacket: this.packet }; }
+ context(context: ReviewAdmissionContext = {}): ReviewAdmissionContext { return { ...context, preparePacket: this.packet,
+  afterHistoricalPacket: async (prepared, entry, retained) => { await context.afterHistoricalPacket?.(prepared, entry, retained); if (!retained) await this.stage(prepared); } }; }
  /** Publication reads the same qualified historical views as recovery. */
- readonly publicationPacket: typeof prepareReviewPacket = (...args) => this.packet(...args);
+ readonly publicationPacket: PacketPreparer = (...args) => this.packet(...args);
  async seal(review: AdmittedReview): Promise<ReadyContextReceipt> {
   await this.tail;
-  if (this.failed || this.sealed || !this.session || review.checkpoint.project !== this.key.project || review.checkpoint.reviewId !== this.key.reviewId
-   || ![...this.packets.values()].some(p => same(p, review.prepared))) throw new Error('Cannot seal unqualified code preparation');
-  // Recovery uses historical decoding and stored derivation, never a fresh
-  // route read. Retain those complete views in the same source session.
-  for (const entry of review.checkpoint.attempts) await this.packet(entry.submitted, this.sources, true, undefined, entry.header.derived);
+  if (this.failed || this.sealed || !this.session || !this.writer || review.checkpoint.project !== this.key.project || review.checkpoint.reviewId !== this.key.reviewId
+   || !this.packetIds.has(review.prepared)) throw new Error('Cannot seal unqualified code preparation');
+  // Feedback/publication deliberately re-enters the historical validator
+  // signature. Stage that exact derived identity one attempt at a time; do
+  // not retain the reconstructed packets as a second history inventory.
+  for (const entry of review.checkpoint.attempts) {
+   const historical = await this.packet(entry.submitted, this.sources, true, undefined, entry.header.derived);
+   await this.stage(historical);
+  }
+  await this.stage(review.prepared);
   this.sealed = true;
-  const packets = [...this.packets.entries()], inputs = packets.map(([, p]) => p.packet);
-  const identity: PreparedSourceIdentity = { key: this.key, attempt: review.attempt.header.attempt, inputDigest: preparationDigest(review.attempt.submitted), validatorVersion: 1,
-   routeDigest: preparationDigest([...this.routes.entries()]), sourceIdentity: preparationDigest(inputs.map(p => [p.reviewRevision, p.reviewSet])),
-   scopeDigest: preparationDigest(packets.map(([id, p]) => [id, p.projection?.identity, p.tasks])),
-   testDocumentDigest: preparationDigest(inputs.map(p => [p.tests, p.documents])) };
-  const receipt = await writePreparedContext(identity, { 'code-packets': packets }, this.session, this.limits, this.capacity);
-  this.identity = identity; return receipt;
+  return this.writer.seal();
  }
  /** Lookup metadata for the private main qualification channel, not a borrow. */
  qualificationIdentity(): PreparedSourceIdentity {
@@ -101,5 +120,5 @@ export class CodePreparation {
  }
  observeSources(observer: Parameters<ReviewSourceSession['observe']>[0]): () => void { return this.session?.observe(observer) ?? (() => {}); }
  sourceMetrics(): ReturnType<ReviewSourceSession['snapshot']> | undefined { return this.session?.snapshot(); }
- async close(): Promise<void> { await this.tail; this.failed = true; await this.session?.close(); }
+ async close(): Promise<void> { await this.tail; this.failed = true; this.reader?.close(); if (this.writer && !this.sealed) await this.writer.discard(); await this.session?.close(); }
 }

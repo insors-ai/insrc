@@ -1,0 +1,524 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1794817881738-7dfm55",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-16T08:34:16.819Z",
+    "epicCreatedAt": "2026-10-03T14:09:32.294Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "claude-sonnet-5-5"
+        }
+      ]
+    },
+    "elapsedMs": 168523,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "149283b0d0455a43",
+    "epicSlug": "story-list-readers-do-not-recognise",
+    "storyId": "s1",
+    "lldRunId": "wf-1794812683989-b7gbk4",
+    "lldEffectiveHash": "70182799f7d0a61f4fbd7ab233ff92fa2fe2c3bb444d9cbb50fd978c3b5a6158",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 2,
+        "contentHash": "7c98447ce5808676adafe3b3eaf11eabccf3f853b73c3401482f2e3e924db96e",
+        "at": "2026-11-16T08:35:37.122Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-16T08:55:11.751Z"
+      }
+    },
+    "revision": 2,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "2e7e82366ccbf0ff126bbff514dcd87dca8a5a5a"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Eight small tasks. A baseline is recorded first, then five independent production edits land in dependency order: the shared implied-story rule, the sized-route anchor, the define-missing message, the chain report (head reader and paths, then next actions) and the JetBrains Workflows reader. A new integration test file proves the LLD, review, anchor and chain behaviour against a seeded ISSUE-only repo, and a final task compares the workflow, MCP and JetBrains test results with the recorded baseline."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Record the baseline, add the shared implied-story rule and point the tracker resolver at it",
+        "summary": "Before any edit, run the workflow and MCP test subsets and the type check and record the result as the baseline for this Story. Then in src/workflow/storage.ts, next to readEpicDefinitionCore, add the exported constant IMPLIED_ISSUE_STORY_ID ('s1') and impliedIssueStories(issue) returning the single { id, title } entry. Change src/workflow/tracker/resolve.ts storyEvidence (the 'implied' branch) to compare against the constant instead of the literal. Behaviour is unchanged.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "the baseline result of npx tsx --test 'src/workflow/**/*.test.ts' 'src/mcp/**/*.test.ts' and of the type check is recorded before any source edit",
+          "impliedIssueStories returns exactly one entry whose id is IMPLIED_ISSUE_STORY_ID and whose title is the ISSUE title",
+          "tracker/resolve.ts has no literal 's1' for the implied rule and still answers implied for s1 and null for s2 on an ISSUE-anchored item",
+          "the existing tracker resolver tests still pass"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "implied-issue-stories.test.ts: impliedIssueStories returns exactly one entry with id IMPLIED_ISSUE_STORY_ID and the ISSUE title"
+          },
+          {
+            "level": "unit",
+            "name": "implied-issue-stories.test.ts: the tracker resolver answers implied for s1 and null for s2 from the shared constant"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Make the sized bugfix route keep the ISSUE as its anchor",
+        "summary": "In src/workflow/bugfix/next-after-issue.ts, the sized branch adds params.epicHash = issue.meta.issueHash and params.storyId = 's1' beside standalone:true and sizeClass:'bugfix', and throws 'nextAfterIssue: invalid-issue-hash' when the sized ISSUE has no 16-hex meta.issueHash. The small branch is untouched. Update the issue() fixture and any advance fixture in src/workflow/__tests__/bugfix-orchestration.test.ts to carry an issueHash, and add the sized-route and refusal tests.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "the sized nextCall carries epicHash equal to the ISSUE's issueHash and storyId 's1', with standalone and sizeClass unchanged",
+          "a sized ISSUE without a valid issueHash throws invalid-issue-hash and no nextCall is produced",
+          "the small nextCall is identical to before",
+          "the existing bugfix-orchestration tests pass with fixtures that carry an issueHash"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "bugfix-orchestration.test.ts: nextAfterIssue sized route carries epicHash=issueHash and storyId s1"
+          },
+          {
+            "level": "unit",
+            "name": "bugfix-orchestration.test.ts: nextAfterIssue refuses a sized ISSUE with no issueHash"
+          },
+          {
+            "level": "unit",
+            "name": "bugfix-orchestration.test.ts: sized-route fixtures carry an issueHash"
+          },
+          {
+            "level": "unit",
+            "name": "bugfix-orchestration.test.ts: nextAfterIssue small route is unchanged"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Name the ISSUE-anchored situation in the define-missing error",
+        "summary": "In src/workflow/gates.ts readDefineArtifact, when the DEF is absent and an ISSUE root exists at the same hash, throw the same ArtifactMissingError class with a message that says the work item is an ISSUE-anchored bugfix with no Define or HLD, and does not tell the user to run define. Without an ISSUE root the message is unchanged. requireApprovedEpic still refuses the ISSUE.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "readDefineArtifact and requireApprovedEpic on an ISSUE-only hash throw ArtifactMissingError whose message names the ISSUE and omits the 'run define' advice",
+          "on a hash with neither root the original message is unchanged",
+          "a DEF-anchored read is unchanged"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "gates.test.ts: readDefineArtifact on an ISSUE-only hash names the ISSUE and does not advise running define"
+          },
+          {
+            "level": "unit",
+            "name": "gates.test.ts: readDefineArtifact on a hash with neither root keeps the original message"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Make the chain report read an ISSUE-anchored definition, its story, its path and its label",
+        "summary": "In src/workflow/chain.ts read the definition head as a discriminated DEF-or-ISSUE value (the DEF wins when both exist). For an ISSUE head: stories holds the implied s1 from impliedIssueStories; each story path is built from the LLD's own meta (workItemAnchorCreatedAt, workItemKindOf, meta.epicSlug) so it points under docs/standalone; define reflects the ISSUE's existence, approval and rejection with its path the ISSUE document; hld is absent. ChainReport gains one optional field, definitionKind, and formatChainReport labels the definition as an ISSUE for an ISSUE head and leaves DEF output byte-identical. The existing DEF-anchored chain tests run first and must stay green. Next-action ordering is t5.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "the existing DEF-anchored chain tests (chain.test.ts, chain-report-tracker.test.ts) pass unchanged before and after the edit",
+          "an ISSUE-anchored report returns one implied story s1 with its LLD existence and approval and a path under docs/standalone, not docs/epics",
+          "when a DEF and an ISSUE share a hash the DEF is read",
+          "definitionKind is 'issue' for an ISSUE head and 'def' for a DEF head",
+          "formatChainReport shows an ISSUE label for an ISSUE head and its DEF output is byte-identical to before"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c5",
+          "c6",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "chain-issue-anchored.test.ts: chain report for an ISSUE-anchored item returns the implied s1 with its LLD state"
+          },
+          {
+            "level": "unit",
+            "name": "chain-issue-anchored.test.ts: chain report story path for an ISSUE-anchored item is the standalone folder"
+          },
+          {
+            "level": "unit",
+            "name": "chain-issue-anchored.test.ts: chain report prefers a DEF when a DEF and an ISSUE share a hash"
+          },
+          {
+            "level": "unit",
+            "name": "chain-issue-anchored.test.ts: definitionKind is issue for an ISSUE head and def for a DEF head"
+          },
+          {
+            "level": "unit",
+            "name": "chain-issue-anchored.test.ts: formatChainReport labels an ISSUE head and leaves DEF output unchanged"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Give the ISSUE-anchored chain report its next-action rules",
+        "summary": "In src/workflow/chain.ts computeNextAction, for an ISSUE head: approve-define whose command names the ISSUE document when unapproved; run-define whose command reruns the issue stage when rejected; then run-lld and approve-lld for s1; then chain-complete. An ISSUE head never yields run-hld, approve-hld, review-amendment, refresh-stale, push-tracker or sync-tracker. DEF-anchored ordering is untouched.",
+        "size": "S",
+        "order": 5,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "an unapproved ISSUE yields approve-define whose command names the ISSUE document",
+          "a rejected ISSUE yields run-define whose command reruns the issue stage, not define",
+          "an approved ISSUE with no LLD yields run-lld for s1, with an unapproved LLD approve-lld, and with an approved LLD chain-complete",
+          "an ISSUE-anchored report never contains an HLD, amendment, stale or tracker action",
+          "the DEF-anchored next-action sequence is unchanged"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "chain-issue-anchored.test.ts: unapproved ISSUE yields approve-define naming the ISSUE document"
+          },
+          {
+            "level": "unit",
+            "name": "chain-issue-anchored.test.ts: rejected ISSUE yields run-define that reruns the issue stage"
+          },
+          {
+            "level": "unit",
+            "name": "chain-issue-anchored.test.ts: next actions follow run-lld, approve-lld, chain-complete and never name an HLD, amendment, stale or tracker step"
+          },
+          {
+            "level": "unit",
+            "name": "chain-issue-anchored.test.ts: the DEF-anchored next-action sequence is unchanged"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Add the identity-regression integration tests for an ISSUE-anchored LLD",
+        "summary": "Create src/workflow/__tests__/issue-anchored-route.test.ts, modelled on seedIssueRepo in folder-identity-finalize.test.ts. Against a seeded ISSUE-only repo it proves that a standalone LLD started with the issue hash and s1 is written as LLD-<issueHash>-s1 with the ISSUE's label, epicCreatedAt and folder and no second root; that design review classifies it as kind issue with the ISSUE as originating_issue; that a second start revises the same LLD; that a genuine standalone feature still mints its own root, an Epic story still requires its DEF and HLD, requireApprovedEpic still refuses an ISSUE, and a bugfix LLD with no ISSUE provenance is still rejected; and that the chain report returns the implied s1 and chain-complete once s1's LLD is approved. PLAN and BUILD identity is scoped to the helpers they use (requireEpicAnchor, inheritedStoryStandalone, inheritedEpicSlug) on the same seeded repo, plus the PLAN finalizer through an existing plan test fixture where one exists; a full BUILD record is not produced. No production code changes.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t2",
+          "t3",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "the sized-ISSUE LLD is LLD-<issueHash>-s1 with the ISSUE's label and epicCreatedAt and no second root",
+          "design review resolves kind issue and lists the approved ISSUE as originating_issue",
+          "requireEpicAnchor, inheritedStoryStandalone and inheritedEpicSlug return the ISSUE's anchor, placement and label for the seeded repo",
+          "a second design.story start revises the same LLD and creates no duplicate",
+          "genuine standalone and Epic-story behaviour is unchanged, and a bugfix LLD without ISSUE provenance is still rejected",
+          "the chain report for the seeded repo returns the implied s1 and chain-complete once s1's LLD is approved"
+        ],
+        "derivedFrom": [
+          "c5",
+          "c6",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "issue-anchored-route.test.ts: sized ISSUE start writes LLD-<issueHash>-s1 and no second root"
+          },
+          {
+            "level": "integration",
+            "name": "issue-anchored-route.test.ts: the LLD inherits the ISSUE label, epicCreatedAt and folder"
+          },
+          {
+            "level": "integration",
+            "name": "issue-anchored-route.test.ts: design review classifies the LLD as kind issue with the ISSUE as originating_issue"
+          },
+          {
+            "level": "integration",
+            "name": "issue-anchored-route.test.ts: PLAN and BUILD placement helpers keep the ISSUE epicHash, anchor and folder"
+          },
+          {
+            "level": "integration",
+            "name": "issue-anchored-route.test.ts: a second design.story start revises the same LLD and creates no duplicate"
+          },
+          {
+            "level": "integration",
+            "name": "issue-anchored-route.test.ts: a genuine standalone feature still mints its own root"
+          },
+          {
+            "level": "integration",
+            "name": "issue-anchored-route.test.ts: an Epic story still requires its DEF and HLD"
+          },
+          {
+            "level": "integration",
+            "name": "issue-anchored-route.test.ts: requireApprovedEpic still refuses an ISSUE root with a message naming the ISSUE"
+          },
+          {
+            "level": "integration",
+            "name": "issue-anchored-route.test.ts: a bugfix LLD with no ISSUE provenance is still rejected by design review"
+          },
+          {
+            "level": "integration",
+            "name": "issue-anchored-route.test.ts: chain report for the seeded ISSUE repo returns the implied s1 and reaches chain-complete"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Make the JetBrains Workflows reader list an ISSUE-anchored work item",
+        "summary": "In jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/workflow/WorkflowChainReader.kt, readDir also enumerates ISSUE-<hash>.json for hashes that have no DEF-<hash>.json and projects each as a chain entry: define mark from the ISSUE's meta.approvedAt and meta.rejectedAt, hld absent, one implied story s1 titled with the ISSUE body title with hasLld and approved read from LLD-<hash>-s1.json and never stale, zero amendments, and a plain hint (Approve issue, Re-run issue, Design story s1, Approve LLD for s1, Chain complete) that never names an HLD, amendment or stale step. WorkflowChainDto gains a defaulted definitionKind field so existing callers compile unchanged. A hash with both a DEF and an ISSUE is listed once, as the DEF; a malformed ISSUE contributes nothing. Read-only, no socket, never throws. DEF entries and their hints are unchanged. Add the tests to WorkflowChainReaderTest.kt.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "an ISSUE-only hash is listed once with definitionKind issue, the implied story s1 and no HLD",
+          "the ISSUE hint follows Approve issue, Re-run issue, Design story s1, Approve LLD for s1, Chain complete and never names an HLD, amendment or stale step",
+          "a hash with both a DEF and an ISSUE is listed once, as the DEF",
+          "a malformed ISSUE file contributes nothing and does not throw",
+          "the existing DEF-anchored WorkflowChainReaderTest cases and WorkflowsPageTest pass unchanged"
+        ],
+        "derivedFrom": [
+          "c9",
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "WorkflowChainReaderTest.kt: readAll lists an ISSUE-anchored hash with the implied story s1 and no HLD"
+          },
+          {
+            "level": "unit",
+            "name": "WorkflowChainReaderTest.kt: nextActionHint for an ISSUE-anchored entry follows approve issue, design story, approve LLD, chain complete"
+          },
+          {
+            "level": "unit",
+            "name": "WorkflowChainReaderTest.kt: readAll lists a hash with both a DEF and an ISSUE once, as the DEF"
+          },
+          {
+            "level": "unit",
+            "name": "WorkflowChainReaderTest.kt: readAll swallows a malformed ISSUE file without throwing"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Verify the whole change",
+        "summary": "Run the workflow and MCP test subsets and the type check once after all tasks, run the JetBrains plugin's Kotlin tests (./gradlew test in jetbrains-plugin) where the Gradle toolchain is available, compare with the baseline recorded in t1, and confirm by reading the diff against the LLD's invariants that no tracker runner file changed and requireApprovedEpic still refuses an ISSUE.",
+        "size": "S",
+        "order": 8,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3",
+          "t4",
+          "t5",
+          "t6",
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "npx tsx --test 'src/workflow/**/*.test.ts' 'src/mcp/**/*.test.ts' passes with no new failures against the baseline recorded in t1",
+          "the type check passes",
+          "the JetBrains WorkflowChainReaderTest suite passes, or the task states plainly that the Gradle toolchain could not run here and why",
+          "the diff touches no tracker runner file and requireApprovedEpic still refuses an ISSUE"
+        ],
+        "derivedFrom": [
+          "c5",
+          "c6",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "workflow and MCP test subsets, the type check and the JetBrains reader tests match the t1 baseline with no new failures"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "nextAfterIssue sized route: epicHash equals issue.meta.issueHash, storyId is 's1', standalone/sizeClass unchanged; invalid-issue-hash refusal; small route unchanged",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "impliedIssueStories and IMPLIED_ISSUE_STORY_ID: one entry, id s1",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "the sized-route fixtures in bugfix-orchestration.test.ts carry a 16-hex issueHash and still pass; nextAfterIssue refuses a sized ISSUE without one",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "finalizeStandaloneLld started with the issue hash and s1 writes LLD-<issueHash>-s1 with the ISSUE's label, epicCreatedAt and folder",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "design review subject for that LLD resolves kind issue with the approved ISSUE as originating_issue",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "buildChainReport for the ISSUE-anchored hash returns implied s1 with LLD state and no run-define action",
+        "coveredByTaskIds": [
+          "t4",
+          "t5",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "plan finalize and build records for the item keep the same epicHash and folder",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "readDefineArtifact/requireApprovedEpic on an ISSUE-only hash throw ArtifactMissingError whose message names the ISSUE and does not say 'run define'",
+        "coveredByTaskIds": [
+          "t3",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "genuine standalone LLD with no ISSUE still mints its own root and an Epic story still requires DEF and HLD",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "a bugfix LLD whose hash has no ISSUE root and no explicit ISSUE reference is still rejected by design review",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "chain report story path for an ISSUE-anchored item equals the LLD's own docs/standalone path, not a docs/epics path",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "chain report next action for an unapproved ISSUE is approve-define naming the ISSUE document, for a rejected ISSUE is run-define rerunning the issue stage, and after s1's LLD is approved is chain-complete with no tracker step",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "when both a DEF and an ISSUE exist at one hash the chain report reads the DEF",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "tracker/resolve.ts storyEvidence uses the shared constant: s1 implied, s2 not",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "JetBrains WorkflowChainReader: an ISSUE-only hash lists one chain entry with definitionKind issue, implied story s1 from LLD-<hash>-s1.json, no HLD, never stale; its next-action hint follows Approve issue, Re-run issue, Design story s1, Approve LLD for s1, Chain complete; a DEF plus ISSUE hash lists once as the DEF; a malformed ISSUE contributes nothing; DEF entries are unchanged",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails: nextAfterIssue — the sized route carries epicHash and storyId s1, with the invalid-issue-hash refusal"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails: impliedIssueStories and IMPLIED_ISSUE_STORY_ID — the one implied-story rule"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails: buildChainReport — ISSUE head, story path from the LLD's own meta, next-action rules"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails: readDefineArtifact — ISSUE-aware ArtifactMissingError message"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 errorPaths: error cases, edge cases and invariants to preserve"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 testStrategy: test levels, subjects and acceptance mapping ac1-ac7"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 migration: ordered rollout steps and backward compatibility"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 dataModelChanges: work item identity shared by LLD, PLAN, BUILD, review and chain records"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails: WorkflowChainReader.readAll — the JetBrains reader lists an ISSUE-anchored work item"
+    }
+  ]
+}

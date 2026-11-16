@@ -31,6 +31,7 @@ export function validateReviewSessionOptions(opts: ReviewSessionOpts): void {
   if (opts.inactivityMs !== REVIEW_INACTIVITY_MS || opts.internalRetry !== false || !(opts.signal instanceof AbortSignal)
    || typeof opts.onActivity !== 'function' || typeof opts.onCandidate !== 'function'
    || opts.onDiagnostic !== undefined && typeof opts.onDiagnostic !== 'function'
+   || opts.inputOwnership !== undefined && (!(opts.inputOwnership.signal instanceof AbortSignal) || typeof opts.inputOwnership.acquire !== 'function')
    || 'deadlineMs' in opts || 'stallMs' in opts || 'reviewBudget' in opts) throw new TypeError('Invalid activity review execution options');
  } else if ((opts.mode !== undefined && opts.mode !== 'bounded') || !Number.isFinite(opts.deadlineMs) || opts.deadlineMs <= 0
   || opts.stallMs !== undefined && (!Number.isFinite(opts.stallMs) || opts.stallMs <= 0)

@@ -22,10 +22,15 @@
           "entityId": "PLAN-470a1f61b26b12c6-s1",
           "type": "PLAN",
           "relation": "derived-from",
-          "fragment": "revision 3"
+          "fragment": "revision 4"
         },
         {
           "entityId": "TASK-470a1f61b26b12c6-s1-t13",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-470a1f61b26b12c6-s1-t20",
           "type": "TASK",
           "relation": "depends-on"
         }
@@ -33,11 +38,11 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "approved",
+      "status": "draft",
       "revision": {
-        "number": 1,
-        "contentHash": "881f7fd8732467555f3d562c2c2f997f5b7e9b8a7ff054fed7f13df4c50d0445",
-        "at": "2026-11-14T12:17:34.294Z",
+        "number": 2,
+        "contentHash": "be4eb10fa2a68b6a64765f2e42ce6f5d7184ca54cd4e16b9fdc3f6969450999b",
+        "at": "2026-11-15T13:12:53.931Z",
         "by": {
           "id": "insrc:approval",
           "kind": "system",
@@ -55,13 +60,13 @@
         "at": "2026-11-14T12:17:34.296Z"
       }
     },
-    "revision": 1
+    "revision": 2
   },
   "body": {
     "title": "Qualify performance, packaging and deployment handoff",
     "summary": "Measure full managed cold/warm/history-growth workloads, build shipped package and document coordinated restart plus explicitly authorized post-deployment smoke.",
     "size": "L",
-    "order": 14,
+    "order": 20,
     "acceptanceChecks": [
       "Three cold-run median<=120s, warm<=10s, controlled admit/cancel<=2s and progress observation<=2s; report all metrics; failed gates block old qualification; deployment awaits BUILD approval.",
       "Task completion uses local managed qualification and package checks only. Deployment smoke requires later approved BUILD, user update/restart and explicit permission to retrigger original review.",

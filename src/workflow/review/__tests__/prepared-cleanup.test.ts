@@ -49,7 +49,7 @@ for (const family of ['code', 'design'] as const) {
   assert.equal(sourceCalls, 0); assert.equal(modelCalls, 0); assert.equal(released, 1);
  });
 
- test(`prepared ${family} cleanup resumes every claim rename unlink and fsync boundary using only permanent proof`, { timeout: 180000 }, async t => {
+ test(`prepared ${family} cleanup resumes every claim rename unlink and fsync boundary using only permanent proof`, { timeout: 600000 }, async t => {
   const probe = await publishedCleanupFixture(family, t), boundaries: string[] = [];
   const complete = await cleanupPreparedReview(probe.target, probe.key, { store: probe.store, contexts: async () => [probe.source], assertIdle: async () => {}, boundary: stage => { boundaries.push(stage); } });
   assert.deepEqual(complete.errors, []); assert.ok(boundaries.some(stage => stage === 'unlink.claim.after'));

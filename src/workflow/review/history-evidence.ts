@@ -11,6 +11,8 @@ import { reviewJsonLimit } from '../../config/review.js';
 import type { ReviewPreparationLimits } from '../../config/review.js';
 import { PreparedContextReader, preparationDigest, contextRoot } from './prepared-context.js';
 import type { ReadyContextReceipt } from './prepared-context.js';
+import { PreparedViewReader } from './prepared-views.js';
+import { ReviewMemoryBudget } from './preparation-memory.js';
 import { reviewSourceQueryDigest, decodeReviewSourceResult } from './source-session.js';
 import type { SourceCapacity } from './source-session.js';
 import type { ReviewSources } from '../code-review/task-review/sources.js';
@@ -65,12 +67,17 @@ export class HistoryEvidenceStore {
  private readonly storedContents = new Set<string>();
  private head: string;
  private failed = false;
- private constructor(private readonly source: ReadyContextReceipt, private readonly reader: PreparedContextReader, private readonly capacity: SourceCapacity, private readonly limits: ReviewPreparationLimits,
+ private constructor(private readonly source: ReadyContextReceipt, private readonly reader: PreparedContextReader | PreparedViewReader, private readonly capacity: SourceCapacity, private readonly limits: ReviewPreparationLimits,
   private readonly authorize: () => Promise<ReadyContextReceipt>) { this.head = source.manifestDigest; }
- static async open(source: ReadyContextReceipt, capacity: SourceCapacity, limits: ReviewPreparationLimits, authorize: () => Promise<ReadyContextReceipt>, invalidate: (error: unknown) => Promise<void>, head = source.manifestDigest): Promise<HistoryEvidenceStore> {
+ static async open(source: ReadyContextReceipt, capacity: SourceCapacity, limits: ReviewPreparationLimits, authorize: () => Promise<ReadyContextReceipt>, invalidate: (error: unknown) => Promise<void>, head = source.manifestDigest, memory = new ReviewMemoryBudget(limits.memoryMaxBytes)): Promise<HistoryEvidenceStore> {
   const check = async () => { if (!same(await authorize(), source)) throw new Error('History evidence borrow changed'); };
-  const reader = await PreparedContextReader.open(source, limits, check, invalidate), store = new HistoryEvidenceStore(source, reader, capacity, limits, authorize);
-  for (const entry of await reader.evidenceInventory()) { store.entries.set(entry.queryDigest, entry); store.baseContents.add(entry.contentDigest); }
+  await check();
+  const manifest = JSON.parse((await read(join(contextRoot(source.key), source.generationId, 'manifest.json'), reviewJsonLimit())).toString()) as { schemaVersion?: unknown; encoding?: unknown };
+  const reader = manifest.schemaVersion === 2 && manifest.encoding === 'staged-values-v2'
+   ? await PreparedViewReader.open(source, limits, memory, check, invalidate)
+   : await PreparedContextReader.open(source, limits, check, invalidate);
+  const store = new HistoryEvidenceStore(source, reader, capacity, limits, authorize);
+  if (reader instanceof PreparedContextReader) for (const entry of await reader.evidenceInventory()) { store.entries.set(entry.queryDigest, entry); store.baseContents.add(entry.contentDigest); }
   await store.restore(head); return store;
  }
  private async active(): Promise<void> { if (this.failed || !same(await this.authorize(), this.source)) throw new Error('History evidence owner unavailable/fenced'); }
@@ -110,12 +117,50 @@ export class HistoryEvidenceStore {
    for (const { entry } of novel.values()) this.add(entry); this.head = id; return id;
   } catch (error) { this.failed = true; throw error; }
  }
+ async contains(method: keyof ReviewSources, args: readonly unknown[]): Promise<boolean> {
+  if (this.failed) return false;
+  const query = reviewSourceQueryDigest(method, args);
+  return this.entries.has(query) || this.reader instanceof PreparedViewReader && this.reader.hasSource(query);
+ }
  has(method: keyof ReviewSources, args: readonly unknown[]): boolean { return !this.failed && this.entries.has(reviewSourceQueryDigest(method, args)); }
+ private async stagedBytes(queryDigest: string): Promise<{ bytes: Buffer; release(): void }> {
+  if (!(this.reader instanceof PreparedViewReader)) throw new Error('Staged source reader required');
+  const reference = await this.reader.source(queryDigest), description = await this.reader.describe(reference);
+  if (description.type !== 'bytes' || description.size > this.limits.memoryMaxBytes) throw new Error('Invalid staged history evidence payload');
+  const allocation = this.reader.memory.allocate(description.size + 1, 'history evidence source decode');
+  let offset = 0;
+  try {
+   for await (const chunk of this.reader.chunks(reference)) {
+    try { allocation.bytes.set(chunk.value, offset); offset += chunk.value.length; }
+    finally { chunk.release(); }
+   }
+   if (offset !== description.size) throw new Error('Staged history evidence length mismatch');
+   return { bytes: Buffer.from(allocation.bytes.buffer, allocation.bytes.byteOffset, description.size), release: allocation.lease.release };
+  } catch (error) { allocation.lease.release(); throw error; }
+ }
  async query(method: keyof ReviewSources, args: readonly unknown[]): Promise<unknown> {
   await this.active();
   try {
-   const entry = this.entries.get(reviewSourceQueryDigest(method, args)); if (!entry) throw new Error('Evidence not present in qualified history');
-   const bytes = this.baseContents.has(entry.contentDigest) ? await this.reader.evidenceObject(entry.contentDigest) : await read(join(await directory(this.source), `${entry.contentDigest}.data`), this.limits.memoryMaxBytes);
+   const queryDigest = reviewSourceQueryDigest(method, args);
+   let entry = this.entries.get(queryDigest);
+   let bytes: Buffer;
+   if (this.reader instanceof PreparedViewReader && await this.reader.hasSource(queryDigest)) {
+    const staged = await this.stagedBytes(queryDigest);
+    try {
+     bytes = staged.bytes;
+     const observed = { queryDigest, contentDigest: hash(bytes), bytes: bytes.length };
+     if (entry && !same(entry, observed)) throw new Error('Immutable staged history evidence changed');
+     if (!entry) { this.add(observed); entry = observed; }
+     this.baseContents.add(entry.contentDigest);
+     if (bytes.length !== entry.bytes || hash(bytes) !== entry.contentDigest) throw new Error('History evidence payload digest mismatch');
+     return decodeReviewSourceResult(method, bytes);
+    } finally { staged.release(); }
+   } else {
+    if (!entry) throw new Error('Evidence not present in qualified history');
+    bytes = this.baseContents.has(entry.contentDigest) && this.reader instanceof PreparedContextReader
+     ? await this.reader.evidenceObject(entry.contentDigest)
+     : await read(join(await directory(this.source), `${entry.contentDigest}.data`), this.limits.memoryMaxBytes);
+   }
    if (bytes.length !== entry.bytes || hash(bytes) !== entry.contentDigest) throw new Error('History evidence payload digest mismatch'); return decodeReviewSourceResult(method, bytes);
   } catch (error) { this.failed = true; throw error; }
  }

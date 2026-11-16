@@ -38,17 +38,18 @@ export function sourceGeneration(identity: PreparedSourceIdentity): string {
   || [identity.inputDigest, identity.routeDigest, identity.sourceIdentity, identity.scopeDigest, identity.testDocumentDigest].some(d => !/^[a-f0-9]{64}$/.test(d))) throw new Error('Invalid qualified source identity');
  return preparationDigest(identity);
 }
-async function bytesAt(path: string, limit: number, expected?: { bytes: number; digest: string }): Promise<Buffer> {
+export async function bytesAt(path: string, limit: number, expected?: { bytes: number; digest: string }, allocation?: Uint8Array): Promise<Buffer> {
  const file = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
  try {
   const st = await file.stat(); if (!st.isFile() || st.size > limit || expected && st.size !== expected.bytes) throw new Error('Invalid prepared object size');
-  const bytes = Buffer.alloc(st.size + 1); let offset = 0;
+  if (allocation && allocation.byteLength !== st.size + 1) throw new Error('Unbound prepared read allocation');
+  const bytes = allocation ? Buffer.from(allocation.buffer, allocation.byteOffset, allocation.byteLength) : Buffer.alloc(st.size + 1); let offset = 0;
   while (offset < bytes.length) { const n = await file.read(bytes, offset, bytes.length - offset, null); if (!n.bytesRead) break; offset += n.bytesRead; }
   if (offset !== st.size) throw new Error('Prepared object changed during read');
   const result = bytes.subarray(0, offset); if (expected && hash(result) !== expected.digest) throw new Error('Prepared object digest mismatch'); return result;
  } finally { await file.close(); }
 }
-async function parents(key: ReviewKey, create = true): Promise<string> {
+export async function preparedContextParents(key: ReviewKey, create = true): Promise<string> {
  if (await realpath(key.project) !== key.project) throw new Error('Noncanonical context project');
  let path = key.project;
  for (const part of ['.insrc', 'tmp', 'review-context', key.family, key.reviewId]) {
@@ -69,7 +70,7 @@ export async function writePreparedContext(identity: PreparedSourceIdentity, vie
  limits: ReviewPreparationLimits, capacity: SourceCapacity, io: { write: typeof writeReviewBytes; rename: typeof rename } = { write: writeReviewBytes, rename }): Promise<ReadyContextReceipt> {
  identity = structuredClone(identity);
  if (identity.key.family === 'code' && !session) throw new Error('Qualified code context requires complete source-session evidence');
- const identityDigest = sourceGeneration(identity), generationId = hash(`${identityDigest}:${randomUUID()}`), root = await parents(identity.key), stage = join(root, `prepare-${randomUUID()}`), ready = join(root, generationId);
+ const identityDigest = sourceGeneration(identity), generationId = hash(`${identityDigest}:${randomUUID()}`), root = await preparedContextParents(identity.key), stage = join(root, `prepare-${randomUUID()}`), ready = join(root, generationId);
  if (session && preparationDigest(session.key) !== preparationDigest(identity.key)) throw new Error('Foreign source session');
  await mkdir(stage, { mode: 0o700 });
  const tokens: string[] = [], files = new Map<string, number>(), objects = new Map<string, PreparedContextManifest['objects'][number]>();
@@ -104,10 +105,15 @@ export async function writePreparedContext(identity: PreparedSourceIdentity, vie
   } finally { ancestors.delete(value); }
  }
  try {
-  if (session) for (const evidence of await session.evidence()) {
-   const bytes = await session.readEvidence(evidence.queryDigest);
-   if (bytes.length !== evidence.bytes || hash(bytes) !== evidence.contentDigest) throw new Error('Source evidence changed during context commit');
-   await put(evidence.queryDigest, bytes);
+  if (session) {
+   const inventory = await session.evidence();
+   try { for (const evidence of inventory) {
+    const bytes = await session.readEvidence(evidence.queryDigest);
+    try {
+     if (bytes.length !== evidence.bytes || hash(bytes) !== evidence.contentDigest) throw new Error('Source evidence changed during context commit');
+     await put(evidence.queryDigest, bytes);
+    } finally { session.releaseResult(bytes); }
+   } } finally { session.releaseResult(inventory); }
   }
   const readyViews: PreparedContextManifest['views'] = [];
   for (const [id, value] of Object.entries(views).sort(([a], [b]) => a.localeCompare(b))) {
@@ -151,7 +157,7 @@ export class PreparedContextReader {
   try {
    if (!/^[a-f0-9]{64}$/.test(receipt.generationId)) throw new Error('Invalid context generation');
    receipt = structuredClone(receipt);
-   const path = join(await parents(receipt.key, false), receipt.generationId), st = await lstat(path);
+   const path = join(await preparedContextParents(receipt.key, false), receipt.generationId), st = await lstat(path);
    if (!st.isDirectory() || st.isSymbolicLink()) throw new Error('Unsafe ready context');
    const before = await this.stamp(join(path, 'manifest.json'));
    const manifest = decodePreparedContextManifest(JSON.parse((await bytesAt(join(path, 'manifest.json'), reviewJsonLimit())).toString()), receipt.key, reviewJsonLimit());

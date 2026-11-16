@@ -1,3 +1,4 @@
+import type { ReviewAdmissionPreparer } from './admission.js';
 import { qualifyReviewCapacity, capacityCheckedResult } from './capacity.js';
 import { failAttribution, unmappedTaskFailure, attributionTimedOut } from './attribution-failure.js';
 import { recordAttributionRejection, MAX_ATTRIBUTION_SUBMISSIONS } from './attribution-repair.js';
@@ -34,7 +35,7 @@ export interface TaskReviewDeps {
  readonly provider: () => LLMProvider;
  readonly save?: typeof saveCheckpoint;
  readonly read?: typeof loadCheckpoint;
- readonly prepare?:typeof prepareReviewAdmission|undefined;
+ readonly prepare?:ReviewAdmissionPreparer|undefined;
  readonly publish?: ((project: string, reviewId: string, epicHash: string, baseline?: import('./capacity.js').CapacityBaseline) => Promise<unknown>) | undefined;
  readonly now?: () => number;
  readonly timer?: (callback: () => void, ms: number) => () => void;

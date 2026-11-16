@@ -12,7 +12,9 @@ import { persistReviewWorkerAdmission } from '../../../daemon/threads/review-wor
 import type { ReviewBootstrapInput } from '../../../daemon/threads/review-worker-contract.js';
 import { ReviewPreparationCapacity } from '../source-session.js';
 import { reviewPreparationLimits } from '../../../config/review.js';
-import { PreparedContextReader, preparationDigest } from '../prepared-context.js';
+import { preparationDigest } from '../prepared-context.js';
+import { PreparedViewReader } from '../prepared-views.js';
+import { ReviewMemoryBudget } from '../preparation-memory.js';
 
 async function terminal(c: DesignReviewCoordinator, repo: string, attempt = 1) {
  for (let i=0;i<1000;i++) { const view=await c.progress(repo,'review-1',attempt); if (!['pending','running'].includes(view.status)) return view; await pause(5); }
@@ -46,7 +48,7 @@ test('shared design preparation executes planning and chunks through coordinator
    for(let i=0;i<1000;i++){try{if((await worker.progress()).phase!=='admission')break;}catch{}await pause(5);}
   }else{coordinator=new DesignReviewCoordinator(deps);await coordinator.start(request);}
   const done=await terminal(coordinator,f.repo);assert.equal(done.status,'passed');assert.equal(done.completedChunks,2);assert.deepEqual(native.calls,['planning','content','final']);
-  const receipt=await preparation.seal(),reader=await PreparedContextReader.open(receipt,limits,async()=>{},async error=>{throw error;});
+  const receipt=await preparation.seal(),reader=await PreparedViewReader.open(receipt,limits,new ReviewMemoryBudget(limits.memoryMaxBytes),async()=>{},async error=>{throw error;});
   assert.equal(preparationDigest(preparation.qualificationIdentity()), receipt.identityDigest);
   writeFileSync(join(f.repo,'unrelated.txt'),'External activity');
   const reused=await DesignPreparation.reuse(key,1,reader,limits,capacity);assert.deepEqual(reused.prepare(f.repo,f.json).inventory,f.prepared.inventory);
@@ -80,7 +82,7 @@ test('shared design context retains the submitted document locator and rejects f
  const preparation=new DesignPreparation(key,1,limits,capacity);
  preparation.prepare(f.repo,f.md);const receipt=await preparation.seal();
  assert.equal(receipt.inputDigest,preparationDigest({artifactPath:f.md,attempt:1}));
- const reader=await PreparedContextReader.open(receipt,limits,async()=>{},async error=>{throw error;});
+ const reader=await PreparedViewReader.open(receipt,limits,new ReviewMemoryBudget(limits.memoryMaxBytes),async()=>{},async error=>{throw error;});
  await assert.rejects(DesignPreparation.reuse(key,2,reader,limits,capacity),{code:'foreign_checkpoint'});
  await assert.rejects(DesignPreparation.reuse({...key,reviewId:'another-review'},1,reader,limits,capacity),{code:'foreign_checkpoint'});
  preparation.close();

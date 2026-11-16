@@ -9,6 +9,71 @@ import { ProjectionBudget, boundedProjectionSources } from '../../code-review/ta
 import { ReviewSourceSession, ReviewPreparationCapacity } from '../source-session.js';
 import { reviewPreparationLimits } from '../../../config/review.js';
 import { prepareReviewPacket } from '../../code-review/task-review/packet.js';
+import { PreparedViewWriter, PreparedViewReader } from '../prepared-views.js';
+import { preparationDigest, contextRoot } from '../prepared-context.js';
+import { reviewSourceQueryDigest } from '../source-session.js';
+import { StagedPacketSources } from '../staged-packet-sources.js';
+import { StagedPacketConstruction } from '../staged-packet-construction.js';
+
+test('staged packet construction reopens repeated history metadata without rebuilding source qualification', async t => {
+ const f = await setup(t), limits = defaults(), capacity = new ReviewPreparationCapacity(limits.cacheMaxBytes);
+ const session = await f.create(limits, capacity), d = preparationDigest('staged-history');
+ const writer = await PreparedViewWriter.create({ key: session.key, attempt: 1, inputDigest: d, validatorVersion: 2, routeDigest: d, sourceIdentity: d, scopeDigest: d, testDocumentDigest: d }, limits, capacity, session.workingMemory, session);
+ const adapter = new StagedPacketSources(session, writer), construction = new StagedPacketConstruction(adapter, writer);
+ try {
+  const first = await construction.preparePacket(f.f.packet, adapter, true);
+  const identity = first.projection?.identity, tasks = first.tasks, documents = first.documents;
+  await construction.release(first);
+  const physical = session.snapshot().physicalQueries;
+  for (let attempt = 0; attempt < 4; attempt++) {
+   const logical = session.snapshot().logicalQueries;
+   const prepared = await construction.preparePacket(f.f.packet, adapter, true);
+   assert.equal(prepared.projection?.identity, identity);
+   assert.deepEqual(prepared.tasks, tasks); assert.deepEqual(prepared.documents, documents);
+   assert.equal(session.snapshot().logicalQueries, logical, 'metadata reuse does not reconstruct Git qualification');
+   const blob = prepared.originChanges[0]!.after; assert.ok(blob);
+   assert.ok(await adapter.text(blob), 'reopened metadata resolves only to its canonical source descriptor');
+   await construction.release(prepared);
+  }
+  assert.equal(session.snapshot().physicalQueries, physical);
+  assert.match(construction.identity(), /^[a-f0-9]{64}$/);
+ } finally { construction.close(); await writer.discard(); }
+ await session.close(); assert.equal(session.workingMemory.snapshot().bytes, 0); assert.equal(capacity.bytes, 0);
+});
+
+test('staged packet source windows preserve packet qualification and reopen blobs without physical queries', async t => {
+ const f = await setup(t), limits = defaults(), capacity = new ReviewPreparationCapacity(limits.cacheMaxBytes);
+ const session = await f.create(limits, capacity), d = preparationDigest('bounded-packet');
+ const writer = await PreparedViewWriter.create({ key: session.key, attempt: 1, inputDigest: d, validatorVersion: 2, routeDigest: d, sourceIdentity: d, scopeDigest: d, testDocumentDigest: d }, limits, capacity, session.workingMemory, session);
+ const adapter = new StagedPacketSources(session, writer);
+ try {
+  adapter.beginPacket();
+  const prepared = await prepareReviewPacket(f.f.packet, adapter, false, undefined, undefined, adapter);
+  const oracle = await prepareReviewPacket(f.f.packet, f.source);
+  assert.deepEqual(prepared.tasks, oracle.tasks);
+  assert.deepEqual(prepared.documents, oracle.documents);
+  assert.deepEqual(prepared.packet, oracle.packet);
+  assert.equal(prepared.projection?.identity, oracle.projection?.identity);
+  const blob = await adapter.file(f.f.packet.reviewRevision!, 'source.js'); assert.ok(blob);
+  assert.equal('bytes' in blob, false, 'packet retains a staged descriptor only');
+  const physical = session.snapshot().physicalQueries;
+  const text = await adapter.text(blob);
+  await adapter.withLines(blob, blob, undefined, (a, b) => assert.equal(a.length, b.length));
+  assert.equal(await adapter.text(blob), text);
+  assert.equal(session.snapshot().physicalQueries, physical);
+  assert.throws(() => adapter.close(), /active/);
+  await writer.add('qualified-packet', 'packet', prepared);
+  adapter.endPacket();
+  assert.throws(() => adapter.size(blob), /active/);
+  adapter.beginPacket();
+  assert.equal(await adapter.file(blob.commit, blob.path), blob);
+  await assert.rejects(adapter.text({ ...blob }), /Foreign/);
+  adapter.endPacket(); adapter.close();
+ } finally { adapter.close(); await writer.discard(); }
+ await session.close();
+ assert.equal(session.workingMemory.snapshot().bytes, 0);
+ assert.equal(capacity.bytes, 0);
+});
 
 const defaults = () => reviewPreparationLimits('/tmp/insrc-nonexistent-test-preparation-config');
 async function setup(t: { after: (fn: () => void | Promise<void>) => void }) {
@@ -23,6 +88,69 @@ async function setup(t: { after: (fn: () => void | Promise<void>) => void }) {
  };
  return { f, source, calls, create: async (limits: ReturnType<typeof defaults>, capacity: ReviewPreparationCapacity) => { const session = await ReviewSourceSession.create({ project: f.repo, family: 'code', reviewId: 'session-test' }, source, limits, capacity); sessions.push(session); return session; } };
 }
+
+test('staged views share source cache memory and retain exact source queries without refetch', async t => {
+ const f = await setup(t), limits = defaults(), capacity = new ReviewPreparationCapacity(limits.cacheMaxBytes);
+ const session = await f.create(limits, capacity), commit = f.f.packet.reviewRevision!;
+ const expected = await session.file(commit, 'source.js'), physical = session.snapshot().physicalQueries;
+ assert.ok(session.snapshot().memoryBytes > 0);
+ const held = session.workingMemory.reserve(limits.memoryMaxBytes - 4000, 'consumer window');
+ assert.ok(session.snapshot().memoryBytes < 4000, 'consumer pressure evicts only the unborrowed source wire cache');
+ held.release();
+ const d = preparationDigest('source-binding');
+ const writer = await PreparedViewWriter.create({ key: session.key, attempt: 1, inputDigest: d, validatorVersion: 1, routeDigest: d, sourceIdentity: d, scopeDigest: d, testDocumentDigest: d }, limits, capacity, session.workingMemory, session);
+ await writer.add('packet', 'packet', { commit, path: 'source.js' }); const receipt = await writer.seal();
+ const reader = await PreparedViewReader.open(receipt, limits, session.workingMemory, async () => {}, async error => { throw error; });
+ const ref = await reader.source(reviewSourceQueryDigest('file', [commit, 'source.js'])), parts: Buffer[] = [];
+ for await (const window of reader.chunks(ref)) { parts.push(Buffer.from(window.value)); window.release(); }
+ const restored = JSON.parse(Buffer.concat(parts).toString('utf8'));
+ assert.equal(restored.oid, expected!.oid); assert.deepEqual(Buffer.from(restored.base64, 'base64'), Buffer.from(expected!.bytes));
+ assert.equal(session.snapshot().physicalQueries, physical);
+ reader.close(); session.releaseResult(expected); await session.close();
+ assert.equal(session.workingMemory.snapshot().bytes, 0);
+ await rm(join(contextRoot(session.key), receipt.generationId), { recursive: true }); await capacity.release(receipt.capacityToken);
+ assert.equal(capacity.bytes, 0);
+});
+
+test('source evidence windows prevent disposal until the exact consumer releases ownership', async t => {
+ const f = await setup(t), limits = defaults(), capacity = new ReviewPreparationCapacity(limits.cacheMaxBytes);
+ const session = await f.create(limits, capacity), commit = f.f.packet.reviewRevision!;
+ const result = await session.file(commit, 'source.js');
+ const window = await session.borrowEvidence(reviewSourceQueryDigest('file', [commit, 'source.js']));
+ await assert.rejects(session.close(), /windows remain borrowed/);
+ assert.ok(capacity.bytes > 0); assert.ok(window.bytes.length > 0);
+ window.release(); window.release(); assert.throws(() => window.bytes, /released/);
+ session.releaseResult(result); await session.close(); assert.equal(capacity.bytes, 0); assert.equal(session.workingMemory.snapshot().bytes, 0);
+});
+
+test('decoded source results retain their charge until explicit consumer release', async t => {
+ const f = await setup(t), limits = defaults(), capacity = new ReviewPreparationCapacity(limits.cacheMaxBytes), session = await f.create(limits, capacity);
+ const result = await session.file(f.f.packet.reviewRevision!, 'source.js'); assert.ok(result);
+ const before = session.workingMemory.snapshot().bytes, codec = session.workingMemory.buffer(result.bytes, 'following codec consumer');
+ assert.equal(session.workingMemory.snapshot().bytes, before);
+ session.releaseResult(result); const shared = session.workingMemory.snapshot().bytes;
+ assert.ok(shared < before); codec.release();
+ assert.equal(session.workingMemory.snapshot().bytes, shared - result.bytes.buffer.byteLength);
+ session.releaseResult(result); await session.close(); assert.equal(session.workingMemory.snapshot().bytes, 0);
+});
+
+test('session close retains decoded result charges while a caller can still use them', async t => {
+ const f = await setup(t), limits = defaults(), capacity = new ReviewPreparationCapacity(limits.cacheMaxBytes), session = await f.create(limits, capacity);
+ const result = await session.file(f.f.packet.reviewRevision!, 'source.js'); assert.ok(result);
+ const text = Buffer.from(result.bytes).toString();
+ await session.close(); assert.equal(capacity.bytes, 0);
+ assert.ok(session.workingMemory.snapshot().bytes > 0);
+ assert.equal(Buffer.from(result.bytes).toString(), text, 'result remains usable and charged after session close');
+ session.releaseResult(result); assert.equal(session.workingMemory.snapshot().bytes, 0);
+});
+
+test('source body memory exhaustion refuses before invoking the body provider', async t => {
+ const f = await setup(t), limits = { ...defaults(), memoryMaxBytes: 8192 }, capacity = new ReviewPreparationCapacity(limits.cacheMaxBytes);
+ let bodies = 0;
+ const session = await ReviewSourceSession.create({ project: f.f.repo, family: 'code', reviewId: 'before-body' }, { ...f.source, file: async (...args) => { bodies++; return f.source.file(...args); } }, limits, capacity);
+ await assert.rejects(session.file(f.f.packet.reviewRevision!, 'source.js'), /source body acquisition/);
+ assert.equal(bodies, 0); await session.close(); assert.equal(session.workingMemory.snapshot().bytes, 0); assert.equal(capacity.bytes, 0);
+});
 
 test('source session batches verified Git objects and shares immutable queries without bypassing logical budgets', async t => {
  const f = await setup(t), limits = defaults(), capacity = new ReviewPreparationCapacity(limits.cacheMaxBytes);
@@ -44,15 +172,17 @@ test('source session batches verified Git objects and shares immutable queries w
 
 test('source session retains evidence above memory capacity and never refetches evicted data', async t => {
  const f = await setup(t);
- for (let i = 0; i < 12; i++) f.f.put(`large-${i}.txt`, String(i % 10).repeat(8192));
+ for (let i = 0; i < 48; i++) f.f.put(`large-${i}.txt`, String(i % 10).repeat(8192));
  f.f.git('add', '.'); f.f.git('commit', '-qm', 'large fixture'); const commit = f.f.git('rev-parse', 'HEAD');
- const limits = { ...defaults(), memoryMaxBytes: 32768, batchMaxBytes: 1024, cacheMaxBytes: 2 * 1024 * 1024 };
+ const limits = { ...defaults(), memoryMaxBytes: 256 * 1024, batchMaxBytes: 1024, cacheMaxBytes: 2 * 1024 * 1024 };
  const capacity = new ReviewPreparationCapacity(limits.cacheMaxBytes), session = await f.create(limits, capacity);
 
  // Single objects may exceed a configured batch target and run alone.
- await session.prefetchObjects(Array.from({ length: 12 }, (_, i) => ({ commit, path: `large-${i}.txt` })));
+ // Account real encoder/decoder and inventory scratch, not just wire bytes.
+ // The expanded48-file fixture still exceeds this complete working-set bound.
+ for (let offset = 0; offset < 48; offset += 8) await session.prefetchObjects(Array.from({ length: 8 }, (_, i) => ({ commit, path: `large-${offset + i}.txt` })));
  assert.ok(session.snapshot().storedBytes > limits.memoryMaxBytes);
- assert.equal(f.calls.batches, 12, 'valid objects above batch target run alone');
+ assert.equal(f.calls.batches, 48, 'valid objects above batch target run alone');
  const before = { ...f.calls }, first = await session.file(commit, 'large-0.txt');
  assert.equal(Buffer.from(first!.bytes).toString(), '0'.repeat(8192));
  assert.deepEqual(f.calls, before); assert.ok(session.snapshot().diskHits > 0);
@@ -75,12 +205,13 @@ test('shared project reservations refuse body fetch before capacity exhaustion a
 });
 
 test('staged corruption and source errors fence the session instead of implicitly retrying Git', async t => {
- const f = await setup(t), limits = { ...defaults(), memoryMaxBytes: 32768, batchMaxBytes: 1024, cacheMaxBytes: 2 * 1024 * 1024 };
+ const f = await setup(t), limits = { ...defaults(), memoryMaxBytes: 256 * 1024, batchMaxBytes: 1024, cacheMaxBytes: 2 * 1024 * 1024 };
  const capacity = new ReviewPreparationCapacity(limits.cacheMaxBytes);
  for (let i = 0; i < 4; i++) f.f.put(`evict-${i}.txt`, String(i % 10).repeat(8192));
  f.f.git('add', '.'); f.f.git('commit', '-qm', 'eviction fixture'); const commit = f.f.git('rev-parse', 'HEAD');
  const session = await f.create(limits, capacity);
  await session.prefetchObjects(Array.from({ length: 4 }, (_, i) => ({ commit, path: `evict-${i}.txt` })));
+ const pressure = session.workingMemory.reserve(limits.memoryMaxBytes - 8192, 'force verified-wire eviction'); pressure.release();
  const line = (await readFile(join(session.directory, 'queries.jsonl'), 'utf8')).split('\n')[0]!;
  const entry = JSON.parse(line); await writeFile(join(session.directory, entry.name), 'corrupt');
  const before = { ...f.calls };

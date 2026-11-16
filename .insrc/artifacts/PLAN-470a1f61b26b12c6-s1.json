@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "plan",
-    "runId": "wf-1794747773925-mi61m2",
+    "runId": "wf-1794819251524-rp20up",
     "repoPath": "/home/subho/work/dev/insors/insrc",
-    "createdAt": "2026-11-15T13:06:43.183Z",
+    "createdAt": "2026-11-16T08:58:25.772Z",
     "epicCreatedAt": "2026-11-14T08:55:28.320Z",
     "standalone": true,
     "attribution": {
@@ -12,25 +12,25 @@
           "role": "(client)",
           "tier": "core",
           "runner": "cli-codex",
-          "model": "unknown"
+          "model": "gpt-5"
         }
       ]
     },
-    "elapsedMs": 224325,
+    "elapsedMs": 247226,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "470a1f61b26b12c6",
     "epicSlug": "rework-review-preparation-context-lifecycle-end",
     "storyId": "s1",
-    "lldRunId": "wf-1794738660757-dh2adn",
-    "lldEffectiveHash": "c990be2b3102c4689ac10509c7511de8fa68638f5b91f1d164c5a2fe23486811",
+    "lldRunId": "wf-1794817146336-3c95t8",
+    "lldEffectiveHash": "ccb16f2a6299fe21a28e42430ed7e6b2dd5280544c47bdea8464e5c18ef5cedf",
     "authoredBy": "controller",
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 4,
-        "contentHash": "5e03739bc25735d1058d1a2b6532a9237d90ee2a6b7e9be1fdfa68e09f847ba6",
-        "at": "2026-11-15T13:06:44.707Z",
+        "number": 5,
+        "contentHash": "b27fff23936be398e5d397470183c01d8a734904ea0f70b82c3c94a13d8d8100",
+        "at": "2026-11-16T08:58:27.797Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
@@ -39,13 +39,13 @@
       },
       "signoffs": [],
       "approval": {
-        "revision": 4,
+        "revision": 5,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-11-15T13:12:52.436Z"
+        "at": "2026-11-16T09:05:15.396Z"
       }
     },
     "envelope": {
@@ -53,13 +53,13 @@
       "references": [],
       "attachments": []
     },
-    "revision": 4,
-    "rangeBase": "2b6e37fffd897a1c11dc0951a660e5c70af13eda"
+    "revision": 5,
+    "rangeBase": "7129dc1ed06b19ff9dbd8f7dee59d7a906a9720f"
   },
   "body": {
     "summary": {
-      "audience": "technical",
-      "prose": "The plan preserves completed T1–T13 and adds six dependency-ordered corrective tasks from approved LLD revision4. T15–T18 bound prepared storage, construction and every lifecycle consumer; T19 measures and corrects admission latency; T20 qualifies the complete production cutover. Retained T14 runs last with its original full-workload performance and package gates. Existing caps, exact scope/history, independent code review and human BUILD approval remain; no intermediate deployment or original-review resume is authorized."
+      "prose": "This revision preserves the completed review-lifecycle build and adds a source-light correction before final qualification. The remaining work explicitly reconciles duplicate provenance, replaces durable aggregate source bodies with exact locators and attempt-owned commit-parent workspaces, integrates that model through production code-review lifecycle paths, then re-runs the retained full workload and packaging gates.",
+      "audience": "technical"
     },
     "tasks": [
       {
@@ -566,28 +566,164 @@
         ]
       },
       {
-        "id": "t14",
-        "title": "Qualify performance, packaging and deployment handoff",
-        "size": "L",
+        "id": "t21",
+        "title": "Reconcile duplicate lifecycle provenance",
+        "size": "M",
         "order": 20,
         "dependsOn": [
-          "t13",
           "t20"
         ],
-        "summary": "Measure full managed cold/warm/history-growth workloads, build shipped package and document coordinated restart plus explicitly authorized post-deployment smoke.",
+        "summary": "Transition duplicate ISSUE-163e7bc3d6f0ccba and its LLD lineage to explicit superseded lifecycle state, bind replacement provenance to the primary standalone artifact, and preserve both records as historical non-routable evidence.",
         "acceptanceChecks": [
-          "Three cold-run median<=120s, warm<=10s, controlled admit/cancel<=2s and progress observation<=2s; report all metrics; failed gates block old qualification; deployment awaits BUILD approval.",
-          "Task completion uses local managed qualification and package checks only. Deployment smoke requires later approved BUILD, user update/restart and explicit permission to retrigger original review.",
-          "Run and record this task's focused validation before advancing; cross-cutting qualification does not replace these checks."
+          "Both duplicate artifacts read back as superseded with replacement provenance to the primary artifact and cannot be selected for new workflow routing.",
+          "The transition is atomic or safely retryable; any failed readback stops the build before source-light migration proceeds.",
+          "Existing primary PLAN/BUILD/TESTS evidence and completed task records remain unchanged."
         ],
         "derivedFrom": [
-          "c1",
-          "c8"
+          "c11",
+          "c12"
         ],
         "tests": [
           {
             "level": "integration",
-            "name": "Managed cold x3/warm/history-growth performance gates on supported Node/native package, npm build plus source-free package smoke; no deployed daemon mutation."
+            "name": "Duplicate ISSUE/LLD lifecycle reconciliation: atomic supersession, replacement provenance, non-routability, retry/readback failure, and unchanged primary PLAN/BUILD/TESTS evidence."
+          }
+        ]
+      },
+      {
+        "id": "t22",
+        "title": "Define source-light locator, manifest and historical-reader contracts",
+        "size": "M",
+        "order": 21,
+        "dependsOn": [
+          "t21"
+        ],
+        "summary": "Introduce versioned exact selected-change locators and attempt baseline-workspace manifests, remove durable aggregate source bodies from new prepared state, and define cold requalification or explicit rejection for historical eager-derived records.",
+        "acceptanceChecks": [
+          "New code-review durable state stores immutable commit/parent/object identities, exact file/range/block locators and sealed workspace metadata, never aggregate source bodies.",
+          "Decoders reject unknown or ambiguous required versions; supported historical records cannot silently become trusted source authority and are either cold-requalified or explicitly rejected.",
+          "Design review latest-document contracts and existing compact runtime/history/publication contracts remain unchanged."
+        ],
+        "derivedFrom": [
+          "c11",
+          "c13"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Source-light locator/manifest codecs: ordered Unicode paths, add/delete/rename/replacement/merge/binary metadata, object and parent identities, version rejection, tamper/cross-attempt detection, and source-body absence."
+          }
+        ]
+      },
+      {
+        "id": "t23",
+        "title": "Implement commit-parent workspaces and transient selected after blocks",
+        "size": "L",
+        "order": 22,
+        "dependsOn": [
+          "t22"
+        ],
+        "summary": "Materialize only relevant before files from each selected change's actual applicable commit parent into an attempt-owned sealed workspace and decode only exact pinned after ranges transiently for reviewer input.",
+        "acceptanceChecks": [
+          "New, deleted, renamed and stacked-commit changes resolve against the actual selected commit parent rather than origin or current HEAD, with exact range and object verification.",
+          "The attempt workspace contains only relevant baseline files at ordinary paths, has a sealed integrity manifest, remains isolated between concurrent attempts, and is removed through owned terminal cleanup.",
+          "Selected after blocks include no unrelated lines and decoded bytes are released after reviewer-input construction rather than retained in checkpoints or prepared packets."
+        ],
+        "derivedFrom": [
+          "c11",
+          "c13"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Pinned commit-parent workspace matrix: new/delete/rename/stacked commits, exact transient after ranges, relevant-only parent files, manifest sealing, concurrent attempt isolation, cancellation and owned cleanup."
+          }
+        ]
+      },
+      {
+        "id": "t24",
+        "title": "Integrate source-light preparation through the production lifecycle",
+        "size": "L",
+        "order": 23,
+        "dependsOn": [
+          "t23"
+        ],
+        "summary": "Wire source-light packet preparation, staged construction/source adapters, isolated workers, progress, cancellation, recovery, publication, approval and cleanup through actual code-review production routes while retaining latest-document design review.",
+        "acceptanceChecks": [
+          "Every code-review route uses locators, transient selected blocks and baseline workspace paths without an eager aggregate source-view fallback; design routes continue latest-document capture.",
+          "Checkpoint/resume, progress, cancellation, permanent CR publication and approval cleanup preserve exact scope, history and ownership across crashes and concurrent sessions.",
+          "Complete test details and mandatory coverage assessment reach the reviewer; execution remains optional, and no module is skipped because of size or preparation mode."
+        ],
+        "derivedFrom": [
+          "c11",
+          "c13"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Production source-light lifecycle matrix for CodePreparation, StagedPacketConstruction, StagedPacketSources, workers, routes, checkpoint/recovery/progress/cancel/publication/approval/cleanup, mandatory coverage, and unchanged latest-document design review."
+          }
+        ]
+      },
+      {
+        "id": "t25",
+        "title": "Migrate readers, remove eager source ownership and qualify cutover readiness",
+        "size": "L",
+        "order": 24,
+        "dependsOn": [
+          "t24"
+        ],
+        "summary": "Remove new-path eager source ownership, complete historical-reader behavior, and run focused correctness, isolation, recovery, cleanup and packaging regressions before the retained full qualification task.",
+        "acceptanceChecks": [
+          "No production new-attempt path persists or reconstructs aggregate prepared source bodies; legacy derived views are untrusted migration inputs, not a fallback engine.",
+          "Two-session concurrency, cancellation, restart/recovery, tamper detection, publication and cleanup tests preserve exact scope and resource ownership with zero unintended cross-session access.",
+          "Production defaults, compiled build and source-free package smoke pass; task scheduling leaves t14 as the sole next qualification gate after t25."
+        ],
+        "derivedFrom": [
+          "c11",
+          "c12",
+          "c13"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Source-light cutover regressions: historical cold requalification/rejection, no eager fallback, two-session isolation, cancel/restart/tamper/publication/cleanup, production defaults and task-order preservation."
+          },
+          {
+            "level": "smoke",
+            "name": "Backend build and source-free compiled package smoke for code and design review after eager source ownership removal."
+          }
+        ]
+      },
+      {
+        "id": "t14",
+        "title": "Qualify performance, packaging and deployment handoff",
+        "size": "L",
+        "order": 25,
+        "dependsOn": [
+          "t25"
+        ],
+        "summary": "Measure the full retained managed cold, warm and history-growth workloads on the source-light production path, build the shipped package, and document coordinated restart plus explicitly authorized post-deployment smoke.",
+        "acceptanceChecks": [
+          "Three cold-run median<=120s, warm<=10s, controlled admit/cancel<=2s and progress observation<=2s; report exact selected-locator counts, unique Git reads, workspace bytes, transient charged memory, heap/external/RSS and durable writes; failed gates block qualification.",
+          "Full retained workload proves no aggregate source bodies, skipped review scope or skipped mandatory coverage assessment, and confirms design review remains latest-document based.",
+          "npm build and source-free package smoke pass. Deployment waits for BUILD approval, user update/restart and explicit permission to retrigger the original review.",
+          "Run and record this task's focused validation before advancing; prior focused regressions do not replace this full qualification."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c8",
+          "c11",
+          "c13"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Retained 171-file/four-attempt cold x3, warm and history 1/4/max source-light qualification with locator/Git/workspace/memory/RSS/write metrics, exact scope and mandatory coverage."
+          },
+          {
+            "level": "smoke",
+            "name": "Approved deployment handoff and explicit post-restart code/design smoke; the stopped review is retriggered only with separate user authorization."
           }
         ]
       }
@@ -596,231 +732,283 @@
       {
         "lldStrategyItem": "Existing projection/lineage oracle: unchanged code scope identities, after-segments, deletion/rename/merge/replacement witnesses and test/document bytes across baseline and new preparation.",
         "coveredByTaskIds": [
+          "t2",
+          "t6",
           "t7",
-          "t13"
+          "t8",
+          "t9",
+          "t12",
+          "t22"
         ]
       },
       {
         "lldStrategyItem": "Counting ReviewSources fixture: exact query keys, all prior/current packets in one session, duplicate coalescing, deterministic error attribution and no negative/error poisoning.",
         "coveredByTaskIds": [
-          "t4"
+          "t2",
+          "t6",
+          "t7",
+          "t8",
+          "t9",
+          "t12",
+          "t22"
         ]
       },
       {
         "lldStrategyItem": "Stable source generation excludes accepted feedback; immutable successor history binding validates new results/origins. Tampering with old feedback revokes descendants; input/source changes invalidate source qualification.",
         "coveredByTaskIds": [
-          "t5",
-          "t6"
+          "t2",
+          "t6",
+          "t7",
+          "t8",
+          "t9",
+          "t12",
+          "t22"
         ]
       },
       {
         "lldStrategyItem": "Logical ProjectionBudget read/byte/fragment limits apply independently per packet even when physical reads are reused.",
         "coveredByTaskIds": [
-          "t4",
-          "t7"
+          "t2",
+          "t6",
+          "t7",
+          "t8",
+          "t9",
+          "t12",
+          "t22"
         ]
       },
       {
         "lldStrategyItem": "Exact runtime and checkpoint decoders: foreign identity, oversized fields, missing/unknown capabilities, forbidden paths, stale sequences and impossible completion states.",
         "coveredByTaskIds": [
           "t2",
-          "t3"
+          "t6",
+          "t7",
+          "t8",
+          "t9",
+          "t12",
+          "t22"
         ]
       },
       {
         "lldStrategyItem": "Code story/task and epic/standalone/issue/no-document route matrix; design DEF/HLD/LLD latest-subject matrix.",
         "coveredByTaskIds": [
+          "t2",
+          "t6",
           "t7",
-          "t8"
+          "t8",
+          "t9",
+          "t12",
+          "t22"
         ]
       },
       {
         "lldStrategyItem": "Full checkpoint input/feedback remains pinned while compact runtime is sole new hot resource authority.",
         "coveredByTaskIds": [
-          "t3"
+          "t2",
+          "t6",
+          "t7",
+          "t8",
+          "t9",
+          "t12",
+          "t22"
         ]
       },
       {
         "lldStrategyItem": "Client/model-supplied qualification handles, PIDs, native closure claims and approval receipts are rejected.",
         "coveredByTaskIds": [
           "t2",
-          "t5",
-          "t9"
+          "t6",
+          "t7",
+          "t8",
+          "t9",
+          "t12",
+          "t22"
         ]
       },
       {
         "lldStrategyItem": "Cancel and preparation progress wire fixtures preserve enum/status meaning, nullable unknown totals and actual counters; no invented task inventory or percentage.",
         "coveredByTaskIds": [
-          "t9"
+          "t2",
+          "t6",
+          "t7",
+          "t8",
+          "t9",
+          "t12",
+          "t22"
         ]
       },
       {
         "lldStrategyItem": "Supported historical checkpoint/CR readers and explicit new-format capability mismatch refusals before cleanup or execution.",
         "coveredByTaskIds": [
           "t2",
-          "t10",
-          "t12"
+          "t6",
+          "t7",
+          "t8",
+          "t9",
+          "t12",
+          "t22"
         ]
       },
       {
         "lldStrategyItem": "ProductionReviews through registered MCP/IPC routes acquires context, runs each family with a deterministic reviewer, preserves full feedback, publishes, approves under fixture authority and cleans only approved inactive targets.",
         "coveredByTaskIds": [
-          "t13"
+          "t13",
+          "t24"
         ]
       },
       {
         "lldStrategyItem": "Real Git batch output, object hash/type/framing, read-only isolation, exact missing-object semantics and byte limits through ReviewNativeHost/ReviewProcessLeases.",
         "coveredByTaskIds": [
-          "t4",
-          "t13"
+          "t13",
+          "t24"
         ]
       },
       {
         "lldStrategyItem": "Warm handoff to a new authorized publication/cleanup worker reuses a private receipt after terminal execution-worker reclamation; cold daemon restart invalidates all receipts and requalifies through authoritative sources once.",
         "coveredByTaskIds": [
-          "t5",
-          "t10",
-          "t11"
+          "t13",
+          "t24"
         ]
       },
       {
         "lldStrategyItem": "Author changes before restart use fresh production scope, not a test-only resolver; latest design target edits invalidate and wait for human-approved restart; unrelated external edits do not loop.",
         "coveredByTaskIds": [
-          "t7",
-          "t8",
-          "t13"
+          "t13",
+          "t24"
         ]
       },
       {
         "lldStrategyItem": "Two review sessions retain separate ownership, progress, cancellation and resource fences; cancel one during preparation, assessment and publication-boundary races without affecting the other.",
         "coveredByTaskIds": [
-          "t9",
-          "t13"
+          "t13",
+          "t24"
         ]
       },
       {
         "lldStrategyItem": "Observe actual runtime/history writer bytes and commit ordering: native open/close writes0 full history records, result commit precedes counted completion, and open intent precedes subprocess spawn.",
         "coveredByTaskIds": [
-          "t3",
-          "t6",
-          "t13"
+          "t13",
+          "t24"
         ]
       },
       {
         "lldStrategyItem": "Multiple accepted task/chunk results plus publication bookkeeping preserve source receipt and use zero repeated Git qualification; new evidence is fetched once and bound to exact successor history.",
         "coveredByTaskIds": [
-          "t6",
-          "t10"
+          "t13",
+          "t24"
         ]
       },
       {
         "lldStrategyItem": "Fault injection at every runtime-initialize/checkpoint-bind/activate, manifest-ready/receipt, native-open/spawn/disposal/close, result-history/runtime-boundary and CR/publication-boundary transition.",
         "coveredByTaskIds": [
-          "t3",
-          "t6",
-          "t13"
+          "t11",
+          "t12",
+          "t25"
         ]
       },
       {
         "lldStrategyItem": "Worker loss and whole-daemon crash with open tools; no automatic clearance or empty-runtime recreation. Confirmed disposal plus failed close persistence remains fenced.",
         "coveredByTaskIds": [
-          "t3",
-          "t9",
-          "t13"
+          "t11",
+          "t12",
+          "t25"
         ]
       },
       {
         "lldStrategyItem": "Cold manifest/object tampering, stale validator versions, replaced checkpoint/runtime files, invalid capability metadata and cleanup races retain evidence and reject false approval.",
         "coveredByTaskIds": [
-          "t5",
           "t11",
-          "t13"
+          "t12",
+          "t25"
         ]
       },
       {
         "lldStrategyItem": "Definitive checkpoint replaced/not-replaced/uncertain outcomes recover committed feedback without model rerun; failed/incomplete attempts still require the existing new-attempt rule.",
         "coveredByTaskIds": [
-          "t3",
-          "t6",
-          "t13"
+          "t11",
+          "t12",
+          "t25"
         ]
       },
       {
         "lldStrategyItem": "Supported v1/v2 historical migration preserves exact submitted aliases, prior results/actions/failures and unresolved legacy guards; interrupted migration and rollback never activate dual writers.",
         "coveredByTaskIds": [
-          "t12"
+          "t11",
+          "t12",
+          "t25"
         ]
       },
       {
         "lldStrategyItem": "The actual stopped attempt4 remains untouched by feature qualification and cannot be automatically resumed or cleared.",
         "coveredByTaskIds": [
-          "t1",
+          "t11",
           "t12",
-          "t13"
+          "t25"
         ]
       },
       {
         "lldStrategyItem": "Crash after every cleanup claim/rename/unlink/directory sync, including runtime removal and checkpoint removal: explicit retry completes from exact permanent closed audit/claim without Git or model calls; arbitrary missing runtime remains fenced.",
         "coveredByTaskIds": [
           "t11",
-          "t13"
+          "t12",
+          "t25"
         ]
       },
       {
         "lldStrategyItem": "Capture three cold runs of the complete171-file/four-attempt workload: median preparation<=120s with every source, scope, origin, test and history check retained; report each run and host/load metadata.",
         "coveredByTaskIds": [
-          "t1",
-          "t14"
+          "t11",
+          "t12",
+          "t25"
         ]
       },
       {
         "lldStrategyItem": "Warm matching-context lifecycle handoff/phase preparation median<=10s; matching publication/cleanup performs0 source reconstructions while current mutable checks still run.",
         "coveredByTaskIds": [
-          "t5",
-          "t10",
-          "t11",
-          "t14"
+          "t14",
+          "t25"
         ]
       },
       {
         "lldStrategyItem": "Growing valid history at1,4 and maximum supported attempts: physical repeated queries per session0, immutable source work proportional to distinct evidence plus history validation, not repeated packet count.",
         "coveredByTaskIds": [
-          "t4",
-          "t14"
+          "t14",
+          "t25"
         ]
       },
       {
         "lldStrategyItem": "Full checkpoint writes per native command0; compact runtime encoder<=256KiB and write size does not grow with history/source size. Report native command counts, total bytes written and stage timings separately.",
         "coveredByTaskIds": [
-          "t3",
-          "t14"
+          "t14",
+          "t25"
         ]
       },
       {
         "lldStrategyItem": "Two concurrent reviews admit/cancel acknowledgement<=2s and preparation observation gap<=2s on the controlled supported-host fixture; cancellation reaches an honest stopped or resource-fenced result without another model call.",
         "coveredByTaskIds": [
-          "t9",
-          "t14"
+          "t14",
+          "t25"
         ]
       },
       {
         "lldStrategyItem": "No timing assertion is a fixed runtime task deadline. If a release gate fails, report the measured failure; do not skip tests, widen timeouts/limits, shrink scope or claim the microbenchmark substitutes for this evidence.",
         "coveredByTaskIds": [
-          "t14"
+          "t14",
+          "t25"
         ]
       },
       {
         "lldStrategyItem": "Working set above memoryMaxBytes but below reserved disk capacity retains query payloads in staging and yields zero physical duplicates. Insufficient aggregate disk capacity fails before next batch; concurrent sessions cannot over-reserve or evict pinned evidence.",
         "coveredByTaskIds": [
-          "t4",
-          "t13",
-          "t14"
+          "t14",
+          "t25"
         ]
       },
       {
         "lldStrategyItem": "Update/restart only after the normal approval/publish sequence and coordination with other active reviews; reconnect MCP and validate advertised formats/cancel schema.",
         "coveredByTaskIds": [
-          "t14"
+          "t14",
+          "t25"
         ]
       },
       {
@@ -836,55 +1024,132 @@
         ]
       },
       {
-        "lldStrategyItem": "Single-packet payload and four-attempt history larger than decoded memory budget but within reserved disk qualify with exact original scope/provenance/tests/feedback and zero repeated physical reads; both cold and warm publication/recovery consume bounded windows.",
+        "lldStrategyItem": "Single-packet and four-attempt histories larger than the decoded memory budget but within reserved disk qualify with exact scope, provenance, tests, feedback, selected after blocks, and applicable parent workspaces; cold and warm lifecycle consumers never build an aggregate packet body.",
         "coveredByTaskIds": [
-          "t15",
-          "t16",
-          "t18",
-          "t20",
           "t14"
         ]
       },
       {
-        "lldStrategyItem": "Instrument reserve-before-allocation and ownership high-water across source acquisition, projection/witness validation, packet descriptor staging, seal, reader, prompt/test-coverage traversal and publication; binary/text/metadata/transient copies included. No full-packet JSON stringify or whole-history view/clone reachable in production.",
+        "lldStrategyItem": "Instrument reserve-before-allocation and ownership high-water across locator validation, Git object verification, parent-file materialization, manifest sealing, transient selected-block decoding, prompt/test traversal, publication, and cleanup. No full-packet JSON stringify or whole-history source clone is reachable in production.",
         "coveredByTaskIds": [
-          "t15",
-          "t16",
-          "t17",
-          "t18",
-          "t20"
-        ]
-      },
-      {
-        "lldStrategyItem": "Versioned descriptor/index round-trip for Unicode, byte arrays, null/undefined, ordered scope, rename/deletion/replacement/merge/binary; missing/sharded/tampered digest or borrow revocation fails before use. Old derived encoding triggers explicit cold requalification, never old decoder acceptance.",
-        "coveredByTaskIds": [
-          "t15",
-          "t16",
-          "t18",
-          "t20"
-        ]
-      },
-      {
-        "lldStrategyItem": "Memory and aggregate disk pressure with two sessions, cancellation while window borrowed, interrupted stage/seal/promote/reopen/cleanup retain correct leases and reservations; no pinned eviction or duplicate evidence.",
-        "coveredByTaskIds": [
-          "t15",
-          "t18",
-          "t20"
-        ]
-      },
-      {
-        "lldStrategyItem": "Monotonic admission segment traces distinguish request/guard/scope/startup/binding/activation; durable input/runtime acknowledgement, failure/cancel races and independent sessions retain exact authority while meeting<=2s on controlled host.",
-        "coveredByTaskIds": [
-          "t19",
-          "t20",
+          "t23",
+          "t24",
+          "t25",
           "t14"
         ]
       },
       {
-        "lldStrategyItem": "Re-run complete retained171-file/four-attempt coldx3/warm/history1,4,max gates with existing bounds and no hosted models; report charged-memory high-water, stagedbytes, heap/external/RSS, all stage durations and writer/query counters. A failed run blocks release; do not replace scope or raise limits.",
+        "lldStrategyItem": "Versioned locator and BaselineWorkspaceManifest round-trip ordered scope, Unicode paths, add/delete/rename/replacement/merge/binary metadata, selected object ids, applicable parent ids, and integrity fields. Missing, tampered, cross-attempt, or stale manifests fail before reviewer use; old eager derived state triggers cold requalification.",
         "coveredByTaskIds": [
-          "t14",
-          "t20"
+          "t23",
+          "t24",
+          "t25",
+          "t14"
+        ]
+      },
+      {
+        "lldStrategyItem": "New files produce an absent parent baseline; deletions expose the parent file and empty after content; renames expose the old parent path and selected new after blocks; stacked unpushed commits resolve against each selected commit's actual parent rather than origin.",
+        "coveredByTaskIds": [
+          "t23",
+          "t24",
+          "t25",
+          "t14"
+        ]
+      },
+      {
+        "lldStrategyItem": "Memory and aggregate disk pressure with two attempts, cancellation during workspace materialization or transient block use, interrupted seal/reopen/cleanup, and restart retain correct ownership, reservations, fences, and cleanup claims without pinned eviction or duplicate Git reads.",
+        "coveredByTaskIds": [
+          "t23",
+          "t24",
+          "t25",
+          "t14"
+        ]
+      },
+      {
+        "lldStrategyItem": "Monotonic admission segment traces distinguish request, guard, route/scope, worker startup, runtime binding, and acknowledgement. Source qualification runs in the isolated review worker after durable admission; independent sessions retain exact authority while controlled admit/cancel acknowledgement remains within the existing bound.",
+        "coveredByTaskIds": [
+          "t23",
+          "t24",
+          "t25",
+          "t14"
+        ]
+      },
+      {
+        "lldStrategyItem": "Re-run the retained 171-file/four-attempt cold x3, warm, and history 1/4/max gates with no hosted models; report locator count, unique Git reads, workspace bytes, transient charged-memory high-water, heap/external/RSS, stage durations, and writer counters. A failed run blocks release and cannot be hidden by higher limits or reduced scope.",
+        "coveredByTaskIds": [
+          "t23",
+          "t24",
+          "t25",
+          "t14"
+        ]
+      },
+      {
+        "lldStrategyItem": "prepareReviewPacket",
+        "coveredByTaskIds": [
+          "t22",
+          "t23"
+        ]
+      },
+      {
+        "lldStrategyItem": "selectedCode",
+        "coveredByTaskIds": [
+          "t22",
+          "t23"
+        ]
+      },
+      {
+        "lldStrategyItem": "SelectedChangeLocator",
+        "coveredByTaskIds": [
+          "t22",
+          "t23"
+        ]
+      },
+      {
+        "lldStrategyItem": "BaselineWorkspaceManifest",
+        "coveredByTaskIds": [
+          "t22",
+          "t23"
+        ]
+      },
+      {
+        "lldStrategyItem": "artifact lifecycle reconciliation",
+        "coveredByTaskIds": [
+          "t21"
+        ]
+      },
+      {
+        "lldStrategyItem": "CodePreparation",
+        "coveredByTaskIds": [
+          "t24",
+          "t25"
+        ]
+      },
+      {
+        "lldStrategyItem": "StagedPacketConstruction",
+        "coveredByTaskIds": [
+          "t24",
+          "t25"
+        ]
+      },
+      {
+        "lldStrategyItem": "StagedPacketSources",
+        "coveredByTaskIds": [
+          "t24",
+          "t25"
+        ]
+      },
+      {
+        "lldStrategyItem": "checkpoint, recovery, progress, cleanup, and publication",
+        "coveredByTaskIds": [
+          "t24",
+          "t25"
+        ]
+      },
+      {
+        "lldStrategyItem": "unchanged design-review preparation",
+        "coveredByTaskIds": [
+          "t24",
+          "t25"
         ]
       }
     ]
@@ -939,6 +1204,21 @@
       "id": "c10",
       "kind": "prior-artifact",
       "ref": "LLD s1 measured admission latency and durable acknowledgement (revision4,3.12;6;7)"
+    },
+    {
+      "id": "c11",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 revision 8 source-light preparation, exact locator, commit-parent workspace, lifecycle preservation and qualification handoff"
+    },
+    {
+      "id": "c12",
+      "kind": "analyze-bundle",
+      "ref": ".insrc/artifacts/PLAN-470a1f61b26b12c6-s1.json and .insrc/artifacts/BUILD-470a1f61b26b12c6-s1.json completed-task evidence plus duplicate lifecycle reconciliation requirement"
+    },
+    {
+      "id": "c13",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/code-review/task-review/packet.ts:144-262; src/workflow/review/code-preparation.ts:23-124; src/workflow/review/staged-packet-construction.ts:23-97; src/workflow/review/staged-packet-sources.ts:25-149"
     }
   ]
 }

@@ -57,7 +57,7 @@ test('durable acknowledgment precedes blocked source qualification and provider 
  await f.registry.execute(ack,f.context);
  await until(async()=>!!(await rpc(s,'fixture.stats')).entered);
  assert.equal((await rpc(s,'fixture.stats')).calls,0);
- assert.deepEqual(await f.registry.admit(submission,f.context),ack);
+ const replay=await f.registry.admit(submission,f.context);assert.deepEqual({...replay,timing:undefined},{...ack,timing:undefined});assert.equal(replay.timing?.mode,'warm');
  const pending=await f.registry.progress(ack.key,f.context) as any;assert.equal(pending.executionState,'starting');assert.equal(pending.interrupted,false);
  await rpc(s,'fixture.release');await until(async()=>((await rpc(s,'fixture.stats')).calls===1));
  const qualified=(await loadStoredCheckpoint(path))!.attempts.at(-1)!;assert.ok(!('phase'in qualified));assert.equal(qualified.progress!.executionId,initial.progress!.executionId);
@@ -67,7 +67,7 @@ test('durable acknowledgment precedes blocked source qualification and provider 
  await until(async()=>{const cp=await loadStoredCheckpoint(path);const a=cp!.attempts.at(-1)!;if('review-response'in a&&a['review-response'].error)throw new Error(a['review-response'].error);return'review-response'in a&&a['review-response'].tasks.length===1&&a.header.status==='passed';});
  const final=(await loadStoredCheckpoint(path))!.attempts.at(-1)!;assert.equal(final.resourceGuard,undefined);assert.ok((await loadReviewRuntime(ack.key)),'native proof belongs to the compact runtime');
  if(s.worker.threadId>0)assert.equal((await rpc(s,'fixture.stats')).qualifiedBeforeProvider,true);
- assert.deepEqual(await f.registry.admit(submission,f.context),ack);
+ const finalReplay=await f.registry.admit(submission,f.context);assert.deepEqual({...finalReplay,timing:undefined},{...ack,timing:undefined});assert.equal(finalReplay.timing?.mode,'warm');
  await f.registry.shutdown();await native;
  assert.deepEqual((await loadReviewRuntime(ack.key))!.resourceGuard.openLeases,[]);
 });
@@ -79,7 +79,7 @@ test('replay and controller admission-to-assignment retain one execution identit
  await assert.rejects(f.registry.progress(ack.key,{...f.context,connectionIdentity:'other-controller'}),/owner mismatch/);
  await f.registry.execute(ack,f.context);await f.registry.execute(ack,f.context);
  await until(async()=>!!(await rpc(s,'fixture.stats')).entered);
- assert.deepEqual(await f.registry.admit(submission,f.context),ack);
+ const replay=await f.registry.admit(submission,f.context);assert.deepEqual({...replay,timing:undefined},{...ack,timing:undefined});assert.equal(replay.timing?.mode,'warm');
  await assert.rejects(f.registry.admit({...submission,submitted:{...f.packet,functionalSummary:'changed'}},f.context),/Conflicting/);
  await rpc(s,'fixture.release');
  await until(async()=>{const a=(await loadStoredCheckpoint(reviewWorkerCheckpoint(ack.key)))!.attempts.at(-1)!;return'review-response'in a&&a.header.status==='running';});

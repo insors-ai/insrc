@@ -8,8 +8,10 @@ import type { PreparedDesignSubject } from './design-review/subject.js';
 import { requireDesign } from './design-review/contracts.js';
 import type { DesignAdmissionAttempt } from './design-review/contracts.js';
 import type { SourceCapacity } from './source-session.js';
-import { preparationDigest, writePreparedContext } from './prepared-context.js';
-import type { PreparedContextReader, ReadyContextReceipt, PreparedSourceIdentity } from './prepared-context.js';
+import { preparationDigest } from './prepared-context.js';
+import type { ReadyContextReceipt, PreparedSourceIdentity } from './prepared-context.js';
+import { PreparedViewReader, PreparedViewWriter } from './prepared-views.js';
+import { ReviewMemoryBudget } from './preparation-memory.js';
 
 interface DesignView { submitted: DesignAdmissionAttempt['submitted']; prepared: PreparedDesignSubject; ancestryDigest: string; }
 type OwnedPublication = Parameters<typeof assertDesignSubjectUnchanged>[2];
@@ -31,18 +33,29 @@ export class DesignPreparation {
  private failed = false;
  private sealed = false;
  private identity: PreparedSourceIdentity | undefined;
+ private reader: PreparedViewReader | undefined;
  constructor(private readonly key: ReviewKey, private readonly attempt: number,
   private readonly limits: ReviewPreparationLimits, private readonly capacity: SourceCapacity,
   private readonly submitted?: DesignAdmissionAttempt['submitted'],
   private readonly prepareSubject:typeof prepareDesignSubject=prepareDesignSubject,
-  private readonly ownedPublication?: OwnedPublication) {
+  private readonly ownedPublication?: OwnedPublication,
+  private readonly memory = new ReviewMemoryBudget(limits.memoryMaxBytes)) {
   requireDesign(!submitted || submitted.attempt + (submitted.recovery?.operation === 'restart_full' ? 1 : 0) === attempt, 'foreign_checkpoint', 'Design submission attempt mismatch');
   requireDesign(key.family === 'design' && Number.isSafeInteger(attempt) && attempt > 0, 'foreign_checkpoint', 'Design preparation identity required');
  }
- static async reuse(key: ReviewKey, attempt: number, reader: PreparedContextReader, limits: ReviewPreparationLimits, capacity: SourceCapacity, ownedPublication?:OwnedPublication): Promise<DesignPreparation> {
+ static async reuse(key: ReviewKey, attempt: number, reader: PreparedViewReader, limits: ReviewPreparationLimits, capacity: SourceCapacity, ownedPublication?:OwnedPublication): Promise<DesignPreparation> {
   requireDesign(same(key, reader.receipt.key) && attempt === reader.receipt.attempt, 'foreign_checkpoint', 'Foreign design context');
-  const result = new DesignPreparation(key, attempt, limits, capacity, undefined, prepareDesignSubject, ownedPublication);
-  result.view = await reader.view('design-subject') as DesignView;
+  const result = new DesignPreparation(key, attempt, limits, capacity, undefined, prepareDesignSubject, ownedPublication, reader.memory);
+  result.reader = reader;
+  const metadata = await reader.metadata(await reader.descriptor('design-metadata', 'view'));
+  const subject = await reader.metadata(await reader.descriptor('design-subject', 'view'));
+  const baseline = await reader.metadata(await reader.descriptor('design-baseline', 'view'));
+  const inventory = await reader.metadata(await reader.descriptor('design-inventory', 'view'));
+  try {
+   const meta = metadata.value as Pick<DesignView, 'submitted' | 'ancestryDigest'>;
+   result.view = { submitted: structuredClone(meta.submitted), ancestryDigest: meta.ancestryDigest,
+    prepared: { subject: structuredClone(subject.value) as PreparedDesignSubject['subject'], baseline: structuredClone(baseline.value) as PreparedDesignSubject['baseline'], inventory: structuredClone(inventory.value) as PreparedDesignSubject['inventory'] } };
+  } finally { inventory.release(); baseline.release(); subject.release(); metadata.release(); }
   result.prepare(key.project, result.view.prepared.subject.canonicalPath);
   return result;
  }
@@ -82,7 +95,9 @@ export class DesignPreparation {
   } catch (error) { this.failed = true; throw error; }
  };
  async seal(): Promise<ReadyContextReceipt> {
-  requireDesign(this.view && !this.failed && !this.sealed, 'foreign_checkpoint', 'No current design preparation to seal');
+  requireDesign(this.view, 'foreign_checkpoint', 'No current design preparation to seal');
+  requireDesign(!this.failed, 'foreign_checkpoint', 'Fenced design preparation cannot seal');
+  requireDesign(!this.sealed, 'foreign_checkpoint', 'Design preparation is already sealed');
   this.assertSubject(this.view.prepared.subject, this.view.prepared.baseline); this.sealed = true;
   const { prepared, ancestryDigest } = this.view;
   const identity: PreparedSourceIdentity = { key: this.key, attempt: this.attempt, validatorVersion: 1,
@@ -90,7 +105,14 @@ export class DesignPreparation {
    routeDigest: preparationDigest([prepared.subject, ancestryDigest]), sourceIdentity: preparationDigest([prepared.baseline.subjectFingerprints, ancestryDigest]),
    scopeDigest: preparationDigest(prepared.inventory), testDocumentDigest: preparationDigest(prepared.baseline.subjectFingerprints),
   };
-  const receipt = await writePreparedContext(identity, { 'design-subject': this.view }, undefined, this.limits, this.capacity);
+  const writer = await PreparedViewWriter.create(identity, this.limits, this.capacity, this.memory);
+  try {
+   await writer.add('design-metadata', 'view', { submitted: this.view.submitted, ancestryDigest });
+   await writer.add('design-subject', 'view', prepared.subject);
+   await writer.add('design-baseline', 'view', prepared.baseline);
+   await writer.add('design-inventory', 'view', prepared.inventory);
+  } catch (error) { await writer.discard(); throw error; }
+  const receipt = await writer.seal();
   this.identity = identity; return receipt;
  }
  /** Lookup metadata for the private main qualification channel, not a borrow. */
@@ -98,5 +120,5 @@ export class DesignPreparation {
   requireDesign(this.identity, 'foreign_checkpoint', 'Design preparation has not sealed a context');
   return structuredClone(this.identity);
  }
- close(): void { this.failed = true; }
+ close(): void { this.failed = true; this.reader?.close(); }
 }

@@ -52,10 +52,41 @@ export const PreparedContextManifestSchema = object({
  byteTotals: object({ stored: count, decoded: count }),
 });
 export type PreparedContextManifest = Static<typeof PreparedContextManifestSchema>;
+/** Disposable staged-view encoding. Never interpret v1 eager views as v2. */
+export const StagedContextManifestSchema = object({
+ schemaVersion: Type.Literal(2), encoding: Type.Literal('staged-values-v2'),
+ key: ReviewKeySchema, attempt: positive, generationId: digest, identityDigest: digest,
+ inputDigest: digest, validatorVersion: positive, sourceIdentity: digest, manifestDigest: digest,
+ objects: PreparedContextManifestSchema.properties.objects,
+ views: Type.Array(object({ id, kind: enumeration(['packet', 'task', 'file', 'view']), rootDigest: digest }), { minItems: 1, maxItems: 10000 }),
+ byteTotals: PreparedContextManifestSchema.properties.byteTotals,
+});
+export type StagedContextManifest = Static<typeof StagedContextManifestSchema>;
+export function decodeStagedContextManifest(input: unknown, key: ReviewKey, maxBytes: number): StagedContextManifest {
+ const value = decodePreparation(StagedContextManifestSchema, input, key, maxBytes);
+ const queries = new Set<string>(), contents = new Map<string, number>(), views = new Set<string>();
+ let total = 0;
+ for (const item of value.objects) {
+  if (queries.has(item.queryDigest)) throw new Error('Duplicate staged query identity');
+  queries.add(item.queryDigest);
+  const previous = contents.get(item.contentDigest);
+  if (previous !== undefined && previous !== item.bytes) throw new Error('Conflicting staged content size');
+  if (previous === undefined) { total += item.bytes; contents.set(item.contentDigest, item.bytes); }
+ }
+ for (const view of value.views) {
+  if (views.has(view.id) || !contents.has(view.rootDigest)) throw new Error('Duplicate or unresolved staged descriptor');
+  views.add(view.id);
+ }
+ if (!Number.isSafeInteger(total) || total !== value.byteTotals.stored) throw new Error('Unaccounted staged content');
+ return value;
+}
 export const HistoryBindingSchema = object({
  schemaVersion: Type.Literal(1), key: ReviewKeySchema, attempt: positive,
  generationId: digest, priorBindingDigest: Type.Union([digest, Type.Null()]),
- semanticSequence: count, historyPrefixDigest: digest, evidenceManifestDigest: digest, bindingDigest: digest,
+ semanticSequence: count, historyPrefixDigest: digest, evidenceManifestDigest: digest,
+ lifecycle: Type.Optional(object({ generationId: digest, identityDigest: digest, inputDigest: digest,
+  sourceIdentity: digest, validatorVersion: positive, manifestDigest: digest, storedBytes: count })),
+ bindingDigest: digest,
 });
 export type HistoryBinding = Static<typeof HistoryBindingSchema>;
 export const PreparedContextReferenceSchema = binding;

@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 29,
-        "contentHash": "ab2e14f22f098022261e635d8ea6eb8476d84e6b20e24adcc52d51792436ffa8",
-        "at": "2026-11-15T09:57:52.111Z",
+        "number": 37,
+        "contentHash": "9a6f5177ff7e4f2ab7612a6ad9236f7da421f5209d7d89140591aeecb3134107",
+        "at": "2026-11-15T18:26:44.327Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "470a1f61b26b12c6",
     "storyId": "s1",
     "createdAt": "2026-11-14T12:24:52.408Z",
-    "updatedAt": "2026-11-15T09:57:51.957Z",
+    "updatedAt": "2026-11-15T18:26:44.188Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-14T08:55:28.320Z",
     "epicSlug": "rework-review-preparation-context-lifecycle-end",
-    "revision": 29
+    "revision": 37
   },
   "body": {
     "tasks": [
@@ -5457,6 +5457,1643 @@
               },
               {
                 "title": "shared design preparation invalidates required ancestry and ignores unrelated files",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t15",
+        "commit": "6a8437b69",
+        "ranAt": "2026-11-15T14:08:45.034Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Typed staged descriptor/leaf codec and shared memory accounting: byte/Unicode/null/order round-trip, shard/version/tamper rejection, reserve-before-allocation and exact window release.",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "memory leases count shared backing buffers once and reserve before allocation",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "cache eviction releases every shared slab reference before refusing a new reservation",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "reserved source and reader allocations remain single-charged across codec borrows",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "allocation happens only after its reservation and refusal performs no allocation",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "small node text and manifest encoders never allocate pooled string buffers",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "typed staged descriptors round trip bytes Unicode null undefined and ordered sharded containers",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "incremental entries stage complete content above working memory without retaining payloads",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "descriptor references are private to their reader and kind lookup is enforced",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "old or unknown derived encodings are rejected without issuing a descriptor",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "tampered staged leaf fails digest verification and revokes its reader",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "cancellation revokes window access but holds its charge until actual release",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "two staged writers cannot exceed aggregate project disk reservation",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "partial seal retains bounded recovery evidence and never emits readiness",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "invalid streamed entry order and canceled construction preserve evidence for explicit disposal",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "tampered index shards cannot return unverified child references",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "pending reader authorization keeps metadata owned until the operation ends",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "explicit writer disposal fences an in-flight entry producer before removing files",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Staged view capacity ownership: aggregate disk reservations, partial sealing, borrowed-window cancellation and two-session memory/disk pressure retain complete evidence.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "memory leases count shared backing buffers once and reserve before allocation",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "cache eviction releases every shared slab reference before refusing a new reservation",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "reserved source and reader allocations remain single-charged across codec borrows",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "allocation happens only after its reservation and refusal performs no allocation",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "small node text and manifest encoders never allocate pooled string buffers",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "typed staged descriptors round trip bytes Unicode null undefined and ordered sharded containers",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "incremental entries stage complete content above working memory without retaining payloads",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "descriptor references are private to their reader and kind lookup is enforced",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "old or unknown derived encodings are rejected without issuing a descriptor",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "tampered staged leaf fails digest verification and revokes its reader",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "cancellation revokes window access but holds its charge until actual release",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "two staged writers cannot exceed aggregate project disk reservation",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "partial seal retains bounded recovery evidence and never emits readiness",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "invalid streamed entry order and canceled construction preserve evidence for explicit disposal",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "tampered index shards cannot return unverified child references",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "pending reader authorization keeps metadata owned until the operation ends",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "explicit writer disposal fences an in-flight entry producer before removing files",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "staged views share source cache memory and retain exact source queries without refetch",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "source evidence windows prevent disposal until the exact consumer releases ownership",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "decoded source results retain their charge until explicit consumer release",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "session close retains decoded result charges while a caller can still use them",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "source body memory exhaustion refuses before invoking the body provider",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "source session batches verified Git objects and shares immutable queries without bypassing logical budgets",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "source session retains evidence above memory capacity and never refetches evicted data",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "shared project reservations refuse body fetch before capacity exhaustion and transfer batches atomically",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "staged corruption and source errors fence the session instead of implicitly retrying Git",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "a source failure is recorded once and requires a fresh preparation session",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "preparation configuration is discoverable bounded and rejects malformed values",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "replaced staging directory is retained with its capacity until exact ownership is restored",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "two source sessions share project capacity without overlapping identities or duplicate fetches",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "historical and current packet qualification share sources while preserving exact projection",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-context-registry.test.ts",
+                "title": "qualified context becomes ready atomically and survives warm phase handoff without source reconstruction",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-context-registry.test.ts",
+                "title": "cold daemon receipts and tampered prepared objects cannot authorize reuse",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-context-registry.test.ts",
+                "title": "design context uses complete validator output and refreshes latest target authority",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-context-registry.test.ts",
+                "title": "partial context writes never emit a ready receipt and retain bounded recovery evidence",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-context-registry.test.ts",
+                "title": "real reclaimed execution worker hands complete context to a distinct publication worker",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-context-registry.test.ts",
+                "title": "matching context acquisitions coalesce qualification and refresh authority before every borrow",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-context-registry.test.ts",
+                "title": "an immutable manifest replacement revokes an active borrow and fresh generations preserve source identity",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-context-registry.test.ts",
+                "title": "central context serialization preserves binary text undefined and tag-shaped artifact data",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/review-context-registry.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2440,
+            "titles": [
+              {
+                "title": "qualified context becomes ready atomically and survives warm phase handoff without source reconstruction",
+                "result": "pass"
+              },
+              {
+                "title": "cold daemon receipts and tampered prepared objects cannot authorize reuse",
+                "result": "pass"
+              },
+              {
+                "title": "design context uses complete validator output and refreshes latest target authority",
+                "result": "pass"
+              },
+              {
+                "title": "partial context writes never emit a ready receipt and retain bounded recovery evidence",
+                "result": "pass"
+              },
+              {
+                "title": "real reclaimed execution worker hands complete context to a distinct publication worker",
+                "result": "pass"
+              },
+              {
+                "title": "matching context acquisitions coalesce qualification and refresh authority before every borrow",
+                "result": "pass"
+              },
+              {
+                "title": "an immutable manifest replacement revokes an active borrow and fresh generations preserve source identity",
+                "result": "pass"
+              },
+              {
+                "title": "central context serialization preserves binary text undefined and tag-shaped artifact data",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1937,
+            "titles": [
+              {
+                "title": "memory leases count shared backing buffers once and reserve before allocation",
+                "result": "pass"
+              },
+              {
+                "title": "cache eviction releases every shared slab reference before refusing a new reservation",
+                "result": "pass"
+              },
+              {
+                "title": "reserved source and reader allocations remain single-charged across codec borrows",
+                "result": "pass"
+              },
+              {
+                "title": "allocation happens only after its reservation and refusal performs no allocation",
+                "result": "pass"
+              },
+              {
+                "title": "small node text and manifest encoders never allocate pooled string buffers",
+                "result": "pass"
+              },
+              {
+                "title": "typed staged descriptors round trip bytes Unicode null undefined and ordered sharded containers",
+                "result": "pass"
+              },
+              {
+                "title": "incremental entries stage complete content above working memory without retaining payloads",
+                "result": "pass"
+              },
+              {
+                "title": "descriptor references are private to their reader and kind lookup is enforced",
+                "result": "pass"
+              },
+              {
+                "title": "old or unknown derived encodings are rejected without issuing a descriptor",
+                "result": "pass"
+              },
+              {
+                "title": "tampered staged leaf fails digest verification and revokes its reader",
+                "result": "pass"
+              },
+              {
+                "title": "cancellation revokes window access but holds its charge until actual release",
+                "result": "pass"
+              },
+              {
+                "title": "two staged writers cannot exceed aggregate project disk reservation",
+                "result": "pass"
+              },
+              {
+                "title": "partial seal retains bounded recovery evidence and never emits readiness",
+                "result": "pass"
+              },
+              {
+                "title": "invalid streamed entry order and canceled construction preserve evidence for explicit disposal",
+                "result": "pass"
+              },
+              {
+                "title": "tampered index shards cannot return unverified child references",
+                "result": "pass"
+              },
+              {
+                "title": "pending reader authorization keeps metadata owned until the operation ends",
+                "result": "pass"
+              },
+              {
+                "title": "explicit writer disposal fences an in-flight entry producer before removing files",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/__tests__/source-session.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2249,
+            "titles": [
+              {
+                "title": "staged views share source cache memory and retain exact source queries without refetch",
+                "result": "pass"
+              },
+              {
+                "title": "source evidence windows prevent disposal until the exact consumer releases ownership",
+                "result": "pass"
+              },
+              {
+                "title": "decoded source results retain their charge until explicit consumer release",
+                "result": "pass"
+              },
+              {
+                "title": "session close retains decoded result charges while a caller can still use them",
+                "result": "pass"
+              },
+              {
+                "title": "source body memory exhaustion refuses before invoking the body provider",
+                "result": "pass"
+              },
+              {
+                "title": "source session batches verified Git objects and shares immutable queries without bypassing logical budgets",
+                "result": "pass"
+              },
+              {
+                "title": "source session retains evidence above memory capacity and never refetches evicted data",
+                "result": "pass"
+              },
+              {
+                "title": "shared project reservations refuse body fetch before capacity exhaustion and transfer batches atomically",
+                "result": "pass"
+              },
+              {
+                "title": "staged corruption and source errors fence the session instead of implicitly retrying Git",
+                "result": "pass"
+              },
+              {
+                "title": "a source failure is recorded once and requires a fresh preparation session",
+                "result": "pass"
+              },
+              {
+                "title": "preparation configuration is discoverable bounded and rejects malformed values",
+                "result": "pass"
+              },
+              {
+                "title": "replaced staging directory is retained with its capacity until exact ownership is restored",
+                "result": "pass"
+              },
+              {
+                "title": "two source sessions share project capacity without overlapping identities or duplicate fetches",
+                "result": "pass"
+              },
+              {
+                "title": "historical and current packet qualification share sources while preserving exact projection",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t16",
+        "commit": "23a3b373a",
+        "ranAt": "2026-11-15T15:28:21.764Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Incremental packet/projection/history equivalence: exact selected after spans, all lineage/replacement/merge/deletion witnesses, tests/documents/origins and identity folds match the existing oracle.",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/__tests__/projection-lines.test.ts",
+                "title": "bounded byte lines preserve the string oracle for Unicode BOM CRLF and final newlines",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/projection-lines.test.ts",
+                "title": "bounded lines reject invalid UTF-8 binary input and insufficient capacity without leaked ownership",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/projection-lines.test.ts",
+                "title": "streamed task metadata digest matches the previous canonical identity bytes",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/projection-lines.test.ts",
+                "title": "streamed review JSON size preserves exact metadata escaping and rejects source payloads",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "construction metadata reopens exact values while binary leaves stay issued references",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "construction metadata rejects forged references and retains charges after fencing until release",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "memory leases count shared backing buffers once and reserve before allocation",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "cache eviction releases every shared slab reference before refusing a new reservation",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "reserved source and reader allocations remain single-charged across codec borrows",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "allocation happens only after its reservation and refusal performs no allocation",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "small node text and manifest encoders never allocate pooled string buffers",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "typed staged descriptors round trip bytes Unicode null undefined and ordered sharded containers",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "incremental entries stage complete content above working memory without retaining payloads",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "descriptor references are private to their reader and kind lookup is enforced",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "old or unknown derived encodings are rejected without issuing a descriptor",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "tampered staged leaf fails digest verification and revokes its reader",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "cancellation revokes window access but holds its charge until actual release",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "two staged writers cannot exceed aggregate project disk reservation",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "partial seal retains bounded recovery evidence and never emits readiness",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "invalid streamed entry order and canceled construction preserve evidence for explicit disposal",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "tampered index shards cannot return unverified child references",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "pending reader authorization keeps metadata owned until the operation ends",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+                "title": "explicit writer disposal fences an in-flight entry producer before removing files",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection.test.ts",
+                "title": "selected later witnesses justify complete supersession and immutable origin accounting",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection.test.ts",
+                "title": "partial replacement witnesses must cover the entire changed target and deletions retain explicit witnesses",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection.test.ts",
+                "title": "selected rename chains compare exact blobs independently of rename similarity and reject unselected moves",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection.test.ts",
+                "title": "unselected merge resolution rejects and explicit selected merge replacement supplies the witness",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection.test.ts",
+                "title": "competing selected path moves fail instead of choosing a rename by array order",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection.test.ts",
+                "title": "identical final blobs cannot hide an unselected rename-away and recreation",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection.test.ts",
+                "title": "typed blob diff mode requires both objects and cannot fall back to HEAD or the working tree",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection.test.ts",
+                "title": "projection budgets refuse before exceeding limits, preserve source fields and use serial reads",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection.test.ts",
+                "title": "actual diff truncation stays changes while oversized JSON refuses input before source/provider work",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection.test.ts",
+                "title": "production projection budgets accept their exact ceilings and refuse the next unit",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection.test.ts",
+                "title": "selected rename then deletion projects absent final blobs and still requires the deletion witness",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection.test.ts",
+                "title": "verified rename deletion ignores unrelated and identical recreation at the original pathname",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection-lineage.test.ts",
+                "title": "projection identity matches the identity pinned from the code before the change",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection-lineage.test.ts",
+                "title": "pathChanges lists the commits that changed the path and refuses a failed or malformed listing as a source error",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection-lineage.test.ts",
+                "title": "boundedProjectionSources caches pathChanges and charges one read per uncached listing",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection-lineage.test.ts",
+                "title": "lineage reads do not grow with interleaved commits that leave the selected path untouched",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection-lineage.test.ts",
+                "title": "a side-branch deletion merged back with the file kept still interrupts lineage",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection-lineage.test.ts",
+                "title": "a side-branch deletion and recreation merged back still interrupts lineage",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection-lineage.test.ts",
+                "title": "a path history failure is a source error, not a projection limit or lineage conflict",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection-lineage.test.ts",
+                "title": "the read limit still refuses with projection_limit when the selected file itself changed too often",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection-lineage.test.ts",
+                "title": "shared code preparation preserves merge and selected rename lineage with every after span",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection-intervals.test.ts",
+                "title": "all small single-edit intervals preserve exactly the selected surviving line identities",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection-intervals.test.ts",
+                "title": "interval projection partitions changed overlaps without granting replacement text",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection-intervals.test.ts",
+                "title": "interval offsets exclude insertions inside selected spans and support negative shifts",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection-intervals.test.ts",
+                "title": "normalization retains every origin and never coalesces unselected gaps",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection-intervals.test.ts",
+                "title": "deletion anchors preserve empty-file zero and mark touched boundaries for witness verification",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection-intervals.test.ts",
+                "title": "committed projection uses identical-blob fast path and ignores HEAD/worktree changes",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection-intervals.test.ts",
+                "title": "projection refuses malformed or omitted changes, invalid UTF-8 and binary sources without invented partitions",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Single oversized packet and1/4/max history construct staged views under combined memory bound with zero physical duplicate source queries and no aggregate binary JSON materialization.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/__tests__/staged-packet-construction.test.ts",
+                "title": "maximum byte-bounded repeated history stages one packet window at a time",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/staged-packet-construction.test.ts",
+                "title": "one and four history windows retain complete feedback and reject invalid origins through shared admission",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/staged-packet-construction.test.ts",
+                "title": "a packet larger than memory stages selected source bodies under one shared cap without binary JSON",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "staged packet construction reopens repeated history metadata without rebuilding source qualification",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "staged packet source windows preserve packet qualification and reopen blobs without physical queries",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "staged views share source cache memory and retain exact source queries without refetch",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "source evidence windows prevent disposal until the exact consumer releases ownership",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "decoded source results retain their charge until explicit consumer release",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "session close retains decoded result charges while a caller can still use them",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "source body memory exhaustion refuses before invoking the body provider",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "source session batches verified Git objects and shares immutable queries without bypassing logical budgets",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "source session retains evidence above memory capacity and never refetches evicted data",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "shared project reservations refuse body fetch before capacity exhaustion and transfer batches atomically",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "staged corruption and source errors fence the session instead of implicitly retrying Git",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "a source failure is recorded once and requires a fresh preparation session",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "preparation configuration is discoverable bounded and rejects malformed values",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "replaced staging directory is retained with its capacity until exact ownership is restored",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "two source sessions share project capacity without overlapping identities or duplicate fetches",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/source-session.test.ts",
+                "title": "historical and current packet qualification share sources while preserving exact projection",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/projection-intervals.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1038,
+            "titles": [
+              {
+                "title": "all small single-edit intervals preserve exactly the selected surviving line identities",
+                "result": "pass"
+              },
+              {
+                "title": "interval projection partitions changed overlaps without granting replacement text",
+                "result": "pass"
+              },
+              {
+                "title": "interval offsets exclude insertions inside selected spans and support negative shifts",
+                "result": "pass"
+              },
+              {
+                "title": "normalization retains every origin and never coalesces unselected gaps",
+                "result": "pass"
+              },
+              {
+                "title": "deletion anchors preserve empty-file zero and mark touched boundaries for witness verification",
+                "result": "pass"
+              },
+              {
+                "title": "committed projection uses identical-blob fast path and ignores HEAD/worktree changes",
+                "result": "pass"
+              },
+              {
+                "title": "projection refuses malformed or omitted changes, invalid UTF-8 and binary sources without invented partitions",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/projection-lineage.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3673,
+            "titles": [
+              {
+                "title": "projection identity matches the identity pinned from the code before the change",
+                "result": "pass"
+              },
+              {
+                "title": "pathChanges lists the commits that changed the path and refuses a failed or malformed listing as a source error",
+                "result": "pass"
+              },
+              {
+                "title": "boundedProjectionSources caches pathChanges and charges one read per uncached listing",
+                "result": "pass"
+              },
+              {
+                "title": "lineage reads do not grow with interleaved commits that leave the selected path untouched",
+                "result": "pass"
+              },
+              {
+                "title": "a side-branch deletion merged back with the file kept still interrupts lineage",
+                "result": "pass"
+              },
+              {
+                "title": "a side-branch deletion and recreation merged back still interrupts lineage",
+                "result": "pass"
+              },
+              {
+                "title": "a path history failure is a source error, not a projection limit or lineage conflict",
+                "result": "pass"
+              },
+              {
+                "title": "the read limit still refuses with projection_limit when the selected file itself changed too often",
+                "result": "pass"
+              },
+              {
+                "title": "shared code preparation preserves merge and selected rename lineage with every after span",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/projection.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3528,
+            "titles": [
+              {
+                "title": "selected later witnesses justify complete supersession and immutable origin accounting",
+                "result": "pass"
+              },
+              {
+                "title": "partial replacement witnesses must cover the entire changed target and deletions retain explicit witnesses",
+                "result": "pass"
+              },
+              {
+                "title": "selected rename chains compare exact blobs independently of rename similarity and reject unselected moves",
+                "result": "pass"
+              },
+              {
+                "title": "unselected merge resolution rejects and explicit selected merge replacement supplies the witness",
+                "result": "pass"
+              },
+              {
+                "title": "competing selected path moves fail instead of choosing a rename by array order",
+                "result": "pass"
+              },
+              {
+                "title": "identical final blobs cannot hide an unselected rename-away and recreation",
+                "result": "pass"
+              },
+              {
+                "title": "typed blob diff mode requires both objects and cannot fall back to HEAD or the working tree",
+                "result": "pass"
+              },
+              {
+                "title": "projection budgets refuse before exceeding limits, preserve source fields and use serial reads",
+                "result": "pass"
+              },
+              {
+                "title": "actual diff truncation stays changes while oversized JSON refuses input before source/provider work",
+                "result": "pass"
+              },
+              {
+                "title": "production projection budgets accept their exact ceilings and refuse the next unit",
+                "result": "pass"
+              },
+              {
+                "title": "selected rename then deletion projects absent final blobs and still requires the deletion witness",
+                "result": "pass"
+              },
+              {
+                "title": "verified rename deletion ignores unrelated and identical recreation at the original pathname",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/__tests__/prepared-views.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1899,
+            "titles": [
+              {
+                "title": "construction metadata reopens exact values while binary leaves stay issued references",
+                "result": "pass"
+              },
+              {
+                "title": "construction metadata rejects forged references and retains charges after fencing until release",
+                "result": "pass"
+              },
+              {
+                "title": "memory leases count shared backing buffers once and reserve before allocation",
+                "result": "pass"
+              },
+              {
+                "title": "cache eviction releases every shared slab reference before refusing a new reservation",
+                "result": "pass"
+              },
+              {
+                "title": "reserved source and reader allocations remain single-charged across codec borrows",
+                "result": "pass"
+              },
+              {
+                "title": "allocation happens only after its reservation and refusal performs no allocation",
+                "result": "pass"
+              },
+              {
+                "title": "small node text and manifest encoders never allocate pooled string buffers",
+                "result": "pass"
+              },
+              {
+                "title": "typed staged descriptors round trip bytes Unicode null undefined and ordered sharded containers",
+                "result": "pass"
+              },
+              {
+                "title": "incremental entries stage complete content above working memory without retaining payloads",
+                "result": "pass"
+              },
+              {
+                "title": "descriptor references are private to their reader and kind lookup is enforced",
+                "result": "pass"
+              },
+              {
+                "title": "old or unknown derived encodings are rejected without issuing a descriptor",
+                "result": "pass"
+              },
+              {
+                "title": "tampered staged leaf fails digest verification and revokes its reader",
+                "result": "pass"
+              },
+              {
+                "title": "cancellation revokes window access but holds its charge until actual release",
+                "result": "pass"
+              },
+              {
+                "title": "two staged writers cannot exceed aggregate project disk reservation",
+                "result": "pass"
+              },
+              {
+                "title": "partial seal retains bounded recovery evidence and never emits readiness",
+                "result": "pass"
+              },
+              {
+                "title": "invalid streamed entry order and canceled construction preserve evidence for explicit disposal",
+                "result": "pass"
+              },
+              {
+                "title": "tampered index shards cannot return unverified child references",
+                "result": "pass"
+              },
+              {
+                "title": "pending reader authorization keeps metadata owned until the operation ends",
+                "result": "pass"
+              },
+              {
+                "title": "explicit writer disposal fences an in-flight entry producer before removing files",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/__tests__/projection-lines.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 494,
+            "titles": [
+              {
+                "title": "bounded byte lines preserve the string oracle for Unicode BOM CRLF and final newlines",
+                "result": "pass"
+              },
+              {
+                "title": "bounded lines reject invalid UTF-8 binary input and insufficient capacity without leaked ownership",
+                "result": "pass"
+              },
+              {
+                "title": "streamed task metadata digest matches the previous canonical identity bytes",
+                "result": "pass"
+              },
+              {
+                "title": "streamed review JSON size preserves exact metadata escaping and rejects source payloads",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/__tests__/source-session.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2948,
+            "titles": [
+              {
+                "title": "staged packet construction reopens repeated history metadata without rebuilding source qualification",
+                "result": "pass"
+              },
+              {
+                "title": "staged packet source windows preserve packet qualification and reopen blobs without physical queries",
+                "result": "pass"
+              },
+              {
+                "title": "staged views share source cache memory and retain exact source queries without refetch",
+                "result": "pass"
+              },
+              {
+                "title": "source evidence windows prevent disposal until the exact consumer releases ownership",
+                "result": "pass"
+              },
+              {
+                "title": "decoded source results retain their charge until explicit consumer release",
+                "result": "pass"
+              },
+              {
+                "title": "session close retains decoded result charges while a caller can still use them",
+                "result": "pass"
+              },
+              {
+                "title": "source body memory exhaustion refuses before invoking the body provider",
+                "result": "pass"
+              },
+              {
+                "title": "source session batches verified Git objects and shares immutable queries without bypassing logical budgets",
+                "result": "pass"
+              },
+              {
+                "title": "source session retains evidence above memory capacity and never refetches evicted data",
+                "result": "pass"
+              },
+              {
+                "title": "shared project reservations refuse body fetch before capacity exhaustion and transfer batches atomically",
+                "result": "pass"
+              },
+              {
+                "title": "staged corruption and source errors fence the session instead of implicitly retrying Git",
+                "result": "pass"
+              },
+              {
+                "title": "a source failure is recorded once and requires a fresh preparation session",
+                "result": "pass"
+              },
+              {
+                "title": "preparation configuration is discoverable bounded and rejects malformed values",
+                "result": "pass"
+              },
+              {
+                "title": "replaced staging directory is retained with its capacity until exact ownership is restored",
+                "result": "pass"
+              },
+              {
+                "title": "two source sessions share project capacity without overlapping identities or duplicate fetches",
+                "result": "pass"
+              },
+              {
+                "title": "historical and current packet qualification share sources while preserving exact projection",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/__tests__/staged-packet-construction.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 11307,
+            "titles": [
+              {
+                "title": "maximum byte-bounded repeated history stages one packet window at a time",
+                "result": "pass"
+              },
+              {
+                "title": "one and four history windows retain complete feedback and reject invalid origins through shared admission",
+                "result": "pass"
+              },
+              {
+                "title": "a packet larger than memory stages selected source bodies under one shared cap without binary JSON",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t17",
+        "commit": "3129f64b2",
+        "ranAt": "2026-11-15T16:05:25.470Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Bounded execution and mandatory coverage traversal for code/design task/story routes: no skipped modules, prompt/provider transport copies charged, borrow invalidation/cancellation and no premature provider dispatch.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/__tests__/selected-code-window.test.ts",
+                "title": "selected-code windows match the original prompt blocks for Unicode BOM CRLF overlap and final newlines",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/selected-code-window.test.ts",
+                "title": "selected-code traversal handles a source above memory without hydrating its unselected body",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/staged-task-execution.test.ts",
+                "title": "design path policy and transport stay borrowed until canceled CLI consumption settles",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/staged-task-execution.test.ts",
+                "title": "revoked input refuses provider dispatch and assembly pressure refuses before invoking a builder",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/staged-task-execution.test.ts",
+                "title": "transport pressure and foreign-generation prompts refuse before CLI dispatch",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/staged-task-execution.test.ts",
+                "title": "coverage cancellation retains the active leaf until its consumer returns",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/staged-task-execution.test.ts",
+                "title": "assessment evidence probes release owned committed bodies after reference resolution",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/staged-design-execution.test.ts",
+                "title": "bounded design DEF HLD LLD policies preserve latest-path scope across epic standalone and issue routes",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/selected-code.test.ts",
+                "title": "selected code: exact pinned after blocks reach assessment and references reach attribution without prior or surrounding source",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/selected-code.test.ts",
+                "title": "deletion markers select exact reviewed-version boundaries without removed text",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/selected-code.test.ts",
+                "title": "immutable historical before/after packets remain resumable but cannot be submitted as new attempts",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/selected-code.test.ts",
+                "title": "selected code preserves Unicode and missing final newline for an added file",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/policy.test.ts",
+                "title": "review evidence policy: body-only logic, missing graph/run evidence and unused test-helper coverage",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/policy.test.ts",
+                "title": "review quality policy: target-language conventions, encapsulation/readability/naming and approved/native framework fallback",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/policy.test.ts",
+                "title": "review policy parity: common prompt/result classification across supported routes without coding/build-validation changes",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/staged-task-execution.test.ts",
+                "title": "bounded story execution preserves all selected modules and mandatory coverage with charged CLI copies",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/staged-task-execution.test.ts",
+                "title": "bounded task execution preserves all selected modules and mandatory coverage with charged CLI copies",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/policy.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3501,
+            "titles": [
+              {
+                "title": "review evidence policy: body-only logic, missing graph/run evidence and unused test-helper coverage",
+                "result": "pass"
+              },
+              {
+                "title": "review quality policy: target-language conventions, encapsulation/readability/naming and approved/native framework fallback",
+                "result": "pass"
+              },
+              {
+                "title": "review policy parity: common prompt/result classification across supported routes without coding/build-validation changes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/selected-code.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1344,
+            "titles": [
+              {
+                "title": "selected code: exact pinned after blocks reach assessment and references reach attribution without prior or surrounding source",
+                "result": "pass"
+              },
+              {
+                "title": "deletion markers select exact reviewed-version boundaries without removed text",
+                "result": "pass"
+              },
+              {
+                "title": "immutable historical before/after packets remain resumable but cannot be submitted as new attempts",
+                "result": "pass"
+              },
+              {
+                "title": "selected code preserves Unicode and missing final newline for an added file",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/__tests__/selected-code-window.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 681,
+            "titles": [
+              {
+                "title": "selected-code windows match the original prompt blocks for Unicode BOM CRLF overlap and final newlines",
+                "result": "pass"
+              },
+              {
+                "title": "selected-code traversal handles a source above memory without hydrating its unselected body",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/__tests__/staged-design-execution.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 893,
+            "titles": [
+              {
+                "title": "bounded design DEF HLD LLD policies preserve latest-path scope across epic standalone and issue routes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/__tests__/staged-task-execution.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3717,
+            "titles": [
+              {
+                "title": "bounded task execution preserves all selected modules and mandatory coverage with charged CLI copies",
+                "result": "pass"
+              },
+              {
+                "title": "bounded story execution preserves all selected modules and mandatory coverage with charged CLI copies",
+                "result": "pass"
+              },
+              {
+                "title": "design path policy and transport stay borrowed until canceled CLI consumption settles",
+                "result": "pass"
+              },
+              {
+                "title": "revoked input refuses provider dispatch and assembly pressure refuses before invoking a builder",
+                "result": "pass"
+              },
+              {
+                "title": "transport pressure and foreign-generation prompts refuse before CLI dispatch",
+                "result": "pass"
+              },
+              {
+                "title": "coverage cancellation retains the active leaf until its consumer returns",
+                "result": "pass"
+              },
+              {
+                "title": "assessment evidence probes release owned committed bodies after reference resolution",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t18",
+        "commit": "47ec128f3",
+        "ranAt": "2026-11-15T18:26:44.188Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Bounded warm/cold recovery publication and cleanup: full feedback round-trip, zero warm source/model calls, old derived version rejection, history/native/cleanup crash and authority invariants.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/__tests__/staged-lifecycle.test.ts",
+                "title": "warm staged publication preserves every submitted feedback action failure and origin without source or model reconstruction",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/staged-lifecycle.test.ts",
+                "title": "cold staged recovery qualifies exactly once then traverses the complete history in bounded windows",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/staged-lifecycle.test.ts",
+                "title": "publication failure never advances progress and retry reuses the same authorized staged generation",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/staged-lifecycle.test.ts",
+                "title": "cleanup traverses exact staged history then requires current authority and a durable claim before deletion",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/staged-lifecycle.test.ts",
+                "title": "cancellation during a publication fragment fences authority but retains the active window until its consumer settles",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/staged-lifecycle.test.ts",
+                "title": "old derived encoding and tampered reopen never gain authority or invoke cleanup deletion",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/staged-lifecycle.test.ts",
+                "title": "revoked warm authority fences traversal without falling back to cold qualification",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/history-binding.test.ts",
+                "title": "successive code feedback resolves only new evidence and publication advances history without rebuilding source",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-publication.test.ts",
+                "title": "prepared code publication preserves complete input and closed proof across failed render, warm retry and temp deletion",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/prepared-publication.test.ts",
+                "title": "prepared design publication emits capability three and retries one permanent full history without models or temporary context",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-worker-cleanup.test.ts",
+                "title": "approval cleanup retains active targets and preserves both-family permanent history",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/review-worker-cleanup.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 15437,
+            "titles": [
+              {
+                "title": "code",
+                "result": "pass"
+              },
+              {
+                "title": "design",
+                "result": "pass"
+              },
+              {
+                "title": "approval cleanup retains active targets and preserves both-family permanent history",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/__tests__/history-binding.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5832,
+            "titles": [
+              {
+                "title": "successive code feedback resolves only new evidence and publication advances history without rebuilding source",
+                "result": "pass"
+              },
+              {
+                "title": "explicit cold source requalification preserves acknowledged feedback and advances the existing history chain",
+                "result": "pass"
+              },
+              {
+                "title": "explicit cold source requalification preserves unacknowledged feedback and advances the existing history chain",
+                "result": "pass"
+              },
+              {
+                "title": "accepted feedback or pinned attribution edits fence descendants without another source call",
+                "result": "pass"
+              },
+              {
+                "title": "lost checkpoint acknowledgment reconciles a durable result and lagging runtime without repeating model or source work",
+                "result": "pass"
+              },
+              {
+                "title": "remove",
+                "result": "pass"
+              },
+              {
+                "title": "rewrite",
+                "result": "pass"
+              },
+              {
+                "title": "accepted task origins cannot be removed or rewritten by a successor",
+                "result": "pass"
+              },
+              {
+                "title": "new feedback cannot reuse an absent or current-attempt origin",
+                "result": "pass"
+              },
+              {
+                "title": "design plan and dependency-ordered chunk results get successor bindings without changing source generation",
+                "result": "pass"
+              },
+              {
+                "title": "cancellation during publication bookkeeping preserves committed feedback and publication proof without accepting a late runtime boundary",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/__tests__/prepared-publication.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4301,
+            "titles": [
+              {
+                "title": "prepared code publication preserves complete input and closed proof across failed render, warm retry and temp deletion",
+                "result": "pass"
+              },
+              {
+                "title": "prepared design publication emits capability three and retries one permanent full history without models or temporary context",
+                "result": "pass"
+              },
+              {
+                "title": "permanent preparation proof refuses unknown capability",
+                "result": "pass"
+              },
+              {
+                "title": "prepared code publication preserves an earlier qualified failure without promoting its retained scope headers to signoff",
+                "result": "pass"
+              },
+              {
+                "title": "publication bookkeeping errors do not change assessment authority and remain in the main phase audit",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/__tests__/staged-lifecycle.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 8324,
+            "titles": [
+              {
+                "title": "warm staged publication preserves every submitted feedback action failure and origin without source or model reconstruction",
+                "result": "pass"
+              },
+              {
+                "title": "cold staged recovery qualifies exactly once then traverses the complete history in bounded windows",
+                "result": "pass"
+              },
+              {
+                "title": "publication failure never advances progress and retry reuses the same authorized staged generation",
+                "result": "pass"
+              },
+              {
+                "title": "cleanup traverses exact staged history then requires current authority and a durable claim before deletion",
+                "result": "pass"
+              },
+              {
+                "title": "cancellation during a publication fragment fences authority but retains the active window until its consumer settles",
+                "result": "pass"
+              },
+              {
+                "title": "old derived encoding and tampered reopen never gain authority or invoke cleanup deletion",
+                "result": "pass"
+              },
+              {
+                "title": "revoked warm authority fences traversal without falling back to cold qualification",
                 "result": "pass"
               }
             ],

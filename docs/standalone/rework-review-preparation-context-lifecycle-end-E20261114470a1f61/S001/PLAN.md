@@ -5,10 +5,10 @@
 ## Summary
 
 **Epic:** `rework-review-preparation-context-lifecycle-end`
-**LLD run:** `wf-1794738660757-dh2adn`
-**LLD effective hash:** `c990be2b3102...`
+**LLD run:** `wf-1794817146336-3c95t8`
+**LLD effective hash:** `ccb16f2a6299...`
 
-The plan preserves completed T1–T13 and adds six dependency-ordered corrective tasks from approved LLD revision4. T15–T18 bound prepared storage, construction and every lifecycle consumer; T19 measures and corrects admission latency; T20 qualifies the complete production cutover. Retained T14 runs last with its original full-workload performance and package gates. Existing caps, exact scope/history, independent code review and human BUILD approval remain; no intermediate deployment or original-review resume is authorized.
+This revision preserves the completed review-lifecycle build and adds a source-light correction before final qualification. The remaining work explicitly reconciles duplicate provenance, replaces durable aggregate source bodies with exact locators and attempt-owned commit-parent workspaces, integrates that model through production code-review lifecycle paths, then re-runs the retained full workload and packaging gates.
 
 ## Contents
 
@@ -33,13 +33,18 @@ The plan preserves completed T1–T13 and adds six dependency-ordered corrective
 | 11 | **`t11`** Implement resumable cleanup claims for both families | L | approved r1 | `t9`, `t10` | integration: Extend both-family cleanup tests: fault every claim/rename/unlink/fsync boundary; cleanup retry after runtime/checkpoint removal, approval/file mismatch and arbitrary missing-runtime refusal. | [[c7]] |
 | 12 | **`t12`** Implement explicit inactive-record migration and coordinated cutover | M | draft r3 | `t11` | integration: Proposed migration/cutover tests: inactive v1/v2 byte-preserving upgrade, legacy guards, interrupted migration, unknown capabilities and unsupported old-reader downgrade. | [[c8]] |
 | 13 | **`t13`** Qualify failure, concurrency and scope equivalence | L | draft r3 | `t12` | integration: Full disposable production two-session matrix through public routes and both families, all crash/tamper/native-loss cases, complete scope equivalence and bounded runtime writes. | [[c1]] [[c3]] [[c5]] [[c6]] [[c7]] [[c8]] |
-| 14 | **`t15`** Stage typed packet descriptors with bounded memory ownership | L | — | `t13` | unit: Typed staged descriptor/leaf codec and shared memory accounting: byte/Unicode/null/order round-trip, shard/version/tamper rejection, reserve-before-allocation and exact window release.; integration: Staged view capacity ownership: aggregate disk reservations, partial sealing, borrowed-window cancellation and two-session memory/disk pressure retain complete evidence. | [[c9]] [[c2]] [[c4]] |
-| 15 | **`t16`** Bound packet projection and history qualification construction | L | — | `t15` | unit: Incremental packet/projection/history equivalence: exact selected after spans, all lineage/replacement/merge/deletion witnesses, tests/documents/origins and identity folds match the existing oracle.; integration: Single oversized packet and1/4/max history construct staged views under combined memory bound with zero physical duplicate source queries and no aggregate binary JSON materialization. | [[c9]] [[c1]] [[c5]] |
-| 16 | **`t17`** Use bounded views in execution and mandatory coverage assessment | L | — | `t16` | integration: Bounded execution and mandatory coverage traversal for code/design task/story routes: no skipped modules, prompt/provider transport copies charged, borrow invalidation/cancellation and no premature provider dispatch. | [[c9]] [[c5]] [[c6]] |
-| 17 | **`t18`** Use staged views across recovery publication and cleanup | L | — | `t16`, `t17` | integration: Bounded warm/cold recovery publication and cleanup: full feedback round-trip, zero warm source/model calls, old derived version rejection, history/native/cleanup crash and authority invariants. | [[c9]] [[c2]] [[c7]] [[c8]] |
-| 18 | **`t19`** Trace and correct measured admission latency | M | — | `t18` | integration: Measured admission segment attribution and durable-ack two-session race matrix: controlled admit/cancel<=2s, progress gap<=2s, complete owner/guard/binding checks and no duplicate dispatch. | [[c10]] [[c3]] [[c6]] |
-| 19 | **`t20`** Qualify the complete staged-view production cutover | L | — | `t18`, `t19` | integration: Actual production staged-view cutover matrix for both families and all workflow routes: combined memory high-water, complete scope/history equality, zero duplicate queries/full-history hot writes, cancellation/tamper/crash fences and task-order preservation.; integration: Source-free compiled package code/design daemon/controller smoke plus backend build after bounded-view cutover; retained full T14 workload remains an independent final gate. | [[c9]] [[c10]] [[c1]] [[c7]] [[c8]] |
-| 20 | **`t14`** Qualify performance, packaging and deployment handoff | L | approved r1 | `t13`, `t20` | integration: Managed cold x3/warm/history-growth performance gates on supported Node/native package, npm build plus source-free package smoke; no deployed daemon mutation. | [[c1]] [[c8]] |
+| 14 | **`t15`** Stage typed packet descriptors with bounded memory ownership | L | approved r1 | `t13` | unit: Typed staged descriptor/leaf codec and shared memory accounting: byte/Unicode/null/order round-trip, shard/version/tamper rejection, reserve-before-allocation and exact window release.; integration: Staged view capacity ownership: aggregate disk reservations, partial sealing, borrowed-window cancellation and two-session memory/disk pressure retain complete evidence. | [[c9]] [[c2]] [[c4]] |
+| 15 | **`t16`** Bound packet projection and history qualification construction | L | approved r1 | `t15` | unit: Incremental packet/projection/history equivalence: exact selected after spans, all lineage/replacement/merge/deletion witnesses, tests/documents/origins and identity folds match the existing oracle.; integration: Single oversized packet and1/4/max history construct staged views under combined memory bound with zero physical duplicate source queries and no aggregate binary JSON materialization. | [[c9]] [[c1]] [[c5]] |
+| 16 | **`t17`** Use bounded views in execution and mandatory coverage assessment | L | approved r1 | `t16` | integration: Bounded execution and mandatory coverage traversal for code/design task/story routes: no skipped modules, prompt/provider transport copies charged, borrow invalidation/cancellation and no premature provider dispatch. | [[c9]] [[c5]] [[c6]] |
+| 17 | **`t18`** Use staged views across recovery publication and cleanup | L | approved r1 | `t16`, `t17` | integration: Bounded warm/cold recovery publication and cleanup: full feedback round-trip, zero warm source/model calls, old derived version rejection, history/native/cleanup crash and authority invariants. | [[c9]] [[c2]] [[c7]] [[c8]] |
+| 18 | **`t19`** Trace and correct measured admission latency | M | approved r1 | `t18` | integration: Measured admission segment attribution and durable-ack two-session race matrix: controlled admit/cancel<=2s, progress gap<=2s, complete owner/guard/binding checks and no duplicate dispatch. | [[c10]] [[c3]] [[c6]] |
+| 19 | **`t20`** Qualify the complete staged-view production cutover | L | approved r1 | `t18`, `t19` | integration: Actual production staged-view cutover matrix for both families and all workflow routes: combined memory high-water, complete scope/history equality, zero duplicate queries/full-history hot writes, cancellation/tamper/crash fences and task-order preservation.; integration: Source-free compiled package code/design daemon/controller smoke plus backend build after bounded-view cutover; retained full T14 workload remains an independent final gate. | [[c9]] [[c10]] [[c1]] [[c7]] [[c8]] |
+| 20 | **`t21`** Reconcile duplicate lifecycle provenance | M | — | `t20` | integration: Duplicate ISSUE/LLD lifecycle reconciliation: atomic supersession, replacement provenance, non-routability, retry/readback failure, and unchanged primary PLAN/BUILD/TESTS evidence. | [[c11]] [[c12]] |
+| 21 | **`t22`** Define source-light locator, manifest and historical-reader contracts | M | — | `t21` | unit: Source-light locator/manifest codecs: ordered Unicode paths, add/delete/rename/replacement/merge/binary metadata, object and parent identities, version rejection, tamper/cross-attempt detection, and source-body absence. | [[c11]] [[c13]] |
+| 22 | **`t23`** Implement commit-parent workspaces and transient selected after blocks | L | — | `t22` | integration: Pinned commit-parent workspace matrix: new/delete/rename/stacked commits, exact transient after ranges, relevant-only parent files, manifest sealing, concurrent attempt isolation, cancellation and owned cleanup. | [[c11]] [[c13]] |
+| 23 | **`t24`** Integrate source-light preparation through the production lifecycle | L | — | `t23` | integration: Production source-light lifecycle matrix for CodePreparation, StagedPacketConstruction, StagedPacketSources, workers, routes, checkpoint/recovery/progress/cancel/publication/approval/cleanup, mandatory coverage, and unchanged latest-document design review. | [[c11]] [[c13]] |
+| 24 | **`t25`** Migrate readers, remove eager source ownership and qualify cutover readiness | L | — | `t24` | integration: Source-light cutover regressions: historical cold requalification/rejection, no eager fallback, two-session isolation, cancel/restart/tamper/publication/cleanup, production defaults and task-order preservation.; smoke: Backend build and source-free compiled package smoke for code and design review after eager source ownership removal. | [[c11]] [[c12]] [[c13]] |
+| 25 | **`t14`** Qualify performance, packaging and deployment handoff | L | draft r2 | `t25` | integration: Retained 171-file/four-attempt cold x3, warm and history 1/4/max source-light qualification with locator/Git/workspace/memory/RSS/write metrics, exact scope and mandatory coverage.; smoke: Approved deployment handoff and explicit post-restart code/design smoke; the stopped review is retriggered only with separate user authorization. | [[c1]] [[c8]] [[c11]] [[c13]] |
 
 ### 1.1 TASK-470a1f61b26b12c6-s1-t1 — Retain workload fixture and establish managed baseline
 
@@ -215,59 +220,116 @@ Wire the revised writer and every lifecycle consumer together in the actual prod
 - Run and record this task's focused validation before advancing; no intermediate adapter completion authorizes deployment or resumes the stopped review.
 - Verify persisted plan/build scheduling follows explicit order/dependencies: next runnable corrective task t15 and final qualification t14 only after t20; preserve exact t1-t13 definitions/test mappings and passed BUILD/TESTS entries.
 
-### 1.20 TASK-470a1f61b26b12c6-s1-t14 — Qualify performance, packaging and deployment handoff
+### 1.20 TASK-470a1f61b26b12c6-s1-t21 — Reconcile duplicate lifecycle provenance
 
-Measure full managed cold/warm/history-growth workloads, build shipped package and document coordinated restart plus explicitly authorized post-deployment smoke.
+Transition duplicate ISSUE-163e7bc3d6f0ccba and its LLD lineage to explicit superseded lifecycle state, bind replacement provenance to the primary standalone artifact, and preserve both records as historical non-routable evidence.
 
 **Acceptance checks:**
-- Three cold-run median<=120s, warm<=10s, controlled admit/cancel<=2s and progress observation<=2s; report all metrics; failed gates block old qualification; deployment awaits BUILD approval.
-- Task completion uses local managed qualification and package checks only. Deployment smoke requires later approved BUILD, user update/restart and explicit permission to retrigger original review.
-- Run and record this task's focused validation before advancing; cross-cutting qualification does not replace these checks.
+- Both duplicate artifacts read back as superseded with replacement provenance to the primary artifact and cannot be selected for new workflow routing.
+- The transition is atomic or safely retryable; any failed readback stops the build before source-light migration proceeds.
+- Existing primary PLAN/BUILD/TESTS evidence and completed task records remain unchanged.
+
+### 1.21 TASK-470a1f61b26b12c6-s1-t22 — Define source-light locator, manifest and historical-reader contracts
+
+Introduce versioned exact selected-change locators and attempt baseline-workspace manifests, remove durable aggregate source bodies from new prepared state, and define cold requalification or explicit rejection for historical eager-derived records.
+
+**Acceptance checks:**
+- New code-review durable state stores immutable commit/parent/object identities, exact file/range/block locators and sealed workspace metadata, never aggregate source bodies.
+- Decoders reject unknown or ambiguous required versions; supported historical records cannot silently become trusted source authority and are either cold-requalified or explicitly rejected.
+- Design review latest-document contracts and existing compact runtime/history/publication contracts remain unchanged.
+
+### 1.22 TASK-470a1f61b26b12c6-s1-t23 — Implement commit-parent workspaces and transient selected after blocks
+
+Materialize only relevant before files from each selected change's actual applicable commit parent into an attempt-owned sealed workspace and decode only exact pinned after ranges transiently for reviewer input.
+
+**Acceptance checks:**
+- New, deleted, renamed and stacked-commit changes resolve against the actual selected commit parent rather than origin or current HEAD, with exact range and object verification.
+- The attempt workspace contains only relevant baseline files at ordinary paths, has a sealed integrity manifest, remains isolated between concurrent attempts, and is removed through owned terminal cleanup.
+- Selected after blocks include no unrelated lines and decoded bytes are released after reviewer-input construction rather than retained in checkpoints or prepared packets.
+
+### 1.23 TASK-470a1f61b26b12c6-s1-t24 — Integrate source-light preparation through the production lifecycle
+
+Wire source-light packet preparation, staged construction/source adapters, isolated workers, progress, cancellation, recovery, publication, approval and cleanup through actual code-review production routes while retaining latest-document design review.
+
+**Acceptance checks:**
+- Every code-review route uses locators, transient selected blocks and baseline workspace paths without an eager aggregate source-view fallback; design routes continue latest-document capture.
+- Checkpoint/resume, progress, cancellation, permanent CR publication and approval cleanup preserve exact scope, history and ownership across crashes and concurrent sessions.
+- Complete test details and mandatory coverage assessment reach the reviewer; execution remains optional, and no module is skipped because of size or preparation mode.
+
+### 1.24 TASK-470a1f61b26b12c6-s1-t25 — Migrate readers, remove eager source ownership and qualify cutover readiness
+
+Remove new-path eager source ownership, complete historical-reader behavior, and run focused correctness, isolation, recovery, cleanup and packaging regressions before the retained full qualification task.
+
+**Acceptance checks:**
+- No production new-attempt path persists or reconstructs aggregate prepared source bodies; legacy derived views are untrusted migration inputs, not a fallback engine.
+- Two-session concurrency, cancellation, restart/recovery, tamper detection, publication and cleanup tests preserve exact scope and resource ownership with zero unintended cross-session access.
+- Production defaults, compiled build and source-free package smoke pass; task scheduling leaves t14 as the sole next qualification gate after t25.
+
+### 1.25 TASK-470a1f61b26b12c6-s1-t14 — Qualify performance, packaging and deployment handoff
+
+Measure the full retained managed cold, warm and history-growth workloads on the source-light production path, build the shipped package, and document coordinated restart plus explicitly authorized post-deployment smoke.
+
+**Acceptance checks:**
+- Three cold-run median<=120s, warm<=10s, controlled admit/cancel<=2s and progress observation<=2s; report exact selected-locator counts, unique Git reads, workspace bytes, transient charged memory, heap/external/RSS and durable writes; failed gates block qualification.
+- Full retained workload proves no aggregate source bodies, skipped review scope or skipped mandatory coverage assessment, and confirms design review remains latest-document based.
+- npm build and source-free package smoke pass. Deployment waits for BUILD approval, user update/restart and explicit permission to retrigger the original review.
+- Run and record this task's focused validation before advancing; prior focused regressions do not replace this full qualification.
 
 ## 2. Test-strategy coverage
 
 | LLD strategy item | Covered by |
 | :--- | :--- |
-| Existing projection/lineage oracle: unchanged code scope identities, after-segments, deletion/rename/merge/replacement witnesses and test/document bytes across baseline and new preparation. | `t7`, `t13` |
-| Counting ReviewSources fixture: exact query keys, all prior/current packets in one session, duplicate coalescing, deterministic error attribution and no negative/error poisoning. | `t4` |
-| Stable source generation excludes accepted feedback; immutable successor history binding validates new results/origins. Tampering with old feedback revokes descendants; input/source changes invalidate source qualification. | `t5`, `t6` |
-| Logical ProjectionBudget read/byte/fragment limits apply independently per packet even when physical reads are reused. | `t4`, `t7` |
-| Exact runtime and checkpoint decoders: foreign identity, oversized fields, missing/unknown capabilities, forbidden paths, stale sequences and impossible completion states. | `t2`, `t3` |
-| Code story/task and epic/standalone/issue/no-document route matrix; design DEF/HLD/LLD latest-subject matrix. | `t7`, `t8` |
-| Full checkpoint input/feedback remains pinned while compact runtime is sole new hot resource authority. | `t3` |
-| Client/model-supplied qualification handles, PIDs, native closure claims and approval receipts are rejected. | `t2`, `t5`, `t9` |
-| Cancel and preparation progress wire fixtures preserve enum/status meaning, nullable unknown totals and actual counters; no invented task inventory or percentage. | `t9` |
-| Supported historical checkpoint/CR readers and explicit new-format capability mismatch refusals before cleanup or execution. | `t2`, `t10`, `t12` |
-| ProductionReviews through registered MCP/IPC routes acquires context, runs each family with a deterministic reviewer, preserves full feedback, publishes, approves under fixture authority and cleans only approved inactive targets. | `t13` |
-| Real Git batch output, object hash/type/framing, read-only isolation, exact missing-object semantics and byte limits through ReviewNativeHost/ReviewProcessLeases. | `t4`, `t13` |
-| Warm handoff to a new authorized publication/cleanup worker reuses a private receipt after terminal execution-worker reclamation; cold daemon restart invalidates all receipts and requalifies through authoritative sources once. | `t5`, `t10`, `t11` |
-| Author changes before restart use fresh production scope, not a test-only resolver; latest design target edits invalidate and wait for human-approved restart; unrelated external edits do not loop. | `t7`, `t8`, `t13` |
-| Two review sessions retain separate ownership, progress, cancellation and resource fences; cancel one during preparation, assessment and publication-boundary races without affecting the other. | `t9`, `t13` |
-| Observe actual runtime/history writer bytes and commit ordering: native open/close writes0 full history records, result commit precedes counted completion, and open intent precedes subprocess spawn. | `t3`, `t6`, `t13` |
-| Multiple accepted task/chunk results plus publication bookkeeping preserve source receipt and use zero repeated Git qualification; new evidence is fetched once and bound to exact successor history. | `t6`, `t10` |
-| Fault injection at every runtime-initialize/checkpoint-bind/activate, manifest-ready/receipt, native-open/spawn/disposal/close, result-history/runtime-boundary and CR/publication-boundary transition. | `t3`, `t6`, `t13` |
-| Worker loss and whole-daemon crash with open tools; no automatic clearance or empty-runtime recreation. Confirmed disposal plus failed close persistence remains fenced. | `t3`, `t9`, `t13` |
-| Cold manifest/object tampering, stale validator versions, replaced checkpoint/runtime files, invalid capability metadata and cleanup races retain evidence and reject false approval. | `t5`, `t11`, `t13` |
-| Definitive checkpoint replaced/not-replaced/uncertain outcomes recover committed feedback without model rerun; failed/incomplete attempts still require the existing new-attempt rule. | `t3`, `t6`, `t13` |
-| Supported v1/v2 historical migration preserves exact submitted aliases, prior results/actions/failures and unresolved legacy guards; interrupted migration and rollback never activate dual writers. | `t12` |
-| The actual stopped attempt4 remains untouched by feature qualification and cannot be automatically resumed or cleared. | `t1`, `t12`, `t13` |
-| Crash after every cleanup claim/rename/unlink/directory sync, including runtime removal and checkpoint removal: explicit retry completes from exact permanent closed audit/claim without Git or model calls; arbitrary missing runtime remains fenced. | `t11`, `t13` |
-| Capture three cold runs of the complete171-file/four-attempt workload: median preparation<=120s with every source, scope, origin, test and history check retained; report each run and host/load metadata. | `t1`, `t14` |
-| Warm matching-context lifecycle handoff/phase preparation median<=10s; matching publication/cleanup performs0 source reconstructions while current mutable checks still run. | `t5`, `t10`, `t11`, `t14` |
-| Growing valid history at1,4 and maximum supported attempts: physical repeated queries per session0, immutable source work proportional to distinct evidence plus history validation, not repeated packet count. | `t4`, `t14` |
-| Full checkpoint writes per native command0; compact runtime encoder<=256KiB and write size does not grow with history/source size. Report native command counts, total bytes written and stage timings separately. | `t3`, `t14` |
-| Two concurrent reviews admit/cancel acknowledgement<=2s and preparation observation gap<=2s on the controlled supported-host fixture; cancellation reaches an honest stopped or resource-fenced result without another model call. | `t9`, `t14` |
-| No timing assertion is a fixed runtime task deadline. If a release gate fails, report the measured failure; do not skip tests, widen timeouts/limits, shrink scope or claim the microbenchmark substitutes for this evidence. | `t14` |
-| Working set above memoryMaxBytes but below reserved disk capacity retains query payloads in staging and yields zero physical duplicates. Insufficient aggregate disk capacity fails before next batch; concurrent sessions cannot over-reserve or evict pinned evidence. | `t4`, `t13`, `t14` |
-| Update/restart only after the normal approval/publish sequence and coordination with other active reviews; reconnect MCP and validate advertised formats/cancel schema. | `t14` |
+| Existing projection/lineage oracle: unchanged code scope identities, after-segments, deletion/rename/merge/replacement witnesses and test/document bytes across baseline and new preparation. | `t2`, `t6`, `t7`, `t8`, `t9`, `t12`, `t22` |
+| Counting ReviewSources fixture: exact query keys, all prior/current packets in one session, duplicate coalescing, deterministic error attribution and no negative/error poisoning. | `t2`, `t6`, `t7`, `t8`, `t9`, `t12`, `t22` |
+| Stable source generation excludes accepted feedback; immutable successor history binding validates new results/origins. Tampering with old feedback revokes descendants; input/source changes invalidate source qualification. | `t2`, `t6`, `t7`, `t8`, `t9`, `t12`, `t22` |
+| Logical ProjectionBudget read/byte/fragment limits apply independently per packet even when physical reads are reused. | `t2`, `t6`, `t7`, `t8`, `t9`, `t12`, `t22` |
+| Exact runtime and checkpoint decoders: foreign identity, oversized fields, missing/unknown capabilities, forbidden paths, stale sequences and impossible completion states. | `t2`, `t6`, `t7`, `t8`, `t9`, `t12`, `t22` |
+| Code story/task and epic/standalone/issue/no-document route matrix; design DEF/HLD/LLD latest-subject matrix. | `t2`, `t6`, `t7`, `t8`, `t9`, `t12`, `t22` |
+| Full checkpoint input/feedback remains pinned while compact runtime is sole new hot resource authority. | `t2`, `t6`, `t7`, `t8`, `t9`, `t12`, `t22` |
+| Client/model-supplied qualification handles, PIDs, native closure claims and approval receipts are rejected. | `t2`, `t6`, `t7`, `t8`, `t9`, `t12`, `t22` |
+| Cancel and preparation progress wire fixtures preserve enum/status meaning, nullable unknown totals and actual counters; no invented task inventory or percentage. | `t2`, `t6`, `t7`, `t8`, `t9`, `t12`, `t22` |
+| Supported historical checkpoint/CR readers and explicit new-format capability mismatch refusals before cleanup or execution. | `t2`, `t6`, `t7`, `t8`, `t9`, `t12`, `t22` |
+| ProductionReviews through registered MCP/IPC routes acquires context, runs each family with a deterministic reviewer, preserves full feedback, publishes, approves under fixture authority and cleans only approved inactive targets. | `t13`, `t24` |
+| Real Git batch output, object hash/type/framing, read-only isolation, exact missing-object semantics and byte limits through ReviewNativeHost/ReviewProcessLeases. | `t13`, `t24` |
+| Warm handoff to a new authorized publication/cleanup worker reuses a private receipt after terminal execution-worker reclamation; cold daemon restart invalidates all receipts and requalifies through authoritative sources once. | `t13`, `t24` |
+| Author changes before restart use fresh production scope, not a test-only resolver; latest design target edits invalidate and wait for human-approved restart; unrelated external edits do not loop. | `t13`, `t24` |
+| Two review sessions retain separate ownership, progress, cancellation and resource fences; cancel one during preparation, assessment and publication-boundary races without affecting the other. | `t13`, `t24` |
+| Observe actual runtime/history writer bytes and commit ordering: native open/close writes0 full history records, result commit precedes counted completion, and open intent precedes subprocess spawn. | `t13`, `t24` |
+| Multiple accepted task/chunk results plus publication bookkeeping preserve source receipt and use zero repeated Git qualification; new evidence is fetched once and bound to exact successor history. | `t13`, `t24` |
+| Fault injection at every runtime-initialize/checkpoint-bind/activate, manifest-ready/receipt, native-open/spawn/disposal/close, result-history/runtime-boundary and CR/publication-boundary transition. | `t11`, `t12`, `t25` |
+| Worker loss and whole-daemon crash with open tools; no automatic clearance or empty-runtime recreation. Confirmed disposal plus failed close persistence remains fenced. | `t11`, `t12`, `t25` |
+| Cold manifest/object tampering, stale validator versions, replaced checkpoint/runtime files, invalid capability metadata and cleanup races retain evidence and reject false approval. | `t11`, `t12`, `t25` |
+| Definitive checkpoint replaced/not-replaced/uncertain outcomes recover committed feedback without model rerun; failed/incomplete attempts still require the existing new-attempt rule. | `t11`, `t12`, `t25` |
+| Supported v1/v2 historical migration preserves exact submitted aliases, prior results/actions/failures and unresolved legacy guards; interrupted migration and rollback never activate dual writers. | `t11`, `t12`, `t25` |
+| The actual stopped attempt4 remains untouched by feature qualification and cannot be automatically resumed or cleared. | `t11`, `t12`, `t25` |
+| Crash after every cleanup claim/rename/unlink/directory sync, including runtime removal and checkpoint removal: explicit retry completes from exact permanent closed audit/claim without Git or model calls; arbitrary missing runtime remains fenced. | `t11`, `t12`, `t25` |
+| Capture three cold runs of the complete171-file/four-attempt workload: median preparation<=120s with every source, scope, origin, test and history check retained; report each run and host/load metadata. | `t11`, `t12`, `t25` |
+| Warm matching-context lifecycle handoff/phase preparation median<=10s; matching publication/cleanup performs0 source reconstructions while current mutable checks still run. | `t14`, `t25` |
+| Growing valid history at1,4 and maximum supported attempts: physical repeated queries per session0, immutable source work proportional to distinct evidence plus history validation, not repeated packet count. | `t14`, `t25` |
+| Full checkpoint writes per native command0; compact runtime encoder<=256KiB and write size does not grow with history/source size. Report native command counts, total bytes written and stage timings separately. | `t14`, `t25` |
+| Two concurrent reviews admit/cancel acknowledgement<=2s and preparation observation gap<=2s on the controlled supported-host fixture; cancellation reaches an honest stopped or resource-fenced result without another model call. | `t14`, `t25` |
+| No timing assertion is a fixed runtime task deadline. If a release gate fails, report the measured failure; do not skip tests, widen timeouts/limits, shrink scope or claim the microbenchmark substitutes for this evidence. | `t14`, `t25` |
+| Working set above memoryMaxBytes but below reserved disk capacity retains query payloads in staging and yields zero physical duplicates. Insufficient aggregate disk capacity fails before next batch; concurrent sessions cannot over-reserve or evict pinned evidence. | `t14`, `t25` |
+| Update/restart only after the normal approval/publish sequence and coordination with other active reviews; reconnect MCP and validate advertised formats/cancel schema. | `t14`, `t25` |
 | Small code and design review demonstrate incremental preparation progress, targeted cancellation and explicit recovery with complete CR history. | `t14` |
 | Only then explicitly resolve the original retained fence and ask to retrigger the stopped worker-isolation review with an appropriate immutable attempt; do not reuse a canceled execution implicitly. | `t14` |
-| Single-packet payload and four-attempt history larger than decoded memory budget but within reserved disk qualify with exact original scope/provenance/tests/feedback and zero repeated physical reads; both cold and warm publication/recovery consume bounded windows. | `t15`, `t16`, `t18`, `t20`, `t14` |
-| Instrument reserve-before-allocation and ownership high-water across source acquisition, projection/witness validation, packet descriptor staging, seal, reader, prompt/test-coverage traversal and publication; binary/text/metadata/transient copies included. No full-packet JSON stringify or whole-history view/clone reachable in production. | `t15`, `t16`, `t17`, `t18`, `t20` |
-| Versioned descriptor/index round-trip for Unicode, byte arrays, null/undefined, ordered scope, rename/deletion/replacement/merge/binary; missing/sharded/tampered digest or borrow revocation fails before use. Old derived encoding triggers explicit cold requalification, never old decoder acceptance. | `t15`, `t16`, `t18`, `t20` |
-| Memory and aggregate disk pressure with two sessions, cancellation while window borrowed, interrupted stage/seal/promote/reopen/cleanup retain correct leases and reservations; no pinned eviction or duplicate evidence. | `t15`, `t18`, `t20` |
-| Monotonic admission segment traces distinguish request/guard/scope/startup/binding/activation; durable input/runtime acknowledgement, failure/cancel races and independent sessions retain exact authority while meeting<=2s on controlled host. | `t19`, `t20`, `t14` |
-| Re-run complete retained171-file/four-attempt coldx3/warm/history1,4,max gates with existing bounds and no hosted models; report charged-memory high-water, stagedbytes, heap/external/RSS, all stage durations and writer/query counters. A failed run blocks release; do not replace scope or raise limits. | `t14`, `t20` |
+| Single-packet and four-attempt histories larger than the decoded memory budget but within reserved disk qualify with exact scope, provenance, tests, feedback, selected after blocks, and applicable parent workspaces; cold and warm lifecycle consumers never build an aggregate packet body. | `t14` |
+| Instrument reserve-before-allocation and ownership high-water across locator validation, Git object verification, parent-file materialization, manifest sealing, transient selected-block decoding, prompt/test traversal, publication, and cleanup. No full-packet JSON stringify or whole-history source clone is reachable in production. | `t23`, `t24`, `t25`, `t14` |
+| Versioned locator and BaselineWorkspaceManifest round-trip ordered scope, Unicode paths, add/delete/rename/replacement/merge/binary metadata, selected object ids, applicable parent ids, and integrity fields. Missing, tampered, cross-attempt, or stale manifests fail before reviewer use; old eager derived state triggers cold requalification. | `t23`, `t24`, `t25`, `t14` |
+| New files produce an absent parent baseline; deletions expose the parent file and empty after content; renames expose the old parent path and selected new after blocks; stacked unpushed commits resolve against each selected commit's actual parent rather than origin. | `t23`, `t24`, `t25`, `t14` |
+| Memory and aggregate disk pressure with two attempts, cancellation during workspace materialization or transient block use, interrupted seal/reopen/cleanup, and restart retain correct ownership, reservations, fences, and cleanup claims without pinned eviction or duplicate Git reads. | `t23`, `t24`, `t25`, `t14` |
+| Monotonic admission segment traces distinguish request, guard, route/scope, worker startup, runtime binding, and acknowledgement. Source qualification runs in the isolated review worker after durable admission; independent sessions retain exact authority while controlled admit/cancel acknowledgement remains within the existing bound. | `t23`, `t24`, `t25`, `t14` |
+| Re-run the retained 171-file/four-attempt cold x3, warm, and history 1/4/max gates with no hosted models; report locator count, unique Git reads, workspace bytes, transient charged-memory high-water, heap/external/RSS, stage durations, and writer counters. A failed run blocks release and cannot be hidden by higher limits or reduced scope. | `t23`, `t24`, `t25`, `t14` |
+| prepareReviewPacket | `t22`, `t23` |
+| selectedCode | `t22`, `t23` |
+| SelectedChangeLocator | `t22`, `t23` |
+| BaselineWorkspaceManifest | `t22`, `t23` |
+| artifact lifecycle reconciliation | `t21` |
+| CodePreparation | `t24`, `t25` |
+| StagedPacketConstruction | `t24`, `t25` |
+| StagedPacketSources | `t24`, `t25` |
+| checkpoint, recovery, progress, cleanup, and publication | `t24`, `t25` |
+| unchanged design-review preparation | `t24`, `t25` |
 
 ## 3. References
 
@@ -281,3 +343,6 @@ Measure full managed cold/warm/history-growth workloads, build shipped package a
 - **[[c8]]** `prior-artifact` `LLD s1 migration, preserved workload and controlled release gates (3.9,7)`
 - **[[c9]]** `prior-artifact` `LLD s1 bounded prepared packet views and working-set ownership (revision4,3.11; testStrategy added integration subjects)`
 - **[[c10]]** `prior-artifact` `LLD s1 measured admission latency and durable acknowledgement (revision4,3.12;6;7)`
+- **[[c11]]** `prior-artifact` `LLD s1 revision 8 source-light preparation, exact locator, commit-parent workspace, lifecycle preservation and qualification handoff`
+- **[[c12]]** `analyze-bundle` `.insrc/artifacts/PLAN-470a1f61b26b12c6-s1.json and .insrc/artifacts/BUILD-470a1f61b26b12c6-s1.json completed-task evidence plus duplicate lifecycle reconciliation requirement`
+- **[[c13]]** `analyze-bundle` `src/workflow/code-review/task-review/packet.ts:144-262; src/workflow/review/code-preparation.ts:23-124; src/workflow/review/staged-packet-construction.ts:23-97; src/workflow/review/staged-packet-sources.ts:25-149`

@@ -8,7 +8,9 @@ import { CodePreparation } from '../code-preparation.js';
 import { DesignPreparation } from '../design-preparation.js';
 import { ReviewPreparationCapacity } from '../source-session.js';
 import { reviewPreparationLimits } from '../../../config/review.js';
-import { preparationDigest, PreparedContextReader } from '../prepared-context.js';
+import { preparationDigest } from '../prepared-context.js';
+import { PreparedViewReader } from '../prepared-views.js';
+import { ReviewMemoryBudget } from '../preparation-memory.js';
 import { HistoryBindingSession } from '../history-binding.js';
 import type { PreparationHistory } from '../history-binding.js';
 import { codeHistoryFeedback, designHistoryFeedback } from '../history-feedback.js';
@@ -33,7 +35,7 @@ test('prepared code publication preserves complete input and closed proof across
  const cold = await CodePreparation.create(key, f.deps.sources, limits, capacity);
  let closed = false; t.after(async () => { if (!closed) await cold.close(); f.cleanup(); });
  const admitted = await cold.prepare(f.repo, key.reviewId, 1, undefined, 'daemon', cold.sources, { operation: 'resume', epicHash: hash });
- const source = await cold.seal(admitted), reader = await PreparedContextReader.open(source, limits, async () => {}, async e => { throw e; });
+ const source = await cold.seal(admitted), reader = await PreparedViewReader.open(source, limits, new ReviewMemoryBudget(limits.memoryMaxBytes), async () => {}, async e => { throw e; });
  const warm = await CodePreparation.reuse(key, reader, cold.sources, limits, capacity);
  const done = { ...f.checkpoint(), schemaVersion: 3 as const, runtime: { runtimeId: 'code-runtime', inputDigest: source.inputDigest } };
  const initial = structuredClone(done); initial.attempts[0]!['review-response'].tasks = []; delete initial.attempts[0]!.header.completedAt;
@@ -143,7 +145,7 @@ test('prepared code publication preserves an earlier qualified failure without p
  t.after(async () => { await cold.close(); f.cleanup(); });
  const admitted = await cold.prepare(f.repo, key.reviewId, 2, f.packet, 'daemon', cold.sources, { operation: 'start', epicHash: hash });
  await bindTaskFinalIdentities(admitted, [{ taskId: 't1', changeIndexes: [0], testIndexes: [0], decision: { action: 'reassess', reason: 'Prior attempt failed' } }]);
- const source = await cold.seal(admitted), reader = await PreparedContextReader.open(source, limits, async () => {}, async e => { throw e; });
+ const source = await cold.seal(admitted), reader = await PreparedViewReader.open(source, limits, new ReviewMemoryBudget(limits.memoryMaxBytes), async () => {}, async e => { throw e; });
  const warm = await CodePreparation.reuse(key, reader, cold.sources, limits, capacity);
  const prior = await cold.publicationPacket(first.submitted, cold.sources, true, undefined, first.header.derived);
  const initial = { ...admitted.checkpoint, schemaVersion: 3 as const, runtime: { runtimeId: 'recovered-runtime', inputDigest: source.inputDigest } };

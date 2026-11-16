@@ -7,6 +7,7 @@ import { validateTaskResult, validateResultOrigins, aggregateTaskStatus } from '
 import { resultReferences } from '../code-review/task-review/record.js';
 import { reviewPath } from '../code-review/task-review/contracts.js';
 import type { PreparedReviewPacket } from '../code-review/task-review/packet.js';
+import type { ReviewAttempt } from '../code-review/task-review/contracts.js';
 import type { ReviewSources } from '../code-review/task-review/sources.js';
 import { decodeStoredDesignCheckpoint } from './design-review/admission-checkpoint.js';
 import { qualifiedDesignProjection, validateStoredDesignIdentity } from './design-review/checkpoint.js';
@@ -29,7 +30,8 @@ async function publication(next: PreparationHistory, previous: PreparationHistor
 
 /** Same attribution/result/origin validators as admission, but with already
  * qualified views. No prepareReviewPacket or model invocation is repeated. */
-export function codeHistoryFeedback(prepared: ReadonlyMap<number, PreparedReviewPacket>, sources: ReviewSources, verifyPublication?: PublicationVerifier) {
+type PreparedPacketSource = ReadonlyMap<number, PreparedReviewPacket> | ((attempt: ReviewAttempt) => Promise<PreparedReviewPacket>);
+export function codeHistoryFeedback(prepared: PreparedPacketSource, sources: ReviewSources, verifyPublication?: PublicationVerifier) {
  const references = new Set<string>(), commits = new Set<string>();
  return async (next: PreparationHistory, previous?: PreparationHistory): Promise<HistoryValidation> => {
   const evidence: CapturedHistoryEvidence[] = [];
@@ -39,7 +41,8 @@ export function codeHistoryFeedback(prepared: ReadonlyMap<number, PreparedReview
   for (const attempt of cp.attempts) {
    const old = prior?.attempts.find(a => a.header.attempt === attempt.header.attempt);
    if (old && same(old, attempt)) continue;
-   const scope = prepared.get(attempt.header.attempt); if (!scope || !same(scope.packet, attempt.submitted)) throw new Error('Prepared scope does not match pinned input');
+   const scope = typeof prepared === 'function' ? await prepared(attempt) : prepared.get(attempt.header.attempt);
+   if (!scope || !same(scope.packet, attempt.submitted)) throw new Error('Prepared scope does not match pinned input');
    const selected = scope.tasks.filter(t => !scope.packet.taskId || t.id === scope.packet.taskId).map(t => t.id);
    if (new Set(attempt.header.selectedTaskIds).size !== selected.length || !same([...selected].sort(), [...attempt.header.selectedTaskIds].sort())) throw new Error('Saved task inventory differs from complete scope');
    if (scope.packet.reviewRevision && scope.projection?.identity !== attempt.header.finalScopeIdentity) throw new Error('Saved final scope identity changed');

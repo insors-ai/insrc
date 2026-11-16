@@ -34,7 +34,7 @@ test('pending admission and cached progress stay responsive during blocked worke
    if(family==='code'){assert.equal(progress.totalTasks,0);assert.equal(progress.progress.task,null);assert.equal(progress.progress.phase,'scope_preparation');assert.equal(progress.progress.executionId,executionId);}
    else{assert.equal(progress.totalChunks,0);assert.equal(progress.phase,'admission');}
    const view=threadViews(services.board.snapshot(),Date.now()).find(v=>v.threadId===started.threadId)!;
-   assert.equal(view.reviewProgress!.reviewId,key.reviewId);assert.equal(reviewProgressLabel(view.reviewProgress!),'Preparing review');assert.ok(view.reviewProgress!.observedAt);
+   assert.equal(view.reviewProgress!.reviewId,key.reviewId);assert.match(reviewProgressLabel(view.reviewProgress!),/^Preparing review/);assert.ok(view.reviewProgress!.observedAt);
    if(family==='design'){assert.equal((await reviewProgressForArtifact(f.repo,f.d!.id))!.reviewId,key.reviewId);const content=await handleArtifactContent({repo:f.repo,mdPath:f.d!.md},undefined);assert.ok('reviewProgress'in content);assert.equal(content.reviewProgress!.reviewId,key.reviewId);}
    const otherKey={...key,family:'code' as const,reviewId:'unrelated-progress'};
    const other=await f.registry.admit({...input,key:otherKey,submitted:f.f.packet,actionId:'other-progress'},f.local);
@@ -52,18 +52,19 @@ test('technical admission failures publish failed preparation without findings o
   const f=await clearanceFixture(t,family),key={...f.key,reviewId:'failed-progress'};
   const submitted=family==='code'?{...f.f.packet,reviewSet:f.f.packet.reviewSet.map(commit=>({...commit,files:commit.files.map(file=>({...file,path:'missing-from-pinned-commit.ts'}))}))}:{phase:'start',repo:f.repo,reviewId:key.reviewId,attempt:1,artifactPath:join(f.repo,'missing-artifact.json')};
   const ack=await f.registry.admit({...f.input,key,submitted,actionId:'failed-progress'},f.local),started=f.started.get(key.reviewId)!,barrier=f.barriers.get(key.reviewId)!;
+  let stop=()=>{};const failedPublication=new Promise<any>(resolve=>{const listener=(raw:any)=>{if(raw?.kind==='review-progress'&&raw.observation?.status==='failed'){started.worker.off('message',listener);resolve(raw);}};stop=()=>started.worker.off('message',listener);started.worker.on('message',listener);});
   await f.registry.execute(ack,f.local);
+  const providerCallsBeforeFailure=family==='code'?(await workerRpc(started,'fixture.stats')).calls:Atomics.load(barrier,2);
   if(family==='code')await workerRpc(started,'fixture.release');else{Atomics.store(barrier,1,1);Atomics.notify(barrier,1);}
-  await until(async()=> (await f.registry.progress(key,f.local) as any).status==='failed');
-  const view=threadViews(services.board.snapshot(),Date.now()).find(v=>v.threadId===started.threadId)!;assert.equal(view.busy,false);const display=view.reviewProgress!;
+  const publication=await failedPublication.finally(stop),cached=f.registry.cachedProgress(key)!;assert.equal(cached.phase,'failed');const display=cached.display!;
   assert.equal(display.admission!.state,'failed');assert.equal(display.admission!.validation,'unverified');
   assert.match(reviewProgressLabel(display),/^Technical admission failure:/);assert.equal(display.completed,0);assert.equal(display.total,0);
-  assert.equal(family==='code'?(await workerRpc(started,'fixture.stats')).calls:Atomics.load(barrier,2),0);
+  assert.equal(providerCallsBeforeFailure,0);
   const before=f.registry.cachedProgress(key)!.sequence;
   assert.doesNotThrow(()=>started.worker.emit('message',{kind:'review-progress',key:null,incarnation:ack.incarnation,attempt:1,sequence:before+1}));
   assert.equal(f.registry.cachedProgress(key)!.sequence,before);
   if(family==='code'){
-   const observation=await f.registry.progress(key,f.local) as any;
+   const observation=publication.observation;
    started.worker.emit('message',{...ack,kind:'review-progress',attempt:1,sequence:before+1,observation:{...observation,reviewId:'another-review'}});
    assert.equal(f.registry.cachedProgress(key)!.sequence,before,'a foreign observation cannot replace this cache');
   }

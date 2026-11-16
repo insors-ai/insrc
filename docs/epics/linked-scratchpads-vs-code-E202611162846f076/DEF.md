@@ -351,6 +351,8 @@ Pads can be tagged and filtered, and new pads can start from an investigation or
   - **resolved**: Escaped Markdown links — Keeps familiar Markdown link authoring for s5 while explicitly resolving qualified-target syntax, versioning, and alias escaping. _(2026-11-16T09:33:43.060Z)_
 - `q5412e625` — PRD open decision blocking s4 and s7: entry-boundary / timestamp / stable-anchor encoding and where scratchpad metadata lives.
   - **resolved**: Structured entry records — Makes s4's entry boundary/timestamp/stable-anchor concerns explicit as structured record fields, with s7's scratchpad metadata attached per-entry. _(2026-11-16T09:34:48.042Z)_
+- `qaa44f9d4` — PRD open decision blocking s2/s5/s6: private backlink projection + lexical index choice, note-size cap, latency targets, and minimum daemon/extension version negotiation for the new IPC.
+  - **resolved**: Balanced bounded rollout — Resolves all four blocking fields (backlink projection/lexical index, note-size cap, latency targets, minimum daemon/extension IPC version) as explicit, independently reviewable constraints for s2/s5/s6. _(2026-11-16T09:35:39.318Z)_
 
 ## Citations
 

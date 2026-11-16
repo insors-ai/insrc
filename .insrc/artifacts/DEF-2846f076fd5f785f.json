@@ -90,6 +90,13 @@
         "choice": "Structured entry records",
         "rationale": "Makes s4's entry boundary/timestamp/stable-anchor concerns explicit as structured record fields, with s7's scratchpad metadata attached per-entry.",
         "resolvedAt": "2026-11-16T09:34:48.042Z"
+      },
+      "qaa44f9d4": {
+        "question": "PRD open decision blocking s2/s5/s6: private backlink projection + lexical index choice, note-size cap, latency targets, and minimum daemon/extension version negotiation for the new IPC.",
+        "status": "resolved",
+        "choice": "Balanced bounded rollout",
+        "rationale": "Resolves all four blocking fields (backlink projection/lexical index, note-size cap, latency targets, minimum daemon/extension IPC version) as explicit, independently reviewable constraints for s2/s5/s6.",
+        "resolvedAt": "2026-11-16T09:35:39.318Z"
       }
     }
   },

@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
 import { once } from 'node:events';
-import { mkdir, mkdtemp, readFile, realpath, rm, symlink, writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, mkdtemp, readFile, realpath, rm, symlink, writeFile } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -13,9 +13,10 @@ import type { TestContext } from 'node:test';
 import { readDarwinIncarnation } from '../../shared/darwin-lifecycle.js';
 import { InstallationMutationGate } from '../../shared/installation-mutation-gate.js';
 import type { MutationReservation, UpdatePredecessor } from '../../shared/installation-mutation-gate.js';
+import { runFileIdentity } from '../../shared/daemon-run-files.js';
 import { launchctl } from '../../shared/managed-daemon-installation.js';
 import type { ManagedInstallation } from '../../shared/managed-daemon-installation.js';
-import { discoverLegacyLaunch, fenceLegacyLauncher, restoreLegacyLauncher } from '../legacy-cutover-admission.js';
+import { discoverLegacyLaunch, fenceLegacyLauncher, requireLegacyCheckoutQuiescent, restoreLegacyLauncher } from '../legacy-cutover-admission.js';
 import { matchesInstalledDaemonArguments } from '../legacy-launch-job.js';
 
 const options = { skip: process.platform !== 'darwin' || (process.getuid?.() ?? 0) === 0, timeout: 120_000 };
@@ -220,13 +221,67 @@ await db.close();
 	await assert.rejects(fenceLegacyLauncher(lostReceipt, update, f.helper), /interrupted after exchange/);
 	assert.throws(() => execFileSync(f.runtime, [entry], { stdio: 'ignore' }));
 	await assert.rejects(readFile(graph), { code: 'ENOENT' });
-	const displaced = await fenceLegacyLauncher(f.gate, update, f.helper);
+	const { archive: displaced } = await fenceLegacyLauncher(f.gate, update, f.helper);
 	assert.match(await readFile(join(displaced, 'out/daemon/index.js'), 'utf8'), /opened-store/);
 	assert.match(await readFile(join(f.oldRoot, 'scripts/daemon-ctl.sh'), 'utf8'), /migration is in progress/);
-	assert.equal(await fenceLegacyLauncher(f.gate, update, f.helper), displaced);
+	assert.equal((await fenceLegacyLauncher(f.gate, update, f.helper)).archive, displaced);
 	await restoreLegacyLauncher(f.gate, update, f.helper);
 	await restoreLegacyLauncher(f.gate, update, f.helper);
 	assert.match(await readFile(entry, 'utf8'), /opened-store/);
 	execFileSync(f.runtime, [entry], { cwd: f.oldRoot, stdio: 'ignore' });
 	assert.ok((await readFile(graph)).length > 0);
+});
+
+test('Legacy cutover admits only the verified tsx esbuild child and waits for its exit', options, async t => {
+	const f = await fixture(t);
+	const packageName = `@esbuild/darwin-${process.arch}`;
+	const binary = join(f.oldRoot, 'node_modules', packageName, 'bin/esbuild');
+	await mkdir(join(f.oldRoot, 'node_modules', packageName, 'bin'), { recursive: true });
+	await copyFile(fileURLToPath(import.meta.resolve(`${packageName}/bin/esbuild`)), binary);
+	const version = execFileSync(binary, ['--version'], { encoding: 'utf8' }).trim();
+	const argv = [`--service=${version}`, '--ping'];
+	const entry = join(f.oldRoot, 'out/daemon/index.js');
+	const pidFile = join(f.stateRoot, 'daemon.pid');
+	const socketFile = join(f.stateRoot, 'daemon.sock');
+	await writeFile(entry, `
+const { spawn } = require('node:child_process');
+const { writeFileSync } = require('node:fs');
+const { createServer } = require('node:net');
+const child = spawn(${JSON.stringify(binary)}, ${JSON.stringify(argv)}, { stdio: 'pipe' });
+writeFileSync(${JSON.stringify(pidFile)}, String(process.pid), { mode: 0o600 });
+child.once('spawn', () => {
+  createServer().listen(${JSON.stringify(socketFile)}, () => console.log(child.pid));
+});
+`);
+	await mkdir(join(f.oldRoot, 'node_modules/tsx'), { recursive: true });
+	await writeFile(join(f.oldRoot, 'node_modules/tsx/package.json'), '{"exports":{"./esm":"./esm.mjs"}}');
+	await writeFile(join(f.oldRoot, 'node_modules/tsx/esm.mjs'), 'export {};');
+	const command = ['--import', 'tsx/esm', entry];
+	const daemon = spawn(f.runtime, command, { cwd: f.oldRoot, stdio: ['pipe', 'pipe', 'inherit'] });
+	try {
+		const [output] = await once(daemon.stdout, 'data');
+		const helperPid = Number(String(output).trim());
+		assert.ok(helperPid > 0);
+		const update = await f.gate.reserve({
+			kind: 'update', owner: f.owner,
+			predecessor: {
+				...f.predecessor, wasRunning: true, pins: { prior: f.prior, candidate: f.candidate },
+				launch: {
+					kind: 'direct', process: await readDarwinIncarnation(daemon.pid!, f.helper),
+					cwd: f.oldRoot, argv: [f.runtime, ...command],
+					pidFile: runFileIdentity(pidFile)!, socketFile: runFileIdentity(socketFile)!,
+				},
+			},
+		}) as Extract<MutationReservation, { kind: 'update' }>;
+		const unrelated = spawn(binary, argv, { cwd: f.oldRoot, stdio: 'pipe' });
+		try {
+			await once(unrelated, 'spawn');
+			await assert.rejects(fenceLegacyLauncher(f.gate, update, f.helper), /older launcher/);
+		} finally { await finish(unrelated); }
+		const { archive, children } = await fenceLegacyLauncher(f.gate, update, f.helper);
+		assert.deepEqual(children.map(child => child.pid), [helperPid]);
+		await assert.rejects(requireLegacyCheckoutQuiescent(f.oldRoot, archive, children, f.helper), /esbuild helper did not exit/);
+		await finish(daemon);
+		await requireLegacyCheckoutQuiescent(f.oldRoot, archive, children, f.helper);
+	} finally { await finish(daemon); }
 });

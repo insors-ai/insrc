@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "design.story",
-    "runId": "wf-1794830844170-7po9fb",
+    "runId": "wf-1794835125681-aqgphg",
     "repoPath": "/home/subho/work/dev/insors/insrc",
-    "createdAt": "2026-11-16T12:10:41.975Z",
+    "createdAt": "2026-11-16T13:23:26.996Z",
     "epicCreatedAt": "2026-11-16T12:10:41.975Z",
     "attribution": {
       "outputs": [
@@ -15,26 +15,25 @@
         }
       ]
     },
-    "elapsedMs": 189752,
+    "elapsedMs": 272594,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "dae67bfc7da310cc",
     "epicSlug": "remove-design-code-review-implementations-while",
     "storyId": "s1",
-    "hldBaseRunId": "wf-1794830844170-7po9fb",
-    "hldEffectiveHash": "dae67bfc7da310cc391a0a55da2942f3a26d78105aaf3fb8daebf06ec8f07c34",
+    "hldBaseRunId": "wf-1794835125681-aqgphg",
+    "hldEffectiveHash": "810021dce1a3aadf430621ba10dd63f963ec8410f9924f44481d6dd0268c7c76",
     "hldAmendmentsApplied": [],
     "storyTitle": "Remove design and code review implementations while retaining unavailable endpoints",
     "standalone": true,
     "sizeClass": "feature",
-    "triageRationale": "One cohesive cross-cutting removal with multiple build tasks and explicit endpoint/gate compatibility choices, not a new subsystem. Graph analysis identifies review engines, daemon services/workers, MCP, CLI and workflow approval dependencies. Source inspection shows preexisting partial retirement stubs; scope must finish the removal rather than duplicate it. Graph is incomplete, so source import/registration audit is required.",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
-        "number": 1,
-        "contentHash": "f3cfa3334250e7c0a2b4c4c67cce759175c746283a6b6bb8ccfab8748c2f8a7a",
-        "at": "2026-11-16T12:10:45.068Z",
+        "number": 2,
+        "contentHash": "4af1e84e5776b271b20b4ab2a3d86790e4a710698f28e6b7d09db70b544d35fe",
+        "at": "2026-11-16T13:23:30.276Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
@@ -42,42 +41,31 @@
         }
       },
       "signoffs": [],
-      "review": {
-        "revision": 1,
-        "reviewer": {
-          "id": "agent:design-review-daemon",
-          "kind": "agent",
-          "properties": {
-            "party": "daemon"
-          }
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
         },
-        "party": "daemon",
-        "verdict": "block",
-        "counts": {
-          "HIGH": 0,
-          "MED": 3,
-          "LOW": 1
-        },
-        "at": "2026-11-16T12:22:05.493Z",
-        "report": {
-          "entityId": "LLD-dae67bfc7da310cc-s1",
-          "type": "change-log-entry",
-          "relation": "reviews",
-          "fragment": "a085b1ffb0231753f3ac546b151bab679b38bc7e29cda3142d18b087b165fdb9"
+        "at": "2026-11-16T13:24:32.906Z",
+        "override": {
+          "reason": "User explicitly requested author self-review because the review framework is broken, then approved the revised LLD in chat. Source inventory and consistency self-checks passed; no independent automated-review certification is claimed."
         }
       }
     },
-    "revision": 1,
     "envelope": {
       "description": "",
       "references": [],
       "attachments": []
-    }
+    },
+    "revision": 2,
+    "rangeBase": "be621dacbd53bb20b5857e075c0eb0b94b960eb8"
   },
   "body": {
     "summary": {
       "audience": "technical",
-      "prose": "Remove all executable design-review and code-review implementations, keeping their public MCP and daemon IPC contracts as unavailable endpoints. Every review operation throws a family-specific Error stating that the functionality is being rewritten before review validation or side effects. Historical artifacts and generic artifact viewing/human approval remain; review-required transitions cannot silently pass. Removal includes transitive review-only workers, services, preparation, checkpoints, publication, cleanup, activation, prompts and tests."
+      "prose": "Remove executable automated design-review and code-review functionality and its gate requirements, retaining public endpoints that raise clear being-rewritten exceptions. Human artifact approval, integrity/team/signoff checks, build validation, task accounting and historical artifact viewing remain. Delete review-only engines, services, workers, preparation, checkpoints, publication, cleanup, activation, prompts and obsolete implementation tests; preserve shared daemon infrastructure."
     },
     "hldContextSlice": {
       "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
@@ -95,19 +83,825 @@
     },
     "contractDetails": {
       "surfaceLevel": "public",
-      "api": []
+      "api": [
+        {
+          "name": "insrc_review_step",
+          "signature": "insrc_review_step(params: unknown): Promise<never>",
+          "parameters": [
+            {
+              "name": "params",
+              "type": "unknown",
+              "purpose": "Existing src/mcp/design-review/schema.ts input schema and all currently accepted phases remain. Unknown denotes the raw transport boundary, not an unvalidated success path.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<never>",
+            "meaning": "No successful review response; existing MCP transport conveys the exception through its ordinary error channel. No acknowledgement or polling token."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "Every call reaching the handler raises exactly 'Design review functionality is being rewritten.'; ordinary MCP schema validation may reject malformed input before dispatch."
+            }
+          ],
+          "preconditions": [
+            "No repo resolution, provider access or review-specific IO is required to report unavailability."
+          ],
+          "postconditions": [
+            "No worker/process/context/attempt/checkpoint/history/cleanup/progress state is created or changed.",
+            "MCP converts the exception once to a non-retryable error envelope without allocating a persistent review connection; IPC preserves ordinary unary/stream error handling."
+          ]
+        },
+        {
+          "name": "insrc_code_review_step",
+          "signature": "insrc_code_review_step(params: unknown): Promise<never>",
+          "parameters": [
+            {
+              "name": "params",
+              "type": "unknown",
+              "purpose": "Existing src/mcp/code-review/schema.ts input schema and all currently accepted phases remain. Unknown denotes the raw transport boundary, not an unvalidated success path.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<never>",
+            "meaning": "No successful review response; existing MCP transport conveys the exception through its ordinary error channel. No acknowledgement or polling token."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "Every call reaching the handler raises exactly 'Code review functionality is being rewritten.'; ordinary MCP schema validation may reject malformed input before dispatch."
+            }
+          ],
+          "preconditions": [
+            "No repo resolution, provider access or review-specific IO is required to report unavailability."
+          ],
+          "postconditions": [
+            "No worker/process/context/attempt/checkpoint/history/cleanup/progress state is created or changed.",
+            "MCP converts the exception once to a non-retryable error envelope without allocating a persistent review connection; IPC preserves ordinary unary/stream error handling."
+          ]
+        },
+        {
+          "name": "designReview.start",
+          "signature": "designReview.start(params: unknown): Promise<never>",
+          "parameters": [
+            {
+              "name": "params",
+              "type": "unknown",
+              "purpose": "Existing raw RPC parameters. Preserve dispatch identity; the unavailable handler does not parse review-specific fields.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<never>",
+            "meaning": "No successful review response; existing IPC transport conveys the exception through its ordinary error channel. No acknowledgement or polling token."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "Every call reaching the handler raises exactly 'Design review functionality is being rewritten.'; ordinary MCP schema validation may reject malformed input before dispatch."
+            }
+          ],
+          "preconditions": [
+            "No repo resolution, provider access or review-specific IO is required to report unavailability."
+          ],
+          "postconditions": [
+            "No worker/process/context/attempt/checkpoint/history/cleanup/progress state is created or changed.",
+            "MCP converts the exception once to a non-retryable error envelope without allocating a persistent review connection; IPC preserves ordinary unary/stream error handling."
+          ]
+        },
+        {
+          "name": "designReview.cancel",
+          "signature": "designReview.cancel(params: unknown): Promise<never>",
+          "parameters": [
+            {
+              "name": "params",
+              "type": "unknown",
+              "purpose": "Existing raw RPC parameters. Preserve dispatch identity; the unavailable handler does not parse review-specific fields.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<never>",
+            "meaning": "No successful review response; existing IPC transport conveys the exception through its ordinary error channel. No acknowledgement or polling token."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "Every call reaching the handler raises exactly 'Design review functionality is being rewritten.'; ordinary MCP schema validation may reject malformed input before dispatch."
+            }
+          ],
+          "preconditions": [
+            "No repo resolution, provider access or review-specific IO is required to report unavailability."
+          ],
+          "postconditions": [
+            "No worker/process/context/attempt/checkpoint/history/cleanup/progress state is created or changed.",
+            "MCP converts the exception once to a non-retryable error envelope without allocating a persistent review connection; IPC preserves ordinary unary/stream error handling."
+          ]
+        },
+        {
+          "name": "designReview.progress",
+          "signature": "designReview.progress(params: unknown): Promise<never>",
+          "parameters": [
+            {
+              "name": "params",
+              "type": "unknown",
+              "purpose": "Existing raw RPC parameters. Preserve dispatch identity; the unavailable handler does not parse review-specific fields.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<never>",
+            "meaning": "No successful review response; existing IPC transport conveys the exception through its ordinary error channel. No acknowledgement or polling token."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "Every call reaching the handler raises exactly 'Design review functionality is being rewritten.'; ordinary MCP schema validation may reject malformed input before dispatch."
+            }
+          ],
+          "preconditions": [
+            "No repo resolution, provider access or review-specific IO is required to report unavailability."
+          ],
+          "postconditions": [
+            "No worker/process/context/attempt/checkpoint/history/cleanup/progress state is created or changed.",
+            "MCP converts the exception once to a non-retryable error envelope without allocating a persistent review connection; IPC preserves ordinary unary/stream error handling."
+          ]
+        },
+        {
+          "name": "designReview.assignment",
+          "signature": "designReview.assignment(params: unknown): Promise<never>",
+          "parameters": [
+            {
+              "name": "params",
+              "type": "unknown",
+              "purpose": "Existing raw RPC parameters. Preserve dispatch identity; the unavailable handler does not parse review-specific fields.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<never>",
+            "meaning": "No successful review response; existing IPC transport conveys the exception through its ordinary error channel. No acknowledgement or polling token."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "Every call reaching the handler raises exactly 'Design review functionality is being rewritten.'; ordinary MCP schema validation may reject malformed input before dispatch."
+            }
+          ],
+          "preconditions": [
+            "No repo resolution, provider access or review-specific IO is required to report unavailability."
+          ],
+          "postconditions": [
+            "No worker/process/context/attempt/checkpoint/history/cleanup/progress state is created or changed.",
+            "MCP converts the exception once to a non-retryable error envelope without allocating a persistent review connection; IPC preserves ordinary unary/stream error handling."
+          ]
+        },
+        {
+          "name": "designReview.plan",
+          "signature": "designReview.plan(params: unknown): Promise<never>",
+          "parameters": [
+            {
+              "name": "params",
+              "type": "unknown",
+              "purpose": "Existing raw RPC parameters. Preserve dispatch identity; the unavailable handler does not parse review-specific fields.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<never>",
+            "meaning": "No successful review response; existing IPC transport conveys the exception through its ordinary error channel. No acknowledgement or polling token."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "Every call reaching the handler raises exactly 'Design review functionality is being rewritten.'; ordinary MCP schema validation may reject malformed input before dispatch."
+            }
+          ],
+          "preconditions": [
+            "No repo resolution, provider access or review-specific IO is required to report unavailability."
+          ],
+          "postconditions": [
+            "No worker/process/context/attempt/checkpoint/history/cleanup/progress state is created or changed.",
+            "MCP converts the exception once to a non-retryable error envelope without allocating a persistent review connection; IPC preserves ordinary unary/stream error handling."
+          ]
+        },
+        {
+          "name": "designReview.impact",
+          "signature": "designReview.impact(params: unknown): Promise<never>",
+          "parameters": [
+            {
+              "name": "params",
+              "type": "unknown",
+              "purpose": "Existing raw RPC parameters. Preserve dispatch identity; the unavailable handler does not parse review-specific fields.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<never>",
+            "meaning": "No successful review response; existing IPC transport conveys the exception through its ordinary error channel. No acknowledgement or polling token."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "Every call reaching the handler raises exactly 'Design review functionality is being rewritten.'; ordinary MCP schema validation may reject malformed input before dispatch."
+            }
+          ],
+          "preconditions": [
+            "No repo resolution, provider access or review-specific IO is required to report unavailability."
+          ],
+          "postconditions": [
+            "No worker/process/context/attempt/checkpoint/history/cleanup/progress state is created or changed.",
+            "MCP converts the exception once to a non-retryable error envelope without allocating a persistent review connection; IPC preserves ordinary unary/stream error handling."
+          ]
+        },
+        {
+          "name": "designReview.activity",
+          "signature": "designReview.activity(params: unknown): Promise<never>",
+          "parameters": [
+            {
+              "name": "params",
+              "type": "unknown",
+              "purpose": "Existing raw RPC parameters. Preserve dispatch identity; the unavailable handler does not parse review-specific fields.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<never>",
+            "meaning": "No successful review response; existing IPC transport conveys the exception through its ordinary error channel. No acknowledgement or polling token."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "Every call reaching the handler raises exactly 'Design review functionality is being rewritten.'; ordinary MCP schema validation may reject malformed input before dispatch."
+            }
+          ],
+          "preconditions": [
+            "No repo resolution, provider access or review-specific IO is required to report unavailability."
+          ],
+          "postconditions": [
+            "No worker/process/context/attempt/checkpoint/history/cleanup/progress state is created or changed.",
+            "MCP converts the exception once to a non-retryable error envelope without allocating a persistent review connection; IPC preserves ordinary unary/stream error handling."
+          ]
+        },
+        {
+          "name": "designReview.result",
+          "signature": "designReview.result(params: unknown): Promise<never>",
+          "parameters": [
+            {
+              "name": "params",
+              "type": "unknown",
+              "purpose": "Existing raw RPC parameters. Preserve dispatch identity; the unavailable handler does not parse review-specific fields.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<never>",
+            "meaning": "No successful review response; existing IPC transport conveys the exception through its ordinary error channel. No acknowledgement or polling token."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "Every call reaching the handler raises exactly 'Design review functionality is being rewritten.'; ordinary MCP schema validation may reject malformed input before dispatch."
+            }
+          ],
+          "preconditions": [
+            "No repo resolution, provider access or review-specific IO is required to report unavailability."
+          ],
+          "postconditions": [
+            "No worker/process/context/attempt/checkpoint/history/cleanup/progress state is created or changed.",
+            "MCP converts the exception once to a non-retryable error envelope without allocating a persistent review connection; IPC preserves ordinary unary/stream error handling."
+          ]
+        },
+        {
+          "name": "designReview.recover",
+          "signature": "designReview.recover(params: unknown): Promise<never>",
+          "parameters": [
+            {
+              "name": "params",
+              "type": "unknown",
+              "purpose": "Existing raw RPC parameters. Preserve dispatch identity; the unavailable handler does not parse review-specific fields.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<never>",
+            "meaning": "No successful review response; existing IPC transport conveys the exception through its ordinary error channel. No acknowledgement or polling token."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "Every call reaching the handler raises exactly 'Design review functionality is being rewritten.'; ordinary MCP schema validation may reject malformed input before dispatch."
+            }
+          ],
+          "preconditions": [
+            "No repo resolution, provider access or review-specific IO is required to report unavailability."
+          ],
+          "postconditions": [
+            "No worker/process/context/attempt/checkpoint/history/cleanup/progress state is created or changed.",
+            "MCP converts the exception once to a non-retryable error envelope without allocating a persistent review connection; IPC preserves ordinary unary/stream error handling."
+          ]
+        },
+        {
+          "name": "designReview.failure",
+          "signature": "designReview.failure(params: unknown): Promise<never>",
+          "parameters": [
+            {
+              "name": "params",
+              "type": "unknown",
+              "purpose": "Existing raw RPC parameters. Preserve dispatch identity; the unavailable handler does not parse review-specific fields.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<never>",
+            "meaning": "No successful review response; existing IPC transport conveys the exception through its ordinary error channel. No acknowledgement or polling token."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "Every call reaching the handler raises exactly 'Design review functionality is being rewritten.'; ordinary MCP schema validation may reject malformed input before dispatch."
+            }
+          ],
+          "preconditions": [
+            "No repo resolution, provider access or review-specific IO is required to report unavailability."
+          ],
+          "postconditions": [
+            "No worker/process/context/attempt/checkpoint/history/cleanup/progress state is created or changed.",
+            "MCP converts the exception once to a non-retryable error envelope without allocating a persistent review connection; IPC preserves ordinary unary/stream error handling."
+          ]
+        },
+        {
+          "name": "codeReview.task.cleanup",
+          "signature": "codeReview.task.cleanup(params: unknown): Promise<never>",
+          "parameters": [
+            {
+              "name": "params",
+              "type": "unknown",
+              "purpose": "Existing raw RPC parameters. Preserve dispatch identity; the unavailable handler does not parse review-specific fields.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<never>",
+            "meaning": "No successful review response; existing IPC transport conveys the exception through its ordinary error channel. No acknowledgement or polling token."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "Every call reaching the handler raises exactly 'Code review functionality is being rewritten.'; ordinary MCP schema validation may reject malformed input before dispatch."
+            }
+          ],
+          "preconditions": [
+            "No repo resolution, provider access or review-specific IO is required to report unavailability."
+          ],
+          "postconditions": [
+            "No worker/process/context/attempt/checkpoint/history/cleanup/progress state is created or changed.",
+            "MCP converts the exception once to a non-retryable error envelope without allocating a persistent review connection; IPC preserves ordinary unary/stream error handling."
+          ]
+        },
+        {
+          "name": "codeReview.task.cancel",
+          "signature": "codeReview.task.cancel(params: unknown): Promise<never>",
+          "parameters": [
+            {
+              "name": "params",
+              "type": "unknown",
+              "purpose": "Existing raw RPC parameters. Preserve dispatch identity; the unavailable handler does not parse review-specific fields.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<never>",
+            "meaning": "No successful review response; existing IPC transport conveys the exception through its ordinary error channel. No acknowledgement or polling token."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "Every call reaching the handler raises exactly 'Code review functionality is being rewritten.'; ordinary MCP schema validation may reject malformed input before dispatch."
+            }
+          ],
+          "preconditions": [
+            "No repo resolution, provider access or review-specific IO is required to report unavailability."
+          ],
+          "postconditions": [
+            "No worker/process/context/attempt/checkpoint/history/cleanup/progress state is created or changed.",
+            "MCP converts the exception once to a non-retryable error envelope without allocating a persistent review connection; IPC preserves ordinary unary/stream error handling."
+          ]
+        },
+        {
+          "name": "codeReview.task.progress",
+          "signature": "codeReview.task.progress(params: unknown): Promise<never>",
+          "parameters": [
+            {
+              "name": "params",
+              "type": "unknown",
+              "purpose": "Existing raw RPC parameters. Preserve dispatch identity; the unavailable handler does not parse review-specific fields.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<never>",
+            "meaning": "No successful review response; existing IPC transport conveys the exception through its ordinary error channel. No acknowledgement or polling token."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "Every call reaching the handler raises exactly 'Code review functionality is being rewritten.'; ordinary MCP schema validation may reject malformed input before dispatch."
+            }
+          ],
+          "preconditions": [
+            "No repo resolution, provider access or review-specific IO is required to report unavailability."
+          ],
+          "postconditions": [
+            "No worker/process/context/attempt/checkpoint/history/cleanup/progress state is created or changed.",
+            "MCP converts the exception once to a non-retryable error envelope without allocating a persistent review connection; IPC preserves ordinary unary/stream error handling."
+          ]
+        },
+        {
+          "name": "codeReview.task.publish",
+          "signature": "codeReview.task.publish(params: unknown): Promise<never>",
+          "parameters": [
+            {
+              "name": "params",
+              "type": "unknown",
+              "purpose": "Existing raw RPC parameters. Preserve dispatch identity; the unavailable handler does not parse review-specific fields.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<never>",
+            "meaning": "No successful review response; existing IPC transport conveys the exception through its ordinary error channel. No acknowledgement or polling token."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "Every call reaching the handler raises exactly 'Code review functionality is being rewritten.'; ordinary MCP schema validation may reject malformed input before dispatch."
+            }
+          ],
+          "preconditions": [
+            "No repo resolution, provider access or review-specific IO is required to report unavailability."
+          ],
+          "postconditions": [
+            "No worker/process/context/attempt/checkpoint/history/cleanup/progress state is created or changed.",
+            "MCP converts the exception once to a non-retryable error envelope without allocating a persistent review connection; IPC preserves ordinary unary/stream error handling."
+          ]
+        },
+        {
+          "name": "codeReview.task.start",
+          "signature": "codeReview.task.start(params: unknown): Promise<never>",
+          "parameters": [
+            {
+              "name": "params",
+              "type": "unknown",
+              "purpose": "Existing raw RPC parameters. Preserve dispatch identity; the unavailable handler does not parse review-specific fields.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<never>",
+            "meaning": "No successful review response; existing IPC transport conveys the exception through its ordinary error channel. No acknowledgement or polling token."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "Every call reaching the handler raises exactly 'Code review functionality is being rewritten.'; ordinary MCP schema validation may reject malformed input before dispatch."
+            }
+          ],
+          "preconditions": [
+            "No repo resolution, provider access or review-specific IO is required to report unavailability."
+          ],
+          "postconditions": [
+            "No worker/process/context/attempt/checkpoint/history/cleanup/progress state is created or changed.",
+            "MCP converts the exception once to a non-retryable error envelope without allocating a persistent review connection; IPC preserves ordinary unary/stream error handling."
+          ]
+        },
+        {
+          "name": "codeReview.task.activity",
+          "signature": "codeReview.task.activity(params: unknown): Promise<never>",
+          "parameters": [
+            {
+              "name": "params",
+              "type": "unknown",
+              "purpose": "Existing raw RPC parameters. Preserve dispatch identity; the unavailable handler does not parse review-specific fields.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<never>",
+            "meaning": "No successful review response; existing IPC transport conveys the exception through its ordinary error channel. No acknowledgement or polling token."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "Every call reaching the handler raises exactly 'Code review functionality is being rewritten.'; ordinary MCP schema validation may reject malformed input before dispatch."
+            }
+          ],
+          "preconditions": [
+            "No repo resolution, provider access or review-specific IO is required to report unavailability."
+          ],
+          "postconditions": [
+            "No worker/process/context/attempt/checkpoint/history/cleanup/progress state is created or changed.",
+            "MCP converts the exception once to a non-retryable error envelope without allocating a persistent review connection; IPC preserves ordinary unary/stream error handling."
+          ]
+        },
+        {
+          "name": "codeReview.task.assignment",
+          "signature": "codeReview.task.assignment(params: unknown): Promise<never>",
+          "parameters": [
+            {
+              "name": "params",
+              "type": "unknown",
+              "purpose": "Existing raw RPC parameters. Preserve dispatch identity; the unavailable handler does not parse review-specific fields.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<never>",
+            "meaning": "No successful review response; existing IPC transport conveys the exception through its ordinary error channel. No acknowledgement or polling token."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "Every call reaching the handler raises exactly 'Code review functionality is being rewritten.'; ordinary MCP schema validation may reject malformed input before dispatch."
+            }
+          ],
+          "preconditions": [
+            "No repo resolution, provider access or review-specific IO is required to report unavailability."
+          ],
+          "postconditions": [
+            "No worker/process/context/attempt/checkpoint/history/cleanup/progress state is created or changed.",
+            "MCP converts the exception once to a non-retryable error envelope without allocating a persistent review connection; IPC preserves ordinary unary/stream error handling."
+          ]
+        },
+        {
+          "name": "codeReview.task.scope",
+          "signature": "codeReview.task.scope(params: unknown): Promise<never>",
+          "parameters": [
+            {
+              "name": "params",
+              "type": "unknown",
+              "purpose": "Existing raw RPC parameters. Preserve dispatch identity; the unavailable handler does not parse review-specific fields.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<never>",
+            "meaning": "No successful review response; existing IPC transport conveys the exception through its ordinary error channel. No acknowledgement or polling token."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "Every call reaching the handler raises exactly 'Code review functionality is being rewritten.'; ordinary MCP schema validation may reject malformed input before dispatch."
+            }
+          ],
+          "preconditions": [
+            "No repo resolution, provider access or review-specific IO is required to report unavailability."
+          ],
+          "postconditions": [
+            "No worker/process/context/attempt/checkpoint/history/cleanup/progress state is created or changed.",
+            "MCP converts the exception once to a non-retryable error envelope without allocating a persistent review connection; IPC preserves ordinary unary/stream error handling."
+          ]
+        },
+        {
+          "name": "codeReview.task.result",
+          "signature": "codeReview.task.result(params: unknown): Promise<never>",
+          "parameters": [
+            {
+              "name": "params",
+              "type": "unknown",
+              "purpose": "Existing raw RPC parameters. Preserve dispatch identity; the unavailable handler does not parse review-specific fields.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<never>",
+            "meaning": "No successful review response; existing IPC transport conveys the exception through its ordinary error channel. No acknowledgement or polling token."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "Every call reaching the handler raises exactly 'Code review functionality is being rewritten.'; ordinary MCP schema validation may reject malformed input before dispatch."
+            }
+          ],
+          "preconditions": [
+            "No repo resolution, provider access or review-specific IO is required to report unavailability."
+          ],
+          "postconditions": [
+            "No worker/process/context/attempt/checkpoint/history/cleanup/progress state is created or changed.",
+            "MCP converts the exception once to a non-retryable error envelope without allocating a persistent review connection; IPC preserves ordinary unary/stream error handling."
+          ]
+        },
+        {
+          "name": "codeReview.grounding",
+          "signature": "codeReview.grounding(params: unknown): Promise<never>",
+          "parameters": [
+            {
+              "name": "params",
+              "type": "unknown",
+              "purpose": "Existing raw RPC parameters. Preserve dispatch identity; the unavailable handler does not parse review-specific fields.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<never>",
+            "meaning": "No successful review response; existing IPC transport conveys the exception through its ordinary error channel. No acknowledgement or polling token."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "Every call reaching the handler raises exactly 'Code review functionality is being rewritten.'; ordinary MCP schema validation may reject malformed input before dispatch."
+            }
+          ],
+          "preconditions": [
+            "No repo resolution, provider access or review-specific IO is required to report unavailability."
+          ],
+          "postconditions": [
+            "No worker/process/context/attempt/checkpoint/history/cleanup/progress state is created or changed.",
+            "MCP converts the exception once to a non-retryable error envelope without allocating a persistent review connection; IPC preserves ordinary unary/stream error handling."
+          ]
+        },
+        {
+          "name": "codeReview.freshness",
+          "signature": "codeReview.freshness(params: unknown): Promise<never>",
+          "parameters": [
+            {
+              "name": "params",
+              "type": "unknown",
+              "purpose": "Existing raw RPC parameters. Preserve dispatch identity; the unavailable handler does not parse review-specific fields.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<never>",
+            "meaning": "No successful review response; existing IPC transport conveys the exception through its ordinary error channel. No acknowledgement or polling token."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "Every call reaching the handler raises exactly 'Code review functionality is being rewritten.'; ordinary MCP schema validation may reject malformed input before dispatch."
+            }
+          ],
+          "preconditions": [
+            "No repo resolution, provider access or review-specific IO is required to report unavailability."
+          ],
+          "postconditions": [
+            "No worker/process/context/attempt/checkpoint/history/cleanup/progress state is created or changed.",
+            "MCP converts the exception once to a non-retryable error envelope without allocating a persistent review connection; IPC preserves ordinary unary/stream error handling."
+          ]
+        },
+        {
+          "name": "codeReview.run",
+          "signature": "codeReview.run(params: unknown): Promise<never>",
+          "parameters": [
+            {
+              "name": "params",
+              "type": "unknown",
+              "purpose": "Existing raw RPC parameters. Preserve dispatch identity; the unavailable handler does not parse review-specific fields.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<never>",
+            "meaning": "No successful review response; existing IPC transport conveys the exception through its ordinary error channel. No acknowledgement or polling token."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "Every call reaching the handler raises exactly 'Code review functionality is being rewritten.'; ordinary MCP schema validation may reject malformed input before dispatch."
+            }
+          ],
+          "preconditions": [
+            "No repo resolution, provider access or review-specific IO is required to report unavailability."
+          ],
+          "postconditions": [
+            "No worker/process/context/attempt/checkpoint/history/cleanup/progress state is created or changed.",
+            "MCP converts the exception once to a non-retryable error envelope without allocating a persistent review connection; IPC preserves ordinary unary/stream error handling."
+          ]
+        },
+        {
+          "name": "workflow.review",
+          "signature": "workflow.review(params: unknown): Promise<never>",
+          "parameters": [
+            {
+              "name": "params",
+              "type": "unknown",
+              "purpose": "Existing raw RPC parameters. Preserve dispatch identity; the unavailable handler does not parse review-specific fields.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<never>",
+            "meaning": "No successful review response; existing IPC transport conveys the exception through its ordinary error channel. No acknowledgement or polling token."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "Every call reaching the handler raises exactly 'Design review functionality is being rewritten.'; ordinary MCP schema validation may reject malformed input before dispatch."
+            }
+          ],
+          "preconditions": [
+            "No repo resolution, provider access or review-specific IO is required to report unavailability."
+          ],
+          "postconditions": [
+            "No worker/process/context/attempt/checkpoint/history/cleanup/progress state is created or changed.",
+            "MCP converts the exception once to a non-retryable error envelope without allocating a persistent review connection; IPC preserves ordinary unary/stream error handling."
+          ]
+        },
+        {
+          "name": "workflow.reviewArtifact",
+          "signature": "workflow.reviewArtifact(params: unknown): Promise<never>",
+          "parameters": [
+            {
+              "name": "params",
+              "type": "unknown",
+              "purpose": "Existing raw RPC parameters. Preserve dispatch identity; the unavailable handler does not parse review-specific fields.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<never>",
+            "meaning": "No successful review response; existing IPC transport conveys the exception through its ordinary error channel. No acknowledgement or polling token."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "Every call reaching the handler raises exactly 'Design review functionality is being rewritten.'; ordinary MCP schema validation may reject malformed input before dispatch."
+            }
+          ],
+          "preconditions": [
+            "No repo resolution, provider access or review-specific IO is required to report unavailability."
+          ],
+          "postconditions": [
+            "No worker/process/context/attempt/checkpoint/history/cleanup/progress state is created or changed.",
+            "MCP converts the exception once to a non-retryable error envelope without allocating a persistent review connection; IPC preserves ordinary unary/stream error handling."
+          ]
+        },
+        {
+          "name": "workflow.resolveFinding",
+          "signature": "workflow.resolveFinding(params: unknown): Promise<never>",
+          "parameters": [
+            {
+              "name": "params",
+              "type": "unknown",
+              "purpose": "Existing raw RPC parameters. Preserve dispatch identity; the unavailable handler does not parse review-specific fields.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<never>",
+            "meaning": "No successful review response; existing IPC transport conveys the exception through its ordinary error channel. No acknowledgement or polling token."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "Every call reaching the handler raises exactly 'Design review functionality is being rewritten.'; ordinary MCP schema validation may reject malformed input before dispatch."
+            }
+          ],
+          "preconditions": [
+            "No repo resolution, provider access or review-specific IO is required to report unavailability."
+          ],
+          "postconditions": [
+            "No worker/process/context/attempt/checkpoint/history/cleanup/progress state is created or changed.",
+            "MCP converts the exception once to a non-retryable error envelope without allocating a persistent review connection; IPC preserves ordinary unary/stream error handling."
+          ]
+        }
+      ]
     },
     "dataModelChanges": [
       {
-        "entity": "Review runtime ownership",
+        "entity": "Review runtime ownership and endpoint routing",
         "change": "invariant-change",
-        "details": "Delete runtime review execution and ownership relationships: endpoints no longer create sessions, attempts, workers, contexts or cleanup claims. Many preserved endpoints delegate directly to one stateless error helper; no endpoint owns mutable review state. Remove review-only dependencies while retaining only schemas/types needed for endpoint inputs and historical artifact reads. Historical records, hashes and parent-child artifact relationships remain unchanged.",
+        "details": "Exactly 27 public operations (2 MCP tools and 25 IPC methods) delegate to one stateless error helper: many endpoints to one helper, zero review-state/worker ownership. Preserve MCP schemas by extracting them from runtime contracts into dependency-free endpoint-schema modules as needed. workflow.reviewDecision (human approve/reject/feedback), team ownership/signoff endpoints and generic pending/artifact/comment views remain active without invoking automated review or cleanup. The explicit API list and relationship prose fully specify this stateless error flow; no ERD, sequence/component companion or UX mock is needed.",
         "callSites": [
-          "src/daemon/review-service.ts",
-          "src/daemon/threads/review-workers.ts",
-          "src/daemon/task-review-rpc.ts",
-          "src/daemon/code-review-rpc.ts",
-          "src/daemon/workflow-review-rpc.ts"
+          "src/daemon/handler-runtime.ts",
+          "src/mcp/design-review/handler.ts",
+          "src/mcp/code-review/handler.ts",
+          "src/workflow/review-decision.ts"
+        ]
+      },
+      {
+        "entity": "Workflow approval and completion",
+        "change": "invariant-change",
+        "details": "Remove automated-review verdict, author-party, freshness and current-review requirements from artifact approval, lifecycle approval fencing and Story completion. Remove storyCodeReview-dependent blocking/diagnostic/completion-outcome paths instead of returning fake clean evidence. Preserve human artifact approval, log/content integrity, team authorization/signoff, upstream approvals, validated BUILD and current task accounting. Future artifacts require no review override. Historical override fields remain readable; preserve task-accounting override semantics separately, and never rewrite historical verdicts. New completion certifies remaining human/build/task gates, never that automated review ran.",
+        "callSites": [
+          "src/workflow/gates.ts",
+          "src/workflow/artifact-core/completion-evidence.ts",
+          "src/workflow/artifact-core/lifecycle.ts",
+          "src/workflow/artifact-core/lifecycle-service.ts"
+        ]
+      },
+      {
+        "entity": "Shared daemon and historical infrastructure",
+        "change": "invariant-change",
+        "details": "Delete ProductionReviews and dedicated review worker/native-host/preparation/resource/cleanup/request-owner/activation execution, live review progress producers and review-specific settings/guidance. Preserve shared ThreadServices, router/hub/step state, process broker/provider execution, generic task-progress validators/store and normal index/analyze/workflow workers. The reviewServices variable also backs ordinary threads: remove only review hooks or rename it, never delete the shared instance. Preserve historical artifacts/checkpoints as inert files and dependency-free schemas/readers/renderers used by generic artifact views; extract them out of execution modules if necessary. Do not remove shared packages or files solely because their name contains review.",
+        "callSites": [
+          "src/daemon/index.ts",
+          "src/daemon/threads/main-services.ts",
+          "src/daemon/threads/router.ts",
+          "src/daemon/threads/status-board.ts",
+          "src/daemon/task-progress/review-measurements.ts"
         ]
       }
     ],
@@ -115,85 +909,118 @@
     "errorPaths": {
       "errorCases": [
         {
-          "scenario": "Any current or legacy design/code review operation is invoked",
-          "detection": "Dispatch reaches a retained review endpoint or retained internal compatibility stub.",
-          "response": "Throw Error with exactly 'Design review functionality is being rewritten.' or 'Code review functionality is being rewritten.' through the existing IPC/MCP error transport. Do not report success, create runtime state, call providers or touch checkpoint files.",
-          "userImpact": "Review is unavailable until rewritten; clients display the error without polling or retrying indefinitely.",
+          "scenario": "Any automated design/code review endpoint is invoked",
+          "detection": "A retained MCP tool or unary/stream IPC method is dispatched.",
+          "response": "Throw built-in Error with the exact family-specific being-rewritten message. Existing transport maps it once to its ordinary non-retryable error response. Return no success, attempt token, progress acknowledgement or synthetic verdict; do no review-specific IO.",
+          "userImpact": "The operation reports unavailable immediately; clients do not enter a polling/retry loop.",
           "recoverable": false
         },
         {
-          "scenario": "Approval or Story completion requires review evidence that no longer exists",
-          "detection": "The existing gate determines that required clean independent review is absent.",
-          "response": "Return an actionable review-unavailable refusal through the existing gate; preserve only explicit human override mechanisms already supported and record their reason. Do not auto-approve or fabricate evidence.",
-          "userImpact": "User must explicitly choose an existing permitted override or wait for the rewrite.",
+          "scenario": "Ordinary human artifact approval or BUILD completion follows removal",
+          "detection": "The existing approval/lifecycle operation runs its remaining guards.",
+          "response": "Do not consult automated-review evidence or call review cleanup. Enforce human approval, integrity/team/signoff/upstream/build/task checks normally. Missing review cannot block and is never rewritten as clean.",
+          "userImpact": "Workflow remains usable with human approval and existing non-review validation.",
           "recoverable": true
         }
       ],
       "edgeCases": [
         {
-          "input": "Existing review-id, resumable attempt, cancel, progress, cleanup, publish or activation request",
-          "expected": "Same rewritten exception; no old runtime recovery, history mutation or checkpoint cleanup."
+          "input": "Any old review-id/resume/progress/cancel/cleanup/publish request",
+          "expected": "Same rewritten exception without reading or mutating saved review/checkpoint files."
         },
         {
-          "input": "Malformed review input reaching a registered handler",
-          "expected": "No review-specific parsing or execution; throw rewritten exception. Transport-level schema validation remains the existing public contract."
+          "input": "Malformed input",
+          "expected": "Existing MCP structural validation may reject before dispatch; otherwise handler returns the rewritten exception without review validation."
         },
         {
-          "input": "Historical review artifacts opened via generic artifact views",
-          "expected": "Remain readable with their original stored data. Retain minimal read/serialization contracts; no live review engine is reintroduced."
+          "input": "Human workflow.reviewDecision approve/reject/feedback",
+          "expected": "Human decision remains functional; it must never invoke automated review, unavailable endpoint or cleanup."
         },
         {
-          "input": "Unrelated workflow/analyze/build requests",
-          "expected": "Continue through ordinary paths without loading review engines or spawning review workers."
+          "input": "History artifact reads and old override/review metadata",
+          "expected": "Remain readable via generic views; no schema/version/content rewrites and no runtime recovery."
+        },
+        {
+          "input": "Normal daemon workers and task-progress subscriptions",
+          "expected": "Shared services remain functional; no review producers/workers are registered. Historical review task rows are inert, not deleted or announced as running."
+        },
+        {
+          "input": "Already-running installed review daemon",
+          "expected": "Source changes do not magically stop old installed processes. Do not restart/deploy automatically; coordinate installation/restart separately. No promise of remote cancellation from a new unavailable endpoint."
         }
       ],
       "invariantsToPreserve": [
         {
-          "text": "Preserve public endpoint schemas and current client compatibility identified by the s1 structural/import analysis; failure replaces review behavior, not endpoint identity.",
-          "source": "c1"
+          "text": "Preserve callable endpoint input schemas and ordinary transport error behavior; exact endpoint inventory is in contractDetails.api.",
+          "source": "c2"
         },
         {
-          "text": "Preserve workflow core and shared artifact storage identified by the s1 module profile; no historical artifact schema migration or record deletion.",
-          "source": "c1"
+          "text": "Preserve human approvals, integrity/team/signoff/build/task guards and shared daemon services; remove only automated-review dependencies.",
+          "source": "c3"
+        },
+        {
+          "text": "Preserve immutable historical artifact data and generic read compatibility without importing executable review modules.",
+          "source": "c4"
         }
       ]
     },
     "testStrategy": {
-      "testFramework": "Node.js node:test with tsx; *.test.ts convention",
+      "testFramework": "Node.js node:test via tsx; existing *.test.ts conventions",
       "testLevels": [
         {
           "level": "contract",
-          "purpose": "Prove endpoint names/input schemas remain registered and valid review calls all return the exact rewritten error, including legacy and current operation phases.",
+          "purpose": "Verify the exact frozen inventory of 2 MCP and 25 IPC review endpoints and the existing MCP input schemas; exercise every accepted phase and valid request through production registration.",
           "subjects": [
-            "MCP insrc_review_step and insrc_code_review_step",
-            "Daemon designReview.*, codeReview.task.*, codeReview.run, codeReview.grounding, codeReview.freshness, workflow.review, workflow.reviewArtifact and workflow.resolveFinding"
+            "All contractDetails.api entries",
+            "Unary and stream error propagation",
+            "MCP error-envelope mapping"
           ],
           "fixturesNeeded": [
-            "Frozen pre-change endpoint and MCP schema inventory",
-            "Valid minimal requests per preserved endpoint"
+            "Pre-change endpoint/schema snapshot",
+            "Valid requests for every preserved phase; malformed transport requests"
           ]
         },
         {
           "level": "integration",
-          "purpose": "Prove failure happens without worker/provider/storage/cleanup work and unrelated daemon/workflow paths still operate.",
+          "purpose": "Prove review calls cause no repo lookup, provider call, worker/native process, preparation/cache/checkpoint/history/cleanup mutation or task-progress creation; repeated failures do not retain MCP connections.",
           "subjects": [
-            "Daemon handler registry and step host",
-            "Review worker startup/recovery shutdown wiring",
-            "Workflow approval and Story completion unavailable/override behavior",
-            "Historical generic artifact viewing"
+            "MCP handlers",
+            "Daemon handler maps and step host",
+            "Daemon startup/shutdown and router/hub review hooks"
           ],
           "fixturesNeeded": [
-            "Fail-on-call provider/worker/file mutation seams",
-            "Temporary historical review artifact and unrelated artifact fixtures"
+            "Fail-on-call IO/provider/spawn/cleanup seams",
+            "Temporary artifact/checkpoint tree and hashes"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove human approvals and Story/Epic rollup work without CR records, and unrelated guards still reject invalid work.",
+          "subjects": [
+            "Human workflow.reviewDecision",
+            "Workflow approval and lifecycle completion",
+            "Missing/failed BUILD and incomplete/stale task sets",
+            "Integrity/team/signoff/upstream approval denials",
+            "Generic historical review rendering",
+            "Normal indexing/analyze/workflow workers and task progress"
+          ],
+          "fixturesNeeded": [
+            "No-review approved/failed BUILD examples",
+            "Pending human decision and signoff examples",
+            "Representative historical review schema versions"
           ]
         },
         {
           "level": "smoke",
-          "purpose": "Verify strict compilation, production build and current IDE error propagation after implementation deletion.",
+          "purpose": "Prove deleted implementation is absent from clean production/package output and current clients display the unavailable error without polling.",
           "subjects": [
-            "npm run build",
-            "Focused workflow/daemon/MCP regression suites",
-            "VS Code and JetBrains client contract checks"
+            "npm run build and scripts/clean-output.mjs",
+            "Import/transitive dependency and obsolete prompt/config audit",
+            "VS Code and JetBrains contract/error handling checks"
+          ],
+          "fixturesNeeded": [
+            "Plant a stale review output file, run clean build and assert removal",
+            "Existing client error fixtures"
           ]
         }
       ],
@@ -201,54 +1028,54 @@
         {
           "criterionId": "ac1",
           "provingTests": [
-            "Preserved endpoint inventory and exact rewritten exception contract"
+            "Exact 27-operation inventory/schema comparison and all accepted phases return exact family errors"
           ]
         },
         {
           "criterionId": "ac2",
           "provingTests": [
-            "No review execution/preparation/recovery/cleanup side effects; import/deletion audit"
+            "Fail-on-call side-effect seams; no runtime imports/workers; repeated MCP failures retain no review connections; no deleted runtime files in package output"
           ]
         },
         {
           "criterionId": "ac3",
           "provingTests": [
-            "Approval/completion never fabricate a clean review; historical artifacts remain unchanged"
+            "Human approvals/completion work without CR; non-review guards still reject invalid work; historical hashes/serialization remain unchanged"
           ]
         }
       ]
     },
     "migration": {
-      "stateBefore": "s1.analyzeBundles[0] identifies current review modules and daemon/MCP/workflow consumers, with a partially retired helper but surviving runtime services and workers. Graph coverage is incomplete; source audit must freeze the full callable endpoint and import inventory before deletion.",
-      "stateAfter": "Only endpoint registrations, minimal input/historical serialization contracts and a stateless rewritten-error helper remain for design/code review. No engines, review-specific runtime resource ownership, preparation, worker processes, resume, publish, cleanup or activation execute. Historical artifacts are untouched. Review-dependent gates explicitly remain unavailable except existing human-authorized overrides.",
+      "stateBefore": "s1.analyzeBundles[0] provides broad review boundaries; s1.analyzeBundles[1] and direct code references enumerate 27 public operations, shared ThreadServices and review-dependent approval/completion/cleanup. Existing partial stubs coexist with active current engines. Stored graph coverage is incomplete and is supplemented by source/import checks.",
+      "stateAfter": "All 27 review operations retain names/callable schemas and report family-specific rewritten exceptions. Automated review execution, gates and live progress producers are removed. Human approval, build/task validation, integrity/team/signoff and unrelated workers remain active. Historical data is retained without running review logic.",
       "migrationSteps": [
         {
           "order": 1,
-          "action": "Record endpoint/schema inventory, historical artifact hashes and dirty-file baseline; reconcile overlap with existing review edits without overwriting others' changes.",
+          "action": "Freeze the exact endpoint/schema inventory, historical fixture hashes and workspace baseline. Review clean and mixed modules by responsibility, not filename.",
           "rollbackable": true
         },
         {
           "order": 2,
-          "action": "Wire preserved current and legacy endpoints to rewritten exceptions; detach live review startup, RPC service and router ownership integrations in the same buildable change.",
+          "action": "Replace preserved operations with stateless rewritten errors, remove MCP persistent connection ownership and detach review-only daemon startup/shutdown/router/progress hooks. Preserve shared ThreadServices and ordinary worker services.",
           "rollbackable": true
         },
         {
           "order": 3,
-          "action": "Delete review execution/runtime modules, prompts and obsolete implementation tests; retain only necessary endpoint schemas and historical serializers. Audit imports, packages, configuration and both current IDE clients.",
+          "action": "Remove automated-review gate/fence/evidence/cleanup requirements from human artifact approval and Story/Epic completion, preserving every non-review integrity/team/signoff/build/task/upstream check and historical metadata.",
           "rollbackable": true
         },
         {
           "order": 4,
-          "action": "Adapt approval/completion to explicit unavailable behavior and existing reasoned human overrides; update operational guidance. Do not execute removed cleanup against existing checkpoints.",
+          "action": "Delete review runtime/preparation/checkpoint/publication/cleanup/activation code and obsolete implementation tests/prompts/config. Extract only dependency-free endpoint schemas and generic historical readers. Update operational guidance to human approval without automated-review requirements.",
           "rollbackable": true
         },
         {
           "order": 5,
-          "action": "Run endpoint/no-side-effect contracts, focused integration suites, production build and relevant current client checks. Restart the daemon only after authorized deployment so in-flight old reviews are not interrupted without notice.",
+          "action": "Run endpoint, side-effect, completion, historical-read and unrelated-worker checks plus clean production build/package inspection and current IDE error contracts. Do not install/restart the daemon as part of source changes; deployment needs separate coordination for old active processes.",
           "rollbackable": true
         }
       ],
-      "backwardCompat": "Public method names and MCP input schemas remain callable. Successful review outputs are intentionally replaced by transported Error messages: 'Design review functionality is being rewritten.' and 'Code review functionality is being rewritten.' No success or completion is fabricated. Existing artifacts remain readable through generic views, with no migration/deletion. Historical checkpoints remain inert. Existing IDE clients must show the error and cease polling that failed operation. Any stale generated out/ review code must be removed from build output/package so deleted sources are not shipped. Rollback restores code from version control without rewriting history.",
+      "backwardCompat": "Public operation names and callable input schemas remain; successful review behavior is intentionally replaced with Error('Design review functionality is being rewritten.') or Error('Code review functionality is being rewritten.'). Human artifact approval remains explicit and works without CR or review-override reasons; no historical review is rewritten or new review pass fabricated. Generic artifact views and historical wire data remain readable. Source-only review cleanup never runs. Existing installed daemons keep their old behavior until a coordinated update/restart. Rollback restores code without rewriting data. Clean output is verified so deleted sources cannot survive as stale shipped JS.",
       "zeroDowntime": false,
       "dataRewriteRequired": false
     },
@@ -257,15 +1084,15 @@
         "id": "a1",
         "name": "Direct endpoint tombstones",
         "oneLineSummary": "Retain the registered endpoints and minimal contract types; delete implementation and wire every review operation directly to a throwing helper.",
-        "approach": "Each existing public MCP/IPC method remains registered with its current input schema and produces a consistent thrown Error explaining that its review family is being rewritten. Delete engines and runtime ownership rather than preserving disabled implementations. Historical read/render schemas remain only where required for general artifact handling. Approval/completion consumers report unavailable review evidence and require explicit existing human override paths; they never synthesize a pass.",
+        "approach": "Preserve public endpoint names and input schemas, route each directly to a stateless rewritten Error, and delete automated review execution and automated-review gate dependencies. Preserve human approval, integrity/team/signoff/build/task guards, generic historical reads and shared daemon infrastructure. No review success or override is synthesized.",
         "pros": [
           "Smallest complete removal with predictable client-visible behavior",
           "No worker, provider, checkpoint or cleanup side effects from review calls",
           "Reuses current registration and error transports"
         ],
         "cons": [
-          "Requires exhaustive audit of indirect callers and import dependencies",
-          "Review-dependent operations may remain blocked until an explicit override or the rewrite"
+          "Requires complete import/endpoint audit and historical-reader extraction",
+          "Removes automated-review assurance while keeping human approval and build/task checks"
         ],
         "costEstimate": "L"
       },
@@ -273,7 +1100,7 @@
         "id": "a2",
         "name": "Dedicated unavailable review adapter",
         "oneLineSummary": "Delete implementation and route all preserved endpoints through a new adapter exposing the former service interface.",
-        "approach": "Replace the review service with an unavailable adapter implementing all former methods, while deleting engines and workers. Existing RPC wrappers retain the service-shaped dependency; review-dependent approvals receive an explicit unavailable result. Preserve historical formats and error transports.",
+        "approach": "Delete engines/workers but keep a dedicated unavailable service implementing old review methods. Remove automated-review gate requirements while preserving human approval and shared infrastructure. Retain public contracts and historical records.",
         "pros": [
           "Central service-shaped compatibility seam",
           "Groups unavailable operations behind one adapter"
@@ -283,7 +1110,7 @@
           "More surface to maintain and audit than direct endpoint tombstones"
         ],
         "costEstimate": "L",
-        "reasonRejected": "Meets endpoint compatibility but unnecessarily retains a service interface after deleting functionality."
+        "reasonRejected": "Retains unnecessary service abstraction after functionality removal."
       }
     ],
     "chosenAlternative": "a1",
@@ -292,34 +1119,89 @@
   "citations": [
     {
       "id": "c1",
-      "kind": "analyze-bundle",
-      "ref": "s1.analyzeBundles[0]",
-      "quotedText": "Analyzer completed a workflow module profile, import graph and convention pass. Review implementation resides under code-review and review; external graph consumers include daemon review-service, review-workers, task/design/workflow/code RPC, build/approval paths, MCP schema and current VS Code client. Stored graph reports 526 incoming and 480 outgoing edges for workflow, but index coverage is incomplete. Source audit is needed to enumerate all endpoints and consumers; an existing review-unavailable helper indicates partial retirement already exists. No new subsystem or persistent schema is needed."
-    },
-    {
-      "id": "c2",
-      "kind": "code",
-      "ref": "src/daemon/handler-runtime.ts:699-727"
-    },
-    {
-      "id": "c3",
-      "kind": "code",
-      "ref": "src/daemon/design-review-rpc.ts"
-    },
-    {
-      "id": "c4",
-      "kind": "code",
-      "ref": "src/daemon/task-review-rpc.ts"
-    },
-    {
-      "id": "c5",
       "kind": "code",
       "ref": "src/workflow/review-unavailable.ts"
     },
     {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/daemon/handler-runtime.ts:549-727"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/gates.ts:640-729"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/record.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/artifact-core/lifecycle.ts:383-405"
+    },
+    {
       "id": "c6",
+      "kind": "code",
+      "ref": "src/workflow/artifact-core/lifecycle-service.ts"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/workflow/artifact-core/completion-evidence.ts:78-96"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "src/daemon/index.ts:274-281"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "src/daemon/threads/main-services.ts:168-184"
+    },
+    {
+      "id": "c10",
+      "kind": "code",
+      "ref": "src/mcp/design-review/schema.ts"
+    },
+    {
+      "id": "c11",
+      "kind": "code",
+      "ref": "src/mcp/code-review/schema.ts"
+    },
+    {
+      "id": "c12",
+      "kind": "code",
+      "ref": "src/mcp/design-review/handler.ts"
+    },
+    {
+      "id": "c13",
+      "kind": "code",
+      "ref": "src/mcp/code-review/handler.ts"
+    },
+    {
+      "id": "c14",
+      "kind": "code",
+      "ref": "src/workflow/review-decision.ts"
+    },
+    {
+      "id": "c15",
+      "kind": "code",
+      "ref": "scripts/clean-output.mjs"
+    },
+    {
+      "id": "c16",
       "kind": "stakeholder",
-      "ref": "User instruction, 2026-11-16: both design and code review functionality needs to be completely removed; only keep endpoints and raise an exception stating it is being rewritten."
+      "ref": "User instruction, 2026-11-16: completely remove design/code review functionality, retaining endpoints that raise a being-rewritten exception; follow-up explicitly requests self-review because the review framework is broken."
+    },
+    {
+      "id": "c17",
+      "kind": "step-output",
+      "ref": "s8",
+      "quotedText": "Author self-review only, not independent review. Source inventory verifies 25 IPC operations plus 2 MCP tools; preserve distinct human approval and shared daemon infrastructure."
     }
   ]
 }

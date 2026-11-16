@@ -21,6 +21,7 @@ import {
 	ArtifactMissingError,
 	ArtifactNotApprovedError,
 	jsonPathForMd,
+	readDefineArtifact,
 	requireApprovedEpic,
 } from '../gates.js';
 import { createRepoLifecycle } from '../artifact-core/repo-lifecycle.js';
@@ -230,6 +231,62 @@ test('requireApprovedEpic throws ArtifactMissingError when no Define exists', ()
 		assert.throws(
 			() => requireApprovedEpic(repo, HASH),
 			(err: Error) => err instanceof ArtifactMissingError,
+		);
+	} finally {
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
+// ISSUE-149283b0d0455a43 / s1 / t3 — a work item headed by an ISSUE can never
+// have a Define; the missing-Define error must name that situation instead of
+// advising a stage that does not apply.
+
+function seedIssueRoot(repo: string, hash: string): void {
+	mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
+	writeFileSync(
+		join(repo, '.insrc', 'artifacts', `ISSUE-${hash}.json`),
+		JSON.stringify({
+			meta: { workflow: 'issue', runId: 'i1', repoPath: repo, issueHash: hash, createdAt: CREATED, schemaVersion: 1 },
+			body: { title: 't', reproduction: 'r', rootCause: 'c', fixIntent: 'f' },
+			citations: [],
+		}),
+	);
+}
+
+test('readDefineArtifact on an ISSUE-only hash names the ISSUE and does not advise running define', () => {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-gate-issue-'));
+	try {
+		seedIssueRoot(repo, HASH);
+		assert.throws(
+			() => readDefineArtifact(repo, HASH),
+			(err: Error) => {
+				if (!(err instanceof ArtifactMissingError)) return false;
+				if (!err.message.includes(`ISSUE-${HASH}`)) return false;
+				if (!err.message.includes('ISSUE-anchored bugfix')) return false;
+				return !err.message.includes("workflow='define'");
+			},
+		);
+		// requireApprovedEpic routes through the same read, so it refuses with
+		// the same ISSUE-aware message.
+		assert.throws(
+			() => requireApprovedEpic(repo, HASH),
+			(err: Error) => err instanceof ArtifactMissingError && err.message.includes('ISSUE-anchored bugfix'),
+		);
+	} finally {
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
+test('readDefineArtifact on a hash with neither root keeps the original message', () => {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-gate-neither-'));
+	try {
+		mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
+		assert.throws(
+			() => readDefineArtifact(repo, HASH),
+			(err: Error) =>
+				err instanceof ArtifactMissingError &&
+				err.message.includes("workflow='define'") &&
+				!err.message.includes('ISSUE-anchored'),
 		);
 	} finally {
 		rmSync(repo, { recursive: true, force: true });

@@ -62,6 +62,7 @@ import {
 	defineArtifactPaths,
 	hldArtifactId,
 	hldArtifactPaths,
+	issueArtifactId,
 	lldArtifactId,
 	lldArtifactPaths,
 	planArtifactId,
@@ -159,6 +160,16 @@ function readStoredHead<T>(id: string, jsonPath: string): T {
 export function readDefineArtifact(repoPath: string, epicHash: string): DefineArtifact {
 	const jsonPath = artifactJsonPath(repoPath, defineArtifactId(epicHash));
 	if (!existsSync(jsonPath)) {
+		// ISSUE-149283b0d0455a43: a work item whose head is an ISSUE (a bugfix)
+		// can never have a Define — advising define would be wrong. Name the real
+		// situation instead.
+		if (existsSync(artifactJsonPath(repoPath, issueArtifactId(epicHash)))) {
+			throw new ArtifactMissingError(
+				`Define artifact not found at ${jsonPath}. The work item ${epicHash} is ` +
+				`an ISSUE-anchored bugfix (ISSUE-${epicHash}.json) — it has no Define or HLD ` +
+				`by design; its route runs through the issue stage and a Story LLD.`,
+			);
+		}
 		throw new ArtifactMissingError(
 			`Define artifact not found at ${jsonPath}. Run \`insrc_workflow_step\` ` +
 			`workflow='define' focus='...' first.`,

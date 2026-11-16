@@ -21,7 +21,8 @@ import { approvalStateOf } from './artifact-core/approval-view.js';
 import { signoffViewOf, type SignoffViewState } from './team/signoff.js';
 import type { DefineArtifact } from './artifacts/define.js';
 import type { HldArtifact } from './artifacts/hld.js';
-import { artifactJsonPath, defineArtifactId, defineArtifactPaths, hldArtifactId, hldArtifactPaths, lldArtifactId, lldArtifactPaths, readRevision, workItemAnchorCreatedAt, workItemKindOf } from './storage.js';
+import type { IssueArtifact } from './artifacts/issue.js';
+import { artifactJsonPath, defineArtifactId, defineArtifactPaths, hldArtifactId, hldArtifactPaths, impliedIssueStories, issueArtifactId, issueArtifactPaths, lldArtifactId, lldArtifactPaths, readRevision, workItemAnchorCreatedAt, workItemKindOf } from './storage.js';
 import { listAmendments } from './amendments/store.js';
 import { unitIssueOf } from './tracker/unit-head.js';
 import { scanLldStaleness } from './amendments/staleness.js';
@@ -33,6 +34,10 @@ import { scanLldStaleness } from './amendments/staleness.js';
 export interface ChainReport {
 	readonly epicHash: string;
 	readonly epicSlug?: string;
+	/** Which artifact kind heads the work item: 'def' for a DEF, 'issue' for
+	 *  an ISSUE-anchored bugfix (ISSUE-149283b0d0455a43). DEF wins when both
+	 *  exist, as in readEpicDefinitionCore. */
+	readonly definitionKind?: 'def' | 'issue';
 	readonly define: {
 		readonly exists:      boolean;
 		readonly approved:    boolean;
@@ -99,13 +104,14 @@ export function buildChainReport(repoPath: string, epicHash: string): ChainRepor
 	const hld    = readHldIfPresent(repoPath, epicHash);
 	const stories = readStoryLldStatus(repoPath, epicHash, define, hld);
 	const amendments = countAmendments(repoPath, epicHash);
-	const tracker = readTrackerMeta(repoPath, epicHash, define.artifact);
+	const tracker = readTrackerMeta(repoPath, epicHash, define.artifact, define.issue);
 	const nextAction = computeNextAction(epicHash, {
 		define, hld, stories, amendments, tracker,
 	});
 	const epicSlug = define.artifact?.meta.epicSlug;
 	return {
 		epicHash,
+		...(define.definitionKind !== undefined ? { definitionKind: define.definitionKind } : {}),
 		...(epicSlug !== undefined ? { epicSlug } : {}),
 		define: {
 			exists:   define.exists,
@@ -134,6 +140,35 @@ interface DefineState {
 	readonly rejected: boolean;
 	readonly path?:    string;
 	readonly artifact?: DefineArtifact;
+	/** ISSUE-149283b0d0455a43: 'issue' when an ISSUE heads the work item (no DEF),
+	 *  'def' when a DEF heads it. Set on every existing head, absent when neither
+	 *  root exists. */
+	readonly definitionKind?: 'def' | 'issue';
+	/** The ISSUE artifact when the head is an ISSUE — the chain report's
+	 *  definition read for a bugfix work item. */
+	readonly issue?:    IssueArtifact;
+}
+
+function readDefineIfPresent(repoPath: string, epicHash: string): DefineState {
+	const jsonPath = artifactJsonPath(repoPath, defineArtifactId(epicHash));
+	if (!existsSync(jsonPath)) {
+		// ISSUE-149283b0d0455a43: the DEF is absent — the work item may still be
+		// headed by an ISSUE (a bugfix), which is a definition head too. The DEF
+		// wins when both exist, as in readEpicDefinitionCore.
+		const issueJson = artifactJsonPath(repoPath, issueArtifactId(epicHash));
+		if (!existsSync(issueJson)) return { exists: false, approved: false, rejected: false };
+		const issue = JSON.parse(readFileSync(issueJson, 'utf8')) as IssueArtifact;
+		const approved = approvalStateOf(issue.meta) === 'approved';
+		const rejected = approvalStateOf(issue.meta) === 'rejected';
+		const mdPath = issueArtifactPaths(repoPath, epicHash, workItemAnchorCreatedAt(issue.meta), workItemKindOf(issue.meta), issue.meta.epicSlug).md;
+		return { exists: true, approved, rejected, path: mdPath, definitionKind: 'issue', issue };
+	}
+	const raw = readFileSync(jsonPath, 'utf8');
+	const artifact = JSON.parse(raw) as DefineArtifact;
+	const approved = approvalStateOf(artifact.meta) === 'approved';
+	const rejected = approvalStateOf(artifact.meta) === 'rejected';
+	const mdPath = defineArtifactPaths(repoPath, epicHash, workItemAnchorCreatedAt(artifact.meta), workItemKindOf(artifact.meta), artifact.meta.epicSlug).md;
+	return { exists: true, approved, rejected, path: mdPath, artifact, definitionKind: 'def' };
 }
 
 interface HldState {
@@ -142,17 +177,6 @@ interface HldState {
 	readonly rejected: boolean;
 	readonly path?:    string;
 	readonly artifact?: HldArtifact;
-}
-
-function readDefineIfPresent(repoPath: string, epicHash: string): DefineState {
-	const jsonPath = artifactJsonPath(repoPath, defineArtifactId(epicHash));
-	if (!existsSync(jsonPath)) return { exists: false, approved: false, rejected: false };
-	const raw = readFileSync(jsonPath, 'utf8');
-	const artifact = JSON.parse(raw) as DefineArtifact;
-	const approved = approvalStateOf(artifact.meta) === 'approved';
-	const rejected = approvalStateOf(artifact.meta) === 'rejected';
-	const mdPath = defineArtifactPaths(repoPath, epicHash, workItemAnchorCreatedAt(artifact.meta), workItemKindOf(artifact.meta), artifact.meta.epicSlug).md;
-	return { exists: true, approved, rejected, path: mdPath, artifact };
 }
 
 function readHldIfPresent(repoPath: string, epicHash: string): HldState {
@@ -172,32 +196,53 @@ function readStoryLldStatus(
 	define:    DefineState,
 	hld:       HldState,
 ): ChainReport['stories'] {
-	if (define.artifact === undefined) return [];
-	const stories = define.artifact.body.stories;
+	if (define.artifact === undefined && define.issue === undefined) return [];
+	// ISSUE-149283b0d0455a43: an ISSUE head declares no story list — its story
+	// set is the one implied story, from the shared rule in storage.ts.
+	const declared: readonly { readonly id: string; readonly title: string }[] =
+		define.artifact !== undefined ? define.artifact.body.stories : impliedIssueStories(define.issue!);
 	const staleness = hld.artifact === undefined ? new Map<string, { stale: boolean; staleReason?: string }>()
 		: staleByStory(scanLldStaleness(repoPath, epicHash, hld.artifact));
-	const epicSlug = define.artifact.meta.epicSlug;
-	return stories.map(s => {
+	const epicSlug = define.artifact?.meta.epicSlug ?? define.issue?.meta.epicSlug;
+	const headCreatedAt = define.artifact?.meta.createdAt ?? define.issue?.meta.createdAt;
+	return declared.map(s => {
 		const jsonPath = artifactJsonPath(repoPath, lldArtifactId(epicHash, s.id));
 		const hasLld = existsSync(jsonPath);
 		let approved = false;
 		let signoff: { signoff?: SignoffViewState } = {};
+		let lldMeta: Record<string, unknown> | undefined;
 		if (hasLld) {
 			try {
 				const raw = readFileSync(jsonPath, 'utf8');
 				const lld = JSON.parse(raw) as { meta: Record<string, unknown> };
 				approved = approvalStateOf(lld.meta) === 'approved';
 				signoff = signoffOf(lld.meta);
+				lldMeta = lld.meta;
 			} catch { /* malformed — treat as unapproved */ }
 		}
 		const stale = staleness.get(s.id);
+		// ISSUE-149283b0d0455a43: the story path comes from the LLD's OWN meta
+		// (anchor, kind, slug), so an ISSUE-anchored item resolves under
+		// docs/standalone — the DEF route's define.artifact.meta.createdAt +
+		// 'epic' construction would point at docs/epics.
+		let path: string | undefined;
+		if (hasLld && lldMeta !== undefined) {
+			path = lldArtifactPaths(
+				repoPath, epicHash, s.id,
+				workItemAnchorCreatedAt(lldMeta),
+				workItemKindOf(lldMeta),
+				(epicSlug ?? lldMeta['epicSlug']) as string | undefined ?? lldMeta['epicSlug'] as string | undefined,
+			).md;
+		} else if (headCreatedAt !== undefined) {
+			path = lldArtifactPaths(repoPath, epicHash, s.id, headCreatedAt, define.definitionKind === 'issue' ? 'standalone' : 'epic', epicSlug).md;
+		}
 		return {
 			id: s.id, title: s.title,
 			hasLld, approved,
 			...signoff,
 			stale: stale?.stale === true,
 			...(stale?.staleReason !== undefined ? { staleReason: stale.staleReason } : {}),
-			...(hasLld ? { path: lldArtifactPaths(repoPath, epicHash, s.id, define.artifact!.meta.createdAt, 'epic', epicSlug).md } : {}),
+			...(path !== undefined ? { path } : {}),
 		};
 	});
 }
@@ -229,23 +274,28 @@ function countAmendments(repoPath: string, epicHash: string): ChainReport['amend
 }
 
 /** The Epic's issue is the binding of its EPIC head; the time of the last sync is the Define's `meta.tracker`. */
-function readTrackerMeta(repoPath: string, epicHash: string, define?: DefineArtifact): ChainReport['tracker'] {
-	if (define === undefined) return { pushed: false };
+function readTrackerMeta(repoPath: string, epicHash: string, define?: DefineArtifact, issue?: IssueArtifact): ChainReport['tracker'] {
+	if (define === undefined && issue === undefined) return { pushed: false };
+	// ISSUE-149283b0d0455a43: tracker handling for an ISSUE-anchored item is
+	// deferred to ISSUE-5f9d4ab4c90c0b4c — the chain report still shows the
+	// binding when one exists, but never derives a Define from it.
 	const epicRef = unitIssueOf(repoPath, epicHash);
 	if (epicRef === undefined) return { pushed: false };
-	const meta = define.meta as { tracker?: { lastSyncedAt?: string } };
-	const stories = define.body.stories.flatMap(s => {
-		const issue = unitIssueOf(repoPath, epicHash, s.id);
-		if (issue === undefined) return [];
+	const head = (define ?? issue) as unknown as { readonly meta: { readonly tracker?: { lastSyncedAt?: string } } };
+	const meta = head.meta;
+	const declared = define !== undefined ? define.body.stories : impliedIssueStories(issue!);
+	const stories = declared.flatMap(s => {
+		const issueRef = unitIssueOf(repoPath, epicHash, s.id);
+		if (issueRef === undefined) return [];
 		const artifactId = lldArtifactId(epicHash, s.id);
-		return [{ id: s.id, issue, artifactId, revision: revisionOnDisk(repoPath, artifactId) }];
+		return [{ id: s.id, issue: issueRef, artifactId, revision: revisionOnDisk(repoPath, artifactId) }];
 	});
 	return {
 		pushed:  true,
 		epicRef,
 		...(typeof meta.tracker?.lastSyncedAt === 'string' ? { lastSyncedAt: meta.tracker.lastSyncedAt } : {}),
-		artifactId: defineArtifactId(epicHash),
-		revision:   readRevision(define),
+		artifactId: define !== undefined ? defineArtifactId(epicHash) : issueArtifactId(epicHash),
+		revision:   readRevision(head as unknown as Parameters<typeof readRevision>[0]),
 		stories,
 	};
 }
@@ -360,7 +410,11 @@ export function formatChainReport(r: ChainReport): string {
 	const title = r.epicSlug !== undefined ? `${r.epicSlug} (${r.epicHash})` : r.epicHash;
 	lines.push(`# Chain status: ${title}`);
 	lines.push('');
-	lines.push(`## Define`);
+	// ISSUE-149283b0d0455a43: label which kind of definition heads the work item;
+	// the DEF rendering stays byte-identical (no label line when definitionKind
+	// is absent, which every pre-ISSUE caller produces only for a DEF head —
+	// buildChainReport always sets it when a head exists).
+	lines.push(r.definitionKind === 'issue' ? `## Issue (bugfix)` : `## Define`);
 	lines.push(bullet('exists',   r.define.exists));
 	lines.push(bullet('approved', r.define.approved));
 	if (r.define.rejected) lines.push(`  - rejected: yes`);

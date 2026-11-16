@@ -63,6 +63,13 @@
         "choice": "Re-verify before sc2",
         "rationale": "Not s1's concern; defers ArtifactIds' exact exported-surface re-verification to s5/s6's own design.story, where sc2 is actually built.",
         "resolvedAt": "2026-11-16T11:12:43.451Z"
+      },
+      "q6240d0f2": {
+        "question": "Item nf1 (partial): none of the four nonFunctional properties carries a quantified target (a latency figure, a size cap, an SLA) — performance explicitly defers the real numbers to the DEF's own unresolved open question (note-size cap, latency targets, minimum daemon/extension IPC version). design.story for s5/s6 must resolve concrete numbers before sc2's daemon IPC is built, not just before Phase C's rollout.",
+        "status": "resolved",
+        "choice": "Set all targets in s5/s6",
+        "rationale": "Not s1's concern; the note-size cap, latency targets, and IPC version negotiation belong to sc2 (owned by s5), to be set concretely before s5/s6 build.",
+        "resolvedAt": "2026-11-16T11:13:32.952Z"
       }
     }
   },

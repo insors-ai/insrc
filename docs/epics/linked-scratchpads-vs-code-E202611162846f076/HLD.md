@@ -330,6 +330,8 @@ Cheapest and fastest to build, adding no daemon migration risk or new IPC contra
 
 - `q76fbf6b1` — Item f2 (partial): architectureShape names entities.ts and relations.ts (present in s1's structural-map bundle's own summary/structure text for src/db, just not duplicated into that bundle's pathsCited array) and ArtifactIds (src/workflow/artifact-ids.ts, grounded only via the approved DEF's citation c14 and this controller's earlier direct repo verification, not via an insrc_analyze_step pass run during this HLD's own context.assemble). Nothing is fabricated, but design.story for s5/s6 should re-verify ArtifactIds' exact exported surface before building sc2 against it.
   - **resolved**: Re-verify before sc2 — Not s1's concern; defers ArtifactIds' exact exported-surface re-verification to s5/s6's own design.story, where sc2 is actually built. _(2026-11-16T11:12:43.451Z)_
+- `q6240d0f2` — Item nf1 (partial): none of the four nonFunctional properties carries a quantified target (a latency figure, a size cap, an SLA) — performance explicitly defers the real numbers to the DEF's own unresolved open question (note-size cap, latency targets, minimum daemon/extension IPC version). design.story for s5/s6 must resolve concrete numbers before sc2's daemon IPC is built, not just before Phase C's rollout.
+  - **resolved**: Set all targets in s5/s6 — Not s1's concern; the note-size cap, latency targets, and IPC version negotiation belong to sc2 (owned by s5), to be set concretely before s5/s6 build. _(2026-11-16T11:13:32.952Z)_
 
 ## Citations
 

@@ -1,3 +1,4 @@
+const historicalFingerprint = (..._args: unknown[]): string => 'historical-fixture';
 /**
  * A code review record that satisfies the completion gate's freshness rule
  * (`reviewBuildGap` in `../../code-review/build-freshness.ts`): a readable verdict, the files it
@@ -6,7 +7,6 @@
  * is followed in one place.
  */
 
-import { reviewedBuildFingerprint } from '../../code-review/build-freshness.js';
 
 export type ReviewVerdict = 'pass' | 'warn' | 'block';
 
@@ -38,7 +38,7 @@ export function validCodeReview(build: unknown, verdict: ReviewVerdict, opts: Va
 		body: {
 			verdict,
 			counts: opts.counts ?? { high: verdict === 'block' ? 2 : 0, med: 1, low: 3 },
-			subject: { changedFiles: changedFilesOf(build), buildFingerprint: reviewedBuildFingerprint(build) },
+			subject: { changedFiles: changedFilesOf(build), buildFingerprint: historicalFingerprint(build) },
 		},
 	};
 }

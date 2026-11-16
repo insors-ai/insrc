@@ -94,13 +94,13 @@ test('a codex structured completion sends the strict form of a non-strict schema
 	}
 });
 
-test('a codex reviewer session sends the strict form of a non-strict schema and leaves the caller\'s schema unchanged', async () => {
+test('a codex read-only session sends the strict form of a non-strict schema and leaves the caller\'s schema unchanged', async () => {
 	const f = fakeCodex();
 	const cwd = realpathSync(mkdtempSync(join(tmpdir(), 'insrc-codex-review-cwd-')));
 	try {
 		const schema = judgeLikeSchema();
 		const p = new CliProvider({ kind: 'codex', binPath: f.bin });
-		assert.deepEqual(await p.runReviewSession('review', schema, { cwd, deadlineMs: 30_000 }), { ok: true });
+		assert.deepEqual(await p.runReadOnlySession('review', schema, { cwd, deadlineMs: 30_000 }), { ok: true });
 		assert.deepEqual(f.seen(), STRICT);
 		assert.deepEqual(schema, judgeLikeSchema(), 'the caller\'s schema is not modified');
 	} finally {
@@ -241,7 +241,7 @@ test("a codex reply that breaks the caller's schema throws ModelResponseShapeErr
 	} finally { dup.cleanup(); }
 });
 
-test('a codex reviewer session rejects a reply that breaks a keyword (also inside prefixItems) or a format left out of the codex copy, and accepts one that meets them', async () => {
+test('a codex read-only session rejects a reply that breaks a keyword (also inside prefixItems) or a format left out of the codex copy, and accepts one that meets them', async () => {
 	const dup = fakeCodex({ ...GOOD, tags: ['a', 'a'] });
 	const notUri = fakeCodex({ ...GOOD, site: 'not a uri' });
 	const dupFirst = fakeCodex({ ...GOOD, pair: [['a', 'a']] });
@@ -249,18 +249,18 @@ test('a codex reviewer session rejects a reply that breaks a keyword (also insid
 	const cwd = realpathSync(mkdtempSync(join(tmpdir(), 'insrc-codex-review-cwd-')));
 	try {
 		await assert.rejects(
-			new CliProvider({ kind: 'codex', binPath: dup.bin }).runReviewSession('review', DISTINCT, { cwd, deadlineMs: 30_000 }),
-			/codex review session answer does not satisfy the caller's schema: .*duplicate items/,
+			new CliProvider({ kind: 'codex', binPath: dup.bin }).runReadOnlySession('review', DISTINCT, { cwd, deadlineMs: 30_000 }),
+			/codex read-only session answer does not satisfy the caller's schema: .*duplicate items/,
 		);
 		await assert.rejects(
-			new CliProvider({ kind: 'codex', binPath: notUri.bin }).runReviewSession('review', DISTINCT, { cwd, deadlineMs: 30_000 }),
-			/codex review session answer does not satisfy the caller's schema: \/site: must match format "uri"/,
+			new CliProvider({ kind: 'codex', binPath: notUri.bin }).runReadOnlySession('review', DISTINCT, { cwd, deadlineMs: 30_000 }),
+			/codex read-only session answer does not satisfy the caller's schema: \/site: must match format "uri"/,
 		);
 		await assert.rejects(
-			new CliProvider({ kind: 'codex', binPath: dupFirst.bin }).runReviewSession('review', DISTINCT, { cwd, deadlineMs: 30_000 }),
-			/codex review session answer does not satisfy the caller's schema: \/pair\/0: .*duplicate items/,
+			new CliProvider({ kind: 'codex', binPath: dupFirst.bin }).runReadOnlySession('review', DISTINCT, { cwd, deadlineMs: 30_000 }),
+			/codex read-only session answer does not satisfy the caller's schema: \/pair\/0: .*duplicate items/,
 		);
-		assert.deepEqual(await new CliProvider({ kind: 'codex', binPath: good.bin }).runReviewSession('review', DISTINCT, { cwd, deadlineMs: 30_000 }), GOOD);
+		assert.deepEqual(await new CliProvider({ kind: 'codex', binPath: good.bin }).runReadOnlySession('review', DISTINCT, { cwd, deadlineMs: 30_000 }), GOOD);
 	} finally {
 		dup.cleanup();
 		notUri.cleanup();
@@ -351,7 +351,7 @@ test('Codex wire schemas omit string lengths recursively but preserve original h
    const f=fakeCodex(value),cwd=realpathSync(mkdtempSync(join(tmpdir(),'insrc-length-check-')));
    try{
     const p=new CliProvider({kind:'codex',binPath:f.bin});
-    const result=()=>mode==='structured'?p.completeStructured([{role:'user',content:'length check'}],schema,{internalRetry:false}):p.runReviewSession('length check',schema,{cwd,deadlineMs:30000,internalRetry:false});
+    const result=()=>mode==='structured'?p.completeStructured([{role:'user',content:'length check'}],schema,{internalRetry:false}):p.runReadOnlySession('length check',schema,{cwd,deadlineMs:30000,internalRetry:false});
     if(value===good)assert.deepEqual(await result(),good);
     else await assert.rejects(result(),/must NOT have (?:fewer|more) than/);
     const sent=f.seen() as Record<string,any>;assert.equal('minLength' in sent.properties.value,false);assert.equal('maxLength' in sent.properties.value,false);
@@ -367,7 +367,7 @@ test('Codex structured and bounded reviewer responses use the shared optional-nu
   const f=fakeCodex({ok:true,error:null}),cwd=realpathSync(mkdtempSync(join(tmpdir(),'insrc-codex-null-reply-')));
   try{
    const p=new CliProvider({kind:'codex',binPath:f.bin});
-   const value=mode==='structured'?await p.completeStructured([{role:'user',content:'nullable reply'}],schema,{internalRetry:false}):await p.runReviewSession('nullable reply',schema,{cwd,deadlineMs:30000,internalRetry:false});
+   const value=mode==='structured'?await p.completeStructured([{role:'user',content:'nullable reply'}],schema,{internalRetry:false}):await p.runReadOnlySession('nullable reply',schema,{cwd,deadlineMs:30000,internalRetry:false});
    assert.deepEqual(value,{ok:true});assert.deepEqual(schema.properties!['error'],{type:'string',minLength:1});
   }finally{f.cleanup();rmSync(cwd,{recursive:true,force:true});}
  }

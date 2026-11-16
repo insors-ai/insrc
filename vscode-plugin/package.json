@@ -302,31 +302,7 @@
           "insrc.review.maxJsonBytes": {
             "type": "number",
             "default": 4194304,
-            "markdownDescription": "maximum serialized bytes per code-review packet, checkpoint, final-scope snapshot and permanent CR envelope; positive safe integer; read live, raise to accommodate larger retained histories",
-            "scope": "machine"
-          },
-          "insrc.review.preparation.batchMaxObjects": {
-            "type": "number",
-            "default": 256,
-            "markdownDescription": "maximum objects per review source batch; positive safe integer, capped at 256",
-            "scope": "machine"
-          },
-          "insrc.review.preparation.batchMaxBytes": {
-            "type": "number",
-            "default": 4194304,
-            "markdownDescription": "target bytes per review source batch; positive safe integer, capped at 4MiB; valid larger single objects run alone",
-            "scope": "machine"
-          },
-          "insrc.review.preparation.memoryMaxBytes": {
-            "type": "number",
-            "default": 67108864,
-            "markdownDescription": "decoded/cache working memory bound for a review preparation session",
-            "scope": "machine"
-          },
-          "insrc.review.preparation.cacheMaxBytes": {
-            "type": "number",
-            "default": 268435456,
-            "markdownDescription": "aggregate retained review context and staging capacity per project; positive safe byte bound",
+            "markdownDescription": "Maximum serialized bytes for historical review records. Automated design and code review functionality is being rewritten.",
             "scope": "machine"
           }
         }
@@ -568,17 +544,6 @@
             ],
             "default": "core",
             "markdownDescription": "Model tier for the `scope.audit` role (critical). Leave at the default to use the daemon's routing.",
-            "scope": "machine"
-          },
-          "insrc.models.tasks.review": {
-            "type": "string",
-            "enum": [
-              "cheap",
-              "mid",
-              "core"
-            ],
-            "default": "core",
-            "markdownDescription": "Model tier for the `review` role (critical). Leave at the default to use the daemon's routing.",
             "scope": "machine"
           },
           "insrc.models.tasks.build": {

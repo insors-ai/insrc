@@ -9,7 +9,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { DESIGN_REVIEW_PHASES } from '../../workflow/review/design-review/contracts.js';
+import { DESIGN_REVIEW_PHASES } from '../../mcp/review-input-schemas.js';
 import { RPC_AUDIT, STEP_PHASE_AUDIT } from '../repo-call-audit.js';
 import { FILE_MODIFYING_METHODS } from '../repo-call-gate.js';
 

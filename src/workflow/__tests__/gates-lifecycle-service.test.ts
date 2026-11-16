@@ -31,7 +31,6 @@ import { createRepoLifecycle } from '../artifact-core/repo-lifecycle.js';
 import { durableKit } from '../artifact-core/__tests__/durable-kit.js';
 import { ackStaleArtifact, approveWorkflowTarget, rejectArtifactByJsonPath } from '../gates.js';
 import { staleAckOf } from '../artifact-core/stale-ack.js';
-import { reviewArtifactFile } from '../review/run-artifact.js';
 import { artifactJsonPath } from '../storage.js';
 import { H, alice, artifact, bob, clock, kit } from '../artifact-core/__tests__/store-kit.js';
 import { EPIC, RECORDS, STORY, T1, T2, seedEpic } from '../artifact-core/__tests__/lifecycle-kit.js';
@@ -45,46 +44,6 @@ function serviceFor(k: ReturnType<typeof kit>): LifecycleService {
 	return new LifecycleService({ store: k.store, evidence: ctx => createCompletionEvidence(k.repo, { ...ctx, enforce: false, history: new History(k.sidecar) }), now: clock() });
 }
 const readHead = (k: ReturnType<typeof kit>, id: string) => JSON.parse(readFileSync(artifactJsonPath(k.repo, id), 'utf8')) as { meta: Record<string, unknown>; body: unknown };
-
-test('with a service, an explicit override over an advisory-blocked code review completes the Story through a real approval and the reason is on the complete entry', async () => {
-	const k = kit();
-	try {
-		await seedEpic(k);
-		// the BUILD record says both Tasks passed; the code review blocks, but enforcement is off, so the gate only advises
-		await k.store.write({ ...(await k.store.read(BUILD)), payload: { body: { tasks: [{ id: 't1', passed: true }, { id: 't2', passed: true }] }, citations: [] } }, alice);
-		await k.store.write({ ...(await k.store.read(CR)), payload: { body: { verdict: 'block', counts: { high: 1, med: 0, low: 0 } }, citations: [] } }, alice);
-		// each Task has its own head, so its build is judged by the rounds on its own log (s7)
-		for (const t of [T1, T2]) {
-			await new History(k.sidecar).appendLog(t, { id: `round-${t}`, actor: bob, timestamp: '2026-10-21T12:00:00.000Z', operation: 'update', outcome: { result: 'pass', summary: 'ok', data: { kind: 'build-round' } } });
-		}
-		const svc = serviceFor(k);
-		await svc.completeIfRolledUp(T1, bob);
-		await svc.completeIfRolledUp(T2, bob);
-		assert.equal((await k.store.read(STORY)).lifecycle.status, 'draft', 'an advisory-blocked review holds the Story back');
-
-		const result = await approveWorkflowTarget(
-			{ repoPath: k.repo, artifactPath: artifactJsonPath(k.repo, BUILD), overrideReview: 'known gap, tracked elsewhere', lifecycle: svc, actor: bob },
-			{ enforce: false },
-		);
-		assert.equal(result.skipped.length, 0, JSON.stringify(result.skipped));
-		assert.equal(result.approved.length, 1);
-
-		// the approval was applied through the service, with the override on it
-		const build = await k.store.read(BUILD);
-		assert.equal(build.lifecycle.status, 'completed', 'the BUILD record was completed with its Story');
-		assert.equal(build.lifecycle.approval?.override?.reason, 'known gap, tracked elsewhere');
-		assert.equal(readHead(k, BUILD).meta['approvedAt'], undefined, 'and no stamp follows');
-
-		// the Story and then the Epic completed once, with the override reason on the Story's entry
-		const story = await k.store.readWithHistory(STORY);
-		assert.equal(story.lifecycle.status, 'completed');
-		const completes = story.changeLog.filter(e => e.operation === 'complete');
-		assert.equal(completes.length, 1);
-		assert.deepEqual(completes[0]?.outcome?.data, { codeReviewOverride: 'known gap, tracked elsewhere' });
-		assert.equal((await k.store.read(EPIC)).lifecycle.status, 'completed');
-		for (const record of RECORDS) assert.equal((await k.store.read(record)).lifecycle.status, 'completed', record);
-	} finally { k.done(); }
-});
 
 const ARTIFACT = '# Story s2\n\n- t1: extend the two exported constants in foo.\n';
 const EXTRACT_JSON = {
@@ -103,35 +62,6 @@ test('a service built over the repository files approves through the lifecycle, 
 		assert.equal((await k.store.read(PLAN)).lifecycle.status, 'approved', 'the lifecycle is approved');
 		const log = await createRepoLifecycle(k.repo).history.log(PLAN);
 		assert.equal(log.filter(e => e.operation === 'approve').length, 1, 'and the approval is logged, in the files of the repository');
-	} finally { k.done(); }
-});
-
-test('with a service, an approval the service refuses leaves the head as it was, and a compact-only historical review still needs an explicit override', async () => {
-	const k = kit();
-	try {
-		await k.store.write(artifact(`DEF-${H}`), alice);
-		const lld = `LLD-${H}-s1`;
-		await k.store.write(artifact(lld), alice);
-		const path = artifactJsonPath(k.repo, lld);
-		const before = readFileSync(path, 'utf8');
-		const svc = serviceFor(k);
-
-		// a design record with no review bound to its revision is refused
-		const refused = await approveWorkflowTarget({ repoPath: k.repo, artifactPath: path, lifecycle: svc, actor: bob }, { enforce: false });
-		assert.deepEqual(refused.approved, []);
-		assert.equal(refused.skipped.length, 1);
-		assert.match(refused.skipped[0]?.reason ?? '', /review/i);
-		assert.equal(readFileSync(path, 'utf8'), before, 'the head is as it was');
-		assert.equal((await k.store.read(lld)).lifecycle.status, 'draft');
-
-		// A compact-only historical review cannot stand in for preserved new-format evidence.
-		await svc.apply(lld, 'review', bob, { review: { reviewer: bob, party: 'daemon', verdict: 'pass', counts: { high: 0, med: 0, low: 0 } } });
-		const stillRefused=await approveWorkflowTarget({repoPath:k.repo,artifactPath:path,lifecycle:svc,actor:bob},{enforce:false});assert.equal(stillRefused.approved.length,0);
-		const ok = await approveWorkflowTarget({ repoPath: k.repo, artifactPath: path, lifecycle: svc, actor: bob,overrideReview:'Explicit historical fixture override' }, { enforce: false });
-		assert.equal(ok.skipped.length, 0, JSON.stringify(ok.skipped));
-		const approved = await k.store.read(lld);
-		assert.equal(approved.lifecycle.status, 'approved');
-		assert.equal(approved.lifecycle.review?.revision, approved.lifecycle.revision.number);
 	} finally { k.done(); }
 });
 

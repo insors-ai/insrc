@@ -1,3 +1,5 @@
+> **Current status:** Automated design and code review functionality has been removed while it is being rewritten. Retained review endpoints fail immediately. Historical records remain readable. Use build validation and explicit human artifact approval; review procedures below are historical.
+
 # insrc workflow framework
 
 A citation-grounded, human-in-the-loop authoring pipeline that

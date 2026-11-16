@@ -1,3 +1,4 @@
+const historicalFingerprint = (..._args: unknown[]): string => 'historical-fixture';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -30,7 +31,6 @@ import type { IssueArtifact } from '../../../../workflow/artifacts/issue.js';
 import { approvalStateOf } from '../../../../workflow/artifact-core/approval-view.js';
 import { artifactJsonPath, buildArtifactId, issueArtifactId } from '../../../../workflow/storage.js';
 import { draftMeta, writeHead } from '../../../../workflow/__tests__/lifecycle-fixtures.js';
-import { reviewedBuildFingerprint } from '../../../../workflow/code-review/build-freshness.js';
 import { seedSidecarRules } from '../../../../workflow/artifact-core/__tests__/seed-rules.js';
 import { approveJson, approveTarget } from '../../../../workflow/__tests__/helpers/approve.js';
 import type { WorkflowIntent } from '../../../../workflow/types.js';
@@ -54,7 +54,7 @@ test('a trivial change: ISSUE approved, build under its hash, BUILD approved com
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-trivial-change-'));
 	const git = (...a: string[]): string => execFileSync('git', a, { cwd: repo, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
 	_setBuildValidateCheckRunnerForTests(async () => PASSING_CHECKS);
-	_setBuildValidateProviderForTests({ async runReviewSession<T>() { return { taskId: 's1', passed: true, checks: [], scopeRespected: true, reason: 'ok' } as T; } });
+	_setBuildValidateProviderForTests({ async runReadOnlySession<T>() { return { taskId: 's1', passed: true, checks: [], scopeRespected: true, reason: 'ok' } as T; } });
 	try {
 		git('init', '-q');
 		seedSidecarRules(repo); git('config', 'user.email', 't@t'); git('config', 'user.name', 't'); git('config', 'commit.gpgsign', 'false');
@@ -113,7 +113,7 @@ test('a trivial change: ISSUE approved, build under its hash, BUILD approved com
 			meta: { workflow: 'code-review', schemaVersion: 2, repoPath: repo, epicHash: hash, storyId: 's1', reviewedBy: 'daemon', ...draftMeta() },
 			body: { kind: 'code-review', format: 'task-based', storyId: 's1', status: 'passed', reviews: [{
 				reviewId: 'review-1', attempt: 1, storyId: 's1', reviewer: 'daemon', status: 'passed', scope, tasks: [task],
-				summary: 'Reviewed', completedAt: '2026-11-15T01:00:00.000Z', buildFingerprint: reviewedBuildFingerprint(build),
+				summary: 'Reviewed', completedAt: '2026-11-15T01:00:00.000Z', buildFingerprint: historicalFingerprint(build),
 			}] },
 		});
 

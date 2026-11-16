@@ -1,4 +1,3 @@
-import { ReviewStateRefused } from './review-state-contract.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -44,7 +43,7 @@ export interface RequestEnvelope {
 	readonly trackCompletion?: true | undefined;
 	readonly session?: SessionId | undefined;
 	/** Constructed by the socket server; session label/pid and params are untrusted. */
-	readonly trustedContext?: Pick<TrustedRpcContext, 'connectionIdentity' | 'daemonEpoch' | 'reviewOwnerNonce' | 'executorProgressPort'> | undefined;
+	readonly trustedContext?: Pick<TrustedRpcContext, 'connectionIdentity' | 'daemonEpoch' | 'executorProgressPort'> | undefined;
 	/**
 	 * Set on a cross-class request made by a handler that already holds the
 	 * daemon maintenance lock (a nested in-daemon call): the serving worker does
@@ -70,7 +69,6 @@ export function wireRequest(request: LocalRequestEnvelope, opts: { readonly ack?
 		...(request.underHold !== undefined ? { underHold: request.underHold } : {}),
 		...(request.trustedContext ? { trustedContext: {
 			connectionIdentity: request.trustedContext.connectionIdentity, daemonEpoch: request.trustedContext.daemonEpoch,
-			...(request.trustedContext.reviewOwnerNonce !== undefined ? { reviewOwnerNonce: request.trustedContext.reviewOwnerNonce } : {}),
 			...(request.trustedContext.executorProgressPort !== undefined ? { executorProgressPort: request.trustedContext.executorProgressPort } : {}),
 		} } : {}),
 	};
@@ -167,7 +165,7 @@ export class HubClient {
 			if (waiting === undefined) return;
 			this.pending.delete(msg.requestId);
 			if (msg.ok) waiting.resolve(msg.value);
-			else waiting.reject(msg.error.name === 'ReviewStateRefused' && /^review-state-(stale|busy|owner-mismatch|uncertain|capacity|invalid)$/.test(msg.error.message) ? new ReviewStateRefused(msg.error.message as ReviewStateRefused['reason'], msg.error.evidence) : new HubRemoteError(msg.error.name, msg.error.message));
+			else waiting.reject(new HubRemoteError(msg.error.name, msg.error.message));
 		});
 		port.once('close', () => this.fail('the hub port closed'));
 	}
@@ -211,7 +209,6 @@ export class HubClient {
 }
 
 function errorShape(e: unknown): { readonly name: string; readonly message: string; readonly evidence?: { artifactId?: string | undefined; runId?: string | undefined } | undefined } {
-	if (e instanceof ReviewStateRefused) return { name: e.name, message: e.message, ...(e.evidence ? { evidence: e.evidence } : {}) };
 	return e instanceof Error ? { name: e.name, message: e.message } : { name: 'Error', message: String(e) };
 }
 

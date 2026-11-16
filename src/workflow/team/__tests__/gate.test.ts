@@ -90,7 +90,7 @@ test('teamGate allows with no tracker call when there is no policy, teamMode is 
 	for (const readPolicy of [none, policy({ teamMode: false }), policy({ claimsEnforced: false })]) {
 		const f = fakePort(['bob']);
 		const seen = inject(f, readPolicy);
-		for (const action of ['author', 'build', 'approve-local', 'open-signoff', 'review-fix'] as GuardedAction[]) {
+		for (const action of ['author', 'build', 'approve-local', 'open-signoff'] as GuardedAction[]) {
 			assert.deepEqual(await teamGate('/repo', UNIT, action), { kind: 'allowed', implicitClaim: false }, action);
 		}
 		assert.equal(seen.loads, 0, 'the tracker is never loaded');
@@ -111,7 +111,7 @@ test('teamGate allows an unassigned stage for author and build and adds the acto
 		assert.ok(!f.calls.some(c => c.startsWith('setAssignee')), 'a claim never uses the replacing setAssignee');
 	}
 	// approve-local and applying a finding (review-fix) take no claim
-	for (const action of ['approve-local', 'review-fix'] as GuardedAction[]) {
+	for (const action of ['approve-local'] as GuardedAction[]) {
 		const f = fakePort([]);
 		inject(f);
 		assert.deepEqual(await teamGate('/repo', UNIT, action), { kind: 'allowed', implicitClaim: false }, action);
@@ -135,7 +135,7 @@ test('teamGate allows an unassigned stage for author and build and adds the acto
 test('teamGate recognises a developer assigned directly in the tracker as the holder with no separate claim, comparing logins case-insensitively', async () => {
 	const f = fakePort(['Alice']);
 	inject(f);
-	for (const action of ['author', 'build', 'approve-local', 'review-fix'] as GuardedAction[]) {
+	for (const action of ['author', 'build', 'approve-local'] as GuardedAction[]) {
 		assert.deepEqual(await teamGate('/repo', UNIT, action), { kind: 'allowed', implicitClaim: false }, action);
 	}
 	assert.ok(!f.calls.some(c => c.startsWith('addAssignee')), 'no claim was needed');
@@ -144,7 +144,7 @@ test('teamGate recognises a developer assigned directly in the tracker as the ho
 test('teamGate returns held-by-other naming the holder for author, build, approve-local, apply and open-signoff, whatever the holder\'s idle time', async () => {
 	const f = fakePort(['bob']);
 	inject(f);
-	for (const action of ['author', 'build', 'approve-local', 'review-fix', 'open-signoff'] as GuardedAction[]) {
+	for (const action of ['author', 'build', 'approve-local', 'open-signoff'] as GuardedAction[]) {
 		const o = await teamGate('/repo', UNIT, action);
 		assert.deepEqual(o, { kind: 'held-by-other', holder: 'bob', offerPark: false }, action);
 	}
@@ -190,7 +190,7 @@ test('the first author turn of a stage with no issue and no artifact is allowed 
 	// no issue, no artifact: only the first author turn is let through, and it says why the issue is missing
 	inject(fakePort([]), policy(), { issue: null, ensure: FAIL_ENSURE, artifact: false });
 	assert.deepEqual(await teamGate('/repo', UNIT, 'author'), { kind: 'no-issue', allowFirstAuthor: true, creationFailure: 'gh timed out' });
-	for (const action of ['build', 'approve-local', 'review-fix', 'open-signoff', 'revise', 'release', 'claim'] as GuardedAction[]) {
+	for (const action of ['build', 'approve-local', 'open-signoff', 'revise', 'release', 'claim'] as GuardedAction[]) {
 		const o = await teamGate('/repo', UNIT, action);
 		assert.deepEqual(o, { kind: 'no-issue', allowFirstAuthor: false, creationFailure: 'gh timed out' }, action);
 	}
@@ -217,7 +217,7 @@ test('the registered completion hook is consulted for author and build on a next
 	// consulted for the five hooked actions, not for the others; 'continue' lets the gate decide
 	const seen: string[] = [];
 	registerCompletionHook((_repo, _unit, port) => { seen.push(typeof port.whoAmI); return 'continue'; });
-	for (const action of ['author', 'build', 'open-signoff', 'revise', 'release', 'approve-local', 'review-fix', 'claim'] as GuardedAction[]) await teamGate('/repo', UNIT, action);
+	for (const action of ['author', 'build', 'open-signoff', 'revise', 'release', 'approve-local', 'claim'] as GuardedAction[]) await teamGate('/repo', UNIT, action);
 	assert.equal(seen.length, 5, 'author, build, open-signoff, revise and release only');
 
 	// an outcome from the hook is the answer, before the holder is read

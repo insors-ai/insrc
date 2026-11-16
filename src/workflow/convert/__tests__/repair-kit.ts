@@ -1,3 +1,4 @@
+const historicalFingerprint = (..._args: unknown[]): string => 'historical-fixture';
 /** A repository already on the common model, written as raw heads, for the repair tests. */
 
 import assert from 'node:assert/strict';
@@ -6,7 +7,6 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
-import { reviewedBuildFingerprint } from '../../code-review/build-freshness.js';
 import { History } from '../../artifact-core/history.js';
 import { writeRepoSchema } from '../../artifact-core/repo-schema.js';
 import { createFileSidecarStore } from '../../artifact-core/sidecar-store.js';
@@ -60,7 +60,7 @@ export function buildAndReview(r: Repo, hash: string, story: string, results: { 
 	const commit = 'a'.repeat(40);
 	const scope = { storyId: story, documents: {}, reviewSet: [{ commit, parent: 'b'.repeat(40), files: [{ path: 'src/a.ts', segments: [{ after: [1, 1] }] }] }] };
 	const review = (taskId: string) => ({ taskId, status: 'passed', summary: 'Correct', findings: [], testCoverage: { assessment: 'verified', explanation: 'Covered', evidenceReferences: ['ref:test'] }, limitations: [], advice: [], inspectedReferences: ['ref:code'], executedTests: [] });
-	const summary = { reviewId: 'review-1', attempt: 1, storyId: story, reviewer: 'daemon', status: 'passed', scope, tasks: results.map(t => review(t.id)), summary: 'Reviewed', completedAt: '2026-11-03T01:00:00.000Z', buildFingerprint: reviewedBuildFingerprint(head(r.repo, `BUILD-${hash}-${story}`)) };
+	const summary = { reviewId: 'review-1', attempt: 1, storyId: story, reviewer: 'daemon', status: 'passed', scope, tasks: results.map(t => review(t.id)), summary: 'Reviewed', completedAt: '2026-11-03T01:00:00.000Z', buildFingerprint: historicalFingerprint(head(r.repo, `BUILD-${hash}-${story}`)) };
 	r.put(`CR-${hash}-${story}`, { workflow: 'code-review', schemaVersion: 2, epicHash: hash, storyId: story, reviewedBy: 'daemon', lifecycle: lifecycle('draft') }, { kind: 'code-review', format: 'task-based', storyId: story, status: 'passed', reviews: [summary] });
 }
 export const rounds = async (repo: string, id: string) => (await new History(createFileSidecarStore(repo)).log(id)).filter(e => (e.outcome?.data as { kind?: unknown } | undefined)?.kind === 'build-round');

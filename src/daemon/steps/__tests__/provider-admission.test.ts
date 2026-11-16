@@ -60,7 +60,7 @@ test('CM-S3-PROVIDER: actual factory/direct/injected/cache/loop/aggregate pre-se
 		for (const candidate of [Object.create(OllamaProvider.prototype) as OllamaProvider, Object.create(CliProvider.prototype) as CliProvider]) {
 			await assert.rejects(candidate.complete(poison as never, { connectionExecution: a.execution }), refusal());
 			await assert.rejects(candidate.completeStructured(poison as never, poison as never, { connectionExecution: a.execution }), refusal());
-			await assert.rejects(candidate.runReviewSession('private', poison as never, { connectionExecution: a.execution } as never), refusal());
+			await assert.rejects(candidate.runReadOnlySession('private', poison as never, { connectionExecution: a.execution } as never), refusal());
 			if (candidate instanceof OllamaProvider) await assert.rejects(async () => { for await (const _chunk of candidate.stream(poison as never, { connectionExecution: a.execution })) sends++; }, refusal());
 		}
 		await assert.rejects(dataAggregateReportRuntime.execute(args as never), refusal());

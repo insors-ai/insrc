@@ -22,7 +22,7 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 
 import type { LLMProvider } from '../../shared/types.js';
-import type { CodeReviewSubject, ReviewDimension } from '../code-review/types.js';
+import type { CodeReviewSubject, ReviewDimension } from '../review-history/code-review/types.js';
 import { deriveMdPath } from '../pending.js';
 import type { ArtifactKind } from '../path-scheme.js';
 import { persistBuildRecord } from '../runners/build/standalone-record.js';

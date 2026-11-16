@@ -58,7 +58,7 @@ function failingOllama(): { provider: OllamaProvider; calls: () => number } {
 	return { provider: p, calls: () => n };
 }
 
-test('internalRetry false makes exactly one attempt on CliProvider completeStructured, runReviewSession and OllamaProvider completeStructured; absent keeps today\'s counts', async () => {
+test('internalRetry false makes exactly one attempt on CliProvider completeStructured, runReadOnlySession and OllamaProvider completeStructured; absent keeps today\'s counts', async () => {
 	// CliProvider.completeStructured: one run with internalRetry false, three without.
 	for (const [internalRetry, expected] of [[false, 1], [undefined, 3]] as const) {
 		const f = fakeCli();
@@ -69,14 +69,14 @@ test('internalRetry false makes exactly one attempt on CliProvider completeStruc
 		} finally { f.cleanup(); }
 	}
 
-	// CliProvider.runReviewSession: one run with internalRetry false, two (one transient retry) without.
+	// CliProvider.runReadOnlySession: one run with internalRetry false, two (one transient retry) without.
 	for (const [internalRetry, expected] of [[false, 1], [undefined, 2]] as const) {
 		const f = fakeCli();
 		try {
 			const p = new CliProvider({ kind: 'claude', binPath: f.bin });
 			const opts = { cwd: tmpdir(), deadlineMs: 60_000, ...(internalRetry === false ? { internalRetry } : {}) };
-			await assert.rejects(p.runReviewSession(`x`, SCHEMA, opts));
-			assert.equal(f.runs(), expected, `runReviewSession, internalRetry=${String(internalRetry)}`);
+			await assert.rejects(p.runReadOnlySession(`x`, SCHEMA, opts));
+			assert.equal(f.runs(), expected, `runReadOnlySession, internalRetry=${String(internalRetry)}`);
 		} finally { f.cleanup(); }
 	}
 

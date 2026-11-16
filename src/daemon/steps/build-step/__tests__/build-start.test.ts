@@ -142,7 +142,7 @@ async function implement(fx: Fx, target: string): Promise<Record<string, unknown
 /** Run the validate phase with a canned passing (or failing) verdict. */
 async function validate(fx: Fx, target: string, taskId: string, passed = true): Promise<void> {
 	_setBuildValidateProviderForTests({
-		async runReviewSession<T>() { return judgeVerdict({ taskId, passed }) as T; },
+		async runReadOnlySession<T>() { return judgeVerdict({ taskId, passed }) as T; },
 	});
 	try {
 		assert.equal(out(await handleBuildStep({ phase: 'validate', target, repo: fx.repo }))['next'], 'done');
@@ -412,7 +412,7 @@ test('Trivial route: the first implement stamps HEAD and writes its task-less re
 
 		// The Trivial route had no base before; with the stamp it records its work.
 		let judgePrompt = '';
-		_setBuildValidateProviderForTests({ async runReviewSession<T>(prompt: string) { judgePrompt = prompt; return judgeVerdict({ taskId: 's1', passed: true }) as T; } });
+		_setBuildValidateProviderForTests({ async runReadOnlySession<T>(prompt: string) { judgePrompt = prompt; return judgeVerdict({ taskId: 's1', passed: true }) as T; } });
 		try { await handleBuildStep({ phase: 'validate', target: 's1', repo: fx.repo, standalone: TRIVIAL }); } finally { _setBuildValidateProviderForTests(undefined); }
 		assert.deepEqual(changeLog(fx, 's1'), ['trivial-work.ts']);
 		assert.match(judgePrompt, /## Stated scope\n\nAdd a flag\.\n/, 'the judge sees the Trivial build\'s stated scope (ISSUE-ae2d83c6)');
@@ -429,7 +429,7 @@ test('Trivial route: validate runs the test files touched since the build-start 
 		commitRecords(fx, 'records');
 		let plan: ValidationCheckPlan | undefined;
 		_setBuildValidateCheckRunnerForTests(async (_repo, p) => { plan = p; return PASSING_CHECKS; });
-		_setBuildValidateProviderForTests({ async runReviewSession<T>() { return judgeVerdict({ taskId: 's1', passed: true }) as T; } });
+		_setBuildValidateProviderForTests({ async runReadOnlySession<T>() { return judgeVerdict({ taskId: 's1', passed: true }) as T; } });
 		try {
 			await handleBuildStep({ phase: 'validate', target: 's1', repo: fx.repo, standalone: TRIVIAL });
 		} finally {
@@ -505,7 +505,7 @@ test('T38: no resolvable base and a clean tree -> validate writes an EMPTY chang
 		seedTrivialIssue(fx);
 		work(fx, 'unrelated.ts', 'everything');
 		assert.equal((await resolveStoryRangeBase(fx.repo, HASH, 's1')), undefined, 'fixture precondition: no stamp, no upstream artifact');
-		_setBuildValidateProviderForTests({ async runReviewSession<T>() { return judgeVerdict({ taskId: 's1', passed: true }) as T; } });
+		_setBuildValidateProviderForTests({ async runReadOnlySession<T>() { return judgeVerdict({ taskId: 's1', passed: true }) as T; } });
 		try { await handleBuildStep({ phase: 'validate', target: 's1', repo: fx.repo, standalone: TRIVIAL }); } finally { _setBuildValidateProviderForTests(undefined); }
 		assert.deepEqual(buildRecord(fx, 's1').body['changeLog'], [], 'empty, written so it replaces any prior one (ISSUE-b97752e9)');
 	} finally { fx.cleanup(); }

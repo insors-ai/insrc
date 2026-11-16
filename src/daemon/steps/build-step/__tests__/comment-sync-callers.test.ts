@@ -65,7 +65,7 @@ const call = async (input: Record<string, unknown>): Promise<Record<string, unkn
 	return JSON.parse(env.content[0]!.text) as Record<string, unknown>;
 };
 const validate = async (repo: string): Promise<Record<string, unknown>> => {
-	_setBuildValidateProviderForTests({ async runReviewSession<T>() { return { taskId: 't1', passed: true, checks: [], scopeRespected: true, reason: 'ok' } as T; } });
+	_setBuildValidateProviderForTests({ async runReadOnlySession<T>() { return { taskId: 't1', passed: true, checks: [], scopeRespected: true, reason: 'ok' } as T; } });
 	try { return await call({ phase: 'validate', target: 's1/t1', repo }); }
 	finally { _setBuildValidateProviderForTests(undefined); }
 };

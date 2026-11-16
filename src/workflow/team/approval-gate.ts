@@ -19,7 +19,7 @@ import type { UnitRef } from '../tracker/refs.js';
 import { artifactJsonPath, inheritedStoryStandalone, planArtifactId } from '../storage.js';
 import { parseBuildArtifactRef } from '../gates.js';
 import { isToolDenied } from '../tracker/tool-denied.js';
-import { claimsEnforcedFor, reviewFixDecision, teamGate, type GateOutcome, type GuardedAction, type RefusedOutcome, type ReviewFixMode } from './gate.js';
+import { claimsEnforcedFor, teamGate, type GateOutcome, type GuardedAction, type RefusedOutcome } from './gate.js';
 
 export interface ApprovalRefusal {
 	readonly outcome: RefusedOutcome;
@@ -68,25 +68,6 @@ const asking = (action: GuardedAction): Decide => (repo, unit) => teamGate(repo,
 /** The refusal for approving this artifact, or undefined when it may be approved (or is not guarded). Never throws. */
 export function authorizeApproval(jsonPath: string, metaOverride?: Meta): Promise<ApprovalRefusal | undefined> {
 	return authorizeStageChange(jsonPath, asking('approve-local'), metaOverride);
-}
-
-/** The refusal for applying a review finding to this artifact (changes its content), or undefined. Never throws. */
-export function authorizeFindingApply(jsonPath: string): Promise<ApprovalRefusal | undefined> {
-	return authorizeStageChange(jsonPath, asking('review-fix'));
-}
-
-/**
- * Whether an automatic review may write fixes to this artifact: through reviewFixDecision for the
- * stage unit(s) the artifact belongs to. A review is never refused; only its fix mode changes.
- */
-export async function reviewFixModeFor(jsonPath: string): Promise<ReviewFixMode> {
-	const decide: Decide = async (repo, unit) => ((await reviewFixDecision(repo, unit)) === 'apply-auto-fixes' ? { kind: 'allowed', implicitClaim: false } : { kind: 'refused', reason: 'report-only' });
-	try { return (await authorizeStageChange(jsonPath, decide)) === undefined ? 'apply-auto-fixes' : 'report-only'; }
-	catch (err) {
-		// a denied tracker call stops the review; it does not continue as a report-only review
-		if (isToolDenied(err)) throw err;
-		return 'report-only';
-	}
 }
 
 /** Map the artifact to its stage unit(s) and ask `decide` about each; the first refusal wins. */

@@ -2,8 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { writeFileSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { impactFixture } from '../../review/design-review/__tests__/impact-fixtures.js';
-import { designPreservationDigest, designWorkflowDigest } from '../../review/design-review/history.js';
+import { gunzipSync } from 'node:zlib';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { designPreservationDigest, designWorkflowDigest } from '../../review-history/review/design-review/history.js';
 import { checkSidecarEntrySize, MAX_SIDECAR_ENTRY_BYTES, sidecarOuterLimit, designHistoryLimit } from '../sidecar.js';
 import { FileSidecarStore } from '../sidecar-store.js';
 import { durableKit } from './durable-kit.js';
@@ -12,11 +14,12 @@ import type { ChangeLogEntry } from '../types.js';
 import { artifact, alice, H } from './store-kit.js';
 
 test('design history alone receives a bounded UTF-8 allowance in sync and async readers', async t => {
- const f = impactFixture(t); f.checkpoint.attempts = [f.baseline];
- f.baseline.baseline.reviewedContent.document = 'é'.repeat(150000);
- const data = { kind:'design-chunk-review', schemaVersion:1, reviewId:'review-1', project:f.repo, artifactId:f.id, subject:f.prepared.subject, submitted:f.checkpoint.submitted,
-  attempts:[f.baseline], applicableAttempt:1, status:'passed', reviewer:f.prepared.subject.reviewer,
-  binding:{sourceRevision:{number:1,contentHash:'a'.repeat(64)},reviewedContentIdentity:f.baseline.baseline.contentIdentity,documentDigest:f.baseline.baseline.subjectFingerprints.document,workflowDigest:designWorkflowDigest(f.prepared.subject.workflow),author:'controller'},preservationDigest:designPreservationDigest(f.checkpoint)};
+ const repo=mkdtempSync(join(tmpdir(),'history-storage-')); t.after(()=>rmSync(repo,{recursive:true,force:true}));
+ const saved=JSON.parse(gunzipSync(readFileSync(new URL('../../review-history/__tests__/fixtures/stored-reviews.json.gz',import.meta.url))).toString()).design[0].value;
+ const data=structuredClone(saved);
+ data.attempts[0].baseline.reviewedContent.document='é'.repeat(150000);
+ data.preservationDigest=designPreservationDigest({attempts:data.attempts} as never);
+ const f={repo,id:data.artifactId};
  const record = { artifactId:f.id, entry:{id:'fixed-entry',timestamp:'2026-11-01T00:00:00Z',operation:'review',outcome:{result:'pass',summary:'Review',data}} };
  const n = Buffer.byteLength(JSON.stringify(record)); assert.ok(n>MAX_SIDECAR_ENTRY_BYTES);
  assert.equal(Buffer.byteLength(checkSidecarEntrySize(record,n)),n);

@@ -17,11 +17,9 @@ If a gate cannot be satisfied, stop and ask the user — do not improvise around
    as `presented` before you ask for approval. If it errors, or any name comes
    back `notPending`, correct the name and call again; if it cannot succeed,
    STOP and tell the user — do not approve anything that was not presented.
-3. **Mandatory reviews only, max three rounds each** (DEF/HLD/LLD review before
-   approval; code review before BUILD completion). After the third round, stop
-   and ask the user.
+3. **Automated reviews are unavailable.** Design and code review endpoints raise an exception stating they are being rewritten. Validate changes and report self-check evidence; keep human artifact approval.
 4. **Never patch off-ledger.** Every feature and every defect goes through
-   triage → tracked artifact → approval → build → review → approve. No direct
+   triage → tracked artifact → approval → build → validate → approve. No direct
    commits that implement tracked work without the chain's records.
 5. **Workflows run only via `insrc_workflow_step`**, turn-by-turn, preserving
    the opaque `state` token. Never `insrc_workflow_run`, never raw IPC.
@@ -81,8 +79,8 @@ a call from memory when the contract is one lookup away.
   artifact definitions below; docgen describes existing code, not a future model.
 - **Build / add / implement a feature** → do NOT hand-pick a stage and do NOT
   just start editing. Route it: `brainstorm` (if the idea is rough) →
-  `insrc_triage` (sizes + routes) → the routed workflow → review → approve →
-  build → code-review → complete. Every feature, big or small, is tracked. See
+  `insrc_triage` (sizes + routes) → the routed workflow → present → approve →
+  build → validate → human approval → complete. Every feature, big or small, is tracked. See
   `insrc_guide({ workflow: 'triage' })` for the routing table.
 - **Fix a bug / defect** → same front door: `insrc_triage` classifies it
   `bugfix` (magnitude `small` or `sized`) and routes to the `issue` stage — a
@@ -110,8 +108,8 @@ a multi-turn tool). Call `insrc_guide({ workflow })` for a workflow's procedure.
 | `insrc_workflow_step` | Drive one tracked workflow turn (define / design.epic / design.story / plan / brainstorm / tracker). **This is the ONLY supported way to run a workflow — always drive it turn-by-turn in-session.** |
 | `insrc_workflow_run` | Daemon-side async run (START → POLL). **NOT recommended — do not use.** The async poll/handoff can stall in a resolution loop and error out on completion; drive workflows with `insrc_workflow_step` instead. |
 | `insrc_build_step` | Drive the build stage (`implement` → `validate`) that turns an approved LLD/plan into code. |
-| `insrc_review_step` | Review of a design artifact (DEF/HLD/LLD) by the party that did not author it, before approval. The tool routes it. |
-| `insrc_code_review_step` | Post-build code review by the party that did not write the code (adherence / conventions / coverage / quality). The tool routes it. |
+| `insrc_review_step` | Retained endpoint; fails immediately: design review is being rewritten. |
+| `insrc_code_review_step` | Retained endpoint; fails immediately: code review is being rewritten. |
 | `insrc_workflow_approve` | Approve a pending artifact by `artifactPath` (or `epicHash` to batch) — only on the user's explicit yes. |
 | `insrc_present` | Declare the documents (artifact ids or repo-relative paths) you are asking the user to review, so the chat opens them — call it before asking for approval. |
 | `insrc_schema` | Return any insrc_* tool's registered input shape + accepted phases. |
@@ -160,7 +158,7 @@ MED/HIGH and blocks; genuinely unavailable evidence is `could-not-verify`.
 Optional improvements to an otherwise adequate design are narrative advice,
 not a `warn` verdict or a false failure/unverified finding. Builders maintain
 relevant artifacts when implementation changes documented relationships or UX.
-These checks stay within the existing three-round review limit.
+Record which checks were actually performed and any unavailable evidence.
 
 ### Approval discipline (applies to every workflow artifact)
 
@@ -178,23 +176,11 @@ in-chat yes **for that artifact** (the message names its id/path, or answers
 only the artifacts you presented in that same turn. Never batch via
 `{ epicHash }` without listing each artifact and getting a yes for the batch.
 Never call `insrc_workflow_approve` through raw daemon IPC or a socket — only
-through the MCP tool. Review a DEF, HLD or LLD before you approve it — see
-`insrc_guide({ workflow: 'review' })`.
+through the MCP tool. Automated reviews are unavailable; present the artifact and obtain explicit human approval.
 
-### Review discipline (applies to every review)
+### Review availability
 
-**Only two reviews are mandatory:** a DEF, HLD or LLD before its approval
-(`insrc_review_step`), and the code review that completes a Story's BUILD
-(`insrc_code_review_step`). Do not review anything else — an ISSUE, SPEC or
-PLAN, or any other stage — unless the user asks for it; present it and ask for
-approval instead.
-
-**At most three review rounds per cycle.** A round is one review call
-(`insrc_review_step` or `insrc_code_review_step`), whatever its verdict. After
-the third round on the same artifact or code, STOP: show the user the latest
-review's findings and what the earlier rounds changed, and ASK whether to run
-another cycle of up to three rounds, approve with an override reason, or change
-course. Do not start a fourth review until the user says so.
+Automated design and code review functionality has been removed while it is being rewritten. Retained endpoints fail immediately; do not start or poll them. Historical review records remain readable. Human approval, build validation, integrity, task accounting, upstream and team/signoff gates still apply.
 
 The chat opens exactly the documents you declare with `insrc_present`; it does
 not work out what to open from tool output, so a document you do not declare is
@@ -285,7 +271,7 @@ constraints). Its FIRST step (`scope.assess`) is the scope classifier: it runs
 
 Standard loop (mirrors analyze-step): `phase:'start'` → `emit_plan` →
 `phase:'plan'` → `emit_step` (loop) → `emit_synthesize` → `phase:'synthesize'` →
-`done` with the written artifact. Review the Define (`insrc_review_step`), then
+`done` with the written artifact. Present the Define, then
 present-ask-approve. Next stage: `design.epic` (HLD).
 <!-- insrc:guide:define:end -->
 
@@ -299,7 +285,7 @@ Story's LLD validates without amending the Epic.
 
 Loop: `phase:'start'` with `{ workflow:'design.epic', focus, params }` →
 `emit_plan` → `phase:'plan'` → `emit_step` (loop) → `emit_synthesize` →
-`phase:'synthesize'` → `done`. Review the HLD with `insrc_review_step` before
+`phase:'synthesize'` → `done`. Present the HLD for explicit human approval before
 approving (a `block` verdict from unresolved HIGH/MED findings gates approval);
 resolve, then present-ask-approve. Next stage: `design.story` per Story.
 Apply the front-door **Relevant design artifacts** rule: assess relevance
@@ -319,7 +305,7 @@ crashes with "Story not found".
 Stay inside the Story's own scope — the LLD carries `adjacentBoundaries` and an
 anti-overreach rule so authoring does not spill onto sibling Stories. Loop:
 `phase:'start'` → `emit_plan` → `phase:'plan'` → `emit_step` (loop) →
-`emit_synthesize` → `phase:'synthesize'` → `done`. Review (`insrc_review_step`),
+`emit_synthesize` → `phase:'synthesize'` → `done`. Present the artifact,
 present-ask-approve, then run `plan`.
 Apply the front-door **Relevant design artifacts** rule: assess relevance
 independently, document relationship changes even when simple, and do not
@@ -362,164 +348,22 @@ name that begins with `<file>.test.ts:` can be run. A wrong mapping is refused
 with `invalid-test-mapping` and nothing is run. The test record is a record:
 it is never approved.
 
-After the build has produced its changes, run `code-review` over the changed
-code, DECLARE the BUILD record and the code review with `insrc_present`, PRESENT
-the verdict, then COMPLETE the Story by approving its **BUILD**
-artifact with `insrc_workflow_approve` on the BUILD md/path. BUILD approval is
-the code-review-gated completion act. A Story with NO code review, or one
-reviewed by the party that wrote the code, is always withheld into `skipped[]`.
-A code review whose verdict is `block` withholds completion under
-the current task-review completion gate (no advisory/enforcement flag). Either is passed only
-with an explicit `overrideReview`.
+After the build passes validation, report self-check evidence and limitations, DECLARE the BUILD with `insrc_present`, PRESENT its summary and ASK for human approval. On explicit approval call `insrc_workflow_approve` for that BUILD. Completion still enforces current task/build, integrity, upstream and team/signoff requirements; no automated review or CR is required.
 Apply the front-door **Relevant design artifacts** rule: assess relevance
 independently, document relationship changes even when simple, and do not
 require an ERD for isolated class edits. Builders keep affected artifacts aligned with the implementation.
 <!-- insrc:guide:build:end -->
 
 <!-- insrc:guide:review:start -->
-## review — evolving design artifacts (`insrc_review_step`)
+## review — unavailable
 
-Read `insrc_schema({ tool: 'insrc_review_step', phase })` for exact input fields.
-Use `start` with repo, unique reviewId, attempt 1 and canonical artifactPath.
-After a complete terminal report (passed/changes_requested/incomplete), explicitly
-start latest attempt+1 with the same reviewId and admitted artifact path for a correction.
-This runs impact analysis before selecting affected chunks; historical attempt replay only observes.
-DEF/HLD/LLD only: the owner derives Epic, standalone or ISSUE workflow context;
-missing required ancestors are errors, and ISSUE/SPEC/PLAN are not review subjects.
-The party that did not author the artifact reviews it: controller-authored artifacts
-go to the daemon; daemon-authored artifacts go to the live controller. Unknown
-provenance is refused. No self-review fallback or retired review protocol.
-
-Start returns a durable short acknowledgement; native work runs in the background.
-To wait, call `progress` again directly, without sleeping first, or wait with ONE
-background command that exits when the checkpoint reaches a terminal status. Never arm
-a placeholder or no-op wait, and stop any armed wait before ending a turn that asks the
-user a question. Show meaningful status and completed-chunk progress to the user, and
-wait for full completion before corrections or approval. Default polling returns
-metadata only. Set includeResult true and use afterCompletedChunk/nextCompletedChunk
-to retrieve one completed chunk per page.
-Polling does not renew activity or execute model calls. The checkpoint path is returned.
-
-For a controller reviewer, `assignment` returns the current planning, impact or chunk prompt,
-schema and executionId. Submit `plan`, `impact` ({plan,impact}) or `result` using that executionId and the next
-positive sequence; `activity` uses the same response sequence and real session/tool
-events. Assignment includes the latest accepted sequence. Keep the same live MCP
-session: observers cannot become reviewer. Schema-invalid requests do not transfer
-ownership or spend retry budget. A structurally valid but invalid review plan/result
-is a technical output failure: fetch the next assignment and its fresh executionId.
-Use `failure` with the current generation/next sequence to report a technical execution
-failure. The host classifies it, persists pointed feedback and rotates the generation.
-Do not manufacture activity merely to keep a review alive.
-
-Prompts contain guidelines and live document paths, never copied artifact bodies.
-The reviewer may inspect anything in the codebase. Plan coherent artifact-specific
-chunks covering every inventory unit, then a final consistency chunk. Findings and
-verification gaps do not skip later chunks. Completed feedback is saved before
-advancement. A subject change invalidates this review; external changes are ignored.
-Technical failures retry only that unit: one initial execution plus at most three
-automatic retries, retaining completed chunks. Planning uses the same budget. Native
-internal retries are disabled; do not add controller/MCP retry loops. On exhaustion,
-status is paused and remaining chunks stop until user direction. Findings and honest
-incomplete coverage are not technical failures. Tools are tracked separately from the
-30-minute idle model-wait grace; polling, heartbeats and mere process presence do not
-renew activity, and no fixed task deadline applies.
-
-Recovery is always an explicit `recover` request with a fresh actionId, source attempt
-and operation. Exact actionId/input replay returns existing admission, never another
-dispatch; conflicting replay is an error. Interrupted unchanged work uses operation
-resume, retaining accepted plan/chunks and retry counters. After daemon restart there
-is no automatic scan/resume; retrigger explicitly. The recovering controller needs a
-live trusted connection after the old execution has ended. Observers cannot steal work.
-Paused resume requires the user's approval and userDecision action retry_failed_unit,
-reason and recordedAt; it grants one extra execution, never a fresh automatic budget.
-Invalidated work requires user approval and operation restart_full with userDecision
-action restart_full, reason and recordedAt. It appends a full fresh attempt, with no
-chunk reuse. External changes are ignored for same-attempt recovery. Report progress
-and wait for full completion before corrections. Failed storage/domain state is not an
-automatic retry. Use operation retry_publication for pending publication: it persists accepted feedback without another model call. Completion is visible only after its permanent history receipt is durable.
-Correction attempts assess direct and indirect effects from current paths and prior checkpoint
-history. The reviewer submits a complete current plan plus sc4 impact in one output; both
-are accepted atomically. Retain only justified eligible same-party coverage without limitations;
-review affected chunks in dependency order and always run fresh final consistency. Uncertain
-comparison requires explicit full mode, never a host-invented scope. The final accepted result
-is the only source of findingDecisions; missing decisions carry prior findings and make the
-report incomplete. Progress completedChunks/totalChunks counts fresh selected work;
-coverageProgress separately shows planned/selected/reviewed/retained/effective totals.
-Pagination contains fresh results only; inspect report provenance by checkpoint path.
-Approval-history publication remains the later S4 story;
-a checkpoint result alone is not an approval record.
-
-Use `phase:'cancel'` with the exact review id/attempt and a pointed `reason`; the daemon derives action identity and control ownership. Observe `operationState`: `cancelling`, `stopped` or `resource_fenced`. Cancellation preserves committed feedback, is not an assessment verdict, and does not resume or approve work. Resource clearance and explicit recovery/new attempts remain separate. Preparation progress counts verified completed operations; totals stay null until known.
-
+Design review functionality is being rewritten. The retained endpoints fail immediately without running a review. Do not invoke or poll them. Existing records remain readable. Present artifacts for explicit human approval and record build/self-check evidence.
 <!-- insrc:guide:review:end -->
 
 <!-- insrc:guide:code-review:start -->
-## code-review — committed task review
+## code-review — unavailable
 
-Use `insrc_schema({ tool: 'insrc_code_review_step', phase })` for exact fields.
-Create the commit packet FIRST. Every new packet requires `reviewRevision`, the explicit
-full Git commit OID of the final reviewed source. All selected origin commits must be
-ancestors of that pin; never infer it from HEAD or document pointers. Select only
-after-version segments (or deletion anchors) in each origin commit. The daemon verifies
-their surviving final spans and selected replacement/deletion witnesses at the pin;
-only that final projection authorizes findings. Original selections remain provenance,
-including superseded entries with no finding scope; commits are lookup pointers. Pin exactly the documents the
-Story's route produced, as committed canonical artifacts: a Story with a Plan pins its
-`lld` and `plan` (and its `story` definition when an epic DEF exists); a Story with only
-an LLD pins that `lld`; a bugfix or a trivial change with only an ISSUE pins that
-`issue`. The daemon reads the route from the
-Story's stored artifacts, refuses a packet whose set differs, and reviews a Story without
-a Plan as one unit, the BUILD's task. Include full test cases, commands, results and
-execution details. Never infer
-scope from HEAD or omit selected modules. Test-coverage inspection is mandatory;
-running tests/integration/build is optional and any skipped execution is advice.
-
-The party that did not write the code reviews it: controller-authored code goes
-to the daemon, and daemon-authored code goes to the live controller. No self-review
-fallback. A story with no valid independent whole-story review is withheld.
-
-1. `start`: supply repo, epicHash, reviewId, attempt and packet. The daemon derives
-   the independent reviewer from BUILD author. Acknowledge only; do not wait for
-   the model in the tool call. Store the returned checkpoint path.
-2. `progress`: observe the same repo/epicHash/reviewId/attempt, or read the atomic
-   checkpoint. This never starts/resumes work. Report meaningful progress to user.
-   To wait, call `progress` again directly, without sleeping first, or wait with ONE
-   background command that exits when the checkpoint reaches a terminal status. Never
-   arm a placeholder or no-op wait; stop any armed wait before ending a turn that asks
-   the user a question.
-3. For a controller reviewer, use `assignment`, `scope`, `activity`, `result` on the
-   live owner connection. Follow returned prompt/schema/taskId/executionId/nextSequence.
-   Scope/result/activity require the exact task/execution/sequence envelope.
-   Diagnostic activity carries phase and bounded native errors; it does not renew
-   inactivity or complete a task. Do not substitute a daemon CLI for the controller.
-4. `resume`: explicit controller retrigger or daemon restart recovery, same identity
-   and pinned attempt; packet may be omitted. Changed input is rejected. Failed or
-   incomplete terminal tasks require a NEW sequential attempt, never same-attempt
-   repetition. No automatic retries or new attempts. Daemon review survives observer
-   disconnect; controller loss requires explicit resume. Cancelling one review
-   releases only its own connection, not other reviews in the session.
-5. `publish`: explicitly retry CR publication using saved terminal feedback, without
-   rerunning models. Permanent CR records preserve findings/coverage/limitations
-   and origins. Only a passing whole-story current BUILD binding permits completion.
-6. Present BUILD and CR and ask for human approval; never auto-approve. Story BUILD
-   approval cleanup is handled by the host when available; retained/errors mean retry
-   cleanup explicitly without re-review. Design review uses its separate initial-attempt protocol and publishes complete versioned history before approval. Normal design approval requires current independent evidence; successful approval cleans only inactive fully preserved checkpoints. After cleanup, progress requires the exact artifactPath when no mapping remains, and reads permanent history without a model.
-
-For rollout, finish qualification before deployment. Drain or explicitly interrupt active
-reviews, retain checkpoints, and coordinate the daemon restart with updated submitters
-and an MCP reconnect so discovery advertises the required pin. Restart does not promise
-in-flight completion; recover explicitly. There is no activation flag or automatic
-deployment. Completed historical no-pin records remain immutable/read-only; interrupted
-unpinned work requires a new pinned attempt. Once pinned records exist, retain an upgraded
-reader; never blind-downgrade or rewrite history. A state-preserving operator rollback
-must retain compatible readers. `review.maxJsonBytes` controls JSON capacity (default4MiB);
-every new attempt requalifies history, and raising the setting can admit a fitting attempt.
-
-All phases require repo (or resolved project), epicHash, reviewId, attempt.
-The schemas advertise reused bounded packet/results; host validates semantic scope,
-phase, ownership and replay. Old dimension/chunk review inputs remain rejected.
-Use `phase:'cancel'` with the exact review id/attempt and a pointed `reason`; the daemon derives action identity and control ownership. Observe `operationState`: `cancelling`, `stopped` or `resource_fenced`. Cancellation preserves committed feedback, is not an assessment verdict, and does not resume or approve work. Resource clearance and explicit recovery/new attempts remain separate. Preparation progress counts verified completed operations; totals stay null until known.
-
+Code review functionality is being rewritten. The retained endpoints fail immediately without running a review. Do not invoke or poll them. Existing records remain readable. Present artifacts for explicit human approval and record build/self-check evidence.
 <!-- insrc:guide:code-review:end -->
 
 <!-- insrc:guide:tracker:start -->
@@ -549,17 +393,14 @@ classifies it `bugfix` and routes it to the `issue` stage.
 2. **Run the `issue` stage** with `insrc_workflow_step` (turn-by-turn, like every
    workflow). It writes an **IssueArtifact** — the single defect record (root
    cause, reproduction, fix intent) that also becomes the GitHub issue body.
-   It needs no review (only a DEF, HLD or LLD and the code review are
-   mandatory): present-ask-approve.
+   Present it and ask for human approval.
 3. **Approve the issue** with `insrc_workflow_approve`. Approval AUTO-ADVANCES the
    bugfix chain: the daemon locates + stamps the fix's parent, checks the advance
    gate, and routes to the next stage (build for small, design.story for sized).
    The approval result carries a `followOn` entry describing what fired; relay a
    failed advance (`ok:false`) rather than assuming it advanced.
 4. **Continue the routed chain** (build, or design.story → plan → build), each
-   with its own present-ask-approve gate and a review only where one is
-   mandatory (the LLD, and the code review of the build). Completing the bugfix BUILD
-   is the code-review-gated completion act, exactly as for a feature story.
+   with its own present-ask-approve gate. Complete the bugfix BUILD after validation and explicit human approval, as for a feature story.
 
 Do NOT patch a bug off-ledger. A change the user scoped as trivial still starts
 with an ISSUE: triage routes trivial work to the `issue` stage too.

@@ -76,7 +76,7 @@ async function abortWhenRunning(f: ReturnType<typeof hangingCli>, run: (signal: 
 	return { err, ms: Date.now() - t0 };
 }
 
-test('aborting a CLI completeStructured or reviewer session in flight kills the process group and throws AbortError at once; an aborted Ollama request throws AbortError; neither is retried', async () => {
+test('aborting a CLI completeStructured or read-only session in flight kills the process group and throws AbortError at once; an aborted Ollama request throws AbortError; neither is retried', async () => {
 	// CliProvider.completeStructured, with today's retries left on: an abort is still not retried.
 	{
 		const f = hangingCli();
@@ -91,14 +91,14 @@ test('aborting a CLI completeStructured or reviewer session in flight kills the 
 			assert.equal(f.pids().length, 1, 'not retried');
 		} finally { f.cleanup(); }
 	}
-	// CliProvider.runReviewSession: same.
+	// CliProvider.runReadOnlySession: same.
 	{
 		const f = hangingCli();
 		try {
 			const p = new CliProvider({ kind: 'claude', binPath: f.bin });
-			const { err, ms } = await abortWhenRunning(f, signal => p.runReviewSession('x', SCHEMA, { cwd: tmpdir(), deadlineMs: 60_000, signal }));
-			assert.ok(err instanceof Error && err.name === 'AbortError', `runReviewSession: got ${String(err)}`);
-			assert.ok(ms < 2_000, `runReviewSession ended ${ms} ms after the abort`);
+			const { err, ms } = await abortWhenRunning(f, signal => p.runReadOnlySession('x', SCHEMA, { cwd: tmpdir(), deadlineMs: 60_000, signal }));
+			assert.ok(err instanceof Error && err.name === 'AbortError', `runReadOnlySession: got ${String(err)}`);
+			assert.ok(ms < 2_000, `runReadOnlySession ended ${ms} ms after the abort`);
 			await waitFor(() => !alive(f.pids()[0]!) && !alive(f.kids()[0]!), 2_000);
 			assert.equal(alive(f.pids()[0]!), false, 'the CLI process is killed');
 			assert.equal(alive(f.kids()[0]!), false, 'and so is the process it started: the whole group');

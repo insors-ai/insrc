@@ -23,7 +23,7 @@ import { closeLanceConn, setLanceConnPath } from '../../../db/lance/conn.js';
 import { currentStepContext } from '../../../shared/step-context.js';
 import type { StepCallContext } from '../../../shared/step-context.js';
 import type { IpcStreamMessage } from '../../../shared/types.js';
-import type { CodeReviewGrounding, CodeReviewSubject } from '../../../workflow/code-review/types.js';
+import type { CodeReviewGrounding, CodeReviewSubject } from '../../../workflow/review-history/code-review/types.js';
 import { IpcServer, directDispatch } from '../../server.js';
 import type { RpcHandlers, StreamHandler, StreamHandlers } from '../../server.js';
 import { loadState as loadAnalyzeState } from '../analyze-step/state-store.js';
@@ -92,7 +92,7 @@ test("step.call: a step tool's progress calls arrive as 'progress' frames before
 	let late: ((data: unknown) => void) | undefined;
 	const host = createStepCallHandler({
 		...stepToolTable(),
-		insrc_code_review_step: async (_args, _signal, progress) => {
+        insrc_triage: async (_args, _signal, progress) => {
 			progress?.({ kind: 'stage', stageLabel: 'call · adherence · judge reviewer #1' });
 			progress?.('a plain line');
 			late = progress;
@@ -100,7 +100,7 @@ test("step.call: a step tool's progress calls arrive as 'progress' frames before
 		},
 	});
 
-	const frames = await collect(host, { tool: 'insrc_code_review_step', args: {}, context: CTX });
+	const frames = await collect(host, { tool: 'insrc_triage', args: {}, context: CTX });
 	assert.deepEqual(frames.map(f => f.stream), ['progress', 'progress', 'done']);
 	assert.deepEqual(frames.slice(0, 2).map(f => f.data), [{ kind: 'stage', stageLabel: 'call · adherence · judge reviewer #1' }, 'a plain line']);
 	assert.equal(frames[2]!.data, ENVELOPE);
@@ -110,7 +110,7 @@ test("step.call: a step tool's progress calls arrive as 'progress' frames before
 
 	// A send that throws for progress (the caller went away): the step still answers.
 	const sent: IpcStreamMessage[] = [];
-	await host({ tool: 'insrc_code_review_step', args: {}, context: CTX }, (m) => {
+	await host({ tool: 'insrc_triage', args: {}, context: CTX }, (m) => {
 		if (m.stream === 'progress') throw new Error('stream closed');
 		sent.push(m);
 	}, new AbortController().signal);
@@ -151,11 +151,9 @@ test('equivalence: each of the seven tools through step.call returns the same en
 			insrc_analyze_step:     { phase: 'start', focus: 'how does x work', repo },
 			insrc_workflow_step:    { phase: 'start', workflow: 'issue', focus: 'add a flag to the cli', repo },
 			insrc_build_step:       { phase: 'implement', target: 's1/t1', repo },
-			insrc_review_step:      { phase: 'start', artifact: join(dir, 's1.md'), repo },
-			insrc_code_review_step: { phase: 'start', epicHash: 'abcdabcdabcdabcd', storyId: 's1', repo },
 			insrc_triage:           { phase: 'start', focus: 'add a flag', repo },
 		};
-		assert.deepEqual(Object.keys(inputs).sort(), [...STEP_TOOL_NAMES].sort(), 'every tool is compared');
+		assert.deepEqual(Object.keys(inputs).sort(), STEP_TOOL_NAMES.filter(n => !['insrc_review_step', 'insrc_code_review_step'].includes(n)).sort(), 'every available tool is compared');
 
 		const table = stepToolTable();
 		const host = createStepCallHandler(table);
@@ -267,31 +265,6 @@ function openStepCall(path: string, tool: string, args: unknown): Promise<Socket
 const CREATED = '2026-07-18T00:00:00.000Z';
 const GROUNDING: CodeReviewGrounding = { symbols: [{ entityId: 'sym:src/a.ts#f', file: 'src/a.ts', kind: 'function', name: 'f', signature: 'f(): void', callers: [], callees: [], testsReaching: [] }] };
 
-test("insrc_review_step through step.call relays every daemon progress frame, heartbeats included, as a 'progress' frame before 'done'", async () => {
-	const repo = mkdtempSync(join(tmpdir(), 'insrc-review-relay-'));
-	try {
-		const dir = join(repo, 'docs', 'stub');
-		mkdirSync(dir, { recursive: true });
-		const md = join(dir, 's1.md');
-		writeFileSync(md, '# Doc\n\nThe body.\n');
-		writeFileSync(join(dir, 's1.json'), JSON.stringify({ meta: { workflow: 'design.story', epicHash: 'abcd', storyId: 'S001', authoredBy: 'controller' }, body: {} }) + '\n');
-		const STAGE = { kind: 'stage', operation: 'workflow.review', stageId: 'template', stageLabel: 'template', index: 0, total: null };
-		const BEAT = { kind: 'heartbeat', operation: 'workflow.review', elapsedMs: 60_000 };
-		const host = createStepCallHandler(stepToolTable({ reviewDeps: {
-			reviewByDaemon: async (_params, opts) => {
-				opts.onFrame?.('progress', STAGE);
-				opts.onFrame?.('progress', BEAT);
-				opts.onFrame?.('progress', { ...BEAT, elapsedMs: 120_000 });
-				return { artifactPath: md, verdict: 'pass', counts: { high: 0, med: 0, low: 0 }, reviewedBy: 'daemon', model: 'm', applied: 0, pending: 0, report: 'R' };
-			},
-		} }));
-		const frames = await collect(host, { tool: 'insrc_review_step', args: { phase: 'start', artifact: md, repo }, context: CTX });
-		assert.deepEqual(frames.map(f => f.stream), ['progress', 'progress', 'progress', 'done']);
-		assert.deepEqual(frames.slice(0, 3).map(f => f.data), [STAGE, BEAT, { ...BEAT, elapsedMs: 120_000 }]);
-		assert.match(JSON.stringify(frames[3]!.data), /\\"next\\": \\"done\\"/);
-	} finally { rmSync(repo, { recursive: true, force: true }); }
-});
-
 test('insrc_analyze through step.call refuses bad arguments with a clear error, not a step-failed frame', async () => {
 	const host = createStepCallHandler(stepToolTable());
 	const context: StepCallContext = { cwd: process.cwd() };
@@ -313,47 +286,4 @@ test('insrc_analyze through step.call refuses bad arguments with a clear error, 
 		assert.equal(env.isError, true);
 		assert.match(env.content[0]!.text, message, JSON.stringify(args));
 	}
-});
-
-test('single-thread owner registration cleanup and out-of-band trusted context preserve non-review behavior', async () => {
-	const { getStepStateStore } = await import('../../threads/step-state.js');
-	const { assertReviewOwnerActive } = await import('../../review-request-owner.js');
-	const store = getStepStateStore();
-	let held: import('../../threads/review-state-contract.js').ReviewStateClaim | undefined;
-	let owner = '';
-	let token = '';
-	let mode: 'leave' | 'complete' | 'throw' = 'leave';
-	const host = createStepCallHandler({
-		insrc_review_step: async () => {
-			owner = currentStepContext()!.reviewOwner!.nonce;
-			assert.notEqual(owner, 'forged'); assertReviewOwnerActive(owner);
-			token = await store.mintReviewState('review', {}, { generation: 0, callId: 'local-call' });
-			const result = await store.claimReviewState({ kind: 'review', token, generation: 0, callId: 'local-call', owner });
-			if (result.status !== 'claimed') throw new Error('expected claim'); held = result.claim;
-			if (mode === 'complete') await store.commitReviewState(result.claim, { status: 'completed', receipt: { status: 'completed', callId: 'local-call', artifactId: 'CR-local-s1' } });
-			if (mode === 'throw') throw new Error('fixture failure');
-			return ENVELOPE;
-		},
-		insrc_triage: async () => { assert.equal(currentStepContext()?.reviewOwner, undefined); return ENVELOPE; },
-	});
-	for (const selected of ['leave', 'complete', 'throw'] as const) {
-		mode = selected;
-		const frames = await collect(host, { tool: 'insrc_review_step', args: { owner: 'forged' }, context: { ...CTX, reviewOwner: { nonce: 'forged' } } });
-		assert.equal(frames.at(-1)?.stream, selected === 'throw' ? 'error' : 'done');
-		assert.throws(() => assertReviewOwnerActive(owner), /owner-mismatch/);
-		await assert.rejects(store.commitReviewState(held!, { status: 'completed', receipt: { status: 'completed', callId: 'local-call' } }), /owner-mismatch|uncertain/);
-		if (selected === 'complete') assert.equal((await store.read('review', token))!.payload, undefined, 'bounded receipt survives owner cleanup');
-	}
-	assert.equal((await collect(host, { tool: 'insrc_triage', args: {}, context: CTX })).at(-1)?.stream, 'done');
-	const controller = new AbortController();
-	const cancelHost = createStepCallHandler({ insrc_review_step: async () => {
-		owner = currentStepContext()!.reviewOwner!.nonce;
-		token = await store.mintReviewState('review', {}, { generation: 0, callId: 'cancel' });
-		await store.claimReviewState({ kind: 'review', token, generation: 0, callId: 'cancel', owner });
-		controller.abort();
-		assert.throws(() => assertReviewOwnerActive(owner), /owner-mismatch/);
-		return ENVELOPE;
-	} });
-	await collect(cancelHost, { tool: 'insrc_review_step', args: {}, context: CTX }, controller.signal);
-	assert.throws(() => assertReviewOwnerActive(owner));
 });

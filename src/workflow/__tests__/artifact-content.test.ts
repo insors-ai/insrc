@@ -24,8 +24,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { handleArtifactContent, type ArtifactReviewView } from '../artifact-content.js';
-import { reviewReference } from '../review/report-log.js';
-import type { ReviewReport } from '../review/types.js';
+import { reviewReference } from '../review-history/review/report-log.js';
+import type { ReviewReport } from '../review-history/review/types.js';
 import { ARTIFACTS_DIR } from '../storage.js';
 import { approvedMeta, blockedMeta, draftMeta, lifecycleMeta, recordReview, rejectedMeta } from './lifecycle-fixtures.js';
 import { FileSidecarStore } from '../artifact-core/sidecar-store.js';

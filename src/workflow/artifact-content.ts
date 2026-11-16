@@ -56,7 +56,7 @@ export interface OpenQuestionRef {
 }
 
 export interface ArtifactReviewView {
- readonly reviewProgress?:import('../shared/review-worker-progress.js').ReviewWorkerStatus|undefined;
+ readonly reviewProgress?:import('../workflow/review-history/shared/worker-progress.js').ReviewWorkerStatus|undefined;
  readonly designFindings?:readonly import('./review-history/review/design-review/read.js').DesignFindingView[]|undefined;
  readonly designReview?:import('./review-history/review/design-review/contracts.js').DesignReviewConsolidated|undefined;
 	readonly artifactId:       string;   // canonical file identity, e.g. 'LLD-<hash>-s2'

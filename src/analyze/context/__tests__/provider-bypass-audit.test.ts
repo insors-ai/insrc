@@ -41,7 +41,6 @@ const ALLOWLIST = new Set([
 	'analyze/context/shaper-provider.ts',
 	'analyze/context/role-router.ts',
 	'daemon/workflow-rpc.ts',
-	'daemon/code-review-rpc.ts',
 	'docgen/extract/narrative-generator.ts',
 ]);
 

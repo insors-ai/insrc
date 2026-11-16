@@ -46,14 +46,14 @@ import {
 } from '../gates.js';
 import { approveJson } from './helpers/approve.js';
 import { approvedMeta, blockedMeta, recordReviewSync, reviewedMeta } from './lifecycle-fixtures.js';
-import { reviewArtifactFile } from '../review/run-artifact.js';
+import { reviewArtifactFile } from '../review-history/review/run-artifact.js';
 import {
 	renderSpecMarkdown,
 	SPEC_SCHEMA_VERSION,
 	type SpecArtifact,
 } from '../artifacts/spec.js';
 import { specArtifactPaths, writeAtomic } from '../storage.js';
-import type { ReviewReport } from '../review/types.js';
+import type { ReviewReport } from '../review-history/review/types.js';
 import type { LLMProvider } from '../../shared/types.js';
 import { createRepoLifecycle } from '../artifact-core/repo-lifecycle.js';
 

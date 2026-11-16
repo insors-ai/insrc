@@ -23,7 +23,7 @@ after(async () => {
 
 import type { LLMMessage, LLMProvider, LLMResponse, StructuredCompletionOpts, StructuredSchema } from '../../../shared/types.js';
 import { lifecycleFor, resetLifecycleRegistry, roundWriterFor } from '../../../daemon/lifecycle-registry.js';
-import { reviewArtifactFile } from '../../review/run-artifact.js';
+import { reviewArtifactFile } from '../../review-history/review/run-artifact.js';
 import { persistBuildRecord } from '../../runners/build/standalone-record.js';
 import { persistTestRecordTask } from '../../runners/build/test-record.js';
 import { storeRound } from '../../runners/build/round-writer.js';

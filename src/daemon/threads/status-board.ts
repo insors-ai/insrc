@@ -19,7 +19,7 @@ import type { HubClient, HubHandlers, MethodClass, SessionId } from './channel.j
 const log = getLogger('status-board');
 
 export interface ThreadStatus {
- readonly reviewProgress?:import('../../shared/review-worker-progress.js').ReviewWorkerStatus|undefined;
+ readonly reviewProgress?:import('../../workflow/review-history/shared/worker-progress.js').ReviewWorkerStatus|undefined;
  readonly reviewSubject?:string|undefined;
 	readonly threadId: number;
 	readonly cls: MethodClass | 'router' | 'review';

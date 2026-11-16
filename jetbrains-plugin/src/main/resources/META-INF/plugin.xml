@@ -4,6 +4,7 @@
     <vendor url="https://github.com/insors-ai/insrc">insors-ai</vendor>
 
     <description><![CDATA[
+        <p>Automated design and code review functionality is being rewritten. Retained review endpoints fail immediately. Historical artifacts and human approval remain available.</p>
         <p><b>insrc</b> brings the insrc code-knowledge system into the JetBrains
         IDE family &mdash; IntelliJ IDEA, PyCharm, GoLand, and WebStorm &mdash; from
         a single install. It is a <b>thin orchestrator that owns no reasoning of its
@@ -25,7 +26,7 @@
                 dependency-scoped model of the codebase.</li>
             <li><b>A tracked workflow</b> &mdash; a human-in-the-loop authoring
                 pipeline that takes one request from
-                <code>triage &rarr; design &rarr; review &rarr; plan &rarr; build &rarr; code-review</code>,
+                <code>triage &rarr; design &rarr; human approval &rarr; plan &rarr; build &rarr; validation</code>,
                 producing an approved, cited artifact at every stage and refusing to
                 advance until you approve the one before it. Every change, large or
                 small, is tracked; a defect fix routes through a first-class
@@ -60,7 +61,7 @@
             <li><b>Grounded analyze + tracked workflow, in your assistant.</b> Once
                 wired, your existing IDE assistant explores the code through the
                 citation-grounded graph and can drive the full tracked design &rarr;
-                review &rarr; plan &rarr; build workflow without leaving the IDE.</li>
+                human approval &rarr; plan &rarr; build workflow without leaving the IDE.</li>
             <li><b>Clean and reversible.</b> Every write into a host config or rules
                 file is marker-delimited and preserves your own surrounding content.
                 Uninstalling the plugin removes exactly those blocks and nothing else;

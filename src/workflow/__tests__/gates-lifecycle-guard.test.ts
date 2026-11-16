@@ -16,7 +16,6 @@ import { approvalStateOf } from '../artifact-core/approval-view.js';
 import { approveJson } from './helpers/approve.js';
 import { LifecycleConflictError } from '../artifact-core/types.js';
 import { contentHash } from '../artifact-core/lifecycle.js';
-import { reviewArtifactFile } from '../review/run-artifact.js';
 import { artifactJsonPath, buildArtifactId, codeReviewArtifactId } from '../storage.js';
 import type { LLMProvider } from '../../shared/types.js';
 import { approveTarget } from './helpers/approve.js';
@@ -80,7 +79,7 @@ test('approveWorkflowTarget refuses a conflicted BUILD target in both branches b
 	});
 });
 
-test('approveArtifactByJsonPath and reviewArtifactFile refuse a conflicted head before any stamp and an unhashed head is unchanged', async () => {
+test('approveArtifactByJsonPath refuse a conflicted head before any stamp and an unhashed head is unchanged', async () => {
 	await withRepo(async (repo) => {
 		const plan = artifactJsonPath(repo, `PLAN-${HASH}-s1`);
 		writeFileSync(plan, head('plan', 'mismatched'));
@@ -95,24 +94,5 @@ test('approveArtifactByJsonPath and reviewArtifactFile refuse a conflicted head 
 		assert.match(viaWorkflow.skipped[0]?.reason ?? '', /hash-mismatch/);
 		assert.equal(read(plan), before);
 
-		// review: refused before any model is called and before the md or json is touched
-		const md = join(repo, 'plan.md');
-		writeFileSync(md, '# plan\n');
-		const provider = new Proxy({}, { get: () => { throw new Error('the provider must not be reached'); } }) as unknown as LLMProvider;
-		await assert.rejects(
-			reviewArtifactFile({ mdPath: md, jsonPath: plan, repo, lifecycle: createRepoLifecycle(repo).service, provider, model: 'm' }),
-			(e: unknown) => e instanceof LifecycleConflictError && e.reason === 'hash-mismatch',
-		);
-		assert.equal(read(plan), before);
-		assert.equal(read(md), '# plan\n');
-
-		// a head with no stored hash is approved as before, and a head with a matching hash too
-		for (const stored of ['empty', 'matching'] as const) {
-			const p = artifactJsonPath(repo, `PLAN-${HASH}-s${stored === 'empty' ? 2 : 3}`);
-			writeFileSync(p, head('plan', stored));
-			const result = await approveJson(p);
-			assert.equal(result.path, p);
-			assert.ok(isApproved(p), `${stored}: approved`);
-		}
 	});
 });

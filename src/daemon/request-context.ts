@@ -14,7 +14,6 @@ export interface TrustedRpcContext {
 	/** Private channel for this verified executor launch. */
 	readonly executorProgressPort?: MessagePort | undefined;
 	/** Main-thread minted request nonce; the only review authority carried over the worker wire. */
-	readonly reviewOwnerNonce?: string | undefined;
 	readonly connectionIdentity: string;
 	readonly daemonEpoch: string;
 	readonly connectionExecution?: ConnectionExecutionContext | undefined;

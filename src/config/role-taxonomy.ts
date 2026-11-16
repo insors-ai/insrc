@@ -60,7 +60,6 @@ const ROLES: readonly RoleDescriptor[] = [
 	{ id: 'design.alternatives.judge',     criticality: 'critical',   defaultTier: 'core' },
 	{ id: 'design.contract.detail',        criticality: 'critical',   defaultTier: 'core' },
 	{ id: 'scope.audit',                   criticality: 'critical',   defaultTier: 'core' },  // checklist.verify
-	{ id: 'review',                        criticality: 'critical',   defaultTier: 'core' },
 	{ id: 'build',                         criticality: 'critical',   defaultTier: 'core' },
 	{ id: 'define.scope.assess',           criticality: 'critical',   defaultTier: 'core' },
 	{ id: 'define.epic.frame',             criticality: 'critical',   defaultTier: 'core' },

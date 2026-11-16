@@ -1,3 +1,5 @@
+> **Current status:** Automated design and code review functionality has been removed while it is being rewritten. Retained review endpoints fail immediately. Historical records remain readable. Use build validation and explicit human artifact approval; review procedures below are historical.
+
 # Design review execution
 
 `insrc_review_step` reviews a current DEF, HLD or LLD through coherent chunks and a final consistency check. The reviewer reads document paths and may inspect the codebase. Prompts contain policy and references; the artifact body is not copied into them.

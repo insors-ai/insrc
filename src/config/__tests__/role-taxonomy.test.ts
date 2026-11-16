@@ -38,7 +38,7 @@ test('covers the critical workflow reasoning roles', () => {
 	const ids = new Set(reasoningRoleTaxonomy().roles.map(r => r.id));
 	for (const id of [
 		'design.alternatives.enumerate', 'design.alternatives.judge', 'design.contract.detail',
-		'scope.audit', 'review', 'build', 'define.scope.assess', 'define.epic.frame', 'define.stories.compose',
+		'scope.audit', 'build', 'define.scope.assess', 'define.epic.frame', 'define.stories.compose',
 	]) {
 		assert.ok(ids.has(id), `taxonomy missing critical role: ${id}`);
 	}

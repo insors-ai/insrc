@@ -28,7 +28,7 @@ import type { PolicyReader } from './types.js';
 
 const log = getLogger('workflow:team-gate');
 
-export type GuardedAction = 'author' | 'build' | 'approve-local' | 'open-signoff' | 'revise' | 'release' | 'claim' | 'review-fix';
+export type GuardedAction = 'author' | 'build' | 'approve-local' | 'open-signoff' | 'revise' | 'release' | 'claim';
 
 export type GateOutcome =
 	| { readonly kind: 'allowed'; readonly implicitClaim: boolean }
@@ -138,7 +138,7 @@ async function consultHook(repo: string, unit: UnitRef, action: GuardedAction, p
 // The gate
 // ---------------------------------------------------------------------------
 
-const GUARDED: ReadonlySet<string> = new Set<GuardedAction>(['author', 'build', 'approve-local', 'open-signoff', 'revise', 'release', 'claim', 'review-fix']);
+const GUARDED: ReadonlySet<string> = new Set<GuardedAction>(['author', 'build', 'approve-local', 'open-signoff', 'revise', 'release', 'claim']);
 
 /** Actions that take the claim when nobody holds the stage. */
 const CLAIMING: ReadonlySet<string> = new Set<GuardedAction>(['author', 'build']);
@@ -296,7 +296,7 @@ export async function teamGate(repo: string, unit: UnitRef, action: GuardedActio
 }
 
 // ---------------------------------------------------------------------------
-// Claim, release and the review-fix decision
+// Claim, release
 // ---------------------------------------------------------------------------
 
 const notEnforced = (): GateOutcome => refused('this repository does not enforce claims (no team policy with claimsEnforced)');
@@ -350,17 +350,5 @@ export async function release(repo: string, unit: UnitRef): Promise<GateOutcome>
 	} catch (err) {
 		if (isToolDenied(err)) throw err;
 		return logOutcome(unit, 'release', refused(`the release failed: ${errorText(err)}`));
-	}
-}
-
-export type ReviewFixMode = 'apply-auto-fixes' | 'report-only';
-
-/** A review is never refused; only whether it may write fixes changes. Report-only for a non-holder or a failed read. */
-export async function reviewFixDecision(repo: string, unit: UnitRef): Promise<ReviewFixMode> {
-	try { return (await teamGate(repo, unit, 'review-fix')).kind === 'allowed' ? 'apply-auto-fixes' : 'report-only'; }
-	catch (err) {
-		// a denied tracker call stops the review; it does not continue as a report-only review
-		if (isToolDenied(err)) throw err;
-		return 'report-only';
 	}
 }

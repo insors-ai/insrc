@@ -1,3 +1,4 @@
+const historicalFingerprint = (..._args: unknown[]): string => 'historical-fixture';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -21,11 +22,10 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 
-import { authorPartyOf, otherParty } from '../../review/party.js';
-import type { Party } from '../../review/party.js';
-import type { ReviewReport } from '../../review/types.js';
+import { authorPartyOf, otherParty } from '../../review-history/review/party.js';
+import type { Party } from '../../review-history/review/party.js';
+import type { ReviewReport } from '../../review-history/review/types.js';
 import { codeReviewArtifactId } from '../../storage.js';
-import { reviewedBuildFingerprint } from '../../code-review/build-freshness.js';
 import { lifecycleMeta, recordReviewSync } from '../lifecycle-fixtures.js';
 
 /** The model label each party's reviews carry: `client` has always meant the controller. */
@@ -65,7 +65,7 @@ export function stampOtherPartyReview(jsonPath: string): StampedReview {
 			body: {
 				kind: 'code-review', epicHash, storyId, groundingMode: 'full', subject: {
 					changedFiles: artifact.body?.changeLog?.map(e => e.target.file) ?? [],
-					buildFingerprint: reviewedBuildFingerprint(artifact),
+					buildFingerprint: historicalFingerprint(artifact),
 				},
 				dimensions: [], verdict: 'pass', counts: { high: 0, med: 0, low: 0 },
 			},

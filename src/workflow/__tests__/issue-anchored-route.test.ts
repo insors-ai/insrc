@@ -47,7 +47,6 @@ import {
 	writeAtomic,
 } from '../storage.js';
 import { resolveArtifactMdPath } from '../path-scheme.js';
-import { prepareDesignSubject } from '../review/design-review/subject.js';
 import type { WorkflowIntent } from '../types.js';
 import type { LldArtifact } from '../artifacts/lld.js';
 import { markApprovedSync } from './lifecycle-fixtures.js';
@@ -146,28 +145,6 @@ test('issue-anchored-route.test.ts: the LLD inherits the ISSUE label, epicCreate
 	} finally { s.cleanup(); }
 });
 
-test('issue-anchored-route.test.ts: design review classifies the LLD as kind issue with the ISSUE as originating_issue', async () => {
-	const s = seedIssueRepo({ approved: true });
-	try {
-		const lld = await finalizeIssueLld(s.repo, 'wf-route-c');
-		// Persist + write the canonical markdown head so the review locator can
-		// read both halves through the shipping path.
-		const json = artifactJsonPath(s.repo, lldArtifactId(HASH, 's1'));
-		const md = lldFolder(s.repo, lld.meta);
-		writeAtomic(json, JSON.stringify(lld, null, 2));
-		mkdirSync(dirname(md), { recursive: true });
-		writeFileSync(md, `<!-- insrc:artifact ${lldArtifactId(HASH, 's1')} -->\n# LLD\n\n## Summary\nFix scope\n`);
-		const prepared = prepareDesignSubject(s.repo, json);
-		assert.equal(prepared.subject.workflow.kind, 'issue');
-		assert.deepEqual(
-			prepared.subject.workflow.requiredReferences.map(r => r.role),
-			['originating_issue'],
-		);
-		assert.equal(prepared.subject.workflow.requiredReferences[0]!.artifactId, issueArtifactId(HASH));
-		assert.equal(prepared.subject.workflow.rootArtifactId, issueArtifactId(HASH));
-	} finally { s.cleanup(); }
-});
-
 test('issue-anchored-route.test.ts: PLAN and BUILD placement helpers keep the ISSUE epicHash, anchor and folder', async () => {
 	const s = seedIssueRepo({ approved: true });
 	try {
@@ -244,33 +221,6 @@ test('issue-anchored-route.test.ts: requireApprovedEpic still refuses an ISSUE r
 				&& err.message.includes('ISSUE-anchored bugfix'),
 		);
 	} finally { s.cleanup(); }
-});
-
-test('issue-anchored-route.test.ts: a bugfix LLD with no ISSUE provenance is still rejected by design review', () => {
-	const repo = mkdtempSync(join(tmpdir(), 'insrc-route-orphan-'));
-	try {
-		// No ISSUE and no DEF at this hash, but the LLD claims sizeClass bugfix:
-		// workflowFor must refuse to downgrade it to standalone.
-		const json = artifactJsonPath(repo, lldArtifactId(HASH, 's1'));
-		mkdirSync(dirname(json), { recursive: true });
-		writeAtomic(json, JSON.stringify({
-			meta: {
-				workflow: 'design.story', runId: 'w1', repoPath: repo, schemaVersion: 1,
-				epicHash: HASH, storyId: 's1', standalone: true, sizeClass: 'bugfix',
-				createdAt: ISSUE_MADE, epicCreatedAt: ISSUE_MADE, epicSlug: SLUG, authoredBy: 'controller',
-			},
-			body: { summary: 'Fix' },
-			citations: [],
-		}, null, 2));
-		const md = resolveArtifactMdPath(repo, { epicHash: HASH, epicCreatedAt: ISSUE_MADE, story: 's1' }, 'LLD', 'standalone', SLUG);
-		mkdirSync(dirname(md), { recursive: true });
-		writeFileSync(md, `<!-- insrc:artifact ${lldArtifactId(HASH, 's1')} -->\n# LLD\n\n## Summary\nFix\n`);
-		assert.throws(
-			() => prepareDesignSubject(repo, json),
-			(err: unknown) => err instanceof Error && (err as { code?: string }).code === 'invalid_context'
-				&& /provenance/i.test(err.message),
-		);
-	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
 test('issue-anchored-route.test.ts: chain report for the seeded ISSUE repo returns the implied s1 and reaches chain-complete', async () => {

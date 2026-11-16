@@ -5,7 +5,7 @@
 
 /**
  * Shared step-state store (Epic 86197ac6, Story s1, contract sc2): the MCP
- * step tokens of the four step kinds, held once on the main thread so a
+ * step tokens of analysis and workflow, held once on the main thread so a
  * session served by a new worker (after an idle release or a failure) resumes
  * its step exactly as today. Workers reach it through the hub.
  *
@@ -17,8 +17,6 @@
  */
 
 import { assertNoSessionPersistence } from '../../shared/connection-persistence.js';
-import { ReviewStateRefused } from './review-state-contract.js';
-import type { ReviewStateKind, ReviewStateExpected, ReviewStateAccess, ReviewStateClaim, ReviewClaimResult, ReviewStateCommit, ReviewCommitResult, ReviewCompletionReceipt } from './review-state-contract.js';
 import { randomBytes } from 'node:crypto';
 
 import { getLogger } from '../../shared/logger.js';
@@ -26,8 +24,8 @@ import type { HubClient, HubHandlers } from './channel.js';
 
 const log = getLogger('step-state');
 
-export type StepKind = 'analyze' | 'workflow' | 'review' | 'code-review';
-export const STEP_KINDS: readonly StepKind[] = ['analyze', 'workflow', 'review', 'code-review'];
+export type StepKind = 'analyze' | 'workflow';
+export const STEP_KINDS: readonly StepKind[] = ['analyze', 'workflow'];
 
 export interface StepStateEntry<P> {
 	readonly token: string;
@@ -37,8 +35,8 @@ export interface StepStateEntry<P> {
 }
 
 export interface StepLifecycle {
-	/** analyze and workflow rotate; review keeps its token; code-review consumes and mints per stage. */
-	readonly update: 'rotate-token' | 'stable-token' | 'consume-per-stage';
+	/** Analyze and workflow rotate tokens on update. */
+	readonly update: 'rotate-token';
 	readonly maxEntries: number;
 	readonly ttlMs: number;
 	/** A read refreshes touchedAt, as today. */
@@ -46,12 +44,6 @@ export interface StepLifecycle {
 }
 
 export interface SharedStepStateStore {
-	mintReviewState<P>(kind: ReviewStateKind, payload: P, expected: ReviewStateExpected): Promise<string>;
-	claimReviewState<P>(access: ReviewStateAccess): Promise<ReviewClaimResult<P>>;
-	commitReviewState<P>(claim: ReviewStateClaim, next: ReviewStateCommit<P>): Promise<ReviewCommitResult>;
-	releaseReviewClaim(claim: ReviewStateClaim, noSideEffects: true): Promise<void>;
-	invalidateReviewClaim(claim: ReviewStateClaim): Promise<void>;
-	invalidateReviewOwner(owner: string): Promise<void>;
 
 	lifecycle(kind: StepKind): StepLifecycle;
 	mint<P>(kind: StepKind, payload: P): Promise<string>;
@@ -77,8 +69,6 @@ export interface SharedStepStateStore {
 const LIFECYCLES: Readonly<Record<StepKind, StepLifecycle>> = {
 	'analyze':     { update: 'rotate-token',      maxEntries: 100, ttlMs: 60 * 60 * 1_000, readRefreshes: true },
 	'workflow':    { update: 'rotate-token',      maxEntries: 100, ttlMs: 60 * 60 * 1_000, readRefreshes: true },
-	'review':      { update: 'stable-token',      maxEntries: 100, ttlMs: 60 * 60 * 1_000, readRefreshes: true },
-	'code-review': { update: 'consume-per-stage', maxEntries: 100, ttlMs: 60 * 60 * 1_000, readRefreshes: true },
 };
 
 export class StepStateNotFound extends Error {
@@ -114,13 +104,7 @@ export class LocalStepStateStore implements SharedStepStateStore {
 
 	async update<P>(kind: StepKind, token: string | undefined, payload: P): Promise<string> {
 		assertNoSessionPersistence();
-		if (LIFECYCLES[kind].update === 'stable-token') {
-			const entry = token === undefined ? undefined : this.map(kind).get(token);
-			if (entry === undefined || token === undefined) throw new StepStateNotFound(kind, token ?? '');
-			entry.payload = structuredClone(payload);
-			entry.touchedAt = this.now();
-			return token;
-		}
+
 		const next = this.mintSync(kind, payload);
 		if (token !== undefined && token !== next) this.map(kind).delete(token);
 		return next;
@@ -142,16 +126,6 @@ export class LocalStepStateStore implements SharedStepStateStore {
 	async clearForTests(kind: StepKind): Promise<void> { assertNoSessionPersistence(); this.map(kind).clear(); }
 	async sizeForTests(kind: StepKind): Promise<number> { assertNoSessionPersistence(); return this.map(kind).size; }
 
-	async mintReviewState<P>(kind: ReviewStateKind, payload: P, expected: ReviewStateExpected): Promise<string> { throw new Error('Review functionality is being rewritten.'); }
-
-	async claimReviewState<P>(access: ReviewStateAccess): Promise<ReviewClaimResult<P>> { throw new Error('Review functionality is being rewritten.'); }
-
-	async commitReviewState<P>(claim: ReviewStateClaim, next: ReviewStateCommit<P>): Promise<ReviewCommitResult> { throw new Error('Review functionality is being rewritten.'); }
-
-	async releaseReviewClaim(claim: ReviewStateClaim, noSideEffects: true): Promise<void> { throw new Error('Review functionality is being rewritten.'); }
-	async invalidateReviewClaim(claim: ReviewStateClaim): Promise<void> { throw new Error('Review functionality is being rewritten.'); }
-	async invalidateReviewOwner(owner: string): Promise<void> { throw new Error('Review functionality is being rewritten.'); }
-
 	private map(kind: StepKind): Map<string, Entry> {
 		const m = this.stores.get(kind);
 		if (m === undefined) throw new Error(`unknown step kind '${String(kind)}'`);
@@ -168,7 +142,7 @@ export class LocalStepStateStore implements SharedStepStateStore {
 			const oldest = [...store.entries()].sort((a, b) => a[1].touchedAt - b[1].touchedAt);
 			while (store.size >= maxEntries && oldest.length > 0) store.delete(oldest.shift()![0]);
 		}
-		if (store.size >= maxEntries) throw new ReviewStateRefused('review-state-capacity');
+		if (store.size >= maxEntries) throw new Error('step-state capacity exceeded');
 		const token = mintToken();
 		store.set(token, { payload: copied, createdAt: now, touchedAt: now });
 		if (store.size >= maxEntries / 2) log.warn({ kind, size: store.size, cap: maxEntries }, 'step-state store: entries approaching cap');
@@ -196,12 +170,6 @@ export function stepStateHubHandlers(store: SharedStepStateStore, _assertOwner?:
 /** A worker's view of the step-state store, one hub request per call. */
 export class HubStepStateStore implements SharedStepStateStore {
 	constructor(private readonly hub: HubClient, _ownerContext?: () => string) {}
-	mintReviewState<P>(kind: ReviewStateKind, payload: P, expected: ReviewStateExpected): Promise<string> { throw new Error('Review functionality is being rewritten.'); }
-	claimReviewState<P>(access: ReviewStateAccess): Promise<ReviewClaimResult<P>> { throw new Error('Review functionality is being rewritten.'); }
-	commitReviewState<P>(claim: ReviewStateClaim, next: ReviewStateCommit<P>): Promise<ReviewCommitResult> { throw new Error('Review functionality is being rewritten.'); }
-	releaseReviewClaim(claim: ReviewStateClaim, noSideEffects: true): Promise<void> { throw new Error('Review functionality is being rewritten.'); }
-	invalidateReviewClaim(claim: ReviewStateClaim): Promise<void> { throw new Error('Review functionality is being rewritten.'); }
-	invalidateReviewOwner(owner: string): Promise<void> { throw new Error('Review functionality is being rewritten.'); }
 
 	lifecycle(kind: StepKind): StepLifecycle { return LIFECYCLES[kind]; }
 	mint<P>(kind: StepKind, payload: P): Promise<string> { assertNoSessionPersistence(); return this.hub.request('step.mint', { kind, payload }); }

@@ -23,7 +23,7 @@ import { tmpdir } from 'node:os';
 import { handleBuildStep } from '../handler.js';
 import { _setBuildValidateCheckRunnerForTests, _setBuildValidateProviderForTests, JUDGE_DEADLINE_MS } from '../phases/validate.js';
 import type { ValidationCheckPlan, ValidationCheckResults } from '../validation-checks.js';
-import { ReviewSessionTimeoutError, type ReviewSessionOpts } from '../../../../agent/providers/cli-provider.js';
+import { ReadOnlySessionTimeoutError, type ReadOnlySessionOpts } from '../../../../agent/providers/cli-provider.js';
 import { jsonPathForMd } from '../../../../workflow/gates.js';
 import { approvedMeta, markApprovedSync } from '../../../../workflow/__tests__/lifecycle-fixtures.js';
 import { approveJson } from '../../../../workflow/__tests__/helpers/approve.js';
@@ -252,7 +252,7 @@ test('validate: returns the judge verdict from a stubbed CliProvider review sess
 		seedLld(repo);
 		seedPlan(repo, true);
 		_setBuildValidateProviderForTests({
-			async runReviewSession<T>() {
+			async runReadOnlySession<T>() {
 				return judgeVerdict({ taskId: 't1', passed: true, scopeRespected: true, reason: 'all green' }) as T;
 			},
 		});
@@ -274,7 +274,7 @@ test('validate: a failing judge verdict gives passed:false', async () => {
 		seedLld(repo);
 		seedPlan(repo, true);
 		_setBuildValidateProviderForTests({
-			async runReviewSession<T>() { return judgeVerdict({ taskId: 't1', passed: false, reason: 'acceptance check 2 not met' }) as T; },
+			async runReadOnlySession<T>() { return judgeVerdict({ taskId: 't1', passed: false, reason: 'acceptance check 2 not met' }) as T; },
 		});
 		const out = outputOf(await handleBuildStep({ phase: 'validate', target: 's1/t1', repo }));
 		assert.equal(out['next'], 'done');
@@ -291,9 +291,9 @@ test('the build-validation session is run with stallMs 300 s and deadlineMs JUDG
 		seedDef(repo);
 		seedLld(repo);
 		seedPlan(repo, true);
-		const seen: ReviewSessionOpts[] = [];
+		const seen: ReadOnlySessionOpts[] = [];
 		_setBuildValidateProviderForTests({
-			async runReviewSession<T>(_prompt: string, _schema: unknown, opts: ReviewSessionOpts) { seen.push(opts); return judgeVerdict({ taskId: 't1', passed: true }) as T; },
+			async runReadOnlySession<T>(_prompt: string, _schema: unknown, opts: ReadOnlySessionOpts) { seen.push(opts); return judgeVerdict({ taskId: 't1', passed: true }) as T; },
 		});
 		const out = outputOf(await handleBuildStep({ phase: 'validate', target: 's1/t1', repo }));
 		assert.equal(out['next'], 'done');
@@ -316,7 +316,7 @@ test('validate: persists a plan-driven BUILD ledger record (standalone key ABSEN
 	try {
 		seedDef(repo); seedLld(repo); seedPlan(repo, true);
 		_setBuildValidateProviderForTests({
-			async runReviewSession<T>() { return judgeVerdict({ taskId: 't1', passed: true }) as T; },
+			async runReadOnlySession<T>() { return judgeVerdict({ taskId: 't1', passed: true }) as T; },
 		});
 		const out = outputOf(await handleBuildStep({ phase: 'validate', target: 's1/t1', repo }));
 		assert.equal(out['next'], 'done');
@@ -357,7 +357,7 @@ test('validate: a BUILD-record persist failure is swallowed — the verdict is s
 		const { json } = buildArtifactPaths(repo, HASH, 's1', CREATED_AT, 'epic', 'tag-filtering');
 		mkdirSync(json, { recursive: true });
 		_setBuildValidateProviderForTests({
-			async runReviewSession<T>() { return judgeVerdict({ taskId: 't1', passed: true }) as T; },
+			async runReadOnlySession<T>() { return judgeVerdict({ taskId: 't1', passed: true }) as T; },
 		});
 		const out = outputOf(await handleBuildStep({ phase: 'validate', target: 's1/t1', repo }));
 		assert.equal(out['next'], 'done', 'persistence failure never converts a real verdict into an error');
@@ -380,7 +380,7 @@ test('validate[standalone]: no plan → resolves identity from context, persists
 		// DEF (folder anchor) + LLD (the standalone Small spec) — but NO plan.
 		seedDef(repo); seedLld(repo);
 		_setBuildValidateProviderForTests({
-			async runReviewSession<T>() { return judgeVerdict({ taskId: 's1', passed: true }) as T; },
+			async runReadOnlySession<T>() { return judgeVerdict({ taskId: 's1', passed: true }) as T; },
 		});
 		const env = await handleBuildStep({
 			phase: 'validate', target: 's1', repo,
@@ -435,7 +435,7 @@ test('validate[standalone]: a persist failure is swallowed — the verdict is st
 		const { json } = buildArtifactPaths(repo, HASH, 's1', CREATED_AT, 'epic', 'tag-filtering');
 		mkdirSync(json, { recursive: true });
 		_setBuildValidateProviderForTests({
-			async runReviewSession<T>() { return judgeVerdict({ taskId: 's1', passed: true }) as T; },
+			async runReadOnlySession<T>() { return judgeVerdict({ taskId: 's1', passed: true }) as T; },
 		});
 		const out = outputOf(await handleBuildStep({
 			phase: 'validate', target: 's1', repo,
@@ -469,7 +469,7 @@ test('validate[standalone]: the persisted record is approvable by the completion
 	try {
 		seedDef(repo); seedLld(repo);
 		_setBuildValidateProviderForTests({
-			async runReviewSession<T>() { return judgeVerdict({ taskId: 's1', passed: true }) as T; },
+			async runReadOnlySession<T>() { return judgeVerdict({ taskId: 's1', passed: true }) as T; },
 		});
 		await handleBuildStep({
 			phase: 'validate', target: 's1', repo,
@@ -511,7 +511,7 @@ test('validate: multi-epic dir + { target:\'s1/t1\', epicHash } resolves + retur
 		seedDef(repo); seedLld(repo); seedPlan(repo, true);
 		seedSecondEpic(repo);
 		_setBuildValidateProviderForTests({
-			async runReviewSession<T>() { return judgeVerdict({ taskId: 't1', passed: true }) as T; },
+			async runReadOnlySession<T>() { return judgeVerdict({ taskId: 't1', passed: true }) as T; },
 		});
 		const out = outputOf(await handleBuildStep({ phase: 'validate', target: 's1/t1', epicHash: HASH, repo }));
 		assert.equal(out['next'], 'done');
@@ -609,7 +609,7 @@ function findBuildMd(repo: string): string | undefined {
  *  sequence that produces the flip, and return the persisted record + markdown. */
 async function runImplementThenValidate(repo: string, opts?: { readonly summary?: string | undefined; readonly beforeValidate?: (() => void) | undefined }): Promise<{ rec: { meta: Record<string, unknown>; body: Record<string, unknown> }; md: string }> {
 	_setBuildValidateProviderForTests({
-		async runReviewSession<T>() { return judgeVerdict({ taskId: 's1', passed: true }) as T; },
+		async runReadOnlySession<T>() { return judgeVerdict({ taskId: 's1', passed: true }) as T; },
 	});
 	try {
 		seedIssue(repo, HASH, { createdAt: CREATED_AT });   // a Trivial build runs under its approved ISSUE
@@ -954,7 +954,7 @@ const STANDALONE_S1 = { standalone: true as const, epicHash: HASH, storyId: 's1'
 
 async function validateOnce(repo: string): Promise<{ meta: Record<string, unknown>; body: Record<string, unknown> }> {
 	_setBuildValidateProviderForTests({
-		async runReviewSession<T>() { return judgeVerdict({ taskId: 's1', passed: true }) as T; },
+		async runReadOnlySession<T>() { return judgeVerdict({ taskId: 's1', passed: true }) as T; },
 	});
 	try {
 		const out = outputOf(await handleBuildStep({ phase: 'validate', target: 's1', repo, standalone: STANDALONE_S1 }));
@@ -1081,7 +1081,7 @@ test('t6: BOTH writers resolve the SAME base for the same Story — one resolver
 
 async function validateWithSummary(repo: string, summary?: string): Promise<Record<string, unknown>> {
 	_setBuildValidateProviderForTests({
-		async runReviewSession<T>() { return judgeVerdict({ taskId: 's1', passed: true }) as T; },
+		async runReadOnlySession<T>() { return judgeVerdict({ taskId: 's1', passed: true }) as T; },
 	});
 	try {
 		const out = outputOf(await handleBuildStep({
@@ -1174,7 +1174,7 @@ test('validate: a standalone work item gets meta.standalone TRUE on the FIRST wr
 	try {
 		seedStandaloneIssue(repo); seedLld(repo);
 		_setBuildValidateProviderForTests({
-			async runReviewSession<T>() { return judgeVerdict({ taskId: 's1', passed: true }) as T; },
+			async runReadOnlySession<T>() { return judgeVerdict({ taskId: 's1', passed: true }) as T; },
 		});
 		const out = outputOf(await handleBuildStep({ phase: 'validate', target: 's1', repo, standalone: STANDALONE_S1 }));
 		assert.equal(out['next'], 'done');
@@ -1203,7 +1203,7 @@ test('validate: an EPIC-parented work item is unchanged — no flag written, rec
 		// manufactured `true`, or wrote `false` unconditionally, this moves.
 		seedDef(repo); seedLld(repo);
 		_setBuildValidateProviderForTests({
-			async runReviewSession<T>() { return judgeVerdict({ taskId: 's1', passed: true }) as T; },
+			async runReadOnlySession<T>() { return judgeVerdict({ taskId: 's1', passed: true }) as T; },
 		});
 		assert.equal(outputOf(await handleBuildStep({ phase: 'validate', target: 's1', repo, standalone: STANDALONE_S1 }))['next'], 'done');
 
@@ -1241,7 +1241,7 @@ function readBuildRecord(repo: string): { meta: Record<string, unknown>; body: R
 
 async function validateWith(repo: string, standalone: Record<string, unknown>): Promise<void> {
 	_setBuildValidateProviderForTests({
-		async runReviewSession<T>() { return judgeVerdict({ taskId: 's1', passed: true }) as T; },
+		async runReadOnlySession<T>() { return judgeVerdict({ taskId: 's1', passed: true }) as T; },
 	});
 	try {
 		const out = outputOf(await handleBuildStep({ phase: 'validate', target: 's1', repo, standalone: standalone as never }));
@@ -1363,7 +1363,7 @@ test('validate runs the checks before the judge and overwrites testsPassed and t
 	const order: string[] = [];
 	try {
 		_setBuildValidateProviderForTests({
-			async runReviewSession<T>() {
+			async runReadOnlySession<T>() {
 				order.push('judge');
 				// The judge claims the tests failed; the daemon's results say they passed.
 				return judgeVerdict({ passed: true, testsPassed: false, typecheckClean: false }) as T;
@@ -1387,7 +1387,7 @@ test('validate runs the checks before the judge and overwrites testsPassed and t
 test('a judge passed:true with a failing typecheck gives passed:false', async () => {
 	const repo = planRepo();
 	try {
-		_setBuildValidateProviderForTests({ async runReviewSession<T>() { return judgeVerdict({ passed: true }) as T; } });
+		_setBuildValidateProviderForTests({ async runReadOnlySession<T>() { return judgeVerdict({ passed: true }) as T; } });
 		const out = await withChecks(async () => FAILED_TYPECHECK,
 			async () => outputOf(await handleBuildStep({ phase: 'validate', target: 's1/t1', repo })));
 		assert.equal(out['next'], 'done');
@@ -1406,7 +1406,7 @@ test('a judge passed:true with a failing typecheck gives passed:false', async ()
 test('a judge timeout returns verdict-session-timeout and writes no BUILD record', async () => {
 	const repo = planRepo();
 	try {
-		_setBuildValidateProviderForTests({ async runReviewSession<T>(): Promise<T> { throw new ReviewSessionTimeoutError(300_000); } });
+		_setBuildValidateProviderForTests({ async runReadOnlySession<T>(): Promise<T> { throw new ReadOnlySessionTimeoutError(300_000); } });
 		const out = outputOf(await handleBuildStep({ phase: 'validate', target: 's1/t1', repo }));
 		assert.equal(out['next'], 'error');
 		assert.equal((out['error'] as { code: string }).code, 'verdict-session-timeout');
@@ -1417,12 +1417,12 @@ test('a judge timeout returns verdict-session-timeout and writes no BUILD record
 	}
 });
 
-test('the validate judge is called through runReviewSession with the repo as cwd and a verdict schema', async () => {
+test('the validate judge is called through runReadOnlySession with the repo as cwd and a verdict schema', async () => {
 	const repo = planRepo();
 	let seen: { prompt: string; schema: Record<string, unknown>; cwd: string; deadlineMs: number } | undefined;
 	try {
 		_setBuildValidateProviderForTests({
-			async runReviewSession<T>(prompt: string, schema: Readonly<Record<string, unknown>>, opts: { cwd: string; deadlineMs: number }) {
+			async runReadOnlySession<T>(prompt: string, schema: Readonly<Record<string, unknown>>, opts: { cwd: string; deadlineMs: number }) {
 				seen = { prompt, schema: { ...schema }, cwd: opts.cwd, deadlineMs: opts.deadlineMs };
 				return judgeVerdict({}) as T;
 			},
@@ -1444,12 +1444,12 @@ test('the validate judge is called through runReviewSession with the repo as cwd
 test('a judge object without a boolean passed gives unparseable-verdict', async () => {
 	const repo = planRepo();
 	try {
-		_setBuildValidateProviderForTests({ async runReviewSession<T>() { return { taskId: 't1', checks: [], scopeRespected: true, reason: 'x' } as T; } });
+		_setBuildValidateProviderForTests({ async runReadOnlySession<T>() { return { taskId: 't1', checks: [], scopeRespected: true, reason: 'x' } as T; } });
 		let out = outputOf(await handleBuildStep({ phase: 'validate', target: 's1/t1', repo }));
 		assert.equal((out['error'] as { code: string }).code, 'unparseable-verdict');
 		assert.match((out['error'] as { message: string }).message, /passed/);
 
-		_setBuildValidateProviderForTests({ async runReviewSession<T>(): Promise<T> { throw new Error('claude returned no structured_output'); } });
+		_setBuildValidateProviderForTests({ async runReadOnlySession<T>(): Promise<T> { throw new Error('claude returned no structured_output'); } });
 		out = outputOf(await handleBuildStep({ phase: 'validate', target: 's1/t1', repo }));
 		assert.equal((out['error'] as { code: string }).code, 'unparseable-verdict');
 		assert.equal(buildRecordExists(repo), false);
@@ -1462,7 +1462,7 @@ test('a judge object without a boolean passed gives unparseable-verdict', async 
 test('a non-timeout judge error gives verdict-session-failed and writes no BUILD record', async () => {
 	const repo = planRepo();
 	try {
-		_setBuildValidateProviderForTests({ async runReviewSession<T>(): Promise<T> { throw new Error('claude exited with 1: error: unknown option --tools'); } });
+		_setBuildValidateProviderForTests({ async runReadOnlySession<T>(): Promise<T> { throw new Error('claude exited with 1: error: unknown option --tools'); } });
 		const out = outputOf(await handleBuildStep({ phase: 'validate', target: 's1/t1', repo }));
 		assert.equal(out['next'], 'error');
 		assert.equal((out['error'] as { code: string }).code, 'verdict-session-failed');
@@ -1477,7 +1477,7 @@ test('a non-timeout judge error gives verdict-session-failed and writes no BUILD
 test('plan-driven and standalone validate each hand the check runner the plan for their route', async () => {
 	const plans: ValidationCheckPlan[] = [];
 	const record = async (_repo: string, plan: ValidationCheckPlan): Promise<ValidationCheckResults> => { plans.push(plan); return PASSING_CHECKS; };
-	_setBuildValidateProviderForTests({ async runReviewSession<T>() { return judgeVerdict({}) as T; } });
+	_setBuildValidateProviderForTests({ async runReadOnlySession<T>() { return judgeVerdict({}) as T; } });
 	const planDriven = planRepo();
 	const small = mkRepo();
 	const trivial = mkRepo();
@@ -1622,7 +1622,7 @@ async function turn(repo: string, input: Record<string, unknown>, opts: { result
 	const plans: ValidationCheckPlan[] = [];
 	let judged = 0;
 	_setBuildValidateProviderForTests({
-		async runReviewSession<T>() { judged += 1; return (opts.judge !== undefined ? opts.judge() : judgeVerdict({ passed: true })) as T; },
+		async runReadOnlySession<T>() { judged += 1; return (opts.judge !== undefined ? opts.judge() : judgeVerdict({ passed: true })) as T; },
 	});
 	try {
 		const out = await withChecks(
@@ -1886,7 +1886,7 @@ test("when the test record cannot be written the verdict is returned unchanged w
 
 test("when the judge session throws after the checks ran, the turn returns the same error as before, the test record holds this run's results with testsPassed from the tests check and the supplied mapping, and the build record is not written (mutation: write the test record in the build record's write, after the judge)", async () => {
 	for (const [thrown, code] of [
-		[new ReviewSessionTimeoutError('too slow'), 'verdict-session-timeout'],
+		[new ReadOnlySessionTimeoutError('too slow'), 'verdict-session-timeout'],
 		[new Error('no structured_output in the reply'), 'unparseable-verdict'],
 		[new Error('the CLI exited with 1'), 'verdict-session-failed'],
 	] as const) {
@@ -1941,7 +1941,7 @@ function recordDocs(repo: string): string[] {
 async function standaloneTurn(repo: string, at: string, standalone: Record<string, unknown>, judge?: () => unknown): Promise<Record<string, unknown>> {
 	const { _setBuildValidateClockForTests } = await import('../phases/validate.js');
 	_setBuildValidateClockForTests(() => at);
-	_setBuildValidateProviderForTests({ async runReviewSession<T>() { return (judge !== undefined ? judge() : judgeVerdict({ taskId: 's1', passed: true })) as T; } });
+	_setBuildValidateProviderForTests({ async runReadOnlySession<T>() { return (judge !== undefined ? judge() : judgeVerdict({ taskId: 's1', passed: true })) as T; } });
 	try {
 		return outputOf(await handleBuildStep({ phase: 'validate', target: 's1', repo, standalone: standalone as never }));
 	} finally { _setBuildValidateProviderForTests(undefined); _setBuildValidateClockForTests(undefined); }
@@ -2206,7 +2206,7 @@ test('c00559b7 — implement + validate admit t1 of a standalone LLD+PLAN (was u
 		assert.match(impl['prompt'] as string, /Standalone check holds/);
 
 		_setBuildValidateProviderForTests({
-			async runReviewSession<T>() { return judgeVerdict({ taskId: 't1', passed: true }) as T; },
+			async runReadOnlySession<T>() { return judgeVerdict({ taskId: 't1', passed: true }) as T; },
 		});
 		const val = outputOf(await handleBuildStep({ phase: 'validate', target: 's1/t1', epicHash: SA_HASH, repo }));
 		assert.equal(val['next'], 'done', `validate must admit the task, got ${JSON.stringify(val)}`);

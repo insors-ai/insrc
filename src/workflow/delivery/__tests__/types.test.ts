@@ -15,7 +15,7 @@ import type {
 	DeliveryRoute, DeliverySnapshot, DeliverySnapshotRequest, DeliverySnapshotResponse, DeliveryStage, EffectiveAmendment,
 	GatePassResult, ItemGates, ReviewCurrency, ReviewVerdict, StageAnnotation, StagePassResult, TaskResult,
 } from '../types.js';
-import type { ReviewVerdict as SourceReviewVerdict } from '../../review/types.js';
+import type { ReviewVerdict as SourceReviewVerdict } from '../../review-history/review/types.js';
 
 test('DeliveryStoreUnreadableError carries the store path and the underlying message', () => {
 	const err = new DeliveryStoreUnreadableError('/repo/.insrc/artifacts', 'EACCES: permission denied');

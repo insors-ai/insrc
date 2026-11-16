@@ -22,7 +22,7 @@ import { ReviewStreamError } from '../../../shared/review-stream.js';
 import type { CodeReviewStreamResult } from '../../../shared/review-stream.js';
 import { runInStepContext } from '../../../shared/step-context.js';
 import type { IpcStreamMessage } from '../../../shared/types.js';
-import type { CodeReviewGrounding, CodeReviewSubject } from '../../../workflow/code-review/types.js';
+import type { CodeReviewGrounding, CodeReviewSubject } from '../../../workflow/review-history/code-review/types.js';
 import type { RpcHandlers, StreamHandler, StreamHandlers } from '../../server.js';
 import type { WorkflowReviewDone } from '../../workflow-review-rpc.js';
 import { createInDaemonClient, installStepDaemonClient, waitText } from '../daemon-client.js';

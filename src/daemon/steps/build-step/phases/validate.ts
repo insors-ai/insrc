@@ -14,7 +14,7 @@
  * pass — it is never a controller or model self-report.
  */
 
-import { CliProvider, ReviewSessionTimeoutError, type ReviewSessionOpts } from '../../../../agent/providers/cli-provider.js';
+import { CliProvider, ReadOnlySessionTimeoutError, type ReadOnlySessionOpts } from '../../../../agent/providers/cli-provider.js';
 import { createRoleRouter } from '../../../../analyze/context/role-router.js';
 import { familyProvider, runWithRoutingContext, currentRoutingContext } from '../../../../analyze/context/shaper-provider.js';
 import { getModelRegistry } from '../../../model-registry.js';
@@ -62,10 +62,10 @@ const log = getLogger('mcp:build-step:validate');
  *  search and the insrc analyze tools; no edits, no shell) that judges the change
  *  and returns a structured verdict. */
 export interface ValidateProvider {
-	runReviewSession<T>(prompt: string, schema: StructuredSchema, opts: ReviewSessionOpts): Promise<T>;
+	runReadOnlySession<T>(prompt: string, schema: StructuredSchema, opts: ReadOnlySessionOpts): Promise<T>;
 }
 
-/** Test seam: inject a fake provider whose `runReviewSession` returns a canned
+/** Test seam: inject a fake provider whose `runReadOnlySession` returns a canned
  *  verdict, so the handler is exercised without spawning the live CLI. */
 let providerOverride: ValidateProvider | undefined;
 export function _setBuildValidateProviderForTests(p: ValidateProvider | undefined): void {
@@ -125,7 +125,7 @@ interface JudgeVerdict {
 	readonly reason:         string;
 }
 
-/** The judge object's shape, checked here because runReviewSession does not. Returns the failing field, or undefined. */
+/** The judge object's shape, checked here because runReadOnlySession does not. Returns the failing field, or undefined. */
 function judgeShapeError(v: unknown): string | undefined {
 	if (typeof v !== 'object' || v === null || Array.isArray(v)) return 'the verdict is not an object';
 	const o = v as Record<string, unknown>;
@@ -507,10 +507,10 @@ async function runValidateTurn(
 		log.info({ taskId: ident.taskId, storyId: ident.storyId }, 'insrc_build_step[validate]: running judge session');
 		let judged: unknown;
 		try {
-			judged = await provider.runReviewSession<unknown>(prompt(renderCheckEvidence(results)), JUDGE_VERDICT_SCHEMA, { cwd: repoPath, deadlineMs: JUDGE_DEADLINE_MS, stallMs: BUILD_VALIDATE_SILENCE_MS });
+			judged = await provider.runReadOnlySession<unknown>(prompt(renderCheckEvidence(results)), JUDGE_VERDICT_SCHEMA, { cwd: repoPath, deadlineMs: JUDGE_DEADLINE_MS, stallMs: BUILD_VALIDATE_SILENCE_MS });
 		} catch (e) {
 			const message = e instanceof Error ? e.message : String(e);
-			if (e instanceof ReviewSessionTimeoutError) {
+			if (e instanceof ReadOnlySessionTimeoutError) {
 				return err('verdict-session-timeout', `insrc_build_step[validate]: the judge session passed its ${Math.round(JUDGE_DEADLINE_MS / 1000)} s deadline; no verdict was recorded.`);
 			}
 			if (/structured_output|JSON|parse/i.test(message)) {

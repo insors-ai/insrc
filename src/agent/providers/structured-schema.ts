@@ -5,7 +5,7 @@ import ajvFormats from 'ajv-formats';
 import { formatNames } from 'ajv-formats/dist/formats.js';
 import type { StructuredSchema } from '../../shared/types.js';
 import type { ValidationResult } from './structured-output.js';
-import type { ReviewValidationIssue } from '../../shared/review-diagnostics.js';
+import type { ResponseValidationIssue } from '../../shared/response-validation.js';
 
 export function formatAjvError(e: ErrorObject): string {
 	const path = e.instancePath.length > 0 ? e.instancePath : '/';
@@ -17,7 +17,7 @@ export function formatAjvError(e: ErrorObject): string {
 	return `${path}: ${msg}${detail}`;
 }
 
-export function reviewValidationIssue(error: ErrorObject): ReviewValidationIssue {
+export function responseValidationIssue(error: ErrorObject): ResponseValidationIssue {
  const root = error.instancePath === '';
  const property = error.params['missingProperty'] ?? error.params['additionalProperty'];
  const field = typeof property === 'string' ? (root ? property : `${error.instancePath}/${property}`) : error.instancePath || '/';
@@ -452,7 +452,7 @@ export function validateNativeReply<T>(schema: StructuredSchema, raw: unknown): 
 function checkedNativeReply<T>(context: CodexReplyContext, value: unknown): ValidationResult<T> {
  if (context.validate(value)) return { ok: true, value: value as T };
  const errors = context.validate.errors ?? [];
- return { ok: false, errors: errors.map(formatAjvError), issues: errors.slice(0, 8).map(reviewValidationIssue) };
+ return { ok: false, errors: errors.map(formatAjvError), issues: errors.slice(0, 8).map(responseValidationIssue) };
 }
 
 /**

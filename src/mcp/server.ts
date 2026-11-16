@@ -659,26 +659,26 @@ export function buildInsrcMcpServerWithRegistry(options: { review?: ConstructorP
 	);
 
 	// -------------------------------------------------------------------
-	// Design review uses live artifact paths and durable coherent chunk feedback.
+	// Retained design-review endpoint: stateless unavailable error.
  const designReviews=new DesignReviewConnections(options.review);
  const priorDesignClose=server.server.onclose;
  server.server.onclose=()=>{designReviews.close();priorDesignClose?.();};
  registerAndRecord('insrc_review_step',{
   title:'Review evolving design artifacts',
-  description:'Review DEF/HLD/LLD by the party that did not author it. Controller-authored artifacts go to the daemon; daemon-authored artifacts go to the live controller. Start acknowledges durable background work; poll progress, retrieve one completed chunk per cursor page, and wait for full completion before corrections. Reviewers read live artifact paths and may inspect the codebase; coherent chunks and final consistency are mandatory. No retired protocol or self-review fallback.',
+  description:'Design review functionality is being rewritten. This compatibility endpoint always returns an error without starting work.',
   inputSchema:DESIGN_REVIEW_INPUT,
  },async(args,extra)=>designReviews.call(args,detectClient(server.server.getClientVersion()?.name),extra.signal));
 
 	// -------------------------------------------------------------------
 
 	// -------------------------------------------------------------------
-	// Current task review is asynchronous; persistent transport preserves live controller authority.
+	// Retained code-review endpoint: stateless unavailable error.
 	const reviews = new CodeReviewConnections(options.review);
 	const priorClose = server.server.onclose;
 	server.server.onclose = () => { reviews.close(); priorClose?.(); };
 	registerAndRecord('insrc_code_review_step', {
 	 title: 'Review committed task changes',
-	 description: 'Task-oriented code review by the party that did not write the code. Controller-authored code is reviewed by the daemon; daemon-authored code is reviewed by the live controller. No substitute self-review. Create a committed packet before start, with an explicit full-OID reviewRevision pin for final source; selected after-blocks/deletion anchors alone define scope and commits are provenance pointers. Start acknowledges in the background; poll progress/checkpoint, explicitly resume interrupted attempts. Controller reviewers return scope/activity/result on the live owner connection. No HEAD-derived scope, auto retries or retired engine.',
+	 description: 'Code review functionality is being rewritten. This compatibility endpoint always returns an error without starting work.',
 	 inputSchema: CODE_REVIEW_INPUT,
 	}, async (args, extra) => reviews.call(args, detectClient(server.server.getClientVersion()?.name), extra.signal));
 

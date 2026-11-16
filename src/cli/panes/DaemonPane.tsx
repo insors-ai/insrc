@@ -9,7 +9,7 @@
  * `scripts/daemon-ctl.sh`. Long-running ops stream into a live log.
  */
 
-import { reviewProgressLabel } from '../../shared/review-worker-progress.js';
+import { reviewProgressLabel } from '../../workflow/review-history/shared/worker-progress.js';
 import { Box, Text, useInput } from 'ink';
 import { useState } from 'react';
 import type { ReactElement } from 'react';

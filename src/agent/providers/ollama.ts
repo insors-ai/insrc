@@ -1,4 +1,3 @@
-import { requireBoundedReview } from '../../shared/review-activity.js';
 import type { OllamaMessage, OllamaTool } from './ollama-wire.js';
 import { toOllamaMessages, toOllamaNativeMessages, toOllamaTools } from './ollama-wire.js';
 import { assertNoSessionEmbedding } from '../../shared/connection-provider.js';
@@ -15,20 +14,17 @@ import type {
   LLMResponse,
   CompletionOpts,
   ProviderCapabilities,
-  ReviewSessionOpts,
+  ReadOnlySessionOpts,
   StructuredCompletionOpts,
   StructuredSchema,
   ToolDefinition,
   ToolCall,
 } from '../../shared/types.js';
-import type { ReviewExecutionKind, ReviewProviderBudgetProfile } from '../../shared/review-budget.js';
-import { freezeReviewBudgetProfile, REVIEW_BUDGET_DEFAULTS, ReviewBudgetError } from './budget/accounting.js';
-import { preflightProviderReviewBudget, reviewPromptChars, reviewToolsJson, reviewWireSchemaJson } from './review-budget.js';
 import { getReadOnlyTools, READ_ONLY_TOOL_IDS } from '../../analyze/context/tool-surface.js';
 import { loadLocalProviderConfig } from '../../config/local.js';
 import { getLogger } from '../../shared/logger.js';
 import { emitStructuredAnswer, runReadOnlyToolLoop, ToolLoopDeadlineError } from '../read-only-tool-loop.js';
-import { ReviewSessionTimeoutError } from './cli-provider.js';
+import { ReadOnlySessionTimeoutError } from './cli-provider.js';
 import { ModelCallFailedError } from './model-call-error.js';
 import { validateAgainstSchema, withStructuredRetry } from './structured-output.js';
 
@@ -214,21 +210,6 @@ export function nativeConnectionProviderIdentity(candidate: LLMProvider): Return
 }
 export class OllamaProvider implements LLMProvider {
   readonly supportsTools = true;
-
-  getReviewBudgetProfile(executionKind: Exclude<ReviewExecutionKind, 'controller'>): ReviewProviderBudgetProfile {
-    let declaredToolsJson: string;
-    try { declaredToolsJson = JSON.stringify(executionKind === 'reviewer-session' ? toOllamaTools(getReadOnlyTools()) : []); }
-    catch { throw new ReviewBudgetError('native-budget-unqualified'); }
-    return freezeReviewBudgetProfile({
-      profileVersion: 1, providerId: `ollama:${this.model}`, transport: 'ollama', transportVersion: 'ollama-chat-review-v1',
-      schemaDialect: 'json-v1', promptDialect: 'ollama-chat-v1', qualification: 'managed-estimate', contextWindowTokens: this.numCtx,
-      declaredToolsJson,
-      nativeReserveTokens: REVIEW_BUDGET_DEFAULTS.nativeReserveTokens,
-      transportReserveTokens: REVIEW_BUDGET_DEFAULTS.transportReserveTokens,
-      completionReserveTokens: REVIEW_BUDGET_DEFAULTS.completionReserveTokens,
-      inspectionReserveTokens: executionKind === 'reviewer-session' ? REVIEW_BUDGET_DEFAULTS.inspectionReserveTokens : 0,
-    });
-  }
   // plans/structured-output.md Phase B.5. Ollama's native structured
   // output is the `format: schema` field on the chat API -- the model
   // is constrained to produce JSON conforming to the schema. Lifted
@@ -408,7 +389,6 @@ export class OllamaProvider implements LLMProvider {
 
   async complete(messages: LLMMessage[], opts: CompletionOpts = {}): Promise<LLMResponse> {
 		assertConnectionProviderAdmission(opts?.connectionExecution, this);
-    if (opts?.reviewBudget) reviewPromptChars(this.getReviewBudgetProfile(opts.reviewBudget.policy.executionKind === 'reviewer-session' ? 'reviewer-session' : 'structured'), messages);
     const ollamaMessages = toOllamaMessages(messages);
     const tools = opts.tools ? toOllamaTools(opts.tools) : undefined;
 
@@ -434,7 +414,7 @@ export class OllamaProvider implements LLMProvider {
       }
     }
 
-    if (!this.connectionMemoryOnly) log.debug(opts.reviewBudget ? { numCtx: this.numCtx, messageCount: ollamaMessages.length, toolCount: tools?.length ?? 0 } : {
+    if (!this.connectionMemoryOnly) log.debug( {
       model: this.model,
       numCtx: this.numCtx,
       maxTokens: opts.maxTokens ?? 8_192,
@@ -460,7 +440,7 @@ export class OllamaProvider implements LLMProvider {
     // and model-not-found errors are NOT retried (they're config
     // failures; retrying is wasted latency and a noisier failure mode).
     let lastErr: unknown;
-    for (let attempt = 0; attempt < (opts.reviewBudget ? 1 : MAX_TRANSIENT_RETRIES + 1); attempt++) {
+    for (let attempt = 0; attempt < (MAX_TRANSIENT_RETRIES + 1); attempt++) {
 			assertConnectionProviderAdmission(opts.connectionExecution, this);
       try {
         // Always use streaming internally to avoid headers-timeout on slow
@@ -476,9 +456,8 @@ export class OllamaProvider implements LLMProvider {
         // A cancelled call is AbortError whatever the fetch rejected with (an abort
         // with a custom reason rejects with that reason). Never retried.
         if (opts.signal?.aborted === true) throw abortError();
-        if (err instanceof ReviewBudgetError) throw err;
         lastErr = err;
-        if (!opts.reviewBudget && attempt < MAX_TRANSIENT_RETRIES && isTransientOllamaError(err)) {
+        if (attempt < MAX_TRANSIENT_RETRIES && isTransientOllamaError(err)) {
           const delayMs = TRANSIENT_RETRY_BASE_DELAY_MS * Math.pow(2, attempt);
 					if (!this.connectionMemoryOnly) log.warn({
             model:    this.model,
@@ -548,14 +527,6 @@ export class OllamaProvider implements LLMProvider {
     // it is per-family (no enforcement guarantees).
     const ollamaToolChoice = toOllamaToolChoice(opts.toolChoice, tools);
 		assertConnectionProviderAdmission(opts.connectionExecution, this);
-    if (opts.reviewBudget) {
-      const kind = opts.reviewBudget.policy.executionKind === 'reviewer-session' ? 'reviewer-session' : 'structured';
-      const profile = this.getReviewBudgetProfile(kind);
-      const declaredToolsJson = reviewToolsJson(profile, opts.tools ?? []);
-      if (declaredToolsJson !== profile.declaredToolsJson) throw new ReviewBudgetError('budget-profile-mismatch');
-      const wireSchemaJson = reviewWireSchemaJson(profile, typeof ollamaFormat === 'object' ? ollamaFormat as StructuredSchema : ollamaFormat ? { format: ollamaFormat } : {});
-      preflightProviderReviewBudget(opts.reviewBudget, profile, JSON.stringify(ollamaMessages).length, wireSchemaJson, opts.maxTokens, declaredToolsJson);
-    }
     const response = await this.clientFor(opts.signal).chat({
       model: this.model,
       messages: toOllamaNativeMessages(ollamaMessages),
@@ -569,7 +540,7 @@ export class OllamaProvider implements LLMProvider {
       stream: true,
       options: {
         num_ctx: this.numCtx,
-        num_predict: opts.maxTokens ?? opts.reviewBudget?.outputAllowanceTokens ?? 8_192,
+        num_predict: opts.maxTokens ?? 8_192,
         ...(opts.temperature !== undefined ? { temperature: opts.temperature } : {}),
       },
     });
@@ -604,7 +575,7 @@ export class OllamaProvider implements LLMProvider {
 
     const toolCalls = parseToolCalls(allToolCalls.length > 0 ? allToolCalls : undefined);
 
-    if (!this.connectionMemoryOnly) log.debug(opts.reviewBudget ? { textLen: text.length, toolCallCount: toolCalls.length, promptEvalCount, evalCount } : {
+    if (!this.connectionMemoryOnly) log.debug( {
       model: this.model,
       textLen: text.length,
       text,
@@ -660,7 +631,6 @@ export class OllamaProvider implements LLMProvider {
 
   async *stream(messages: LLMMessage[], opts: CompletionOpts = {}): AsyncIterable<string> {
 		assertConnectionProviderAdmission(opts.connectionExecution, this);
-    if (opts.reviewBudget) throw new ReviewBudgetError('native-budget-unqualified');
     const ollamaMessages = toOllamaMessages(messages);
 
     try {
@@ -706,7 +676,6 @@ export class OllamaProvider implements LLMProvider {
     opts?:    StructuredCompletionOpts,
   ): Promise<T> {
 		assertConnectionProviderAdmission(opts?.connectionExecution, this);
-    if (opts?.reviewBudget) reviewPromptChars(this.getReviewBudgetProfile(opts.reviewBudget.policy.executionKind === 'reviewer-session' ? 'reviewer-session' : 'structured'), messages);
     const apiMessages = toOllamaMessages(messages);
     // plans/structured-output.md Phase C.5. Honour the caller's
     // `disableThinking: true` (Ollama specifically -- cloud providers
@@ -721,11 +690,6 @@ export class OllamaProvider implements LLMProvider {
         const msgs = extraSystemNote !== undefined
           ? [...apiMessages, { role: 'user' as const, content: extraSystemNote }]
           : apiMessages;
-        if (opts?.reviewBudget) {
-          const kind = opts.reviewBudget.policy.executionKind === 'reviewer-session' ? 'reviewer-session' : 'structured';
-          const profile = this.getReviewBudgetProfile(kind);
-          preflightProviderReviewBudget(opts.reviewBudget, profile, JSON.stringify(msgs).length, reviewWireSchemaJson(profile, schema), opts.maxTokens, '[]');
-        }
         try {
           // Stream instead of collect-and-parse so we can (a) bridge
           // token deltas to the UI's progress row via opts.onToken and
@@ -742,7 +706,7 @@ export class OllamaProvider implements LLMProvider {
             stream:   true,
             options: {
               num_ctx: this.numCtx,
-              num_predict: opts?.maxTokens ?? opts?.reviewBudget?.outputAllowanceTokens ?? 8_192,
+              num_predict: opts?.maxTokens ?? 8_192,
               ...(opts?.temperature !== undefined ? { temperature: opts.temperature } : {}),
             },
             ...(disableThinking ? { think: false } : {}),
@@ -803,29 +767,22 @@ export class OllamaProvider implements LLMProvider {
       },
 			(raw) => validateAgainstSchema<T>(schema, raw, opts?.connectionExecution),
       // internalRetry false: one attempt; the caller owns retries (Epic 8315a11f s1).
-      opts?.reviewBudget || opts?.internalRetry === false ? 1 : (opts?.maxAttempts ?? 3),
+      opts?.internalRetry === false ? 1 : (opts?.maxAttempts ?? 3),
 			opts?.connectionExecution,
-      opts?.reviewBudget !== undefined,
     );
   }
 
   /**
-   * A reviewer session on a local model (Epic 8315a11f s1): the model reads the
+   * A read-only session on a local model (Epic 8315a11f s1): the model reads the
    * repository at `opts.cwd` through the read-only tool loop, whose allowlist is
    * checked where each tool runs, then gives a structured answer checked against
    * `schema`. `opts.deadlineMs` bounds the whole session: passing it aborts the
-   * turn in flight and throws {@link ReviewSessionTimeoutError}, never retried.
+   * turn in flight and throws {@link ReadOnlySessionTimeoutError}, never retried.
    * `opts.signal` cancels it with AbortError.
    */
-  async runReviewSession<T>(prompt: string, schema: StructuredSchema, opts: ReviewSessionOpts): Promise<T> {
+  async runReadOnlySession<T>(prompt: string, schema: StructuredSchema, opts: ReadOnlySessionOpts): Promise<T> {
 		assertConnectionProviderAdmission(opts.connectionExecution, this);
-    requireBoundedReview(opts);
     const closingInstruction = 'Now give your final answer: ONLY a JSON object matching this JSON Schema -- no prose, no fenced block.\n\n' + JSON.stringify(schema);
-    if (opts.reviewBudget) {
-      const profile = this.getReviewBudgetProfile('reviewer-session');
-      const messages: LLMMessage[] = [{ role: 'user', content: prompt }, { role: 'user', content: closingInstruction }];
-      preflightProviderReviewBudget(opts.reviewBudget, profile, reviewPromptChars(profile, messages), reviewWireSchemaJson(profile, schema));
-    }
     const deadlineAt = Date.now() + opts.deadlineMs;
     const timer = new AbortController();
     const handle = setTimeout(() => timer.abort(), opts.deadlineMs);
@@ -835,22 +792,20 @@ export class OllamaProvider implements LLMProvider {
       const loop = await runReadOnlyToolLoop({
         closingSchema: schema,
         closingInstruction,
-        ...(opts.reviewBudget !== undefined ? { reviewBudget: opts.reviewBudget } : {}),
         provider: this,
         messages: [{ role: 'user', content: prompt }],
         tools:    getReadOnlyTools(),
         allow:    new Set(READ_ONLY_TOOL_IDS),
-        deps:     { sessionId: `review-session-${randomUUID()}`, repoPath: opts.cwd, closureRepos: [opts.cwd], send: () => {}, requestId: 0, ollamaProvider: this, caller: 'agent' },
+        deps:     { sessionId: `readonly-session-${randomUUID()}`, repoPath: opts.cwd, closureRepos: [opts.cwd], send: () => {}, requestId: 0, ollamaProvider: this, caller: 'agent' },
         // The repository is the session's working directory, as it is for the CLI sessions.
         root:     opts.cwd,
-        maxTurns: REVIEW_SESSION_MAX_TURNS,
+        maxTurns: READ_ONLY_SESSION_MAX_TURNS,
         signal,
         deadlineAt,
       });
       // Out of turns: the model still answers from what it has read.
-      if (!loop.done) log.warn({ model: this.model, turns: REVIEW_SESSION_MAX_TURNS }, 'ollama review session: tool turns ran out; asking for the answer');
+      if (!loop.done) log.warn({ model: this.model, turns: READ_ONLY_SESSION_MAX_TURNS }, 'ollama read-only session: tool turns ran out; asking for the answer');
       return await emitStructuredAnswer<T>({
-        ...(opts.reviewBudget !== undefined ? { reviewBudget: opts.reviewBudget } : {}),
         provider:    this,
         messages:    loop.messages,
         // Structural reference trails the prompt.
@@ -860,7 +815,7 @@ export class OllamaProvider implements LLMProvider {
         signal,
       });
     } catch (err) {
-      if (timedOut() || err instanceof ToolLoopDeadlineError) throw new ReviewSessionTimeoutError(opts.deadlineMs);
+      if (timedOut() || err instanceof ToolLoopDeadlineError) throw new ReadOnlySessionTimeoutError(opts.deadlineMs);
       throw err;
     } finally {
       clearTimeout(handle);
@@ -868,7 +823,7 @@ export class OllamaProvider implements LLMProvider {
   }
 }
 
-/** Tool turns an Ollama reviewer session may take; its deadline is the real bound. */
+/** Tool turns an Ollama read-only session may take; its deadline is the real bound. */
 // Module-load baseline prevents a pre-construction helper substitution from
 // being mistaken for a native implementation when identity is first recorded.
 const modulePrivacyEvidence = captureConnectionProviderModule(import.meta.url);
@@ -878,7 +833,7 @@ function assertOriginalAdapterMethods(): void {
 	if (keys.length !== originalAdapterMethods.size || keys.some(key => { const actual = Object.getOwnPropertyDescriptor(OllamaProvider.prototype, key)!, expected = originalAdapterMethods.get(key); return !expected || actual.value !== expected.value || actual.get !== expected.get || actual.set !== expected.set; })) throw new ConnectionExecutionError('unsupported-temporary');
 }
 
-const REVIEW_SESSION_MAX_TURNS = 40;
+const READ_ONLY_SESSION_MAX_TURNS = 40;
 
 // ---------------------------------------------------------------------------
 // Helpers

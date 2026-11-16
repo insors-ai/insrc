@@ -411,79 +411,8 @@ export function guideList(
 
 export interface ReviewStreamDeps {
 	readonly connect?:    (() => Socket) | undefined;
-	/** Injected timer, so a test can fire the wait limit without waiting for it. */
-	readonly setTimer?:   ((fn: () => void, ms: number) => unknown) | undefined;
-	readonly clearTimer?: ((handle: unknown) => void) | undefined;
 }
 
-/** One stream request over the daemon socket, resolved by its `done` frame's
- *  data. The request itself (wait limit, abort, frames) is runReviewStream's;
- *  this is the socket transport. */
-function reviewStreamRequest<T>(
-	method: string,
-	params: Record<string, unknown>,
-	opts:   ReviewStreamOpts,
-	deps:   ReviewStreamDeps,
-): Promise<T> {
-	return runReviewStream<T>(method, opts, (sink) => {
-		let buffer = '';
-		const socket = deps.connect !== undefined ? deps.connect() : createConnection(PATHS.sockFile);
-
-		socket.on('connect', () => {
-			socket.write(JSON.stringify({ id: _nextId++, method, stream: true, client: { label: 'mcp', pid: process.pid }, params }) + '\n');
-		});
-
-		onUtf8Data(socket, (decodedChunk, chunkBytes) => {
-			buffer += decodedChunk;
-			const lines = buffer.split('\n');
-			buffer = lines.pop() ?? '';
-			for (const line of lines) {
-				if (!line.trim()) continue;
-				let frame: Record<string, unknown>;
-				try {
-					const parsed: unknown = JSON.parse(line);
-					if (typeof parsed !== 'object' || parsed === null) throw new Error('not an object');
-					frame = parsed as Record<string, unknown>;
-				} catch {
-					sink.fail('protocol', `${method}: invalid frame from daemon`);
-					return;
-				}
-				const stream = frame['stream'];
-				if (stream === undefined) {
-					// A PLAIN line: the daemon did not treat this as a stream request.
-					if ('error' in frame) {
-						const error = typeof frame['error'] === 'string' ? frame['error'] : JSON.stringify(frame['error']);
-						if (error.startsWith('unknown method')) {
-							sink.fail('unknown-method', `${method}: this daemon does not support the request (${error}). Update the daemon and restart it.`);
-						} else {
-							sink.fail('daemon-error', error);
-						}
-						return;
-					}
-					if ('result' in frame) {
-						sink.fail('protocol', `${method}: the daemon answered a stream request with a plain result`);
-						return;
-					}
-					continue;   // neither: not ours to interpret
-				}
-				sink.frame({ stream: String(stream), data: frame['data'] });
-			}
-		});
-
-		socket.on('error', (err: NodeJS.ErrnoException) => {
-			if (err.code === 'ENOENT' || err.code === 'ECONNREFUSED') {
-				sink.fail('unreachable', 'daemon is not running — start it with: insrc daemon start');
-			} else {
-				sink.fail('unreachable', `${method}: cannot reach the daemon (${err.message})`);
-			}
-		});
-		socket.on('close', () => sink.fail('closed', `${method}: connection closed before completion`));
-
-		return { end: () => socket.end(), cancel: () => socket.destroy() };
-	}, deps);
-}
-
-/** Ask the daemon to review an existing design artifact (`workflow.review`). */
 export function reviewArtifactStream(
 	params: ReviewArtifactStreamParams,
 	opts:   ReviewStreamOpts,

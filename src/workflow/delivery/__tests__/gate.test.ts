@@ -13,8 +13,8 @@ import { join } from 'node:path';
 
 import { History } from '../../artifact-core/history.js';
 import { FileSidecarStore } from '../../artifact-core/sidecar-store.js';
-import { resolutionEntryOf } from '../../review/report-log.js';
-import type { ReviewReport } from '../../review/types.js';
+import { resolutionEntryOf } from '../../review-history/review/report-log.js';
+import type { ReviewReport } from '../../review-history/review/types.js';
 import { blockedMeta, recordReview, reviewedMeta, writeHead } from '../../__tests__/lifecycle-fixtures.js';
 import { deriveGates } from '../gate.js';
 import { loadArtifactRecordSet } from '../load.js';

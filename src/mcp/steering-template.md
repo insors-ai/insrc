@@ -14,7 +14,7 @@ region if present, and never clobbers your surrounding content. Re-running
 (Claude / Codex) to use `insrc_analyze_step` for code questions, `insrc_triage`
 first for build requests AND bug/defect fixes (a bugfix is classified + routed to
 the `issue` stage, tracked like a feature), `insrc_workflow_step` to drive the
-routed workflow turn-by-turn, and `insrc_review_step` to review before approving.
+routed workflow turn-by-turn, then present artifacts for explicit human approval. Automated design and code review functionality is being rewritten; the retained endpoints fail immediately.
 
 For code questions it tells the agent to read the user's prompt itself and send
 `insrc_analyze_step` / `insrc_analyze` a structured `request` (`question`,

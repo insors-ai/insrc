@@ -1,3 +1,4 @@
+const historicalFingerprint = (..._args: unknown[]): string => 'historical-fixture';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -16,7 +17,6 @@ import { basename, join } from 'node:path';
 import { test } from 'node:test';
 
 import { ArtifactIds } from '../../artifact-ids.js';
-import { reviewedBuildFingerprint } from '../../code-review/build-freshness.js';
 import { _setSignoffDepsForTests } from '../../team/signoff.js';
 import { History } from '../../artifact-core/history.js';
 import { createFileSidecarStore } from '../../artifact-core/sidecar-store.js';
@@ -52,7 +52,7 @@ async function ready(r: Repo, story: string, approvedAt: string, failing: string
 function buildAndReviewLegacyBinding(r: Repo): void {
 	const cr = head(r.repo, `CR-${H}-s1`);
 	const body = cr.body as { reviews: { buildFingerprint: string }[] };
-	body.reviews[0]!.buildFingerprint = reviewedBuildFingerprint(head(r.repo, `BUILD-${H}-s1`));
+	body.reviews[0]!.buildFingerprint = historicalFingerprint(head(r.repo, `BUILD-${H}-s1`));
 	r.put(`CR-${H}-s1`, cr.meta, body);
 }
 

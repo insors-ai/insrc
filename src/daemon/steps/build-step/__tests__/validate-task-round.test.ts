@@ -59,7 +59,7 @@ function repoWith(head: boolean): string {
 }
 
 async function validate(repo: string, passed: boolean, reason: string): Promise<Record<string, unknown>> {
-	_setBuildValidateProviderForTests({ async runReviewSession<T>() { return judge(passed, reason) as T; } });
+	_setBuildValidateProviderForTests({ async runReadOnlySession<T>() { return judge(passed, reason) as T; } });
 	try {
 		const env = await handleBuildStep({ phase: 'validate', target: 's1/t1', repo });
 		return JSON.parse(env.content[0]!.text) as Record<string, unknown>;

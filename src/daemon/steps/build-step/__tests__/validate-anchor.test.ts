@@ -70,7 +70,7 @@ function recordDocs(repo: string): string[] {
 /** One standalone validate turn at a given time; `judge` may throw. */
 async function turn(repo: string, at: string, judge: () => unknown = verdict): Promise<Record<string, unknown>> {
 	_setBuildValidateClockForTests(() => at);
-	_setBuildValidateProviderForTests({ async runReviewSession<T>() { return judge() as T; } });
+	_setBuildValidateProviderForTests({ async runReadOnlySession<T>() { return judge() as T; } });
 	try {
 		const env = await handleBuildStep({ phase: 'validate', target: 's1', repo, standalone: TRIVIAL as never });
 		return JSON.parse(env.content[0]!.text) as Record<string, unknown>;

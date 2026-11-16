@@ -5,10 +5,10 @@ import { join } from 'node:path';
 
 import type { IpcStreamMessage, LLMProvider } from '../../../shared/types.js';
 import { codeReviewRunStart } from '../../../daemon/code-review-rpc.js';
-import type { CodeReviewGrounding, CodeReviewSubject, DimensionResult, ReviewDimension } from '../../code-review/types.js';
+import type { CodeReviewGrounding, CodeReviewSubject, DimensionResult, ReviewDimension } from '../../review-history/code-review/types.js';
 import { artifactJsonPath, buildArtifactId, codeReviewArtifactId, planArtifactId, testsArtifactId } from '../../storage.js';
 import { approveWorkflowTarget } from '../../gates.js';
-import { reviewArtifactFile } from '../../review/run-artifact.js';
+import { reviewArtifactFile } from '../../review-history/review/run-artifact.js';
 import { LifecycleConflictError } from '../types.js';
 import { LifecycleService } from '../lifecycle-service.js';
 import { persistBuildRecord } from '../../runners/build/standalone-record.js';

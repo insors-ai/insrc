@@ -76,7 +76,7 @@ async function everyEntryPoint(p: CliProvider): Promise<Run[]> {
 	await p.complete([{ role: 'user', content: 'hello' }]);
 	await p.completeStructured([{ role: 'user', content: 'hello' }], schema);
 	await p.runEditSession('edit the file', { cwd: dir });
-	await p.runReviewSession('review the repo', schema, { cwd: dir, deadlineMs: 20_000 });
+	await p.runReadOnlySession('review the repo', schema, { cwd: dir, deadlineMs: 20_000 });
 	return calls();
 }
 
@@ -133,7 +133,7 @@ test('cli-ollama.test.ts: a failing pre-run check on each entry point throws Oll
 		await assert.rejects(p.completeStructured([{ role: 'user', content: 'hello' }], schema), isRefusal);
 		await assert.rejects(p.completeStructured([{ role: 'user', content: 'e' }], schema, { boundedInput: { maxInputChars: 10_000, contextMode: 'isolated-structured' } }), isRefusal);
 		await assert.rejects(p.runEditSession('edit', { cwd: dir }), isRefusal);
-		await assert.rejects(p.runReviewSession('review', schema, { cwd: dir, deadlineMs: 20_000 }), isRefusal);
+		await assert.rejects(p.runReadOnlySession('review', schema, { cwd: dir, deadlineMs: 20_000 }), isRefusal);
 		assert.deepEqual(calls(), [], 'no claude process started');
 		assert.equal(existsSync(join(dir, 'help.log')), false, 'not even the bounded path\'s --help probe');
 		assert.equal(checks, 5, 'one check per call, never retried');

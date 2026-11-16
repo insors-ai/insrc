@@ -1,6 +1,3 @@
-import { ReviewActivityStream } from './review-activity-stream.js';
-import type { ActivityReviewSessionOpts } from '../../shared/types.js';
-import { requireBoundedReview, validateReviewSessionOptions } from '../../shared/review-activity.js';
 // CLI adapters never have a supported Session backend; denial needs no local-provider proof loader.
 import { assertNoSessionProvider as assertNoSessionEmbedding, assertNoSessionProvider as assertConnectionProviderAdmission } from '../../shared/connection-provider-denial.js';
 /*---------------------------------------------------------------------------------------------
@@ -61,23 +58,18 @@ import type {
 	LLMProvider,
 	LLMResponse,
 	ProviderCapabilities,
-	ReviewSessionOpts,
+	ReadOnlySessionOpts,
 	StructuredCompletionOpts,
 	StructuredSchema,
 } from '../../shared/types.js';
 import type { TierEffort } from '../../config/analyze.js';
 import { getLogger } from '../../shared/logger.js';
 import { runInProcessGroup } from '../../shared/process-group.js';
-import { reviewNativeTransport } from '../../shared/review-process-bridge.js';
 import type { ProcessGroupOpts } from '../../shared/process-group.js';
-import type { ReviewExecutionKind, ReviewProviderBudgetProfile } from '../../shared/review-budget.js';
-import { freezeReviewBudgetProfile, REVIEW_BUDGET_DEFAULTS, ReviewBudgetError } from './budget/accounting.js';
-import { preflightProviderReviewBudget, reviewWireSchemaJson, reviewPromptChars } from './review-budget.js';
 import { codexStrictSchema, rootUnionKey, schemaKeywordSummary, validateCodexReply, validateNativeReply } from './structured-schema.js';
 import { buildRetryNote, validateAgainstSchema, withStructuredRetry } from './structured-output.js';
 import { ModelResponseShapeError } from './model-call-error.js';
 import { checkOllamaTarget, OllamaTargetError } from './ollama-target.js';
-import { ReviewOutputFailureError } from '../../shared/review-diagnostics.js';
 import { getModelRegistry } from '../../daemon/model-registry.js';
 import { openVerifiedVibeSession, runVerifiedVibeTurn, vibeAssistantOutput, VibeTurnError, type VibeCatalogModel } from '../../shared/vibe-session.js';
 
@@ -103,33 +95,26 @@ export interface EditSessionOpts {
 	readonly timeoutMs?: number | undefined;
 }
 
-/** Options for {@link CliProvider.runReviewSession}; declared with the provider interface. */
-export type { ReviewSessionOpts } from '../../shared/types.js';
+/** Options for {@link CliProvider.runReadOnlySession}; declared with the provider interface. */
+export type { ReadOnlySessionOpts } from '../../shared/types.js';
 
-/** A reviewer session ran past the time it was given. Never retried. */
-export class ReviewSessionTimeoutError extends Error {
+/** A read-only session ran past the time it was given. Never retried. */
+export class ReadOnlySessionTimeoutError extends Error {
 	constructor(readonly deadlineMs: number) {
-		super(`review session passed its time limit of ${Math.round(deadlineMs / 1000)}s`);
-		this.name = 'ReviewSessionTimeoutError';
+		super(`read-only session passed its time limit of ${Math.round(deadlineMs / 1000)}s`);
+		this.name = 'ReadOnlySessionTimeoutError';
 	}
 }
 
-/** The built-in tools a reviewer session may use: reading only. */
-export const REVIEW_SESSION_READ_TOOLS: readonly string[] = ['Read', 'Grep', 'Glob'];
-/** The insrc analyze tools a reviewer session may call for drill-down. */
-export const REVIEW_SESSION_ANALYZE_TOOLS: readonly string[] = ['mcp__insrc__insrc_analyze', 'mcp__insrc__insrc_analyze_step'];
+/** The built-in tools a read-only session may use: reading only. */
+export const READ_ONLY_SESSION_READ_TOOLS: readonly string[] = ['Read', 'Grep', 'Glob'];
+/** The insrc analyze tools a read-only session may call for drill-down. */
+export const READ_ONLY_SESSION_ANALYZE_TOOLS: readonly string[] = ['mcp__insrc__insrc_analyze', 'mcp__insrc__insrc_analyze_step'];
 
-/** Design reviewers retain read-only tools. Code tasks may additionally receive
- * exact host-generated read/test command grants; no edit permission is granted. */
-export function claudeReviewSessionArgs(schema: StructuredSchema, modelArgs: readonly string[], commands?: readonly string[]): string[] {
-	return [
-		'--print',
-		'--output-format', 'json',
-		'--json-schema', JSON.stringify(schema),
-		'--tools', [...REVIEW_SESSION_READ_TOOLS, ...(commands ? ['Bash'] : [])].join(','),
-		'--allowedTools', [...REVIEW_SESSION_READ_TOOLS, ...REVIEW_SESSION_ANALYZE_TOOLS, ...(commands?.map(command => `Bash(${command})`) ?? [])].join(','),
-		...modelArgs,
-	];
+/** Read-only sessions expose file reads and analysis tools only. */
+export function claudeReadOnlySessionArgs(schema: StructuredSchema, modelArgs: readonly string[]): string[] {
+ return ['--print', '--output-format', 'json', '--json-schema', JSON.stringify(schema),
+  '--tools', READ_ONLY_SESSION_READ_TOOLS.join(','), '--allowedTools', [...READ_ONLY_SESSION_READ_TOOLS, ...READ_ONLY_SESSION_ANALYZE_TOOLS].join(','), ...modelArgs];
 }
 
 /**
@@ -154,8 +139,8 @@ function codexReply<T>(schema: StructuredSchema, parsed: unknown, what: string):
 	return checked.value;
 }
 
-/** codex arguments for a reviewer session: a read-only sandbox, never `--full-auto`. */
-export function codexReviewSessionArgs(schemaPath: string, cwd: string, modelArgs: readonly string[]): string[] {
+/** codex arguments for a read-only session: a read-only sandbox, never `--full-auto`. */
+export function codexReadOnlySessionArgs(schemaPath: string, cwd: string, modelArgs: readonly string[]): string[] {
 	return ['exec', '--output-schema', schemaPath, '--json', '--sandbox', 'read-only', '-C', cwd, ...modelArgs];
 }
 
@@ -196,7 +181,7 @@ export interface CliProviderOpts {
 
 
 /**
- * How long a codex reviewer session may show no model output (no event past
+ * How long a codex read-only session may show no model output (no event past
  * `thread.started` / `turn.started`) before it is treated as stalled and killed
  * (ISSUE-d4b2cd1c). Other codex calls are not watched.
  * A model normally starts answering within seconds; on 2026-10-19 two runs took
@@ -266,7 +251,6 @@ export class CliProvider implements LLMProvider {
 		this.embedDelegate = opts.embedDelegate;
 		this.capabilities = {
 			structuredOutput: true,
-            reviewActivity: true,
 			toolCalling: false,
 			vision: false,
 			webSearch: false,
@@ -279,7 +263,6 @@ export class CliProvider implements LLMProvider {
 	// -- complete -------------------------------------------------------
 
 	async complete(messages: LLMMessage[], opts?: CompletionOpts): Promise<LLMResponse> {
-		if (opts?.reviewBudget) throw new ReviewBudgetError('native-budget-unqualified');
 		assertConnectionProviderAdmission(opts?.connectionExecution);
 		return this.withTransientRetry('complete', async () => {
 			const prompt = serialiseMessages(messages);
@@ -328,11 +311,11 @@ export class CliProvider implements LLMProvider {
 				assertConnectionProviderAdmission(execution);
 				lastErr = err;
 				// A size refusal is never resent, whatever its text looks like (ISSUE-aef82b03).
-				if (err instanceof ReviewBudgetError || err instanceof InputTooLargeError) throw err;
+				if (err instanceof InputTooLargeError) throw err;
 				// An Ollama server that cannot serve the run is reported, not retried.
 				if (err instanceof OllamaTargetError) throw err;
 				// A cancelled call ends at once; it is never retried (Epic 8315a11f s1).
-				if (err instanceof ReviewBudgetError || isAbortError(err)) throw err;
+				if (isAbortError(err)) throw err;
 				const msg = err instanceof Error ? err.message : String(err);
 				if (attempt >= maxAttempts || !isTransientCliError(transienceText(err))) throw err;
 				const backoffMs = 2000 * attempt;
@@ -344,22 +327,6 @@ export class CliProvider implements LLMProvider {
 			}
 		}
 		throw lastErr;
-	}
-
-
-	getReviewBudgetProfile(executionKind: Exclude<ReviewExecutionKind, 'controller'>): ReviewProviderBudgetProfile {
-		return freezeReviewBudgetProfile({
-			profileVersion: 1, providerId: `cli-${this.kind}:${this.defaultModel ?? 'default'}`,
-			transport: this.kind, transportVersion: 'cli-review-v1', promptDialect: 'cli-text-v1',
-			schemaDialect: this.kind === 'codex' ? 'codex-strict-v1' : 'json-v1',
-			qualification: 'reserved-native',
-			declaredToolsJson: JSON.stringify(executionKind === 'reviewer-session' && this.kind === 'claude'
-				? { tools: REVIEW_SESSION_READ_TOOLS, allowedTools: [...REVIEW_SESSION_READ_TOOLS, ...REVIEW_SESSION_ANALYZE_TOOLS] } : []),
-			nativeReserveTokens: REVIEW_BUDGET_DEFAULTS.nativeReserveTokens,
-			transportReserveTokens: REVIEW_BUDGET_DEFAULTS.transportReserveTokens,
-			completionReserveTokens: REVIEW_BUDGET_DEFAULTS.completionReserveTokens,
-			inspectionReserveTokens: executionKind === 'reviewer-session' ? REVIEW_BUDGET_DEFAULTS.inspectionReserveTokens : 0,
-		});
 	}
 
 	// -- completeStructured ---------------------------------------------
@@ -400,7 +367,7 @@ export class CliProvider implements LLMProvider {
 				+ `required: ['<field>'] }. A union BELOW the root is fine.`,
 			);
 		}
-		return this.withTransientRetry('completeStructured', () => this.completeStructuredOnce<T>(messages, schema, opts), opts?.reviewBudget || opts?.internalRetry === false ? 1 : 3, opts?.connectionExecution);
+		return this.withTransientRetry('completeStructured', () => this.completeStructuredOnce<T>(messages, schema, opts), opts?.internalRetry === false ? 1 : 3, opts?.connectionExecution);
 	}
 
 	private async completeStructuredOnce<T>(
@@ -409,12 +376,7 @@ export class CliProvider implements LLMProvider {
 		opts?: StructuredCompletionOpts,
 	): Promise<T> {
 		const prompt = serialiseMessages(messages);
-		const wireSchema = opts?.reviewBudget
-			? reviewWireSchemaJson(this.getReviewBudgetProfile('structured'), schema)
-			: this.kind === 'codex' ? codexSchemaJson(schema) : JSON.stringify(schema);
-		if (opts?.reviewBudget) {
-			preflightProviderReviewBudget(opts.reviewBudget, this.getReviewBudgetProfile('structured'), reviewPromptChars(this.getReviewBudgetProfile('structured'), messages), wireSchema, opts.maxTokens);
-		}
+		const wireSchema = this.kind === 'codex' ? codexSchemaJson(schema) : JSON.stringify(schema);
 		if (this.kind === 'claude') {
 			const args = [
 				'--print',
@@ -422,9 +384,8 @@ export class CliProvider implements LLMProvider {
 				'--json-schema', wireSchema,
 				...this.modelArgs(opts),
 			];
-			const { envelope } = await this.runClaude(args, prompt, this.execIn(opts?.cwd, opts?.timeoutMs, opts?.signal, opts?.reviewBudget !== undefined));
+			const { envelope } = await this.runClaude(args, prompt, this.execIn(opts?.cwd, opts?.timeoutMs, opts?.signal));
 			if (envelope.is_error) {
-				if (opts?.reviewBudget) throw reviewCliError(envelope.result ?? '', 'review-cli-failed');
 				const message = `claude --print failed: ${envelope.result ?? 'no error message'}`;
 				throw sizeRefusalOr(message, envelope.result ?? '', () => new Error(message));
 			}
@@ -439,7 +400,7 @@ export class CliProvider implements LLMProvider {
 			const schemaPath = join(tmpDir, 'schema.json');
 			writeFileSync(schemaPath, wireSchema);
 			const args = ['exec', '--output-schema', schemaPath, '--json', ...this.modelArgs(opts)];
-			const exec = this.execIn(opts?.cwd, opts?.timeoutMs, opts?.signal, opts?.reviewBudget !== undefined);
+			const exec = this.execIn(opts?.cwd, opts?.timeoutMs, opts?.signal);
 			const silence = opts?.stallMs !== undefined ? { ...exec, timeoutMs: exec?.timeoutMs ?? this.timeoutMs, stallMs: opts.stallMs } : exec;
 			let agentText: string | undefined;
 			try {
@@ -458,7 +419,6 @@ export class CliProvider implements LLMProvider {
 			try {
 				parsed = JSON.parse(agentText);
 			} catch (err) {
-				if (opts?.reviewBudget) throw new ModelResponseShapeError('review-answer-invalid', ['Return one valid JSON object matching the supplied schema.']);
 				throw new Error(`codex agent_message.text was not parseable JSON: ${(err as Error).message}. text=${agentText.slice(0, 300)}`);
 			}
 			return codexReply<T>(schema, parsed, 'codex answer');
@@ -542,15 +502,14 @@ export class CliProvider implements LLMProvider {
 	}
 
 
-	// -- runReviewSession -----------------------------------------------
+	// -- runReadOnlySession -----------------------------------------------
 
 	/**
-	 * Run ONE read-only reviewer session: the CLI starts in `opts.cwd` with
+	 * Run ONE read-only read-only session: the CLI starts in `opts.cwd` with
 	 * tools limited to reading the repo and to the insrc analyze tools, cannot
 	 * edit anything, and returns an answer checked against `schema`.
 	 *
-	 * The read-only sibling of {@link runEditSession}, used by the design-review
-	 * template (LLD-f2f08ccf89f8ab25-S001). Both CLIs do this in a single run —
+	 * The read-only sibling of {@link runEditSession}, used by build validation. Both CLIs do this in a single run —
 	 * probed live on 2026-10-05:
 	 *   - claude: `--tools Read,Grep,Glob` leaves no built-in tool that can write,
 	 *     `--allowedTools` admits the two insrc analyze tools, and `--json-schema`
@@ -562,36 +521,22 @@ export class CliProvider implements LLMProvider {
 	 * every other call on this provider it is NOT wrapped in the three-attempt
 	 * transient retry: a transient CLI error is retried at most once, and only
 	 * with the time that remains. Passing the deadline throws
-	 * {@link ReviewSessionTimeoutError}, which is never retried.
+	 * {@link ReadOnlySessionTimeoutError}, which is never retried.
 	 */
-	async runReviewSession<T>(prompt: string, schema: StructuredSchema, opts: ReviewSessionOpts): Promise<T> {
+	async runReadOnlySession<T>(prompt: string, schema: StructuredSchema, opts: ReadOnlySessionOpts): Promise<T> {
 		assertConnectionProviderAdmission(opts.connectionExecution);
-    if (opts.mode === 'activity') {
-     validateReviewSessionOptions(opts);
-     const lease = await opts.inputOwnership?.acquire(prompt, schema);
-     try {
-      const signal = opts.inputOwnership ? AbortSignal.any([opts.signal, opts.inputOwnership.signal]) : opts.signal;
-      signal.throwIfAborted();
-      return await this.activityReview<T>(prompt, schema, { ...opts, signal });
-     } finally { lease?.release(); }
-    }
     // Preserve the bounded caller's expired-deadline error without starting a process.
-    if ((opts.mode === undefined || opts.mode === 'bounded') && Number.isFinite(opts.deadlineMs) && opts.deadlineMs <= 0) throw new ReviewSessionTimeoutError(opts.deadlineMs);
-    requireBoundedReview(opts);
+    if ((opts.mode === undefined || opts.mode === 'bounded') && Number.isFinite(opts.deadlineMs) && opts.deadlineMs <= 0) throw new ReadOnlySessionTimeoutError(opts.deadlineMs);
 		const startedAt = Date.now();
 		// internalRetry false: the caller re-issues, so this call makes one attempt only.
-		const maxAttempts = opts.reviewBudget || opts.internalRetry === false ? 1 : 2;
+		const maxAttempts = opts.internalRetry === false ? 1 : 2;
 		for (let attempt = 1; ; attempt++) {
 			assertConnectionProviderAdmission(opts.connectionExecution);
 			const remainingMs = opts.deadlineMs - (Date.now() - startedAt);
-			if (remainingMs <= 0) throw new ReviewSessionTimeoutError(opts.deadlineMs);
-			if (opts.reviewBudget) {
-				const profile = this.getReviewBudgetProfile('reviewer-session');
-				preflightProviderReviewBudget(opts.reviewBudget, profile, prompt.length, reviewWireSchemaJson(profile, schema));
-			}
+			if (remainingMs <= 0) throw new ReadOnlySessionTimeoutError(opts.deadlineMs);
 			try {
-				return await this.reviewSessionOnce<T>(prompt, schema, {
-					cwd: opts.cwd, timeoutMs: remainingMs, watchStall: true, codeTaskCommands: opts.codeTaskCommands, reviewScoped: opts.reviewBudget !== undefined,
+				return await this.readOnlySessionOnce<T>(prompt, schema, {
+					cwd: opts.cwd, timeoutMs: remainingMs, watchStall: true,
 					...(opts.stallMs !== undefined ? { stallMs: opts.stallMs } : {}),
 					...(opts.signal !== undefined ? { signal: opts.signal } : {}),
 				});
@@ -603,19 +548,16 @@ export class CliProvider implements LLMProvider {
 				// retried once, as a fresh run, inside the time that remains (ISSUE-d4b2cd1c).
 				if (err instanceof CliStallError) {
 					const what = opts.stallMs !== undefined ? 'the CLI printed nothing new within its silence limit' : 'the CLI produced no model output';
-					log.warn((opts.reviewBudget ? { provider: this.kind, attempt, errorCode: 'stall' } : { provider: this.kind, attempt, codexSession: err.sessionId, err: msg }),
-						`runReviewSession: ${what}; ${attempt < maxAttempts ? 'retrying once inside the remaining time' : 'giving up'}`);
+					log.warn(({ provider: this.kind, attempt, codexSession: err.sessionId, err: msg }),
+						`runReadOnlySession: ${what}; ${attempt < maxAttempts ? 'retrying once inside the remaining time' : 'giving up'}`);
 					if (attempt < maxAttempts) continue;
 					throw err;
 				}
 				if (err instanceof OllamaTargetError) throw err;
-				// A preflight rejection is wrapped in ReviewOutputFailureError so the
-				// checkpoint diagnostic carries the backend cause; it is not transient.
-				if (err instanceof ReviewOutputFailureError && err.diagnostic.terminal?.reason === 'ollama_preflight') throw err;
 				// The subprocess runner reports its own kill as exit code -9.
-				if (/exited with -9\b/.test(msg)) throw new ReviewSessionTimeoutError(opts.deadlineMs);
+				if (/exited with -9\b/.test(msg)) throw new ReadOnlySessionTimeoutError(opts.deadlineMs);
 				if (attempt >= maxAttempts || !isTransientCliError(transienceText(err))) throw err;
-				log.warn(opts.reviewBudget ? { provider: this.kind, errorCode: 'transient' } : { provider: this.kind, err: msg.slice(0, 200) }, 'runReviewSession: transient CLI error; retrying once inside the remaining time');
+				log.warn({ provider: this.kind, err: msg.slice(0, 200) }, 'runReadOnlySession: transient CLI error; retrying once inside the remaining time');
 			}
 		}
 	}
@@ -626,105 +568,7 @@ export class CliProvider implements LLMProvider {
   return registry.models('cli-vibe').filter(model => !rejected.has(model.id));
  }
 
- /** Read-only review tool policy for a Vibe activity session (invariant c4):
-  *  read_file + the insrc analyze MCP tools only; verified against the app
-  *  server's runtime tool list before the turn starts. */
- private vibeActivityVerifyRuntime(runtime: Readonly<Record<string, unknown>>): void {
-  const tools = runtime['tools'];
-  if (runtime['bypassToolPermissions'] !== false || !Array.isArray(tools) || tools.some(tool => {
-   const name = isRecord(tool) ? tool['name'] : undefined;
-   return typeof name !== 'string' || (name !== 'read_file' && !name.startsWith('mcp_insrc_'));
-  })) throw new Error('Vibe app server did not verify the review tool policy');
- }
-
- private async vibeActivityReview<T>(prompt: string, schema: StructuredSchema, opts: ActivityReviewSessionOpts): Promise<T> {
-  const acceptedStop = new AbortController();
-  const signal = AbortSignal.any([opts.signal, acceptedStop.signal]);
-  // Model/effort are verified against the catalog + the runtime's
-  // thinkingLevels before any turn is dispatched; VibeSelectionError precedes it.
-  const session = await openVerifiedVibeSession({
-   command: await resolveBin(this.vibeAppServerPath),
-   cwd: opts.cwd,
-   signal,
-   timeoutMs: this.timeoutMs,
-   model: this.defaultModel || undefined,
-   effort: this.effort,
-   catalog: this.vibeActivityCatalog(),
-   agentConfig: { cwd: opts.cwd, headless: true, enabledTools: ['read_file', 'mcp_insrc_*'] },
-   verifyRuntime: runtime => this.vibeActivityVerifyRuntime(runtime),
-   inheritProcessGroup: true,
-  });
-  const parser = new ReviewActivityStream<T>('vibe', schema, opts, () => acceptedStop.abort());
-  // Settles on a terminal turn event, acceptance (stop fires the shared
-  // signal), caller abort, or a transport failure.
-  let settleWait!: () => void;
-  const waitTurn = new Promise<void>(resolve => { settleWait = resolve; });
-  signal.addEventListener('abort', () => settleWait(), { once: true });
-  try {
-   session.transport.releaseSetupAbort();
-   await parser.start();
-   // The app-server transport emits one JSON-RPC notification per line; the
-   // parser's feed() is line-oriented, so each event becomes one frame.
-   session.transport.observe((method, params) => {
-    void parser.feed(Buffer.from(JSON.stringify({ method, params }) + '\n')).catch(() => { acceptedStop.abort(); });
-    if (method === 'turn/completed') settleWait();
-   }, error => {
-    void parser.failure('transport_failed', error.message, undefined, error.message).catch(() => { acceptedStop.abort(); });
-   });
-   await session.transport.request('turn/start', { sessionId: session.id, message: [{ type: 'text', text: prompt + '\n' + outputContractNote(schema) }] });
-   await waitTurn;
-   const accepted = parser.result();
-   if (accepted.accepted) return accepted.value;
-   if (opts.signal.aborted) throw abortError();
-   try { return parser.completed(); }
-   catch (error) { throw await parser.failure('no_valid_final', error instanceof Error ? error.message : 'No valid final assessment'); }
-  } finally {
-   await session.transport.close();
-  }
- }
-
- private async activityReview<T>(prompt:string,schema:StructuredSchema,opts:ActivityReviewSessionOpts):Promise<T>{
-  if(this.kind==='vibe') return this.vibeActivityReview<T>(prompt,schema,opts);
-  const acceptedStop=new AbortController();
-  const signal=AbortSignal.any([opts.signal,acceptedStop.signal]);
-  const parser=new ReviewActivityStream<T>(this.kind,schema,opts,()=>acceptedStop.abort());
-  let directory:string|undefined;
-  try{
-   // Same Ollama preflight + per-child env as the bounded claude path (ISSUE-738d62b848fd173f):
-   // a rejected check throws before any child is spawned, and its cause reaches onDiagnostic so
-   // the checkpoint diagnostic carries the real backend response, not a bare generic.
-   try{await this.checkOllama();}
-   catch(err){
-    if(err instanceof OllamaTargetError){
-     throw await parser.failure('ollama_preflight',`Ollama preflight failed: ${err.message}`,undefined,err.message);
-    }
-    throw err;
-   }
-   const childEnv=this.withOllama(process.env);
-   let args:readonly string[];
-   if(this.kind==='claude'){
-    const original=claudeReviewSessionArgs(schema,this.modelArgs(),opts.codeTaskCommands);
-    args=[...original.map((value,index)=>index>0&&original[index-1]==='--output-format'?'stream-json':value),'--verbose','--include-partial-messages'];
-   }else{
-    directory=mkdtempSync(join(tmpdir(),'codex-activity-schema-'));
-    const path=join(directory,'schema.json');writeFileSync(path,codexSchemaJson(schema));
-    args=codexReviewSessionArgs(path,opts.cwd,this.modelArgs());
-   }
-   await parser.start();
-   const result=await runInProcessGroup(await resolveBin(this.binPath),args,{mode:'activity',cwd:opts.cwd,stdin:prompt,signal,onStdoutChunk:chunk=>parser.feed(chunk),...childEnv?{env:childEnv}:{}});
-   await parser.end();
-   const accepted=parser.result();if(accepted.accepted)return accepted.value;
-   if(result.aborted)throw abortError();
-   if(result.spawnError||result.exitCode!==0){
-    // Retain a bounded error line, never the raw diagnostic/debug stream.
-    const detail=result.spawnError??result.stderr.split(/\r?\n/).filter(line=>/^(?:Error|Fatal|Invalid|Failed|Usage|ENOENT|EACCES|EPERM)(?:[:\s]|$)/i.test(line)).at(-1);
-    throw await parser.failure(result.spawnError?'spawn_failed':'cli_exit','Review activity CLI failed',result.exitCode,detail);
-   }
-   try{return parser.completed();}catch(error){throw await parser.failure('no_valid_final',error instanceof Error?error.message:'No valid final assessment');}
-  }finally{if(directory)rmSync(directory,{recursive:true,force:true});}
- }
-
-	private async reviewSessionOnce<T>(prompt: string, schema: StructuredSchema, exec: ExecOverride & { cwd: string; timeoutMs: number; watchStall: boolean }): Promise<T> {
+	private async readOnlySessionOnce<T>(prompt: string, schema: StructuredSchema, exec: ExecOverride & { cwd: string; timeoutMs: number; watchStall: boolean }): Promise<T> {
 		if (this.kind === 'vibe') {
 			// Read-only: in headless mode `--enabled-tools` disables every other
 			// tool, and programmatic mode denies any call that would need an
@@ -739,41 +583,37 @@ export class CliProvider implements LLMProvider {
 				const text = vibeLastAssistantText(out.stdout);
 				let parsed: unknown;
 				try { parsed = JSON.parse(text); }
-				catch (err) { errors = [`the review answer was not parseable JSON: ${(err as Error).message}`]; continue; }
+				catch (err) { errors = [`the read-only answer was not parseable JSON: ${(err as Error).message}`]; continue; }
 				const checked = validateNativeReply<T>(schema, parsed);
 				if (checked.ok) return checked.value;
 				errors = checked.errors;
 			}
-			throw new ModelResponseShapeError('vibe review session answer did not satisfy the schema', errors);
+			throw new ModelResponseShapeError('vibe read-only session answer did not satisfy the schema', errors);
 		}
 		if (this.kind === 'claude') {
-			const { envelope } = await this.runClaude(claudeReviewSessionArgs(schema, this.modelArgs(), exec.codeTaskCommands), prompt, exec);
+			const { envelope } = await this.runClaude(claudeReadOnlySessionArgs(schema, this.modelArgs()), prompt, exec);
 			if (envelope.is_error) {
-				// A size refusal is classified as completeStructured classifies it, so the
-				// pipeline re-divides the call instead of resending it (Epic 8315a11f s1).
-				if (exec.reviewScoped) throw reviewCliError(envelope.result ?? '', 'review-cli-failed');
-				const message = `claude review session failed: ${envelope.result ?? 'no error message'}`;
+				const message = `claude read-only session failed: ${envelope.result ?? 'no error message'}`;
 				throw sizeRefusalOr(message, envelope.result ?? '', () => new Error(message));
 			}
 			if (envelope.structured_output === undefined) {
-				throw new Error('claude review session returned no structured_output');
+				throw new Error('claude read-only session returned no structured_output');
 			}
 			return envelope.structured_output as T;
 		}
-		const tmpDir = mkdtempSync(join(tmpdir(), 'codex-review-schema-'));
+		const tmpDir = mkdtempSync(join(tmpdir(), 'codex-readonly-schema-'));
 		try {
 			const schemaPath = join(tmpDir, 'schema.json');
 			writeFileSync(schemaPath, codexSchemaJson(schema));
-			const { agentText: text } = await this.runCodex(codexReviewSessionArgs(schemaPath, exec.cwd, this.modelArgs()), prompt, exec);
-			if (text === undefined) throw new Error('codex review session emitted no agent_message item');
+			const { agentText: text } = await this.runCodex(codexReadOnlySessionArgs(schemaPath, exec.cwd, this.modelArgs()), prompt, exec);
+			if (text === undefined) throw new Error('codex read-only session emitted no agent_message item');
 			let parsed: unknown;
 			try {
 				parsed = JSON.parse(text);
 			} catch (err) {
-				if (exec.reviewScoped) throw new ModelResponseShapeError('review-answer-invalid', ['Return one valid JSON object matching the supplied schema.']);
-				throw new Error(`codex review session answer was not parseable JSON: ${(err as Error).message}. text=${text.slice(0, 300)}`);
+				throw new Error(`codex read-only session answer was not parseable JSON: ${(err as Error).message}. text=${text.slice(0, 300)}`);
 			}
-			return codexReply<T>(schema, parsed, 'codex review session answer');
+			return codexReply<T>(schema, parsed, 'codex read-only session answer');
 		} finally {
 			rmSync(tmpDir, { recursive: true, force: true });
 		}
@@ -850,7 +690,7 @@ export class CliProvider implements LLMProvider {
 					if (runtime['bypassToolPermissions'] !== false || !Array.isArray(tools) || tools.some(tool => {
 						const name = isRecord(tool) ? tool['name'] : undefined;
 						return typeof name !== 'string' || (name !== 'read_file' && !name.startsWith('mcp_insrc_'));
-					})) throw new Error('Vibe app server did not verify the review tool policy');
+					})) throw new Error('Vibe app server did not verify the read-only tool policy');
 				},
 				prompt,
 				onHistory: output.accept,
@@ -879,9 +719,8 @@ export class CliProvider implements LLMProvider {
 	 *  caller names one, with the caller's `timeoutMs` when it names one, else
 	 *  no override, so the CLI inherits the daemon's working directory and the
 	 *  provider's timeout exactly as before. */
-	private execIn(cwd: string | undefined, timeoutMs?: number | undefined, signal?: AbortSignal | undefined, reviewScoped = false): ExecOverride | undefined {
-		if (cwd === undefined && timeoutMs === undefined && signal === undefined && !reviewScoped) return undefined;
-		return { reviewScoped, ...(cwd !== undefined ? { cwd } : {}), timeoutMs: timeoutMs ?? this.timeoutMs, ...(signal !== undefined ? { signal } : {}) };
+	private execIn(cwd: string | undefined, timeoutMs?: number | undefined, signal?: AbortSignal | undefined): ExecOverride | undefined {
+		return { ...(cwd !== undefined ? { cwd } : {}), timeoutMs: timeoutMs ?? this.timeoutMs, ...(signal !== undefined ? { signal } : {}) };
 	}
 
 	/** A copy of `base` pointing claude at this provider's Ollama server, without
@@ -916,15 +755,14 @@ export class CliProvider implements LLMProvider {
 			const r = runSubprocess(this.binPath, args, prompt, exec?.timeoutMs ?? this.timeoutMs, exec?.cwd, undefined, exec?.signal, env);
 			r.then(out => {
 				if (out.exitCode !== 0) {
-					return reject(cliExitError('claude', out.exitCode, out.stdout, out.stderr, undefined, exec?.reviewScoped));
+					return reject(cliExitError('claude', out.exitCode, out.stdout, out.stderr, undefined));
 				}
 				let envelope: ClaudeEnvelope;
 				try { envelope = JSON.parse(out.stdout) as ClaudeEnvelope; }
 				catch (err) {
-					if (exec?.reviewScoped) return reject(new ModelResponseShapeError('review-envelope-invalid'));
 					return reject(new Error(`claude stdout was not parseable JSON envelope: ${(err as Error).message}. stdout=${out.stdout.slice(0, 500)}`));
 				}
-				log.debug(exec?.reviewScoped ? { duration_ms: typeof envelope.duration_ms === 'number' ? envelope.duration_ms : undefined } : { duration_ms: envelope.duration_ms, model: Object.keys(envelope.modelUsage ?? {})[0] ?? null }, 'claude completed');
+				log.debug( { duration_ms: envelope.duration_ms, model: Object.keys(envelope.modelUsage ?? {})[0] ?? null }, 'claude completed');
 				resolve({ envelope });
 			}, reject);
 		});
@@ -953,11 +791,10 @@ export class CliProvider implements LLMProvider {
 			// Classified on every error event and the error output, not only the first
 			// event: a generic first event must not hide a size refusal behind it.
 			const said = [...errorEvents.map(e => JSON.stringify(e)), out.stderr].join('\n');
-			if (exec?.reviewScoped) throw reviewCliError(said, 'review-cli-failed');
 			throw sizeRefusalOr(message, said, () => new Error(message));
 		}
 		if (out.exitCode !== 0) {
-			throw cliExitError('codex', out.exitCode, out.stdout, out.stderr, undefined, exec?.reviewScoped);
+			throw cliExitError('codex', out.exitCode, out.stdout, out.stderr, undefined);
 		}
 		// A tool-using run narrates before it answers: the answer is the LAST message.
 		const agentMsg = events.filter(e => e.type === 'item.completed' && e.item?.type === 'agent_message').at(-1);
@@ -1051,15 +888,13 @@ interface SubprocessResult {
  *  working directory (edit sessions run inside the repo) and/or a tighter
  *  timeout. Absent fields fall back to the provider defaults. */
 interface ExecOverride {
-	readonly codeTaskCommands?: readonly string[] | undefined;
-	readonly reviewScoped?: boolean | undefined;
-	readonly cwd?:       string | undefined;
+		readonly cwd?:       string | undefined;
 	readonly timeoutMs?: number | undefined;
 	/** Kill a codex run that shows no model output within the first-output limit
-	 *  (CliStallError). Only the reviewer session asks for it (ISSUE-d4b2cd1c). */
+	 *  (CliStallError). Only the read-only session asks for it (ISSUE-d4b2cd1c). */
 	readonly watchStall?: boolean | undefined;
 	/** Kill a codex run that prints nothing new for this long (CliStallError).
-	 *  Set by a structured call or a reviewer session that passes `stallMs` (ISSUE-562b1bb5); takes
+	 *  Set by a structured call or a read-only session that passes `stallMs` (ISSUE-562b1bb5); takes
 	 *  the place of `watchStall` when both are set. */
 	readonly stallMs?: number | undefined;
 	/** Cancels the run in flight: its process group is killed and AbortError thrown (Epic 8315a11f s1). */
@@ -1202,7 +1037,6 @@ export function cliExitError(
 	stdout:   string,
 	stderr:   string,
 	dir:      string = join(tmpdir(), 'insrc-cli-failures'),
-	reviewScoped = false,
 ): CliExitError {
 	const head = `${cli} exited with ${exitCode}.`;
 	let result = '';
@@ -1211,7 +1045,6 @@ export function cliExitError(
 		if (typeof r === 'string') result = r.trim();
 	} catch { /* not an envelope: the output below is all there is */ }
 	const said = result.length > 0 ? result : stderr.trim();
-	if (reviewScoped) return reviewCliError(`${stdout}\n${stderr}`, head);
 	const lead = result.length > 0 ? ` ${result}` : '';
 
 	const output = `stderr=${stderr} stdout=${stdout}`;
@@ -1265,8 +1098,6 @@ function writeCliFailureFile(dir: string, cli: string, stdout: string, stderr: s
  *  bare name (PATH lookup at spawn) when `which` can't resolve it. */
 const resolvedBinCache = new Map<string, string>();
 async function resolveBin(command: string): Promise<string> {
-	const review = reviewNativeTransport();
-	if (review) return review.resolveBinary(command);
 	if (command.includes('/')) return command;                 // already an explicit path
 	const cached = resolvedBinCache.get(command);
 	if (cached !== undefined) return cached;
@@ -1350,11 +1181,4 @@ interface CodexEvent {
 	readonly item?: { readonly type?: string; readonly text?: string };
 	readonly error?: { readonly message?: string };
 	readonly message?: string;
-}
-
-/** Review failures never persist CLI output or quote it into a logged error. */
-function reviewCliError(said: string, message: string): CliExitError {
-	const sizes = classifyInputTooLarge(said);
-	return sizes !== undefined ? new InputTooLargeError('review-input-too-large', 'input_too_large', sizes)
-		: new CliExitError(message, isTransientCliError(said) ? 'transient-cli-failure' : 'cli-failure');
 }

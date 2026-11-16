@@ -1,4 +1,4 @@
-import type { ReviewValidationIssue } from '../../shared/review-diagnostics.js';
+import type { ResponseValidationIssue } from '../../shared/response-validation.js';
 import { assertConnectionProviderAttempt } from '../../shared/connection-provider.js';
 import { ConnectionExecutionError, assertExplicitConnectionExecution, currentStepContext, connectionExecutionErrorCode } from '../../shared/step-context.js';
 import type { ConnectionExecutionContext } from '../../shared/step-context.js';
@@ -32,9 +32,8 @@ import type { ConnectionExecutionContext } from '../../shared/step-context.js';
  * `JSON.parse(rawText)` to `provider.completeStructured(messages, Schema)`.
  */
 
-import { ReviewBudgetError } from './budget/accounting.js';
 import { Ajv, type ValidateFunction } from 'ajv';
-import { formatAjvError, reviewValidationIssue } from './structured-schema.js';
+import { formatAjvError, responseValidationIssue } from './structured-schema.js';
 export { codexStrictSchema, validateCodexReply, rootUnionKey, processSchemaForOpenAIStrict } from './structured-schema.js';
 export type { RootUnionKey } from './structured-schema.js';
 import { getLogger } from '../../shared/logger.js';
@@ -78,7 +77,7 @@ const ajv = new Ajv(ajvOptions);
 
 export type ValidationResult<T> =
 	| { readonly ok: true;  readonly value: T }
-	| { readonly ok: false; readonly errors: readonly string[]; readonly issues?: readonly ReviewValidationIssue[] };
+	| { readonly ok: false; readonly errors: readonly string[]; readonly issues?: readonly ResponseValidationIssue[] };
 
 /**
  * Validate `raw` against `schema`. Returns the typed value or the list
@@ -115,7 +114,7 @@ export function validateAgainstSchema<T>(
 	}
 	if (execution?.mode === 'session-memory') return { ok: false, errors: ['Structured output did not match the schema.'] };
 	const errors = (validate.errors ?? []).map(formatAjvError);
-	return { ok: false, errors, issues: (validate.errors ?? []).slice(0, 8).map(reviewValidationIssue) };
+	return { ok: false, errors, issues: (validate.errors ?? []).slice(0, 8).map(responseValidationIssue) };
 }
 
 
@@ -202,7 +201,6 @@ export async function withStructuredRetry<T>(
 	validate:     StructuredValidator<T>,
 	maxAttempts:  number,
 	execution?: ConnectionExecutionContext,
-	reviewScoped = false,
 ): Promise<T> {
 	assertConnectionProviderAttempt(execution);
 	const log = execution?.mode === 'session-memory' ? quietLog : savedLog;
@@ -230,7 +228,7 @@ export async function withStructuredRetry<T>(
 			assertConnectionProviderAttempt(execution);
 		} catch (err) {
 			// Budget admission is not a failed model answer and must never be retried/wrapped.
-			if (err instanceof ReviewBudgetError || err instanceof VibeTurnError) throw err;
+			if (err instanceof VibeTurnError) throw err;
 			assertConnectionProviderAttempt(execution);
 			if (execution?.mode === 'session-memory') throw new ConnectionExecutionError(connectionExecutionErrorCode(err) ?? 'unsupported-temporary');
 			if (err instanceof ConnectionExecutionError) throw err;
@@ -249,7 +247,7 @@ export async function withStructuredRetry<T>(
 			lastErrors = [msg];
 			lastCallFailure = err instanceof ModelCallFailedError ? err : undefined;
 			lastThrown = err;
-			log.warn(reviewScoped ? { attempt, maxAttempts, errorCode: 'invalid-answer' } : { attempt, maxAttempts, error: msg }, 'structured-output: call threw; treating as validation failure for retry');
+			log.warn({ attempt, maxAttempts, error: msg }, 'structured-output: call threw; treating as validation failure for retry');
 			continue;
 		}
 
@@ -265,16 +263,14 @@ export async function withStructuredRetry<T>(
 		lastErrors = execution?.mode === 'session-memory' ? ['Temporary provider response was invalid.'] : result.errors;
 		lastCallFailure = undefined;
 		lastThrown = undefined;
-		log.warn(reviewScoped ? { attempt, maxAttempts, errorCode: 'invalid-answer' } : { attempt, maxAttempts, errors: lastErrors }, 'structured-output: validation failed; will retry');
+		log.warn({ attempt, maxAttempts, errors: lastErrors }, 'structured-output: validation failed; will retry');
 	}
 	assertConnectionProviderAttempt(execution);
 	if (execution?.mode === 'session-memory') throw new ConnectionExecutionError('unsupported-temporary');
 	const prefix = `structured-output: validation failed after ${maxAttempts} attempts: `;
-	if (reviewScoped && lastCallFailure !== undefined) throw new ModelCallFailedError('review-model-call-failed');
 	if (lastCallFailure !== undefined) {
 		throw new ModelCallFailedError(`${prefix}${lastCallFailure.detail}`, { cause: lastCallFailure });
 	}
-	if (reviewScoped) throw new ModelResponseShapeError('review-answer-invalid', lastErrors);
 	throw new Error(`${prefix}${lastErrors.join('; ')}`, lastThrown !== undefined ? { cause: lastThrown } : undefined);
 }
 

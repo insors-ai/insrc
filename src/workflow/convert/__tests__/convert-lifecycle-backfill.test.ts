@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { amendmentOfHead } from '../../amendments/store.js';
 import { checkHeadIntegrity, checkIntegrity, contentHash } from '../../artifact-core/lifecycle.js';
 import type { Actor, Lifecycle } from '../../artifact-core/types.js';
-import { readReviewReport } from '../../review/report-log.js';
+import { readReviewReport } from '../../review-history/review/report-log.js';
 import { backfillHead } from '../backfill.js';
 import { migratedEntryId } from '../entry-ids.js';
 import { ConversionUnreadable } from '../types.js';

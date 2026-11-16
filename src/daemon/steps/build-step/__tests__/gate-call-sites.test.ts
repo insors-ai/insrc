@@ -118,7 +118,7 @@ function inject(holder: string | null, readPolicy: PolicyReader = team): Seen {
 		artifactExists: () => true,
 	});
 	_setBuildValidateCheckRunnerForTests(async () => { seen.checked += 1; throw new Error('no check may run'); });
-	_setBuildValidateProviderForTests({ runReviewSession: async () => { seen.judged += 1; throw new Error('no judge may run'); } } as never);
+	_setBuildValidateProviderForTests({ runReadOnlySession: async () => { seen.judged += 1; throw new Error('no judge may run'); } } as never);
 	return seen;
 }
 
@@ -188,7 +188,7 @@ test('validate asks the gate again before each record it writes: a claim that mo
 				ensureIssue: () => ({ ok: false, kind: 'unreachable', reason: 'gh timed out' }), artifactExists: () => true,
 			});
 			_setBuildValidateCheckRunnerForTests(async () => ({ typecheck: passing, tests: passing }));
-			_setBuildValidateProviderForTests({ runReviewSession: async () => ({ taskId: 't1', passed: true, checks: [], scopeRespected: true, reason: 'ok' }) } as never);
+			_setBuildValidateProviderForTests({ runReadOnlySession: async () => ({ taskId: 't1', passed: true, checks: [], scopeRespected: true, reason: 'ok' }) } as never);
 			return { reads: () => reads };
 		};
 

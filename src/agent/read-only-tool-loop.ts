@@ -17,10 +17,6 @@ import { assertConnectionProviderAdmission } from '../shared/connection-provider
  * never executed; the model is told the tool is not available.
  */
 
-import { preflightProviderReviewBudget, resolveReviewBudgetPolicy, reviewPromptChars, reviewToolsJson, reviewWireSchemaJson } from './providers/review-budget.js';
-import { measureReviewBudget, ReviewBudgetError } from './providers/budget/accounting.js';
-import { safeReviewId } from './providers/budget/identity.js';
-import type { ReviewExecutionBudget } from '../shared/review-budget.js';
 import { assertExplicitConnectionExecution, ConnectionExecutionError } from '../shared/step-context.js';
 import type { ConnectionExecutionContext } from '../shared/step-context.js';
 import { isAbsolute, resolve } from 'node:path';
@@ -48,7 +44,6 @@ export interface GatheredToolOutput {
 export interface ReadOnlyToolLoopArgs {
  readonly closingSchema?: StructuredSchema | undefined;
  readonly closingInstruction?: string | undefined;
-	readonly reviewBudget?: ReviewExecutionBudget | undefined;
 	readonly connectionExecution?: ConnectionExecutionContext | undefined;
 	readonly provider: LLMProvider;
 	readonly messages: readonly LLMMessage[];
@@ -108,7 +103,7 @@ export async function runReadOnlyToolLoop(args: ReadOnlyToolLoopArgs): Promise<R
 		assertExplicitConnectionExecution(execution);
 		const tool = getTool(name);
 		if (tool === undefined) return unknownTool(name, execution);
-		if (!args.allow.has(tool.id)) return refused(name, tool.id, execution, args.reviewBudget !== undefined);
+		if (!args.allow.has(tool.id)) return refused(name, tool.id, execution, false);
 		return execute(name, args.root !== undefined ? rootedInput(tool.id, input, args.root) : input, deps);
 	};
 
@@ -116,15 +111,7 @@ export async function runReadOnlyToolLoop(args: ReadOnlyToolLoopArgs): Promise<R
 		throwIfAborted(signal);
 		assertExplicitConnectionExecution(execution);
 		if (args.deadlineAt !== undefined && now() >= args.deadlineAt) throw new ToolLoopDeadlineError(args.deadlineAt);
-
-		// disableThinking: true is critical for the qwen3.6 family -- without
-		// `think: false` the model emits empty bodies (memory: qwen3_6_needs_think_false).
-		// The signal goes into the call AND bounds the wait for it, so a provider
-		// that is between attempts (a retry backoff) cannot hold the loop past it.
-		const reviewBudget = args.reviewBudget === undefined ? undefined
-			: managedReviewBudget(args.provider, args.reviewBudget, convo, args.tools, args.closingSchema, undefined, turn, args.closingInstruction);
 		const work = args.provider.complete(convo, {
-			...(reviewBudget !== undefined ? { reviewBudget, maxTokens: reviewBudget.outputAllowanceTokens } : {}),
 			tools:           [...args.tools],
 			toolChoice:      'auto',
 			disableThinking: true,
@@ -173,7 +160,6 @@ export async function runReadOnlyToolLoop(args: ReadOnlyToolLoopArgs): Promise<R
 }
 
 export interface StructuredAnswerArgs {
-	readonly reviewBudget?: ReviewExecutionBudget | undefined;
 	readonly connectionExecution?: ConnectionExecutionContext | undefined;
 	readonly provider:    LLMProvider;
 	/** The conversation so far (typically a tool loop's messages). */
@@ -199,12 +185,8 @@ export async function emitStructuredAnswer<T>(args: StructuredAnswerArgs): Promi
 	const signals = [...new Set([execution?.lifetime.signal, args.signal].filter((value): value is AbortSignal => value !== undefined))];
 	const signal = signals.length > 1 ? AbortSignal.any(signals) : signals[0];
 	throwIfAborted(signal);
-	if (args.reviewBudget) managedReviewBudget(args.provider, args.reviewBudget, args.messages, undefined, args.schema, args.maxTokens, 0);
 	const messages: LLMMessage[] = [...args.messages, { role: 'user', content: args.instruction }];
-	const reviewBudget = args.reviewBudget === undefined ? undefined
-		: managedReviewBudget(args.provider, args.reviewBudget, messages, undefined, args.schema, args.maxTokens);
 	const work = args.provider.completeStructured<T>(messages, args.schema, {
-		...(reviewBudget !== undefined ? { reviewBudget, maxTokens: args.maxTokens ?? reviewBudget.outputAllowanceTokens } : {}),
 		// Critical for qwen3.6 (memory: qwen3_6_needs_think_false); harmless elsewhere.
 		disableThinking: true,
 		...(args.maxAttempts !== undefined ? { maxAttempts: args.maxAttempts } : {}),
@@ -282,7 +264,7 @@ function unknownTool(name: string, execution?: ConnectionExecutionContext): Tool
 
 function refused(name: string, id: string, execution?: ConnectionExecutionContext, reviewScoped = false): ToolResult {
 	if (execution?.mode === 'session-memory') return { output: 'Temporary tool is unavailable.', format: 'text', success: false, error: 'Temporary tool is unavailable.' };
-	captureAnalysisDiagnostics(log, execution).emit('warn', () => [reviewScoped ? { errorCode: 'tool-refused' } : { tool: name, id }, 'read-only tool loop: refused a call to a tool outside the allowlist; it was not executed']);
+	captureAnalysisDiagnostics(log, execution).emit('warn', () => [ { tool: name, id }, 'read-only tool loop: refused a call to a tool outside the allowlist; it was not executed']);
 	return {
 		output:  `Tool '${name}' is not available in this session. Only the read-only tools offered to you can be used.`,
 		format:  'text',
@@ -313,31 +295,4 @@ function abortError(): Error {
 	const err = new Error('the call was cancelled');
 	err.name = 'AbortError';
 	return err;
-}
-
-/** Review-only preflight: retain every history/tool/schema byte, and refuse instead of trimming. */
-function managedReviewBudget(provider: LLMProvider, budget: ReviewExecutionBudget, messages: readonly LLMMessage[], tools?: readonly ToolDefinition[], schema?: StructuredSchema, maxTokens?: number, turn?: number, closingInstruction?: string | undefined): ReviewExecutionBudget {
-	if (!provider.getReviewBudgetProfile || budget.policy.executionKind === 'controller') throw new ReviewBudgetError('native-budget-unqualified');
-	const profile = resolveReviewBudgetPolicy(provider, budget.policy.executionKind, budget.policy.totalTokens).profile;
-	if (tools !== undefined && (profile.qualification !== 'managed-estimate' || reviewToolsJson(profile, tools) !== profile.declaredToolsJson)) {
-		throw new ReviewBudgetError('budget-profile-mismatch');
-	}
-	const countedMessages = closingInstruction === undefined ? messages : [...messages, { role: 'user' as const, content: closingInstruction }];
-	const promptChars = reviewPromptChars(profile, countedMessages);
-	const wireSchemaJson = schema === undefined ? '{}' : reviewWireSchemaJson(profile, schema);
-	const declaredToolsJson = tools === undefined ? '[]' : reviewToolsJson(profile, tools);
-	const admitted = measureReviewBudget(budget.policy, { promptChars, wireSchemaJson, phase: 'dispatch', declaredToolsJson });
-	const current = { ...budget, admitted };
-	const metadata = { callId: safeReviewId(budget.callId), reviewId: safeReviewId(budget.reviewId), turn, budget: admitted };
-	try {
-		preflightProviderReviewBudget(current, profile, promptChars, wireSchemaJson, maxTokens ?? budget.outputAllowanceTokens, declaredToolsJson);
-	} catch (err) {
-		if (err instanceof ReviewBudgetError) {
-			const refusal = err.code === 'dispatch-budget-exceeded' && turn !== undefined ? new ReviewBudgetError('inspection-budget-exceeded', err.breakdown) : err;
-			log.info({ ...metadata, errorCode: refusal.code }, 'review managed request refused'); throw refusal;
-		}
-		throw err;
-	}
-	log.info(metadata, 'review managed request admitted');
-	return current;
 }

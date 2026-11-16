@@ -70,6 +70,13 @@
         "choice": "Set all targets in s5/s6",
         "rationale": "Not s1's concern; the note-size cap, latency targets, and IPC version negotiation belong to sc2 (owned by s5), to be set concretely before s5/s6 build.",
         "resolvedAt": "2026-11-16T11:13:32.952Z"
+      },
+      "q5c06aa6f": {
+        "question": "This HLD contradicts its own resolved design.epic open question: at the open-questions gate, the choice recorded for s2's content/title-source gap was 'Sequence s2 after s7' (make s2 depend on s7's durable metadata). What was actually built here is the opposite: sc3 (ScratchpadListReadModel) is owned by s2 alone, with no dependency on anything s7 owns, and Phase B places s2 and s7 in parallel, not sequenced. This is not an oversight in the architecture — the Epic's own dependsOn graph has s2.dependsOn = [s1] only, never s7, and framework.write cannot invent a new Epic dependency edge; 'Sequence s2 after s7' was not actually buildable under that graph, and what got built (sc3 self-contained at s2) was the only graph-consistent option, equivalent to the 'Interim file parsing' choice that was not selected at the gate. The resolve-question record itself was not corrected when this was discovered. design.story for s2 and s7 should treat this HLD, not that resolution record, as authoritative, and should not expect to depend on s7 for list/title data.",
+        "status": "resolved",
+        "choice": "Keep sc3 self-contained in s2",
+        "rationale": "This is the only option consistent with the Epic's immutable dependsOn graph (s2.dependsOn=[s1] only); formally closes the loop the HLD's self-review already resolved.",
+        "resolvedAt": "2026-11-16T11:14:10.778Z"
       }
     }
   },

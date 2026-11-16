@@ -120,7 +120,7 @@ test('Linux final signing revalidates qualification, artifact and lane before al
 	} finally { cleanup(); }
 });
 
-test('Protected Linux signer CLI verifies hosted origin and local evidence without running candidate files', () => {
+test('Linux dispatch, qualification and protected signer CLI preserve hosted origin through interrupted delivery', () => {
 	const { root, remote, git, cleanup } = fixtureLedger();
 	try {
 		const sentinel = join(root, 'candidate-executed');
@@ -131,7 +131,16 @@ test('Protected Linux signer CLI verifies hosted origin and local evidence witho
 		execFileSync('tar', ['-czf', tar, '-C', payload, 'start.cjs']);
 		const { verifiedCandidate, inputs, release } = linuxQualificationFixture(1, 'production', readFileSync(tar));
 		const { origin, record } = verifiedCandidate;
-		writeFileSync(join(root, 'candidate.json'), encode(record));
+		const { repository: _, ref: _sourceRef, runId: _run, runAttempt: _attempt, ...packageRecord } = record;
+		writeFileSync(join(root, 'candidate.json'), encode(packageRecord));
+		const dispatch = spawnSync(process.execPath,
+			[new URL('../linux-daemon-dispatch.mjs', import.meta.url).pathname, 'record', root], { encoding: 'utf8', env: {
+				REQUESTED_COMMIT: origin.commit, RELEASE_VERSION: record.version, RELEASE_LANE: record.lane,
+				GITHUB_SHA: origin.commit, GITHUB_REF: origin.ref, GITHUB_REF_PROTECTED: 'true', GITHUB_REPOSITORY_ID: origin.repository,
+				GITHUB_RUN_ID: origin.runId, GITHUB_RUN_ATTEMPT: String(origin.runAttempt), GITHUB_EVENT_NAME: 'workflow_dispatch',
+				LINUX_RELEASE_REF: origin.ref, LINUX_DEVELOPMENT_REFS: '[]',
+			} });
+		assert.equal(dispatch.status, 0, dispatch.stderr);
 		const zip = join(root, 'asset.zip');
 		execFileSync('zip', ['-q', '-0', zip, 'candidate.json', record.archiveName], { cwd: root });
 		const zipBytes = readFileSync(zip);
@@ -159,6 +168,15 @@ case "$2" in
  *) exit 3;;
 esac
 `, { mode: 0o700 });
+		const realGit = execFileSync('which', ['git'], { encoding: 'utf8' }).trim();
+		writeFileSync(join(root, 'git'), `#!/bin/bash
+if [[ "$3" == push && "${"$"}MOCK_INTERRUPT" == yes ]]; then
+  "$REAL_GIT" "$@" || exit $?
+  kill -KILL "$PPID"
+  exit 0
+fi
+exec "$REAL_GIT" "$@"
+`, { mode: 0o700 });
 		const qualification = join(root, 'input');
 		const trustedKeys = join(root, 'keys');
 		mkdirSync(qualification);
@@ -176,12 +194,13 @@ esac
 		writeFileSync(approval, encode({ origin, lane: record.lane, version: record.version,
 			expectedArchiveSha256: record.archiveSha256, requiredTests: inputs.requiredTests }));
 		const cli = new URL('../sign-linux-daemon-candidate.mjs', import.meta.url).pathname;
-		const run = (output: string, artifactInfo = artifact) => spawnSync(process.execPath,
+		const run = (output: string, artifactInfo = artifact, interrupt = false) => spawnSync(process.execPath,
 			[cli, approval, qualification, trustedKeys, output], { encoding: 'utf8', env: { ...process.env,
 				PATH: `${root}:${process.env.PATH}`, GH_REPO: 'owner/repo', LINUX_RELEASE_REF: origin.ref,
 				LINUX_DEVELOPMENT_REFS: '[]', LINUX_SIGNING_LEDGER_REMOTE: remote, LINUX_SIGNING_LEDGER_REF: ref,
 				MOCK_RUN: JSON.stringify(action), MOCK_JOB: JSON.stringify({ total_count: 1, jobs: [job] }),
-				MOCK_ARTIFACT: JSON.stringify(artifactInfo), MOCK_ZIP: zip } });
+				MOCK_ARTIFACT: JSON.stringify(artifactInfo), MOCK_ZIP: zip, REAL_GIT: realGit,
+				MOCK_INTERRUPT: interrupt ? 'yes' : 'no' } });
 		const initial = git(['rev-parse', ref]);
 		const output = join(root, 'out');
 		const foreign = run(output, { ...artifact, id: 111 });
@@ -195,8 +214,14 @@ esac
 		assert(!existsSync(output));
 		assert(!existsSync(sentinel));
 		writeFileSync(join(qualification, 'qualification.sig'), inputs.evidenceSignature);
+		const interrupted = run(output, artifact, true);
+		assert.equal(interrupted.signal, 'SIGKILL', interrupted.stderr);
+		const reserved = git(['rev-parse', ref]);
+		assert.notEqual(reserved, initial);
+		assert(!existsSync(output), 'signature must remain undelivered after a durable reservation');
 		const accepted = run(output);
 		assert.equal(accepted.status, 0, accepted.stderr);
+		assert.equal(git(['rev-parse', ref]), reserved);
 		const signed = readFileSync(join(output, 'manifest.json'));
 		assert.deepEqual(signed, inputs.bytes);
 		assert.equal(verifyLinuxReleaseManifest(signed, readFileSync(join(output, 'manifest.production.sig')),

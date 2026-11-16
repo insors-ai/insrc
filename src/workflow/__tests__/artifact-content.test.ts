@@ -82,7 +82,7 @@ test('handleArtifactContent: happy path — renderedMarkdown byte-equal to the .
 	}
 });
 
-test('handleArtifactContent: a standing review block-verdict -> approvable=false + blockReason', async () => {
+test('handleArtifactContent: a historical block verdict does not block human approval', async () => {
 	const review = {
 		artifact: ID, stage: 'design.story', verdict: 'block' as const,
 		findings: [{ claimId: 'c1', kind: 'semantic', severity: 'HIGH', premise: 'a load-bearing premise', evidence: 'e', action: 'fix it', fixability: 'manual' }],
@@ -92,19 +92,19 @@ test('handleArtifactContent: a standing review block-verdict -> approvable=false
 	try {
 		await recordReview(repo, ID, review, 'review-1');
 		const v = asView((await handleArtifactContent({ repo, mdPath: mdRel }, undefined)));
-		assert.equal(v.approvable, false);
-		assert.match(v.blockReason ?? '', /Review blocks approval — 1 HIGH, 0 MED: a load-bearing premise/);
+		assert.equal(v.approvable, true);
+		assert.equal(v.blockReason, undefined);
 	} finally {
 		cleanup(repo);
 	}
 });
 
-test('handleArtifactContent: a review whose report cannot be read blocks on the lifecycle verdict', async () => {
+test('handleArtifactContent: an unreadable historical report does not impose an automated approval gate', async () => {
 	const { repo, mdRel } = makeFixture({ json: { meta: blockedMeta(), body: {} } });
 	try {
 		const v = asView((await handleArtifactContent({ repo, mdPath: mdRel }, undefined)));
-		assert.equal(v.approvable, false);
-		assert.match(v.blockReason ?? '', /Review blocks approval/);
+		assert.equal(v.approvable, true);
+		assert.equal(v.blockReason, undefined);
 	} finally {
 		cleanup(repo);
 	}

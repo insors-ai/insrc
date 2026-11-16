@@ -155,17 +155,17 @@ test('review decision: approve approves first and then saves the comments with d
 		assert.deepEqual(byText(fb, ON_HTML.comment).anchor, { section: HTML_REL }, 'a companion file rides in anchor.section');
 	} finally { cleanup(fx.repo); }
 
-	// Withheld: the review gate holds the approval back (no other-party review).
+	// Approval without an automated review still saves comments as comments.
 	const held = makeFixture();
 	try {
 		const r = await decide(held, { decision: 'approve', comments: [INLINE, WHOLE] });
 		assert.equal(r.decision, 'approve');
-		assert.equal(r.outcome, 'withheld');
-		assert.ok(typeof r.reason === 'string' && r.reason.length > 0, 'the skip reason is reported');
+		assert.equal(r.outcome, 'approved');
+		assert.equal(r.reason, undefined);
 		assert.equal(r.recorded, 2);
 		const s = stored(held.jsonPath);
-		assert.equal(s.meta.approvedAt, undefined, 'the artifact stays pending');
-		assert.ok((await entriesOf(held)).every(e => e.kind === 'revision-request'), 'a comment is never saved with a decision that did not take effect');
+		assert.equal(typeof s.meta.approvedAt, 'string');
+		assert.ok((await entriesOf(held)).every(e => e.kind === 'comment'), 'a comment is never saved with a decision that did not take effect');
 	} finally { cleanup(held.repo); }
 });
 

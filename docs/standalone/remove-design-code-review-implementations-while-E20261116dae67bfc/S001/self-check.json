@@ -1,0 +1,68 @@
+{
+  "story": "dae67bfc7da310cc/s1",
+  "date": "2026-11-16",
+  "reviewMode": "User-authorized self-review because automated review framework is broken. No design/code-review tool was invoked to certify this removal.",
+  "behavior": [
+    "All 25 preserved review IPC registrations and both MCP phase catalogs return family-specific being-rewritten errors before touching review dependencies.",
+    "Human approval and completion no longer require automated review evidence or overrides; integrity, upstream, validated BUILD/current task and team/signoff checks remain.",
+    "No review engines, live workers, preparation/activity/native ownership, progress producers, publication or cleanup execution remains.",
+    "Historical review data remains unchanged and readable through isolated validators/readers/renderers.",
+    "Generic read-only provider sessions remain for BUILD validation as runReadOnlySession."
+  ],
+  "checks": [
+    {
+      "command": "npx tsx --test --test-force-exit --test-concurrency=4 src/daemon/__tests__/review-retirement-audit.test.ts src/daemon/__tests__/review-retirement-endpoints.test.ts src/workflow/__tests__/review-retirement-workflow.test.ts src/workflow/review-history/__tests__/readers.test.ts src/daemon/threads/__tests__/review-retirement-runtime.test.ts src/agent/providers/__tests__/cli-readonly-session.test.ts src/agent/providers/__tests__/ollama-readonly-session.test.ts src/agent/providers/__tests__/cli-vibe.test.ts",
+      "result": "50 passed, 0 failed",
+      "log": "/tmp/insrc-removal-t4-final.log"
+    },
+    {
+      "command": "npx tsx --test --test-force-exit --test-concurrency=4 src/config/__tests__/role-taxonomy.test.ts src/workflow/team/__tests__/gate.test.ts src/workflow/team/__tests__/team-gate-callers.test.ts src/analyze/context/__tests__/provider-bypass-audit.test.ts src/daemon/__tests__/review-retirement-audit.test.ts",
+      "result": "24 passed, 0 failed",
+      "log": "/tmp/insrc-removal-t4-guards.log"
+    },
+    {
+      "command": "npx tsx --test --test-force-exit --test-concurrency=4 src/daemon/steps/build-step/__tests__/build-step.test.ts src/daemon/steps/build-step/__tests__/build-start.test.ts src/daemon/steps/build-step/__tests__/task-round-evidence.test.ts",
+      "result": "79 passed, 0 failed",
+      "log": "/tmp/insrc-removal-t4-build-regression.log"
+    },
+    {
+      "command": "npx tsx --test --test-force-exit --test-concurrency=4 'src/workflow/__tests__/approve-*.test.ts' src/workflow/__tests__/gates.test.ts src/workflow/__tests__/gates-revision.test.ts src/workflow/__tests__/review-decision.test.ts src/workflow/__tests__/bugfix-orchestration.test.ts src/workflow/__tests__/artifact-content.test.ts",
+      "result": "111 passed, 0 failed",
+      "log": "/tmp/insrc-removal-t5-approval-final.log"
+    },
+    {
+      "command": "npx tsx --test --test-force-exit src/daemon/__tests__/review-retirement-package.test.ts",
+      "result": "Passed. Planted stale files were removed by npm run build, including typechecks and build gates; archived out/ payload contains no retired executable modules. This is an output payload audit, not a signed release package.",
+      "log": "/tmp/insrc-removal-t5-package-final.log"
+    },
+    {
+      "command": "npx tsx --test --test-force-exit src/daemon/__tests__/review-retirement-wire.test.ts",
+      "result": "Passed. Actual IPC server and shared client used by VS Code propagate both family exceptions without polling or modifying frozen historical fixtures.",
+      "log": "/tmp/insrc-removal-t5-wire.log"
+    },
+    {
+      "command": "npx tsx --test --test-force-exit jetbrains-plugin/__tests__/review-retirement-gradle.test.ts",
+      "result": "Passed. Offline Gradle/JUnit real Unix-socket test confirms both rewrite errors are surfaced by JetBrains without review polling.",
+      "log": "/tmp/insrc-removal-t5-jetbrains.log"
+    },
+    {
+      "command": "npx tsc --noEmit",
+      "result": "Passed",
+      "log": "/tmp/insrc-removal-t5-tsc.log"
+    }
+  ],
+  "selfReviewFindingsResolved": [
+    "Removed review ownership from shared worker/step state without weakening artifact-write authority or connection/session checks.",
+    "Extracted inert historical validators rather than retaining imports of retired execution trees. Frozen actual v2/v3 code and v1/v2 design records validate with unchanged digests; newer schema versions remain supported.",
+    "Preserved BUILD validation by separating generic bounded read-only sessions from removed review activity/budget/native hooks.",
+    "Updated mixed regression expectations for removed automated gates while retaining human decision, build/task, upstream, integrity and team tests.",
+    "Preserved generic analyzer adherence prompts and shared process/provider facilities."
+  ],
+  "limitations": [
+    "The full repository suite was attempted and is not certified green. It reported session/Ollama/environment and snapshot failures, including failures observed before this removal, and shared generated-output interference; it was stopped. Focused affected suites were run separately and passed after fixing obsolete review expectations.",
+    "An initial npm pack --dry-run traversing this large repository timed out. The final smoke check instead archives and inspects the clean production out/ payload. No signed deployment package was produced.",
+    "IDE transport contracts were tested, not interactive IDE UI rendering.",
+    "No installed daemon update or restart was performed. Historical repository artifacts/checkpoints and unrelated working-tree changes were preserved.",
+    "Final BUILD approval remains a separate explicit human gate."
+  ]
+}

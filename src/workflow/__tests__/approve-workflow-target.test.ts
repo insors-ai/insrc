@@ -69,14 +69,14 @@ test('single: a review-clean artifact is approved (in its lifecycle)', async () 
 	});
 });
 
-test('single: a review-blocked artifact lands in skipped[] (not approved[]), no override', async () => {
+test('single: a historical review block does not prevent human approval', async () => {
 	await withRepo(async (repo, dir) => {
 		const p = writeArtifact(dir, `LLD-${HASH}-s1.json`, 'design.story', /* blocked */ true);
 		const out = await approveTarget({ repoPath: repo, artifactPath: p });
-		assert.equal(out.approved.length, 0);
-		assert.equal(out.skipped.length, 1);
-		assert.equal(out.skipped[0]!.path, p);
-		assert.ok(!isApproved(p), 'blocked artifact NOT approved');
+		assert.equal(out.approved.length, 1);
+		assert.equal(out.skipped.length, 0);
+		assert.equal(out.approved[0]!.path, p);
+		assert.ok(isApproved(p));
 	});
 });
 
@@ -103,17 +103,16 @@ test('single: a missing artifact throws ArtifactMissingError (not skipped)', asy
 // batch by epicHash
 // ---------------------------------------------------------------------------
 
-test('batch: a mixed epic splits into approved[] + skipped[] — nothing dropped', async () => {
+test('batch: a mixed historical review epic approves every eligible artifact', async () => {
 	await withRepo(async (repo, dir) => {
 		const clean1 = writeArtifact(dir, `DEF-${HASH}.json`, 'define');
 		const clean2 = writeArtifact(dir, `LLD-${HASH}-s1.json`, 'design.story');
 		const blocked = writeArtifact(dir, `LLD-${HASH}-s2.json`, 'design.story', true);
 		const out = await approveTarget({ repoPath: repo, epicHash: HASH });
 		const approvedPaths = out.approved.map(a => a.path).sort();
-		assert.deepEqual(approvedPaths, [clean1, clean2].sort(), 'both clean artifacts approved');
-		assert.equal(out.skipped.length, 1);
-		assert.equal(out.skipped[0]!.path, blocked);
-		assert.ok(isApproved(clean1) && isApproved(clean2) && !isApproved(blocked));
+		assert.deepEqual(approvedPaths, [clean1, clean2, blocked].sort(), 'both clean artifacts approved');
+		assert.equal(out.skipped.length, 0);
+		assert.ok(isApproved(clean1) && isApproved(clean2) && isApproved(blocked));
 	});
 });
 
@@ -142,12 +141,12 @@ test('batch: an epic with ZERO pending artifacts throws NoPendingArtifactsError'
 	});
 });
 
-test('batch: an epic whose pending artifacts are ALL blocked returns approved=[] / skipped=[all] (NOT the empty error)', async () => {
+test('batch: historical review blocks do not withhold a pending epic', async () => {
 	await withRepo(async (repo, dir) => {
 		writeArtifact(dir, `LLD-${HASH}-s1.json`, 'design.story', true);
 		writeArtifact(dir, `LLD-${HASH}-s2.json`, 'design.story', true);
 		const out = await approveTarget({ repoPath: repo, epicHash: HASH });
-		assert.equal(out.approved.length, 0);
-		assert.equal(out.skipped.length, 2, 'both blocked artifacts reported, non-lossy');
+		assert.equal(out.approved.length, 2);
+        assert.equal(out.skipped.length, 0);
 	});
 });

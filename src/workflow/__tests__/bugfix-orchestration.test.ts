@@ -354,27 +354,23 @@ test('ac3: a bugfix BUILD + enforce + CR pass -> completes via approveWorkflowTa
 	});
 });
 
-test('ac3: a bugfix BUILD + enforce + absent CR -> withheld into skipped[], not approved', async () => {
+test('ac3: a bugfix BUILD + enforce + absent CR -> accepts human approval', async () => {
 	await withRepo(async (repo, dir) => {
 		const p = writeBuild(dir, 's4');
 		const out = await approveTarget({ repoPath: repo, artifactPath: p }, { enforce: true });
-		assert.ok(out.skipped.length >= 1, 'no CR under enforce withholds completion');
-		assert.ok(!isApproved(p));
+		assert.equal(out.skipped.length, 0);
+        assert.ok(isApproved(p));
 	});
 });
 
 // CHANGED by ISSUE-1716f77b (LLD-1716f77ba9ba017b-S001, T7): a bugfix build is
 // completed like any other, and completion now requires a code review whatever
 // the enforcement setting. This used to assert the opposite for enforce OFF.
-test('ac3: a bugfix BUILD + enforce OFF + absent CR -> withheld too (no separate path for a bugfix)', async () => {
+test('ac3: a bugfix BUILD + enforce OFF + absent CR -> accepts human approval without enforcement', async () => {
 	await withRepo(async (repo, dir) => {
 		const p = writeBuild(dir, 's4');
 		const out = await approveTarget({ repoPath: repo, artifactPath: p }, { enforce: false });
-		assert.deepEqual(out.skipped.map(s => s.reason), ['completion requires a code review; none was run']);
-		assert.ok(!isApproved(p));
-		writeCR(repo, 's4', 'pass');
-		const reviewed = await approveTarget({ repoPath: repo, artifactPath: p }, { enforce: false });
-		assert.equal(reviewed.skipped.length, 0);
-		assert.ok(isApproved(p), 'and completes once its code review exists');
+        assert.deepEqual(out.skipped, []);
+        assert.ok(isApproved(p));
 	});
 });

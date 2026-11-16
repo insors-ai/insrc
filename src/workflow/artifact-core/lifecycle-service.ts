@@ -163,14 +163,19 @@ export class LifecycleService {
 			}
 
 			written = lifecycle;
+			const superseding = op === 'supersede' ? detail.supersededBy : undefined;
+			const references = superseding === undefined || head.references.some(ref =>
+				ref.entityId === superseding.entityId && ref.type === superseding.type && ref.relation === superseding.relation)
+				? head.references : [...head.references, superseding];
 			return {
-				next: { ...head, lifecycle },
+				next: { ...head, references, lifecycle },
 				options: {
 					operation: op,
      ...approvalProof,
 					...(cascade ? { cascade } : {}),
 					...(outcome !== undefined ? { outcome } : {}),
-					...(detail.request !== undefined ? { references: [detail.request] } : {}),
+					...(detail.request !== undefined ? { references: [detail.request] } :
+						superseding !== undefined ? { references: [superseding] } : {}),
 				},
 			};
 		});

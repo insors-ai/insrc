@@ -1,0 +1,124 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1794809967096-zwo9cl",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-16T06:20:49.694Z",
+    "epicCreatedAt": "2026-11-16T06:20:49.694Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "gpt-6.1-sol"
+        }
+      ]
+    },
+    "elapsedMs": 82597,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "163e7bc3d6f0ccba",
+    "epicSlug": "isolate-code-reviews-commit-parent-baseline",
+    "standalone": true,
+    "magnitude": "sized",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "superseded",
+      "revision": {
+        "number": 1,
+        "contentHash": "3f1ca4d4789438f5292726c08ccb190f0fa7c37dc29618aceb409cdd7e4230e8",
+        "at": "2026-11-16T06:20:49.700Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-16T06:24:41.267Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [
+        {
+          "entityId": "ISSUE-470a1f61b26b12c6",
+          "type": "ISSUE",
+          "relation": "supersedes"
+        }
+      ],
+      "attachments": []
+    },
+    "parentRef": {
+      "epicHash": "163e7bc3d6f0ccba",
+      "slug": "EPIC-163e7bc3d6f0ccba"
+    }
+  },
+  "body": {
+    "title": "Isolate code reviews with commit-parent baseline workspaces",
+    "reproduction": "Submit a retained code-review workload covering 171 selected files across four attempts through the production preparation path. Preparation performs thousands of source queries, stages roughly 25.5 MiB, charges about 63.6 MiB of a 64 MiB budget, and then fails while acquiring another source body before any reviewer/provider call. Expected: the packet's exact selected changes remain the sole review scope, and only their pinned pre-change baselines are materialized without aggregate semantic hydration.",
+    "rootCause": "The production daemon enters review preparation through `src/daemon/threads/review-worker-preparation.ts`, whose sole preparation component is `src/workflow/review/code-preparation.ts`. That component depends directly on source-session, prepared-context, memory, views, packet, admission and checkpoint contracts, but the staged packet/source helpers are not integrated into this production path. The current eager path therefore acquires and retains decoded source bodies and broad prepared context under one aggregate memory budget instead of representing selected changes as immutable locators over local Git objects. This both exhausts memory before reviewer invocation and allows preparation breadth to exceed the submitted after-block change set.",
+    "fixIntent": "Make the submitted packet the exclusive scope contract. Require each selected change to be pinned to a mandatory local commit and final review revision; derive its pre-change file from the explicitly applicable parent in the local Git graph, including stacked and unpushed commits; materialize only relevant parent blobs into an immutable per-attempt temporary baseline workspace; and retain exact after ranges or blocks plus new-file, deletion, rename and merge-parent metadata and blob digests. Give the reviewer artifact/task paths, the packet, baseline workspace and complete test evidence, while rejecting uncommitted, unpinned or rewritten inputs. Remove eager source-body/semantic hydration and aggregate review-size dependence from production preparation without changing reviewer decisions, checkpoint history, recovery or publication behavior."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "Deterministic code analysis of src/workflow/review/code-preparation.ts found one production importer, 11 direct dependencies, and test-heavy contract coverage; the subsequent in-session free-form probe was incomplete because its read-only registry was unavailable."
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/review/code-preparation.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/daemon/threads/review-worker-preparation.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/review/source-session.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/review/staged-packet-construction.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/workflow/review/staged-packet-sources.ts"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/packet.ts"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/admission.ts"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/publication.ts"
+    },
+    {
+      "id": "c10",
+      "kind": "stakeholder",
+      "ref": "User requirement: review scope is the submitted change set; commits are provenance pointers, and baselines come from applicable local commit parents rather than remote origin."
+    }
+  ]
+}

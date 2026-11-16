@@ -1,4 +1,5 @@
 import { handleTaskReviewStep } from './task-review-step.js';
+import { reviewUnavailable } from '../../workflow/review-unavailable.js';
 import type { TrustedRpcContext } from '../request-context.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
@@ -20,8 +21,6 @@ import type { TrustedRpcContext } from '../request-context.js';
  */
 
 import { handleDesignReviewStep } from './design-review-step.js';
-import { registerLocalReviewOwner } from '../review-request-owner.js';
-import { createReviewOwnerContext } from '../../shared/review-owner-context.js';
 import type { StreamHandler } from '../server.js';
 import { getLogger } from '../../shared/logger.js';
 import { runInStepContext, requireConnectionExecution } from '../../shared/step-context.js';
@@ -102,7 +101,7 @@ function contextOf(raw: unknown): StepCallContext | string {
 }
 
 /** The step tools whose phases are in the repo gate's table, and the name their table rows carry. */
-const GATED_STEP_TOOLS: Readonly<Record<string, string>> = { insrc_workflow_step: 'workflow-step', insrc_build_step: 'build-step', insrc_review_step: 'design-review-step' };
+const GATED_STEP_TOOLS: Readonly<Record<string, string>> = { insrc_workflow_step: 'workflow-step', insrc_build_step: 'build-step' };
 
 /** What the step host needs beyond the tool table. */
 export interface StepCallHandlerOptions {
@@ -157,6 +156,11 @@ export function createStepCallHandler(table: Record<string, StepToolRunner> = st
 			return;
 		}
         if (bound && !['insrc_analyze', 'insrc_analyze_step'].includes(String(p.tool))) { fail('upgrade-required', 'This operation is unavailable for this connection session.'); return; }
+        if (p.tool === 'insrc_review_step' || p.tool === 'insrc_code_review_step') {
+         try { reviewUnavailable(p.tool === 'insrc_review_step' ? 'design' : 'code'); }
+         catch (error) { fail('step-failed', (error as Error).message); }
+         return;
+        }
 		const ctx = bound && execution ? { cwd: execution.connectionAccess.lookupRoot, envRepo: execution.connectionAccess.lookupRoot, connectionExecution: execution } : contextOf(p.context);
 		if (typeof ctx === 'string') {
 			fail('step-failed', `step.call: ${ctx}`);
@@ -180,10 +184,6 @@ export function createStepCallHandler(table: Record<string, StepToolRunner> = st
 			// The step runs in the client provider context of the family the calling
 			// client implies (Claude Code → the family running claude), as an MCP call did.
 			const family = familyForClient((ctx as StepCallContext).client);
-			const review = p.tool === 'insrc_review_step' || p.tool === 'insrc_code_review_step';
-			const localOwner = review && trusted?.reviewOwnerNonce === undefined ? registerLocalReviewOwner(signal, trusted?.assertRequestActive) : undefined;
-			const nonce = trusted?.reviewOwnerNonce ?? localOwner?.nonce;
-			const ownedContext = review && nonce ? { ...ctx, reviewOwner: createReviewOwnerContext(nonce, signal, trusted?.assertRequestActive) } : ctx;
 			let stepArgs = p.args;
 			if (opts.registeredRepos !== undefined) {
 				const gated = await gateStepArgs(p.tool, p.args, opts.registeredRepos);
@@ -191,8 +191,7 @@ export function createStepCallHandler(table: Record<string, StepToolRunner> = st
 				stepArgs = gated.args;
 			}
 			const call = (): Promise<StepEnvelope> => run(stepArgs, signal, progress, execution, trusted);
-			try { envelope = await runInStepContext(ownedContext, () => family !== undefined ? runWithClientProviderContext(family, call) : call()); }
-			finally { localOwner?.close(); }
+			envelope = await runInStepContext(ctx, () => family !== undefined ? runWithClientProviderContext(family, call) : call());
 		} catch (err) {
 			answered = true;
 			const message = bound ? 'Connection session operation failed.' : err instanceof Error ? err.message : String(err);

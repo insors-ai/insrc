@@ -7,4 +7,4 @@ export interface ReviewArtifactResult {
 	readonly pendingUser: readonly Finding[];
 }
 export interface ReviewArtifactOpts { readonly [key: string]: unknown; }
-export async function reviewArtifactFile(...args: readonly unknown[]): Promise<ReviewArtifactResult> { return reviewUnavailable(...args); }
+export async function reviewArtifactFile(...args: readonly unknown[]): Promise<ReviewArtifactResult> { return reviewUnavailable('design', ...args); }

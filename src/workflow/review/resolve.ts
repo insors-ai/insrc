@@ -77,4 +77,4 @@ const RESOLVER: Actor = { id: 'insrc:user', kind: 'person', properties: {} };
  * the decision is a further entry there. Returns the post-resolution effective verdict + how many blocking
  * findings remain, so a caller can drive the loop until it clears.
  */
-export async function resolveReviewFinding(...args: readonly unknown[]): Promise<ResolveReviewResult> { return reviewUnavailable(...args); }
+export async function resolveReviewFinding(...args: readonly unknown[]): Promise<ResolveReviewResult> { return reviewUnavailable('design', ...args); }

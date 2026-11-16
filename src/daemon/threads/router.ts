@@ -24,7 +24,7 @@
  * as on a single thread. Requests bound to a connection session stay on this thread.
  */
 
-import { registerReviewRequestOwner, reviewWorkerConnection, retireReviewOwner, disconnectReviewWorker } from '../review-request-owner.js';
+import { reviewWorkerConnection, retireReviewOwner, disconnectReviewWorker } from '../review-request-owner.js';
 import { threadId as mainThreadId } from 'node:worker_threads';
 import type { MessagePort } from 'node:worker_threads';
 
@@ -594,21 +594,9 @@ export class Router {
 	/** `onAck`: the request ends only at its worker's completion message, or at an end after which none can come (ISSUE-7c39e5cd). */
 	private send(threadId: number, request: LocalRequestEnvelope, deliver: DeliverEnvelope, onAck?: () => void): () => void {
 		const port = this.ports.get(threadId)!;
-		const tool = (request.params as { tool?: unknown } | null)?.tool;
-		const connection = reviewWorkerConnection(port);
-		let reviewOwner: string | undefined;
-		try {
-			if (request.method === 'step.call' && (tool === 'insrc_review_step' || tool === 'insrc_code_review_step') && connection !== undefined) {
-				reviewOwner = registerReviewRequestOwner(connection, request.requestId, request.stream ? request.lifetime?.signal : undefined, request.stream ? request.lifetime?.assertActive : undefined);
-			}
-		} catch {
-			try { deliver({ kind: 'reply', requestId: request.requestId, error: 'review request channel unavailable' }); }
-			finally { request.lifetime?.complete(); }
-			return () => {};
-		}
-		const owned = reviewOwner === undefined ? request : { ...request, trustedContext: { ...request.trustedContext, connectionIdentity: request.trustedContext?.connectionIdentity ?? 'internal', daemonEpoch: request.trustedContext?.daemonEpoch ?? 'internal', reviewOwnerNonce: reviewOwner } };
+		const owned = request;
 		this.pending.set(request.requestId, {
-			reviewOwner, threadId, method: request.method, stream: request.stream, deliver,
+			threadId, method: request.method, stream: request.stream, deliver,
 			...(request.stream && request.lifetime ? { lifetime: request.lifetime } : {}),
 			...(onAck !== undefined ? { onAck } : {}),
 		});
@@ -626,7 +614,6 @@ export class Router {
 			}
 		}
 		catch {
-			if (reviewOwner) retireReviewOwner(reviewOwner);
 			this.pending.delete(request.requestId);
 			this.finished(threadId, request.requestId);
 			try { deliver({kind:'reply', requestId:request.requestId, error:'request channel unavailable'}); }

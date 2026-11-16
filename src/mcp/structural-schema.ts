@@ -6,6 +6,7 @@ import type { TSchema } from '@sinclair/typebox';
 export function structural(schema: TSchema): z.ZodTypeAny {
  let output: z.ZodTypeAny;
  if (schema.const !== undefined) output = z.literal(schema.const);
+ else if (schema.enum) output = z.enum(schema.enum as [string, ...string[]]);
  else if (schema.anyOf) output = z.union(schema.anyOf.map((entry: TSchema) => structural(entry)) as [z.ZodTypeAny,z.ZodTypeAny,...z.ZodTypeAny[]]);
  else if (schema.type === 'object') {
   const required = new Set(schema.required ?? []);
@@ -24,7 +25,7 @@ export function structural(schema: TSchema): z.ZodTypeAny {
  } else if (schema.type === 'string') {
   let text = z.string(); if(schema.minLength!==undefined)text=text.min(schema.minLength);if(schema.maxLength!==undefined)text=text.max(schema.maxLength);if(schema.pattern)text=text.regex(new RegExp(schema.pattern));output=text;
  } else if (schema.type === 'integer' || schema.type === 'number') {
-  let number=z.number();if(schema.type==='integer')number=number.int();if(schema.minimum!==undefined)number=number.min(schema.minimum);if(schema.maximum!==undefined)number=number.max(schema.maximum);output=number;
+  let number=z.number();if(schema.type==='integer')number=number.int();if(schema.minimum!==undefined)number=number.min(schema.minimum);if(schema.maximum!==undefined)number=number.max(schema.maximum);if(schema.exclusiveMinimum!==undefined)number=number.gt(schema.exclusiveMinimum);if(schema.exclusiveMaximum!==undefined)number=number.lt(schema.exclusiveMaximum);output=number;
  } else if(schema.type==='boolean')output=z.boolean();
  else if(schema.type==='null')output=z.null();
  else throw new Error('Unsupported structural schema');

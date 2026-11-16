@@ -1,3 +1,4 @@
+import { reviewUnavailable } from '../workflow/review-unavailable.js';
 import { assertNoSessionEmbedding } from '../shared/connection-provider.js';
 import { ConnectionExecutionError } from '../shared/step-context.js';
 /*---------------------------------------------------------------------------------------------
@@ -546,8 +547,8 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		'team.refresh': async (params) => (await import('./team-review-handlers.js')).handleTeamRefresh(params),
 		'team.claim': async (params) => (await import('./team-review-handlers.js')).handleTeamClaim(params),
 		'team.release': async (params) => (await import('./team-review-handlers.js')).handleTeamRelease(params),
-		'workflow.reviewArtifact': async (params) => (await import('./team-review-handlers.js')).handleReviewArtifact(params),
-		'workflow.resolveFinding': async (params) => (await import('./team-review-handlers.js')).handleResolveFinding(params),
+		'workflow.reviewArtifact': async () => reviewUnavailable('design'),
+		'workflow.resolveFinding': async () => reviewUnavailable('design'),
 
 		// Story s10: pull the tracker state of an Epic and its Stories into the Define; read-only against GitHub.
 		'tracker.sync': async (params) => {
@@ -696,26 +697,26 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		// no-verdict reason (no approved contract / no build) rather than a
 		// verdict (ac2); on ok, grounding is structured entity summaries, never
 		// raw file text (ac3, k6).
-		'designReview.start': async (params, context) => (await import('./design-review-rpc.js')).designReviewOperation('start', params, context),
-		'designReview.cancel': async (params, context) => (await import('./design-review-rpc.js')).designReviewOperation('cancel', params, context),
-		'designReview.progress': async (params, context) => (await import('./design-review-rpc.js')).designReviewOperation('progress', params, context),
-		'designReview.assignment': async (params, context) => (await import('./design-review-rpc.js')).designReviewOperation('assignment', params, context),
-		'designReview.plan': async (params, context) => (await import('./design-review-rpc.js')).designReviewOperation('plan', params, context),
-		'designReview.impact': async (params, context) => (await import('./design-review-rpc.js')).designReviewOperation('impact', params, context),
-		'designReview.activity': async (params, context) => (await import('./design-review-rpc.js')).designReviewOperation('activity', params, context),
-		'designReview.result': async (params, context) => (await import('./design-review-rpc.js')).designReviewOperation('result', params, context),
-		'designReview.recover': async (params, context) => (await import('./design-review-rpc.js')).designReviewOperation('recover', params, context),
-		'designReview.failure': async (params, context) => (await import('./design-review-rpc.js')).designReviewOperation('failure', params, context),
-		'codeReview.task.cleanup': async params => (await import('./task-review-rpc.js')).cleanupApprovedTaskReviews(params),
-		'codeReview.task.cancel': async (params,context) => (await import('./task-review-rpc.js')).cancelTaskReview(params,context),
-		'codeReview.task.progress': async (params,context) => (await import('./task-review-rpc.js')).readTaskReviewProgress(params,context),
-		'codeReview.task.publish': async (params,context) => (await import('./task-review-rpc.js')).publishStoredTaskReview(params,context),
-		'codeReview.task.start': async (params, context) => (await import('./task-review-rpc.js')).startTaskReview(params, context),
-		'codeReview.task.activity': async (params, context) => (await import('./task-review-rpc.js')).exchangeControllerTaskReview(params, context, 'activity'),
-		'codeReview.task.assignment': async (params, context) => (await import('./task-review-rpc.js')).exchangeControllerTaskReview(params, context, 'assignment'),
-		'codeReview.task.scope': async (params, context) => (await import('./task-review-rpc.js')).exchangeControllerTaskReview(params, context, 'scope'),
-		'codeReview.task.result': async (params, context) => (await import('./task-review-rpc.js')).exchangeControllerTaskReview(params, context, 'result'),
-		'codeReview.grounding': async () => { throw new Error('PENDING REVIEW RE-IMPLEMENTATION'); },
+		'designReview.start': async () => reviewUnavailable('design'),
+		'designReview.cancel': async () => reviewUnavailable('design'),
+		'designReview.progress': async () => reviewUnavailable('design'),
+		'designReview.assignment': async () => reviewUnavailable('design'),
+		'designReview.plan': async () => reviewUnavailable('design'),
+		'designReview.impact': async () => reviewUnavailable('design'),
+		'designReview.activity': async () => reviewUnavailable('design'),
+		'designReview.result': async () => reviewUnavailable('design'),
+		'designReview.recover': async () => reviewUnavailable('design'),
+		'designReview.failure': async () => reviewUnavailable('design'),
+		'codeReview.task.cleanup': async () => reviewUnavailable('code'),
+		'codeReview.task.cancel': async () => reviewUnavailable('code'),
+		'codeReview.task.progress': async () => reviewUnavailable('code'),
+		'codeReview.task.publish': async () => reviewUnavailable('code'),
+		'codeReview.task.start': async () => reviewUnavailable('code'),
+		'codeReview.task.activity': async () => reviewUnavailable('code'),
+		'codeReview.task.assignment': async () => reviewUnavailable('code'),
+		'codeReview.task.scope': async () => reviewUnavailable('code'),
+		'codeReview.task.result': async () => reviewUnavailable('code'),
+		'codeReview.grounding': async () => { return reviewUnavailable('code'); },
 
 		// Code-review s9 — the indexing-readiness freshness check. Read-only:
 		// returns { isProcessing, inFlight, pendingCodeIndexJobs, staleFiles, unindexedFiles } for the
@@ -724,7 +725,7 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		// index holds, once per mtime (no reindex of the repo, no store write). The controller-side gate (insrc_code_review_step) polls
 		// this before assembling grounding so a stale graph cannot yield a hollow
 		// PASS. Additive sibling of codeReview.grounding.
-		'codeReview.freshness': async () => { throw new Error('PENDING REVIEW RE-IMPLEMENTATION'); },
+		'codeReview.freshness': async () => { return reviewUnavailable('code'); },
 
 		// Measure the mid-tier model's document-relationship proposals against the hand-checked set (Epic c2ba6fa6 s10).
 		'docRelations.measure': async (params) => measureDocRelations(params, { enqueue: job => queue.enqueue(job) }),
@@ -1841,16 +1842,8 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		// four-judge loop, streams CodeReviewProgress frames, and persists the sc4
 		// CR-<epic>-<story> record. Peer of workflow.run; the load-bearing logic
 		// lives in runCodeReview.
-		'codeReview.run': async (params, send, signal) => {
-			const mod = await import('./code-review-rpc.js');
-			return mod.codeReviewRunStart(params, send, signal);
-		},
-		// Retired design-review transport remains unavailable; current review uses designReview.* / step.call.
-		'workflow.review': async (params, send, signal) => {
-			const mod = await import('./workflow-review-rpc.js');
-			const { lifecycleFor } = await import('./lifecycle-registry.js');
-			return mod.workflowReviewStart(params, send, signal, { lifecycleFor: (repoPath: string) => lifecycleFor(repoPath).service });
-		},
+		'codeReview.run': async () => reviewUnavailable('code'),
+		'workflow.review': async () => reviewUnavailable('design'),
 		// The step host (Epic c2ba6fa6, Story s11): runs one of the seven step
 		// tools for an MCP forwarder, in the caller's context, with this
 		// stream's signal; the 'done' frame carries the tool's reply unchanged.

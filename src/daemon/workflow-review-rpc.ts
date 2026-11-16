@@ -13,4 +13,4 @@ export interface WorkflowReviewDone {
 	/** The rendered review report (markdown). */
 	readonly report:       string;
 }
-export async function workflowReviewStart(...args: readonly unknown[]): Promise<never> { return reviewUnavailable(...args); }
+export async function workflowReviewStart(...args: readonly unknown[]): Promise<never> { return reviewUnavailable('design', ...args); }

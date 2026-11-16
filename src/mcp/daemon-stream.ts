@@ -495,4 +495,4 @@ export function codeReviewStream(
 	params: CodeReviewStreamParams,
 	opts:   ReviewStreamOpts,
 	deps:   ReviewStreamDeps = {},
-): Promise<CodeReviewStreamResult> { return reviewUnavailable(); }
+): Promise<CodeReviewStreamResult> { return reviewUnavailable('code'); }

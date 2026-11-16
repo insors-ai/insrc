@@ -125,9 +125,9 @@ export function createInDaemonClient(
 	return {
 		request: <T>(method: string, params: unknown) => call<T>(method, params),
 		reviewArtifactStream: async () => reviewUnavailable(),
-		codeReviewStream: async () => reviewUnavailable(),
-		fetchCodeReviewGrounding: async () => reviewUnavailable(),
-		fetchCodeReviewFreshness: async () => reviewUnavailable(),
+		codeReviewStream: async () => reviewUnavailable('code'),
+		fetchCodeReviewGrounding: async () => reviewUnavailable('code'),
+		fetchCodeReviewFreshness: async () => reviewUnavailable('code'),
 		resolveRepoForCwd: (cwd) =>
 			call<{ path?: string | null; error?: string }>('repo.resolveForCwd', { cwd }).then(r => {
 				if (r.error !== undefined) throw new Error(r.error);

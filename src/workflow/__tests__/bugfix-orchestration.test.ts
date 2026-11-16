@@ -136,6 +136,30 @@ test('nextAfterIssue: a sized ISSUE routes to design.story with params.epicHash 
 	assert.equal(p.epicHash, ISSUE_HASH, 'the LLD is authored under the ISSUE');
 });
 
+test('nextAfterIssue sized route carries epicHash=issueHash and storyId s1 (ISSUE-149283b0d0455a43)', () => {
+	const nc = nextAfterIssue(issue({ magnitude: 'sized', approvedAt: APPROVED }), '/repo');
+	assert.equal(nc.tool, 'insrc_workflow_step');
+	assert.equal(nc.params['workflow'], 'design.story');
+	const p = nc.params['params'] as { standalone?: boolean; epicHash?: string; storyId?: string; sizeClass?: string };
+	assert.equal(p.epicHash, ISSUE_HASH, 'the sized route keeps the ISSUE as the work-item anchor');
+	assert.equal(p.storyId, 's1', 'the sized route explicitly targets the one implied story');
+	assert.equal(p.standalone, true);
+	assert.equal(p.sizeClass, 'bugfix');
+});
+
+test('nextAfterIssue refuses a sized ISSUE with no issueHash', () => {
+	assert.throws(() => nextAfterIssue(issue({ magnitude: 'sized', issueHash: null }), '/repo'), /invalid-issue-hash/);
+});
+
+test('nextAfterIssue small route is unchanged', () => {
+	const nc = nextAfterIssue(issue({ magnitude: 'small', approvedAt: APPROVED }), '/repo');
+	assert.equal(nc.tool, 'insrc_build_step');
+	const st = nc.params['standalone'] as { epicHash?: string; sizeClass?: string; storyId?: string };
+	assert.equal(st.epicHash, ISSUE_HASH);
+	assert.equal(st.sizeClass, 'trivial');
+	assert.equal(st.storyId, undefined, 'the small build route carries no storyId');
+});
+
 test('nextAfterIssue: an ISSUE without a 16-hex issueHash is refused', () => {
 	for (const magnitude of ['small', 'sized'] as const) {
 		assert.throws(() => nextAfterIssue(issue({ magnitude, issueHash: null }), '/repo'), /invalid-issue-hash/);

@@ -12,6 +12,7 @@
  */
 
 import type { IssueArtifact } from '../artifacts/issue.js';
+import { IMPLIED_ISSUE_STORY_ID } from '../storage.js';
 import { routeForSizeClass } from '../triage/classify.js';
 import type { BugfixNextCall } from './types.js';
 
@@ -81,6 +82,10 @@ export function nextAfterIssue(issue: IssueArtifact, repo: string): BugfixNextCa
 	// sized → a standalone design.story (LLD), then the existing design→plan→build
 	// upstream gates carry it to build. The full defect body is the spec so the
 	// LLD author has the reproduction/root-cause/fix-intent, not just the title.
+	// The route EXPLICITLY keeps the ISSUE as the work-item anchor (epicHash) and
+	// targets the one implied story (storyId s1), so the LLD lands as
+	// LLD-<issueHash>-s1 under the ISSUE's identity instead of minting a fresh
+	// hash via augmentStandaloneParams (ISSUE-149283b0d0455a43).
 	return {
 		tool:   'insrc_workflow_step',
 		params: {
@@ -91,6 +96,7 @@ export function nextAfterIssue(issue: IssueArtifact, repo: string): BugfixNextCa
 			params: {
 				standalone: true,
 				epicHash:   issueHash,
+				storyId:    IMPLIED_ISSUE_STORY_ID,
 				storyTitle: title,
 				storySpec:  scope,
 				sizeClass:  'bugfix',

@@ -74,6 +74,13 @@
         "status": "ignored",
         "rationale": "Tagging bundle ids would change the analyze framework's output; out of this Story's scope. The c-ids only matter inside this LLD and are consistent.",
         "resolvedAt": "2026-11-16T08:27:50.033Z"
+      },
+      "q2ac9bbf7": {
+        "question": "ts1 (partial): the Story has no acceptance criteria of its own; ac1-ac7 are derived from the approved ISSUE's regression-coverage list.",
+        "status": "resolved",
+        "choice": "Adopt + annotate provenance",
+        "rationale": "ac1-ac7 derive from the approved ISSUE's regression coverage; keep that traceable.",
+        "resolvedAt": "2026-11-16T08:28:48.327Z"
       }
     }
   },

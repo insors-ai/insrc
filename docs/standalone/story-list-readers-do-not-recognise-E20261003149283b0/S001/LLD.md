@@ -286,6 +286,8 @@ Leave the shared reader alone and edit each non-test caller (readPlanUpstream, f
   - **resolved**: Plan treats them as new, LLD-sourced symbols — Greenfield by design; the LLD is the source and tasks create them. _(2026-11-16T08:26:26.456Z)_
 - `q692d6d0b` — ep3 (partial): the invariant sources c1-c3 map to the three s1 analyze bundles in order; the s1 output does not carry those ids.
   - **ignored**: left to implementer judgment — Tagging bundle ids would change the analyze framework's output; out of this Story's scope. The c-ids only matter inside this LLD and are consistent. _(2026-11-16T08:27:50.033Z)_
+- `q2ac9bbf7` — ts1 (partial): the Story has no acceptance criteria of its own; ac1-ac7 are derived from the approved ISSUE's regression-coverage list.
+  - **resolved**: Adopt + annotate provenance — ac1-ac7 derive from the approved ISSUE's regression coverage; keep that traceable. _(2026-11-16T08:28:48.327Z)_
 
 ## Citations
 

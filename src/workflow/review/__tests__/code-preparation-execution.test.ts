@@ -14,11 +14,7 @@ import { preparationDigest } from '../prepared-context.js';
 import { PreparedViewReader } from '../prepared-views.js';
 import { ReviewMemoryBudget } from '../preparation-memory.js';
 
-<<<<<<< Updated upstream
 for (const full of [false, true]) test(`source-light preparation executes ${full ? 'story' : 'task'} through fresh durable worker admission`, async () => {
-=======
-for (const full of [false, true]) test(`source-light preparation executes ${full ? 'story' : 'task'} through fresh durable worker admission`, async t => {
->>>>>>> Stashed changes
   const f = await fixture(full, full ? 2 : 1), id = 'shared-worker';
   const key = { project: f.repo, family: 'code' as const, reviewId: id };
   const limits = reviewPreparationLimits(join(f.repo, 'missing-config.json'));
@@ -66,7 +62,6 @@ for (const full of [false, true]) test(`source-light preparation executes ${full
    assert.equal(preparation.qualificationIdentity().key.reviewId, receipt.key.reviewId);
    assert.equal(receipt.attempt, 1); assert.equal(receipt.key.reviewId, id);
   } finally { await execution?.close(); await preparation.close(); f.cleanup(); }
-<<<<<<< Updated upstream
 });
 
 test('code preparation exposes no eager admission or publication fallback', async () => {
@@ -78,6 +73,4 @@ test('code preparation exposes no eager admission or publication fallback', asyn
   assert.equal('context' in preparation, false);
   await assert.rejects(preparation.publicationPacket(f.packet, preparation.sources), /cold requalification is required/);
  } finally { await preparation.close(); f.cleanup(); }
-=======
->>>>>>> Stashed changes
 });

@@ -1,0 +1,972 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "wf-1794815463347-ke0two",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-16T07:56:36.838Z",
+    "epicCreatedAt": "2026-11-16T07:56:36.838Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 333489,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2846f076fd5f785f",
+    "epicSlug": "linked-scratchpads-vs-code",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 6,
+        "contentHash": "2f0c0e0e00345a09ddf428984c99256a4acee183475066ac9b62287fd277e28d",
+        "at": "2026-11-16T09:05:10.929Z",
+        "by": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "name": "claude-sonnet-5",
+          "properties": {
+            "reason": "fourth self-review correction: flag s2 content/title-source gap vs listScratches() and whether s2 should depend on s7"
+          }
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 6,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-16T09:11:14.565Z",
+        "override": {
+          "reason": "Design review (insrc_review_step, reviewId def-linked-scratchpads-r1, attempt 1) paused on technical_retry_exhausted (invalid_output on the planning unit) and produced no verdict. In its place, four rounds of controller-led critical self-review were run and applied as corrections directly to the DEF (now at content revision 6): fixed a mis-sourced citation, downgraded an overconfident host-availability assumption, removed an ungrounded acceptance criterion (s6/ac3 — no target surface exists), narrowed a host-capability note to an existing reuse mechanism, flagged s6/ac2's new command/menu-contribution scope, cited missed-reuse opportunities for s5 (ArtifactIds) and s8 (attachment pipeline), and flagged s2's content/title-source gap against the real store shape plus whether s2 should depend on s7. Ten open questions remain recorded in the DEF for design.story to resolve, including an unrelated tooling defect (define auto-bound this Epic to a real GitHub issue, insors-ai/insrc#185, without tracker.push or approval — user decided 2026-11-16 to leave it as-is). User gave explicit in-chat approval with override (\"approved with override\") after being presented this DEF."
+        }
+      }
+    },
+    "revision": 6,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "questionResolutions": {
+      "qd9509b66": {
+        "question": "The `define` workflow auto-bound this Epic to a real, OPEN GitHub issue (insors-ai/insrc#185) as a side effect of finishing `define` — no `tracker.push` was called, and there was no present/ask/approve before a public issue existed. The user decided (2026-11-16) to leave #185 as-is rather than close it. This auto-push behavior is a tooling defect that should be filed and fixed separately (through the normal bugfix front door) so a future Epic's `define` run does not silently publish before design review/approval. [[c11]]",
+        "status": "deferred",
+        "rationale": "Not a design decision for this epic — it's a defect in the `define` workflow itself (auto-published a real GitHub issue, insors-ai/insrc#185, as a side effect of finishing `define`, bypassing tracker.push and approval). Deferred here; being logged as its own tracked bugfix via insrc_triage against the workflow framework, independent of linked-scratchpads' architecture.",
+        "resolvedAt": "2026-11-16T09:28:49.285Z"
+      }
+    }
+  },
+  "body": {
+    "assumptions": [
+      {
+        "confidence": "high",
+        "source": "c2",
+        "text": "Scratchpads remain plain Markdown files on disk under ~/.insrc/scratches/ so they stay editable outside VS Code and diffable in git when inside a workspace; all linking/indexing is metadata layered on that contract, not a new file format."
+      },
+      {
+        "confidence": "med",
+        "source": "c8",
+        "text": "VS Code's bundled markdown-language-features custom editor (vscode.markdown.editor) provides rendered-in-place editing with lock/inline-edit on standard VS Code installs (user-verified, 2026-11-15), so the pad surface should not need a bespoke rich-text webview — but availability across every host this plugin targets is unverified: vscode-plugin/src/hosts/specs.ts already treats Cursor as a distinct host, and the plugin elsewhere anticipates a capability missing in an editor fork (chat/group-lock.ts). S1 must detect the capability per host rather than assume it everywhere."
+      },
+      {
+        "confidence": "med",
+        "source": "c4",
+        "text": "The daemon's existing graph + doc-relations layer can resolve link targets to files, symbols, and workflow artifacts by extending the file-target-only link extraction, without widening repo enrollment to the home-dir scratchpad store."
+      },
+      {
+        "confidence": "med",
+        "source": "c1",
+        "text": "The user's PRD mock decisions are settled inputs (10-pad recent menu, 20-pad/3-line list panel with in-panel relevance search, per-row delete, native editor with lock/pencil, separate find-in-note), not open questions for design."
+      }
+    ],
+    "constraints": [
+      {
+        "id": "k1",
+        "source": "c1",
+        "text": "Two distinct search surfaces: cross-note relevance search lives only in the list panel; find-in-note (Ctrl/Cmd+F) stays a separate in-pad action operating on live unsaved text, independent of lock state.",
+        "type": "contract"
+      },
+      {
+        "id": "k2",
+        "source": "c1",
+        "text": "UI parameters are fixed by the PRD mock: recent menu cap 10; list panel cap 20 newest-first with first-3-line previews and per-row delete; relevance ranking puts title hits ahead of body-only hits, ties by mtime then stable id.",
+        "type": "contract"
+      },
+      {
+        "id": "k3",
+        "source": "c8",
+        "text": "The pad editor is VS Code's built-in vscode.markdown.editor opened on the scratchpad's real file (openWith), replacing the custom webview and its save protocol; VS Code's own text-document model owns save/undo/conflict.",
+        "type": "contract"
+      },
+      {
+        "id": "k4",
+        "source": "c4",
+        "text": "The home-dir scratchpad store stays outside repo enrollment and default document search; daemon-backed backlinks join only through a private, repository-keyed scratchpad index using validated target identity (note=repo+stable ID; file/symbol=repo+path+qualified name; artifact=repo+canonical ID).",
+        "type": "invariant"
+      },
+      {
+        "id": "k5",
+        "source": "c1",
+        "text": "No implicit agent context: note evidence enters a turn or workflow draft only on explicit user selection (SP-5/SP-6), never by default.",
+        "type": "invariant"
+      },
+      {
+        "id": "k6",
+        "source": "c1",
+        "text": "Non-goals are binding: no vault import/sync, shared/collaborative editing, general-purpose canvas/graph browser, unlinked-mention suggestions, arbitrary transclusion, automatic project-memory ingestion, CLI/JetBrains surfaces, semantic embedding search, or analyzer-output links in this epic.",
+        "type": "stakeholder"
+      }
+    ],
+    "flavor": "enhancement",
+    "nonGoals": [
+      {
+        "rationale": "PRD out-of-scope; vault concerns are orthogonal to linking.",
+        "text": "Vault import/sync"
+      },
+      {
+        "rationale": "PRD out-of-scope; single-user scratchpads, not collaboration.",
+        "text": "Shared/collaborative note editing"
+      },
+      {
+        "rationale": "PRD out-of-scope; the code graph browser already exists separately.",
+        "text": "A general-purpose canvas or graph browser"
+      },
+      {
+        "rationale": "PRD out-of-scope; unlinked mentions stay invisible.",
+        "text": "Unlinked-mention suggestions"
+      },
+      {
+        "rationale": "PRD out-of-scope; only explicit typed links transclude.",
+        "text": "Arbitrary transclusion"
+      },
+      {
+        "rationale": "PRD non-goal and constraint k5: nothing enters project memory automatically.",
+        "text": "Automatic project-memory ingestion"
+      },
+      {
+        "rationale": "PRD out-of-scope: this epic targets the VS Code plugin only.",
+        "text": "New client surfaces for the CLI or JetBrains plugin"
+      },
+      {
+        "rationale": "Explicitly deferred in the PRD to later work.",
+        "text": "Semantic (embedding-based) scratchpad search and ephemeral analyzer-output links"
+      }
+    ],
+    "openQuestions": [
+      "Item a2: med-confidence assumptions (daemon link-target resolution feasibility; PRD mock decisions settled) map to design-time decisions carried on s4/s5/s7 local constraints and will surface at design.story starts.",
+      "Item ac2: s4/s5/s6 acceptance criteria carry empty operationalizes by scoping (governed by story-level requirements/localConstraints, not epic kN); design.story should bind them.",
+      "PRD open decision blocking s5: Markdown syntax for qualified link targets, versioning, and alias escaping.",
+      "PRD open decision blocking s4 and s7: entry-boundary / timestamp / stable-anchor encoding and where scratchpad metadata lives.",
+      "PRD open decision blocking s2/s5/s6: private backlink projection + lexical index choice, note-size cap, latency targets, and minimum daemon/extension version negotiation for the new IPC.",
+      "PRD open decision blocking s8: first controller/daemon context routes, evidence budgets, and preview behavior for a target that changes mid-queue.",
+      "Story s1 must confirm vscode.markdown.editor is registered on the target host before opening with it; this reuses the plugin's existing by-extension capability check (HostEnv.getExtension — vscode-plugin/src/hosts/specs.ts, hosts/types.ts) rather than needing new detection machinery. Only the fallback/error UX for a host where the probe is negative (e.g. an editor fork — vscode-plugin/src/hosts/specs.ts already treats Cursor as distinct, and chat/group-lock.ts anticipates a capability missing in a fork) is an open design item. [[c9]] [[c12]]",
+      "Story s6's backlinks-on-'workflow artifact detail view' criterion had no grounded target surface in vscode-plugin: the only comparable surface, docs-review-panel.ts, lists only PENDING tracked artifacts and drops one once resolved (a passthrough review pane, not a persistent per-artifact view). s6 is now scoped to note + file/symbol backlinks until such a surface exists or is built. [[c10]]",
+      "The `define` workflow auto-bound this Epic to a real, OPEN GitHub issue (insors-ai/insrc#185) as a side effect of finishing `define` — no `tracker.push` was called, and there was no present/ask/approve before a public issue existed. The user decided (2026-11-16) to leave #185 as-is rather than close it. This auto-push behavior is a tooling defect that should be filed and fixed separately (through the normal bugfix front door) so a future Epic's `define` run does not silently publish before design review/approval. [[c11]]",
+      "Story s6's ac2 ('show scratchpad backlinks' on a file/symbol) requires a new command + menu contribution in vscode-plugin/package.json — no existing command/menu is scoped to a file or symbol today (contributes.menus covers only commandPalette and editor/title). Not a blocker, but new manifest scope the design.story should account for. [[c13]]",
+      "Story s2 (3-line preview + title-ranked search) needs real body content and a non-lossy title per pad; scratch-store.ts's listScratches() provides neither today (vscode-plugin/src/chat/scratch-store.ts). s2 currently depends only on s1, but a durable title/metadata source is s7's territory (its own lc1 already defers 'where scratchpad metadata lives' to design time). Design time must decide: make s2 depend on s7 for that metadata, or give s2 its own interim content/title-read approach (e.g. parsing each file's first heading on list) that s7 later supersedes. [[c16]]"
+    ],
+    "problem": "A scratchpad today is a flat, unlinked Markdown file: easy to find when recent (the chat menu shows five), impossible to rediscover from the code, symbol, or workflow artifact it concerns, and read-only-ish once opened in the plugin's custom webview. There is no way to link notes to each other or to tracked design/code, no backlinks from a file or artifact back to the notes that discuss it, no cross-note search (only an unbounded browse list), no dated entries or stable identity across rename/archive, and no way to carry a note selection into a chat turn or promote it into a tracked workflow draft. The scratchpad corpus therefore stays a pile of recent files rather than a second knowledge surface sitting beside the indexed code graph and the workflow ledger.",
+    "stories": [
+      {
+        "acceptanceCriteria": [
+          {
+            "given": "a scratchpad file on disk and the VS Code host with the bundled Markdown Editor",
+            "id": "ac1",
+            "operationalizes": [
+              "k3"
+            ],
+            "then": "the pad opens as a rendered Markdown view of its real file (not a custom webview), locked read-only by default; image paste/drop, URL-as-link paste, and insert-link/insert-image-from-workspace work; save/undo/conflict are handled by the editor's own document model",
+            "when": "the user opens the pad from the chat menu or the list panel"
+          },
+          {
+            "given": "an unlocked pad",
+            "id": "ac2",
+            "operationalizes": [
+              "k3"
+            ],
+            "then": "a pencil control toggles inline click-to-edit and a lock control returns to the rendered read-only view",
+            "when": "the user toggles edit/lock in the open pad"
+          },
+          {
+            "given": "the plugin build",
+            "id": "ac3",
+            "operationalizes": [
+              "k3"
+            ],
+            "then": "no custom scratchpad document webview or its save channel remains in the open-pad path; the scratchpad file contract on disk is unchanged",
+            "when": "the old custom document view path is exercised"
+          }
+        ],
+        "dependsOn": [],
+        "existingCapabilityRefs": [
+          "c2",
+          "c3",
+          "c8",
+          "c12"
+        ],
+        "functionalRequirements": [
+          {
+            "rationale": "SP-4 editing substrate: native rendered editor on the real file.",
+            "statement": "A pad opens rendered-in-place in the host's built-in Markdown editor on its real file, locked by default, with inline edit toggled by a pencil and lock returning to read-only."
+          },
+          {
+            "rationale": "Rich authoring affordances without bespoke code.",
+            "statement": "Image paste/drop, URL-to-link paste, and insert-link/insert-image-from-workspace work in the pad editor."
+          }
+        ],
+        "id": "s1",
+        "localConstraints": [
+          {
+            "id": "lc1",
+            "source": "c8",
+            "text": "Pad editor must be the host's built-in vscode.markdown.editor custom editor (openWith on the real file), never a bespoke rich-text webview.",
+            "type": "contract"
+          },
+          {
+            "id": "lc2",
+            "source": "c12",
+            "type": "invariant",
+            "text": "The target host must register a built-in rendered+editable Markdown custom editor (today: vscode.markdown.editor) before this surface can open. Host-capability detection reuses the plugin's existing by-extension check (HostEnv.getExtension('vscode.markdown-language-features') — vscode-plugin/src/hosts/specs.ts, hosts/types.ts); only the fallback/error UX for a host that lacks it (e.g. an editor fork) needs new design."
+          }
+        ],
+        "sizeEstimate": "M",
+        "title": "Native Markdown Editor pad surface",
+        "userValue": "Pads feel native: rendered Markdown in place, inline editing with a lock/pencil toggle, and real rich-authoring affordances (links, images) instead of the current custom read-only webview."
+      },
+      {
+        "acceptanceCriteria": [
+          {
+            "given": "the chat scratchpad menu",
+            "id": "ac1",
+            "operationalizes": [
+              "k2"
+            ],
+            "then": "the menu lists at most 10 recent pads by modification time alongside the existing New and Browse-all actions",
+            "when": "the user opens the scratchpad dropdown from the chat panel"
+          },
+          {
+            "given": "the \"insrc scratchpads\" list panel with more than 20 pads on disk",
+            "id": "ac2",
+            "operationalizes": [
+              "k2"
+            ],
+            "then": "the panel shows at most 20 pads, newest first, each with its first 3 body lines as a preview and a per-row delete button; deleting removes the pad and the row disappears",
+            "when": "the user opens the list panel or deletes a row"
+          },
+          {
+            "given": "pads on disk and an empty search box in the list panel",
+            "id": "ac3",
+            "operationalizes": [
+              "k1",
+              "k2"
+            ],
+            "then": "typing a query filters the list to matching pads ranked by relevance (title hits ahead of body-only hits, ties by mtime then stable id) and a result count/empty state is shown; clearing the box restores the unfiltered recency list",
+            "when": "the user types in or clears the list-panel search box"
+          },
+          {
+            "given": "any pad card in the filtered or unfiltered list",
+            "id": "ac4",
+            "operationalizes": [
+              "k2",
+              "k3"
+            ],
+            "then": "clicking the card opens that pad in the native pad editor (s1 surface)",
+            "when": "the user clicks a pad card"
+          }
+        ],
+        "dependsOn": [
+          "s1"
+        ],
+        "existingCapabilityRefs": [
+          "c3",
+          "c7"
+        ],
+        "functionalRequirements": [
+          {
+            "rationale": "SP-3 'Search all notes' as settled: the search box lives in the list panel, not a nav view and not inside the pad.",
+            "statement": "The list panel carries a search box that filters the recency list by relevance with title-first ranking and mtime/id tiebreaks, and clearing restores the full list."
+          },
+          {
+            "rationale": "Capped, previewed list with delete per settled mock.",
+            "statement": "The list panel caps at 20 newest-first pads with 3-line previews and per-row delete; the chat recent menu caps at 10."
+          }
+        ],
+        "id": "s2",
+        "localConstraints": [
+          {
+            "id": "lc1",
+            "source": "c1",
+            "text": "Search box lives at the top of the list panel only — never a separate nav-panel view, never an in-pane section inside the open pad.",
+            "type": "contract"
+          },
+          {
+            "id": "lc2",
+            "source": "c1",
+            "text": "List cap 20 newest-first, preview = first 3 lines, per-row delete; chat menu cap = 10 (raised from 5).",
+            "type": "contract"
+          },
+          {
+            "id": "lc3",
+            "source": "c16",
+            "type": "invariant",
+            "text": "The list panel's 3-line preview (ac2) and title-first relevance ranking (ac3) need body content and a non-lossy title per pad, neither of which listScratches() provides today (metadata-only readdir+stat; its `name` is a lossy slug, not the typed title). This story must add a content/title source for the list — reading each file's content per render, parsing a heading, or sourcing from the metadata layer s7 is expected to add — not just change the UI on top of the existing list."
+          }
+        ],
+        "sizeEstimate": "M",
+        "title": "List panel caps, previews, delete, and relevance search (menu cap 10)",
+        "userValue": "The scratchpad list is bounded and scannable (20 recent pads with previews and one-click delete), the chat menu shows ten recents, and a search box in that same panel finds any pad by relevance."
+      },
+      {
+        "acceptanceCriteria": [
+          {
+            "given": "a pad open in the native editor",
+            "id": "ac1",
+            "operationalizes": [
+              "k1"
+            ],
+            "then": "a find bar shows the query with an N-of-M match count, prev/next buttons that wrap around, and a zero-match state; Escape closes the bar; matches are highlighted and the current match scrolls into view",
+            "when": "the user presses Ctrl/Cmd+F inside the pad and types a query"
+          },
+          {
+            "given": "a find query with matches in collapsed content",
+            "id": "ac2",
+            "operationalizes": [
+              "k1"
+            ],
+            "then": "navigating to a match reveals the collapsed section containing it",
+            "when": "the user moves to a match inside a collapsed section"
+          },
+          {
+            "given": "a pad whose editor is locked",
+            "id": "ac3",
+            "operationalizes": [
+              "k1"
+            ],
+            "then": "find still matches and navigates against the live (including unsaved) text, independent of the lock/edit state",
+            "when": "the user runs find while the pad is locked"
+          }
+        ],
+        "dependsOn": [
+          "s1"
+        ],
+        "existingCapabilityRefs": [
+          "c8"
+        ],
+        "functionalRequirements": [
+          {
+            "rationale": "SP-3 'Find in note' — the separate in-pad surface.",
+            "statement": "An in-pad find highlights matches with N-of-M count, wraparound prev/next, Escape to close, and a zero-match state, operating on live text regardless of lock state."
+          }
+        ],
+        "id": "s3",
+        "localConstraints": [
+          {
+            "id": "lc1",
+            "source": "c1",
+            "text": "Find-in-note operates on live including unsaved text and is independent of the editor's locked/editing state.",
+            "type": "contract"
+          }
+        ],
+        "sizeEstimate": "S",
+        "title": "Find in note (in-pad search)",
+        "userValue": "Finding text inside a large pad is instant and keyboard-driven, with match counts, wraparound, and zero-match feedback — without leaving the pad."
+      },
+      {
+        "acceptanceCriteria": [
+          {
+            "given": "a pad containing entries with creation dates and legacy content without them",
+            "id": "ac1",
+            "operationalizes": [],
+            "then": "entries render grouped by day, newest first, each day a collapsible section with a count, plus an Undated bucket for legacy content; toggles are keyboard-operable",
+            "when": "the user opens a pad with dated entries"
+          },
+          {
+            "given": "a new entry started in a pad",
+            "id": "ac2",
+            "operationalizes": [],
+            "then": "the entry is stamped with its creation date/time under the agreed Markdown convention and lands in the right day group",
+            "when": "the user starts a new entry"
+          }
+        ],
+        "dependsOn": [
+          "s1"
+        ],
+        "existingCapabilityRefs": [
+          "c2"
+        ],
+        "functionalRequirements": [
+          {
+            "rationale": "SP-4 'Dated entries'.",
+            "statement": "Pads support dated entries rendered as day-grouped, newest-first, collapsible sections with per-day counts and an Undated bucket for legacy notes."
+          }
+        ],
+        "id": "s4",
+        "localConstraints": [
+          {
+            "id": "lc1",
+            "source": "c6",
+            "text": "The entry-boundary/timestamp Markdown convention is an open PRD decision and must be resolved at design time before this story builds.",
+            "type": "stakeholder"
+          }
+        ],
+        "sizeEstimate": "M",
+        "title": "Dated entries in pads",
+        "userValue": "Long-lived pads read like a journal: entries group by day, newest first, with collapsible days and an Undated bucket for old content."
+      },
+      {
+        "acceptanceCriteria": [
+          {
+            "given": "a pad open in the native editor whose text contains a typed link",
+            "id": "ac1",
+            "operationalizes": [],
+            "then": "the link target picker offers notes, workspace files, code symbols, and workflow artifacts (SPEC/ISSUE/HLD/LLD/TASK); committing a qualified target inserts a link that resolves unambiguously even when titles/symbols duplicate",
+            "when": "the user authors a link in a pad"
+          },
+          {
+            "given": "a link whose target is ambiguous, missing, or unavailable",
+            "id": "ac2",
+            "operationalizes": [],
+            "then": "the link renders in a visibly distinct state per case and offers a repair action; links inside code spans/blocks stay literal",
+            "when": "the user views a pad containing such a link"
+          },
+          {
+            "given": "a resolved link in a pad",
+            "id": "ac3",
+            "operationalizes": [],
+            "then": "activating the link opens the target (pad, file/symbol location, or workflow artifact view)",
+            "when": "the user activates a resolved link"
+          }
+        ],
+        "dependsOn": [
+          "s1"
+        ],
+        "existingCapabilityRefs": [
+          "c4",
+          "c14"
+        ],
+        "functionalRequirements": [
+          {
+            "rationale": "SP-1 link authoring + resolution across all four target types.",
+            "statement": "Pads support typed links to notes, files, symbols, and workflow artifacts, with a target picker, qualified-target commit for duplicate titles/symbols, distinguishable ambiguous/missing/unavailable states with repair, and literal links inside code spans/blocks."
+          }
+        ],
+        "id": "s5",
+        "localConstraints": [
+          {
+            "id": "lc1",
+            "source": "c4",
+            "text": "Link resolution for files and symbols must extend the daemon’s file-target-only extraction via validated target identity (repo+path+qualified name); the home-dir store stays out of repo enrollment.",
+            "type": "contract"
+          },
+          {
+            "id": "lc2",
+            "source": "c6",
+            "text": "The Markdown syntax for qualified link targets, versioning, and alias escaping is an open PRD decision to resolve at design time.",
+            "type": "stakeholder"
+          },
+          {
+            "id": "lc3",
+            "source": "c14",
+            "type": "contract",
+            "text": "The workflow-artifact leg of link-target identity (SPEC/ISSUE/HLD/LLD/TASK) reuses the existing ArtifactIds identity scheme (src/workflow/artifact-ids.ts) rather than inventing new identity parsing; what remains new is validating a parsed id against the real artifact store and rendering missing/ambiguous/unavailable states for it."
+          }
+        ],
+        "sizeEstimate": "L",
+        "title": "Link authoring and target resolution",
+        "userValue": "A pad can point at the exact note, file, symbol, or workflow artifact it concerns — and open it — with clear states when a target can't be resolved."
+      },
+      {
+        "acceptanceCriteria": [
+          {
+            "given": "a resolved outgoing link in a pad",
+            "id": "ac1",
+            "operationalizes": [],
+            "then": "the pad view shows both outgoing links and incoming backlinks grouped by source note",
+            "when": "the user views a pad that participates in links"
+          },
+          {
+            "given": "a workspace file or code symbol",
+            "id": "ac2",
+            "operationalizes": [],
+            "then": "a 'show scratchpad backlinks' action lists the notes linking to it, grouped by source note",
+            "when": "the user invokes the backlink view on a file or symbol"
+          }
+        ],
+        "dependsOn": [
+          "s5"
+        ],
+        "existingCapabilityRefs": [
+          "c4"
+        ],
+        "functionalRequirements": [
+          {
+            "rationale": "SP-2 backlinks, on note + target surfaces; the workflow-artifact-detail slice is deferred pending a surface (see open questions).",
+            "statement": "Outgoing and incoming links are visible on a note; file and symbol views show scratchpad backlinks grouped by source note. Backlinks on a workflow artifact's own detail view are deferred until vscode-plugin has a durable per-artifact surface to host them."
+          }
+        ],
+        "id": "s6",
+        "localConstraints": [
+          {
+            "id": "lc1",
+            "source": "c4",
+            "text": "Backlinks are served by a private, repository-keyed scratchpad index joined on validated target identity — not by widening the daemon's default document search to the home-dir store.",
+            "type": "invariant"
+          },
+          {
+            "id": "lc2",
+            "source": "c10",
+            "type": "stakeholder",
+            "text": "No persistent 'workflow artifact detail surface' exists in vscode-plugin today to host a backlinks section — the only comparable surface (docs-review-panel.ts) is a PENDING-only review passthrough that drops an artifact once it's no longer pending. This story delivers note + file/symbol backlinks now; backlinks on a workflow artifact's own view wait on that surface's own design."
+          },
+          {
+            "id": "lc3",
+            "source": "c13",
+            "type": "contract",
+            "text": "The file/symbol 'show scratchpad backlinks' action (ac2) has no existing command or menu contribution to reuse — vscode-plugin/package.json's contributes.menus covers only commandPalette and editor/title, and none of its 20 commands relate to scratch/link. This story must add a new command + menu contribution (e.g. editor/context), not extend an existing one."
+          }
+        ],
+        "sizeEstimate": "L",
+        "title": "Backlinks for notes, files/symbols, and workflow artifacts",
+        "userValue": "Notes are rediscoverable from the code or symbol they discuss: backlinks show on the note and on file/symbol views, grouped by source note; backlinks on workflow artifacts follow once vscode-plugin has a durable artifact-detail surface to host them."
+      },
+      {
+        "acceptanceCriteria": [
+          {
+            "given": "a legacy pad without a stable ID",
+            "id": "ac1",
+            "operationalizes": [
+              "k4"
+            ],
+            "then": "the pad is associated with the active repo explicitly and carries a stable ID that survives rename, move, archive, and restore",
+            "when": "the user touches or lists the legacy pad"
+          },
+          {
+            "given": "an archived pad",
+            "id": "ac2",
+            "operationalizes": [
+              "k4"
+            ],
+            "then": "archive hides the pad from default search and backlinks but a direct link still opens it, and restore reverses this",
+            "when": "the user archives or restores a pad"
+          },
+          {
+            "given": "a pad with surviving links to it",
+            "id": "ac3",
+            "operationalizes": [
+              "k4"
+            ],
+            "then": "permanent delete requires explicit confirmation and links to the deleted pad render as 'missing'",
+            "when": "the user permanently deletes a pad"
+          }
+        ],
+        "dependsOn": [
+          "s1"
+        ],
+        "existingCapabilityRefs": [
+          "c2"
+        ],
+        "functionalRequirements": [
+          {
+            "rationale": "SP-4 identity/lifecycle (not dated entries).",
+            "statement": "Every pad carries a stable ID surviving rename/move/archive/restore, explicit repo association for legacy notes, reversible archive (hidden from default search/backlinks, direct link still opens), and explicit permanent delete with 'missing' link rendering."
+          }
+        ],
+        "id": "s7",
+        "localConstraints": [
+          {
+            "id": "lc1",
+            "source": "c6",
+            "text": "Where scratchpad metadata (stable ID, repo association, archive state) lives is an open PRD decision to resolve at design time.",
+            "type": "stakeholder"
+          }
+        ],
+        "sizeEstimate": "M",
+        "title": "Scratchpad identity and lifecycle",
+        "userValue": "Pads keep their identity across rename and archive, can be archived reversibly and deleted permanently with clear link fallout — so links don't silently rot."
+      },
+      {
+        "acceptanceCriteria": [
+          {
+            "given": "a saved pad and a chat turn composer",
+            "id": "ac1",
+            "operationalizes": [
+              "k5"
+            ],
+            "then": "a distinct 'attach to turn' action beside the existing send path opens a picker of the note with source and revision; the selected excerpts appear as a removable preview attached to the turn, and queued turns pin the revision",
+            "when": "the user attaches note content to a turn"
+          },
+          {
+            "given": "an attached excerpt whose note changes before send",
+            "id": "ac2",
+            "operationalizes": [
+              "k5"
+            ],
+            "then": "the preview shows the pinned revision and the payload stays bounded to the controller/daemon routes",
+            "when": "the queued turn is eventually sent"
+          }
+        ],
+        "dependsOn": [
+          "s5",
+          "s7"
+        ],
+        "existingCapabilityRefs": [
+          "c2",
+          "c15"
+        ],
+        "functionalRequirements": [
+          {
+            "rationale": "SP-5 cited agent context — explicit only.",
+            "statement": "A user can explicitly attach selected note excerpts to a chat turn, with a removable preview showing source/revision, bounded payload, and revision pinning for queued turns."
+          }
+        ],
+        "id": "s8",
+        "localConstraints": [
+          {
+            "id": "lc1",
+            "source": "c1",
+            "text": "Note evidence never enters a turn by default; only an explicit user selection attaches it.",
+            "type": "invariant"
+          },
+          {
+            "id": "lc2",
+            "source": "c15",
+            "type": "contract",
+            "text": "The attach/preview/queue mechanics reuse the existing chat attachment pipeline (attachment-store.ts → chat-outbox.ts → chat-queue-store.ts → chat-queue-worker.ts), adapted from file/image references to note excerpts with revision pinning, rather than built as a new parallel path."
+          }
+        ],
+        "sizeEstimate": "M",
+        "title": "Cited agent context (attach note to turn)",
+        "userValue": "Note evidence can be attached to a chat turn explicitly, with a visible source/revision preview the user can remove — and nothing is ever attached implicitly."
+      },
+      {
+        "acceptanceCriteria": [
+          {
+            "given": "a saved note selection and the existing workflow approval chain",
+            "id": "ac1",
+            "operationalizes": [
+              "k5"
+            ],
+            "then": "the user can promote the selection into a SPEC (via brainstorm) or an ISSUE, the draft carries a provenance link back to the note, and a lost response retries idempotently",
+            "when": "the user promotes a note selection to a workflow draft"
+          }
+        ],
+        "dependsOn": [
+          "s8"
+        ],
+        "existingCapabilityRefs": [
+          "c2"
+        ],
+        "functionalRequirements": [
+          {
+            "rationale": "SP-6 promote to workflow draft through the existing approval chain.",
+            "statement": "A saved note selection can be promoted into a SPEC or ISSUE draft through the existing approval chain, with a provenance link back on the note and idempotent retry after a lost response."
+          }
+        ],
+        "id": "s9",
+        "localConstraints": [
+          {
+            "id": "lc1",
+            "source": "c1",
+            "text": "Promotion always goes through the tracked approval chain; never an off-ledger draft.",
+            "type": "contract"
+          }
+        ],
+        "sizeEstimate": "M",
+        "title": "Promote a note selection to a workflow draft",
+        "userValue": "A good scratchpad note can graduate into a tracked SPEC or ISSUE through the normal approval chain, with the note linked as provenance."
+      },
+      {
+        "acceptanceCriteria": [
+          {
+            "given": "pads carrying optional tags",
+            "id": "ac1",
+            "operationalizes": [
+              "k2"
+            ],
+            "then": "the list panel offers a tag filter alongside the search box, and filtering by tag narrows the pad list",
+            "when": "the user filters the list panel by tag"
+          },
+          {
+            "given": "a new-pad action",
+            "id": "ac2",
+            "operationalizes": [],
+            "then": "starter templates (e.g. investigation, decision candidate) are offered when creating a pad, and the new pad inherits the chosen template",
+            "when": "the user creates a pad from a template"
+          }
+        ],
+        "dependsOn": [
+          "s2",
+          "s7"
+        ],
+        "existingCapabilityRefs": [
+          "c3"
+        ],
+        "functionalRequirements": [
+          {
+            "rationale": "SP-7 tags + templates.",
+            "statement": "Notes carry optional tags (filterable in the list panel) and starter templates are offered at pad creation."
+          }
+        ],
+        "id": "s10",
+        "localConstraints": [],
+        "sizeEstimate": "S",
+        "title": "Tags and starter templates",
+        "userValue": "Pads can be tagged and filtered, and new pads can start from an investigation or decision-candidate template."
+      }
+    ],
+    "summary": {
+      "audience": "product",
+      "prose": "Turns the VS Code scratchpads from a flat list of recent files into a linked knowledge surface: pads open in a native rendered Markdown editor, notes link to each other and to code symbols and workflow artifacts with visible backlinks, the list panel and in-pad find make the corpus searchable, and dated entries, stable IDs, and archive/delete lifecycle make notes durable. Note evidence can be explicitly attached to a chat turn or promoted into a tracked SPEC/ISSUE draft — never implicitly."
+    },
+    "title": "Linked scratchpads in VS Code",
+    "functionalDefinition": {
+      "requirements": [
+        {
+          "id": "E202611162846f076:FR001",
+          "statement": "A scratchpad can contain typed links to other scratchpads, workspace files, code symbols, and workflow artifacts (SPEC/ISSUE/HLD/LLD/TASK), with qualified targets that resolve unambiguously and distinguishable ambiguous/missing/unavailable states; links inside code spans/blocks stay literal.",
+          "scope": "doc",
+          "rationale": "The PRD's P0 slice; links/backlinks only pay off alongside search and lifecycle."
+        },
+        {
+          "id": "E202611162846f076:FR002",
+          "statement": "The system shows outgoing and incoming links for a note, and surfaces scratchpad backlinks on file and symbol views, grouped by source note; backlinks on a workflow artifact's own detail view follow once vscode-plugin has a persistent per-artifact surface to host them (none exists today).",
+          "scope": "doc",
+          "rationale": "Rediscovery of notes from the code or design they concern; the artifact-surface slice is deferred pending that surface (see open questions)."
+        },
+        {
+          "id": "E202611162846f076:FR003",
+          "statement": "The \"insrc scratchpads\" list panel shows up to 20 pads newest-first with first-3-line previews and per-row delete, and a search box that filters the list by relevance (title hits first, then mtime, then stable id); any card opens the pad. The chat recent menu shows up to 10 pads by mtime alongside New/Browse-all.",
+          "scope": "doc",
+          "rationale": "Settled UI: search box in the list panel, not a nav view and not inside the pad."
+        },
+        {
+          "id": "E202611162846f076:FR004",
+          "statement": "An in-pad find action highlights matches with an N-of-M count and prev/next wraparound, closable with Escape, showing a zero-match state, operating on live text regardless of editor lock state.",
+          "scope": "doc",
+          "rationale": "Find inside the open pad is a separate surface per the mock."
+        },
+        {
+          "id": "E202611162846f076:FR005",
+          "statement": "A pad opens in a rendered Markdown editor on its real file, locked by default, with inline click-to-edit toggled by a pencil and a lock button returning to read-only rendered view; image paste/drop, URL-as-link paste, and insert-link/insert-image-from-workspace work natively.",
+          "scope": "doc",
+          "rationale": "Pad editing must feel native, not like a custom webview."
+        },
+        {
+          "id": "E202611162846f076:FR006",
+          "statement": "Notes carry dated entries in day-grouped newest-first collapsible sections with an Undated bucket for legacy content, plus a stable ID surviving rename/move/archive/restore, reversible archive, and explicit permanent delete.",
+          "scope": "doc",
+          "rationale": "P0 lifecycle portion of SP-4."
+        },
+        {
+          "id": "E202611162846f076:FR007",
+          "statement": "A user can explicitly attach selected note excerpts to a chat turn, with a removable preview showing source and revision, bounded to the controller/daemon payload routes, pinning the revision for queued turns.",
+          "scope": "doc",
+          "rationale": "P1: evidence into a turn only on explicit selection."
+        },
+        {
+          "id": "E202611162846f076:FR008",
+          "statement": "A user can promote a saved note selection into a workflow draft (SPEC via brainstorm or ISSUE) through the existing approval chain, with a provenance link back on the note and idempotent retry.",
+          "scope": "doc",
+          "rationale": "P1: promotion through the existing approval chain."
+        },
+        {
+          "id": "E202611162846f076:FR009",
+          "statement": "Notes can carry optional tags (filterable in the list panel) and starter templates for investigations/decision candidates.",
+          "scope": "doc",
+          "rationale": "P2 per PRD, independent of the link machinery once metadata exists."
+        },
+        {
+          "id": "E202611162846f076:S001:FR001",
+          "statement": "A pad opens rendered-in-place in the host's built-in Markdown editor on its real file, locked by default, with inline edit toggled by a pencil and lock returning to read-only.",
+          "scope": "item",
+          "itemRef": "s1",
+          "rationale": "SP-4 editing substrate: native rendered editor on the real file."
+        },
+        {
+          "id": "E202611162846f076:S001:FR002",
+          "statement": "Image paste/drop, URL-to-link paste, and insert-link/insert-image-from-workspace work in the pad editor.",
+          "scope": "item",
+          "itemRef": "s1",
+          "rationale": "Rich authoring affordances without bespoke code."
+        },
+        {
+          "id": "E202611162846f076:S002:FR001",
+          "statement": "The list panel carries a search box that filters the recency list by relevance with title-first ranking and mtime/id tiebreaks, and clearing restores the full list.",
+          "scope": "item",
+          "itemRef": "s2",
+          "rationale": "SP-3 'Search all notes' as settled: the search box lives in the list panel, not a nav view and not inside the pad."
+        },
+        {
+          "id": "E202611162846f076:S002:FR002",
+          "statement": "The list panel caps at 20 newest-first pads with 3-line previews and per-row delete; the chat recent menu caps at 10.",
+          "scope": "item",
+          "itemRef": "s2",
+          "rationale": "Capped, previewed list with delete per settled mock."
+        },
+        {
+          "id": "E202611162846f076:S003:FR001",
+          "statement": "An in-pad find highlights matches with N-of-M count, wraparound prev/next, Escape to close, and a zero-match state, operating on live text regardless of lock state.",
+          "scope": "item",
+          "itemRef": "s3",
+          "rationale": "SP-3 'Find in note' — the separate in-pad surface."
+        },
+        {
+          "id": "E202611162846f076:S004:FR001",
+          "statement": "Pads support dated entries rendered as day-grouped, newest-first, collapsible sections with per-day counts and an Undated bucket for legacy notes.",
+          "scope": "item",
+          "itemRef": "s4",
+          "rationale": "SP-4 'Dated entries'."
+        },
+        {
+          "id": "E202611162846f076:S005:FR001",
+          "statement": "Pads support typed links to notes, files, symbols, and workflow artifacts, with a target picker, qualified-target commit for duplicate titles/symbols, distinguishable ambiguous/missing/unavailable states with repair, and literal links inside code spans/blocks.",
+          "scope": "item",
+          "itemRef": "s5",
+          "rationale": "SP-1 link authoring + resolution across all four target types."
+        },
+        {
+          "id": "E202611162846f076:S006:FR001",
+          "statement": "Outgoing and incoming links are visible on a note; file and symbol views show scratchpad backlinks grouped by source note. Backlinks on a workflow artifact's own detail view are deferred until vscode-plugin has a durable per-artifact surface to host them.",
+          "scope": "item",
+          "itemRef": "s6",
+          "rationale": "SP-2 backlinks, on note + target surfaces; deferred for workflow artifacts pending a surface."
+        },
+        {
+          "id": "E202611162846f076:S007:FR001",
+          "statement": "Every pad carries a stable ID surviving rename/move/archive/restore, explicit repo association for legacy notes, reversible archive (hidden from default search/backlinks, direct link still opens), and explicit permanent delete with 'missing' link rendering.",
+          "scope": "item",
+          "itemRef": "s7",
+          "rationale": "SP-4 identity/lifecycle (not dated entries)."
+        },
+        {
+          "id": "E202611162846f076:S008:FR001",
+          "statement": "A user can explicitly attach selected note excerpts to a chat turn, with a removable preview showing source/revision, bounded payload, and revision pinning for queued turns.",
+          "scope": "item",
+          "itemRef": "s8",
+          "rationale": "SP-5 cited agent context — explicit only."
+        },
+        {
+          "id": "E202611162846f076:S009:FR001",
+          "statement": "A saved note selection can be promoted into a SPEC or ISSUE draft through the existing approval chain, with a provenance link back on the note and idempotent retry after a lost response.",
+          "scope": "item",
+          "itemRef": "s9",
+          "rationale": "SP-6 promote to workflow draft through the existing approval chain."
+        },
+        {
+          "id": "E202611162846f076:S010:FR001",
+          "statement": "Notes carry optional tags (filterable in the list panel) and starter templates are offered at pad creation.",
+          "scope": "item",
+          "itemRef": "s10",
+          "rationale": "SP-7 tags + templates."
+        }
+      ]
+    }
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "quotedText": "Settled mock UI decisions: menu cap 10; list panel 20 pads newest-first, 3-line previews, per-row delete, in-panel relevance search; pad = built-in Markdown Editor locked with pencil inline-edit; separate in-pad find.",
+      "ref": "docs/reqs/enhanced-scratchpad-prd.html"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "quotedText": "Flat ~/.insrc/scratches/*.md store, basename IDs, guarded read/write.",
+      "ref": "vscode-plugin/src/chat/scratch-store.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "quotedText": "Custom webview document view (documentBodyHtml/documentBootstrap, scratch-save/scratch-saved); unbounded browse list (browseHtml/renderBrowse/openBrowse) with per-row open/delete icons.",
+      "ref": "vscode-plugin/src/panels/scratch-panels.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "quotedText": "Daemon link extraction targets files only, strips fragments; no symbol/artifact resolution, no backlink projection.",
+      "ref": "src/db/doc-relations.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "quotedText": "The plugin's own dependencies are { \"marked\": \"^4.3.0\" } only; vscode-plugin/src contains no reference to vscode.markdown.editor or markdown-language-features anywhere — the plugin implements no built-in rich-markdown editor integration today.",
+      "ref": "vscode-plugin/package.json"
+    },
+    {
+      "id": "c6",
+      "kind": "doc",
+      "quotedText": "Story split S1-S10, dependencies, rollout order, open decisions (link syntax, entry anchors, backlink projection, IPC version negotiation).",
+      "ref": "docs/plans/enhanced-scratchpad-epic.md"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "quotedText": "SCRATCH_MENU_LIMIT = 5 chat dropdown with New/Browse-all actions (chat-panel.ts menu render).",
+      "ref": "vscode-plugin/src/chat/scratch-host.ts"
+    },
+    {
+      "id": "c8",
+      "kind": "stakeholder",
+      "ref": "user (VS Code host inspection, 2026-11-15)",
+      "quotedText": "Confirmed on the user's VS Code install: `code --list-extensions --show-versions` lists markdown-language-features@10.0.0; its manifest registers customEditors vscode.markdown.preview.editor and vscode.markdown.editor ('Markdown Editor') for *.md, with toggleLocked, insertLinkFromWorkspace, insertImageFromWorkspace commands and markdown.editor.filePaste.enabled / drop.enabled settings; behavior matched against an attached screenshot of its inline-edit/lock UI. This is the HOST's bundled extension, not part of this repo."
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "vscode-plugin/src/hosts/specs.ts:71",
+      "quotedText": "Host detection enumerates by-editor-env hosts including Cursor (appName: 'Cursor', uriScheme: 'cursor'); vscode-plugin/src/chat/group-lock.ts:89 already anticipates 'an editor fork without it [a capability]' as an expected case elsewhere in this codebase. No comparable per-host check exists yet for vscode.markdown.editor's availability."
+    },
+    {
+      "id": "c10",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/docs-review-panel.ts:1-14",
+      "quotedText": "Its own header states it 'lists the daemon's PENDING tracked artifacts' and 'is a PASSTHROUGH observer of the tracked-workflow flow... it keeps which document is open and nothing else' — an artifact drops out once no longer pending. No persistent per-artifact detail surface exists in vscode-plugin today for backlinks to attach to."
+    },
+    {
+      "id": "c11",
+      "kind": "step-output",
+      "ref": "tracker binding on .insrc/artifacts/EPIC-2846f076fd5f785f.json (envelope.binding)",
+      "quotedText": "The define workflow's own finalize step bound this Epic's unit head to a real, OPEN GitHub issue (insors-ai/insrc#185, created 2026-11-16T07:56:46Z, titled and bodied from this Epic's problem/non-goals) without tracker.push ever being called, and without present/ask/approve. User decision (2026-11-16): leave #185 as-is; record the gap here rather than close or edit the issue."
+    },
+    {
+      "id": "c12",
+      "kind": "code",
+      "ref": "vscode-plugin/src/hosts/specs.ts:23",
+      "quotedText": "env.getExtension(detection.extensionId) is an existing, reusable by-extension host-capability check (HostEnv.getExtension, vscode-plugin/src/hosts/types.ts:33; wired via vscode.extensions.getExtension(id) !== undefined in vscode-plugin/src/extension.ts:151). Checking for 'vscode.markdown-language-features' reuses this mechanism directly — it is not an open design question, only its negative-result fallback UX needs design."
+    },
+    {
+      "id": "c13",
+      "kind": "code",
+      "ref": "vscode-plugin/package.json#contributes",
+      "quotedText": "contributes.menus has only commandPalette and editor/title; contributes.commands lists 20 entries with no 'scratch' or 'link' command among them. No existing context-menu/command contribution is scoped to a file or symbol — a 'show scratchpad backlinks' action on a file/symbol needs a new command + menu contribution, not reuse of an existing one."
+    },
+    {
+      "id": "c14",
+      "kind": "code",
+      "ref": "src/workflow/artifact-ids.ts",
+      "quotedText": "ArtifactIds is 'the one identity scheme for every artifact' — it already builds and parses every artifact id form (DEF-<h>, LLD-<h>-s1, TASK-<h>-s1-t3, AMD-<h>-2, ...) and RequirementIds does the same for FR ids. The workflow-artifact leg of link-target identity (SPEC/ISSUE/HLD/LLD/TASK) reuses this directly; what's new is validating a parsed id against the real artifact store and rendering missing/ambiguous states, not inventing artifact identity from scratch."
+    },
+    {
+      "id": "c15",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/attachment-store.ts",
+      "quotedText": "createAttachmentStore already copies a reference into the session's own directory, assigns it a stable id, and enforces size/count limits (MAX_ATTACHMENT_BYTES, MAX_ATTACHMENTS_PER_MESSAGE); its attachments field flows through chat-outbox.ts, chat-queue-store.ts and chat-queue-worker.ts — the existing queued-turn pipeline. File/image-shaped, not note-excerpt-shaped, but substantial prior art for s8's attach/preview/queue mechanics."
+    },
+    {
+      "id": "c16",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/scratch-store.ts",
+      "quotedText": "ScratchEntry is {id, name, mtime, size} only; `name` is 'Reconstructed from the id (the <yyyymmdd-hhmmss>-<slug> basename)' — a lossy slug, not the title text typed. listScratches() is pure readdir+stat; it reads no file content. Neither a real title nor body preview text exists today for the list to show."
+    }
+  ]
+}

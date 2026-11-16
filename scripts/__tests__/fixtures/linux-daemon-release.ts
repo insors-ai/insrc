@@ -7,7 +7,8 @@ const { verifyLinuxReleaseManifest } = await import(new URL('../../linux-daemon-
 export const sha256 = (bytes: Buffer) => createHash('sha256').update(bytes).digest('hex');
 export const encode = (value: object) => Buffer.from(JSON.stringify(value));
 
-export function linuxQualificationFixture(sequence = 1, lane: 'production' | 'development' = 'production') {
+export function linuxQualificationFixture(sequence = 1, lane: 'production' | 'development' = 'production',
+	archive = Buffer.from('release archive fixture')) {
 	const qualifier = generateKeyPairSync('ed25519');
 	const operator = generateKeyPairSync('ed25519');
 	const release = generateKeyPairSync('ed25519');
@@ -16,7 +17,6 @@ export function linuxQualificationFixture(sequence = 1, lane: 'production' | 'de
 	const version = lane === 'production' ? '0.2.1-pilot.1' : '0.2.1-dev.1';
 	const host = { distribution: 'ubuntu', version: '24.04', architecture: 'amd64', glibc: '2.39',
 		nodeVersion: '22.22.1', systemLibraries: ['libc.so.6'], pidfdRequired: true };
-	const archive = Buffer.from('release archive fixture');
 	const { artifactId: _, ...buildOrigin } = origin;
 	const record = { schemaVersion: 1, target: 'linux-x64', ...buildOrigin, lane, version,
 		archiveName: `insrc-daemon-${version}-linux-x64.tar.gz`, archiveBytes: archive.length,

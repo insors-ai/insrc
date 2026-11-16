@@ -288,6 +288,8 @@ Leave the shared reader alone and edit each non-test caller (readPlanUpstream, f
   - **ignored**: left to implementer judgment — Tagging bundle ids would change the analyze framework's output; out of this Story's scope. The c-ids only matter inside this LLD and are consistent. _(2026-11-16T08:27:50.033Z)_
 - `q2ac9bbf7` — ts1 (partial): the Story has no acceptance criteria of its own; ac1-ac7 are derived from the approved ISSUE's regression-coverage list.
   - **resolved**: Adopt + annotate provenance — ac1-ac7 derive from the approved ISSUE's regression coverage; keep that traceable. _(2026-11-16T08:28:48.327Z)_
+- `qcee90751` — alt2 (partial): alternatives were scored against four issue.* constraints written in s3, as the Story and Epic carry none.
+  - **resolved**: Adopt s3's issue.* constraints as-is — Only constraints in the chain; inheritance noted. _(2026-11-16T08:29:40.023Z)_
 
 ## Citations
 

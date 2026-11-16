@@ -81,6 +81,13 @@
         "choice": "Adopt + annotate provenance",
         "rationale": "ac1-ac7 derive from the approved ISSUE's regression coverage; keep that traceable.",
         "resolvedAt": "2026-11-16T08:28:48.327Z"
+      },
+      "qcee90751": {
+        "question": "alt2 (partial): alternatives were scored against four issue.* constraints written in s3, as the Story and Epic carry none.",
+        "status": "resolved",
+        "choice": "Adopt s3's issue.* constraints as-is",
+        "rationale": "Only constraints in the chain; inheritance noted.",
+        "resolvedAt": "2026-11-16T08:29:40.023Z"
       }
     }
   },

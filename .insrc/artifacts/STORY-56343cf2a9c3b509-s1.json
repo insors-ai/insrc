@@ -1,0 +1,59 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "unit-STORY-56343cf2a9c3b509-s1",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-16T09:31:35.659Z",
+    "epicCreatedAt": "2026-11-16T08:53:15.795Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "56343cf2a9c3b509",
+    "storyId": "s1",
+    "envelope": {
+      "description": "",
+      "parent": {
+        "entityId": "EPIC-56343cf2a9c3b509",
+        "type": "EPIC",
+        "relation": "derived-from"
+      },
+      "references": [],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#187",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": [
+          {
+            "kind": "task-list",
+            "at": "2026-11-16T09:56:24.461Z"
+          },
+          {
+            "kind": "design",
+            "at": "2026-11-16T09:56:26.714Z"
+          }
+        ]
+      }
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "7f67311f00c6101c952763f219208b46e606b381c765f6354708dffd623980a3",
+        "at": "2026-11-16T09:31:35.659Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

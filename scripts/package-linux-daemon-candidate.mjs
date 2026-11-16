@@ -86,16 +86,20 @@ async function collectNativeInventory(root) {
 			materials.set(real, { dependencies: inspectLinuxElf(description), description });
 		}
 		const { dependencies, description } = materials.get(real);
-		const paths = [...description.matchAll(/\((?:RUNPATH|RPATH)\)[^\n]*\[([^\]]*)\]/g)]
-			.flatMap(match => match[1].split(':')).map(item => resolveElfSearchPath(root, dirname(path), item));
-		for (const name of dependencies) {
-			if (hostLibraries.has(name)) continue;
-			if (!/^[a-zA-Z0-9_.+-]+$/.test(name) || !paths.some(directory => targets.has(join(directory, name)))) {
-				throw new Error(`unlisted Linux runtime dependency: ${name} in ${relative(root, path)}`);
-			}
-		}
+		requireLinuxElfDependencies(root, path, description, dependencies, targets);
 	}
 	return [...new Set([...materials.values()].flatMap(data => data.dependencies).filter(name => hostLibraries.has(name)))].sort();
+}
+
+export function requireLinuxElfDependencies(root, path, description, dependencies, inventory) {
+	const paths = [...description.matchAll(/\((?:RUNPATH|RPATH)\)[^\n]*\[([^\]]*)\]/g)]
+		.flatMap(match => match[1].split(':')).map(item => resolveElfSearchPath(root, dirname(path), item));
+	for (const name of dependencies) {
+		if (hostLibraries.has(name)) continue;
+		if (!/^[a-zA-Z0-9_.+-]+$/.test(name) || !paths.some(directory => inventory.has(join(directory, name)))) {
+			throw new Error(`unlisted Linux runtime dependency: ${name} in ${relative(root, path)}`);
+		}
+	}
 }
 
 async function hasElfMagic(path) {

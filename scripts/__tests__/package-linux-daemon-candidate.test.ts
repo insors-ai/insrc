@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import test from 'node:test';
 
-const { inspectLinuxElf } = await import(new URL('../package-linux-daemon-candidate.mjs', import.meta.url).href);
+const { inspectLinuxElf, requireLinuxElfDependencies } = await import(new URL('../package-linux-daemon-candidate.mjs', import.meta.url).href);
 const { stageRuntime } = await import(new URL('../package-daemon-candidate.mjs', import.meta.url).href);
 
 test('Linux packaging rejects wrong ELF architecture and runtime ABI floors', () => {
@@ -26,6 +26,20 @@ test('Linux packaging rejects wrong ELF architecture and runtime ABI floors', ()
 	assert.throws(() => inspectLinuxElf(elf.replace('/lib64/ld-linux-x86-64.so.2', '/lib/ld-musl-x86_64.so.1')), /interpreter/);
 	assert.throws(() => inspectLinuxElf(elf.replace('GLIBC_2.39', 'GLIBC_2.40')), /glibc ABI/);
 	assert.throws(() => inspectLinuxElf(elf.replace('GLIBCXX_3.4.32', 'GLIBCXX_3.4.33')), /libstdc/);
+});
+
+test('Linux native dependency inventory rejects missing libraries and escaping ELF search paths', () => {
+	const root = '/bundle';
+	const addon = '/bundle/node_modules/addon/binding.node';
+	const local = '$ORIGIN/../@vendor/library';
+	const systemAndLocal = ['libc.so.6', 'libvendor.so.1'];
+	const inventory = new Set(['/bundle/node_modules/@vendor/library/libvendor.so.1']);
+	const runpath = (value: string) => `0x1d (RUNPATH) Library runpath: [${value}]`;
+	requireLinuxElfDependencies(root, addon, runpath(local), systemAndLocal, inventory);
+	assert.throws(() => requireLinuxElfDependencies(root, addon, runpath(local), systemAndLocal, new Set()), /unlisted.*libvendor/);
+	assert.throws(() => requireLinuxElfDependencies(root, addon, runpath(local), ['libunapproved.so.9'], inventory), /unlisted.*libunapproved/);
+	assert.throws(() => requireLinuxElfDependencies(root, addon, runpath('/usr/local/lib'), [], inventory), /non-relocatable/);
+	assert.throws(() => requireLinuxElfDependencies(root, addon, runpath('$ORIGIN/../../../outside'), [], inventory), /escapes the bundle/);
 });
 
 test('Linux staging requires Linux entry points, retains matching native dependencies and refuses escaping links', async () => {

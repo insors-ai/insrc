@@ -279,3 +279,22 @@ Leave the shared reader alone and edit each non-test caller (readPlanUpstream, f
 - Decided (user, 2026-11-16): an ISSUE is equivalent to a define for the chain, so no new NextAction kinds are added; tracker handling is deferred to ISSUE-5f9d4ab4c90c0b4c.
 - Unverified: a second design.story start for the same ISSUE revising LLD-<issueHash>-s1 through the existing re-finalize path; it is expected from finalizeStandaloneLld but not exercised.
 - Checked: the JetBrains WorkflowChainReader reads the artifact files itself and builds its own hint, and the VS Code plugin has no nextAction consumer, so neither reads the daemon ChainReport and the optional definitionKind field cannot break them. Separately, the JetBrains reader reads only DEF files, so it will not show an ISSUE-anchored item; that is outside this Story.
+
+## Resolved questions
+
+- `qefcdc6f7` — cd1 (partial): impliedIssueStories, IMPLIED_ISSUE_STORY_ID and the optional ChainReport field are new symbols proposed by this Story, not existing code.
+  - **resolved**: Plan treats them as new, LLD-sourced symbols — Greenfield by design; the LLD is the source and tasks create them. _(2026-11-16T08:26:26.456Z)_
+
+## Citations
+
+- **[[c1]]** `analyze-bundle` `s1 bundle 1: producer of the sized-bugfix design.story nextCall and its identity params` — "nextAfterIssue emits the sized route with params {standalone:true, storyTitle, storySpec, sizeClass:'bugfix'}; it carries no epicHash and no storyId."
+- **[[c2]]** `analyze-bundle` `s1 bundle 2: how a standalone design.story LLD takes its identity, label, anchor and review classification from an ISSUE root` — "Design review already classifies an LLD as kind 'issue' when an ISSUE-<epicHash> root exists."
+- **[[c3]]** `analyze-bundle` `s1 bundle 3: readers that only know DEF roots and the one-implied-story rule` — "readDefineArtifact is DEF-only; buildChainReport returns [] stories when the DEF is absent; the implied-story rule exists once, in tracker/resolve.ts."
+- **[[c4]]** `code` `src/workflow/bugfix/next-after-issue.ts:78` — "workflow: 'design.story',"
+- **[[c5]]** `code` `src/daemon/steps/workflow-step/phases/start.ts:147` — "export function augmentStandaloneParams(params: Record<string, unknown>, runId: string): void {"
+- **[[c6]]** `code` `src/workflow/review/design-review/subject.ts:94` — "Missing Epic/ISSUE provenance; cannot downgrade to standalone"
+- **[[c7]]** `code` `src/workflow/chain.ts:161` — "if (define.artifact === undefined) return [];"
+- **[[c8]]** `code` `src/workflow/tracker/resolve.ts:292` — "An ISSUE declares no story list — the bugfix route is one story at ordinal 1."
+- **[[c9]]** `prior-artifact` `ISSUE-149283b0d0455a43 (approved) — the defect record this LLD answers`
+- **[[c10]]** `prior-artifact` `ISSUE-5f9d4ab4c90c0b4c — the draft issue tracking tracker push, sync and post for an ISSUE-anchored item`
+- **[[c11]]** `code` `src/workflow/chain.ts:200` — "lldArtifactPaths(repoPath, epicHash, s.id, define.artifact!.meta.createdAt, 'epic', epicSlug).md"

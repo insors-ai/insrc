@@ -60,7 +60,16 @@
       "references": [],
       "attachments": []
     },
-    "rangeBase": "0dbf085e0694d5143cb0f527ebd066ee864744b1"
+    "rangeBase": "0dbf085e0694d5143cb0f527ebd066ee864744b1",
+    "questionResolutions": {
+      "qefcdc6f7": {
+        "question": "cd1 (partial): impliedIssueStories, IMPLIED_ISSUE_STORY_ID and the optional ChainReport field are new symbols proposed by this Story, not existing code.",
+        "status": "resolved",
+        "choice": "Plan treats them as new, LLD-sourced symbols",
+        "rationale": "Greenfield by design; the LLD is the source and tasks create them.",
+        "resolvedAt": "2026-11-16T08:26:26.456Z"
+      }
+    }
   },
   "body": {
     "summary": {

@@ -9,10 +9,15 @@ import { fileURLToPath } from 'node:url';
 
 const NODE_VERSION = '22.22.1';
 const MIN_MACOS = '15.0';
-const required = [
+const darwinRequired = [
 	'out/daemon/index.js', 'out/bin/insrc-daemon-control.js',
 	'out/bin/insrc-daemon-supervisor.js', 'out/bin/insrc-shutdown-watchdog.js',
 	'out/bin/insrc-process-broker', 'out/bin/insrc-darwin-lifecycle',
+	'packages/project-memory/dist/index.js',
+];
+const linuxRequired = [
+	'out/daemon/index.js', 'out/cli/index.js', 'out/bin/insrc-mcp.js',
+	'out/bin/insrc-shutdown-watchdog.js', 'out/bin/insrc-process-broker',
 	'packages/project-memory/dist/index.js',
 ];
 
@@ -32,22 +37,34 @@ export function dispatchOrigin(env, commit) {
 	return { branch: ref.slice('refs/heads/'.length), lane, runId, runAttempt };
 }
 
-export async function stageRuntime(source, stage, runtime) {
+export async function stageRuntime(source, stage, runtime, target) {
+	if (target !== undefined && target !== 'linux-x64') throw new Error('unsupported bundle staging target');
+	const required = target === 'linux-x64' ? linuxRequired : darwinRequired;
 	for (const name of required) {
 		if (!(await lstat(join(source, name))).isFile()) throw new Error(`missing regular runtime file: ${name}`);
 	}
-	const copy = (from, to) => cp(from, to, { recursive: true, verbatimSymlinks: true, errorOnExist: true, force: false });
+	const copy = (from, to, filter) => cp(from, to, {
+		recursive: true, verbatimSymlinks: true, errorOnExist: true, force: false, ...(filter ? { filter } : {}),
+	});
 	for (const name of ['out', 'node_modules', 'package.json', 'package-lock.json', 'LICENSE', 'THIRD_PARTY_NOTICES.md']) {
 		if (name === 'out') {
 			await cp(join(source, name), join(stage, name), {
 				recursive: true, verbatimSymlinks: true, errorOnExist: true, force: false,
 				filter: path => path !== join(source, 'out/node_modules'),
 			});
-		} else await copy(join(source, name), join(stage, name));
+		} else {
+			const filter = name === 'node_modules' && target === 'linux-x64'
+				? path => includeLinuxDependency(relative(join(source, name), path))
+				: undefined;
+			await copy(join(source, name), join(stage, name), filter);
+		}
 	}
 	await mkdir(join(stage, 'scripts'));
-	for (const name of ['daemon-ctl.sh', 'insrc', 'insrc-daemon-install.sh', 'stage-daemon-bundle.mjs',
-		'daemon-bundle-metadata.mjs', 'verify-daemon-bundle.mjs']) {
+	const scripts = target === 'linux-x64'
+		? ['daemon-ctl.sh', 'insrc', 'stage-daemon-bundle.mjs', 'daemon-bundle-metadata.mjs', 'linux-daemon-metadata.mjs']
+		: ['daemon-ctl.sh', 'insrc', 'insrc-daemon-install.sh', 'stage-daemon-bundle.mjs',
+			'daemon-bundle-metadata.mjs', 'verify-daemon-bundle.mjs'];
+	for (const name of scripts) {
 		await copy(join(source, 'scripts', name), join(stage, 'scripts', name));
 	}
 	await mkdir(join(stage, 'tools'));
@@ -67,6 +84,21 @@ export async function stageRuntime(source, stage, runtime) {
 	// Runtime entrypoints use explicit paths, not npm's executable shims.
 	await rm(join(stage, 'node_modules/.bin'), { recursive: true, force: true });
 	await validateLinks(await realpath(stage));
+}
+
+function includeLinuxDependency(path) {
+	// USTAR can split directory prefixes, but its basename field is only
+	// 100 bytes. Omit declaration and source map files that cannot fit.
+	const basename = path.split('/').at(-1);
+	if (Buffer.byteLength(basename) > 100 && /(?:\.d\.[cm]?ts|\.map)$/.test(basename)) return false;
+	const prebuild = /(?:^|\/)prebuilds\/([^/]+)/.exec(path);
+	if (prebuild && !['linux-x64', 'linux-x64-gnu'].includes(prebuild[1])) return false;
+	const onnx = /(?:^|\/)onnxruntime-node\/bin\/napi-v\d+\/([^/]+)(?:\/([^/]+))?/.exec(path);
+	if (onnx && (onnx[1] !== 'linux' || (onnx[2] !== undefined && onnx[2] !== 'x64'))) return false;
+	if (onnx && /\/libonnxruntime_providers_(?:cuda|tensorrt)\.so$/.test(path)) return false;
+	if (/(?:^|\/)oracledb\/build\/Release\/oracledb-[^/]+\.node$/.test(path) && !path.endsWith('-linux-x64.node')) return false;
+	// Platform-specific optional npm packages can include musl siblings.
+	return !/(?:^|\/)[\w.-]+-(?:linux-x64-musl|linuxmusl-x64)(?:\/|$)/.test(path) && !/\.musl\.node$/.test(path);
 }
 
 async function validateLinks(root, dir = root) {

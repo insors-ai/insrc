@@ -683,6 +683,19 @@ export function readEpicDefinitionCore(repoPath: string, epicHash: string): Epic
 	};
 }
 
+/** The ONE story id an ISSUE-anchored work item is taken to have: the bugfix
+ *  route is exactly one story at ordinal 1. This constant is the single place
+ *  the rule lives — the tracker resolver's story-existence check and the chain
+ *  report's implied story both read it, so the two can never diverge again. */
+export const IMPLIED_ISSUE_STORY_ID = 's1';
+
+/** The story set an ISSUE declares: exactly one implied story
+ *  ({@link IMPLIED_ISSUE_STORY_ID}), titled with the ISSUE's own title. An
+ *  ISSUE carries no story list, so this single entry IS its declaration. */
+export function impliedIssueStories(issue: { readonly body: { readonly title: string } }): readonly { readonly id: string; readonly title: string }[] {
+	return [{ id: IMPLIED_ISSUE_STORY_ID, title: issue.body.title }];
+}
+
 /** A head is usable when it yielded at least one of the three epic-level fields. */
 function hasUsableField(core: EpicDefinitionCore): boolean {
 	return core.createdAt !== undefined || core.epicSlug !== undefined || core.standalone !== undefined;

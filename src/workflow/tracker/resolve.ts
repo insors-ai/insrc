@@ -37,7 +37,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { ARTIFACTS_DIR, readEpicDefinitionCore } from '../storage.js';
+import { ARTIFACTS_DIR, IMPLIED_ISSUE_STORY_ID, readEpicDefinitionCore } from '../storage.js';
 import { unitIssueOf } from './unit-head.js';
 import { ArtifactIds, type ArtifactKey } from '../artifact-ids.js';
 import { issueNumber } from './refs.js';
@@ -277,8 +277,9 @@ function storyEvidence(dir: string, epicHash: string, storyId: string): StoryEvi
 
 	const def = readEpicDefinition(dir, epicHash);
 	if (def === null) return null;
-	// An ISSUE declares no story list — the bugfix route is one story at ordinal 1.
-	if (def.kind === 'issue') return storyId === 's1' ? 'implied' : null;
+	// An ISSUE declares no story list — the bugfix route is one story at
+	// ordinal 1, stated in ONE place (storage.ts).
+	if (def.kind === 'issue') return storyId === IMPLIED_ISSUE_STORY_ID ? 'implied' : null;
 	for (const story of def.artifact.body?.stories ?? []) {
 		if (story.id === storyId) return 'declared';
 	}

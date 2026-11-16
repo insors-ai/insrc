@@ -5,7 +5,7 @@
 
 /**
  * The inventory of guarded entry points (sc4): every route that changes a stage names the team-gate
- * call (or the review-fix decision) it makes, and the test reads each function's source to see that
+ * call it makes, and the test reads each function's source to see that
  * call still there. Removing a gate call from a listed function fails this test. The analyze and
  * code-review steps change no stage and must stay off the gate.
  *
@@ -22,7 +22,7 @@ import ts from 'typescript';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 
 /** The gate calls an entry point may make. */
-const GATE_CALLS = ['assertMayAuthor', 'assertMayBuild', 'authorizeApproval', 'authorizeFindingApply', 'reviewFixModeFor', 'reviewFixDecision', 'teamGate', 'readHolder', 'parkPlan', 'resumeCheck'] as const;
+const GATE_CALLS = ['assertMayAuthor', 'assertMayBuild', 'authorizeApproval', 'teamGate', 'readHolder', 'parkPlan', 'resumeCheck'] as const;
 
 interface EntryPoint {
 	readonly file: string;
@@ -45,9 +45,6 @@ export const GUARDED_ENTRY_POINTS: readonly EntryPoint[] = [
 	{ file: 'src/daemon/steps/build-step/phases/validate.ts',      fn: 'handleStandaloneValidate', calls: ['assertMayBuild'], min: 1 },
 	{ file: 'src/workflow/gates.ts',                               fn: 'approveArtifactByJsonPath', calls: ['authorizeApproval'], min: 1 },
 	{ file: 'src/workflow/gates.ts',                               fn: 'approveWorkflowTarget',  calls: ['authorizeApproval'], min: 1 },
-	{ file: 'src/workflow/review/resolve.ts',                      fn: 'resolveReviewFinding',   calls: ['authorizeFindingApply'], min: 1 },
-	{ file: 'src/daemon/steps/review-step/phases/verdicts.ts',     fn: 'persistPremiseVerdicts',         calls: ['reviewFixModeFor'], min: 1 },
-	{ file: 'src/workflow/review/run-artifact.ts',                 fn: 'reviewArtifactFile',     calls: ['reviewFixModeFor'], min: 1 },
 	// handing a stage over: parking reads the holder through the gate, and resuming asks the author gate
 	{ file: 'src/workflow/team/handoff.ts',                        fn: 'parkPlan',               calls: ['readHolder'],      min: 1 },
 	{ file: 'src/workflow/team/handoff.ts',                        fn: 'parkDraft',              calls: ['parkPlan'],        min: 1 },
@@ -58,7 +55,6 @@ export const GUARDED_ENTRY_POINTS: readonly EntryPoint[] = [
 /** Routes that change no stage and must make no gate call. */
 const OFF_THE_GATE: readonly string[] = [
 	'src/daemon/steps/analyze-step',
-	'src/daemon/steps/code-review-step',
 	'src/daemon/steps/analyze-oneshot.ts',
 	'src/daemon/analyze-rpc.ts',
 	'src/daemon/code-review-rpc.ts',
@@ -89,7 +85,7 @@ function sourceFilesUnder(rel: string): string[] {
 	});
 }
 
-test('the inventory of guarded entry points (daemon step phases, approveArtifactByJsonPath, approveWorkflowTarget, resolveReviewFinding apply) is complete, and the analyze and code-review steps are not on it', () => {
+test('the inventory of guarded entry points (daemon step phases, approveArtifactByJsonPath, approveWorkflowTarget) is complete, and the analyze and code-review steps are not on it', () => {
 	// every listed entry point still makes its gate call
 	for (const ep of GUARDED_ENTRY_POINTS) {
 		const names = gateCallsIn(readFileSync(join(ROOT, ep.file), 'utf8'), ep.fn);

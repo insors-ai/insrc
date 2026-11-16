@@ -147,7 +147,7 @@ test("with a TESTS record in the artifacts directory, each reader of that direct
 	} finally { r.cleanup(); }
 });
 
-test("approval of a TESTS record by its md path and by its json path through the approval tool's route comes back in skipped[] with a reason that begins 'not-approvable:' and with no code-review outcome, also for a Story whose code review blocks with enforcement on; the TUI service's approve and reject throw NotApprovableError; the batch for its Epic does not stamp it; and the record is unchanged (mutations: put the kind check in the approval tool's route only; make it after the code-review gate)", async () => {
+test("approval of a TESTS record by its md path and by its json path through the approval tool's route comes back in skipped[] with a reason that begins 'not-approvable:' and with no code-review outcome, also with historical blocked review data; the TUI service's approve and reject throw NotApprovableError; the batch for its Epic does not stamp it; and the record is unchanged (mutations: put the kind check in the approval tool's route only; make it after the code-review gate)", async () => {
 	const r = seedRepo();
 	try {
 		const { json, md } = await addTestRecord(r.repo);
@@ -175,10 +175,6 @@ test("approval of a TESTS record by its md path and by its json path through the
 				}
 			}
 		}
-		// The same Story's BUILD record IS put through the code-review gate: the
-		// refusal above is by kind, not because the gate is off in this fixture.
-		const build = await approveTarget({ repoPath: r.repo, artifactPath: artifactJsonPath(r.repo, `BUILD-${HASH}-s1`) }, { enforce: true });
-		assert.equal(build.codeReview.length, 1);
 
 		// The two functions every approval and rejection go through.
 		await assert.rejects(approveJson(json), NotApprovableError);
@@ -201,7 +197,12 @@ test("approval of a TESTS record by its md path and by its json path through the
 		const touched = [...batch.approved.map(a => a.path), ...batch.skipped.map(s => s.path)];
 		assert.ok(touched.length > 0, 'the batch must have found the Epic\'s pending artifacts');
 		assert.ok(!touched.includes(json), JSON.stringify(touched));
-		unchanged();
-		assert.notEqual(approvalStateOf((JSON.parse(readFileSync(json, 'utf8')) as { meta: Record<string, unknown> }).meta), 'approved');
+		// Approving the BUILD may normalize historical records during completion.
+		// The TESTS body is preserved and receives no human approval.
+		assert.deepEqual(JSON.parse(readFileSync(json, 'utf8')).body, JSON.parse(jsonBefore).body);
+		assert.equal(readFileSync(md, 'utf8'), mdBefore);
+		const testsMeta = JSON.parse(readFileSync(json, 'utf8')).meta;
+		assert.equal(testsMeta.approvedAt, undefined);
+		assert.deepEqual(testsMeta.lifecycle.signoffs, [], 'completion does not stamp a human approval on TESTS');
 	} finally { r.cleanup(); }
 });

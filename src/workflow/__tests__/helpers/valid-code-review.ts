@@ -1,4 +1,4 @@
-const historicalFingerprint = (..._args: unknown[]): string => 'historical-fixture';
+const historicalFingerprint = (..._args: unknown[]): string => 'a'.repeat(64);
 /**
  * A code review record that satisfies the completion gate's freshness rule
  * (`reviewBuildGap` in `../../code-review/build-freshness.ts`): a readable verdict, the files it

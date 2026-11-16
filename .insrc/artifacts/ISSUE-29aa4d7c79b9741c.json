@@ -1,0 +1,108 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1794843760626-2e6if7",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-16T15:44:28.779Z",
+    "epicCreatedAt": "2026-11-16T15:44:28.779Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 108153,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "29aa4d7c79b9741c",
+    "epicSlug": "fix-residual-review-removal-behavior-regression",
+    "standalone": true,
+    "magnitude": "small",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c8b3635dd84c36453a4fd6242c66f55d68892efa435eae82d9a2b86291666218",
+        "at": "2026-11-16T15:44:28.786Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-16T16:00:08.189Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "parentRef": {
+      "epicHash": "29aa4d7c79b9741c",
+      "slug": "EPIC-29aa4d7c79b9741c"
+    }
+  },
+  "body": {
+    "title": "Fix residual review-removal behavior and regression coverage",
+    "reproduction": "The detailed self-review of removal commits afd5d2e6a through 16a5f85d4 reproduced four defects. [c1]\n1. Run conversion repeat/verification over a legacy blocked-review fixture: the recorded verdict/counts are preserved, but verification reports blocking:true before versus blocking:false after. [c2]\n2. Call fetchCodeReviewGrounding and fetchCodeReviewFreshness with an injected connector that increments a counter and throws: each attempts one connection and rejects with 'Design review functionality is being rewritten.' Expected: zero connections and 'Code review functionality is being rewritten.' [c1]\n3. Finalize a workflow with review:true: its review-skipped progress still directs the caller to insrc_review_step or an approval override, despite reviews being unavailable. [c1]\n4. Run npx tsx --test --test-force-exit --test-concurrency=4 --test-timeout=15000 'src/workflow/**/*.test.ts' 'src/mcp/**/*.test.ts': 2263 passed, 34 failed, 1 skipped. Mixed team guard suites fail loading removed review-fix exports, and several tests still require dismantled behavior. Not all 34 failures are established removal regressions. [c2]",
+    "rootCause": "The removal changed current delivery review blocking to informational, but the legacy conversion projection and comparison still use the former gating semantics. The exported MCP client grounding/freshness helpers retain unary transport calls, then invoke shared response/error adapters using the default design-family rewrite error. Executable workflow progress retains its old instruction to seek an independent review. Test retirement updated selected suites without repairing all mixed fixtures/imports/assertions; removed exports prevent unrelated guard and tracker-denial cases from loading. [c1][c2] The analyzer's dependency graph was stale/incomplete and still named deleted review modules; current source, direct injected-dependency reproduction and test output provide the evidence rather than graph completeness. [c3] Conversion projection/comparison are grounded in [c5][c6], the exported client helpers in [c7], and executable workflow guidance in [c8]; filesystem-backed module profiles confirmed those paths.",
+    "fixIntent": "Correct all four residual defects within the approved review-removal behavior. Conversion must compare historical records consistently as informational while preserving verdicts, counts and stored data. Both exported code-review helpers must reject immediately with the exact code-family rewrite error and never invoke transport or review dependencies. Workflow progress and associated active guidance must communicate review unavailability and ordinary explicit human approval. Repair removal-related test imports, fixtures and obsolete expectations selectively; preserve non-review approval, team ownership, tracker-denial, integrity, upstream, build/task and historical-read checks. Add or retain meaningful regressions for each defect, run the affected workflow/MCP suites and production typecheck, and distinguish any remaining unrelated failures. Do not restore review execution, fabricate a CR, update/restart the installed daemon, or alter unrelated work. [c1][c4]"
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "step-output",
+      "ref": "Detailed self-review and direct source/connector reproductions in this conversation, 2026-11-16"
+    },
+    {
+      "id": "c2",
+      "kind": "doc",
+      "ref": "/tmp/insrc-detailed-self-review-workflow.log"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "insrc_analyze_step self-review dependency context; repo index timestamp 2026-11-15T14:40:23.648Z; incomplete/stale result"
+    },
+    {
+      "id": "c4",
+      "kind": "stakeholder",
+      "ref": "User: fix all identified issue; four findings from the preceding detailed self-review"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/convert/legacy-view.ts:105"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/workflow/convert/verify.ts:54"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/mcp/daemon-stream.ts:338"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "src/daemon/workflow-rpc.ts:114"
+    }
+  ]
+}

@@ -112,7 +112,7 @@ const WORKFLOW_CLI_TIMEOUT_MS = 900_000;
 
 /** What a run says when it was asked to review the artifact it just authored. */
 export const REVIEW_SKIPPED_DETAIL =
-	'not reviewed: this run authored the artifact, so it needs a controller review (insrc_review_step) or an override reason at approval';
+	'Automated design and code review functionality is being rewritten. No automated review is required. Present the artifact for explicit human approval.';
 
 /** Incremental progress event. `phase` is one of: `decompose`, `plan-ready`,
  *  `grounding` (running analyze for a step), `step-start`, `step-done`,
@@ -159,11 +159,8 @@ export interface RunWorkflowOpts {
 	 *  the corrected content — never re-running the design steps. DEFAULT 3.
 	 *  Set 0 to reproduce the historical terminate-on-first-boundary-fail. */
 	readonly maxCorrectionRounds?: number | undefined;
-	/** Formerly: auto-run the review at finalize. A daemon run authors its
-	 *  artifact, and the party that did not author the work reviews it, so the
-	 *  run never reviews what it wrote. Setting this true makes the run report
-	 *  (progress phase `review-skipped`) that the artifact needs a controller
-	 *  review (insrc_review_step); no review is run or returned. */
+	/** Legacy flag: emit review-unavailable guidance in `review-skipped`.
+	 *  No review runs; explicit human approval remains required. */
 	readonly review?:          boolean | undefined;
 	/** S003 RoleRouter for per-step, per-role provider resolution. When present,
 	 *  each decompose/step/synthesize call resolves its own provider by the
@@ -374,14 +371,11 @@ export async function runWorkflowServerSide(
 	});
 	log.info({ workflow: intent.workflow, runId, model: opts.modelLabel, path: paths.md }, 'workflow.run: artifact written');
 
-	// 5. No review at finalize. The run just authored this artifact, so a review
-	//    here would be the daemon reviewing its own work: the party that did not
-	//    author the work reviews it. `review: true` is still accepted, and is
-	//    answered out loud rather than silently ignored: the run says the artifact
-	//    needs a controller review and returns none.
+	// Preserve the legacy progress phase while reporting current availability.
+	// Human approval remains separate; no review or review override is required.
 	if (opts.review === true) {
 		opts.onProgress?.({ phase: 'review-skipped', detail: REVIEW_SKIPPED_DETAIL });
-		log.info({ workflow: intent.workflow, runId, path: paths.md }, 'workflow.run: review requested but skipped (daemon-authored artifact needs a controller review)');
+		log.info({ workflow: intent.workflow, runId, path: paths.md }, 'workflow.run: automated review unavailable; present the artifact for human approval');
 	}
 
 	opts.onProgress?.({ phase: 'done' });
@@ -401,8 +395,7 @@ interface WorkflowRunParams {
 	/** Invoking MCP agent, so a config with no explicit shaperProvider falls
 	 *  back to that CLI (claude/codex/vibe) instead of Ollama. */
 	readonly client?:   StepClient;
-	/** Ask for a review at finalize. The run does not review its own artifact: it
-	 *  reports `review-skipped` instead (see RunWorkflowOpts.review). */
+	/** Legacy flag: emit review-unavailable guidance in the review-skipped progress phase. */
 	readonly review?:   boolean;
 }
 

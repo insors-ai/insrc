@@ -124,17 +124,11 @@ function withRepo(fn: (repo: string) => void | Promise<void>): void | Promise<vo
 // ac2 — approve refuses a block-verdict SPEC without an override
 // ---------------------------------------------------------------------------
 
-test('ac2: approve refuses a block-verdict SPEC without an override, approves with one', async () => {
+test('ac2: human approval accepts a SPEC with historical blocking findings without an override', async () => {
 	await withRepo(async repo => {
 		const paths = writeSpec(repo, specArtifact(), blockReview());
-		// No override → refused, with the blocking reason surfaced.
-		await assert.rejects(
-			approveJson(paths.json),
-			(e: unknown) => e instanceof ReviewBlockedError && /1 HIGH/.test((e as Error).message),
-		);
-		// With an explicit override → approved + the override recorded.
-		const res = await approveJson(paths.json, 'accepted risk for the demo');
-		assert.ok(res.approvedAt);
+        const res = await approveJson(paths.json);
+        assert.ok(res.approvedAt, 'human approval requires no automated review override');
 	});
 });
 

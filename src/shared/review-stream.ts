@@ -86,14 +86,14 @@ export type CodeReviewFreshnessResult =
 	| { ok: false; reason: string };
 
 /** The `codeReview.grounding` reply as a result. */
-export function groundingFromReply(res: { ok?: boolean; grounding?: CodeReviewGrounding; reason?: string; error?: string }): CodeReviewGroundingResult { return reviewUnavailable(); }
+export function groundingFromReply(res: { ok?: boolean; grounding?: CodeReviewGrounding; reason?: string; error?: string }): CodeReviewGroundingResult { return reviewUnavailable('code'); }
 
 /** The `codeReview.freshness` reply as a result. A reply from an older daemon
  *  (no inFlight / pendingCodeIndexJobs) reads as inFlight = isProcessing and 0. */
-export function freshnessFromReply(res: { isProcessing?: boolean | undefined; inFlight?: boolean | undefined; pendingCodeIndexJobs?: number | undefined; staleFiles?: readonly string[] | undefined; error?: string | undefined }): CodeReviewFreshnessResult { return reviewUnavailable(); }
+export function freshnessFromReply(res: { isProcessing?: boolean | undefined; inFlight?: boolean | undefined; pendingCodeIndexJobs?: number | undefined; staleFiles?: readonly string[] | undefined; error?: string | undefined }): CodeReviewFreshnessResult { return reviewUnavailable('code'); }
 
 /** A rejected grounding or freshness request as a result. */
-export function unavailableFromError(err: unknown): { ok: false; reason: string } { return reviewUnavailable(); }
+export function unavailableFromError(err: unknown): { ok: false; reason: string } { return reviewUnavailable('code'); }
 
 // ---------------------------------------------------------------------------
 // The review request itself, shared by the socket client (src/mcp/daemon-stream.ts)
@@ -108,7 +108,7 @@ export function unavailableFromError(err: unknown): { ok: false; reason: string 
 export function reviewArtifactRequestParams(params: ReviewArtifactStreamParams): Record<string, unknown> { return reviewUnavailable(); }
 
 /** The parameters `codeReview.run` is sent. */
-export function codeReviewRequestParams(params: CodeReviewStreamParams): Record<string, unknown> { return reviewUnavailable(); }
+export function codeReviewRequestParams(params: CodeReviewStreamParams): Record<string, unknown> { return reviewUnavailable('code'); }
 
 /** A wait limit in words, never more than the limit: whole minutes when it is
  *  a whole number of minutes, otherwise seconds. */

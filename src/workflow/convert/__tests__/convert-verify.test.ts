@@ -51,7 +51,7 @@ describe('convert-verify', () => {
 			const plan = await planConversion(repo, { rules: CONVERSION_RULES });
 			const before = plan.snapshot;
 			assert.ok(before.some(u => u.artifactId === `LLD-${H}-s1` && u.approval === 'approved' && u.openFeedback === 1 && u.review?.blocking === false));
-			assert.ok(before.some(u => u.artifactId === `LLD-${H}-s2` && u.review?.blocking === true), 'the unapproved block blocks');
+			assert.ok(before.some(u => u.artifactId === `LLD-${H}-s2` && u.review?.blocking === false && u.review?.verdict === 'block'), 'historical block remains informational');
 
 			// the apply verifies: an approved head, a blocked one, a rejected one and a head with feedback read as they did
 			const result = await applyConversion(repo, plan, deps, { deliveryReadsLifecycle: () => true });
@@ -76,13 +76,16 @@ describe('convert-verify', () => {
 			assert.match(approval?.reason ?? '', /legacy stamps.*lifecycle/);
 			assert.deepEqual(treeOf(repo), tree, 'a difference is reported and nothing is written');
 
+			const corruptedReview = before.map(u => u.review === null ? u : { ...u, review: { ...u.review, counts: { high: 99, med: 0, low: 0 } } });
+			assert.deepEqual(verifyConversion(repo, corruptedReview).differences.map(d => d.field), ['review', 'review'], 'historical review corruption is still detected');
+
 			// a head the conversion left in another state is found by the real reader
 			const path = artifactJsonPath(repo, `LLD-${H}-s1`);
 			const head = JSON.parse(readFileSync(path, 'utf8')) as { meta: { lifecycle: { status: string } } };
 			head.meta.lifecycle.status = 'draft';
 			writeFileSync(path, JSON.stringify(head, null, 2) + '\n');
-			// and what follows from it: the same review now blocks, because the head is no longer approved
-			assert.deepEqual(verifyConversion(repo, before).differences.map(d => [d.artifactId, d.field]), [[`LLD-${H}-s1`, 'approval'], [`LLD-${H}-s1`, 'review']]);
+			// Human approval changes are detected independently of informational review history.
+			assert.deepEqual(verifyConversion(repo, before).differences.map(d => [d.artifactId, d.field]), [[`LLD-${H}-s1`, 'approval']]);
 		} finally { kit.done(); }
 	});
 });

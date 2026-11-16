@@ -1,4 +1,4 @@
-const historicalFingerprint = (..._args: unknown[]): string => 'historical-fixture';
+const historicalFingerprint = (..._args: unknown[]): string => 'a'.repeat(64);
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.

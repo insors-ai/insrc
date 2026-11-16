@@ -129,26 +129,25 @@ const LATER = '2026-11-20T00:00:00.000Z';
 /** A fifth hash: a headless trivial BUILD approved after the cutoff, with no code review. */
 const N = '5555666677778888';
 
-test('repair settles a backfilled Story by the completion rule: one approved before the cutoff completes, one approved after it with no code review is held, and a draft BUILD is not settled', async () => {
+test('repair settles a backfilled Story by the completion rule: one approved before the cutoff completes, one approved after it with no code review also completes, and a draft BUILD is not settled', async () => {
 	const r = repository();
 	try {
 		trivialBuild(r, H, { approved: true, approvedAt: AT });            // before COMPLETION_RULE_FROM
 		trivialBuild(r, N, { approved: true, approvedAt: LATER });         // after it, and no CR
 		trivialBuild(r, K, { approved: false });                           // a draft
 		const preview = await runRepair(r.repo, 'repair-preview');
-		assert.deepEqual(preview.plan.changes.filter(c => c.rule === 'settle-unit').map(c => c.artifactId).sort(), [`EPIC-${H}`, `STORY-${H}-s1`].sort(), 'only the old approval is proposed for settling');
+		assert.deepEqual(preview.plan.changes.filter(c => c.rule === 'settle-unit').map(c => c.artifactId).sort(), [`EPIC-${H}`, `STORY-${H}-s1`, `EPIC-${N}`, `STORY-${N}-s1`].sort(), 'approved builds settle without automated reviews');
 
 		const done = result(await runRepair(r.repo, 'repair'));
 		assert.equal(done.stoppedAt, undefined, JSON.stringify(done.stoppedAt));
 		// H completes under its backfilled ISSUE: the Story and the Epic the ISSUE heads
 		assert.equal(head(r.repo, `STORY-${H}-s1`).meta['lifecycle'].status, 'completed');
 		assert.equal(head(r.repo, `EPIC-${H}`).meta['lifecycle'].status, 'completed');
-		// N: its Story exists under the ISSUE now, but the live rule needs a code review, so it is held and says why
+		// N: approved builds settle regardless of the historical review cutoff.
 		assert.equal(head(r.repo, `ISSUE-${N}`).meta['lifecycle'].status, 'approved');
-		assert.equal(head(r.repo, `STORY-${N}-s1`).meta['lifecycle'].status, 'draft');
-		const heldN = done.held.find(h => h.artifactId === `STORY-${N}-s1`);
-		assert.ok(heldN !== undefined, JSON.stringify(done.held));
-		assert.match(heldN.reason, /review/i);
+		assert.equal(head(r.repo, `STORY-${N}-s1`).meta['lifecycle'].status, 'completed');
+		assert.equal(head(r.repo, `EPIC-${N}`).meta['lifecycle'].status, 'completed');
+		assert.equal(done.held.some(h => h.artifactId.includes(N)), false);
 		// K: its ISSUE is pending and its Story is neither settled nor reported held: nothing was approved
 		assert.notEqual(head(r.repo, `STORY-${K}-s1`).meta['lifecycle']?.status, 'completed');
 		assert.equal(done.held.some(h => h.artifactId.includes(K)), false);

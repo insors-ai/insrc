@@ -90,15 +90,15 @@ function submit(heads: Record<string, unknown>, earlier?: Submit['earlier']): Su
 
 const reasonOf = (r: PortResult<unknown>): string => { assert.equal(r.ok, false); return r.ok ? '' : r.reason; };
 
-test('prerequisiteFailure refuses a stale review including an override-approved one, accepts a changes-requested head whose approval and review are current, and refuses one whose approval is behind', async () => {
+test('signoff ignores historical review currency but still refuses an approval behind the current revision', async () => {
 	// a review of an earlier revision is refused, even when the revision was approved over it with an override reason
 	let s = submit({ [LLD]: headOf({ revision: 3, reviewRevision: 2 }) });
-	assert.match(reasonOf(await openSignoff('/repo', STORY, [LLD], s.deps)), /review of .* is of revision 2 but it is at revision 3: review it again first/);
+	assert.equal((await openSignoff('/repo', STORY, [LLD], s.deps)).ok, true);
 	const overridden = headOf({ revision: 3, reviewRevision: 2 }) as { lifecycle: { approval: Record<string, unknown> } };
 	overridden.lifecycle.approval['override'] = { reason: 'the reviewer is away' };
 	s = submit({ [LLD]: overridden });
-	assert.match(reasonOf(await openSignoff('/repo', STORY, [LLD], s.deps)), /is of revision 2 but it is at revision 3/);
-	assert.deepEqual([s.opened.length, s.applied.length], [0, 0]);
+	assert.equal((await openSignoff('/repo', STORY, [LLD], s.deps)).ok, true);
+	assert.deepEqual([s.opened.length, s.applied.length], [1, 1]);
 	// a review of the current revision is accepted
 	s = submit({ [LLD]: headOf({ revision: 3 }) });
 	assert.equal((await openSignoff('/repo', STORY, [LLD], s.deps)).ok, true);
@@ -110,7 +110,7 @@ test('prerequisiteFailure refuses a stale review including an override-approved 
 	s = submit({ [LLD]: headOf({ status: 'changes-requested', revision: 3, approvedRevision: 2 }) });
 	assert.match(reasonOf(await openSignoff('/repo', STORY, [LLD], s.deps)), /in changes-requested and its approval is not of its current revision 3: review and approve it again first/);
 	s = submit({ [LLD]: headOf({ status: 'changes-requested', revision: 3, reviewRevision: 2 }) });
-	assert.match(reasonOf(await openSignoff('/repo', STORY, [LLD], s.deps)), /is of revision 2 but it is at revision 3/);
+	assert.equal((await openSignoff('/repo', STORY, [LLD], s.deps)).ok, true);
 	// every other status is refused as before
 	for (const status of ['draft', 'signed-off']) {
 		s = submit({ [LLD]: headOf({ status }) });

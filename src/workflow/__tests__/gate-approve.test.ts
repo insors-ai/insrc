@@ -88,7 +88,7 @@ test('approveArtifactByJsonPath throws TeamGateRefusedError for a non-holder bef
 		inject({ 'story:s2': 'bob' });
 		await assert.rejects(approveJson(blockedPath), (err: unknown) => err instanceof TeamGateRefusedError);
 		inject({ 'story:s2': 'alice' });
-		await assert.rejects(approveJson(blockedPath), (err: unknown) => err instanceof Error && err.name === 'ReviewBlockedError', 'the holder then meets the review check');
+		await assert.doesNotReject(approveJson(blockedPath), 'the holder can approve despite historical review findings');
 
 		// an artifact whose meta lacks its workflow is read from its file name, not waved through
 		const unnamed = put(dir, `PLAN-${HASH}-s3.json`, { meta: { repoPath: repo, epicHash: HASH, storyId: 's3' }, body: { tasks: [] }, citations: [] });

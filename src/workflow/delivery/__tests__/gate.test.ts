@@ -13,7 +13,11 @@ import { join } from 'node:path';
 
 import { History } from '../../artifact-core/history.js';
 import { FileSidecarStore } from '../../artifact-core/sidecar-store.js';
-import { resolutionEntryOf } from '../../review-history/review/report-log.js';
+import type { ChangeLogEntry } from '../../artifact-core/types.js';
+import type { ReviewResolution } from '../../artifact-core/types.js';
+function resolutionEntryOf(input: {id:string;actor:ChangeLogEntry['actor'];timestamp:string;findingId:string;resolution:ReviewResolution}):ChangeLogEntry {
+ return {id:input.id,actor:input.actor,timestamp:input.timestamp,operation:'review',outcome:{result:input.resolution.status,summary:`finding ${input.findingId} ${input.resolution.status}`,data:{kind:'review-resolution',findingId:input.findingId,resolution:input.resolution}}};
+}
 import type { ReviewReport } from '../../review-history/review/types.js';
 import { blockedMeta, recordReview, reviewedMeta, writeHead } from '../../__tests__/lifecycle-fixtures.js';
 import { deriveGates } from '../gate.js';
@@ -174,7 +178,7 @@ test('an approved historical block and an overridden block do not block and stil
 	assert.equal(overridden?.blocking, false);
 
 	const open = gateOf(result, `LLD-${EPIC}-s3`).review;
-	assert.equal(open?.blocking, true, 'an unapproved block with no override blocks');
+	assert.equal(open?.blocking, false, 'a historical block remains informational');
 	assert.equal(open?.override, null);
 	assert.deepEqual(open?.counts, { high: 0, med: 1, low: 0 });
 	assert.equal(open?.reviewedAt, REVIEWED);
@@ -197,10 +201,10 @@ test('a block whose blocking findings are all resolved has effective verdict pas
 	const warn = gateOf(result, `LLD-${EPIC}-s2`).review;
 	assert.equal(warn?.verdict, 'warn');
 	assert.equal(warn?.effectiveVerdict, 'block');
-	assert.equal(warn?.blocking, true);
+	assert.equal(warn?.blocking, false);
 });
 
-test('a code review blocks only while its story has no approved build', () => {
+test('historical code reviews remain informational regardless of build approval', () => {
 	const { result } = run([
 		defRecord(EPIC, ['s1', 's2', 's3']),
 		buildRecord(EPIC, 's1', [{ id: 't1', passed: true }], APPROVED),
@@ -210,13 +214,13 @@ test('a code review blocks only while its story has no approved build', () => {
 		crRecord(EPIC, 's3', 'block'),
 	]);
 	assert.equal(gateOf(result, `CR-${EPIC}-s1`).review?.blocking, false, 'the build it guards is approved');
-	assert.equal(gateOf(result, `CR-${EPIC}-s2`).review?.blocking, true, 'the build is unapproved');
-	assert.equal(gateOf(result, `CR-${EPIC}-s3`).review?.blocking, true, 'there is no build');
+	assert.equal(gateOf(result, `CR-${EPIC}-s2`).review?.blocking, false, 'unapproved builds do not reactivate reviews');
+	assert.equal(gateOf(result, `CR-${EPIC}-s3`).review?.blocking, false, 'absent builds do not reactivate reviews');
 	assert.deepEqual(gateOf(result, `CR-${EPIC}-s3`).review?.counts, { high: 0, med: 0, low: 0 }, 'a body without counts reads zeros');
 	assert.equal(gateOf(result, `BUILD-${EPIC}-s1`).review, null, 'a BUILD has no review of its own');
 });
 
-test("the reviewer party is read through reviewerPartyOf, and a code review's own approval stamp is reported but does not lift its block", () => {
+test("the reviewer party is read through reviewerPartyOf, and a code review's approval stamp is reported independently of its historical verdict", () => {
 	const { result } = run([
 		defRecord(EPIC, ['s1', 's2']),
 		buildRecord(EPIC, 's1', [{ id: 't1', passed: true }]),
@@ -227,7 +231,7 @@ test("the reviewer party is read through reviewerPartyOf, and a code review's ow
 
 	const cr = gateOf(result, `CR-${EPIC}-s1`);
 	assert.deepEqual(cr.approval, { state: 'approved', at: CREATED }, 'the stamp is reported');
-	assert.equal(cr.review?.blocking, true, 'but the guarded build is unapproved');
+	assert.equal(cr.review?.blocking, false, 'historical reviews do not block unapproved builds');
 	assert.equal(cr.review?.reviewedBy, 'controller', "model 'client' without reviewedBy reads as the controller");
 
 	assert.equal(gateOf(result, `LLD-${EPIC}-s2`).review?.reviewedBy, 'daemon', 'reviewedBy wins over the model label');
@@ -267,14 +271,14 @@ test('a malformed review, finding, code-review body, task entry or unparseable t
 	assert.equal(gates.attentionReasons.includes('validation-failed'), false);
 });
 
-test('an unapproved block with no override is blocking and puts the item in Needs attention, and deriveStages over the same fixture gives the same stage as without the review', () => {
+test('an unapproved historical block preserves pending human decision attention, and deriveStages over the same fixture gives the same stage as without the review', () => {
 	const base = [defRecord(EPIC, ['s1']), lldRecord(EPIC, 's1')];
 	const blocked = [defRecord(EPIC, ['s1']), lldRecord(EPIC, 's1', { review: review('block', [MED('q1')]) })];
 
 	const out = run(blocked);
 	const story = holder(out.graph, `LLD-${EPIC}-s1`, 'story');
-	assert.equal(gateOf(out.result, `LLD-${EPIC}-s1`).review?.blocking, true);
-	assert.deepEqual(itemOf(out.result, story.id).attentionReasons, ['pending-decision', 'review-blocked']);
+	assert.equal(gateOf(out.result, `LLD-${EPIC}-s1`).review?.blocking, false);
+	assert.deepEqual(itemOf(out.result, story.id).attentionReasons, ['pending-decision']);
 
 	const stageOf = (records: readonly ArtifactRecord[]): string | undefined => {
 		const set = recordSet(records);
@@ -381,7 +385,7 @@ test('a pending artifact superseded by an approved later gate on the same item s
 	assert.deepEqual(storyGates.attentionReasons, [], 'neither pending-decision nor review-blocked from the superseded LLD');
 	assert.match(storyGates.attentionRule, new RegExp(`LLD-${EPIC}-s1`));
 	assert.equal(gateOf(result, `LLD-${EPIC}-s1`).approval.state, 'pending', 'the superseded record still reads pending');
-	assert.equal(gateOf(result, `LLD-${EPIC}-s1`).review?.blocking, true, 'and its own gate still reports the block');
+	assert.equal(gateOf(result, `LLD-${EPIC}-s1`).review?.blocking, false, 'its own gate retains the informational review');
 
 	const solo = holder(graph, `SPEC-${SPEC}`, 'story');
 	assert.deepEqual(itemOf(result, solo.id).attentionReasons, [], 'a pending SPEC heads the story chain');
@@ -444,7 +448,7 @@ test('a recorded block with no unresolved HIGH/MED finding is effectively pass, 
 	}
 });
 
-test('gate.test.ts: blocking comes from the lifecycle review and the review log entry', async () => {
+test('gate.test.ts: historical verdicts and resolutions remain readable without blocking', async () => {
 	const repo = mkdtempSync(join(tmpdir(), 'delivery-gate-'));
 	try {
 		const base = { epicHash: EPIC, createdAt: CREATED, epicCreatedAt: CREATED };
@@ -474,12 +478,12 @@ test('gate.test.ts: blocking comes from the lifecycle review and the review log 
 		const result = deriveGates(graph, set);
 
 		const unresolved = gateOf(result, `LLD-${EPIC}-s1`).review;
-		assert.deepEqual([unresolved?.verdict, unresolved?.effectiveVerdict, unresolved?.blocking, unresolved?.reviewedBy], ['block', 'block', true, 'daemon']);
+		assert.deepEqual([unresolved?.verdict, unresolved?.effectiveVerdict, unresolved?.blocking, unresolved?.reviewedBy], ['block', 'block', false, 'daemon']);
 		const resolved = gateOf(result, `LLD-${EPIC}-s2`).review;
 		assert.deepEqual([resolved?.verdict, resolved?.effectiveVerdict, resolved?.resolvedFindings, resolved?.blocking], ['block', 'pass', 1, false], 'the resolution in the log lifts the block and the recorded verdict stays');
 		const malformed = gateOf(result, `LLD-${EPIC}-s3`).review;
-		assert.deepEqual([malformed?.verdict, malformed?.effectiveVerdict, malformed?.blocking], ['warn', 'block', true], 'the junk findings are dropped and the unresolved MED still blocks');
-		assert.ok(itemOf(result, holder(graph, `LLD-${EPIC}-s1`, 'story').id).attentionReasons.includes('review-blocked'));
+		assert.deepEqual([malformed?.verdict, malformed?.effectiveVerdict, malformed?.blocking], ['warn', 'block', false], 'the junk findings are dropped and the historical effective verdict remains');
+		assert.equal(itemOf(result, holder(graph, `LLD-${EPIC}-s1`, 'story').id).attentionReasons.includes('review-blocked'), false);
 	} finally {
 		rmSync(repo, { recursive: true, force: true });
 	}

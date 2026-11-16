@@ -342,7 +342,7 @@ test('snapshot.test.ts: the delivery snapshot of a lifecycle fixture equals the 
 	// and the snapshot itself shows the story-level facts the old one did
 	const story = (id: string) => snapshot.items.find(i => i.kind === 'story' && i.evidence.some(e => e.artifactId === `LLD-${H}-${id}`));
 	assert.equal(story('s1')?.feedback.length, 2);
-	assert.deepEqual(story('s1')?.attentionReasons.includes('review-blocked'), true);
+	assert.deepEqual(story('s1')?.attentionReasons.includes('review-blocked'), false);
 	assert.deepEqual(story('s2')?.attentionReasons.includes('review-blocked'), false, 'a resolved block no longer needs attention for its review');
 	assert.deepEqual(story('s5')?.attentionReasons.includes('review-blocked'), false, 'an overridden block does not block');
 });

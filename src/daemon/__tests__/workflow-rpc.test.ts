@@ -188,7 +188,9 @@ test('T16 a run asked to review (review:true) makes no review call, says the art
 		const skipped = frames.filter(f => f.phase === 'review-skipped');
 		assert.equal(skipped.length, 1, 'the skip is announced once');
 		assert.equal(skipped[0]!.detail, REVIEW_SKIPPED_DETAIL);
-		assert.match(REVIEW_SKIPPED_DETAIL, /controller review \(insrc_review_step\)/);
+		assert.match(REVIEW_SKIPPED_DETAIL, /being rewritten/);
+		assert.match(REVIEW_SKIPPED_DETAIL, /human approval/);
+		assert.doesNotMatch(REVIEW_SKIPPED_DETAIL, /insrc_review_step|override reason/);
 		assert.ok(frames.every(f => f.phase !== 'review' && f.phase !== 'review-done'), 'no review phase is reported');
 		assert.ok(frames.findIndex(f => f.phase === 'review-skipped') < frames.findIndex(f => f.phase === 'done'));
 	} finally { rmSync(repo, { recursive: true, force: true }); }

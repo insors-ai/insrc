@@ -59,8 +59,8 @@ const INPUTS: Record<string, Record<string, unknown>> = {
 	insrc_analyze_step:     { phase: 'start', focus: 'how does x work', repo: REPO },
 	insrc_workflow_step:    { phase: 'start', workflow: 'issue', focus: 'add a flag to the cli', repo: REPO },
 	insrc_build_step:       { phase: 'implement', target: 's1/t1', repo: REPO },
-	insrc_review_step:      { phase: 'start', artifact: join(REPO, 'docs', 'stub', 's1.md'), repo: REPO },
-	insrc_code_review_step: { phase: 'start', epicHash: 'abcdabcdabcdabcd', storyId: 's1', repo: REPO },
+	insrc_review_step:      { phase: 'start', reviewId: 'unavailable', attempt: 1, artifactPath: join(REPO, 'docs', 'stub', 's1.md'), repo: REPO },
+	insrc_code_review_step: { phase: 'start', reviewId: 'unavailable', attempt: 1, epicHash: 'abcdabcdabcdabcd', storyId: 's1', repo: REPO },
 	insrc_triage:           { phase: 'start', focus: 'add a flag', repo: REPO },
 };
 
@@ -207,7 +207,7 @@ test('ac5 pass-through: emit_plan and emit_step prompts, schemas and state are b
 	}
 });
 
-test('ac3: with no daemon every moved tool returns DaemonUnreachableError through a real MCP process, which opens no store; against a daemon without step.call, DaemonTooOldError', { timeout: 180_000 }, async () => {
+test('ac3: with no daemon active tools return DaemonUnreachableError and retired reviews fail locally through a real MCP process, which opens no store; against a daemon without step.call, DaemonTooOldError', { timeout: 180_000 }, async () => {
 	// No daemon: an empty home.
 	const empty = mkdtempSync(join(tmpdir(), 'insrc-e2e-nodaemon-'));
 	try {
@@ -216,6 +216,11 @@ test('ac3: with no daemon every moved tool returns DaemonUnreachableError throug
 			for (const [tool, args] of Object.entries(INPUTS)) {
 				const result = await mcp.client.callTool({ name: tool, arguments: args });
 				assert.equal(result.isError, true, tool);
+				if (tool === 'insrc_review_step' || tool === 'insrc_code_review_step') {
+					assert.match(JSON.stringify(result), /functionality is being rewritten/);
+					assert.deepEqual(storePaths(openPaths(mcp.pid)), [], `${tool}: no store opened`);
+					continue;
+				}
 				const error = body(result)['error'] as { code: string; name: string };
 				assert.equal(error.code, 'daemon-unreachable', tool);
 				assert.equal(error.name, 'DaemonUnreachableError', tool);
@@ -240,6 +245,10 @@ test('ac3: with no daemon every moved tool returns DaemonUnreachableError throug
 		try {
 			for (const [tool, args] of Object.entries(INPUTS)) {
 				const result = await mcp.client.callTool({ name: tool, arguments: args });
+				if (tool === 'insrc_review_step' || tool === 'insrc_code_review_step') {
+					assert.match(JSON.stringify(result), /functionality is being rewritten/);
+					continue;
+				}
 				const error = body(result)['error'] as { code: string; name: string; message: string };
 				assert.equal(error.code, 'daemon-too-old', tool);
 				assert.equal(error.name, 'DaemonTooOldError', tool);

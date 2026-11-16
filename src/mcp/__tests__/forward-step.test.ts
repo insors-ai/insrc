@@ -210,7 +210,7 @@ test('MCP tool surface: the thirteen tools keep their names, descriptions and in
 			.sort((x, y) => x.name.localeCompare(y.name));
 		assert.deepEqual(surface.map(t => t.name), golden.map(t => t.name));
 		for (let i = 0; i < golden.length; i++) {
-			assert.equal(JSON.stringify(surface[i]), JSON.stringify(golden[i]), `${golden[i]!.name} changed`);
+			assert.deepEqual(surface[i], golden[i], `${golden[i]!.name} changed`);
 		}
 	} finally { await close(); }
 });

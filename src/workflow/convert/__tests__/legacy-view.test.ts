@@ -15,7 +15,7 @@ const head = (artifactId: string, meta: Record<string, unknown>, body: unknown =
 const view = (heads: RawHead[], id: string) => legacyDeliveryView(heads).find(v => v.artifactId === id);
 
 describe('legacy-view', () => {
-	it("legacy-view.test.ts: legacyDeliveryView reproduces the old delivery reader's approval, review and blocking", () => {
+	it("legacy-view.test.ts: legacyDeliveryView reproduces the old delivery reader's approval and informational review history", () => {
 		const approved = head(`LLD-${H}-s1`, { approvedAt: at, revision: 3, review: review('pass') });
 		const viaStatus = head(`LLD-${H}-s2`, { status: 'approved' });
 		const rejected = head(`HLD-${H}`, { rejectedAt: at });
@@ -34,9 +34,9 @@ describe('legacy-view', () => {
 		assert.equal(view(all, viaStatus.artifactId)?.approval, 'approved');
 		assert.equal(view(all, rejected.artifactId)?.approval, 'rejected');
 		assert.deepEqual([view(all, pending.artifactId)?.approval, view(all, pending.artifactId)?.review, view(all, pending.artifactId)?.revision], ['pending', null, null]);
-		assert.deepEqual([view(all, blocked.artifactId)?.review?.effectiveVerdict, view(all, blocked.artifactId)?.review?.blocking], ['block', true]);
+		assert.deepEqual([view(all, blocked.artifactId)?.review?.effectiveVerdict, view(all, blocked.artifactId)?.review?.blocking], ['block', false]);
 		assert.deepEqual([view(all, resolved.artifactId)?.review?.verdict, view(all, resolved.artifactId)?.review?.effectiveVerdict, view(all, resolved.artifactId)?.review?.blocking], ['block', 'pass', false], 'a block whose HIGH finding is resolved is effectively pass');
-		assert.deepEqual([view(all, warnWithMed.artifactId)?.review?.verdict, view(all, warnWithMed.artifactId)?.review?.effectiveVerdict, view(all, warnWithMed.artifactId)?.review?.blocking], ['warn', 'block', true], 'a warn carrying an unresolved MED is effectively block');
+		assert.deepEqual([view(all, warnWithMed.artifactId)?.review?.verdict, view(all, warnWithMed.artifactId)?.review?.effectiveVerdict, view(all, warnWithMed.artifactId)?.review?.blocking], ['warn', 'block', false], 'a warn carrying an unresolved MED is effectively block');
 		assert.equal(view(all, overridden.artifactId)?.review?.blocking, false, 'an override lifts the block');
 		assert.deepEqual([view(all, approvedBlock.artifactId)?.review?.effectiveVerdict, view(all, approvedBlock.artifactId)?.review?.blocking], ['block', false], 'an approved gate is not blocked');
 		assert.equal(view(all, malformed.artifactId)?.review?.effectiveVerdict, 'block', 'malformed findings are dropped, the well-formed HIGH still blocks');
@@ -49,11 +49,11 @@ describe('legacy-view', () => {
 		assert.equal(view([amendment], amendment.artifactId)?.approval, 'approved');
 		const cr: RawHead = { artifactId: `CR-${H}-s1`, json: { meta: { epicHash: H, storyId: 's1' }, body: { verdict: 'block', counts: { high: 2 } } } };
 		const build = (extra: Record<string, unknown>): RawHead => ({ artifactId: `BUILD-${H}-s1`, json: { meta: { epicHash: H, storyId: 's1', ...extra }, body: {} } });
-		assert.equal(view([cr, build({})], cr.artifactId)?.review?.blocking, true);
+		assert.equal(view([cr, build({})], cr.artifactId)?.review?.blocking, false);
 		assert.equal(view([cr, build({ approvedAt: at })], cr.artifactId)?.review?.blocking, false, 'an approved BUILD lifts the code review block');
 		assert.equal(view([cr, build({ reviewOverride: { reason: 'r' } })], cr.artifactId)?.review?.blocking, false, 'an override on the story\'s BUILD lifts it too');
 		assert.equal(view([{ ...cr, json: { ...(cr.json as object), meta: { epicHash: H, storyId: 's1', reviewOverride: { reason: 'r' } } } }, build({})], cr.artifactId)?.review?.blocking, false, 'so does an override on the code review itself');
-		assert.equal(view([cr, { ...build({}), artifactId: `BUILD-${H}-s2`, json: { meta: { epicHash: H, storyId: 's2', approvedAt: at }, body: {} } }], cr.artifactId)?.review?.blocking, true, 'a BUILD of another story does not lift it');
+		assert.equal(view([cr, { ...build({}), artifactId: `BUILD-${H}-s2`, json: { meta: { epicHash: H, storyId: 's2', approvedAt: at }, body: {} } }], cr.artifactId)?.review?.blocking, false, 'a BUILD of another story does not lift it');
 
 		// not an object, no meta, an unknown prefix: left out, never thrown
 		assert.deepEqual(legacyDeliveryView([{ artifactId: `LLD-${H}-s1`, json: 'x' }, { artifactId: `LLD-${H}-s2`, json: { body: {} } }, { artifactId: 'TESTS-x', json: { meta: {} } }]), []);

@@ -149,7 +149,7 @@ function submit(heads: Record<string, unknown>, over: Partial<Submit['state']> =
 
 const reasonOf = (r: PortResult<unknown>): string => { assert.equal(r.ok, false); return r.ok ? '' : r.reason; };
 
-test('openSignoff refuses a missing approval, a missing or author-written review for DEF, HLD and LLD, a stage the policy does not list, and a submitter who is not the holder', async () => {
+test('openSignoff refuses a missing approval, a stage the policy does not list, and a submitter who is not the holder', async () => {
 	// not approved
 	let s = submit({ [LLD]: approvedHead({ status: 'draft' }) });
 	assert.match(reasonOf(await openSignoff('/repo', STORY, [LLD], s.deps)), /not approved.*approve it locally first/);
@@ -158,12 +158,12 @@ test('openSignoff refuses a missing approval, a missing or author-written review
 	assert.match(reasonOf(await openSignoff('/repo', STORY, [LLD], s.deps)), /approved at revision 2 but is at revision 3/);
 	// no review, then a review by the party that wrote it
 	s = submit({ [LLD]: approvedHead({ review: 'none' }) });
-	assert.match(reasonOf(await openSignoff('/repo', STORY, [LLD], s.deps)), /no other-party review/);
+	assert.equal((await openSignoff('/repo', STORY, [LLD], s.deps)).ok, true);
 	s = submit({ [LLD]: approvedHead({ review: 'controller', authoredBy: 'controller' }) });
-	assert.match(reasonOf(await openSignoff('/repo', STORY, [LLD], s.deps)), /needs the other party/);
+	assert.equal((await openSignoff('/repo', STORY, [LLD], s.deps)).ok, true);
 	// DEF and HLD are judged the same way, on the epic unit
 	s = submit({ [DEF]: approvedHead({ review: 'none' }), [HLD]: approvedHead() });
-	assert.match(reasonOf(await openSignoff('/repo', EPIC_UNIT, [DEF, HLD], s.deps)), /DEF.*no other-party review|no other-party review/);
+	assert.equal((await openSignoff('/repo', EPIC_UNIT, [DEF, HLD], s.deps)).ok, true);
 	// a stage the policy does not list, and an artifact this unit does not hold
 	s = submit({ [LLD]: approvedHead() }, { stages: ['DEF', 'HLD'] });
 	assert.match(reasonOf(await openSignoff('/repo', STORY, [LLD], s.deps)), /does not ask for signoff at the LLD/);
@@ -190,19 +190,19 @@ test('openSignoff refuses an unassigned unit saying it must be claimed first', a
 	assert.match(reasonOf(await openSignoff('/repo', STORY, [LLD], { ...none.deps, resolveIssue: () => null })), /has no tracker issue/);
 });
 
-test('openSignoff for BUILD checks the Story\'s code-review record (missing, written by the author, or blocking is refused; pass or warn by the other party is accepted) and never the lifecycle review', async () => {
+test('openSignoff for a human-approved BUILD never consults historical code-review evidence', async () => {
 	// a BUILD head carries no lifecycle review
 	const build = approvedHead({ review: 'none', authoredBy: 'controller' });
 	const cases: Array<[CodeReviewRecord | undefined, RegExp | null]> = [
-		[undefined, /has no code review/],
-		[{ verdict: 'block', party: 'daemon' }, /code review of .* is blocking/],
-		[{ verdict: 'pass', party: 'controller' }, /was run by the controller, who wrote the code/],
+		[undefined, null],
+		[{ verdict: 'block', party: 'daemon' }, null],
+		[{ verdict: 'pass', party: 'controller' }, null],
 		[{ verdict: 'pass', party: 'daemon' }, null],
 		[{ verdict: 'warn', party: 'daemon' }, null],
 	];
 	for (const [codeReview, expected] of cases) {
 		const s = submit({ [BUILD]: build }, { codeReview });
-		const r = await openSignoff('/repo', STORY, [BUILD], s.deps);
+		const r = await openSignoff('/repo', STORY, [BUILD], {...s.deps, readCodeReview:()=>{throw new Error('Retired review dependency was consulted');}});
 		if (expected === null) assert.equal(r.ok, true, JSON.stringify(codeReview));
 		else assert.match(reasonOf(r), expected);
 	}
@@ -213,7 +213,7 @@ test('openSignoff for BUILD checks the Story\'s code-review record (missing, wri
 
 test('openSignoff for BUILD reads the holder of the Story\'s issue and links the request from it even when claimUnits puts BUILD on task units, and settleSignoff for a story unit selects LLD and BUILD while an epic unit selects DEF and HLD', async () => {
 	const s = submit({ [BUILD]: approvedHead({ review: 'none' }) });
-	const r = await openSignoff('/repo', STORY, [BUILD], s.deps);
+	const r = await openSignoff('/repo', STORY, [BUILD], {...s.deps, readCodeReview:()=>{throw new Error('Retired review dependency was consulted');}});
 	assert.equal(r.ok, true);
 	assert.deepEqual(s.resolved, [STORY], 'the issue read is the Story\'s, whatever claimUnits says about tasks');
 	assert.equal(s.opened[0]?.issue, 'acme/demo#2', 'the request is linked from the Story issue');

@@ -33,11 +33,7 @@ import type { StepClient } from '../shared/step-context.js';
 import type { WorkflowPendingError, WorkflowPendingResult } from '../workflow/pending.js';
 import type { DocGenOutcome, RenderedDocumentShell, SerializableDocTypeRegistration } from '../docgen/types.js';
 import type { InsrcGuideResult } from '../daemon/guide-sections.js';
-import type { CodeReviewGrounding } from '../workflow/review-history/code-review/types.js';
 import type { WorkflowReviewDone } from '../daemon/workflow-review-rpc.js';
-import {
-	codeReviewRequestParams, freshnessFromReply, groundingFromReply, reviewArtifactRequestParams, runReviewStream, unavailableFromError,
-} from '../shared/review-stream.js';
 import type {
 	CodeReviewFreshnessResult, CodeReviewGroundingResult,
 	CodeReviewStreamParams, CodeReviewStreamResult, ReviewArtifactStreamParams, ReviewStreamFailure, ReviewStreamOpts,
@@ -62,7 +58,7 @@ export interface RunWorkflowStreamParams {
 	readonly workflow:  string;
 	readonly focus:     string;
 	readonly params?:   Record<string, unknown> | undefined;
-	/** Opt out of the finalize review cycle (default: review runs). */
+	/** Legacy request flag; reports review unavailability without starting review work. */
 	readonly review?:   boolean | undefined;
 }
 
@@ -328,37 +324,17 @@ export function abortRun(runId: string, deps: UnaryRpcDeps = {}): Promise<{ ok: 
 	return unaryRpc<{ ok: boolean }>('workflow.run.abort', { runId }, deps);
 }
 
-/** Fetch the code-review grounding (code-review S001 sc2) over the daemon
- *  `codeReview.grounding` IPC. This is the ONLY graph access for the controller
- *  path (`insrc_code_review_step`, S008) — the MCP tool never opens LMDB/Lance
- *  directly (k5/k6). The daemon resolves the subject internally and returns
- *  structured symbol summaries; a decline / error / unreachable socket all map
- *  to `{ ok:false, reason }` (never a throw), so the handler can relay a clean
- *  `error` frame. */
-export function fetchCodeReviewGrounding(
+/** Compatibility helper: code review is unavailable; never open a connection. */
+export async function fetchCodeReviewGrounding(
 	params: { repo: string; epicHash: string; storyId: string },
 	deps: UnaryRpcDeps = {},
-): Promise<CodeReviewGroundingResult> {
-	return unaryRpc<{ ok?: boolean; grounding?: CodeReviewGrounding; reason?: string; error?: string }>(
-		'codeReview.grounding', params, deps,
-	).then(groundingFromReply, unavailableFromError);
-}
+): Promise<CodeReviewGroundingResult> { return reviewUnavailable('code'); }
 
-/** Fetch the code-review index-freshness verdict (code-review s9) over the
- *  daemon `codeReview.freshness` IPC — the controller's ONLY access to the queue
- *  + graph freshness signal (k5), the peer of {@link fetchCodeReviewGrounding}.
- *  The daemon computes `{ isProcessing, inFlight, pendingCodeIndexJobs, staleFiles }`
- *  read-only (never a reindex);
- *  a daemon `{ error }` or an unreachable socket maps to `{ ok:false, reason }`
- *  (never a throw), so the gate can relay a clean `error` frame. */
-export function fetchCodeReviewFreshness(
+/** Compatibility helper: code review is unavailable; never open a connection. */
+export async function fetchCodeReviewFreshness(
 	params: { repo: string; epicHash: string; storyId: string; changedFiles: readonly string[] },
 	deps: UnaryRpcDeps = {},
-): Promise<CodeReviewFreshnessResult> {
-	return unaryRpc<Parameters<typeof freshnessFromReply>[0]>(
-		'codeReview.freshness', params, deps,
-	).then(freshnessFromReply, unavailableFromError);
-}
+): Promise<CodeReviewFreshnessResult> { return reviewUnavailable('code'); }
 
 /** Forward a docgen generation request to the daemon `docgen.generate` IPC. The
  *  read happens entirely inside the daemon (k2/ac2) — only the finished outcome

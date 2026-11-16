@@ -13,9 +13,9 @@ import { join } from 'node:path';
 import type { TrackerPort } from '../../tracker/port.js';
 import type { UnitRef } from '../../tracker/refs.js';
 import { ToolDenied } from '../../tracker/tool-denied.js';
-import { authorizeApproval, authorizeFindingApply, reviewFixModeFor } from '../approval-gate.js';
+import { authorizeApproval } from '../approval-gate.js';
 import { assertMayAuthor, assertMayBuild } from '../author-gate.js';
-import { _setGateDepsForTests, actingUser, claim, registerCompletionHook, release, reviewFixDecision, teamGate } from '../gate.js';
+import { _setGateDepsForTests, actingUser, claim, registerCompletionHook, release, teamGate } from '../gate.js';
 import type { GateDeps } from '../gate.js';
 import { parkPlan } from '../handoff.js';
 import type { PolicyReader, TeamPolicy } from '../types.js';
@@ -78,22 +78,10 @@ describe('team-gates-denial.test.ts: a denial stops the stage as ToolDenied and 
 			assert.equal(await actingUser('/repo'), undefined);
 		});
 
-		it(`${label}: reviewFixDecision and reviewFixModeFor throw the denial and do not continue as report-only; a non-denial failure is still report-only`, async () => {
-			const { json } = repoWithLld();
-			inject(port('readAssignee', denied(), asyncMode));
-			await assert.rejects(reviewFixDecision('/repo', UNIT), isDenied);
-			inject(port('readAssignee', denied(), asyncMode));
-			await assert.rejects(reviewFixModeFor(json), isDenied);
-			inject(port('readAssignee', new Error('boom'), asyncMode));
-			assert.equal(await reviewFixDecision('/repo', UNIT), 'report-only');
-			assert.equal(await reviewFixModeFor(json), 'report-only');
-		});
-
-		it(`${label}: authorizeApproval and authorizeFindingApply (authorizeStageChange) throw the denial and are never a generic refusal`, async () => {
+		it(`${label}: authorizeApproval throw the denial and are never a generic refusal`, async () => {
 			const { json } = repoWithLld();
 			inject(port('readAssignee', denied(), asyncMode));
 			await assert.rejects(authorizeApproval(json), isDenied);
-			await assert.rejects(authorizeFindingApply(json), isDenied);
 			inject(port('readAssignee', new Error('boom'), asyncMode));
 			const generic = await authorizeApproval(json);
 			assert.equal(generic?.outcome.kind, 'refused');

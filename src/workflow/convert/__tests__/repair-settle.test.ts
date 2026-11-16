@@ -1,4 +1,4 @@
-const historicalFingerprint = (..._args: unknown[]): string => 'historical-fixture';
+const historicalFingerprint = (..._args: unknown[]): string => 'a'.repeat(64);
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -127,7 +127,7 @@ test('repair settles a BUILD approved before COMPLETION_RULE_FROM with the attri
 		const complete = (await log(r.repo, STORY)).filter(e => e.operation === 'complete');
 		assert.equal(complete.length, 1);
 		assert.equal(complete[0]?.actor.id, 'insrc:migration');
-		assert.deepEqual(complete[0]?.outcome?.data, { codeReviewOverride: 'settled from an approved BUILD' });
+		assert.equal(complete[0]?.outcome?.data, undefined, 'completion does not invent a review override');
 		for (const t of [T1, T2]) assert.equal(statusOf(r.repo, t), 'completed', t);
 		assert.equal(statusOf(r.repo, `EPIC-${H}`), 'completed');
 	} finally { r.done(); }

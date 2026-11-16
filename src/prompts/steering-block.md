@@ -285,9 +285,7 @@ Story's LLD validates without amending the Epic.
 
 Loop: `phase:'start'` with `{ workflow:'design.epic', focus, params }` →
 `emit_plan` → `phase:'plan'` → `emit_step` (loop) → `emit_synthesize` →
-`phase:'synthesize'` → `done`. Present the HLD for explicit human approval before
-approving (a `block` verdict from unresolved HIGH/MED findings gates approval);
-resolve, then present-ask-approve. Next stage: `design.story` per Story.
+`phase:'synthesize'` → `done`. Present the HLD for explicit human approval using the present-ask-approve gate. Next stage: `design.story` per Story.
 Apply the front-door **Relevant design artifacts** rule: assess relevance
 independently, document relationship changes even when simple, and do not
 require an ERD for isolated class edits. Use structured companion definitions only when the visual materially helps.

@@ -12,9 +12,9 @@ import { join } from 'node:path';
 
 import type { PortResult, TrackerPort } from '../../tracker/port.js';
 import type { UnitRef } from '../../tracker/refs.js';
-import { authorizeApproval, authorizeFindingApply, reviewFixModeFor } from '../approval-gate.js';
+import { authorizeApproval } from '../approval-gate.js';
 import { assertMayAuthor, assertMayBuild } from '../author-gate.js';
-import { _setGateDepsForTests, actingUser, claim, readHolder, release, reviewFixDecision, teamContext, teamGate, TeamGateRefusedError } from '../gate.js';
+import { _setGateDepsForTests, actingUser, claim, readHolder, release, teamContext, teamGate, TeamGateRefusedError } from '../gate.js';
 import type { GateDeps } from '../gate.js';
 import type { PolicyReader, TeamPolicy } from '../types.js';
 
@@ -101,29 +101,23 @@ describe('team-gates-async.test.ts: the gate functions return the same outcomes 
 			assert.ok(held.ok);
 		});
 
-		it(`${label}: actingUser and reviewFixDecision`, async () => {
+		it(`${label}: actingUser follows the policy`, async () => {
 			const unit = unitOf('/repo');
 			let p = port(['alice'], 'alice', asyncMode); inject(p.port, asyncMode);
 			assert.equal(await actingUser('/repo'), 'alice');
-			assert.equal(await reviewFixDecision('/repo', unit), 'apply-auto-fixes');
 			p = port(['bob'], 'alice', asyncMode); inject(p.port, asyncMode);
-			assert.equal(await reviewFixDecision('/repo', unit), 'report-only');
 			inject(p.port, asyncMode, { readPolicy: async () => ({ ok: true, value: 'none' }) });
 			assert.equal(await actingUser('/repo'), undefined, 'no policy: nobody is asked');
 		});
 
-		it(`${label}: the artifact gates (approval, finding apply, fix mode) refuse a non-holder and let the holder through`, async () => {
+		it(`${label}: the human artifact approval gate refuse a non-holder and let the holder through`, async () => {
 			const repo = repoWithLld();
 			const jsonPath = join(repo, '.insrc', 'artifacts', `LLD-${HASH}-s1.json`);
 			let p = port(['alice'], 'alice', asyncMode); inject(p.port, asyncMode);
 			assert.equal(await authorizeApproval(jsonPath), undefined);
-			assert.equal(await authorizeFindingApply(jsonPath), undefined);
-			assert.equal(await reviewFixModeFor(jsonPath), 'apply-auto-fixes');
 			p = port(['bob'], 'alice', asyncMode); inject(p.port, asyncMode);
 			const refusal = await authorizeApproval(jsonPath);
 			assert.equal(refusal?.outcome.kind, 'held-by-other');
-			assert.equal((await authorizeFindingApply(jsonPath))?.outcome.kind, 'held-by-other');
-			assert.equal(await reviewFixModeFor(jsonPath), 'report-only');
 		});
 
 		it(`${label}: assertMayAuthor and assertMayBuild resolve for the holder and reject with TeamGateRefusedError for another holder`, async () => {

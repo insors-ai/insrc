@@ -27,9 +27,8 @@ test('MCP workflow streams preserve split UTF-8 in both progress and done frames
 	s.feed({ id: 1, stream: 'done', data: { path: TEXT, artifact: {}, runId: 'r', model: 'test' } });
 	assert.deepEqual(progress, [TEXT]); assert.equal((await promise).path, TEXT);
 });
-test('MCP review streams preserve split UTF-8 in done frames', async () => {
-	const s = new FakeSocket();
-	const promise = reviewArtifactStream({ artifactPath: '/repo/LLD.md' }, { timeoutMs: 1000 }, { connect: () => s.socket });
-	s.feed({ id: 1, stream: 'done', data: { note: TEXT } });
-	assert.deepEqual(await promise, { note: TEXT });
+test('retired review stream fails before opening a UTF-8 transport', () => {
+ let connections = 0;
+ assert.throws(() => reviewArtifactStream({artifactPath:'/repo/LLD.md'}, {timeoutMs:1000}, {connect:()=>{connections++;return new FakeSocket().socket;}}), {message:'Design review functionality is being rewritten.'});
+ assert.equal(connections, 0);
 });

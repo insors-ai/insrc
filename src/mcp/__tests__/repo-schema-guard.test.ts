@@ -34,8 +34,6 @@ test('repo-schema-guard.test.ts: the MCP artifact tools refuse an unconverted re
 		const calls: [string, Record<string, unknown>][] = [
 			['insrc_workflow_step', { phase: 'start', workflow: 'define', focus: 'x', repo }],
 			['insrc_build_step', { phase: 'implement', target: 's1/t1', repo }],
-			['insrc_review_step', { phase: 'start', artifact: 'x.md', repo }],
-			['insrc_code_review_step', { phase: 'start', epicHash: 'a3f4b8c9d1e2f3a4', storyId: 's1', repo }],
 			['insrc_triage', { phase: 'start', focus: 'x', repo }],
 		];
 		for (const [name, args] of calls) {
@@ -43,6 +41,12 @@ test('repo-schema-guard.test.ts: the MCP artifact tools refuse an unconverted re
 			assert.equal(r.isError, true, name);
 			assert.match(textOf(r), NAMING, `${name} names the conversion`);
 		}
+        for (const [name, message] of [['insrc_review_step','Design'], ['insrc_code_review_step','Code']]) {
+          const result=await client.callTool({name,arguments:{phase:'progress',repo,...(name==='insrc_code_review_step'?{epicHash:'a3f4b8c9d1e2f3a4'}:{}),reviewId:'unavailable',attempt:1}});
+          assert.equal(result.isError,true);
+          assert.match(textOf(result),new RegExp(`${message} review functionality is being rewritten`));
+        }
+
 		assert.match(textOf(await handleWorkflowApprove({ epicHash: 'a3f4b8c9d1e2f3a4', repo })), NAMING, 'insrc_workflow_approve');
 		assert.match(textOf(await handleInsrcPresent({ documents: ['LLD-a3f4b8c9d1e2f3a4-s1'], repo })), NAMING, 'insrc_present');
 

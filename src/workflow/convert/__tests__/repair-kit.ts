@@ -1,4 +1,4 @@
-const historicalFingerprint = (..._args: unknown[]): string => 'historical-fixture';
+const historicalFingerprint = (..._args: unknown[]): string => 'a'.repeat(64);
 /** A repository already on the common model, written as raw heads, for the repair tests. */
 
 import assert from 'node:assert/strict';

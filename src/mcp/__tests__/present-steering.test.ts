@@ -31,15 +31,15 @@ test('the steering block, the steering template and the guide tell the controlle
 	assert.match(discipline, /does not work out what to open from tool output/);
 	assert.match(discipline, /`notPending`/);
 
-	// The note that steering-only enforcement may need to be revisited.
-	assert.match(discipline, /steering-only for now/);
-	assert.match(discipline, /if that proves unreliable, revisit it \(a reminder from the daemon in tool responses, or detection of a missing call\)/);
 
 	// The guide sections that end in an approval carry it too.
 	const review = flat(readWorkflowGuide(readSteeringBlock(), 'review') ?? '');
-	assert.match(review, /declare the document with `insrc_present`, present-ask-approve/);
+	assert.match(review, /being rewritten/);
+	assert.match(review, /explicit human approval/);
+	assert.doesNotMatch(review, /phase:'start'/);
 	const build = flat(readWorkflowGuide(readSteeringBlock(), 'build') ?? '');
-	assert.match(build, /DECLARE the BUILD record and the code review with `insrc_present`/);
+	assert.match(build, /DECLARE the BUILD with `insrc_present`/);
+	assert.match(build, /no automated review or CR is required/);
 
 	// The injected skeleton keeps the discipline (it is not inside a guide section) and the catalog row.
 	const skeleton = flat(stripGuideSections(readSteeringBlock()));

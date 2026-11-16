@@ -263,4 +263,118 @@ class WorkflowChainReaderTest {
         write(dir, "LLD-z-s2.json", lld(runId, effHash(runId), approved = true))
         assertEquals("Chain complete", readerOver(dir).readAll().single().nextActionHint)
     }
+
+    // ---- ISSUE-149283b0d0455a43 / t7: ISSUE-anchored work items ----------------
+
+    /** An ISSUE file fixture: approved/rejected marks from meta, title from body. */
+    private fun issue(issueHash: String, slug: String, title: String, approved: Boolean, rejected: Boolean = false): String {
+        val approvedAt = if (approved) "\"2026-01-01T00:00:00Z\"" else "\"\""
+        val rejectedAt = if (rejected) "\"2026-01-04T00:00:00Z\"" else "\"\""
+        return """{"meta":{"issueHash":"$issueHash","epicHash":"$issueHash","epicSlug":"$slug","approvedAt":$approvedAt,"rejectedAt":$rejectedAt},"body":{"title":"$title"}}"""
+    }
+
+    @Test
+    fun `readAll lists an ISSUE-anchored hash with the implied story s1 and no HLD`() {
+        val dir = tempArtifacts()
+        write(dir, "ISSUE-bug1.json", issue("bug1", "the-bugfix", "Fix the boom", approved = true))
+        write(dir, "LLD-bug1-s1.json", lld("r", effHash("r"), approved = true))
+
+        val chains = readerOver(dir).readAll()
+        assertEquals(1, chains.size)
+        val chain = chains.single()
+        assertEquals("bug1", chain.epicHash)
+        assertEquals("the-bugfix", chain.epicSlug)
+        assertEquals("issue", chain.definitionKind)
+        assertTrue(chain.define.exists && chain.define.approved && !chain.define.rejected)
+        assertFalse(chain.hld.exists, "an ISSUE-anchored item never has an HLD")
+        // Exactly the one implied story, titled with the ISSUE body title, never stale.
+        assertEquals(1, chain.stories.size)
+        val s1 = chain.stories.single()
+        assertEquals("s1", s1.id)
+        assertEquals("Fix the boom", s1.title)
+        assertTrue(s1.hasLld && s1.approved)
+        assertFalse(s1.stale)
+        assertNull(s1.staleReason)
+        assertEquals(0, chain.amendmentsPending)
+        assertEquals(0, chain.amendmentsApproved)
+    }
+
+    @Test
+    fun `nextActionHint for an ISSUE-anchored entry follows approve issue, design story, approve LLD, chain complete`() {
+        // Unapproved ISSUE -> Approve issue (never an HLD/amendment/stale step).
+        run {
+            val dir = tempArtifacts()
+            write(dir, "ISSUE-i1.json", issue("i1", "e", "T", approved = false))
+            assertEquals("Approve issue", readerOver(dir).readAll().single().nextActionHint)
+        }
+        // Rejected ISSUE -> Re-run issue.
+        run {
+            val dir = tempArtifacts()
+            write(dir, "ISSUE-i2.json", issue("i2", "e", "T", approved = false, rejected = true))
+            assertEquals("Re-run issue", readerOver(dir).readAll().single().nextActionHint)
+        }
+        // Approved ISSUE, no LLD -> Design story s1.
+        run {
+            val dir = tempArtifacts()
+            write(dir, "ISSUE-i3.json", issue("i3", "e", "T", approved = true))
+            assertEquals("Design story s1", readerOver(dir).readAll().single().nextActionHint)
+        }
+        // Approved ISSUE + unapproved LLD -> Approve LLD for s1.
+        run {
+            val dir = tempArtifacts()
+            write(dir, "ISSUE-i4.json", issue("i4", "e", "T", approved = true))
+            write(dir, "LLD-i4-s1.json", lld("r", effHash("r"), approved = false))
+            assertEquals("Approve LLD for s1", readerOver(dir).readAll().single().nextActionHint)
+        }
+        // Approved ISSUE + approved LLD -> Chain complete.
+        run {
+            val dir = tempArtifacts()
+            write(dir, "ISSUE-i5.json", issue("i5", "e", "T", approved = true))
+            write(dir, "LLD-i5-s1.json", lld("r", effHash("r"), approved = true))
+            val hint = readerOver(dir).readAll().single().nextActionHint
+            assertEquals("Chain complete", hint)
+        }
+        // The hint never names an HLD, amendment, stale or tracker step at any stage.
+        for (approved in listOf(false, true)) {
+            for (withLld in listOf(false, true)) {
+                for (lldApproved in listOf(false, true)) {
+                    val dir = tempArtifacts()
+                    val h = "ix"
+                    write(dir, "ISSUE-$h.json", issue(h, "e", "T", approved = approved))
+                    if (withLld) write(dir, "LLD-$h-s1.json", lld("r", effHash("r"), approved = lldApproved))
+                    val hint = readerOver(dir).readAll().single().nextActionHint
+                    assertFalse(hint.contains("HLD"), "ISSUE hint must never name an HLD: $hint")
+                    assertFalse(hint.contains("amendment", ignoreCase = true), "ISSUE hint must never name an amendment: $hint")
+                    assertFalse(hint.contains("stale", ignoreCase = true), "ISSUE hint must never name a stale step: $hint")
+                    assertFalse(hint.contains("tracker", ignoreCase = true), "the plugin reader never offers tracker steps: $hint")
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `readAll lists a hash with both a DEF and an ISSUE once, as the DEF`() {
+        val dir = tempArtifacts()
+        write(dir, "DEF-both.json", def("both", "the-epic", approved = true, "s1" to "A", "s2" to "B"))
+        write(dir, "ISSUE-both.json", issue("both", "the-bugfix", "Fix", approved = true))
+
+        val chains = readerOver(dir).readAll()
+        assertEquals(1, chains.size, "a hash with both a DEF and an ISSUE is listed exactly once")
+        assertEquals("def", chains.single().definitionKind)
+        assertEquals(2, chains.single().stories.size, "the DEF story list is used, not the implied s1")
+    }
+
+    @Test
+    fun `readAll swallows a malformed ISSUE file without throwing`() {
+        val dir = tempArtifacts()
+        write(dir, "ISSUE-broken.json", "{ this is not valid json ")
+        write(dir, "ISSUE-notoobj.json", "[1,2,3]")
+        // A malformed ISSUE contributes nothing and does not throw — even alongside a good DEF.
+        write(dir, "DEF-ok.json", def("ok", "fine", approved = true, "s1" to "A"))
+
+        val chains = readerOver(dir).readAll()
+        assertEquals(1, chains.size)
+        assertEquals("ok", chains.single().epicHash)
+        assertEquals("def", chains.single().definitionKind)
+    }
 }

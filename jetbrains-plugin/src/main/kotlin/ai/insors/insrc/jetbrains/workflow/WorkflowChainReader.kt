@@ -40,10 +40,16 @@ data class StoryChainMark(
  * page renders (Story E2026092157298940:S003). A faithful subset — NOT a port of the
  * mutating `NextAction`/tracker machine: [nextActionHint] is a plain human string derived
  * from the marks, with no push-tracker/sync-tracker cases (k6, no daemon).
+ *
+ * [definitionKind] discriminates the work item's definition head: `"def"` for a DEF-anchored
+ * Epic, `"issue"` for an ISSUE-anchored bugfix (ISSUE-149283b0d0455a43 — an ISSUE is
+ * equivalent to a define, so it is listed too, with one implied story and no HLD).
+ * Defaults to `"def"` so existing DEF-only callers compile unchanged.
  */
 data class WorkflowChainDto(
     val epicHash: String,
     val epicSlug: String?,
+    val definitionKind: String = "def",
     val define: StageMark,
     val hld: StageMark,
     val stories: List<StoryChainMark>,
@@ -89,8 +95,11 @@ class WorkflowChainReader(
         return dirs.flatMap { readDir(it) }
     }
 
-    /** Project every Epic (DEF-*.json) found directly under [dir]. A dir that is absent or
-     *  cannot be listed contributes nothing. */
+    /** Project every work item found directly under [dir]: one entry per `DEF-*.json`,
+     *  plus one per `ISSUE-*.json` whose hash has NO DEF (ISSUE-149283b0d0455a43 — an
+     *  ISSUE-anchored bugfix is its own definition head, so it is listed even with no
+     *  DEF; a hash with both is listed once, as the DEF). A dir that is absent or cannot
+     *  be listed contributes nothing. */
     private fun readDir(dir: Path): List<WorkflowChainDto> {
         if (!Files.isDirectory(dir)) return emptyList()
         val names: List<String> = try {
@@ -98,9 +107,52 @@ class WorkflowChainReader(
         } catch (e: Exception) {
             return emptyList()
         }
+        val defHashes = names
+            .filter { it.startsWith("DEF-") && it.endsWith(".json") }
+            .mapTo(mutableSetOf()) { it.removePrefix("DEF-").removeSuffix(".json") }
         return names
             .filter { it.startsWith("DEF-") && it.endsWith(".json") }
             .mapNotNull { readEpic(dir, it) }
+            .plus(
+                names
+                    .filter { it.startsWith("ISSUE-") && it.endsWith(".json") }
+                    .mapNotNull { it.removePrefix("ISSUE-").removeSuffix(".json") }
+                    .filter { it !in defHashes }
+                    .mapNotNull { readIssue(dir, it) },
+            )
+    }
+
+    /** Project one ISSUE-anchored bugfix from its `ISSUE-<issueHash>.json` file name.
+     *  Mirrors the CLI chain report's ISSUE branch (src/workflow/chain.ts): the ISSUE is
+     *  the definition head, there is no HLD, and the story list is the one implied story
+     *  s1 titled with the ISSUE body's title. Returns null when the ISSUE itself is
+     *  unreadable/malformed — a malformed ISSUE contributes nothing. */
+    private fun readIssue(dir: Path, issueHash: String): WorkflowChainDto? {
+        val issueFileName = "ISSUE-$issueHash.json"
+        val issueObj = parseObject(dir.resolve(issueFileName)) ?: return null
+
+        val issueMeta = issueObj.objOrNull("meta")
+        val define = StageMark(exists = true, approved = issueMeta.isApproved(), rejected = issueMeta.isRejected())
+        val epicSlug = issueMeta.stringOrNull("epicSlug")
+        val title = issueObj.objOrNull("body").stringOrNull("title") ?: "s1"
+
+        // An ISSUE-anchored work item has exactly one implied story (s1) and never an HLD,
+        // so its LLD is never stale — staleness is undefined without an HLD base, same as
+        // the DEF-without-HLD guard below.
+        val s1 = readStory(dir, issueHash, IMPLIED_ISSUE_STORY_ID, title, hldRunId = "", currentEffective = null, approvedAmendmentIds = emptyList())
+        val stories = listOf(s1)
+
+        return WorkflowChainDto(
+            epicHash = issueHash,
+            epicSlug = epicSlug,
+            definitionKind = "issue",
+            define = define,
+            hld = StageMark.ABSENT,
+            stories = stories,
+            amendmentsPending = 0,
+            amendmentsApproved = 0,
+            nextActionHint = nextIssueActionHint(define, stories),
+        )
     }
 
     /** Project one Epic from its `DEF-<epicHash>.json` file name. Returns null when the DEF
@@ -246,6 +298,23 @@ class WorkflowChainReader(
     }
 
     /**
+     * The ISSUE-anchored hint (ISSUE-149283b0d0455a43): reuses the define-level steps with
+     * issue wording and NEVER names an HLD, amendment, stale or tracker step, mirroring
+     * computeNextAction's ISSUE branch in src/workflow/chain.ts.
+     */
+    private fun nextIssueActionHint(
+        define: StageMark,
+        stories: List<StoryChainMark>,
+    ): String {
+        if (!define.exists) return "Run issue"
+        if (define.rejected) return "Re-run issue"
+        if (!define.approved) return "Approve issue"
+        stories.firstOrNull { !it.hasLld }?.let { return "Design story ${it.id}" }
+        stories.firstOrNull { !it.approved }?.let { return "Approve LLD for ${it.id}" }
+        return "Chain complete"
+    }
+
+    /**
      * The effective HLD hash — `sha256(baseRunId || "|"+id …)` over the approved amendment
      * ids, replicating computeHldEffectiveHash (src/workflow/artifacts/lld.ts:176) so a
      * story LLD's staleness is decided by `!=` against its stored `meta.hldEffectiveHash`.
@@ -289,6 +358,13 @@ class WorkflowChainReader(
     private fun JsonObject?.isRejected(): Boolean = !stringOrNull("rejectedAt").isNullOrEmpty()
 
     companion object {
+        /**
+         * The ONE story id an ISSUE-anchored work item is taken to have (the Kotlin mirror
+         * of IMPLIED_ISSUE_STORY_ID in src/workflow/storage.ts — the bugfix route is
+         * exactly one story at ordinal 1).
+         */
+        const val IMPLIED_ISSUE_STORY_ID = "s1"
+
         /** Production seam: every open project's `<basePath>/.insrc/artifacts` directory. */
         fun defaultOpenProjectArtifactsDirs(): List<Path> =
             ProjectManager.getInstance().openProjects.mapNotNull { project ->

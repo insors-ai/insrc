@@ -68,6 +68,12 @@
         "choice": "Plan treats them as new, LLD-sourced symbols",
         "rationale": "Greenfield by design; the LLD is the source and tasks create them.",
         "resolvedAt": "2026-11-16T08:26:26.456Z"
+      },
+      "q692d6d0b": {
+        "question": "ep3 (partial): the invariant sources c1-c3 map to the three s1 analyze bundles in order; the s1 output does not carry those ids.",
+        "status": "ignored",
+        "rationale": "Tagging bundle ids would change the analyze framework's output; out of this Story's scope. The c-ids only matter inside this LLD and are consistent.",
+        "resolvedAt": "2026-11-16T08:27:50.033Z"
       }
     }
   },

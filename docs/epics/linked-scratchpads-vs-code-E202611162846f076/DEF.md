@@ -343,6 +343,8 @@ Pads can be tagged and filtered, and new pads can start from an investigation or
 
 - `qd9509b66` — The `define` workflow auto-bound this Epic to a real, OPEN GitHub issue (insors-ai/insrc#185) as a side effect of finishing `define` — no `tracker.push` was called, and there was no present/ask/approve before a public issue existed. The user decided (2026-11-16) to leave #185 as-is rather than close it. This auto-push behavior is a tooling defect that should be filed and fixed separately (through the normal bugfix front door) so a future Epic's `define` run does not silently publish before design review/approval. [[c11]]
   - **deferred**: deferred for review — Not a design decision for this epic — it's a defect in the `define` workflow itself (auto-published a real GitHub issue, insors-ai/insrc#185, as a side effect of finishing `define`, bypassing tracker.push and approval). Deferred here; being logged as its own tracked bugfix via insrc_triage against the workflow framework, independent of linked-scratchpads' architecture. _(2026-11-16T09:28:49.285Z)_
+- `q7dfed83c` — Item a2: med-confidence assumptions (daemon link-target resolution feasibility; PRD mock decisions settled) map to design-time decisions carried on s4/s5/s7 local constraints and will surface at design.story starts.
+  - **resolved**: Carry only unresolved assumptions — Keep settled PRD mock decisions settled; carry only the daemon link-target-resolution feasibility assumption forward to s4/s5/s7 local constraints, visible at design.story starts. _(2026-11-16T09:31:18.111Z)_
 
 ## Citations
 

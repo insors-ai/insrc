@@ -62,6 +62,13 @@
         "status": "deferred",
         "rationale": "Not a design decision for this epic — it's a defect in the `define` workflow itself (auto-published a real GitHub issue, insors-ai/insrc#185, as a side effect of finishing `define`, bypassing tracker.push and approval). Deferred here; being logged as its own tracked bugfix via insrc_triage against the workflow framework, independent of linked-scratchpads' architecture.",
         "resolvedAt": "2026-11-16T09:28:49.285Z"
+      },
+      "q7dfed83c": {
+        "question": "Item a2: med-confidence assumptions (daemon link-target resolution feasibility; PRD mock decisions settled) map to design-time decisions carried on s4/s5/s7 local constraints and will surface at design.story starts.",
+        "status": "resolved",
+        "choice": "Carry only unresolved assumptions",
+        "rationale": "Keep settled PRD mock decisions settled; carry only the daemon link-target-resolution feasibility assumption forward to s4/s5/s7 local constraints, visible at design.story starts.",
+        "resolvedAt": "2026-11-16T09:31:18.111Z"
       }
     }
   },

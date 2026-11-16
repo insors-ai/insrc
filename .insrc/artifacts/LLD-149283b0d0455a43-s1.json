@@ -95,6 +95,13 @@
         "choice": "A. ISSUE = define-equivalent (decided)",
         "rationale": "User decision 2026-11-16; tracker handling deferred to ISSUE-5f9d4ab4c90c0b4c.",
         "resolvedAt": "2026-11-16T08:30:24.460Z"
+      },
+      "q304688a8": {
+        "question": "Unverified: a second design.story start for the same ISSUE revising LLD-<issueHash>-s1 through the existing re-finalize path; it is expected from finalizeStandaloneLld but not exercised.",
+        "status": "resolved",
+        "choice": "Exercise the re-finalize path explicitly",
+        "rationale": "Cheap test that settles the one unverified claim.",
+        "resolvedAt": "2026-11-16T08:30:51.087Z"
       }
     }
   },

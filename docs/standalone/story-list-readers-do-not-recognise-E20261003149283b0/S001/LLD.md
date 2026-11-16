@@ -292,6 +292,8 @@ Leave the shared reader alone and edit each non-test caller (readPlanUpstream, f
   - **resolved**: Adopt s3's issue.* constraints as-is — Only constraints in the chain; inheritance noted. _(2026-11-16T08:29:40.023Z)_
 - `qa959ced3` — Decided (user, 2026-11-16): an ISSUE is equivalent to a define for the chain, so no new NextAction kinds are added; tracker handling is deferred to ISSUE-5f9d4ab4c90c0b4c.
   - **resolved**: A. ISSUE = define-equivalent (decided) — User decision 2026-11-16; tracker handling deferred to ISSUE-5f9d4ab4c90c0b4c. _(2026-11-16T08:30:24.460Z)_
+- `q304688a8` — Unverified: a second design.story start for the same ISSUE revising LLD-<issueHash>-s1 through the existing re-finalize path; it is expected from finalizeStandaloneLld but not exercised.
+  - **resolved**: Exercise the re-finalize path explicitly — Cheap test that settles the one unverified claim. _(2026-11-16T08:30:51.087Z)_
 
 ## Citations
 

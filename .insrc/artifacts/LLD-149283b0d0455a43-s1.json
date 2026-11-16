@@ -31,9 +31,9 @@
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 3,
-        "contentHash": "ed1c4d0a41b250b5f869555e10d92668b7cfefb74ecf872ea721cb458ca7aa82",
-        "at": "2026-11-16T07:58:07.602Z",
+        "number": 5,
+        "contentHash": "bfba4ceb0f04ef8b19e634cd793b7e3b8e7eb4896add7e44ad73305583f0927a",
+        "at": "2026-11-16T08:35:16.075Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
@@ -42,19 +42,19 @@
       },
       "signoffs": [],
       "approval": {
-        "revision": 3,
+        "revision": 5,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-11-16T07:59:44.606Z",
+        "at": "2026-11-16T08:54:35.378Z",
         "override": {
-          "reason": "Daemon design review failed (review_resource_fenced, 1 of 8 chunks, no verdict). The LLD was self-reviewed by its author in two passes: pass 1 found 6 gaps, all fixed in revision 3; pass 2 confirmed them. Approved on the user's explicit yes, 2026-11-16, with this override."
+          "reason": "Daemon design review remains broken (rv-lld-149283b0-s1-r1 failed with review_resource_fenced, no verdict; never recovered). LLD rev 4-5 changes (JetBrains reader scope) were critically self-reviewed by the author against the real code (WorkflowChainReader.kt line 102 DEF-only filter). Approved on the user's explicit yes, 2026-11-16."
         }
       }
     },
-    "revision": 3,
+    "revision": 5,
     "envelope": {
       "description": "",
       "references": [],
@@ -115,7 +115,7 @@
   "body": {
     "summary": {
       "audience": "technical",
-      "prose": "A sized bugfix ISSUE now routes into design.story carrying its own hash and story id, so the LLD is LLD-<issueHash>-s1 under the ISSUE's folder instead of a new standalone root. One shared definition of the one-implied-story rule is used by the chain report and the tracker resolver, so `insrc workflow chain` reports the ISSUE-anchored item's single story, and the chain report no longer says to run define. design.epic and the tracker keep refusing an ISSUE as an Epic; when they meet one they say so instead of advising a Define. Relationship change: LLD, PLAN, BUILD and review records of a bugfix share the ISSUE's epicHash (ISSUE 1 : 1 Story s1, the Story keyed by the same hash, no new stored field); existing LLDs and ISSUEs are unchanged. The tracker push, sync and post stages are out of scope: an ISSUE-anchored item skips them in the chain report, and ISSUE-5f9d4ab4c90c0b4c tracks making them handle an ISSUE."
+      "prose": "A sized bugfix ISSUE now routes into design.story carrying its own hash and story id, so the LLD is LLD-<issueHash>-s1 under the ISSUE's folder instead of a new standalone root. One shared definition of the one-implied-story rule is used by the chain report and the tracker resolver, so `insrc workflow chain` reports the ISSUE-anchored item's single story, and the chain report no longer says to run define. design.epic and the tracker keep refusing an ISSUE as an Epic; when they meet one they say so instead of advising a Define. Relationship change: LLD, PLAN, BUILD and review records of a bugfix share the ISSUE's epicHash (ISSUE 1 : 1 Story s1, the Story keyed by the same hash, no new stored field); existing LLDs and ISSUEs are unchanged. The tracker push, sync and post stages are out of scope: an ISSUE-anchored item skips them in the chain report, and ISSUE-5f9d4ab4c90c0b4c tracks making them handle an ISSUE. The JetBrains Workflows page reads artifact files directly and lists only DEF-anchored Epics; it now also lists an ISSUE-anchored item (one implied story s1, no HLD, no tracker step) so the IDE shows the same single story and next step as the chain report."
     },
     "hldContextSlice": {
       "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
@@ -254,6 +254,22 @@
           "postconditions": [
             "The error class and the throwing condition are unchanged; only the message differs for an ISSUE-anchored hash"
           ]
+        },
+        {
+          "name": "WorkflowChainReader.readAll",
+          "signature": "readAll(): List<WorkflowChainDto>",
+          "parameters": [],
+          "returns": {
+            "type": "List<WorkflowChainDto>",
+            "meaning": "One entry per DEF-*.json (unchanged) plus one entry per ISSUE-*.json whose hash has no DEF-*.json in the same artifacts directory (a hash with both lists once, as the DEF). An ISSUE entry has definitionKind 'issue'; define is the ISSUE's existence, approval (meta.approvedAt) and rejection (meta.rejectedAt); hld is absent; stories holds the one implied story s1 titled with the ISSUE body title, with hasLld and approved read from LLD-<hash>-s1.json and never stale; amendments are zero. nextActionHint for an ISSUE entry is a plain string: 'Approve issue' when unapproved, 'Re-run issue' when rejected, 'Design story s1' with no LLD, 'Approve LLD for s1' with an unapproved LLD, 'Chain complete' once approved; it never names an HLD, amendment or stale step. The tracker half stays out of the plugin as before. Existing DEF entries are unchanged."
+          },
+          "errors": [],
+          "preconditions": [
+            "The reader stays read-only, opens no socket and never throws; a malformed ISSUE file contributes nothing, as a malformed DEF does"
+          ],
+          "postconditions": [
+            "WorkflowChainDto gains one field with a default, definitionKind: String = \"def\", so existing constructor callers and DEF entries are unchanged"
+          ]
         }
       ]
     },
@@ -287,6 +303,15 @@
           "src/workflow/storage.ts:651",
           "src/workflow/review/design-review/subject.ts:94",
           "src/workflow/tracker/resolve.ts:292"
+        ]
+      },
+      {
+        "entity": "WorkflowChainDto (JetBrains plugin)",
+        "change": "field-add",
+        "details": "One field with a default, definitionKind ('def' | 'issue'), so the Workflows page and its tests that build the DTO by name keep compiling and DEF entries keep their value. The reader additionally enumerates ISSUE-*.json for hashes that have no DEF.",
+        "callSites": [
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/workflow/WorkflowChainReader.kt",
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/ops/WorkflowsConfigurable.kt:56"
         ]
       }
     ],
@@ -365,6 +390,18 @@
         {
           "input": "Chain report for a rejected ISSUE",
           "expected": "run-define kind whose command reruns the issue stage"
+        },
+        {
+          "input": "JetBrains reader finds ISSUE-<hash>.json and no DEF-<hash>.json",
+          "expected": "One chain entry with definitionKind issue, implied story s1 and no HLD or amendment hint"
+        },
+        {
+          "input": "JetBrains reader finds both DEF-<hash>.json and ISSUE-<hash>.json",
+          "expected": "One entry, built from the DEF, so a hash is never listed twice"
+        },
+        {
+          "input": "JetBrains reader finds a malformed ISSUE file",
+          "expected": "It contributes nothing and does not throw, as a malformed DEF does"
         }
       ],
       "invariantsToPreserve": [
@@ -391,7 +428,7 @@
       ]
     },
     "testStrategy": {
-      "testFramework": "node:test with tsx (npx tsx --test), tests under src/workflow/__tests__/*.test.ts, repo-seeded temp directories like folder-identity-finalize.test.ts and bugfix-orchestration.test.ts",
+      "testFramework": "node:test with tsx (npx tsx --test), tests under src/workflow/__tests__/*.test.ts, repo-seeded temp directories like folder-identity-finalize.test.ts and bugfix-orchestration.test.ts; the JetBrains reader is Kotlin with JUnit 5 under jetbrains-plugin (./gradlew test in jetbrains-plugin), in WorkflowChainReaderTest.kt",
       "testLevels": [
         {
           "level": "unit",
@@ -399,7 +436,8 @@
           "subjects": [
             "nextAfterIssue sized route: epicHash equals issue.meta.issueHash, storyId is 's1', standalone/sizeClass unchanged; invalid-issue-hash refusal; small route unchanged",
             "impliedIssueStories and IMPLIED_ISSUE_STORY_ID: one entry, id s1",
-            "the sized-route fixtures in bugfix-orchestration.test.ts carry a 16-hex issueHash and still pass; nextAfterIssue refuses a sized ISSUE without one"
+            "the sized-route fixtures in bugfix-orchestration.test.ts carry a 16-hex issueHash and still pass; nextAfterIssue refuses a sized ISSUE without one",
+            "JetBrains WorkflowChainReader: an ISSUE-only hash lists one chain entry with definitionKind issue, implied story s1 from LLD-<hash>-s1.json, no HLD, never stale; its next-action hint follows Approve issue, Re-run issue, Design story s1, Approve LLD for s1, Chain complete; a DEF plus ISSUE hash lists once as the DEF; a malformed ISSUE contributes nothing; DEF entries are unchanged"
           ],
           "fixturesNeeded": [
             "the existing issue() builder in src/workflow/__tests__/bugfix-orchestration.test.ts"
@@ -485,6 +523,15 @@
             "bugfix-orchestration.test.ts: nextAfterIssue refuses a sized ISSUE with no issueHash",
             "bugfix-orchestration.test.ts: sized-route fixtures carry an issueHash"
           ]
+        },
+        {
+          "criterionId": "ac8",
+          "provingTests": [
+            "WorkflowChainReaderTest.kt: readAll lists an ISSUE-anchored hash with the implied story s1 and no HLD",
+            "WorkflowChainReaderTest.kt: nextActionHint for an ISSUE-anchored entry follows approve issue, design story, approve LLD, chain complete",
+            "WorkflowChainReaderTest.kt: readAll lists a hash with both a DEF and an ISSUE once, as the DEF",
+            "WorkflowChainReaderTest.kt: readAll swallows a malformed ISSUE file without throwing"
+          ]
         }
       ]
     },
@@ -511,9 +558,14 @@
           "order": 4,
           "action": "Add epicHash and storyId to the sized route of nextAfterIssue, with the invalid-issue-hash refusal; small route untouched.",
           "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Teach the JetBrains WorkflowChainReader to enumerate ISSUE-<hash>.json for hashes with no DEF and project them with the implied story s1 and the ISSUE next-action hints; add the defaulted definitionKind field to WorkflowChainDto.",
+          "rollbackable": true
         }
       ],
-      "backwardCompat": "No stored artifact changes shape, so no data is rewritten and existing ISSUE, LLD, PLAN and BUILD records stay valid. ChainReport gains one optional field only, so the VS Code and JetBrains clients that read it over IPC keep working (their parsers must ignore unknown optional fields; verify against vscode-plugin and jetbrains-plugin chain readers before build). Already-approved ISSUEs that have an orphaned standalone LLD from the old route keep that LLD; they are not migrated, and re-running design.story for such an ISSUE through the new route creates LLD-<issueHash>-s1 as a separate record. The emitted nextCall of an ISSUE approved before this change is recomputed from the stored ISSUE at advance time, so it picks up the new params with no stored state to update. Test fixtures that build a sized ISSUE gain an issueHash. The chain report no longer suggests push-tracker or sync-tracker for an ISSUE-anchored item; the tracker stages stay unchanged and DEF-only until ISSUE-5f9d4ab4c90c0b4c.",
+      "backwardCompat": "No stored artifact changes shape, so no data is rewritten and existing ISSUE, LLD, PLAN and BUILD records stay valid. ChainReport gains one optional field only, so the VS Code and JetBrains clients that read it over IPC keep working (their parsers must ignore unknown optional fields; verify against vscode-plugin and jetbrains-plugin chain readers before build). Already-approved ISSUEs that have an orphaned standalone LLD from the old route keep that LLD; they are not migrated, and re-running design.story for such an ISSUE through the new route creates LLD-<issueHash>-s1 as a separate record. The emitted nextCall of an ISSUE approved before this change is recomputed from the stored ISSUE at advance time, so it picks up the new params with no stored state to update. Test fixtures that build a sized ISSUE gain an issueHash. The chain report no longer suggests push-tracker or sync-tracker for an ISSUE-anchored item; the tracker stages stay unchanged and DEF-only until ISSUE-5f9d4ab4c90c0b4c. The JetBrains WorkflowChainDto gains a defaulted field only, so existing callers and the Workflows page compile unchanged; DEF entries and their hints are identical.",
       "zeroDowntime": true,
       "dataRewriteRequired": false
     },
@@ -593,7 +645,8 @@
       "alt2 (partial): alternatives were scored against four issue.* constraints written in s3, as the Story and Epic carry none.",
       "Decided (user, 2026-11-16): an ISSUE is equivalent to a define for the chain, so no new NextAction kinds are added; tracker handling is deferred to ISSUE-5f9d4ab4c90c0b4c.",
       "Unverified: a second design.story start for the same ISSUE revising LLD-<issueHash>-s1 through the existing re-finalize path; it is expected from finalizeStandaloneLld but not exercised.",
-      "Checked: the JetBrains WorkflowChainReader reads the artifact files itself and builds its own hint, and the VS Code plugin has no nextAction consumer, so neither reads the daemon ChainReport and the optional definitionKind field cannot break them. Separately, the JetBrains reader reads only DEF files, so it will not show an ISSUE-anchored item; that is outside this Story."
+      "Checked: the JetBrains WorkflowChainReader reads the artifact files itself and builds its own hint, and the VS Code plugin has no nextAction consumer, so neither reads the daemon ChainReport and the optional definitionKind field cannot break them. Decided (user, 2026-11-16): the JetBrains reader's DEF-only limitation is fixed in this Story, not deferred.",
+      "Unverified: the JetBrains Kotlin tests need the Gradle IntelliJ platform toolchain; whether ./gradlew test runs offline in this environment is not yet known, and the build task will say so if it cannot."
     ]
   },
   "citations": [
@@ -660,6 +713,12 @@
       "kind": "code",
       "ref": "src/workflow/chain.ts:200",
       "quotedText": "lldArtifactPaths(repoPath, epicHash, s.id, define.artifact!.meta.createdAt, 'epic', epicSlug).md"
+    },
+    {
+      "id": "c12",
+      "kind": "code",
+      "ref": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/workflow/WorkflowChainReader.kt:102",
+      "quotedText": ".filter { it.startsWith(\"DEF-\") && it.endsWith(\".json\") }"
     }
   ]
 }

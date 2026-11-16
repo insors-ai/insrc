@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
 import { once } from 'node:events';
-import { copyFile, mkdir, mkdtemp, readFile, realpath, rm, symlink, writeFile } from 'node:fs/promises';
+import { copyFile, link, mkdir, mkdtemp, readFile, realpath, rm, symlink, writeFile } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -236,8 +236,11 @@ test('Legacy cutover admits only the verified tsx esbuild child and waits for it
 	const f = await fixture(t);
 	const packageName = `@esbuild/darwin-${process.arch}`;
 	const binary = join(f.oldRoot, 'node_modules', packageName, 'bin/esbuild');
+	const alias = join(f.oldRoot, 'node_modules/esbuild/bin/esbuild');
 	await mkdir(join(f.oldRoot, 'node_modules', packageName, 'bin'), { recursive: true });
-	await copyFile(fileURLToPath(import.meta.resolve(`${packageName}/bin/esbuild`)), binary);
+	await mkdir(join(f.oldRoot, 'node_modules/esbuild/bin'), { recursive: true });
+	await copyFile(fileURLToPath(import.meta.resolve(`${packageName}/bin/esbuild`)), alias);
+	await link(alias, binary);
 	const version = execFileSync(binary, ['--version'], { encoding: 'utf8' }).trim();
 	const argv = [`--service=${version}`, '--ping'];
 	const entry = join(f.oldRoot, 'out/daemon/index.js');
@@ -247,7 +250,7 @@ test('Legacy cutover admits only the verified tsx esbuild child and waits for it
 const { spawn } = require('node:child_process');
 const { writeFileSync } = require('node:fs');
 const { createServer } = require('node:net');
-const child = spawn(${JSON.stringify(binary)}, ${JSON.stringify(argv)}, { stdio: 'pipe' });
+const child = spawn(${JSON.stringify(alias)}, ${JSON.stringify(argv)}, { argv0: ${JSON.stringify(binary)}, stdio: 'pipe' });
 writeFileSync(${JSON.stringify(pidFile)}, String(process.pid), { mode: 0o600 });
 child.once('spawn', () => {
   createServer().listen(${JSON.stringify(socketFile)}, () => console.log(child.pid));
@@ -262,6 +265,7 @@ child.once('spawn', () => {
 		const [output] = await once(daemon.stdout, 'data');
 		const helperPid = Number(String(output).trim());
 		assert.ok(helperPid > 0);
+		assert.equal((await readDarwinIncarnation(helperPid, f.helper)).executable, alias);
 		const update = await f.gate.reserve({
 			kind: 'update', owner: f.owner,
 			predecessor: {

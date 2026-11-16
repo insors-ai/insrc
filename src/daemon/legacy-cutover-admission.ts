@@ -191,12 +191,31 @@ async function layout(fence: Fence): Promise<'original' | 'fenced'> {
 }
 
 async function verifiedEsbuildChild(pid: number, parent: DarwinIncarnation, roots: readonly string[], helper?: string) {
-	const paths = roots.flatMap(root => ['arm64', 'x64'].map(arch => join(root, 'node_modules', `@esbuild/darwin-${arch}`, 'bin/esbuild')));
+	const names = ['node_modules/esbuild/bin/esbuild',
+		...['arm64', 'x64'].map(arch => `node_modules/@esbuild/darwin-${arch}/bin/esbuild`)];
+	const relativeBinary = (path: string) => names.find(name => roots.some(root => path === join(root, name)));
 	const child = await readDarwinIncarnation(pid, helper);
-	if (child.uid !== parent.uid || !paths.includes(child.executable)) return undefined;
+	const executable = relativeBinary(child.executable);
+	if (child.uid !== parent.uid || executable === undefined) return undefined;
 	const { cwd, argv } = await readDarwinLaunchContext(pid, helper);
-	if (!roots.includes(cwd) || argv.length !== 3 || !paths.includes(argv[0]!)
+	const invoked = relativeBinary(argv[0] ?? '');
+	if (!roots.includes(cwd) || argv.length !== 3 || invoked === undefined
 		|| !/^--service=\d+\.\d+\.\d+$/.test(argv[1]!) || argv[2] !== '--ping') return undefined;
+	// npm may hard-link the platform executable under the esbuild package. macOS
+	// can report either name after both launch and archive exchange.
+	let sameBinary = false;
+	for (const root of roots) {
+		const inspect = (name: string) => lstat(join(root, name), { bigint: true }).catch(error => {
+			if ((error as NodeJS.ErrnoException).code === 'ENOENT') return undefined;
+			throw error;
+		});
+		const [actual, requested] = await Promise.all([inspect(executable), inspect(invoked)]);
+		if (actual?.isFile() && requested?.isFile() && actual.dev === requested.dev && actual.ino === requested.ino) {
+			sameBinary = true;
+			break;
+		}
+	}
+	if (!sameBinary) return undefined;
 	const { stdout } = await exec('/bin/ps', ['-p', String(pid), '-o', 'ppid='], { timeout: 2_000 });
 	if (stdout.trim() !== String(parent.pid)
 		|| !matchesDarwinPeer(parent, await readDarwinIncarnation(parent.pid, helper), parent)
@@ -228,7 +247,7 @@ async function requireNoLegacyMutator(
 					continue;
 				}
 			}
-			fail('an older launcher, updater or daemon still references the legacy checkout');
+			fail(`an older launcher, updater or daemon still references the legacy checkout (PID ${pid})`);
 		}
 		pids.push(pid);
 	}
@@ -236,7 +255,7 @@ async function requireNoLegacyMutator(
 		const observations = await readDarwinWorkingDirectories(pids.slice(first, first + 256), helper);
 		for (const { pid, cwd, errno } of observations) {
 			if (cwd !== undefined) {
-				if (roots.some(root => inside(root, cwd))) fail('an older launcher, updater or daemon still references the legacy checkout');
+				if (roots.some(root => inside(root, cwd))) fail(`an older launcher, updater or daemon still references the legacy checkout (PID ${pid})`);
 				continue;
 			}
 			try { process.kill(pid, 0); }

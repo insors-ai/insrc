@@ -76,6 +76,13 @@
         "choice": "Bind at story design",
         "rationale": "Preserve the stated story-level governance; design.story is responsible for operationalizing s4/s5/s6's acceptance criteria against story-level requirements/localConstraints.",
         "resolvedAt": "2026-11-16T09:32:33.610Z"
+      },
+      "q29be74c0": {
+        "question": "PRD open decision blocking s5: Markdown syntax for qualified link targets, versioning, and alias escaping.",
+        "status": "resolved",
+        "choice": "Escaped Markdown links",
+        "rationale": "Keeps familiar Markdown link authoring for s5 while explicitly resolving qualified-target syntax, versioning, and alias escaping.",
+        "resolvedAt": "2026-11-16T09:33:43.060Z"
       }
     }
   },

@@ -347,6 +347,8 @@ Pads can be tagged and filtered, and new pads can start from an investigation or
   - **resolved**: Carry only unresolved assumptions — Keep settled PRD mock decisions settled; carry only the daemon link-target-resolution feasibility assumption forward to s4/s5/s7 local constraints, visible at design.story starts. _(2026-11-16T09:31:18.111Z)_
 - `q77afa3a7` — Item ac2: s4/s5/s6 acceptance criteria carry empty operationalizes by scoping (governed by story-level requirements/localConstraints, not epic kN); design.story should bind them.
   - **resolved**: Bind at story design — Preserve the stated story-level governance; design.story is responsible for operationalizing s4/s5/s6's acceptance criteria against story-level requirements/localConstraints. _(2026-11-16T09:32:33.610Z)_
+- `q29be74c0` — PRD open decision blocking s5: Markdown syntax for qualified link targets, versioning, and alias escaping.
+  - **resolved**: Escaped Markdown links — Keeps familiar Markdown link authoring for s5 while explicitly resolving qualified-target syntax, versioning, and alias escaping. _(2026-11-16T09:33:43.060Z)_
 
 ## Citations
 

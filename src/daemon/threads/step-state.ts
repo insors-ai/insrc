@@ -17,10 +17,7 @@
  */
 
 import { assertNoSessionPersistence } from '../../shared/connection-persistence.js';
-import { assertReviewOwnerActive, retireReviewOwner } from '../review-request-owner.js';
-import { currentStepContext } from '../../shared/step-context.js';
-import { requireReviewOwnerContext } from '../../shared/review-owner-context.js';
-import { ReviewStateRefused, reviewEvidence } from './review-state-contract.js';
+import { ReviewStateRefused } from './review-state-contract.js';
 import type { ReviewStateKind, ReviewStateExpected, ReviewStateAccess, ReviewStateClaim, ReviewClaimResult, ReviewStateCommit, ReviewCommitResult, ReviewCompletionReceipt } from './review-state-contract.js';
 import { randomBytes } from 'node:crypto';
 
@@ -91,13 +88,7 @@ export class StepStateNotFound extends Error {
 	}
 }
 
-interface ReviewEntry extends ReviewStateExpected {
-	claim?: ReviewStateClaim | undefined;
-	receipt?: ReviewCompletionReceipt | undefined;
-	uncertain?: boolean | undefined;
-	evidence?: ReturnType<typeof reviewEvidence> | undefined;
-}
-interface Entry { review?: ReviewEntry | undefined; payload: unknown; readonly createdAt: number; touchedAt: number; }
+interface Entry { payload: unknown; readonly createdAt: number; touchedAt: number; }
 
 function mintToken(): string {
 	return randomBytes(16).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
@@ -107,7 +98,7 @@ function mintToken(): string {
 export class LocalStepStateStore implements SharedStepStateStore {
 	private readonly stores = new Map<StepKind, Map<string, Entry>>(STEP_KINDS.map(k => [k, new Map()]));
 
-	constructor(private readonly now: () => number = () => Date.now(), private readonly assertOwner: (owner: string) => void = assertReviewOwnerActive) {}
+	constructor(private readonly now: () => number = () => Date.now(), _assertOwner?: (owner: string) => void) {}
 
 	lifecycle(kind: StepKind): StepLifecycle { return LIFECYCLES[kind]; }
 
@@ -123,7 +114,6 @@ export class LocalStepStateStore implements SharedStepStateStore {
 
 	async update<P>(kind: StepKind, token: string | undefined, payload: P): Promise<string> {
 		assertNoSessionPersistence();
-		if (token !== undefined && this.map(kind).get(token)?.review !== undefined) throw new ReviewStateRefused('review-state-invalid');
 		if (LIFECYCLES[kind].update === 'stable-token') {
 			const entry = token === undefined ? undefined : this.map(kind).get(token);
 			if (entry === undefined || token === undefined) throw new StepStateNotFound(kind, token ?? '');
@@ -138,7 +128,6 @@ export class LocalStepStateStore implements SharedStepStateStore {
 
 	async release(kind: StepKind, token: string): Promise<void> {
 		assertNoSessionPersistence();
-		if (this.map(kind).get(token)?.review !== undefined) throw new ReviewStateRefused('review-state-invalid');
 		this.map(kind).delete(token);
 	}
 
@@ -146,103 +135,22 @@ export class LocalStepStateStore implements SharedStepStateStore {
 		const now = this.now();
 		const { ttlMs } = LIFECYCLES[kind];
 		return [...this.map(kind).entries()]
-			.filter(([, e]) => e.review?.claim !== undefined || now - e.touchedAt <= ttlMs)
+			.filter(([, e]) => now - e.touchedAt <= ttlMs)
 			.sort((a, b) => b[1].touchedAt - a[1].touchedAt || b[1].createdAt - a[1].createdAt)
 			.map(([token, e]) => ({ token, kind, payload: structuredClone(e.payload) as P, touchedAt: e.touchedAt }));
 	}
 	async clearForTests(kind: StepKind): Promise<void> { assertNoSessionPersistence(); this.map(kind).clear(); }
 	async sizeForTests(kind: StepKind): Promise<number> { assertNoSessionPersistence(); return this.map(kind).size; }
 
-	async mintReviewState<P>(kind: ReviewStateKind, payload: P, expected: ReviewStateExpected): Promise<string> {
-		this.validateExpected(kind, expected);
-		const token = this.mintSync(kind, payload);
-		this.map(kind).get(token)!.review = { generation: expected.generation, callId: expected.callId };
-		return token;
-	}
+	async mintReviewState<P>(kind: ReviewStateKind, payload: P, expected: ReviewStateExpected): Promise<string> { throw new Error('Review functionality is being rewritten.'); }
 
-	async claimReviewState<P>(access: ReviewStateAccess): Promise<ReviewClaimResult<P>> {
-		this.assertOwner(access.owner);
-		this.validateExpected(access.kind, access);
-		if (typeof access.owner !== 'string' || access.owner.length === 0) throw new ReviewStateRefused('review-state-owner-mismatch');
-		const entry = this.reviewEntry(access.kind, access.token);
-		const review = entry.review!;
-		if ((review.receipt === undefined ? review.generation : review.generation - 1) !== access.generation || review.callId !== access.callId) throw new ReviewStateRefused('review-state-stale');
-		if (review.receipt !== undefined) return { status: 'completed', receipt: structuredClone(review.receipt) };
-		if (review.claim !== undefined) throw new ReviewStateRefused('review-state-busy');
-		const payload = structuredClone(entry.payload) as P;
-		const claim: ReviewStateClaim = { kind: access.kind, token: access.token, generation: access.generation, callId: access.callId, owner: access.owner, claimId: mintToken() };
-		review.claim = claim;
-		entry.touchedAt = this.now();
-		return { status: 'claimed', claim: { ...claim }, payload };
-	}
+	async claimReviewState<P>(access: ReviewStateAccess): Promise<ReviewClaimResult<P>> { throw new Error('Review functionality is being rewritten.'); }
 
-	async commitReviewState<P>(claim: ReviewStateClaim, next: ReviewStateCommit<P>): Promise<ReviewCommitResult> {
-		if (!next || (next.status !== 'completed' && next.status !== 'pending')) throw new ReviewStateRefused('review-state-invalid');
-		const entry = this.claimEntry(claim);
-		const generation = claim.generation + 1;
-		if (!Number.isSafeInteger(generation)) throw new ReviewStateRefused('review-state-invalid');
-		if (next.status === 'completed') {
-			const receipt = this.completionReceipt(next.receipt, claim.callId);
-			entry.payload = undefined;
-			// Keep the advanced generation and consumed call as a bounded replay receipt, never grant another claim.
-			entry.review = { generation, callId: claim.callId, receipt };
-			entry.touchedAt = this.now();
-			return { token: claim.token, generation };
-		}
-		this.validateExpected(claim.kind, { generation, callId: next.callId });
-		const payload = structuredClone(next.payload); // clone failures must not consume the claim
-		const token = LIFECYCLES[claim.kind].update === 'stable-token' ? claim.token : mintToken();
-		const replacement: Entry = { payload, createdAt: entry.createdAt, touchedAt: this.now(), review: { generation, callId: next.callId } };
-		this.map(claim.kind).set(token, replacement);
-		if (token !== claim.token) this.map(claim.kind).delete(claim.token);
-		return { token, generation };
-	}
+	async commitReviewState<P>(claim: ReviewStateClaim, next: ReviewStateCommit<P>): Promise<ReviewCommitResult> { throw new Error('Review functionality is being rewritten.'); }
 
-	async releaseReviewClaim(claim: ReviewStateClaim, noSideEffects: true): Promise<void> {
-		const entry = this.claimEntry(claim);
-		if (noSideEffects !== true) throw new ReviewStateRefused('review-state-uncertain');
-		entry.review!.claim = undefined;
-		entry.touchedAt = this.now();
-	}
-	async invalidateReviewClaim(claim: ReviewStateClaim): Promise<void> {
-		this.invalidateEntry(this.claimEntry(claim));
-	}
-	async invalidateReviewOwner(owner: string): Promise<void> {
-		for (const kind of ['review', 'code-review'] as const) {
-			for (const entry of this.map(kind).values()) if (entry.review?.claim?.owner === owner) this.invalidateEntry(entry);
-		}
-	}
-	private invalidateEntry(entry: Entry): void {
-		const review = entry.review!;
-		entry.review = { generation: review.generation, callId: review.callId, uncertain: true, evidence: reviewEvidence(entry.payload) };
-		entry.payload = undefined;
-		entry.touchedAt = this.now();
-	}
-	private reviewEntry(kind: ReviewStateKind, token: string): Entry {
-		if (kind !== 'review' && kind !== 'code-review') throw new ReviewStateRefused('review-state-invalid');
-		const entry = this.map(kind).get(token);
-		if (entry?.review === undefined) throw new ReviewStateRefused('review-state-stale');
-		if (entry.review.claim === undefined && this.now() - entry.touchedAt > LIFECYCLES[kind].ttlMs) {
-			this.map(kind).delete(token); throw new ReviewStateRefused('review-state-stale');
-		}
-		if (entry.review.uncertain) throw new ReviewStateRefused('review-state-uncertain', entry.review.evidence);
-		return entry;
-	}
-	private claimEntry(claim: ReviewStateClaim): Entry {
-		this.assertOwner(claim.owner);
-		const entry = this.reviewEntry(claim.kind, claim.token);
-		const held = entry.review!.claim;
-		if (held === undefined || held.claimId !== claim.claimId || held.owner !== claim.owner || held.generation !== claim.generation || held.callId !== claim.callId) throw new ReviewStateRefused('review-state-owner-mismatch');
-		return entry;
-	}
-	private validateExpected(kind: ReviewStateKind, expected: ReviewStateExpected): void {
-		if ((kind !== 'review' && kind !== 'code-review') || !Number.isSafeInteger(expected.generation) || expected.generation < 0 || typeof expected.callId !== 'string' || expected.callId.length === 0 || expected.callId.length > 256) throw new ReviewStateRefused('review-state-invalid');
-	}
-	private completionReceipt(receipt: ReviewCompletionReceipt, callId: string): ReviewCompletionReceipt {
-		const validId = (value: unknown): value is string => typeof value === 'string' && /^[A-Za-z0-9_.:/-]{1,256}$/.test(value);
-		if (receipt.status !== 'completed' || receipt.callId !== callId || !validId(callId) || (receipt.artifactId !== undefined && !validId(receipt.artifactId)) || (receipt.runId !== undefined && !validId(receipt.runId))) throw new ReviewStateRefused('review-state-invalid');
-		return { status: 'completed', callId, ...(receipt.artifactId !== undefined ? { artifactId: receipt.artifactId } : {}), ...(receipt.runId !== undefined ? { runId: receipt.runId } : {}) };
-	}
+	async releaseReviewClaim(claim: ReviewStateClaim, noSideEffects: true): Promise<void> { throw new Error('Review functionality is being rewritten.'); }
+	async invalidateReviewClaim(claim: ReviewStateClaim): Promise<void> { throw new Error('Review functionality is being rewritten.'); }
+	async invalidateReviewOwner(owner: string): Promise<void> { throw new Error('Review functionality is being rewritten.'); }
 
 	private map(kind: StepKind): Map<string, Entry> {
 		const m = this.stores.get(kind);
@@ -255,9 +163,9 @@ export class LocalStepStateStore implements SharedStepStateStore {
 		const store = this.map(kind);
 		const { maxEntries, ttlMs } = LIFECYCLES[kind];
 		const now = this.now();
-		for (const [k, v] of store) if (v.review?.claim === undefined && now - v.touchedAt > ttlMs) store.delete(k);
+		for (const [k, v] of store) if (now - v.touchedAt > ttlMs) store.delete(k);
 		if (store.size >= maxEntries) {
-			const oldest = [...store.entries()].filter(([, e]) => e.review?.claim === undefined).sort((a, b) => a[1].touchedAt - b[1].touchedAt);
+			const oldest = [...store.entries()].sort((a, b) => a[1].touchedAt - b[1].touchedAt);
 			while (store.size >= maxEntries && oldest.length > 0) store.delete(oldest.shift()![0]);
 		}
 		if (store.size >= maxEntries) throw new ReviewStateRefused('review-state-capacity');
@@ -273,15 +181,9 @@ export class LocalStepStateStore implements SharedStepStateStore {
 // ---------------------------------------------------------------------------
 
 /** The main thread's hub services for the step-state store. */
-export function stepStateHubHandlers(store: SharedStepStateStore, assertOwner: (owner: string) => void = assertReviewOwnerActive): HubHandlers {
+export function stepStateHubHandlers(store: SharedStepStateStore, _assertOwner?: (owner: string) => void): HubHandlers {
 	type A = { kind: StepKind; token?: string | undefined; payload?: unknown | undefined };
 	return {
-		'step.review.mint': a => { const v = a as { kind: ReviewStateKind; payload: unknown; expected: ReviewStateExpected }; return store.mintReviewState(v.kind, v.payload, v.expected); },
-		'step.review.claim': a => { const access = a as ReviewStateAccess; assertOwner(access.owner); return store.claimReviewState(access); },
-		'step.review.commit': a => { const v = a as { claim: ReviewStateClaim; next: ReviewStateCommit<unknown> }; assertOwner(v.claim.owner); return store.commitReviewState(v.claim, v.next); },
-		'step.review.release': a => { const v = a as { claim: ReviewStateClaim; noSideEffects: true }; assertOwner(v.claim.owner); return store.releaseReviewClaim(v.claim, v.noSideEffects); },
-		'step.review.invalidate': a => { const claim = a as ReviewStateClaim; assertOwner(claim.owner); return store.invalidateReviewClaim(claim); },
-		'step.review.owner-end': a => { const owner = (a as { owner: string }).owner; assertOwner(owner); retireReviewOwner(owner); },
 		'step.mint':    a => store.mint((a as A).kind, (a as A).payload),
 		'step.read':    a => store.read((a as A).kind, (a as A).token!),
 		'step.update':  a => store.update((a as A).kind, (a as A).token, (a as A).payload),
@@ -293,14 +195,13 @@ export function stepStateHubHandlers(store: SharedStepStateStore, assertOwner: (
 
 /** A worker's view of the step-state store, one hub request per call. */
 export class HubStepStateStore implements SharedStepStateStore {
-	constructor(private readonly hub: HubClient, private readonly ownerContext: (() => string) = () => requireReviewOwnerContext(currentStepContext()?.reviewOwner).nonce) {}
-	private checkOwner(owner: string): void { if (owner !== this.ownerContext()) throw new ReviewStateRefused('review-state-owner-mismatch'); }
-	mintReviewState<P>(kind: ReviewStateKind, payload: P, expected: ReviewStateExpected): Promise<string> { return this.hub.request('step.review.mint', { kind, payload, expected }); }
-	claimReviewState<P>(access: ReviewStateAccess): Promise<ReviewClaimResult<P>> { this.checkOwner(access.owner); return this.hub.request('step.review.claim', access); }
-	commitReviewState<P>(claim: ReviewStateClaim, next: ReviewStateCommit<P>): Promise<ReviewCommitResult> { this.checkOwner(claim.owner); return this.hub.request('step.review.commit', { claim, next }); }
-	releaseReviewClaim(claim: ReviewStateClaim, noSideEffects: true): Promise<void> { this.checkOwner(claim.owner); return this.hub.request('step.review.release', { claim, noSideEffects }); }
-	invalidateReviewClaim(claim: ReviewStateClaim): Promise<void> { this.checkOwner(claim.owner); return this.hub.request('step.review.invalidate', claim); }
-	invalidateReviewOwner(owner: string): Promise<void> { this.checkOwner(owner); return this.hub.request('step.review.owner-end', { owner }); }
+	constructor(private readonly hub: HubClient, _ownerContext?: () => string) {}
+	mintReviewState<P>(kind: ReviewStateKind, payload: P, expected: ReviewStateExpected): Promise<string> { throw new Error('Review functionality is being rewritten.'); }
+	claimReviewState<P>(access: ReviewStateAccess): Promise<ReviewClaimResult<P>> { throw new Error('Review functionality is being rewritten.'); }
+	commitReviewState<P>(claim: ReviewStateClaim, next: ReviewStateCommit<P>): Promise<ReviewCommitResult> { throw new Error('Review functionality is being rewritten.'); }
+	releaseReviewClaim(claim: ReviewStateClaim, noSideEffects: true): Promise<void> { throw new Error('Review functionality is being rewritten.'); }
+	invalidateReviewClaim(claim: ReviewStateClaim): Promise<void> { throw new Error('Review functionality is being rewritten.'); }
+	invalidateReviewOwner(owner: string): Promise<void> { throw new Error('Review functionality is being rewritten.'); }
 
 	lifecycle(kind: StepKind): StepLifecycle { return LIFECYCLES[kind]; }
 	mint<P>(kind: StepKind, payload: P): Promise<string> { assertNoSessionPersistence(); return this.hub.request('step.mint', { kind, payload }); }

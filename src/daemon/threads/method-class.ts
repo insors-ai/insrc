@@ -319,17 +319,17 @@ export const methodClasses: MethodClassRegistry = Object.freeze({
 /**
  * The session-class families whose state is one process-wide copy (s3): chat (the chat session pool), todos (the todos event bus)
  * and understanding (the understanding service); and (Story 5d393a4b) models, whose checks run one at a time and are decided by a
- * later call, and codeReview, whose running operations later turns look up.
+ * later call.
  */
-const SHARED_STATE_FAMILIES = ['chat.', 'todos.', 'understanding.', 'models.', 'codeReview.'] as const;
+const SHARED_STATE_FAMILIES = ['chat.', 'todos.', 'understanding.', 'models.'] as const;
 
 /** The session-class methods served on the one shared-state worker (s3), so their state stays whole. */
 export const SHARED_STATE_METHODS: ReadonlySet<string> = new Set(
 	ENTRIES.filter(e => e.cls === 'session' && SHARED_STATE_FAMILIES.some(f => e.method.startsWith(f))).map(e => e.method),
 );
 
-/** The step.call tools served on the shared-state worker (Story 5d393a4b): the code-review step's turns reach the operations codeReview.run started there. */
-export const SHARED_STATE_STEP_TOOLS: ReadonlySet<string> = new Set(['insrc_code_review_step']);
+/** No step tools currently need a shared-state worker. */
+export const SHARED_STATE_STEP_TOOLS: ReadonlySet<string> = new Set([]);
 
 /** Whether a session-class request is served on the shared-state worker: a shared-state method, or step.call for a shared-state step tool. */
 export function servedOnSharedState(method: string, params: unknown): boolean {
@@ -389,13 +389,13 @@ export const MAIN_DAEMON_CONNECTION_METHODS:ReadonlySet<string>=new Set([
  'db.connections.v2.session.delegate','db.connections.v2.session.heartbeat','db.connections.v2.session.end',
 ]);
 
-/** Task review state and trusted controller lifetimes have one main-daemon owner. */
+/** Retired task-review endpoints are answered inline without worker allocation. */
 export const MAIN_DAEMON_TASK_REVIEW_METHODS: ReadonlySet<string> = new Set([
  'codeReview.task.cancel', 'codeReview.task.cleanup', 'codeReview.task.start', 'codeReview.task.progress', 'codeReview.task.publish',
  'codeReview.task.assignment', 'codeReview.task.scope', 'codeReview.task.result', 'codeReview.task.activity',
 ]);
 
-/** Design review execution and trusted connection authority are main-daemon owned. */
+/** Retired design-review endpoints are answered inline without worker allocation. */
 export const MAIN_DAEMON_DESIGN_REVIEW_METHODS:ReadonlySet<string>=new Set([
  'designReview.cancel','designReview.start','designReview.progress','designReview.assignment','designReview.plan','designReview.impact','designReview.activity','designReview.result',
  'designReview.recover','designReview.failure',

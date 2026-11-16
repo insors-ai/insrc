@@ -24,7 +24,7 @@ import { openProgressRuntime } from './task-progress/runtime.js';
 import { registerExecutorProducers } from './task-progress/executor-measurements.js';
 import type { ExecutorDetails } from './task-progress/executor-measurements.js';
 import type { ProgressCoordinator } from './task-progress/coordinator.js';
-import { bindReviewTask, registerReviewProducers, validateAllDetails } from './task-progress/review-measurements.js';
+import { validateAllDetails } from './task-progress/detail-compatibility.js';
 import { ExecutorProgressRelay } from './task-progress/executor-relay.js';
 import { setLogMode, getLogger } from '../shared/logger.js';
 
@@ -71,7 +71,6 @@ import { registerSignoff } from './steps/workflow-step/signoff-registration.js';
 import { writePid, isAlreadyRunning, bootstrapEmbeddingModel, getModelState } from './lifecycle.js';
 import { readPublicInstalledCommit } from './managed-update-ipc.js';
 import { ThreadServices, currentLmdbFileSizeMb, maintenanceConfig, sessionIdleMs, threadsEnabled } from './threads/main-services.js';
-import { ProductionReviews,installProductionReviews } from './review-service.js';
 import { threadViews } from './threads/admin-status.js';
 import type { SessionPool } from './threads/session-pool.js';
 import { startSessionRouting } from './threads/session-routing.js';
@@ -271,16 +270,16 @@ async function main(): Promise<void> {
 	//     any store is used, and the hub each worker is served over.
 	// Idle maintenance (graph compaction), made once the workers are (below).
 	let maintenance: MaintenanceController | undefined;
-	const reviewServices = new ThreadServices(async () => ({
+	const workerServices = new ThreadServices(async () => ({
 			startedAt,
 			modelState: getModelState(),
 			installedCommit: await readPublicInstalledCommit(),
 			lmdbFileSizeMb: currentLmdbFileSizeMb(),
 			maintenance: maintenance?.status(),
 		}));
- const threadServices=threadsEnabled()?reviewServices:undefined;
+ const threadServices=threadsEnabled()?workerServices:undefined;
  const {onToolSettingsChange}=await import('./tools/config.js');
- onToolSettingsChange(settings=>reviewServices.setToolSettings(settings));
+ onToolSettingsChange(settings=>workerServices.setToolSettings(settings));
 	if (threadServices !== undefined) {
 		log.info('daemon threads enabled');
 		// tools.config.set is served here; each change reaches every worker (Story 5d393a4b).
@@ -307,7 +306,7 @@ async function main(): Promise<void> {
 
 	// 4. Bootstrap embedding model (async, non-blocking)
 	void bootstrapEmbeddingModel()
-		.then(() => reviewServices.setEmbedderBackend(getActiveEmbedderBackend()))
+		.then(() => workerServices.setEmbedderBackend(getActiveEmbedderBackend()))
 		.catch(() => { /* the bootstrap logs its own failures */ });
 
 	// 5. Load repos, start indexer: on this thread, or, with daemon threads
@@ -417,15 +416,7 @@ async function main(): Promise<void> {
 	//     onto the canonical unified ids in one pass.
 	const { registerBuiltinTools } = await import('./tools/builtins/index.js');
 	registerBuiltinTools();
- const reviews:ProductionReviews=new ProductionReviews({services:reviewServices,registeredRepos:async()=>new Set((await listRepos(db)).map(r=>r.path)),track:(worker,name)=>{
-  if(supervisor)supervisor.track(worker,name);
-  else worker.on('error',error=>log.error({worker:name,error:error.message},'review worker failed'));
- },
- // s3: reviews are bound to a task of the ONE progress runtime at admission; a
- // launch/registration failure leaves the review unobserved, exactly as before.
- bindTask:(key,attempt,context):Promise<import('./task-progress/review-measurements.js').ReviewTaskBinding|undefined>=>bindReviewTask({runtime:getProgressRuntime,source:reviews.registry},key,attempt,context)});
- installProductionReviews(reviews);
- let reviewClosing:Promise<void>|undefined;
+
 
 	// 6b'. The two rules that refresh the tracker status after a git pull or push in a registered repo (Story s9).
 	const { registerTrackerRefreshHooks } = await import('../workflow/tracker/refresh-hooks.js');
@@ -503,7 +494,7 @@ async function main(): Promise<void> {
 	// Built at boot without daemon threads; with them, only when the first request that must stay
 	// on this thread arrives (s4), so a daemon that never sees one never builds the handler tables here.
 	let understandingRoutes: HandlerRuntime['understandingRoutes'] | undefined;
-	// One progress runtime serves the executor kinds and the review kinds: a single
+	// One progress runtime serves ordinary executor kinds and historical task rows: a single
 	// store with the composed validator, one coordinator, one set of progress.* routes.
 	// The coordinator's producers are registered through its widened type; the
 	// executor registry only ever touches the executor kinds.
@@ -512,7 +503,7 @@ async function main(): Promise<void> {
 		const coordinator = runtime.coordinator as ProgressCoordinator<ExecutorDetails>;
 		return {
 			...runtime,
-			producers: { ...registerExecutorProducers(coordinator), ...registerReviewProducers(runtime.coordinator) },
+			producers: { ...registerExecutorProducers(coordinator) },
 		};
 	};
 	let progressRuntime: ReturnType<typeof openExecutorProgress> | undefined;
@@ -523,7 +514,6 @@ async function main(): Promise<void> {
 	const buildRuntime = (): ForwardRequest => {
 		const runtime = buildHandlerRuntime({
 			db, configStore, queue, indexer, startedAt,
-   reviewThreads:()=>threadViews(reviewServices.board.snapshot(),Date.now()).filter(t=>t.cls==='review'),
 			shutdown: reason => requestPublicShutdown(reason),
 			attachedClients: () => server.attachedClients(),
 			understandingService: () => understandingService,
@@ -673,7 +663,6 @@ async function main(): Promise<void> {
 			},
 		}),
 		stopBackgroundWork: () => {
-   reviews.stopAdmission();reviewClosing=reviews.shutdown();void reviewClosing.catch(error=>log.error({error:String(error)},'review shutdown retained recovery fences'));
 			connectionSessionRuntime.stopAdmission();
 			void connectionTestSupervisor.shutdown();
 			understandingService?.stop();
@@ -692,7 +681,6 @@ async function main(): Promise<void> {
 		},
 		queueDone,
 		closeStores: async () => {
-   await (reviewClosing??reviews.shutdown());
 			await connectionTestSupervisor.shutdown();
 			await server.flushPendingWrites(1000);
 			server.disconnectClients();

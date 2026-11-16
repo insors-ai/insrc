@@ -24,7 +24,6 @@
  * as on a single thread. Requests bound to a connection session stay on this thread.
  */
 
-import { reviewWorkerConnection, retireReviewOwner, disconnectReviewWorker } from '../review-request-owner.js';
 import { threadId as mainThreadId } from 'node:worker_threads';
 import type { MessagePort } from 'node:worker_threads';
 
@@ -116,7 +115,6 @@ const isTerminal = (envelope: ReplyEnvelope | FrameEnvelope): boolean => {
 };
 
 interface Pending {
-	readonly reviewOwner?: string | undefined;
 	readonly lifetime?: RequestLifetime | undefined;
 	readonly threadId: number;
 	readonly method: string;
@@ -245,7 +243,8 @@ export class Router {
 
 	private dispatch(cls: MethodClass | undefined, request: LocalRequestEnvelope, deliver: DeliverEnvelope, dropped: () => void = () => {}): () => void {
 		if (request.trustedContext?.connectionSession !== undefined || request.trustedContext?.connectionExecution?.mode === 'session-memory'
-			|| MAIN_DAEMON_TASK_REVIEW_METHODS.has(request.method) || MAIN_DAEMON_DESIGN_REVIEW_METHODS.has(request.method)
+			|| ['codeReview.run', 'codeReview.grounding', 'codeReview.freshness', 'workflow.review', 'workflow.reviewArtifact', 'workflow.resolveFinding'].includes(request.method)
+            || MAIN_DAEMON_TASK_REVIEW_METHODS.has(request.method) || MAIN_DAEMON_DESIGN_REVIEW_METHODS.has(request.method)
 			|| request.method === 'step.call' && ['insrc_code_review_step','insrc_review_step'].includes(String((request.params as { tool?: unknown } | null)?.tool))
 			|| MAIN_DAEMON_CONNECTION_METHODS.has(request.method) || MAIN_THREAD_STATE_METHODS.has(request.method) || cls === undefined || !this.opts.routed.has(cls)) return this.local(request, deliver);
 		if (cls === 'session' && this.sessions !== undefined) return this.dispatchSession(request, deliver, dropped);
@@ -481,7 +480,6 @@ export class Router {
 			const pending = this.pending.get(response.requestId);
 			if (pending === undefined || pending.threadId !== threadId) return;
 			if (completion) {
-				if (pending.reviewOwner) retireReviewOwner(pending.reviewOwner);
 				if (pending.lifetime || pending.onAck) {
 					this.pending.delete(response.requestId);
 					pending.lifetime?.complete();
@@ -493,12 +491,12 @@ export class Router {
 			// A request awaiting its ack stays pending, and in flight, past its reply or last frame.
 			const kept = pending.lifetime !== undefined || pending.onAck !== undefined;
 			if (response.kind === 'reply') {
-				if (!kept) { if (pending.reviewOwner) retireReviewOwner(pending.reviewOwner); this.pending.delete(response.requestId); }
+                if (!kept) this.pending.delete(response.requestId);
 				if (!pending.onAck) this.finished(threadId, response.requestId);
 			} else {
 				const stream = ((response as FrameEnvelope).frame as IpcStreamMessage).stream;
 				const terminal = stream === 'done' || stream === 'error';
-				if (!kept && terminal) { if (pending.reviewOwner) retireReviewOwner(pending.reviewOwner); this.pending.delete(response.requestId); }
+                if (!kept && terminal) this.pending.delete(response.requestId);
 				if (terminal && !pending.onAck) this.finished(threadId, response.requestId);
 			}
 			pending.deliver(response);
@@ -514,8 +512,6 @@ export class Router {
 	detach(threadId: number): OrphanedRequest[] {
 		const port = this.ports.get(threadId);
 		const listener = this.listeners.get(threadId);
-		const connection = port === undefined ? undefined : reviewWorkerConnection(port);
-		if (connection) disconnectReviewWorker(connection);
 		if (port !== undefined && listener !== undefined) port.off('message', listener);
 		this.ports.delete(threadId);
 		this.listeners.delete(threadId);
@@ -526,7 +522,6 @@ export class Router {
 		for (const [requestId, p] of this.pending) {
 			if (p.threadId !== threadId) continue;
 			this.pending.delete(requestId);
-			if (p.reviewOwner) { retireReviewOwner(p.reviewOwner); p.lifetime?.abort(); }
 			p.lifetime?.complete();
 			orphaned.push({ requestId, method: p.method, stream: p.stream, deliver: p.deliver, ack: p.onAck ?? (() => {}) });
 		}
@@ -653,8 +648,6 @@ export class Router {
 	/** The request's socket closed: a stream is cancelled on its worker; a unary request runs on and its reply is dropped there. */
 	private cancel(threadId: number, request: LocalRequestEnvelope): void {
 		if (!request.stream) return;
-		const owner = this.pending.get(request.requestId)?.reviewOwner;
-		if (owner) retireReviewOwner(owner);
 		request.lifetime?.abort();
 		// Without a lifetime the stream ends here; with one, or awaiting its ack, when its worker completes it.
 		if (!request.lifetime && this.pending.get(request.requestId)?.onAck === undefined) { this.pending.delete(request.requestId); this.finished(threadId, request.requestId); }

@@ -68,7 +68,6 @@ export class ProductionReviews{
    const scope=knownScope??await this.scope(key),id=key.family==='code'?scope.subject.replace(/^BUILD-/,'CR-'):scope.subject;
    await persistReviewResourceAudit(lifecycleFor(key.project).store,id,key,rows);
   });
-  deps.services.onReviewCleanup(async target=>{await this.registered(target.project);return this.registry.cleanupApproved(target);});
  }
  private async registered(repo:string):Promise<void>{
   if(this.closed||this.lifetime.signal.aborted||await realpath(repo)!==repo||!(await this.deps.registeredRepos()).has(repo))throw new Error('Registered live review project required');

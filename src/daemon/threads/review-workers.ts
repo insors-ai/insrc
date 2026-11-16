@@ -145,7 +145,6 @@ export class ReviewWorkers {
    const last=history.attempts.at(-1)!,error='review-response'in last?last['review-response'].error:undefined;
    await persistReviewRuntimeAudit(lifecycleFor(identity.key.project).store,artifactId,identity.key,{...(error?.startsWith('CR publication failed: ')?{publicationError:error}:{}),runtime:proof.runtime,checkpointDigest:receipt.checkpointDigest,checkpointRuntime:{runtimeId:proof.runtime.runtimeId,inputDigest:proof.runtime.checkpointBinding.inputDigest},context:{generationId:proof.binding.generationId,manifestDigest:proof.manifestDigest,historyBindingDigest:proof.binding.bindingDigest},publication:proof});
   });
-  deps.services.onReviewCleanup(target=>this.cleanupApproved(target));
  }
  private forReservation(r:ReviewProcessReservation):Entry{
   const e=this.entries.get(keyOf(r.key));if(!e||e.input.incarnation!==r.workerIncarnation)throw new Error('Foreign review incarnation');return e;

@@ -12,7 +12,7 @@ import type { ForwardRequest } from '../server.js';
 import type { OwnerEvidence, ProducerPort } from './coordinator.js';
 import { validateExecutorDetails } from './executor-measurements.js';
 import type { AnalysisDetails, ExecutorDetails, WorkflowDetails, registerExecutorProducers } from './executor-measurements.js';
-import type { AllTaskDetails } from './review-measurements.js';
+import type { AllTaskDetails } from './detail-compatibility.js';
 import type { ProgressRuntime } from './rpc.js';
 
 export type ExecutorProgressKind = ExecutorDetails['kind'];

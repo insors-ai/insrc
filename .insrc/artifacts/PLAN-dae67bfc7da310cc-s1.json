@@ -1,0 +1,360 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1794835523446-lvfofz",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-16T13:28:34.331Z",
+    "epicCreatedAt": "2026-11-16T12:10:41.975Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 181624,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "dae67bfc7da310cc",
+    "epicSlug": "remove-design-code-review-implementations-while",
+    "storyId": "s1",
+    "lldRunId": "wf-1794835125681-aqgphg",
+    "lldEffectiveHash": "810021dce1a3aadf430621ba10dd63f963ec8410f9924f44481d6dd0268c7c76",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "32d5a719df69face0f44893f34951c8a63b815bd2caab370564d3859357f7ccd",
+        "at": "2026-11-16T13:28:37.122Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-16T13:34:39.144Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "85d5b112ac946142b1e10114f64b917d61900001"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Replace automated design and code reviews with stateless unavailable endpoints, then delete their engines and all live wiring. Remove automated-review requirements from workflow gates while preserving human approvals, build/task checks, shared daemon services and historical reads. Validate the exact endpoint contracts, absence of side effects, remaining guards, current client behavior and clean packaged output using user-authorized self-checks."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Retain review endpoints as stateless rewritten errors",
+        "summary": "Freeze existing MCP schemas and exact 27-operation inventory. Isolate public schema definitions from execution contracts, replace MCP/step/IPC/legacy review entrypoints with family-specific errors, remove MCP persistent review connections, and preserve ordinary error transport and human decision endpoints. Remove/bypass review-specific host/router ownership allocation before unavailable dispatch; defer deletion of orphan ownership infrastructure to t3.",
+        "size": "L",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "All 2 MCP tools and 25 IPC review methods remain registered with unchanged callable MCP schemas and accepted phase sets.",
+          "Every valid review operation reports the exact family-specific rewritten error without repo resolution, provider/file access, worker/process creation or retained MCP connections.",
+          "Human workflow.reviewDecision and generic artifact/team endpoints remain outside automated-review retirement.",
+          "Unavailable review dispatch allocates no review owner in step host or router before reaching the error handler."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "All preserved review operations and accepted MCP phases report exact rewrite errors without allocating review state"
+          },
+          {
+            "level": "integration",
+            "name": "Repeated unavailable MCP calls allocate no persistent review connections and preserve transport error envelopes"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Decouple approval and completion from automated reviews",
+        "summary": "Remove automated-review gates, party/freshness/approval fences and cleanup hooks from workflow/lifecycle approval and Story/Epic completion. Extract minimal dependency-free historical schema/read/render contracts where generic artifact views require them, preserving data and all non-review guards. Historical schema/readers must have a dependency-free inert closure; do not preserve entire execution-contract trees.",
+        "size": "L",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Human artifact approval and completion of approved validated builds with passing current tasks work without any CR or review override.",
+          "Integrity, upstream approval, team/signoff, build and task-accounting denials still apply; no fake clean review or altered historical verdict is written.",
+          "Approval/completion and generic historical reads do not load review execution or call cleanup endpoints; representative stored review versions remain readable.",
+          "Transitive imports of generic historical readers and preserved public schemas contain no review execution, provider, worker, checkpoint-writing or cleanup modules."
+        ],
+        "derivedFrom": [
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Human approval and Story Epic completion work without CR while non-review integrity build task and team guards remain effective"
+          },
+          {
+            "level": "integration",
+            "name": "Historical review versions remain readable unchanged through an inert dependency closure"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Remove review runtime wiring from shared daemon services",
+        "summary": "Detach ProductionReviews, dedicated workers/native/preparation/resource/cleanup owners, router/request ownership and live review progress producer registration. Preserve shared ThreadServices, worker hub/step state, process broker/providers and ordinary index/analyze/workflow task progress.",
+        "size": "L",
+        "order": 3,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "Daemon startup/shutdown and normal requests allocate no review worker, runtime service, recovery scan, preparation or cleanup owner.",
+          "Shared ThreadServices, ordinary daemon worker routing, step state, provider broker and unrelated progress validation still function.",
+          "Historical review task rows remain inert/readable; no fabricated live or completed review progress is published."
+        ],
+        "derivedFrom": [
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Daemon startup shutdown and dispatch create no review services workers progress producers or cleanup owners"
+          },
+          {
+            "level": "integration",
+            "name": "Normal ThreadServices worker routing step state provider broker and task progress continue without review hooks"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Delete obsolete review implementation and update operational guidance",
+        "summary": "Delete now-unreachable review engines, preparation/checkpoint/publication/cleanup/activation code, review-only helpers/assets/config/prompts and obsolete implementation tests. Update canonical steering/user guidance and current client metadata for unavailable endpoints and human approval. Keep only endpoint/schema/error and generic historical read compatibility, with no dormant execution trees.",
+        "size": "L",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "No executable review engine, worker/bootstrap/native host, activation, checkpoint writer, publication or cleanup implementation remains in production imports or shipped output.",
+          "Remaining review-named files contain only endpoint schemas/errors, historical data/read/render types or explicitly preserved human artifact decisions; shared packages and generic analyze adherence remain.",
+          "Guidance and current IDE configuration match endpoint unavailability and removal of automated-review requirements; repository history artifacts/checkpoints are unchanged."
+        ],
+        "derivedFrom": [
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Production source import and asset audit retains only review endpoints inert historical readers and human decisions"
+          },
+          {
+            "level": "integration",
+            "name": "Review unavailability guidance and settings agree across backend VS Code and JetBrains contracts"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Verify complete removal and compatibility with self-check evidence",
+        "summary": "Run focused production-registration, no-side-effect, human approval/completion, historical read and unrelated service checks; clean production build and inspect packaged output for stale runtime files; verify both current IDE clients surface errors without polling. Record self-check evidence and limitations without invoking broken automated reviews or deploying/restarting the daemon.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "Endpoint/schema inventory and exact error contracts pass across accepted phases and unary/stream/MCP dispatch; repeated failures allocate no review state/connections.",
+          "Missing/failed BUILD, stale/incomplete task set, integrity/team/signoff/upstream refusal checks remain effective; valid human-approved work completes without CR.",
+          "Clean build removes planted stale review output; package/import inspection finds no deleted runtime; historical fixtures/hashes and both current IDE client error contracts pass.",
+          "Self-review evidence records actual commands/results and limitations; no installed-daemon update, restart or automated-review certification is claimed."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4",
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "Clean production build and package contain no deleted review implementation or planted stale review output"
+          },
+          {
+            "level": "integration",
+            "name": "End-to-end unavailable review calls preserve historical data and do not start client polling or unrelated service regressions"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "All contractDetails.api entries",
+        "coveredByTaskIds": [
+          "t1",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Unary and stream error propagation",
+        "coveredByTaskIds": [
+          "t1",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "MCP error-envelope mapping",
+        "coveredByTaskIds": [
+          "t1",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "MCP handlers",
+        "coveredByTaskIds": [
+          "t1",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Daemon handler maps and step host",
+        "coveredByTaskIds": [
+          "t1",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Daemon startup/shutdown and router/hub review hooks",
+        "coveredByTaskIds": [
+          "t3",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Human workflow.reviewDecision",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Workflow approval and lifecycle completion",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Missing/failed BUILD and incomplete/stale task sets",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Integrity/team/signoff/upstream approval denials",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Generic historical review rendering",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Normal indexing/analyze/workflow workers and task progress",
+        "coveredByTaskIds": [
+          "t3",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "npm run build and scripts/clean-output.mjs",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Import/transitive dependency and obsolete prompt/config audit",
+        "coveredByTaskIds": [
+          "t4",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "VS Code and JetBrains contract/error handling checks",
+        "coveredByTaskIds": [
+          "t4",
+          "t5"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails.api: exact 27 public review operations and schema/error contracts"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 errorPaths: no side effects, transport errors, no persistent review connections"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 dataModelChanges: Workflow approval and completion"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 errorPaths and testStrategy: historical reads and remaining non-review guards"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 dataModelChanges: Shared daemon and historical infrastructure"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 migration and testStrategy: runtime/asset deletion, guidance, clean output and client validation"
+    }
+  ]
+}

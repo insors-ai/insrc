@@ -1,0 +1,100 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1794936009261-ryfc3y",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-17T17:20:47.836Z",
+    "epicCreatedAt": "2026-11-17T17:20:47.836Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 38574,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "cf6cdc5c2154fc27",
+    "epicSlug": "vs-code-plugin-build-fails-chat",
+    "standalone": true,
+    "magnitude": "small",
+    "kind": "defect",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a5f95b47a478ab1e229408e6817252a4eea42638bf6eae193591f3df0cd670bf",
+        "at": "2026-11-17T17:20:47.846Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-17T17:22:13.259Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "parentRef": {
+      "epicHash": "cf6cdc5c2154fc27",
+      "slug": "EPIC-cf6cdc5c2154fc27"
+    }
+  },
+  "body": {
+    "title": "VS Code plugin build fails: chat imports reference the deleted review-worker-progress module",
+    "reproduction": "1. In vscode-plugin/, run `npm run build` (or `tsc -p tsconfig.json` directly). Observed: TypeScript fails with `error TS2307: Cannot find module '../../../src/shared/review-worker-progress.js' or its corresponding type declarations.` at vscode-plugin/src/chat/docs-review-panel.ts:1, vscode-plugin/src/chat/protocol.ts:158, and vscode-plugin/src/chat/protocol.ts:176 (the same stale path is also imported in vscode-plugin/src/chat/__tests__/review-worker-progress.test.ts:4-5). Expected: the build completes cleanly.",
+    "rootCause": "Three production files and one test file under vscode-plugin/src/chat/ import `ReviewWorkerStatus`, `isReviewWorkerStatus`, and `reviewProgressLabel` from the relative path `../../../src/shared/review-worker-progress.js` (5 import sites total: docs-review-panel.ts:1, protocol.ts:158, protocol.ts:176, and the test file's lines 4 and 5). That backend module `src/shared/review-worker-progress.ts` no longer exists in the repo — it was deleted as part of the automated-review removal work. The equivalent exports (ReviewWorkerStatus, isReviewWorkerStatus, reviewProgressLabel, with identical names and signatures) now live at src/workflow/review-history/shared/worker-progress.ts:19-36, but none of the vscode-plugin import sites were ever updated to the new path, so every one of them fails to resolve.",
+    "fixIntent": "Repoint all 5 import sites in vscode-plugin/src/chat/ (docs-review-panel.ts, protocol.ts, and the test file) from the deleted path `../../../src/shared/review-worker-progress.js` to the relocated module's actual path `../../../src/workflow/review-history/shared/worker-progress.js` (adjusting the relative prefix for the deeper test-file location). No change to the exported symbols' names, shapes, or to the backend module itself — purely an import-path correction so the existing code compiles again."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/docs-review-panel.ts:1",
+      "quotedText": "import { reviewProgressLabel } from '../../../src/shared/review-worker-progress.js';"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/protocol.ts:158"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/protocol.ts:176"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/__tests__/review-worker-progress.test.ts:4"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/__tests__/review-worker-progress.test.ts:5"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/workflow/review-history/shared/worker-progress.ts:19-36"
+    }
+  ]
+}

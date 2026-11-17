@@ -302,7 +302,7 @@
           "insrc.review.maxJsonBytes": {
             "type": "number",
             "default": 4194304,
-            "markdownDescription": "Maximum serialized bytes for historical review records. Automated design and code review functionality is being rewritten.",
+            "markdownDescription": "maximum serialized bytes for historical review records; positive safe integer; raise to read larger retained histories",
             "scope": "machine"
           }
         }

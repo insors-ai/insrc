@@ -1,0 +1,46 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "4e0e5cc1f1c40bea92e34ddae05b7208ae3bca5c0fc9396a4dc7cbd772c00aca",
+        "at": "2026-11-17T19:14:35.192Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "cf6cdc5c2154fc27",
+    "storyId": "s1",
+    "createdAt": "2026-11-17T19:14:35.109Z",
+    "updatedAt": "2026-11-17T19:14:35.109Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-17T17:20:47.836Z",
+    "epicSlug": "vs-code-plugin-build-fails-chat",
+    "revision": 1
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "a4ac9f749",
+        "ranAt": "2026-11-17T19:14:35.109Z",
+        "testsPassed": true,
+        "tests": [],
+        "files": [],
+        "note": "no tests named for a trivial build"
+      }
+    ]
+  },
+  "citations": []
+}

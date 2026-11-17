@@ -1,0 +1,69 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 2,
+        "contentHash": "ed6a55ae96be50b48509fe5184b2d31af2cc882f852341ca9623725337ccd136",
+        "at": "2026-11-17T19:14:51.407Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-17T19:19:33.494Z",
+        "override": {
+          "reason": "Automated code review is retired/unavailable; controller self-review performed instead — minimal 5-line import-path repoint in vscode-plugin, matches the approved ISSUE's fix intent exactly, no symbol/shape change. Validated: build (bundle+typecheck) clean, review-worker-progress.test.ts 2/2, protocol.test.ts 17/17, docs-review-panel.test.ts 237/238 (the 1 marker is a known pre-existing dangling-handle-at-exit quirk, confirmed by a peer session and the user, not a real assertion failure). User explicitly approved with override."
+        }
+      }
+    },
+    "workflow": "build",
+    "runId": "store-8f15ee17-d200-40a1-a0e8-b7c175fe8490",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-17T17:22:35.440Z",
+    "epicCreatedAt": "2026-11-17T17:20:47.836Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "cf6cdc5c2154fc27",
+    "storyId": "s1",
+    "revision": 2,
+    "standalone": true,
+    "sizeClass": "trivial",
+    "authoredBy": "controller",
+    "triageRationale": "A pure mechanical import-path fix confirmed against the real graph: exactly 5 import sites across 3 files reference the deleted module, and the replacement module exports the identical 3 symbol names with matching signatures. No symbol renames, no shape changes, no new contract.",
+    "epicSlug": "vs-code-plugin-build-fails-chat",
+    "updatedAt": "2026-11-17T19:14:35.109Z"
+  },
+  "body": {
+    "focus": "Bug: the VS Code plugin (vscode-plugin/) fails to build. Three files under vscode-plugin/src/chat/ import `ReviewWorkerStatus`, `isReviewWorkerStatus`, and `reviewProgressLabel` from `'../../../src/shared/review-worker-progress.js'` (vscode-plugin/src/chat/docs-review-panel.ts:1, vscode-plugin/src/chat/protocol.ts:158,176, and vscode-plugin/src/chat/__tests__/review-worker-progress.test.ts:4-5) — but that backend module was deleted during the automated-review removal work. The equivalent exports now live at src/workflow/review-history/shared/worker-progress.ts (same symbol names). Fix: repoint all 5 import sites in vscode-plugin/src/chat/ from the deleted path to the relocated module's path '../../../src/workflow/review-history/shared/worker-progress.js' (adjusting the relative prefix for the deeper test-file location). No change to exported symbols' shape or the backend module itself. See ISSUE-cf6cdc5c2154fc27 for the full record.",
+    "producesLld": false,
+    "commit": "a4ac9f749",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "Repointed 5 import sites in vscode-plugin/src/chat/ (docs-review-panel.ts, protocol.ts x2, review-worker-progress.test.ts x2) from the deleted src/shared/review-worker-progress.js to its relocated path src/workflow/review-history/shared/worker-progress.js. No symbol/shape changes. Verified: vscode-plugin build (bundle+typecheck) is clean; review-worker-progress.test.ts and protocol.test.ts pass fully; docs-review-panel.test.ts passes 237/238 sub-tests (the 1 file-level marker is the repo's known dangling-promise-at-exit quirk, not an assertion failure).",
+    "testRecord": {
+      "md": "docs/standalone/vs-code-plugin-build-fails-chat-E20261117cf6cdc5c/S001/TESTS.md"
+    },
+    "changeLog": []
+  },
+  "citations": []
+}

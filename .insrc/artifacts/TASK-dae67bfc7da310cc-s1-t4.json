@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-6ce37481-0071-4b4c-8fb6-1951c6d0be91",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-16T13:34:40.871Z",
+    "epicCreatedAt": "2026-11-16T12:10:41.975Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "dae67bfc7da310cc",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Delete obsolete review implementation and update operational guidance",
+      "parent": {
+        "entityId": "STORY-dae67bfc7da310cc-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-dae67bfc7da310cc-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-dae67bfc7da310cc-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-dae67bfc7da310cc-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-dae67bfc7da310cc-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "21a07b5bb4bd0b1504e66403cc483f4c41fa9430adb5857b6f1417ca8841c5c4",
+        "at": "2026-11-16T13:34:40.875Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-16T13:34:40.876Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Delete obsolete review implementation and update operational guidance",
+    "summary": "Delete now-unreachable review engines, preparation/checkpoint/publication/cleanup/activation code, review-only helpers/assets/config/prompts and obsolete implementation tests. Update canonical steering/user guidance and current client metadata for unavailable endpoints and human approval. Keep only endpoint/schema/error and generic historical read compatibility, with no dormant execution trees.",
+    "size": "L",
+    "order": 4,
+    "acceptanceChecks": [
+      "No executable review engine, worker/bootstrap/native host, activation, checkpoint writer, publication or cleanup implementation remains in production imports or shipped output.",
+      "Remaining review-named files contain only endpoint schemas/errors, historical data/read/render types or explicitly preserved human artifact decisions; shared packages and generic analyze adherence remain.",
+      "Guidance and current IDE configuration match endpoint unavailability and removal of automated-review requirements; repository history artifacts/checkpoints are unchanged."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Production source import and asset audit retains only review endpoints inert historical readers and human decisions"
+      },
+      {
+        "level": "integration",
+        "name": "Review unavailability guidance and settings agree across backend VS Code and JetBrains contracts"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

@@ -1,0 +1,342 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 4,
+        "contentHash": "75d022352e9e0882831798e2fd460c7e6f2776e964c5734c30f0b1f680a41e78",
+        "at": "2026-11-16T16:24:23.525Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 4,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-16T16:26:05.211Z",
+        "override": {
+          "reason": "User explicitly approved BUILD-29aa4d7c79b9741c-s1 in chat after presentation and passing daemon validation. Automated design/code review has been dismantled under the current AGENTS.md instructions; this records human approval without requiring or fabricating automated review evidence."
+        }
+      }
+    },
+    "workflow": "build",
+    "runId": "store-fed8d26f-8bcd-4b2c-b315-30539586adfc",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-16T16:01:01.310Z",
+    "epicCreatedAt": "2026-11-16T15:44:28.779Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "29aa4d7c79b9741c",
+    "storyId": "s1",
+    "revision": 4,
+    "standalone": true,
+    "sizeClass": "trivial",
+    "authoredBy": "controller",
+    "epicSlug": "fix-residual-review-removal-behavior-regression",
+    "updatedAt": "2026-11-16T16:22:40.607Z"
+  },
+  "body": {
+    "focus": "Fix all four defects recorded in approved ISSUE-29aa4d7c79b9741c: conversion informational-review comparison, immediate code-family errors with no transport, workflow guidance without review requirements, and selective repair of mixed regression suites preserving non-review guards. Preserve historical data and existing endpoint schemas; run affected workflow/MCP suites and typecheck; report unrelated failures. No automated review or daemon restart.",
+    "producesLld": false,
+    "commit": "35729b084",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "All four findings fixed in ae04a3bba, with follow-up test-isolation fix 35729b084 after the first daemon validation found two MCP process lsof failures absent in local runs. Reproduced those failures by launching tests from a parent with a temporary LMDB store open: native descriptors are inherited before application code starts. Test-only preload now closes inherited store descriptors before imports; actual child-opened stores still fail existing assertions. Added regression proving child isolation and parent store preservation; the open-store-parent reproduction now passes all four MCP process tests. Earlier local changed-file suite:117/117 passed, build with packaged attestation passed, typecheck passed. Broad workflow/MCP:2313 tests,2307 passes,5 failures,1 skip; stale TESTS fixture assertion subsequently corrected and passes. Four known unrelated failures remain (writer inventory, convert-preview async rejection, range-base unawaited assertions, tracker github argv). They are outside this issue; no checks waived. Human approval/team ownership/denial/integrity/task checks remain. No review endpoint called, CR fabricated, or installed daemon restarted.",
+    "testRecord": {
+      "md": "docs/standalone/fix-residual-review-removal-behavior-regression-E2026111629aa4d7c/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-29aa4d7c79b9741c.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T16:22:40.607Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-29aa4d7c79b9741c.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T16:22:40.607Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/fix-residual-review-removal-behavior-regression-E2026111629aa4d7c/ISSUE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T16:22:40.607Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/workflow-rpc.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T16:22:40.607Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/__tests__/trivial-change-e2e.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T16:22:40.607Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/workflow-rpc.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T16:22:40.607Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/__tests__/daemon-stream-utf8.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T16:22:40.607Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/__tests__/fixtures/tool-surface.golden.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T16:22:40.607Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/__tests__/forward-step.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T16:22:40.607Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/__tests__/mcp-process-e2e.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T16:22:40.607Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/__tests__/present-steering.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T16:22:40.607Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/__tests__/repo-schema-guard.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T16:22:40.607Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/__tests__/review-unavailable-clients.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T16:22:40.607Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/daemon-stream.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T16:22:40.607Z"
+      },
+      {
+        "target": {
+          "file": "src/prompts/steering-block.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T16:22:40.607Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/review-stream.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T16:22:40.607Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/artifact-kinds.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T16:22:40.607Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/gate-approve.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T16:22:40.607Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/gate-guarded-entry-points.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T16:22:40.607Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/helpers/other-party-review.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T16:22:40.607Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/helpers/valid-code-review.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T16:22:40.607Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/spec-review-approve.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T16:22:40.607Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/__tests__/automated-writers-addresses.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T16:22:40.607Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-write-inventory.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T16:22:40.607Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/convert/__tests__/convert-verify.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T16:22:40.607Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/convert/__tests__/legacy-view.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T16:22:40.607Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/convert/__tests__/repair-backfill-issue.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T16:22:40.607Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/convert/__tests__/repair-kit.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T16:22:40.607Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/convert/__tests__/repair-settle.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T16:22:40.607Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/convert/legacy-view.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T16:22:40.607Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/__tests__/gate.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T16:22:40.607Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/__tests__/snapshot.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T16:22:40.607Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/signoff-revise.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T16:22:40.607Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/signoff.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T16:22:40.607Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/team-gates-async.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T16:22:40.607Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/team-gates-denial.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T16:22:40.607Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/__tests__/fixtures/close-inherited-stores.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T16:22:40.607Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/__tests__/helpers/mcp-e2e.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T16:22:40.607Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/__tests__/mcp-inherited-stores.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-16T16:22:40.607Z"
+      }
+    ]
+  },
+  "citations": []
+}

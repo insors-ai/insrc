@@ -1,0 +1,99 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3755476e-7f56-4a13-81f8-fee171437a02",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-16T13:34:40.877Z",
+    "epicCreatedAt": "2026-11-16T12:10:41.975Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "dae67bfc7da310cc",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Verify complete removal and compatibility with self-check evidence",
+      "parent": {
+        "entityId": "STORY-dae67bfc7da310cc-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-dae67bfc7da310cc-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-dae67bfc7da310cc-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-dae67bfc7da310cc-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-dae67bfc7da310cc-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-dae67bfc7da310cc-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "85ec73c70d353a1ff95dab527a14e9b1195cae982fda1ac62a69620247d4053e",
+        "at": "2026-11-16T13:34:40.881Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-16T13:34:40.882Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Verify complete removal and compatibility with self-check evidence",
+    "summary": "Run focused production-registration, no-side-effect, human approval/completion, historical read and unrelated service checks; clean production build and inspect packaged output for stale runtime files; verify both current IDE clients surface errors without polling. Record self-check evidence and limitations without invoking broken automated reviews or deploying/restarting the daemon.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "Endpoint/schema inventory and exact error contracts pass across accepted phases and unary/stream/MCP dispatch; repeated failures allocate no review state/connections.",
+      "Missing/failed BUILD, stale/incomplete task set, integrity/team/signoff/upstream refusal checks remain effective; valid human-approved work completes without CR.",
+      "Clean build removes planted stale review output; package/import inspection finds no deleted runtime; historical fixtures/hashes and both current IDE client error contracts pass.",
+      "Self-review evidence records actual commands/results and limitations; no installed-daemon update, restart or automated-review certification is claimed."
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "Clean production build and package contain no deleted review implementation or planted stale review output"
+      },
+      {
+        "level": "integration",
+        "name": "End-to-end unavailable review calls preserve historical data and do not start client polling or unrelated service regressions"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

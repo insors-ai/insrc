@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-7d65b994-033b-4039-82eb-68c108ba725a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-16T13:34:40.866Z",
+    "epicCreatedAt": "2026-11-16T12:10:41.975Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "dae67bfc7da310cc",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Remove review runtime wiring from shared daemon services",
+      "parent": {
+        "entityId": "STORY-dae67bfc7da310cc-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-dae67bfc7da310cc-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-dae67bfc7da310cc-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-dae67bfc7da310cc-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1aff7c5399306258f3978aa94464d7c5696033dd5f1af25d17e431fbe057395c",
+        "at": "2026-11-16T13:34:40.869Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-16T13:34:40.870Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Remove review runtime wiring from shared daemon services",
+    "summary": "Detach ProductionReviews, dedicated workers/native/preparation/resource/cleanup owners, router/request ownership and live review progress producer registration. Preserve shared ThreadServices, worker hub/step state, process broker/providers and ordinary index/analyze/workflow task progress.",
+    "size": "L",
+    "order": 3,
+    "acceptanceChecks": [
+      "Daemon startup/shutdown and normal requests allocate no review worker, runtime service, recovery scan, preparation or cleanup owner.",
+      "Shared ThreadServices, ordinary daemon worker routing, step state, provider broker and unrelated progress validation still function.",
+      "Historical review task rows remain inert/readable; no fabricated live or completed review progress is published."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Daemon startup shutdown and dispatch create no review services workers progress producers or cleanup owners"
+      },
+      {
+        "level": "integration",
+        "name": "Normal ThreadServices worker routing step state provider broker and task progress continue without review hooks"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

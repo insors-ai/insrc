@@ -133,6 +133,14 @@
         "rationale": "s2's 3-line preview and title-ranked search need a durable, non-lossy title/content source that listScratches() doesn't provide; sequencing s2 after s7's metadata layer avoids duplicate interim read logic. Flagged to and accepted by the user as a change from the original epic plan's rollout ordering.",
         "resolvedAt": "2026-11-16T09:38:03.713Z"
       }
+    },
+    "tracker": {
+      "adapter": "github",
+      "epicStatus": "open",
+      "storyStatus": {
+        "s1": "open"
+      },
+      "lastSyncedAt": "2026-11-16T13:35:07.355Z"
     }
   },
   "body": {

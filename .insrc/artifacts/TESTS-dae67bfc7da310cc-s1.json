@@ -1,0 +1,456 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 7,
+        "contentHash": "220db1647bfbb835e58462e801efb55a3e2d725a2aceb04d4f1bcdeead10015b",
+        "at": "2026-11-16T14:39:21.737Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "dae67bfc7da310cc",
+    "storyId": "s1",
+    "createdAt": "2026-11-16T13:44:34.973Z",
+    "updatedAt": "2026-11-16T14:39:21.323Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-16T12:10:41.975Z",
+    "epicSlug": "remove-design-code-review-implementations-while",
+    "revision": 7
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "7c072cace",
+        "ranAt": "2026-11-16T13:48:42.350Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "All preserved review operations and accepted MCP phases report exact rewrite errors without allocating review state",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/review-retirement-endpoints.test.ts",
+                "title": "all preserved review operations and MCP phases return exact rewrite errors without review state",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Repeated unavailable MCP calls allocate no persistent review connections and preserve transport error envelopes",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/review-retirement-endpoints.test.ts",
+                "title": "repeated unavailable MCP calls allocate no connections and preserve error envelopes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/review-retirement-endpoints.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1243,
+            "titles": [
+              {
+                "title": "all preserved review operations and MCP phases return exact rewrite errors without review state",
+                "result": "pass"
+              },
+              {
+                "title": "repeated unavailable MCP calls allocate no connections and preserve error envelopes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "0099d14a1",
+        "ranAt": "2026-11-16T14:07:35.758Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Human approval and Story Epic completion work without CR while non-review integrity build task and team guards remain effective",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/review-retirement-workflow.test.ts",
+                "title": "human approval and completion work without CR while remaining guards still refuse invalid work",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Historical review versions remain readable unchanged through an inert dependency closure",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-history/__tests__/readers.test.ts",
+                "title": "historical review versions remain readable unchanged through an inert dependency closure",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/review-retirement-workflow.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 771,
+            "titles": [
+              {
+                "title": "human approval and completion work without CR while remaining guards still refuse invalid work",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review-history/__tests__/readers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1001,
+            "titles": [
+              {
+                "title": "historical review versions remain readable unchanged through an inert dependency closure",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "868146fdd",
+        "ranAt": "2026-11-16T14:12:19.702Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Daemon startup shutdown and dispatch create no review services workers progress producers or cleanup owners",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/review-retirement-runtime.test.ts",
+                "title": "daemon startup shutdown and dispatch allocate no review runtime or hooks",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Normal ThreadServices worker routing step state provider broker and task progress continue without review hooks",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/review-retirement-runtime.test.ts",
+                "title": "shared worker hub step state and historical progress survive without review hooks",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/cli-subprocess.test.ts",
+                "title": "a structured call honours its own timeoutMs, so a silent CLI is killed at the caller's limit, not the provider default",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/cli-subprocess.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3957,
+            "titles": [
+              {
+                "title": "a timed-out CLI child is killed with its process group, so a grandchild it started is gone",
+                "result": "pass"
+              },
+              {
+                "title": "a CLI child that exits 0 leaving a background process holding its pipes resolves with exit code 0 and the background process is gone",
+                "result": "pass"
+              },
+              {
+                "title": "completeStructured and complete run the CLI in opts.cwd when it is given",
+                "result": "pass"
+              },
+              {
+                "title": "completeStructured without opts.cwd runs the CLI in the inherited working directory",
+                "result": "pass"
+              },
+              {
+                "title": "a structured call honours its own timeoutMs, so a silent CLI is killed at the caller's limit, not the provider default",
+                "result": "pass"
+              },
+              {
+                "title": "a codex run that narrates before answering yields its last agent message to completeStructured and complete",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/review-retirement-runtime.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 755,
+            "titles": [
+              {
+                "title": "daemon startup shutdown and dispatch allocate no review runtime or hooks",
+                "result": "pass"
+              },
+              {
+                "title": "shared worker hub step state and historical progress survive without review hooks",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "8d52490bc",
+        "ranAt": "2026-11-16T14:29:49.468Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Production source import and asset audit retains only review endpoints inert historical readers and human decisions",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/review-retirement-audit.test.ts",
+                "title": "production imports and assets retain only unavailable endpoints historical reads and human decisions",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Review unavailability guidance and settings agree across backend VS Code and JetBrains contracts",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/review-retirement-audit.test.ts",
+                "title": "backend and current IDE guidance agree on review unavailability and human approval",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/review-retirement-audit.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 587,
+            "titles": [
+              {
+                "title": "production imports and assets retain only unavailable endpoints historical reads and human decisions",
+                "result": "pass"
+              },
+              {
+                "title": "backend and current IDE guidance agree on review unavailability and human approval",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "16a5f85d4",
+        "ranAt": "2026-11-16T14:39:21.323Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Clean production build and package contain no deleted review implementation or planted stale review output",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/review-retirement-package.test.ts",
+                "title": "clean build and package remove retired runtime and planted stale output",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "End-to-end unavailable review calls preserve historical data and do not start client polling or unrelated service regressions",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/review-retirement-wire.test.ts",
+                "title": "real IPC unavailable calls preserve history and the VS Code client fails without polling",
+                "result": "pass"
+              },
+              {
+                "file": "jetbrains-plugin/__tests__/review-retirement-gradle.test.ts",
+                "title": "rewrite exceptions surface from real transport without review polling",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/review-retirement-endpoints.test.ts",
+                "title": "all preserved review operations and MCP phases return exact rewrite errors without review state",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/review-retirement-workflow.test.ts",
+                "title": "human approval and completion work without CR while remaining guards still refuse invalid work",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-history/__tests__/readers.test.ts",
+                "title": "historical review versions remain readable unchanged through an inert dependency closure",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-retirement-runtime.test.ts",
+                "title": "shared worker hub step state and historical progress survive without review hooks",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "jetbrains-plugin/__tests__/review-retirement-gradle.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 9341,
+            "titles": [
+              {
+                "title": "rewrite exceptions surface from real transport without review polling",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/review-retirement-endpoints.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1240,
+            "titles": [
+              {
+                "title": "all preserved review operations and MCP phases return exact rewrite errors without review state",
+                "result": "pass"
+              },
+              {
+                "title": "repeated unavailable MCP calls allocate no connections and preserve error envelopes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/review-retirement-package.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 19768,
+            "titles": [
+              {
+                "title": "clean build and package remove retired runtime and planted stale output",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/review-retirement-wire.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1097,
+            "titles": [
+              {
+                "title": "real IPC unavailable calls preserve history and the VS Code client fails without polling",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/review-retirement-runtime.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 842,
+            "titles": [
+              {
+                "title": "daemon startup shutdown and dispatch allocate no review runtime or hooks",
+                "result": "pass"
+              },
+              {
+                "title": "shared worker hub step state and historical progress survive without review hooks",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/__tests__/review-retirement-workflow.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 756,
+            "titles": [
+              {
+                "title": "human approval and completion work without CR while remaining guards still refuse invalid work",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review-history/__tests__/readers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1011,
+            "titles": [
+              {
+                "title": "historical review versions remain readable unchanged through an inert dependency closure",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

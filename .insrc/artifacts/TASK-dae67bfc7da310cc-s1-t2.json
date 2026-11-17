@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-6c409155-cdc1-4e35-b30d-d8bb85501788",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-16T13:34:40.860Z",
+    "epicCreatedAt": "2026-11-16T12:10:41.975Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "dae67bfc7da310cc",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Decouple approval and completion from automated reviews",
+      "parent": {
+        "entityId": "STORY-dae67bfc7da310cc-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-dae67bfc7da310cc-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-dae67bfc7da310cc-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a1ee09d4f34cab343e2ea741ee4a9bb89e57ee46e77c4576e9dd8395a76bab88",
+        "at": "2026-11-16T13:34:40.864Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-16T13:34:40.865Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Decouple approval and completion from automated reviews",
+    "summary": "Remove automated-review gates, party/freshness/approval fences and cleanup hooks from workflow/lifecycle approval and Story/Epic completion. Extract minimal dependency-free historical schema/read/render contracts where generic artifact views require them, preserving data and all non-review guards. Historical schema/readers must have a dependency-free inert closure; do not preserve entire execution-contract trees.",
+    "size": "L",
+    "order": 2,
+    "acceptanceChecks": [
+      "Human artifact approval and completion of approved validated builds with passing current tasks work without any CR or review override.",
+      "Integrity, upstream approval, team/signoff, build and task-accounting denials still apply; no fake clean review or altered historical verdict is written.",
+      "Approval/completion and generic historical reads do not load review execution or call cleanup endpoints; representative stored review versions remain readable.",
+      "Transitive imports of generic historical readers and preserved public schemas contain no review execution, provider, worker, checkpoint-writing or cleanup modules."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Human approval and Story Epic completion work without CR while non-review integrity build task and team guards remain effective"
+      },
+      {
+        "level": "integration",
+        "name": "Historical review versions remain readable unchanged through an inert dependency closure"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

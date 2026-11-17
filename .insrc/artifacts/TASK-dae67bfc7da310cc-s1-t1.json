@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1db37131-63cc-4412-b7cc-107bfa994295",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-16T13:34:40.853Z",
+    "epicCreatedAt": "2026-11-16T12:10:41.975Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "dae67bfc7da310cc",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Retain review endpoints as stateless rewritten errors",
+      "parent": {
+        "entityId": "STORY-dae67bfc7da310cc-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-dae67bfc7da310cc-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "00436ad941802763546bb0c79ac282ea4e5ae6bd51969c33307abffb48a010a1",
+        "at": "2026-11-16T13:34:40.858Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-16T13:34:40.859Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Retain review endpoints as stateless rewritten errors",
+    "summary": "Freeze existing MCP schemas and exact 27-operation inventory. Isolate public schema definitions from execution contracts, replace MCP/step/IPC/legacy review entrypoints with family-specific errors, remove MCP persistent review connections, and preserve ordinary error transport and human decision endpoints. Remove/bypass review-specific host/router ownership allocation before unavailable dispatch; defer deletion of orphan ownership infrastructure to t3.",
+    "size": "L",
+    "order": 1,
+    "acceptanceChecks": [
+      "All 2 MCP tools and 25 IPC review methods remain registered with unchanged callable MCP schemas and accepted phase sets.",
+      "Every valid review operation reports the exact family-specific rewritten error without repo resolution, provider/file access, worker/process creation or retained MCP connections.",
+      "Human workflow.reviewDecision and generic artifact/team endpoints remain outside automated-review retirement.",
+      "Unavailable review dispatch allocates no review owner in step host or router before reaching the error handler."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "All preserved review operations and accepted MCP phases report exact rewrite errors without allocating review state"
+      },
+      {
+        "level": "integration",
+        "name": "Repeated unavailable MCP calls allocate no persistent review connections and preserve transport error envelopes"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

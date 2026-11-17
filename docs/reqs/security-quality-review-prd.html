@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Product requirements for evidence-grounded security and software-quality review in insrc.">
+  <title>insrc · Security and quality review PRD</title>
+  <style>
+    :root { color-scheme: light dark; --ink: #19231d; --paper: #f7f9f6; --panel: #eaf0e9; --line: #bec9bf; --accent: #285f46; --risk: #8b2f2f; --warn: #8a6517; }
+    @media (prefers-color-scheme: dark) {
+      :root { --ink: #e5ece6; --paper: #111713; --panel: #1b2720; --line: #425348; --accent: #9bd6ae; --risk: #ff9d9d; --warn: #e8c775; }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.6 system-ui, sans-serif; }
+    main { max-width: 68rem; margin: auto; padding: clamp(1.25rem, 5vw, 4rem); }
+    header { border-bottom: 1px solid var(--line); padding-bottom: 1rem; }
+    h1, h2, h3 { line-height: 1.2; }
+    h1 { margin: .35em 0; font-size: clamp(2rem, 6vw, 3.5rem); letter-spacing: -.035em; }
+    h2 { margin-top: 2.35rem; }
+    h3 { margin-top: 1.6rem; margin-bottom: .45rem; }
+    a { color: var(--accent); text-underline-offset: .18em; }
+    nav, .table, .callout { border: 1px solid var(--line); border-radius: .55rem; background: var(--panel); }
+    nav { margin-top: 1.5rem; padding: .8rem 1rem; }
+    nav ul { display: flex; flex-wrap: wrap; gap: .35rem 1.2rem; margin: 0; padding: 0; list-style: none; }
+    nav li + li { margin-top: 0; }
+    .table { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: .7rem .85rem; text-align: left; vertical-align: top; }
+    thead, tbody tr + tr { border-bottom: 1px solid var(--line); }
+    tbody tr:last-child { border-bottom: 0; }
+    li + li { margin-top: .35rem; }
+    code { overflow-wrap: anywhere; }
+    .callout { margin: 1rem 0; padding: .8rem 1rem; }
+    .callout p { margin: 0; }
+    .requirement { padding: .65rem 0; border-bottom: 1px solid var(--line); }
+    .requirement:last-child { border-bottom: 0; }
+    .requirement p { margin: 0; }
+    .rid { display: inline-block; min-width: 4.75rem; margin-right: .45rem; color: var(--accent); font-weight: 750; }
+    .risk { color: var(--risk); }
+    .small { font-size: .92rem; opacity: .85; }
+    @media print {
+      :root { color-scheme: light; --ink: #111; --paper: #fff; --panel: #fff; --line: #999; --accent: #254c39; --risk: #700; --warn: #654a00; }
+      main { padding: 0; }
+      h2, h3 { break-after: avoid; }
+      tr, .requirement, .callout { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <p>insrc · Product requirements · Draft · 16 November 2026</p>
+    <h1>Evidence-grounded security and quality review</h1>
+    <p>Extend insrc's tracked design, build, and code-review workflow with deterministic security evidence, context-sensitive risk selection, graph-based impact analysis, enforceable repository policy, and independently verified remediation.</p>
+  </header>
+
+  <nav aria-label="Contents">
+    <ul>
+      <li><a href="#problem">Problem</a></li>
+      <li><a href="#principles">Principles</a></li>
+      <li><a href="#scope">Scope</a></li>
+      <li><a href="#journeys">User journeys</a></li>
+      <li><a href="#model">Capability model</a></li>
+      <li><a href="#requirements">Requirements</a></li>
+      <li><a href="#records">Records</a></li>
+      <li><a href="#quality">Non-functional requirements</a></li>
+      <li><a href="#acceptance">Acceptance</a></li>
+      <li><a href="#rollout">Rollout</a></li>
+      <li><a href="#decisions">Open decisions</a></li>
+      <li><a href="#references">References</a></li>
+    </ul>
+  </nav>
+
+  <section id="problem">
+    <h2>Problem and outcome</h2>
+    <p>insrc already reviews pinned changed code against approved requirements and design, records severity-ranked findings, inspects test coverage, and gates completion. It also has a structural graph, local embeddings, durable review history, and independent reviewer routing. These foundations provide context and governance, but they do not yet constitute deterministic vulnerability discovery, interprocedural data-flow analysis, dependency vulnerability assessment, policy-as-code, or sandbox-backed reproduction.</p>
+    <p>The required outcome is one review system in which deterministic tools discover candidates, the graph establishes relationships and blast radius, a critical-tier reviewer judges contextual impact, and workflow gates enforce only evidence-backed results. A reviewer must be able to distinguish a demonstrated defect, a plausible but unverified risk, unavailable evidence, an unfinished check, and optional advice.</p>
+    <div class="callout"><p><strong>Core product decision.</strong> Language models judge prepared evidence; they are not the sole vulnerability scanners. A missing graph edge, silent scanner, or unavailable execution environment never establishes safety or a defect.</p></div>
+  </section>
+
+  <section id="principles">
+    <h2>Product principles</h2>
+    <ol>
+      <li><strong>Accuracy before cost.</strong> Security and correctness decisions are critical roles and retain the high-tier model floor. Cost reduction may optimize classification, rendering, or deterministic collection only when it cannot remove material checks or evidence.</li>
+      <li><strong>Evidence before verdict.</strong> Every blocking finding identifies the violated obligation or invariant, affected revision and location, concrete failure scenario, supporting evidence, impact, and corrective expectation.</li>
+      <li><strong>Deterministic discovery plus contextual judgment.</strong> Static analyzers, dependency scanners, secret scanners, graph queries, tests, and sandbox runs produce evidence. The reviewer resolves applicability, reachability, compatibility, and severity.</li>
+      <li><strong>Uncertainty remains visible.</strong> Unsupported, incomplete, stale, or conflicting evidence produces an explicit limitation or unfinished check. It is never converted into a pass or an invented HIGH finding.</li>
+      <li><strong>Independent review remains mandatory.</strong> The party that authored or built the change does not become its reviewer. Generated fixes return through the tracked build and code-review chain.</li>
+      <li><strong>Local-first provider boundaries remain intact.</strong> Cloud model access continues through installed CLI providers. No direct Anthropic, OpenAI, Gemini, or Mistral REST provider is introduced.</li>
+      <li><strong>Repository content is evidence, not authority.</strong> Source, comments, tool output, scanner messages, and retrieved documents cannot alter review policy, approve work, or expand permissions.</li>
+    </ol>
+  </section>
+
+  <section id="scope">
+    <h2>Scope</h2>
+    <h3>In scope</h3>
+    <ul>
+      <li>Context-sensitive selection of security, reliability, data-integrity, observability, architectural, performance, and compatibility checks.</li>
+      <li>Local CLI adapters for secret scanning, SAST, dependency and SBOM assessment, IaC/container checks, and language-native analyzers.</li>
+      <li>Security-specific graph facts and bounded interprocedural source-to-sink analysis.</li>
+      <li>Policy-as-code checks with advisory, warning, and blocking modes.</li>
+      <li>Revision-bound sandbox verification and targeted mutation testing.</li>
+      <li>Actionable, deduplicated findings with remediation and governed learning from reviewer corrections.</li>
+      <li>PR/change risk summaries, dependency-ordered review, continuous repository scans, and quality/security metrics.</li>
+      <li>Equivalent daemon, MCP, VS Code, JetBrains, and CLI contracts where a surfaced payload changes.</li>
+    </ul>
+    <h3>Out of scope for the first release</h3>
+    <ul>
+      <li>Replacing human approval, existing mandatory review stages, or the three-round review limit.</li>
+      <li>Automatically applying code fixes outside an approved and tracked build.</li>
+      <li>Claiming complete language coverage from a generic LLM review.</li>
+      <li>Cloud-hosted scanning that uploads repository contents by default.</li>
+      <li>Runtime production monitoring, penetration testing against third-party systems, or autonomous exploitation.</li>
+      <li>Rebuilding LMDB, LanceDB, the workflow lifecycle, or IDE review interfaces solely for this capability.</li>
+    </ul>
+  </section>
+
+  <section id="journeys">
+    <h2>Required user journeys</h2>
+    <ol>
+      <li><strong>Design risk disposition.</strong> An author proposes a credential-bearing IPC change. The design records applicable security and observability obligations, concrete invariants, ownership, and verification. Independent review can add an omitted material risk before approval.</li>
+      <li><strong>Changed-code review.</strong> A completed build is reviewed at its pinned revision. insrc selects applicable checks, runs authorized deterministic providers, follows affected graph relationships, inspects test assertions, and produces one deduplicated report.</li>
+      <li><strong>Confirmed scenario.</strong> A suspected path traversal is reproduced in an isolated checkout using a synthetic path. The finding links the source-to-sink trace, reproduction receipt, affected scope, severity, and required fix.</li>
+      <li><strong>Unavailable evidence.</strong> A required scanner or language model is unavailable. The check remains unfinished or could not be verified; the review cannot claim complete coverage.</li>
+      <li><strong>Policy enforcement.</strong> A repository policy forbids direct cloud LLM REST clients. A change introduces one. The check blocks completion, identifies the policy version and location, and records any explicit human override with its reason.</li>
+      <li><strong>Correction becomes learning.</strong> A reviewer explains that this repository maps domain errors to HTTP responses in handlers. insrc proposes a scoped learning; a human approves it; later reviews apply it only to the relevant paths and retain provenance.</li>
+      <li><strong>Repository deep scan.</strong> A user starts a full scan independently of a Story. Findings are revision-bound, triaged into tracked issues before remediation, and never silently attached to an unrelated build.</li>
+    </ol>
+  </section>
+
+  <section id="model">
+    <h2>Capability and evidence model</h2>
+    <div class="table">
+      <table aria-label="Capability model">
+        <thead><tr><th scope="col">Layer</th><th scope="col">Responsibility</th><th scope="col">Must not do</th></tr></thead>
+        <tbody>
+          <tr><td>Risk selector</td><td>Classify applicability and emit concrete review obligations with triggers and expected evidence.</td><td>Drop baseline checks or infer absence from filenames alone.</td></tr>
+          <tr><td>Evidence providers</td><td>Run deterministic scanners and native tools against a pinned subject; normalize results and disclose coverage.</td><td>Issue workflow verdicts or silently widen repository scope.</td></tr>
+          <tr><td>Security graph</td><td>Represent trust boundaries, sources, sanitizers, sinks, permissions, stores, diagnostics, and interprocedural paths.</td><td>Treat unresolved dynamic behavior or a missing edge as proof.</td></tr>
+          <tr><td>Reviewer</td><td>Judge actual reachability, exploitability, compatibility, requirement adherence, severity, and remediation from prepared evidence.</td><td>Invent evidence, expose secrets, or execute unapproved actions.</td></tr>
+          <tr><td>Verifier</td><td>Run bounded tests, mutations, or reproductions in an isolated revision-bound environment and retain receipts.</td><td>Use ambient credentials or production services by default.</td></tr>
+          <tr><td>Gate</td><td>Fold completed check outcomes into existing approval/build/code-review semantics and record overrides.</td><td>Approve artifacts, create extra mandatory reviews, or turn advice into a blocker.</td></tr>
+          <tr><td>Learning service</td><td>Promote approved corrections into scoped, versioned review guidance.</td><td>Convert arbitrary comments or model output directly into standing policy.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="requirements">
+    <h2>Functional requirements</h2>
+
+    <h3>Selection and review planning</h3>
+    <div class="requirement" id="FR-01"><p><span class="rid">FR-01</span>Every design and code review MUST preserve its existing baseline checks. Additional security and quality selection cannot remove adherence, conventions, coverage, functional, diagram, UX, or other checks already required for the subject.</p></div>
+    <div class="requirement" id="FR-02"><p><span class="rid">FR-02</span>For every cataloged risk family, the selector MUST record <code>applicable</code>, <code>not-applicable</code>, or <code>uncertain</code> with a reason and evidence reference. Each selected check MUST have a stable ID, catalog version, trigger, scope, owning review dimension, expected evidence, and completion policy.</p></div>
+    <div class="requirement" id="FR-03"><p><span class="rid">FR-03</span>Selection MUST inspect upstream requirements and design, changed code, public and storage contracts, affected callers/readers/writers, repository policy, graph evidence, and relevant tests. Authors may propose risks but cannot suppress independently discovered applicable checks.</p></div>
+    <div class="requirement" id="FR-04"><p><span class="rid">FR-04</span>An uncertain check MUST trigger targeted evidence gathering when a supported provider exists. If uncertainty remains, the report MUST retain the reason and attempted evidence; it cannot become not-applicable or passed merely to finish the review.</p></div>
+    <div class="requirement" id="FR-05"><p><span class="rid">FR-05</span>Selection and evaluation MUST occur inside the existing design-review or code-review round. This feature MUST NOT create an additional mandatory review stage or bypass the maximum three rounds without user direction.</p></div>
+
+    <h3>Deterministic evidence providers</h3>
+    <div class="requirement" id="FR-06"><p><span class="rid">FR-06</span>The daemon MUST provide a versioned evidence-provider interface for secret scanning, SAST, dependency/SBOM analysis, IaC/container analysis, language-native checks, and future provider families. Providers MUST run through the daemon tool/execution boundary rather than being called directly by IDE clients.</p></div>
+    <div class="requirement" id="FR-07"><p><span class="rid">FR-07</span>Each provider result MUST identify provider and rule versions, subject revision, files or packages actually inspected, exclusions, limits, execution status, and normalized findings. A successful process with partial coverage MUST remain partial.</p></div>
+    <div class="requirement" id="FR-08"><p><span class="rid">FR-08</span>A normalized evidence finding MUST support rule ID, category, optional CWE/CVE identifiers, original severity, confidence, location, trace, evidence summary, suggested remediation, scanner identity, and raw-result digest. Raw secrets and unnecessary source bodies MUST NOT enter the normalized record.</p></div>
+    <div class="requirement" id="FR-09"><p><span class="rid">FR-09</span>Scanner candidates MUST NOT directly determine the workflow verdict. The reviewer MUST assess applicability, actual reachability, mitigating controls, compatibility impact, and evidence strength. Deterministic, directly enforced repository-policy violations may bypass semantic triage only when the policy explicitly defines that behavior.</p></div>
+    <div class="requirement" id="FR-10"><p><span class="rid">FR-10</span>External scanner CLIs MUST be capability-detected, version-qualified, invoked without shell interpolation, bounded by time/output/resource policy, and provided only the minimum repository and environment access required. Missing optional scanners are visible; missing required scanners leave their checks unfinished.</p></div>
+
+    <h3>Security graph and impact analysis</h3>
+    <div class="requirement" id="FR-11"><p><span class="rid">FR-11</span>The indexer MUST support security facts for untrusted inputs, trust boundaries, authorization gates, sanitizers, command/query/rendering/deserialization sinks, credential use, persistent stores, network egress, and diagnostic emission. Facts MUST carry language/parser version and source citations.</p></div>
+    <div class="requirement" id="FR-12"><p><span class="rid">FR-12</span>The graph layer MUST support bounded interprocedural paths derived from per-function summaries. A path MUST retain its source, transformations, sanitizers, calls, sink, unresolved steps, and completeness limitations.</p></div>
+    <div class="requirement" id="FR-13"><p><span class="rid">FR-13</span>Initial source/sink coverage MUST include IPC/HTTP/RPC input, file paths, SQL/query construction, subprocess execution, template rendering, deserialization, logs/errors, credential stores, authorization checks, and network requests for supported languages.</p></div>
+    <div class="requirement" id="FR-14"><p><span class="rid">FR-14</span>Impact analysis MUST combine changed symbols with incoming callers, dependency closure, public contracts, persistence readers/writers, tests reaching the symbol, and security paths. It MUST distinguish a structurally reachable path from observed runtime behavior and asserted test behavior.</p></div>
+    <div class="requirement" id="FR-15"><p><span class="rid">FR-15</span>Dynamic dispatch, reflection, generated code, unsupported syntax, parse failure, stale indexes, and missing edges MUST be reported as limitations. None alone establishes a vulnerability, absence of impact, or full pass.</p></div>
+
+    <h3>Policy-as-code and gates</h3>
+    <div class="requirement" id="FR-16"><p><span class="rid">FR-16</span>A repository MAY define versioned review policies with stable rule IDs, scope/path matching, applicability triggers, evidence providers, severity, enforcement mode, remediation guidance, owner, and override policy. The initial enforcement modes are <code>advice</code>, <code>warning</code>, and <code>blocking</code>.</p></div>
+    <div class="requirement" id="FR-17"><p><span class="rid">FR-17</span>Built-in policy templates SHOULD cover direct cloud LLM REST access, client-side database access, IPC contract compatibility, credential-bearing diagnostics, public API compatibility, storage migration and rollback, security-boundary negative tests, and new dependency provenance.</p></div>
+    <div class="requirement" id="FR-18"><p><span class="rid">FR-18</span>Policy evaluation MUST bind to the exact reviewed revision and policy version. A policy change MUST invalidate affected reusable results. Repository content from the reviewed change MUST NOT be able to weaken the policy used for the same review unless the policy change itself is explicitly part of the reviewed and authorized subject.</p></div>
+    <div class="requirement" id="FR-19"><p><span class="rid">FR-19</span>A blocking policy failure MUST participate in the existing code-review/build completion gate. An override requires explicit human authority, a reason, rule ID, subject revision, actor, and timestamp. Overrides do not rewrite the underlying finding.</p></div>
+    <div class="requirement" id="FR-20"><p><span class="rid">FR-20</span>Gate evaluation MUST fail closed on malformed or ambiguous required policy configuration and fail visibly on registry/tool-surface inconsistencies. Startup and build qualification MUST verify that every declared mandatory evidence tool is registered and callable.</p></div>
+
+    <h3>Verification, tests, and mutation analysis</h3>
+    <div class="requirement" id="FR-21"><p><span class="rid">FR-21</span>The verifier MUST be able to create an isolated checkout or equivalent immutable workspace at the reviewed revision. Network, credentials, writable paths, CPU, memory, output, and elapsed time MUST be explicitly bounded. Ambient user credentials and production services are denied by default.</p></div>
+    <div class="requirement" id="FR-22"><p><span class="rid">FR-22</span>A verification receipt MUST record scenario, revision, tool and version, command or structured action, synthetic inputs, environment policy, start/end time, exit status, timeout, redacted output digest, and retained evidence references. Unknown execution outcomes MUST require reconciliation before repetition.</p></div>
+    <div class="requirement" id="FR-23"><p><span class="rid">FR-23</span>The reviewer MAY request bounded failure scenarios for authorization bypass, path traversal, injection, secret disclosure, tenant isolation, unsafe retries, duplicate side effects, cancellation/resource leaks, or another selected obligation. Generated scenarios remain evidence requests, not production edits.</p></div>
+    <div class="requirement" id="FR-24"><p><span class="rid">FR-24</span>Targeted mutation analysis SHOULD operate on changed behavior and selected risk obligations. Supported mutations SHOULD include condition negation, boundary changes, removed validation/authorization/redaction/cleanup, swallowed errors, reordered state transitions, and duplicated retryable effects.</p></div>
+    <div class="requirement" id="FR-25"><p><span class="rid">FR-25</span>Mutation survival blocks only when it demonstrates failure to verify an approved requirement or material selected risk. Otherwise it is advice. Mutation and test results MUST be tied to the reviewed revision and integrated with, rather than replacing, the existing TESTS and code-review records.</p></div>
+
+    <h3>Findings and remediation</h3>
+    <div class="requirement" id="FR-26"><p><span class="rid">FR-26</span>A material finding MUST identify its primary category, associated check IDs, violated requirement/invariant/policy, trigger or failure scenario, affected revision and location, evidence references, impact, severity, confidence, corrective expectation, and fixability. One defect associated with several checks is counted once.</p></div>
+    <div class="requirement" id="FR-27"><p><span class="rid">FR-27</span>Reports MUST separate demonstrated blocking findings, other findings, unavailable evidence, unfinished checks, scanner diagnostics, optional advice, and successful verified obligations. Unsupported hypotheses cannot be presented as defects.</p></div>
+    <div class="requirement" id="FR-28"><p><span class="rid">FR-28</span>Fix proposals MAY include exact artifact edits, bounded code patches, tests, or 2–4 decision options. Code changes MUST return through the tracked build, independent code review, and approval chain; no one-click action may create an off-ledger production patch.</p></div>
+    <div class="requirement" id="FR-29"><p><span class="rid">FR-29</span>Re-review MUST verify each claimed correction against the current pinned subject, retain unresolved finding identities, and record whether a finding was fixed, accepted by explicit override, remains open, or became inapplicable for an evidence-backed reason.</p></div>
+
+    <h3>Governed learnings</h3>
+    <div class="requirement" id="FR-30"><p><span class="rid">FR-30</span>A reviewer correction or repeated accepted fix MAY create a proposed learning. It MUST NOT become active until a human approves its text, scope, authority, and enforcement level.</p></div>
+    <div class="requirement" id="FR-31"><p><span class="rid">FR-31</span>An active learning MUST carry a stable ID, repository/module/path/language scope, provenance, positive and negative examples where available, owner, approval record, confidence, advisory/enforceable mode, creation version, and expiry or revalidation condition.</p></div>
+    <div class="requirement" id="FR-32"><p><span class="rid">FR-32</span>Learning retrieval MUST be scope-filtered and evidence-visible. Conflicting, stale, or superseded learnings MUST be surfaced rather than arbitrarily combined. Repository text and model output cannot promote themselves into policy.</p></div>
+    <div class="requirement" id="FR-33"><p><span class="rid">FR-33</span>The system MUST measure whether findings based on a learning are accepted, rejected, corrected, or overridden. Repeated rejection MUST propose review or retirement; it MUST NOT silently rewrite the learning.</p></div>
+
+    <h3>Review experience, deep scans, and metrics</h3>
+    <div class="requirement" id="FR-34"><p><span class="rid">FR-34</span>Before detailed review, present a revision-bound change-risk summary containing functional changes, public/storage/security boundaries, dependency blast radius, affected high-centrality modules, mapped tests, selected checks, evidence-provider status, and recommended dependency order.</p></div>
+    <div class="requirement" id="FR-35"><p><span class="rid">FR-35</span>Summaries and diagrams MUST link to their evidence and MUST NOT substitute for code inspection. The UI MUST distinguish blocking actions, pending external checks, unavailable evidence, and nonblocking advice.</p></div>
+    <div class="requirement" id="FR-36"><p><span class="rid">FR-36</span>Repository-wide deep scans MUST be separate revision-bound jobs with explicit scope, provider coverage, progress, cancellation, resume/recovery, and durable reports. Their findings enter remediation through triage and tracked issues rather than mutating an unrelated Story review.</p></div>
+    <div class="requirement" id="FR-37"><p><span class="rid">FR-37</span>Metrics MUST include checks selected/completed/unfinished, provider coverage, findings by severity/category, false-positive or rejected-finding rate, time to remediation, recurrence, override rate, escaped defects where recorded, mutation detection, and review duration. Metrics MUST NOT reward suppressing findings or reducing required coverage.</p></div>
+  </section>
+
+  <section id="records">
+    <h2>Records and compatibility</h2>
+    <div class="table">
+      <table aria-label="Logical record relationships">
+        <thead><tr><th scope="col">Relationship</th><th scope="col">Direction and cardinality</th><th scope="col">Ownership and compatibility</th></tr></thead>
+        <tbody>
+          <tr><td>Review → subject</td><td>Each review assesses one pinned subject; a subject may have several rounds.</td><td>Later changes do not retarget historical evidence.</td></tr>
+          <tr><td>Review → selection</td><td>Each new review owns one versioned applicability and check-selection snapshot.</td><td>Older records remain readable and state that no context-sensitive selection was recorded.</td></tr>
+          <tr><td>Selection → checks</td><td>One selection contains zero or more checks and a disposition for every cataloged risk family.</td><td>Stable IDs and catalog versions preserve interpretation.</td></tr>
+          <tr><td>Check → evidence</td><td>A check may use many evidence records; evidence may support several checks.</td><td>Evidence is revision-bound, digest-addressed, scoped, and strength-classified.</td></tr>
+          <tr><td>Finding → checks</td><td>One finding may relate to several checks; a check may produce several findings.</td><td>A primary finding identity prevents duplicate counting.</td></tr>
+          <tr><td>Finding → remediation</td><td>A finding may have several proposed fixes and verification attempts.</td><td>Only tracked workflow work changes production code.</td></tr>
+          <tr><td>Feedback → learning</td><td>Many corrections may support one proposed learning; one learning may inform many later reviews.</td><td>Human approval, provenance, scope, expiry, and supersession are retained.</td></tr>
+          <tr><td>Deep scan → issue</td><td>A scan may create candidates for several tracked issues; an issue may reference several scan findings.</td><td>Triage owns remediation routing; scan output does not become approval.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>New fields and record types MUST be additively versioned or explicitly migrated. Controller and daemon review paths MUST validate the same required selection floor, evidence contract, finding fields, and verdict rules. IPC method names and payload changes MUST remain aligned in the VS Code and JetBrains clients.</p>
+  </section>
+
+  <section id="quality">
+    <h2>Non-functional requirements</h2>
+    <ul>
+      <li><strong>Security and privacy.</strong> Never persist raw credentials, credential-bearing URIs, unnecessary source bodies, hidden reasoning, or complete prompts in findings or telemetry. Redact before logging and before model context. Synthetic secrets used for verification must be unmistakably non-production.</li>
+      <li><strong>Isolation.</strong> Scanner and verifier processes run with least privilege. The host resolves repository paths, symlinks, environment, executable allowlists, network access, and resource bounds outside model control.</li>
+      <li><strong>Reliability.</strong> Evidence collection, verification, and publication use stable operation IDs and durable receipts. Restart recovery distinguishes complete, failed, cancelled, unknown, and stale work and never automatically repeats an uncertain side effect.</li>
+      <li><strong>Completeness.</strong> Limits are visible and cannot silently discard a material selected check. Partitioning preserves dependency order, scope accounting, and a final consistency pass. Exhausted limits yield incomplete coverage.</li>
+      <li><strong>Performance.</strong> Incremental review reuses evidence only when the provider version, subject identity, policy/catalog version, graph generation, and relevant configuration remain valid. Reuse is an optimization, never a capability downgrade.</li>
+      <li><strong>Storage ownership.</strong> The daemon remains the sole owner of graph, vector, registry, review, and scan-record access. CLI, MCP, and IDE clients use IPC.</li>
+      <li><strong>Provider discipline.</strong> All model work uses <code>LLMProvider</code>. Cloud access uses installed CLI sessions; embeddings remain local. Calls reaching a model or embedding provider are serialized.</li>
+      <li><strong>Model quality.</strong> Risk selection that can omit checks, security judgment, final review, remediation judgment, and verification interpretation are critical roles protected by the core tier floor. Narrow formatting and deterministic collection may use peripheral roles.</li>
+      <li><strong>Auditability.</strong> A reader can reconstruct why a check applied, what ran, what was inspected, what was unavailable, why a verdict followed, and who approved any exception without rerunning the model.</li>
+      <li><strong>Extensibility.</strong> Provider, rule, risk-family, graph-fact, and finding schemas are versioned. Adding a provider does not change historical meanings or require a new top-level review dimension.</li>
+    </ul>
+  </section>
+
+  <section id="acceptance">
+    <h2>Acceptance criteria</h2>
+    <div class="table">
+      <table aria-label="Acceptance criteria">
+        <thead><tr><th scope="col">ID</th><th scope="col">Scenario</th><th scope="col">Required result</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">AC-01</th><td>Isolated wording-only change</td><td>Baseline review remains. Additional risk families are excluded with concise reasons; no generic security findings are fabricated.</td></tr>
+          <tr><th scope="row">AC-02</th><td>Credential-bearing IPC change</td><td>Security and observability checks inspect validation, authorization, storage, redaction, error serialization, and negative tests without copying the credential into any record.</td></tr>
+          <tr><th scope="row">AC-03</th><td>Untrusted input reaches a subprocess sink</td><td>The report contains a cited source-to-sink path, sanitizer/validation status, affected callers, impact, and either a demonstrated finding or explicit unresolved steps.</td></tr>
+          <tr><th scope="row">AC-04</th><td>Known vulnerable dependency in a changed lockfile</td><td>The exact package/version and advisory evidence are recorded, reachability is assessed where supported, and severity distinguishes reachable use, uncertain reachability, and unused development-only scope.</td></tr>
+          <tr><th scope="row">AC-05</th><td>Hard-coded synthetic secret</td><td>The secret scanner finds it, normalization redacts its value, the finding points to the location and rule, and the blocking policy behaves as configured.</td></tr>
+          <tr><th scope="row">AC-06</th><td>Scanner unavailable</td><td>A required check remains unfinished and prevents a complete pass; an optional check is disclosed without becoming a fabricated defect.</td></tr>
+          <tr><th scope="row">AC-07</th><td>Missing graph edge for a new file</td><td>Source and test inspection continue where possible. The report states the graph limitation and does not infer safety or a defect from the missing edge.</td></tr>
+          <tr><th scope="row">AC-08</th><td>Sandbox confirms path traversal</td><td>The receipt binds the synthetic input and observed result to the reviewed revision under bounded isolation. The evidence supports one actionable finding.</td></tr>
+          <tr><th scope="row">AC-09</th><td>Mutation removes an authorization check</td><td>A relevant test kills the mutation, or the surviving mutation is linked to the approved security obligation and handled according to its enforcement policy.</td></tr>
+          <tr><th scope="row">AC-10</th><td>One bug affects security and reliability</td><td>One primary finding carries both check associations and contributes once to severity counts.</td></tr>
+          <tr><th scope="row">AC-11</th><td>Repository rule changes during review</td><td>Evidence and policy results affected by the change are invalidated; the review cannot reuse a stale pass.</td></tr>
+          <tr><th scope="row">AC-12</th><td>Explicit blocking-rule override</td><td>The original failure remains visible and the actor, reason, rule, revision, and time are durably recorded.</td></tr>
+          <tr><th scope="row">AC-13</th><td>Correction proposed as a learning</td><td>No future review uses it until human approval; after approval it applies only inside its declared scope and retains provenance.</td></tr>
+          <tr><th scope="row">AC-14</th><td>Generated code fix</td><td>The fix enters a tracked build, tests are recorded, independent code review runs, and no production file is changed by an off-ledger review action.</td></tr>
+          <tr><th scope="row">AC-15</th><td>Deep scan at repository revision</td><td>Coverage, exclusions, provider versions, progress, findings, and revision are durable; remediation routes through triage to tracked issues.</td></tr>
+          <tr><th scope="row">AC-16</th><td>Controller and daemon review parity</td><td>Equivalent input enforces the same selected checks, evidence requirements, structured fields, limitations, and verdict semantics.</td></tr>
+          <tr><th scope="row">AC-17</th><td>Declared mandatory tool is not registered</td><td>Startup/build qualification fails with the missing capability names; review does not begin with a knowingly inconsistent tool surface.</td></tr>
+          <tr><th scope="row">AC-18</th><td>Local-only environment</td><td>Configured local scanners, graph analysis, local embeddings, and Ollama-backed review work without direct cloud REST access.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="rollout">
+    <h2>Delivery sequence</h2>
+    <ol>
+      <li><strong>Context-sensitive baseline.</strong> Implement risk-family disposition, stable check selection, NFR propagation, completion accounting, and controller/daemon parity.</li>
+      <li><strong>Evidence contract.</strong> Define normalized providers and records; add registry qualification plus secret, dependency, and one SAST adapter for the primary languages.</li>
+      <li><strong>Policy gates.</strong> Add repository policy, advisory/warning/blocking modes, revision binding, overrides, and mirrored client presentation.</li>
+      <li><strong>Security graph.</strong> Add initial source/sanitizer/sink facts, interprocedural summaries, impact paths, parser coverage, and limitation handling.</li>
+      <li><strong>Verification.</strong> Add isolated scenario execution, receipts, targeted mutation analysis, and TESTS/code-review integration.</li>
+      <li><strong>Learning and experience.</strong> Add human-approved learnings, change-risk summaries, dependency-ordered views, effectiveness metrics, and retirement workflow.</li>
+      <li><strong>Deep scans.</strong> Add resumable repository-wide scanning and triage integration after PR-scoped evidence and verdict semantics are proven.</li>
+    </ol>
+    <p>No phase may weaken the existing review baseline. Each phase must dogfood its own failure modes, including unavailable tools, stale indexes, malformed results, secret redaction, cancellation, restart, record-size bounds, and inconsistent registry declarations.</p>
+  </section>
+
+  <section id="decisions">
+    <h2>Open decisions</h2>
+    <ul>
+      <li>Which scanner CLIs and minimum versions are qualified and optionally installed for each supported language?</li>
+      <li>Does repository policy extend the existing team-policy document or use a distinct review-policy artifact with independent ownership?</li>
+      <li>Which security graph facts are parser-derived deterministically, which come from framework packs, and which may be model-proposed but require verification?</li>
+      <li>What isolation mechanism is portable across supported platforms, and which verification scenarios require containers, OS sandboxes, or process-only restrictions?</li>
+      <li>How are provider databases updated and provenance recorded when the machine is offline?</li>
+      <li>Which result classes block under degraded diff-only review, and which necessarily require fresh graph evidence?</li>
+      <li>What bounded evidence retention is sufficient to reproduce a finding without retaining sensitive source or scanner payloads?</li>
+      <li>Which metrics are visible locally and which, if any, may be exported only through an explicit user-configured integration?</li>
+    </ul>
+  </section>
+
+  <section id="references">
+    <h2>References</h2>
+    <ul>
+      <li><a href="../../AGENTS.md">Repository architecture, workflow gates, and provider constraints</a></li>
+      <li><a href="../../plans/context-sensitive-review-prd.md">Context-sensitive design and code review requirements</a></li>
+      <li><a href="../../design/analyze-framework-code.md">Code analysis scope and current security-scanning exclusions</a></li>
+      <li><a href="../../src/workflow/code-review/task-review/policy.ts">Current task-review evidence and coverage policy</a></li>
+      <li><a href="../../src/workflow/code-review/types.ts">Current graph-grounding and finding dimensions</a></li>
+      <li><a href="../../src/workflow/review/types.ts">Current severity, verdict, evidence, and fixability contracts</a></li>
+      <li><a href="../../src/workflow/runners/build/test-record.ts">Current revision-bound test evidence record</a></li>
+      <li><a href="../../src/workflow/feedback/feedback-service.ts">Current durable artifact feedback service</a></li>
+      <li><a href="https://www.coderabbit.ai/review">CodeRabbit review capabilities used as product inspiration</a></li>
+      <li><a href="https://www.coderabbit.ai/blog/pre-merge-checks-built-in-and-custom-pr-enforced">CodeRabbit pre-merge policy examples</a></li>
+    </ul>
+  </section>
+</main>
+</body>
+</html>

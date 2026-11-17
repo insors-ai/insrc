@@ -1,0 +1,68 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 2,
+        "contentHash": "808d0291c347d959f68e3765bdeaa938557643c210bac91b792c27fe3cd64f2a",
+        "at": "2026-11-17T15:46:26.851Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-17T16:31:25.281Z",
+        "override": {
+          "reason": "Automated code review is retired/unavailable (per project rules); controller self-review performed instead — minimal 1-line fix in deriveMdPath matching the proven write-side special case, covered by a targeted regression test, tsc clean, full src/workflow test sweep run with only pre-existing unrelated failures (convert/, runners/build/, team/, tracker/ modules). User explicitly approved with override."
+        }
+      }
+    },
+    "workflow": "build",
+    "runId": "store-006326ed-0440-41e2-9ee5-8a6568e0d145",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-17T15:02:45.172Z",
+    "epicCreatedAt": "2026-11-17T15:02:45.172Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a9101bff4b445e83",
+    "storyId": "s1",
+    "revision": 2,
+    "standalone": true,
+    "sizeClass": "trivial",
+    "authoredBy": "controller",
+    "triageRationale": "A single localized fix in one function (deriveMdPath, src/workflow/pending.ts:245-257), which has exactly two in-file callers (toDescriptor, buildRecordMdPath). The write-side logic (pathsForWorkflow in storage.ts:1183-1188) already special-cases workflow==='brainstorm' as always-standalone; deriveMdPath just needs the equivalent early special-case for kind==='SPEC' so the read path agrees with the write path. No new contract, no schema/storage change, no cross-module ripple.",
+    "updatedAt": "2026-11-17T15:45:28.650Z"
+  },
+  "body": {
+    "focus": "Bug: insrc_present (and the pending-list machinery behind it) fails to re-open an already-written, approved brainstorm SPEC artifact. `deriveMdPath` in src/workflow/pending.ts (line ~249) resolves a SPEC artifact's markdown path by checking `meta['standalone'] === true`, defaulting to the 'epic' work-item kind when that flag is absent/false — producing `docs/epics/<slug>/SPEC.md`. But a brainstorm SPEC artifact is ALWAYS written under `docs/standalone/<slug>/SPEC.md` regardless of the standalone meta flag, per the write-side special case in `pathsForWorkflow` (src/workflow/storage.ts ~line 1177-1188, workflow === 'brainstorm' always resolves 'standalone' and never stamps meta.standalone=true back). Fix: add an early special-case inside `deriveMdPath` (src/workflow/pending.ts) so that `kind === 'SPEC'` always resolves `workItemKind = 'standalone'`, mirroring the write-side special case already proven correct in `pathsForWorkflow` — rather than falling through to the generic `meta['standalone'] === true` check that SPEC artifacts never satisfy. No change to the write path, the SpecArtifact schema, or any other artifact kind's path resolution. See ISSUE-778fc07c9d84c7fb for the full reproduction/root-cause record.",
+    "producesLld": false,
+    "commit": "91d3cf154",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "Fixed deriveMdPath (src/workflow/pending.ts) to special-case kind==='SPEC' as always-standalone, matching the write-side logic in storage.ts's pathsForWorkflow brainstorm branch, so insrc_present/pending-list resolution reads the SPEC.md file at its real docs/standalone/ path instead of a nonexistent docs/epics/ path. Added a regression test in pending.test.ts.",
+    "testRecord": {
+      "md": "docs/standalone/a9101bff4b445e83-E20261117a9101bff/S001/TESTS.md"
+    },
+    "changeLog": []
+  },
+  "citations": []
+}

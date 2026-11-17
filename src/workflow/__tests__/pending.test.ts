@@ -410,3 +410,19 @@ test('pending.test.ts: pending approvals read the lifecycle', () => {
 		cleanup(repo);
 	}
 });
+
+// ISSUE-778fc07c9d84c7fb — deriveMdPath must resolve a SPEC artifact under
+// docs/standalone/ even when its meta carries no `standalone` flag, matching
+// the write-side special case in pathsForWorkflow (storage.ts) for workflow
+// 'brainstorm', which never stamps that flag back onto the artifact.
+test('deriveMdPath resolves a SPEC artifact under docs/standalone/ with no standalone flag on meta', () => {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-pending-spec-'));
+	try {
+		const md = deriveMdPath(repo, 'SPEC', { specHash: 'abc1234567890def', epicCreatedAt: CREATED, epicSlug: 'some-spec' });
+		assert.notEqual(md, '', 'a SPEC with specHash + epicCreatedAt resolves a path');
+		assert.match(md, /docs[\\/]standalone[\\/]/, 'resolves under docs/standalone/, not docs/epics/');
+		assert.doesNotMatch(md, /docs[\\/]epics[\\/]/);
+	} finally {
+		cleanup(repo);
+	}
+});

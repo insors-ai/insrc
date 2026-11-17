@@ -246,7 +246,11 @@ export function deriveMdPath(repoPath: string, kind: ArtifactKind, meta: Readonl
 	const hash = str(meta['epicHash']) ?? str(meta['specHash']) ?? str(meta['issueHash']);
 	const createdAt = str(meta['epicCreatedAt']);
 	if (hash === undefined || createdAt === undefined) return '';
-	const workItemKind: WorkItemKind = meta['standalone'] === true ? 'standalone' : 'epic';
+	// A brainstorm SPEC artifact is always written under docs/standalone/ (storage.ts
+	// pathsForWorkflow's 'brainstorm' branch), regardless of meta.standalone, and that
+	// write path never stamps the flag back — so the generic check below would
+	// otherwise resolve 'epic' and read from the wrong folder.
+	const workItemKind: WorkItemKind = kind === 'SPEC' || meta['standalone'] === true ? 'standalone' : 'epic';
 	const slug = str(meta['epicSlug']) ?? hash;
 	try {
 		const story = str(meta['storyId']);

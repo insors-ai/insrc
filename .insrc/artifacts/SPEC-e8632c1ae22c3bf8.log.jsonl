@@ -1,0 +1,1 @@
+360	{"artifactId":"SPEC-e8632c1ae22c3bf8","entry":{"id":"20a0803199e446f7a4fd64eb486d1bbd","actor":{"id":"insrc:approval","kind":"system","properties":{}},"timestamp":"2026-11-17T14:33:48.618Z","operation":"approve","revision":{"number":1,"contentHash":"06249fa91c9cdb8753922124ae75d1cc0f6b87a8c3ad132266d758fda258a494"},"status":{"from":"draft","to":"approved"}}}

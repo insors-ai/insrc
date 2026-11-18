@@ -13,12 +13,13 @@ This HLD defines one shared ReviewContext data model that both design review and
 1. [Problem context](#1-problem-context)
 2. [Framework summary](#2-framework-summary)
 3. [Architecture shape](#3-architecture-shape)
-4. [Shared contracts](#4-shared-contracts)
-5. [Story boundaries](#5-story-boundaries)
-6. [Non-functional targets](#6-non-functional-targets)
-7. [Rollout](#7-rollout)
-8. [Alternatives considered](#8-alternatives-considered)
-9. [References](#9-references)
+4. [Diagrams](#4-diagrams)
+5. [Shared contracts](#5-shared-contracts)
+6. [Story boundaries](#6-story-boundaries)
+7. [Non-functional targets](#7-non-functional-targets)
+8. [Rollout](#8-rollout)
+9. [Alternatives considered](#9-alternatives-considered)
+10. [References](#10-references)
 
 ## 1. Problem context
 
@@ -32,9 +33,13 @@ Alternative a2 wins: one canonical TypeScript type per Story (Pointer/Locator, S
 
 Four independently-owned type modules land in src/workflow/artifact-core/ alongside the existing shared lifecycle/type files: Locator+Pointer (s1, the shared primitive every other piece builds on), Scope (s2, scopeType/scopeLevel plus named per-artifact-kind Pointer fields), ReviewTargets (s3, a reset-each-round list of Pointer entries), and CommentEntry+the root-level round field (s4). Per the Epic's own Non-Goals, assembling these four pieces into one populated ReviewContext instance and wiring that instance into insrc_review_step/insrc_code_review_step is deferred follow-on work in a later Epic -- this HLD defines only the four field-level types and their validator/staleness contracts, not the assembly logic.
 
-## 4. Shared contracts
+## 4. Diagrams
 
-### 4.1 sc1: Locator + Pointer
+- [ER model](docs/epics/shared-reviewcontext-data-model-E2026111850cde239/er-model.html)
+
+## 5. Shared contracts
+
+### 5.1 sc1: Locator + Pointer
 
 **Owner Story:** `s1`
 **Consumed by:** `s2`, `s3`
@@ -58,7 +63,7 @@ interface Pointer {
 
 **Assumptions cited:** [[c1]]
 
-### 4.2 sc2: Pointer staleness check
+### 5.2 sc2: Pointer staleness check
 
 **Owner Story:** `s1`
 **Consumed by:** `s2`, `s3`
@@ -77,7 +82,7 @@ type PointerStalenessCheck = (pointer: Pointer, currentContentHash: string) => S
 
 **Assumptions cited:** [[c1]]
 
-### 4.3 sc3: Scope
+### 5.3 sc3: Scope
 
 **Owner Story:** `s2`
 
@@ -108,7 +113,7 @@ interface ValidationResult {
 
 **Assumptions cited:** [[c1]]
 
-### 4.4 sc4: ReviewTargets
+### 5.4 sc4: ReviewTargets
 
 **Owner Story:** `s3`
 
@@ -124,7 +129,7 @@ interface ReviewTargets {
 
 **Assumptions cited:** [[c1]]
 
-### 4.5 sc5: CommentEntry + round
+### 5.5 sc5: CommentEntry + round
 
 **Owner Story:** `s4`
 
@@ -148,40 +153,40 @@ interface ReviewContextRound {
 
 **Assumptions cited:** [[c1]]
 
-## 5. Story boundaries
+## 6. Story boundaries
 
-### 5.1 Story STORY-50cde239426d6e2a-s1
+### 6.1 Story STORY-50cde239426d6e2a-s1
 
 **Owns:** `sc1`, `sc2`
 
 The specific set of currently-known LocatorKind string literals (symbol/lineRange/docSection) is s1's own enumeration; because every consumer treats `Locator.kind` as an opaque string rather than exhaustively switching on a closed union, s1 can add a new literal later without forcing s2/s3/s4 to change, satisfying ac2/lc1.
 
-### 5.2 Story STORY-50cde239426d6e2a-s2
+### 6.2 Story STORY-50cde239426d6e2a-s2
 
 **Owns:** `sc3`
 **Depends on:** `sc1`, `sc2`
 
 Which named artifact-kind fields Scope carries beyond def/hld/lld/plan/tasks (e.g. a future named kind) and the exact per-review-type ScopeValidator implementations are s2's own; no other Story's type depends on Scope, since nothing in the Epic's Story graph consumes s2.
 
-### 5.3 Story STORY-50cde239426d6e2a-s3
+### 6.3 Story STORY-50cde239426d6e2a-s3
 
 **Owns:** `sc4`
 **Depends on:** `sc1`, `sc2`
 
 ReviewTargets' own reset-on-new-round mechanics (how the entries list is rebuilt rather than merged) stay internal to s3; no other Story's type depends on ReviewTargets.
 
-### 5.4 Story STORY-50cde239426d6e2a-s4
+### 6.4 Story STORY-50cde239426d6e2a-s4
 
 **Owns:** `sc5`
 
 CommentEntry does not reference Pointer/Locator at all, so s4 needs neither sc1 nor sc2. The round-stamping mechanics (how a new attempt's round number is assigned) and the same-artifact-only scoping of Comments across a chain stay internal to s4; the full ReviewContext container embedding Scope and ReviewTargets alongside round/comments is explicitly deferred (Epic Non-Goals), since no Story in this graph depends on all of s2, s3 and s4 together.
 
-## 6. Non-functional targets
+## 7. Non-functional targets
 
 - **Performance:** The staleness check (sc2) is a single hash comparison against already-read file content; it adds no I/O beyond the read the controller already performs to populate a Pointer's contentHash.
 - **Security:** Pointer.path is repo-relative and must resolve within the registered repo root; validators (k3) reject a Pointer whose path escapes that root, consistent with the repo-registry strict-contract rule elsewhere in this codebase.
 
-## 7. Rollout
+## 8. Rollout
 
 **Phase A — foundational Pointer/Locator + staleness contract**
 
@@ -205,9 +210,9 @@ s2, s3 and s4 each depend only on s1 (already landed in Phase A) and have no dep
 | Staleness check reimplemented per consumer instead of reused | k5 requires ONE shared staleness-detection function; if s2's and s3's LLDs each write their own ad hoc contentHash comparison instead of importing sc2's PointerStalenessCheck, the Epic silently ends up with two staleness implementations that can drift (e.g. different hash normalization) and fail the k5 constraint without any test catching it. | s2 and s3's LLDs must cite sc2's concrete file/export directly as what they import, not re-derive their own comparison; code review for both Stories checks for a second staleness implementation. |
 | Per-Story types drift from what the deferred assembly Epic will actually need | Because no Story in this graph combines Scope + ReviewTargets + CommentEntry into one ReviewContext container (the assembly is an explicit Non-Goal deferred to a later Epic), a field named or shaped slightly differently across s2/s3/s4's independently-written LLDs could force an awkward adapter layer -- or a breaking rename -- when that later Epic tries to compose them. | Each Story's LLD must use the exact field names and types already fixed in this HLD's sharedContracts (sc3/sc4/sc5) verbatim, not re-derive its own naming, so the later assembly Epic composes them with no adapter. |
 
-## 8. Alternatives considered
+## 9. Alternatives considered
 
-### 8.1 a1: Flat discriminated-union wire format
+### 9.1 a1: Flat discriminated-union wire format
 
 Locator/Pointer/Scope/Comments are plain TS discriminated unions, and the SAME union shape is what every consumer (controller, each review-type validator, and every LLM prompt) is handed verbatim.
 
@@ -228,7 +233,7 @@ This is the simplest possible implementation: one canonical type, one serializat
 
 **Rejected because:** Ties with a2 on k1-k4 (both satisfies) and k5 (both partial), but hands the raw tagged union straight to every review-type LLM prompt with no reshaping layer -- exactly the failure mode SPEC-0add47b5b1f72874 recorded (most LLMs handle unions/inheritance poorly, some refuse to parse such schemas).
 
-### 8.2 a2: Canonical internal type + per-consumer shaping transformers — **CHOSEN**
+### 9.2 a2: Canonical internal type + per-consumer shaping transformers — **CHOSEN**
 
 Locator/Pointer/Scope/ReviewTargets/Comments are one canonical TS type internally, but each review-type validator and each LLM-facing call site gets its own transformer that reshapes the canonical type into whatever structured-output schema that specific consumer parses reliably.
 
@@ -247,7 +252,7 @@ This directly satisfies the brainstorm's explicit instruction (captured in backF
 
 **Cost estimate:** M
 
-### 8.3 a3: Abstract base-class hierarchy mirroring per-review-type subclasses
+### 9.3 a3: Abstract base-class hierarchy mirroring per-review-type subclasses
 
 Locator, Pointer, Feedback and Scope are abstract base classes with a concrete subclass per locator kind / review type, and per-review-type validators are implemented as subclass-overridden methods.
 
@@ -267,7 +272,7 @@ This mirrors classic OOP extension and is the shape later Epic work (e.g. Securi
 
 **Rejected because:** Violates k3 (replaces the required standalone validator function per review type with subclass-overridden methods) and violates k4 (introduces a new abstract-base-class idiom the DEF's capability-discovery explicitly found absent, baseClassIdioms: []).
 
-## 9. References
+## 10. References
 
 - **[[c1]]** `prior-artifact` `SPEC-0add47b5b1f72874` — "docs/standalone/reviewcontext-data-model-design-code-review-E202611170add47b5/SPEC.md"
 - **[[c2]]** `analyze-bundle` `capability-discovery: src/workflow/review-history reuse-check + convention.detect` — "0 clear-match / 5 partial-match across 50 candidates; baseClassIdioms: []"

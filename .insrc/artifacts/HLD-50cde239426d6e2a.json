@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "design.epic",
-    "runId": "wf-1794979386595-seznwo",
+    "runId": "wf-1794984468539-8trvyt",
     "repoPath": "/home/subho/work/dev/insors/insrc",
-    "createdAt": "2026-11-18T05:30:26.807Z",
+    "createdAt": "2026-11-18T06:51:37.450Z",
     "epicCreatedAt": "2026-11-18T04:59:27.796Z",
     "attribution": {
       "outputs": [
@@ -15,7 +15,7 @@
         }
       ]
     },
-    "elapsedMs": 438718,
+    "elapsedMs": 227113,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "50cde239426d6e2a",
@@ -24,9 +24,9 @@
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 1,
-        "contentHash": "ab8483daa938e28dcb6580b0c144dad56238c246106d591c96cde4e444a6d932",
-        "at": "2026-11-18T05:30:27.233Z",
+        "number": 2,
+        "contentHash": "e014ce0643cc20cdad5b748666f1a46113f2e670f4fd47b0c640ebe6d33b77e2",
+        "at": "2026-11-18T06:51:38.090Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
@@ -35,24 +35,24 @@
       },
       "signoffs": [],
       "approval": {
-        "revision": 1,
+        "revision": 2,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-11-18T05:46:37.250Z",
+        "at": "2026-11-18T06:54:48.429Z",
         "override": {
-          "reason": "Automated design review is retired/unavailable while being rewritten. Controller-authored HLD, self-reviewed via checklist.verify (19/19 passed); user approved explicitly in chat after presentation."
+          "reason": "Automated design review is retired/unavailable while being rewritten. Controller-authored HLD revision 2, self-reviewed via checklist.verify (one honest partial on f2, no hard-fails); user approved explicitly in chat."
         }
       }
     },
-    "revision": 1,
     "envelope": {
       "description": "",
       "references": [],
       "attachments": []
-    }
+    },
+    "revision": 2
   },
   "body": {
     "summary": {
@@ -169,6 +169,150 @@
       "performance": "The staleness check (sc2) is a single hash comparison against already-read file content; it adds no I/O beyond the read the controller already performs to populate a Pointer's contentHash.",
       "security": "Pointer.path is repo-relative and must resolve within the registered repo root; validators (k3) reject a Pointer whose path escapes that root, consistent with the repo-registry strict-contract rule elsewhere in this codebase."
     },
+    "erDefinition": {
+      "id": "review-context-data-model",
+      "narrative": "Scope and ReviewTargets each hold one or more Pointer references naming content elsewhere (another artifact or a source/doc file); a Pointer may carry an optional Locator pinning an exact region inside that file. CommentEntry carries no Pointer or Locator reference at all -- it is pure freeform text with provenance.",
+      "classes": {
+        "Locator": {
+          "description": "An open, extensible pin to a region inside the file a Pointer names (symbol name, line range, doc-section id, or a future kind read structurally, never via an exhaustive switch).",
+          "attributes": {
+            "kind": {
+              "description": "The locator's kind; a known literal today, but any string is accepted so a future kind never breaks existing consumers.",
+              "range": "string",
+              "required": true
+            },
+            "value": {
+              "description": "The symbol name, 'startLine-endLine' string, or doc-section id, interpreted per `kind`.",
+              "range": "string",
+              "required": true
+            }
+          }
+        },
+        "Pointer": {
+          "description": "A non-owning, read-only reference to an existing authored file (never a generated extract), optionally pinned to a region via Locator.",
+          "attributes": {
+            "path": {
+              "description": "Repo-relative path to the existing authored file this Pointer names.",
+              "range": "string",
+              "required": true
+            },
+            "section": {
+              "description": "The optional region within `path` this Pointer pins.",
+              "range": "Locator",
+              "required": false,
+              "minimum_cardinality": 0,
+              "maximum_cardinality": 1
+            },
+            "contentHash": {
+              "description": "sha256 hex of `path`'s content at the time this Pointer was built, used by the shared staleness check.",
+              "range": "string",
+              "required": false
+            }
+          }
+        },
+        "Scope": {
+          "description": "Describes which review family and chain depth a review attempt covers, self-inclusive at the artifact under review.",
+          "attributes": {
+            "scopeType": {
+              "description": "Which review family this Scope belongs to (design or code).",
+              "range": "string",
+              "required": true
+            },
+            "scopeLevel": {
+              "description": "Which chain depth this review attempt covers.",
+              "range": "string",
+              "required": true
+            },
+            "def": {
+              "description": "Pointer to the DEF artifact in scope, when the review's depth includes it.",
+              "range": "Pointer",
+              "required": false,
+              "minimum_cardinality": 0,
+              "maximum_cardinality": 1
+            },
+            "hld": {
+              "description": "Pointer to the HLD artifact in scope, when the review's depth includes it.",
+              "range": "Pointer",
+              "required": false,
+              "minimum_cardinality": 0,
+              "maximum_cardinality": 1
+            },
+            "lld": {
+              "description": "Pointer to the LLD artifact in scope, when the review's depth includes it.",
+              "range": "Pointer",
+              "required": false,
+              "minimum_cardinality": 0,
+              "maximum_cardinality": 1
+            },
+            "plan": {
+              "description": "Pointer to the PLAN artifact in scope, when the review's depth includes it.",
+              "range": "Pointer",
+              "required": false,
+              "minimum_cardinality": 0,
+              "maximum_cardinality": 1
+            },
+            "tasks": {
+              "description": "Pointers to the Task(s) in scope, for a code-review depth whose natural unit is per-Task.",
+              "range": "Pointer",
+              "required": false,
+              "multivalued": true,
+              "minimum_cardinality": 0
+            },
+            "extension": {
+              "description": "Pointer to an EXT (extend-Define) artifact in scope, when relevant.",
+              "range": "Pointer",
+              "required": false,
+              "minimum_cardinality": 0,
+              "maximum_cardinality": 1
+            },
+            "amendment": {
+              "description": "Pointer to an AMD (amendment) artifact in scope, when relevant.",
+              "range": "Pointer",
+              "required": false,
+              "minimum_cardinality": 0,
+              "maximum_cardinality": 1
+            }
+          }
+        },
+        "ReviewTargets": {
+          "description": "The submitter-owned, fully-reset-each-round list of content to review this round.",
+          "attributes": {
+            "entries": {
+              "description": "The current round's floor set of content to review; rebuilt fresh every round, never merged with a prior round's entries.",
+              "range": "Pointer",
+              "required": true,
+              "multivalued": true,
+              "minimum_cardinality": 0
+            }
+          }
+        },
+        "CommentEntry": {
+          "description": "The submitter's freeform, provenance-tagged context for one review round; carries no Pointer/Locator reference at all.",
+          "attributes": {
+            "round": {
+              "description": "Which review attempt this comment belongs to.",
+              "range": "integer",
+              "required": true
+            },
+            "party": {
+              "description": "Which side recorded this comment (submitter or reviewer).",
+              "range": "string",
+              "required": true
+            },
+            "timestamp": {
+              "description": "ISO-8601 time this comment was recorded.",
+              "range": "string",
+              "required": true
+            },
+            "text": {
+              "description": "The freeform comment text.",
+              "range": "string",
+              "required": true
+            }
+          }
+        }
+      }
+    },
     "rolloutOverview": {
       "phases": [
         {
@@ -263,7 +407,14 @@
       }
     ],
     "chosenAlternative": "a2",
-    "openQuestions": []
+    "openQuestions": [],
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/shared-reviewcontext-data-model-E2026111850cde239/er-model.html",
+        "title": "ER model"
+      }
+    ]
   },
   "citations": [
     {

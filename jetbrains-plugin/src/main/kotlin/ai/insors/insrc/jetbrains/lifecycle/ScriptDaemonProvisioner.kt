@@ -29,10 +29,11 @@ fun interface SubprocessRunner {
  * Locates the existing backend scripts to delegate to (Story S003 / t6): the
  * install script for INSTALL, the daemon-ctl script for UPDATE. Returns `null`
  * when the script cannot be found on disk (a fail-safe skip, not a reproduction).
+ * daemon-ctl.sh itself routes a managed vs. unmanaged UPDATE safely, so no
+ * caller needs its own legacy-target detection.
  */
 fun interface DaemonScriptLocator {
     fun scriptFor(kind: ProvisionKind): Path?
-    fun existingUpgradeTarget(): Path? = null
 }
 
 /**
@@ -54,21 +55,18 @@ class ScriptDaemonProvisioner(
     private val log = logger<ScriptDaemonProvisioner>()
 
     override fun run(kind: ProvisionKind, node: NodeRuntime): ProvisionOutcome {
-        val route = runCatching {
-            val legacy = if (kind == ProvisionKind.UPDATE) locator.existingUpgradeTarget() else null
-            legacy to locator.scriptFor(if (legacy == null) kind else ProvisionKind.INSTALL)
-        }.getOrElse { return ProvisionOutcome(ok = false, reason = it.message ?: "Invalid daemon installation") }
-        val (legacy, script) = route
+        val script = runCatching { locator.scriptFor(kind) }
+            .getOrElse { return ProvisionOutcome(ok = false, reason = it.message ?: "Invalid daemon installation") }
         if (script == null || !Files.exists(script)) {
             log.warn("insrc: daemon setup script for $kind not found — skipping")
             return ProvisionOutcome(ok = false, reason = "insrc setup tooling is unavailable")
         }
 
-        // INSTALL runs the install script; UPDATE runs `daemon-ctl.sh update`.
+        // INSTALL runs the install script; UPDATE runs `daemon-ctl.sh update`, which
+        // routes a managed vs. unmanaged install safely on its own.
         val command = when (kind) {
             ProvisionKind.INSTALL -> listOf("bash", script.toString())
-            ProvisionKind.UPDATE -> if (legacy == null) listOf("bash", script.toString(), "update")
-                else listOf("bash", script.toString(), "-y", "--target", legacy.toString())
+            ProvisionKind.UPDATE -> listOf("bash", script.toString(), "update")
         }
         val env = envWithNodeOnPath(node) + ("INSRC_DAEMON_UPDATE_WAIT" to "1")
 

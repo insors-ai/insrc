@@ -37,19 +37,16 @@ class DaemonLifecycleCommandRunner(
     fun run(command: LifecycleCommand): DaemonActionResult {
         // daemon-ctl.sh is the UPDATE-kind script the existing locator already resolves;
         // we run it with a DIFFERENT subcommand. A null path (daemon not installed) is a
-        // fail-safe skip, never a reproduction.
-        val route = runCatching {
-            val legacy = if (command == LifecycleCommand.UPDATE) scriptLocator.existingUpgradeTarget() else null
-            legacy to scriptLocator.scriptFor(if (legacy == null) ProvisionKind.UPDATE else ProvisionKind.INSTALL)
-        }.getOrElse { return DaemonActionResult.Failed(it.message ?: "Invalid daemon installation") }
-        val (legacy, script) = route
+        // fail-safe skip, never a reproduction. daemon-ctl.sh itself routes a managed vs.
+        // unmanaged UPDATE safely, so no legacy-target detection is needed here.
+        val script = runCatching { scriptLocator.scriptFor(ProvisionKind.UPDATE) }
+            .getOrElse { return DaemonActionResult.Failed(it.message ?: "Invalid daemon installation") }
         if (script == null || !Files.exists(script)) {
             log.warn("insrc: daemon-ctl.sh not found for $command — skipping")
             return DaemonActionResult.Failed("insrc daemon tooling is unavailable (daemon not installed)")
         }
 
-        val commandLine = if (legacy == null) listOf("bash", script.toString(), subcommand(command))
-            else listOf("bash", script.toString(), "-y", "--target", legacy.toString())
+        val commandLine = listOf("bash", script.toString(), subcommand(command))
         val env = envWithNodeOnPath(nodeResolver()) + ("INSRC_DAEMON_UPDATE_WAIT" to "1")
 
         return try {

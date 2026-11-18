@@ -228,11 +228,6 @@ class DefaultDaemonScriptLocator(
     fun daemonRoot(): java.nio.file.Path = daemonRootOverride?.takeIf { it.isNotBlank() }?.let { java.nio.file.Path.of(it) }
         ?: homeDir.resolve(".insrc").resolve("daemon")
 
-    override fun existingUpgradeTarget(): java.nio.file.Path? = daemonRoot().takeIf { root ->
-        macOS && managedReleaseRoot() == null && (java.nio.file.Files.isRegularFile(root.resolve("scripts/daemon-ctl.sh")) ||
-            java.nio.file.Files.isRegularFile(root.resolve("out/daemon/index.js")))
-    }
-
     fun managedReleaseRoot(): java.nio.file.Path? {
         if (!macOS) return null
         val stateRoot = homeDir.resolve(".insrc")

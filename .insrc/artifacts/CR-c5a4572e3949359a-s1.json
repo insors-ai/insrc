@@ -1,0 +1,3401 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "store-e395c8d3-3a0e-41ec-8fa5-dc7338d5b1c3",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-18T07:14:38.166Z",
+    "epicCreatedAt": "2026-11-18T05:16:00.099Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 2,
+    "epicHash": "c5a4572e3949359a",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicSlug": "daemon-update-always-fails-unmanaged-macos",
+    "standalone": true,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 2,
+        "contentHash": "b3fe6f423679f13b19b959701309bec489d77d012a21aff39f577300e26335eb",
+        "at": "2026-11-18T07:24:10.870Z",
+        "by": {
+          "id": "insrc:code-review",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 2
+  },
+  "body": {
+    "kind": "code-review",
+    "format": "task-based",
+    "storyId": "s1",
+    "status": "changes_requested",
+    "reviews": [
+      {
+        "reviewId": "cr1",
+        "attempt": 1,
+        "storyId": "s1",
+        "reviewer": "daemon",
+        "status": "failed",
+        "finalScopeIdentity": "852efc329db0a00bca6ef59fc705b9be5f2406c8e19b7b32bbb56f8352e72453",
+        "attributionIdentity": "546bfb633b68464e2aabbcd0df8bf886c1d2782d46a7fb0428853f9b9e418f72",
+        "taskScopeIdentities": [
+          {
+            "taskId": "t1",
+            "identity": "8a1fd969266b13e39a0aeabb32d121371a10a290960ee6ae4e0320013407a5f4"
+          },
+          {
+            "taskId": "t2",
+            "identity": "54bd53ca47628e1ff63f23f87007bbfd798519e6b191551fa3c16f67e5a36973"
+          },
+          {
+            "taskId": "t3",
+            "identity": "6894d481205d4791d349f91f67a7429d87e344b63ac7199c6e7a293e62e29d58"
+          },
+          {
+            "taskId": "t4",
+            "identity": "a3d6a773496024f8bc5bcb8c91dea8c1dfb1eac36ad9c365463088e3c68b1cef"
+          },
+          {
+            "taskId": "t5",
+            "identity": "a74d8cc99b11bc85b96952d99de74f351e439ffc9d9fdd893c0b5b463c94e2be"
+          },
+          {
+            "taskId": "t6",
+            "identity": "9462d952dcb6191dc718de25bb28425b2113324c7c404d21f1ac79790bef9d90"
+          }
+        ],
+        "scope": {
+          "reviewRevision": "d3450ccd37e426e64cb93e9c8b08d83b356d3d07",
+          "finalScope": {
+            "revision": "d3450ccd37e426e64cb93e9c8b08d83b356d3d07",
+            "identity": "852efc329db0a00bca6ef59fc705b9be5f2406c8e19b7b32bbb56f8352e72453",
+            "entries": [
+              {
+                "originChangeIndex": 0,
+                "path": "scripts/daemon-ctl.sh",
+                "blobOid": "7ba599e38acb0699d4f15a1dbe58c04a5acac74f",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      402,
+                      405
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 1,
+                "path": "vscode-plugin/src/daemon/controller.ts",
+                "blobOid": "f10f64466a87c0aa8819ebc44c8ffcb78dd6978f",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      80,
+                      80
+                    ]
+                  },
+                  {
+                    "after": [
+                      85,
+                      85
+                    ]
+                  },
+                  {
+                    "after": [
+                      100,
+                      100
+                    ]
+                  },
+                  {
+                    "after": [
+                      107,
+                      108
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 2,
+                "path": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/freshness/InstalledCommitFreshnessConsumer.kt",
+                "blobOid": "196533b48651c110f200a505734a5432cfe02cd8",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "deletionAt": 10
+                  },
+                  {
+                    "deletionAt": 85
+                  },
+                  {
+                    "deletionAt": 97
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 3,
+                "path": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleCommandRunner.kt",
+                "blobOid": "0e4cb3baa92e937c6160e19e183c4ef97bebc1fb",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      40,
+                      43
+                    ]
+                  },
+                  {
+                    "after": [
+                      49,
+                      49
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 4,
+                "path": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleService.kt",
+                "blobOid": "690e08ef0dd2791cb6fa1693b36fd23edb791588",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "deletionAt": 230
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 5,
+                "path": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/lifecycle/ScriptDaemonProvisioner.kt",
+                "blobOid": "a9b049bf53001120f6491bce71146d7ed4b99c22",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      32,
+                      33
+                    ]
+                  },
+                  {
+                    "after": [
+                      58,
+                      59
+                    ]
+                  },
+                  {
+                    "after": [
+                      65,
+                      66
+                    ]
+                  },
+                  {
+                    "after": [
+                      69,
+                      69
+                    ]
+                  },
+                  {
+                    "deletionAt": 36
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 6,
+                "path": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/freshness/InstalledCommitFreshnessConsumerTest.kt",
+                "blobOid": "da740e21b0f856a53d0a704f6aecf94ad99f3691",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      56,
+                      56
+                    ]
+                  },
+                  {
+                    "after": [
+                      58,
+                      59
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 7,
+                "path": "vscode-plugin/src/daemon/__tests__/controller.test.ts",
+                "blobOid": "abd44582a9fd41afc1a5d8e187a436d2c4c59122",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      67,
+                      67
+                    ]
+                  },
+                  {
+                    "after": [
+                      76,
+                      78
+                    ]
+                  },
+                  {
+                    "after": [
+                      80,
+                      80
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 8,
+                "path": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleCommandRunnerTest.kt",
+                "blobOid": "ee34ff72d81d4bbc55c50557ea59a6cea26ac4e8",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      62,
+                      62
+                    ]
+                  },
+                  {
+                    "after": [
+                      85,
+                      85
+                    ]
+                  },
+                  {
+                    "after": [
+                      89,
+                      91
+                    ]
+                  },
+                  {
+                    "after": [
+                      93,
+                      93
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 9,
+                "path": "src/daemon/__tests__/macos-upgrade-routing.test.ts",
+                "blobOid": "4107a959595d49512442143dda106322706a8af3",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      15,
+                      19
+                    ]
+                  },
+                  {
+                    "after": [
+                      23,
+                      30
+                    ]
+                  },
+                  {
+                    "after": [
+                      43,
+                      44
+                    ]
+                  },
+                  {
+                    "after": [
+                      51,
+                      51
+                    ]
+                  },
+                  {
+                    "after": [
+                      69,
+                      70
+                    ]
+                  },
+                  {
+                    "after": [
+                      80,
+                      162
+                    ]
+                  },
+                  {
+                    "after": [
+                      168,
+                      171
+                    ]
+                  },
+                  {
+                    "after": [
+                      174,
+                      174
+                    ]
+                  },
+                  {
+                    "after": [
+                      176,
+                      198
+                    ]
+                  },
+                  {
+                    "after": [
+                      201,
+                      207
+                    ]
+                  },
+                  {
+                    "deletionAt": 78
+                  }
+                ]
+              }
+            ],
+            "dispositions": [
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    402,
+                    405
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      402,
+                      405
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    80,
+                    80
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      80,
+                      80
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    85,
+                    85
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      85,
+                      85
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    100,
+                    100
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      100,
+                      100
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    107,
+                    108
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      107,
+                      108
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 2,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "deletionAt": 10
+                },
+                "kind": "deleted",
+                "finalSegments": [
+                  {
+                    "deletionAt": 10
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 2,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "deletionAt": 85
+                },
+                "kind": "deleted",
+                "finalSegments": [
+                  {
+                    "deletionAt": 85
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 2,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "deletionAt": 97
+                },
+                "kind": "deleted",
+                "finalSegments": [
+                  {
+                    "deletionAt": 97
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 3,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    40,
+                    43
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      40,
+                      43
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 3,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    49,
+                    49
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      49,
+                      49
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 4,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "deletionAt": 230
+                },
+                "kind": "deleted",
+                "finalSegments": [
+                  {
+                    "deletionAt": 230
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 5,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    32,
+                    33
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      32,
+                      33
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 5,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "deletionAt": 36
+                },
+                "kind": "deleted",
+                "finalSegments": [
+                  {
+                    "deletionAt": 36
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 5,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    58,
+                    59
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      58,
+                      59
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 5,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    65,
+                    66
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      65,
+                      66
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 5,
+                  "segmentIndex": 4
+                },
+                "sourcePart": {
+                  "after": [
+                    69,
+                    69
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      69,
+                      69
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 6,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    56,
+                    56
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      56,
+                      56
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 6,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    58,
+                    59
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      58,
+                      59
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 7,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    67,
+                    67
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      67,
+                      67
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 7,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    76,
+                    78
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      76,
+                      78
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 7,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    80,
+                    80
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      80,
+                      80
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    62,
+                    62
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      62,
+                      62
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    85,
+                    85
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      85,
+                      85
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    89,
+                    91
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      89,
+                      91
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    93,
+                    93
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      93,
+                      93
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 9,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    15,
+                    19
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      15,
+                      19
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 9,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    23,
+                    30
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      23,
+                      30
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 9,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    43,
+                    44
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      43,
+                      44
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 9,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    51,
+                    51
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      51,
+                      51
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 9,
+                  "segmentIndex": 4
+                },
+                "sourcePart": {
+                  "after": [
+                    69,
+                    70
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      69,
+                      70
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 9,
+                  "segmentIndex": 5
+                },
+                "sourcePart": {
+                  "deletionAt": 78
+                },
+                "kind": "deleted",
+                "finalSegments": [
+                  {
+                    "deletionAt": 78
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 9,
+                  "segmentIndex": 6
+                },
+                "sourcePart": {
+                  "after": [
+                    80,
+                    162
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      80,
+                      162
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 9,
+                  "segmentIndex": 7
+                },
+                "sourcePart": {
+                  "after": [
+                    168,
+                    171
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      168,
+                      171
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 9,
+                  "segmentIndex": 8
+                },
+                "sourcePart": {
+                  "after": [
+                    174,
+                    174
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      174,
+                      174
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 9,
+                  "segmentIndex": 9
+                },
+                "sourcePart": {
+                  "after": [
+                    176,
+                    198
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      176,
+                      198
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 9,
+                  "segmentIndex": 10
+                },
+                "sourcePart": {
+                  "after": [
+                    201,
+                    207
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      201,
+                      207
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              }
+            ],
+            "selectedTaskIds": [
+              "t1",
+              "t2",
+              "t3",
+              "t4",
+              "t5",
+              "t6"
+            ],
+            "testCount": 3,
+            "attributionIdentity": "546bfb633b68464e2aabbcd0df8bf886c1d2782d46a7fb0428853f9b9e418f72",
+            "attributionState": "accepted",
+            "tasks": [
+              {
+                "taskId": "t1",
+                "changeIndexes": [
+                  0
+                ],
+                "testIndexes": [
+                  0
+                ],
+                "decision": {
+                  "action": "initial"
+                },
+                "identity": "8a1fd969266b13e39a0aeabb32d121371a10a290960ee6ae4e0320013407a5f4"
+              },
+              {
+                "taskId": "t2",
+                "changeIndexes": [
+                  1
+                ],
+                "testIndexes": [
+                  0,
+                  1
+                ],
+                "decision": {
+                  "action": "initial"
+                },
+                "identity": "54bd53ca47628e1ff63f23f87007bbfd798519e6b191551fa3c16f67e5a36973"
+              },
+              {
+                "taskId": "t3",
+                "changeIndexes": [
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "testIndexes": [
+                  0,
+                  2
+                ],
+                "decision": {
+                  "action": "initial"
+                },
+                "identity": "6894d481205d4791d349f91f67a7429d87e344b63ac7199c6e7a293e62e29d58"
+              },
+              {
+                "taskId": "t4",
+                "changeIndexes": [
+                  7
+                ],
+                "testIndexes": [
+                  1
+                ],
+                "decision": {
+                  "action": "initial"
+                },
+                "identity": "a3d6a773496024f8bc5bcb8c91dea8c1dfb1eac36ad9c365463088e3c68b1cef"
+              },
+              {
+                "taskId": "t5",
+                "changeIndexes": [
+                  6,
+                  8
+                ],
+                "testIndexes": [
+                  2
+                ],
+                "decision": {
+                  "action": "initial"
+                },
+                "identity": "a74d8cc99b11bc85b96952d99de74f351e439ffc9d9fdd893c0b5b463c94e2be"
+              },
+              {
+                "taskId": "t6",
+                "changeIndexes": [
+                  9
+                ],
+                "testIndexes": [
+                  0
+                ],
+                "decision": {
+                  "action": "initial"
+                },
+                "identity": "9462d952dcb6191dc718de25bb28425b2113324c7c404d21f1ac79790bef9d90"
+              }
+            ]
+          },
+          "storyId": "s1",
+          "documents": {
+            "lld": {
+              "path": "docs/standalone/daemon-update-always-fails-unmanaged-macos-E20261118c5a4572e/S001/LLD.md",
+              "commit": "472871847bc035ebe3542317f776a9e2ab861f6e"
+            },
+            "plan": {
+              "path": "docs/standalone/daemon-update-always-fails-unmanaged-macos-E20261118c5a4572e/S001/PLAN.md",
+              "commit": "d403e59be56671cf597ecbc445b774471e74301d"
+            }
+          },
+          "reviewSet": [
+            {
+              "commit": "529b88edcdd6a4f4c05554eb257ed7ba50bec514",
+              "parent": "190f104495852486c52c2d22edaed4acef3f7ba6",
+              "files": [
+                {
+                  "path": "scripts/daemon-ctl.sh",
+                  "segments": [
+                    {
+                      "after": [
+                        402,
+                        405
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "9e009a72dc327b0d8e80e924c4abb7d907ec39b0",
+              "parent": "529b88edcdd6a4f4c05554eb257ed7ba50bec514",
+              "files": [
+                {
+                  "path": "vscode-plugin/src/daemon/controller.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        80,
+                        80
+                      ]
+                    },
+                    {
+                      "after": [
+                        85,
+                        85
+                      ]
+                    },
+                    {
+                      "after": [
+                        100,
+                        100
+                      ]
+                    },
+                    {
+                      "after": [
+                        107,
+                        108
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "99831c70c38f52d84cb9ffd9ef3177a62efe1d6b",
+              "parent": "9e009a72dc327b0d8e80e924c4abb7d907ec39b0",
+              "files": [
+                {
+                  "path": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/freshness/InstalledCommitFreshnessConsumer.kt",
+                  "segments": [
+                    {
+                      "deletionAt": 10
+                    },
+                    {
+                      "deletionAt": 85
+                    },
+                    {
+                      "deletionAt": 97
+                    }
+                  ]
+                },
+                {
+                  "path": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleCommandRunner.kt",
+                  "segments": [
+                    {
+                      "after": [
+                        40,
+                        43
+                      ]
+                    },
+                    {
+                      "after": [
+                        49,
+                        49
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleService.kt",
+                  "segments": [
+                    {
+                      "deletionAt": 230
+                    }
+                  ]
+                },
+                {
+                  "path": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/lifecycle/ScriptDaemonProvisioner.kt",
+                  "segments": [
+                    {
+                      "after": [
+                        32,
+                        33
+                      ]
+                    },
+                    {
+                      "deletionAt": 36
+                    },
+                    {
+                      "after": [
+                        58,
+                        59
+                      ]
+                    },
+                    {
+                      "after": [
+                        65,
+                        66
+                      ]
+                    },
+                    {
+                      "after": [
+                        69,
+                        69
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/freshness/InstalledCommitFreshnessConsumerTest.kt",
+                  "segments": [
+                    {
+                      "after": [
+                        56,
+                        56
+                      ]
+                    },
+                    {
+                      "after": [
+                        58,
+                        59
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "c08724a64b4aee863da7bf1112a9c1c50a1a20af",
+              "parent": "99831c70c38f52d84cb9ffd9ef3177a62efe1d6b",
+              "files": [
+                {
+                  "path": "vscode-plugin/src/daemon/__tests__/controller.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        67,
+                        67
+                      ]
+                    },
+                    {
+                      "after": [
+                        76,
+                        78
+                      ]
+                    },
+                    {
+                      "after": [
+                        80,
+                        80
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "bc8ee180b80dd213fa5b8e103cf20f0e8b1653f5",
+              "parent": "c08724a64b4aee863da7bf1112a9c1c50a1a20af",
+              "files": [
+                {
+                  "path": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleCommandRunnerTest.kt",
+                  "segments": [
+                    {
+                      "after": [
+                        62,
+                        62
+                      ]
+                    },
+                    {
+                      "after": [
+                        85,
+                        85
+                      ]
+                    },
+                    {
+                      "after": [
+                        89,
+                        91
+                      ]
+                    },
+                    {
+                      "after": [
+                        93,
+                        93
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "d3450ccd37e426e64cb93e9c8b08d83b356d3d07",
+              "parent": "bc8ee180b80dd213fa5b8e103cf20f0e8b1653f5",
+              "files": [
+                {
+                  "path": "src/daemon/__tests__/macos-upgrade-routing.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        15,
+                        19
+                      ]
+                    },
+                    {
+                      "after": [
+                        23,
+                        30
+                      ]
+                    },
+                    {
+                      "after": [
+                        43,
+                        44
+                      ]
+                    },
+                    {
+                      "after": [
+                        51,
+                        51
+                      ]
+                    },
+                    {
+                      "after": [
+                        69,
+                        70
+                      ]
+                    },
+                    {
+                      "deletionAt": 78
+                    },
+                    {
+                      "after": [
+                        80,
+                        162
+                      ]
+                    },
+                    {
+                      "after": [
+                        168,
+                        171
+                      ]
+                    },
+                    {
+                      "after": [
+                        174,
+                        174
+                      ]
+                    },
+                    {
+                      "after": [
+                        176,
+                        198
+                      ]
+                    },
+                    {
+                      "after": [
+                        201,
+                        207
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "tasks": [
+          {
+            "taskId": "t1",
+            "status": "changes_requested",
+            "summary": "The unmanaged Darwin update path and caller delegation changes match the design. The updated tests exercise plain updates across the CLI and both IDEs, but the managed-update acceptance check lacks behavioral coverage.",
+            "findings": [
+              {
+                "severity": "MED",
+                "location": "scripts/daemon-ctl.sh:402-405",
+                "message": "The managed-update acceptance check is not covered behaviorally by the rewritten route-matrix test.",
+                "rationale": "The test verifies unmanaged updates for the CLI, VS Code, and JetBrains. Its managed-selector case in VS Code runs a no-op candidate script and asserts only that the selected path was used; it does not exercise the managed signed update route. The raw installer test covers its authorization/refusal behavior, not a managed daemon-ctl.sh update. This leaves the explicit requirement that managed updates remain unchanged without a test of that behavior.",
+                "evidenceReferences": [
+                  "d3450ccd37e426e64cb93e9c8b08d83b356d3d07:src/daemon/__tests__/macos-upgrade-routing.test.ts",
+                  "472871847bc035ebe3542317f776a9e2ab861f6e:docs/standalone/daemon-update-always-fails-unmanaged-macos-E20261118c5a4572e/S001/LLD.md",
+                  "d403e59be56671cf597ecbc445b774471e74301d:docs/standalone/daemon-update-always-fails-unmanaged-macos-E20261118c5a4572e/S001/PLAN.md"
+                ]
+              }
+            ],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "Reviewed the route-matrix test body and relevant JetBrains lifecycle/freshness test assertions against the design’s test strategy and acceptance checks. The unmanaged update route is asserted with a real local Git origin, HEAD advancement, and npm trace checks. JetBrains unit coverage asserts UPDATE invokes the resolved daemon-ctl script before and after selector creation. The managed update routing requirement is not behaviorally tested; the managed VS Code case checks selected-script path selection using a no-op stub.",
+              "evidenceReferences": [
+                "d3450ccd37e426e64cb93e9c8b08d83b356d3d07:src/daemon/__tests__/macos-upgrade-routing.test.ts",
+                "bc8ee180b80dd213fa5b8e103cf20f0e8b1653f5:jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleCommandRunnerTest.kt",
+                "99831c70c38f52d84cb9ffd9ef3177a62efe1d6b:jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/freshness/InstalledCommitFreshnessConsumerTest.kt"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: Tests were not run. The builder reports the route-matrix test passed, but this review did not independently execute it."
+            ],
+            "inspectedReferences": [
+              "529b88edcdd6a4f4c05554eb257ed7ba50bec514:scripts/daemon-ctl.sh",
+              "d3450ccd37e426e64cb93e9c8b08d83b356d3d07:src/daemon/__tests__/macos-upgrade-routing.test.ts",
+              "9e009a72dc327b0d8e80e924c4abb7d907ec39b0:vscode-plugin/src/daemon/controller.ts",
+              "99831c70c38f52d84cb9ffd9ef3177a62efe1d6b:jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/lifecycle/ScriptDaemonProvisioner.kt",
+              "99831c70c38f52d84cb9ffd9ef3177a62efe1d6b:jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleCommandRunner.kt",
+              "99831c70c38f52d84cb9ffd9ef3177a62efe1d6b:jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleService.kt",
+              "99831c70c38f52d84cb9ffd9ef3177a62efe1d6b:jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/freshness/InstalledCommitFreshnessConsumer.kt",
+              "bc8ee180b80dd213fa5b8e103cf20f0e8b1653f5:jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleCommandRunnerTest.kt",
+              "99831c70c38f52d84cb9ffd9ef3177a62efe1d6b:jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/freshness/InstalledCommitFreshnessConsumerTest.kt",
+              "472871847bc035ebe3542317f776a9e2ab861f6e:docs/standalone/daemon-update-always-fails-unmanaged-macos-E20261118c5a4572e/S001/LLD.md",
+              "d403e59be56671cf597ecbc445b774471e74301d:docs/standalone/daemon-update-always-fails-unmanaged-macos-E20261118c5a4572e/S001/PLAN.md"
+            ],
+            "executedTests": []
+          },
+          {
+            "taskId": "t2",
+            "status": "failed",
+            "summary": "Reviewer failed: commit: Commit pointer is unavailable",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "unverified",
+              "explanation": "No valid completed assessment was obtained.",
+              "evidenceReferences": []
+            },
+            "limitations": [
+              "Reviewer failed: commit: Commit pointer is unavailable"
+            ],
+            "advice": [],
+            "inspectedReferences": [],
+            "executedTests": [],
+            "error": "Reviewer failed: commit: Commit pointer is unavailable"
+          },
+          {
+            "taskId": "t3",
+            "status": "failed",
+            "summary": "Reviewer failed: commit: Commit pointer is unavailable",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "unverified",
+              "explanation": "No valid completed assessment was obtained.",
+              "evidenceReferences": []
+            },
+            "limitations": [
+              "Reviewer failed: commit: Commit pointer is unavailable"
+            ],
+            "advice": [],
+            "inspectedReferences": [],
+            "executedTests": [],
+            "error": "Reviewer failed: commit: Commit pointer is unavailable"
+          },
+          {
+            "taskId": "t4",
+            "status": "passed",
+            "summary": "The rewritten VS Code test covers update routing for both an unmanaged-but-present install and a managed install. The assertions match the LLD and plan acceptance check, and the committed implementation delegates both cases to daemon-ctl.sh update.",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "Inspected the full submitted test body and assertions. It constructs an unmanaged fixture with the ctl script, daemon entry, and bundled installer present but no managed installation record; it then asserts the exact daemon-ctl.sh update command. It adds a managed installation record and asserts the selected managed ctl script is used. The test would detect reintroduced installer pre-emption in the unmanaged case. The test is Darwin-gated, matching the platform-specific routing defect.",
+              "evidenceReferences": [
+                "d3450ccd37e426e64cb93e9c8b08d83b356d3d07:vscode-plugin/src/daemon/__tests__/controller.test.ts",
+                "9e009a72dc327b0d8e80e924c4abb7d907ec39b0:vscode-plugin/src/daemon/controller.ts"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: I did not run the test. The supplied report says 9/9 tests passed, but this review did not independently execute it."
+            ],
+            "inspectedReferences": [
+              "472871847bc035ebe3542317f776a9e2ab861f6e:docs/standalone/daemon-update-always-fails-unmanaged-macos-E20261118c5a4572e/S001/LLD.md",
+              "d403e59be56671cf597ecbc445b774471e74301d:docs/standalone/daemon-update-always-fails-unmanaged-macos-E20261118c5a4572e/S001/PLAN.md",
+              "c08724a64b4aee863da7bf1112a9c1c50a1a20af:vscode-plugin/src/daemon/__tests__/controller.test.ts",
+              "d3450ccd37e426e64cb93e9c8b08d83b356d3d07:vscode-plugin/src/daemon/__tests__/controller.test.ts",
+              "9e009a72dc327b0d8e80e924c4abb7d907ec39b0:vscode-plugin/src/daemon/controller.ts"
+            ],
+            "executedTests": []
+          },
+          {
+            "taskId": "t5",
+            "status": "passed",
+            "summary": "Reviewed both submitted JetBrains test changes against the pinned LLD and plan. The lifecycle runner test asserts direct `daemon-ctl.sh update` command selection for unmanaged and managed locator states; the freshness test asserts the consumer retains daemon update IPC calls and removes the named legacy-routing hooks. No blocking findings.",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "Inspected the full bodies of both submitted test files. The command-runner test checks the actual subprocess command and managed selector behavior; its optional route-matrix branch checks the delegated update result when fixture environment variables are supplied. The freshness test checks the consumer source for legacy hook names and both daemon IPC calls. These tests cover the submitted routing changes, though they do not independently prove that a real unmanaged update completes its git/npm/build sequence; that behavior is assigned to the cross-client integration test in the LLD, outside these submitted test hunks.",
+              "evidenceReferences": [
+                "d3450ccd37e426e64cb93e9c8b08d83b356d3d07:jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/freshness/InstalledCommitFreshnessConsumerTest.kt",
+                "d3450ccd37e426e64cb93e9c8b08d83b356d3d07:jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleCommandRunnerTest.kt",
+                "472871847bc035ebe3542317f776a9e2ab861f6e:docs/standalone/daemon-update-always-fails-unmanaged-macos-E20261118c5a4572e/S001/LLD.md",
+                "d403e59be56671cf597ecbc445b774471e74301d:docs/standalone/daemon-update-always-fails-unmanaged-macos-E20261118c5a4572e/S001/PLAN.md"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: Tests were not run. The supplied report says six focused JUnit classes passed, but that result is builder-reported; this review did not independently verify the executed source revision.",
+              "The freshness test’s source-string checks cover specific legacy-hook names; behavior-level coverage of the consumer would be more resilient to equivalent routing changes."
+            ],
+            "inspectedReferences": [
+              "d3450ccd37e426e64cb93e9c8b08d83b356d3d07:jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/freshness/InstalledCommitFreshnessConsumerTest.kt",
+              "d3450ccd37e426e64cb93e9c8b08d83b356d3d07:jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleCommandRunnerTest.kt",
+              "d3450ccd37e426e64cb93e9c8b08d83b356d3d07:jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/lifecycle/ScriptDaemonProvisioner.kt",
+              "472871847bc035ebe3542317f776a9e2ab861f6e:docs/standalone/daemon-update-always-fails-unmanaged-macos-E20261118c5a4572e/S001/LLD.md",
+              "d403e59be56671cf597ecbc445b774471e74301d:docs/standalone/daemon-update-always-fails-unmanaged-macos-E20261118c5a4572e/S001/PLAN.md"
+            ],
+            "executedTests": []
+          },
+          {
+            "taskId": "t6",
+            "status": "changes_requested",
+            "summary": "Reviewed the pinned LLD and plan, the route-matrix test, and the implementation changes in daemon-ctl.sh, the VS Code controller, and JetBrains lifecycle/freshness routing. The unmanaged update path is implemented as described, but the rewritten test does not satisfy the managed-path acceptance check: it tests VS Code script selection, not signed updates across all four surfaces.",
+            "findings": [
+              {
+                "severity": "MED",
+                "location": "src/daemon/__tests__/macos-upgrade-routing.test.ts:178-197",
+                "message": "The test does not verify that managed updates still engage the signed bridge across all four surfaces.",
+                "rationale": "The managed fixture only writes a selector for the VS Code controller and asserts that it selects a stub script. It does not invoke or assert signed-bridge behavior. The raw installer assertions at lines 80-92 cover an unmanaged checkout, while daemon-ctl.sh and JetBrains are exercised only with unmanaged checkouts. This leaves the stated managed-path acceptance check unproven.",
+                "evidenceReferences": [
+                  "d3450ccd37e426e64cb93e9c8b08d83b356d3d07:src/daemon/__tests__/macos-upgrade-routing.test.ts",
+                  "472871847bc035ebe3542317f776a9e2ab861f6e:docs/standalone/daemon-update-always-fails-unmanaged-macos-E20261118c5a4572e/S001/LLD.md"
+                ]
+              }
+            ],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "Inspected the complete changed route-matrix test body and assertions, and compared them with the LLD test strategy and supplied acceptance checks. The unmanaged real-git update assertions cover daemon-ctl.sh, VS Code, and JetBrains; the raw installer leg asserts signed-bridge authorization and refusal. The managed update acceptance is not demonstrated, as detailed in the finding. The review also inspected the changed implementation logic in the four relevant routing components; no tests were executed for this assessment.",
+              "evidenceReferences": [
+                "d3450ccd37e426e64cb93e9c8b08d83b356d3d07:src/daemon/__tests__/macos-upgrade-routing.test.ts",
+                "529b88edcdd6a4f4c05554eb257ed7ba50bec514:scripts/daemon-ctl.sh",
+                "9e009a72dc327b0d8e80e924c4abb7d907ec39b0:vscode-plugin/src/daemon/controller.ts",
+                "99831c70c38f52d84cb9ffd9ef3177a62efe1d6b:jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/lifecycle/ScriptDaemonProvisioner.kt"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: Tests, typechecks, and builds were not run. The supplied builder report says the route-matrix test passed, but this review did not independently execute it."
+            ],
+            "inspectedReferences": [
+              "472871847bc035ebe3542317f776a9e2ab861f6e:docs/standalone/daemon-update-always-fails-unmanaged-macos-E20261118c5a4572e/S001/LLD.md",
+              "d403e59be56671cf597ecbc445b774471e74301d:docs/standalone/daemon-update-always-fails-unmanaged-macos-E20261118c5a4572e/S001/PLAN.md",
+              "d3450ccd37e426e64cb93e9c8b08d83b356d3d07:src/daemon/__tests__/macos-upgrade-routing.test.ts",
+              "529b88edcdd6a4f4c05554eb257ed7ba50bec514:scripts/daemon-ctl.sh",
+              "9e009a72dc327b0d8e80e924c4abb7d907ec39b0:vscode-plugin/src/daemon/controller.ts",
+              "99831c70c38f52d84cb9ffd9ef3177a62efe1d6b:jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/lifecycle/ScriptDaemonProvisioner.kt",
+              "99831c70c38f52d84cb9ffd9ef3177a62efe1d6b:jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleCommandRunner.kt",
+              "99831c70c38f52d84cb9ffd9ef3177a62efe1d6b:jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/freshness/InstalledCommitFreshnessConsumer.kt",
+              "99831c70c38f52d84cb9ffd9ef3177a62efe1d6b:jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/freshness/InstalledCommitFreshnessConsumerTest.kt"
+            ],
+            "executedTests": []
+          }
+        ],
+        "summary": "6 selected task assessment(s): failed.\nNative output diagnostics: [{\"phase\":\"assessment\",\"taskId\":\"t2\",\"provider\":\"codex\",\"resolved\":false,\"errors\":[{\"code\":\"HOST_VALIDATION_ERROR\",\"field\":\"commit\",\"correction\":\"Correct the host-rejected review field before resubmitting.\",\"occurrences\":1}]},{\"phase\":\"assessment\",\"taskId\":\"t3\",\"provider\":\"codex\",\"resolved\":false,\"errors\":[{\"code\":\"HOST_VALIDATION_ERROR\",\"field\":\"commit\",\"correction\":\"Correct the host-rejected review field before resubmitting.\",\"occurrences\":1}]}]",
+        "completedAt": "2026-11-18T07:14:34.989Z",
+        "buildFingerprint": "60420a36fd20b7cd493c811f8bcfdca12552229f7f1ebae6539598fabdbf9fdc"
+      },
+      {
+        "reassessmentSummary": "Attribution covers all 10 changes and all 3 required tests. The cross-client route-matrix test is shared evidence for t1, t2, t3, and t6. No code findings are included.",
+        "reviewId": "cr1",
+        "attempt": 2,
+        "storyId": "s1",
+        "reviewer": "daemon",
+        "status": "changes_requested",
+        "finalScopeIdentity": "852efc329db0a00bca6ef59fc705b9be5f2406c8e19b7b32bbb56f8352e72453",
+        "attributionIdentity": "13a85d4ea2ae5fa930267e47691184a66deb21cc597fec344ecc06da391918bc",
+        "taskScopeIdentities": [
+          {
+            "taskId": "t1",
+            "identity": "8a1fd969266b13e39a0aeabb32d121371a10a290960ee6ae4e0320013407a5f4"
+          },
+          {
+            "taskId": "t2",
+            "identity": "54bd53ca47628e1ff63f23f87007bbfd798519e6b191551fa3c16f67e5a36973"
+          },
+          {
+            "taskId": "t3",
+            "identity": "6894d481205d4791d349f91f67a7429d87e344b63ac7199c6e7a293e62e29d58"
+          },
+          {
+            "taskId": "t4",
+            "identity": "a3d6a773496024f8bc5bcb8c91dea8c1dfb1eac36ad9c365463088e3c68b1cef"
+          },
+          {
+            "taskId": "t5",
+            "identity": "a74d8cc99b11bc85b96952d99de74f351e439ffc9d9fdd893c0b5b463c94e2be"
+          },
+          {
+            "taskId": "t6",
+            "identity": "9462d952dcb6191dc718de25bb28425b2113324c7c404d21f1ac79790bef9d90"
+          }
+        ],
+        "scope": {
+          "reviewRevision": "d3450ccd37e426e64cb93e9c8b08d83b356d3d07",
+          "finalScope": {
+            "revision": "d3450ccd37e426e64cb93e9c8b08d83b356d3d07",
+            "identity": "852efc329db0a00bca6ef59fc705b9be5f2406c8e19b7b32bbb56f8352e72453",
+            "entries": [
+              {
+                "originChangeIndex": 0,
+                "path": "scripts/daemon-ctl.sh",
+                "blobOid": "7ba599e38acb0699d4f15a1dbe58c04a5acac74f",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      402,
+                      405
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 1,
+                "path": "vscode-plugin/src/daemon/controller.ts",
+                "blobOid": "f10f64466a87c0aa8819ebc44c8ffcb78dd6978f",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      80,
+                      80
+                    ]
+                  },
+                  {
+                    "after": [
+                      85,
+                      85
+                    ]
+                  },
+                  {
+                    "after": [
+                      100,
+                      100
+                    ]
+                  },
+                  {
+                    "after": [
+                      107,
+                      108
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 2,
+                "path": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/freshness/InstalledCommitFreshnessConsumer.kt",
+                "blobOid": "196533b48651c110f200a505734a5432cfe02cd8",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "deletionAt": 10
+                  },
+                  {
+                    "deletionAt": 85
+                  },
+                  {
+                    "deletionAt": 97
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 3,
+                "path": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleCommandRunner.kt",
+                "blobOid": "0e4cb3baa92e937c6160e19e183c4ef97bebc1fb",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      40,
+                      43
+                    ]
+                  },
+                  {
+                    "after": [
+                      49,
+                      49
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 4,
+                "path": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleService.kt",
+                "blobOid": "690e08ef0dd2791cb6fa1693b36fd23edb791588",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "deletionAt": 230
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 5,
+                "path": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/lifecycle/ScriptDaemonProvisioner.kt",
+                "blobOid": "a9b049bf53001120f6491bce71146d7ed4b99c22",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      32,
+                      33
+                    ]
+                  },
+                  {
+                    "after": [
+                      58,
+                      59
+                    ]
+                  },
+                  {
+                    "after": [
+                      65,
+                      66
+                    ]
+                  },
+                  {
+                    "after": [
+                      69,
+                      69
+                    ]
+                  },
+                  {
+                    "deletionAt": 36
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 6,
+                "path": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/freshness/InstalledCommitFreshnessConsumerTest.kt",
+                "blobOid": "da740e21b0f856a53d0a704f6aecf94ad99f3691",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      56,
+                      56
+                    ]
+                  },
+                  {
+                    "after": [
+                      58,
+                      59
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 7,
+                "path": "vscode-plugin/src/daemon/__tests__/controller.test.ts",
+                "blobOid": "abd44582a9fd41afc1a5d8e187a436d2c4c59122",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      67,
+                      67
+                    ]
+                  },
+                  {
+                    "after": [
+                      76,
+                      78
+                    ]
+                  },
+                  {
+                    "after": [
+                      80,
+                      80
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 8,
+                "path": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleCommandRunnerTest.kt",
+                "blobOid": "ee34ff72d81d4bbc55c50557ea59a6cea26ac4e8",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      62,
+                      62
+                    ]
+                  },
+                  {
+                    "after": [
+                      85,
+                      85
+                    ]
+                  },
+                  {
+                    "after": [
+                      89,
+                      91
+                    ]
+                  },
+                  {
+                    "after": [
+                      93,
+                      93
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 9,
+                "path": "src/daemon/__tests__/macos-upgrade-routing.test.ts",
+                "blobOid": "4107a959595d49512442143dda106322706a8af3",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      15,
+                      19
+                    ]
+                  },
+                  {
+                    "after": [
+                      23,
+                      30
+                    ]
+                  },
+                  {
+                    "after": [
+                      43,
+                      44
+                    ]
+                  },
+                  {
+                    "after": [
+                      51,
+                      51
+                    ]
+                  },
+                  {
+                    "after": [
+                      69,
+                      70
+                    ]
+                  },
+                  {
+                    "after": [
+                      80,
+                      162
+                    ]
+                  },
+                  {
+                    "after": [
+                      168,
+                      171
+                    ]
+                  },
+                  {
+                    "after": [
+                      174,
+                      174
+                    ]
+                  },
+                  {
+                    "after": [
+                      176,
+                      198
+                    ]
+                  },
+                  {
+                    "after": [
+                      201,
+                      207
+                    ]
+                  },
+                  {
+                    "deletionAt": 78
+                  }
+                ]
+              }
+            ],
+            "dispositions": [
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    402,
+                    405
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      402,
+                      405
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    80,
+                    80
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      80,
+                      80
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    85,
+                    85
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      85,
+                      85
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    100,
+                    100
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      100,
+                      100
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    107,
+                    108
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      107,
+                      108
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 2,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "deletionAt": 10
+                },
+                "kind": "deleted",
+                "finalSegments": [
+                  {
+                    "deletionAt": 10
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 2,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "deletionAt": 85
+                },
+                "kind": "deleted",
+                "finalSegments": [
+                  {
+                    "deletionAt": 85
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 2,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "deletionAt": 97
+                },
+                "kind": "deleted",
+                "finalSegments": [
+                  {
+                    "deletionAt": 97
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 3,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    40,
+                    43
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      40,
+                      43
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 3,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    49,
+                    49
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      49,
+                      49
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 4,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "deletionAt": 230
+                },
+                "kind": "deleted",
+                "finalSegments": [
+                  {
+                    "deletionAt": 230
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 5,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    32,
+                    33
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      32,
+                      33
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 5,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "deletionAt": 36
+                },
+                "kind": "deleted",
+                "finalSegments": [
+                  {
+                    "deletionAt": 36
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 5,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    58,
+                    59
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      58,
+                      59
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 5,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    65,
+                    66
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      65,
+                      66
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 5,
+                  "segmentIndex": 4
+                },
+                "sourcePart": {
+                  "after": [
+                    69,
+                    69
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      69,
+                      69
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 6,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    56,
+                    56
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      56,
+                      56
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 6,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    58,
+                    59
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      58,
+                      59
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 7,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    67,
+                    67
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      67,
+                      67
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 7,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    76,
+                    78
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      76,
+                      78
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 7,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    80,
+                    80
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      80,
+                      80
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    62,
+                    62
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      62,
+                      62
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    85,
+                    85
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      85,
+                      85
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    89,
+                    91
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      89,
+                      91
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 8,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    93,
+                    93
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      93,
+                      93
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 9,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    15,
+                    19
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      15,
+                      19
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 9,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    23,
+                    30
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      23,
+                      30
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 9,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    43,
+                    44
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      43,
+                      44
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 9,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    51,
+                    51
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      51,
+                      51
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 9,
+                  "segmentIndex": 4
+                },
+                "sourcePart": {
+                  "after": [
+                    69,
+                    70
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      69,
+                      70
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 9,
+                  "segmentIndex": 5
+                },
+                "sourcePart": {
+                  "deletionAt": 78
+                },
+                "kind": "deleted",
+                "finalSegments": [
+                  {
+                    "deletionAt": 78
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 9,
+                  "segmentIndex": 6
+                },
+                "sourcePart": {
+                  "after": [
+                    80,
+                    162
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      80,
+                      162
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 9,
+                  "segmentIndex": 7
+                },
+                "sourcePart": {
+                  "after": [
+                    168,
+                    171
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      168,
+                      171
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 9,
+                  "segmentIndex": 8
+                },
+                "sourcePart": {
+                  "after": [
+                    174,
+                    174
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      174,
+                      174
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 9,
+                  "segmentIndex": 9
+                },
+                "sourcePart": {
+                  "after": [
+                    176,
+                    198
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      176,
+                      198
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 9,
+                  "segmentIndex": 10
+                },
+                "sourcePart": {
+                  "after": [
+                    201,
+                    207
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      201,
+                      207
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              }
+            ],
+            "selectedTaskIds": [
+              "t1",
+              "t2",
+              "t3",
+              "t4",
+              "t5",
+              "t6"
+            ],
+            "testCount": 3,
+            "attributionIdentity": "13a85d4ea2ae5fa930267e47691184a66deb21cc597fec344ecc06da391918bc",
+            "attributionState": "accepted",
+            "tasks": [
+              {
+                "taskId": "t1",
+                "changeIndexes": [
+                  0
+                ],
+                "testIndexes": [
+                  0
+                ],
+                "decision": {
+                  "action": "reassess",
+                  "reason": "Change 0 fixes daemon-ctl.sh's unmanaged Darwin update route; test 0 exercises the CLI route and signed-bridge boundary."
+                },
+                "identity": "8a1fd969266b13e39a0aeabb32d121371a10a290960ee6ae4e0320013407a5f4"
+              },
+              {
+                "taskId": "t2",
+                "changeIndexes": [
+                  1
+                ],
+                "testIndexes": [
+                  0,
+                  1
+                ],
+                "decision": {
+                  "action": "reassess",
+                  "reason": "Change 1 removes VS Code's update pre-emption. Test 1 asserts the controller routing; test 0 covers the VS Code leg in the cross-client matrix."
+                },
+                "identity": "54bd53ca47628e1ff63f23f87007bbfd798519e6b191551fa3c16f67e5a36973"
+              },
+              {
+                "taskId": "t3",
+                "changeIndexes": [
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "testIndexes": [
+                  0,
+                  2
+                ],
+                "decision": {
+                  "action": "reassess",
+                  "reason": "Changes 2–5 remove JetBrains' legacy update routing and delegate to daemon-ctl.sh. Test 2 verifies the JetBrains lifecycle route; test 0 covers the JetBrains leg in the cross-client matrix."
+                },
+                "identity": "6894d481205d4791d349f91f67a7429d87e344b63ac7199c6e7a293e62e29d58"
+              },
+              {
+                "taskId": "t4",
+                "changeIndexes": [
+                  7
+                ],
+                "testIndexes": [
+                  1
+                ],
+                "decision": {
+                  "action": "reassess",
+                  "reason": "Change 7 rewrites the VS Code controller test for the corrected update routing; test 1 is its required evidence."
+                },
+                "identity": "a3d6a773496024f8bc5bcb8c91dea8c1dfb1eac36ad9c365463088e3c68b1cef"
+              },
+              {
+                "taskId": "t5",
+                "changeIndexes": [
+                  6,
+                  8
+                ],
+                "testIndexes": [
+                  2
+                ],
+                "decision": {
+                  "action": "reassess",
+                  "reason": "Changes 6 and 8 update JetBrains freshness and lifecycle test coverage for the routing change and its compatibility; test 2 is the required JetBrains routing evidence."
+                },
+                "identity": "a74d8cc99b11bc85b96952d99de74f351e439ffc9d9fdd893c0b5b463c94e2be"
+              },
+              {
+                "taskId": "t6",
+                "changeIndexes": [
+                  9
+                ],
+                "testIndexes": [
+                  0
+                ],
+                "decision": {
+                  "action": "reassess",
+                  "reason": "Change 9 rewrites the cross-client integration route matrix; test 0 is its required evidence and also covers the three implementation paths."
+                },
+                "identity": "9462d952dcb6191dc718de25bb28425b2113324c7c404d21f1ac79790bef9d90"
+              }
+            ]
+          },
+          "storyId": "s1",
+          "documents": {
+            "lld": {
+              "path": "docs/standalone/daemon-update-always-fails-unmanaged-macos-E20261118c5a4572e/S001/LLD.md",
+              "commit": "472871847bc035ebe3542317f776a9e2ab861f6e"
+            },
+            "plan": {
+              "path": "docs/standalone/daemon-update-always-fails-unmanaged-macos-E20261118c5a4572e/S001/PLAN.md",
+              "commit": "d403e59be56671cf597ecbc445b774471e74301d"
+            }
+          },
+          "reviewSet": [
+            {
+              "commit": "529b88edcdd6a4f4c05554eb257ed7ba50bec514",
+              "parent": "190f104495852486c52c2d22edaed4acef3f7ba6",
+              "files": [
+                {
+                  "path": "scripts/daemon-ctl.sh",
+                  "segments": [
+                    {
+                      "after": [
+                        402,
+                        405
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "9e009a72dc327b0d8e80e924c4abb7d907ec39b0",
+              "parent": "529b88edcdd6a4f4c05554eb257ed7ba50bec514",
+              "files": [
+                {
+                  "path": "vscode-plugin/src/daemon/controller.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        80,
+                        80
+                      ]
+                    },
+                    {
+                      "after": [
+                        85,
+                        85
+                      ]
+                    },
+                    {
+                      "after": [
+                        100,
+                        100
+                      ]
+                    },
+                    {
+                      "after": [
+                        107,
+                        108
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "99831c70c38f52d84cb9ffd9ef3177a62efe1d6b",
+              "parent": "9e009a72dc327b0d8e80e924c4abb7d907ec39b0",
+              "files": [
+                {
+                  "path": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/freshness/InstalledCommitFreshnessConsumer.kt",
+                  "segments": [
+                    {
+                      "deletionAt": 10
+                    },
+                    {
+                      "deletionAt": 85
+                    },
+                    {
+                      "deletionAt": 97
+                    }
+                  ]
+                },
+                {
+                  "path": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleCommandRunner.kt",
+                  "segments": [
+                    {
+                      "after": [
+                        40,
+                        43
+                      ]
+                    },
+                    {
+                      "after": [
+                        49,
+                        49
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleService.kt",
+                  "segments": [
+                    {
+                      "deletionAt": 230
+                    }
+                  ]
+                },
+                {
+                  "path": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/lifecycle/ScriptDaemonProvisioner.kt",
+                  "segments": [
+                    {
+                      "after": [
+                        32,
+                        33
+                      ]
+                    },
+                    {
+                      "deletionAt": 36
+                    },
+                    {
+                      "after": [
+                        58,
+                        59
+                      ]
+                    },
+                    {
+                      "after": [
+                        65,
+                        66
+                      ]
+                    },
+                    {
+                      "after": [
+                        69,
+                        69
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/freshness/InstalledCommitFreshnessConsumerTest.kt",
+                  "segments": [
+                    {
+                      "after": [
+                        56,
+                        56
+                      ]
+                    },
+                    {
+                      "after": [
+                        58,
+                        59
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "c08724a64b4aee863da7bf1112a9c1c50a1a20af",
+              "parent": "99831c70c38f52d84cb9ffd9ef3177a62efe1d6b",
+              "files": [
+                {
+                  "path": "vscode-plugin/src/daemon/__tests__/controller.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        67,
+                        67
+                      ]
+                    },
+                    {
+                      "after": [
+                        76,
+                        78
+                      ]
+                    },
+                    {
+                      "after": [
+                        80,
+                        80
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "bc8ee180b80dd213fa5b8e103cf20f0e8b1653f5",
+              "parent": "c08724a64b4aee863da7bf1112a9c1c50a1a20af",
+              "files": [
+                {
+                  "path": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleCommandRunnerTest.kt",
+                  "segments": [
+                    {
+                      "after": [
+                        62,
+                        62
+                      ]
+                    },
+                    {
+                      "after": [
+                        85,
+                        85
+                      ]
+                    },
+                    {
+                      "after": [
+                        89,
+                        91
+                      ]
+                    },
+                    {
+                      "after": [
+                        93,
+                        93
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "d3450ccd37e426e64cb93e9c8b08d83b356d3d07",
+              "parent": "bc8ee180b80dd213fa5b8e103cf20f0e8b1653f5",
+              "files": [
+                {
+                  "path": "src/daemon/__tests__/macos-upgrade-routing.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        15,
+                        19
+                      ]
+                    },
+                    {
+                      "after": [
+                        23,
+                        30
+                      ]
+                    },
+                    {
+                      "after": [
+                        43,
+                        44
+                      ]
+                    },
+                    {
+                      "after": [
+                        51,
+                        51
+                      ]
+                    },
+                    {
+                      "after": [
+                        69,
+                        70
+                      ]
+                    },
+                    {
+                      "deletionAt": 78
+                    },
+                    {
+                      "after": [
+                        80,
+                        162
+                      ]
+                    },
+                    {
+                      "after": [
+                        168,
+                        171
+                      ]
+                    },
+                    {
+                      "after": [
+                        174,
+                        174
+                      ]
+                    },
+                    {
+                      "after": [
+                        176,
+                        198
+                      ]
+                    },
+                    {
+                      "after": [
+                        201,
+                        207
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "tasks": [
+          {
+            "taskId": "t1",
+            "status": "changes_requested",
+            "summary": "The unmanaged update assertions now exercise real git fetch and fast-forward behavior for the CLI, VS Code, and JetBrains. However, the rewrite removes the CLI managed-update bridge assertion and does not replace it with a managed daemon-ctl.sh update check, leaving the managed-update acceptance check unproven.",
+            "findings": [
+              {
+                "severity": "MED",
+                "location": "scripts/daemon-ctl.sh:402-405",
+                "message": "The rewritten route-matrix test no longer verifies that a managed CLI update still uses the signed bridge.",
+                "rationale": "The previous test ran both the installer and daemon-ctl.sh update through the signed bridge. The rewrite retains only the raw installer bridge checks. Its managed-selector VS Code case checks candidate script selection using a no-op stub; it does not exercise the managed daemon-ctl.sh update path. This leaves the explicit managed-update acceptance check without behavioral coverage.",
+                "evidenceReferences": [
+                  "d3450ccd37e426e64cb93e9c8b08d83b356d3d07:src/daemon/__tests__/macos-upgrade-routing.test.ts",
+                  "472871847bc035ebe3542317f776a9e2ab861f6e:docs/standalone/daemon-update-always-fails-unmanaged-macos-E20261118c5a4572e/S001/LLD.md",
+                  "d403e59be56671cf597ecbc445b774471e74301d:docs/standalone/daemon-update-always-fails-unmanaged-macos-E20261118c5a4572e/S001/PLAN.md"
+                ]
+              }
+            ],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "Reviewed the full rewritten route-matrix test body and its prior version against the LLD and plan acceptance checks. The test asserts unmanaged CLI, VS Code, and JetBrains updates advance checkout HEAD through a real local origin, record npm install/build, and omit signed-bridge trace events. It retains raw-installer signed-bridge success and authorization-refusal assertions. It no longer runs daemon-ctl.sh update against a managed fixture, and the VS Code managed-selector case only checks script selection with a no-op stub.",
+              "evidenceReferences": [
+                "d3450ccd37e426e64cb93e9c8b08d83b356d3d07:src/daemon/__tests__/macos-upgrade-routing.test.ts",
+                "472871847bc035ebe3542317f776a9e2ab861f6e:docs/standalone/daemon-update-always-fails-unmanaged-macos-E20261118c5a4572e/S001/LLD.md",
+                "d403e59be56671cf597ecbc445b774471e74301d:docs/standalone/daemon-update-always-fails-unmanaged-macos-E20261118c5a4572e/S001/PLAN.md"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: The builder reports the route-matrix test passed; this review did not independently execute it."
+            ],
+            "inspectedReferences": [
+              "472871847bc035ebe3542317f776a9e2ab861f6e:docs/standalone/daemon-update-always-fails-unmanaged-macos-E20261118c5a4572e/S001/LLD.md",
+              "d403e59be56671cf597ecbc445b774471e74301d:docs/standalone/daemon-update-always-fails-unmanaged-macos-E20261118c5a4572e/S001/PLAN.md",
+              "d3450ccd37e426e64cb93e9c8b08d83b356d3d07:scripts/daemon-ctl.sh",
+              "d3450ccd37e426e64cb93e9c8b08d83b356d3d07:src/daemon/__tests__/macos-upgrade-routing.test.ts"
+            ],
+            "executedTests": []
+          },
+          {
+            "taskId": "t2",
+            "status": "passed",
+            "summary": "The submitted VS Code change satisfies the pinned design and both acceptance checks. `run('update')` delegates to the selected daemon control script, and the reviewed tests assert routing for unmanaged and managed installs. No blocking findings.",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "Inspected the complete VS Code controller test body and the VS Code portion of the cross-client integration test. The unit test asserts `['bash', paths.ctlScript, 'update']` for an unmanaged install and the selected release’s control script after managed migration. The integration test runs the real controller against a local git origin and asserts the checkout advances without signed-bridge events; its managed-selector case confirms the selected script is used. These assertions cover both acceptance checks for this task.",
+              "evidenceReferences": [
+                "d3450ccd37e426e64cb93e9c8b08d83b356d3d07:vscode-plugin/src/daemon/__tests__/controller.test.ts",
+                "d3450ccd37e426e64cb93e9c8b08d83b356d3d07:src/daemon/__tests__/macos-upgrade-routing.test.ts",
+                "d3450ccd37e426e64cb93e9c8b08d83b356d3d07:vscode-plugin/src/daemon/controller.ts"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: Tests were not run during this review. The supplied builder report says the cross-client routing test and VS Code controller tests passed; this is reported evidence, not an execution by this reviewer."
+            ],
+            "inspectedReferences": [
+              "472871847bc035ebe3542317f776a9e2ab861f6e:docs/standalone/daemon-update-always-fails-unmanaged-macos-E20261118c5a4572e/S001/LLD.md",
+              "d403e59be56671cf597ecbc445b774471e74301d:docs/standalone/daemon-update-always-fails-unmanaged-macos-E20261118c5a4572e/S001/PLAN.md",
+              "d3450ccd37e426e64cb93e9c8b08d83b356d3d07:vscode-plugin/src/daemon/controller.ts",
+              "d3450ccd37e426e64cb93e9c8b08d83b356d3d07:vscode-plugin/src/daemon/__tests__/controller.test.ts",
+              "d3450ccd37e426e64cb93e9c8b08d83b356d3d07:src/daemon/__tests__/macos-upgrade-routing.test.ts",
+              "d3450ccd37e426e64cb93e9c8b08d83b356d3d07:vscode-plugin/src/daemon/paths.ts"
+            ],
+            "executedTests": []
+          },
+          {
+            "taskId": "t3",
+            "status": "changes_requested",
+            "summary": "The JetBrains update-routing changes satisfy the submitted unmanaged delegation and INSTALL-preservation checks. The route-matrix test does not cover the LLD’s managed-install acceptance check for JetBrains: its JetBrains bridge runs only against an unmanaged checkout.",
+            "findings": [
+              {
+                "severity": "MED",
+                "location": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/lifecycle/ScriptDaemonProvisioner.kt:58-59",
+                "message": "Add managed-install route coverage for the JetBrains update path.",
+                "rationale": "The LLD requires the cross-client matrix to retain managed-path assertions, including JetBrains. The submitted matrix invokes the JetBrains runner only against an unmanaged checkout; its managed-selector check is VS Code-only. The separate JetBrains unit test checks that a selector causes the runner to choose the selected release script, but does not establish that the managed update path still engages the signed bridge. Thus the managed-path acceptance check is not demonstrated.",
+                "evidenceReferences": [
+                  "d3450ccd37e426e64cb93e9c8b08d83b356d3d07:src/daemon/__tests__/macos-upgrade-routing.test.ts",
+                  "99831c70c38f52d84cb9ffd9ef3177a62efe1d6b:jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleCommandRunnerTest.kt",
+                  "472871847bc035ebe3542317f776a9e2ab861f6e:docs/standalone/daemon-update-always-fails-unmanaged-macos-E20261118c5a4572e/S001/LLD.md"
+                ]
+              }
+            ],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "Inspected the committed JetBrains implementation and relevant test bodies/assertions. DaemonProvisionerTest asserts UPDATE invokes `bash <daemon-ctl.sh> update` and INSTALL still invokes the install script without an extra argument. DaemonLifecycleCommandRunnerTest asserts unmanaged and managed-selector script selection. The integration matrix exercises actual unmanaged JetBrains update behavior, including a real local git fast-forward and absence of signed-bridge events, but has no managed JetBrains execution; this demonstrated gap is reported as a finding.",
+              "evidenceReferences": [
+                "99831c70c38f52d84cb9ffd9ef3177a62efe1d6b:jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/lifecycle/ScriptDaemonProvisioner.kt",
+                "99831c70c38f52d84cb9ffd9ef3177a62efe1d6b:jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonProvisionerTest.kt",
+                "99831c70c38f52d84cb9ffd9ef3177a62efe1d6b:jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleCommandRunnerTest.kt",
+                "d3450ccd37e426e64cb93e9c8b08d83b356d3d07:src/daemon/__tests__/macos-upgrade-routing.test.ts",
+                "472871847bc035ebe3542317f776a9e2ab861f6e:docs/standalone/daemon-update-always-fails-unmanaged-macos-E20261118c5a4572e/S001/LLD.md",
+                "d403e59be56671cf597ecbc445b774471e74301d:docs/standalone/daemon-update-always-fails-unmanaged-macos-E20261118c5a4572e/S001/PLAN.md"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: Tests were not run; assessment is based on committed source, requirements, and test assertions."
+            ],
+            "inspectedReferences": [
+              "472871847bc035ebe3542317f776a9e2ab861f6e:docs/standalone/daemon-update-always-fails-unmanaged-macos-E20261118c5a4572e/S001/LLD.md",
+              "d403e59be56671cf597ecbc445b774471e74301d:docs/standalone/daemon-update-always-fails-unmanaged-macos-E20261118c5a4572e/S001/PLAN.md",
+              "99831c70c38f52d84cb9ffd9ef3177a62efe1d6b:jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/lifecycle/ScriptDaemonProvisioner.kt",
+              "99831c70c38f52d84cb9ffd9ef3177a62efe1d6b:jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleCommandRunner.kt",
+              "99831c70c38f52d84cb9ffd9ef3177a62efe1d6b:jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleService.kt",
+              "99831c70c38f52d84cb9ffd9ef3177a62efe1d6b:jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/freshness/InstalledCommitFreshnessConsumer.kt",
+              "99831c70c38f52d84cb9ffd9ef3177a62efe1d6b:jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonProvisionerTest.kt",
+              "99831c70c38f52d84cb9ffd9ef3177a62efe1d6b:jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DefaultDaemonScriptLocatorTest.kt",
+              "99831c70c38f52d84cb9ffd9ef3177a62efe1d6b:jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleCommandRunnerTest.kt",
+              "99831c70c38f52d84cb9ffd9ef3177a62efe1d6b:jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/freshness/InstalledCommitFreshnessConsumerTest.kt",
+              "d3450ccd37e426e64cb93e9c8b08d83b356d3d07:src/daemon/__tests__/macos-upgrade-routing.test.ts"
+            ],
+            "executedTests": []
+          },
+          {
+            "taskId": "t4",
+            "status": "passed",
+            "summary": "The submitted VS Code test change matches the pinned LLD and plan acceptance checks. It asserts that update spawns the resolved daemon-ctl.sh for both an unmanaged install and a managed install.",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "Inspected the full submitted test body and its assertions. The Darwin-gated test first creates an unmanaged-but-present fixture with the ctl script, daemon entry, and bundled installer, but no managed installation record; it asserts the exact daemon-ctl.sh update command. It then creates a managed installation record and asserts that the selected managed ctl script is used. Reintroducing the install(true) pre-emption would fail the unmanaged assertion. This covers the acceptance checks for the submitted test change; it does not independently verify the implementation or the other modules in the overall story.",
+              "evidenceReferences": [
+                "d3450ccd37e426e64cb93e9c8b08d83b356d3d07:vscode-plugin/src/daemon/__tests__/controller.test.ts",
+                "472871847bc035ebe3542317f776a9e2ab861f6e:docs/standalone/daemon-update-always-fails-unmanaged-macos-E20261118c5a4572e/S001/LLD.md",
+                "d403e59be56671cf597ecbc445b774471e74301d:docs/standalone/daemon-update-always-fails-unmanaged-macos-E20261118c5a4572e/S001/PLAN.md"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: I did not run the test. The supplied report says 9/9 tests passed; that result was not independently verified."
+            ],
+            "inspectedReferences": [
+              "472871847bc035ebe3542317f776a9e2ab861f6e:docs/standalone/daemon-update-always-fails-unmanaged-macos-E20261118c5a4572e/S001/LLD.md",
+              "d403e59be56671cf597ecbc445b774471e74301d:docs/standalone/daemon-update-always-fails-unmanaged-macos-E20261118c5a4572e/S001/PLAN.md",
+              "d3450ccd37e426e64cb93e9c8b08d83b356d3d07:vscode-plugin/src/daemon/__tests__/controller.test.ts"
+            ],
+            "executedTests": []
+          },
+          {
+            "taskId": "t5",
+            "status": "passed",
+            "summary": "Reviewed both submitted JetBrains test changes against the pinned LLD and plan. The lifecycle runner test asserts direct `daemon-ctl.sh update` command selection for unmanaged and managed locator states; the freshness test checks removal of the legacy-routing hooks and retention of both daemon IPC calls. No blocking findings.",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "Inspected the complete bodies and submitted hunks of both changed test files. The runner test verifies the actual subprocess arguments for unmanaged and managed states; its optional route-matrix branch checks the delegated result when fixture environment variables are supplied. The freshness test checks that the named legacy hooks are absent and that both IPC methods remain referenced. These tests cover the submitted routing changes, though they do not independently prove that a real unmanaged update completes its git/npm/build sequence; the LLD assigns that behavior to the cross-client integration test, outside this task’s submitted hunks.",
+              "evidenceReferences": [
+                "d3450ccd37e426e64cb93e9c8b08d83b356d3d07:jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/freshness/InstalledCommitFreshnessConsumerTest.kt",
+                "d3450ccd37e426e64cb93e9c8b08d83b356d3d07:jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleCommandRunnerTest.kt",
+                "472871847bc035ebe3542317f776a9e2ab861f6e:docs/standalone/daemon-update-always-fails-unmanaged-macos-E20261118c5a4572e/S001/LLD.md",
+                "d403e59be56671cf597ecbc445b774471e74301d:docs/standalone/daemon-update-always-fails-unmanaged-macos-E20261118c5a4572e/S001/PLAN.md"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: Tests were not run. The supplied report says six focused JUnit classes passed; that result is builder-reported, and this review did not independently verify the executed source revision.",
+              "The freshness test’s source-string checks cover specific legacy-hook names; behavior-level coverage of the consumer would be more resilient to equivalent routing changes."
+            ],
+            "inspectedReferences": [
+              "d3450ccd37e426e64cb93e9c8b08d83b356d3d07:jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/freshness/InstalledCommitFreshnessConsumerTest.kt",
+              "d3450ccd37e426e64cb93e9c8b08d83b356d3d07:jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleCommandRunnerTest.kt",
+              "d3450ccd37e426e64cb93e9c8b08d83b356d3d07:jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/lifecycle/ScriptDaemonProvisioner.kt",
+              "d3450ccd37e426e64cb93e9c8b08d83b356d3d07:jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/freshness/InstalledCommitFreshnessConsumer.kt",
+              "472871847bc035ebe3542317f776a9e2ab861f6e:docs/standalone/daemon-update-always-fails-unmanaged-macos-E20261118c5a4572e/S001/LLD.md",
+              "d403e59be56671cf597ecbc445b774471e74301d:docs/standalone/daemon-update-always-fails-unmanaged-macos-E20261118c5a4572e/S001/PLAN.md"
+            ],
+            "executedTests": []
+          },
+          {
+            "taskId": "t6",
+            "status": "changes_requested",
+            "summary": "Reviewed the pinned design, plan, changed routing implementation, and complete route-matrix test. The unmanaged update path is exercised for daemon-ctl.sh, VS Code, and JetBrains; the test does not demonstrate the required managed signed-update behavior across those surfaces.",
+            "findings": [
+              {
+                "severity": "MED",
+                "location": "src/daemon/__tests__/macos-upgrade-routing.test.ts:178-197",
+                "message": "Managed signed-update behavior is not verified for all required surfaces.",
+                "rationale": "The managed fixture only calls VS Code's controller and checks that it selects a no-op candidate script. It does not execute the signed update path or assert bridge behavior. There is no managed fixture for daemon-ctl.sh or JetBrains. This falls short of the LLD’s requirement that managed-path assertions remain valid and the acceptance check requiring signed-bridge behavior across all four surfaces.",
+                "evidenceReferences": [
+                  "d3450ccd37e426e64cb93e9c8b08d83b356d3d07:src/daemon/__tests__/macos-upgrade-routing.test.ts",
+                  "472871847bc035ebe3542317f776a9e2ab861f6e:docs/standalone/daemon-update-always-fails-unmanaged-macos-E20261118c5a4572e/S001/LLD.md",
+                  "d403e59be56671cf597ecbc445b774471e74301d:docs/standalone/daemon-update-always-fails-unmanaged-macos-E20261118c5a4572e/S001/PLAN.md"
+                ]
+              }
+            ],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "Inspected the full changed route-matrix test and its assertions against the LLD and plan acceptance checks. The test uses a real local Git origin to verify unmanaged fetch/build updates for daemon-ctl.sh, VS Code, and JetBrains, and checks the raw installer’s signed bridge and denied-authorization behavior. The managed controller stub only establishes script selection; it does not assert signed behavior, and there are no managed assertions for the other callers, as detailed in the finding. Coverage review is complete; tests were not independently executed.",
+              "evidenceReferences": [
+                "d3450ccd37e426e64cb93e9c8b08d83b356d3d07:src/daemon/__tests__/macos-upgrade-routing.test.ts",
+                "472871847bc035ebe3542317f776a9e2ab861f6e:docs/standalone/daemon-update-always-fails-unmanaged-macos-E20261118c5a4572e/S001/LLD.md",
+                "d403e59be56671cf597ecbc445b774471e74301d:docs/standalone/daemon-update-always-fails-unmanaged-macos-E20261118c5a4572e/S001/PLAN.md"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: The route-matrix test was not run independently. The supplied builder report says it passed; that reported result is not an execution by this reviewer."
+            ],
+            "inspectedReferences": [
+              "472871847bc035ebe3542317f776a9e2ab861f6e:docs/standalone/daemon-update-always-fails-unmanaged-macos-E20261118c5a4572e/S001/LLD.md",
+              "d403e59be56671cf597ecbc445b774471e74301d:docs/standalone/daemon-update-always-fails-unmanaged-macos-E20261118c5a4572e/S001/PLAN.md",
+              "d3450ccd37e426e64cb93e9c8b08d83b356d3d07:src/daemon/__tests__/macos-upgrade-routing.test.ts",
+              "529b88edcdd6a4f4c05554eb257ed7ba50bec514:scripts/daemon-ctl.sh",
+              "9e009a72dc327b0d8e80e924c4abb7d907ec39b0:vscode-plugin/src/daemon/controller.ts",
+              "99831c70c38f52d84cb9ffd9ef3177a62efe1d6b:jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/lifecycle/ScriptDaemonProvisioner.kt",
+              "99831c70c38f52d84cb9ffd9ef3177a62efe1d6b:jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleCommandRunner.kt",
+              "99831c70c38f52d84cb9ffd9ef3177a62efe1d6b:jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/freshness/InstalledCommitFreshnessConsumer.kt"
+            ],
+            "executedTests": []
+          }
+        ],
+        "summary": "6 selected task assessment(s): changes_requested.",
+        "completedAt": "2026-11-18T07:24:05.189Z",
+        "buildFingerprint": "60420a36fd20b7cd493c811f8bcfdca12552229f7f1ebae6539598fabdbf9fdc"
+      }
+    ]
+  },
+  "citations": []
+}

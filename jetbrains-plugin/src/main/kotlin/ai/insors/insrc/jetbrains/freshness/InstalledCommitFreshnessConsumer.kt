@@ -8,8 +8,6 @@ import ai.insors.insrc.jetbrains.daemon.DaemonGateway
 import ai.insors.insrc.jetbrains.daemon.DaemonGatewayService
 import ai.insors.insrc.jetbrains.daemon.DaemonStatusResult
 import ai.insors.insrc.jetbrains.daemon.DaemonUpdateOutcomeResult
-import ai.insors.insrc.jetbrains.daemon.LifecycleCommand
-import ai.insors.insrc.jetbrains.lifecycle.DaemonLifecycleCommandRunner
 import ai.insors.insrc.jetbrains.lifecycle.DefaultDaemonScriptLocator
 import com.intellij.ide.plugins.PluginManagerCore
 import com.intellij.notification.NotificationAction
@@ -85,7 +83,6 @@ class InstalledCommitFreshnessConsumer(
             // skips the update silently rather than triggering the daemon's reject path.
             val inFlight = java.util.concurrent.atomic.AtomicBoolean(false)
             val scripts = DefaultDaemonScriptLocator()
-            val lifecycle = DaemonLifecycleCommandRunner.production()
             val deps = FreshnessDeps(
                 gateway = GatewayFreshnessView(gateway),
                 gitLsRemote = { root, branch -> gitLsRemote((scripts.managedReleaseRoot() ?: Path.of(root)).toString(), branch) },
@@ -98,7 +95,6 @@ class InstalledCommitFreshnessConsumer(
                 daemonRoot = scripts.daemonRoot().toString(),
                 beginUpdate = { inFlight.compareAndSet(false, true) },
                 endUpdate = { inFlight.set(false) },
-                upgradeLegacy = { scripts.existingUpgradeTarget()?.let { lifecycle.run(LifecycleCommand.UPDATE) } },
             )
             return InstalledCommitFreshnessConsumer(deps)
         }

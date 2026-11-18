@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1d61c868-c72d-4ce7-a63e-ce7bc6fd1ab8",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-18T05:57:28.649Z",
+    "epicCreatedAt": "2026-11-18T05:16:00.099Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c5a4572e3949359a",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Simplify jetbrains-plugin's ScriptDaemonProvisioner.run(UPDATE): remove the legacy/existingUpgradeTarget() branch",
+      "parent": {
+        "entityId": "STORY-c5a4572e3949359a-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c5a4572e3949359a-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c5a4572e3949359a-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "00abbbf3dfdde7c363e4939396a6a6aec797fe4beb44ac58a7b035a71f7616da",
+        "at": "2026-11-18T05:57:28.649Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-18T05:57:28.651Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Simplify jetbrains-plugin's ScriptDaemonProvisioner.run(UPDATE): remove the legacy/existingUpgradeTarget() branch",
+    "summary": "Remove run(kind)'s legacy branch for UPDATE (computed from locator.existingUpgradeTarget()) so UPDATE always resolves via locator.scriptFor(UPDATE) and spawns 'bash <daemon-ctl.sh> update'. Remove the now-dead DaemonLifecycleService.existingUpgradeTarget() override and the DaemonScriptLocator interface's existingUpgradeTarget() default, since nothing calls it anymore.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "ScriptDaemonProvisioner.run(ProvisionKind.UPDATE, ...) on an unmanaged install always spawns 'bash <daemon-ctl.sh> update', never the bundled installer with --target.",
+      "ScriptDaemonProvisioner.run(ProvisionKind.INSTALL, ...) is unchanged."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleCommandRunnerTest.kt (rewritten: the legacy branch it currently exercises via INSRC_ROUTE_MATRIX_* env vars is removed)"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

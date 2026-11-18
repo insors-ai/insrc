@@ -53,9 +53,10 @@ class InstalledCommitFreshnessConsumerTest {
     }
 
     @Test
-    fun `freshness routes legacy macOS through the installer and keeps managed IPC`() {
+    fun `freshness no longer special-cases a legacy install and always keeps managed IPC`() {
         val src = codeLines(readConsumerSource())
-        assertTrue(src.contains("upgradeLegacy = { scripts.existingUpgradeTarget()?.let { lifecycle.run(LifecycleCommand.UPDATE) } }"))
+        assertFalse(src.contains("upgradeLegacy"), "daemon-ctl.sh update now routes managed vs. unmanaged safely on its own; no separate legacy-bridge pre-step is wired")
+        assertFalse(src.contains("existingUpgradeTarget"), "the legacy-target detection this consumer used to drive is gone")
         assertTrue(src.contains("gateway.update()"), "consumes the daemon-owned update() IPC (k2)")
         assertTrue(src.contains("gateway.updateOutcome()"), "consumes the daemon-owned updateOutcome() IPC")
     }

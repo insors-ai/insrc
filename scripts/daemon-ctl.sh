@@ -399,13 +399,10 @@ cmd_update() {
 	if [ "${INSRC_DAEMON_UPDATE_WAIT:-0}" -eq 1 ] || [ -n "$BRANCH" ] || [ -n "$REPO_URL" ]; then operation=update-local; fi
 	if INSRC_DAEMON_UPDATE_REPO_URL="$REPO_URL" INSRC_DAEMON_UPDATE_BRANCH="$BRANCH" supervised_lifecycle "$operation"; then return 0; else rc=$?; fi
 	[ "$rc" -eq 10 ] || return "$rc"
-	if [ "$(uname -s)" = Darwin ]; then
-		local args=(--target "$DAEMON_ROOT" -y)
-		if [ -n "$BRANCH" ]; then args+=(--branch "$BRANCH"); fi
-		if [ -n "$REPO_URL" ]; then args+=(--repo "$REPO_URL"); fi
-		cd /
-		exec /bin/bash "$DAEMON_ROOT/scripts/insrc-daemon-install.sh" "${args[@]}"
-	fi
+	# An unmanaged (plain git-clone) install updates the same way on every
+	# platform: a managed install is handled above by supervised_lifecycle;
+	# this fallback never needs the signed macOS upgrade bridge, which exists
+	# only to migrate a legacy install into the managed lifecycle.
 	require_daemon_dir
 	local branch="${BRANCH:-$(git -C "$DAEMON_ROOT" rev-parse --abbrev-ref HEAD)}"
 

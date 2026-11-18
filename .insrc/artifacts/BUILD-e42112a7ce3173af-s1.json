@@ -1,0 +1,45 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "3a3b1c838e74638af5473005861ba2f8f5b9eecd79960f54f9deb3657f1682f4",
+        "at": "2026-11-18T04:54:17.468Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-77233736-3f5d-476a-8b3e-69e53eb2611f",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-18T04:54:17.437Z",
+    "epicCreatedAt": "2026-11-18T04:49:40.427Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e42112a7ce3173af",
+    "storyId": "s1",
+    "revision": 1,
+    "standalone": true,
+    "sizeClass": "trivial",
+    "authoredBy": "controller",
+    "triageRationale": "Grounded via insrc_analyze_step: createDaemonLifecycleController has exactly one production caller (extension.ts:activate) plus its test file, so the fix is confined to controller.ts. JetBrains' lifecycle module already implements and documents the correct UPDATE policy and never references the signing env var -- cross-plugin precedent resolves the fix shape; small/trivial, not design-worthy.",
+    "epicSlug": "vs-code-daemon-update-always-fails"
+  },
+  "body": {
+    "focus": "Bugfix (ISSUE-e42112a7ce3173af, magnitude small): fix vscode-plugin/src/daemon/controller.ts's run('update') so an unmanaged checkout whose daemon entry/ctl script already exists drives daemon-ctl.sh update directly, instead of falling back to install(true)'s bundled signed-installer bridge (which always fails with 'production source release signing key is not provisioned' because the extension's bundled asset never gets the real signing key baked in). Bring this in line with the JetBrains plugin's existing correct policy (UPDATE always via daemon-ctl.sh update; bundled installer reserved for fresh INSTALL only). No change to scripts/insrc-daemon-install.sh's signed-bridge gate itself.",
+    "producesLld": false,
+    "commit": "3c860246e"
+  },
+  "citations": []
+}

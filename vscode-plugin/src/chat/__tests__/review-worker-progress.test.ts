@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createDocsReviewClient } from '../docs-review-client.js';
-import { isReviewWorkerStatus,reviewProgressLabel } from '../../../../src/shared/review-worker-progress.js';
-import type { ReviewWorkerStatus } from '../../../../src/shared/review-worker-progress.js';
+import { isReviewWorkerStatus,reviewProgressLabel } from '../../../../src/workflow/review-history/shared/worker-progress.js';
+import type { ReviewWorkerStatus } from '../../../../src/workflow/review-history/shared/worker-progress.js';
 import type { IpcClient } from '../../../../src/shared/ipc-client.js';
 
 test('admission DTOs render preparing or failure without empty success',async()=>{

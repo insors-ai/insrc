@@ -1,4 +1,4 @@
-import { reviewProgressLabel } from '../../../src/shared/review-worker-progress.js';
+import { reviewProgressLabel } from '../../../src/workflow/review-history/shared/worker-progress.js';
 /**
  * Story E20260925edb76e2e:S007 / t3 — the docs-review webview host; reworked by
  * Story E202610138d4b90c9:S001.

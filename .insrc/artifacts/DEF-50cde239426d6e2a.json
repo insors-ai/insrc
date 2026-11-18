@@ -53,6 +53,12 @@
       "description": "",
       "references": [],
       "attachments": []
+    },
+    "tracker": {
+      "adapter": "github",
+      "epicStatus": "open",
+      "storyStatus": {},
+      "lastSyncedAt": "2026-11-18T07:56:45.492Z"
     }
   },
   "body": {

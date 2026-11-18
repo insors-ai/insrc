@@ -1,0 +1,288 @@
+{
+  "meta": {
+    "workflow": "design.epic",
+    "runId": "wf-1794979386595-seznwo",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-18T05:30:26.807Z",
+    "epicCreatedAt": "2026-11-18T04:59:27.796Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 438718,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "50cde239426d6e2a",
+    "epicSlug": "shared-reviewcontext-data-model",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ab8483daa938e28dcb6580b0c144dad56238c246106d591c96cde4e444a6d932",
+        "at": "2026-11-18T05:30:27.233Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-18T05:46:37.250Z",
+        "override": {
+          "reason": "Automated design review is retired/unavailable while being rewritten. Controller-authored HLD, self-reviewed via checklist.verify (19/19 passed); user approved explicitly in chat after presentation."
+        }
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "This HLD defines one shared ReviewContext data model that both design review and code review build on: a uniform way to point at content (Pointer/Locator), describe which artifact depth a review attempt covers (Scope), list what changed this round (ReviewTargets), and carry freeform submitter context across rounds (Comments + round). Each piece is typed independently per review type never collapses another's fields into its own, and every review type gets its own validator function and its own LLM-facing transformer, so no single schema is forced on every consumer.",
+      "audience": "technical"
+    },
+    "frameworkSummary": "Alternative a2 wins: one canonical TypeScript type per Story (Pointer/Locator, Scope, ReviewTargets, CommentEntry+round), with per-review-type validator functions running against the canonical type and a thin per-consumer transformer reshaping it for whichever LLM structured-output schema that consumer actually parses reliably, mirroring the existing CliProvider input/output transformer pattern.",
+    "architectureShape": "Four independently-owned type modules land in src/workflow/artifact-core/ alongside the existing shared lifecycle/type files: Locator+Pointer (s1, the shared primitive every other piece builds on), Scope (s2, scopeType/scopeLevel plus named per-artifact-kind Pointer fields), ReviewTargets (s3, a reset-each-round list of Pointer entries), and CommentEntry+the root-level round field (s4). Per the Epic's own Non-Goals, assembling these four pieces into one populated ReviewContext instance and wiring that instance into insrc_review_step/insrc_code_review_step is deferred follow-on work in a later Epic -- this HLD defines only the four field-level types and their validator/staleness contracts, not the assembly logic.",
+    "sharedContracts": [
+      {
+        "id": "sc1",
+        "name": "Locator + Pointer",
+        "purpose": "The uniform way every Scope and ReviewTargets entry names a piece of content: a Pointer to an existing authored file plus an optional Locator pinning an exact region within it, per k2.",
+        "interfaceSketch": "type LocatorKind = 'symbol' | 'lineRange' | 'docSection'; // known kinds; the set is open, not exhaustive\ninterface Locator {\n  readonly kind: LocatorKind | string; // consumers read `kind` structurally; a future kind is just a new string, never a breaking union member\n  readonly value: string; // symbol name, 'startLine-endLine', or doc-section id, per `kind`\n}\ninterface Pointer {\n  readonly path: string; // repo-relative path to an existing authored file (DEF.md/HLD.md/LLD.md/source); never a generated extract\n  readonly section?: Locator;\n  readonly contentHash?: string; // sha256 hex of `path`'s content when this Pointer was built\n}",
+        "ownedByStory": "s1",
+        "consumedByStories": [
+          "s2",
+          "s3"
+        ],
+        "assumptions": [
+          "c1"
+        ]
+      },
+      {
+        "id": "sc2",
+        "name": "Pointer staleness check",
+        "purpose": "One staleness-detection function signature shared by every Pointer consumer (Scope and ReviewTargets alike), per k5 -- no consumer defines its own.",
+        "interfaceSketch": "interface StalenessResult {\n  readonly stale: boolean;\n  readonly checkedAt: string; // ISO-8601\n}\ntype PointerStalenessCheck = (pointer: Pointer, currentContentHash: string) => StalenessResult;",
+        "ownedByStory": "s1",
+        "consumedByStories": [
+          "s2",
+          "s3"
+        ],
+        "assumptions": [
+          "c1"
+        ]
+      },
+      {
+        "id": "sc3",
+        "name": "Scope",
+        "purpose": "Describes which review family and chain depth a review attempt covers, self-inclusive at the artifact under review, per k1/lc2.",
+        "interfaceSketch": "type ScopeType = 'design' | 'code';\ntype ScopeLevel = 'def' | 'hld' | 'lld' | 'plan' | 'task';\ninterface Scope {\n  readonly scopeType: ScopeType;\n  readonly scopeLevel: ScopeLevel;\n  readonly def?: Pointer;\n  readonly hld?: Pointer;\n  readonly lld?: Pointer;\n  readonly plan?: Pointer;\n  readonly tasks?: readonly Pointer[];\n  readonly extension?: Pointer;\n  readonly amendment?: Pointer;\n}\ntype ScopeValidator = (scope: Scope) => ValidationResult; // one per review type, per k3\ninterface ValidationResult {\n  readonly ok: boolean;\n  readonly violations: readonly string[];\n}",
+        "ownedByStory": "s2",
+        "consumedByStories": [],
+        "assumptions": [
+          "c1"
+        ]
+      },
+      {
+        "id": "sc4",
+        "name": "ReviewTargets",
+        "purpose": "The submitter-owned, fully-reset-each-round list of content to review this round, per lc3/lc4.",
+        "interfaceSketch": "interface ReviewTargets {\n  readonly entries: readonly Pointer[]; // rebuilt fresh every round; never merged with a prior round's entries\n}",
+        "ownedByStory": "s3",
+        "consumedByStories": [],
+        "assumptions": [
+          "c1"
+        ]
+      },
+      {
+        "id": "sc5",
+        "name": "CommentEntry + round",
+        "purpose": "The submitter's freeform, provenance-tagged context and the root-level round field, per lc5/lc6/lc7. Per the Epic's Non-Goals this type does not yet embed Scope/ReviewTargets -- the full populated ReviewContext container is assembled by deferred follow-on work.",
+        "interfaceSketch": "type CommentParty = 'submitter' | 'reviewer';\ninterface CommentEntry {\n  readonly round: number;\n  readonly party: CommentParty;\n  readonly timestamp: string; // ISO-8601\n  readonly text: string;\n}\ninterface ReviewContextRound {\n  readonly round: number; // the current attempt number, stamped once per new review round\n  readonly comments: readonly CommentEntry[]; // same-artifact-only across the chain\n}",
+        "ownedByStory": "s4",
+        "consumedByStories": [],
+        "assumptions": [
+          "c1"
+        ]
+      }
+    ],
+    "storyBoundaries": [
+      {
+        "storyId": "s1",
+        "owns": [
+          "sc1",
+          "sc2"
+        ],
+        "depends": [],
+        "internal": "The specific set of currently-known LocatorKind string literals (symbol/lineRange/docSection) is s1's own enumeration; because every consumer treats `Locator.kind` as an opaque string rather than exhaustively switching on a closed union, s1 can add a new literal later without forcing s2/s3/s4 to change, satisfying ac2/lc1."
+      },
+      {
+        "storyId": "s2",
+        "owns": [
+          "sc3"
+        ],
+        "depends": [
+          "sc1",
+          "sc2"
+        ],
+        "internal": "Which named artifact-kind fields Scope carries beyond def/hld/lld/plan/tasks (e.g. a future named kind) and the exact per-review-type ScopeValidator implementations are s2's own; no other Story's type depends on Scope, since nothing in the Epic's Story graph consumes s2."
+      },
+      {
+        "storyId": "s3",
+        "owns": [
+          "sc4"
+        ],
+        "depends": [
+          "sc1",
+          "sc2"
+        ],
+        "internal": "ReviewTargets' own reset-on-new-round mechanics (how the entries list is rebuilt rather than merged) stay internal to s3; no other Story's type depends on ReviewTargets."
+      },
+      {
+        "storyId": "s4",
+        "owns": [
+          "sc5"
+        ],
+        "depends": [],
+        "internal": "CommentEntry does not reference Pointer/Locator at all, so s4 needs neither sc1 nor sc2. The round-stamping mechanics (how a new attempt's round number is assigned) and the same-artifact-only scoping of Comments across a chain stay internal to s4; the full ReviewContext container embedding Scope and ReviewTargets alongside round/comments is explicitly deferred (Epic Non-Goals), since no Story in this graph depends on all of s2, s3 and s4 together."
+      }
+    ],
+    "nonFunctional": {
+      "performance": "The staleness check (sc2) is a single hash comparison against already-read file content; it adds no I/O beyond the read the controller already performs to populate a Pointer's contentHash.",
+      "security": "Pointer.path is repo-relative and must resolve within the registered repo root; validators (k3) reject a Pointer whose path escapes that root, consistent with the repo-registry strict-contract rule elsewhere in this codebase."
+    },
+    "rolloutOverview": {
+      "phases": [
+        {
+          "name": "Phase A — foundational Pointer/Locator + staleness contract",
+          "includesStories": [
+            "s1"
+          ],
+          "rationale": "s1 owns sc1 (Locator+Pointer) and sc2 (staleness check), which s2 and s3 both depend on per the Epic's dependsOn graph. Nothing else can land before s1.",
+          "backwardCompat": "",
+          "featureFlag": null
+        },
+        {
+          "name": "Phase B — Scope, ReviewTargets and Comments types",
+          "includesStories": [
+            "s2",
+            "s3",
+            "s4"
+          ],
+          "rationale": "s2, s3 and s4 each depend only on s1 (already landed in Phase A) and have no dependencies on each other, so they can be built and landed in any order or in parallel once Phase A is done.",
+          "backwardCompat": "",
+          "featureFlag": null
+        }
+      ],
+      "orderingRationale": "The Epic's Story graph is a single root (s1) with three independent children (s2, s3, s4); the only hard ordering constraint is that s1's sc1/sc2 contracts exist before s2 or s3 can be typed against them. s4 has no contract dependency on s1 at all but is grouped into Phase B anyway since it is equally safe to land alongside s2/s3 and splitting it into its own phase would add no value.",
+      "riskyBits": [
+        {
+          "area": "Locator's open-string `kind` field",
+          "why": "A consumer that still writes an exhaustive switch over today's known LocatorKind literals (symbol/lineRange/docSection) instead of treating `kind` structurally would break ac2/lc1 the first time a new kind is introduced, even though the type itself stays open.",
+          "mitigation": "s1's LLD must show at least one real consumer reading `kind` non-exhaustively (e.g. a lookup by string key, not a switch with no default), and code review for s2/s3's Story checks that their Locator-consuming code follows the same shape."
+        },
+        {
+          "area": "Staleness check reimplemented per consumer instead of reused",
+          "why": "k5 requires ONE shared staleness-detection function; if s2's and s3's LLDs each write their own ad hoc contentHash comparison instead of importing sc2's PointerStalenessCheck, the Epic silently ends up with two staleness implementations that can drift (e.g. different hash normalization) and fail the k5 constraint without any test catching it.",
+          "mitigation": "s2 and s3's LLDs must cite sc2's concrete file/export directly as what they import, not re-derive their own comparison; code review for both Stories checks for a second staleness implementation."
+        },
+        {
+          "area": "Per-Story types drift from what the deferred assembly Epic will actually need",
+          "why": "Because no Story in this graph combines Scope + ReviewTargets + CommentEntry into one ReviewContext container (the assembly is an explicit Non-Goal deferred to a later Epic), a field named or shaped slightly differently across s2/s3/s4's independently-written LLDs could force an awkward adapter layer -- or a breaking rename -- when that later Epic tries to compose them.",
+          "mitigation": "Each Story's LLD must use the exact field names and types already fixed in this HLD's sharedContracts (sc3/sc4/sc5) verbatim, not re-derive its own naming, so the later assembly Epic composes them with no adapter."
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Flat discriminated-union wire format",
+        "oneLineSummary": "Locator/Pointer/Scope/Comments are plain TS discriminated unions, and the SAME union shape is what every consumer (controller, each review-type validator, and every LLM prompt) is handed verbatim.",
+        "approach": "Define Locator as a single `{kind: 'symbol'|'lineRange'|'docSection', ...}` tagged union, Pointer as `{path, section?: Locator, contentHash?}`, and Scope/ReviewTargets/Comments as plain interfaces with per-artifact-kind named fields per k1. Every per-review-type validator and every review-type's LLM prompt receives this same union-shaped JSON directly, with no reshaping step in between.\n\nThis is the simplest possible implementation: one canonical type, one serialization, no transformer layer. It matches how most of the rest of artifact-core/ (e.g. types.ts) already represents data.",
+        "pros": [
+          "Zero extra code: no transformer layer to build, test, or maintain",
+          "Matches the existing artifact-core/ convention.detect finding of plain interfaces with no base-class idiom (baseClassIdioms: [])",
+          "Single source of truth for the shape everywhere -- no risk of two representations drifting apart"
+        ],
+        "cons": [
+          "SPEC-0add47b5b1f72874 explicitly recorded that most LLMs handle unions and inheritance poorly in structured-output mode, and some refuse to parse such schemas -- feeding the raw union straight into every review-type's prompt risks exactly the failure the brainstorm flagged",
+          "No place to apply the per-LLM/per-consumer schema fine-tuning the SPEC called for (mirroring the existing CliProvider transformer pattern) without later having to retrofit a transformer layer anyway"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Ties with a2 on k1-k4 (both satisfies) and k5 (both partial), but hands the raw tagged union straight to every review-type LLM prompt with no reshaping layer -- exactly the failure mode SPEC-0add47b5b1f72874 recorded (most LLMs handle unions/inheritance poorly, some refuse to parse such schemas)."
+      },
+      {
+        "id": "a2",
+        "name": "Canonical internal type + per-consumer shaping transformers",
+        "oneLineSummary": "Locator/Pointer/Scope/ReviewTargets/Comments are one canonical TS type internally, but each review-type validator and each LLM-facing call site gets its own transformer that reshapes the canonical type into whatever structured-output schema that specific consumer parses reliably.",
+        "approach": "Keep ONE canonical internal representation (TS discriminated union for Locator, plain interfaces for Pointer/Scope/ReviewTargets/Comments, matching k1-k5) as the single source of truth and the thing every validator function (k3) runs against. Add a small transformer per consumer -- one per review-type's LLM prompt shape, following the same input/output transformer pattern CliProvider already uses for its own structured-output calls -- so a model that chokes on a tagged union sees a flattened or per-type-narrowed schema instead, while the controller/validator logic never sees anything but the canonical type.\n\nThis directly satisfies the brainstorm's explicit instruction (captured in backFlowNotes) to handle LLM union/inheritance intolerance at the framework level with a transformer per consumer, the same way CliProvider already does, rather than forcing one schema on every LLM.",
+        "pros": [
+          "Directly satisfies the recorded brainstorm decision on LLM union/inheritance intolerance without requiring a second brainstorm round later",
+          "Validator functions (k3) and all internal logic work against one stable canonical type regardless of how many LLM-facing shapes exist",
+          "Follows an established, already-proven pattern in this codebase (CliProvider's own transformer approach) rather than inventing a new one"
+        ],
+        "cons": [
+          "More code than a1: one transformer per LLM/consumer combination that fine-tunes the schema, adding a Story-sized chunk of new surface area",
+          "Requires discipline to keep each transformer's output provably reversible into the canonical type, or validator logic could silently diverge from what was actually sent for review"
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a3",
+        "name": "Abstract base-class hierarchy mirroring per-review-type subclasses",
+        "oneLineSummary": "Locator, Pointer, Feedback and Scope are abstract base classes with a concrete subclass per locator kind / review type, and per-review-type validators are implemented as subclass-overridden methods.",
+        "approach": "Introduce abstract classes (e.g. `abstract class Locator`, `abstract class Feedback`) with concrete subclasses per kind (SymbolLocator, LineRangeLocator, DocSectionLocator; SecurityFeedback, etc.), and let each review type's validator live as an overridden method on its own Scope/Feedback subclass rather than as a standalone function per k3.\n\nThis mirrors classic OOP extension and is the shape later Epic work (e.g. SecurityFeedback inheriting from Feedback, per the approved security-extension-points SPEC) will eventually want on the output side.",
+        "pros": [
+          "Gives output-side Feedback/Finding classes (from the already-approved security-extension-points SPEC) a ready-made inheritance chain to slot into later",
+          "Conventional OOP extension point for genuinely open-ended future locator/feedback kinds"
+        ],
+        "cons": [
+          "Directly contradicts k4 and the DEF's own capability-discovery finding: convention.detect found baseClassIdioms: [] in both review-history/ and artifact-core/ -- there is no existing abstract-base-class idiom anywhere in this part of the codebase to extend, so this alternative introduces a brand-new pattern rather than following one",
+          "Class hierarchies carry exactly the same LLM structured-output parsing risk the brainstorm flagged for discriminated unions (SPEC-0add47b5b1f72874), and this alternative has no transformer layer to mitigate it, so it inherits a1's weakness without a1's simplicity"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Violates k3 (replaces the required standalone validator function per review type with subclass-overridden methods) and violates k4 (introduces a new abstract-base-class idiom the DEF's capability-discovery explicitly found absent, baseClassIdioms: [])."
+      }
+    ],
+    "chosenAlternative": "a2",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "SPEC-0add47b5b1f72874",
+      "quotedText": "docs/standalone/reviewcontext-data-model-design-code-review-E202611170add47b5/SPEC.md"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "capability-discovery: src/workflow/review-history reuse-check + convention.detect",
+      "quotedText": "0 clear-match / 5 partial-match across 50 candidates; baseClassIdioms: []"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "structural-map: src/workflow/review-history + src/workflow/artifact-core",
+      "quotedText": "review-history/ topImportees include src/workflow/artifact-core/types.ts and src/workflow/artifact-core/lifecycle.ts; artifact-core/ convention.detect: baseClassIdioms: []"
+    }
+  ]
+}

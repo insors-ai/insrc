@@ -1,0 +1,391 @@
+{
+  "meta": {
+    "workflow": "design.epic",
+    "runId": "wf-1794986545330-2wntv5",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-18T07:25:16.420Z",
+    "epicCreatedAt": "2026-11-18T06:14:00.057Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 168967,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "03f4fd3b9102aab8",
+    "epicSlug": "review-rounds-reconciliation-recovery",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 2,
+        "contentHash": "37efea8010316169a4a9d30c765a9f27b52e57e5cdbd51cb25d02785ab3f12ea",
+        "at": "2026-11-18T07:25:17.205Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-18T07:55:49.512Z",
+        "override": {
+          "reason": "Automated design review is retired/unavailable while being rewritten. Controller-authored HLD (revision with sequenceDefinition companion), self-reviewed via checklist.verify (all passed); user approved explicitly in chat."
+        }
+      }
+    },
+    "revision": 2,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "This HLD gives every review type one shared round-driver: a single process that runs the grounding-and-findings cycle, the dedicated reconciliation pass, the per-round docgen render and presentation, and the checkpoint write, identically for Initial Review and Correction-and-Re-review. Review-type differences (checkpoint granularity, finding taxonomy/severity) are supplied to the driver through a small hook set rather than duplicated into separate per-type drivers.",
+      "audience": "technical"
+    },
+    "frameworkSummary": "Alternative a2 wins: one shared round-driver function in a new sibling module under src/workflow/ (outside review-history/, which is being retired from rather than extended) takes a small per-review-type hook set -- the grounding/findings call, checkpoint granularity, and finding taxonomy/severity -- and runs the identical round cycle, checkpoint lifecycle, and reconciliation call for every review type.",
+    "architectureShape": "A new kebab-case-named sibling module lands under src/workflow/ (not nested inside review-history/, which the grounded import-graph evidence shows is a heavily-imported reuse hub whose own per-type checkpoint logic is being retired rather than extended). This module owns: the round-driver function (s1) that runs grounding+findings, reconciliation for round>1, MD render+present, and checkpoint write, identically for every review type; the finding taxonomy/severity contract (s2); the reconciliation pass (s3); the review-report docgen render/presentation flow (s4); and the per-review-type checkpoint + .insrc/tmp/<reviewId>/ lifecycle (s5). Per the Epic's own Non-Goals, wiring this module's round-driver into insrc_review_step/insrc_code_review_step is deferred follow-on work -- this HLD defines the driver and its hook contracts, not that wiring.",
+    "sharedContracts": [
+      {
+        "id": "sc1",
+        "name": "Review-type hook set",
+        "purpose": "The small hook set (grounding/findings call, checkpoint granularity, taxonomy/severity) that is the only thing legitimately differing per review type, consumed by the round-driver, per the Epic's one-shared-process framing (Story s1 ac1/ac2).",
+        "interfaceSketch": "type ReviewKind = 'design' | 'code';\ninterface RoundDriverHooks {\n  readonly reviewKind: ReviewKind;\n  readonly checkpointGranularity: 'round' | 'task';\n}",
+        "ownedByStory": "s1",
+        "consumedByStories": [
+          "s2",
+          "s3",
+          "s4",
+          "s5"
+        ],
+        "assumptions": [
+          "c1"
+        ]
+      },
+      {
+        "id": "sc2",
+        "name": "Finding taxonomy + severity scale",
+        "purpose": "The fixed design-review-specific taxonomy and the per-review-type-configurable severity scale every finding carries, per lc1/lc2.",
+        "interfaceSketch": "type FindingCategory = 'correctness' | 'functional-completeness' | 'security' | 'quality' | 'maintainability';\ninterface Finding {\n  readonly category: FindingCategory;\n  readonly severity: string;\n}",
+        "ownedByStory": "s2",
+        "consumedByStories": [],
+        "assumptions": [
+          "c1"
+        ]
+      },
+      {
+        "id": "sc3",
+        "name": "Reconciliation result shape",
+        "purpose": "The classification a dedicated reconciliation call assigns to a prior round's HIGH/MED findings, per k3/k5.",
+        "interfaceSketch": "type ReconciliationVerdict = 'confirmed' | 'still-open' | 'contradicted' | 'no-longer-surfaced';\ninterface ReconciliationResult {\n  readonly priorFindingRef: string;\n  readonly verdict: ReconciliationVerdict;\n}",
+        "ownedByStory": "s3",
+        "consumedByStories": [],
+        "assumptions": [
+          "c1"
+        ]
+      },
+      {
+        "id": "sc4",
+        "name": "Review-report docgen call shape",
+        "purpose": "The explicit, agent-invoked call shape that renders a round's findings (+ relevant reconciliation annotations) to a persisted MD artifact, per k6.",
+        "interfaceSketch": "interface ReviewReportDocgenCall {\n  readonly reviewId: string;\n  readonly round: number;\n}",
+        "ownedByStory": "s4",
+        "consumedByStories": [],
+        "assumptions": [
+          "c1"
+        ]
+      },
+      {
+        "id": "sc5",
+        "name": "Review checkpoint record",
+        "purpose": "The generic 'review checkpoint' JSON side-record and the .insrc/tmp/<reviewId>/ folder lifecycle (per-review-type granularity, durable copy before deletion, reviewId as one identity), per k1/k7/k8/lc4.",
+        "interfaceSketch": "interface ReviewCheckpoint {\n  readonly reviewId: string;\n  readonly lastCompletedUnit: { readonly kind: 'round' | 'task'; readonly ref: number | string };\n}",
+        "ownedByStory": "s5",
+        "consumedByStories": [],
+        "assumptions": [
+          "c1"
+        ]
+      }
+    ],
+    "storyBoundaries": [
+      {
+        "storyId": "s1",
+        "owns": [
+          "sc1"
+        ],
+        "depends": [],
+        "internal": "The round-driver function itself -- what it does internally to run the grounding+findings, reconciliation, render+present and checkpoint-write cycle -- stays private to s1; no other Story's type depends on the driver's internals, only on the hook contract sc1 exposes."
+      },
+      {
+        "storyId": "s2",
+        "owns": [
+          "sc2"
+        ],
+        "depends": [
+          "sc1"
+        ],
+        "internal": "Which exact per-review-type severity scales exist beyond the HIGH/MED default, and how a review type's Feedback implementation declares its own, stay internal to s2; no other Story's type depends on Finding's shape."
+      },
+      {
+        "storyId": "s3",
+        "owns": [
+          "sc3"
+        ],
+        "depends": [
+          "sc1"
+        ],
+        "internal": "How the reconciliation LLM call is actually prompted, and how it reads the temp folder's audit trail when needed, stay internal to s3; no other Story's type depends on ReconciliationResult's internals beyond its verdict shape."
+      },
+      {
+        "storyId": "s4",
+        "owns": [
+          "sc4"
+        ],
+        "depends": [
+          "sc1"
+        ],
+        "internal": "The exact docgen docType registration and MD rendering logic (including the resolved/still-open/contradicted annotation rule scoped to this round's own corrections) stay internal to s4; no other Story's type depends on the renderer's internals."
+      },
+      {
+        "storyId": "s5",
+        "owns": [
+          "sc5"
+        ],
+        "depends": [
+          "sc1"
+        ],
+        "internal": "The exact per-review-type granularity mapping (round-level for design review, per-Task for code review) and the durable-copy-before-deletion mechanics stay internal to s5; no other Story's type depends on ReviewCheckpoint's internals beyond what sc1's round-driver needs to call it."
+      }
+    ],
+    "nonFunctional": {
+      "performance": "Checkpoint write/read (sc5) is a single small JSON file write/read per completed unit of work (a round, or a Task), adding no I/O beyond what the round cycle already performs.",
+      "durability": "The final round's review-output JSON is copied into durable artifact storage before the .insrc/tmp/<reviewId>/ folder is deleted at a terminal state (k7), so a completed review's result survives after the ephemeral working folder is gone."
+    },
+    "rolloutOverview": {
+      "phases": [
+        {
+          "name": "Phase A — the shared round-driver",
+          "includesStories": [
+            "s1"
+          ],
+          "rationale": "s1 owns sc1 (the round-driver + hooks), which s2-s5 all depend on. Nothing else can land before s1.",
+          "backwardCompat": "",
+          "featureFlag": null
+        },
+        {
+          "name": "Phase B — taxonomy, reconciliation, rendering, checkpointing",
+          "includesStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "rationale": "s2, s3, s4 and s5 each depend only on s1 (landed in Phase A) and have no dependencies on each other, so they can be built and landed in any order or in parallel once Phase A is done.",
+          "backwardCompat": "",
+          "featureFlag": null
+        }
+      ],
+      "orderingRationale": "The Epic's Story graph is a single root (s1) with four independent children (s2, s3, s4, s5); the only hard ordering constraint is that s1's round-driver and hook contract (sc1) exist before any of the others can be typed against it.",
+      "riskyBits": [
+        {
+          "area": "Hook interface lets review-type-specific logic leak into the shared driver",
+          "why": "If the RoundDriverHooks contract (sc1) ends up carrying review-type-specific branching logic rather than staying a thin, declarative hook set (grounding/findings call, checkpoint granularity, taxonomy/severity), the shared driver silently re-accumulates the duplication the Epic exists to remove.",
+          "mitigation": "s1's LLD must show the driver's own code never branches on reviewKind directly -- every review-type difference must route through a hook, and code review for s2-s5's Stories checks that no new reviewKind-conditional logic was added to the driver itself."
+        },
+        {
+          "area": "No caller exists yet to exercise the round-driver end-to-end",
+          "why": "Per the Epic's Non-Goals, wiring this module into insrc_review_step/insrc_code_review_step is deferred follow-on work, so s1-s5's LLDs can only be tested against synthetic hook implementations, not a real review type, until that later Epic lands.",
+          "mitigation": "Each Story's LLD must include a test harness that exercises the round-driver with a minimal synthetic ReviewKind hook set, so the driver's own behavior (shared process, checkpoint granularity routing, reconciliation call shape) is verified now rather than deferred to the wiring Epic."
+        },
+        {
+          "area": "Checkpoint and audit-trail shapes drift between what s3's reconciliation pass expects and what s5's checkpoint actually persists",
+          "why": "k5 lets reconciliation read the temp folder's audit trail 'if needed', and s5 owns that temp-folder lifecycle independently of s3 -- if the two Stories' LLDs assume different shapes for what is actually stored there, reconciliation could silently fail to find what it expects.",
+          "mitigation": "s3 and s5's LLDs must agree on and cite the same concrete shape for what the temp folder's audit trail actually contains, with s5's LLD authored first (or reviewed against s5's final shape) since s5 owns the lifecycle."
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Monolithic per-review-type driver",
+        "oneLineSummary": "Each review type (design review, code review) gets its own standalone driver function that inlines the round loop, checkpoint read/write, reconciliation call, and docgen render for that type.",
+        "approach": "Write a separate top-level driver per review type -- e.g. a design-review driver and a code-review driver -- each containing its own copy of the round loop (grounding -> findings -> reconciliation -> render -> present), its own checkpoint read/write at whatever granularity that type needs, and its own call into the reconciliation pass and the review-report docgen docType.\n\nThis mirrors the retired implementation's shape (review-history/review/design-review/ and review-history/code-review/task-review/ each already had their own separate admission-checkpoint.ts), just without the heavier attempts/chunks/admission/migration-guard machinery.",
+        "pros": [
+          "No new shared module to design; each driver can be written and tested in isolation",
+          "A review-type-specific quirk never risks leaking into a shared abstraction, since there is no shared abstraction"
+        ],
+        "cons": [
+          "Reintroduces exactly the duplication the Epic's own problem statement names: 'every review type must separately solve round sequencing, crash recovery, and how a correction round relates to the round before it'",
+          "Directly contradicts Story s1's acceptance criteria (ac1/ac2), which require Initial Review and Correction-and-Re-review -- and, by the Epic's framing, every review type -- to run through the exact same process"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Each constraint is individually satisfiable inside a per-type driver, but nothing in the structure guarantees it: duplicating the round loop across design-review and code-review drivers is exactly the duplication the Epic's problem statement names, and directly risks Story s1's ac1/ac2 (one shared process) drifting apart over time with no single place enforcing it."
+      },
+      {
+        "id": "a2",
+        "name": "Shared review-process driver with per-review-type hooks",
+        "oneLineSummary": "One generic round-driver function in a new review-process module takes a small per-review-type hook set (grounding/findings call, checkpoint granularity, taxonomy/severity) and runs the identical round cycle for every review type.",
+        "approach": "Introduce one new sibling module under src/workflow/ (landing outside review-history/, since review-history/'s own per-type checkpoint logic is being retired rather than extended, per the grounded import-graph evidence that review-history/ is a heavily-imported reuse hub not itself the new process's home). This module owns a single round-driver function that executes the full cycle -- grounding+findings, reconciliation (round > 1), MD render + present, checkpoint write -- identically for every review type, and accepts a small, review-type-supplied hook set for the three things that legitimately differ: the grounding/findings call itself, the checkpoint granularity (round-level vs per-Task), and the finding taxonomy/severity scale.\n\nEach review type (design review, code review) supplies its own hooks but never its own copy of the round loop, checkpoint lifecycle, or reconciliation call -- those stay single-sourced in the new module, directly satisfying Story s1's requirement that every round, of every review type, runs through the same process.",
+        "pros": [
+          "Directly satisfies Story s1 (ac1/ac2): one driver, one execution process, with round number as the only thing distinguishing Initial Review from Correction-and-Re-review",
+          "Checkpoint granularity (k1) varies per review type through a hook, not a duplicated driver, so the per-type difference is isolated to exactly the one place it's supposed to differ",
+          "Lands as a new sibling module following the grounded naming convention (kebab-case files, no base-class idiom to extend), so it reads consistently with the rest of src/workflow/"
+        ],
+        "cons": [
+          "Requires designing the hook interface carefully up front; a poorly-scoped hook could let review-type-specific logic leak back into the shared driver",
+          "The new module has no caller yet at this Epic's scope (wiring it into insrc_review_step/insrc_code_review_step is deferred follow-on work), so it cannot be exercised end-to-end until that later work lands"
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a3",
+        "name": "Event-sourced round ledger",
+        "oneLineSummary": "Model each round's lifecycle as an append-only event log (RoundStarted, FindingsRecorded, ReconciliationRecorded, MdRendered, Presented) inside the temp folder, with a reducer computing checkpoint/current state by replay.",
+        "approach": "Instead of a procedural round-driver, persist every round-cycle transition as an event appended to a log file inside .insrc/tmp/<reviewId>/. A reducer function replays the log to compute the review's current state (which round, what stage of the cycle it reached) on resume, making checkpointing a byproduct of the event log rather than a separately-written record.\n\nReconciliation and docgen rendering would read the event log's audit trail directly rather than a separately-shaped checkpoint record, which could make the 'full audit trail already retained in the temp folder' (k5) richer and more uniform.",
+        "pros": [
+          "Recovery (k1/k7/k8) falls out of log replay for free, rather than needing a separately-maintained checkpoint record",
+          "The event log IS the audit trail k5 already requires reconciliation to be able to read, so there is no separate record to keep in sync"
+        ],
+        "cons": [
+          "Introduces an event-sourcing pattern with no precedent anywhere else in this codebase's workflow layer (which uses artifact-core's lifecycle/revision model, not event logs), adding a genuinely new idiom for a single Epic's use case",
+          "More moving parts than the problem needs: a reducer, an event schema, and replay logic, for a crash-recovery need that a single checkpoint record (k1's 'generic review checkpoint JSON side-record') already satisfies at lower cost"
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Satisfies every constraint and arguably strengthens k5 (the event log IS the audit trail), but at higher cost (L vs M) and by introducing an event-sourcing idiom with no precedent elsewhere in this codebase's workflow layer, for a crash-recovery need a2's single checkpoint record already meets."
+      }
+    ],
+    "chosenAlternative": "a2",
+    "openQuestions": [],
+    "sequenceDefinition": {
+      "id": "review-round-cycle",
+      "narrative": "Shows the ordered round cycle the shared round-driver (s1) runs for every review type: independent grounding and findings, a reconciliation pass for round>1, the explicit review-report docgen render and presentation, and the internal checkpoint write -- the same sequence regardless of review type.",
+      "participants": [
+        {
+          "id": "Submitter",
+          "label": "Submitter/Controller",
+          "description": "Starts a review round and supplies corrections on round > 1."
+        },
+        {
+          "id": "RoundDriver",
+          "label": "Round-driver (sc1)",
+          "description": "The single, shared process every review type calls into for every round."
+        },
+        {
+          "id": "Reviewer",
+          "label": "Reviewer (groundAndFind hook)",
+          "description": "Performs this round's full independent re-grounding and produces its finding set."
+        },
+        {
+          "id": "Reconciliation",
+          "label": "Reconciliation pass (sc3)",
+          "description": "A separate, dedicated call that classifies the prior round's HIGH/MED findings; runs only for round > 1."
+        },
+        {
+          "id": "Docgen",
+          "label": "review-report docgen (sc4)",
+          "description": "Renders the round's findings and relevant reconciliation annotations to a persisted MD artifact."
+        },
+        {
+          "id": "Checkpoint",
+          "label": "Review checkpoint (sc5)",
+          "description": "The internal checkpoint record, written automatically at the granularity for the review type."
+        }
+      ],
+      "messages": [
+        {
+          "from": "Submitter",
+          "to": "RoundDriver",
+          "label": "start round N",
+          "description": "The submitter (or, for round > 1, their corrections) triggers this round's cycle."
+        },
+        {
+          "from": "RoundDriver",
+          "to": "Reviewer",
+          "label": "groundAndFind(reviewTargets, comments)",
+          "description": "The driver calls the review-type-supplied grounding/findings hook, ignoring any prior round's findings."
+        },
+        {
+          "from": "Reviewer",
+          "to": "RoundDriver",
+          "label": "self-contained finding set",
+          "kind": "return",
+          "description": "The reviewer returns this round's own findings, independent of what any prior round found."
+        },
+        {
+          "from": "RoundDriver",
+          "to": "Reconciliation",
+          "label": "reconcile(priorFindings, currentFindings, auditTrail?)",
+          "description": "For round > 1 only, the driver invokes the separate reconciliation pass; this message does not occur on round 1."
+        },
+        {
+          "from": "Reconciliation",
+          "to": "RoundDriver",
+          "label": "reconciliation verdicts",
+          "kind": "return",
+          "description": "Reconciliation returns confirmed/still-open/contradicted/no-longer-surfaced verdicts for the prior round's HIGH/MED findings; informational only."
+        },
+        {
+          "from": "RoundDriver",
+          "to": "Docgen",
+          "label": "render review-report(reviewId, round)",
+          "description": "The agent explicitly invokes the review-report docgen docType with this round's findings and any reconciliation annotations."
+        },
+        {
+          "from": "Docgen",
+          "to": "Submitter",
+          "label": "present rendered MD",
+          "description": "The rendered MD artifact is presented to the user via insrc_present for this round."
+        },
+        {
+          "from": "RoundDriver",
+          "to": "Checkpoint",
+          "label": "write checkpoint",
+          "description": "The driver writes the checkpoint automatically and internally, at the granularity for this review type, once the round's full cycle completes."
+        }
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/review-rounds-reconciliation-recovery-E2026111803f4fd3b/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "SPEC-e8632c1ae22c3bf8",
+      "quotedText": "docs/standalone/review-process-rounds-reconciliation-recovery-E20261117e8632c1a/SPEC.md"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "capability-discovery: review-history checkpoint files + docgen docType registry",
+      "quotedText": "admission-checkpoint.ts / preparation-checkpoint.ts / checkpoint.ts (per-review-type, retired); src/mcp/docgen/handler.ts docType registry has no 'review-report'"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "structural-map: src/workflow/review-history import-graph + src/workflow/ convention.detect",
+      "quotedText": "review-history/ totalInDegree 67 vs totalOutDegree 13 (reuse hub); src/workflow/ file naming mixed, kebab-case (448) dominant over snake_case (233); baseClassIdioms: []"
+    }
+  ]
+}

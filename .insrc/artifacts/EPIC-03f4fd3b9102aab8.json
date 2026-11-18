@@ -1,0 +1,61 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "unit-EPIC-03f4fd3b9102aab8",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-18T06:14:00.698Z",
+    "epicCreatedAt": "2026-11-18T06:14:00.057Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "03f4fd3b9102aab8",
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": [
+        {
+          "target": {
+            "entityId": "HLD-03f4fd3b9102aab8",
+            "type": "HLD",
+            "relation": "documents",
+            "fragment": "docs/epics/review-rounds-reconciliation-recovery-E2026111803f4fd3b/HLD.md"
+          },
+          "revision": 2,
+          "at": "2026-11-18T07:56:26.360Z",
+          "externalId": "6972588615"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#196",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": [
+          {
+            "kind": "design",
+            "at": "2026-11-18T07:55:52.690Z"
+          }
+        ]
+      }
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "7f67311f00c6101c952763f219208b46e606b381c765f6354708dffd623980a3",
+        "at": "2026-11-18T06:14:00.698Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

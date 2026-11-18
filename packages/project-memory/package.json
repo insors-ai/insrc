@@ -24,7 +24,7 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "test": "node --import tsx --test src/__tests__/*.test.ts",
+    "test": "node --import tsx --test --test-force-exit src/__tests__/*.test.ts",
     "prepack": "node -e \"throw new Error('Use npm run pack:release to produce the verified standalone tarball')\"",
     "pack:release": "node scripts/pack-release.mjs"
   },

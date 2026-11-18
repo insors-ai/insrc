@@ -1,0 +1,68 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 2,
+        "contentHash": "23f1f381b78da904e9011049ad559714d9329965383230410711a2b801318cf9",
+        "at": "2026-11-18T04:29:15.382Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-18T04:37:57.111Z",
+        "override": {
+          "reason": "Automated code review is retired/unavailable while being rewritten; user explicitly approved with override after reviewing the build verdict (typecheck clean, flag-only change, reproduced hang fix confirmed)."
+        }
+      }
+    },
+    "workflow": "build",
+    "runId": "store-8045b4a8-2ebe-4787-bb9c-10f5fa8a00ad",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-18T04:12:58.156Z",
+    "epicCreatedAt": "2026-11-17T19:23:53.221Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "cffd1c931403f0c9",
+    "storyId": "s1",
+    "revision": 2,
+    "standalone": true,
+    "sizeClass": "trivial",
+    "authoredBy": "controller",
+    "triageRationale": "A pure test-runner-invocation robustness fix, empirically confirmed by reproduction: 3 one-line script edits, no src/ code touched, identical pass count before/after, only the hang-after-completion eliminated.",
+    "epicSlug": "node-test-runs-hang-indefinitely-after",
+    "updatedAt": "2026-11-18T04:28:59.692Z"
+  },
+  "body": {
+    "focus": "Bug: node:test runs hang indefinitely after all sub-tests finish because no exit-forcing flag is set. The repo's three node-test-runner invocations (package.json:19, packages/project-memory/package.json:27, vscode-plugin/package.json:911) invoke node's built-in test runner with no exit-forcing flag. Some shared test fixture leaves a timer/socket/watcher open after tests finish, so the process never exits on its own. Fix: add the `--test-force-exit` flag to the node test-runner invocation in all three 'test' scripts, so a run exits promptly once all tests have genuinely finished. No test logic changes. See ISSUE-cffd1c931403f0c9 for the full record.",
+    "producesLld": false,
+    "commit": "3713f391e",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "testRecord": {
+      "md": "docs/standalone/node-test-runs-hang-indefinitely-after-E20261117cffd1c93/S001/TESTS.md"
+    },
+    "changeLog": []
+  },
+  "citations": []
+}

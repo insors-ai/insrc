@@ -1,0 +1,483 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "wf-1794977490327-xmgybo",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-18T04:59:27.796Z",
+    "epicCreatedAt": "2026-11-18T04:59:27.796Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "claude-sonnet-5"
+        }
+      ]
+    },
+    "elapsedMs": 477467,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "50cde239426d6e2a",
+    "epicSlug": "shared-reviewcontext-data-model",
+    "seededFromSpec": "0add47b5b1f72874",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 2,
+        "contentHash": "4c34f78b862b6c1015ead19ebbbeaa04907756a90ad800cb6c3bde2a57dbb65d",
+        "at": "2026-11-18T05:30:00.000Z",
+        "by": {
+          "id": "insrc:controller",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-18T05:22:48.435Z",
+        "override": {
+          "reason": "Automated design review is retired/unavailable while being rewritten. Controller self-reviewed and hand-resolved the sole open question (added staleness-detection AC/constraint to s1) before user approval."
+        }
+      }
+    },
+    "revision": 2,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    }
+  },
+  "body": {
+    "title": "Shared ReviewContext data model",
+    "flavor": "new-capability",
+    "problem": "insrc's review framework -- design review (DEF/HLD/LLD) and code review -- has no shared way to describe what a given review attempt is reviewing, what content is in scope for that attempt, and what additional context the submitter wants to flag, independent of which review type or review depth is in play. The prior review framework is retired and being rewritten (insrc_review_step/insrc_code_review_step currently raise an exception stating they are being rewritten), and the surviving review-history/ structure (~198 entities) encodes review record-keeping separately per review type -- design-review contracts, code-review task-review contracts -- rather than a single reusable model of a review attempt's scope, targets, and comments. Without a common data model, each review type must separately define and validate its own notion of attempt number, in-scope artifact/ancestor chain, reviewable-content pointers, and submitter context -- confirmed by capability discovery (zero clear-match candidates, zero existing abstract-base-class convention) -- which duplicates structure across review kinds and leaves no single typed contract that either review type, at either an epic-chain depth or a standalone depth, can validate a review attempt against.",
+    "nonGoals": [
+      {
+        "text": "Building the per-depth construction/population logic that assembles a populated ReviewContext at each review depth (DEF-only, DEF+HLD, DEF+HLD+LLD+PLAN+Task)",
+        "rationale": "Deferred, tracked follow-on work intended to land in the same eventual Epic, not this data-model Epic."
+      },
+      {
+        "text": "Wiring ReviewContext into insrc_review_step / insrc_code_review_step",
+        "rationale": "Deferred, tracked follow-on work intended to land in the same eventual Epic, not this data-model Epic."
+      },
+      {
+        "text": "Pre-digesting review content into ready-made analysis for the reviewer",
+        "rationale": "The reviewer must re-derive findings from the referenced source itself; context sections are pointers, not conclusions."
+      },
+      {
+        "text": "Framework-authored verdict/severity/dimension fields carried over on Comments entries from a prior round",
+        "rationale": "Any verdict is re-formed fresh by the reviewer each round, never trusted from a prior round's label."
+      }
+    ],
+    "assumptions": [
+      {
+        "text": "The prior review framework (insrc_review_step/insrc_code_review_step) is fully retired/being rewritten, so this ReviewContext model is not required to preserve backward compatibility with its prior invocation shape.",
+        "confidence": "high",
+        "source": "c1"
+      },
+      {
+        "text": "review-history/'s ~198 surviving entities are legacy per-review-type record-keeping structure, not a shared base type this Epic extends.",
+        "confidence": "high",
+        "source": "c2"
+      },
+      {
+        "text": "The per-depth construction/population logic and the wiring into insrc_review_step/insrc_code_review_step are tracked as deferred follow-on work within the same eventual Epic as this data model.",
+        "confidence": "high",
+        "source": "c1"
+      }
+    ],
+    "constraints": [
+      {
+        "id": "k1",
+        "text": "Every ReviewContext artifact-kind field (def/hld/lld/plan/tasks, extension/amendment, and future kinds) is independently named and typed; no field is folded into or widens an existing kind's field, and none are genericized into a map.",
+        "type": "invariant",
+        "source": "c1"
+      },
+      {
+        "id": "k2",
+        "text": "A Pointer carries { path, section?, contentHash? } and references the existing authored file directly (DEF.md/HLD.md/source files); no generated extract/summary file is produced for review consumption.",
+        "type": "contract",
+        "source": "c1"
+      },
+      {
+        "id": "k3",
+        "text": "A dedicated validator function per review type enforces exactly which fields must/must-not be populated for a given (scopeType, scopeLevel) pair; validation happens in the controller/caller before the context is sent for review.",
+        "type": "invariant",
+        "source": "c1"
+      },
+      {
+        "id": "k4",
+        "text": "No existing abstract-base-class convention exists in review-history/ to extend (baseClassIdioms: []).",
+        "type": "convention",
+        "source": "c2"
+      },
+      {
+        "id": "k5",
+        "text": "A Pointer's optional contentHash, when present, is checked against the referenced file's current content via one staleness-detection function shared by every Pointer consumer (Scope and ReviewTargets alike); a mismatch reports the Pointer stale.",
+        "type": "invariant",
+        "source": "c1"
+      }
+    ],
+    "stories": [
+      {
+        "id": "s1",
+        "title": "Pointer and Locator as the shared building blocks for naming content",
+        "userValue": "So that every part of ReviewContext that names a piece of content does so the same way, letting reviewers and validators reason uniformly about staleness and the exact region in play.",
+        "sizeEstimate": "M",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a Pointer references an existing authored file (a DEF/HLD/LLD/source file) with an attached section locator",
+            "when": "the Pointer is used to name a piece of content",
+            "then": "it identifies both the file and an exact region without the framework generating any extract or summary file for it",
+            "operationalizes": [
+              "k2"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "a new kind of locator is introduced later (beyond symbol name, line range, or doc-section id)",
+            "when": "existing code that consumes a Locator encounters an instance of the new kind",
+            "then": "it is not required to be rewritten, because Locator stays an open, extensible type rather than a closed union",
+            "operationalizes": [
+              "lc1"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "a Pointer carries a contentHash recorded at the time it was built, and the file it names has since changed",
+            "when": "the Pointer's contentHash is compared against the referenced file's current content",
+            "then": "the comparison reports the Pointer stale, uniformly regardless of which section (Scope or ReviewTargets) the Pointer appears in",
+            "operationalizes": [
+              "lc8"
+            ]
+          }
+        ],
+        "localConstraints": [
+          {
+            "id": "lc1",
+            "text": "Locator is an open, extensible type (symbol name, line range, doc-section id, and future kinds), not a closed union.",
+            "type": "invariant",
+            "source": "c1"
+          },
+          {
+            "id": "lc8",
+            "text": "A Pointer's optional contentHash, when present, is checked against the referenced file's current content via one staleness-detection function shared by every Pointer consumer (Scope and ReviewTargets alike); a mismatch reports the Pointer stale.",
+            "type": "invariant",
+            "source": "c1"
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "Define a Pointer type carrying { path, section?, contentHash? } that references an existing authored file directly.",
+            "rationale": "A single shared shape lets Scope and ReviewTargets both name content the same way."
+          },
+          {
+            "statement": "Define an open, extensible Locator type for the Pointer's section field.",
+            "rationale": "New ways of pinning a region (beyond symbol name, line range, doc-section id) must be addable without breaking existing Pointer consumers."
+          },
+          {
+            "statement": "Define a staleness-detection function that compares a Pointer's recorded contentHash against the referenced file's current content.",
+            "rationale": "Reviewers and validators need one uniform way to tell whether a referenced piece of content has drifted since the Pointer was recorded."
+          }
+        ]
+      },
+      {
+        "id": "s2",
+        "title": "Scope describes which depth and chain a review attempt belongs to, including the artifact under review itself",
+        "userValue": "So that a single validator per review type can check exactly the right fields are populated for the review's actual depth, and the reviewer always knows which artifact is being reviewed, not just its ancestors.",
+        "sizeEstimate": "L",
+        "dependsOn": [
+          "s1"
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a review attempt declares its scopeType and scopeLevel",
+            "when": "Scope's artifact-kind fields are populated",
+            "then": "each named kind (def/hld/lld/plan/tasks and any future named kind such as extension or amendment) is independently typed and never folded into another kind's field",
+            "operationalizes": [
+              "k1"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "an HLD review in progress",
+            "when": "Scope is populated for that review",
+            "then": "the hld field names the HLD actually under review, not merely ancestor context, matching the self-inclusive depth model",
+            "operationalizes": [
+              "lc2"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "a populated ReviewContext with a declared (scopeType, scopeLevel) pair",
+            "when": "the controller validates it before sending it for review",
+            "then": "the dedicated validator function for that review type accepts it only if exactly the fields valid for that pair are populated",
+            "operationalizes": [
+              "k3"
+            ]
+          }
+        ],
+        "localConstraints": [
+          {
+            "id": "lc2",
+            "text": "Scope's deepest-populated field at a given depth is the artifact under review itself, self-inclusive, not only ancestor context.",
+            "type": "invariant",
+            "source": "c1"
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "Define Scope with independent scopeType and scopeLevel fields plus named per-artifact-kind pointer fields (def/hld/lld/plan singular, tasks plural).",
+            "rationale": "The (scopeType, scopeLevel) pair selects the validator; per-kind named fields avoid a generic map."
+          },
+          {
+            "statement": "Define a validator function per review type that checks a populated Scope against its declared (scopeType, scopeLevel) pair.",
+            "rationale": "Each review type must enforce exactly which fields must/must-not be populated for its own depth combinations."
+          }
+        ]
+      },
+      {
+        "id": "s3",
+        "title": "ReviewTargets names the current round's reviewable content, owned solely by the submitter",
+        "userValue": "So that the reviewer starts from a concrete, current floor of what changed, while remaining free to dig further, and is never misled by stale targets carried over from an earlier round.",
+        "sizeEstimate": "M",
+        "dependsOn": [
+          "s1"
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a new review round starts on the same artifact",
+            "when": "ReviewTargets is built for that round",
+            "then": "it is populated fresh from the current real set of targets with no entries merged or carried forward from the previous round",
+            "operationalizes": [
+              "lc3"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "ReviewTargets lists a floor set of file/section entries",
+            "when": "the reviewer investigates the review",
+            "then": "the reviewer is free to fetch and examine any file or region beyond that list, including unchanged files",
+            "operationalizes": [
+              "lc4"
+            ]
+          }
+        ],
+        "localConstraints": [
+          {
+            "id": "lc3",
+            "text": "ReviewTargets is fully reset, not merged or carried forward, on every new review round on the same artifact.",
+            "type": "invariant",
+            "source": "c1"
+          },
+          {
+            "id": "lc4",
+            "text": "ReviewTargets entries carry no origin metadata; the reviewer never adds to the list and is always free to investigate beyond it.",
+            "type": "invariant",
+            "source": "c1"
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "Define ReviewTargets as a list of { file, section, contentHash } entries naming the content to review this round.",
+            "rationale": "A floor set of targets, reset each round, keeps the reviewer grounded on what actually changed without biasing or capping their own investigation."
+          }
+        ]
+      },
+      {
+        "id": "s4",
+        "title": "Comments carries the submitter's freeform context and round tracking across repeated rounds on the same artifact",
+        "userValue": "So that the submitter can flag edge cases the rest of the model doesn't structurally handle, and both submitter and reviewer can tell which round produced which comment, without any trusted verdict being carried forward.",
+        "sizeEstimate": "M",
+        "dependsOn": [
+          "s1"
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a ReviewContext instance is built for a new review attempt",
+            "when": "the instance is assembled",
+            "then": "its root-level round field states which attempt this instance represents",
+            "operationalizes": [
+              "lc5"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "a Comments entry is added",
+            "when": "it is recorded",
+            "then": "it carries round, party, timestamp and text as first-class fields with no verdict, severity or dimension field",
+            "operationalizes": [
+              "lc6"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "an HLD review follows a DEF review in the same chain",
+            "when": "the HLD review's Comments is populated",
+            "then": "it does not include the DEF review's comments, because Comments is scoped same-artifact-only across the chain",
+            "operationalizes": [
+              "lc7"
+            ]
+          }
+        ],
+        "localConstraints": [
+          {
+            "id": "lc5",
+            "text": "ReviewContext carries an explicit root-level round field stamped by the framework for each new attempt.",
+            "type": "invariant",
+            "source": "c1"
+          },
+          {
+            "id": "lc6",
+            "text": "A Comments entry's first-class fields are {round, party, timestamp, text}, with no verdict/severity/dimension carried over from a prior round's output.",
+            "type": "invariant",
+            "source": "c1"
+          },
+          {
+            "id": "lc7",
+            "text": "Comments is scoped same-artifact only across the chain; comments from a different artifact in the same chain do not carry over.",
+            "type": "invariant",
+            "source": "c1"
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "Define a root-level round field on ReviewContext stating the current attempt number.",
+            "rationale": "Needed for the 3-round review cap."
+          },
+          {
+            "statement": "Define Comments as a flat list of provenance-tagged entries, scoped to the same artifact's review cycle only.",
+            "rationale": "Comments is a catchall for context the rest of the model doesn't structurally handle, not a cross-artifact or verdict channel."
+          }
+        ]
+      }
+    ],
+    "openQuestions": [],
+    "summary": {
+      "prose": "This Epic defines a single shared TypeScript data model, ReviewContext, that both design review and code review use to describe what a review attempt covers: which artifact depth and chain it belongs to, what content is in scope to be checked this round, and any free-form context the submitter wants to flag. Today each review type has its own separate, ad hoc notion of these things, duplicated across design-history and code-history structures with no common contract. This Epic delivers only the type/schema and its per-review-type validators -- not the logic that builds a populated instance or wires it into the review tools, which are deferred, tracked follow-on work in the same eventual Epic.",
+      "audience": "product"
+    },
+    "functionalDefinition": {
+      "requirements": [
+        {
+          "id": "E2026111850cde239:FR001",
+          "statement": "Define a root-level round field recording which attempt a ReviewContext instance represents.",
+          "scope": "doc",
+          "rationale": "Needed for the 3-round review cap."
+        },
+        {
+          "id": "E2026111850cde239:FR002",
+          "statement": "Define a Scope section identified by independent scopeType and scopeLevel fields, plus named singular/array pointer fields per artifact kind (def/hld/lld/plan single Pointer; tasks a Pointer array), extensible to further named kinds (extension, amendment, ...).",
+          "scope": "doc",
+          "rationale": "The (scopeType, scopeLevel) pair selects the validator; per-kind named fields avoid a generic map and support the self-inclusive depth model."
+        },
+        {
+          "id": "E2026111850cde239:FR003",
+          "statement": "Define a ReviewTargets section as a list of pointer+locator entries naming the content to review, fully reset on every new review round on the same artifact.",
+          "scope": "doc",
+          "rationale": "The real set of targets legitimately changes between rounds; a stale carried-forward list would misdirect the reviewer."
+        },
+        {
+          "id": "E2026111850cde239:FR004",
+          "statement": "Define a Comments section as a flat list of provenance-tagged ({round, party, timestamp, text}) freeform entries, scoped to the same artifact across rounds only.",
+          "scope": "doc",
+          "rationale": "Comments is a catchall for context the rest of the model doesn't structurally handle, not a verdict channel."
+        },
+        {
+          "id": "E2026111850cde239:FR005",
+          "statement": "Define an open/extensible Locator type (symbol name, line range, doc-section id, future kinds) and a Pointer type ({path, section?, contentHash?}) used uniformly across Scope and ReviewTargets.",
+          "scope": "doc",
+          "rationale": "Independent concurrent agents need to pin exact changed regions so a reviewer can correlate overlapping impacts, without closing off future locator kinds."
+        },
+        {
+          "id": "E2026111850cde239:FR006",
+          "statement": "Define a per-review-type validator contract that checks a populated ReviewContext against its declared (scopeType, scopeLevel) pair.",
+          "scope": "doc",
+          "rationale": "Each review type needs to enforce exactly which fields must/must-not be populated for its own depth combinations."
+        },
+        {
+          "id": "E2026111850cde239:S001:FR001",
+          "statement": "Define a Pointer type carrying { path, section?, contentHash? } that references an existing authored file directly.",
+          "scope": "item",
+          "itemRef": "s1",
+          "rationale": "A single shared shape lets Scope and ReviewTargets both name content the same way."
+        },
+        {
+          "id": "E2026111850cde239:S001:FR002",
+          "statement": "Define an open, extensible Locator type for the Pointer's section field.",
+          "scope": "item",
+          "itemRef": "s1",
+          "rationale": "New ways of pinning a region (beyond symbol name, line range, doc-section id) must be addable without breaking existing Pointer consumers."
+        },
+        {
+          "id": "E2026111850cde239:S001:FR003",
+          "statement": "Define a staleness-detection function that compares a Pointer's recorded contentHash against the referenced file's current content.",
+          "scope": "item",
+          "itemRef": "s1",
+          "rationale": "Reviewers and validators need one uniform way to tell whether a referenced piece of content has drifted since the Pointer was recorded."
+        },
+        {
+          "id": "E2026111850cde239:S002:FR001",
+          "statement": "Define Scope with independent scopeType and scopeLevel fields plus named per-artifact-kind pointer fields (def/hld/lld/plan singular, tasks plural).",
+          "scope": "item",
+          "itemRef": "s2",
+          "rationale": "The (scopeType, scopeLevel) pair selects the validator; per-kind named fields avoid a generic map."
+        },
+        {
+          "id": "E2026111850cde239:S002:FR002",
+          "statement": "Define a validator function per review type that checks a populated Scope against its declared (scopeType, scopeLevel) pair.",
+          "scope": "item",
+          "itemRef": "s2",
+          "rationale": "Each review type must enforce exactly which fields must/must-not be populated for its own depth combinations."
+        },
+        {
+          "id": "E2026111850cde239:S003:FR001",
+          "statement": "Define ReviewTargets as a list of { file, section, contentHash } entries naming the content to review this round.",
+          "scope": "item",
+          "itemRef": "s3",
+          "rationale": "A floor set of targets, reset each round, keeps the reviewer grounded on what actually changed without biasing or capping their own investigation."
+        },
+        {
+          "id": "E2026111850cde239:S004:FR001",
+          "statement": "Define a root-level round field on ReviewContext stating the current attempt number.",
+          "scope": "item",
+          "itemRef": "s4",
+          "rationale": "Needed for the 3-round review cap."
+        },
+        {
+          "id": "E2026111850cde239:S004:FR002",
+          "statement": "Define Comments as a flat list of provenance-tagged entries, scoped to the same artifact's review cycle only.",
+          "scope": "item",
+          "itemRef": "s4",
+          "rationale": "Comments is a catchall for context the rest of the model doesn't structurally handle, not a cross-artifact or verdict channel."
+        }
+      ]
+    }
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "SPEC-0add47b5b1f72874",
+      "quotedText": "docs/standalone/reviewcontext-data-model-design-code-review-E202611170add47b5/SPEC.md"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "capability-discovery: src/workflow/review-history reuse-check + convention.detect",
+      "quotedText": "0 clear-match / 5 partial-match across 50 candidates; baseClassIdioms: []"
+    }
+  ]
+}

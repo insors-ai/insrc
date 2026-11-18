@@ -1,0 +1,536 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1794979399326-f0w86q",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-18T05:31:04.204Z",
+    "epicCreatedAt": "2026-11-18T05:16:00.099Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 464623,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c5a4572e3949359a",
+    "epicSlug": "daemon-update-always-fails-unmanaged-macos",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1794979399326-f0w86q",
+    "hldEffectiveHash": "dac20d855e4afe93873a6fb000de79cedc16d51732ae5e456615c572ce6c7001",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "Two always-working daemon update paths fix (ISSUE-c5a4572e3949359a).",
+    "standalone": true,
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8fb17d03a845fbf6f90d0d54cb4eb1195ab479a7f7e6386fcbf462cc4792af9c",
+        "at": "2026-11-18T05:31:04.313Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-18T05:45:20.066Z",
+        "override": {
+          "reason": "Automated design review is unavailable (insrc_review_step fails immediately; being rewritten). Per user's standing instruction, a controller self-review was performed and recorded at docs/standalone/daemon-update-always-fails-unmanaged-macos-E20261118c5a4572e/S001/LLD-SELF-REVIEW.md: citations re-verified against live source, scope boundary clean, backward-compat confirmed, no findings. User explicitly approved this LLD after being shown the self-review summary."
+        }
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "3c860246e00edb840773e9cd4df9c74fc6ed0a00"
+  },
+  "body": {
+    "summary": {
+      "prose": "Two always-working daemon update paths. A managed (signed-release) install keeps today's full signed, transactional migration-and-update machinery untouched. An unmanaged (plain git-clone) install's update always completes via the same plain git-fetch + npm-install + npm-build sequence daemon-ctl.sh already runs on non-Darwin and that start/stop/restart already use unmanaged on Darwin -- no signing key required. scripts/daemon-ctl.sh's cmd_update becomes the single place that decides managed vs unmanaged for every caller; vscode-plugin's controller.ts and jetbrains-plugin's ScriptDaemonProvisioner.kt/DaemonLifecycleService.kt drop their now-redundant pre-emptive detection and simply delegate to it unconditionally.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Two always-working daemon update paths fix (ISSUE-c5a4572e3949359a)."
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "DaemonLifecycleController.run",
+          "signature": "run(action: LifecycleAction, options?: LifecycleRunOptions): Promise<LifecycleResult>",
+          "parameters": [
+            {
+              "name": "action",
+              "type": "LifecycleAction",
+              "purpose": "One of 'start'|'stop'|'restart'|'update'.",
+              "optional": false
+            },
+            {
+              "name": "options",
+              "type": "LifecycleRunOptions | undefined",
+              "purpose": "Carries the plain-start flag; unused by update.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<LifecycleResult>",
+            "meaning": "The real post-action reachability, re-probed via the shared IPC client."
+          },
+          "errors": [
+            {
+              "type": "LifecycleResult (ok:false)",
+              "condition": "daemon-ctl.sh exits non-zero; mapped via ctlReason(code)."
+            }
+          ],
+          "preconditions": [
+            "paths.ctlScript (or the managed install's own daemon-ctl.sh) exists."
+          ],
+          "postconditions": [
+            "For action='update': no longer special-cases an unmanaged-but-present install into install(true)/the bundled signed installer -- it always calls daemon-ctl.sh update, which itself now safely routes managed vs unmanaged.",
+            "Behavior for start/stop/restart and for a genuinely managed install's update is unchanged."
+          ]
+        },
+        {
+          "name": "ScriptDaemonProvisioner.run",
+          "signature": "fun run(kind: ProvisionKind, node: NodeRuntime): ProvisionOutcome",
+          "parameters": [
+            {
+              "name": "kind",
+              "type": "ProvisionKind",
+              "purpose": "INSTALL or UPDATE.",
+              "optional": false
+            },
+            {
+              "name": "node",
+              "type": "NodeRuntime",
+              "purpose": "The resolved Node runtime to put on PATH for the spawned script.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ProvisionOutcome",
+            "meaning": "ok + exitCode, or ok=false + a mapped reason; never throws."
+          },
+          "errors": [
+            {
+              "type": "ProvisionOutcome(ok=false)",
+              "condition": "The resolved script is missing, the spawn fails, or the script exits non-zero."
+            }
+          ],
+          "preconditions": [
+            "locator.scriptFor(kind) resolves to an existing script."
+          ],
+          "postconditions": [
+            "For kind=UPDATE: no longer branches on locator.existingUpgradeTarget() into the bundled insrc-daemon-install.sh -- it always spawns bash <daemon-ctl.sh> update, which now safely routes managed vs unmanaged on its own.",
+            "Behavior for kind=INSTALL is unchanged."
+          ]
+        }
+      ],
+      "dataModel": [],
+      "interactionWithShared": []
+    },
+    "dataModelChanges": [
+      {
+        "entity": "scripts/daemon-ctl.sh cmd_update (Darwin + unmanaged branch)",
+        "change": "invariant-change",
+        "details": "Currently: on Darwin, when supervised_lifecycle returns rc=10 (unmanaged), cmd_update re-execs insrc-daemon-install.sh --target \"$DAEMON_ROOT\" -y, which requires INSRC_RELEASE_BOOTSTRAP_B64 and always fails without it. New invariant: an unmanaged install's update on Darwin always falls through to the same plain sync_repo/npm_install_if_needed/npm_build sequence the non-Darwin branch already uses (no exec into insrc-daemon-install.sh, no signing requirement), matching cmd_start/cmd_stop/cmd_restart's existing unmanaged behavior exactly. A managed install (supervised_lifecycle returns 0) is unaffected.",
+        "callSites": [
+          "scripts/daemon-ctl.sh:396-416",
+          "scripts/daemon-ctl.sh:368-394",
+          "scripts/daemon-ctl.sh:330-345"
+        ]
+      },
+      {
+        "entity": "vscode-plugin's createDaemonLifecycleController.run('update') unmanaged pre-emption",
+        "change": "invariant-change",
+        "details": "Currently: when paths.managedStateRoot is set, managed is undefined (no installation.json) and the daemon entry/ctl script already exists, run('update') calls install(true), spawning the extension's bundled assets/insrc-daemon-install.sh --target ... -y directly -- bypassing daemon-ctl.sh entirely and hitting the same unprovisioned signing gate. New invariant: this special-case is removed; run('update') always spawns bash <script> update (script = the managed daemon-ctl.sh when managed, else paths.ctlScript), delegating the managed/unmanaged decision entirely to the now-fixed daemon-ctl.sh.",
+        "callSites": [
+          "vscode-plugin/src/daemon/controller.ts:102-118",
+          "vscode-plugin/src/daemon/__tests__/controller.test.ts"
+        ]
+      },
+      {
+        "entity": "jetbrains-plugin's ScriptDaemonProvisioner.run(UPDATE) legacy branch / DaemonScriptLocator.existingUpgradeTarget()",
+        "change": "field-remove",
+        "details": "Currently: run(kind) computes `val legacy = if (kind == ProvisionKind.UPDATE) locator.existingUpgradeTarget() else null`; when non-null (macOS, no managed install, ctl/entry exists), UPDATE's command becomes `bash <script> -y --target <legacy>` instead of `bash <script> update` -- the same unprovisioned signing gate as the installer. New invariant: the legacy branch and existingUpgradeTarget() are removed; UPDATE always spawns `bash <daemon-ctl.sh> update` (via locator.scriptFor(UPDATE)), delegating the managed/unmanaged decision entirely to the now-fixed daemon-ctl.sh, exactly like VS Code.",
+        "callSites": [
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/lifecycle/ScriptDaemonProvisioner.kt:30-33",
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/lifecycle/ScriptDaemonProvisioner.kt:57-73",
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleService.kt:231-233",
+          "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonProvisionerTest.kt",
+          "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DefaultDaemonScriptLocatorTest.kt",
+          "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleCommandRunnerTest.kt"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Managed install's update fails for a genuine reason (bad signature, missing key on a managed box, network failure fetching the signed tag).",
+          "detection": "supervised_lifecycle returns a non-10 rc (managed path engaged) and the signed bridge's own checks (git fetch, signature verification, compatibility catalog) fail as they do today.",
+          "response": "Unchanged: the existing signed-bridge error handling (die with the documented exit codes) applies exactly as before -- this Story does not touch the managed branch.",
+          "userImpact": "Same as today; this Story introduces no regression here.",
+          "recoverable": true
+        },
+        {
+          "scenario": "An unmanaged install's plain update fails (e.g. local uncommitted changes, diverged branch, npm/build failure).",
+          "detection": "sync_repo / npm_install_if_needed / npm_build return non-zero, exactly as cmd_start/cmd_stop/cmd_restart's existing unmanaged fallback already detects for those verbs.",
+          "response": "cmd_update returns the existing documented exit codes (2 not-a-git-checkout, 3 uncommitted/diverged, 4 git/npm/build failure) -- no change to this mapping; it already exists for the non-Darwin branch and is reused for Darwin.",
+          "userImpact": "Reported via ctlReason(code) in VS Code and mapReason(UPDATE, exitCode) in JetBrains, both of which already map these exact codes.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A caller (VS Code or JetBrains) still holds code that checks for an unmanaged-but-present install and expects the OLD install(true)/legacy routing (a stale build, or a test not yet updated).",
+          "detection": "The removed special-case's call sites and the fields they drove (install(true)'s existing param, existingUpgradeTarget()) no longer exist after the fix; any remaining caller of them is a compile error (TS/Kotlin), not a silent behavior drift.",
+          "response": "None needed at runtime -- this is caught at build/compile time in both languages, not a runtime failure mode.",
+          "userImpact": "None in production; this is a build-time safety net, not a user-facing case.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "An unmanaged install on Darwin whose daemon entry exists but whose ctl script is missing (a partial/corrupted checkout).",
+          "expected": "Unchanged from today's cmd_start/cmd_stop/cmd_restart behavior for the same shape: the plain fallback still requires the ctl script's own directory structure (require_daemon_dir) and fails the same documented way update already would for a broken checkout -- no new behavior introduced by this Story."
+        },
+        {
+          "input": "A box transitions from unmanaged to managed (the official migration completes) between two update calls.",
+          "expected": "supervised_lifecycle re-evaluates on every call; once managed-lifecycle/installation.json exists, the NEXT update call engages the managed branch, exactly as it already does today for start/stop/restart. This Story does not change that transition logic."
+        },
+        {
+          "input": "VS Code or JetBrains is itself the managed install's controller (paths.managedStateRoot resolves to a real installation.json with enabled:true).",
+          "expected": "Unchanged: both plugins already delegate to the managed install's own daemon-ctl.sh for every verb including update in that case; this Story's removed special-case only ever fired for the UNMANAGED branch, never this one."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "A managed install (supervised_lifecycle returns 0 / installation.json with enabled:true) always uses the signed, transactional migration-and-update machinery, unchanged by this Story.",
+          "source": "c1"
+        },
+        {
+          "text": "cmd_start, cmd_stop and cmd_restart's existing unmanaged-on-Darwin fallback (no signing, plain prepare_daemon/stop_managed_daemon/start_prepared_daemon) is the behavioral precedent this Story extends to cmd_update -- it is not itself modified.",
+          "source": "c2"
+        },
+        {
+          "text": "The cross-client integration test 'Installer and updated CLI, VS Code and JetBrains route matrix' (src/daemon/__tests__/macos-upgrade-routing.test.ts) is the authoritative spec for how all three clients route an update; its MANAGED-path assertions must still hold after this Story -- only its UNMANAGED-path assertions change.",
+          "source": "c3"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test (TypeScript + bash integration, vscode-plugin and src/daemon) + JUnit5/Kotlin (jetbrains-plugin)",
+      "testLevels": [
+        {
+          "level": "integration",
+          "purpose": "Rewrite the authoritative cross-client route-matrix test so an unmanaged checkout bypasses the signed bridge entirely (no authorize/npm ci/npm run/prepare-legacy-upgrade trace events; a plain git fetch + npm install + npm build instead) across all four surfaces, while a genuinely managed checkout's assertions are left exactly as they are today.",
+          "subjects": [
+            "src/daemon/__tests__/macos-upgrade-routing.test.ts: 'Installer and updated CLI, VS Code and JetBrains route matrix' (rewritten)"
+          ],
+          "fixturesNeeded": [
+            "The existing fake unmanaged .git checkout + shimmed uname/git/node/npm fixture in the test, extended with a second fixture for a genuinely managed checkout (managed-lifecycle/installation.json) so both paths are asserted in the same test"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Verify vscode-plugin's createDaemonLifecycleController.run('update') always spawns 'bash <script> update' with no install(true)/bundled-installer branch for an unmanaged install, and is unchanged for a managed one.",
+          "subjects": [
+            "vscode-plugin/src/daemon/__tests__/controller.test.ts: 'The VS Code update action selects the installer on legacy macOS and the selected controller after migration' (replaced with an assertion that update always spawns daemon-ctl.sh update, unmanaged or managed)"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Verify ScriptDaemonProvisioner.run(UPDATE) always spawns 'bash <daemon-ctl.sh> update' with the legacy/existingUpgradeTarget() branch removed.",
+          "subjects": [
+            "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonProvisionerTest.kt (rewritten: legacy-target fixtures removed/replaced)",
+            "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DefaultDaemonScriptLocatorTest.kt (rewritten: existingUpgradeTarget() assertions removed if the method is deleted, or updated to always-null if retained for interface compatibility)",
+            "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleCommandRunnerTest.kt (rewritten: the legacy branch it currently exercises via INSRC_ROUTE_MATRIX_* env vars is removed)"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "src/daemon/__tests__/macos-upgrade-routing.test.ts: 'Installer and updated CLI, VS Code and JetBrains route matrix' (unmanaged-path assertions)",
+            "vscode-plugin/src/daemon/__tests__/controller.test.ts (rewritten update test)",
+            "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleCommandRunnerTest.kt (rewritten)"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "src/daemon/__tests__/macos-upgrade-routing.test.ts: 'Installer and updated CLI, VS Code and JetBrains route matrix' (managed-path assertions, unchanged)"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonProvisionerTest.kt (rewritten)",
+            "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DefaultDaemonScriptLocatorTest.kt (rewritten)",
+            "vscode-plugin/src/daemon/__tests__/controller.test.ts (rewritten)"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "scripts/daemon-ctl.sh's cmd_update (lines 396-416) re-execs scripts/insrc-daemon-install.sh --target \"$DAEMON_ROOT\" -y for an unmanaged install on Darwin, which always dies on an unprovisioned INSRC_RELEASE_BOOTSTRAP_B64. vscode-plugin's createDaemonLifecycleController.run('update') (controller.ts:107-108) and jetbrains-plugin's ScriptDaemonProvisioner.run(UPDATE) via DaemonLifecycleService.existingUpgradeTarget() (DaemonLifecycleService.kt:231-233) each independently pre-empt daemon-ctl.sh for this same unmanaged case and hit the identical dead end by calling their own bundled insrc-daemon-install.sh directly.",
+      "stateAfter": "cmd_update's Darwin+unmanaged branch falls through to the same plain sync_repo/npm_install_if_needed/npm_build sequence the non-Darwin branch already uses -- no signing key required, matching cmd_start/cmd_stop/cmd_restart's existing unmanaged behavior. vscode-plugin's run('update') and jetbrains-plugin's ScriptDaemonProvisioner.run(UPDATE) both drop their pre-emptive unmanaged detection (install(true); existingUpgradeTarget()/the legacy branch) and always delegate to daemon-ctl.sh update, which itself safely routes managed vs unmanaged. A managed install's behavior in all three clients is unchanged.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "In scripts/daemon-ctl.sh's cmd_update, remove the Darwin-specific re-exec into insrc-daemon-install.sh for the unmanaged (supervised_lifecycle rc=10) case; let it fall through to the existing plain update sequence.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "In vscode-plugin/src/daemon/controller.ts, remove run('update')'s install(true) pre-emption so it always spawns the resolved daemon-ctl.sh with 'update'.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "In jetbrains-plugin, remove ScriptDaemonProvisioner.run's legacy/existingUpgradeTarget() branch for UPDATE and the now-unused existingUpgradeTarget() method/DaemonScriptLocator default, so UPDATE always resolves and spawns daemon-ctl.sh update.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Rewrite the five affected test files (the cross-client macos-upgrade-routing.test.ts, controller.test.ts, DaemonProvisionerTest.kt, DefaultDaemonScriptLocatorTest.kt, DaemonLifecycleCommandRunnerTest.kt) to assert the new unmanaged-path behavior while preserving every managed-path assertion unchanged.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No persisted data or on-disk format changes. The public-facing LifecycleAction/ProvisionKind API signatures are unchanged for both plugins -- only internal routing behavior for 'update' on an unmanaged install changes, and it changes from 'always fails' to 'succeeds like start/stop/restart already do', so no existing working caller is affected. A managed install's behavior across all three clients is byte-for-byte unchanged. Removing existingUpgradeTarget() from the JetBrains DaemonScriptLocator interface is a source-level removal of an internal, non-public method with a default implementation (returns null), confined to this plugin's own lifecycle package with no external consumers.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Branch inside scripts/insrc-daemon-install.sh only",
+        "oneLineSummary": "Put the managed-vs-unmanaged split inside the installer script itself, leaving daemon-ctl.sh and both plugins' call sites unchanged.",
+        "approach": "insrc-daemon-install.sh's existing-checkout Darwin branch (scripts/insrc-daemon-install.sh:208-238) is the single point every current caller (cmd_update's fallback, controller.ts's install(true), ScriptDaemonProvisioner.kt's legacy branch) ultimately re-execs into. Make THAT branch itself check for a managed install and skip the signed bridge for an unmanaged one, running the plain git-fetch+build sequence in place instead of dying on the missing key. No other file changes.",
+        "pros": [
+          "Smallest possible diff: one script, one existing test file (macos-upgrade-routing.test.ts)",
+          "Fixes every current caller transitively without touching daemon-ctl.sh or either plugin"
+        ],
+        "cons": [
+          "Leaves daemon-ctl.sh's Darwin-only re-exec into the heavier installer script for an unmanaged update that start/stop/restart handle cheaply in-process -- an asymmetry that stays confusing",
+          "vscode-plugin's install(true) and jetbrains-plugin's existingUpgradeTarget()/legacy fields become permanently dead/misleading (their whole purpose was to detect this case and route to the installer; now that routing produces an identical outcome to NOT detecting it)",
+          "Does not remove the duplicated unmanaged-detection logic that already drifted into two independent, now-redundant implementations"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Fixes the bug but leaves two independently-drifted detection implementations (controller.ts, ScriptDaemonProvisioner.kt) in place as dead/misleading code rather than removing the duplication that let the same bug ship twice."
+      },
+      {
+        "id": "a2",
+        "name": "Fix cmd_update directly; retire the now-redundant plugin special-cases",
+        "oneLineSummary": "Make daemon-ctl.sh's cmd_update match start/stop/restart's existing unmanaged fallback, then let both plugins simply call daemon-ctl.sh update unconditionally.",
+        "approach": "scripts/daemon-ctl.sh's cmd_update (lines 396-416) stops re-execing insrc-daemon-install.sh for the Darwin+unmanaged case and falls through to the same sync_repo/npm_install_if_needed/npm_build sequence the other three verbs and the non-Darwin branch already use (lines 368-394, 409-415) -- one script becomes the single source of truth for 'how does an unmanaged update behave', matching the existing precedent exactly. Once that is safe unconditionally, vscode-plugin/src/daemon/controller.ts's run('update') drops its install(true) pre-emption (lines 97-99) and always calls daemon-ctl.sh update; jetbrains-plugin's ScriptDaemonProvisioner.kt drops its legacy/existingUpgradeTarget() branch (lines 57-73) the same way. Each caller becomes a thin, unconditional delegate to the one script that now safely routes managed vs unmanaged on its own.",
+        "pros": [
+          "Single source of truth for the managed/unmanaged split, at the layer (daemon-ctl.sh) that already owns this decision for the other three verbs -- no duplicated detection logic left anywhere",
+          "Removes dead/misleading fields (existingUpgradeTarget, the install(true) special-case) rather than leaving them as now-pointless indirection",
+          "Directly matches the user's two-path directive and the already-working start/stop/restart precedent"
+        ],
+        "cons": [
+          "Touches three codebases (bash, TypeScript, Kotlin) and five existing test files instead of one -- larger, more coordinated change",
+          "Removing the plugins' own detection means they now trust daemon-ctl.sh's exit code/behavior entirely for this distinction, rather than deciding it themselves"
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a3",
+        "name": "Fix only daemon-ctl.sh; leave both plugins untouched",
+        "oneLineSummary": "Patch cmd_update's fallback but leave controller.ts's install(true) and ScriptDaemonProvisioner.kt's existingUpgradeTarget() exactly as they are.",
+        "approach": "Apply only the daemon-ctl.sh change from a2 (stop the Darwin+unmanaged re-exec into the signed bridge) and stop there -- no changes to vscode-plugin or jetbrains-plugin.",
+        "pros": [
+          "Smallest, single-file change plus its one directly-affected test"
+        ],
+        "cons": [
+          "Does not fix the reported bug for either IDE's own Update click: both plugins pre-empt daemon-ctl.sh entirely for the unmanaged case and call the bundled installer directly themselves, so they never reach the now-fixed daemon-ctl.sh code path at all",
+          "Leaves the user's actual repro (VS Code/JetBrains Update button) broken while only fixing a terminal-only invocation path nobody asked about"
+        ],
+        "costEstimate": "XS",
+        "reasonRejected": "Neither plugin ever reaches daemon-ctl.sh for the unmanaged case today -- they pre-empt it and call the bundled installer directly -- so this does not fix the reported bug via either IDE's Update action."
+      },
+      {
+        "id": "a4",
+        "name": "Opt-in environment flag to skip the signed bridge",
+        "oneLineSummary": "Keep today's forced signed-bridge-on-unmanaged-update behavior as the default; add an env var a user must set explicitly to get the plain git-update path instead.",
+        "approach": "Introduce e.g. INSRC_SKIP_SIGNED_BRIDGE=1, checked in cmd_update's Darwin+unmanaged branch, to opt into the plain fallback instead of the signed bridge. Default (unset) behavior is unchanged -- still dies on the missing key.",
+        "pros": [
+          "Zero behavior change for anyone who does not opt in; lowest risk to whatever intent the signed-bridge hardening still carries"
+        ],
+        "cons": [
+          "Every normal user hits the exact same failure by default and must discover and set an undocumented env var to get a working update -- does not satisfy the user's explicit ask that the git-clone path 'just work' without extra ceremony",
+          "Still requires the same plugin-side changes as a2 to actually reach daemon-ctl.sh with the flag set, so it does not even save implementation work, only adds an opt-in gate nobody asked for"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Default behavior is unchanged, so every normal user still hits the failure; still requires the same plugin-side changes as a2 to even reach the opt-in flag."
+      }
+    ],
+    "chosenAlternative": "a2",
+    "openQuestions": [],
+    "sequenceDefinition": {
+      "narrative": "How an update request now routes for a managed vs. an unmanaged install, after daemon-ctl.sh becomes the single decision point and both plugins delegate to it unconditionally.",
+      "participants": [
+        {
+          "id": "caller",
+          "label": "Caller (CLI / VS Code / JetBrains)",
+          "description": "A terminal invocation of daemon-ctl.sh, or either IDE plugin's lifecycle controller, all now spawning the identical command for update."
+        },
+        {
+          "id": "daemonctl",
+          "label": "scripts/daemon-ctl.sh cmd_update",
+          "description": "The single shared decision point for managed vs. unmanaged, for all three clients."
+        },
+        {
+          "id": "supervised",
+          "label": "supervised_lifecycle()",
+          "description": "Checks for ~/.insrc/managed-lifecycle/{installation.json,journal.json}; returns 0 if managed, 10 if unmanaged."
+        },
+        {
+          "id": "signedbridge",
+          "label": "Signed migration/update machinery",
+          "description": "The existing transactional, signature-verified update path for a managed install; untouched by this Story."
+        },
+        {
+          "id": "plainupdate",
+          "label": "Plain git-fetch + npm install + npm build",
+          "description": "The existing unmanaged fallback already used by start/stop/restart and by update on non-Darwin; now also used by update on Darwin for an unmanaged install, with no signing requirement."
+        }
+      ],
+      "messages": [
+        {
+          "from": "caller",
+          "to": "daemonctl",
+          "label": "update",
+          "kind": "call",
+          "description": "Every client (terminal, VS Code's run('update'), JetBrains's ScriptDaemonProvisioner.run(UPDATE)) now spawns this one command unconditionally."
+        },
+        {
+          "from": "daemonctl",
+          "to": "supervised",
+          "label": "supervised_lifecycle('update')",
+          "kind": "call"
+        },
+        {
+          "from": "supervised",
+          "to": "daemonctl",
+          "label": "rc (0=managed, 10=unmanaged)",
+          "kind": "return"
+        },
+        {
+          "from": "daemonctl",
+          "to": "signedbridge",
+          "label": "[rc=0] delegate to managed update",
+          "kind": "call",
+          "note": "Managed branch -- unchanged by this Story.",
+          "description": "Exactly today's signed, transactional migration-and-update machinery."
+        },
+        {
+          "from": "daemonctl",
+          "to": "plainupdate",
+          "label": "[rc=10] sync_repo + npm_install_if_needed + npm_build",
+          "kind": "call",
+          "note": "Unmanaged branch -- the fix: no longer re-execs the signed installer bridge.",
+          "description": "The same sequence start/stop/restart already use unmanaged on Darwin, and update already uses on non-Darwin."
+        },
+        {
+          "from": "plainupdate",
+          "to": "caller",
+          "label": "exit code",
+          "kind": "return"
+        }
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/standalone/daemon-update-always-fails-unmanaged-macos-E20261118c5a4572e/S001/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "scripts/daemon-ctl.sh:396-416",
+      "quotedText": "cmd_update's Darwin re-exec into insrc-daemon-install.sh for an unmanaged install, and its own plain fallback for the non-Darwin case"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "scripts/daemon-ctl.sh:368-394",
+      "quotedText": "cmd_start/cmd_stop/cmd_restart's existing unmanaged fallback precedent"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "scripts/daemon-ctl.sh:330-345",
+      "quotedText": "supervised_lifecycle() returns 10 on Darwin with no managed-lifecycle state"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "scripts/insrc-daemon-install.sh:208-238",
+      "quotedText": "the signed macOS upgrade bridge requiring INSRC_RELEASE_BOOTSTRAP_B64"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "vscode-plugin/src/daemon/controller.ts:97-120",
+      "quotedText": "run('update')'s install(true) pre-emption for an unmanaged-but-present install"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleService.kt:231-233",
+      "quotedText": "existingUpgradeTarget()'s condition, equivalent to controller.ts's"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/lifecycle/ScriptDaemonProvisioner.kt:57-73",
+      "quotedText": "run(kind)'s legacy branch for UPDATE"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "src/daemon/__tests__/macos-upgrade-routing.test.ts",
+      "quotedText": "the cross-client 'Installer and updated CLI, VS Code and JetBrains route matrix' integration test"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "ISSUE-c5a4572e3949359a",
+      "quotedText": "the approved, corrected cross-plugin root cause and fix intent"
+    }
+  ]
+}

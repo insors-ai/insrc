@@ -59,7 +59,7 @@ class DaemonLifecycleCommandRunnerTest {
     }
 
     @Test
-    fun `legacy macOS update selects the bundled installer for the configured checkout`() {
+    fun `update always invokes the resolved daemon-ctl_sh directly, both before and after migrating to a managed release`() {
         val matrixHome = System.getenv("INSRC_ROUTE_MATRIX_HOME")
         if (matrixHome != null) {
             val home = Path.of(matrixHome)
@@ -82,15 +82,15 @@ class DaemonLifecycleCommandRunnerTest {
             val oldCtl = legacy.resolve("scripts/daemon-ctl.sh")
             Files.createDirectories(oldCtl.parent)
             Files.writeString(oldCtl, "old controller")
-            val installer = "fixture installer".toByteArray()
-            val locator = DefaultDaemonScriptLocator(homeDir = home, bundledInstaller = { installer.inputStream() },
+            val locator = DefaultDaemonScriptLocator(homeDir = home, bundledInstaller = { null },
                 macOS = true, daemonRootOverride = legacy.toString())
             val runner = RecordingRunner(0)
             val controller = DaemonLifecycleCommandRunner(runner, locator, noNode, emptyMap())
+            // Before migration (no managed-lifecycle/installation.json yet): daemon-ctl.sh
+            // itself routes managed vs. unmanaged safely, so UPDATE never pre-empts into the
+            // bundled installer — it spawns the legacy checkout's OWN daemon-ctl.sh directly.
             assertTrue(controller.run(LifecycleCommand.UPDATE) is DaemonActionResult.Ok)
-            val bridge = runner.lastSpec!!.command
-            assertEquals("fixture installer", Files.readString(Path.of(bridge[1])))
-            assertEquals(listOf("-y", "--target", legacy.toString()), bridge.drop(2))
+            assertEquals(listOf("bash", oldCtl.toString(), "update"), runner.lastSpec?.command)
 
             val state = home.resolve(".insrc")
             val selector = state.resolve("managed-lifecycle/installation.json")

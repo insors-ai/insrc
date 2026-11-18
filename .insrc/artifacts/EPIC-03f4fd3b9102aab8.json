@@ -20,7 +20,12 @@
           "relation": "tracked-by"
         },
         "createdAtRevision": 1,
-        "posted": []
+        "posted": [
+          {
+            "kind": "design",
+            "at": "2026-11-18T07:55:52.690Z"
+          }
+        ]
       }
     },
     "lifecycle": {

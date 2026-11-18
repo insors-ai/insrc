@@ -6,6 +6,7 @@
 
 **Flavor:** new-capability
 **Seeded from:** `SPEC-e8632c1ae22c3bf8`
+**Tracker:** [insors-ai/insrc#196](https://github.com/insors-ai/insrc/issues/196)
 
 This Epic gives every review type -- design review and code review alike -- one shared process for running a review across multiple rounds: a reviewer re-grounds independently each round, a separate reconciliation pass tracks how a correction round relates to the round before it, each round's findings are rendered and presented to the submitter, and a round can recover from a crash without losing already-completed work. It replaces per-review-type checkpoint logic that previously had to be built and recovered separately for each review kind.
 
@@ -170,6 +171,11 @@ So that a crash costs at most one unit of rework, and a completed review's resul
 - `lc4` (invariant) A review's checkpoint is a generic 'review checkpoint' JSON side-record, independent of ReviewContext's own fields, stored inside the .insrc/tmp/<reviewId>/ folder. [[c1]]
 
 ## 7. References
+
+- **[[c1]]** `prior-artifact` `SPEC-e8632c1ae22c3bf8` — "docs/standalone/review-process-rounds-reconciliation-recovery-E20261117e8632c1a/SPEC.md"
+- **[[c2]]** `analyze-bundle` `capability-discovery: review-history checkpoint files + docgen docType registry` — "admission-checkpoint.ts / preparation-checkpoint.ts / checkpoint.ts (per-review-type, retired); src/mcp/docgen/handler.ts docType registry has no 'review-report'"
+
+## Citations
 
 - **[[c1]]** `prior-artifact` `SPEC-e8632c1ae22c3bf8` — "docs/standalone/review-process-rounds-reconciliation-recovery-E20261117e8632c1a/SPEC.md"
 - **[[c2]]** `analyze-bundle` `capability-discovery: review-history checkpoint files + docgen docType registry` — "admission-checkpoint.ts / preparation-checkpoint.ts / checkpoint.ts (per-review-type, retired); src/mcp/docgen/handler.ts docType registry has no 'review-report'"

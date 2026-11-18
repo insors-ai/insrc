@@ -77,12 +77,12 @@ export function createDaemonLifecycleController(deps: ControllerDeps): DaemonLif
   const { runner, paths, client } = deps;
 
   const reachability = async (): Promise<DaemonReachability> => client.reachability();
-  const install = async (existing = false): Promise<LifecycleResult> => {
+  const install = async (): Promise<LifecycleResult> => {
     if (!existsSync(paths.bundledInstaller)) {
       return { ok: false, state: 'errored', message: 'the bundled insrc installer is missing — reinstall the extension' };
     }
     const { code } = await runner.run(['bash', paths.bundledInstaller, '-y',
-      ...(existing || paths.managedStateRoot !== undefined ? ['--target', paths.daemonRoot] : [])]);
+      ...(paths.managedStateRoot !== undefined ? ['--target', paths.daemonRoot] : [])]);
     return code === 0 ? { ok: true, state: await reachability() }
       : { ok: false, state: 'errored', message: installerReason(code) };
   };
@@ -97,15 +97,15 @@ export function createDaemonLifecycleController(deps: ControllerDeps): DaemonLif
       }
     },
 
-    install: () => install(),
+    install,
 
     async run(action: LifecycleAction, options?: LifecycleRunOptions | undefined): Promise<LifecycleResult> {
       let managed: string | undefined;
       try { managed = await selectedDaemonRoot(paths); }
       catch (error) { return { ok: false, state: 'errored', message: String(error) }; }
       const script = managed === undefined ? paths.ctlScript : join(managed, 'scripts/daemon-ctl.sh');
-      if (action === 'update' && paths.managedStateRoot !== undefined && managed === undefined
-        && (existsSync(paths.daemonEntry) || existsSync(paths.ctlScript))) return install(true);
+      // Every action — including an unmanaged install's update — always delegates to
+      // daemon-ctl.sh: it is the single place that routes managed vs. unmanaged safely.
       if (!existsSync(script)) {
         return { ok: false, state: 'errored', message: 'insrc daemon is not installed — run Install first' };
       }

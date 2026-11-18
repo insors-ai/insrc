@@ -1,0 +1,110 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1794977316937-vaqp4c",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-18T04:49:40.427Z",
+    "epicCreatedAt": "2026-11-18T04:49:40.427Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 63486,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "e42112a7ce3173af",
+    "epicSlug": "vs-code-daemon-update-always-fails",
+    "standalone": true,
+    "magnitude": "small",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b4ca9f4e93c2dd5e5c687dc2e99673073638d6a5d39a808baf224ea90b46d32d",
+        "at": "2026-11-18T04:49:40.444Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-18T04:53:53.870Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "parentRef": {
+      "epicHash": "e42112a7ce3173af",
+      "slug": "EPIC-e42112a7ce3173af"
+    }
+  },
+  "body": {
+    "title": "VS Code daemon update always fails on an unmanaged git checkout: signed installer bridge fires instead of daemon-ctl.sh update",
+    "reproduction": "On a Mac where ~/.insrc/daemon is a plain git checkout with no ~/.insrc/managed-lifecycle/installation.json (the shape every pre-managed-lifecycle install has, and the shape of this user's own daemon), trigger the VS Code extension's daemon update action (startup commit-check self-update, or the manual Update command). The action always fails with install log lines 'preparing the macOS upgrade bridge beside the installed release' then 'FATAL: production source release signing key is not provisioned 4' (reproduced 3 times today: /tmp/insrc/daemon-install-20261118-095256-588.log, /tmp/insrc/daemon-install-20261118-101207-22731.log, /tmp/insrc/daemon-install-20261118-101214-22884.log, all identical). Expected: the daemon updates via the normal git-pull-and-rebuild path, as it does for the JetBrains plugin and as it did before the signed-bridge gate existed.",
+    "rootCause": "createDaemonLifecycleController's run('update') (vscode-plugin/src/daemon/controller.ts:97-99) special-cases an unmanaged install: when paths.managedStateRoot is set (always true on darwin; vscode-plugin/src/daemon/paths.ts:46) and selectedDaemonRoot() resolves to undefined (no ~/.insrc/managed-lifecycle/installation.json; vscode-plugin/src/daemon/paths.ts:24-26) and the daemon entry or ctl script already exists on disk, it calls install(true) instead of running daemon-ctl.sh update directly. install() (vscode-plugin/src/daemon/controller.ts:78-85) runs the extension's bundled installer asset: bash assets/insrc-daemon-install.sh -y --target <daemonRoot>. Because the target is an existing non-managed .git checkout, scripts/insrc-daemon-install.sh takes its 'stage a verified macOS daemon upgrade' branch (scripts/insrc-daemon-install.sh:208-226), which requires the env var INSRC_RELEASE_BOOTSTRAP_B64 (an Ed25519 release-signing key) to be non-empty before it will proceed (scripts/insrc-daemon-install.sh:226). That key is meant to be baked into the installer only by scripts/bundle-release-bootstrap.mjs at official-release packaging time (scripts/bundle-release-bootstrap.mjs:1-27, replacing the INSRC_RELEASE_BOOTSTRAP_B64='' placeholder at scripts/insrc-daemon-install.sh:64). But vscode-plugin's own packaging (vscode-plugin/package.json's sync-assets script) does a raw `cp ../scripts/insrc-daemon-install.sh assets/insrc-daemon-install.sh` and never invokes bundle-release-bootstrap.mjs, so the bundled asset always ships with the empty placeholder -- confirmed directly in the installed extension's own assets/insrc-daemon-install.sh:64. So this update path can never succeed for any unmanaged-checkout install. By contrast, the JetBrains plugin's equivalent lifecycle code already routes UPDATE through daemon-ctl.sh update unconditionally and only uses its own bundled insrc-daemon-install.sh for a fresh INSTALL (jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleContracts.kt:45: 'INSTALL -> insrc-daemon-install.sh, UPDATE -> daemon-ctl.sh update'; jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/lifecycle/ScriptDaemonProvisioner.kt:40 repeats the same split) -- it has zero references to INSRC_RELEASE_BOOTSTRAP_B64 or bundle-release-bootstrap anywhere, so it never hits the signed bridge for an update.",
+    "fixIntent": "Change vscode-plugin/src/daemon/controller.ts's run('update') so that, for an unmanaged checkout where the daemon entry/ctl script already exists, it drives daemon-ctl.sh update directly (the same path the 'managed' branch and the JetBrains plugin already use) instead of falling back to install(true)'s bundled signed-installer bridge. The bundled installer stays reserved for a genuine fresh install (no entry/ctl script present) and for a managed install's own update flow, matching jetbrains-plugin's documented INSTALL-vs-UPDATE split. No change to scripts/insrc-daemon-install.sh's signed-bridge gate itself, and no provisioning of a real signing key into the extension's bundled asset."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "vscode-plugin/src/daemon/controller.ts:97-99",
+      "quotedText": "if (action === 'update' && paths.managedStateRoot !== undefined && managed === undefined && (existsSync(paths.daemonEntry) || existsSync(paths.ctlScript))) return install(true);"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "vscode-plugin/src/daemon/controller.ts:78-85",
+      "quotedText": "const install = async (existing = false) => { ... bash paths.bundledInstaller -y ...--target paths.daemonRoot ... }"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "vscode-plugin/src/daemon/paths.ts:46",
+      "quotedText": "...(process.platform === 'darwin' ? { managedStateRoot: join(homedir(), '.insrc') } : {})"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "scripts/insrc-daemon-install.sh:226",
+      "quotedText": "[ -n \"$INSRC_RELEASE_BOOTSTRAP_B64\" ] || die \"production source release signing key is not provisioned\" 4"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "scripts/bundle-release-bootstrap.mjs:1-27",
+      "quotedText": "bakes a real Ed25519 key into INSRC_RELEASE_BOOTSTRAP_B64 by replacing the placeholder in the packaged installer at release-build time"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleContracts.kt:45",
+      "quotedText": "INSTALL -> insrc-daemon-install.sh, UPDATE -> daemon-ctl.sh update"
+    },
+    {
+      "id": "c7",
+      "kind": "analyze-bundle",
+      "ref": "vscode-plugin/src/daemon/controller.ts:76-120",
+      "quotedText": "createDaemonLifecycleController has exactly 2 callers: __tests__/controller.test.ts and extension.ts:activate (the sole production caller) -- confirms the fix is confined to controller.ts"
+    }
+  ]
+}

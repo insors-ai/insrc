@@ -1,0 +1,77 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-21660ded-8d24-4fb1-838e-6a3164483201",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-18T05:57:28.653Z",
+    "epicCreatedAt": "2026-11-18T05:16:00.099Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c5a4572e3949359a",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Rewrite vscode-plugin's controller.test.ts to assert the corrected update routing",
+      "parent": {
+        "entityId": "STORY-c5a4572e3949359a-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c5a4572e3949359a-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c5a4572e3949359a-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "9ae45ee7449ac9c9ad9d0a6211ab8f60b8dcdfb33218505107ccc677cc5e21c5",
+        "at": "2026-11-18T05:57:28.654Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-18T05:57:28.656Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Rewrite vscode-plugin's controller.test.ts to assert the corrected update routing",
+    "summary": "Replace 'The VS Code update action selects the installer on legacy macOS and the selected controller after migration' with an assertion that run('update') always spawns daemon-ctl.sh update for both the unmanaged and the managed case, matching t2's new behavior.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "The rewritten test passes against t2's implementation and fails if the install(true) pre-emption is reintroduced."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "vscode-plugin/src/daemon/__tests__/controller.test.ts: 'The VS Code update action selects the installer on legacy macOS and the selected controller after migration' (replaced with an assertion that update always spawns daemon-ctl.sh update, unmanaged or managed)"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

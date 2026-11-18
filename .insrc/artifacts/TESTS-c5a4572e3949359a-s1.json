@@ -1,0 +1,293 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 6,
+        "contentHash": "b7aaccf8f4a9f9c6138683751d0c9c135b8b263295e6ca7e6d9d22cfbba719bd",
+        "at": "2026-11-18T06:30:20.310Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "c5a4572e3949359a",
+    "storyId": "s1",
+    "createdAt": "2026-11-18T06:25:16.610Z",
+    "updatedAt": "2026-11-18T06:30:20.296Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-18T05:16:00.099Z",
+    "epicSlug": "daemon-update-always-fails-unmanaged-macos",
+    "revision": 6
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "d3450ccd3",
+        "ranAt": "2026-11-18T06:25:16.610Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/__tests__/macos-upgrade-routing.test.ts: 'Installer and updated CLI, VS Code and JetBrains route matrix' (rewritten)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/macos-upgrade-routing.test.ts",
+                "title": "Installer and updated CLI, VS Code and JetBrains route matrix",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/macos-upgrade-routing.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 6774,
+            "titles": [
+              {
+                "title": "Installer and updated CLI, VS Code and JetBrains route matrix",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "d3450ccd3",
+        "ranAt": "2026-11-18T06:26:26.313Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "vscode-plugin/src/daemon/__tests__/controller.test.ts: 'The VS Code update action selects the installer on legacy macOS and the selected controller after migration' (replaced with an assertion that update always spawns daemon-ctl.sh update, unmanaged or managed)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/daemon/__tests__/controller.test.ts",
+                "title": "run('update') always spawns daemon-ctl.sh update — for an unmanaged-but-present install and for a managed one after migration",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/daemon/__tests__/controller.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 448,
+            "titles": [
+              {
+                "title": "run(action) spawns bash <ctlScript> <action> for each lifecycle action and derives state from reachability on exit 0",
+                "result": "pass"
+              },
+              {
+                "title": "run('update') always spawns daemon-ctl.sh update — for an unmanaged-but-present install and for a managed one after migration",
+                "result": "pass"
+              },
+              {
+                "title": "run(action) maps EACH ctl exit code 1/2/3/4 to its documented reason and never throws",
+                "result": "pass"
+              },
+              {
+                "title": "run(action) with a missing ctl script returns errored/not-installed WITHOUT spawning",
+                "result": "pass"
+              },
+              {
+                "title": "install() spawns bash <bundledInstaller> -y; exit 0 → reachability; codes 1/2 → mapped reason",
+                "result": "pass"
+              },
+              {
+                "title": "install() with a missing bundled installer returns errored/reinstall WITHOUT spawning",
+                "result": "pass"
+              },
+              {
+                "title": "isInstalled() is true iff the compiled daemon entry exists, false for a clone-without-build, never throws",
+                "result": "pass"
+              },
+              {
+                "title": "source-scan: vscode-plugin/src/daemon/ imports only node builtins + the shared ipc-client + the s1 surfaces (k5)",
+                "result": "pass"
+              },
+              {
+                "title": "a plain start runs daemon-ctl.sh start with --skip-sync, --skip-install and --skip-build, and a run without options builds the same command line as before",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "d3450ccd3",
+        "ranAt": "2026-11-18T06:27:29.736Z",
+        "testsPassed": false,
+        "tests": [
+          {
+            "name": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleCommandRunnerTest.kt (rewritten: the legacy branch it currently exercises via INSRC_ROUTE_MATRIX_* env vars is removed)",
+            "level": "unit",
+            "source": "none",
+            "cases": [],
+            "files": []
+          }
+        ],
+        "files": [],
+        "note": "named tests matched no test file: jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleCommandRunnerTest.kt (rewritten: the legacy branch it currently exercises via INSRC_ROUTE_MATRIX_* env vars is removed) (pass a `tests` mapping at the validate turn: for each named test, the file and title of the test cases that carry it)"
+      },
+      {
+        "taskId": "t5",
+        "commit": "d3450ccd3",
+        "ranAt": "2026-11-18T06:28:26.984Z",
+        "testsPassed": false,
+        "tests": [
+          {
+            "name": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonProvisionerTest.kt (rewritten: legacy-target fixtures removed/replaced)",
+            "level": "unit",
+            "source": "none",
+            "cases": [],
+            "files": []
+          },
+          {
+            "name": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DefaultDaemonScriptLocatorTest.kt (rewritten: existingUpgradeTarget() assertions removed if the method is deleted, or updated to always-null if retained for interface compatibility)",
+            "level": "unit",
+            "source": "none",
+            "cases": [],
+            "files": []
+          },
+          {
+            "name": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleCommandRunnerTest.kt (rewritten: the legacy branch it currently exercises via INSRC_ROUTE_MATRIX_* env vars is removed)",
+            "level": "unit",
+            "source": "none",
+            "cases": [],
+            "files": []
+          }
+        ],
+        "files": [],
+        "note": "named tests matched no test file: jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonProvisionerTest.kt (rewritten: legacy-target fixtures removed/replaced); jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DefaultDaemonScriptLocatorTest.kt (rewritten: existingUpgradeTarget() assertions removed if the method is deleted, or updated to always-null if retained for interface compatibility); jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleCommandRunnerTest.kt (rewritten: the legacy branch it currently exercises via INSRC_ROUTE_MATRIX_* env vars is removed) (pass a `tests` mapping at the validate turn: for each named test, the file and title of the test cases that carry it)"
+      },
+      {
+        "taskId": "t4",
+        "commit": "d3450ccd3",
+        "ranAt": "2026-11-18T06:29:21.864Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "vscode-plugin/src/daemon/__tests__/controller.test.ts: 'The VS Code update action selects the installer on legacy macOS and the selected controller after migration' (replaced with an assertion that update always spawns daemon-ctl.sh update, unmanaged or managed)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/daemon/__tests__/controller.test.ts",
+                "title": "run('update') always spawns daemon-ctl.sh update — for an unmanaged-but-present install and for a managed one after migration",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/daemon/__tests__/controller.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 399,
+            "titles": [
+              {
+                "title": "run(action) spawns bash <ctlScript> <action> for each lifecycle action and derives state from reachability on exit 0",
+                "result": "pass"
+              },
+              {
+                "title": "run('update') always spawns daemon-ctl.sh update — for an unmanaged-but-present install and for a managed one after migration",
+                "result": "pass"
+              },
+              {
+                "title": "run(action) maps EACH ctl exit code 1/2/3/4 to its documented reason and never throws",
+                "result": "pass"
+              },
+              {
+                "title": "run(action) with a missing ctl script returns errored/not-installed WITHOUT spawning",
+                "result": "pass"
+              },
+              {
+                "title": "install() spawns bash <bundledInstaller> -y; exit 0 → reachability; codes 1/2 → mapped reason",
+                "result": "pass"
+              },
+              {
+                "title": "install() with a missing bundled installer returns errored/reinstall WITHOUT spawning",
+                "result": "pass"
+              },
+              {
+                "title": "isInstalled() is true iff the compiled daemon entry exists, false for a clone-without-build, never throws",
+                "result": "pass"
+              },
+              {
+                "title": "source-scan: vscode-plugin/src/daemon/ imports only node builtins + the shared ipc-client + the s1 surfaces (k5)",
+                "result": "pass"
+              },
+              {
+                "title": "a plain start runs daemon-ctl.sh start with --skip-sync, --skip-install and --skip-build, and a run without options builds the same command line as before",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "d3450ccd3",
+        "ranAt": "2026-11-18T06:30:20.296Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/__tests__/macos-upgrade-routing.test.ts: 'Installer and updated CLI, VS Code and JetBrains route matrix' (rewritten)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/macos-upgrade-routing.test.ts",
+                "title": "Installer and updated CLI, VS Code and JetBrains route matrix",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/macos-upgrade-routing.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 8168,
+            "titles": [
+              {
+                "title": "Installer and updated CLI, VS Code and JetBrains route matrix",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

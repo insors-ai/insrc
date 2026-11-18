@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-036bdc10-271b-4534-b3ce-4e44042eed19",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-18T05:57:28.659Z",
+    "epicCreatedAt": "2026-11-18T05:16:00.099Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c5a4572e3949359a",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Rewrite jetbrains-plugin's three affected test files to assert the corrected update routing",
+      "parent": {
+        "entityId": "STORY-c5a4572e3949359a-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c5a4572e3949359a-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c5a4572e3949359a-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "153b55b7641a7e4c06f903885f29178fa3ced3edc69b9152cee4f905d4e9c614",
+        "at": "2026-11-18T05:57:28.659Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-18T05:57:28.661Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Rewrite jetbrains-plugin's three affected test files to assert the corrected update routing",
+    "summary": "Rewrite DaemonProvisionerTest.kt, DefaultDaemonScriptLocatorTest.kt and DaemonLifecycleCommandRunnerTest.kt so none of them exercise the removed legacy/existingUpgradeTarget() branch; each asserts UPDATE always spawns daemon-ctl.sh update for an unmanaged install, matching t3's new behavior, with INSTALL coverage unchanged.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "All three rewritten test files pass against t3's implementation and fail if the legacy branch or existingUpgradeTarget() is reintroduced."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonProvisionerTest.kt (rewritten: legacy-target fixtures removed/replaced)"
+      },
+      {
+        "level": "unit",
+        "name": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DefaultDaemonScriptLocatorTest.kt (rewritten: existingUpgradeTarget() assertions removed if the method is deleted, or updated to always-null if retained for interface compatibility)"
+      },
+      {
+        "level": "unit",
+        "name": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleCommandRunnerTest.kt (rewritten: the legacy branch it currently exercises via INSRC_ROUTE_MATRIX_* env vars is removed)"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

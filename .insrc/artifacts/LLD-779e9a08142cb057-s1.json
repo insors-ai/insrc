@@ -52,6 +52,13 @@
         "choice": "Adopt the five criteria from this LLD's testStrategy.acceptanceMapping as the Story's formal acceptanceCriteria: ac1 SecurityFinding structurally extends base Finding and passes through reconciliation/docgen unchanged; ac2 SecurityLocator structurally extends Locator/Pointer with trust-boundary/taint-path fields; ac3 stale policy overrides are rejected and risk-family verdicts (incl. not-applicable/uncertain) are recorded as informational zero-severity SecurityFindings; ac4 VerificationReceipt is written for every sandbox/mutation checkpoint run as a non-approvable RECEIPTS.md record; ac5 SecurityFinding/SecurityLocator have per-(type,model) JSON Schema transformers.",
         "rationale": "The Story had no formal acceptanceCriteria on entry to design.story; these five were derived from the approved SPEC's settled decisions during s6 (test.strategy) and are now adopted as the Story's acceptance criteria so plan/build treat them as first-class rather than LLD-internal inventions.",
         "resolvedAt": "2026-11-18T08:56:23.361Z"
+      },
+      "qb072fdba": {
+        "question": "Which exact revision of the sibling Stories' types should SecurityFinding/SecurityLocator extend: HLD-03f4fd3b9102aab8's sc2 Finding{category,severity} (Story s2, not yet built) and HLD-50cde239426d6e2a's sc1 Locator/Pointer (Story s1, not yet built)? This LLD assumes those exact shapes per citations c4/c5; build order must sequence this Story's build after both sibling Stories land, and this LLD must be revisited if either sibling Story's actual shape diverges from what its approved HLD currently describes.",
+        "status": "resolved",
+        "choice": "Pin approved HLD shapes",
+        "rationale": "Target Finding{category,severity} from HLD-03f4fd3b9102aab8's sc2 and Locator/Pointer from HLD-50cde239426d6e2a's sc1, exactly as cited in this LLD's c4/c5. This Story's build must be sequenced after both sibling Stories (review-process Story s2, ReviewContext Story s1) land; if either implemented shape diverges from its approved HLD, this LLD is revisited before SecurityFinding/SecurityLocator are built against it.",
+        "resolvedAt": "2026-11-18T09:13:08.346Z"
       }
     }
   },

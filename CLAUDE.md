@@ -174,9 +174,11 @@ If a gate cannot be satisfied, stop and ask the user — do not improvise around
    as `presented` before you ask for approval. If it errors, or any name comes
    back `notPending`, correct the name and call again; if it cannot succeed,
    STOP and tell the user — do not approve anything that was not presented.
-3. **Automated reviews are unavailable.** Design and code review endpoints raise an exception stating they are being rewritten. Validate changes and report self-check evidence; keep human artifact approval.
+3. **Mandatory reviews only, max three rounds each** (DEF/HLD/LLD review before
+   approval; code review before BUILD completion). After the third round, stop
+   and ask the user.
 4. **Never patch off-ledger.** Every feature and every defect goes through
-   triage → tracked artifact → approval → build → validate → approve. No direct
+   triage → tracked artifact → approval → build → review → approve. No direct
    commits that implement tracked work without the chain's records.
 5. **Workflows run only via `insrc_workflow_step`**, turn-by-turn, preserving
    the opaque `state` token. Never `insrc_workflow_run`, never raw IPC.
@@ -234,8 +236,8 @@ a call from memory when the contract is one lookup away.
   artifact definitions below; docgen describes existing code, not a future model.
 - **Build / add / implement a feature** → do NOT hand-pick a stage and do NOT
   just start editing. Route it: `brainstorm` (if the idea is rough) →
-  `insrc_triage` (sizes + routes) → the routed workflow → present → approve →
-  build → validate → human approval → complete. Every feature, big or small, is tracked. See
+  `insrc_triage` (sizes + routes) → the routed workflow → review → approve →
+  build → code-review → complete. Every feature, big or small, is tracked. See
   `insrc_guide({ workflow: 'triage' })` for the routing table.
 - **Fix a bug / defect** → same front door: `insrc_triage` classifies it
   `bugfix` (magnitude `small` or `sized`) and routes to the `issue` stage — a
@@ -263,8 +265,8 @@ a multi-turn tool). Call `insrc_guide({ workflow })` for a workflow's procedure.
 | `insrc_workflow_step` | Drive one tracked workflow turn (define / design.epic / design.story / plan / brainstorm / tracker). **This is the ONLY supported way to run a workflow — always drive it turn-by-turn in-session.** |
 | `insrc_workflow_run` | Daemon-side async run (START → POLL). **NOT recommended — do not use.** The async poll/handoff can stall in a resolution loop and error out on completion; drive workflows with `insrc_workflow_step` instead. |
 | `insrc_build_step` | Drive the build stage (`implement` → `validate`) that turns an approved LLD/plan into code. |
-| `insrc_review_step` | Retained endpoint; fails immediately: design review is being rewritten. |
-| `insrc_code_review_step` | Retained endpoint; fails immediately: code review is being rewritten. |
+| `insrc_review_step` | Review of a design artifact (DEF/HLD/LLD) by the party that did not author it, before approval. The tool routes it. |
+| `insrc_code_review_step` | Post-build code review by the party that did not write the code (adherence / conventions / coverage / quality). The tool routes it. |
 | `insrc_workflow_approve` | Approve a pending artifact by `artifactPath` (or `epicHash` to batch) — only on the user's explicit yes. |
 | `insrc_present` | Declare the documents (artifact ids or repo-relative paths) you are asking the user to review, so the chat opens them — call it before asking for approval. |
 | `insrc_schema` | Return any insrc_* tool's registered input shape + accepted phases. |
@@ -313,7 +315,7 @@ MED/HIGH and blocks; genuinely unavailable evidence is `could-not-verify`.
 Optional improvements to an otherwise adequate design are narrative advice,
 not a `warn` verdict or a false failure/unverified finding. Builders maintain
 relevant artifacts when implementation changes documented relationships or UX.
-Record which checks were actually performed and any unavailable evidence.
+These checks stay within the existing three-round review limit.
 
 ### Approval discipline (applies to every workflow artifact)
 
@@ -331,11 +333,23 @@ in-chat yes **for that artifact** (the message names its id/path, or answers
 only the artifacts you presented in that same turn. Never batch via
 `{ epicHash }` without listing each artifact and getting a yes for the batch.
 Never call `insrc_workflow_approve` through raw daemon IPC or a socket — only
-through the MCP tool. Automated reviews are unavailable; present the artifact and obtain explicit human approval.
+through the MCP tool. Review a DEF, HLD or LLD before you approve it — see
+`insrc_guide({ workflow: 'review' })`.
 
-### Review availability
+### Review discipline (applies to every review)
 
-Automated design and code review functionality has been removed while it is being rewritten. Retained endpoints fail immediately; do not start or poll them. Historical review records remain readable. Human approval, build validation, integrity, task accounting, upstream and team/signoff gates still apply.
+**Only two reviews are mandatory:** a DEF, HLD or LLD before its approval
+(`insrc_review_step`), and the code review that completes a Story's BUILD
+(`insrc_code_review_step`). Do not review anything else — an ISSUE, SPEC or
+PLAN, or any other stage — unless the user asks for it; present it and ask for
+approval instead.
+
+**At most three review rounds per cycle.** A round is one review call
+(`insrc_review_step` or `insrc_code_review_step`), whatever its verdict. After
+the third round on the same artifact or code, STOP: show the user the latest
+review's findings and what the earlier rounds changed, and ASK whether to run
+another cycle of up to three rounds, approve with an override reason, or change
+course. Do not start a fourth review until the user says so.
 
 The chat opens exactly the documents you declare with `insrc_present`; it does
 not work out what to open from tool output, so a document you do not declare is

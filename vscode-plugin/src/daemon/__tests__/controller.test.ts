@@ -64,7 +64,7 @@ test('run(action) spawns bash <ctlScript> <action> for each lifecycle action and
   }
 });
 
-test('The VS Code update action selects the installer on legacy macOS and the selected controller after migration', {
+test('run(\'update\') always spawns daemon-ctl.sh update — for an unmanaged-but-present install and for a managed one after migration', {
   skip: process.platform !== 'darwin',
 }, async t => {
   const paths = fixturePaths({ ctl: true, entry: true, installer: true });
@@ -73,8 +73,11 @@ test('The VS Code update action selects the installer on legacy macOS and the se
   paths.managedStateRoot = root;
   const runner = new FakeRunner(0);
   const ctl = createDaemonLifecycleController({ runner, paths, client: fakeClient('stopped') });
+  // Unmanaged-but-present (no managed-lifecycle/installation.json yet): daemon-ctl.sh
+  // itself now routes managed vs. unmanaged safely, so run('update') never pre-empts
+  // into the bundled signed installer — it always spawns the resolved ctl script.
   assert.deepEqual(await ctl.run('update'), { ok: true, state: 'stopped' });
-  assert.deepEqual(runner.calls[0], ['bash', paths.bundledInstaller, '-y', '--target', paths.daemonRoot]);
+  assert.deepEqual(runner.calls[0], ['bash', paths.ctlScript, 'update']);
   const candidate = join(root, 'selected');
   const ctlScript = join(candidate, 'scripts', 'daemon-ctl.sh');
   mkdirSync(dirname(ctlScript), { recursive: true });

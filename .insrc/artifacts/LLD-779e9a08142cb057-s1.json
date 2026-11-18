@@ -1,0 +1,638 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1794991305269-uesxrz",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-18T08:51:40.429Z",
+    "epicCreatedAt": "2026-11-18T08:51:40.429Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 592683,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "779e9a08142cb057",
+    "epicSlug": "add-securityfinding-capability-family-delegates-framing",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1794991305269-uesxrz",
+    "hldEffectiveHash": "779e9a08142cb057cca637abe8b4455a3ed7f93145399f263770e14a4884cb28",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "Add SecurityFinding and capability-family DELEGATES framing to the review process",
+    "standalone": true,
+    "sizeClass": "feature",
+    "triageRationale": "Real grounding (capability-discovery over 47 candidates in src/workflow/) found no SecurityFinding subtype and no capability-family delegation mechanism anywhere. The closest existing structures are retired/generic: review-history/review/types.ts's legacy Finding/Severity taxonomy, review-history/code-review/types.ts's legacy DimensionFinding shape, and artifact-core/types.ts's generic Feedback entity -- none specialized for security, and review-history/ is being retired from. This is narrower than the two sibling epics: it is ONE cohesive design decision (SecurityFinding inherits from the sibling review-process Epic's already-approved Finding type, per sc2 in HLD-03f4fd3b9102aab8) plus the DELEGATES framing for picking a security sub-type steering -- a single Story-sized design. The brainstorm SPEC itself explicitly parked the relevance-checking sub-problem as out of scope, further narrowing this to one cohesive slice.",
+    "seededFromSpec": "5a5f556b77d7aa31",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "e810cc3faee1cc0d5d4496cc6acb4bcf06d90eca49f75942e111764a52b80df3",
+        "at": "2026-11-18T08:51:41.267Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1,
+    "questionResolutions": {
+      "q0fb51f3b": {
+        "question": "This standalone Story's acceptanceCriteria was empty on entry to design.story — no formal ac-ids were handed down from an upstream stage. body.testStrategy.acceptanceMapping's ac1-ac5 were derived directly from the approved SPEC-5a5f556b77d7aa31's settled decisions rather than from a Story.acceptanceCriteria list, since none existed to map against. Recommend reconciling these five criteria back into the Story record so future stages (plan/build) see them as first-class acceptance criteria rather than LLD-internal inventions.",
+        "status": "resolved",
+        "choice": "Adopt the five criteria from this LLD's testStrategy.acceptanceMapping as the Story's formal acceptanceCriteria: ac1 SecurityFinding structurally extends base Finding and passes through reconciliation/docgen unchanged; ac2 SecurityLocator structurally extends Locator/Pointer with trust-boundary/taint-path fields; ac3 stale policy overrides are rejected and risk-family verdicts (incl. not-applicable/uncertain) are recorded as informational zero-severity SecurityFindings; ac4 VerificationReceipt is written for every sandbox/mutation checkpoint run as a non-approvable RECEIPTS.md record; ac5 SecurityFinding/SecurityLocator have per-(type,model) JSON Schema transformers.",
+        "rationale": "The Story had no formal acceptanceCriteria on entry to design.story; these five were derived from the approved SPEC's settled decisions during s6 (test.strategy) and are now adopted as the Story's acceptance criteria so plan/build treat them as first-class rather than LLD-internal inventions.",
+        "resolvedAt": "2026-11-18T08:56:23.361Z"
+      }
+    }
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Add SecurityFinding and capability-family DELEGATES framing to the review process"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "summary": {
+      "prose": "This LLD defines the data-model extension points that let a 'security' review type plug into the rebuilt review framework: SecurityFinding (a structural subtype of the framework's base review Finding), SecurityLocator (a structural subtype of Locator/Pointer with trust-boundary/taint-path fields), a dedicated EvidenceProvider registry routed through daemon IPC, and a VerificationReceipt record mirroring the existing Story TEST RECORD pattern. It is extension points only — no risk-family taxonomy, evidence-provider internals, security-graph schema, or policy DSL are designed here.",
+      "audience": "technical"
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": []
+    },
+    "dataModelChanges": [
+      {
+        "entity": "SecurityFinding",
+        "change": "new",
+        "details": "A structural subtype of the review framework's base review Finding (owned by the sibling review-process Epic 03f4fd3b9102aab8's sc2 contract, Story s2 — not yet built; see openQuestions). Carries kind:'security' as its type discriminant, plus checkId, violatedPolicyRef, evidence: SecurityEvidence[], fixability, confidence ('high'|'medium'|'low'), enforcementMode ('advisory'|'warning'|'blocking'), and the revision-anchored override fields overriddenBy?/overrideReason?/overriddenAt?. Modeled as a plain TS interface extending the base Finding structurally (interface SecurityFinding extends Finding), matching this codebase's own plain-interface convention (baseClassIdioms: [] confirmed in s1 grounding) rather than a class hierarchy. Further subclassed per security subtype (data/endpoint/vulnerability) or risk family with their own discriminant value as needed. A risk-family verdict (applicable/not-applicable/uncertain + reason) for every family, including not-applicable ones, is represented as an informational, zero-severity SecurityFinding for durable audit visibility — not a separate type.",
+        "callSites": [
+          "src/workflow/artifact-core/types.ts"
+        ]
+      },
+      {
+        "entity": "SecurityLocator",
+        "change": "new",
+        "details": "A structural subtype of the review framework's Locator/Pointer type (owned by the sibling ReviewContext Epic 50cde239426d6e2a's sc1 contract, Story s1 — not yet built; see openQuestions), adding trust-boundary id and taint-path step index as first-class fields, following the same open-Locator-kind extensibility pattern (a string-typed kind field, read structurally rather than via exhaustive switch). Used by SecurityFinding.evidence entries that cite a code location inside the security graph or an evidence provider's output.",
+        "callSites": []
+      },
+      {
+        "entity": "EvidenceProvider",
+        "change": "new",
+        "details": "A dedicated interface/registry for the five deterministic evidence-provider categories (secret scanning, SAST, dependency/SBOM, IaC/container, language-native checks), distinct from the general ~110-entry tool registry but still routed through daemon IPC so it stays within the existing tool boundary. Every provider implements a common input/output contract feeding SecurityFinding.evidence uniformly.",
+        "callSites": []
+      },
+      {
+        "entity": "VerificationReceipt",
+        "change": "new",
+        "details": "A durable per-security-review-round record (what ran, in what isolated environment, with what outcome) produced by the sandbox-verification/mutation-testing checkpoint for every run, pass or fail, independent of SecurityFinding (a corroborated SecurityFinding references a receipt by id). Mirrors the existing Story TEST RECORD pattern — one entry per unit of work, a RECORD never an approvable artifact (no approval stamps, approval refused), rendered as RECEIPTS.md beside the review artifact exactly as TESTS.md sits beside BUILD.md — reusing the same writeArtifact/writeAtomic/storeRound/withStoredModel machinery TestRecordCase/TestRecordReported already use, rather than inventing new storage primitives.",
+        "callSites": [
+          "src/workflow/runners/build/test-record.ts",
+          "src/workflow/storage.ts",
+          "src/workflow/runners/build/round-writer.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A policy-evaluation checkpoint stamps a SecurityFinding's enforcementMode as 'blocking' for a finding whose severity the controller/reviewer judged low.",
+          "detection": "The existing severity-driven gate reads only severity to decide block-vs-pass; enforcementMode is orthogonal and carried but not consulted by that gate, so a mismatch is only detectable by a human or a future audit reading both fields on the same record.",
+          "response": "No gate-level error is raised — accepted consequence of enforcementMode staying orthogonal to severity and riding the existing severity-driven gate rather than a new parallel block path. The mismatch is visible in the rendered review-report since both fields are present on the same SecurityFinding.",
+          "userImpact": "A reviewer could see a 'blocking' policy verdict that did not actually block the round, which could read as surprising without the decision's rationale in view.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A policy override's overriddenAt revision no longer matches the Scope's current revision when the next round runs.",
+          "detection": "The policy-evaluation checkpoint compares SecurityFinding.overriddenAt against the Scope's current revision before trusting the override; a mismatch is a direct string/hash comparison, not an exception.",
+          "response": "The override is treated as stale/invalid: the checkpoint re-evaluates enforcementMode as if no override existed, forcing a fresh human decision rather than silently carrying forward a stale exemption.",
+          "userImpact": "A previously-overridden finding can reappear as blocking after an unrelated code change advances the revision, requiring the override to be re-granted.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A VerificationReceipt is written for a round whose sandbox/mutation checkpoint failed to run at all (e.g. the sandbox environment itself could not start).",
+          "detection": "The checkpoint's own stage-report records whether it ran; absence of both a receipt and a stage-report success is distinguishable from a receipt recording a genuine pass/fail outcome.",
+          "response": "No receipt is written for a checkpoint that never ran; the existing per-checkpoint validator mechanism's own failure/skip reporting (unchanged by this Story) is the only record, consistent with VerificationReceipt being recorded 'for every run' — a non-run is not a run.",
+          "userImpact": "A reviewer sees the checkpoint's own skip/failure status but no RECEIPTS.md entry for that attempt, which is expected, not a defect.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A caller constructs an object with SecurityFinding's fields but an incorrect `kind` discriminant value (e.g. 'Security' or missing).",
+          "detection": "The `isSecurityFinding` type-guard function checks `kind === 'security'` exactly; TypeScript's structural typing alone does not prevent a malformed discriminant at compile time, so this is a runtime risk the type guard is specifically responsible for catching.",
+          "response": "The type guard returns false, and the object is treated as a plain Finding — docgen's dedicated SecurityFinding rendering section and reconciliation's security-specific dedup step (owned separately, out of this Story's scope) are both skipped for it.",
+          "userImpact": "A malformed SecurityFinding silently loses its security-specific rendering and dedup treatment rather than raising a visible error, which is the accepted cost noted in a2's own cons list.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A risk-family verdict of 'not-applicable' for every family in a review round.",
+          "expected": "One informational, zero-severity SecurityFinding per family is still recorded, so the round's RECEIPTS.md/review-report shows every family was considered and explicitly ruled out, even though no true security finding exists."
+        },
+        {
+          "input": "A security review round where risk-family selection marks a family 'uncertain'.",
+          "expected": "That family's checkpoints still run, and any resulting SecurityFinding carries confidence:'low' or 'medium' rather than being suppressed or silently treated as applicable."
+        },
+        {
+          "input": "A SecurityFinding corroborated by a VerificationReceipt whose sandbox run is still in progress when the round's docgen render is invoked.",
+          "expected": "This Story does not design the sandbox/mutation checkpoint's own internal timing; it only fixes that a receipt is written once the checkpoint completes (pass or fail) and referenced by id — a render invoked before completion simply has no receipt id to show yet, which is a sequencing concern for the checkpoint implementation, not this Story's data-model contract."
+        },
+        {
+          "input": "Two different SecurityFindings (e.g. from SAST and the security graph) both evidence the same underlying vulnerability.",
+          "expected": "The security review type's own dedup step (scoped entirely inside its validator, after its own checkpoints, before handoff to the framework's shared reconciliation pass) collapses them to one primary finding with the other referenced as corroborating evidence; this Story's contract only fixes that SecurityFinding's shape supports that linkage, not the dedup algorithm itself."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The framework's shared reconciliation pass and the docgen 'review-report' renderer must accept a SecurityFinding with zero change to their own type signatures or logic, since it is structurally a Finding (ordinary polymorphism, no unwrap/rehydration step).",
+          "source": "c1"
+        },
+        {
+          "text": "No abstract-base-class/class-hierarchy idiom is introduced; SecurityFinding and SecurityLocator stay plain TypeScript interfaces extending their base types structurally, matching the convention this and the sibling sessions' own grounding confirmed (baseClassIdioms: [] everywhere in src/workflow/).",
+          "source": "c1"
+        },
+        {
+          "text": "VerificationReceipt is recorded for every sandbox/mutation checkpoint run, pass or fail, and persists independently of whether any SecurityFinding corroborates it — mirroring the existing Story TEST RECORD's non-approvable, per-unit-of-work record pattern.",
+          "source": "c2"
+        }
+      ],
+      "hld": {}
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Verify the new type guards, discriminants and data shapes behave correctly in isolation.",
+          "subjects": [
+            "isSecurityFinding type guard (true/false/malformed discriminant)",
+            "SecurityFinding structural extension of base Finding (all base fields present + security-only fields)",
+            "SecurityLocator structural extension of Locator/Pointer (trust-boundary id + taint-path step index fields)",
+            "VerificationReceipt record shape (pass/fail/evidence linkage by id)"
+          ],
+          "fixturesNeeded": [
+            "sample SecurityFinding objects per enforcementMode value",
+            "sample SecurityLocator objects",
+            "sample VerificationReceipt objects for pass/fail outcomes"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Verify the policy-override staleness check and the zero-severity not-applicable/uncertain risk-family verdict representation.",
+          "subjects": [
+            "overriddenAt vs current Scope revision comparison (stale override rejected)",
+            "risk-family verdict recorded as informational zero-severity SecurityFinding for not-applicable/uncertain families"
+          ],
+          "fixturesNeeded": [
+            "Scope objects at two different revisions",
+            "risk-family verdict fixtures for applicable/not-applicable/uncertain"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Verify the framework's shared reconciliation pass and docgen review-report renderer accept a SecurityFinding with zero change to their own logic (ordinary polymorphism, no unwrap step).",
+          "subjects": [
+            "reconciliation pass consuming a mixed Finding/SecurityFinding list",
+            "docgen review-report render of a round containing SecurityFinding entries"
+          ],
+          "fixturesNeeded": [
+            "a review round fixture mixing plain Finding and SecurityFinding entries"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Verify VerificationReceipt reuses the existing TEST RECORD storage machinery (writeArtifact/writeAtomic/storeRound/withStoredModel) and is recorded as a non-approvable RECORD beside the review artifact, mirroring TESTS.md beside BUILD.md.",
+          "subjects": [
+            "RECEIPTS.md write for a security review round",
+            "approval attempt against a RECEIPTS.md/VerificationReceipt record is refused"
+          ],
+          "fixturesNeeded": [
+            "a stored review round whose checkpoint has completed"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "Verify the per-(type,model) JSON Schema transformer requirement holds for the new union/inheritance-heavy types.",
+          "subjects": [
+            "JSON Schema transformer output for SecurityFinding (kind discriminant + inherited Finding fields)",
+            "JSON Schema transformer output for SecurityLocator (kind discriminant + inherited Locator/Pointer fields)"
+          ],
+          "fixturesNeeded": []
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "SecurityFinding structural extension of base Finding (all base fields present + security-only fields)",
+            "reconciliation pass consuming a mixed Finding/SecurityFinding list",
+            "docgen review-report render of a round containing SecurityFinding entries"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "SecurityLocator structural extension of Locator/Pointer (trust-boundary id + taint-path step index fields)"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "overriddenAt vs current Scope revision comparison (stale override rejected)",
+            "risk-family verdict recorded as informational zero-severity SecurityFinding for not-applicable/uncertain families"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "RECEIPTS.md write for a security review round",
+            "approval attempt against a RECEIPTS.md/VerificationReceipt record is refused"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "JSON Schema transformer output for SecurityFinding (kind discriminant + inherited Finding fields)",
+            "JSON Schema transformer output for SecurityLocator (kind discriminant + inherited Locator/Pointer fields)"
+          ]
+        }
+      ],
+      "testFramework": "node:test (tsx --test)"
+    },
+    "migration": {
+      "stateBefore": "Per s1's capability-discovery bundle: the codebase has no SecurityFinding, no SecurityLocator, no EvidenceProvider, and no capability-family delegation mechanism anywhere. src/workflow/artifact-core/types.ts exports only a generic Feedback entity with no security specialization; the only existing Finding-shaped taxonomies are the legacy, being-retired review-history/review/types.ts and review-history/code-review/types.ts shapes, which this Story does not touch. Security review rounds, when they run today, have no structured output type and no corroborating verification record.",
+      "stateAfter": "src/workflow/artifact-core/types.ts (or a new sibling module) additionally exports SecurityFinding (interface extending the base Finding from HLD-03f4fd3b9102aab8's sc2, once that sibling Story builds it), SecurityLocator (interface extending Locator/Pointer from HLD-50cde239426d6e2a's sc1, once that sibling Story builds it), and an EvidenceProvider registry interface routed through daemon IPC. src/workflow/runners/build/test-record.ts's storage machinery gains a parallel VerificationReceipt record type, rendered as RECEIPTS.md beside the review artifact using the same writeArtifact/writeAtomic/storeRound/withStoredModel primitives. No existing exported type, field, or function signature is changed or removed.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the SecurityFinding interface (new, additive) once the sibling Epic 03f4fd3b9102aab8 Story s2 Finding type exists to extend; until then this Story's own openQuestion records the dependency rather than inventing a placeholder base.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add the SecurityLocator interface (new, additive) once the sibling Epic 50cde239426d6e2a Story s1 Locator/Pointer type exists to extend; same dependency-ordering note as step 1.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add the EvidenceProvider interface/registry (new, additive), routed through the existing daemon IPC tool-call boundary — no change to the IPC transport or the ~110-entry general tool registry.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Add the VerificationReceipt type and extend test-record.ts's storage helpers with a parallel receipts-artifact id/path function and a RECEIPTS.md renderer, mirroring TestRecordCase/TestRecordReported and TESTS.md without modifying their existing behavior.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Wire the security review type's validator to call risk-family selection one capability family at a time (DELEGATES framing) and emit SecurityFinding entries, including one informational zero-severity SecurityFinding per not-applicable/uncertain family, before handing results to the framework's unchanged shared reconciliation pass.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No existing public API, type, or function signature is changed, renamed, or removed — every change in this migration is a strictly additive new type or a new field path on a type that does not exist yet in the codebase. The framework's shared reconciliation pass and docgen review-report renderer require zero code change since SecurityFinding is consumed via ordinary structural polymorphism as a Finding. Backward compatibility is preserved by construction; there is no prior version of these types to be compatible with.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Real TypeScript class hierarchy (abstract class Feedback, class SecurityFinding extends Feedback)",
+        "oneLineSummary": "Model the IS-A relationship with actual TS classes and `extends`, matching textbook OOP inheritance literally.",
+        "approach": "Declare `abstract class Feedback` with the fields the sibling review-process HLD's Finding shape already defines (category, severity), and `class SecurityFinding extends Feedback` adding checkId, violatedPolicyRef, evidence[], fixability, confidence, enforcementMode, and the override fields. Further security subtypes (data/endpoint/vulnerability) extend SecurityFinding again as needed.\n\nThe reconciliation pass and docgen renderer would accept `Feedback` instances and rely on `instanceof SecurityFinding` for the type-discriminant check the brainstorm's settled decisions require.",
+        "pros": [
+          "Most literal match for 'true inheritance, not wrapping-by-reference' as the brainstorm phrased it",
+          "`instanceof` gives an unambiguous, built-in type-discriminant check with no separate tag field to keep in sync"
+        ],
+        "cons": [
+          "Introduces a class-hierarchy idiom this codebase does not otherwise use anywhere: convention.detect found baseClassIdioms: [] across src/workflow/ and src/workflow/artifact-core/ in both prior sibling sessions' own grounding, and the sibling ReviewContext HLD explicitly rejected an abstract-base-class alternative for exactly this reason (its own k4: 'no existing abstract-base-class convention exists... to extend')",
+          "Real classes resist the cross-cutting per-(type,model) JSON Schema transformer requirement this session's own decisions impose: a class instance is not itself a JSON Schema-describable shape without extra serialization work, working against rather than with the transformer pattern"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Introduces a real TS class hierarchy, a base-class idiom the codebase does not otherwise use anywhere (baseClassIdioms: [] confirmed in s1 grounding), and resists the per-(type,model) JSON Schema transformer requirement since class instances need extra serialization before they are a plain JSON Schema shape."
+      },
+      {
+        "id": "a2",
+        "name": "Interface-based structural extension with a type discriminant (SecurityFinding interface extends Feedback interface + kind field)",
+        "oneLineSummary": "Model the IS-A relationship with plain TypeScript interfaces (`interface SecurityFinding extends Feedback`) plus a discriminant field, matching the codebase's existing plain-interface convention with no runtime class.",
+        "approach": "Declare `interface Feedback { category; severity }` (matching the sibling HLD's sc2 Finding shape) and `interface SecurityFinding extends Feedback { kind: 'security'; checkId; violatedPolicyRef; evidence; fixability; confidence; enforcementMode; overriddenBy?; overrideReason?; overriddenAt? }`. A SecurityFinding IS structurally a Feedback (every Feedback-typed field is present), so reconciliation's and docgen's existing Feedback-typed logic accepts it with zero code change; a narrow type-guard function (`isSecurityFinding(f): f is SecurityFinding`) checking the `kind` discriminant gives the renderer's type-discriminant check.\n\nFurther security subtypes (data/endpoint/vulnerability) extend SecurityFinding again with their own discriminant value, following the same pattern. This directly matches the plain-interface, no-base-class-idiom convention both sibling sessions' own grounding confirmed (baseClassIdioms: [] everywhere in src/workflow/), and gives every SecurityFinding a plain JSON-serializable shape that fits naturally into the per-(type,model) transformer pattern this session's decisions require.",
+        "pros": [
+          "Matches the codebase's own established convention (plain interfaces, zero base-class idioms anywhere in src/workflow/) confirmed by this and the sibling sessions' own grounding, rather than introducing a brand-new pattern",
+          "A SecurityFinding instance is already a plain JSON-serializable object, requiring no extra step before being fed through the per-(type,model) JSON Schema transformer pattern this session's decisions require",
+          "The discriminant field makes the type-guard check explicit and inspectable in rendered JSON, unlike `instanceof` which disappears once an object crosses a JSON boundary (e.g. into the review-report's stored JSON, or into a different process)"
+        ],
+        "cons": [
+          "Requires a small, explicit type-guard function per discriminant level rather than a built-in language check",
+          "A caller could in principle construct an object with the right fields but a mismatched `kind` string; TypeScript's structural typing does not prevent this misuse the way a real class's private constructor could"
+        ],
+        "costEstimate": "S"
+      },
+      {
+        "id": "a3",
+        "name": "Flat Feedback type with optional security-only fields, gated by a kind discriminant",
+        "oneLineSummary": "Add the security-specific fields directly onto the base Feedback type as optional fields, with no separate SecurityFinding type at all.",
+        "approach": "Extend the sibling HLD's Feedback interface itself with optional fields (checkId?, violatedPolicyRef?, evidence?, fixability?, confidence?, enforcementMode?) populated only when a Feedback instance comes from the security review type, discriminated by an optional `kind` tag.\n\nEvery consumer (reconciliation, docgen) already sees these fields on the one Feedback type it already knows, with no new type to introduce at all.",
+        "pros": [
+          "Zero new type: every consumer already operates on Feedback and needs no awareness of a SecurityFinding type existing"
+        ],
+        "cons": [
+          "Directly contradicts this session's own settled decision and explicit non-goal: 'Extending the base Feedback type itself to carry check-ID/policy/evidence/fixability fields' was raised and explicitly ruled out in favor of a dedicated SecurityFinding subtype",
+          "Pollutes every non-security Feedback instance with six always-present-but-usually-undefined optional fields, and gives no principled place for further per-security-subtype (data/endpoint/vulnerability) specialization the brainstorm also settled on"
+        ],
+        "costEstimate": "XS",
+        "reasonRejected": "Directly contradicts the approved SPEC's settled decision and explicit non-goal ruling out extending the base Feedback type itself with security-only optional fields, and pollutes every non-security Feedback instance with always-undefined fields."
+      }
+    ],
+    "chosenAlternative": "a2",
+    "openQuestions": [
+      "Which exact revision of the sibling Stories' types should SecurityFinding/SecurityLocator extend: HLD-03f4fd3b9102aab8's sc2 Finding{category,severity} (Story s2, not yet built) and HLD-50cde239426d6e2a's sc1 Locator/Pointer (Story s1, not yet built)? This LLD assumes those exact shapes per citations c4/c5; build order must sequence this Story's build after both sibling Stories land, and this LLD must be revisited if either sibling Story's actual shape diverges from what its approved HLD currently describes.",
+      "This standalone Story's acceptanceCriteria was empty on entry to design.story — no formal ac-ids were handed down from an upstream stage. body.testStrategy.acceptanceMapping's ac1-ac5 were derived directly from the approved SPEC-5a5f556b77d7aa31's settled decisions rather than from a Story.acceptanceCriteria list, since none existed to map against. Recommend reconciling these five criteria back into the Story record so future stages (plan/build) see them as first-class acceptance criteria rather than LLD-internal inventions."
+    ],
+    "erDefinition": {
+      "id": "security-extension-points-er",
+      "narrative": "Shows the four new security-review extension-point types and how they relate to the two base types they extend (owned by sibling, not-yet-built Stories) and to each other — SecurityFinding/SecurityLocator inherit structurally from the framework's base Finding/Locator, EvidenceProvider feeds SecurityFinding.evidence, and VerificationReceipt is referenced by id from a corroborated SecurityFinding.",
+      "classes": {
+        "Finding": {
+          "description": "Existing framework base type (owned by sibling Epic 03f4fd3b9102aab8's HLD-03f4fd3b9102aab8 sc2 contract, Story s2 — not yet built). Every review finding, security or otherwise, structurally extends this shape.",
+          "attributes": {
+            "category": {
+              "description": "The finding's category, as defined by the base review process.",
+              "range": "string",
+              "required": true
+            },
+            "severity": {
+              "description": "The finding's severity, consumed by the existing severity-driven block/approval gate.",
+              "range": "string",
+              "required": true
+            }
+          }
+        },
+        "SecurityFinding": {
+          "description": "A structural subtype of Finding, carrying the security review type's own fields. Further subclassed per security subtype (data/endpoint/vulnerability) or risk family as needed (not modeled individually here).",
+          "attributes": {
+            "kind": {
+              "description": "Type discriminant, constant 'security'.",
+              "range": "string",
+              "required": true
+            },
+            "checkId": {
+              "description": "Identifier of the specific check/delegate capability that produced this finding.",
+              "range": "string",
+              "required": true
+            },
+            "violatedPolicyRef": {
+              "description": "Reference to the policy this finding violates, if any.",
+              "range": "string",
+              "required": false
+            },
+            "evidence": {
+              "description": "Evidence items corroborating this finding, produced by an EvidenceProvider.",
+              "range": "SecurityEvidence",
+              "multivalued": true,
+              "required": true
+            },
+            "fixability": {
+              "description": "Whether and how this finding can be fixed.",
+              "range": "string",
+              "required": false
+            },
+            "confidence": {
+              "description": "Confidence level, used especially for uncertain-risk-family output.",
+              "range": "string",
+              "required": false
+            },
+            "enforcementMode": {
+              "description": "Policy enforcement mode, orthogonal to severity: advisory, warning, or blocking.",
+              "range": "string",
+              "required": true
+            },
+            "overriddenBy": {
+              "description": "Who overrode this finding's enforcement, if overridden.",
+              "range": "string",
+              "required": false
+            },
+            "overrideReason": {
+              "description": "Why this finding's enforcement was overridden.",
+              "range": "string",
+              "required": false
+            },
+            "overriddenAt": {
+              "description": "The Scope revision the override was granted against; the override lapses once the Scope's current revision diverges from this value.",
+              "range": "string",
+              "required": false
+            },
+            "receiptId": {
+              "description": "Id of the VerificationReceipt corroborating this finding, if the sandbox/mutation checkpoint ran for it.",
+              "range": "VerificationReceipt",
+              "required": false
+            }
+          }
+        },
+        "Locator": {
+          "description": "Existing framework base type (owned by sibling Epic 50cde239426d6e2a's HLD-50cde239426d6e2a sc1 contract, Story s1 — not yet built), using an open string-typed kind field for extensibility.",
+          "attributes": {
+            "kind": {
+              "description": "Open discriminant for Locator subtypes, read structurally rather than via exhaustive switch.",
+              "range": "string",
+              "required": true
+            }
+          }
+        },
+        "SecurityLocator": {
+          "description": "A structural subtype of Locator, adding security-graph-specific fields for citing a code location inside the security graph or an evidence provider's output.",
+          "attributes": {
+            "trustBoundaryId": {
+              "description": "Identifier of the trust boundary this locator sits within or crosses.",
+              "range": "string",
+              "required": false
+            },
+            "taintPathStepIndex": {
+              "description": "Index of this locator's position within a taint-path step sequence, if applicable.",
+              "range": "integer",
+              "required": false
+            }
+          }
+        },
+        "EvidenceProvider": {
+          "description": "A dedicated registry interface for the five deterministic evidence-provider categories (secret scanning, SAST, dependency/SBOM, IaC/container, language-native checks), routed through daemon IPC and distinct from the general tool registry.",
+          "attributes": {
+            "category": {
+              "description": "Which of the five deterministic evidence-provider categories this provider implements.",
+              "range": "string",
+              "required": true
+            }
+          }
+        },
+        "SecurityEvidence": {
+          "description": "A single evidence item produced by an EvidenceProvider and attached to a SecurityFinding.",
+          "attributes": {
+            "providerCategory": {
+              "description": "Which EvidenceProvider category produced this evidence.",
+              "range": "string",
+              "required": true
+            },
+            "locator": {
+              "description": "The code location this evidence points to.",
+              "range": "SecurityLocator",
+              "required": false
+            }
+          }
+        },
+        "VerificationReceipt": {
+          "description": "A durable per-security-review-round record of a sandbox-verification/mutation-testing checkpoint run, pass or fail, independent of SecurityFinding. Mirrors the existing Story TEST RECORD pattern; a non-approvable record, rendered as RECEIPTS.md beside the review artifact.",
+          "attributes": {
+            "result": {
+              "description": "Pass/fail outcome of this checkpoint run.",
+              "range": "string",
+              "required": true
+            },
+            "environment": {
+              "description": "Description of the isolated sandbox environment the checkpoint ran in.",
+              "range": "string",
+              "required": false
+            }
+          }
+        }
+      }
+    },
+    "sequenceDefinition": {
+      "id": "security-delegate-selection-sequence",
+      "narrative": "Shows the DELEGATES framing within one security reviewer pass: capability families are evaluated for applicability one at a time, each running (or being skipped with a recorded reason) before the next is considered, with a VerificationReceipt written independently of any SecurityFinding the sandbox/mutation checkpoint corroborates.",
+      "participants": [
+        {
+          "id": "SecurityValidator",
+          "label": "Security review type's validator",
+          "description": "The single new 'security' review type's own control flow, internal to its validator."
+        },
+        {
+          "id": "RiskFamilySelector",
+          "label": "Risk-family selection",
+          "description": "Determines each capability family's applicability (applicable/not-applicable/uncertain) before that family's delegate runs."
+        },
+        {
+          "id": "CapabilityDelegate",
+          "label": "One capability-family delegate",
+          "description": "A single named steering/workflow (e.g. secret-scan, SAST, SBOM) selected and run one at a time, sequentially."
+        },
+        {
+          "id": "SandboxCheckpoint",
+          "label": "Sandbox verification / mutation-testing checkpoint",
+          "description": "Runs in an isolated environment and always writes a VerificationReceipt, pass or fail."
+        },
+        {
+          "id": "Reconciliation",
+          "label": "Shared reconciliation pass",
+          "description": "The framework's existing, unchanged cross-reviewer reconciliation pass (round > 1 only)."
+        }
+      ],
+      "messages": [
+        {
+          "from": "SecurityValidator",
+          "to": "RiskFamilySelector",
+          "label": "evaluate applicability for next capability family",
+          "kind": "call"
+        },
+        {
+          "from": "RiskFamilySelector",
+          "to": "SecurityValidator",
+          "label": "verdict: applicable | not-applicable (+ reason) | uncertain",
+          "kind": "return"
+        },
+        {
+          "from": "SecurityValidator",
+          "to": "CapabilityDelegate",
+          "label": "run this one delegate (skipped if not-applicable; recorded as zero-severity informational SecurityFinding instead)",
+          "kind": "call",
+          "note": "Repeats one family at a time until all capability families are considered."
+        },
+        {
+          "from": "CapabilityDelegate",
+          "to": "SecurityValidator",
+          "label": "SecurityFinding(s) for this family",
+          "kind": "return"
+        },
+        {
+          "from": "SecurityValidator",
+          "to": "SandboxCheckpoint",
+          "label": "run sandbox verification / mutation-testing checkpoint",
+          "kind": "call"
+        },
+        {
+          "from": "SandboxCheckpoint",
+          "to": "SecurityValidator",
+          "label": "VerificationReceipt (always written, pass or fail) + corroborated SecurityFinding reference by receipt id, if any",
+          "kind": "return"
+        },
+        {
+          "from": "SecurityValidator",
+          "to": "SecurityValidator",
+          "label": "dedup primary findings across all families' SecurityFindings (scoped entirely inside this validator)",
+          "kind": "recurse"
+        },
+        {
+          "from": "SecurityValidator",
+          "to": "Reconciliation",
+          "label": "hand off deduped SecurityFinding set (framework reconciliation pass itself unchanged; runs only when round > 1)",
+          "kind": "call"
+        }
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/standalone/add-securityfinding-capability-family-delegates-framing-E20261118779e9a08/S001/er-model.html",
+        "title": "ER model"
+      },
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/standalone/add-securityfinding-capability-family-delegates-framing-E20261118779e9a08/S001/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 capability-discovery bundle",
+      "quotedText": "Capability-discovery over 47 candidates in src/workflow/ found no SecurityFinding and no capability-family delegation mechanism anywhere."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 how-does-it-work bundle",
+      "quotedText": "src/workflow/runners/build/test-record.ts implements the Story TEST RECORD: a per-Task record ... rendered as TESTS.md beside BUILD.md ... It is explicitly a RECORD, not an approvable artifact."
+    },
+    {
+      "id": "c3",
+      "kind": "doc",
+      "ref": "docs/standalone/security-review-extension-points-review-framework-E202611175a5f556b/SPEC.md"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/review-rounds-reconciliation-recovery-E2026111803f4fd3b/HLD.md"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/shared-reviewcontext-data-model-E2026111850cde239/HLD.md"
+    }
+  ]
+}

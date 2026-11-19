@@ -23,6 +23,28 @@
           "revision": 2,
           "at": "2026-11-18T07:56:26.360Z",
           "externalId": "6972588615"
+        },
+        {
+          "target": {
+            "entityId": "HLD-03f4fd3b9102aab8",
+            "type": "HLD",
+            "relation": "documents",
+            "fragment": "docs/epics/review-rounds-reconciliation-recovery-E2026111803f4fd3b/HLD.md"
+          },
+          "revision": 3,
+          "at": "2026-11-19T06:50:14.406Z",
+          "externalId": "7002008022"
+        },
+        {
+          "target": {
+            "entityId": "HLD-03f4fd3b9102aab8",
+            "type": "HLD",
+            "relation": "documents",
+            "fragment": "docs/epics/review-rounds-reconciliation-recovery-E2026111803f4fd3b/sequence-diagram.html"
+          },
+          "revision": 3,
+          "at": "2026-11-19T06:50:15.844Z",
+          "externalId": "7002008484"
         }
       ],
       "binding": {

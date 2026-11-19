@@ -7,6 +7,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { Pointer, Scope, ScopeLevel, ScopeType, ScopeValidator, ValidationResult } from '../types.js';
+import { validateDesignScope } from '../scope-checks.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..');
 const TSC = resolve(ROOT, 'node_modules/typescript/bin/tsc');
@@ -78,5 +79,33 @@ describe('Scope, ScopeType, ScopeLevel, ValidationResult and ScopeValidator', ()
 		const validator: ScopeValidator = (scope, root) => ({ ok: scope.scopeType === 'design' && root.length > 0, violations: [] });
 		assert.equal(validator(minimal, '/repo/root').ok, true);
 		assert.equal(validator(full, '/repo/root').ok, false);
+	});
+
+	it('a Scope with distinct def/hld/lld/plan/tasks/extension/amendment Pointers keeps each field independently addressable', () => {
+		const def = { path: 'DEF.md' };
+		const hld = { path: 'HLD.md' };
+		const lld = { path: 'LLD.md' };
+		const plan = { path: 'PLAN.md' };
+		const task1 = { path: 'TASK1.md' };
+		const extension = { path: 'EXT.md' };
+		const amendment = { path: 'AMD.md' };
+		const scope: Scope = {
+			scopeType: 'code', scopeLevel: 'task',
+			def, hld, lld, plan, tasks: [task1], extension, amendment,
+		};
+		assert.deepEqual(scope.def, def);
+		assert.deepEqual(scope.hld, hld);
+		assert.deepEqual(scope.lld, lld);
+		assert.deepEqual(scope.plan, plan);
+		assert.deepEqual(scope.tasks, [task1]);
+		assert.deepEqual(scope.extension, extension);
+		assert.deepEqual(scope.amendment, amendment);
+	});
+
+	it("a minimal valid design-review Scope (scopeType='design', scopeLevel='def', only def populated) validates ok:true", () => {
+		const scope: Scope = { scopeType: 'design', scopeLevel: 'def', def: { path: 'DEF.md' } };
+		assert.equal(scope.hld, undefined);
+		assert.equal(scope.lld, undefined);
+		assert.equal(validateDesignScope(scope, '/repo/root').ok, true);
 	});
 });

@@ -319,3 +319,15 @@ export interface ValidationResult {
 }
 
 export type ScopeValidator = (scope: Scope) => ValidationResult;
+
+/**
+ * Which of Scope's named Pointer-typed fields must be populated (the self-inclusive chain up to
+ * and including scopeLevel) and which must be absent (anything deeper), for one (scopeType,
+ * scopeLevel) pair. Not exported: this shape is internal to this Story's validators and not part
+ * of sc3's public contract, so src/workflow/artifact-core/scope-checks.ts declares its own
+ * equivalent private type rather than importing this one.
+ */
+interface ScopeFieldRequirement {
+	readonly required:     readonly (keyof Scope)[];
+	readonly mustBeAbsent: readonly (keyof Scope)[];
+}

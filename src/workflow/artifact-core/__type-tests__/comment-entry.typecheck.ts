@@ -14,6 +14,19 @@
 
 import type { CommentEntry, CommentParty, ReviewContextRound } from '../types.js';
 
+/** True iff A and B are the exact same type (distributes correctly over unions,
+ *  unlike `A extends B ? B extends A ? true : false : false`). */
+type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
+
+// Exact-keys proof: unlike a per-field @ts-expect-error (which only catches the
+// specific field names written here), this fails to compile for ANY added or
+// removed key, named anything, because `keyof CommentEntry` would then differ
+// from the literal union below -- it is the general form of "no other field of
+// any kind" that the LLD's absence subjects require.
+const _commentEntryKeysExact: Equal<keyof CommentEntry, 'round' | 'party' | 'timestamp' | 'text'> = true;
+const _reviewContextRoundKeysExact: Equal<keyof ReviewContextRound, 'round' | 'comments'> = true;
+void _commentEntryKeysExact; void _reviewContextRoundKeysExact;
+
 export function positive(): void {
 	const submitter: CommentParty = 'submitter';
 	const reviewer: CommentParty = 'reviewer';

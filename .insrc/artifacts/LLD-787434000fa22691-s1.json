@@ -94,6 +94,13 @@
         "choice": "Confirm constraints before proceeding",
         "rationale": "User confirmed 2026-11-19 (yes, resolve all): the four request-derived constraints (guidance by project type, no hardcoded Node command, independent gate evidence, stays small) are the scoring basis; no Story, Epic or HLD constraints exist.",
         "resolvedAt": "2026-11-19T18:28:57.665Z"
+      },
+      "qd8149faa": {
+        "question": "sbdry4 partial: the criterion ids ac1 to ac5 and citation ids c2 to c4 are labels this LLD assigned.",
+        "status": "resolved",
+        "choice": "Keep LLD-local labels",
+        "rationale": "User approved 2026-11-19: ac1-ac5 and c1-c4 are labels assigned by LLD-787434000fa22691-s1 and resolve within it; no upstream identity is claimed.",
+        "resolvedAt": "2026-11-19T18:29:15.529Z"
       }
     }
   },

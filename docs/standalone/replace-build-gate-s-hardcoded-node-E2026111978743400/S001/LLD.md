@@ -264,6 +264,8 @@ As a1 for the prompt: a table of per-type commands renders the guidance, so no h
   - **resolved**: Confirm ac1–ac5 — User was offered ac1-ac5 for amendment on 2026-11-19, said 'yes, resolve all' and asked for no changes, so the five LLD-authored criteria stand as the Story's acceptance criteria. _(2026-11-19T18:28:31.456Z)_
 - `q0a66b38a` — alt2 partial: alternatives were scored against four constraints derived from the request, since no Story, Epic or HLD constraints exist.
   - **resolved**: Confirm constraints before proceeding — User confirmed 2026-11-19 (yes, resolve all): the four request-derived constraints (guidance by project type, no hardcoded Node command, independent gate evidence, stays small) are the scoring basis; no Story, Epic or HLD constraints exist. _(2026-11-19T18:28:57.665Z)_
+- `qd8149faa` — sbdry4 partial: the criterion ids ac1 to ac5 and citation ids c2 to c4 are labels this LLD assigned.
+  - **resolved**: Keep LLD-local labels — User approved 2026-11-19: ac1-ac5 and c1-c4 are labels assigned by LLD-787434000fa22691-s1 and resolve within it; no upstream identity is claimed. _(2026-11-19T18:29:15.529Z)_
 
 ## Citations
 

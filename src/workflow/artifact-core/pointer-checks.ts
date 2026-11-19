@@ -32,7 +32,10 @@ export const validatePointerPath: PointerPathValidator = (pointer, registeredRep
 	}
 	const root = resolve(registeredRepoRoot);
 	const resolved = resolve(root, pointer.path);
-	if (resolved === root || resolved.startsWith(root + sep)) {
+	// `root` already ends with `sep` at the filesystem root ('/'); doubling it there would make
+	// every in-root path fail `startsWith`.
+	const rootWithSep = root.endsWith(sep) ? root : root + sep;
+	if (resolved === root || resolved.startsWith(rootWithSep)) {
 		return { ok: true, violations: [] };
 	}
 	return { ok: false, violations: [`'${pointer.path}' resolves to '${resolved}', outside repo root '${root}'`] };

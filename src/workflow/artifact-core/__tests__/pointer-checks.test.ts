@@ -97,4 +97,11 @@ describe('PointerStalenessCheck and PointerPathValidator', () => {
 		assert.equal(result.violations.length, 1);
 		assert.match(result.violations[0]!, /absolute/);
 	});
+
+	it('PointerPathValidator returns ok:true for an in-root path when registeredRepoRoot is the filesystem root', () => {
+		const pointer: Pointer = { path: 'docs/HLD.md' };
+		const result = validatePointerPath(pointer, '/');
+		assert.equal(result.ok, true);
+		assert.deepEqual(result.violations, []);
+	});
 });

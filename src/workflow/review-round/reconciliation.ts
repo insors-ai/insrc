@@ -35,15 +35,6 @@ const CLASSIFY_ROLE: RoleId = 'review.reconciliation.classify';
 
 const VERDICTS: readonly ReconciliationVerdict[] = ['confirmed', 'still-open', 'contradicted', 'no-longer-surfaced'];
 
-/** `needsAuditTrail` lets the classify call say it couldn't resolve one or
- *  more verdicts from the two finding sets alone, WITHOUT reconcileRound
- *  reading the audit trail up front on every call -- the read only happens
- *  on this signal (HLD boundary: "only when needed"). */
-interface ClassifyOutcome {
-	readonly verdicts:        readonly ReconciliationVerdict[];
-	readonly needsAuditTrail: boolean;
-}
-
 const CLASSIFY_SCHEMA: StructuredSchema = {
 	type: 'object',
 	properties: {
@@ -51,9 +42,8 @@ const CLASSIFY_SCHEMA: StructuredSchema = {
 			type:  'array',
 			items: { type: 'string', enum: VERDICTS },
 		},
-		needsAuditTrail: { type: 'boolean' },
 	},
-	required:             ['verdicts', 'needsAuditTrail'],
+	required:             ['verdicts'],
 	additionalProperties: false,
 };
 
@@ -63,21 +53,26 @@ const CLASSIFY_SCHEMA: StructuredSchema = {
  *  reconcileRound itself pairs each verdict with its finding's own id, so
  *  priorFindingRef is never derived from (and never trusts) the model's own echo. */
 export interface ReconciliationDeps {
-	readonly classify?:       ((reviewId: string, priorFindings: readonly Finding[], currentFindings: readonly Finding[], auditTrail: string | undefined) => Promise<ClassifyOutcome>) | undefined;
-	readonly readAuditTrail?: ((reviewId: string) => string | undefined) | undefined;
+	readonly classify?:          ((reviewId: string, priorFindings: readonly Finding[], currentFindings: readonly Finding[], auditTrail: string | undefined) => Promise<readonly ReconciliationVerdict[]>) | undefined;
+	readonly auditTrailExists?:  ((reviewId: string) => boolean) | undefined;
+	readonly readAuditTrail?:    ((reviewId: string) => string) | undefined;
 }
 
 let testDeps: ReconciliationDeps = {};
 
-/** Test seam: inject the classification call and the audit-trail reader; no argument resets. */
+/** Test seam: inject the classification call and the audit-trail existence check/reader; no argument resets. */
 export function _setReconciliationDepsForTests(deps: ReconciliationDeps = {}): void { testDeps = deps; }
 
-/** The review's temp-folder audit trail, if one has been written; undefined
- *  when the file is absent -- a missing or unneeded audit trail is not an error. */
-function defaultReadAuditTrail(reviewId: string): string | undefined {
-	const path = join(process.cwd(), '.insrc/tmp', reviewId, 'audit-trail.json');
-	if (!existsSync(path)) return undefined;
-	return readFileSync(path, 'utf8');
+function auditTrailPath(reviewId: string): string {
+	return join(process.cwd(), '.insrc/tmp', reviewId, 'audit-trail.json');
+}
+
+function defaultAuditTrailExists(reviewId: string): boolean {
+	return existsSync(auditTrailPath(reviewId));
+}
+
+function defaultReadAuditTrail(reviewId: string): string {
+	return readFileSync(auditTrailPath(reviewId), 'utf8');
 }
 
 async function defaultClassify(
@@ -85,7 +80,7 @@ async function defaultClassify(
 	priorFindings: readonly Finding[],
 	currentFindings: readonly Finding[],
 	auditTrail: string | undefined,
-): Promise<ClassifyOutcome> {
+): Promise<readonly ReconciliationVerdict[]> {
 	const cfg = loadAnalyzeConfig();
 	const { provider } = createRoleRouter().resolveProviderForRole(CLASSIFY_ROLE, cfg, process.cwd());
 	const messages: LLMMessage[] = [
@@ -96,26 +91,24 @@ async function defaultClassify(
 				+ 'confirmed: an equivalent finding still appears in currentFindings. still-open: the issue is unresolved '
 				+ 'but not independently re-raised. contradicted: currentFindings or the audit trail shows the prior finding '
 				+ 'was mistaken. no-longer-surfaced: the issue no longer appears and nothing indicates why. '
-				+ 'This classification is informational only; it never blocks approval. '
-				+ (auditTrail === undefined
-					? 'If the two finding sets alone are not enough to classify every entry with confidence, '
-						+ 'set needsAuditTrail to true instead of guessing -- you will be asked again with the review\'s audit trail included.'
-					: 'An audit trail is included below; use it to resolve any entry the two finding sets alone could not.'),
+				+ 'This classification is informational only; it never blocks approval.'
+				+ (auditTrail !== undefined ? ' An audit trail is included below; use it where the two finding sets alone leave an entry ambiguous.' : ''),
 		},
 		{
 			role:    'user',
 			content: JSON.stringify({ reviewId, priorFindings, currentFindings, auditTrail }),
 		},
 	];
-	return provider.completeStructured<ClassifyOutcome>(messages, CLASSIFY_SCHEMA);
+	const raw = await provider.completeStructured<{ verdicts: readonly ReconciliationVerdict[] }>(messages, CLASSIFY_SCHEMA);
+	return raw.verdicts;
 }
 
 /**
- * Runs the dedicated reconciliation pass for one round. Never performs its own
- * re-grounding pass, and never folds into the same pass that produced
- * currentFindings -- a single dedicated call per round. The audit trail is
- * read ONLY when the first classification pass (over the two finding sets
- * alone) signals it could not resolve every verdict -- never unconditionally.
+ * Runs the dedicated reconciliation pass for one round: a single classification
+ * call, never re-grounding and never folded into the pass that produced
+ * currentFindings. The review's temp-folder audit trail is read only when one
+ * exists for this reviewId -- a missing audit trail is not an error, and this
+ * function never attempts the read when there is nothing to read.
  */
 export async function reconcileRound(
 	reviewId: string,
@@ -123,16 +116,14 @@ export async function reconcileRound(
 	currentFindings: readonly Finding[],
 ): Promise<readonly ReconciliationResult[]> {
 	if (priorFindings.length === 0) return [];
+	const auditTrailExists = testDeps.auditTrailExists ?? defaultAuditTrailExists;
 	const readAuditTrail = testDeps.readAuditTrail ?? defaultReadAuditTrail;
 	const classify = testDeps.classify ?? defaultClassify;
 
-	let outcome = await classify(reviewId, priorFindings, currentFindings, undefined);
-	if (outcome.needsAuditTrail) {
-		const auditTrail = readAuditTrail(reviewId);
-		outcome = await classify(reviewId, priorFindings, currentFindings, auditTrail);
+	const auditTrail = auditTrailExists(reviewId) ? readAuditTrail(reviewId) : undefined;
+	const verdicts = await classify(reviewId, priorFindings, currentFindings, auditTrail);
+	if (verdicts.length !== priorFindings.length) {
+		throw new Error(`reconcileRound: classification returned ${verdicts.length} verdicts for ${priorFindings.length} prior findings`);
 	}
-	if (outcome.verdicts.length !== priorFindings.length) {
-		throw new Error(`reconcileRound: classification returned ${outcome.verdicts.length} verdicts for ${priorFindings.length} prior findings`);
-	}
-	return priorFindings.map((finding, i) => ({ priorFindingRef: finding.id, verdict: outcome.verdicts[i] as ReconciliationVerdict }));
+	return priorFindings.map((finding, i) => ({ priorFindingRef: finding.id, verdict: verdicts[i] as ReconciliationVerdict }));
 }

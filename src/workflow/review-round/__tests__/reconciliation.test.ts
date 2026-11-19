@@ -45,12 +45,12 @@ function typecheckFixture(): void {
 
 const finding = (id: string, category: Finding['category'] = 'correctness', severity = 'HIGH'): Finding => ({ id, category, severity });
 
-/** A classify stub that resolves in one pass (needsAuditTrail: false), recording every call. */
+/** A classify stub returning the given verdicts in order, recording every call. */
 function stubClassify(verdicts: readonly ReconciliationVerdict[]) {
 	const calls: Array<{ reviewId: string; priorFindings: readonly Finding[]; currentFindings: readonly Finding[]; auditTrail: string | undefined }> = [];
-	const classify = async (reviewId: string, priorFindings: readonly Finding[], currentFindings: readonly Finding[], auditTrail: string | undefined) => {
+	const classify = async (reviewId: string, priorFindings: readonly Finding[], currentFindings: readonly Finding[], auditTrail: string | undefined): Promise<readonly ReconciliationVerdict[]> => {
 		calls.push({ reviewId, priorFindings, currentFindings, auditTrail });
-		return { verdicts, needsAuditTrail: false };
+		return verdicts;
 	};
 	return { classify, calls };
 }
@@ -63,7 +63,7 @@ describe('reconcileRound and ReconciliationResult', () => {
 		const priorFindings = [finding('f1'), finding('f2'), finding('f3')];
 		const currentFindings = [finding('f4')];
 		const { classify } = stubClassify(['confirmed', 'still-open', 'no-longer-surfaced']);
-		_setReconciliationDepsForTests({ classify, readAuditTrail: () => undefined });
+		_setReconciliationDepsForTests({ classify, auditTrailExists: () => false });
 
 		const results = await reconcileRound('review-1', priorFindings, currentFindings);
 

@@ -49,7 +49,7 @@ type ScopeValidator = (scope: Scope, registeredRepoRoot: string) => ValidationRe
 
 **Parameters:**
 - `scope: Scope` — The populated Scope to check against its own declared (scopeType, scopeLevel) pair.
-- `registeredRepoRoot: string` — The absolute path sc6's PointerPathValidator resolves each populated Pointer-typed field against. Threaded through from the caller rather than read from any global/process state, so the function stays a pure mapping of its own arguments.
+- `registeredRepoRoot: string` — The absolute path sc6's PointerPathValidator resolves each populated Pointer-typed field against. Threaded through from the caller (the controller or whoever assembles the review) rather than read from any global/process state, so the function stays a pure mapping of its own arguments.
 
 **Returns:** `ValidationResult` — {ok, violations}: whether exactly the fields valid for this Scope's (scopeType, scopeLevel) pair are populated, and a human-readable violation per field that is wrongly present or wrongly absent.
 

@@ -27,7 +27,7 @@
     "storyTitle": "Scope describes which depth and chain a review attempt belongs to, including the artifact under review itself",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 4,
         "contentHash": "42a25178457b0f49c5949ea3d6de1c0c9519885617ba7298eb34bc134af72f16",
@@ -38,7 +38,19 @@
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 4,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-19T10:40:45.085Z",
+        "override": {
+          "reason": "Design review is retired/unavailable while being rewritten. Revision 4 mirrors the HLD's sc3 amendment (ScopeValidator now takes registeredRepoRoot, per the same rationale) plus the matching contractDetails.api/interactionWithShared/errorPaths text updates. User explicitly chose this amendment after reviewing the build-gate impasse."
+        }
+      }
     },
     "revision": 3,
     "envelope": {

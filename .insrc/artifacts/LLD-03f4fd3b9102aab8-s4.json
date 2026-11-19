@@ -1,0 +1,406 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1795096456277-jwje77",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-19T13:58:23.327Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 243998,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-11-18T06:14:00.057Z",
+    "epicHash": "03f4fd3b9102aab8",
+    "epicSlug": "review-rounds-reconciliation-recovery",
+    "storyId": "s4",
+    "hldBaseRunId": "wf-1794986545330-2wntv5",
+    "hldEffectiveHash": "6d57abfa68accf993485dc920a80409335ebda32202c80baa14902fde616994d",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "Each round's findings are rendered and presented through a new review-report docgen document",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b169082d949e1fc26b5e05f06a0a72d6f42d043ace711315cd2bab39a2e88851",
+        "at": "2026-11-19T13:58:24.342Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-19T14:45:12.516Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "This Story adds the review-report docgen document: a new, explicitly-invoked docType that renders one round's findings (plus, from round 2 onward, its reconciliation annotations) to a persisted MD artifact, then presents it to the submitter every round via the existing insrc_present tool. The annotation rule is deliberately narrow: it marks only the specific prior comments the submitter's corrections addressed or rejected this round, never a running history of everything ever raised.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Alternative a2 wins: one shared round-driver function in a new sibling module under src/workflow/ (outside review-history/, which is being retired from rather than extended) takes a small per-review-type hook set -- the grounding/findings call, checkpoint granularity, and finding taxonomy/severity -- and runs the identical round cycle, checkpoint lifecycle, and reconciliation call for every review type.",
+      "ownedContracts": [
+        {
+          "id": "sc4",
+          "name": "Review-report docgen call shape",
+          "purpose": "The explicit, agent-invoked call shape that renders a round's findings (+ relevant reconciliation annotations) to a persisted MD artifact, per k6.",
+          "interfaceSketch": "interface ReviewReportDocgenCall {\n  readonly reviewId: string;\n  readonly round: number;\n}",
+          "ownedByStory": "s4",
+          "consumedByStories": [],
+          "assumptions": [
+            "c1"
+          ]
+        }
+      ],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "Review-type hook set",
+          "purpose": "The small hook set (grounding/findings call, checkpoint granularity, taxonomy/severity) that is the only thing legitimately differing per review type, consumed by the round-driver, per the Epic's one-shared-process framing (Story s1 ac1/ac2).",
+          "interfaceSketch": "type ReviewKind = 'design' | 'code';\ninterface RoundDriverHooks {\n  readonly reviewKind: ReviewKind;\n  readonly checkpointGranularity: 'round' | 'task';\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s4",
+        "owns": [
+          "sc4"
+        ],
+        "depends": [
+          "sc1"
+        ],
+        "internal": "The exact docgen docType registration and MD rendering logic (including the resolved/still-open/contradicted annotation rule scoped to this round's own corrections) stay internal to s4; no other Story's type depends on the renderer's internals."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1"
+          ],
+          "depends": [],
+          "internal": "The round-driver function itself -- what it does internally to run the grounding+findings, reconciliation, render+present and checkpoint-write cycle -- stays private to s1; no other Story's type depends on the driver's internals, only on the hook contract sc1 exposes."
+        },
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc2"
+          ],
+          "depends": [
+            "sc1"
+          ],
+          "internal": "Which exact per-review-type severity scales exist beyond the HIGH/MED default, and how a review type's Feedback implementation declares its own, stay internal to s2; no other Story's type depends on Finding's shape."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc3"
+          ],
+          "depends": [
+            "sc1"
+          ],
+          "internal": "How the reconciliation LLM call is actually prompted, and how it reads the temp folder's audit trail when needed, stay internal to s3; no other Story's type depends on ReconciliationResult's internals beyond its verdict shape."
+        },
+        {
+          "storyId": "s5",
+          "owns": [
+            "sc5"
+          ],
+          "depends": [
+            "sc1"
+          ],
+          "internal": "The exact per-review-type granularity mapping (round-level for design review, per-Task for code review) and the durable-copy-before-deletion mechanics stay internal to s5; no other Story's type depends on ReviewCheckpoint's internals beyond what sc1's round-driver needs to call it."
+        }
+      ],
+      "rolloutPhase": "Phase B — taxonomy, reconciliation, rendering, checkpointing",
+      "nonFunctional": {
+        "performance": "Checkpoint write/read (sc5) is a single small JSON file write/read per completed unit of work (a round, or a Task), adding no I/O beyond what the round cycle already performs.",
+        "durability": "The final round's review-output JSON is copied into durable artifact storage before the .insrc/tmp/<reviewId>/ folder is deleted at a terminal state (k7), so a completed review's result survives after the ephemeral working folder is gone."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "public",
+      "api": [],
+      "dataModel": [
+        {
+          "entity": "ReviewReportDocgenCall",
+          "change": "new",
+          "details": "interface ReviewReportDocgenCall { readonly reviewId: string; readonly round: number; } -- exactly sc4's HLD interfaceSketch, the args shape passed to the existing insrc_docgen tool's `params` once docType is set to 'review-report'. No new tool, no new function signature -- insrc_docgen itself (src/mcp/docgen/handler.ts) is unchanged.",
+          "callSites": [
+            "src/mcp/docgen/handler.ts"
+          ]
+        },
+        {
+          "entity": "review-report DocTypeRegistration",
+          "change": "new",
+          "details": "A new entry registered through the existing DocTypeRegistry.register() (src/docgen/registry.ts): { docType: 'review-report', capability, extractorInputSchema, extract() }. extract() reads the round's finalized Finding[] (sc2) plus, for round>1, the ReconciliationResult[] (sc3), and composes the MD, applying lc3's resolved/still-open/contradicted annotation only to the specific prior Feedback entries (the real artifact-core Feedback type) the submitter's corrections this round addressed or rejected -- derived internally by extract(), never passed in by the caller. This exact mechanism (one more DocTypeRegistration) is already used by type-structure/component-dependency/call-sequence/narrative; no new dispatch path is introduced.",
+          "callSites": [
+            "src/docgen/registry.ts",
+            "src/docgen/types.ts"
+          ]
+        }
+      ],
+      "interactionWithShared": [
+        {
+          "contractId": "sc4",
+          "role": "implements",
+          "howDetails": "ReviewReportDocgenCall and the 'review-report' DocTypeRegistration are authored here as sc4's concrete shape, implementing the HLD interfaceSketch verbatim and wiring it through the existing docgen registry rather than inventing a new call mechanism."
+        },
+        {
+          "contractId": "sc1",
+          "role": "consumes",
+          "howDetails": "The review-report docgen call is invoked by a review type's round-driver cycle (sc1, owned by s1) once a round's findings (and, for round>1, reconciliation) have finished; this Story's contract does not reference RoundDriverHooks fields directly, it only accepts reviewId and round once the driver decides to render."
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "ReviewReportDocgenCall",
+        "change": "new",
+        "details": "interface ReviewReportDocgenCall { readonly reviewId: string; readonly round: number; } -- exactly sc4's HLD interfaceSketch, the args shape passed to the existing insrc_docgen tool's `params` once docType is set to 'review-report'. No new tool, no new function signature -- insrc_docgen itself (src/mcp/docgen/handler.ts) is unchanged.",
+        "callSites": [
+          "src/mcp/docgen/handler.ts"
+        ]
+      },
+      {
+        "entity": "review-report DocTypeRegistration",
+        "change": "new",
+        "details": "A new entry registered through the existing DocTypeRegistry.register() (src/docgen/registry.ts): { docType: 'review-report', capability, extractorInputSchema, extract() }. extract() reads the round's finalized Finding[] (sc2) plus, for round>1, the ReconciliationResult[] (sc3), and composes the MD, applying lc3's resolved/still-open/contradicted annotation only to the specific prior Feedback entries (the real artifact-core Feedback type) the submitter's corrections this round addressed or rejected -- derived internally by extract(), never passed in by the caller. This exact mechanism (one more DocTypeRegistration) is already used by type-structure/component-dependency/call-sequence/narrative; no new dispatch path is introduced.",
+        "callSites": [
+          "src/docgen/registry.ts",
+          "src/docgen/types.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc4",
+        "role": "implements",
+        "howDetails": "ReviewReportDocgenCall and the 'review-report' DocTypeRegistration are authored here as sc4's concrete shape, implementing the HLD interfaceSketch verbatim and wiring it through the existing docgen registry rather than inventing a new call mechanism."
+      },
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "The review-report docgen call is invoked by a review type's round-driver cycle (sc1, owned by s1) once a round's findings (and, for round>1, reconciliation) have finished; this Story's contract does not reference RoundDriverHooks fields directly, it only accepts reviewId and round once the driver decides to render."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "the 'review-report' docType string collides with an already-registered docType (a startup wiring bug, e.g. a duplicate registration)",
+          "detection": "DocTypeRegistry.register() throws DuplicateDocTypeError synchronously at startup wiring time (src/docgen/registry.ts)",
+          "response": "startup wiring fails fast rather than silently letting one registration shadow the other",
+          "userImpact": "a docType collision is caught immediately at startup, never discovered later as an unexplained wrong-extractor result at request time",
+          "recoverable": true
+        },
+        {
+          "scenario": "extract() itself fails -- e.g. the round's finalized Finding[] or, for round>1, ReconciliationResult[] cannot be read for the given reviewId/round",
+          "detection": "extract()'s returned Promise rejects, or it returns a non-ok outcome through docgen's existing DocGenOutcome shape",
+          "response": "docgenGenerate surfaces the failure through the existing non-ok DocGenOutcome path rather than rendering a partial or fabricated MD for that round",
+          "userImpact": "the caller sees generation as having failed outright for that round, not a document that looks complete but is missing content",
+          "recoverable": true
+        },
+        {
+          "scenario": "the call names a reviewId/round whose findings (and, for round>1, reconciliation) have not actually finished yet",
+          "detection": "extract() finds no stored finalized output for that reviewId/round combination",
+          "response": "extract() fails rather than rendering an empty or placeholder MD as if the round had completed",
+          "userImpact": "a too-early call is caught as a failure, not silently presented to the submitter as a finished round's report",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "round is 1 (Initial Review, no reconciliation exists yet)",
+          "expected": "the MD renders that round's findings with no reconciliation-annotation section at all -- absent, not an empty or placeholder section"
+        },
+        {
+          "input": "round > 1, but the submitter's corrections this round addressed or rejected zero prior Feedback entries",
+          "expected": "the MD's annotation section is empty or absent, never a fabricated audit of unaddressed history"
+        },
+        {
+          "input": "many prior Feedback entries exist across the review's full history, but only one was addressed or rejected this round",
+          "expected": "only that one entry is annotated resolved/still-open/contradicted in this round's MD -- lc3's exact scoping, never the full history"
+        }
+      ],
+      "invariantsToPreserve": []
+    },
+    "testStrategy": {
+      "testFramework": "node:test, run via npx tsx --test (matches registry.test.ts's own register()/assert.throws convention, cited in s1, and this Epic's s1-s3 convention)",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove the review-report docType registers without colliding with existing docTypes (ac1's mechanism), that rendering only succeeds once a round's output has actually finished, that lc3's annotation scoping is exact (ac2), and that presentation happens every round via the existing tool (ac3).",
+          "subjects": [
+            "registering the 'review-report' docType succeeds without colliding with any existing docType (type-structure, component-dependency, call-sequence, narrative)",
+            "the review-report extractor renders a persisted MD artifact for a round whose findings (and, for round>1, reconciliation) have already finished",
+            "the review-report extractor fails rather than rendering when called for a reviewId/round whose findings have not finished yet",
+            "round 1's rendered MD contains no reconciliation-annotation section at all, since no reconciliation exists yet",
+            "a correction round's rendered MD annotates only the specific prior Feedback entries the submitter's corrections addressed or rejected this round, as resolved/still-open/contradicted",
+            "a correction round's rendered MD never annotates a prior Feedback entry the submitter's corrections did not address or reject this round, even when that entry exists in the review's full history",
+            "insrc_present is invoked with the rendered MD's path once per round, with no response required from the user"
+          ],
+          "fixturesNeeded": [
+            "a stub DocTypeRegistry populated with the four existing docTypes plus the new 'review-report' entry, to prove no DuplicateDocTypeError",
+            "a fixture reviewId/round with finalized Finding[] and ReconciliationResult[] plus a set of prior Feedback entries, some addressed/rejected this round and some not"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "the review-report extractor renders a persisted MD artifact for a round whose findings (and, for round>1, reconciliation) have already finished"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "a correction round's rendered MD annotates only the specific prior Feedback entries the submitter's corrections addressed or rejected this round, as resolved/still-open/contradicted",
+            "a correction round's rendered MD never annotates a prior Feedback entry the submitter's corrections did not address or reject this round, even when that entry exists in the review's full history"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "insrc_present is invoked with the rendered MD's path once per round, with no response required from the user"
+          ]
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Flat ReviewReportDocgenCall per sc4's sketch, registered as a plain new docType via the existing DocTypeRegistry",
+        "oneLineSummary": "interface ReviewReportDocgenCall { readonly reviewId: string; readonly round: number; } exactly as sc4 sketches it; 'review-report' becomes one more DocTypeRegistration entry with its own extract(), the identical mechanism type-structure/component-dependency/call-sequence/narrative already use, and insrc_present (the existing tool) is called with the rendered MD's path once per round.",
+        "approach": "ReviewReportDocgenCall carries only reviewId and round, exactly sc4's interfaceSketch. Rendering is one new src/docgen DocTypeRegistration (docType: 'review-report') whose extract() reads that round's finalized findings (sc2's Finding) plus, for round>1, sc3's ReconciliationResult array, and composes the MD -- including lc3's resolved/still-open/contradicted annotation of only the specific prior Feedback (the real artifact-core Feedback type) the submitter's corrections this round addressed or rejected, derived internally by the extractor, not passed in by the caller. After rendering, the round-driver (s1) calls insrc_present with the new MD's path, satisfying ac3 with the tool docgen and present already provide -- no new presentation mechanism.",
+        "pros": [
+          "Matches sc4's HLD interfaceSketch exactly, field-for-field -- no invented structure.",
+          "Reuses the existing DocTypeRegistry + insrc_present mechanisms verbatim (confirmed by s1's how-does-it-work bundle) rather than inventing a parallel rendering or presentation path.",
+          "Smallest shape that satisfies ac1 (one explicit call renders one persisted MD) and ac3 (present every round via the existing tool) -- lc3's annotation-scoping rule is internal extractor logic, exactly as the HLD's own 'internal' field says it should be."
+        ],
+        "cons": [
+          "The extractor's internal logic for deriving 'which prior Feedback did this round's corrections address or reject' is not itself part of this Story's exported contract -- a reader of sc4 alone cannot see how lc3 is enforced, only that it is (documented in prose, not in a type)."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "ReviewReportDocgenCall carries an explicit priorFeedbackRefs list the caller must pre-filter",
+        "oneLineSummary": "interface ReviewReportDocgenCall { readonly reviewId: string; readonly round: number; readonly priorFeedbackRefs: readonly string[]; } -- the caller decides and passes in which prior Feedback entries to annotate, instead of the extractor deriving that internally.",
+        "approach": "Add a priorFeedbackRefs field so the round-driver (or whatever calls docgen) must itself compute which Feedback entries the submitter's corrections addressed or rejected this round, and hand that pre-filtered list to the docgen call.",
+        "pros": [
+          "Makes the annotation-scoping decision visible in the call's own type, rather than hidden inside the extractor."
+        ],
+        "cons": [
+          "Deviates from sc4's approved flat interfaceSketch (reviewId + round only) by adding a field the HLD never sketched.",
+          "Pushes lc3's filtering logic -- which the HLD's own boundary.internal text assigns to s4's rendering internals -- onto the caller (s1's round-driver), overstepping into s1's adjacent boundary by requiring it to pre-compute something this Story owns.",
+          "Nothing in the Story's acceptance criteria asks the caller to supply this; ac1-ac3 only name reviewId and round as the call's inputs."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Violates sc4's approved shape (adds priorFeedbackRefs) and weakens ac2's guarantee by moving lc3's enforcement out of this Story's own rendering logic and onto a caller the HLD explicitly places this responsibility away from."
+      },
+      {
+        "id": "a3",
+        "name": "ReviewReportDocgenCall returns rendered content directly instead of going through docgen's existing DocGenOutcome/present flow",
+        "oneLineSummary": "A bespoke function returns { markdown: string; path: string } directly to the caller, bypassing the docgen registry's DocTypeRegistration/DocGenOutcome mechanism entirely.",
+        "approach": "function renderReviewReport(call: ReviewReportDocgenCall): Promise<{ markdown: string; path: string }> -- a standalone function outside the docgen registry, which the caller then has to separately decide how to persist and present.",
+        "pros": [
+          "Avoids any dependency on docgen's registry wiring or DocGenOutcome shape."
+        ],
+        "cons": [
+          "Directly contradicts ac1's own wording -- 'the agent explicitly invokes the review-report docgen docType' names docgen as the mechanism, not a bespoke function.",
+          "Reinvents persistence and the insrc_present hookup that docgen + the existing tool already solve, duplicating a working mechanism s1's analyze bundle confirmed is reused by every other docType.",
+          "A caller-side bespoke function is harder for the daemon tool registry, IPC method table, and MCP tool surface to stay in sync with (the exact k4 risk registry.ts's own module comment warns about), since it sits outside the registry those three surfaces already derive from."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Violates ac1 directly by bypassing the docgen docType mechanism the acceptance criterion names by name, and reinvents persistence/presentation plumbing the existing registry and insrc_present already provide."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/review-history/review/design-review/admission-checkpoint.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/review-history/review/design-review/preparation-checkpoint.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/review-history/review/design-review/checkpoint.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/review-history/code-review/task-review/admission-checkpoint.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "src/mcp/docgen/handler.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "analyze-bundle",
+      "ref": "src/docgen/registry.ts"
+    },
+    {
+      "id": "c7",
+      "kind": "analyze-bundle",
+      "ref": "src/docgen/types.ts"
+    },
+    {
+      "id": "c8",
+      "kind": "analyze-bundle",
+      "ref": "src/docgen/__tests__/registry.test.ts"
+    },
+    {
+      "id": "c9",
+      "kind": "analyze-bundle",
+      "ref": "docs/epics/review-rounds-reconciliation-recovery-E2026111803f4fd3b/DEF.md"
+    },
+    {
+      "id": "c10",
+      "kind": "prior-artifact",
+      "ref": "HLD-03f4fd3b9102aab8#sc4"
+    }
+  ]
+}

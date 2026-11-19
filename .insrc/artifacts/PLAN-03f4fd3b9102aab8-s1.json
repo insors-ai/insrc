@@ -1,0 +1,278 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1795099940639-css4co",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-19T14:54:48.739Z",
+    "epicCreatedAt": "2026-11-18T06:14:00.057Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 144402,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "03f4fd3b9102aab8",
+    "epicSlug": "review-rounds-reconciliation-recovery",
+    "storyId": "s1",
+    "lldRunId": "wf-1795095121944-ody2m8",
+    "lldEffectiveHash": "6d57abfa68accf993485dc920a80409335ebda32202c80baa14902fde616994d",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "854d61a8d7026cab785334f5df105e37b75e8b1bb99e3ae41d7f6dafbfd99f03",
+        "at": "2026-11-19T14:54:49.980Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-19T14:55:09.071Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "969911b01ee286651dbb583b4add404b7c7d551c"
+  },
+  "body": {
+    "summary": {
+      "prose": "Building this Story means adding one brand-new module, src/workflow/review-round/, with no existing code to extend: a types file for the three shared shapes (ReviewKind, RoundDriverHooks, RoundResult) and a driver file for the one function, runReviewRound, that every review round -- whatever round number, whatever review kind -- runs through. The second task adds the full named test suite proving round-number validation, both hooks' call/error behavior, the security-pass opt-out, and that reviewId passes through unchanged for downstream Stories to use.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add ReviewKind, RoundDriverHooks, RoundResult and the runReviewRound function",
+        "summary": "Create the new src/workflow/review-round/ module: types.ts exporting ReviewKind, RoundDriverHooks<F>, RoundResult<F> exactly as the LLD's dataModel section specifies, and driver.ts exporting runReviewRound(reviewId, hooks, round, targets, opts?) per the contract -- round validation (RangeError for non-positive-integer round), hooks.ground called once per round with the full targets, the optional nested hooks.security pass gated by opts.runSecurityPass, rejection propagation from both hooks, and reviewId threaded through unchanged with no re-derivation.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "ReviewKind, RoundDriverHooks<F>, RoundResult<F> are exported exactly as the dataModel section specifies, with no extra or missing field",
+          "runReviewRound throws a RangeError synchronously for round=0, a negative round, or a non-integer round, before any hook is called",
+          "runReviewRound calls hooks.ground(targets, round) exactly once per call, with the complete targets and no prior-findings argument, for both round=1 and round>1",
+          "When opts.runSecurityPass is not explicitly false and hooks.security is defined, hooks.security(targets, round) is also called once and its findings are merged into the same RoundResult",
+          "A rejecting hooks.ground propagates its rejection and hooks.security is never called for that round; a rejecting hooks.security propagates its rejection rather than returning hooks.ground's findings alone",
+          "reviewId is never derived, rewritten or substituted -- it is the same value the caller supplied, available for the caller to thread onward to sc4/sc5 calls"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "a round 1 call invokes hooks.ground once with the complete targets and no prior-findings argument"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add the full named test suite for runReviewRound",
+        "summary": "One it() per testStrategy.testLevels subject (14 total) in a new src/workflow/review-round/__tests__/driver.test.ts, matching ac1/ac2/ac3's acceptanceMapping.provingTests verbatim, using stub RoundDriverHooks with spyable ground()/security() and a minimal ReviewTargets fixture (populated and empty entries[]).",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "All 14 named test subjects from testStrategy.testLevels[0].subjects exist as individual it() cases with matching titles",
+          "ac1, ac2 and ac3's acceptanceMapping.provingTests all pass",
+          "npx tsx --test for the new test file passes with zero failures"
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "a round 1 call invokes hooks.ground once with the complete targets and no prior-findings argument"
+          },
+          {
+            "level": "unit",
+            "name": "a round 2 (Correction-and-Re-review) call invokes hooks.ground through the identical call shape as round 1, differing only in the round number passed"
+          },
+          {
+            "level": "unit",
+            "name": "hooks.ground receives the full targets/artifact unmodified -- nothing is stripped or withheld before grounding runs"
+          },
+          {
+            "level": "unit",
+            "name": "round 0 is rejected with a RangeError before any hook is called"
+          },
+          {
+            "level": "unit",
+            "name": "a negative round is rejected with a RangeError before any hook is called"
+          },
+          {
+            "level": "unit",
+            "name": "a non-integer round is rejected with a RangeError before any hook is called"
+          },
+          {
+            "level": "unit",
+            "name": "a rejecting hooks.ground propagates its rejection and hooks.security is never called for that round"
+          },
+          {
+            "level": "unit",
+            "name": "a rejecting hooks.security propagates its rejection rather than returning hooks.ground's findings alone"
+          },
+          {
+            "level": "unit",
+            "name": "an empty ReviewTargets.entries array is passed through to hooks.ground unchanged, with no special-casing"
+          },
+          {
+            "level": "unit",
+            "name": "opts omitted defaults runSecurityPass to true -- hooks.security runs when it is supplied"
+          },
+          {
+            "level": "unit",
+            "name": "opts.runSecurityPass:false suppresses hooks.security even when it is supplied"
+          },
+          {
+            "level": "unit",
+            "name": "hooks.security undefined is a no-op, not a thrown error, when runSecurityPass is true or omitted"
+          },
+          {
+            "level": "unit",
+            "name": "a large round number (e.g. 50) runs through the identical code path as round 1, with no round-number-based branching"
+          },
+          {
+            "level": "unit",
+            "name": "reviewId is passed unchanged into hooks.ground/hooks.security's own arguments-free of mutation across round 1 and round 2 calls, so a caller can thread it on to sc4/sc5 calls without this function ever substituting a different value"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "a round 1 call invokes hooks.ground once with the complete targets and no prior-findings argument",
+        "coveredByTaskIds": [
+          "t1",
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "a round 2 (Correction-and-Re-review) call invokes hooks.ground through the identical call shape as round 1, differing only in the round number passed",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "hooks.ground receives the full targets/artifact unmodified -- nothing is stripped or withheld before grounding runs",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "round 0 is rejected with a RangeError before any hook is called",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "a negative round is rejected with a RangeError before any hook is called",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "a non-integer round is rejected with a RangeError before any hook is called",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "a rejecting hooks.ground propagates its rejection and hooks.security is never called for that round",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "a rejecting hooks.security propagates its rejection rather than returning hooks.ground's findings alone",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "an empty ReviewTargets.entries array is passed through to hooks.ground unchanged, with no special-casing",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "opts omitted defaults runSecurityPass to true -- hooks.security runs when it is supplied",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "opts.runSecurityPass:false suppresses hooks.security even when it is supplied",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "hooks.security undefined is a no-op, not a thrown error, when runSecurityPass is true or omitted",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "a large round number (e.g. 50) runs through the identical code path as round 1, with no round-number-based branching",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "reviewId is passed unchanged into hooks.ground/hooks.security's own arguments-free of mutation across round 1 and round 2 calls, so a caller can thread it on to sc4/sc5 calls without this function ever substituting a different value",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails.api[0] (runReviewRound)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 dataModelChanges (ReviewKind, RoundDriverHooks, RoundResult)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 errorPaths"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 testStrategy"
+    }
+  ]
+}

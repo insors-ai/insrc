@@ -13,6 +13,8 @@
  */
 
 import type { ReconciliationResult, ReconciliationVerdict } from '../reconciliation.js';
+import { reconcileRound } from '../reconciliation.js';
+import type { Finding } from '../finding.js';
 
 /** True iff A and B are the exact same type (distributes correctly over unions,
  *  unlike `A extends B ? B extends A ? true : false : false`). */
@@ -31,6 +33,16 @@ void _verdictExact;
 // independently narrowed or widened union that happens to compile against it.
 const _verdictFieldExact: Equal<ReconciliationResult['verdict'], ReconciliationVerdict> = true;
 void _verdictFieldExact;
+
+// Parameter-shape proof (ac1): fails to compile if reconcileRound gains, loses, widens,
+// or makes optional/rest any parameter -- in particular, no ReviewTargets-shaped (or any
+// other) re-grounding input can be added without this failing, since the tuple type is
+// exact. A runtime arity check alone (reconcileRound.length === 3) cannot see this: it
+// would stay 3 even if a parameter were retyped to `unknown` or widened to accept a
+// ReviewTargets-shaped object.
+type ReconcileRoundParams = Parameters<typeof reconcileRound>;
+const _reconcileRoundParamsExact: Equal<ReconcileRoundParams, [string, readonly Finding[], readonly Finding[]]> = true;
+void _reconcileRoundParamsExact;
 
 export function positive(): void {
 	const a: ReconciliationResult = { priorFindingRef: 'f1', verdict: 'confirmed' };

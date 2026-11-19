@@ -76,6 +76,11 @@ describe('reconcileRound and ReconciliationResult', () => {
 
 	it('reconcileRound\'s parameters are reviewId and the two finding sets only -- no ReviewTargets-shaped parameter exists anywhere in its signature, so no re-grounding input is even possible', () => {
 		assert.equal(reconcileRound.length, 3, 'reconcileRound must declare exactly three parameters: reviewId, priorFindings, currentFindings');
+		// Runtime arity alone cannot see a widened or retyped parameter -- the fixture's
+		// Parameters<typeof reconcileRound> exact-tuple proof is what actually rules out a
+		// ReviewTargets-shaped (or any other) extra/retyped input.
+		assert.doesNotThrow(typecheckFixture,
+			`${FIXTURE} must compile with no @ts-expect-error mismatches, including its reconcileRound parameter-shape proof`);
 	});
 
 	it('ReconciliationResult\'s exported shape contains exactly priorFindingRef and verdict, with no severity, blocking, or gate-facing field of any kind', async () => {

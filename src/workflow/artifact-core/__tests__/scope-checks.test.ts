@@ -24,6 +24,18 @@ describe('validateDesignScope and validateCodeScope', () => {
 		};
 		assert.equal(validateCodeScope(minimalCode, ROOT).ok, true);
 
+		// Enforces the field-presence table: a required ancestor missing fails.
+		const missingAncestor: Scope = { scopeType: 'design', scopeLevel: 'hld', hld: pointer('HLD.md') };
+		const missingResult = validateDesignScope(missingAncestor, ROOT);
+		assert.equal(missingResult.ok, false);
+		assert.match(missingResult.violations.join(' '), /'def' is required/);
+
+		// Enforces sc6 path validation: an escaping Pointer.path fails, folded into the same array.
+		const escaping: Scope = { scopeType: 'design', scopeLevel: 'def', def: pointer('../../etc/passwd') };
+		const escapingResult = validateDesignScope(escaping, ROOT);
+		assert.equal(escapingResult.ok, false);
+		assert.match(escapingResult.violations.join(' '), /etc\/passwd/);
+
 		for (const spy of fsSpies) assert.equal(spy.mock.calls.length, 0);
 	});
 

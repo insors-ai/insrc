@@ -22,7 +22,7 @@
     "epicSlug": "shared-reviewcontext-data-model",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 6,
         "contentHash": "00c06d178708e8fb2e1c39d06d12c9b5c4ee76a0d11a3bcb0dc3e13cb9a35303",
@@ -33,7 +33,19 @@
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 6,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-19T10:38:55.991Z",
+        "override": {
+          "reason": "Design review is retired/unavailable while being rewritten. Revision 6 widens sc3's ScopeValidator to (scope, registeredRepoRoot) => ValidationResult so the two implementing validators can call sc6's PointerPathValidator with a real root instead of a provably exploitable fixed/synthetic one. User explicitly chose this amendment (over keeping a root-independent check) after reviewing the build-gate impasse."
+        }
+      }
     },
     "envelope": {
       "description": "",

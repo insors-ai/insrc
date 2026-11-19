@@ -45,7 +45,7 @@ test('validation-checks-registry.test.ts: trackedFiles, changedFiles and trivial
 	const r = repo();
 	try {
 		r.put('src/a/__tests__/keep.test.ts'); r.put('src/a/__tests__/gone.test.ts'); r.put('src/a/code.ts'); r.put('plugin/tsconfig.json', '{}\n');
-		r.put('with space.ts'); r.commit('base');
+		r.put('with space.ts'); r.put('package.json', '{}\n'); r.commit('base');   // a Node project: the default commands apply
 		const base = git(r.dir, 'rev-parse', 'HEAD').trim();
 		r.put('src/a/__tests__/new.test.ts'); r.put('plugin/src/view.ts'); r.put('src/a/code.ts', 'changed\n');
 		rmSync(join(r.dir, 'src/a/__tests__/gone.test.ts'));

@@ -1,0 +1,116 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 3,
+        "contentHash": "643e4638a7867cfb65f2cdda2e63c7a73d6c2947392074fafc7c86d3b9643a9b",
+        "at": "2026-11-19T12:58:42.567Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 3,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-19T13:27:03.402Z"
+      }
+    },
+    "workflow": "build",
+    "runId": "store-8fab3fd5-4c97-45dd-b2f2-5649f89b8b83",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-19T12:47:50.231Z",
+    "epicCreatedAt": "2026-11-19T11:39:18.637Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "793b8230cdbc616e",
+    "storyId": "s1",
+    "revision": 3,
+    "standalone": true,
+    "sizeClass": "trivial",
+    "authoredBy": "controller",
+    "triageRationale": "Triage classified this as a small bugfix. It is a no-LLD issue-routed build localized to the CLI presentation layer; the no-LLD standalone gate uses the trivial route class while the approved ISSUE retains the bugfix magnitude and rationale.",
+    "epicSlug": "clear-tui-screen-operation-messages",
+    "updatedAt": "2026-11-19T12:58:03.216Z"
+  },
+  "body": {
+    "focus": "Fix two defects in the insrc Ink TUI: clear the terminal screen when the TUI launches, and provide a discoverable global action to clear all operation output/status messages without changing pane state, daemon status, modal capture, or IPC contracts.",
+    "producesLld": false,
+    "commit": "171f2093c",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "Clears the terminal immediately before Ink mounts and adds a discoverable uppercase C shortcut that removes all displayed operation messages while preserving the active pane, daemon state, and captured modal input. Focused unit and Ink tests cover the terminal escape sequence, real error clearing, pane preservation, and modal capture.",
+    "testRecord": {
+      "md": "docs/standalone/clear-tui-screen-operation-messages-E20261119793b8230/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/cli/__tests__/tui.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-19T12:58:03.216Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/app.tsx"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-19T12:58:03.216Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/index.tsx"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-19T12:58:03.216Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/ui/__tests__/messages.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-19T12:58:03.216Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/ui/__tests__/terminal.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-19T12:58:03.216Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/ui/messages.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-19T12:58:03.216Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/ui/terminal.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-19T12:58:03.216Z"
+      }
+    ]
+  },
+  "citations": []
+}

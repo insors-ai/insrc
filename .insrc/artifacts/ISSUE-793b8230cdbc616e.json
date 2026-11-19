@@ -1,0 +1,104 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1795088313723-jp2ul3",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-19T11:39:18.637Z",
+    "epicCreatedAt": "2026-11-19T11:39:18.637Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 44913,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "793b8230cdbc616e",
+    "epicSlug": "clear-tui-screen-operation-messages",
+    "standalone": true,
+    "magnitude": "small",
+    "kind": "defect",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f6125d2fe6560da7de0816b1f7c60dd32dea54158c679669688facfe3b5bee6d",
+        "at": "2026-11-19T11:39:18.645Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-19T12:47:19.884Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "parentRef": {
+      "epicHash": "793b8230cdbc616e",
+      "slug": "EPIC-793b8230cdbc616e"
+    }
+  },
+  "body": {
+    "title": "Clear the TUI screen and operation messages",
+    "reproduction": "1. Launch `insrc` from an interactive terminal after other terminal output is present. Observed: the TUI begins rendering without first clearing the existing terminal contents. Expected: the full-screen TUI starts on a cleared screen. 2. Run an operation such as daemon compact, update, refresh, or a typed command so output appears in the bottom message box. Observed: sticky operation, command, and error messages remain until they are displaced by newer messages, with no user action to clear them. Expected: a documented global action clears the current message box without changing pane state or daemon status.",
+    "rootCause": "The TTY-validated CLI entrypoint calls Ink `render` directly and performs no terminal clear before the first frame (`src/cli/index.tsx:23-35`). The root app owns all operation output in one `messages` state and its global input handler implements command, quit, pane switching, refresh, and help, but no action resets that state (`src/cli/app.tsx:56-59`, `src/cli/app.tsx:129-137`). The existing `clearTransient` helper intentionally preserves sticky note/task/error lines, so it cannot satisfy a user-requested full message clear (`src/cli/ui/messages.ts:38-41`).",
+    "fixIntent": "Clear the interactive terminal once at TUI startup immediately before the first Ink render. Add a discoverable global keyboard action that clears all currently displayed message rows while the root input handler is active, update the visible key hints/help text, and retain modal/approval input capture behavior. Add focused tests for startup clearing and for clearing success, info, and error operation output; preserve pane state, daemon status, and all IPC/service contracts."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/cli/index.tsx:23-35"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/cli/app.tsx:56-59"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/cli/app.tsx:129-137"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/cli/ui/messages.ts:38-41"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/cli/__tests__/tui.test.ts:305-360"
+    },
+    {
+      "id": "c6",
+      "kind": "analyze-bundle",
+      "ref": "src/cli/app.tsx#MessageBox"
+    },
+    {
+      "id": "c7",
+      "kind": "analyze-bundle",
+      "ref": "src/cli/ui/messages.ts#clearTransient"
+    }
+  ]
+}

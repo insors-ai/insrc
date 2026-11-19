@@ -62,6 +62,13 @@
         "choice": "Keep prompt-level design; defer HLD correction",
         "rationale": "lc2's Feedback-hierarchy assumption doesn't exist in the codebase; the LLD's prompt-level design via RoundDriverHooks.ground() already satisfies ac1/ac2 and sc2's interfaceSketch. Flag for the HLD owner to correct later; doesn't block this Story.",
         "resolvedAt": "2026-11-19T18:31:39.598Z"
+      },
+      "qf0185403": {
+        "question": "Resolved (revision 2, following the s3/s5 cross-review): sc2 was amended (HLD revision 4, fieldAdd, non-breaking) to add Finding.id: string, giving a finding a stable identity across rounds. s3's reconcileRound now keys ReconciliationResult.priorFindingRef off Finding.id directly instead of requiring the caller to assign and track an opaque ref.",
+        "status": "resolved",
+        "choice": "Use Finding.id directly",
+        "rationale": "Implements the resolved s3/s5 cross-review decision (HLD rev4 fieldAdd); removes caller-managed opaque reference tracking.",
+        "resolvedAt": "2026-11-19T18:32:02.219Z"
       }
     }
   },

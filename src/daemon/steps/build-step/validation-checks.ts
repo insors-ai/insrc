@@ -110,6 +110,13 @@ export const PROJECT_TEST_FILE: Readonly<Record<ProjectType, RegExp>> = {
 	unknown: /(^|\/)(tests?|__tests__)\/|[._-]tests?\.[A-Za-z]+$/,
 };
 
+/** Whether a build names its test files by its project type's own convention: a project that is not a Node one, with the
+ *  commands a repo setting states. Every other build, a Node project with custom commands included, keeps this
+ *  repository's rule: '.test.ts' files. */
+export function namesOwnTestFiles(profile: CommandProfile): boolean {
+	return profile.commandsSource === 'repo-setting' && profile.projectType !== 'node';
+}
+
 /** The profile of a project with no repo setting: today's Node gate for a Node
  *  project, no command for any other type. */
 export function defaultCommandProfile(projectType: ProjectType): CommandProfile {
@@ -523,8 +530,8 @@ export async function trivialCheckPlan(
 	let touched: string[] = [];
 	// A listing that failed is not "no tests": it fails the tests check rather than passing it.
 	let listError: string | undefined;
-	// This repository's own convention, unless a repo setting states the commands of another kind of project.
-	const isTest = (f: string): boolean => profile.commandsSource === 'repo-setting'
+	// This repository's own convention, unless a repo setting states the commands of a project that is not a Node one.
+	const isTest = (f: string): boolean => namesOwnTestFiles(profile)
 		? PROJECT_TEST_FILE[profile.projectType].test(f)
 		: f.endsWith('.test.ts') && f.split('/').includes('__tests__');
 	try {

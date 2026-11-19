@@ -1398,10 +1398,10 @@ prompt is built, check is run or record is written. `build.resultFormat` is a ro
 rows, as `models.byRepo` is not: a row would write an empty default into every config, and an empty command is an error here.
 The extra tsconfig projects are checked only for the Node default.
 
-Test file names follow the commands. For a project whose commands a repo setting states, a case of the `tests` mapping may
+Test file names follow the commands. For a project that is not a Node one and whose commands a repo setting states, a case of the `tests` mapping may
 name any tracked file of the repository (not only a `.test.ts` file), and a Trivial build runs the test files its commits
 touched by the project type's own naming: `test_*.py`, `*_test.py` (python), `*_test.go` (go), `tests/*.rs` (rust), files under
-`src/test/` (jvm), or a `tests/` or `__tests__/` directory (unknown). Everywhere else the rule is as before: a case's file is a
+`src/test/` (jvm), or a `tests/` or `__tests__/` directory (unknown). Everywhere else, a Node project with commands of its own included, the rule is as before: a case's file is a
 tracked `.test.ts` file, and a Trivial build runs the `.test.ts` files in `__tests__` directories.
 
 ### What the record holds

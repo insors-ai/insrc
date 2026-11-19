@@ -22,6 +22,7 @@ import {
 	TYPECHECK_ARGV,
 	InvalidCommandSetting,
 	commandProfileOf,
+	namesOwnTestFiles,
 	profileFromSetting,
 	commandSettingError,
 	defaultCommandProfile,
@@ -1056,8 +1057,13 @@ test("the trivial plan keeps a repo-setting project's own test files as tests", 
 		// The type decides: a Python project with a setting.
 		const py = profileFromSetting('python', { typecheckCommand: 'mypy .', testCommand: 'pytest' });
 		assert.deepEqual((await trivialCheckPlan(repo, undefined, undefined, py)).testFiles, ['tests/test_a.py']);
-		// A Node plan is unchanged: the '.test.ts' files in __tests__ directories, and nothing else.
+		// A Node plan is unchanged: the '.test.ts' files in __tests__ directories, and nothing else, also when
+		// a repo setting gives it commands of its own.
 		const node = profileFromSetting('node', {});
 		assert.deepEqual((await trivialCheckPlan(repo, undefined, undefined, node)).testFiles, ['src/a/__tests__/n.test.ts']);
+		const nodeOwn = profileFromSetting('node', { typecheckCommand: 'tsc -p .', testCommand: 'npm test --' });
+		assert.deepEqual((await trivialCheckPlan(repo, undefined, undefined, nodeOwn)).testFiles, ['src/a/__tests__/n.test.ts']);
+		// Only a project that is not a Node one, with commands of its own, names its own test files.
+		assert.deepEqual([go, py, nodeOwn, node, defaultCommandProfile('go')].map(namesOwnTestFiles), [true, true, false, false, false]);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });

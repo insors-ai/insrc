@@ -47,6 +47,7 @@ import type { BuildStandaloneContext, BuildStepDone, BuildStepError, BuildStepIn
 import {
 	commandProfileOf,
 	commandSettingError,
+	namesOwnTestFiles,
 	planTaskCheckPlan,
 	runValidationChecks,
 	smallStandaloneCheckPlan,
@@ -262,8 +263,8 @@ async function resolveMapping(
 	named:    readonly NamedTest[],
 	ident:    { readonly epicHash: string; readonly storyId: string; readonly taskId: string },
 ): Promise<{ readonly ok: true; readonly entries: readonly TestMappingEntry[] | undefined; readonly note?: string | undefined } | { readonly ok: false; readonly error: BuildStepError }> {
-	// A project whose commands a repo setting states may be of any language: its cases name its own test files.
-	const anyTestFile = commandProfileOf(repoPath).commandsSource === 'repo-setting';
+	// A project that is not a Node one, with commands a repo setting states: its cases name its own test files.
+	const anyTestFile = namesOwnTestFiles(commandProfileOf(repoPath));
 	if (supplied !== undefined) {
 		const faults = checkTestMapping(supplied, named, await trackedFiles(repoPath), anyTestFile);
 		if (faults.length > 0) {

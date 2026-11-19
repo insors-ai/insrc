@@ -1,0 +1,532 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1795072380921-ph8gfl",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-19T07:19:23.910Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 379392,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-11-18T04:59:27.796Z",
+    "epicHash": "50cde239426d6e2a",
+    "epicSlug": "shared-reviewcontext-data-model",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1794984468539-8trvyt",
+    "hldEffectiveHash": "720f2f3adc5525d23526380a1f529ffe76b33eb2c0aff4624caef750f83b8cc5",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "Pointer and Locator as the shared building blocks for naming content",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 3,
+        "contentHash": "2838c065592a46901f672b26103d8b09ac495aac52e31c561487a021df1ea669",
+        "at": "2026-11-19T08:09:22.147Z",
+        "by": {
+          "id": "insrc:controller",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 3,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-19T08:23:48.362Z",
+        "override": {
+          "reason": "Automated design review is retired/unavailable while being rewritten. Revision 3 adds the real PointerPathValidator implementation (sc6) this Story now owns, plus syncing sc6's hldContextSlice copy verbatim with the HLD. User approved explicitly in chat for this batch of 6 artifacts."
+        }
+      }
+    },
+    "revision": 3,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    }
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Alternative a2 wins: one canonical TypeScript type per Story (Pointer/Locator, Scope, ReviewTargets, CommentEntry+round), with per-review-type validator functions running against the canonical type and a thin per-consumer transformer reshaping it for whichever LLM structured-output schema that consumer actually parses reliably, mirroring the existing CliProvider input/output transformer pattern.",
+      "ownedContracts": [
+        {
+          "id": "sc1",
+          "name": "Locator + Pointer",
+          "purpose": "The uniform way every Scope and ReviewTargets entry names a piece of content: a Pointer to an existing authored file plus an optional Locator pinning an exact region within it, per k2.",
+          "interfaceSketch": "type LocatorKind = 'symbol' | 'lineRange' | 'docSection'; // known kinds; the set is open, not exhaustive\ninterface Locator {\n  readonly kind: LocatorKind | string; // consumers read `kind` structurally; a future kind is just a new string, never a breaking union member\n  readonly value: string; // symbol name, 'startLine-endLine', or doc-section id, per `kind`\n}\ninterface Pointer {\n  readonly path: string; // repo-relative path to an existing authored file (DEF.md/HLD.md/LLD.md/source); never a generated extract\n  readonly section?: Locator;\n  readonly contentHash?: string; // sha256 hex of `path`'s content when this Pointer was built\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        },
+        {
+          "id": "sc2",
+          "name": "Pointer staleness check",
+          "purpose": "One staleness-detection function signature shared by every Pointer consumer (Scope and ReviewTargets alike), per k5 -- no consumer defines its own.",
+          "interfaceSketch": "interface StalenessResult {\n  readonly stale: boolean;\n  readonly checkedAt: string; // ISO-8601\n}\ntype PointerStalenessCheck = (pointer: Pointer, currentContentHash: string) => StalenessResult;",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        },
+        {
+          "id": "sc6",
+          "name": "Pointer path validation",
+          "purpose": "One repo-root-escape check shared by every Pointer consumer (Scope and ReviewTargets alike), per the Epic's own nonFunctional security note -- no consumer defines its own, mirroring sc2's staleness-check pattern. Closes a cross-Story gap found in a controller-led cross-LLD review on 2026-11-19: s1's error-paths deferred this check to 's2's ScopeValidator' informally, but neither s2 nor s3 ever picked it up.",
+          "interfaceSketch": "interface PathValidationResult {\n  readonly ok: boolean;\n  readonly violations: readonly string[];\n}\ntype PointerPathValidator = (pointer: Pointer, registeredRepoRoot: string) => PathValidationResult;",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        }
+      ],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [
+          "sc1",
+          "sc2",
+          "sc6"
+        ],
+        "depends": [],
+        "internal": "The specific set of currently-known LocatorKind string literals (symbol/lineRange/docSection) is s1's own enumeration; because every consumer treats `Locator.kind` as an opaque string rather than exhaustively switching on a closed union, s1 can add a new literal later without forcing s2/s3/s4 to change, satisfying ac2/lc1."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc3"
+          ],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "Which named artifact-kind fields Scope carries beyond def/hld/lld/plan/tasks (e.g. a future named kind) and the exact per-review-type ScopeValidator implementations are s2's own; no other Story's type depends on Scope, since nothing in the Epic's Story graph consumes s2."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc4"
+          ],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "ReviewTargets' own reset-on-new-round mechanics (how the entries list is rebuilt rather than merged) stay internal to s3; no other Story's type depends on ReviewTargets."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc5"
+          ],
+          "depends": [],
+          "internal": "CommentEntry does not reference Pointer/Locator at all, so s4 needs neither sc1 nor sc2. The round-stamping mechanics (how a new attempt's round number is assigned) and the same-artifact-only scoping of Comments across a chain stay internal to s4; the full ReviewContext container embedding Scope and ReviewTargets alongside round/comments is explicitly deferred (Epic Non-Goals), since no Story in this graph depends on all of s2, s3 and s4 together."
+        }
+      ],
+      "rolloutPhase": "Phase A — foundational Pointer/Locator + staleness contract",
+      "nonFunctional": {
+        "performance": "The staleness check (sc2) is a single hash comparison against already-read file content; it adds no I/O beyond the read the controller already performs to populate a Pointer's contentHash.",
+        "security": "Pointer.path is repo-relative and must resolve within the registered repo root; validators (k3) reject a Pointer whose path escapes that root, consistent with the repo-registry strict-contract rule elsewhere in this codebase."
+      }
+    },
+    "summary": {
+      "prose": "This Story defines Locator and Pointer, the two foundational types every other piece of ReviewContext uses to name a piece of content: a Pointer references an existing authored file (optionally with a content hash recorded at build time), and an optional Locator pins an exact region within it. It also defines one shared, pure staleness-detection function so every consumer (Scope, ReviewTargets) checks a Pointer's freshness the same way, with no I/O inside the check itself.",
+      "audience": "technical"
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "PointerStalenessCheck",
+          "signature": "type PointerStalenessCheck = (pointer: Pointer, currentContentHash: string) => StalenessResult",
+          "parameters": [
+            {
+              "name": "pointer",
+              "type": "Pointer",
+              "purpose": "The Pointer whose recorded contentHash is being checked for staleness.",
+              "optional": false
+            },
+            {
+              "name": "currentContentHash",
+              "type": "string",
+              "purpose": "The sha256 hex digest of pointer.path's current content, computed by the caller (createHash('sha256').update(content).digest('hex')) before calling this function -- the function performs no I/O itself.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "StalenessResult",
+            "meaning": "{stale, checkedAt}: whether pointer.contentHash (when present) differs from currentContentHash, and the ISO-8601 timestamp the comparison was made."
+          },
+          "errors": [],
+          "preconditions": [
+            "pointer.contentHash may be absent (a Pointer built without recording a hash); in that case the function returns stale:false -- there is nothing to compare against, so absence is not staleness."
+          ],
+          "postconditions": [
+            "The function is pure: given the same two arguments it always returns the same stale value; only checkedAt varies by wall-clock time."
+          ]
+        },
+        {
+          "name": "PointerPathValidator",
+          "signature": "type PointerPathValidator = (pointer: Pointer, registeredRepoRoot: string) => PathValidationResult",
+          "parameters": [
+            {
+              "name": "pointer",
+              "type": "Pointer",
+              "purpose": "The Pointer whose path is being checked for escaping the registered repo root.",
+              "optional": false
+            },
+            {
+              "name": "registeredRepoRoot",
+              "type": "string",
+              "purpose": "The absolute path of the registered repo root the caller is validating against, obtained the same way the repo-registry strict-contract rule elsewhere in this codebase does (the registered repo's own root).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "PathValidationResult",
+            "meaning": "{ok, violations}: whether pointer.path, once resolved via path.resolve(registeredRepoRoot, pointer.path), stays within registeredRepoRoot; a violation names the escaping path when it does not."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "The function is pure: it only normalizes and compares two strings (via path.resolve, the same normalization src/db/repos.ts's own repo-path comparison already uses) and returns a result; it performs no file-system I/O and mutates nothing."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "Locator",
+        "change": "new",
+        "details": "interface Locator { readonly kind: LocatorKind | string; readonly value: string } where type LocatorKind = 'symbol' | 'lineRange' | 'docSection' (known kinds; the set is open, not exhaustive -- every consumer reads kind structurally, e.g. a lookup by string key, never an exhaustive switch with no default, per the HLD's own risky-bits mitigation). value stays one opaque string per kind (a symbol name, 'startLine-endLine', or a doc-section id) -- the caller that builds a Locator already knows the format for its own kind; this Story does not introduce per-kind structured typing (a2 rejected). Lands in src/workflow/artifact-core/types.ts, the existing home for shared plain-interface types in this part of the codebase.",
+        "callSites": [
+          "src/workflow/artifact-core/types.ts"
+        ]
+      },
+      {
+        "entity": "Pointer",
+        "change": "new",
+        "details": "interface Pointer { readonly path: string; readonly section?: Locator; readonly contentHash?: string }. path is a repo-relative path to an existing authored file (DEF.md/HLD.md/LLD.md/source); never a generated extract. contentHash, when present, is the sha256 hex digest of path's content at the time this Pointer was built, computed with createHash('sha256').update(content).digest('hex') -- the same idiom already used for entity ids and for the lifecycle revision's own contentHash. Pointer MUST stay a plain TypeScript interface (no sealed/closed type, no class) so a future structural subtype -- e.g. the sibling standalone security-extension-points Story's planned SecurityPointer, which the user has decided will be `interface SecurityPointer extends Pointer` -- can add its own fields (trustBoundaryId, taintPathStepIndex) without this Story needing to change; that future subtype is out of this Story's scope and is not modeled here. Lands in src/workflow/artifact-core/types.ts alongside Locator.",
+        "callSites": [
+          "src/workflow/artifact-core/types.ts"
+        ]
+      },
+      {
+        "entity": "StalenessResult",
+        "change": "new",
+        "details": "interface StalenessResult { readonly stale: boolean; readonly checkedAt: string } (checkedAt is ISO-8601). Returned by PointerStalenessCheck. Lands beside Locator/Pointer in src/workflow/artifact-core/types.ts.",
+        "callSites": [
+          "src/workflow/artifact-core/types.ts",
+          "src/workflow/artifact-core/lifecycle.ts"
+        ]
+      },
+      {
+        "entity": "PathValidationResult",
+        "change": "new",
+        "details": "interface PathValidationResult { readonly ok: boolean; readonly violations: readonly string[] }, returned by PointerPathValidator. Lands beside Locator/Pointer/StalenessResult in src/workflow/artifact-core/types.ts.",
+        "callSites": [
+          "src/workflow/artifact-core/types.ts",
+          "src/db/repos.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "implements",
+        "howDetails": "This Story is sc1's owner; Locator and Pointer are implemented exactly as sc1's interfaceSketch describes, with Pointer kept plain-interface-extensible per the resolved cross-design open question on the future SecurityPointer subtype."
+      },
+      {
+        "contractId": "sc2",
+        "role": "implements",
+        "howDetails": "This Story is sc2's owner; PointerStalenessCheck implements sc2's interfaceSketch exactly -- a pure, synchronous function taking a pre-computed currentContentHash, with no I/O inside it, matching sc2's own nonFunctional performance note."
+      },
+      {
+        "contractId": "sc6",
+        "role": "implements",
+        "howDetails": "This Story is sc6's owner; PointerPathValidator implements sc6's interfaceSketch exactly -- a pure, synchronous function using the same path.resolve-based normalization src/db/repos.ts's own repo-path comparison already uses, closing the gap this LLD's s2/s3 siblings left unaddressed."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A caller passes a currentContentHash to PointerStalenessCheck that was computed with a different scheme than this Story's established createHash('sha256').update(content).digest('hex') idiom (e.g. base64 instead of hex, or hashed over normalized rather than raw bytes).",
+          "detection": "PointerStalenessCheck performs a plain string comparison between pointer.contentHash and currentContentHash; it has no way to detect which hashing scheme produced either string, since both are opaque strings to the function.",
+          "response": "No error is raised. The mismatched encoding simply makes the two strings unequal, so the comparison reports stale:true even though the file may not actually have changed -- a false positive caused entirely by a caller-side hashing-convention violation, not something this pure function can catch.",
+          "userImpact": "A Pointer could be reported stale incorrectly if some future caller does not follow the established sha256-hex idiom; this is a caller-discipline concern, not a defect in PointerStalenessCheck itself.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The file at pointer.path no longer exists (deleted or moved) since the Pointer was built.",
+          "detection": "PointerStalenessCheck itself never reads pointer.path -- it only compares two already-computed strings -- so it cannot detect a missing file. Detection happens one level up, at the caller's own file-read step (an ENOENT or equivalent) when it tries to compute currentContentHash before calling this function at all.",
+          "response": "Out of this Story's scope: file I/O and its error handling belong to the caller (the controller or a consuming Story's validator), not to the pure Locator/Pointer/PointerStalenessCheck contract this Story defines. This Story's contract assumes currentContentHash is already available by the time PointerStalenessCheck is called.",
+          "userImpact": "None directly from this Story's types; a caller that does not handle a missing-file read error before calling PointerStalenessCheck would surface that failure through its own error path, not through a StalenessResult.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A Pointer.path value that would resolve outside the registered repo root (e.g. containing '..' segments) is passed to PointerPathValidator.",
+          "detection": "PointerPathValidator resolves pointer.path against registeredRepoRoot via path.resolve (the same normalization src/db/repos.ts's own repo-path comparison already uses, per 'Compared post-path.resolve so trailing slashes / `..` segments' normalize') and checks the result starts with registeredRepoRoot.",
+          "response": "Returns ok:false with a violation naming the escaping path. This closes the gap found in a cross-LLD review: earlier this Story deferred the check to 's2's ScopeValidator' informally with no shared contract backing it; sc6 now gives s2 and s3 a real function to call on every Pointer-typed field before sending a Scope/ReviewTargets instance for review.",
+          "userImpact": "A Pointer that would escape the registered repo root is rejected with a named violation instead of silently passing through to review.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A Pointer with no contentHash at all (never recorded at build time).",
+          "expected": "PointerStalenessCheck returns stale:false -- there is nothing to compare against, so an absent contentHash is not treated as staleness, per the function's documented precondition."
+        },
+        {
+          "input": "A Pointer.contentHash that is present but an empty string.",
+          "expected": "An empty string is still a 'present' value (not undefined), so it is compared literally against currentContentHash like any other string; it is almost certainly unequal to a real sha256 hex digest, so this reports stale:true -- not a special case, just the ordinary comparison outcome for an unusual recorded value."
+        },
+        {
+          "input": "A Locator with kind set to a string that is not one of the three currently-known literals (symbol/lineRange/docSection) -- e.g. a future kind introduced by a different Story.",
+          "expected": "Accepted without error: kind is typed `LocatorKind | string`, so any string is structurally valid. Consumers reading kind must do so via a non-exhaustive lookup (e.g. a string-keyed branch), never an exhaustive switch with no default, per ac2/lc1."
+        },
+        {
+          "input": "A Locator.value string whose format does not match the convention expected for its own kind (e.g. a 'lineRange' kind with a value that is not actually formatted 'startLine-endLine').",
+          "expected": "This Story's types do not validate value's internal format per kind -- that interpretation and validation responsibility belongs to whichever consumer reads a Locator of that specific kind, not to the Locator type itself."
+        }
+      ],
+      "invariantsToPreserve": []
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Verify Pointer/Locator shapes identify a file + exact region with no generated extract involved.",
+          "subjects": [
+            "a Pointer with path + section (Locator) identifies both the file and the region",
+            "a Pointer with no section still identifies the whole file"
+          ],
+          "fixturesNeeded": [
+            "sample Pointer objects with and without section"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Verify Locator's open-string kind field accepts any string, including kinds beyond the three currently-known literals, without requiring code changes.",
+          "subjects": [
+            "a Locator with kind='symbol'/'lineRange'/'docSection' is accepted",
+            "a Locator with an arbitrary future kind string is accepted and read via a non-exhaustive string-keyed lookup, not an exhaustive switch"
+          ],
+          "fixturesNeeded": [
+            "Locator fixtures per known kind",
+            "a Locator fixture with an unknown kind string"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Verify PointerStalenessCheck's pure comparison logic across the documented precondition and edge cases.",
+          "subjects": [
+            "PointerStalenessCheck returns stale:true when pointer.contentHash differs from currentContentHash",
+            "PointerStalenessCheck returns stale:false when pointer.contentHash equals currentContentHash",
+            "PointerStalenessCheck returns stale:false when pointer.contentHash is absent (no hash was ever recorded)",
+            "PointerStalenessCheck returns stale:true when pointer.contentHash is an empty string compared against a real hex digest",
+            "PointerStalenessCheck always returns the same stale value for the same two arguments (purity), only checkedAt varies"
+          ],
+          "fixturesNeeded": [
+            "Pointer fixtures with matching/differing/absent/empty contentHash",
+            "sample sha256 hex digests computed via createHash('sha256').update(content).digest('hex')"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Verify PointerPathValidator correctly accepts in-root paths and rejects escaping paths (closes the cross-LLD security gap; not tied to an existing Story ac since it operationalizes the HLD's own nonFunctional security note via the new sc6 contract).",
+          "subjects": [
+            "PointerPathValidator returns ok:true for a Pointer.path that resolves within registeredRepoRoot",
+            "PointerPathValidator returns ok:false with a named violation for a Pointer.path containing '..' segments that resolves outside registeredRepoRoot"
+          ],
+          "fixturesNeeded": [
+            "Pointer fixtures with in-root and escaping paths",
+            "a sample registeredRepoRoot value"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "a Pointer with path + section (Locator) identifies both the file and the region",
+            "a Pointer with no section still identifies the whole file"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "a Locator with an arbitrary future kind string is accepted and read via a non-exhaustive string-keyed lookup, not an exhaustive switch"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "PointerStalenessCheck returns stale:true when pointer.contentHash differs from currentContentHash",
+            "PointerStalenessCheck returns stale:false when pointer.contentHash equals currentContentHash",
+            "PointerStalenessCheck always returns the same stale value for the same two arguments (purity), only checkedAt varies"
+          ]
+        }
+      ],
+      "testFramework": "node:test (tsx --test)"
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Exactly-as-sketched minimal types: opaque-string Locator, plain Pointer, pure synchronous staleness comparator",
+        "oneLineSummary": "Implement sc1/sc2 literally as the HLD's own interface sketches: Locator{kind:string,value:string}, Pointer{path,section?,contentHash?}, and a pure PointerStalenessCheck(pointer, currentContentHash) => StalenessResult that only compares two hex strings.",
+        "approach": "Locator.kind stays a plain string (LocatorKind | string) and Locator.value stays one opaque string per kind (symbol name, 'startLine-endLine', or doc-section id) -- the caller that builds a Locator already knows how to format value for its kind; no cross-kind structured typing is introduced. Pointer stays exactly {path, section?: Locator, contentHash?: string}. PointerStalenessCheck is a pure, synchronous function: it takes the Pointer and an already-computed currentContentHash (the caller reads the file and runs createHash('sha256').update(content).digest('hex'), matching the repo's established content-hashing idiom) and returns {stale, checkedAt} from a plain string comparison -- no I/O inside the function itself, matching sc2's nonFunctional performance note ('adds no I/O beyond the read the controller already performs').",
+        "pros": [
+          "Matches the HLD's own interfaceSketch for sc1/sc2 verbatim -- no deviation for s2/s3 to adapt to later",
+          "The smallest shape that fully satisfies ac1/ac2/ac3: file+region naming, open extensibility, uniform staleness reporting",
+          "A pure, synchronous staleness function is trivially unit-testable with plain string fixtures, no mocking of file I/O needed"
+        ],
+        "cons": [
+          "Callers must remember to compute currentContentHash themselves (read file + sha256) before calling the staleness check -- the function does not do it for them"
+        ],
+        "costEstimate": "S"
+      },
+      {
+        "id": "a2",
+        "name": "Structured per-kind Locator.value (discriminated union keyed by kind)",
+        "oneLineSummary": "Replace Locator's single opaque `value: string` with a discriminated union typing value's shape per known kind (e.g. {kind:'lineRange', start:number, end:number} vs {kind:'symbol', name:string}).",
+        "approach": "Define Locator as a union of concrete shapes, one per known LocatorKind literal, each with its own strongly-typed value fields instead of one opaque string a caller must format/parse by convention.",
+        "pros": [
+          "Stronger compile-time typing for the three currently-known kinds: a lineRange locator's start/end are real numbers, not a parsed 'startLine-endLine' string"
+        ],
+        "cons": [
+          "Directly contradicts lc1/ac2's open-extensibility requirement: a discriminated union is closed by construction, so a future locator kind would require a new union member and a breaking change for every exhaustive switch -- exactly what ac2 says must not happen",
+          "The HLD's sc1 interfaceSketch explicitly chose `kind: LocatorKind | string` and one opaque `value: string` for this reason; this alternative reopens a decision the HLD already made and would need an HLD back-flow, not just an LLD choice"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Directly contradicts lc1/ac2's open-extensibility requirement by closing Locator's value into a per-kind discriminated union, and deviates from sc1's own published interfaceSketch, which already chose the open opaque-string shape for this reason."
+      },
+      {
+        "id": "a3",
+        "name": "Self-contained async staleness check that reads and hashes the file itself",
+        "oneLineSummary": "Give PointerStalenessCheck a single-argument async signature that reads pointer.path from disk and computes its own sha256 hash internally, instead of taking a pre-computed currentContentHash.",
+        "approach": "PointerStalenessCheck(pointer: Pointer) => Promise<StalenessResult> reads the file at pointer.path itself, hashes it, and compares against pointer.contentHash -- the caller passes only the Pointer, not a separately-computed hash.",
+        "pros": [
+          "Simpler call site: one argument instead of two, nothing for the caller to remember to pre-compute"
+        ],
+        "cons": [
+          "Directly contradicts sc2's published interfaceSketch, which is explicitly synchronous and takes `currentContentHash` as its second parameter -- every consumer (s2, s3) already expects that exact signature",
+          "Duplicates file I/O the controller already performs when it populates a Pointer's contentHash in the first place, directly contradicting sc2's own nonFunctional performance note that the staleness check 'adds no I/O beyond the read the controller already performs'",
+          "Makes the staleness check async and I/O-bound, which both s2 and s3's LLDs (not yet written) would then have to accommodate, rather than reusing one simple pure function"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Contradicts sc2's exact published synchronous signature and its own nonFunctional performance note by making the staleness check asynchronous and self-reading, duplicating I/O the controller already performs."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [],
+    "erDefinition": {
+      "id": "locator-pointer-staleness-er",
+      "narrative": "Shows the three types this Story introduces and their one relationship: a Pointer optionally carries a Locator (via its `section` field) that pins an exact region within the file the Pointer names; PointerStalenessCheck (not itself a class) consumes a Pointer and produces a StalenessResult.",
+      "classes": {
+        "Locator": {
+          "description": "Pins an exact region within an authored file: a symbol name, a line range, or a doc-section id, per an open (non-exhaustive) kind discriminant.",
+          "attributes": {
+            "kind": {
+              "description": "LocatorKind | string -- a known literal (symbol/lineRange/docSection) or any future string; read structurally, never via exhaustive switch.",
+              "range": "string",
+              "required": true
+            },
+            "value": {
+              "description": "One opaque string formatted per kind: a symbol name, 'startLine-endLine', or a doc-section id.",
+              "range": "string",
+              "required": true
+            }
+          }
+        },
+        "Pointer": {
+          "description": "References an existing authored file directly (never a generated extract), optionally with an exact region and a content hash recorded at build time. Stays plain-interface-extensible so a future structural subtype (e.g. the sibling security-extension-points Story's planned SecurityPointer) can extend it.",
+          "attributes": {
+            "path": {
+              "description": "Repo-relative path to an existing authored file (DEF.md/HLD.md/LLD.md/source).",
+              "range": "string",
+              "required": true
+            },
+            "section": {
+              "description": "An optional Locator pinning the exact region within `path` this Pointer names.",
+              "range": "Locator",
+              "required": false
+            },
+            "contentHash": {
+              "description": "sha256 hex digest of path's content when this Pointer was built, via createHash('sha256').update(content).digest('hex').",
+              "range": "string",
+              "required": false
+            }
+          }
+        },
+        "StalenessResult": {
+          "description": "The outcome of comparing a Pointer's recorded contentHash against the referenced file's current content.",
+          "attributes": {
+            "stale": {
+              "description": "True when pointer.contentHash is present and differs from the currentContentHash passed to PointerStalenessCheck.",
+              "range": "boolean",
+              "required": true
+            },
+            "checkedAt": {
+              "description": "ISO-8601 timestamp of when the comparison was made.",
+              "range": "string",
+              "required": true
+            }
+          }
+        }
+      }
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/shared-reviewcontext-data-model-E2026111850cde239/S001/er-model.html",
+        "title": "ER model"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 capability-discovery bundle",
+      "quotedText": "grep for 'interface Locator'/'interface Pointer' across src/ (excluding __tests__) returned zero hits."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 how-does-it-work bundle (content hash + repo-registry strict-contract)",
+      "quotedText": "The repo's established idiom for content hashing is createHash('sha256').update(<content>).digest('hex')."
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1 how-does-it-work bundle (test-file convention)",
+      "quotedText": "src/workflow/artifact-core/__tests__/ uses flat kebab-case *.test.ts files ... using node:test's describe/it + node:assert/strict."
+    }
+  ]
+}

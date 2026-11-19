@@ -20,6 +20,7 @@ This HLD gives every review type one shared round-driver: a single process that 
 8. [Rollout](#8-rollout)
 9. [Alternatives considered](#9-alternatives-considered)
 10. [References](#10-references)
+11. [Open questions](#11-open-questions)
 
 ## 1. Problem context
 
@@ -192,6 +193,7 @@ s2, s3, s4 and s5 each depend only on s1 (landed in Phase A) and have no depende
 | Hook interface lets review-type-specific logic leak into the shared driver | If the RoundDriverHooks contract (sc1) ends up carrying review-type-specific branching logic rather than staying a thin, declarative hook set (grounding/findings call, checkpoint granularity, taxonomy/severity), the shared driver silently re-accumulates the duplication the Epic exists to remove. | s1's LLD must show the driver's own code never branches on reviewKind directly -- every review-type difference must route through a hook, and code review for s2-s5's Stories checks that no new reviewKind-conditional logic was added to the driver itself. |
 | No caller exists yet to exercise the round-driver end-to-end | Per the Epic's Non-Goals, wiring this module into insrc_review_step/insrc_code_review_step is deferred follow-on work, so s1-s5's LLDs can only be tested against synthetic hook implementations, not a real review type, until that later Epic lands. | Each Story's LLD must include a test harness that exercises the round-driver with a minimal synthetic ReviewKind hook set, so the driver's own behavior (shared process, checkpoint granularity routing, reconciliation call shape) is verified now rather than deferred to the wiring Epic. |
 | Checkpoint and audit-trail shapes drift between what s3's reconciliation pass expects and what s5's checkpoint actually persists | k5 lets reconciliation read the temp folder's audit trail 'if needed', and s5 owns that temp-folder lifecycle independently of s3 -- if the two Stories' LLDs assume different shapes for what is actually stored there, reconciliation could silently fail to find what it expects. | s3 and s5's LLDs must agree on and cite the same concrete shape for what the temp folder's audit trail actually contains, with s5's LLD authored first (or reviewed against s5's final shape) since s5 owns the lifecycle. |
+| A third Epic's Story (security review extension points) assumes 'security' plugs into the existing round cycle without a new RoundDriverHooks.reviewKind member | sc1's reviewKind is closed to 'design'\|'code'. STORY-779e9a08142cb057-s1's LLD never states whether the security reviewer pass runs nested inside the primary round's existing reviewKind (reusing s1's driver as-is) or needs a third enum member added to sc1 -- found during a cross-design review on 2026-11-18/19, not by this Epic's own Stories. | Resolve explicitly, either in s1's own LLD or back-flowed from STORY-779e9a08142cb057-s1's LLD once its matching open question is answered, before s1's round-driver is built; s1's LLD must show which reading it implements. |
 
 ## 9. Alternatives considered
 
@@ -259,6 +261,10 @@ Reconciliation and docgen rendering would read the event log's audit trail direc
 - **[[c1]]** `prior-artifact` `SPEC-e8632c1ae22c3bf8` — "docs/standalone/review-process-rounds-reconciliation-recovery-E20261117e8632c1a/SPEC.md"
 - **[[c2]]** `analyze-bundle` `capability-discovery: review-history checkpoint files + docgen docType registry` — "admission-checkpoint.ts / preparation-checkpoint.ts / checkpoint.ts (per-review-type, retired); src/mcp/docgen/handler.ts docType registry has no 'review-report'"
 - **[[c3]]** `analyze-bundle` `structural-map: src/workflow/review-history import-graph + src/workflow/ convention.detect` — "review-history/ totalInDegree 67 vs totalOutDegree 13 (reuse hub); src/workflow/ file naming mixed, kebab-case (448) dominant over snake_case (233); baseClassIdioms: []"
+
+## 11. Open questions
+
+- A new standalone Story (STORY-779e9a08142cb057-s1, 'security review extension points', seeded from approved SPEC-5a5f556b77d7aa31) extends SecurityFinding from this HLD's sc2 Finding and frames security as 'ONE new review type' running a 'security reviewer pass' within a round. sc1's RoundDriverHooks.reviewKind is closed to 'design'|'code' with no third value. Must resolve: does the security pass run nested inside the primary round's existing reviewKind (no enum change), or does reviewKind need a third 'security' member? This changes the round-driver's (s1's) implementation structure.
 
 ## Citations
 

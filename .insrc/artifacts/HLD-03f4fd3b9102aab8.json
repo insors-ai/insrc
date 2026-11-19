@@ -24,30 +24,30 @@
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 2,
-        "contentHash": "37efea8010316169a4a9d30c765a9f27b52e57e5cdbd51cb25d02785ab3f12ea",
-        "at": "2026-11-18T07:25:17.205Z",
+        "number": 3,
+        "contentHash": "f2ab3bb802ba867924a0cd9480fba7e99d6e3e2f6534d89305047e570c327b25",
+        "at": "2026-11-19T06:44:31.135Z",
         "by": {
-          "id": "insrc:system",
-          "kind": "system",
+          "id": "insrc:controller",
+          "kind": "person",
           "properties": {}
         }
       },
       "signoffs": [],
       "approval": {
-        "revision": 2,
+        "revision": 3,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-11-18T07:55:49.512Z",
+        "at": "2026-11-19T06:49:31.937Z",
         "override": {
-          "reason": "Automated design review is retired/unavailable while being rewritten. Controller-authored HLD (revision with sequenceDefinition companion), self-reviewed via checklist.verify (all passed); user approved explicitly in chat."
+          "reason": "Automated design review is retired/unavailable while being rewritten (insrc_review_step errors immediately). Revision 3 adds one open question + one risky-bit row surfacing a cross-Epic coupling gap found in a controller-led cross-design review against the sibling security-extension-points Story's LLD (RoundDriverHooks.reviewKind closed to 'design'|'code' with no 'security' member anticipated). No other content changed. User approved explicitly in chat for this batch of 3 artifacts."
         }
       }
     },
-    "revision": 2,
+    "revision": 3,
     "envelope": {
       "description": "",
       "references": [],
@@ -217,6 +217,11 @@
           "area": "Checkpoint and audit-trail shapes drift between what s3's reconciliation pass expects and what s5's checkpoint actually persists",
           "why": "k5 lets reconciliation read the temp folder's audit trail 'if needed', and s5 owns that temp-folder lifecycle independently of s3 -- if the two Stories' LLDs assume different shapes for what is actually stored there, reconciliation could silently fail to find what it expects.",
           "mitigation": "s3 and s5's LLDs must agree on and cite the same concrete shape for what the temp folder's audit trail actually contains, with s5's LLD authored first (or reviewed against s5's final shape) since s5 owns the lifecycle."
+        },
+        {
+          "area": "A third Epic's Story (security review extension points) assumes 'security' plugs into the existing round cycle without a new RoundDriverHooks.reviewKind member",
+          "why": "sc1's reviewKind is closed to 'design'|'code'. STORY-779e9a08142cb057-s1's LLD never states whether the security reviewer pass runs nested inside the primary round's existing reviewKind (reusing s1's driver as-is) or needs a third enum member added to sc1 -- found during a cross-design review on 2026-11-18/19, not by this Epic's own Stories.",
+          "mitigation": "Resolve explicitly, either in s1's own LLD or back-flowed from STORY-779e9a08142cb057-s1's LLD once its matching open question is answered, before s1's round-driver is built; s1's LLD must show which reading it implements."
         }
       ]
     },
@@ -271,7 +276,9 @@
       }
     ],
     "chosenAlternative": "a2",
-    "openQuestions": [],
+    "openQuestions": [
+      "A new standalone Story (STORY-779e9a08142cb057-s1, 'security review extension points', seeded from approved SPEC-5a5f556b77d7aa31) extends SecurityFinding from this HLD's sc2 Finding and frames security as 'ONE new review type' running a 'security reviewer pass' within a round. sc1's RoundDriverHooks.reviewKind is closed to 'design'|'code' with no third value. Must resolve: does the security pass run nested inside the primary round's existing reviewKind (no enum change), or does reviewKind need a third 'security' member? This changes the round-driver's (s1's) implementation structure."
+    ],
     "sequenceDefinition": {
       "id": "review-round-cycle",
       "narrative": "Shows the ordered round cycle the shared round-driver (s1) runs for every review type: independent grounding and findings, a reconciliation pass for round>1, the explicit review-report docgen render and presentation, and the internal checkpoint write -- the same sequence regardless of review type.",

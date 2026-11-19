@@ -74,6 +74,13 @@ describe('CommentParty, CommentEntry and ReviewContextRound', () => {
 	});
 
 	it("CommentEntry's exported shape contains no verdict, severity or dimension field of any kind", () => {
+		// A runtime Object.keys check on one hand-built literal only proves that literal's own
+		// keys, not that the TYPE itself forbids a verdict/severity/dimension field -- a caller
+		// could still widen the interface later with no test ever catching it. The fixture's
+		// `@ts-expect-error CommentEntry has no field named "verdict"` is the real proof: it
+		// fails to compile if that field is ever added to the type.
+		assert.doesNotThrow(typecheckFixture,
+			`${FIXTURE} must compile with no @ts-expect-error mismatches, including the rejected "verdict" field`);
 		const entry: CommentEntry = { round: 1, party: 'submitter', timestamp: '2026-11-19T00:00:00.000Z', text: 'x' };
 		assert.deepEqual(Object.keys(entry).sort(), ['party', 'round', 'text', 'timestamp']);
 	});
@@ -84,6 +91,12 @@ describe('CommentParty, CommentEntry and ReviewContextRound', () => {
 	});
 
 	it("CommentEntry's and ReviewContextRound's exported shapes contain no artifactId or other cross-artifact scoping field of any kind", () => {
+		// Same reasoning as the verdict/severity/dimension subject above: the fixture's
+		// `@ts-expect-error ReviewContextRound has no field named "artifactId"` proves the type
+		// itself forbids the field; the Object.keys checks below only corroborate it for one
+		// hand-built instance.
+		assert.doesNotThrow(typecheckFixture,
+			`${FIXTURE} must compile with no @ts-expect-error mismatches, including the rejected "artifactId" field`);
 		const entry: CommentEntry = { round: 1, party: 'submitter', timestamp: '2026-11-19T00:00:00.000Z', text: 'x' };
 		assert.deepEqual(Object.keys(entry).sort(), ['party', 'round', 'text', 'timestamp']);
 		const round: ReviewContextRound = { round: 1, comments: [entry] };

@@ -780,10 +780,38 @@ export interface WorkflowApproveResult {
 	readonly followOn?: readonly FollowOnOutcome[];
 }
 
+/** Whether a BUILD artifact is itself `completed` but its Story has not rolled up --
+ *  the state a fresh approval can never transition out of again (approveArtifactByJsonPath
+ *  refuses a second transition from `completed`), so its completion rollup needs a retry
+ *  path that does not depend on that transition running again. */
+function buildAwaitingRollupRetry(repoPath: string, jsonPath: string): boolean {
+	const name = basename(jsonPath);
+	if (!name.startsWith('BUILD-')) return false;
+	let meta: { lifecycle?: { status?: unknown } } | undefined;
+	try {
+		meta = (JSON.parse(readFileSync(jsonPath, 'utf8')) as { meta?: typeof meta }).meta;
+	} catch {
+		return false;
+	}
+	if (meta?.lifecycle?.status !== 'completed') return false;
+	const key = ArtifactIds.parse(name.replace(/\.json$/, ''));
+	if (key?.kind !== 'BUILD' || key.story === undefined) return false;
+	const storyPath = artifactJsonPath(repoPath, ArtifactIds.make({ kind: 'STORY', epicHash: key.epicHash, story: key.story }));
+	if (!existsSync(storyPath)) return true;
+	try {
+		const storyMeta = (JSON.parse(readFileSync(storyPath, 'utf8')) as { meta?: { lifecycle?: { status?: unknown } } }).meta;
+		return storyMeta?.lifecycle?.status !== 'completed';
+	} catch {
+		return true;
+	}
+}
+
 /** JSON paths of every DEF/HLD/LLD/PLAN/BUILD artifact under `epicHash` that is
  *  not yet approved (its lifecycle is not approved). BUILD is the story-completion
- *  approval target, so it joins the batch sweep alongside the design artifacts.
- *  Sorted; malformed files skipped. */
+ *  approval target, so it joins the batch sweep alongside the design artifacts. A
+ *  BUILD already approved-or-beyond rejoins the sweep when its own completion rollup
+ *  has not caught up (`buildAwaitingRollupRetry`), since that state is otherwise
+ *  invisible to this filter. Sorted; malformed files skipped. */
 function pendingArtifactJsonPaths(repoPath: string, epicHash: string): string[] {
 	const dir = join(repoPath, ARTIFACTS_DIR);
 	if (!existsSync(dir)) return [];
@@ -794,7 +822,7 @@ function pendingArtifactJsonPaths(repoPath: string, epicHash: string): string[] 
 		const jsonPath = join(dir, name);
 		try {
 			const meta = (JSON.parse(readFileSync(jsonPath, 'utf8')) as { meta?: unknown }).meta;
-			if (approvalStateOf(meta) !== 'approved') out.push(jsonPath);
+			if (approvalStateOf(meta) !== 'approved' || buildAwaitingRollupRetry(repoPath, jsonPath)) out.push(jsonPath);
 		} catch { /* malformed — skip */ }
 	}
 	return out;
@@ -892,6 +920,15 @@ export async function approveWorkflowTarget(
 			return;
 		}
 		if (await refuseLogConflict(jsonPath)) return;
+		// A BUILD already completed, whose Story/Epic rollup has not caught up (e.g. an
+		// earlier rollup attempt failed on a now-fixed sibling conflict), retries just the
+		// rollup here. approveArtifactByJsonPath would refuse a second transition from
+		// 'completed' (IllegalTransitionError), so it is never attempted for this case.
+		if (buildAwaitingRollupRetry(req.repoPath, jsonPath)) {
+			const outcome = await completeThroughService(jsonPath);
+			if (outcome !== undefined) followOn.push(outcome);
+			return;
+		}
 		// No automated review or cleanup is performed during approval.
 		let completeAfter = false;
 		try {

@@ -279,6 +279,40 @@ test('a BUILD approval retries completion without consulting historical review m
 	} finally { k.done(); }
 });
 
+test('a BUILD already completed but whose Story has not rolled up retries the rollup without a fresh (illegal) approval transition', async () => {
+	const k = kit();
+	try {
+		await ready(k, { failed: [T2] });
+		const svc = serviceFor(k);
+		await approve(k, svc);
+		assert.equal(await statusOf(k, BUILD), 'approved');
+		assert.equal(await statusOf(k, STORY), 'draft');
+
+		// Force the BUILD straight to 'completed' without going through the Story (BUILD
+		// is not a UNIT, so `complete` never checks a roll-up condition for it) --
+		// reproducing the state a failed rollup attempt can leave behind: the BUILD
+		// terminal, its Story not. approveArtifactByJsonPath can no longer transition this
+		// BUILD at all (`approve` only runs from 'draft'), so the retry must not depend on it.
+		await svc.apply(BUILD, 'complete', alice, {});
+		assert.equal(await statusOf(k, BUILD), 'completed');
+		assert.equal(await statusOf(k, STORY), 'draft');
+
+		// Fix what was holding the Story back, then retry with a BRAND NEW override
+		// reason (different from any already recorded) -- before the fix this hit
+		// record-override's transition table (only 'approved' | 'in-signoff' | 'signed-off'),
+		// threw IllegalTransitionError for the already-'completed' BUILD, and the rollup
+		// was never retried.
+		await round(k, T2, 'pass', 2);
+		const retry = await approve(k, svc, 'a brand new override reason, never recorded before this call');
+		assert.equal(retry.skipped.length, 0, JSON.stringify(retry.skipped));
+		assert.equal(retry.approved.length, 0, 'nothing fresh to approve -- the BUILD was already completed');
+		const done = completion(retry);
+		assert.equal(done.ok, true);
+		assert.equal(await statusOf(k, STORY), 'completed');
+		assert.equal(await statusOf(k, EPIC), 'completed');
+	} finally { k.done(); }
+});
+
 test('a draft BUILD at a new revision gets a fresh human approval without inheriting an old review override', async () => {
 	const open = kit();
 	try {

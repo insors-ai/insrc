@@ -1,0 +1,263 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1795077332409-88oziq",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-19T08:38:12.694Z",
+    "epicCreatedAt": "2026-11-18T04:59:27.796Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 156185,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "50cde239426d6e2a",
+    "epicSlug": "shared-reviewcontext-data-model",
+    "storyId": "s1",
+    "lldRunId": "wf-1795072380921-ph8gfl",
+    "lldEffectiveHash": "720f2f3adc5525d23526380a1f529ffe76b33eb2c0aff4624caef750f83b8cc5",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "25dec0e44bde4aefbd604f1a1fec95d080e0856f71bfd3ea26d72382da42d10f",
+        "at": "2026-11-19T08:38:13.994Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-19T08:38:44.271Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "a31785a1388d4fcf1e13d0bd7c06139d679ef3a6"
+  },
+  "body": {
+    "summary": {
+      "prose": "Building Story s1 means adding four small, purely-additive plain-data types and two pure, synchronous functions to one existing file (src/workflow/artifact-core/types.ts), with no I/O and no changes to any existing code. The work is almost entirely new surface area with a matching set of unit tests; nothing here touches a file any other Story or system already depends on.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add Locator, Pointer, StalenessResult and PathValidationResult interfaces to src/workflow/artifact-core/types.ts",
+        "summary": "Add a new, clearly-labeled section (e.g. '// --- shared-reviewcontext-data-model Epic sc1/sc2/sc6 (Locator/Pointer/staleness/path-validation), owned by s1 ---') at the end of src/workflow/artifact-core/types.ts defining: type LocatorKind = 'symbol' | 'lineRange' | 'docSection'; interface Locator { kind, value }; interface Pointer { path, section?, contentHash? }; interface StalenessResult { stale, checkedAt }; interface PathValidationResult { ok, violations }. No functions in this Task -- types only.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Locator, Pointer, StalenessResult and PathValidationResult are exported from src/workflow/artifact-core/types.ts with exactly the field shapes the LLD's dataModelChanges describe",
+          "The new section is labeled unambiguously with this Epic's own name, not a bare 'sc1/sc2/sc6' that could be confused with this file's existing, differently-scoped sc-labeled sections",
+          "tsc typechecks the file with no errors"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Locator, Pointer, StalenessResult and PathValidationResult are exported with the exact documented field shapes"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Implement PointerStalenessCheck and PointerPathValidator as pure functions",
+        "summary": "Add type PointerStalenessCheck = (pointer, currentContentHash) => StalenessResult and type PointerPathValidator = (pointer, registeredRepoRoot) => PathValidationResult, each with a concrete implementing function, exported beside the types from t1. PointerStalenessCheck does a plain string comparison (no I/O); PointerPathValidator resolves pointer.path against registeredRepoRoot via path.resolve (mirroring src/db/repos.ts's own repo-path normalization) and checks the result stays within registeredRepoRoot, with no I/O either.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "PointerStalenessCheck returns {stale:false} when pointer.contentHash is absent, and compares currentContentHash against pointer.contentHash otherwise, with no file I/O",
+          "PointerPathValidator returns {ok:true, violations:[]} for an in-root path and {ok:false, violations:[...]} naming the escaping path for a '..'-escaping path, with no file I/O",
+          "Both functions are pure: identical inputs always produce identical ok/stale, varying only in any wall-clock field documented for that function"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "PointerStalenessCheck and PointerPathValidator are exported with their documented signatures and are pure (no I/O)"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Write unit tests for the new types and both functions",
+        "summary": "Add flat kebab-case *.test.ts files under src/workflow/artifact-core/__tests__/ (matching this directory's existing one-concern-per-file convention) covering: Locator/Pointer shape + open-kind acceptance, PointerStalenessCheck's documented precondition/edge cases, and PointerPathValidator's in-root/escaping-path cases, per the LLD's testStrategy.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "Every subject named in the LLD's testStrategy.testLevels has a corresponding test case",
+          "ac1, ac2 and ac3's provingTests from the LLD's acceptanceMapping all pass",
+          "npx tsx --test for the new test files passes with zero failures"
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "a Pointer with path + section (Locator) identifies both the file and the region"
+          },
+          {
+            "level": "unit",
+            "name": "a Pointer with no section still identifies the whole file"
+          },
+          {
+            "level": "unit",
+            "name": "a Locator with kind='symbol'/'lineRange'/'docSection' is accepted"
+          },
+          {
+            "level": "unit",
+            "name": "a Locator with an arbitrary future kind string is accepted and read via a non-exhaustive string-keyed lookup, not an exhaustive switch"
+          },
+          {
+            "level": "unit",
+            "name": "PointerStalenessCheck returns stale:true when pointer.contentHash differs from currentContentHash"
+          },
+          {
+            "level": "unit",
+            "name": "PointerStalenessCheck returns stale:false when pointer.contentHash equals currentContentHash"
+          },
+          {
+            "level": "unit",
+            "name": "PointerStalenessCheck returns stale:false when pointer.contentHash is absent (no hash was ever recorded)"
+          },
+          {
+            "level": "unit",
+            "name": "PointerStalenessCheck returns stale:true when pointer.contentHash is an empty string compared against a real hex digest"
+          },
+          {
+            "level": "unit",
+            "name": "PointerStalenessCheck always returns the same stale value for the same two arguments (purity), only checkedAt varies"
+          },
+          {
+            "level": "unit",
+            "name": "PointerPathValidator returns ok:true for a Pointer.path that resolves within registeredRepoRoot"
+          },
+          {
+            "level": "unit",
+            "name": "PointerPathValidator returns ok:false with a named violation for a Pointer.path containing '..' segments that resolves outside registeredRepoRoot"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "a Pointer with path + section (Locator) identifies both the file and the region",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "a Pointer with no section still identifies the whole file",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "a Locator with kind='symbol'/'lineRange'/'docSection' is accepted",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "a Locator with an arbitrary future kind string is accepted and read via a non-exhaustive string-keyed lookup, not an exhaustive switch",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "PointerStalenessCheck returns stale:true when pointer.contentHash differs from currentContentHash",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "PointerStalenessCheck returns stale:false when pointer.contentHash equals currentContentHash",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "PointerStalenessCheck returns stale:false when pointer.contentHash is absent (no hash was ever recorded)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "PointerStalenessCheck returns stale:true when pointer.contentHash is an empty string compared against a real hex digest",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "PointerStalenessCheck always returns the same stale value for the same two arguments (purity), only checkedAt varies",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "PointerPathValidator returns ok:true for a Pointer.path that resolves within registeredRepoRoot",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "PointerPathValidator returns ok:false with a named violation for a Pointer.path containing '..' segments that resolves outside registeredRepoRoot",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 dataModelChanges (Locator, Pointer, StalenessResult, PathValidationResult)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails.api (PointerStalenessCheck, PointerPathValidator)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 testStrategy"
+    }
+  ]
+}

@@ -251,3 +251,15 @@ As a1 for the prompt: a table of per-type commands renders the guidance, so no h
 - ts1 partial: the Story has no acceptance criteria, so ac1 to ac5 were written by this LLD and need the user's confirmation as the acceptance criteria.
 - alt2 partial: alternatives were scored against four constraints derived from the request, since no Story, Epic or HLD constraints exist.
 - sbdry4 partial: the criterion ids ac1 to ac5 and citation ids c2 to c4 are labels this LLD assigned.
+
+## Resolved questions
+
+- `q188e74ee` — Confirm alternative a4 (guidance by type, with an optional repo setting that gives a non-Node project an independent gate run): the request did not choose between guidance only and configured commands.
+  - **resolved**: Guidance with an optional gate — User approved the LLD with alternative a4 (2026-11-19): guidance by project type plus an optional repo setting for an independent gate run. _(2026-11-19T18:26:12.000Z)_
+
+## Citations
+
+- **[[c1]]** `code` `src/daemon/steps/build-step/validation-checks.ts:35` — "s1 search.text: the hardcoded typecheck and test-runner argv constants (also validation-checks.ts:43 and :219-221; render.ts:30-31, :113-114, :239-240)"
+- **[[c2]]** `code` `src/daemon/steps/build-step/validation-checks.ts:443-470` — "s1 module.profile: how the gate runs the typecheck and the tests and reads the TAP report (also validation-checks.ts:515-560 and tap-results.ts:63)"
+- **[[c3]]** `code` `src/daemon/steps/build-step/phases/validate.ts:433-434` — "s1 usage.example: the validate phase builds the plan, adds the typecheck projects and runs the checks (also render.ts:280 and :311)"
+- **[[c4]]** `code` `src/daemon/steps/build-step/__tests__/validation-checks.test.ts:100-101` — "s1 test.locate: tests that assert the current constants (also validation-checks.test.ts:58 and :708-710)"

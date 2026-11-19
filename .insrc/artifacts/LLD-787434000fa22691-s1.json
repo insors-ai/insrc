@@ -58,7 +58,16 @@
       "references": [],
       "attachments": []
     },
-    "rangeBase": "8729144941c234c431f1baab07964143cad889ae"
+    "rangeBase": "8729144941c234c431f1baab07964143cad889ae",
+    "questionResolutions": {
+      "q188e74ee": {
+        "question": "Confirm alternative a4 (guidance by type, with an optional repo setting that gives a non-Node project an independent gate run): the request did not choose between guidance only and configured commands.",
+        "status": "resolved",
+        "choice": "Guidance with an optional gate",
+        "rationale": "User approved the LLD with alternative a4 (2026-11-19): guidance by project type plus an optional repo setting for an independent gate run.",
+        "resolvedAt": "2026-11-19T18:26:12.000Z"
+      }
+    }
   },
   "body": {
     "summary": {

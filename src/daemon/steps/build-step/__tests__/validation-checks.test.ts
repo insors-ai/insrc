@@ -17,8 +17,11 @@ import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 
 import {
+	PROJECT_TYPE_GUIDANCE,
 	TEST_RUNNER_ARGV,
 	TYPECHECK_ARGV,
+	defaultCommandProfile,
+	detectProjectType,
 	owningTypecheckProjects,
 	planTaskCheckPlan,
 	resolveTaskTestFiles,
@@ -825,4 +828,52 @@ test('with a storyKey, a trivial build that deletes a test file does not ask to 
 		commit({ 'src/a/__tests__/added.test.ts': null }, 'feat(build): S001/t3 remove it again', KEY);
 		assert.deepEqual((await trivialCheckPlan(repo, base, KEY)).testFiles, ['src/a/__tests__/notice.test.ts']);
 	} finally { cleanup(); }
+});
+
+// --- command profile (LLD-787434000fa22691-s1, t1) ---
+
+function markerRepo(...files: string[]): string {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-profile-'));
+	for (const f of files) {
+		mkdirSync(dirname(join(repo, f)), { recursive: true });
+		writeFileSync(join(repo, f), '');
+	}
+	return repo;
+}
+
+test('project type is detected from root marker files and mixed or no markers give unknown', () => {
+	const cases: ReadonlyArray<readonly [string[], string]> = [
+		[['package.json'], 'node'],
+		[['pyproject.toml'], 'python'],
+		[['setup.py'], 'python'],
+		[['go.mod'], 'go'],
+		[['Cargo.toml'], 'rust'],
+		[['pom.xml'], 'jvm'],
+		[['build.gradle'], 'jvm'],
+		[['build.sbt'], 'jvm'],
+		[[], 'unknown'],
+		[['package.json', 'go.mod'], 'unknown'],
+		[['package.json', 'sub/go.mod'], 'node'],   // only the root decides
+	];
+	for (const [files, want] of cases) {
+		const repo = markerRepo(...files);
+		try { assert.equal(detectProjectType(repo), want, files.join(',') || '(none)'); }
+		finally { rmSync(repo, { recursive: true, force: true }); }
+	}
+});
+
+test("the Node default profile equals today's argv and tap format", () => {
+	const node = defaultCommandProfile('node');
+	assert.deepEqual(node.typecheck, TYPECHECK_ARGV);
+	assert.deepEqual(node.testCommand, TEST_RUNNER_ARGV);
+	assert.equal(node.resultFormat, 'tap');
+	assert.equal(node.commandsSource, 'node-default');
+	for (const type of ['python', 'go', 'rust', 'jvm', 'unknown'] as const) {
+		const p = defaultCommandProfile(type);
+		assert.equal(p.commandsSource, 'none', type);
+		assert.deepEqual(p.typecheck, [], type);
+	}
+	for (const type of ['node', 'python', 'go', 'rust', 'jvm', 'unknown'] as const) {
+		assert.ok(PROJECT_TYPE_GUIDANCE[type].typecheck.length > 0 && PROJECT_TYPE_GUIDANCE[type].test.length > 0, type);
+	}
 });

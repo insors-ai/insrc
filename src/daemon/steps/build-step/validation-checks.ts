@@ -42,6 +42,70 @@ export const TYPECHECK_ARGV: readonly string[] = ['npx', 'tsc', '--noEmit'];
  *  written to a file of its own (see `runTestFile`). */
 export const TEST_RUNNER_ARGV: readonly string[] = ['npx', 'tsx', '--test-force-exit'];
 
+// ---------------------------------------------------------------------------
+// Command profile (LLD-787434000fa22691-s1, task t1)
+// ---------------------------------------------------------------------------
+
+/** The kind of project at a repository's root, told from its marker files. */
+export type ProjectType = 'node' | 'python' | 'go' | 'rust' | 'jvm' | 'unknown';
+/** How a test run is read: its TAP report title by title, or its exit code alone. */
+export type ResultFormat = 'tap' | 'exit-code';
+/** Where the gate's commands came from. */
+export type CommandsSource = 'node-default' | 'repo-setting' | 'none';
+
+/** The commands one build is gated and prompted by. `typecheck` and `testCommand`
+ *  are empty when `commandsSource` is 'none': the gate then has nothing to run. */
+export interface CommandProfile {
+	readonly projectType:   ProjectType;
+	readonly typecheck:     readonly string[];
+	readonly testCommand:   readonly string[];
+	readonly resultFormat:  ResultFormat;
+	readonly commandsSource: CommandsSource;
+}
+
+/** A repo setting names an empty command or an unknown result format. */
+export class InvalidCommandSetting extends Error {
+	constructor(readonly field: string, reason: string) {
+		super(`invalid build command setting '${field}': ${reason}`);
+		this.name = 'InvalidCommandSetting';
+	}
+}
+
+/** Root marker files per project type; a root with markers of two types is 'unknown'. */
+const PROJECT_MARKERS: ReadonlyArray<readonly [Exclude<ProjectType, 'unknown'>, readonly string[]]> = [
+	['node',   ['package.json']],
+	['python', ['pyproject.toml', 'setup.py']],
+	['go',     ['go.mod']],
+	['rust',   ['Cargo.toml']],
+	['jvm',    ['pom.xml', 'build.gradle', 'build.gradle.kts', 'build.sbt']],
+];
+
+/** The project type from the marker files at the repository root only; a
+ *  subdirectory's markers are never guessed at. */
+export function detectProjectType(repoPath: string): ProjectType {
+	const found = PROJECT_MARKERS.filter(([, files]) => files.some(f => existsSync(join(repoPath, f)))).map(([type]) => type);
+	return found.length === 1 && found[0] !== undefined ? found[0] : 'unknown';
+}
+
+/** Per type, the commands the builder prompt names. Guidance text only: the gate
+ *  runs only the Node default or a repo setting, never these. */
+export const PROJECT_TYPE_GUIDANCE: Readonly<Record<ProjectType, { readonly typecheck: string; readonly test: string }>> = {
+	node:    { typecheck: 'npx tsc --noEmit', test: "npx tsx --test 'src/**/__tests__/*.test.ts'" },
+	python:  { typecheck: 'mypy . (or pyright)', test: 'pytest' },
+	go:      { typecheck: 'go vet ./...', test: 'go test ./...' },
+	rust:    { typecheck: 'cargo check', test: 'cargo test' },
+	jvm:     { typecheck: 'mvn -q compile (or gradle compileJava / sbt compile)', test: 'mvn -q test (or gradle test / sbt test)' },
+	unknown: { typecheck: "the project's own typecheck or compile command", test: "the project's own test command" },
+};
+
+/** The profile of a project with no repo setting: today's Node gate for a Node
+ *  project, no command for any other type. */
+export function defaultCommandProfile(projectType: ProjectType): CommandProfile {
+	return projectType === 'node'
+		? { projectType, typecheck: TYPECHECK_ARGV, testCommand: TEST_RUNNER_ARGV, resultFormat: 'tap', commandsSource: 'node-default' }
+		: { projectType, typecheck: [], testCommand: [], resultFormat: 'exit-code', commandsSource: 'none' };
+}
+
 export const TYPECHECK_TIMEOUT_MS = 300_000;
 export const TEST_TIMEOUT_MS      = 600_000;
 

@@ -43,7 +43,7 @@ function typecheckFixture(): void {
 }
 
 describe('Finding and FindingCategory', () => {
-	it('are exported with the exact documented field shapes, including the id field', () => {
+	it('Finding and FindingCategory are exported with the exact documented field shapes, including the id field', () => {
 		assert.doesNotThrow(typecheckFixture,
 			`${FIXTURE} must compile with no @ts-expect-error mismatches`);
 

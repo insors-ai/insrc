@@ -318,7 +318,12 @@ export interface ValidationResult {
 	readonly violations: readonly string[];
 }
 
-export type ScopeValidator = (scope: Scope) => ValidationResult;
+/**
+ * `registeredRepoRoot` threads a real root to sc6's PointerPathValidator -- no fixed/synthetic
+ * root can detect a '..'-escape soundly (a crafted path reusing that root's own last segment
+ * resolves back inside it while still escaping the real repo).
+ */
+export type ScopeValidator = (scope: Scope, registeredRepoRoot: string) => ValidationResult;
 
 /**
  * Which of Scope's named Pointer-typed fields must be populated (the self-inclusive chain up to

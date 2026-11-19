@@ -105,7 +105,7 @@ interface Scope {
   readonly extension?: Pointer;
   readonly amendment?: Pointer;
 }
-type ScopeValidator = (scope: Scope) => ValidationResult; // one per review type, per k3
+type ScopeValidator = (scope: Scope, registeredRepoRoot: string) => ValidationResult; // one per review type, per k3; registeredRepoRoot threads a real root to sc6's PointerPathValidator -- no fixed/synthetic root can detect a '..'-escape soundly
 interface ValidationResult {
   readonly ok: boolean;
   readonly violations: readonly string[];

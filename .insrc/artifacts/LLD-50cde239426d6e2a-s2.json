@@ -27,30 +27,18 @@
     "storyTitle": "Scope describes which depth and chain a review attempt belongs to, including the artifact under review itself",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "approved",
+      "status": "draft",
       "revision": {
-        "number": 3,
-        "contentHash": "2d03a68c3a8214c95c6eb840618de446516a4612778ec43d1c007ebc2e25aa18",
-        "at": "2026-11-19T08:09:22.148Z",
+        "number": 4,
+        "contentHash": "42a25178457b0f49c5949ea3d6de1c0c9519885617ba7298eb34bc134af72f16",
+        "at": "2026-11-19T10:29:01.466Z",
         "by": {
           "id": "insrc:controller",
           "kind": "person",
           "properties": {}
         }
       },
-      "signoffs": [],
-      "approval": {
-        "revision": 3,
-        "by": {
-          "id": "insrc:approval",
-          "kind": "system",
-          "properties": {}
-        },
-        "at": "2026-11-19T08:25:29.545Z",
-        "override": {
-          "reason": "Automated design review is retired/unavailable while being rewritten. Revision 3 adds consumption of sc6's PointerPathValidator inside validateDesignScope/validateCodeScope (closing the cross-LLD security gap) plus an ER fix (Pointer.section range corrected to Locator) and a verbatim sc6 sync. User approved explicitly in chat for this batch of 6 artifacts."
-        }
-      }
+      "signoffs": []
     },
     "revision": 3,
     "envelope": {
@@ -76,7 +64,7 @@
           "id": "sc3",
           "name": "Scope",
           "purpose": "Describes which review family and chain depth a review attempt covers, self-inclusive at the artifact under review, per k1/lc2.",
-          "interfaceSketch": "type ScopeType = 'design' | 'code';\ntype ScopeLevel = 'def' | 'hld' | 'lld' | 'plan' | 'task';\ninterface Scope {\n  readonly scopeType: ScopeType;\n  readonly scopeLevel: ScopeLevel;\n  readonly def?: Pointer;\n  readonly hld?: Pointer;\n  readonly lld?: Pointer;\n  readonly plan?: Pointer;\n  readonly tasks?: readonly Pointer[];\n  readonly extension?: Pointer;\n  readonly amendment?: Pointer;\n}\ntype ScopeValidator = (scope: Scope) => ValidationResult; // one per review type, per k3\ninterface ValidationResult {\n  readonly ok: boolean;\n  readonly violations: readonly string[];\n}",
+          "interfaceSketch": "type ScopeType = 'design' | 'code';\ntype ScopeLevel = 'def' | 'hld' | 'lld' | 'plan' | 'task';\ninterface Scope {\n  readonly scopeType: ScopeType;\n  readonly scopeLevel: ScopeLevel;\n  readonly def?: Pointer;\n  readonly hld?: Pointer;\n  readonly lld?: Pointer;\n  readonly plan?: Pointer;\n  readonly tasks?: readonly Pointer[];\n  readonly extension?: Pointer;\n  readonly amendment?: Pointer;\n}\ntype ScopeValidator = (scope: Scope, registeredRepoRoot: string) => ValidationResult; // one per review type, per k3; registeredRepoRoot threads a real root to sc6's PointerPathValidator -- no fixed/synthetic root can detect a '..'-escape soundly\ninterface ValidationResult {\n  readonly ok: boolean;\n  readonly violations: readonly string[];\n}",
           "ownedByStory": "s2",
           "consumedByStories": [],
           "assumptions": [
@@ -186,12 +174,18 @@
       "api": [
         {
           "name": "ScopeValidator",
-          "signature": "type ScopeValidator = (scope: Scope) => ValidationResult",
+          "signature": "type ScopeValidator = (scope: Scope, registeredRepoRoot: string) => ValidationResult",
           "parameters": [
             {
               "name": "scope",
               "type": "Scope",
               "purpose": "The populated Scope to check against its own declared (scopeType, scopeLevel) pair.",
+              "optional": false
+            },
+            {
+              "name": "registeredRepoRoot",
+              "type": "string",
+              "purpose": "The absolute path sc6's PointerPathValidator resolves each populated Pointer-typed field against. Threaded through from the caller (the controller or whoever assembles the review) rather than read from any global/process state, so the function stays a pure mapping of its own arguments.",
               "optional": false
             }
           ],
@@ -214,6 +208,12 @@
               "type": "Scope",
               "purpose": "A Scope whose scopeType is expected to be 'design'.",
               "optional": false
+            },
+            {
+              "name": "registeredRepoRoot",
+              "type": "string",
+              "purpose": "Passed straight through to sc6's PointerPathValidator for every populated Pointer-typed field.",
+              "optional": false
             }
           ],
           "returns": {
@@ -232,6 +232,12 @@
               "name": "scope",
               "type": "Scope",
               "purpose": "A Scope whose scopeType is expected to be 'code'.",
+              "optional": false
+            },
+            {
+              "name": "registeredRepoRoot",
+              "type": "string",
+              "purpose": "Passed straight through to sc6's PointerPathValidator for every populated Pointer-typed field.",
               "optional": false
             }
           ],
@@ -290,7 +296,7 @@
       {
         "contractId": "sc6",
         "role": "consumes",
-        "howDetails": "validateDesignScope and validateCodeScope each call sc6's PointerPathValidator (owned by s1) against every populated Pointer-typed field before returning ok:true, closing the gap a cross-LLD review found: this Story's ScopeValidators previously checked only field presence/absence, never the repo-root-escape security property sc1's own nonFunctional note requires somewhere."
+        "howDetails": "validateDesignScope and validateCodeScope each take registeredRepoRoot as their second parameter and call sc6's PointerPathValidator (owned by s1) against every populated Pointer-typed field before returning ok:true, closing the gap a cross-LLD review found: this Story's ScopeValidators previously checked only field presence/absence, never the repo-root-escape security property sc1's own nonFunctional note requires somewhere. The second parameter was added by a build-stage amendment: ScopeValidator's original single-argument sketch gave the validators no real root to check against, and a fixed/synthetic root is provably exploitable (a Pointer.path crafted to reuse that root's own last segment resolves back inside it while still escaping the real repo)."
       }
     ],
     "errorPaths": {
@@ -332,7 +338,7 @@
         },
         {
           "scenario": "A populated Pointer-typed field on a Scope (e.g. scope.hld) carries a path that would resolve outside the registered repo root (e.g. containing '..' segments).",
-          "detection": "validateDesignScope/validateCodeScope now call sc6's PointerPathValidator against every populated Pointer-typed field as part of their own check, after the field-presence table lookup passes; PointerPathValidator resolves the path via path.resolve and checks it stays within registeredRepoRoot.",
+          "detection": "validateDesignScope/validateCodeScope now take registeredRepoRoot as their second parameter and call sc6's PointerPathValidator against every populated Pointer-typed field, passing that same registeredRepoRoot through, as part of their own check after the field-presence table lookup passes; PointerPathValidator resolves the path via path.resolve and checks it stays within registeredRepoRoot.",
           "response": "Returns ok:false with a violation naming the escaping field, folded into the same ValidationResult.violations array as any field-presence violations. This closes a gap a cross-LLD review found: earlier this Story's validators checked only field presence/absence, leaving the repo-root-escape requirement sc1's nonFunctional security note promises unimplemented anywhere.",
           "userImpact": "A Scope carrying an escaping Pointer path is rejected before being sent for review, with a named violation identifying which field.",
           "recoverable": true

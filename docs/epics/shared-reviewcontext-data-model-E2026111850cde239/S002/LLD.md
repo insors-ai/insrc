@@ -44,11 +44,12 @@ This Story defines Scope, the type that names which review family (design or cod
 ### 2.1 `ScopeValidator`
 
 ```typescript
-type ScopeValidator = (scope: Scope) => ValidationResult
+type ScopeValidator = (scope: Scope, registeredRepoRoot: string) => ValidationResult
 ```
 
 **Parameters:**
 - `scope: Scope` — The populated Scope to check against its own declared (scopeType, scopeLevel) pair.
+- `registeredRepoRoot: string` — The absolute path sc6's PointerPathValidator resolves each populated Pointer-typed field against. Threaded through from the caller rather than read from any global/process state, so the function stays a pure mapping of its own arguments.
 
 **Returns:** `ValidationResult` — {ok, violations}: whether exactly the fields valid for this Scope's (scopeType, scopeLevel) pair are populated, and a human-readable violation per field that is wrongly present or wrongly absent.
 
@@ -63,6 +64,7 @@ const validateDesignScope: ScopeValidator
 
 **Parameters:**
 - `scope: Scope` — A Scope whose scopeType is expected to be 'design'.
+- `registeredRepoRoot: string` — Passed straight through to sc6's PointerPathValidator for every populated Pointer-typed field.
 
 **Returns:** `ValidationResult` — ok:false with a violation naming the mismatch if scope.scopeType is not 'design'; otherwise checks the def/hld/lld self-inclusive chain for scope.scopeLevel. As of this revision, also calls sc6's PointerPathValidator against every populated Pointer-typed field (def/hld/lld/plan/tasks/extension/amendment), closing the repo-root-escape gap a cross-LLD review found; a violation from that check is folded into the same violations array.
 
@@ -74,6 +76,7 @@ const validateCodeScope: ScopeValidator
 
 **Parameters:**
 - `scope: Scope` — A Scope whose scopeType is expected to be 'code'.
+- `registeredRepoRoot: string` — Passed straight through to sc6's PointerPathValidator for every populated Pointer-typed field.
 
 **Returns:** `ValidationResult` — ok:false with a violation naming the mismatch if scope.scopeType is not 'code'; otherwise checks the def/hld/lld/plan/tasks self-inclusive chain for scope.scopeLevel. As of this revision, also calls sc6's PointerPathValidator against every populated Pointer-typed field (def/hld/lld/plan/tasks/extension/amendment), closing the repo-root-escape gap a cross-LLD review found; a violation from that check is folded into the same violations array.
 
@@ -111,7 +114,7 @@ A private, declarative data shape (not exported as part of sc3's public surface)
 | `sc3` | implements | This Story is sc3's owner; Scope, ScopeType, ScopeLevel, ScopeValidator and ValidationResult are implemented exactly as sc3's interfaceSketch, with validateDesignScope/validateCodeScope as the two required 'one per review type' instances. |
 | `sc1` | consumes | Scope's def/hld/lld/plan/extension/amendment fields and tasks array are typed as Pointer/readonly Pointer[] exactly as sc1 publishes Pointer; this Story does not redesign Locator or Pointer. |
 | `sc2` | consumes | This Story does not call PointerStalenessCheck itself (Scope's validators check field presence/shape, not content freshness); it simply ensures Scope's Pointer-typed fields remain structurally compatible with sc2's PointerStalenessCheck signature for whichever caller later runs that check. |
-| `sc6` | consumes | validateDesignScope and validateCodeScope each call sc6's PointerPathValidator (owned by s1) against every populated Pointer-typed field before returning ok:true, closing the gap a cross-LLD review found: this Story's ScopeValidators previously checked only field presence/absence, never the repo-root-escape security property sc1's own nonFunctional note requires somewhere. |
+| `sc6` | consumes | validateDesignScope and validateCodeScope each take registeredRepoRoot as their second parameter and call sc6's PointerPathValidator (owned by s1) against every populated Pointer-typed field before returning ok:true, closing the gap a cross-LLD review found: this Story's ScopeValidators previously checked only field presence/absence, never the repo-root-escape security property sc1's own nonFunctional note requires somewhere. The second parameter was added by a build-stage amendment: ScopeValidator's original single-argument sketch gave the validators no real root to check against, and a fixed/synthetic root is provably exploitable (a Pointer.path crafted to reuse that root's own last segment resolves back inside it while still escaping the real repo). |
 
 ## 6. Error paths
 
@@ -138,7 +141,7 @@ A private, declarative data shape (not exported as part of sc3's public surface)
   - Response: Returns ok:false with a violation naming tasks as effectively absent.
   - User impact: A Scope cannot claim task-level coverage while naming zero actual Tasks.
 - **A populated Pointer-typed field on a Scope (e.g. scope.hld) carries a path that would resolve outside the registered repo root (e.g. containing '..' segments).** (recoverable)
-  - Detection: validateDesignScope/validateCodeScope now call sc6's PointerPathValidator against every populated Pointer-typed field as part of their own check, after the field-presence table lookup passes; PointerPathValidator resolves the path via path.resolve and checks it stays within registeredRepoRoot.
+  - Detection: validateDesignScope/validateCodeScope now take registeredRepoRoot as their second parameter and call sc6's PointerPathValidator against every populated Pointer-typed field, passing that same registeredRepoRoot through, as part of their own check after the field-presence table lookup passes; PointerPathValidator resolves the path via path.resolve and checks it stays within registeredRepoRoot.
   - Response: Returns ok:false with a violation naming the escaping field, folded into the same ValidationResult.violations array as any field-presence violations. This closes a gap a cross-LLD review found: earlier this Story's validators checked only field presence/absence, leaving the repo-root-escape requirement sc1's nonFunctional security note promises unimplemented anywhere.
   - User impact: A Scope carrying an escaping Pointer path is rejected before being sent for review, with a named violation identifying which field.
 

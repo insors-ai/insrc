@@ -8,8 +8,7 @@
  * Pure, synchronous, no I/O.
  */
 
-import { isAbsolute, normalize, sep } from 'node:path';
-
+import { validatePointerPath } from './pointer-checks.js';
 import type { Pointer, Scope, ScopeLevel, ScopeType, ScopeValidator } from './types.js';
 
 /**
@@ -24,22 +23,6 @@ interface ScopeFieldRequirement {
 }
 
 const POINTER_FIELDS = ['def', 'hld', 'lld', 'plan', 'extension', 'amendment'] as const satisfies readonly (keyof Scope)[];
-
-/**
- * ScopeValidator takes only a Scope, with no registeredRepoRoot parameter, so sc6's
- * PointerPathValidator (which requires a real root) cannot be called soundly here: calling it
- * with ANY fixed synthetic root is exploitable -- a path like '../<root's own last segment>/x'
- * resolves back inside that synthetic root while still escaping the real one, because the
- * traversal depth and the synthetic root's depth can coincide. The sound, root-independent
- * equivalent is checking the already-relative path's own structure: after `normalize`, a
- * repo-relative path escapes ANY possible root if and only if it is absolute or its normalized
- * form still starts with '..' -- no real root is needed to decide that.
- */
-function escapesAnyRoot(path: string): boolean {
-	if (isAbsolute(path)) return true;
-	const normalized = normalize(path);
-	return normalized === '..' || normalized.startsWith(`..${sep}`);
-}
 
 // ScopeLevel is one unified chain (def < hld < lld < plan < task): self-inclusive at a level
 // requires every field up to and including that level's own field and forbids every field
@@ -79,22 +62,24 @@ function checkFieldRequirement(scope: Scope, requirement: ScopeFieldRequirement)
 	return violations;
 }
 
-function checkPointerPaths(scope: Scope): readonly string[] {
+function checkPointerPaths(scope: Scope, registeredRepoRoot: string): readonly string[] {
 	const violations: string[] = [];
 	for (const field of POINTER_FIELDS) {
 		const pointer = scope[field] as Pointer | undefined;
 		if (pointer === undefined) continue;
-		if (escapesAnyRoot(pointer.path)) violations.push(`'${field}': '${pointer.path}' escapes the repo root`);
+		const result = validatePointerPath(pointer, registeredRepoRoot);
+		if (!result.ok) violations.push(...result.violations.map((v) => `'${field}': ${v}`));
 	}
 	if (scope.tasks !== undefined) {
 		for (const [index, pointer] of scope.tasks.entries()) {
-			if (escapesAnyRoot(pointer.path)) violations.push(`'tasks[${index}]': '${pointer.path}' escapes the repo root`);
+			const result = validatePointerPath(pointer, registeredRepoRoot);
+			if (!result.ok) violations.push(...result.violations.map((v) => `'tasks[${index}]': ${v}`));
 		}
 	}
 	return violations;
 }
 
-function validateScope(scope: Scope, expectedType: ScopeType, requirements: Readonly<Record<string, ScopeFieldRequirement>>): { readonly ok: boolean; readonly violations: readonly string[] } {
+function validateScope(scope: Scope, registeredRepoRoot: string, expectedType: ScopeType, requirements: Readonly<Record<string, ScopeFieldRequirement>>): { readonly ok: boolean; readonly violations: readonly string[] } {
 	if (scope.scopeType !== expectedType) {
 		return { ok: false, violations: [`scopeType '${scope.scopeType}' does not match this validator's expected '${expectedType}'`] };
 	}
@@ -102,10 +87,10 @@ function validateScope(scope: Scope, expectedType: ScopeType, requirements: Read
 	if (requirement === undefined) {
 		return { ok: false, violations: [`(scopeType '${scope.scopeType}', scopeLevel '${scope.scopeLevel}') is not a valid combination`] };
 	}
-	const violations = [...checkFieldRequirement(scope, requirement), ...checkPointerPaths(scope)];
+	const violations = [...checkFieldRequirement(scope, requirement), ...checkPointerPaths(scope, registeredRepoRoot)];
 	return { ok: violations.length === 0, violations };
 }
 
-export const validateDesignScope: ScopeValidator = (scope) => validateScope(scope, 'design', DESIGN_REQUIREMENTS);
+export const validateDesignScope: ScopeValidator = (scope, registeredRepoRoot) => validateScope(scope, registeredRepoRoot, 'design', DESIGN_REQUIREMENTS);
 
-export const validateCodeScope: ScopeValidator = (scope) => validateScope(scope, 'code', CODE_REQUIREMENTS);
+export const validateCodeScope: ScopeValidator = (scope, registeredRepoRoot) => validateScope(scope, registeredRepoRoot, 'code', CODE_REQUIREMENTS);

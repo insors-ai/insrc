@@ -22,30 +22,18 @@
     "epicSlug": "shared-reviewcontext-data-model",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "approved",
+      "status": "draft",
       "revision": {
-        "number": 5,
-        "contentHash": "27774954d5d0fde110eac0aae23183813b988c0766681cb056c419870c8881b0",
-        "at": "2026-11-19T08:09:41.167Z",
+        "number": 6,
+        "contentHash": "00c06d178708e8fb2e1c39d06d12c9b5c4ee76a0d11a3bcb0dc3e13cb9a35303",
+        "at": "2026-11-19T10:28:17.442Z",
         "by": {
           "id": "insrc:controller",
           "kind": "person",
           "properties": {}
         }
       },
-      "signoffs": [],
-      "approval": {
-        "revision": 5,
-        "by": {
-          "id": "insrc:approval",
-          "kind": "system",
-          "properties": {}
-        },
-        "at": "2026-11-19T08:22:14.012Z",
-        "override": {
-          "reason": "Automated design review is retired/unavailable while being rewritten. Revision 5 adds sc6 (Pointer path validation, owned by s1, consumed by s2/s3) closing a cross-LLD security-check gap found by a controller-led review, plus two rounds of self-caught consistency fixes (sc6 purpose text now verbatim across HLD/s1/s2/s3; rollout rationale text updated to mention sc6). User approved explicitly in chat for this batch of 6 artifacts."
-        }
-      }
+      "signoffs": []
     },
     "envelope": {
       "description": "",
@@ -110,7 +98,7 @@
         "id": "sc3",
         "name": "Scope",
         "purpose": "Describes which review family and chain depth a review attempt covers, self-inclusive at the artifact under review, per k1/lc2.",
-        "interfaceSketch": "type ScopeType = 'design' | 'code';\ntype ScopeLevel = 'def' | 'hld' | 'lld' | 'plan' | 'task';\ninterface Scope {\n  readonly scopeType: ScopeType;\n  readonly scopeLevel: ScopeLevel;\n  readonly def?: Pointer;\n  readonly hld?: Pointer;\n  readonly lld?: Pointer;\n  readonly plan?: Pointer;\n  readonly tasks?: readonly Pointer[];\n  readonly extension?: Pointer;\n  readonly amendment?: Pointer;\n}\ntype ScopeValidator = (scope: Scope) => ValidationResult; // one per review type, per k3\ninterface ValidationResult {\n  readonly ok: boolean;\n  readonly violations: readonly string[];\n}",
+        "interfaceSketch": "type ScopeType = 'design' | 'code';\ntype ScopeLevel = 'def' | 'hld' | 'lld' | 'plan' | 'task';\ninterface Scope {\n  readonly scopeType: ScopeType;\n  readonly scopeLevel: ScopeLevel;\n  readonly def?: Pointer;\n  readonly hld?: Pointer;\n  readonly lld?: Pointer;\n  readonly plan?: Pointer;\n  readonly tasks?: readonly Pointer[];\n  readonly extension?: Pointer;\n  readonly amendment?: Pointer;\n}\ntype ScopeValidator = (scope: Scope, registeredRepoRoot: string) => ValidationResult; // one per review type, per k3; registeredRepoRoot threads a real root to sc6's PointerPathValidator -- no fixed/synthetic root can detect a '..'-escape soundly\ninterface ValidationResult {\n  readonly ok: boolean;\n  readonly violations: readonly string[];\n}",
         "ownedByStory": "s2",
         "consumedByStories": [],
         "assumptions": [

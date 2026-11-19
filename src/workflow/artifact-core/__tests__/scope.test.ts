@@ -74,9 +74,9 @@ describe('Scope, ScopeType, ScopeLevel, ValidationResult and ScopeValidator', ()
 		assert.equal(result.ok, false);
 		assert.deepEqual(result.violations, ['x escapes the repo root']);
 
-		// A ScopeValidator takes exactly one Scope and returns exactly one ValidationResult.
-		const validator: ScopeValidator = (scope) => ({ ok: scope.scopeType === 'design', violations: [] });
-		assert.equal(validator(minimal).ok, true);
-		assert.equal(validator(full).ok, false);
+		// A ScopeValidator takes a Scope and a registeredRepoRoot, and returns a ValidationResult.
+		const validator: ScopeValidator = (scope, root) => ({ ok: scope.scopeType === 'design' && root.length > 0, violations: [] });
+		assert.equal(validator(minimal, '/repo/root').ok, true);
+		assert.equal(validator(full, '/repo/root').ok, false);
 	});
 });

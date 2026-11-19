@@ -35,9 +35,9 @@ export function positive(): void {
 
 	const result: ValidationResult = { ok: false, violations: ['x'] };
 
-	// A ScopeValidator takes exactly one Scope and returns exactly one ValidationResult.
-	const validator: ScopeValidator = (s: Scope): ValidationResult => ({ ok: s.scopeType === 'design', violations: [] });
-	const validated: ValidationResult = validator(full);
+	// A ScopeValidator takes a Scope and a registeredRepoRoot, and returns a ValidationResult.
+	const validator: ScopeValidator = (s: Scope, root: string): ValidationResult => ({ ok: s.scopeType === 'design' && root.length > 0, violations: [] });
+	const validated: ValidationResult = validator(full, '/repo/root');
 
 	void minimal; void full; void result; void validated;
 }

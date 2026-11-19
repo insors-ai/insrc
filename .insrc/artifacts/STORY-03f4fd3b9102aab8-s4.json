@@ -18,7 +18,19 @@
         "relation": "derived-from"
       },
       "references": [],
-      "attachments": [],
+      "attachments": [
+        {
+          "target": {
+            "entityId": "LLD-03f4fd3b9102aab8-s4",
+            "type": "LLD",
+            "relation": "documents",
+            "fragment": "docs/epics/review-rounds-reconciliation-recovery-E2026111803f4fd3b/S004/LLD.md"
+          },
+          "revision": 1,
+          "at": "2026-11-19T14:46:21.013Z",
+          "externalId": "7012492602"
+        }
+      ],
       "binding": {
         "reference": {
           "entityId": "insors-ai/insrc#214",

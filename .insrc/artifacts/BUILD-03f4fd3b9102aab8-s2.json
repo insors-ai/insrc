@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 5,
+        "contentHash": "3aa612f8b0537f83c723a14646e62513e3aad9cec539322fed910e22b02de1a4",
+        "at": "2026-11-19T18:58:15.385Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 5,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-19T19:04:13.442Z",
+        "override": {
+          "reason": "Automated code review (insrc_code_review_step) is retired/unavailable per CLAUDE.md. Self-review substitute recorded in SELF-REVIEW.md and /tmp/.insrc/review-packet-03f4fd3b9102aab8-s2.md, including an externally-reported P2 (Finding.category not cross-checked against the FindingCategory alias) found and fixed after the first self-review pass. User approved explicitly in chat."
+        }
+      }
+    },
+    "workflow": "build",
+    "runId": "store-37e09ec7-4b5f-43b7-96fb-aeb460688151",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-19T18:42:19.290Z",
+    "epicCreatedAt": "2026-11-18T06:14:00.057Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "03f4fd3b9102aab8",
+    "storyId": "s2",
+    "revision": 5,
+    "updatedAt": "2026-11-19T18:57:42.012Z",
+    "authoredBy": "controller",
+    "epicSlug": "review-rounds-reconciliation-recovery"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      }
+    ],
+    "summary": "Fixed a P2 found in external review of pinned revision 4199c00d2: the exact-union assertion verified FindingCategory in isolation but never checked that Finding.category actually uses that alias (an independently narrowed or widened category field would still have passed). Added Equal<Finding['category'], FindingCategory> = true, reproducing both reported mutations and confirming the new assertion catches each before restoring clean.",
+    "testRecord": {
+      "md": "docs/epics/review-rounds-reconciliation-recovery-E2026111803f4fd3b/S002/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/workflow/review-round/__tests__/finding.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-19T18:57:42.012Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-round/__type-tests__/finding.typecheck.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-19T18:57:42.012Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-round/finding.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-19T18:57:42.012Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/review-rounds-reconciliation-recovery-E2026111803f4fd3b/S002/SELF-REVIEW.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-19T18:57:42.012Z"
+      }
+    ],
+    "commit": "0d33cc2c7"
+  },
+  "citations": []
+}

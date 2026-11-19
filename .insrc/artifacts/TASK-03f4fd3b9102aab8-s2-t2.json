@@ -1,0 +1,104 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-14cda0d0-a8a9-41d7-87d1-550ae1c1ec3e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-19T18:38:08.840Z",
+    "epicCreatedAt": "2026-11-18T06:14:00.057Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "03f4fd3b9102aab8",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Add the full named test suite for Finding/FindingCategory",
+      "parent": {
+        "entityId": "STORY-03f4fd3b9102aab8-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-03f4fd3b9102aab8-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-03f4fd3b9102aab8-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#219",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "bf0eeabbd6f7d90dbbee06bfd2f9f367d027be178fc8841cba9b39e6b8d9ba86",
+        "at": "2026-11-19T18:38:08.840Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-19T18:38:08.841Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the full named test suite for Finding/FindingCategory",
+    "summary": "One it() per testStrategy.testLevels subject (6 total) in __tests__/finding.test.ts, matching ac1/ac2's acceptanceMapping.provingTests verbatim, exercising the compile-time fixture from t1.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "All 6 named test subjects from testStrategy.testLevels[0].subjects exist as individual it() cases with matching titles",
+      "ac1 and ac2's acceptanceMapping.provingTests all pass",
+      "npx tsx --test for the new test file passes with zero failures"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "FindingCategory accepts exactly the five fixed categories (correctness, functional-completeness, security, quality, maintainability) and rejects any other category value at compile time"
+      },
+      {
+        "level": "unit",
+        "name": "Finding.severity accepts any string value, including a review-type-specific custom severity scale outside HIGH/MED"
+      },
+      {
+        "level": "unit",
+        "name": "DEFAULT_SEVERITY_SCALE names HIGH and MED as the documented fallback scale for a review type that declares none"
+      },
+      {
+        "level": "unit",
+        "name": "Finding's exported shape contains exactly id, category and severity, and no other field of any kind"
+      },
+      {
+        "level": "unit",
+        "name": "two Finding values with identical category and severity but different id values are distinct findings"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

@@ -1,0 +1,208 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 5,
+        "contentHash": "10f72637c8512883614c8bbae88a485e26cf88ccfd3900c7dd1dc866641e258b",
+        "at": "2026-11-19T18:57:42.109Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "03f4fd3b9102aab8",
+    "storyId": "s2",
+    "createdAt": "2026-11-19T18:42:19.290Z",
+    "updatedAt": "2026-11-19T18:57:42.012Z",
+    "epicCreatedAt": "2026-11-18T06:14:00.057Z",
+    "epicSlug": "review-rounds-reconciliation-recovery",
+    "revision": 5
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "89027e8f3",
+        "ranAt": "2026-11-19T18:42:19.290Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Finding and FindingCategory are exported with the exact documented field shapes, including the id field",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/finding.test.ts",
+                "title": "are exported with the exact documented field shapes, including the id field",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-round/__tests__/finding.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 868,
+            "titles": [
+              {
+                "title": "are exported with the exact documented field shapes, including the id field",
+                "result": "pass"
+              },
+              {
+                "title": "FindingCategory accepts exactly the five fixed categories (correctness, functional-completeness, security, quality, maintainability) and rejects any other category value at compile time",
+                "result": "pass"
+              },
+              {
+                "title": "Finding.severity accepts any string value, including a review-type-specific custom severity scale outside HIGH/MED",
+                "result": "pass"
+              },
+              {
+                "title": "DEFAULT_SEVERITY_SCALE names HIGH and MED as the documented fallback scale for a review type that declares none",
+                "result": "pass"
+              },
+              {
+                "title": "Finding's exported shape contains exactly id, category and severity, and no other field of any kind",
+                "result": "pass"
+              },
+              {
+                "title": "two Finding values with identical category and severity but different id values are distinct findings",
+                "result": "pass"
+              },
+              {
+                "title": "Finding and FindingCategory",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "0d33cc2c7",
+        "ranAt": "2026-11-19T18:57:42.012Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "FindingCategory accepts exactly the five fixed categories (correctness, functional-completeness, security, quality, maintainability) and rejects any other category value at compile time",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/finding.test.ts",
+                "title": "FindingCategory accepts exactly the five fixed categories (correctness, functional-completeness, security, quality, maintainability) and rejects any other category value at compile time",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Finding.severity accepts any string value, including a review-type-specific custom severity scale outside HIGH/MED",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/finding.test.ts",
+                "title": "Finding.severity accepts any string value, including a review-type-specific custom severity scale outside HIGH/MED",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "DEFAULT_SEVERITY_SCALE names HIGH and MED as the documented fallback scale for a review type that declares none",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/finding.test.ts",
+                "title": "DEFAULT_SEVERITY_SCALE names HIGH and MED as the documented fallback scale for a review type that declares none",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Finding's exported shape contains exactly id, category and severity, and no other field of any kind",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/finding.test.ts",
+                "title": "Finding's exported shape contains exactly id, category and severity, and no other field of any kind",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "two Finding values with identical category and severity but different id values are distinct findings",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/finding.test.ts",
+                "title": "two Finding values with identical category and severity but different id values are distinct findings",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-round/__tests__/finding.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 804,
+            "titles": [
+              {
+                "title": "Finding and FindingCategory are exported with the exact documented field shapes, including the id field",
+                "result": "pass"
+              },
+              {
+                "title": "FindingCategory accepts exactly the five fixed categories (correctness, functional-completeness, security, quality, maintainability) and rejects any other category value at compile time",
+                "result": "pass"
+              },
+              {
+                "title": "Finding.severity accepts any string value, including a review-type-specific custom severity scale outside HIGH/MED",
+                "result": "pass"
+              },
+              {
+                "title": "DEFAULT_SEVERITY_SCALE names HIGH and MED as the documented fallback scale for a review type that declares none",
+                "result": "pass"
+              },
+              {
+                "title": "Finding's exported shape contains exactly id, category and severity, and no other field of any kind",
+                "result": "pass"
+              },
+              {
+                "title": "two Finding values with identical category and severity but different id values are distinct findings",
+                "result": "pass"
+              },
+              {
+                "title": "Finding and FindingCategory",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

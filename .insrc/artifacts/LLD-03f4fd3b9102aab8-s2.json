@@ -27,7 +27,7 @@
     "storyTitle": "Findings are classified against a fixed taxonomy with a per-review-type-configurable severity scale",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "approved",
+      "status": "completed",
       "revision": {
         "number": 2,
         "contentHash": "e288a37402c752d93341797587f56c723b74c7211bde1b84739bf06f5ac4cb8e",

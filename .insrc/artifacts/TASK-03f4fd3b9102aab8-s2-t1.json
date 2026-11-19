@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b4644f0c-2703-4f85-8758-d3c26924afbe",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-19T18:38:08.837Z",
+    "epicCreatedAt": "2026-11-18T06:14:00.057Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "03f4fd3b9102aab8",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Add FindingCategory, Finding and DEFAULT_SEVERITY_SCALE",
+      "parent": {
+        "entityId": "STORY-03f4fd3b9102aab8-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-03f4fd3b9102aab8-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#218",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "d26f504c2f7c3515495932f53a3b7f75df58a725657868334c1e853a82666580",
+        "at": "2026-11-19T18:38:08.838Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-19T18:38:08.839Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add FindingCategory, Finding and DEFAULT_SEVERITY_SCALE",
+    "summary": "Add src/workflow/review-round/finding.ts exporting FindingCategory (fixed 5-member union), Finding {id, category, severity} (sc2's interfaceSketch as amended by HLD rev4), and DEFAULT_SEVERITY_SCALE = ['HIGH','MED'] as const, plus a compile-time typecheck fixture at __type-tests__/finding.typecheck.ts.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "FindingCategory, Finding and DEFAULT_SEVERITY_SCALE are exported exactly as dataModelChanges specifies, with no extra or missing field",
+      "the typecheck fixture rejects an invalid category literal and an added/removed Finding key via @ts-expect-error / Equal<keyof Finding,...>"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Finding and FindingCategory are exported with the exact documented field shapes, including the id field"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

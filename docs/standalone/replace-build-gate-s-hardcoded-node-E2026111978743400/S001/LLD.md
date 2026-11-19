@@ -262,6 +262,8 @@ As a1 for the prompt: a table of per-type commands renders the guidance, so no h
   - **resolved**: Verify existing IDs — Verified 2026-11-19: c1-c4 in the LLD are the four s1 analyze bundles in order (search.text, module.profile, usage.example, test.locate); c2, c3 and c4 cite the intended bundles. _(2026-11-19T18:27:55.231Z)_
 - `q59c82aa2` — ts1 partial: the Story has no acceptance criteria, so ac1 to ac5 were written by this LLD and need the user's confirmation as the acceptance criteria.
   - **resolved**: Confirm ac1–ac5 — User was offered ac1-ac5 for amendment on 2026-11-19, said 'yes, resolve all' and asked for no changes, so the five LLD-authored criteria stand as the Story's acceptance criteria. _(2026-11-19T18:28:31.456Z)_
+- `q0a66b38a` — alt2 partial: alternatives were scored against four constraints derived from the request, since no Story, Epic or HLD constraints exist.
+  - **resolved**: Confirm constraints before proceeding — User confirmed 2026-11-19 (yes, resolve all): the four request-derived constraints (guidance by project type, no hardcoded Node command, independent gate evidence, stays small) are the scoring basis; no Story, Epic or HLD constraints exist. _(2026-11-19T18:28:57.665Z)_
 
 ## Citations
 

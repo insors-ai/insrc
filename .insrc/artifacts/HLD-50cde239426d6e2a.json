@@ -60,6 +60,13 @@
         "choice": "Introduce SecurityPointer, as a true structural extension of Pointer (interface SecurityPointer extends Pointer), not a wrapper-by-reference. SecurityPointer carries Pointer's own path/section?/contentHash? fields plus the security-specific trustBoundaryId/taintPathStepIndex fields directly, matching this session's established true-inheritance convention (plain interface extension, no wrapping, no class hierarchy) rather than holding a separate Pointer instance by reference.",
         "rationale": "User's explicit decision: SecurityPointer, not a wrapper but an extended type -- consistent with the plain-interface structural-extension pattern already used for SecurityFinding (extends Finding) elsewhere in this session's sibling Story.",
         "resolvedAt": "2026-11-19T07:12:22.494Z"
+      },
+      "q369424e0": {
+        "question": "The same sibling Story frames 'security' as 'ONE new review type' running a 'security reviewer pass' within a round. sc3's Scope.scopeType is closed to 'design'|'code' with no third value. Must resolve: does the security pass run nested inside the primary round's existing scopeType (no enum change), or does scopeType need a third 'security' member? This changes Scope's (s2's) implementation structure, not just the sibling Story's.",
+        "status": "resolved",
+        "choice": "Nested security pass. The security reviewer pass runs within whichever primary round (design or code) is active, retaining that round's existing scopeType. Scope.scopeType stays closed to 'design'|'code'; security is represented as an additional reviewer pass inside the round, not a third scopeType value.",
+        "rationale": "User's explicit decision: Nested security pass, matching the recommendation and the SPEC's own framing of security as a pass within a round rather than a parallel round of its own.",
+        "resolvedAt": "2026-11-19T07:12:46.626Z"
       }
     }
   },

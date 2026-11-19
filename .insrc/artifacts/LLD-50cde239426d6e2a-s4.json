@@ -1,0 +1,392 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1795074401621-3ti5hc",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-19T07:50:05.900Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 200514,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-11-18T04:59:27.796Z",
+    "epicHash": "50cde239426d6e2a",
+    "epicSlug": "shared-reviewcontext-data-model",
+    "storyId": "s4",
+    "hldBaseRunId": "wf-1794984468539-8trvyt",
+    "hldEffectiveHash": "720f2f3adc5525d23526380a1f529ffe76b33eb2c0aff4624caef750f83b8cc5",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "Comments carries the submitter's freeform context and round tracking across repeated rounds on the same artifact",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "50f0657612a0f72f19f0d1793d1c0f503576e1f17907c05b7b9570b4a1aa1166",
+        "at": "2026-11-19T07:50:07.096Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-19T08:28:57.386Z",
+        "override": {
+          "reason": "Automated design review is retired/unavailable while being rewritten. Unchanged since its original self-review (clean, zero open questions); approved now as part of this batch alongside the DEF/HLD/s1/s2/s3 fixes. User approved explicitly in chat for this batch of 6 artifacts."
+        }
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    }
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Alternative a2 wins: one canonical TypeScript type per Story (Pointer/Locator, Scope, ReviewTargets, CommentEntry+round), with per-review-type validator functions running against the canonical type and a thin per-consumer transformer reshaping it for whichever LLM structured-output schema that consumer actually parses reliably, mirroring the existing CliProvider input/output transformer pattern.",
+      "ownedContracts": [
+        {
+          "id": "sc5",
+          "name": "CommentEntry + round",
+          "purpose": "The submitter's freeform, provenance-tagged context and the root-level round field, per lc5/lc6/lc7. Per the Epic's Non-Goals this type does not yet embed Scope/ReviewTargets -- the full populated ReviewContext container is assembled by deferred follow-on work.",
+          "interfaceSketch": "type CommentParty = 'submitter' | 'reviewer';\ninterface CommentEntry {\n  readonly round: number;\n  readonly party: CommentParty;\n  readonly timestamp: string; // ISO-8601\n  readonly text: string;\n}\ninterface ReviewContextRound {\n  readonly round: number; // the current attempt number, stamped once per new review round\n  readonly comments: readonly CommentEntry[]; // same-artifact-only across the chain\n}",
+          "ownedByStory": "s4",
+          "consumedByStories": [],
+          "assumptions": [
+            "c1"
+          ]
+        }
+      ],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s4",
+        "owns": [
+          "sc5"
+        ],
+        "depends": [],
+        "internal": "CommentEntry does not reference Pointer/Locator at all, so s4 needs neither sc1 nor sc2. The round-stamping mechanics (how a new attempt's round number is assigned) and the same-artifact-only scoping of Comments across a chain stay internal to s4; the full ReviewContext container embedding Scope and ReviewTargets alongside round/comments is explicitly deferred (Epic Non-Goals), since no Story in this graph depends on all of s2, s3 and s4 together."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1",
+            "sc2"
+          ],
+          "depends": [],
+          "internal": "The specific set of currently-known LocatorKind string literals (symbol/lineRange/docSection) is s1's own enumeration; because every consumer treats `Locator.kind` as an opaque string rather than exhaustively switching on a closed union, s1 can add a new literal later without forcing s2/s3/s4 to change, satisfying ac2/lc1."
+        },
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc3"
+          ],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "Which named artifact-kind fields Scope carries beyond def/hld/lld/plan/tasks (e.g. a future named kind) and the exact per-review-type ScopeValidator implementations are s2's own; no other Story's type depends on Scope, since nothing in the Epic's Story graph consumes s2."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc4"
+          ],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "ReviewTargets' own reset-on-new-round mechanics (how the entries list is rebuilt rather than merged) stay internal to s3; no other Story's type depends on ReviewTargets."
+        }
+      ],
+      "rolloutPhase": "Phase B — Scope, ReviewTargets and Comments types",
+      "nonFunctional": {
+        "performance": "The staleness check (sc2) is a single hash comparison against already-read file content; it adds no I/O beyond the read the controller already performs to populate a Pointer's contentHash.",
+        "security": "Pointer.path is repo-relative and must resolve within the registered repo root; validators (k3) reject a Pointer whose path escapes that root, consistent with the repo-registry strict-contract rule elsewhere in this codebase."
+      }
+    },
+    "summary": {
+      "prose": "This Story defines CommentEntry and ReviewContextRound: a flat, provenance-tagged freeform-context record and the explicit root-level round field every review attempt stamps. CommentEntry deliberately carries no verdict, severity or dimension field -- it is a catchall for context the rest of the model doesn't structurally handle, never a channel for trusted review output.",
+      "audience": "technical"
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": []
+    },
+    "dataModelChanges": [
+      {
+        "entity": "CommentParty",
+        "change": "new",
+        "details": "type CommentParty = 'submitter' | 'reviewer', exactly as sc5's interfaceSketch. A closed two-value union (unlike Locator's open kind) since only these two parties exist in the converged review process.",
+        "callSites": [
+          "src/workflow/artifact-core/types.ts"
+        ]
+      },
+      {
+        "entity": "CommentEntry",
+        "change": "new",
+        "details": "interface CommentEntry { readonly round: number; readonly party: CommentParty; readonly timestamp: string; readonly text: string }, exactly as sc5's interfaceSketch. No verdict/severity/dimension field exists anywhere on this type (per lc6) -- it is a pure freeform-context record. round is a first-class field on every entry, independent of how entries happen to be stored in a container.",
+        "callSites": [
+          "src/workflow/artifact-core/types.ts"
+        ]
+      },
+      {
+        "entity": "ReviewContextRound",
+        "change": "new",
+        "details": "interface ReviewContextRound { readonly round: number; readonly comments: readonly CommentEntry[] }, exactly as sc5's interfaceSketch. round is the root-level field stamped once per new review attempt (lc5/ac1); comments is same-artifact-only across the chain (lc7/ac3) by assembly discipline -- this Story's types carry no field that could leak a different artifact's comments in, since there is none to populate incorrectly from.",
+        "callSites": [
+          "src/workflow/artifact-core/types.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc5",
+        "role": "implements",
+        "howDetails": "This Story is sc5's owner; CommentParty, CommentEntry and ReviewContextRound are implemented exactly as sc5's interfaceSketch, with zero additional fields."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A CommentEntry's round value does not match the containing ReviewContextRound's own round (e.g. a stale comment from an earlier round is accidentally included in a later round's comments array).",
+          "detection": "None exists in this Story's own surface: ReviewContextRound.comments accepts any readonly CommentEntry[] value, and there is no cross-check function comparing each entry's round against the container's round.",
+          "response": "Not caught by this Story's contract at all -- consistency between an entry's own round and its container's round is a controller-assembly discipline, not something these plain data types enforce.",
+          "userImpact": "A caller that populates comments incorrectly would silently produce a ReviewContextRound with internally inconsistent round values; no error surfaces at the type level.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Comments from a different artifact in the same review chain are included in a ReviewContextRound's comments array (an lc7 violation).",
+          "detection": "None exists in this Story's own surface: CommentEntry carries no artifactId or other scoping field (a2's such a field was rejected as reaching into the deferred container assembly's scope), so there is nothing in CommentEntry itself that could distinguish a same-artifact comment from a cross-artifact one.",
+          "response": "Not caught by this Story's contract -- lc7's same-artifact-only scoping is enforced entirely by the (not-yet-built) controller assembly logic that decides which comments to read when building a ReviewContextRound, not by anything CommentEntry or ReviewContextRound carry.",
+          "userImpact": "A caller that violates lc7 would silently produce a ReviewContextRound with cross-artifact comments mixed in; no error surfaces at the type level.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A CommentEntry.party value outside the closed CommentParty union ('submitter' | 'reviewer').",
+          "expected": "Rejected at compile time by TypeScript's own type checker -- unlike Locator.kind (an intentionally open LocatorKind | string), CommentParty is a closed two-value union since only these two parties exist in the converged review process; there is no runtime path for a third value to reach this field."
+        },
+        {
+          "input": "A ReviewContextRound with an empty comments array.",
+          "expected": "Valid -- a round with no freeform comments recorded is structurally fine; comments is purely additive context, never required."
+        },
+        {
+          "input": "Multiple CommentEntry values in the same round, one from 'submitter' and one from 'reviewer', with identical timestamps.",
+          "expected": "Accepted without special-casing -- nothing in this Story's types deduplicates or orders entries by timestamp or party; both are recorded as distinct entries."
+        },
+        {
+          "input": "A CommentEntry.text that is an empty string.",
+          "expected": "Structurally valid -- text has no minimum-length constraint in sc5's interfaceSketch, and this Story introduces none."
+        }
+      ],
+      "invariantsToPreserve": []
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Verify ReviewContextRound's root-level round field states the current attempt.",
+          "subjects": [
+            "a ReviewContextRound built for attempt N carries round=N at the root level"
+          ],
+          "fixturesNeeded": [
+            "ReviewContextRound fixtures for several round numbers"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Verify CommentEntry carries exactly round/party/timestamp/text with no verdict/severity/dimension channel.",
+          "subjects": [
+            "a CommentEntry carries round, party, timestamp and text as first-class fields",
+            "CommentEntry's exported shape contains no verdict, severity or dimension field of any kind",
+            "a CommentEntry.party value outside 'submitter'|'reviewer' is rejected at compile time (type-level check, not a runtime test)"
+          ],
+          "fixturesNeeded": [
+            "CommentEntry fixtures for both CommentParty values"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Verify CommentEntry/ReviewContextRound carry no field that could leak a different artifact's comments into a round (ac3's structural guarantee).",
+          "subjects": [
+            "CommentEntry's and ReviewContextRound's exported shapes contain no artifactId or other cross-artifact scoping field of any kind"
+          ],
+          "fixturesNeeded": []
+        },
+        {
+          "level": "unit",
+          "purpose": "Verify the documented unusual-but-valid edge cases are accepted without special-casing.",
+          "subjects": [
+            "a ReviewContextRound with an empty comments array is structurally valid",
+            "multiple CommentEntry values in the same round from different parties with identical timestamps are both recorded",
+            "a CommentEntry.text that is an empty string is structurally valid"
+          ],
+          "fixturesNeeded": [
+            "CommentEntry fixtures with identical timestamps",
+            "a ReviewContextRound fixture with zero comments"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "a ReviewContextRound built for attempt N carries round=N at the root level"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "a CommentEntry carries round, party, timestamp and text as first-class fields",
+            "CommentEntry's exported shape contains no verdict, severity or dimension field of any kind"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "CommentEntry's and ReviewContextRound's exported shapes contain no artifactId or other cross-artifact scoping field of any kind"
+          ]
+        }
+      ],
+      "testFramework": "node:test (tsx --test)"
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "CommentEntry + ReviewContextRound exactly as sketched, no extra fields",
+        "oneLineSummary": "CommentParty/CommentEntry/ReviewContextRound implemented exactly per sc5's interfaceSketch -- round/party/timestamp/text only, with no artifactId or other scoping field; same-artifact-only scoping (lc7) is a controller-assembly discipline, not a field this type carries.",
+        "approach": "Define type CommentParty = 'submitter' | 'reviewer', interface CommentEntry { round, party, timestamp, text }, and interface ReviewContextRound { round, comments: readonly CommentEntry[] }. Nothing else. A caller only ever populates comments from the current artifact's own prior comments when assembling a ReviewContextRound; which artifact a given round belongs to is carried by the surrounding (deferred) ReviewContext container, not by CommentEntry itself.",
+        "pros": [
+          "Matches sc5's interfaceSketch exactly -- the smallest shape that fully satisfies ac1/ac2/ac3/lc5/lc6/lc7",
+          "Adds zero API surface and zero fields nobody asked for; CommentEntry stays a pure freeform-context record with no verdict/severity/dimension channel, satisfying lc6 by construction",
+          "Correctly leaves 'which artifact a round belongs to' to the deferred ReviewContext container assembly (an explicit Epic Non-Goal), rather than this Story reaching into that scope"
+        ],
+        "cons": [
+          "lc7's same-artifact-only scoping is enforced entirely by the (not-yet-built) controller assembly logic, not by any field or check this Story's types provide"
+        ],
+        "costEstimate": "XS"
+      },
+      {
+        "id": "a2",
+        "name": "Add an explicit artifactId field to CommentEntry for self-documented scoping",
+        "oneLineSummary": "Add a readonly artifactId: string field to CommentEntry so each comment structurally self-documents which artifact's chain it belongs to, instead of relying purely on assembly discipline for lc7.",
+        "approach": "Extend CommentEntry with an artifactId field (e.g. the artifact's Pointer path or id) alongside round/party/timestamp/text, so a comment carries its own scoping information.",
+        "pros": [
+          "Could make a same-artifact-only violation structurally detectable by comparing artifactId values, rather than relying purely on assembly discipline"
+        ],
+        "cons": [
+          "Deviates from sc5's published interfaceSketch, which deliberately keeps CommentEntry to exactly {round, party, timestamp, text}",
+          "Reaches into the deferred ReviewContext container assembly's own scope (correlating a comment to 'which artifact'), which is this Epic's own explicit Non-Goal and not this Story's to design",
+          "Duplicates information the surrounding, not-yet-built ReviewContext/Scope container will already carry once it exists, for no acceptance-criterion benefit"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Satisfies every ac but scores only partial on sc5 for adding an artifactId field sc5's own interfaceSketch does not publish, reaching into the deferred ReviewContext container assembly's own scope (an Epic Non-Goal)."
+      },
+      {
+        "id": "a3",
+        "name": "Nest comments in a map keyed by round number instead of a flat list with per-entry round",
+        "oneLineSummary": "Replace ReviewContextRound.comments: readonly CommentEntry[] (with round on every entry) with a Record<number, CommentEntry[]> keyed by round, dropping the per-entry round field as redundant with the key.",
+        "approach": "Store comments as a map from round number to that round's CommentEntry list, removing CommentEntry.round since the map key already states which round a comment belongs to.",
+        "pros": [
+          "Avoids repeating the same round value on every entry within one round's bucket"
+        ],
+        "cons": [
+          "Directly contradicts sc5's interfaceSketch, which requires CommentEntry.round as a first-class field on the entry itself (not merely implied by container nesting) -- ac1/ac2 both require round as an entry-level fact, independent of how comments happen to be stored",
+          "A generic map keyed by round echoes exactly the 'genericized into a map' smell this Epic's own k1 invariant warns against for Scope's named fields, now reapplied to rounds instead of artifact kinds"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Violates ac2, sc5 and k1 by dropping CommentEntry.round as a first-class entry-level field in favor of a round-keyed map, echoing the genericized-map smell k1 already warns against for Scope."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [],
+    "erDefinition": {
+      "id": "comment-entry-round-er",
+      "narrative": "Shows ReviewContextRound's single relationship: a one-to-many, same-artifact-only list of CommentEntry values, each self-stating its own round independent of container nesting.",
+      "classes": {
+        "ReviewContextRound": {
+          "description": "The root-level record of which review attempt this is, and the freeform comments recorded for it, same-artifact-only across the chain.",
+          "attributes": {
+            "round": {
+              "description": "The current attempt number, stamped once per new review round.",
+              "range": "integer",
+              "required": true
+            },
+            "comments": {
+              "description": "This round's freeform comments, same-artifact-only across the chain.",
+              "range": "CommentEntry",
+              "required": true,
+              "multivalued": true
+            }
+          }
+        },
+        "CommentEntry": {
+          "description": "A submitter's or reviewer's freeform, provenance-tagged context entry. Carries no verdict, severity or dimension field -- never a channel for trusted review output.",
+          "attributes": {
+            "round": {
+              "description": "Which round produced this comment, as a first-class fact on the entry itself.",
+              "range": "integer",
+              "required": true
+            },
+            "party": {
+              "description": "'submitter' | 'reviewer' -- a closed two-value union.",
+              "range": "string",
+              "required": true
+            },
+            "timestamp": {
+              "description": "ISO-8601 timestamp of when this comment was recorded.",
+              "range": "string",
+              "required": true
+            },
+            "text": {
+              "description": "The freeform comment text.",
+              "range": "string",
+              "required": true
+            }
+          }
+        }
+      }
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/shared-reviewcontext-data-model-E2026111850cde239/S004/er-model.html",
+        "title": "ER model"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 capability-discovery bundle on CommentEntry naming and its landing module",
+      "quotedText": "grep for 'interface CommentEntry', 'interface ReviewContextRound', and 'type CommentParty' across src/ returned zero hits."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 capability-discovery bundle reused from the Epic-level ReviewContext capability-discovery pass",
+      "quotedText": "Zero clear-match; 5 partial-match are each separate per-review-type legacy contracts/types ... baseClassIdioms: []."
+    }
+  ]
+}

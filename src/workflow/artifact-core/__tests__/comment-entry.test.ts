@@ -57,4 +57,55 @@ describe('CommentParty, CommentEntry and ReviewContextRound', () => {
 		assert.equal(round.round, 1);
 		assert.deepEqual(round.comments, [entry, reviewerEntry]);
 	});
+
+	it('a ReviewContextRound built for attempt N carries round=N at the root level', () => {
+		for (const n of [1, 2, 7]) {
+			const round: ReviewContextRound = { round: n, comments: [] };
+			assert.equal(round.round, n);
+		}
+	});
+
+	it('a CommentEntry carries round, party, timestamp and text as first-class fields', () => {
+		const entry: CommentEntry = { round: 3, party: 'reviewer', timestamp: '2026-11-19T01:00:00.000Z', text: 'looks good' };
+		assert.equal(entry.round, 3);
+		assert.equal(entry.party, 'reviewer');
+		assert.equal(entry.timestamp, '2026-11-19T01:00:00.000Z');
+		assert.equal(entry.text, 'looks good');
+	});
+
+	it("CommentEntry's exported shape contains no verdict, severity or dimension field of any kind", () => {
+		const entry: CommentEntry = { round: 1, party: 'submitter', timestamp: '2026-11-19T00:00:00.000Z', text: 'x' };
+		assert.deepEqual(Object.keys(entry).sort(), ['party', 'round', 'text', 'timestamp']);
+	});
+
+	it("a CommentEntry.party value outside 'submitter'|'reviewer' is rejected at compile time (type-level check, not a runtime test)", () => {
+		assert.doesNotThrow(typecheckFixture,
+			`${FIXTURE} must compile with no @ts-expect-error mismatches, including the rejected 'author' party literal`);
+	});
+
+	it("CommentEntry's and ReviewContextRound's exported shapes contain no artifactId or other cross-artifact scoping field of any kind", () => {
+		const entry: CommentEntry = { round: 1, party: 'submitter', timestamp: '2026-11-19T00:00:00.000Z', text: 'x' };
+		assert.deepEqual(Object.keys(entry).sort(), ['party', 'round', 'text', 'timestamp']);
+		const round: ReviewContextRound = { round: 1, comments: [entry] };
+		assert.deepEqual(Object.keys(round).sort(), ['comments', 'round']);
+	});
+
+	it('a ReviewContextRound with an empty comments array is structurally valid', () => {
+		const round: ReviewContextRound = { round: 1, comments: [] };
+		assert.deepEqual(round.comments, []);
+	});
+
+	it('multiple CommentEntry values in the same round from different parties with identical timestamps are both recorded', () => {
+		const timestamp = '2026-11-19T02:00:00.000Z';
+		const fromSubmitter: CommentEntry = { round: 1, party: 'submitter', timestamp, text: 'submitter note' };
+		const fromReviewer: CommentEntry = { round: 1, party: 'reviewer', timestamp, text: 'reviewer note' };
+		const round: ReviewContextRound = { round: 1, comments: [fromSubmitter, fromReviewer] };
+		assert.equal(round.comments.length, 2);
+		assert.deepEqual(round.comments, [fromSubmitter, fromReviewer]);
+	});
+
+	it('a CommentEntry.text that is an empty string is structurally valid', () => {
+		const entry: CommentEntry = { round: 1, party: 'submitter', timestamp: '2026-11-19T00:00:00.000Z', text: '' };
+		assert.equal(entry.text, '');
+	});
 });

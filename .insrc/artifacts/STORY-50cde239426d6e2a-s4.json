@@ -29,6 +29,17 @@
           "revision": 1,
           "at": "2026-11-19T08:29:49.101Z",
           "externalId": "7003894822"
+        },
+        {
+          "target": {
+            "entityId": "PLAN-50cde239426d6e2a-s4",
+            "type": "PLAN",
+            "relation": "documents",
+            "fragment": "docs/epics/shared-reviewcontext-data-model-E2026111850cde239/S004/PLAN.md"
+          },
+          "revision": 1,
+          "at": "2026-11-19T11:41:43.930Z",
+          "externalId": "7008071749"
         }
       ],
       "binding": {

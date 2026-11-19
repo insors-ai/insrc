@@ -891,6 +891,13 @@ test('a Node project with no setting gets the same argv and TAP judging as befor
 		assert.deepEqual(plan.testCommand, TEST_RUNNER_ARGV);
 		assert.equal(plan.resultFormat, 'tap');
 		assert.equal(plan.commandsSource, 'node-default');
+		// Judged as TAP: the run's report is read title by title under the plan's format.
+		const dir = runnerDir({ 'a.test.mjs': PASSING });
+		try {
+			const r = await runValidationChecks(dir, nodePlan({ testFiles: ['a.test.mjs'], resultFormat: plan.resultFormat, commandsSource: plan.commandsSource }));
+			assert.equal(r.tests.ok, true);
+			assert.deepEqual(r.tests.files![0]!.titles.map(t => `${t.result} ${t.title}`), ['pass alpha passes', 'pass beta passes']);
+		} finally { rmSync(dir, { recursive: true, force: true }); }
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 

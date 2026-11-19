@@ -142,6 +142,11 @@ interface Finding { readonly category: FindingCategory; readonly severity: { rea
 - The HLD's lc2 text assumes 'Feedback being an abstract base type with per-review-type implementations' as an existing fact this Story's design should be consistent with, but no such class or interface exists anywhere in the codebase (grepped repo-wide; the only 'Feedback' symbol, artifact-core/types.ts:73-93, is an unrelated comment/thread-reply type with no severity field). This LLD's chosen design still satisfies ac1/ac2 and sc2's interfaceSketch exactly by treating severity-scale configuration as a steering/prompt-level concern (via sc1's RoundDriverHooks.ground()), not a class hierarchy. Flagging for the HLD owner to correct lc2's wording in a future revision; does not block this Story's approval.
 - Resolved (revision 2, following the s3/s5 cross-review): sc2 was amended (HLD revision 4, fieldAdd, non-breaking) to add Finding.id: string, giving a finding a stable identity across rounds. s3's reconcileRound now keys ReconciliationResult.priorFindingRef off Finding.id directly instead of requiring the caller to assign and track an opaque ref.
 
+## Resolved questions
+
+- `q6cac26bc` — The HLD's lc2 text assumes 'Feedback being an abstract base type with per-review-type implementations' as an existing fact this Story's design should be consistent with, but no such class or interface exists anywhere in the codebase (grepped repo-wide; the only 'Feedback' symbol, artifact-core/types.ts:73-93, is an unrelated comment/thread-reply type with no severity field). This LLD's chosen design still satisfies ac1/ac2 and sc2's interfaceSketch exactly by treating severity-scale configuration as a steering/prompt-level concern (via sc1's RoundDriverHooks.ground()), not a class hierarchy. Flagging for the HLD owner to correct lc2's wording in a future revision; does not block this Story's approval.
+  - **resolved**: Keep prompt-level design; defer HLD correction — lc2's Feedback-hierarchy assumption doesn't exist in the codebase; the LLD's prompt-level design via RoundDriverHooks.ground() already satisfies ac1/ac2 and sc2's interfaceSketch. Flag for the HLD owner to correct later; doesn't block this Story. _(2026-11-19T18:31:39.598Z)_
+
 ## Citations
 
 - **[[c1]]** `analyze-bundle` `src/workflow/review-history/review/design-review/admission-checkpoint.ts`

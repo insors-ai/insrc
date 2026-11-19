@@ -54,6 +54,15 @@
       "description": "",
       "references": [],
       "attachments": []
+    },
+    "questionResolutions": {
+      "q6cac26bc": {
+        "question": "The HLD's lc2 text assumes 'Feedback being an abstract base type with per-review-type implementations' as an existing fact this Story's design should be consistent with, but no such class or interface exists anywhere in the codebase (grepped repo-wide; the only 'Feedback' symbol, artifact-core/types.ts:73-93, is an unrelated comment/thread-reply type with no severity field). This LLD's chosen design still satisfies ac1/ac2 and sc2's interfaceSketch exactly by treating severity-scale configuration as a steering/prompt-level concern (via sc1's RoundDriverHooks.ground()), not a class hierarchy. Flagging for the HLD owner to correct lc2's wording in a future revision; does not block this Story's approval.",
+        "status": "resolved",
+        "choice": "Keep prompt-level design; defer HLD correction",
+        "rationale": "lc2's Feedback-hierarchy assumption doesn't exist in the codebase; the LLD's prompt-level design via RoundDriverHooks.ground() already satisfies ac1/ac2 and sc2's interfaceSketch. Flag for the HLD owner to correct later; doesn't block this Story.",
+        "resolvedAt": "2026-11-19T18:31:39.598Z"
+      }
     }
   },
   "body": {

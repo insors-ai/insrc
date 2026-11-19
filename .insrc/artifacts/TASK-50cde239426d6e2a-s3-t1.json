@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-576209d9-f742-4d5e-83c9-be9a76649508",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-19T11:13:37.297Z",
+    "epicCreatedAt": "2026-11-18T04:59:27.796Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "50cde239426d6e2a",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Add ReviewTargets type",
+      "parent": {
+        "entityId": "STORY-50cde239426d6e2a-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-50cde239426d6e2a-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#207",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "195a7e6d754c71ff14bba3ef57e5404e4167e9a925b45b7cf5ae8727f6ceb82c",
+        "at": "2026-11-19T11:13:37.297Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-19T11:13:37.298Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add ReviewTargets type",
+    "summary": "Add interface ReviewTargets { readonly entries: readonly Pointer[] } to src/workflow/artifact-core/types.ts, beside Scope and Pointer. Exactly sc4's interfaceSketch, with zero additional API surface (no builder, factory, merge function, or validator) per the approved alternative a1.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "ReviewTargets is exported from types.ts with exactly sc4's interfaceSketch field shape (readonly entries: readonly Pointer[])",
+      "No builder, factory, merge, or validator function for ReviewTargets exists anywhere in types.ts",
+      "tsc --noEmit passes with the new type in place"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "ReviewTargets is exported with the exact documented field shape"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

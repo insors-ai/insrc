@@ -1,0 +1,116 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-05188340-114f-4d9a-b420-248b6d7decf4",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-19T11:13:37.299Z",
+    "epicCreatedAt": "2026-11-18T04:59:27.796Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "50cde239426d6e2a",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Write unit and contract tests for ReviewTargets",
+      "parent": {
+        "entityId": "STORY-50cde239426d6e2a-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-50cde239426d6e2a-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-50cde239426d6e2a-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#208",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "8f67bb1f47cccb6d1a8357aa64a8fd89a936cbeebc7ae9b6c87a5de074208cfa",
+        "at": "2026-11-19T11:13:37.299Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-19T11:13:37.300Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Write unit and contract tests for ReviewTargets",
+    "summary": "Add a flat kebab-case *.test.ts file under src/workflow/artifact-core/__tests__/ covering: exact-entries construction, independence across rounds, the deliberate absence of any merge/builder/validator function, empty/duplicate/mixed-section entries, and structural compatibility with sc6's PointerPathValidator -- one test case per testStrategy.testLevels subject, matching ac1/ac2's acceptanceMapping verbatim.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "Every subject named in the LLD's testStrategy.testLevels has a corresponding test case",
+      "ac1 and ac2's provingTests from the LLD's acceptanceMapping all pass",
+      "npx tsx --test for the new test file passes with zero failures"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "a ReviewTargets built from a fresh Pointer list contains exactly those entries, nothing else"
+      },
+      {
+        "level": "unit",
+        "name": "no builder, factory or merge function exists anywhere in ReviewTargets' exported surface (a1's deliberate absence of such an API)"
+      },
+      {
+        "level": "unit",
+        "name": "two ReviewTargets instances built for consecutive rounds on the same artifact are independent objects sharing no entries by construction"
+      },
+      {
+        "level": "unit",
+        "name": "ReviewTargets' exported surface contains no validator, allow-list or restriction function of any kind that could cap investigation to entries"
+      },
+      {
+        "level": "unit",
+        "name": "a ReviewTargets with zero entries is structurally valid"
+      },
+      {
+        "level": "unit",
+        "name": "entries with a duplicate Pointer (same path and section) is accepted"
+      },
+      {
+        "level": "unit",
+        "name": "entries mixing whole-file Pointers (no section) and region-pinned Pointers (section populated) is accepted"
+      },
+      {
+        "level": "integration",
+        "name": "every ReviewTargets.entries[] Pointer can be passed directly to sc6's PointerPathValidator with no reshaping"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

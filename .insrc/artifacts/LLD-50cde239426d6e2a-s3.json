@@ -27,7 +27,7 @@
     "storyTitle": "ReviewTargets names the current round's reviewable content, owned solely by the submitter",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "approved",
+      "status": "completed",
       "revision": {
         "number": 4,
         "contentHash": "ce02f4f219c38ce57a1f6fb0466a4043c3f2a1535efa3680babb22603f8fedd4",

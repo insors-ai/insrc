@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 3,
+        "contentHash": "1fd07e559d2ca06e3a80289d0e07e3f84530ce120d173010051b7954b27bbaba",
+        "at": "2026-11-19T11:21:52.729Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 3,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-19T11:37:24.321Z"
+      }
+    },
+    "workflow": "build",
+    "runId": "store-b95a6fc3-8321-42ca-a875-8b832c451b4e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-19T11:17:23.419Z",
+    "epicCreatedAt": "2026-11-18T04:59:27.796Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "50cde239426d6e2a",
+    "storyId": "s3",
+    "revision": 3,
+    "updatedAt": "2026-11-19T11:21:21.247Z",
+    "authoredBy": "controller",
+    "epicSlug": "shared-reviewcontext-data-model"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      }
+    ],
+    "summary": "The two API-absence tests only filtered export names matching /reviewtargets/i, so a builder/merge/validator exported under any other name would slip through undetected. Replaced with an exhaustive check: every runtime export of the module is either an Error subclass or not a function at all (verified types.ts exports exactly 11 Error subclasses and nothing else), which directly proves no plain function -- for ReviewTargets or anything -- exists.",
+    "testRecord": {
+      "md": "docs/epics/shared-reviewcontext-data-model-E2026111850cde239/S003/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/__tests__/review-targets.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-19T11:21:21.247Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/__type-tests__/review-targets.typecheck.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-19T11:21:21.247Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-19T11:21:21.247Z"
+      }
+    ],
+    "commit": "a4bfa64af"
+  },
+  "citations": []
+}

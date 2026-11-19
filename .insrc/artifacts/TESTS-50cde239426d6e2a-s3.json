@@ -1,0 +1,239 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 3,
+        "contentHash": "32979662c9dcceb111ef9c986518c8f476e7a7d76cf6a7fd7583a70faae07381",
+        "at": "2026-11-19T11:21:21.536Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "50cde239426d6e2a",
+    "storyId": "s3",
+    "createdAt": "2026-11-19T11:17:23.419Z",
+    "updatedAt": "2026-11-19T11:21:21.247Z",
+    "epicCreatedAt": "2026-11-18T04:59:27.796Z",
+    "epicSlug": "shared-reviewcontext-data-model",
+    "revision": 3
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "4665d920a",
+        "ranAt": "2026-11-19T11:17:23.419Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "ReviewTargets is exported with the exact documented field shape",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/review-targets.test.ts",
+                "title": "is exported with the exact documented field shape",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifact-core/__tests__/review-targets.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 947,
+            "titles": [
+              {
+                "title": "is exported with the exact documented field shape",
+                "result": "pass"
+              },
+              {
+                "title": "ReviewTargets",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "a4bfa64af",
+        "ranAt": "2026-11-19T11:21:21.247Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a ReviewTargets built from a fresh Pointer list contains exactly those entries, nothing else",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/review-targets.test.ts",
+                "title": "a ReviewTargets built from a fresh Pointer list contains exactly those entries, nothing else",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "no builder, factory or merge function exists anywhere in ReviewTargets' exported surface (a1's deliberate absence of such an API)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/review-targets.test.ts",
+                "title": "no builder, factory or merge function exists anywhere in ReviewTargets' exported surface (a1's deliberate absence of such an API)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "two ReviewTargets instances built for consecutive rounds on the same artifact are independent objects sharing no entries by construction",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/review-targets.test.ts",
+                "title": "two ReviewTargets instances built for consecutive rounds on the same artifact are independent objects sharing no entries by construction",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "ReviewTargets' exported surface contains no validator, allow-list or restriction function of any kind that could cap investigation to entries",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/review-targets.test.ts",
+                "title": "ReviewTargets' exported surface contains no validator, allow-list or restriction function of any kind that could cap investigation to entries",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a ReviewTargets with zero entries is structurally valid",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/review-targets.test.ts",
+                "title": "a ReviewTargets with zero entries is structurally valid",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "entries with a duplicate Pointer (same path and section) is accepted",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/review-targets.test.ts",
+                "title": "entries with a duplicate Pointer (same path and section) is accepted",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "entries mixing whole-file Pointers (no section) and region-pinned Pointers (section populated) is accepted",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/review-targets.test.ts",
+                "title": "entries mixing whole-file Pointers (no section) and region-pinned Pointers (section populated) is accepted",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "every ReviewTargets.entries[] Pointer can be passed directly to sc6's PointerPathValidator with no reshaping",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/review-targets.test.ts",
+                "title": "every ReviewTargets.entries[] Pointer can be passed directly to sc6's PointerPathValidator with no reshaping",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifact-core/__tests__/review-targets.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 879,
+            "titles": [
+              {
+                "title": "is exported with the exact documented field shape",
+                "result": "pass"
+              },
+              {
+                "title": "a ReviewTargets built from a fresh Pointer list contains exactly those entries, nothing else",
+                "result": "pass"
+              },
+              {
+                "title": "no builder, factory or merge function exists anywhere in ReviewTargets' exported surface (a1's deliberate absence of such an API)",
+                "result": "pass"
+              },
+              {
+                "title": "two ReviewTargets instances built for consecutive rounds on the same artifact are independent objects sharing no entries by construction",
+                "result": "pass"
+              },
+              {
+                "title": "ReviewTargets' exported surface contains no validator, allow-list or restriction function of any kind that could cap investigation to entries",
+                "result": "pass"
+              },
+              {
+                "title": "a ReviewTargets with zero entries is structurally valid",
+                "result": "pass"
+              },
+              {
+                "title": "entries with a duplicate Pointer (same path and section) is accepted",
+                "result": "pass"
+              },
+              {
+                "title": "entries mixing whole-file Pointers (no section) and region-pinned Pointers (section populated) is accepted",
+                "result": "pass"
+              },
+              {
+                "title": "every ReviewTargets.entries[] Pointer can be passed directly to sc6's PointerPathValidator with no reshaping",
+                "result": "pass"
+              },
+              {
+                "title": "ReviewTargets",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

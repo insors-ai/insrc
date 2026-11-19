@@ -291,3 +291,42 @@ export interface PathValidationResult {
 	readonly ok:         boolean;
 	readonly violations: readonly string[];
 }
+
+// ---------------------------------------------------------------------------
+// shared-reviewcontext-data-model Epic sc3 (Scope + its validator contract), owned by s2
+// ---------------------------------------------------------------------------
+
+export type ScopeType = 'design' | 'code';
+export type ScopeLevel = 'def' | 'hld' | 'lld' | 'plan' | 'task';
+
+/** Names which review family and chain depth a review attempt covers, self-inclusive at the artifact under review. */
+export interface Scope {
+	readonly scopeType:   ScopeType;
+	readonly scopeLevel:  ScopeLevel;
+	readonly def?:        Pointer | undefined;
+	readonly hld?:        Pointer | undefined;
+	readonly lld?:        Pointer | undefined;
+	readonly plan?:       Pointer | undefined;
+	readonly tasks?:      readonly Pointer[] | undefined;
+	readonly extension?:  Pointer | undefined;
+	readonly amendment?:  Pointer | undefined;
+}
+
+/** The outcome of a ScopeValidator checking a populated Scope against its own (scopeType, scopeLevel) pair. */
+export interface ValidationResult {
+	readonly ok:         boolean;
+	readonly violations: readonly string[];
+}
+
+export type ScopeValidator = (scope: Scope) => ValidationResult;
+
+/**
+ * Which of Scope's named Pointer-typed fields must be populated (the self-inclusive chain up to
+ * and including scopeLevel) and which must be absent (anything deeper), for one (scopeType,
+ * scopeLevel) pair. Implementation-internal to this Story's validators (src/workflow/artifact-core/
+ * scope-checks.ts) -- not part of sc3's public contract other Stories consume.
+ */
+export interface ScopeFieldRequirement {
+	readonly required:    readonly (keyof Scope)[];
+	readonly mustBeAbsent: readonly (keyof Scope)[];
+}

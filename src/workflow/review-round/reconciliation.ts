@@ -81,17 +81,17 @@ function defaultReadAuditTrail(reviewId: string): string {
 
 /**
  * Whether one prior finding's disposition is unambiguous from the two
- * finding sets alone: no finding in currentFindings shares its category
- * (unambiguously no-longer-surfaced), or one does AND matches its severity
- * exactly (unambiguously confirmed). Anything else -- same category, no
- * exact severity match -- is ambiguous: it could be 'still-open' at a
- * different severity or 'contradicted', a call the two finding sets alone
- * cannot make with confidence.
+ * finding sets alone: an exact (category AND severity) match recurs in
+ * currentFindings -- unambiguously confirmed. Every other case -- no finding
+ * shares its category, or one does but at a different severity -- is
+ * ambiguous: an absence could mean the issue was fixed (no-longer-surfaced)
+ * OR that the prior finding was simply wrong to begin with (contradicted),
+ * and a severity mismatch could mean either 'still-open' or 'contradicted'.
+ * The two finding sets alone cannot distinguish these without the audit
+ * trail; only a literal recurrence is safe to treat as settled.
  */
 function isUnambiguous(prior: Finding, currentFindings: readonly Finding[]): boolean {
-	const sameCategory = currentFindings.filter(c => c.category === prior.category);
-	if (sameCategory.length === 0) return true;
-	return sameCategory.some(c => c.severity === prior.severity);
+	return currentFindings.some(c => c.category === prior.category && c.severity === prior.severity);
 }
 
 /** Whether the two finding sets ALONE resolve every prior finding's

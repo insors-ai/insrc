@@ -202,4 +202,23 @@ describe('runReviewRound', () => {
 			assert.ok(!call.includes(reviewId as unknown as ReviewTargets | number), `${label}'s captured arguments never contain the reviewId value itself -- it stays out of this function's hook calls entirely, left unchanged for the caller to thread on to the sc4/sc5 calls`);
 		}
 	});
+
+	it('hooks.security is invoked with hooks as its receiver, so a method implementation that reads `this` does not throw', async () => {
+		const hooks: RoundDriverHooks<string> = {
+			reviewKind: 'design',
+			checkpointGranularity: 'round',
+			ground: async () => ['finding-a'],
+			async security(this: RoundDriverHooks<string>, _targets: ReviewTargets, round: number): Promise<readonly string[]> {
+				// Deliberately reads `this` the way a real method implementation would --
+				// arrow-function hooks elsewhere in this file conceal a lost-receiver defect.
+				return [`${this.reviewKind}-finding-round-${round}`];
+			},
+		};
+
+		const round1 = await runReviewRound('review-1', hooks, 1, targets);
+		const round2 = await runReviewRound('review-1', hooks, 2, targets);
+
+		assert.deepEqual(round1.findings, ['finding-a', 'design-finding-round-1']);
+		assert.deepEqual(round2.findings, ['finding-a', 'design-finding-round-2']);
+	});
 });

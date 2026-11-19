@@ -48,6 +48,6 @@ async function runRound<F>(
 		return { round, findings: groundFindings };
 	}
 
-	const securityFindings = await security(targets, round);
+	const securityFindings = await security.call(hooks, targets, round);
 	return { round, findings: [...groundFindings, ...securityFindings] };
 }

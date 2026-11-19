@@ -191,11 +191,11 @@ test('the old review settings are retired with the review engine: no codeReview.
 	}
 });
 
-test("the catalog declares models.tiers.{core,mid,cheap}.effort as enum ['', 'low','medium','high','xhigh','max','ultra','off'] (the shipped efforts) with default ''", () => {
+test("the catalog declares models.tiers.{core,mid,cheap}.effort as enum ['', 'low','medium','high','xhigh','max','ultra'] (the shipped efforts) with default ''", () => {
 	assert.equal(FROM_CONFIG.length, 42);
 	for (const tier of ['core', 'mid', 'cheap']) {
 		const row = FROM_CONFIG.find(r => r.path === `models.tiers.${tier}.effort`);
 		assert.ok(row, `models.tiers.${tier}.effort is declared`);
-		assert.deepEqual([row.type, row.default, row.enumValues, row.group], ['enum', '', ['', 'low', 'medium', 'high', 'xhigh', 'max', 'ultra', 'off'], 'Models — tiers']);
+		assert.deepEqual([row.type, row.default, row.enumValues, row.group], ['enum', '', ['', 'low', 'medium', 'high', 'xhigh', 'max', 'ultra'], 'Models — tiers']);
 	}
 });

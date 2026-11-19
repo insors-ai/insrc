@@ -71,26 +71,32 @@ describe('runReviewRound', () => {
 
 	it('round 0 is rejected with a RangeError before any hook is called', () => {
 		const spy = spyGround<string>([]);
-		const hooks = stubHooks<string>(spy.ground);
+		let securityCalls = 0;
+		const hooks = stubHooks<string>(spy.ground, async () => { securityCalls += 1; return []; });
 
 		assert.throws(() => runReviewRound('review-1', hooks, 0, targets), RangeError);
 		assert.equal(spy.calls.length, 0);
+		assert.equal(securityCalls, 0, 'a supplied hooks.security must not be called either, when the round is rejected before any hook runs');
 	});
 
 	it('a negative round is rejected with a RangeError before any hook is called', () => {
 		const spy = spyGround<string>([]);
-		const hooks = stubHooks<string>(spy.ground);
+		let securityCalls = 0;
+		const hooks = stubHooks<string>(spy.ground, async () => { securityCalls += 1; return []; });
 
 		assert.throws(() => runReviewRound('review-1', hooks, -1, targets), RangeError);
 		assert.equal(spy.calls.length, 0);
+		assert.equal(securityCalls, 0, 'a supplied hooks.security must not be called either, when the round is rejected before any hook runs');
 	});
 
 	it('a non-integer round is rejected with a RangeError before any hook is called', () => {
 		const spy = spyGround<string>([]);
-		const hooks = stubHooks<string>(spy.ground);
+		let securityCalls = 0;
+		const hooks = stubHooks<string>(spy.ground, async () => { securityCalls += 1; return []; });
 
 		assert.throws(() => runReviewRound('review-1', hooks, 1.5, targets), RangeError);
 		assert.equal(spy.calls.length, 0);
+		assert.equal(securityCalls, 0, 'a supplied hooks.security must not be called either, when the round is rejected before any hook runs');
 	});
 
 	it('a rejecting hooks.ground propagates its rejection and hooks.security is never called for that round', async () => {
@@ -176,9 +182,11 @@ describe('runReviewRound', () => {
 	it("reviewId is passed unchanged into hooks.ground/hooks.security's own arguments-free of mutation across round 1 and round 2 calls, so a caller can thread it on to sc4/sc5 calls without this function ever substituting a different value", async () => {
 		const reviewId = 'review-xyz';
 		const spy = spyGround<string>(['finding-a']);
+		const securityCalls: Array<[ReviewTargets, number]> = [];
 		const securityArgumentCounts: number[] = [];
 		const security: RoundDriverHooks<string>['security'] = async (...args: [ReviewTargets, number]) => {
 			securityArgumentCounts.push(args.length);
+			securityCalls.push([args[0], args[1]]);
 			return ['finding-b'];
 		};
 		const hooks = stubHooks<string>(spy.ground, security);
@@ -188,6 +196,8 @@ describe('runReviewRound', () => {
 
 		assert.deepEqual(spy.argumentCounts, [2, 2], 'hooks.ground never receives reviewId as one of its own arguments');
 		assert.deepEqual(securityArgumentCounts, [2, 2], 'hooks.security never receives reviewId as one of its own arguments either');
+		assert.deepEqual(spy.calls, [[targets, 1], [targets, 2]], "hooks.ground's actual received arguments are [targets, round] -- reviewId was not substituted for either one");
+		assert.deepEqual(securityCalls, [[targets, 1], [targets, 2]], "hooks.security's actual received arguments are [targets, round] -- reviewId was not substituted for either one");
 		assert.equal(reviewId, 'review-xyz', "the caller's own reviewId value is left untouched, so it can still be threaded on to the review-report docgen call and the checkpoint/finalize calls");
 	});
 });

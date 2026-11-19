@@ -52,7 +52,16 @@
       "references": [],
       "attachments": []
     },
-    "revision": 3
+    "revision": 3,
+    "questionResolutions": {
+      "qfc8a811e": {
+        "question": "STORY-779e9a08142cb057-s1 ('security review extension points', sibling Epic, standalone) proposes a SecurityLocator that extends 'the review framework's Locator/Pointer type' -- but sc1 defines Locator{kind,value} (a region pin within a file) and Pointer{path,section?:Locator,contentHash?} (a file-level reference, optionally carrying a Locator region) as two distinct, structurally unrelated types; SecurityLocator cannot structurally extend both at once. Found during a cross-design review on 2026-11-18/19. Must resolve before that Story's build: does SecurityLocator extend Locator (adding trustBoundaryId/taintPathStepIndex to the region-pin, used inside a Pointer.section), or does a security-graph citation need a separate SecurityPointer wrapping a Locator-compatible region alongside a file path?",
+        "status": "resolved",
+        "choice": "Introduce SecurityPointer, as a true structural extension of Pointer (interface SecurityPointer extends Pointer), not a wrapper-by-reference. SecurityPointer carries Pointer's own path/section?/contentHash? fields plus the security-specific trustBoundaryId/taintPathStepIndex fields directly, matching this session's established true-inheritance convention (plain interface extension, no wrapping, no class hierarchy) rather than holding a separate Pointer instance by reference.",
+        "rationale": "User's explicit decision: SecurityPointer, not a wrapper but an extended type -- consistent with the plain-interface structural-extension pattern already used for SecurityFinding (extends Finding) elsewhere in this session's sibling Story.",
+        "resolvedAt": "2026-11-19T07:12:22.494Z"
+      }
+    }
   },
   "body": {
     "summary": {

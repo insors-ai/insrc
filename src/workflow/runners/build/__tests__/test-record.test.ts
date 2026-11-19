@@ -265,3 +265,11 @@ test('text that came from the builder is rendered on one line, so it cannot add 
 		assert.deepEqual(testRecordState(repo, HASH, 's1'), { kind: 'unreadable', reason: "it does not have the record's shape" });
 	});
 });
+
+test("a named test whose cases took their file's exit code carries its note into the document, above its table", () => {
+	const rec: TestRecord = { meta: { workflow: 'tests', epicHash: HASH, storyId: 's1', createdAt: T0, updatedAt: T0 }, body: { tasks: [
+		task('t1', { tests: [{ name: 'by exit code', level: 'unit', source: 'mapping', files: [], note: 'Not checked per case: each case takes its file exit code.', cases: [{ file: X, title: 'adds', result: 'pass' }] }] }),
+	] } };
+	const md = renderTestRecordMd(rec);
+	assert.ok(md.indexOf('Not checked per case') !== -1 && md.indexOf('Not checked per case') < md.indexOf('| Result | Test | File |'));
+});

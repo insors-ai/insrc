@@ -603,6 +603,9 @@ function testRunEnv(): NodeJS.ProcessEnv {
 	return env;
 }
 
+/** The note on a named test whose cases took their file's exit code as their result. */
+const NOTE_CASES_BY_EXIT_CODE = 'Not checked per case: each case below takes the exit code of its file as its result.';
+
 /** The note on a run judged by its exit code alone. */
 const NOTE_EXIT_CODE_ONLY = 'judged by its exit code alone: its test cases are not checked individually';
 
@@ -728,6 +731,7 @@ function namedResults(named: readonly NamedTestPlan[], runs: readonly TestFileRu
 		}),
 		files: n.source === 'mapping' ? [] : [...n.files],
 		...(n.reported !== undefined ? { reported: n.reported } : {}),
+		...(format === 'exit-code' && n.cases.length > 0 ? { note: NOTE_CASES_BY_EXIT_CODE } : {}),
 	}));
 }
 

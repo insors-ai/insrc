@@ -956,6 +956,7 @@ test('an exit-code plan passes when every file exits 0 and fails on a non-zero e
 	assert.equal(ok.tests.ok, true);
 	// The case takes its file's exit code, and the record says it was not checked on its own.
 	assert.deepEqual(ok.tests.namedTests![0]!.cases.map(c => c.result), ['pass']);
+	assert.match(ok.tests.namedTests![0]!.note ?? '', /Not checked per case/);
 	assert.match(ok.tests.files![0]!.note ?? '', /not checked individually/);
 
 	exits['tests/b_test.py'] = 1;

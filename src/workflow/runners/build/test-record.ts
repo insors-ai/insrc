@@ -69,6 +69,8 @@ export interface TestRecordNamedTest {
 	/** 'prefix' / 'touched': the files run for it (their results are in `files`). */
 	readonly files:     readonly string[];
 	readonly reported?: TestRecordReported | undefined;
+	/** Set when the cases' results are not per case: each is its file's exit code. */
+	readonly note?:     string | undefined;
 }
 
 /** One test file's run. */
@@ -392,6 +394,7 @@ export function renderTestRecordMd(rec: TestRecord): string {
 
 		for (const t of task.tests) {
 			lines.push(`**${t.level !== undefined ? `${flat(t.level)}: ` : ''}${flat(t.name)}**`, '');
+			if (t.note !== undefined) lines.push(`_${flat(t.note)}_`, '');
 			if (t.source === 'mapping' && t.cases.length > 0) {
 				lines.push('| Result | Test | File |', '| :--- | :--- | :--- |');
 				for (const c of t.cases) lines.push(`| ${c.result} | ${cell(c.title)} | \`${c.file}\` |`);

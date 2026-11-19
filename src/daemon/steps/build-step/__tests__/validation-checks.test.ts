@@ -1011,9 +1011,12 @@ test('a repo setting wins over the default; an empty command or an unknown resul
 		// A repo's own block wins over the global one, key by key.
 		const own = profile(py, { typecheckCommand: 'global-check', testCommand: 'global-test', byRepo: { [py]: { testCommand: 'pytest -x' } } });
 		assert.deepEqual([own.typecheck, own.testCommand], [['global-check'], ['pytest', '-x']]);
-		// Nothing set (or only empty strings): the default of the project type.
-		assert.equal(profile(node, { typecheckCommand: '', testCommand: '' }).commandsSource, 'node-default');
+		// Nothing set: the default of the project type.
+		assert.equal(profile(node, {}).commandsSource, 'node-default');
 		assert.equal(profile(py, {}).commandsSource, 'none');
+		// A key that is present but empty is a value, not an absent one: refused, never read as the default.
+		refused(node, { typecheckCommand: '', testCommand: '' }, 'build.typecheckCommand');
+		refused(node, { typecheckCommand: 'tsc', testCommand: '' }, 'build.testCommand');
 
 		refused(py, { typecheckCommand: '   ', testCommand: 'pytest' }, 'build.typecheckCommand');
 		refused(py, { typecheckCommand: 'mypy', testCommand: 'pytest', resultFormat: 'junit' }, 'build.resultFormat');

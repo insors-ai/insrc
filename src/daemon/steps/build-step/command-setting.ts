@@ -7,9 +7,10 @@
  * The commands a project states for the build gate (LLD-787434000fa22691-s1, task t5): the
  * `build.typecheckCommand`, `build.testCommand` and `build.resultFormat` keys of
  * `~/.insrc/config.json`, and the same three keys under `build.byRepo.<absolute repo path>`,
- * which win over the global ones for that repository. An absent key and an empty string both mean
- * "not set". This module only reads the raw values; what makes them valid is decided once, where
- * the command profile is built (validation-checks.ts).
+ * which win over the global ones for that repository. Only an ABSENT key means "not set": the keys
+ * are not catalog rows (which would fill an empty default), so a key that is present, empty
+ * included, is a value, and an empty command is refused where the command profile is built
+ * (validation-checks.ts), which decides what makes the values valid.
  */
 
 import { existsSync, readFileSync } from 'node:fs';
@@ -29,13 +30,13 @@ function isObject(v: unknown): v is Record<string, unknown> {
 	return typeof v === 'object' && v !== null && !Array.isArray(v);
 }
 
-/** The keys of `section` that are set: present, and not the empty string. */
+/** The keys of `section` that are present, whatever their value. */
 function setKeys(section: unknown): BuildCommandSetting {
 	if (!isObject(section)) return {};
 	const out: Record<string, unknown> = {};
 	for (const key of KEYS) {
 		const value = section[key];
-		if (value !== undefined && value !== '') out[key] = value;
+		if (value !== undefined) out[key] = value;
 	}
 	return out;
 }

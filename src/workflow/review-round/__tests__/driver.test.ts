@@ -55,14 +55,18 @@ describe('runReviewRound', () => {
 	});
 
 	it("hooks.ground receives the full targets/artifact unmodified -- nothing is stripped or withheld before grounding runs", async () => {
-		const populatedTargets: ReviewTargets = { entries: [{ path: 'src/a.ts' }] };
+		// Deep-frozen so any in-place stripping by the driver would throw (ES modules are
+		// always strict mode), and compared against a snapshot taken BEFORE the call --
+		// not against itself -- so this proves content fidelity, not just reference identity.
+		const populatedTargets: ReviewTargets = Object.freeze({ entries: Object.freeze([Object.freeze({ path: 'src/a.ts' })]) });
+		const expectedSnapshot = structuredClone(populatedTargets);
 		const spy = spyGround<string>([]);
 		const hooks = stubHooks<string>(spy.ground);
 
 		await runReviewRound('review-1', hooks, 1, populatedTargets);
 
 		assert.equal(spy.calls[0]?.[0], populatedTargets, 'the exact same targets reference must reach hooks.ground, not a stripped copy');
-		assert.deepEqual(spy.calls[0]?.[0], populatedTargets);
+		assert.deepEqual(spy.calls[0]?.[0], expectedSnapshot, 'content must match a snapshot taken before the call -- proves no field was stripped or withheld, not merely that the reference was not swapped');
 	});
 
 	it('round 0 is rejected with a RangeError before any hook is called', () => {
@@ -172,12 +176,18 @@ describe('runReviewRound', () => {
 	it("reviewId is passed unchanged into hooks.ground/hooks.security's own arguments-free of mutation across round 1 and round 2 calls, so a caller can thread it on to sc4/sc5 calls without this function ever substituting a different value", async () => {
 		const reviewId = 'review-xyz';
 		const spy = spyGround<string>(['finding-a']);
-		const hooks = stubHooks<string>(spy.ground, async () => ['finding-b']);
+		const securityArgumentCounts: number[] = [];
+		const security: RoundDriverHooks<string>['security'] = async (...args: [ReviewTargets, number]) => {
+			securityArgumentCounts.push(args.length);
+			return ['finding-b'];
+		};
+		const hooks = stubHooks<string>(spy.ground, security);
 
 		await runReviewRound(reviewId, hooks, 1, targets);
 		await runReviewRound(reviewId, hooks, 2, targets);
 
-		assert.deepEqual(spy.argumentCounts, [2, 2], 'hooks.ground/hooks.security never receive reviewId as one of their own arguments');
-		assert.equal(reviewId, 'review-xyz', 'the caller\'s own reviewId value is left untouched, so it can still be threaded on to the review-report docgen call and the checkpoint/finalize calls');
+		assert.deepEqual(spy.argumentCounts, [2, 2], 'hooks.ground never receives reviewId as one of its own arguments');
+		assert.deepEqual(securityArgumentCounts, [2, 2], 'hooks.security never receives reviewId as one of its own arguments either');
+		assert.equal(reviewId, 'review-xyz', "the caller's own reviewId value is left untouched, so it can still be threaded on to the review-report docgen call and the checkpoint/finalize calls");
 	});
 });

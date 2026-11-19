@@ -13,12 +13,14 @@
  */
 
 import type { Pointer } from '../types.js';
-import type { Scope, ValidationResult } from '../types.js';
+import type { Scope, ScopeLevel, ScopeType, ScopeValidator, ValidationResult } from '../types.js';
 
 export function positive(): void {
 	const pointer: Pointer = { path: 'a.md' };
 
-	const minimal: Scope = { scopeType: 'design', scopeLevel: 'def' };
+	const scopeType: ScopeType = 'design';
+	const scopeLevel: ScopeLevel = 'def';
+	const minimal: Scope = { scopeType, scopeLevel };
 	const full: Scope = {
 		scopeType: 'code',
 		scopeLevel: 'task',
@@ -33,7 +35,11 @@ export function positive(): void {
 
 	const result: ValidationResult = { ok: false, violations: ['x'] };
 
-	void minimal; void full; void result;
+	// A ScopeValidator takes exactly one Scope and returns exactly one ValidationResult.
+	const validator: ScopeValidator = (s: Scope): ValidationResult => ({ ok: s.scopeType === 'design', violations: [] });
+	const validated: ValidationResult = validator(full);
+
+	void minimal; void full; void result; void validated;
 }
 
 export function negative(scope: Scope, result: ValidationResult): void {
@@ -45,6 +51,12 @@ export function negative(scope: Scope, result: ValidationResult): void {
 	const _s3: Scope = { scopeType: 'design', scopeLevel: 'def', unknownField: 1 };
 	// @ts-expect-error Scope.scopeType must be 'design' | 'code'
 	const _s4: Scope = { scopeType: 'review', scopeLevel: 'def' };
+	// @ts-expect-error ScopeType has only 'design' | 'code'
+	const _t1: ScopeType = 'review';
+	// @ts-expect-error ScopeLevel has only 'def' | 'hld' | 'lld' | 'plan' | 'task'
+	const _l1: ScopeLevel = 'story';
+	// @ts-expect-error a ScopeValidator must take a Scope and return a ValidationResult, not a boolean
+	const _v0: ScopeValidator = (s: Scope): boolean => s.scopeType === 'design';
 	// @ts-expect-error Scope.scopeType is readonly
 	scope.scopeType = 'code';
 	// @ts-expect-error Scope.scopeLevel is readonly

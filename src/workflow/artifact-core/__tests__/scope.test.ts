@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import type { Pointer, Scope, ValidationResult } from '../types.js';
+import type { Pointer, Scope, ScopeLevel, ScopeType, ScopeValidator, ValidationResult } from '../types.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..');
 const TSC = resolve(ROOT, 'node_modules/typescript/bin/tsc');
@@ -43,7 +43,9 @@ describe('Scope, ScopeType, ScopeLevel, ValidationResult and ScopeValidator', ()
 
 		const pointer: Pointer = { path: 'docs/epics/example/HLD.md' };
 
-		const minimal: Scope = { scopeType: 'design', scopeLevel: 'def' };
+		const scopeType: ScopeType = 'design';
+		const scopeLevel: ScopeLevel = 'def';
+		const minimal: Scope = { scopeType, scopeLevel };
 		assert.equal(minimal.scopeType, 'design');
 		assert.equal(minimal.scopeLevel, 'def');
 		assert.equal(minimal.hld, undefined);
@@ -71,5 +73,10 @@ describe('Scope, ScopeType, ScopeLevel, ValidationResult and ScopeValidator', ()
 		const result: ValidationResult = { ok: false, violations: ['x escapes the repo root'] };
 		assert.equal(result.ok, false);
 		assert.deepEqual(result.violations, ['x escapes the repo root']);
+
+		// A ScopeValidator takes exactly one Scope and returns exactly one ValidationResult.
+		const validator: ScopeValidator = (scope) => ({ ok: scope.scopeType === 'design', violations: [] });
+		assert.equal(validator(minimal).ok, true);
+		assert.equal(validator(full).ok, false);
 	});
 });

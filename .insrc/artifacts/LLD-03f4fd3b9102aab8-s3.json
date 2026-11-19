@@ -62,6 +62,13 @@
         "choice": "Use Finding.id",
         "rationale": "Follows the resolved cross-review decision and sc2 HLD revision 4's non-breaking Finding.id addition; removes caller-managed opaque references.",
         "resolvedAt": "2026-11-19T19:06:22.010Z"
+      },
+      "q1ae3e82b": {
+        "question": "Cross-review found reconcileRound's original auditTrail?: string parameter contradicted the HLD's own boundary text for s3 ('how it reads the temp folder's audit trail when needed stays internal to s3'): the caller would have had to pre-extract that content itself, and the signature had no reviewId to let reconcileRound read it internally either. Fixed by replacing auditTrail with a reviewId: string first parameter; reconcileRound now reads .insrc/tmp/<reviewId>/ itself when the two finding sets alone do not resolve a classification.",
+        "status": "resolved",
+        "choice": "Require reviewId; read internally",
+        "rationale": "Matches the cross-review fix and preserves the HLD's boundary that audit-trail access stays internal to s3.",
+        "resolvedAt": "2026-11-19T19:06:44.621Z"
       }
     }
   },

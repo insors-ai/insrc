@@ -223,7 +223,7 @@ test('Model Tiers pane (5) renders effective tiers, coreFloor, and roles from co
 	assert.match(frame, /Model Tiers/);
 	assert.match(frame, /fx-core/);       // core-tier default model, from the definitions
 	assert.match(frame, /coreFloor/);
-	assert.match(frame, /review/);        // a critical role row (→ core)
+	assert.match(frame, /scope\.audit/);  // a visible critical role row (→ core)
 	assert.match(frame, /override/);      // the context.assemble override is surfaced (in-window)
 	unmount();
 });
@@ -360,18 +360,34 @@ test('bottom box: ui.toast (r refresh) lands in the message box', async () => {
 	unmount();
 });
 
-test('bottom box: uppercase C clears operation output and errors', async () => {
+test('bottom box: uppercase C clears errors without changing pane state and remains captured by modals', async () => {
 	const svc = fakeServices();
 	svc.daemon.getStatus = async () => status({ repos: [repo('/work/repoA')] });
+	svc.daemon.compact = async () => { throw new Error('compact boom'); };
+	svc.workflow.trackerSetup = async () => ({
+		steps: [{ key: 'gh-auth', title: 'gh CLI authenticated', status: 'already', detail: 'signed in' }],
+		manualRemaining: 0,
+	});
 	const { lastFrame, stdin, unmount } = render(createElement(App, { services: svc, pollMs: 0 }));
 	await settle();
 	stdin.write('c');
 	await settle();
-	assert.match(lastFrame() ?? '', /compacted: saved/);
+	assert.match(lastFrame() ?? '', /compact boom/);
+	stdin.write('2');
+	await settle();
+	stdin.write('t');
+	await settle();
+	assert.match(lastFrame() ?? '', /gh CLI authenticated/);
+	stdin.write('C');                     // captured by the modal: dismisses it, does not clear messages
+	await settle();
+	assert.doesNotMatch(lastFrame() ?? '', /gh CLI authenticated/);
+	assert.match(lastFrame() ?? '', /compact boom/);
 	stdin.write('C');
 	await settle();
-	assert.doesNotMatch(lastFrame() ?? '', /compacted: saved/);
-	assert.match(lastFrame() ?? '', /running/);
+	const frame = lastFrame() ?? '';
+	assert.doesNotMatch(frame, /compact boom/);
+	assert.match(frame, /\/work\/repoA/);        // the Repos pane remains active
+	assert.match(frame, /running/);                // daemon status is unchanged
 	unmount();
 });
 

@@ -1,0 +1,428 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1795096193568-o7xxbs",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-19T13:53:57.548Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 241084,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-11-18T06:14:00.057Z",
+    "epicHash": "03f4fd3b9102aab8",
+    "epicSlug": "review-rounds-reconciliation-recovery",
+    "storyId": "s3",
+    "hldBaseRunId": "wf-1794986545330-2wntv5",
+    "hldEffectiveHash": "6d57abfa68accf993485dc920a80409335ebda32202c80baa14902fde616994d",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "A dedicated reconciliation pass tracks prior findings without ever gating approval",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 3,
+        "contentHash": "48ecc8b8f1103e2068e92532146de8644b4e49bc7c21a5c52373533d3fe1431d",
+        "at": "2026-11-19T14:17:20.251Z",
+        "by": {
+          "id": "insrc:controller",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 3,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-19T14:43:03.126Z"
+      }
+    },
+    "revision": 3,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "This Story adds the dedicated reconciliation pass that runs after a correction round's findings are finalized. It compares the prior round's HIGH/MED findings against the new round's own independent findings and classifies each as confirmed, still-open, contradicted, or no-longer-surfaced -- purely for the submitter and reviewer to see round-over-round disposition. This classification never feeds the approval gate; round N's own findings alone decide block vs. pass.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Alternative a2 wins: one shared round-driver function in a new sibling module under src/workflow/ (outside review-history/, which is being retired from rather than extended) takes a small per-review-type hook set -- the grounding/findings call, checkpoint granularity, and finding taxonomy/severity -- and runs the identical round cycle, checkpoint lifecycle, and reconciliation call for every review type.",
+      "ownedContracts": [
+        {
+          "id": "sc3",
+          "name": "Reconciliation result shape",
+          "purpose": "The classification a dedicated reconciliation call assigns to a prior round's HIGH/MED findings, per k3/k5.",
+          "interfaceSketch": "type ReconciliationVerdict = 'confirmed' | 'still-open' | 'contradicted' | 'no-longer-surfaced';\ninterface ReconciliationResult {\n  readonly priorFindingRef: string;\n  readonly verdict: ReconciliationVerdict;\n}",
+          "ownedByStory": "s3",
+          "consumedByStories": [],
+          "assumptions": [
+            "c1"
+          ]
+        }
+      ],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "Review-type hook set",
+          "purpose": "The small hook set (grounding/findings call, checkpoint granularity, taxonomy/severity) that is the only thing legitimately differing per review type, consumed by the round-driver, per the Epic's one-shared-process framing (Story s1 ac1/ac2).",
+          "interfaceSketch": "type ReviewKind = 'design' | 'code';\ninterface RoundDriverHooks {\n  readonly reviewKind: ReviewKind;\n  readonly checkpointGranularity: 'round' | 'task';\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s3",
+        "owns": [
+          "sc3"
+        ],
+        "depends": [
+          "sc1"
+        ],
+        "internal": "How the reconciliation LLM call is actually prompted, and how it reads the temp folder's audit trail when needed, stay internal to s3; no other Story's type depends on ReconciliationResult's internals beyond its verdict shape."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1"
+          ],
+          "depends": [],
+          "internal": "The round-driver function itself -- what it does internally to run the grounding+findings, reconciliation, render+present and checkpoint-write cycle -- stays private to s1; no other Story's type depends on the driver's internals, only on the hook contract sc1 exposes."
+        },
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc2"
+          ],
+          "depends": [
+            "sc1"
+          ],
+          "internal": "Which exact per-review-type severity scales exist beyond the HIGH/MED default, and how a review type's Feedback implementation declares its own, stay internal to s2; no other Story's type depends on Finding's shape."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc4"
+          ],
+          "depends": [
+            "sc1"
+          ],
+          "internal": "The exact docgen docType registration and MD rendering logic (including the resolved/still-open/contradicted annotation rule scoped to this round's own corrections) stay internal to s4; no other Story's type depends on the renderer's internals."
+        },
+        {
+          "storyId": "s5",
+          "owns": [
+            "sc5"
+          ],
+          "depends": [
+            "sc1"
+          ],
+          "internal": "The exact per-review-type granularity mapping (round-level for design review, per-Task for code review) and the durable-copy-before-deletion mechanics stay internal to s5; no other Story's type depends on ReviewCheckpoint's internals beyond what sc1's round-driver needs to call it."
+        }
+      ],
+      "rolloutPhase": "Phase B — taxonomy, reconciliation, rendering, checkpointing",
+      "nonFunctional": {
+        "performance": "Checkpoint write/read (sc5) is a single small JSON file write/read per completed unit of work (a round, or a Task), adding no I/O beyond what the round cycle already performs.",
+        "durability": "The final round's review-output JSON is copied into durable artifact storage before the .insrc/tmp/<reviewId>/ folder is deleted at a terminal state (k7), so a completed review's result survives after the ephemeral working folder is gone."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "reconcileRound",
+          "signature": "function reconcileRound(reviewId: string, priorFindings: readonly Finding[], currentFindings: readonly Finding[]): Promise<readonly ReconciliationResult[]>",
+          "parameters": [
+            {
+              "name": "reviewId",
+              "type": "string",
+              "purpose": "Identifies which review's .insrc/tmp/<reviewId>/ folder this call may read for its audit trail, if the two finding sets alone do not resolve a classification -- per the HLD's own boundary text ('how it reads the temp folder's audit trail when needed stays internal to s3'), that reading happens inside this function, not by the caller pre-extracting and passing a string.",
+              "optional": false
+            },
+            {
+              "name": "priorFindings",
+              "type": "readonly Finding[]",
+              "purpose": "The prior round's HIGH/MED findings. Finding now carries its own id (sc2, amended HLD revision 4) -- each ReconciliationResult.priorFindingRef is that finding's own id, so this Story no longer needs a caller-assigned key.",
+              "optional": false
+            },
+            {
+              "name": "currentFindings",
+              "type": "readonly Finding[]",
+              "purpose": "Round N's own finalized, self-contained finding set (produced by s1's round-driver per ac1/k4) -- read-only input for classification, never re-derived or re-grounded by this call.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<readonly ReconciliationResult[]>",
+            "meaning": "One ReconciliationResult per entry in priorFindings, each carrying that finding's own id as priorFindingRef and the verdict reconciliation assigned it against currentFindings."
+          },
+          "errors": [],
+          "preconditions": [
+            "priorFindings and currentFindings both come from round N's own finalized output -- this call never performs its own re-grounding pass",
+            "priorFindings contains only the prior round's HIGH/MED findings, not its LOW findings, per sc3's purpose (k3/k5 only concern HIGH/MED)"
+          ],
+          "postconditions": [
+            "Exactly one ReconciliationResult is produced per entry in priorFindings, keyed by that finding's own id, in a single dedicated call -- never folded into the same pass that produced currentFindings (ac1/k5)",
+            "The returned array is never consulted by or passed into the round N approval gate -- it is purely informational/presentational (ac2/k3)",
+            "If the two finding sets alone do not resolve a classification, reconcileRound reads the audit trail itself from .insrc/tmp/<reviewId>/ -- the caller never extracts or passes that content; cross-review found the original auditTrail?: string parameter contradicted the HLD's own framing that this reading stays internal to s3, and this signature was corrected to match it."
+          ]
+        }
+      ],
+      "dataModel": [
+        {
+          "entity": "ReconciliationVerdict",
+          "change": "new",
+          "details": "type ReconciliationVerdict = 'confirmed' | 'still-open' | 'contradicted' | 'no-longer-surfaced'; -- exactly sc3's HLD interfaceSketch, a fixed 4-member union.",
+          "callSites": []
+        },
+        {
+          "entity": "ReconciliationResult",
+          "change": "new",
+          "details": "interface ReconciliationResult { readonly priorFindingRef: string; readonly verdict: ReconciliationVerdict; } -- exactly sc3's HLD interfaceSketch, unchanged. priorFindingRef is the matching prior Finding's own id field (sc2, amended HLD revision 4 to add Finding.id) -- this Story no longer needs a caller-assigned opaque key, since Finding now carries stable identity of its own.",
+          "callSites": []
+        }
+      ],
+      "interactionWithShared": [
+        {
+          "contractId": "sc3",
+          "role": "implements",
+          "howDetails": "ReconciliationVerdict, ReconciliationResult and reconcileRound are authored here as sc3's concrete shape, implementing the HLD interfaceSketch verbatim and adding the one dedicated call the Story's acceptance criteria require."
+        },
+        {
+          "contractId": "sc2",
+          "role": "consumes",
+          "howDetails": "priorFindings and currentFindings are both readonly Finding[] (sc2, amended HLD revision 4 to add id); ReconciliationResult.priorFindingRef is read directly from each prior finding's own id field, which this Story does not define or redesign."
+        },
+        {
+          "contractId": "sc1",
+          "role": "consumes",
+          "howDetails": "reconcileRound is invoked by a review type's round-driver cycle (sc1, owned by s1) once a round's findings are finalized; this Story's contract does not reference RoundDriverHooks fields directly, it only accepts the finding sets and ref keys the driver already has at that point in the cycle."
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "ReconciliationVerdict",
+        "change": "new",
+        "details": "type ReconciliationVerdict = 'confirmed' | 'still-open' | 'contradicted' | 'no-longer-surfaced'; -- exactly sc3's HLD interfaceSketch, a fixed 4-member union.",
+        "callSites": []
+      },
+      {
+        "entity": "ReconciliationResult",
+        "change": "new",
+        "details": "interface ReconciliationResult { readonly priorFindingRef: string; readonly verdict: ReconciliationVerdict; } -- exactly sc3's HLD interfaceSketch, unchanged. priorFindingRef is the matching prior Finding's own id field (sc2, amended HLD revision 4 to add Finding.id) -- this Story no longer needs a caller-assigned opaque key, since Finding now carries stable identity of its own.",
+        "callSites": []
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc3",
+        "role": "implements",
+        "howDetails": "ReconciliationVerdict, ReconciliationResult and reconcileRound are authored here as sc3's concrete shape, implementing the HLD interfaceSketch verbatim and adding the one dedicated call the Story's acceptance criteria require."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "priorFindings and currentFindings are both readonly Finding[] (sc2, amended HLD revision 4 to add id); ReconciliationResult.priorFindingRef is read directly from each prior finding's own id field, which this Story does not define or redesign."
+      },
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "reconcileRound is invoked by a review type's round-driver cycle (sc1, owned by s1) once a round's findings are finalized; this Story's contract does not reference RoundDriverHooks fields directly, it only accepts the finding sets and ref keys the driver already has at that point in the cycle."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "the underlying dedicated LLM call that reconcileRound makes rejects (e.g. errors or times out)",
+          "detection": "the Promise reconcileRound returns rejects",
+          "response": "reconcileRound propagates the rejection unchanged to the caller rather than returning partial, empty, or fabricated verdicts for the entries it did not finish classifying",
+          "userImpact": "the caller sees reconciliation as having failed outright for this round, rather than silently receiving verdicts that look complete but are not grounded in an actual classification",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "priorFindings is an empty array (the prior round had zero HIGH/MED findings)",
+          "expected": "reconcileRound returns an empty array -- there is nothing to classify, and this is not an error"
+        },
+        {
+          "input": "currentFindings is an empty array (round N found nothing)",
+          "expected": "reconcileRound still returns one ReconciliationResult per entry in priorFindings; an empty currentFindings set is valid input to the classification call, likely yielding 'no-longer-surfaced' verdicts, but that judgment is the LLM call's to make, not this contract's to assume"
+        },
+        {
+          "input": "no audit trail file exists yet in .insrc/tmp/<reviewId>/ (nothing has been written there, or the two finding sets alone are enough)",
+          "expected": "reconcileRound classifies using only the two finding sets; a missing or unneeded audit trail is not an error"
+        },
+        {
+          "input": "two entries in priorFindings have identical category and severity but different id values",
+          "expected": "reconcileRound still produces two separate ReconciliationResult entries, one per distinct id -- Finding.id is what establishes identity here, not category/severity content"
+        }
+      ],
+      "invariantsToPreserve": []
+    },
+    "testStrategy": {
+      "testFramework": "node:test, run via npx tsx --test, with a compile-time @ts-expect-error fixture for ReconciliationVerdict/ReconciliationResult checked through a throwaway tsconfig (matches this Epic's s1/s2 convention)",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove reconcileRound never re-grounds and produces exactly one result per prior ref (ac1), and that ReconciliationResult's shape carries no field a gate could consume (ac2), plus the rejection-propagation and identity-by-ref edge behaviors.",
+          "subjects": [
+            "reconcileRound produces exactly one ReconciliationResult per entry in priorFindings, keyed by that finding's own id",
+            "reconcileRound's parameters are reviewId and the two finding sets only -- no ReviewTargets-shaped parameter exists anywhere in its signature, so no re-grounding input is even possible",
+            "ReconciliationResult's exported shape contains exactly priorFindingRef and verdict, with no severity, blocking, or gate-facing field of any kind",
+            "ReconciliationVerdict accepts exactly the four fixed verdicts (confirmed, still-open, contradicted, no-longer-surfaced) and rejects any other value at compile time",
+            "a rejecting reconcileRound call propagates its rejection rather than returning partial or fabricated results",
+            "priorFindings as an empty array returns an empty array, not an error",
+            "two priorFindings entries with identical category and severity but different id values still produce two separate ReconciliationResult entries, keyed by their distinct ids",
+            "when the two finding sets alone do not resolve a classification, reconcileRound reads the audit trail itself from .insrc/tmp/<reviewId>/, rather than requiring the caller to have pre-extracted and passed it in"
+          ],
+          "fixturesNeeded": [
+            "a stub reconcileRound-shaped function with a spyable call to assert argument shape and count",
+            "a compile-time typecheck fixture (__type-tests__/reconciliation-result.typecheck.ts) with @ts-expect-error assertions for an invalid verdict literal and an exact-keys Equal<keyof ReconciliationResult, 'priorFindingRef'|'verdict'> assertion",
+            "a temp-directory fixture standing in for .insrc/tmp/<reviewId>/ with and without an audit-trail file present, to exercise reconcileRound's own internal read"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "reconcileRound's parameters are reviewId and the two finding sets only -- no ReviewTargets-shaped parameter exists anywhere in its signature, so no re-grounding input is even possible"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "ReconciliationResult's exported shape contains exactly priorFindingRef and verdict, with no severity, blocking, or gate-facing field of any kind"
+          ]
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Flat ReconciliationResult per sc3's sketch, with a caller-assigned opaque priorFindingRef",
+        "oneLineSummary": "One function takes the two adjacent rounds' finding sets plus an optional audit-trail string and returns one ReconciliationResult per prior HIGH/MED finding; priorFindingRef is whatever opaque string the caller (the round-driver, s1) already uses to identify that finding, since Finding (sc2) itself carries no id field.",
+        "approach": "type ReconciliationVerdict = 'confirmed' | 'still-open' | 'contradicted' | 'no-longer-surfaced'; interface ReconciliationResult { readonly priorFindingRef: string; readonly verdict: ReconciliationVerdict; } -- exactly sc3's HLD interfaceSketch. function reconcileRound(priorFindingRefs: ReadonlyMap<string, Finding>, currentFindings: readonly Finding[], auditTrail?: string): Promise<readonly ReconciliationResult[]> -- the caller supplies each prior HIGH/MED finding keyed by whatever ref it already tracks (sc2's Finding has no built-in id, so this Story does not invent one; it only consumes whatever opaque key the round-driver assigns). One ReconciliationResult is produced per entry in priorFindingRefs, classified against currentFindings and, if needed, auditTrail -- a single dedicated LLM call per round, never re-grounding against ReviewTargets.",
+        "pros": [
+          "Matches sc3's HLD interfaceSketch exactly, field-for-field -- no invented structure.",
+          "Does not quietly invent an identity scheme for Finding (sc2, owned by s2) that sc2's own approved interfaceSketch does not provide -- the gap is flagged as an openQuestion instead.",
+          "Smallest shape that satisfies ac1 (a single dedicated call, no re-grounding) and ac2 (verdict output never feeds the gate -- there is no gate-facing return value at all, only an informational array)."
+        ],
+        "cons": [
+          "Depends on the caller already having a stable way to key each prior finding; if the round-driver has no such key today, this Story cannot manufacture one without overstepping into sc2's/sc1's scope. This dependency is the openQuestion this LLD surfaces rather than silently resolves."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "ReconciliationResult embeds the full prior Finding instead of a string ref",
+        "oneLineSummary": "interface ReconciliationResult { readonly priorFinding: Finding; readonly verdict: ReconciliationVerdict }, self-contained without needing any external key.",
+        "approach": "Replace sc3's flat `priorFindingRef: string` with a `priorFinding: Finding` field carrying the full prior finding inline, so no caller-assigned key is needed at all -- each result is self-describing.",
+        "pros": [
+          "Sidesteps the identity gap entirely: no key is needed because the full finding travels with its verdict."
+        ],
+        "cons": [
+          "Deviates from sc3's approved HLD interfaceSketch, which specifies a string ref, not an embedded Finding -- a structural change to an already-approved shared contract, not a refinement.",
+          "Two distinct prior findings with identical category+severity (Finding carries no other distinguishing field) become indistinguishable once embedded this way too -- it does not actually solve the underlying identity gap, it just hides it inside a bigger object.",
+          "Duplicates the full prior Finding data on every reconciliation result, for a benefit (avoiding an external key) that the identity gap makes illusory."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Violates sc3's approved shape (embeds the full Finding instead of a string ref) and does not even solve the identity gap it claims to sidestep -- two same-category/same-severity findings remain indistinguishable either way."
+      },
+      {
+        "id": "a3",
+        "name": "Content-hash-derived priorFindingRef computed internally from Finding's fields",
+        "oneLineSummary": "reconcileRound computes each priorFindingRef itself as a deterministic hash of category+severity (+ position in the array), rather than requiring the caller to supply one.",
+        "approach": "function reconcileRound(priorFindings: readonly Finding[], currentFindings: readonly Finding[], auditTrail?: string): Promise<readonly ReconciliationResult[]> -- priorFindingRef is derived internally, e.g. `hash(finding.category + finding.severity + index)`, so the caller need not track any key at all.",
+        "pros": [
+          "No dependency on the caller maintaining a key -- this Story becomes fully self-contained."
+        ],
+        "cons": [
+          "Does not actually solve the identity problem it tries to paper over: Finding (sc2) has only category + severity, so two findings in the same round sharing both (a realistic case -- e.g. two separate 'correctness'/'HIGH' findings) hash identically except for array position, making the derived ref fragile to any reordering between rounds and not a genuine stable identity.",
+          "Invents an identity-derivation scheme for a sibling Story's type (Finding, sc2) that sc2's own interfaceSketch and LLD never asked for or designed -- oversteps sc2's boundary by effectively deciding what makes two findings 'the same' across rounds, which is exactly the kind of judgment this Story's own acceptance criteria assign to the LLM reconciliation call itself, not to a hash function.",
+          "More complex than a1 for a worse guarantee."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Technically satisfies the same constraints as a1, but its content-hash approach is fragile (collides on identical category+severity, breaks under reordering) and oversteps into deciding Finding identity semantics on sc2's behalf -- a judgment call this Story's own LLM reconciliation call is supposed to make, not a hash function."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "Resolved (following cross-review): sc2 was amended (HLD revision 4, fieldAdd, non-breaking) to add Finding.id: string, giving a finding a stable identity across rounds. reconcileRound now takes priorFindings: readonly Finding[] and keys each ReconciliationResult.priorFindingRef off that finding's own id, instead of requiring the caller to assign and track an opaque ref for a type (Finding, sc2) this Story does not own.",
+      "Cross-review found reconcileRound's original auditTrail?: string parameter contradicted the HLD's own boundary text for s3 ('how it reads the temp folder's audit trail when needed stays internal to s3'): the caller would have had to pre-extract that content itself, and the signature had no reviewId to let reconcileRound read it internally either. Fixed by replacing auditTrail with a reviewId: string first parameter; reconcileRound now reads .insrc/tmp/<reviewId>/ itself when the two finding sets alone do not resolve a classification."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/review-history/review/design-review/admission-checkpoint.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/review-history/review/design-review/preparation-checkpoint.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/review-history/review/design-review/checkpoint.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/review-history/code-review/task-review/admission-checkpoint.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "src/mcp/docgen/handler.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/tasks/__tests__/task-set-reconcile.test.ts"
+    },
+    {
+      "id": "c7",
+      "kind": "analyze-bundle",
+      "ref": "src/config/reconcile.ts"
+    },
+    {
+      "id": "c8",
+      "kind": "analyze-bundle",
+      "ref": "src/config/reconcile-io.ts"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "HLD-03f4fd3b9102aab8#sc3"
+    }
+  ]
+}

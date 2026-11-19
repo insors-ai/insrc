@@ -1,0 +1,116 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 2,
+        "contentHash": "826c323de8ca0c4c86900be8084a4af58a9682c6bd4a78d77fd524b194743811",
+        "at": "2026-11-19T18:15:24.939Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "42411279eac2687e",
+    "storyId": "s1",
+    "createdAt": "2026-11-19T18:11:16.226Z",
+    "updatedAt": "2026-11-19T18:15:24.719Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-19T17:07:32.614Z",
+    "epicSlug": "retry-build-s-story-epic-completion",
+    "revision": 2
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "872914494",
+        "ranAt": "2026-11-19T18:15:24.719Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/__tests__/story-completion.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/workflow/__tests__/story-completion.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/story-completion.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1100,
+            "titles": [
+              {
+                "title": "record-override keeps status, revision and approval time, logs the actor and reason, and is refused from a completed BUILD",
+                "result": "pass"
+              },
+              {
+                "title": "handleWorkflowApprove on a BUILD: the outcome merges the approval's own followOn with the seam's, and the Story, its Tasks and its Epic complete",
+                "result": "pass"
+              },
+              {
+                "title": "a walk failure leaves the approval standing and reports ok false",
+                "result": "pass"
+              },
+              {
+                "title": "a live approval with a listed Task missing its head is held and named in the note",
+                "result": "pass"
+              },
+              {
+                "title": "a live approval after a failed reconcile, and after one that stopped part-way with newly created unlisted Tasks, is held and leaves those Tasks unfrozen",
+                "result": "pass"
+              },
+              {
+                "title": "initial approval held, then re-approval with an override records it and completes the Story",
+                "result": "pass"
+              },
+              {
+                "title": "a BUILD approval retries completion without consulting historical review metadata",
+                "result": "pass"
+              },
+              {
+                "title": "a BUILD already completed but whose Story has not rolled up retries the rollup without a fresh (illegal) approval transition",
+                "result": "pass"
+              },
+              {
+                "title": "a completed BUILD whose Story completed but whose Epic has not retries the rollup too, not just the Story case",
+                "result": "pass"
+              },
+              {
+                "title": "a draft BUILD at a new revision gets a fresh human approval without inheriting an old review override",
+                "result": "pass"
+              },
+              {
+                "title": "a held Story in signoff completes later from the stored override",
+                "result": "pass"
+              },
+              {
+                "title": "an Epic with a signoff hold stays open after its Story completes",
+                "result": "pass"
+              },
+              {
+                "title": "the CLI adapter exposes the story-completion outcome",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

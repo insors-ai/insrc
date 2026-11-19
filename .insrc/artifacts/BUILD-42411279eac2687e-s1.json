@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 3,
+        "contentHash": "0fc34c3d43e65f14c20755dd7d013890889cea8b1706d4da07d43c78a77185f4",
+        "at": "2026-11-19T18:16:22.631Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 3,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-19T18:19:22.108Z",
+        "override": {
+          "reason": "Automated code review (insrc_code_review_step) is retired/unavailable per CLAUDE.md. Self-review substitute: 13/13 tests pass (2 new regression tests, both verified to fail with the exact real-world error when the fix is reverted), tsc clean, build-validation gate passed. User approved explicitly in chat."
+        }
+      }
+    },
+    "workflow": "build",
+    "runId": "store-bc4ecaa9-1ea5-4200-93a3-e92a1f044d39",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-19T17:10:25.303Z",
+    "epicCreatedAt": "2026-11-19T17:07:32.614Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "42411279eac2687e",
+    "storyId": "s1",
+    "revision": 3,
+    "standalone": true,
+    "sizeClass": "trivial",
+    "authoredBy": "controller",
+    "triageRationale": "completeThroughService has exactly 2 callers (approveWorkflowTarget, approveOne), both in src/workflow/gates.ts.",
+    "epicSlug": "retry-build-s-story-epic-completion",
+    "updatedAt": "2026-11-19T18:15:24.719Z"
+  },
+  "body": {
+    "focus": "Decouple the Story/Epic completion rollup (completeThroughService / lifecycle.completeIfRolledUp) from the BUILD artifact's own approval state transition, so it can be retried after the fact. Let approveWorkflowTarget detect a BUILD whose own lifecycle.status is already 'completed' but whose Story (and/or Epic) has not itself reached 'completed', and run the rollup for it directly -- without requiring approveArtifactByJsonPath to execute a fresh, now-illegal transition first. Preserve the happy path (a fresh BUILD approval still completes and rolls up as today) and the review/override gate. Add a regression test alongside src/workflow/__tests__/story-completion.test.ts.",
+    "producesLld": false,
+    "commit": "872914494",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "Added buildAwaitingRollupRetry(repoPath, jsonPath) to src/workflow/gates.ts: true for a BUILD whose own lifecycle.status is 'completed' but whose Story OR Epic has not itself completed (via the stillOpen helper). approveOne() checks this before attempting approveArtifactByJsonPath and, when true, retries the Story/Epic completion rollup (completeThroughService) directly instead of a now-impossible approval transition; pendingArtifactJsonPaths() also rejoins such a BUILD to the epicHash batch sweep. Two regression tests in story-completion.test.ts: one forces a BUILD to 'completed' with its Story still draft, the other with the Story completed but a sibling declared Story (and so the Epic) never completing; both verify a retry with a new override reason completes/advances without throwing IllegalTransitionError.",
+    "testRecord": {
+      "md": "docs/standalone/retry-build-s-story-epic-completion-E2026111942411279/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/workflow/__tests__/story-completion.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-19T18:15:24.719Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/gates.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-19T18:15:24.719Z"
+      }
+    ]
+  },
+  "citations": []
+}

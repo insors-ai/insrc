@@ -1,0 +1,203 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1795086650902-3aekxf",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-19T11:12:33.059Z",
+    "epicCreatedAt": "2026-11-18T04:59:27.796Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 96822,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "50cde239426d6e2a",
+    "epicSlug": "shared-reviewcontext-data-model",
+    "storyId": "s3",
+    "lldRunId": "wf-1795074125025-18n7k9",
+    "lldEffectiveHash": "720f2f3adc5525d23526380a1f529ffe76b33eb2c0aff4624caef750f83b8cc5",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c084b9c1691acb451a8cb3150b0a3cd3d81b4130844ed32300f72d2831700190",
+        "at": "2026-11-19T11:12:35.196Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-19T11:13:35.689Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "71a03c5cf0c73987c4a284ec32277c8b77b44e99"
+  },
+  "body": {
+    "summary": {
+      "prose": "This Story adds ReviewTargets -- the submitter-owned list naming exactly the content to review this round, rebuilt fresh every round with no builder, factory or merge function of any kind. The build is two Tasks: land the one-field type, then write the full named test suite proving both its exactness (no carry-forward capability) and its structural compatibility with Story s1's path-validation contract.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add ReviewTargets type",
+        "summary": "Add interface ReviewTargets { readonly entries: readonly Pointer[] } to src/workflow/artifact-core/types.ts, beside Scope and Pointer. Exactly sc4's interfaceSketch, with zero additional API surface (no builder, factory, merge function, or validator) per the approved alternative a1.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "ReviewTargets is exported from types.ts with exactly sc4's interfaceSketch field shape (readonly entries: readonly Pointer[])",
+          "No builder, factory, merge, or validator function for ReviewTargets exists anywhere in types.ts",
+          "tsc --noEmit passes with the new type in place"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "ReviewTargets is exported with the exact documented field shape"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Write unit and contract tests for ReviewTargets",
+        "summary": "Add a flat kebab-case *.test.ts file under src/workflow/artifact-core/__tests__/ covering: exact-entries construction, independence across rounds, the deliberate absence of any merge/builder/validator function, empty/duplicate/mixed-section entries, and structural compatibility with sc6's PointerPathValidator -- one test case per testStrategy.testLevels subject, matching ac1/ac2's acceptanceMapping verbatim.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Every subject named in the LLD's testStrategy.testLevels has a corresponding test case",
+          "ac1 and ac2's provingTests from the LLD's acceptanceMapping all pass",
+          "npx tsx --test for the new test file passes with zero failures"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "a ReviewTargets built from a fresh Pointer list contains exactly those entries, nothing else"
+          },
+          {
+            "level": "unit",
+            "name": "no builder, factory or merge function exists anywhere in ReviewTargets' exported surface (a1's deliberate absence of such an API)"
+          },
+          {
+            "level": "unit",
+            "name": "two ReviewTargets instances built for consecutive rounds on the same artifact are independent objects sharing no entries by construction"
+          },
+          {
+            "level": "unit",
+            "name": "ReviewTargets' exported surface contains no validator, allow-list or restriction function of any kind that could cap investigation to entries"
+          },
+          {
+            "level": "unit",
+            "name": "a ReviewTargets with zero entries is structurally valid"
+          },
+          {
+            "level": "unit",
+            "name": "entries with a duplicate Pointer (same path and section) is accepted"
+          },
+          {
+            "level": "unit",
+            "name": "entries mixing whole-file Pointers (no section) and region-pinned Pointers (section populated) is accepted"
+          },
+          {
+            "level": "integration",
+            "name": "every ReviewTargets.entries[] Pointer can be passed directly to sc6's PointerPathValidator with no reshaping"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "a ReviewTargets built from a fresh Pointer list contains exactly those entries, nothing else",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "no builder, factory or merge function exists anywhere in ReviewTargets' exported surface (a1's deliberate absence of such an API)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "two ReviewTargets instances built for consecutive rounds on the same artifact are independent objects sharing no entries by construction",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "ReviewTargets' exported surface contains no validator, allow-list or restriction function of any kind that could cap investigation to entries",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "a ReviewTargets with zero entries is structurally valid",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "entries with a duplicate Pointer (same path and section) is accepted",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "entries mixing whole-file Pointers (no section) and region-pinned Pointers (section populated) is accepted",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "every ReviewTargets.entries[] Pointer can be passed directly to sc6's PointerPathValidator with no reshaping",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 dataModelChanges (ReviewTargets)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 testStrategy (testLevels and acceptanceMapping)"
+    }
+  ]
+}

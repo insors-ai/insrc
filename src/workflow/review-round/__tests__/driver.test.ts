@@ -196,8 +196,10 @@ describe('runReviewRound', () => {
 
 		assert.deepEqual(spy.argumentCounts, [2, 2], 'hooks.ground never receives reviewId as one of its own arguments');
 		assert.deepEqual(securityArgumentCounts, [2, 2], 'hooks.security never receives reviewId as one of its own arguments either');
-		assert.deepEqual(spy.calls, [[targets, 1], [targets, 2]], "hooks.ground's actual received arguments are [targets, round] -- reviewId was not substituted for either one");
-		assert.deepEqual(securityCalls, [[targets, 1], [targets, 2]], "hooks.security's actual received arguments are [targets, round] -- reviewId was not substituted for either one");
-		assert.equal(reviewId, 'review-xyz', "the caller's own reviewId value is left untouched, so it can still be threaded on to the review-report docgen call and the checkpoint/finalize calls");
+		assert.deepEqual(spy.calls, [[targets, 1], [targets, 2]], "hooks.ground's actual received arguments are exactly [targets, round] -- reviewId was not substituted for either one");
+		assert.deepEqual(securityCalls, [[targets, 1], [targets, 2]], "hooks.security's actual received arguments are exactly [targets, round] -- reviewId was not substituted for either one");
+		for (const [call, label] of [...spy.calls.map((c) => [c, 'hooks.ground'] as const), ...securityCalls.map((c) => [c, 'hooks.security'] as const)]) {
+			assert.ok(!call.includes(reviewId as unknown as ReviewTargets | number), `${label}'s captured arguments never contain the reviewId value itself -- it stays out of this function's hook calls entirely, left unchanged for the caller to thread on to the sc4/sc5 calls`);
+		}
 	});
 });

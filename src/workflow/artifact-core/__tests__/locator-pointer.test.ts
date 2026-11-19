@@ -75,4 +75,37 @@ describe('Locator, Pointer, StalenessResult and PathValidationResult', () => {
 		// any string, not how a consumer should branch on it.
 		assert.equal(futureLocator.kind, 'futureKind');
 	});
+
+	it('a Pointer with path + section (Locator) identifies both the file and the region', () => {
+		const section: Locator = { kind: 'lineRange', value: '10-20' };
+		const pointer: Pointer = { path: 'docs/epics/example/HLD.md', section };
+		assert.equal(pointer.path, 'docs/epics/example/HLD.md');
+		assert.deepEqual(pointer.section, section);
+	});
+
+	it('a Pointer with no section still identifies the whole file', () => {
+		const pointer: Pointer = { path: 'docs/epics/example/DEF.md' };
+		assert.equal(pointer.path, 'docs/epics/example/DEF.md');
+		assert.equal(pointer.section, undefined);
+	});
+
+	it("a Locator with kind='symbol'/'lineRange'/'docSection' is accepted", () => {
+		const bySymbol: Locator = { kind: 'symbol', value: 'someSymbol' };
+		const byLineRange: Locator = { kind: 'lineRange', value: '10-20' };
+		const byDocSection: Locator = { kind: 'docSection', value: '3.2' };
+		assert.equal(bySymbol.kind, 'symbol');
+		assert.equal(byLineRange.kind, 'lineRange');
+		assert.equal(byDocSection.kind, 'docSection');
+	});
+
+	it('a Locator with an arbitrary future kind string is accepted and read via a non-exhaustive string-keyed lookup, not an exhaustive switch', () => {
+		const futureLocator: Locator = { kind: 'futureKind', value: 'whatever' };
+		const readers: Record<string, (l: Locator) => string> = {
+			symbol: (l) => `symbol:${l.value}`,
+			lineRange: (l) => `lineRange:${l.value}`,
+			docSection: (l) => `docSection:${l.value}`,
+		};
+		const read = readers[futureLocator.kind] ?? ((l) => `unknown:${l.value}`);
+		assert.equal(read(futureLocator), 'unknown:whatever');
+	});
 });

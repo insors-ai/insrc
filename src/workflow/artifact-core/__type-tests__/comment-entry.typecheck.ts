@@ -39,6 +39,12 @@ export function negative(entry: CommentEntry, round: ReviewContextRound): void {
 	const _e4: CommentEntry = { round: 1, party: 'submitter', timestamp: '2026-11-19T00:00:00.000Z' };
 	// @ts-expect-error CommentEntry has no field named "verdict"
 	const _e5: CommentEntry = { round: 1, party: 'submitter', timestamp: '2026-11-19T00:00:00.000Z', text: 'x', verdict: 'pass' };
+	// @ts-expect-error CommentEntry has no field named "severity"
+	const _e6: CommentEntry = { round: 1, party: 'submitter', timestamp: '2026-11-19T00:00:00.000Z', text: 'x', severity: 'HIGH' };
+	// @ts-expect-error CommentEntry has no field named "dimension"
+	const _e7: CommentEntry = { round: 1, party: 'submitter', timestamp: '2026-11-19T00:00:00.000Z', text: 'x', dimension: 'coverage' };
+	// @ts-expect-error CommentEntry has no field named "artifactId"
+	const _e8: CommentEntry = { round: 1, party: 'submitter', timestamp: '2026-11-19T00:00:00.000Z', text: 'x', artifactId: 'LLD-1' };
 	// @ts-expect-error CommentEntry.round is readonly
 	entry.round = 2;
 	// @ts-expect-error CommentEntry.party is readonly

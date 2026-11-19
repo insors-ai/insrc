@@ -336,3 +336,12 @@ interface ScopeFieldRequirement {
 	readonly required:     readonly (keyof Scope)[];
 	readonly mustBeAbsent: readonly (keyof Scope)[];
 }
+
+// ---------------------------------------------------------------------------
+// shared-reviewcontext-data-model Epic sc4 (ReviewTargets), owned by s3
+// ---------------------------------------------------------------------------
+
+/** The submitter-owned, fully-reset-each-round list of content to review this round; rebuilt fresh every round, never merged with a prior round's entries. */
+export interface ReviewTargets {
+	readonly entries: readonly Pointer[];
+}

@@ -1,0 +1,394 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1795095635590-gkstbp",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-19T13:49:32.404Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 533850,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-11-18T06:14:00.057Z",
+    "epicHash": "03f4fd3b9102aab8",
+    "epicSlug": "review-rounds-reconciliation-recovery",
+    "storyId": "s2",
+    "hldBaseRunId": "wf-1794986545330-2wntv5",
+    "hldEffectiveHash": "6d57abfa68accf993485dc920a80409335ebda32202c80baa14902fde616994d",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "Findings are classified against a fixed taxonomy with a per-review-type-configurable severity scale",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 2,
+        "contentHash": "e288a37402c752d93341797587f56c723b74c7211bde1b84739bf06f5ac4cb8e",
+        "at": "2026-11-19T14:17:20.249Z",
+        "by": {
+          "id": "insrc:controller",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-19T14:40:49.220Z"
+      }
+    },
+    "revision": 2,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "This Story adds the fixed taxonomy every finding is classified against and a documented default severity scale. A finding's category is always exactly one of five fixed values, so findings stay comparable across every round and every review type. Severity itself stays a plain string, since no review-type class hierarchy exists to constrain it further -- a review type that wants its own severity vocabulary supplies it through its own grounding/steering, falling back to HIGH/MED when it declares none.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Alternative a2 wins: one shared round-driver function in a new sibling module under src/workflow/ (outside review-history/, which is being retired from rather than extended) takes a small per-review-type hook set -- the grounding/findings call, checkpoint granularity, and finding taxonomy/severity -- and runs the identical round cycle, checkpoint lifecycle, and reconciliation call for every review type.",
+      "ownedContracts": [
+        {
+          "id": "sc2",
+          "name": "Finding taxonomy + severity scale",
+          "purpose": "The fixed design-review-specific taxonomy and the per-review-type-configurable severity scale every finding carries, per lc1/lc2.",
+          "interfaceSketch": "type FindingCategory = 'correctness' | 'functional-completeness' | 'security' | 'quality' | 'maintainability';\ninterface Finding {\n  readonly category: FindingCategory;\n  readonly severity: string;\n}",
+          "ownedByStory": "s2",
+          "consumedByStories": [],
+          "assumptions": [
+            "c1"
+          ]
+        }
+      ],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "Review-type hook set",
+          "purpose": "The small hook set (grounding/findings call, checkpoint granularity, taxonomy/severity) that is the only thing legitimately differing per review type, consumed by the round-driver, per the Epic's one-shared-process framing (Story s1 ac1/ac2).",
+          "interfaceSketch": "type ReviewKind = 'design' | 'code';\ninterface RoundDriverHooks {\n  readonly reviewKind: ReviewKind;\n  readonly checkpointGranularity: 'round' | 'task';\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s2",
+        "owns": [
+          "sc2"
+        ],
+        "depends": [
+          "sc1"
+        ],
+        "internal": "Which exact per-review-type severity scales exist beyond the HIGH/MED default, and how a review type's Feedback implementation declares its own, stay internal to s2; no other Story's type depends on Finding's shape."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1"
+          ],
+          "depends": [],
+          "internal": "The round-driver function itself -- what it does internally to run the grounding+findings, reconciliation, render+present and checkpoint-write cycle -- stays private to s1; no other Story's type depends on the driver's internals, only on the hook contract sc1 exposes."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc3"
+          ],
+          "depends": [
+            "sc1"
+          ],
+          "internal": "How the reconciliation LLM call is actually prompted, and how it reads the temp folder's audit trail when needed, stay internal to s3; no other Story's type depends on ReconciliationResult's internals beyond its verdict shape."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc4"
+          ],
+          "depends": [
+            "sc1"
+          ],
+          "internal": "The exact docgen docType registration and MD rendering logic (including the resolved/still-open/contradicted annotation rule scoped to this round's own corrections) stay internal to s4; no other Story's type depends on the renderer's internals."
+        },
+        {
+          "storyId": "s5",
+          "owns": [
+            "sc5"
+          ],
+          "depends": [
+            "sc1"
+          ],
+          "internal": "The exact per-review-type granularity mapping (round-level for design review, per-Task for code review) and the durable-copy-before-deletion mechanics stay internal to s5; no other Story's type depends on ReviewCheckpoint's internals beyond what sc1's round-driver needs to call it."
+        }
+      ],
+      "rolloutPhase": "Phase B — taxonomy, reconciliation, rendering, checkpointing",
+      "nonFunctional": {
+        "performance": "Checkpoint write/read (sc5) is a single small JSON file write/read per completed unit of work (a round, or a Task), adding no I/O beyond what the round cycle already performs.",
+        "durability": "The final round's review-output JSON is copied into durable artifact storage before the .insrc/tmp/<reviewId>/ folder is deleted at a terminal state (k7), so a completed review's result survives after the ephemeral working folder is gone."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [],
+      "dataModel": [
+        {
+          "entity": "FindingCategory",
+          "change": "new",
+          "details": "type FindingCategory = 'correctness' | 'functional-completeness' | 'security' | 'quality' | 'maintainability'; -- exactly sc2's HLD interfaceSketch, a fixed 5-member union never widened per review type.",
+          "callSites": []
+        },
+        {
+          "entity": "Finding",
+          "change": "new",
+          "details": "interface Finding { readonly id: string; readonly category: FindingCategory; readonly severity: string; } -- sc2's HLD interfaceSketch as amended (revision 4): adds a required id field so a finding has a stable identity across rounds. severity stays an unconstrained string because no abstract review-type class hierarchy exists in the codebase (grounded in s1's structural-map bundle) to type-check against; a review type's own grounding/steering is where its severity vocabulary is actually declared and used. id is assigned by whatever review type's hook produces the finding (sc1's RoundDriverHooks.ground()) -- this Story defines the field, not how a given hook generates a unique value for it.",
+          "callSites": []
+        },
+        {
+          "entity": "DEFAULT_SEVERITY_SCALE",
+          "change": "new",
+          "details": "const DEFAULT_SEVERITY_SCALE: readonly string[] = ['HIGH', 'MED'] as const; -- the fallback scale ac2/lc2 name for a review type that declares no severity scale of its own. Documents the default; does not enforce it structurally (severity stays a plain string).",
+          "callSites": []
+        }
+      ],
+      "interactionWithShared": [
+        {
+          "contractId": "sc2",
+          "role": "implements",
+          "howDetails": "FindingCategory and Finding are authored here as sc2's concrete shape, implementing the HLD interfaceSketch verbatim; DEFAULT_SEVERITY_SCALE is this Story's own addition, documenting the fallback ac2 requires."
+        },
+        {
+          "contractId": "sc1",
+          "role": "consumes",
+          "howDetails": "Finding's severity field is populated by whatever a review type's RoundDriverHooks.ground() implementation (sc1, owned by s1) returns -- this Story only defines the shape findings must carry, not how a review type's hook chooses its severity values."
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "FindingCategory",
+        "change": "new",
+        "details": "type FindingCategory = 'correctness' | 'functional-completeness' | 'security' | 'quality' | 'maintainability'; -- exactly sc2's HLD interfaceSketch, a fixed 5-member union never widened per review type.",
+        "callSites": []
+      },
+      {
+        "entity": "Finding",
+        "change": "new",
+        "details": "interface Finding { readonly id: string; readonly category: FindingCategory; readonly severity: string; } -- sc2's HLD interfaceSketch as amended (revision 4): adds a required id field so a finding has a stable identity across rounds. severity stays an unconstrained string because no abstract review-type class hierarchy exists in the codebase (grounded in s1's structural-map bundle) to type-check against; a review type's own grounding/steering is where its severity vocabulary is actually declared and used. id is assigned by whatever review type's hook produces the finding (sc1's RoundDriverHooks.ground()) -- this Story defines the field, not how a given hook generates a unique value for it.",
+        "callSites": []
+      },
+      {
+        "entity": "DEFAULT_SEVERITY_SCALE",
+        "change": "new",
+        "details": "const DEFAULT_SEVERITY_SCALE: readonly string[] = ['HIGH', 'MED'] as const; -- the fallback scale ac2/lc2 name for a review type that declares no severity scale of its own. Documents the default; does not enforce it structurally (severity stays a plain string).",
+        "callSites": []
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc2",
+        "role": "implements",
+        "howDetails": "FindingCategory and Finding are authored here as sc2's concrete shape, implementing the HLD interfaceSketch verbatim; DEFAULT_SEVERITY_SCALE is this Story's own addition, documenting the fallback ac2 requires."
+      },
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Finding's severity field is populated by whatever a review type's RoundDriverHooks.ground() implementation (sc1, owned by s1) returns -- this Story only defines the shape findings must carry, not how a review type's hook chooses its severity values."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "code attempts to construct a Finding with a category value outside the fixed 5-member FindingCategory union",
+          "detection": "tsc rejects the literal at compile time because it does not match the FindingCategory union type",
+          "response": "compilation fails before the code can ship; no invalid category literal ever reaches runtime",
+          "userImpact": "a typo'd or sixth category is caught during development, not discovered later from a stored finding carrying an uncategorized or miscategorized value",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "a review type's hook declares no severity scale at all (its RoundDriverHooks.ground() implementation simply emits 'HIGH'/'MED' values without ever referencing DEFAULT_SEVERITY_SCALE)",
+          "expected": "Finding.severity still structurally accepts those values -- DEFAULT_SEVERITY_SCALE is documentation of the fallback, not a runtime default applied automatically by any function in this Story (there is no function in this Story's contract to apply it)"
+        },
+        {
+          "input": "a review type's hook emits a severity string outside any documented scale (e.g. a typo like 'HGIH', or a wholly custom value like 'CRITICAL' with no corresponding scale declared anywhere)",
+          "expected": "Finding accepts it structurally -- severity is deliberately an unconstrained string (per the chosen alternative's rationale), so no finding is rejected or dropped for an unrecognized severity value"
+        },
+        {
+          "input": "a nested security pass (per the resolved cross-epic decision in s1) produces a finding",
+          "expected": "that finding still uses category='security', one of the same fixed 5-member FindingCategory values -- the security pass does not introduce a parallel taxonomy or category scheme of its own"
+        }
+      ],
+      "invariantsToPreserve": []
+    },
+    "testStrategy": {
+      "testFramework": "node:test, run via npx tsx --test, with a compile-time @ts-expect-error fixture checked through a throwaway tsconfig (matches this Epic's own s1 convention and the shared-reviewcontext-data-model epic's artifact-core convention)",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove FindingCategory is a closed fixed taxonomy (ac1), Finding.severity accepts any review-type-declared value including the documented default scale (ac2), and Finding's exported shape has exactly the two documented fields -- no extra field smuggled in later.",
+          "subjects": [
+            "Finding and FindingCategory are exported with the exact documented field shapes, including the id field",
+            "FindingCategory accepts exactly the five fixed categories (correctness, functional-completeness, security, quality, maintainability) and rejects any other category value at compile time",
+            "Finding.severity accepts any string value, including a review-type-specific custom severity scale outside HIGH/MED",
+            "DEFAULT_SEVERITY_SCALE names HIGH and MED as the documented fallback scale for a review type that declares none",
+            "Finding's exported shape contains exactly id, category and severity, and no other field of any kind",
+            "two Finding values with identical category and severity but different id values are distinct findings"
+          ],
+          "fixturesNeeded": [
+            "a compile-time typecheck fixture (__type-tests__/finding.typecheck.ts) with @ts-expect-error assertions for an invalid category literal and an exact-keys Equal<keyof Finding, 'id'|'category'|'severity'> assertion"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "FindingCategory accepts exactly the five fixed categories (correctness, functional-completeness, security, quality, maintainability) and rejects any other category value at compile time"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "Finding.severity accepts any string value, including a review-type-specific custom severity scale outside HIGH/MED",
+            "DEFAULT_SEVERITY_SCALE names HIGH and MED as the documented fallback scale for a review type that declares none"
+          ]
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Flat Finding{category,severity:string} exactly per sc1's sketch, plus an advisory default-scale constant",
+        "oneLineSummary": "Finding carries a fixed 5-value FindingCategory and a plain `severity: string`; a DEFAULT_SEVERITY_SCALE = ['HIGH','MED'] constant documents the fallback a review type's steering/prompt falls back to when it declares no scale of its own.",
+        "approach": "type FindingCategory = 'correctness' | 'functional-completeness' | 'security' | 'quality' | 'maintainability' (fixed, never widened). interface Finding { readonly category: FindingCategory; readonly severity: string; } -- exactly sc2's HLD interfaceSketch, unchanged. export const DEFAULT_SEVERITY_SCALE: readonly string[] = ['HIGH', 'MED'] as const -- the fallback named by ac2/lc2 when a review type declares no scale of its own. Since no abstract 'Feedback' base class exists anywhere in the codebase (confirmed by s1's grounding), 'a review type's Feedback implementation declares its own severity scale' is realized at the steering/prompt level (the per-review-type hook's grounding instructions name the scale it uses), not by a TypeScript class hierarchy -- severity stays an unconstrained string so any review type's scale fits without widening the type.",
+        "pros": [
+          "Matches sc2's HLD interfaceSketch exactly, field-for-field -- no invented structure.",
+          "Does not fabricate a 'Feedback' abstract class the codebase does not have and the HLD never asks this Story to build.",
+          "Smallest shape that satisfies ac1 (fixed category) and ac2 (a default scale exists and is named) -- a review type is free to use any severity string, defaulting to HIGH/MED when it has not chosen otherwise."
+        ],
+        "cons": [
+          "severity: string is not type-checked against any particular review type's declared scale -- a typo like 'HIGH ' or 'Hihg' compiles fine. Acceptable: the HLD's own sketch chose `string`, and validating against an open-ended, review-type-declared vocabulary at the type level is not what sc2 asks for."
+        ],
+        "costEstimate": "S"
+      },
+      {
+        "id": "a2",
+        "name": "Generic Finding<S extends string> parameterized by each review type's severity-scale union",
+        "oneLineSummary": "Finding<S extends string = 'HIGH'|'MED'> carries severity: S, so each review type instantiates its own literal-union severity type and gets compile-time narrowing.",
+        "approach": "interface Finding<S extends string = 'HIGH'|'MED'> { readonly category: FindingCategory; readonly severity: S; } -- a review type with a custom scale declares its own `type MySeverity = 'CRITICAL'|'WARN'` and uses Finding<MySeverity>; the default type parameter supplies HIGH/MED when a review type does not specialize it.",
+        "pros": [
+          "Compile-time rejects a severity value outside the chosen scale for any review type that specializes S, catching the typo a1's plain string cannot."
+        ],
+        "cons": [
+          "Every consumer of Finding anywhere in the codebase must now either specialize S or accept the inferred default, propagating a generic parameter through every function signature, array type and downstream consumer that touches Finding -- real added complexity none of the four consuming Stories (s3-s5 in the HLD context; s2 itself has no consumers listed) asked for.",
+          "The HLD's own sc2 interfaceSketch is a flat, non-generic interface; introducing a type parameter is a structural departure from the approved sketch, not a refinement of it.",
+          "Still does not create the 'Feedback abstract base type with per-review-type implementations' lc2's wording describes -- it would need a parallel, unrequested class hierarchy to actually dispatch which S a given review gets, which is exactly the over-engineering the smallest-shape rule warns against."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Violates sc2's approved shape by introducing a generic parameter nothing in the Story or HLD asked for; the extra compile-time rigor it buys over a1 is not needed to satisfy ac2."
+      },
+      {
+        "id": "a3",
+        "name": "Self-describing Finding.severity as {scale, value}",
+        "oneLineSummary": "severity becomes a structured object carrying both the finding's own value and the full scale it was drawn from, so each Finding is self-contained without a separate constant.",
+        "approach": "interface Finding { readonly category: FindingCategory; readonly severity: { readonly scale: readonly string[]; readonly value: string }; } -- every finding instance repeats its review type's entire severity scale alongside its own value.",
+        "pros": [
+          "A single Finding value is fully self-describing -- a reader never needs to look up which scale produced it."
+        ],
+        "cons": [
+          "Deviates from sc2's HLD interfaceSketch, which specifies `severity: string` flatly, not a nested object -- this is a structural change to an already-approved shared contract, not a refinement.",
+          "Duplicates the same scale array across every finding a review produces (potentially dozens per round), for a self-description benefit nothing in ac1/ac2 asks for.",
+          "No consuming code needs per-finding scale introspection; the scale is a property of the review type/round, not of each individual finding."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Violates sc2's approved shape (nested severity object instead of a flat string) and duplicates the severity scale across every finding instance for a self-description benefit neither acceptance criterion asks for."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "The HLD's lc2 text assumes 'Feedback being an abstract base type with per-review-type implementations' as an existing fact this Story's design should be consistent with, but no such class or interface exists anywhere in the codebase (grepped repo-wide; the only 'Feedback' symbol, artifact-core/types.ts:73-93, is an unrelated comment/thread-reply type with no severity field). This LLD's chosen design still satisfies ac1/ac2 and sc2's interfaceSketch exactly by treating severity-scale configuration as a steering/prompt-level concern (via sc1's RoundDriverHooks.ground()), not a class hierarchy. Flagging for the HLD owner to correct lc2's wording in a future revision; does not block this Story's approval.",
+      "Resolved (revision 2, following the s3/s5 cross-review): sc2 was amended (HLD revision 4, fieldAdd, non-breaking) to add Finding.id: string, giving a finding a stable identity across rounds. s3's reconcileRound now keys ReconciliationResult.priorFindingRef off Finding.id directly instead of requiring the caller to assign and track an opaque ref."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/review-history/review/design-review/admission-checkpoint.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/review-history/review/design-review/preparation-checkpoint.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/review-history/review/design-review/checkpoint.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/review-history/code-review/task-review/admission-checkpoint.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "src/mcp/docgen/handler.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/artifact-core/types.ts:73-93"
+    },
+    {
+      "id": "c7",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/review-history/review/types.ts:29"
+    },
+    {
+      "id": "c8",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/review-history/review/types.ts:65-80"
+    },
+    {
+      "id": "c9",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/review-history/code-review/types.ts:26"
+    },
+    {
+      "id": "c10",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/review-history/code-review/types.ts:34-48"
+    },
+    {
+      "id": "c11",
+      "kind": "prior-artifact",
+      "ref": "HLD-03f4fd3b9102aab8#sc2"
+    }
+  ]
+}

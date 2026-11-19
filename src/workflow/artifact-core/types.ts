@@ -345,3 +345,23 @@ interface ScopeFieldRequirement {
 export interface ReviewTargets {
 	readonly entries: readonly Pointer[];
 }
+
+// ---------------------------------------------------------------------------
+// shared-reviewcontext-data-model Epic sc5 (CommentEntry + round), owned by s4
+// ---------------------------------------------------------------------------
+
+export type CommentParty = 'submitter' | 'reviewer';
+
+/** A submitter's or reviewer's freeform, provenance-tagged context entry. Never a channel for trusted review output -- carries no verdict, severity or dimension field. */
+export interface CommentEntry {
+	readonly round:     number;
+	readonly party:     CommentParty;
+	readonly timestamp: string;
+	readonly text:      string;
+}
+
+/** The root-level record of which review attempt this is, and the freeform comments recorded for it, same-artifact-only across the chain. */
+export interface ReviewContextRound {
+	readonly round:    number;
+	readonly comments: readonly CommentEntry[];
+}

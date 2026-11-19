@@ -12,7 +12,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { appendMessage, clearTransient, dismissMessage, MAX_MESSAGES } from '../messages.js';
+import { appendMessage, clearMessages, clearTransient, dismissMessage, MAX_MESSAGES } from '../messages.js';
 import type { MsgKind, MsgLine } from '../messages.js';
 
 let seq = 0;
@@ -46,6 +46,11 @@ test('clearTransient removes ALL transient lines but keeps sticky note/task line
 	const list = [line('sticky-info', 'info', false), line('toast', 'success', true), line('sticky-err', 'error', false)];
 	const out = clearTransient(list);
 	assert.deepEqual(out.map(m => m.text), ['sticky-info', 'sticky-err']);
+});
+
+test('clearMessages removes transient and sticky operation messages', () => {
+	const list = [line('sticky-info', 'info', false), line('toast', 'success', true), line('sticky-err', 'error', false)];
+	assert.deepEqual(clearMessages(list), []);
 });
 
 test('dismissMessage removes only the line with the given id (sticky siblings survive)', () => {

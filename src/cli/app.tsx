@@ -17,7 +17,7 @@ import type { ReactElement } from 'react';
 
 import type { Services } from './services/index.js';
 import { ServicesContext, UiContext, CaptureContext, useServices, type Ui } from './ui/context.js';
-import { appendMessage, clearTransient, dismissMessage, MAX_MESSAGES } from './ui/messages.js';
+import { appendMessage, clearMessages, clearTransient, dismissMessage, MAX_MESSAGES } from './ui/messages.js';
 import type { MsgKind, MsgLine } from './ui/messages.js';
 import { KeyHints } from './ui/widgets.js';
 import { CommandBar } from './ui/CommandBar.js';
@@ -129,11 +129,12 @@ function AppBody(props: { pollMs?: number | undefined; initialPane?: number | un
 	useInput((input, key) => {
 		if (input === ':') { openCmd(); return; }
 		if (input === 'q') { exit(); return; }
+		if (input === 'C') { setMessages(clearMessages); return; }
 		if (input >= '1' && input <= '6') { setPane(Number(input) - 1); return; }
 		if (key.tab && key.shift) { setPane(p => (p + TABS.length - 1) % TABS.length); return; }
 		if (key.tab)              { setPane(p => (p + 1) % TABS.length); return; }
 		if (input === 'r') { setNonce(n => n + 1); ui.toast('refreshed'); return; }
-		if (input === '?') { ui.toast(': command · 1-6/Tab switch · r refresh · q quit'); return; }
+		if (input === '?') { ui.toast(': command · 1-6/Tab switch · r refresh · C clear messages · q quit'); return; }
 	}, { isActive: !captured && !prompting });
 
 	return (
@@ -164,7 +165,7 @@ function AppBody(props: { pollMs?: number | undefined; initialPane?: number | un
 					{/* The one and only message render site — docked at the bottom. */}
 					<MessageBox messages={messages} />
 					{!cmdMode && (
-						<KeyHints hints={[[':', 'command'], ['1-6/Tab', 'switch'], ['r', 'refresh'], ['q', 'quit']]} />
+						<KeyHints hints={[[':', 'command'], ['1-6/Tab', 'switch'], ['r', 'refresh'], ['C', 'clear messages'], ['q', 'quit']]} />
 					)}
 				</Box>
 			</CaptureContext.Provider>

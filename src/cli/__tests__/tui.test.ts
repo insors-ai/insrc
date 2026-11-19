@@ -360,6 +360,21 @@ test('bottom box: ui.toast (r refresh) lands in the message box', async () => {
 	unmount();
 });
 
+test('bottom box: uppercase C clears operation output and errors', async () => {
+	const svc = fakeServices();
+	svc.daemon.getStatus = async () => status({ repos: [repo('/work/repoA')] });
+	const { lastFrame, stdin, unmount } = render(createElement(App, { services: svc, pollMs: 0 }));
+	await settle();
+	stdin.write('c');
+	await settle();
+	assert.match(lastFrame() ?? '', /compacted: saved/);
+	stdin.write('C');
+	await settle();
+	assert.doesNotMatch(lastFrame() ?? '', /compacted: saved/);
+	assert.match(lastFrame() ?? '', /running/);
+	unmount();
+});
+
 test("':' opens the command bar and runs a typed command", async () => {
 	const svc = fakeServices();
 	const addCalls: string[] = [];

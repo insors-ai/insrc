@@ -41,6 +41,11 @@ export function clearTransient(list: readonly MsgLine[]): MsgLine[] {
 	return list.filter(m => !m.transient);
 }
 
+/** Remove every displayed message, including sticky operation output and errors. */
+export function clearMessages(_list: readonly MsgLine[]): MsgLine[] {
+	return [];
+}
+
 /** Remove the single line with `id` — the per-toast auto-dismiss timer path.
  *  Targeting by id means a newer sticky line added before the timer fires is
  *  never swept away with the transient. */

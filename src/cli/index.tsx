@@ -30,6 +30,8 @@ const { render } = await import('ink');
 const { createElement } = await import('react');
 const { App } = await import('./app.js');
 const { makeServices } = await import('./services/index.js');
+const { clearTerminal } = await import('./ui/terminal.js');
 
+clearTerminal(process.stdout);
 const { waitUntilExit } = render(createElement(App, { services: makeServices() }));
 await waitUntilExit();

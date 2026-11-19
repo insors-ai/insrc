@@ -1393,9 +1393,10 @@ Several types at the root, or none, is `unknown`; a file in a subdirectory is ne
 
 The two commands are set together. A key that is present but empty, a result format other than `tap` or `exit-code`, or a
 value that is not a string is refused: the build phase returns the error `invalid-command-setting`, naming the key, before any
-prompt is built, check is run or record is written. These keys are not rows of the settings catalog, as `models.byRepo` is
-not: a catalog row would write an empty default into every config, and an empty command is an error here. The extra tsconfig
-projects are checked only for the Node default.
+prompt is built, check is run or record is written. `build.resultFormat` is a row of the settings catalog (default
+`exit-code`; it applies only when the two commands are set). The two commands, and everything under `build.byRepo`, are not
+rows, as `models.byRepo` is not: a row would write an empty default into every config, and an empty command is an error here.
+The extra tsconfig projects are checked only for the Node default.
 
 ### What the record holds
 

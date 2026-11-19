@@ -133,9 +133,10 @@ export function buildConfigCatalog(defs: ModelDefinitionsFile): readonly ConfigO
 		{ path: 'models.coreFloor',          type: 'enum',   default: 'mid',            desc: "min tier for critical tasks: 'core' | 'mid' | 'cheap'", enumValues: ['core', 'mid', 'cheap'], group: 'Models — tiers' },
 		// models.tasks.<roleId> and models.byRepo.<repoPath>.{tiers,tasks,coreFloor} are dynamic-key
 		// overrides — set them directly in ~/.insrc/config.json (see docs/daemon.md).
-		// build.{typecheckCommand,testCommand,resultFormat} and build.byRepo.<repoPath>.* (the build gate's
-		// commands for a project) are deliberately NOT rows: a row would fill an empty default, and a present
-		// empty command is refused (src/daemon/steps/build-step/command-setting.ts; docs/daemon.md, "Build commands").
+		// The build gate's commands for a project: build.typecheckCommand / build.testCommand (and every key under
+		// build.byRepo.<repoPath>) are deliberately NOT rows: a row would fill an empty default, and a present empty
+		// command is refused (src/daemon/steps/build-step/command-setting.ts; docs/daemon.md, "Build commands").
+		{ path: 'build.resultFormat', type: 'enum', default: 'exit-code', desc: "how the gate reads a test run of the commands a project states: 'exit-code' (a file passes when its command exits 0) | 'tap' (the command prints TAP, read case by case); applies only when build.typecheckCommand and build.testCommand are set", enumValues: ['tap', 'exit-code'], group: 'Workflow & review' },
 
 		// ── shaper runtime knobs (NOT model specs) — models.shaper.* ──
 		{ path: 'models.shaper.maxToolTurns',            type: 'number', default: 40,    desc: 'max tool-loop turns for the shaper', group: 'Models — shaper' },

@@ -780,13 +780,27 @@ export interface WorkflowApproveResult {
 	readonly followOn?: readonly FollowOnOutcome[];
 }
 
-/** Whether a BUILD artifact is itself `completed` but its Story has not rolled up --
+/** Whether the artifact at `jsonPath` is missing, or exists but is NOT yet `completed` --
+ *  i.e. still a potential obstacle to a unit's roll-up. A missing artifact is not an
+ *  obstacle: `ensureUnitHeads` creates it fresh (as `completeThroughService` already does). */
+function stillOpen(jsonPath: string): boolean {
+	if (!existsSync(jsonPath)) return false;
+	try {
+		const meta = (JSON.parse(readFileSync(jsonPath, 'utf8')) as { meta?: { lifecycle?: { status?: unknown } } }).meta;
+		return meta?.lifecycle?.status !== 'completed';
+	} catch {
+		return true;
+	}
+}
+
+/** Whether a BUILD artifact is itself `completed` but its Story or Epic has not rolled up --
  *  the state a fresh approval can never transition out of again (approveArtifactByJsonPath
  *  refuses a second transition from `completed`), so its completion rollup needs a retry
  *  path that does not depend on that transition running again. */
 function buildAwaitingRollupRetry(repoPath: string, jsonPath: string): boolean {
 	const name = basename(jsonPath);
 	if (!name.startsWith('BUILD-')) return false;
+	if (!existsSync(jsonPath)) return false;
 	let meta: { lifecycle?: { status?: unknown } } | undefined;
 	try {
 		meta = (JSON.parse(readFileSync(jsonPath, 'utf8')) as { meta?: typeof meta }).meta;
@@ -797,13 +811,8 @@ function buildAwaitingRollupRetry(repoPath: string, jsonPath: string): boolean {
 	const key = ArtifactIds.parse(name.replace(/\.json$/, ''));
 	if (key?.kind !== 'BUILD' || key.story === undefined) return false;
 	const storyPath = artifactJsonPath(repoPath, ArtifactIds.make({ kind: 'STORY', epicHash: key.epicHash, story: key.story }));
-	if (!existsSync(storyPath)) return true;
-	try {
-		const storyMeta = (JSON.parse(readFileSync(storyPath, 'utf8')) as { meta?: { lifecycle?: { status?: unknown } } }).meta;
-		return storyMeta?.lifecycle?.status !== 'completed';
-	} catch {
-		return true;
-	}
+	const epicPath = artifactJsonPath(repoPath, ArtifactIds.make({ kind: 'EPIC', epicHash: key.epicHash }));
+	return stillOpen(storyPath) || stillOpen(epicPath);
 }
 
 /** JSON paths of every DEF/HLD/LLD/PLAN/BUILD artifact under `epicHash` that is

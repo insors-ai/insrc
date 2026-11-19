@@ -313,6 +313,37 @@ test('a BUILD already completed but whose Story has not rolled up retries the ro
 	} finally { k.done(); }
 });
 
+test('a completed BUILD whose Story completed but whose Epic has not retries the rollup too, not just the Story case', async () => {
+	const k = kit();
+	try {
+		await ready(k);
+		// A second declared Story (s2) that never gets created keeps the Epic open
+		// forever, so this Epic can never complete -- the point is only to prove the
+		// retry is attempted (and does not throw) when the Story alone is not the
+		// blocker, which the Story-only check in buildAwaitingRollupRetry would miss.
+		// (Written AFTER ready(): seedEpic() writes its own default DEF body first.)
+		await k.store.write({ ...(await k.store.read(`DEF-${H}`)), payload: { body: { stories: [{ id: 's1' }, { id: 's2' }] }, citations: [] } }, alice);
+		const svc = serviceFor(k);
+
+		const first = await approve(k, svc);
+		assert.equal(first.skipped.length, 0, JSON.stringify(first.skipped));
+		assert.equal(completion(first).ok, true);
+		assert.equal(await statusOf(k, BUILD), 'completed');
+		assert.equal(await statusOf(k, STORY), 'completed', 's1 completes on its own merits');
+		assert.equal(await statusOf(k, EPIC), 'draft', 'the Epic stays open: it declares s2, which was never created');
+
+		// Retry with a brand-new override reason on the now-'completed' BUILD. Before the
+		// fix, buildAwaitingRollupRetry checked only the Story (already 'completed' here),
+		// so this fell through to approveArtifactByJsonPath's record-override attempt and
+		// threw IllegalTransitionError, even though the Epic genuinely still needs a retry.
+		const retry = await approve(k, svc, 'a brand new override reason, never recorded before this call');
+		assert.equal(retry.skipped.length, 0, JSON.stringify(retry.skipped));
+		const done = completion(retry);
+		assert.equal(done.ok, true);
+		assert.equal(await statusOf(k, EPIC), 'draft', 'still correctly open -- s2 was never created');
+	} finally { k.done(); }
+});
+
 test('a draft BUILD at a new revision gets a fresh human approval without inheriting an old review override', async () => {
 	const open = kit();
 	try {

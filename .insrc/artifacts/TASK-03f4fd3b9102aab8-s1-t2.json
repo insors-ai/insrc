@@ -1,0 +1,151 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-103d2c58-38d3-43ce-a9c8-9e786a7e8a9f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-19T14:55:11.305Z",
+    "epicCreatedAt": "2026-11-18T06:14:00.057Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "03f4fd3b9102aab8",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add the full named test suite for runReviewRound",
+      "parent": {
+        "entityId": "STORY-03f4fd3b9102aab8-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-03f4fd3b9102aab8-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-03f4fd3b9102aab8-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#217",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 2,
+        "contentHash": "3ceab9c2f3c7eb387a46598226ec3f6469de970c6a0a928511e4d15baf43ff33",
+        "at": "2026-11-19T16:30:00.495Z",
+        "by": {
+          "id": "insrc:controller",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [
+        {
+          "by": {
+            "id": "insrc:controller",
+            "kind": "system",
+            "properties": {}
+          },
+          "at": "2026-11-19T16:30:00.495Z",
+          "decision": "approved",
+          "overrideReason": "Automated design review is retired/unavailable (CLAUDE.md). User approved explicitly in chat; this revision only clarifies the named test's wording (no task scope/behavior change), matching the corresponding LLD rev3 fix."
+        }
+      ],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-19T14:55:11.306Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Add the full named test suite for runReviewRound",
+    "summary": "One it() per testStrategy.testLevels subject (14 total) in a new src/workflow/review-round/__tests__/driver.test.ts, matching ac1/ac2/ac3's acceptanceMapping.provingTests verbatim, using stub RoundDriverHooks with spyable ground()/security() and a minimal ReviewTargets fixture (populated and empty entries[]).",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "All 14 named test subjects from testStrategy.testLevels[0].subjects exist as individual it() cases with matching titles",
+      "ac1, ac2 and ac3's acceptanceMapping.provingTests all pass",
+      "npx tsx --test for the new test file passes with zero failures"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "a round 1 call invokes hooks.ground once with the complete targets and no prior-findings argument"
+      },
+      {
+        "level": "unit",
+        "name": "a round 2 (Correction-and-Re-review) call invokes hooks.ground through the identical call shape as round 1, differing only in the round number passed"
+      },
+      {
+        "level": "unit",
+        "name": "hooks.ground receives the full targets/artifact unmodified -- nothing is stripped or withheld before grounding runs"
+      },
+      {
+        "level": "unit",
+        "name": "round 0 is rejected with a RangeError before any hook is called"
+      },
+      {
+        "level": "unit",
+        "name": "a negative round is rejected with a RangeError before any hook is called"
+      },
+      {
+        "level": "unit",
+        "name": "a non-integer round is rejected with a RangeError before any hook is called"
+      },
+      {
+        "level": "unit",
+        "name": "a rejecting hooks.ground propagates its rejection and hooks.security is never called for that round"
+      },
+      {
+        "level": "unit",
+        "name": "a rejecting hooks.security propagates its rejection rather than returning hooks.ground's findings alone"
+      },
+      {
+        "level": "unit",
+        "name": "an empty ReviewTargets.entries array is passed through to hooks.ground unchanged, with no special-casing"
+      },
+      {
+        "level": "unit",
+        "name": "opts omitted defaults runSecurityPass to true -- hooks.security runs when it is supplied"
+      },
+      {
+        "level": "unit",
+        "name": "opts.runSecurityPass:false suppresses hooks.security even when it is supplied"
+      },
+      {
+        "level": "unit",
+        "name": "hooks.security undefined is a no-op, not a thrown error, when runSecurityPass is true or omitted"
+      },
+      {
+        "level": "unit",
+        "name": "a large round number (e.g. 50) runs through the identical code path as round 1, with no round-number-based branching"
+      },
+      {
+        "level": "unit",
+        "name": "reviewId never appears in hooks.ground's or hooks.security's own call arguments across round 1 and round 2, and is left available unchanged for the caller to thread on to the sc4/sc5 calls, never substituted for a different value"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

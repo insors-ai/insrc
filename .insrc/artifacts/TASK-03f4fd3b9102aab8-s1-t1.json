@@ -25,7 +25,6 @@
           "fragment": "revision 1"
         }
       ],
-      "attachments": [],
       "binding": {
         "reference": {
           "entityId": "insors-ai/insrc#216",
@@ -34,10 +33,11 @@
         },
         "createdAtRevision": 1,
         "posted": []
-      }
+      },
+      "attachments": []
     },
     "lifecycle": {
-      "status": "approved",
+      "status": "completed",
       "revision": {
         "number": 1,
         "contentHash": "20f9c75ca034e7b5db0f3f9a62d907fc01be0768e53aeba1b3cbd7734fe5dea2",

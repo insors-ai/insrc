@@ -6,7 +6,7 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "approved",
+      "status": "completed",
       "revision": {
         "number": 9,
         "contentHash": "35724e4d9f6a67f1e08a8641d78dc71b6d0d3aa1b3fea55340105e4799ac1e9e",
@@ -27,7 +27,7 @@
         },
         "at": "2026-11-19T16:53:45.601Z",
         "override": {
-          "reason": "Automated code review (insrc_code_review_step) is retired/unavailable per CLAUDE.md. Self-review substitute recorded in SELF-REVIEW.md and /tmp/.insrc/review-packet-03f4fd3b9102aab8-s1.md, including an externally-reported P2 (hooks.security's lost `this` receiver) found and fixed after the first self-review pass. User approved explicitly in chat."
+          "reason": "Automated code review (insrc_code_review_step) is retired/unavailable per CLAUDE.md. Self-review substitute recorded in SELF-REVIEW.md and /tmp/.insrc/review-packet-03f4fd3b9102aab8-s1.md, including an externally-reported P2 (hooks.security's lost `this` receiver) found and fixed after the first self-review pass. User approved explicitly in chat. Retrying after fixing a malformed-signoffs bug on LLD/PLAN/TASK that blocked the story-completion follow-on, and committing the previously-untracked BUILD/TESTS docs."
         }
       }
     },

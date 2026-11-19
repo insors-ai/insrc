@@ -93,8 +93,17 @@ describe('validateDesignScope and validateCodeScope', () => {
 	});
 
 	it('extension and amendment populated or absent independent of scopeLevel do not affect ok/violations', () => {
-		const withExtras: Scope = { scopeType: 'design', scopeLevel: 'def', def: pointer('DEF.md'), extension: pointer('EXT.md'), amendment: pointer('AMD.md') };
+		const withoutExtras: Scope = { scopeType: 'design', scopeLevel: 'def', def: pointer('DEF.md') };
+		const withExtras: Scope = { ...withoutExtras, extension: pointer('EXT.md'), amendment: pointer('AMD.md') };
+		// Populating them does not flip ok:false, and the requirement table never names either field.
+		assert.deepEqual(validateDesignScope(withoutExtras, ROOT), validateDesignScope(withExtras, ROOT));
 		assert.equal(validateDesignScope(withExtras, ROOT).ok, true);
+
+		// Leaving them absent at a deeper level (where most other fields are forbidden) is also fine.
+		const deeperWithoutExtras: Scope = { scopeType: 'design', scopeLevel: 'lld', def: pointer('DEF.md'), hld: pointer('HLD.md'), lld: pointer('LLD.md') };
+		const deeperWithExtras: Scope = { ...deeperWithoutExtras, extension: pointer('EXT.md'), amendment: pointer('AMD.md') };
+		assert.deepEqual(validateDesignScope(deeperWithoutExtras, ROOT), validateDesignScope(deeperWithExtras, ROOT));
+		assert.equal(validateDesignScope(deeperWithExtras, ROOT).ok, true);
 	});
 
 	it('validateDesignScope returns ok:false with a named violation when a populated Pointer-typed field\'s path escapes registeredRepoRoot', () => {

@@ -34,6 +34,8 @@ import {
 
 function gitRepo(files: Readonly<Record<string, string>>): string {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-validate-checks-'));
+	// A Node project unless the fixture names a root marker file of its own: the gate's default commands apply.
+	writeFileSync(join(repo, 'package.json'), '{}\n');
 	for (const [rel, body] of Object.entries(files)) {
 		mkdirSync(dirname(join(repo, rel)), { recursive: true });
 		writeFileSync(join(repo, rel), body);
@@ -67,6 +69,7 @@ function nodePlan(over: Partial<ValidationCheckPlan>): ValidationCheckPlan {
 		testCommand: NODE_TEST_ARGV,
 		testFiles: [], unresolvedTests: [], namedTests: [],
 		typecheckTimeoutMs: 10_000, testTimeoutMs: 20_000,
+		resultFormat: 'tap', commandsSource: 'node-default',
 		...over,
 	};
 }
@@ -875,5 +878,48 @@ test("the Node default profile equals today's argv and tap format", () => {
 	}
 	for (const type of ['node', 'python', 'go', 'rust', 'jvm', 'unknown'] as const) {
 		assert.ok(PROJECT_TYPE_GUIDANCE[type].typecheck.length > 0 && PROJECT_TYPE_GUIDANCE[type].test.length > 0, type);
+	}
+});
+
+// --- t2: plans come from the profile; nothing to run is not a pass ---
+
+test('a Node project with no setting gets the same argv and TAP judging as before', async () => {
+	const repo = gitRepo({ 'src/a/__tests__/x.test.ts': '' });
+	try {
+		const plan = await planTaskCheckPlan(repo, { tests: [{ level: 'unit', name: 'x.test.ts: works' }] });
+		assert.deepEqual(plan.typecheck, TYPECHECK_ARGV);
+		assert.deepEqual(plan.testCommand, TEST_RUNNER_ARGV);
+		assert.equal(plan.resultFormat, 'tap');
+		assert.equal(plan.commandsSource, 'node-default');
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('a project with no known commands makes no process call and both checks are ok false with a note', async () => {
+	const repo = markerRepo('go.mod', 'src/a/__tests__/x.test.ts');
+	try {
+		const plan = await planTaskCheckPlan(repo, { tests: [{ level: 'unit', name: 'x.test.ts: works' }] });
+		assert.equal(plan.commandsSource, 'none');
+		assert.deepEqual(plan.typecheck, []);
+		assert.deepEqual(plan.testCommand, []);
+		let calls = 0;
+		const res = await runValidationChecks(repo, plan, { run: async () => { calls++; throw new Error('must not run'); } });
+		assert.equal(calls, 0);
+		for (const c of [res.typecheck, res.tests]) {
+			assert.equal(c.ok, false);
+			assert.equal(c.command, '');
+			assert.match(c.note ?? '', /the gate ran nothing/);
+		}
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('no Node command constant is the source of a non-Node plan', async () => {
+	for (const marker of ['pyproject.toml', 'Cargo.toml', 'pom.xml']) {
+		const repo = markerRepo(marker);
+		try {
+			for (const plan of [await planTaskCheckPlan(repo, { tests: [] }), await smallStandaloneCheckPlan(repo, undefined), await trivialCheckPlan(repo)]) {
+				assert.equal(plan.commandsSource, 'none', marker);
+				assert.ok(!plan.typecheck.includes('tsc') && !plan.testCommand.includes('tsx'), marker);
+			}
+		} finally { rmSync(repo, { recursive: true, force: true }); }
 	}
 });

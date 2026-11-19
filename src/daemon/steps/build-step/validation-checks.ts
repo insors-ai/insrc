@@ -106,6 +106,8 @@ export function defaultCommandProfile(projectType: ProjectType): CommandProfile 
 		: { projectType, typecheck: [], testCommand: [], resultFormat: 'exit-code', commandsSource: 'none' };
 }
 
+const NO_COMMANDS_HINT = 'it is not a Node project and its repo settings give no commands';
+
 export const TYPECHECK_TIMEOUT_MS = 300_000;
 export const TEST_TIMEOUT_MS      = 600_000;
 
@@ -179,6 +181,10 @@ export interface ValidationCheckPlan {
 	readonly noTests?:           { readonly ok: boolean; readonly note: string } | undefined;
 	readonly typecheckTimeoutMs: number;
 	readonly testTimeoutMs:      number;
+	/** How each test file's run is read. */
+	readonly resultFormat:       ResultFormat;
+	/** Where `typecheck` and `testCommand` came from; both are empty for 'none', and nothing runs. */
+	readonly commandsSource:     CommandsSource;
 }
 
 export interface CheckResult {
@@ -280,8 +286,17 @@ export async function resolveTaskTestFiles(
 // Per-route plans
 // ---------------------------------------------------------------------------
 
-function basePlan(): Pick<ValidationCheckPlan, 'typecheck' | 'testCommand' | 'typecheckTimeoutMs' | 'testTimeoutMs'> {
-	return { typecheck: TYPECHECK_ARGV, testCommand: TEST_RUNNER_ARGV, typecheckTimeoutMs: TYPECHECK_TIMEOUT_MS, testTimeoutMs: TEST_TIMEOUT_MS };
+function basePlan(profile: CommandProfile): Pick<ValidationCheckPlan, 'typecheck' | 'testCommand' | 'typecheckTimeoutMs' | 'testTimeoutMs' | 'resultFormat' | 'commandsSource'> {
+	return {
+		typecheck: profile.typecheck, testCommand: profile.testCommand,
+		typecheckTimeoutMs: TYPECHECK_TIMEOUT_MS, testTimeoutMs: TEST_TIMEOUT_MS,
+		resultFormat: profile.resultFormat, commandsSource: profile.commandsSource,
+	};
+}
+
+/** The profile a build is gated by: the commands of the repository's project type. */
+function profileOf(repoPath: string): CommandProfile {
+	return defaultCommandProfile(detectProjectType(repoPath));
 }
 
 /**
@@ -408,7 +423,7 @@ export async function planTaskCheckPlan(
 	const namedTests: NamedTestPlan[] = [];
 	for (const t of task.tests) namedTests.push(await planNamedTest(repoPath, t, byName.get(t.name)));
 	return {
-		...basePlan(), testFiles: sortedUnion(namedTests),
+		...basePlan(profileOf(repoPath)), testFiles: sortedUnion(namedTests),
 		unresolvedTests: namedTests.filter(n => n.source === 'none').map(n => n.name),
 		namedTests,
 		...(task.tests.length === 0 ? { noTests: { ok: false, note: 'the plan task names no tests' } } : {}),
@@ -430,10 +445,10 @@ export async function smallStandaloneCheckPlan(
 	for (const t of subjects) namedTests.push(await planNamedTest(repoPath, t, byName.get(t.name)));
 	const runnable = namedTests.filter(n => n.source === 'mapping' || LEADING_TEST_FILE.test(n.name));
 	if (runnable.length === 0) {
-		return { ...basePlan(), testFiles: [], unresolvedTests: [], namedTests, noTests: { ok: false, note: 'the LLD names no test file' } };
+		return { ...basePlan(profileOf(repoPath)), testFiles: [], unresolvedTests: [], namedTests, noTests: { ok: false, note: 'the LLD names no test file' } };
 	}
 	return {
-		...basePlan(), testFiles: sortedUnion(namedTests),
+		...basePlan(profileOf(repoPath)), testFiles: sortedUnion(namedTests),
 		// Only a subject that NAMES a file and resolves to none is unresolved.
 		unresolvedTests: namedTests.filter(n => n.source === 'none' && LEADING_TEST_FILE.test(n.name)).map(n => n.name),
 		namedTests,
@@ -472,7 +487,7 @@ export async function trivialCheckPlan(repoPath: string, base?: string | undefin
 		? { ok: false, note: `could not list the build's files: ${listError.split('\n')[0]}` }
 		: { ok: true, note: 'no tests named for a trivial build' };
 	return {
-		...basePlan(), testFiles, unresolvedTests: [],
+		...basePlan(profileOf(repoPath)), testFiles, unresolvedTests: [],
 		namedTests: testFiles.map(file => ({ name: file, source: 'touched' as const, cases: [], files: [file] })),
 		...(testFiles.length === 0 ? { noTests } : {}),
 	};
@@ -683,6 +698,12 @@ export async function runValidationChecks(
 	plan: ValidationCheckPlan,
 	deps: CheckRunnerDeps = { run: runInProcessGroup },
 ): Promise<ValidationCheckResults> {
+	// No command to run: nothing runs, and neither check reads as passed.
+	if (plan.commandsSource === 'none') {
+		const note = `the gate ran nothing: no typecheck or test command is known for this project (${NO_COMMANDS_HINT})`;
+		const nothing: CheckResult = { ok: false, command: '', exitCode: null, timedOut: false, durationMs: 0, outputTail: '', note };
+		return { typecheck: nothing, tests: { ...nothing, files: [], namedTests: namedResults(plan.namedTests, []) } };
+	}
 	const typecheck = await runTypechecks(repoPath, plan, deps);
 
 	const named = plan.namedTests;

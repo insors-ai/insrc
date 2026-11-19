@@ -1348,6 +1348,7 @@ async function withChecks<T>(runner: (repo: string, plan: ValidationCheckPlan) =
 
 function planRepo(): string {
 	const repo = mkRepo();
+	writeFileSync(join(repo, 'package.json'), '{}\n');   // a Node project: the gate's default commands apply
 	seedDef(repo);
 	seedLld(repo);
 	seedPlan(repo, true);
@@ -1481,6 +1482,7 @@ test('plan-driven and standalone validate each hand the check runner the plan fo
 	const planDriven = planRepo();
 	const small = mkRepo();
 	const trivial = mkRepo();
+	for (const r of [small, trivial]) writeFileSync(join(r, 'package.json'), '{}\n');   // Node projects
 	try {
 		seedStandaloneLldOnly(small);
 		seedIssue(trivial, HASH, { createdAt: CREATED_AT });
@@ -1569,6 +1571,7 @@ const TR_ROOT = 'docs/epics/tag-filtering-E20260718a3f4b8c9/S001';
  *  in prose, and two test files are tracked. */
 function mappedRepo(tests: readonly { level: string; name: string }[] = [{ level: 'unit', name: T_UNIT }, { level: 'live', name: T_LIVE }]): string {
 	const repo = mkRepo();
+	writeFileSync(join(repo, 'package.json'), '{}\n');   // a Node project
 	seedDef(repo);
 	seedLld(repo);
 	const json = join(artifactsDir(repo), `${planArtifactId(HASH, 's1')}.json`);

@@ -8,8 +8,9 @@
  * Pure, synchronous, no I/O.
  */
 
-import { validatePointerPath } from './pointer-checks.js';
-import type { Pointer, Scope, ScopeType, ScopeValidator } from './types.js';
+import { isAbsolute, normalize, sep } from 'node:path';
+
+import type { Pointer, Scope, ScopeLevel, ScopeType, ScopeValidator } from './types.js';
 
 /**
  * Not exported: this shape is internal to this file's comparison engine and not part of sc3's
@@ -26,24 +27,41 @@ const POINTER_FIELDS = ['def', 'hld', 'lld', 'plan', 'extension', 'amendment'] a
 
 /**
  * ScopeValidator takes only a Scope, with no registeredRepoRoot parameter, so sc6's
- * PointerPathValidator is called against a fixed internal anchor rather than the caller's real
- * repo root. The anchor's own identity doesn't matter: a well-formed repo-relative Pointer.path
- * (sc1's contract) resolves under ANY sufficiently-deep absolute anchor, while a path escaping
- * via enough '..' segments escapes any anchor the same way -- so this still faithfully detects
- * an escaping path without needing the real root.
+ * PointerPathValidator (which requires a real root) cannot be called soundly here: calling it
+ * with ANY fixed synthetic root is exploitable -- a path like '../<root's own last segment>/x'
+ * resolves back inside that synthetic root while still escaping the real one, because the
+ * traversal depth and the synthetic root's depth can coincide. The sound, root-independent
+ * equivalent is checking the already-relative path's own structure: after `normalize`, a
+ * repo-relative path escapes ANY possible root if and only if it is absolute or its normalized
+ * form still starts with '..' -- no real root is needed to decide that.
  */
-const SCOPE_CHECK_ANCHOR = '/scope-validator-anchor';
+function escapesAnyRoot(path: string): boolean {
+	if (isAbsolute(path)) return true;
+	const normalized = normalize(path);
+	return normalized === '..' || normalized.startsWith(`..${sep}`);
+}
 
-const DESIGN_REQUIREMENTS: Readonly<Record<string, ScopeFieldRequirement>> = {
-	def: { required: ['def'], mustBeAbsent: ['hld', 'lld'] },
-	hld: { required: ['def', 'hld'], mustBeAbsent: ['lld'] },
-	lld: { required: ['def', 'hld', 'lld'], mustBeAbsent: [] },
+// ScopeLevel is one unified chain (def < hld < lld < plan < task): self-inclusive at a level
+// requires every field up to and including that level's own field and forbids every field
+// beyond it, whichever review family the level belongs to.
+const CHAIN_ORDER = ['def', 'hld', 'lld', 'plan', 'tasks'] as const satisfies readonly (keyof Scope)[];
+const LEVEL_FIELD: Readonly<Record<ScopeLevel, (typeof CHAIN_ORDER)[number]>> = {
+	def: 'def', hld: 'hld', lld: 'lld', plan: 'plan', task: 'tasks',
 };
 
-const CODE_REQUIREMENTS: Readonly<Record<string, ScopeFieldRequirement>> = {
-	plan: { required: ['plan'], mustBeAbsent: ['tasks'] },
-	task: { required: ['plan', 'tasks'], mustBeAbsent: [] },
-};
+function requirementAt(level: ScopeLevel): ScopeFieldRequirement {
+	const ownIndex = CHAIN_ORDER.indexOf(LEVEL_FIELD[level]);
+	return { required: CHAIN_ORDER.slice(0, ownIndex + 1), mustBeAbsent: CHAIN_ORDER.slice(ownIndex + 1) };
+}
+
+function requirementsFor(levels: readonly ScopeLevel[]): Readonly<Record<string, ScopeFieldRequirement>> {
+	const table: Record<string, ScopeFieldRequirement> = {};
+	for (const level of levels) table[level] = requirementAt(level);
+	return table;
+}
+
+const DESIGN_REQUIREMENTS = requirementsFor(['def', 'hld', 'lld']);
+const CODE_REQUIREMENTS = requirementsFor(['plan', 'task']);
 
 function isPopulated(scope: Scope, field: keyof Scope): boolean {
 	const value = scope[field];
@@ -66,13 +84,11 @@ function checkPointerPaths(scope: Scope): readonly string[] {
 	for (const field of POINTER_FIELDS) {
 		const pointer = scope[field] as Pointer | undefined;
 		if (pointer === undefined) continue;
-		const result = validatePointerPath(pointer, SCOPE_CHECK_ANCHOR);
-		if (!result.ok) violations.push(...result.violations.map((v) => `'${field}': ${v}`));
+		if (escapesAnyRoot(pointer.path)) violations.push(`'${field}': '${pointer.path}' escapes the repo root`);
 	}
 	if (scope.tasks !== undefined) {
 		for (const [index, pointer] of scope.tasks.entries()) {
-			const result = validatePointerPath(pointer, SCOPE_CHECK_ANCHOR);
-			if (!result.ok) violations.push(...result.violations.map((v) => `'tasks[${index}]': ${v}`));
+			if (escapesAnyRoot(pointer.path)) violations.push(`'tasks[${index}]': '${pointer.path}' escapes the repo root`);
 		}
 	}
 	return violations;

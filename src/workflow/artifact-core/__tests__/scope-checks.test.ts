@@ -15,7 +15,12 @@ describe('validateDesignScope and validateCodeScope', () => {
 		const minimalDesign: Scope = { scopeType: 'design', scopeLevel: 'def', def: pointer('DEF.md') };
 		assert.equal(validateDesignScope(minimalDesign).ok, true);
 
-		const minimalCode: Scope = { scopeType: 'code', scopeLevel: 'plan', plan: pointer('PLAN.md') };
+		// scopeLevel is one unified chain (def < hld < lld < plan < task): a code review at
+		// 'plan' self-inclusively covers every design ancestor too, not just plan itself.
+		const minimalCode: Scope = {
+			scopeType: 'code', scopeLevel: 'plan',
+			def: pointer('DEF.md'), hld: pointer('HLD.md'), lld: pointer('LLD.md'), plan: pointer('PLAN.md'),
+		};
 		assert.equal(validateCodeScope(minimalCode).ok, true);
 
 		for (const spy of fsSpies) assert.equal(spy.mock.calls.length, 0);
@@ -46,14 +51,22 @@ describe('validateDesignScope and validateCodeScope', () => {
 	});
 
 	it('validateCodeScope returns ok:false when a field deeper than scopeLevel is populated', () => {
-		const scope: Scope = { scopeType: 'code', scopeLevel: 'plan', plan: pointer('PLAN.md'), tasks: [pointer('TASK.md')] };
+		const scope: Scope = {
+			scopeType: 'code', scopeLevel: 'plan',
+			def: pointer('DEF.md'), hld: pointer('HLD.md'), lld: pointer('LLD.md'), plan: pointer('PLAN.md'),
+			tasks: [pointer('TASK.md')],
+		};
 		const result = validateCodeScope(scope);
 		assert.equal(result.ok, false);
 		assert.match(result.violations.join(' '), /'tasks' must be absent/);
 	});
 
 	it('validateCodeScope returns ok:false when scope.tasks is an empty array at a scopeLevel requiring tasks', () => {
-		const scope: Scope = { scopeType: 'code', scopeLevel: 'task', plan: pointer('PLAN.md'), tasks: [] };
+		const scope: Scope = {
+			scopeType: 'code', scopeLevel: 'task',
+			def: pointer('DEF.md'), hld: pointer('HLD.md'), lld: pointer('LLD.md'), plan: pointer('PLAN.md'),
+			tasks: [],
+		};
 		const result = validateCodeScope(scope);
 		assert.equal(result.ok, false);
 		assert.match(result.violations.join(' '), /'tasks' is required/);
@@ -79,9 +92,29 @@ describe('validateDesignScope and validateCodeScope', () => {
 	});
 
 	it('validateCodeScope returns ok:false with a named violation when a populated Pointer-typed field\'s path escapes registeredRepoRoot', () => {
-		const scope: Scope = { scopeType: 'code', scopeLevel: 'plan', plan: pointer('../../etc/passwd') };
+		const scope: Scope = {
+			scopeType: 'code', scopeLevel: 'plan',
+			def: pointer('DEF.md'), hld: pointer('HLD.md'), lld: pointer('LLD.md'), plan: pointer('../../etc/passwd'),
+		};
 		const result = validateCodeScope(scope);
 		assert.equal(result.ok, false);
 		assert.match(result.violations.join(' '), /etc\/passwd/);
+	});
+
+	it('validateDesignScope returns ok:false when scope.plan or scope.tasks is populated, even at scopeLevel=\'def\'', () => {
+		const scope: Scope = { scopeType: 'design', scopeLevel: 'def', def: pointer('DEF.md'), plan: pointer('PLAN.md'), tasks: [pointer('TASK.md')] };
+		const result = validateDesignScope(scope);
+		assert.equal(result.ok, false);
+		assert.match(result.violations.join(' '), /'plan' must be absent/);
+		assert.match(result.violations.join(' '), /'tasks' must be absent/);
+	});
+
+	it('an escaping path that reuses a path segment name does not slip through', () => {
+		// Regression: an earlier implementation checked escapes against a fixed synthetic anchor,
+		// which a path crafted to reuse the anchor's own segment name could bypass.
+		const scope: Scope = { scopeType: 'design', scopeLevel: 'def', def: pointer('../scope-validator-anchor/file') };
+		const result = validateDesignScope(scope);
+		assert.equal(result.ok, false);
+		assert.match(result.violations.join(' '), /scope-validator-anchor\/file/);
 	});
 });

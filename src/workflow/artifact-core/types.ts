@@ -259,3 +259,35 @@ export class UnreadableChildError extends Error {
 		this.name = 'UnreadableChildError';
 	}
 }
+
+// ---------------------------------------------------------------------------
+// shared-reviewcontext-data-model Epic sc1/sc2/sc6 (Locator/Pointer/staleness/path-validation), owned by s1
+// ---------------------------------------------------------------------------
+
+/** Known Locator kinds; the set is open, not exhaustive -- a future kind is just a new string. */
+export type LocatorKind = 'symbol' | 'lineRange' | 'docSection';
+
+/** Pins an exact region within an authored file. `kind` is read structurally, never via exhaustive switch. */
+export interface Locator {
+	readonly kind:  LocatorKind | string;
+	readonly value: string;
+}
+
+/** References an existing authored file directly; never a generated extract. */
+export interface Pointer {
+	readonly path:        string;
+	readonly section?:    Locator | undefined;
+	readonly contentHash?: string | undefined;
+}
+
+/** The outcome of comparing a Pointer's recorded contentHash against the referenced file's current content. */
+export interface StalenessResult {
+	readonly stale:     boolean;
+	readonly checkedAt: string;
+}
+
+/** The outcome of checking a Pointer's path against the registered repo root. */
+export interface PathValidationResult {
+	readonly ok:         boolean;
+	readonly violations: readonly string[];
+}

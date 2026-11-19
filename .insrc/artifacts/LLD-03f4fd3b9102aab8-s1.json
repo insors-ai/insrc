@@ -27,20 +27,29 @@
     "storyTitle": "Initial Review and Correction-and-Re-review share one round-driven execution process",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
-        "number": 1,
-        "contentHash": "b6c2c36cfd51d8ed0da13359e550ef89326e3bcc7c5c2f2c6ee4d08cec9f2ff6",
-        "at": "2026-11-19T13:38:07.872Z",
+        "number": 2,
+        "contentHash": "48f341700753db07d5b3b3ba66dd09c5282929085019f7df69d685cade132e3f",
+        "at": "2026-11-19T14:11:12.128Z",
         "by": {
-          "id": "insrc:system",
+          "id": "insrc:controller",
           "kind": "system",
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-19T14:38:43.083Z"
+      }
     },
-    "revision": 1,
+    "revision": 2,
     "questionResolutions": {
       "q7db2a4dc": {
         "question": "cd3 (partial at audit, resolved before this synthesis): api.errors was initially left empty despite s5 documenting a concrete RangeError for an invalid round; this synthesis adds { type: 'RangeError', condition: 'round is not a positive integer' } to runReviewRound's errors so the contract and error-paths sections agree.",
@@ -48,6 +57,11 @@
         "rationale": "Not an actual open design question -- it's a changelog note recording that the cd3 audit gap (api.errors left empty) was already fixed within this same synthesis call. The LLD's contract details section 2.1 already lists the RangeError.",
         "resolvedAt": "2026-11-19T13:38:29.498Z"
       }
+    },
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
     }
   },
   "body": {
@@ -137,8 +151,14 @@
       "api": [
         {
           "name": "runReviewRound",
-          "signature": "function runReviewRound<F = unknown>(hooks: RoundDriverHooks<F>, round: number, targets: ReviewTargets, opts?: { readonly runSecurityPass?: boolean }): Promise<RoundResult<F>>",
+          "signature": "function runReviewRound<F = unknown>(reviewId: string, hooks: RoundDriverHooks<F>, round: number, targets: ReviewTargets, opts?: { readonly runSecurityPass?: boolean }): Promise<RoundResult<F>>",
           "parameters": [
+            {
+              "name": "reviewId",
+              "type": "string",
+              "purpose": "Identifies which review this round belongs to -- threaded unchanged into every downstream call this round's cycle makes (the review-report docgen call, sc4, and the checkpoint/finalize calls, sc5, both of which require a reviewId of their own). Found missing from this signature in cross-review: without it, the round-driver had no way to construct those calls.",
+              "optional": false
+            },
             {
               "name": "hooks",
               "type": "RoundDriverHooks<F>",
@@ -181,7 +201,8 @@
           "postconditions": [
             "hooks.ground(targets, round) is called exactly once, every round, with the complete targets and no prior-findings argument -- satisfies ac1 (round 1) and ac2 (round>1 via the identical call shape)",
             "When opts.runSecurityPass is not explicitly false and hooks.security is defined, hooks.security(targets, round) is also called once, nested inside this same round call, and its findings are merged into the same RoundResult -- the security pass never becomes a third reviewKind",
-            "No submitter rationale carried on targets/the artifact is stripped, filtered or withheld before being handed to hooks.ground or hooks.security -- independence is enforced only by the hook implementation's own steering instructions (ac3/k2), never by this function removing content"
+            "No submitter rationale carried on targets/the artifact is stripped, filtered or withheld before being handed to hooks.ground or hooks.security -- independence is enforced only by the hook implementation's own steering instructions (ac3/k2), never by this function removing content",
+            "reviewId is passed through unchanged to every sc4/sc5 call this round's cycle makes (the review-report docgen call and the checkpoint/finalize calls) -- this function never derives, rewrites or substitutes a different reviewId."
           ]
         }
       ]
@@ -280,7 +301,8 @@
             "opts omitted defaults runSecurityPass to true -- hooks.security runs when it is supplied",
             "opts.runSecurityPass:false suppresses hooks.security even when it is supplied",
             "hooks.security undefined is a no-op, not a thrown error, when runSecurityPass is true or omitted",
-            "a large round number (e.g. 50) runs through the identical code path as round 1, with no round-number-based branching"
+            "a large round number (e.g. 50) runs through the identical code path as round 1, with no round-number-based branching",
+            "reviewId is passed unchanged into hooks.ground/hooks.security's own arguments-free of mutation across round 1 and round 2 calls, so a caller can thread it on to sc4/sc5 calls without this function ever substituting a different value"
           ],
           "fixturesNeeded": [
             "a stub RoundDriverHooks with a spyable ground() that records its call count and arguments",
@@ -362,7 +384,8 @@
     ],
     "chosenAlternative": "a1",
     "openQuestions": [
-      "cd3 (partial at audit, resolved before this synthesis): api.errors was initially left empty despite s5 documenting a concrete RangeError for an invalid round; this synthesis adds { type: 'RangeError', condition: 'round is not a positive integer' } to runReviewRound's errors so the contract and error-paths sections agree."
+      "cd3 (partial at audit, resolved before this synthesis): api.errors was initially left empty despite s5 documenting a concrete RangeError for an invalid round; this synthesis adds { type: 'RangeError', condition: 'round is not a positive integer' } to runReviewRound's errors so the contract and error-paths sections agree.",
+      "Cross-review (post-synthesis) found runReviewRound's original signature omitted reviewId entirely, even though the round-driver is the one Story that must call sc4's ReviewReportDocgenCall{reviewId, round} and sc5's writeCheckpoint/readCheckpoint/finalizeReview, all of which require a reviewId. Fixed by adding reviewId: string as this function's first parameter, with a postcondition that it is threaded through unchanged to those calls."
     ]
   },
   "citations": [

@@ -43,10 +43,11 @@ This Story adds the one shared function every review round runs through, whateve
 ### 2.1 `runReviewRound`
 
 ```typescript
-function runReviewRound<F = unknown>(hooks: RoundDriverHooks<F>, round: number, targets: ReviewTargets, opts?: { readonly runSecurityPass?: boolean }): Promise<RoundResult<F>>
+function runReviewRound<F = unknown>(reviewId: string, hooks: RoundDriverHooks<F>, round: number, targets: ReviewTargets, opts?: { readonly runSecurityPass?: boolean }): Promise<RoundResult<F>>
 ```
 
 **Parameters:**
+- `reviewId: string` — Identifies which review this round belongs to -- threaded unchanged into every downstream call this round's cycle makes (the review-report docgen call, sc4, and the checkpoint/finalize calls, sc5, both of which require a reviewId of their own). Found missing from this signature in cross-review: without it, the round-driver had no way to construct those calls.
 - `hooks: RoundDriverHooks<F>` — The per-review-type hook set (sc1): reviewKind, checkpointGranularity, the grounding/findings call, and an optional nested security pass.
 - `round: number` — The round number (1 = Initial Review, >1 = Correction-and-Re-review). The only input that varies between an ac1 call and an ac2 call -- no other branching exists.
 - `targets: ReviewTargets` — The full, reset-each-round scope to ground against (src/workflow/artifact-core/types.ts:345-347) -- always the entire scope, never a filtered subset of what a prior round already covered.
@@ -65,6 +66,7 @@ function runReviewRound<F = unknown>(hooks: RoundDriverHooks<F>, round: number, 
 - hooks.ground(targets, round) is called exactly once, every round, with the complete targets and no prior-findings argument -- satisfies ac1 (round 1) and ac2 (round>1 via the identical call shape)
 - When opts.runSecurityPass is not explicitly false and hooks.security is defined, hooks.security(targets, round) is also called once, nested inside this same round call, and its findings are merged into the same RoundResult -- the security pass never becomes a third reviewKind
 - No submitter rationale carried on targets/the artifact is stripped, filtered or withheld before being handed to hooks.ground or hooks.security -- independence is enforced only by the hook implementation's own steering instructions (ac3/k2), never by this function removing content
+- reviewId is passed through unchanged to every sc4/sc5 call this round's cycle makes (the review-report docgen call and the checkpoint/finalize calls) -- this function never derives, rewrites or substitutes a different reviewId.
 
 ## 3. Data model changes
 
@@ -123,7 +125,7 @@ interface RoundResult<F = unknown> { readonly round: number; readonly findings: 
 **Test levels**
 
 - **unit** — Prove runReviewRound's one-process-per-round contract (ac1/ac2/ac3), its round-number validation, and both hooks' error propagation and the security-pass opt-out, with stub hooks -- no real LLM calls needed since hooks.ground/hooks.security are caller-supplied functions.
-  - Subjects: `a round 1 call invokes hooks.ground once with the complete targets and no prior-findings argument`, `a round 2 (Correction-and-Re-review) call invokes hooks.ground through the identical call shape as round 1, differing only in the round number passed`, `hooks.ground receives the full targets/artifact unmodified -- nothing is stripped or withheld before grounding runs`, `round 0 is rejected with a RangeError before any hook is called`, `a negative round is rejected with a RangeError before any hook is called`, `a non-integer round is rejected with a RangeError before any hook is called`, `a rejecting hooks.ground propagates its rejection and hooks.security is never called for that round`, `a rejecting hooks.security propagates its rejection rather than returning hooks.ground's findings alone`, `an empty ReviewTargets.entries array is passed through to hooks.ground unchanged, with no special-casing`, `opts omitted defaults runSecurityPass to true -- hooks.security runs when it is supplied`, `opts.runSecurityPass:false suppresses hooks.security even when it is supplied`, `hooks.security undefined is a no-op, not a thrown error, when runSecurityPass is true or omitted`, `a large round number (e.g. 50) runs through the identical code path as round 1, with no round-number-based branching`
+  - Subjects: `a round 1 call invokes hooks.ground once with the complete targets and no prior-findings argument`, `a round 2 (Correction-and-Re-review) call invokes hooks.ground through the identical call shape as round 1, differing only in the round number passed`, `hooks.ground receives the full targets/artifact unmodified -- nothing is stripped or withheld before grounding runs`, `round 0 is rejected with a RangeError before any hook is called`, `a negative round is rejected with a RangeError before any hook is called`, `a non-integer round is rejected with a RangeError before any hook is called`, `a rejecting hooks.ground propagates its rejection and hooks.security is never called for that round`, `a rejecting hooks.security propagates its rejection rather than returning hooks.ground's findings alone`, `an empty ReviewTargets.entries array is passed through to hooks.ground unchanged, with no special-casing`, `opts omitted defaults runSecurityPass to true -- hooks.security runs when it is supplied`, `opts.runSecurityPass:false suppresses hooks.security even when it is supplied`, `hooks.security undefined is a no-op, not a thrown error, when runSecurityPass is true or omitted`, `a large round number (e.g. 50) runs through the identical code path as round 1, with no round-number-based branching`, `reviewId is passed unchanged into hooks.ground/hooks.security's own arguments-free of mutation across round 1 and round 2 calls, so a caller can thread it on to sc4/sc5 calls without this function ever substituting a different value`
   - Fixtures: `a stub RoundDriverHooks with a spyable ground() that records its call count and arguments`, `a stub RoundDriverHooks with an added spyable security() for the nested-pass tests`, `a minimal ReviewTargets fixture (both populated and empty entries[])`
 
 **Acceptance mapping**
@@ -176,6 +178,7 @@ Replace sc1's flat interfaceSketch with a union so each reviewKind's hook fields
 ## 9. Open questions
 
 - cd3 (partial at audit, resolved before this synthesis): api.errors was initially left empty despite s5 documenting a concrete RangeError for an invalid round; this synthesis adds { type: 'RangeError', condition: 'round is not a positive integer' } to runReviewRound's errors so the contract and error-paths sections agree.
+- Cross-review (post-synthesis) found runReviewRound's original signature omitted reviewId entirely, even though the round-driver is the one Story that must call sc4's ReviewReportDocgenCall{reviewId, round} and sc5's writeCheckpoint/readCheckpoint/finalizeReview, all of which require a reviewId. Fixed by adding reviewId: string as this function's first parameter, with a postcondition that it is threaded through unchanged to those calls.
 
 ## Resolved questions
 

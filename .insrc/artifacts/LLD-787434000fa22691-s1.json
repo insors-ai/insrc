@@ -1,0 +1,486 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1795111970362-jt5tqs",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-19T18:15:53.783Z",
+    "epicCreatedAt": "2026-11-19T18:15:53.783Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 179860,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "787434000fa22691",
+    "epicSlug": "replace-build-gate-s-hardcoded-node",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1795111970362-jt5tqs",
+    "hldEffectiveHash": "787434000fa22691b4ddf255f281c8e2101fa7db829143efd1f586eb2edc1884",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "Replace the build gate's hardcoded Node commands with project-type guidance",
+    "standalone": true,
+    "sizeClass": "feature",
+    "triageRationale": "One cohesive change in the build step (validation-checks.ts, render.ts, implement-task.md) with real design choices: how results of a non-Node runner are read, since the gate parses the Node test runner's TAP report (tap-results.ts).",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "486b08a4c4f188554323324866e0d47e91a5a5ea294fcb04d7da04756df9840b",
+        "at": "2026-11-19T18:15:54.872Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-19T18:18:25.208Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "8729144941c234c431f1baab07964143cad889ae"
+  },
+  "body": {
+    "summary": {
+      "prose": "The build gate and the builder's prompt stop assuming a Node project. The prompt names the typecheck and test commands that fit the project's type, taken from a table keyed by the files at the repository root. The gate keeps its Node behaviour for a Node project, and a project of another type states its own typecheck and test commands and how to read the result (tap or exit code) in a repo setting; without them the gate says it ran nothing instead of passing.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Replace the build gate's hardcoded Node commands with project-type guidance"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "basePlan",
+          "signature": "function basePlan(profile: CommandProfile): Pick<ValidationCheckPlan, 'typecheck' | 'testCommand' | 'typecheckTimeoutMs' | 'testTimeoutMs'> & { resultFormat: 'tap' | 'exit-code'; commandsSource: 'node-default' | 'repo-setting' | 'none' }",
+          "parameters": [
+            {
+              "name": "profile",
+              "type": "CommandProfile",
+              "purpose": "The commands the project states or the Node default; replaces the TYPECHECK_ARGV and TEST_RUNNER_ARGV constants.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "plan fields",
+            "meaning": "The typecheck argv, the test command argv, the time limits, how a test run is read, and where the commands came from."
+          },
+          "errors": [
+            {
+              "type": "InvalidCommandSetting",
+              "condition": "A repo setting names an empty command or a result format other than tap or exit-code."
+            }
+          ],
+          "preconditions": [
+            "The project type was read from the repository root's marker files, or the repo setting was read."
+          ],
+          "postconditions": [
+            "A Node project with no setting gets exactly today's argv and TAP reading.",
+            "A project of another type with no setting gets commandsSource 'none' and no command."
+          ]
+        },
+        {
+          "name": "runValidationChecks",
+          "signature": "function runValidationChecks(repoPath: string, plan: ValidationCheckPlan, deps?: CheckRunnerDeps): Promise<ValidationCheckResults>",
+          "parameters": [
+            {
+              "name": "plan",
+              "type": "ValidationCheckPlan",
+              "purpose": "A plan whose commands may be absent (commandsSource 'none').",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ValidationCheckResults",
+            "meaning": "For a plan with no commands, a typecheck result and a tests result that each say nothing ran, never ok true."
+          },
+          "errors": [],
+          "preconditions": [
+            "Never throws: a failure to start is a failed CheckResult with a note."
+          ],
+          "postconditions": [
+            "A plan with commandsSource 'none' makes no process call.",
+            "A tests result for a plan with resultFormat 'exit-code' passes when every test file command exits 0, and named test cases are not checked per case.",
+            "A plan with resultFormat 'tap' is judged exactly as today."
+          ]
+        },
+        {
+          "name": "withTypecheckProjects",
+          "signature": "function withTypecheckProjects(repoPath: string, plan: ValidationCheckPlan, base?: string, storyKey?: string): Promise<ValidationCheckPlan>",
+          "parameters": [
+            {
+              "name": "plan",
+              "type": "ValidationCheckPlan",
+              "purpose": "Extra tsconfig project directories are added only for a Node plan.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ValidationCheckPlan",
+            "meaning": "The plan unchanged for a plan that is not Node-based."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "For a non-Node plan no tsconfig.json search is made."
+          ]
+        },
+        {
+          "name": "TYPECHECK_CMD",
+          "signature": "const TYPECHECK_CMD: string  // becomes a value read from the command profile, no longer the literal 'npx tsc --noEmit'",
+          "parameters": [],
+          "returns": {
+            "type": "string",
+            "meaning": "The typecheck command line shown to the builder in the implement-task prompt and the Definition of done."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "For a project with no known commands the prompt says to find and run the project's own typecheck and tests, naming the table's guidance for its type."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "CommandProfile",
+        "change": "new",
+        "details": "One value per project: the project type (node, python, go, rust, jvm or unknown), the typecheck argv, the test command argv, the result format (tap or exit-code) and where the commands came from (node-default, repo-setting or none). The project type comes from marker files at the repository root; the per-type commands in the table are guidance text for the prompt, not commands the gate runs. Only a repo setting or the Node default gives the gate a command.",
+        "callSites": [
+          "src/daemon/steps/build-step/validation-checks.ts:219-221",
+          "src/daemon/steps/build-step/render.ts:30-31",
+          "src/daemon/steps/build-step/render.ts:113-114",
+          "src/daemon/steps/build-step/phases/validate.ts:433-434"
+        ]
+      },
+      {
+        "entity": "ValidationCheckPlan",
+        "change": "field-add",
+        "details": "Adds resultFormat ('tap' | 'exit-code') and commandsSource ('node-default' | 'repo-setting' | 'none'); typecheck and testCommand may be empty when commandsSource is 'none'. The route builders keep spreading basePlan.",
+        "callSites": [
+          "src/daemon/steps/build-step/validation-checks.ts:97-117",
+          "src/daemon/steps/build-step/validation-checks.ts:347",
+          "src/daemon/steps/build-step/validation-checks.ts:369-372",
+          "src/daemon/steps/build-step/validation-checks.ts:411"
+        ]
+      },
+      {
+        "entity": "CheckResult",
+        "change": "invariant-change",
+        "details": "A check that ran no command is ok false with a note that says why, so a gate that ran nothing cannot read as passed; the verdict combines it as a failed independent check and the builder's and verdict session's evidence are reported beside it.",
+        "callSites": [
+          "src/daemon/steps/build-step/validation-checks.ts:133-136",
+          "src/daemon/steps/build-step/phases/validate.ts:434"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A repo setting names an empty command, a command that does not start, or a result format other than tap or exit-code",
+          "detection": "basePlan validates the setting when it builds the plan; a spawn failure surfaces as a spawnError in runOne or runTestFile",
+          "response": "A bad setting is refused with InvalidCommandSetting naming the field, and no command runs; a command that cannot start is a failed CheckResult with a 'could not start' note, as today",
+          "userImpact": "The validate turn reports an actionable reason instead of passing or hanging",
+          "recoverable": true
+        },
+        {
+          "scenario": "A project of a type other than Node has no repo setting, so the gate has no command to run",
+          "detection": "The plan's commandsSource is 'none'",
+          "response": "runValidationChecks makes no process call and returns a typecheck result and a tests result that are ok false with a note saying the gate ran nothing and why",
+          "userImpact": "The build does not read as passed; the user sees that the gate had no commands and can set them",
+          "recoverable": true
+        },
+        {
+          "scenario": "The project type cannot be told from the marker files (several markers, or none)",
+          "detection": "Project-type detection finds no marker or markers of different types at the repository root",
+          "response": "The type is 'unknown'; the prompt gives the generic instruction to find and run the project's own typecheck and tests, and the gate falls back as for a type with no setting",
+          "userImpact": "No wrong command is shown or run on a guess",
+          "recoverable": true
+        },
+        {
+          "scenario": "A test command with result format exit-code is used for a Task whose named tests must be checked per case",
+          "detection": "A named test of the plan has cases and the plan's resultFormat is 'exit-code'",
+          "response": "The tests check passes only on exit codes and records, per named test, that its cases were not checked individually; a named test the builder reported with a result keeps that result as reported",
+          "userImpact": "The record says which evidence is per case and which is not",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A Node project (package.json at the root) with no repo setting",
+          "expected": "Identical to today: npx tsc --noEmit, npx tsx --test-force-exit with the TAP reporter, per-case results, tsconfig projects checked"
+        },
+        {
+          "input": "A Node project whose repo setting gives its own commands",
+          "expected": "The setting wins over the Node default; commandsSource is 'repo-setting'"
+        },
+        {
+          "input": "A monorepo with a package.json at the root and a go.mod in a subdirectory",
+          "expected": "The root's marker decides the type; the subdirectory is not guessed"
+        },
+        {
+          "input": "A change that touches only documents",
+          "expected": "The plan's noTests rule decides as today, whatever the project type"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "A Node project with no setting is gated by exactly the typecheck and TAP-judged test runs it has today, in the repository root and in each extra tsconfig project that owns a touched file",
+          "source": "c2"
+        },
+        {
+          "text": "A run whose output was not understood as TAP proves nothing, and a run that ran nothing never reads as a pass",
+          "source": "c2"
+        },
+        {
+          "text": "The prompts tell the verdict session not to run the typecheck or tests itself because the daemon already has; this stays true only where the daemon ran them",
+          "source": "c3"
+        },
+        {
+          "text": "The constants asserted by the existing tests keep their values for the Node default, so the Node tests stay green",
+          "source": "c4"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove the command profile, the plan fields and the gate's two result formats without running a real toolchain",
+          "subjects": [
+            "src/daemon/steps/build-step/__tests__/validation-checks.test.ts: basePlan gives the Node default for a package.json project, a repo setting wins, a non-Node type with no setting has commandsSource 'none'",
+            "src/daemon/steps/build-step/__tests__/validation-checks.test.ts: runValidationChecks makes no process call for commandsSource 'none' and returns ok false with a note",
+            "src/daemon/steps/build-step/__tests__/validation-checks.test.ts: an exit-code plan passes when every file exits 0 and fails on a non-zero exit",
+            "src/daemon/steps/build-step/__tests__/validation-checks.test.ts: withTypecheckProjects makes no tsconfig search for a non-Node plan",
+            "src/daemon/steps/build-step/__tests__/render.test.ts: the prompt and the Definition of done name the project type's commands and no npx tsc for a Python or Go project"
+          ],
+          "fixturesNeeded": [
+            "Temporary repositories holding only a marker file (package.json, pyproject.toml, go.mod, Cargo.toml, pom.xml, or none)",
+            "The stand-in process runner already used by validation-checks.test.ts"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove the validate phase end to end for a Node project and for a non-Node project with and without a setting",
+          "subjects": [
+            "src/daemon/steps/build-step/__tests__/validate-task-round.test.ts: a Node project's round is unchanged",
+            "src/daemon/steps/build-step/__tests__/validate-task-round.test.ts: a project with no commands is not passed and its record says the gate ran nothing"
+          ],
+          "fixturesNeeded": [
+            "The existing validate-round harness with a stand-in verdict session"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "validation-checks.test.ts: a Node project with no setting gets the same argv and TAP judging as before",
+            "render.test.ts: the prompt of a Node project still names npx tsc --noEmit and the Node test command"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "render.test.ts: the implement-task prompt and the Definition of done for a Python, Go, Rust and JVM project name that type's commands and no npx tsc or npx tsx",
+            "validation-checks.test.ts: no Node command constant is the source of a non-Node plan"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "validation-checks.test.ts: a project with no known commands makes no process call and both checks are ok false with a note",
+            "validate-task-round.test.ts: such a build does not read as passed"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "validation-checks.test.ts: a repo setting wins over the default; an empty command or an unknown result format is refused with InvalidCommandSetting",
+            "validation-checks.test.ts: an exit-code plan passes on exit 0 and fails otherwise"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "validation-checks.test.ts and tap-results.test.ts and validation-checks-registry.test.ts pass unchanged for the Node default"
+          ]
+        }
+      ],
+      "testFramework": "node:test run through tsx, with the existing stand-in process runner and temporary repositories (convention of src/daemon/steps/build-step/__tests__)"
+    },
+    "migration": {
+      "stateBefore": "Every build, whatever the project, is gated by npx tsc --noEmit and npx tsx --test-force-exit with a TAP report (validation-checks.ts constants spread by basePlan), and every builder prompt tells the builder to run npx tsc --noEmit and npx tsx --test (render.ts constants and the implement-task prompt). A non-Node project can never pass the gate.",
+      "stateAfter": "A command profile is read once per build. A Node project with no setting behaves exactly as before. The prompt names the project type's commands from a guidance table. A project of another type either states its commands and result format in a repo setting and gets an independent run, or has no commands and the gate says it ran nothing and does not pass it.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the command profile and the project-type detection from root marker files, with the Node default reproducing today's argv and TAP format; no behaviour changes yet",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Route basePlan and the plan fields resultFormat and commandsSource through the profile, keep the TYPECHECK_ARGV and TEST_RUNNER_ARGV values as the Node default, and make runValidationChecks return a failed, explained result when there is no command",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add the exit-code result format to the tests check and skip the tsconfig project search for a plan that is not Node-based",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Render the prompt, the Definition of done and the implement-task slots from the profile and the guidance table instead of the TYPECHECK_CMD and TEST_CMD literals",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Read the optional repo setting for the typecheck command, the test command and the result format, validate it, and document it in docs/daemon.md",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No stored data and no public API change. A Node project with no repo setting sees the same plan, commands, prompts and results as before. A non-Node project that previously could not pass the gate now sees an explained failure or, with a setting, an independent run. A repo setting is new and optional, so no existing config needs editing.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Guidance only, no gate run for non-Node projects",
+        "oneLineSummary": "Detect the project type; for Node the gate runs as today; for any other type the builder prompt names that type's typecheck and test commands and the gate runs nothing of its own.",
+        "approach": "Add a small table in the build step from project type to the typecheck command, the test command and the test-file naming, used only to render the implement-task prompt and the Definition of done (replacing TYPECHECK_CMD and TEST_CMD). The project type is read from marker files at the repository root (package.json, pyproject.toml or setup.py, go.mod, Cargo.toml, pom.xml or build.gradle, build.sbt). The gate keeps its TAP-based run for a Node project only. For a project of another type the validate phase skips the typecheck and tests checks and records that the gate ran nothing, so the verdict session and the builder's own report carry the result.",
+        "pros": [
+          "Smallest change: no new result readers and no change to the TAP reader or the test mapping.",
+          "Matches the request: guidance by project type instead of a hardcoded Node gate.",
+          "Never mis-reads a runner's output."
+        ],
+        "cons": [
+          "For a non-Node project the daemon no longer independently runs the typecheck or tests, so the gate's passed verdict rests on the builder's report and the read-only verdict session.",
+          "Weakens the build gate's independent evidence, which the project treats as important."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Meets the request but drops the daemon's own typecheck and test run for every non-Node project. CLAUDE.md puts accuracy first and the gate's passed is the daemon's judgment, not a self-report."
+      },
+      {
+        "id": "a2",
+        "name": "Per-project-type commands the gate runs, judged by exit code",
+        "oneLineSummary": "A table gives each project type its typecheck argv and test argv, the gate runs them, and for a non-Node type a test file passes when its command exits 0.",
+        "approach": "Introduce a project profile (type, typecheck argv, test command argv, test-file pattern) resolved from marker files and an optional repo setting that overrides it. The gate and the prompt both read the profile. The Node profile keeps TAP parsing and per-case results. Other profiles run the typecheck and each test file or package and judge by exit code only; a named test case cannot be checked individually, so a Task's named tests for such a project are checked by file and by the builder's report.",
+        "pros": [
+          "The daemon keeps its own independent typecheck and test run for every project type.",
+          "One profile drives both the gate and the prompt, so they cannot disagree.",
+          "A repo setting lets a project fix a wrong guess."
+        ],
+        "cons": [
+          "Per-case verification of named tests is lost for non-Node types, which weakens the acceptance mapping.",
+          "More to build: profile resolution, the .test.ts naming and tsconfig project detection become per-profile, and several commands (go test, cargo test, pytest) differ in how a single file is run.",
+          "Needs real project fixtures for each type to test."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Keeps an independent run but guesses each project's runner from marker files, and its exit-code-only judgment is weaker than the Node gate while costing a large build."
+      },
+      {
+        "id": "a3",
+        "name": "Profiles with a result reader per runner",
+        "oneLineSummary": "As a2, plus a reader per runner that turns its output (TAP, JUnit XML, go test -json, pytest junit) into per-case results.",
+        "approach": "Keep the project profile of a2 and add a result-reader interface the gate calls: the Node profile uses the existing TAP reader, and other profiles name a machine-readable reporter and a reader for it (go test -json, pytest with junit output, cargo test with a JSON or junit formatter, maven surefire XML). Named tests are checked per case for every type.",
+        "pros": [
+          "Full parity: independent run and per-case results for every supported type.",
+          "The gate's guarantees do not depend on the project type."
+        ],
+        "cons": [
+          "Largest build and the most to keep correct: each runner's reporter flags and output change between versions.",
+          "Not asked for: the request is for guidance by project type.",
+          "Hard to verify here, with no Go, Rust or Java toolchains guaranteed on the build machine."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Best evidence but the largest build, not asked for, and its readers could not be tested here for Go, Rust or Java."
+      },
+      {
+        "id": "a4",
+        "name": "Guidance by type with the gate's commands taken from a repo setting",
+        "oneLineSummary": "The prompt gets type-specific guidance; the gate's own typecheck and test commands come from an optional repo setting and run only when the repo sets them (the Node default stays for a Node project).",
+        "approach": "As a1 for the prompt: a table of per-type commands renders the guidance, so no hardcoded npx tsc remains. The gate reads two optional repo-level settings, a typecheck command and a test command with a stated result format (tap or exit-code). A Node project with no setting keeps today's behaviour; a project of another type with no setting runs nothing and says so; a project that sets them gets an independent run, judged by TAP or exit code as stated.",
+        "pros": [
+          "Guidance by project type as requested, with a path to keep the independent gate run where a project opts in.",
+          "No guess about a project's runner: the project states it.",
+          "Smaller than a2 and a3: only two result formats, tap and exit-code."
+        ],
+        "cons": [
+          "A non-Node project gets no independent run until someone configures it.",
+          "A new repo setting to document and validate.",
+          "Per-case checking of named tests exists only for the tap format."
+        ],
+        "costEstimate": "M"
+      }
+    ],
+    "chosenAlternative": "a4",
+    "openQuestions": [
+      "Confirm alternative a4 (guidance by type, with an optional repo setting that gives a non-Node project an independent gate run): the request did not choose between guidance only and configured commands.",
+      "cd1 partial: CommandProfile and InvalidCommandSetting are new symbols, declared as new rather than taken from an existing symbol.",
+      "ep3 partial: the invariants cite c2, c3 and c4, assumed to be the ids of the s1 bundles in order and given below as citations.",
+      "ts1 partial: the Story has no acceptance criteria, so ac1 to ac5 were written by this LLD and need the user's confirmation as the acceptance criteria.",
+      "alt2 partial: alternatives were scored against four constraints derived from the request, since no Story, Epic or HLD constraints exist.",
+      "sbdry4 partial: the criterion ids ac1 to ac5 and citation ids c2 to c4 are labels this LLD assigned."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/daemon/steps/build-step/validation-checks.ts:35",
+      "quotedText": "s1 search.text: the hardcoded typecheck and test-runner argv constants (also validation-checks.ts:43 and :219-221; render.ts:30-31, :113-114, :239-240)"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/daemon/steps/build-step/validation-checks.ts:443-470",
+      "quotedText": "s1 module.profile: how the gate runs the typecheck and the tests and reads the TAP report (also validation-checks.ts:515-560 and tap-results.ts:63)"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/daemon/steps/build-step/phases/validate.ts:433-434",
+      "quotedText": "s1 usage.example: the validate phase builds the plan, adds the typecheck projects and runs the checks (also render.ts:280 and :311)"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts:100-101",
+      "quotedText": "s1 test.locate: tests that assert the current constants (also validation-checks.test.ts:58 and :708-710)"
+    }
+  ]
+}

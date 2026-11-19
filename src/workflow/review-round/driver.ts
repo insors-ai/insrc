@@ -17,8 +17,11 @@ import type { RoundDriverHooks, RoundResult } from './types.js';
  * Runs one review round. `reviewId` is never read or derived here -- it exists
  * so the caller can thread the same value on to the review-report docgen call
  * and the checkpoint/finalize calls, both of which require it.
+ *
+ * Deliberately NOT `async`: an invalid round must throw synchronously, before
+ * the caller even receives a Promise, not surface as a rejection from one.
  */
-export async function runReviewRound<F = unknown>(
+export function runReviewRound<F = unknown>(
 	reviewId: string,
 	hooks: RoundDriverHooks<F>,
 	round: number,
@@ -29,7 +32,15 @@ export async function runReviewRound<F = unknown>(
 	if (!Number.isInteger(round) || round < 1) {
 		throw new RangeError(`round must be a positive integer, got ${round}`);
 	}
+	return runRound(hooks, round, targets, opts);
+}
 
+async function runRound<F>(
+	hooks: RoundDriverHooks<F>,
+	round: number,
+	targets: ReviewTargets,
+	opts: { readonly runSecurityPass?: boolean } | undefined,
+): Promise<RoundResult<F>> {
 	const groundFindings = await hooks.ground(targets, round);
 
 	const security = hooks.security;

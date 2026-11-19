@@ -18,13 +18,20 @@ function stubHooks<F>(ground: RoundDriverHooks<F>['ground'], security?: RoundDri
 
 describe('runReviewRound', () => {
 	it('a round 1 call invokes hooks.ground once with the complete targets and no prior-findings argument', async () => {
+		const argumentCounts: number[] = [];
 		const calls: Array<[ReviewTargets, number]> = [];
-		const hooks = stubHooks<string>(async (t, r) => { calls.push([t, r]); return ['finding-a']; });
+		const hooks = stubHooks<string>(async function (this: unknown, ...args) {
+			argumentCounts.push(args.length);
+			const [t, r] = args;
+			calls.push([t, r]);
+			return ['finding-a'];
+		});
 
 		const result = await runReviewRound('review-1', hooks, 1, targets);
 
 		assert.equal(calls.length, 1);
 		assert.deepEqual(calls[0], [targets, 1]);
+		assert.deepEqual(argumentCounts, [2], 'hooks.ground must receive exactly targets and round -- no third, prior-findings argument');
 		assert.deepEqual(result, { round: 1, findings: ['finding-a'] });
 	});
 });

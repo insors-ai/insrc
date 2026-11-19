@@ -76,6 +76,7 @@ const ROLES: readonly RoleDescriptor[] = [
 	{ id: 'synthesize',                    criticality: 'peripheral', defaultTier: 'mid'  },  // render artifact from settled outputs
 	{ id: 'workflow.questions',            criticality: 'peripheral', defaultTier: 'mid'  },
 	{ id: 'brainstorm.decision.draft',     criticality: 'peripheral', defaultTier: 'mid'  },  // S010 — adaptive elicit: draft one decision per turn (mid, never cheap/local)
+	{ id: 'review.reconciliation.classify', criticality: 'peripheral', defaultTier: 'mid' },  // reconcileRound's dedicated per-finding verdict call -- informational only, never gate-blocking (ac2)
 
 	// (B) Tracker rendering — PERIPHERAL → cheap (prose over settled facts).
 	{ id: 'tracker.render.issueBody',      criticality: 'peripheral', defaultTier: 'cheap' },

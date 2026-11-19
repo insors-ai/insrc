@@ -60,10 +60,13 @@ describe('ReviewTargets', () => {
 	});
 
 	it("no builder, factory or merge function exists anywhere in ReviewTargets' exported surface (a1's deliberate absence of such an API)", () => {
-		// The interface itself produces no runtime export (types are erased); this directly
-		// checks the module's real runtime surface for any name that could be such a function.
-		const reviewTargetsRelated = Object.keys(types).filter((key) => /reviewtargets/i.test(key));
-		assert.deepEqual(reviewTargetsRelated, []);
+		// The interface itself produces no runtime export (types are erased), so there is no
+		// name to search for; instead this exhaustively checks every runtime export of the
+		// module ReviewTargets lands in. Every one is an Error subclass (sc3/sc4 and friends are
+		// types only) -- there is no plain function anywhere, so none can be a builder/factory/
+		// merge function for ReviewTargets specifically.
+		const plainFunctions = Object.entries(types).filter(([, value]) => typeof value === 'function' && !(value.prototype instanceof Error));
+		assert.deepEqual(plainFunctions.map(([key]) => key), []);
 	});
 
 	it('two ReviewTargets instances built for consecutive rounds on the same artifact are independent objects sharing no entries by construction', () => {
@@ -79,8 +82,8 @@ describe('ReviewTargets', () => {
 	});
 
 	it("ReviewTargets' exported surface contains no validator, allow-list or restriction function of any kind that could cap investigation to entries", () => {
-		const reviewTargetsRelated = Object.keys(types).filter((key) => /reviewtargets/i.test(key));
-		assert.deepEqual(reviewTargetsRelated, []);
+		const plainFunctions = Object.entries(types).filter(([, value]) => typeof value === 'function' && !(value.prototype instanceof Error));
+		assert.deepEqual(plainFunctions.map(([key]) => key), []);
 	});
 
 	it('a ReviewTargets with zero entries is structurally valid', () => {

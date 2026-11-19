@@ -31,20 +31,32 @@
     "seededFromSpec": "5a5f556b77d7aa31",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
-        "number": 1,
-        "contentHash": "e810cc3faee1cc0d5d4496cc6acb4bcf06d90eca49f75942e111764a52b80df3",
-        "at": "2026-11-18T08:51:41.267Z",
+        "number": 2,
+        "contentHash": "69615c4c206ca059c89f8e754fec1594b05a7a424c5ce04cc41adfc7095f5f44",
+        "at": "2026-11-18T10:29:38.648Z",
         "by": {
-          "id": "insrc:system",
-          "kind": "system",
+          "id": "insrc:controller",
+          "kind": "person",
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-19T06:52:25.908Z",
+        "override": {
+          "reason": "Automated design review is retired/unavailable while being rewritten (insrc_review_step errors immediately). Revision 2 adds two open questions surfaced by a controller-led cross-design review against the two sibling Epics' approved HLDs (SecurityLocator's extension-target ambiguity between Locator vs Pointer; whether 'security' needs its own ReviewKind/ScopeType enum member). No other content changed. User approved explicitly in chat for this batch of 3 artifacts."
+        }
+      }
     },
-    "revision": 1,
+    "revision": 2,
     "questionResolutions": {
       "q0fb51f3b": {
         "question": "This standalone Story's acceptanceCriteria was empty on entry to design.story — no formal ac-ids were handed down from an upstream stage. body.testStrategy.acceptanceMapping's ac1-ac5 were derived directly from the approved SPEC-5a5f556b77d7aa31's settled decisions rather than from a Story.acceptanceCriteria list, since none existed to map against. Recommend reconciling these five criteria back into the Story record so future stages (plan/build) see them as first-class acceptance criteria rather than LLD-internal inventions.",
@@ -60,7 +72,13 @@
         "rationale": "Target Finding{category,severity} from HLD-03f4fd3b9102aab8's sc2 and Locator/Pointer from HLD-50cde239426d6e2a's sc1, exactly as cited in this LLD's c4/c5. This Story's build must be sequenced after both sibling Stories (review-process Story s2, ReviewContext Story s1) land; if either implemented shape diverges from its approved HLD, this LLD is revisited before SecurityFinding/SecurityLocator are built against it.",
         "resolvedAt": "2026-11-18T09:13:08.346Z"
       }
-    }
+    },
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "632e9b61261397287a6531d09918f86bf36c5b13"
   },
   "body": {
     "hldContextSlice": {
@@ -369,7 +387,9 @@
     "chosenAlternative": "a2",
     "openQuestions": [
       "Which exact revision of the sibling Stories' types should SecurityFinding/SecurityLocator extend: HLD-03f4fd3b9102aab8's sc2 Finding{category,severity} (Story s2, not yet built) and HLD-50cde239426d6e2a's sc1 Locator/Pointer (Story s1, not yet built)? This LLD assumes those exact shapes per citations c4/c5; build order must sequence this Story's build after both sibling Stories land, and this LLD must be revisited if either sibling Story's actual shape diverges from what its approved HLD currently describes.",
-      "This standalone Story's acceptanceCriteria was empty on entry to design.story — no formal ac-ids were handed down from an upstream stage. body.testStrategy.acceptanceMapping's ac1-ac5 were derived directly from the approved SPEC-5a5f556b77d7aa31's settled decisions rather than from a Story.acceptanceCriteria list, since none existed to map against. Recommend reconciling these five criteria back into the Story record so future stages (plan/build) see them as first-class acceptance criteria rather than LLD-internal inventions."
+      "This standalone Story's acceptanceCriteria was empty on entry to design.story — no formal ac-ids were handed down from an upstream stage. body.testStrategy.acceptanceMapping's ac1-ac5 were derived directly from the approved SPEC-5a5f556b77d7aa31's settled decisions rather than from a Story.acceptanceCriteria list, since none existed to map against. Recommend reconciling these five criteria back into the Story record so future stages (plan/build) see them as first-class acceptance criteria rather than LLD-internal inventions.",
+      "SecurityLocator's extension target is ambiguous: HLD-50cde239426d6e2a's sc1 defines two distinct, structurally unrelated types -- Locator{kind,value} (a region pin within a file) and Pointer{path,section?:Locator,contentHash?} (a file-level reference, optionally carrying a Locator region) -- and SecurityLocator cannot structurally extend both at once. Needs resolving before build: does SecurityLocator extend Locator (adding trustBoundaryId/taintPathStepIndex to the region-pin, used inside a Pointer.section), or does it need a separate SecurityPointer wrapping a Locator-compatible region alongside a file path? A security-graph citation plausibly needs both a file path and a region.",
+      "Whether 'security' needs its own ReviewKind/ScopeType enum member, or the security pass reuses whichever value the primary round already has: the approved SPEC narrative frames security as 'ONE new review type' running as a 'security reviewer pass' within a round, but HLD-03f4fd3b9102aab8's sc1 RoundDriverHooks.reviewKind and HLD-50cde239426d6e2a's sc3 Scope.scopeType are both closed to 'design'|'code' with no third value anticipated. This LLD should state explicitly which reading is correct -- no enum change needed because the security pass runs nested inside the primary round's existing reviewKind/scopeType, or a third enum member is required on both sibling contracts -- since it changes real implementation structure on both sibling Epics."
     ],
     "erDefinition": {
       "id": "security-extension-points-er",

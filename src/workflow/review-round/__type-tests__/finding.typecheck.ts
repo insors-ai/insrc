@@ -30,6 +30,15 @@ void _findingKeysExact;
 const _findingCategoryExact: Equal<FindingCategory, 'correctness' | 'functional-completeness' | 'security' | 'quality' | 'maintainability'> = true;
 void _findingCategoryExact;
 
+// Field-matches-alias proof: the assertion above only verifies the standalone
+// FindingCategory alias -- it says nothing about whether Finding.category
+// actually USES that alias (it could be independently narrowed or widened to
+// a different union and this would still compile). This fails to compile if
+// Finding['category'] is ever declared as anything other than FindingCategory
+// itself, closing that gap.
+const _categoryFieldExact: Equal<Finding['category'], FindingCategory> = true;
+void _categoryFieldExact;
+
 // Unconstrained-string proof: fails to compile if Finding.severity is ever
 // narrowed to a literal union -- the general, type-level form of "accepts any
 // string value", not just the two example strings positive() happens to assign.

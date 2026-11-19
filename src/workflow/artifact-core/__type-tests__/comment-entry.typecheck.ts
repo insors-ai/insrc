@@ -28,6 +28,8 @@ export function positive(): void {
 export function negative(entry: CommentEntry, round: ReviewContextRound): void {
 	// @ts-expect-error CommentParty has only 'submitter' | 'reviewer'
 	const _p1: CommentParty = 'author';
+	// @ts-expect-error CommentEntry.party has only 'submitter' | 'reviewer'
+	const _p2: CommentEntry = { round: 1, party: 'author', timestamp: '2026-11-19T00:00:00.000Z', text: 'x' };
 
 	// @ts-expect-error CommentEntry.round is required
 	const _e1: CommentEntry = { party: 'submitter', timestamp: '2026-11-19T00:00:00.000Z', text: 'x' };

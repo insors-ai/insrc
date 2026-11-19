@@ -54,6 +54,15 @@
       "description": "",
       "references": [],
       "attachments": []
+    },
+    "questionResolutions": {
+      "qd41f38a9": {
+        "question": "Resolved (following cross-review): sc2 was amended (HLD revision 4, fieldAdd, non-breaking) to add Finding.id: string, giving a finding a stable identity across rounds. reconcileRound now takes priorFindings: readonly Finding[] and keys each ReconciliationResult.priorFindingRef off that finding's own id, instead of requiring the caller to assign and track an opaque ref for a type (Finding, sc2) this Story does not own.",
+        "status": "resolved",
+        "choice": "Use Finding.id",
+        "rationale": "Follows the resolved cross-review decision and sc2 HLD revision 4's non-breaking Finding.id addition; removes caller-managed opaque references.",
+        "resolvedAt": "2026-11-19T19:06:22.010Z"
+      }
     }
   },
   "body": {

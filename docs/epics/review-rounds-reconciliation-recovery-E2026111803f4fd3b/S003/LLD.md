@@ -159,6 +159,11 @@ function reconcileRound(priorFindings: readonly Finding[], currentFindings: read
 - Resolved (following cross-review): sc2 was amended (HLD revision 4, fieldAdd, non-breaking) to add Finding.id: string, giving a finding a stable identity across rounds. reconcileRound now takes priorFindings: readonly Finding[] and keys each ReconciliationResult.priorFindingRef off that finding's own id, instead of requiring the caller to assign and track an opaque ref for a type (Finding, sc2) this Story does not own.
 - Cross-review found reconcileRound's original auditTrail?: string parameter contradicted the HLD's own boundary text for s3 ('how it reads the temp folder's audit trail when needed stays internal to s3'): the caller would have had to pre-extract that content itself, and the signature had no reviewId to let reconcileRound read it internally either. Fixed by replacing auditTrail with a reviewId: string first parameter; reconcileRound now reads .insrc/tmp/<reviewId>/ itself when the two finding sets alone do not resolve a classification.
 
+## Resolved questions
+
+- `qd41f38a9` — Resolved (following cross-review): sc2 was amended (HLD revision 4, fieldAdd, non-breaking) to add Finding.id: string, giving a finding a stable identity across rounds. reconcileRound now takes priorFindings: readonly Finding[] and keys each ReconciliationResult.priorFindingRef off that finding's own id, instead of requiring the caller to assign and track an opaque ref for a type (Finding, sc2) this Story does not own.
+  - **resolved**: Use Finding.id — Follows the resolved cross-review decision and sc2 HLD revision 4's non-breaking Finding.id addition; removes caller-managed opaque references. _(2026-11-19T19:06:22.010Z)_
+
 ## Citations
 
 - **[[c1]]** `analyze-bundle` `src/workflow/review-history/review/design-review/admission-checkpoint.ts`

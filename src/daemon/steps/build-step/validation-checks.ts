@@ -26,8 +26,10 @@ import { storyChangeSet } from '../../../workflow/runners/build/story-commits.js
 import { runInProcessGroup, type ProcessGroupOpts, type ProcessGroupResult } from '../../../shared/process-group.js';
 import type { NamedTestSource, TestCaseResult, TestRecordNamedTest, TestRecordReported } from '../../../workflow/runners/build/test-record.js';
 
+import { readBuildCommandSetting, type BuildCommandSetting } from './command-setting.js';
 import { parseTapRun, resultOfTitle, type TapTitle } from './tap-results.js';
 import type { NamedTest, TestCaseRef, TestMappingEntry } from './test-mapping.js';
+import type { BuildStepError } from './types.js';
 
 const log = getLogger('build-validate-checks');
 
@@ -294,9 +296,47 @@ function basePlan(profile: CommandProfile): Pick<ValidationCheckPlan, 'typecheck
 	};
 }
 
-/** The profile a build is gated by and prompted with: the commands of the repository's project type. */
-export function commandProfileOf(repoPath: string): CommandProfile {
-	return defaultCommandProfile(detectProjectType(repoPath));
+/** A command line from a setting: split on whitespace (no shell quoting), non-empty. */
+function commandArgv(field: string, value: unknown): readonly string[] {
+	if (typeof value !== 'string') throw new InvalidCommandSetting(field, 'must be a string');
+	const argv = value.trim().split(/\s+/).filter(a => a.length > 0);
+	if (argv.length === 0) throw new InvalidCommandSetting(field, 'is empty');
+	return argv;
+}
+
+/**
+ * The profile of a project whose repo setting states its commands: the setting wins over the
+ * type's default. The typecheck and test commands are set together; the result format defaults to
+ * 'exit-code'. Throws InvalidCommandSetting for a bad value, before anything runs.
+ */
+export function profileFromSetting(projectType: ProjectType, setting: BuildCommandSetting): CommandProfile {
+	const hasType = setting.typecheckCommand !== undefined;
+	const hasTest = setting.testCommand !== undefined;
+	if (hasType !== hasTest) {
+		throw new InvalidCommandSetting(hasType ? 'build.testCommand' : 'build.typecheckCommand', 'must be set together with the other command');
+	}
+	const format = setting.resultFormat ?? 'exit-code';
+	if (format !== 'tap' && format !== 'exit-code') {
+		throw new InvalidCommandSetting('build.resultFormat', `must be 'tap' or 'exit-code', not ${JSON.stringify(format)}`);
+	}
+	if (!hasType) return defaultCommandProfile(projectType);   // only a format: nothing to apply it to
+	return {
+		projectType,
+		typecheck: commandArgv('build.typecheckCommand', setting.typecheckCommand),
+		testCommand: commandArgv('build.testCommand', setting.testCommand),
+		resultFormat: format,
+		commandsSource: 'repo-setting',
+	};
+}
+
+/**
+ * The profile a build is gated by and prompted with: the repo setting's commands when it states
+ * them, else the project type's default. Throws InvalidCommandSetting for a bad setting.
+ */
+export function commandProfileOf(repoPath: string, configPath?: string): CommandProfile {
+	const projectType = detectProjectType(repoPath);
+	const setting = readBuildCommandSetting(repoPath, configPath);
+	return setting === undefined ? defaultCommandProfile(projectType) : profileFromSetting(projectType, setting);
 }
 
 /**
@@ -813,4 +853,15 @@ export async function runValidationChecks(
 		};
 	}
 	return { typecheck, tests };
+}
+
+/** The error a build phase returns when the repo's build-command setting is invalid; `undefined` when it is fine. */
+export function commandSettingError(phase: 'implement' | 'validate', repoPath: string, configPath?: string): BuildStepError | undefined {
+	try {
+		commandProfileOf(repoPath, configPath);
+		return undefined;
+	} catch (err) {
+		if (!(err instanceof InvalidCommandSetting)) throw err;
+		return { next: 'error', error: { code: 'invalid-command-setting', message: `insrc_build_step[${phase}]: ${err.message}. Fix it in ~/.insrc/config.json (see docs/daemon.md, "Build commands").`, retryable: false } };
+	}
 }

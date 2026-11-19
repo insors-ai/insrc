@@ -20,6 +20,9 @@ import {
 	PROJECT_TYPE_GUIDANCE,
 	TEST_RUNNER_ARGV,
 	TYPECHECK_ARGV,
+	InvalidCommandSetting,
+	commandProfileOf,
+	commandSettingError,
 	defaultCommandProfile,
 	detectProjectType,
 	owningTypecheckProjects,
@@ -977,4 +980,56 @@ test('withTypecheckProjects makes no tsconfig search for a non-Node plan', async
 			assert.equal(await withTypecheckProjects(repo, other), other, commandsSource);   // the very same plan
 		}
 	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+// --- t5: the repo setting ---
+
+function configWith(build: unknown): string {
+	const dir = mkdtempSync(join(tmpdir(), 'insrc-build-config-'));
+	const path = join(dir, 'config.json');
+	writeFileSync(path, JSON.stringify({ build }));
+	return path;
+}
+
+test('a repo setting wins over the default; an empty command or an unknown result format is refused with InvalidCommandSetting', () => {
+	const node = markerRepo('package.json');
+	const py = markerRepo('pyproject.toml');
+	const cfg: string[] = [];
+	const profileConfig = (build: unknown): string => { const c = configWith(build); cfg.push(c); return c; };
+	const profile = (repo: string, build: unknown) => commandProfileOf(repo, profileConfig(build));
+	const refused = (repo: string, build: unknown, field: string) => {
+		const c = configWith(build); cfg.push(c);
+		assert.throws(() => commandProfileOf(repo, c), (e: unknown) => e instanceof InvalidCommandSetting && e.field === field, field);
+	};
+	try {
+		// The setting wins for a Node project, and gives a project of another type its commands.
+		const set = { typecheckCommand: 'tsc -p .', testCommand: 'npm test --', resultFormat: 'exit-code' };
+		const n = profile(node, set);
+		assert.deepEqual([n.typecheck, n.testCommand, n.resultFormat, n.commandsSource], [['tsc', '-p', '.'], ['npm', 'test', '--'], 'exit-code', 'repo-setting']);
+		const p = profile(py, { typecheckCommand: 'mypy src', testCommand: 'pytest -q' });
+		assert.deepEqual([p.projectType, p.typecheck, p.testCommand, p.resultFormat, p.commandsSource], ['python', ['mypy', 'src'], ['pytest', '-q'], 'exit-code', 'repo-setting']);
+		// A repo's own block wins over the global one, key by key.
+		const own = profile(py, { typecheckCommand: 'global-check', testCommand: 'global-test', byRepo: { [py]: { testCommand: 'pytest -x' } } });
+		assert.deepEqual([own.typecheck, own.testCommand], [['global-check'], ['pytest', '-x']]);
+		// Nothing set (or only empty strings): the default of the project type.
+		assert.equal(profile(node, { typecheckCommand: '', testCommand: '' }).commandsSource, 'node-default');
+		assert.equal(profile(py, {}).commandsSource, 'none');
+
+		refused(py, { typecheckCommand: '   ', testCommand: 'pytest' }, 'build.typecheckCommand');
+		refused(py, { typecheckCommand: 'mypy', testCommand: 'pytest', resultFormat: 'junit' }, 'build.resultFormat');
+		refused(py, { typecheckCommand: 'mypy' }, 'build.testCommand');
+		refused(py, { testCommand: 'pytest' }, 'build.typecheckCommand');
+		refused(py, { typecheckCommand: 7, testCommand: 'pytest' }, 'build.typecheckCommand');
+
+		// A phase refuses a bad setting before anything runs, with a message that names the field.
+		const bad = configWith({ typecheckCommand: ' ', testCommand: 'pytest' }); cfg.push(bad);
+		const refusal = commandSettingError('validate', py, bad);
+		assert.equal(refusal?.next, 'error');
+		assert.equal(refusal?.error.code, 'invalid-command-setting');
+		assert.match(refusal?.error.message ?? '', /build\.typecheckCommand/);
+		assert.equal(commandSettingError('validate', py, profileConfig({ typecheckCommand: 'mypy', testCommand: 'pytest' })), undefined);
+	} finally {
+		for (const r of [node, py]) rmSync(r, { recursive: true, force: true });
+		for (const c of cfg) rmSync(dirname(c), { recursive: true, force: true });
+	}
 });

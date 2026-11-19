@@ -31,7 +31,7 @@ import { persistStandaloneBuildRecord } from '../../../../workflow/runners/build
 import { roundWriterFor } from '../../../lifecycle-registry.js';
 import { runTaskCommentSync } from '../../../tracker-sync-comments.js';
 import { assertMayBuild, settleBeforeBuild } from '../../../../workflow/team/author-gate.js';
-import { commandProfileOf } from '../validation-checks.js';
+import { commandProfileOf, commandSettingError } from '../validation-checks.js';
 import { mergeInProgressError, renderImplementPrompt, renderStandaloneImplementPrompt, resolveRepoPath, resolveTaskRef } from '../render.js';
 import type {
 	BuildStandaloneContext,
@@ -53,6 +53,9 @@ export async function handleImplement(
 	// A merge must be committed on its own before the next round of Story work
 	// (ISSUE-f9ced66a): refuse before doing anything else while one is open.
 	if (await mergeInProgress(repoPath)) return mergeInProgressError('implement');
+	// A bad build-command setting is refused here, before any prompt is built from it.
+	const setting = commandSettingError('implement', repoPath);
+	if (setting !== undefined) return setting;
 
 	// Standalone (no-plan) build — a triage-routed Small (LLD → build) or Trivial
 	// (build only) feature. Bypasses task/tracker resolution; the spec is the

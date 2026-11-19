@@ -13,7 +13,7 @@ import { tmpdir } from 'node:os';
 
 import { handleBuildStep } from '../handler.js';
 import { _setBuildValidateCheckRunnerForTests, _setBuildValidateProviderForTests } from '../phases/validate.js';
-import type { ValidationCheckResults } from '../validation-checks.js';
+import { TEST_RUNNER_ARGV, TYPECHECK_ARGV, type ValidationCheckPlan, type ValidationCheckResults } from '../validation-checks.js';
 import { createCompletionEvidence } from '../../../../workflow/artifact-core/completion-evidence.js';
 import { approvedMeta, markApprovedSync } from '../../../../workflow/__tests__/lifecycle-fixtures.js';
 import { approveJson } from '../../../../workflow/__tests__/helpers/approve.js';
@@ -105,4 +105,41 @@ test("a validate turn records its round in the Task's own log, and a Task with n
 		assert.equal((out['verdict'] as { evidence: Record<string, unknown> }).evidence['taskRoundNote'], undefined);
 		assert.equal(await createCompletionEvidence(old).taskBuildPassed(TASK), false, 'the BUILD record does not answer for a Task with no head');
 	} finally { rmSync(old, { recursive: true, force: true }); }
+});
+
+test("a Node project's round is unchanged", async () => {
+	const repo = repoWith(true);
+	writeFileSync(join(repo, 'package.json'), '{}\n');
+	const plans: ValidationCheckPlan[] = [];
+	_setBuildValidateCheckRunnerForTests(async (_repo, plan) => { plans.push(plan); return PASSING; });
+	try {
+		const out = await validate(repo, true, 'all checks hold');
+		assert.equal(out['next'], 'done');
+		assert.equal(out['passed'], true);
+		// The gate was handed today's plan: the Node commands, read as TAP.
+		assert.equal(plans.length, 1);
+		assert.deepEqual([plans[0]!.typecheck, plans[0]!.testCommand, plans[0]!.resultFormat, plans[0]!.commandsSource], [TYPECHECK_ARGV, TEST_RUNNER_ARGV, 'tap', 'node-default']);
+	} finally {
+		_setBuildValidateCheckRunnerForTests(async () => PASSING);
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
+test('a project with no commands is not passed and its record says the gate ran nothing', async () => {
+	const repo = repoWith(true);   // no marker file: no command is known, so the real runner runs nothing
+	_setBuildValidateCheckRunnerForTests(undefined);
+	try {
+		// The judge says yes, and the daemon's own result still fails the Task.
+		const out = await validate(repo, true, 'the change reads right');
+		assert.equal(out['next'], 'done');
+		assert.equal(out['passed'], false);
+		const verdict = out['verdict'] as { testsPassed: boolean; typecheckClean: boolean; evidence: { typecheck: { note?: string }; tests: { note?: string } } };
+		assert.deepEqual([verdict.testsPassed, verdict.typecheckClean], [false, false]);
+		assert.match(verdict.evidence.typecheck.note ?? '', /the gate ran nothing/);
+		assert.match(verdict.evidence.tests.note ?? '', /the gate ran nothing/);
+		assert.equal(await createCompletionEvidence(repo).taskBuildPassed(TASK), false);
+	} finally {
+		_setBuildValidateCheckRunnerForTests(async () => PASSING);
+		rmSync(repo, { recursive: true, force: true });
+	}
 });

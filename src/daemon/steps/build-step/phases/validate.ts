@@ -46,6 +46,7 @@ import { checkTestMapping, oneLine, usableStoredMapping, type NamedTest, type Te
 import type { BuildStandaloneContext, BuildStepDone, BuildStepError, BuildStepInputValidate } from '../types.js';
 import {
 	commandProfileOf,
+	commandSettingError,
 	planTaskCheckPlan,
 	runValidationChecks,
 	smallStandaloneCheckPlan,
@@ -215,6 +216,9 @@ export async function handleValidate(input: BuildStepInputValidate): Promise<Bui
 	// A merge must be committed on its own before the next round of Story work
 	// (ISSUE-f9ced66a): refuse before doing anything else while one is open.
 	if (await mergeInProgress(repoPath)) return mergeInProgressError('validate');
+	// A bad build-command setting is refused here: nothing is run, judged or written.
+	const setting = commandSettingError('validate', repoPath);
+	if (setting !== undefined) return setting;
 
 	// S002: standalone (no-plan) validate — a triage-routed Small story. Resolve the
 	// story identity from the standalone context (mirroring handleStandaloneImplement)

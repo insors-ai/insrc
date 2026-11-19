@@ -1020,6 +1020,9 @@ test('a repo setting wins over the default; an empty command or an unknown resul
 
 		refused(py, { typecheckCommand: '   ', testCommand: 'pytest' }, 'build.typecheckCommand');
 		refused(py, { typecheckCommand: 'mypy', testCommand: 'pytest', resultFormat: 'junit' }, 'build.resultFormat');
+		refused(py, { typecheckCommand: 'mypy', testCommand: 'pytest', resultFormat: null }, 'build.resultFormat');
+		refused(py, { typecheckCommand: 'mypy', testCommand: 'pytest', resultFormat: '' }, 'build.resultFormat');
+		refused(py, { typecheckCommand: null, testCommand: 'pytest' }, 'build.typecheckCommand');
 		refused(py, { typecheckCommand: 'mypy' }, 'build.testCommand');
 		refused(py, { testCommand: 'pytest' }, 'build.typecheckCommand');
 		refused(py, { typecheckCommand: 7, testCommand: 'pytest' }, 'build.typecheckCommand');

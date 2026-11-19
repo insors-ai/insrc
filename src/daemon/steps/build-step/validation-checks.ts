@@ -315,7 +315,7 @@ export function profileFromSetting(projectType: ProjectType, setting: BuildComma
 	if (hasType !== hasTest) {
 		throw new InvalidCommandSetting(hasType ? 'build.testCommand' : 'build.typecheckCommand', 'must be set together with the other command');
 	}
-	const format = setting.resultFormat ?? 'exit-code';
+	const format = setting.resultFormat === undefined ? 'exit-code' : setting.resultFormat;   // not `??`: a null is a bad value
 	if (format !== 'tap' && format !== 'exit-code') {
 		throw new InvalidCommandSetting('build.resultFormat', `must be 'tap' or 'exit-code', not ${JSON.stringify(format)}`);
 	}

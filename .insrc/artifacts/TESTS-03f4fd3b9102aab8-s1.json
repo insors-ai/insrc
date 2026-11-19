@@ -1,0 +1,393 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 9,
+        "contentHash": "8ae237fc72767b478efdb38c45a9023f328492730dede01d46c07b9489d9520e",
+        "at": "2026-11-19T16:50:02.172Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "03f4fd3b9102aab8",
+    "storyId": "s1",
+    "createdAt": "2026-11-19T15:01:05.706Z",
+    "updatedAt": "2026-11-19T16:50:02.110Z",
+    "epicCreatedAt": "2026-11-18T06:14:00.057Z",
+    "epicSlug": "review-rounds-reconciliation-recovery",
+    "revision": 9
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "83d89193c",
+        "ranAt": "2026-11-19T16:50:02.110Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a round 1 call invokes hooks.ground once with the complete targets and no prior-findings argument",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/driver.test.ts",
+                "title": "a round 1 call invokes hooks.ground once with the complete targets and no prior-findings argument",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-round/__tests__/driver.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 324,
+            "titles": [
+              {
+                "title": "a round 1 call invokes hooks.ground once with the complete targets and no prior-findings argument",
+                "result": "pass"
+              },
+              {
+                "title": "a round 2 (Correction-and-Re-review) call invokes hooks.ground through the identical call shape as round 1, differing only in the round number passed",
+                "result": "pass"
+              },
+              {
+                "title": "hooks.ground receives the full targets/artifact unmodified -- nothing is stripped or withheld before grounding runs",
+                "result": "pass"
+              },
+              {
+                "title": "round 0 is rejected with a RangeError before any hook is called",
+                "result": "pass"
+              },
+              {
+                "title": "a negative round is rejected with a RangeError before any hook is called",
+                "result": "pass"
+              },
+              {
+                "title": "a non-integer round is rejected with a RangeError before any hook is called",
+                "result": "pass"
+              },
+              {
+                "title": "a rejecting hooks.ground propagates its rejection and hooks.security is never called for that round",
+                "result": "pass"
+              },
+              {
+                "title": "a rejecting hooks.security propagates its rejection rather than returning hooks.ground's findings alone",
+                "result": "pass"
+              },
+              {
+                "title": "an empty ReviewTargets.entries array is passed through to hooks.ground unchanged, with no special-casing",
+                "result": "pass"
+              },
+              {
+                "title": "opts omitted defaults runSecurityPass to true -- hooks.security runs when it is supplied",
+                "result": "pass"
+              },
+              {
+                "title": "opts.runSecurityPass:false suppresses hooks.security even when it is supplied",
+                "result": "pass"
+              },
+              {
+                "title": "hooks.security undefined is a no-op, not a thrown error, when runSecurityPass is true or omitted",
+                "result": "pass"
+              },
+              {
+                "title": "a large round number (e.g. 50) runs through the identical code path as round 1, with no round-number-based branching",
+                "result": "pass"
+              },
+              {
+                "title": "reviewId never appears in hooks.ground's or hooks.security's own call arguments across round 1 and round 2, and is left available unchanged for the caller to thread on to the sc4/sc5 calls, never substituted for a different value",
+                "result": "pass"
+              },
+              {
+                "title": "hooks.security is invoked with hooks as its receiver, so a method implementation that reads `this` does not throw",
+                "result": "pass"
+              },
+              {
+                "title": "runReviewRound",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "1e6b04b7d",
+        "ranAt": "2026-11-19T16:30:48.757Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a round 1 call invokes hooks.ground once with the complete targets and no prior-findings argument",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/driver.test.ts",
+                "title": "a round 1 call invokes hooks.ground once with the complete targets and no prior-findings argument",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a round 2 (Correction-and-Re-review) call invokes hooks.ground through the identical call shape as round 1, differing only in the round number passed",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/driver.test.ts",
+                "title": "a round 2 (Correction-and-Re-review) call invokes hooks.ground through the identical call shape as round 1, differing only in the round number passed",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "hooks.ground receives the full targets/artifact unmodified -- nothing is stripped or withheld before grounding runs",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/driver.test.ts",
+                "title": "hooks.ground receives the full targets/artifact unmodified -- nothing is stripped or withheld before grounding runs",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "round 0 is rejected with a RangeError before any hook is called",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/driver.test.ts",
+                "title": "round 0 is rejected with a RangeError before any hook is called",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a negative round is rejected with a RangeError before any hook is called",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/driver.test.ts",
+                "title": "a negative round is rejected with a RangeError before any hook is called",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a non-integer round is rejected with a RangeError before any hook is called",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/driver.test.ts",
+                "title": "a non-integer round is rejected with a RangeError before any hook is called",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a rejecting hooks.ground propagates its rejection and hooks.security is never called for that round",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/driver.test.ts",
+                "title": "a rejecting hooks.ground propagates its rejection and hooks.security is never called for that round",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a rejecting hooks.security propagates its rejection rather than returning hooks.ground's findings alone",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/driver.test.ts",
+                "title": "a rejecting hooks.security propagates its rejection rather than returning hooks.ground's findings alone",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "an empty ReviewTargets.entries array is passed through to hooks.ground unchanged, with no special-casing",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/driver.test.ts",
+                "title": "an empty ReviewTargets.entries array is passed through to hooks.ground unchanged, with no special-casing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "opts omitted defaults runSecurityPass to true -- hooks.security runs when it is supplied",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/driver.test.ts",
+                "title": "opts omitted defaults runSecurityPass to true -- hooks.security runs when it is supplied",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "opts.runSecurityPass:false suppresses hooks.security even when it is supplied",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/driver.test.ts",
+                "title": "opts.runSecurityPass:false suppresses hooks.security even when it is supplied",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "hooks.security undefined is a no-op, not a thrown error, when runSecurityPass is true or omitted",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/driver.test.ts",
+                "title": "hooks.security undefined is a no-op, not a thrown error, when runSecurityPass is true or omitted",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a large round number (e.g. 50) runs through the identical code path as round 1, with no round-number-based branching",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/driver.test.ts",
+                "title": "a large round number (e.g. 50) runs through the identical code path as round 1, with no round-number-based branching",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "reviewId never appears in hooks.ground's or hooks.security's own call arguments across round 1 and round 2, and is left available unchanged for the caller to thread on to the sc4/sc5 calls, never substituted for a different value",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/driver.test.ts",
+                "title": "reviewId never appears in hooks.ground's or hooks.security's own call arguments across round 1 and round 2, and is left available unchanged for the caller to thread on to the sc4/sc5 calls, never substituted for a different value",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-round/__tests__/driver.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 284,
+            "titles": [
+              {
+                "title": "a round 1 call invokes hooks.ground once with the complete targets and no prior-findings argument",
+                "result": "pass"
+              },
+              {
+                "title": "a round 2 (Correction-and-Re-review) call invokes hooks.ground through the identical call shape as round 1, differing only in the round number passed",
+                "result": "pass"
+              },
+              {
+                "title": "hooks.ground receives the full targets/artifact unmodified -- nothing is stripped or withheld before grounding runs",
+                "result": "pass"
+              },
+              {
+                "title": "round 0 is rejected with a RangeError before any hook is called",
+                "result": "pass"
+              },
+              {
+                "title": "a negative round is rejected with a RangeError before any hook is called",
+                "result": "pass"
+              },
+              {
+                "title": "a non-integer round is rejected with a RangeError before any hook is called",
+                "result": "pass"
+              },
+              {
+                "title": "a rejecting hooks.ground propagates its rejection and hooks.security is never called for that round",
+                "result": "pass"
+              },
+              {
+                "title": "a rejecting hooks.security propagates its rejection rather than returning hooks.ground's findings alone",
+                "result": "pass"
+              },
+              {
+                "title": "an empty ReviewTargets.entries array is passed through to hooks.ground unchanged, with no special-casing",
+                "result": "pass"
+              },
+              {
+                "title": "opts omitted defaults runSecurityPass to true -- hooks.security runs when it is supplied",
+                "result": "pass"
+              },
+              {
+                "title": "opts.runSecurityPass:false suppresses hooks.security even when it is supplied",
+                "result": "pass"
+              },
+              {
+                "title": "hooks.security undefined is a no-op, not a thrown error, when runSecurityPass is true or omitted",
+                "result": "pass"
+              },
+              {
+                "title": "a large round number (e.g. 50) runs through the identical code path as round 1, with no round-number-based branching",
+                "result": "pass"
+              },
+              {
+                "title": "reviewId never appears in hooks.ground's or hooks.security's own call arguments across round 1 and round 2, and is left available unchanged for the caller to thread on to the sc4/sc5 calls, never substituted for a different value",
+                "result": "pass"
+              },
+              {
+                "title": "runReviewRound",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

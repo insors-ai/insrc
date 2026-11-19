@@ -1,0 +1,146 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 9,
+        "contentHash": "35724e4d9f6a67f1e08a8641d78dc71b6d0d3aa1b3fea55340105e4799ac1e9e",
+        "at": "2026-11-19T16:50:43.007Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 9,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-19T16:53:45.601Z",
+        "override": {
+          "reason": "Automated code review (insrc_code_review_step) is retired/unavailable per CLAUDE.md. Self-review substitute recorded in SELF-REVIEW.md and /tmp/.insrc/review-packet-03f4fd3b9102aab8-s1.md, including an externally-reported P2 (hooks.security's lost `this` receiver) found and fixed after the first self-review pass. User approved explicitly in chat."
+        }
+      }
+    },
+    "workflow": "build",
+    "runId": "store-3b520c64-1060-4797-bab4-39a0e1715e1a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-19T15:01:05.706Z",
+    "epicCreatedAt": "2026-11-18T06:14:00.057Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "03f4fd3b9102aab8",
+    "storyId": "s1",
+    "revision": 9,
+    "updatedAt": "2026-11-19T16:50:02.110Z",
+    "authoredBy": "controller",
+    "epicSlug": "review-rounds-reconciliation-recovery"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      }
+    ],
+    "testRecord": {
+      "md": "docs/epics/review-rounds-reconciliation-recovery-E2026111803f4fd3b/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/workflow/review-round/__tests__/driver.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-19T16:50:02.110Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-round/driver.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-19T16:50:02.110Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-round/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-19T16:50:02.110Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/LLD-03f4fd3b9102aab8-s1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-19T16:50:02.110Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/LLD-03f4fd3b9102aab8-s1.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-19T16:50:02.110Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/review-rounds-reconciliation-recovery-E2026111803f4fd3b/S001/LLD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-19T16:50:02.110Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-03f4fd3b9102aab8-s1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-19T16:50:02.110Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-03f4fd3b9102aab8-s1.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-19T16:50:02.110Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-03f4fd3b9102aab8-s1-t2.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-19T16:50:02.110Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/review-rounds-reconciliation-recovery-E2026111803f4fd3b/S001/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-19T16:50:02.110Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/review-rounds-reconciliation-recovery-E2026111803f4fd3b/S001/SELF-REVIEW.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-19T16:50:02.110Z"
+      }
+    ],
+    "commit": "83d89193c",
+    "summary": "Fixed a P2 found in external review of pinned revision 6c1574852: runRound invoked the captured hooks.security as a bare function, losing its `this` receiver, so a method-style hook reading this.reviewKind threw TypeError. Fixed by invoking security.call(hooks, targets, round). Added a receiver-aware regression test (a real method hook reading `this.reviewKind`) that reproduces the exact TypeError without the fix."
+  },
+  "citations": []
+}

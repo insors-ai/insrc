@@ -74,6 +74,24 @@ describe('validateDesignScope and validateCodeScope', () => {
 		assert.match(result.violations.join(' '), /'tasks' must be absent/);
 	});
 
+	it("validateDesignScope returns ok:false when scope.tasks is an empty array at a scopeLevel where tasks must be absent", () => {
+		const scope: Scope = { scopeType: 'design', scopeLevel: 'def', def: pointer('DEF.md'), tasks: [] };
+		const result = validateDesignScope(scope, ROOT);
+		assert.equal(result.ok, false);
+		assert.match(result.violations.join(' '), /'tasks' must be absent/);
+	});
+
+	it("validateCodeScope returns ok:false when scope.tasks is an empty array at scopeLevel='plan', where tasks must be absent", () => {
+		const scope: Scope = {
+			scopeType: 'code', scopeLevel: 'plan',
+			def: pointer('DEF.md'), hld: pointer('HLD.md'), lld: pointer('LLD.md'), plan: pointer('PLAN.md'),
+			tasks: [],
+		};
+		const result = validateCodeScope(scope, ROOT);
+		assert.equal(result.ok, false);
+		assert.match(result.violations.join(' '), /'tasks' must be absent/);
+	});
+
 	it('validateCodeScope returns ok:false when scope.tasks is an empty array at a scopeLevel requiring tasks', () => {
 		const scope: Scope = {
 			scopeType: 'code', scopeLevel: 'task',

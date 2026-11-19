@@ -46,18 +46,26 @@ function requirementsFor(levels: readonly ScopeLevel[]): Readonly<Record<string,
 const DESIGN_REQUIREMENTS = requirementsFor(['def', 'hld', 'lld']);
 const CODE_REQUIREMENTS = requirementsFor(['plan', 'task']);
 
-function isPopulated(scope: Scope, field: keyof Scope): boolean {
+// An empty array does not satisfy a "required" field (a Scope cannot claim task-level coverage
+// while naming zero actual Tasks), but it DOES violate a "must be absent" field: the LLD's own
+// check for that direction is scope[field] !== undefined, so a caller that explicitly sets
+// tasks: [] at a depth where tasks must be absent has still populated the field key.
+function isRequiredSatisfied(scope: Scope, field: keyof Scope): boolean {
 	const value = scope[field];
 	return Array.isArray(value) ? value.length > 0 : value !== undefined;
+}
+
+function isAbsent(scope: Scope, field: keyof Scope): boolean {
+	return scope[field] === undefined;
 }
 
 function checkFieldRequirement(scope: Scope, requirement: ScopeFieldRequirement): readonly string[] {
 	const violations: string[] = [];
 	for (const field of requirement.required) {
-		if (!isPopulated(scope, field)) violations.push(`'${field}' is required at scopeLevel '${scope.scopeLevel}' but is absent`);
+		if (!isRequiredSatisfied(scope, field)) violations.push(`'${field}' is required at scopeLevel '${scope.scopeLevel}' but is absent`);
 	}
 	for (const field of requirement.mustBeAbsent) {
-		if (isPopulated(scope, field)) violations.push(`'${field}' must be absent at scopeLevel '${scope.scopeLevel}' but is populated`);
+		if (!isAbsent(scope, field)) violations.push(`'${field}' must be absent at scopeLevel '${scope.scopeLevel}' but is populated`);
 	}
 	return violations;
 }

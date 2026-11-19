@@ -179,7 +179,7 @@ describe('runReviewRound', () => {
 		assert.deepEqual(result, { round: 50, findings: ['finding-a'] });
 	});
 
-	it("reviewId is passed unchanged into hooks.ground/hooks.security's own arguments-free of mutation across round 1 and round 2 calls, so a caller can thread it on to sc4/sc5 calls without this function ever substituting a different value", async () => {
+	it("reviewId never appears in hooks.ground's or hooks.security's own call arguments across round 1 and round 2, and is left available unchanged for the caller to thread on to the sc4/sc5 calls, never substituted for a different value", async () => {
 		const reviewId = 'review-xyz';
 		const spy = spyGround<string>(['finding-a']);
 		const securityCalls: Array<[ReviewTargets, number]> = [];

@@ -1,0 +1,119 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 10,
+        "contentHash": "948192abf3eece1e158e9a59a8403ef973d283ab776a29d5485d73de50871904",
+        "at": "2026-11-19T09:49:18.652Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 10,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-19T09:58:46.696Z"
+      }
+    },
+    "workflow": "build",
+    "runId": "store-b73cbcb5-5284-4c23-9bad-3cc53da7065c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-19T08:42:23.624Z",
+    "epicCreatedAt": "2026-11-18T04:59:27.796Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "50cde239426d6e2a",
+    "storyId": "s1",
+    "revision": 10,
+    "updatedAt": "2026-11-19T09:48:46.341Z",
+    "authoredBy": "controller",
+    "epicSlug": "shared-reviewcontext-data-model"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      }
+    ],
+    "summary": "The previous validate turn's own re-check found a second containment bug: root + sep double-separates when root is already '/' (filesystem root), rejecting every in-root path there. Fixed by only appending sep when root does not already end with one, with a regression test for registeredRepoRoot='/'.",
+    "testRecord": {
+      "md": "docs/epics/shared-reviewcontext-data-model-E2026111850cde239/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/__tests__/locator-pointer.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-19T09:48:46.341Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-19T09:48:46.341Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/__tests__/typecheck-config.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-19T09:48:46.341Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/__type-tests__/locator-pointer.typecheck.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-19T09:48:46.341Z"
+      },
+      {
+        "target": {
+          "file": "tsconfig.typecheck.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-19T09:48:46.341Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/__tests__/pointer-checks.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-19T09:48:46.341Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/pointer-checks.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-19T09:48:46.341Z"
+      }
+    ],
+    "commit": "d25eec8e2"
+  },
+  "citations": []
+}

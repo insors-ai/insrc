@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e92737a8-34ad-4e0b-b380-4eeda0a41387",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-19T08:38:45.618Z",
+    "epicCreatedAt": "2026-11-18T04:59:27.796Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "50cde239426d6e2a",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Implement PointerStalenessCheck and PointerPathValidator as pure functions",
+      "parent": {
+        "entityId": "STORY-50cde239426d6e2a-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-50cde239426d6e2a-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-50cde239426d6e2a-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#202",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "3e92c5543fc0865ecef7749671f66705477ce493e7c66903537c3f17590286df",
+        "at": "2026-11-19T08:38:45.618Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-19T08:38:45.619Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement PointerStalenessCheck and PointerPathValidator as pure functions",
+    "summary": "Add type PointerStalenessCheck = (pointer, currentContentHash) => StalenessResult and type PointerPathValidator = (pointer, registeredRepoRoot) => PathValidationResult, each with a concrete implementing function, exported beside the types from t1. PointerStalenessCheck does a plain string comparison (no I/O); PointerPathValidator resolves pointer.path against registeredRepoRoot via path.resolve (mirroring src/db/repos.ts's own repo-path normalization) and checks the result stays within registeredRepoRoot, with no I/O either.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "PointerStalenessCheck returns {stale:false} when pointer.contentHash is absent, and compares currentContentHash against pointer.contentHash otherwise, with no file I/O",
+      "PointerPathValidator returns {ok:true, violations:[]} for an in-root path and {ok:false, violations:[...]} naming the escaping path for a '..'-escaping path, with no file I/O",
+      "Both functions are pure: identical inputs always produce identical ok/stale, varying only in any wall-clock field documented for that function"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "PointerStalenessCheck and PointerPathValidator are exported with their documented signatures and are pure (no I/O)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

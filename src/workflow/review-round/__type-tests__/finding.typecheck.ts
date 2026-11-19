@@ -24,6 +24,18 @@ type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B 
 const _findingKeysExact: Equal<keyof Finding, 'id' | 'category' | 'severity'> = true;
 void _findingKeysExact;
 
+// Exact-union proof: fails to compile if FindingCategory ever gains or loses a
+// member, not just for the one invalid literal ('style') the negative() cases
+// below happen to try -- the general form of "exactly the five fixed categories".
+const _findingCategoryExact: Equal<FindingCategory, 'correctness' | 'functional-completeness' | 'security' | 'quality' | 'maintainability'> = true;
+void _findingCategoryExact;
+
+// Unconstrained-string proof: fails to compile if Finding.severity is ever
+// narrowed to a literal union -- the general, type-level form of "accepts any
+// string value", not just the two example strings positive() happens to assign.
+const _findingSeverityIsString: Equal<Finding['severity'], string> = true;
+void _findingSeverityIsString;
+
 export function positive(): void {
 	const a: Finding = { id: 'f1', category: 'correctness', severity: 'HIGH' };
 	const b: Finding = { id: 'f2', category: 'security', severity: 'CRITICAL' };

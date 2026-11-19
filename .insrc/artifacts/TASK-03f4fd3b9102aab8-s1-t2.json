@@ -30,7 +30,6 @@
           "relation": "depends-on"
         }
       ],
-      "attachments": [],
       "binding": {
         "reference": {
           "entityId": "insors-ai/insrc#217",
@@ -39,10 +38,11 @@
         },
         "createdAtRevision": 1,
         "posted": []
-      }
+      },
+      "attachments": []
     },
     "lifecycle": {
-      "status": "approved",
+      "status": "completed",
       "revision": {
         "number": 2,
         "contentHash": "4e9186f78117c8dbc788aaa2acb4924097c273ce09b6918c0e90b1d1e4cf8541",

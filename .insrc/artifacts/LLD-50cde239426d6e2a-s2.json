@@ -1,0 +1,612 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1795073668515-dyvzbj",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-19T07:41:29.576Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 417546,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-11-18T04:59:27.796Z",
+    "epicHash": "50cde239426d6e2a",
+    "epicSlug": "shared-reviewcontext-data-model",
+    "storyId": "s2",
+    "hldBaseRunId": "wf-1794984468539-8trvyt",
+    "hldEffectiveHash": "720f2f3adc5525d23526380a1f529ffe76b33eb2c0aff4624caef750f83b8cc5",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "Scope describes which depth and chain a review attempt belongs to, including the artifact under review itself",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 3,
+        "contentHash": "2d03a68c3a8214c95c6eb840618de446516a4612778ec43d1c007ebc2e25aa18",
+        "at": "2026-11-19T08:09:22.148Z",
+        "by": {
+          "id": "insrc:controller",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 3,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-19T08:25:29.545Z",
+        "override": {
+          "reason": "Automated design review is retired/unavailable while being rewritten. Revision 3 adds consumption of sc6's PointerPathValidator inside validateDesignScope/validateCodeScope (closing the cross-LLD security gap) plus an ER fix (Pointer.section range corrected to Locator) and a verbatim sc6 sync. User approved explicitly in chat for this batch of 6 artifacts."
+        }
+      }
+    },
+    "revision": 3,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    }
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Alternative a2 wins: one canonical TypeScript type per Story (Pointer/Locator, Scope, ReviewTargets, CommentEntry+round), with per-review-type validator functions running against the canonical type and a thin per-consumer transformer reshaping it for whichever LLM structured-output schema that consumer actually parses reliably, mirroring the existing CliProvider input/output transformer pattern.",
+      "ownedContracts": [
+        {
+          "id": "sc3",
+          "name": "Scope",
+          "purpose": "Describes which review family and chain depth a review attempt covers, self-inclusive at the artifact under review, per k1/lc2.",
+          "interfaceSketch": "type ScopeType = 'design' | 'code';\ntype ScopeLevel = 'def' | 'hld' | 'lld' | 'plan' | 'task';\ninterface Scope {\n  readonly scopeType: ScopeType;\n  readonly scopeLevel: ScopeLevel;\n  readonly def?: Pointer;\n  readonly hld?: Pointer;\n  readonly lld?: Pointer;\n  readonly plan?: Pointer;\n  readonly tasks?: readonly Pointer[];\n  readonly extension?: Pointer;\n  readonly amendment?: Pointer;\n}\ntype ScopeValidator = (scope: Scope) => ValidationResult; // one per review type, per k3\ninterface ValidationResult {\n  readonly ok: boolean;\n  readonly violations: readonly string[];\n}",
+          "ownedByStory": "s2",
+          "consumedByStories": [],
+          "assumptions": [
+            "c1"
+          ]
+        }
+      ],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "Locator + Pointer",
+          "purpose": "The uniform way every Scope and ReviewTargets entry names a piece of content: a Pointer to an existing authored file plus an optional Locator pinning an exact region within it, per k2.",
+          "interfaceSketch": "type LocatorKind = 'symbol' | 'lineRange' | 'docSection'; // known kinds; the set is open, not exhaustive\ninterface Locator {\n  readonly kind: LocatorKind | string; // consumers read `kind` structurally; a future kind is just a new string, never a breaking union member\n  readonly value: string; // symbol name, 'startLine-endLine', or doc-section id, per `kind`\n}\ninterface Pointer {\n  readonly path: string; // repo-relative path to an existing authored file (DEF.md/HLD.md/LLD.md/source); never a generated extract\n  readonly section?: Locator;\n  readonly contentHash?: string; // sha256 hex of `path`'s content when this Pointer was built\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        },
+        {
+          "id": "sc2",
+          "name": "Pointer staleness check",
+          "purpose": "One staleness-detection function signature shared by every Pointer consumer (Scope and ReviewTargets alike), per k5 -- no consumer defines its own.",
+          "interfaceSketch": "interface StalenessResult {\n  readonly stale: boolean;\n  readonly checkedAt: string; // ISO-8601\n}\ntype PointerStalenessCheck = (pointer: Pointer, currentContentHash: string) => StalenessResult;",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        },
+        {
+          "id": "sc6",
+          "name": "Pointer path validation",
+          "purpose": "One repo-root-escape check shared by every Pointer consumer (Scope and ReviewTargets alike), per the Epic's own nonFunctional security note -- no consumer defines its own, mirroring sc2's staleness-check pattern. Closes a cross-Story gap found in a controller-led cross-LLD review on 2026-11-19: s1's error-paths deferred this check to 's2's ScopeValidator' informally, but neither s2 nor s3 ever picked it up.",
+          "interfaceSketch": "interface PathValidationResult {\n  readonly ok: boolean;\n  readonly violations: readonly string[];\n}\ntype PointerPathValidator = (pointer: Pointer, registeredRepoRoot: string) => PathValidationResult;",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s2",
+        "owns": [
+          "sc3"
+        ],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc6"
+        ],
+        "internal": "Which named artifact-kind fields Scope carries beyond def/hld/lld/plan/tasks (e.g. a future named kind) and the exact per-review-type ScopeValidator implementations are s2's own; no other Story's type depends on Scope, since nothing in the Epic's Story graph consumes s2."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1",
+            "sc2",
+            "sc6"
+          ],
+          "depends": [],
+          "internal": "The specific set of currently-known LocatorKind string literals (symbol/lineRange/docSection) is s1's own enumeration; because every consumer treats `Locator.kind` as an opaque string rather than exhaustively switching on a closed union, s1 can add a new literal later without forcing s2/s3/s4 to change, satisfying ac2/lc1."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc4"
+          ],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "ReviewTargets' own reset-on-new-round mechanics (how the entries list is rebuilt rather than merged) stay internal to s3; no other Story's type depends on ReviewTargets."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc5"
+          ],
+          "depends": [],
+          "internal": "CommentEntry does not reference Pointer/Locator at all, so s4 needs neither sc1 nor sc2. The round-stamping mechanics (how a new attempt's round number is assigned) and the same-artifact-only scoping of Comments across a chain stay internal to s4; the full ReviewContext container embedding Scope and ReviewTargets alongside round/comments is explicitly deferred (Epic Non-Goals), since no Story in this graph depends on all of s2, s3 and s4 together."
+        }
+      ],
+      "rolloutPhase": "Phase B — Scope, ReviewTargets and Comments types",
+      "nonFunctional": {
+        "performance": "The staleness check (sc2) is a single hash comparison against already-read file content; it adds no I/O beyond the read the controller already performs to populate a Pointer's contentHash.",
+        "security": "Pointer.path is repo-relative and must resolve within the registered repo root; validators (k3) reject a Pointer whose path escapes that root, consistent with the repo-registry strict-contract rule elsewhere in this codebase."
+      }
+    },
+    "summary": {
+      "prose": "This Story defines Scope, the type that names which review family (design or code) and which chain depth (def through hld/lld/plan/tasks) a review attempt covers, self-inclusive at the artifact actually under review. It also defines the per-review-type validator contract: two dedicated ScopeValidator instances, validateDesignScope and validateCodeScope, each enforcing exactly which named fields must or must not be populated for a given (scopeType, scopeLevel) pair, sharing one proven self-inclusive-chain comparison rather than duplicating it.",
+      "audience": "technical"
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "ScopeValidator",
+          "signature": "type ScopeValidator = (scope: Scope) => ValidationResult",
+          "parameters": [
+            {
+              "name": "scope",
+              "type": "Scope",
+              "purpose": "The populated Scope to check against its own declared (scopeType, scopeLevel) pair.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ValidationResult",
+            "meaning": "{ok, violations}: whether exactly the fields valid for this Scope's (scopeType, scopeLevel) pair are populated, and a human-readable violation per field that is wrongly present or wrongly absent."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "The function is pure: it only reads scope's own fields and returns a result; it performs no I/O and mutates nothing."
+          ]
+        },
+        {
+          "name": "validateDesignScope",
+          "signature": "const validateDesignScope: ScopeValidator",
+          "parameters": [
+            {
+              "name": "scope",
+              "type": "Scope",
+              "purpose": "A Scope whose scopeType is expected to be 'design'.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ValidationResult",
+            "meaning": "ok:false with a violation naming the mismatch if scope.scopeType is not 'design'; otherwise checks the def/hld/lld self-inclusive chain for scope.scopeLevel. As of this revision, also calls sc6's PointerPathValidator against every populated Pointer-typed field (def/hld/lld/plan/tasks/extension/amendment), closing the repo-root-escape gap a cross-LLD review found; a violation from that check is folded into the same violations array."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": []
+        },
+        {
+          "name": "validateCodeScope",
+          "signature": "const validateCodeScope: ScopeValidator",
+          "parameters": [
+            {
+              "name": "scope",
+              "type": "Scope",
+              "purpose": "A Scope whose scopeType is expected to be 'code'.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ValidationResult",
+            "meaning": "ok:false with a violation naming the mismatch if scope.scopeType is not 'code'; otherwise checks the def/hld/lld/plan/tasks self-inclusive chain for scope.scopeLevel. As of this revision, also calls sc6's PointerPathValidator against every populated Pointer-typed field (def/hld/lld/plan/tasks/extension/amendment), closing the repo-root-escape gap a cross-LLD review found; a violation from that check is folded into the same violations array."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": []
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "Scope",
+        "change": "new",
+        "details": "interface Scope { readonly scopeType: ScopeType; readonly scopeLevel: ScopeLevel; readonly def?: Pointer; readonly hld?: Pointer; readonly lld?: Pointer; readonly plan?: Pointer; readonly tasks?: readonly Pointer[]; readonly extension?: Pointer; readonly amendment?: Pointer } where ScopeType = 'design' | 'code' and ScopeLevel = 'def' | 'hld' | 'lld' | 'plan' | 'task'. Every named kind is its own independently-typed field (never a generic map), matching k1. Lands in src/workflow/artifact-core/types.ts alongside sc1's Locator/Pointer.",
+        "callSites": [
+          "src/workflow/artifact-core/types.ts"
+        ]
+      },
+      {
+        "entity": "ValidationResult",
+        "change": "new",
+        "details": "interface ValidationResult { readonly ok: boolean; readonly violations: readonly string[] }, returned by every ScopeValidator. Lands beside Scope in src/workflow/artifact-core/types.ts.",
+        "callSites": [
+          "src/workflow/artifact-core/types.ts"
+        ]
+      },
+      {
+        "entity": "ScopeFieldRequirement (internal)",
+        "change": "new",
+        "details": "A private, declarative data shape (not exported as part of sc3's public surface) mapping each valid (scopeType, scopeLevel) pair to which of Scope's named fields must be populated (the self-inclusive chain up to and including the review's own depth) and which must be absent (anything deeper than the review's own scopeLevel). validateDesignScope and validateCodeScope each read their own slice of this table through one shared internal comparison function.",
+        "callSites": [
+          "src/workflow/artifact-core/types.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc3",
+        "role": "implements",
+        "howDetails": "This Story is sc3's owner; Scope, ScopeType, ScopeLevel, ScopeValidator and ValidationResult are implemented exactly as sc3's interfaceSketch, with validateDesignScope/validateCodeScope as the two required 'one per review type' instances."
+      },
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Scope's def/hld/lld/plan/extension/amendment fields and tasks array are typed as Pointer/readonly Pointer[] exactly as sc1 publishes Pointer; this Story does not redesign Locator or Pointer."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "This Story does not call PointerStalenessCheck itself (Scope's validators check field presence/shape, not content freshness); it simply ensures Scope's Pointer-typed fields remain structurally compatible with sc2's PointerStalenessCheck signature for whichever caller later runs that check."
+      },
+      {
+        "contractId": "sc6",
+        "role": "consumes",
+        "howDetails": "validateDesignScope and validateCodeScope each call sc6's PointerPathValidator (owned by s1) against every populated Pointer-typed field before returning ok:true, closing the gap a cross-LLD review found: this Story's ScopeValidators previously checked only field presence/absence, never the repo-root-escape security property sc1's own nonFunctional note requires somewhere."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "validateDesignScope is called on a Scope whose scopeType is actually 'code' (or vice versa for validateCodeScope).",
+          "detection": "The validator reads scope.scopeType first and compares it against the one literal value it is dedicated to ('design' or 'code' respectively); a mismatch is a direct string comparison, not an exception.",
+          "response": "Returns ok:false with a violation naming the scopeType mismatch; the validator never proceeds to check the field table for the wrong review type.",
+          "userImpact": "A caller that routes a Scope to the wrong validator gets a clear, named violation rather than a confusing field-level error or a false pass.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A field required at the Scope's own declared scopeLevel is absent (e.g. scopeLevel='lld' but scope.lld is undefined).",
+          "detection": "The shared comparison engine looks up the (scopeType, scopeLevel) pair in the declarative requirement table, finds 'lld' listed as required, and checks scope.lld === undefined.",
+          "response": "Returns ok:false with a violation naming the missing required field.",
+          "userImpact": "A reviewer is never handed a Scope that claims a depth it does not actually carry a Pointer for.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A field deeper than the Scope's own declared scopeLevel is populated (e.g. scopeLevel='hld' but scope.lld is also populated).",
+          "detection": "The requirement table marks 'lld' as must-be-absent at scopeLevel='hld'; the comparison engine checks scope.lld !== undefined against that must-be-absent entry.",
+          "response": "Returns ok:false with a violation naming the field that should not have been populated at this depth.",
+          "userImpact": "Prevents a Scope from silently smuggling in content beyond what the review attempt actually declared it covers.",
+          "recoverable": true
+        },
+        {
+          "scenario": "scope.scopeLevel is a value that is not valid for the Scope's own scopeType (e.g. scopeType='design' with scopeLevel='task', since design review's valid levels are def/hld/lld and code review's are plan/task).",
+          "detection": "The requirement table has no entry at all for that (scopeType, scopeLevel) combination; the lookup itself comes back empty rather than returning a field list.",
+          "response": "Returns ok:false with a violation naming the (scopeType, scopeLevel) combination itself as invalid, rather than attempting to check individual fields against a non-existent entry.",
+          "userImpact": "A caller that constructs an impossible scopeType/scopeLevel pair gets one clear top-level violation instead of a confusing or empty field-by-field result.",
+          "recoverable": true
+        },
+        {
+          "scenario": "scope.tasks is present but an empty array ([]) at a scopeLevel that requires at least one Task Pointer.",
+          "detection": "The comparison engine treats an empty tasks array the same as absent for the purposes of the 'must be populated' check -- it inspects tasks.length, not merely whether the field key exists.",
+          "response": "Returns ok:false with a violation naming tasks as effectively absent.",
+          "userImpact": "A Scope cannot claim task-level coverage while naming zero actual Tasks.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A populated Pointer-typed field on a Scope (e.g. scope.hld) carries a path that would resolve outside the registered repo root (e.g. containing '..' segments).",
+          "detection": "validateDesignScope/validateCodeScope now call sc6's PointerPathValidator against every populated Pointer-typed field as part of their own check, after the field-presence table lookup passes; PointerPathValidator resolves the path via path.resolve and checks it stays within registeredRepoRoot.",
+          "response": "Returns ok:false with a violation naming the escaping field, folded into the same ValidationResult.violations array as any field-presence violations. This closes a gap a cross-LLD review found: earlier this Story's validators checked only field presence/absence, leaving the repo-root-escape requirement sc1's nonFunctional security note promises unimplemented anywhere.",
+          "userImpact": "A Scope carrying an escaping Pointer path is rejected before being sent for review, with a named violation identifying which field.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A minimal valid design-review Scope: scopeType='design', scopeLevel='def', only def populated, every other named field absent.",
+          "expected": "validateDesignScope returns ok:true -- def is both required and sufficient at scopeLevel='def'; nothing deeper is populated to violate the self-inclusive-depth rule."
+        },
+        {
+          "input": "A Scope with multiple Pointers in its tasks array.",
+          "expected": "Accepted without special-casing -- tasks is typed readonly Pointer[] and the requirement table only checks non-emptiness where required, not a specific count."
+        },
+        {
+          "input": "A Scope with both extension and amendment populated alongside a normal def/hld/lld chain.",
+          "expected": "Neither extension nor amendment is governed by the (scopeType, scopeLevel) requirement table -- the HLD's own ScopeLevel enum names no 'extension' or 'amendment' level, so these are orthogonal optional fields this Story's validators do not constrain; both may be populated or absent independent of scopeLevel."
+        },
+        {
+          "input": "A Scope where scopeLevel='hld' but hld itself is absent while def is populated (an ancestor-only Scope with no self-inclusive artifact Pointer).",
+          "expected": "validateDesignScope returns ok:false -- this is exactly the case ac2/lc2 exists to reject: the hld field (the artifact actually under review at this depth) must itself be populated, not merely its ancestor def."
+        }
+      ],
+      "invariantsToPreserve": []
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Verify Scope's named per-kind fields are independently typed and never folded together.",
+          "subjects": [
+            "a Scope with distinct def/hld/lld/plan/tasks/extension/amendment Pointers keeps each field independently addressable",
+            "a minimal valid design-review Scope (scopeType='design', scopeLevel='def', only def populated) validates ok:true"
+          ],
+          "fixturesNeeded": [
+            "sample Scope objects per scopeType/scopeLevel combination",
+            "sample Pointer fixtures reused from Story s1"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Verify the self-inclusive depth model: the artifact actually under review must itself be populated, not just its ancestors.",
+          "subjects": [
+            "validateDesignScope returns ok:false when scopeLevel='hld' but hld is absent while def is populated",
+            "validateDesignScope returns ok:true when scopeLevel='hld' and both def and hld are populated"
+          ],
+          "fixturesNeeded": [
+            "Scope fixtures with an ancestor populated but the self-inclusive field missing"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Verify each dedicated per-review-type validator enforces exactly the fields valid for its own (scopeType, scopeLevel) pairs.",
+          "subjects": [
+            "validateDesignScope/validateCodeScope return ok:false with a named violation when called on the wrong scopeType",
+            "validateCodeScope returns ok:false when a field deeper than scopeLevel is populated",
+            "validateCodeScope returns ok:false when scope.tasks is an empty array at a scopeLevel requiring tasks",
+            "a validator returns ok:false naming the (scopeType, scopeLevel) combination itself as invalid when no requirement-table entry exists for it",
+            "extension and amendment populated or absent independent of scopeLevel do not affect ok/violations"
+          ],
+          "fixturesNeeded": [
+            "Scope fixtures covering every valid and invalid (scopeType, scopeLevel) combination",
+            "a Scope fixture with a mismatched scopeType for the validator under test"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Verify validateDesignScope/validateCodeScope now reject a Scope carrying an escaping Pointer path, via sc6's PointerPathValidator (closes the cross-LLD security gap).",
+          "subjects": [
+            "validateDesignScope returns ok:false with a named violation when a populated Pointer-typed field's path escapes registeredRepoRoot",
+            "validateCodeScope returns ok:false with a named violation when a populated Pointer-typed field's path escapes registeredRepoRoot"
+          ],
+          "fixturesNeeded": [
+            "Scope fixtures with an escaping Pointer path in a populated field"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "a Scope with distinct def/hld/lld/plan/tasks/extension/amendment Pointers keeps each field independently addressable"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "validateDesignScope returns ok:false when scopeLevel='hld' but hld is absent while def is populated",
+            "validateDesignScope returns ok:true when scopeLevel='hld' and both def and hld are populated"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "validateDesignScope/validateCodeScope return ok:false with a named violation when called on the wrong scopeType",
+            "validateCodeScope returns ok:false when a field deeper than scopeLevel is populated",
+            "validateCodeScope returns ok:false when scope.tasks is an empty array at a scopeLevel requiring tasks",
+            "a validator returns ok:false naming the (scopeType, scopeLevel) combination itself as invalid when no requirement-table entry exists for it"
+          ]
+        }
+      ],
+      "testFramework": "node:test (tsx --test)"
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "One shared declarative field-requirement table + a generic validation engine, instantiated as two named per-review-type ScopeValidator exports",
+        "oneLineSummary": "Scope/ScopeValidator/ValidationResult exactly as sc3's sketch; the two required ScopeValidator instances (validateDesignScope, validateCodeScope) are each a thin closure over a shared, declarative per-(scopeType,scopeLevel) field-requirement table and one shared comparison engine, rather than duplicated branching logic.",
+        "approach": "Scope, ScopeType, ScopeLevel, ValidationResult and the ScopeValidator function type are defined exactly as sc3's interfaceSketch. A private, declarative table maps each valid (scopeType, scopeLevel) pair to which named fields (def/hld/lld/plan/tasks/extension/amendment) must be populated (the self-inclusive chain up to and including the review's own depth) and which must be absent (anything deeper than the review's own scopeLevel). validateDesignScope and validateCodeScope are each exported as a real ScopeValidator-typed const, but both call one shared internal comparison function against their own slice of the table -- so the two review types stay independently named and independently typed (satisfying k3's 'one per review type'), while the actual self-inclusive-chain comparison logic is written once.",
+        "pros": [
+          "Satisfies k3 literally: two distinct, independently-callable ScopeValidator-typed exports, one per review type",
+          "The self-inclusive chain rule (lc2) is expressed once in a shared table + comparison engine, so design and code reviews cannot silently drift apart on how 'self-inclusive' is enforced",
+          "Matches the sibling review-process Epic's own risky-bits lesson (HLD-03f4fd3b9102aab8's own mitigation: route review-type differences through data/hooks, never branch inside a shared function) by keeping the per-type DIFFERENCE (the table's data) separate from the per-type IDENTITY (two named exports)"
+        ],
+        "cons": [
+          "Slightly more structure up front than two fully independent functions -- a declarative table + one small comparison engine, rather than two flat if-chains"
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Two fully independent, hand-written validator functions with no shared logic",
+        "oneLineSummary": "validateDesignScope and validateCodeScope are each written from scratch, with their own independent switch/if-chain over scopeLevel and no shared comparison helper.",
+        "approach": "Each of the two ScopeValidator-typed exports contains its own complete, independent logic for checking which named fields must/must-not be populated at each of its valid scopeLevel values -- nothing is factored out or shared between them.",
+        "pros": [
+          "Simplest possible mental model: each validator is fully self-contained and readable in isolation, with zero indirection through a shared table"
+        ],
+        "cons": [
+          "Duplicates the self-inclusive-chain comparison logic (lc2) across both validators; if a future fix to how 'self-inclusive' is checked is applied to one, nothing guarantees it is applied to the other, risking exactly the kind of per-type drift the sibling Epic's own risky-bits table warns about for its analogous hook-interface concern",
+          "As more review types are added later (the Epic's own rollout anticipates this contract being stable long-term), each new validator re-derives the same chain logic from scratch rather than reusing a proven comparison"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Technically satisfies every ac/sc/k constraint, but duplicates the self-inclusive-chain logic (lc2/ac2) across two independent implementations with no shared engine, risking per-type drift the sibling Epic's own risky-bits table warns about for its analogous hook-interface concern."
+      },
+      {
+        "id": "a3",
+        "name": "One single validator function that reads scope.scopeType and branches internally",
+        "oneLineSummary": "Export one function, validateScope(scope) => ValidationResult, that reads scope.scopeType itself and branches to design-specific or code-specific logic inside the same function body.",
+        "approach": "Instead of two separate ScopeValidator-typed exports, export a single function matching the ScopeValidator type that inspects scope.scopeType at the top and dispatches to an internal design-branch or code-branch.",
+        "pros": [
+          "Only one exported symbol for a caller to import, instead of two"
+        ],
+        "cons": [
+          "Contradicts sc3's own interfaceSketch comment, 'one [ScopeValidator] per review type, per k3' -- the HLD's own wording implies distinct per-type instances, not one dispatcher branching on scopeType internally",
+          "Reintroduces, inside Scope's own validator, exactly the review-type-conditional-branching-in-a-shared-function pattern the sibling review-process Epic's own risky-bits table (HLD-03f4fd3b9102aab8) explicitly calls out as the failure mode to avoid for its analogous RoundDriverHooks concern",
+          "Makes it harder for a future review type to be added without touching this one function's body, versus simply adding a new named export"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Violates ac3, sc3 and k3 by collapsing 'one validator per review type' into a single dispatcher that branches on scopeType internally, contradicting both the HLD's own interfaceSketch wording and the sibling Epic's own explicit lesson against exactly this shared-function-branches-on-type pattern."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "[dm1 / missed] All three dataModel entries (Scope, ValidationResult, ScopeFieldRequirement) cite callSites: ['src/workflow/artifact-core/types.ts'], but this Story's own s1.analyzeBundles[*].pathsCited never actually lists that path -- it only cites the three indexer/parser Scope files and the five review-history files. The landing location is correct (it matches Story s1's own approved LLD and this Epic's established module), but it was not freshly grounded by an analyze call in this Story's own context.assemble step. Should be closed by a module.profile/concept.resolve pass on src/workflow/artifact-core/types.ts before this LLD proceeds to build, so the citation is genuinely satisfied rather than carried over by assumption from the sibling Story."
+    ],
+    "erDefinition": {
+      "id": "scope-validator-er",
+      "narrative": "Shows Scope's relationship to sc1's Pointer (via its named per-kind fields, owned by sibling Story s1) and the ValidationResult a ScopeValidator produces when checking a populated Scope.",
+      "classes": {
+        "Scope": {
+          "description": "Describes which review family (scopeType) and chain depth (scopeLevel) a review attempt covers, self-inclusive at the artifact under review.",
+          "attributes": {
+            "scopeType": {
+              "description": "'design' | 'code' -- which review family this Scope belongs to.",
+              "range": "string",
+              "required": true
+            },
+            "scopeLevel": {
+              "description": "'def' | 'hld' | 'lld' | 'plan' | 'task' -- the chain depth, self-inclusive at the artifact under review.",
+              "range": "string",
+              "required": true
+            },
+            "def": {
+              "description": "Pointer to the DEF under or behind this review, if applicable at this depth.",
+              "range": "Pointer",
+              "required": false
+            },
+            "hld": {
+              "description": "Pointer to the HLD under or behind this review, if applicable at this depth.",
+              "range": "Pointer",
+              "required": false
+            },
+            "lld": {
+              "description": "Pointer to the LLD under or behind this review, if applicable at this depth.",
+              "range": "Pointer",
+              "required": false
+            },
+            "plan": {
+              "description": "Pointer to the PLAN under or behind this review, if applicable at this depth.",
+              "range": "Pointer",
+              "required": false
+            },
+            "tasks": {
+              "description": "Pointers to the Tasks under or behind this review, if applicable at this depth.",
+              "range": "Pointer",
+              "required": false,
+              "multivalued": true
+            },
+            "extension": {
+              "description": "Pointer to an extension artifact, if this review covers one.",
+              "range": "Pointer",
+              "required": false
+            },
+            "amendment": {
+              "description": "Pointer to an amendment artifact, if this review covers one.",
+              "range": "Pointer",
+              "required": false
+            }
+          }
+        },
+        "Pointer": {
+          "description": "Owned by sibling Story s1 (sc1) -- references an existing authored file directly, optionally with an exact region and a content hash. Shown here only as the range target for Scope's named per-kind fields; not redesigned by this Story.",
+          "attributes": {
+            "path": {
+              "description": "Repo-relative path to an existing authored file.",
+              "range": "string",
+              "required": true
+            },
+            "section": {
+              "description": "An optional Locator pinning the exact region within path this Pointer names.",
+              "range": "Locator",
+              "required": false
+            },
+            "contentHash": {
+              "description": "sha256 hex digest of path's content when this Pointer was built.",
+              "range": "string",
+              "required": false
+            }
+          }
+        },
+        "ValidationResult": {
+          "description": "The outcome of a ScopeValidator checking a populated Scope against its own (scopeType, scopeLevel) pair.",
+          "attributes": {
+            "ok": {
+              "description": "True when exactly the fields valid for this Scope's (scopeType, scopeLevel) pair are populated.",
+              "range": "boolean",
+              "required": true
+            },
+            "violations": {
+              "description": "A human-readable violation per field that is wrongly present or wrongly absent.",
+              "range": "string",
+              "required": true,
+              "multivalued": true
+            }
+          }
+        },
+        "Locator": {
+          "description": "Owned by sibling Story s1 (sc1) -- pins an exact region within an authored file via an open (non-exhaustive) kind discriminant. Shown here only as the range target for Pointer.section; not redesigned by this Story.",
+          "attributes": {
+            "kind": {
+              "description": "LocatorKind | string -- read structurally, never via exhaustive switch.",
+              "range": "string",
+              "required": true
+            },
+            "value": {
+              "description": "One opaque string formatted per kind.",
+              "range": "string",
+              "required": true
+            }
+          }
+        }
+      }
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/shared-reviewcontext-data-model-E2026111850cde239/S002/er-model.html",
+        "title": "ER model"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 capability-discovery bundle (Scope/ValidationResult/Validator naming collision check)",
+      "quotedText": "Three unrelated interface Scope declarations in src/indexer/parser/{cpp,rust,csharp}.ts ... no naming collision risk."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 capability-discovery bundle (reused ReviewContext capability-discovery)",
+      "quotedText": "Zero clear-match; 5 partial-match are each separate per-review-type legacy contracts/types ... baseClassIdioms: []."
+    }
+  ]
+}

@@ -38,7 +38,7 @@ test('typecheck-config.test.ts: tsconfig.typecheck.json includes the fixtures wi
 	const cfg = json('tsconfig.typecheck.json') as { extends: string; compilerOptions: { noEmit: boolean }; include: string[]; exclude: string[] };
 	assert.equal(cfg.extends, './tsconfig.json');
 	assert.equal(cfg.compilerOptions.noEmit, true);
-	assert.deepEqual(cfg.include, ['src/daemon/tools/__type-tests__/**/*.ts']);
+	assert.deepEqual(cfg.include, ['**/__type-tests__/**/*.ts']);
 	assert.deepEqual(cfg.exclude, [], 'the fixtures are not excluded here');
 	const scripts = (json('package.json') as { scripts: Record<string, string> }).scripts;
 	assert.equal(scripts['typecheck:tools'], 'tsc -p tsconfig.typecheck.json');

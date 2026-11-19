@@ -1354,6 +1354,49 @@ Other rules:
 - A Trivial standalone build names no tests: `tests` is ignored and the test
   files its commit touched are run.
 
+### Build commands
+
+The gate runs the typecheck and the tests itself, and the prompts name them to the builder. Which commands those are depends on
+the project, which the daemon tells from the files at the repository root:
+
+| Root file | Project type |
+|---|---|
+| `package.json` | node |
+| `pyproject.toml`, `setup.py` | python |
+| `go.mod` | go |
+| `Cargo.toml` | rust |
+| `pom.xml`, `build.gradle`, `build.gradle.kts`, `build.sbt` | jvm |
+
+Several types at the root, or none, is `unknown`; a file in a subdirectory is never read.
+
+- **A Node project with no setting** is gated as it always was: `npx tsc --noEmit` (also in each other tsconfig project that
+  owns a touched file) and `npx tsx --test-force-exit` per test file, read as TAP, with a result for every named case.
+- **A project of another type with no setting** gets no gate run: the typecheck and tests checks are reported as `ok: false`
+  with the note "the gate ran nothing", so the build does not read as passed. The builder's prompt names the commands typical
+  for the type (for example `go vet ./...` and `go test ./...`) as guidance only, and the judge is told the daemon ran nothing.
+- **A project that states its commands** gets an independent run. Set these keys in `~/.insrc/config.json`, globally under
+  `build`, and for one repository under `build.byRepo.<absolute repo path>` (a key there wins over the global one):
+
+```json
+{ "build": { "byRepo": { "/home/me/work/svc": {
+  "typecheckCommand": "mypy src",
+  "testCommand": "pytest -q",
+  "resultFormat": "exit-code"
+} } } }
+```
+
+| Key | Meaning |
+|---|---|
+| `typecheckCommand` | the typecheck command line, split on spaces (no shell quoting); run in the repository root |
+| `testCommand` | the test command line, split on spaces; each test file is appended and run on its own |
+| `resultFormat` | `exit-code` (the default): a file passes when its command exits 0, and a named test's cases take their file's exit code, which the record says; or `tap`: the command must print TAP (it is given `--test-reporter=tap` and a report destination, as the Node runner is) |
+
+The two commands are set together. A key that is present but empty, a result format other than `tap` or `exit-code`, or a
+value that is not a string is refused: the build phase returns the error `invalid-command-setting`, naming the key, before any
+prompt is built, check is run or record is written. These keys are not rows of the settings catalog, as `models.byRepo` is
+not: a catalog row would write an empty default into every config, and an empty command is an error here. The extra tsconfig
+projects are checked only for the Node default.
+
 ### What the record holds
 
 One section per Task, replaced when that Task is validated again: the commit

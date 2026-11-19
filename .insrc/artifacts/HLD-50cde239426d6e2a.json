@@ -24,9 +24,9 @@
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 3,
-        "contentHash": "d4faba0f7040d468b8933e201a03379958a656a5cdd1db218c15fca20cbc694e",
-        "at": "2026-11-19T06:44:31.136Z",
+        "number": 5,
+        "contentHash": "27774954d5d0fde110eac0aae23183813b988c0766681cb056c419870c8881b0",
+        "at": "2026-11-19T08:09:41.167Z",
         "by": {
           "id": "insrc:controller",
           "kind": "person",
@@ -35,15 +35,15 @@
       },
       "signoffs": [],
       "approval": {
-        "revision": 3,
+        "revision": 5,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-11-19T06:51:00.319Z",
+        "at": "2026-11-19T08:22:14.012Z",
         "override": {
-          "reason": "Automated design review is retired/unavailable while being rewritten (insrc_review_step errors immediately). Revision 3 adds two open questions + two risky-bit rows surfacing cross-Epic coupling gaps found in a controller-led cross-design review against the sibling security-extension-points Story's LLD: (1) SecurityLocator's extension target is ambiguous between sc1's two distinct types Locator{kind,value} and Pointer{path,section,contentHash}; (2) Scope.scopeType closed to 'design'|'code' with no 'security' member anticipated. No other content changed. User approved explicitly in chat for this batch of 3 artifacts."
+          "reason": "Automated design review is retired/unavailable while being rewritten. Revision 5 adds sc6 (Pointer path validation, owned by s1, consumed by s2/s3) closing a cross-LLD security-check gap found by a controller-led review, plus two rounds of self-caught consistency fixes (sc6 purpose text now verbatim across HLD/s1/s2/s3; rollout rationale text updated to mention sc6). User approved explicitly in chat for this batch of 6 artifacts."
         }
       }
     },
@@ -52,7 +52,7 @@
       "references": [],
       "attachments": []
     },
-    "revision": 3,
+    "revision": 5,
     "questionResolutions": {
       "qfc8a811e": {
         "question": "STORY-779e9a08142cb057-s1 ('security review extension points', sibling Epic, standalone) proposes a SecurityLocator that extends 'the review framework's Locator/Pointer type' -- but sc1 defines Locator{kind,value} (a region pin within a file) and Pointer{path,section?:Locator,contentHash?} (a file-level reference, optionally carrying a Locator region) as two distinct, structurally unrelated types; SecurityLocator cannot structurally extend both at once. Found during a cross-design review on 2026-11-18/19. Must resolve before that Story's build: does SecurityLocator extend Locator (adding trustBoundaryId/taintPathStepIndex to the region-pin, used inside a Pointer.section), or does a security-graph citation need a separate SecurityPointer wrapping a Locator-compatible region alongside a file path?",
@@ -138,6 +138,20 @@
         "assumptions": [
           "c1"
         ]
+      },
+      {
+        "id": "sc6",
+        "name": "Pointer path validation",
+        "purpose": "One repo-root-escape check shared by every Pointer consumer (Scope and ReviewTargets alike), per the Epic's own nonFunctional security note -- no consumer defines its own, mirroring sc2's staleness-check pattern. Closes a cross-Story gap found in a controller-led cross-LLD review on 2026-11-19: s1's error-paths deferred this check to 's2's ScopeValidator' informally, but neither s2 nor s3 ever picked it up.",
+        "interfaceSketch": "interface PathValidationResult {\n  readonly ok: boolean;\n  readonly violations: readonly string[];\n}\ntype PointerPathValidator = (pointer: Pointer, registeredRepoRoot: string) => PathValidationResult;",
+        "ownedByStory": "s1",
+        "consumedByStories": [
+          "s2",
+          "s3"
+        ],
+        "assumptions": [
+          "c1"
+        ]
       }
     ],
     "storyBoundaries": [
@@ -145,7 +159,8 @@
         "storyId": "s1",
         "owns": [
           "sc1",
-          "sc2"
+          "sc2",
+          "sc6"
         ],
         "depends": [],
         "internal": "The specific set of currently-known LocatorKind string literals (symbol/lineRange/docSection) is s1's own enumeration; because every consumer treats `Locator.kind` as an opaque string rather than exhaustively switching on a closed union, s1 can add a new literal later without forcing s2/s3/s4 to change, satisfying ac2/lc1."
@@ -157,7 +172,8 @@
         ],
         "depends": [
           "sc1",
-          "sc2"
+          "sc2",
+          "sc6"
         ],
         "internal": "Which named artifact-kind fields Scope carries beyond def/hld/lld/plan/tasks (e.g. a future named kind) and the exact per-review-type ScopeValidator implementations are s2's own; no other Story's type depends on Scope, since nothing in the Epic's Story graph consumes s2."
       },
@@ -168,7 +184,8 @@
         ],
         "depends": [
           "sc1",
-          "sc2"
+          "sc2",
+          "sc6"
         ],
         "internal": "ReviewTargets' own reset-on-new-round mechanics (how the entries list is rebuilt rather than merged) stay internal to s3; no other Story's type depends on ReviewTargets."
       },
@@ -183,7 +200,7 @@
     ],
     "nonFunctional": {
       "performance": "The staleness check (sc2) is a single hash comparison against already-read file content; it adds no I/O beyond the read the controller already performs to populate a Pointer's contentHash.",
-      "security": "Pointer.path is repo-relative and must resolve within the registered repo root; validators (k3) reject a Pointer whose path escapes that root, consistent with the repo-registry strict-contract rule elsewhere in this codebase."
+      "security": "Pointer.path is repo-relative and must resolve within the registered repo root; sc6's PointerPathValidator (owned by s1, consumed by s2/s3) rejects a Pointer whose path escapes that root, consistent with the repo-registry strict-contract rule elsewhere in this codebase."
     },
     "erDefinition": {
       "id": "review-context-data-model",
@@ -336,7 +353,7 @@
           "includesStories": [
             "s1"
           ],
-          "rationale": "s1 owns sc1 (Locator+Pointer) and sc2 (staleness check), which s2 and s3 both depend on per the Epic's dependsOn graph. Nothing else can land before s1.",
+          "rationale": "s1 owns sc1 (Locator+Pointer), sc2 (staleness check) and sc6 (path validation), which s2 and s3 both depend on per the Epic's dependsOn graph. Nothing else can land before s1.",
           "backwardCompat": "",
           "featureFlag": null
         },
@@ -352,7 +369,7 @@
           "featureFlag": null
         }
       ],
-      "orderingRationale": "The Epic's Story graph is a single root (s1) with three independent children (s2, s3, s4); the only hard ordering constraint is that s1's sc1/sc2 contracts exist before s2 or s3 can be typed against them. s4 has no contract dependency on s1 at all but is grouped into Phase B anyway since it is equally safe to land alongside s2/s3 and splitting it into its own phase would add no value.",
+      "orderingRationale": "The Epic's Story graph is a single root (s1) with three independent children (s2, s3, s4); the only hard ordering constraint is that s1's sc1/sc2/sc6 contracts exist before s2 or s3 can be typed against them. s4 has no contract dependency on s1 at all but is grouped into Phase B anyway since it is equally safe to land alongside s2/s3 and splitting it into its own phase would add no value.",
       "riskyBits": [
         {
           "area": "Locator's open-string `kind` field",
@@ -378,6 +395,11 @@
           "area": "A third Epic's Story (security review extension points) assumes 'security' plugs into the existing round cycle without a new Scope.scopeType member",
           "why": "sc3's scopeType is closed to 'design'|'code'. STORY-779e9a08142cb057-s1's LLD never states whether the security reviewer pass runs nested inside the primary round's existing scopeType (reusing s2's Scope as-is) or needs a third enum member added to sc3 -- found during a cross-design review on 2026-11-18/19, not by this Epic's own Stories.",
           "mitigation": "Resolve explicitly, either in s2's own LLD or back-flowed from STORY-779e9a08142cb057-s1's LLD once its matching open question is answered, before s2's Scope type is built; s2's LLD must show which reading it implements."
+        },
+        {
+          "area": "sc6 (Pointer path validation) is a newly-added shared contract closing a gap a cross-LLD review found after s1-s4 were already drafted",
+          "why": "s1's original error-paths deferred the repo-root-escape check to 's2's ScopeValidator' only in prose, with no formal sharedContract -- s2 never implemented it and s3 never raised it either, so the HLD's own nonFunctional security note had no Story actually committed to building it.",
+          "mitigation": "s1's LLD must now show PointerPathValidator with a real implementation (not just a deferred mention); s2 and s3's LLDs must show their respective validators/callers actually invoking it on every Pointer-typed field before a Scope/ReviewTargets instance is sent for review."
         }
       ]
     },

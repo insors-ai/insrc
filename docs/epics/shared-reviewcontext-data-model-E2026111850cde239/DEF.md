@@ -137,8 +137,6 @@ So that the reviewer starts from a concrete, current floor of what changed, whil
 
 So that the submitter can flag edge cases the rest of the model doesn't structurally handle, and both submitter and reviewer can tell which round produced which comment, without any trusted verdict being carried forward.
 
-**Depends on:** `s1`
-
 **Acceptance criteria:**
 
 - **ac1:** Given a ReviewContext instance is built for a new review attempt, when the instance is assembled, then its root-level round field states which attempt this instance represents. _(operationalizes `lc5`)_

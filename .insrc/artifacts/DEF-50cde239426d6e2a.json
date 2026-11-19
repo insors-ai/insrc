@@ -25,9 +25,9 @@
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 2,
-        "contentHash": "4c34f78b862b6c1015ead19ebbbeaa04907756a90ad800cb6c3bde2a57dbb65d",
-        "at": "2026-11-18T05:30:00.000Z",
+        "number": 3,
+        "contentHash": "2bb1b4938bd1de70f81572a4345c33fae434bca0166ef8d98e96164f938b917d",
+        "at": "2026-11-19T08:07:35.982Z",
         "by": {
           "id": "insrc:controller",
           "kind": "person",
@@ -36,19 +36,19 @@
       },
       "signoffs": [],
       "approval": {
-        "revision": 2,
+        "revision": 3,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-11-18T05:22:48.435Z",
+        "at": "2026-11-19T08:22:07.756Z",
         "override": {
-          "reason": "Automated design review is retired/unavailable while being rewritten. Controller self-reviewed and hand-resolved the sole open question (added staleness-detection AC/constraint to s1) before user approval."
+          "reason": "Automated design review is retired/unavailable while being rewritten. Revision 3 only fixes s4's dependsOn (now [] -- matches the HLD's own boundary text, which already said s4 depends on nothing) per a controller-led cross-LLD review. User approved explicitly in chat for this batch of 6 artifacts."
         }
       }
     },
-    "revision": 2,
+    "revision": 3,
     "envelope": {
       "description": "",
       "references": [],
@@ -58,7 +58,7 @@
       "adapter": "github",
       "epicStatus": "open",
       "storyStatus": {},
-      "lastSyncedAt": "2026-11-19T06:50:38.323Z"
+      "lastSyncedAt": "2026-11-19T06:52:49.289Z"
     }
   },
   "body": {
@@ -306,9 +306,7 @@
         "title": "Comments carries the submitter's freeform context and round tracking across repeated rounds on the same artifact",
         "userValue": "So that the submitter can flag edge cases the rest of the model doesn't structurally handle, and both submitter and reviewer can tell which round produced which comment, without any trusted verdict being carried forward.",
         "sizeEstimate": "M",
-        "dependsOn": [
-          "s1"
-        ],
+        "dependsOn": [],
         "acceptanceCriteria": [
           {
             "id": "ac1",

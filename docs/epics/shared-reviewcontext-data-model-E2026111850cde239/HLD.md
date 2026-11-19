@@ -154,25 +154,44 @@ interface ReviewContextRound {
 
 **Assumptions cited:** [[c1]]
 
+### 5.6 sc6: Pointer path validation
+
+**Owner Story:** `s1`
+**Consumed by:** `s2`, `s3`
+
+**Purpose:** One repo-root-escape check shared by every Pointer consumer (Scope and ReviewTargets alike), per the Epic's own nonFunctional security note -- no consumer defines its own, mirroring sc2's staleness-check pattern. Closes a cross-Story gap found in a controller-led cross-LLD review on 2026-11-19: s1's error-paths deferred this check to 's2's ScopeValidator' informally, but neither s2 nor s3 ever picked it up.
+
+**Interface sketch (type-level):**
+
+```
+interface PathValidationResult {
+  readonly ok: boolean;
+  readonly violations: readonly string[];
+}
+type PointerPathValidator = (pointer: Pointer, registeredRepoRoot: string) => PathValidationResult;
+```
+
+**Assumptions cited:** [[c1]]
+
 ## 6. Story boundaries
 
 ### 6.1 Story STORY-50cde239426d6e2a-s1
 
-**Owns:** `sc1`, `sc2`
+**Owns:** `sc1`, `sc2`, `sc6`
 
 The specific set of currently-known LocatorKind string literals (symbol/lineRange/docSection) is s1's own enumeration; because every consumer treats `Locator.kind` as an opaque string rather than exhaustively switching on a closed union, s1 can add a new literal later without forcing s2/s3/s4 to change, satisfying ac2/lc1.
 
 ### 6.2 Story STORY-50cde239426d6e2a-s2
 
 **Owns:** `sc3`
-**Depends on:** `sc1`, `sc2`
+**Depends on:** `sc1`, `sc2`, `sc6`
 
 Which named artifact-kind fields Scope carries beyond def/hld/lld/plan/tasks (e.g. a future named kind) and the exact per-review-type ScopeValidator implementations are s2's own; no other Story's type depends on Scope, since nothing in the Epic's Story graph consumes s2.
 
 ### 6.3 Story STORY-50cde239426d6e2a-s3
 
 **Owns:** `sc4`
-**Depends on:** `sc1`, `sc2`
+**Depends on:** `sc1`, `sc2`, `sc6`
 
 ReviewTargets' own reset-on-new-round mechanics (how the entries list is rebuilt rather than merged) stay internal to s3; no other Story's type depends on ReviewTargets.
 
@@ -185,7 +204,7 @@ CommentEntry does not reference Pointer/Locator at all, so s4 needs neither sc1 
 ## 7. Non-functional targets
 
 - **Performance:** The staleness check (sc2) is a single hash comparison against already-read file content; it adds no I/O beyond the read the controller already performs to populate a Pointer's contentHash.
-- **Security:** Pointer.path is repo-relative and must resolve within the registered repo root; validators (k3) reject a Pointer whose path escapes that root, consistent with the repo-registry strict-contract rule elsewhere in this codebase.
+- **Security:** Pointer.path is repo-relative and must resolve within the registered repo root; sc6's PointerPathValidator (owned by s1, consumed by s2/s3) rejects a Pointer whose path escapes that root, consistent with the repo-registry strict-contract rule elsewhere in this codebase.
 
 ## 8. Rollout
 
@@ -193,7 +212,7 @@ CommentEntry does not reference Pointer/Locator at all, so s4 needs neither sc1 
 
 **Stories:** `s1`
 
-s1 owns sc1 (Locator+Pointer) and sc2 (staleness check), which s2 and s3 both depend on per the Epic's dependsOn graph. Nothing else can land before s1.
+s1 owns sc1 (Locator+Pointer), sc2 (staleness check) and sc6 (path validation), which s2 and s3 both depend on per the Epic's dependsOn graph. Nothing else can land before s1.
 
 **Phase B — Scope, ReviewTargets and Comments types**
 
@@ -201,7 +220,7 @@ s1 owns sc1 (Locator+Pointer) and sc2 (staleness check), which s2 and s3 both de
 
 s2, s3 and s4 each depend only on s1 (already landed in Phase A) and have no dependencies on each other, so they can be built and landed in any order or in parallel once Phase A is done.
 
-**Ordering rationale:** The Epic's Story graph is a single root (s1) with three independent children (s2, s3, s4); the only hard ordering constraint is that s1's sc1/sc2 contracts exist before s2 or s3 can be typed against them. s4 has no contract dependency on s1 at all but is grouped into Phase B anyway since it is equally safe to land alongside s2/s3 and splitting it into its own phase would add no value.
+**Ordering rationale:** The Epic's Story graph is a single root (s1) with three independent children (s2, s3, s4); the only hard ordering constraint is that s1's sc1/sc2/sc6 contracts exist before s2 or s3 can be typed against them. s4 has no contract dependency on s1 at all but is grouped into Phase B anyway since it is equally safe to land alongside s2/s3 and splitting it into its own phase would add no value.
 
 **Risky bits**
 
@@ -212,6 +231,7 @@ s2, s3 and s4 each depend only on s1 (already landed in Phase A) and have no dep
 | Per-Story types drift from what the deferred assembly Epic will actually need | Because no Story in this graph combines Scope + ReviewTargets + CommentEntry into one ReviewContext container (the assembly is an explicit Non-Goal deferred to a later Epic), a field named or shaped slightly differently across s2/s3/s4's independently-written LLDs could force an awkward adapter layer -- or a breaking rename -- when that later Epic tries to compose them. | Each Story's LLD must use the exact field names and types already fixed in this HLD's sharedContracts (sc3/sc4/sc5) verbatim, not re-derive its own naming, so the later assembly Epic composes them with no adapter. |
 | A third Epic's Story (security review extension points) assumes SecurityLocator can extend 'Locator/Pointer' as one combined concept | sc1 deliberately keeps Locator{kind,value} and Pointer{path,section,contentHash} as two separate types with no common shape. STORY-779e9a08142cb057-s1's LLD extends both at once without saying which, found during a cross-design review on 2026-11-18/19, not by this Epic's own Stories. | Resolve explicitly, either in s1's own LLD or back-flowed from STORY-779e9a08142cb057-s1's LLD once its matching open question is answered, before s1's Locator/Pointer types are built; s1's LLD must show which type SecurityLocator actually extends. |
 | A third Epic's Story (security review extension points) assumes 'security' plugs into the existing round cycle without a new Scope.scopeType member | sc3's scopeType is closed to 'design'\|'code'. STORY-779e9a08142cb057-s1's LLD never states whether the security reviewer pass runs nested inside the primary round's existing scopeType (reusing s2's Scope as-is) or needs a third enum member added to sc3 -- found during a cross-design review on 2026-11-18/19, not by this Epic's own Stories. | Resolve explicitly, either in s2's own LLD or back-flowed from STORY-779e9a08142cb057-s1's LLD once its matching open question is answered, before s2's Scope type is built; s2's LLD must show which reading it implements. |
+| sc6 (Pointer path validation) is a newly-added shared contract closing a gap a cross-LLD review found after s1-s4 were already drafted | s1's original error-paths deferred the repo-root-escape check to 's2's ScopeValidator' only in prose, with no formal sharedContract -- s2 never implemented it and s3 never raised it either, so the HLD's own nonFunctional security note had no Story actually committed to building it. | s1's LLD must now show PointerPathValidator with a real implementation (not just a deferred mention); s2 and s3's LLDs must show their respective validators/callers actually invoking it on every Pointer-typed field before a Scope/ReviewTargets instance is sent for review. |
 
 ## 9. Alternatives considered
 

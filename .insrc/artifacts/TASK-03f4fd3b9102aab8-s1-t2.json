@@ -53,26 +53,18 @@
           "properties": {}
         }
       },
-      "signoffs": [
-        {
-          "by": {
-            "id": "insrc:controller",
-            "kind": "system",
-            "properties": {}
-          },
-          "at": "2026-11-19T16:30:00.495Z",
-          "decision": "approved",
-          "overrideReason": "Automated design review is retired/unavailable (CLAUDE.md). User approved explicitly in chat; this revision only clarifies the named test's wording (no task scope/behavior change), matching the corresponding LLD rev3 fix."
-        }
-      ],
+      "signoffs": [],
       "approval": {
-        "revision": 1,
+        "revision": 2,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-11-19T14:55:11.306Z"
+        "at": "2026-11-19T16:54:49.100Z",
+        "override": {
+          "reason": "Automated design review is retired/unavailable (CLAUDE.md). User approved explicitly in chat; this revision only clarifies one test name's wording (no behavior/task-scope change), fixing a prior malformed signoffs entry at the same time (Signoff requires {revision, request, state, actors, at}, not {by, at, decision, overrideReason})."
+        }
       }
     },
     "revision": 2

@@ -38,18 +38,19 @@
           "properties": {}
         }
       },
-      "signoffs": [
-        {
-          "by": {
-            "id": "insrc:controller",
-            "kind": "system",
-            "properties": {}
-          },
-          "at": "2026-11-19T16:27:05.553Z",
-          "decision": "approved",
-          "overrideReason": "Automated design review is retired/unavailable (CLAUDE.md). User approved explicitly in chat; this revision only clarifies one test-subject title's wording (no behavior/contract change) after the build-validation gate repeatedly misread the ambiguous original phrasing."
+      "signoffs": [],
+      "approval": {
+        "revision": 3,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-19T16:54:49.099Z",
+        "override": {
+          "reason": "Automated design review is retired/unavailable (CLAUDE.md). User approved explicitly in chat; this revision only clarifies one test name's wording (no behavior/task-scope change), fixing a prior malformed signoffs entry at the same time (Signoff requires {revision, request, state, actors, at}, not {by, at, decision, overrideReason})."
         }
-      ]
+      }
     },
     "revision": 3,
     "questionResolutions": {

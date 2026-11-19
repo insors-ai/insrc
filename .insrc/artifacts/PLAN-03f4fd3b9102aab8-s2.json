@@ -1,0 +1,195 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1795113131797-4o2jmp",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-19T18:33:57.942Z",
+    "epicCreatedAt": "2026-11-18T06:14:00.057Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 104733,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "03f4fd3b9102aab8",
+    "epicSlug": "review-rounds-reconciliation-recovery",
+    "storyId": "s2",
+    "lldRunId": "wf-1795095635590-gkstbp",
+    "lldEffectiveHash": "6d57abfa68accf993485dc920a80409335ebda32202c80baa14902fde616994d",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "4f3d927f743c8913b97339456dea150a3701a98e426684164163734dc7fb0b92",
+        "at": "2026-11-19T18:33:58.536Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-19T18:38:06.540Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "7f71d2b2431f7855c7802ddcec184697c5796024"
+  },
+  "body": {
+    "summary": {
+      "prose": "Building s2 means adding one small new type module to src/workflow/review-round/: the fixed five-category taxonomy every review finding is classified under, the Finding shape itself (id, category, severity), and a documented HIGH/MED fallback severity scale. There's no new logic or runtime behavior -- just types, a compile-time fixture proving the shape is closed and exact, and a matching named test suite.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add FindingCategory, Finding and DEFAULT_SEVERITY_SCALE",
+        "summary": "Add src/workflow/review-round/finding.ts exporting FindingCategory (fixed 5-member union), Finding {id, category, severity} (sc2's interfaceSketch as amended by HLD rev4), and DEFAULT_SEVERITY_SCALE = ['HIGH','MED'] as const, plus a compile-time typecheck fixture at __type-tests__/finding.typecheck.ts.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "FindingCategory, Finding and DEFAULT_SEVERITY_SCALE are exported exactly as dataModelChanges specifies, with no extra or missing field",
+          "the typecheck fixture rejects an invalid category literal and an added/removed Finding key via @ts-expect-error / Equal<keyof Finding,...>"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Finding and FindingCategory are exported with the exact documented field shapes, including the id field"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add the full named test suite for Finding/FindingCategory",
+        "summary": "One it() per testStrategy.testLevels subject (6 total) in __tests__/finding.test.ts, matching ac1/ac2's acceptanceMapping.provingTests verbatim, exercising the compile-time fixture from t1.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "All 6 named test subjects from testStrategy.testLevels[0].subjects exist as individual it() cases with matching titles",
+          "ac1 and ac2's acceptanceMapping.provingTests all pass",
+          "npx tsx --test for the new test file passes with zero failures"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "FindingCategory accepts exactly the five fixed categories (correctness, functional-completeness, security, quality, maintainability) and rejects any other category value at compile time"
+          },
+          {
+            "level": "unit",
+            "name": "Finding.severity accepts any string value, including a review-type-specific custom severity scale outside HIGH/MED"
+          },
+          {
+            "level": "unit",
+            "name": "DEFAULT_SEVERITY_SCALE names HIGH and MED as the documented fallback scale for a review type that declares none"
+          },
+          {
+            "level": "unit",
+            "name": "Finding's exported shape contains exactly id, category and severity, and no other field of any kind"
+          },
+          {
+            "level": "unit",
+            "name": "two Finding values with identical category and severity but different id values are distinct findings"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "Finding and FindingCategory are exported with the exact documented field shapes, including the id field",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "FindingCategory accepts exactly the five fixed categories (correctness, functional-completeness, security, quality, maintainability) and rejects any other category value at compile time",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "Finding.severity accepts any string value, including a review-type-specific custom severity scale outside HIGH/MED",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "DEFAULT_SEVERITY_SCALE names HIGH and MED as the documented fallback scale for a review type that declares none",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "Finding's exported shape contains exactly id, category and severity, and no other field of any kind",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "two Finding values with identical category and severity but different id values are distinct findings",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 dataModelChanges: FindingCategory"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 dataModelChanges: Finding"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 dataModelChanges: DEFAULT_SEVERITY_SCALE"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 testStrategy acceptanceMapping ac1"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 testStrategy acceptanceMapping ac2"
+    }
+  ]
+}

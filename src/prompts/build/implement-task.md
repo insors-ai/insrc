@@ -27,7 +27,7 @@ this Task — do not exceed its scope.**
 1. For design context, read the Story LLD (`{{lldPath}}`) and HLD (`{{hldPath}}`);
    for conventions, read `CLAUDE.md`. Stay within this Task's stated surface.
 2. Implement the Task until every acceptance check holds.
-3. Run the Task's named tests, then `{{typecheckCmd}}` and `{{testCmd}}`.
+3. Run the Task's named tests, then {{checkCommands}}.
 4. If green, **commit** referencing the Task and its issue:
    `feat(build): {{storyId}}/{{taskId}} … ({{issueRef}})`.
    {{storyTrailerRule}}

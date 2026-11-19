@@ -45,6 +45,7 @@ import { inheritedStoryStandalone, lldMdRel, readEpicDefinitionCore, workItemAnc
 import { checkTestMapping, oneLine, usableStoredMapping, type NamedTest, type TestMappingEntry } from '../test-mapping.js';
 import type { BuildStandaloneContext, BuildStepDone, BuildStepError, BuildStepInputValidate } from '../types.js';
 import {
+	commandProfileOf,
 	planTaskCheckPlan,
 	runValidationChecks,
 	smallStandaloneCheckPlan,
@@ -376,7 +377,7 @@ async function handleStandaloneValidate(
 		checks = await trivialCheckPlan(repoPath, await resolveStoryRangeBase(repoPath, epicHash, storyId),
 			epicHash.length > 0 && storyId.length > 0 ? `${epicHash}/${storyId}` : undefined);
 	}
-	const prompt = (evidence: string): string => renderStandaloneValidatePrompt({ storyId, sizeClass, lldMdRel: lldMdRelPath, scope: producesLld ? undefined : ctx.focus, evidence });
+	const prompt = (evidence: string): string => renderStandaloneValidatePrompt({ storyId, sizeClass, lldMdRel: lldMdRelPath, scope: producesLld ? undefined : ctx.focus, evidence, profile: commandProfileOf(repoPath) });
 	// Carry the route the caller declared into the persist. This branch KNOWS it is
 	// serving a standalone story; discarding that here left the shared persist to
 	// re-derive it from a definition head a Small story does not have (ISSUE-0855311b).

@@ -31,6 +31,7 @@ import { persistStandaloneBuildRecord } from '../../../../workflow/runners/build
 import { roundWriterFor } from '../../../lifecycle-registry.js';
 import { runTaskCommentSync } from '../../../tracker-sync-comments.js';
 import { assertMayBuild, settleBeforeBuild } from '../../../../workflow/team/author-gate.js';
+import { commandProfileOf } from '../validation-checks.js';
 import { mergeInProgressError, renderImplementPrompt, renderStandaloneImplementPrompt, resolveRepoPath, resolveTaskRef } from '../render.js';
 import type {
 	BuildStandaloneContext,
@@ -192,7 +193,7 @@ async function handleStandaloneImplement(
 
 	const prompt = renderStandaloneImplementPrompt({
 		epicHash, storyId, sizeClass, producesLld, focus: specFocus,
-		lldMdRel: lldMdRelPath, resolvedDecisions,
+		lldMdRel: lldMdRelPath, resolvedDecisions, profile: commandProfileOf(repoPath),
 	});
 	log.info({ storyId, sizeClass, standalone: true, producesLld }, 'insrc_build_step[implement]: emitting standalone prompt');
 	return { next: 'implement', taskId: storyId, workflowId: epicHash, issueRef: undefined, prompt };

@@ -21,14 +21,59 @@ import { hldMdRel, lldMdRel, planMdRel } from '../../../workflow/storage.js';
 import { SMALLEST_CHANGE_RULE } from '../../../workflow/runners/scope-prompts.js';
 import { resolveWorkflowRef, type ResolvedRef } from '../../../workflow/tracker/resolve.js';
 import type { PlanTask } from '../../../workflow/artifacts/plan.js';
+import { commandProfileOf, defaultCommandProfile, PROJECT_TYPE_GUIDANCE, type CommandProfile } from './validation-checks.js';
 import type { BuildStepError } from './types.js';
 
 const IMPLEMENT_TEMPLATE_REL = 'prompts/build/implement-task.md';
 const VALIDATE_TEMPLATE_REL  = 'prompts/build/validate-task.md';
 
-/** Repo-standard commands the templates cite (CLAUDE.md conventions). */
-const TYPECHECK_CMD = 'npx tsc --noEmit';
-const TEST_CMD      = `npx tsx --test 'src/**/__tests__/*.test.ts'`;
+/** This repository's own commands (CLAUDE.md conventions): what a Node project's prompt names. */
+const NODE_TYPECHECK_CMD = 'npx tsc --noEmit';
+const NODE_TEST_CMD      = `npx tsx --test 'src/**/__tests__/*.test.ts'`;
+
+/** What the builder's prompts say about the typecheck and the tests, for one project. */
+export interface CheckGuidance {
+	/** The two commands as one phrase: 'X and Y'. */
+	readonly commands:      string;
+	/** The Definition-of-done bullets for the typecheck and for the tests. */
+	readonly doneTypecheck: string;
+	readonly doneTests:     string;
+	/** The validate prompt's sentence on running the checks. */
+	readonly judgeNote:     string;
+}
+
+const code = (c: string): string => `\`${c}\``;
+
+/**
+ * The checks guidance of a command profile. A Node project (the default) and a
+ * project with its own repo setting name the commands the gate runs; a project
+ * the gate runs nothing for gets the commands typical for its type as guidance
+ * only, or the instruction to find its own.
+ */
+export function checkGuidance(profile: CommandProfile): CheckGuidance {
+	const ranByDaemon = 'Do not try to run the typecheck or the tests: the daemon has already run them and reports the results below.';
+	if (profile.commandsSource !== 'none') {
+		const typecheck = profile.commandsSource === 'node-default' ? NODE_TYPECHECK_CMD : profile.typecheck.join(' ');
+		const test      = profile.commandsSource === 'node-default' ? NODE_TEST_CMD : profile.testCommand.join(' ');
+		return {
+			commands: `${code(typecheck)} and ${code(test)}`,
+			doneTypecheck: `- ${code(typecheck)} is clean.`,
+			doneTests: `- ${code(test)} passes (add or extend tests for the change).`,
+			judgeNote: ranByDaemon,
+		};
+	}
+	const g = PROJECT_TYPE_GUIDANCE[profile.projectType];
+	const own = profile.projectType === 'unknown';
+	return {
+		commands: own
+			? `${g.typecheck} and ${g.test}, found in its build files`
+			: `the project's typecheck and test commands (typically ${code(g.typecheck)} and ${code(g.test)}; use the project's own if they differ)`,
+		doneTypecheck: own ? `- ${g.typecheck} is clean.` : `- The project's typecheck is clean (typically ${code(g.typecheck)}).`,
+		doneTests: own ? `- ${g.test} passes (add or extend tests for the change).` : `- The project's tests pass (typically ${code(g.test)}); add or extend tests for the change.`,
+		judgeNote: 'The daemon ran no typecheck or tests, because it has no command for them in this project: its results below say nothing ran, so there is no independent run to rely on. ' +
+			'Do not run them yourself either; judge from what you can read, and treat the implementer\'s report of them as unconfirmed.',
+	};
+}
 
 // ---------------------------------------------------------------------------
 // Repo + task resolution
@@ -94,7 +139,7 @@ function baseVars(repoPath: string, ref: ResolvedTask): Record<string, string> {
 		? task.tests.map(t => `- ${t.level}: ${t.name}`).join('\n')
 		: '- (none stated)';
 	const dependsOn = task.dependsOn.length > 0 ? task.dependsOn.join(', ') : 'none';
-	void repoPath;
+	const guidance = checkGuidance(commandProfileOf(repoPath));
 	return {
 		taskId:           ref.taskId,
 		storyId:          ref.storyId,
@@ -110,8 +155,8 @@ function baseVars(repoPath: string, ref: ResolvedTask): Record<string, string> {
 		lldPath:          lldMdRel(ref.epicHash, ref.createdAt, 'epic', ref.epicSlug, ref.storyId),
 		hldPath:          hldMdRel(ref.epicHash, ref.createdAt, 'epic', ref.epicSlug),
 		planPath:         planMdRel(ref.epicHash, ref.createdAt, 'epic', ref.epicSlug, ref.storyId),
-		typecheckCmd:     TYPECHECK_CMD,
-		testCmd:          TEST_CMD,
+		checkCommands:    guidance.commands,
+		daemonChecksNote: guidance.judgeNote,
 		judgeNamedTestsRule: JUDGE_NAMED_TESTS_RULE,
 	};
 }
@@ -204,6 +249,8 @@ export interface StandaloneBuildSpec {
 	/** Relative LLD md path to read (Small only). */
 	readonly lldMdRel?:   string | undefined;
 	readonly resolvedDecisions: string;
+	/** The project's command profile, for the checks the prompt names; the Node default when absent. */
+	readonly profile?:    CommandProfile | undefined;
 }
 
 /** Render the implement prompt for a triage-routed no-plan build. There is no
@@ -214,6 +261,7 @@ export function renderStandaloneImplementPrompt(spec: StandaloneBuildSpec): stri
 	const decisions = spec.resolvedDecisions.trim().length > 0
 		? spec.resolvedDecisions
 		: '_No design decisions were resolved; use your judgment within the stated scope._';
+	const checks = checkGuidance(spec.profile ?? defaultCommandProfile('node'));
 	const lines: string[] = [
 		`# Implement — standalone ${spec.sizeClass} feature (Story \`${spec.storyId}\`)`,
 		'',
@@ -236,8 +284,8 @@ export function renderStandaloneImplementPrompt(spec: StandaloneBuildSpec): stri
 		'', '## Resolved design decisions', '', decisions,
 		'', '## The smallest complete change', '', SMALLEST_CHANGE_RULE,
 		'', '## Definition of done', '',
-		`- \`${TYPECHECK_CMD}\` is clean.`,
-		`- \`${TEST_CMD}\` passes (add or extend tests for the change).`,
+		checks.doneTypecheck,
+		checks.doneTests,
 		'- The edit is minimal and matches the surrounding conventions.',
 		'', '## Committing', '', storyTrailerRule(spec.epicHash, spec.storyId),
 		...(spec.lldMdRel !== undefined ? ['', '## Submitting the tests', '', STANDALONE_MAPPING_RULE] : []),
@@ -259,6 +307,8 @@ export interface StandaloneValidateSpec {
 	readonly scope?: string | undefined;
 	/** The daemon's check results, rendered into the prompt's check-results section. */
 	readonly evidence?: string | undefined;
+	/** The project's command profile, for what the prompt says about the checks; the Node default when absent. */
+	readonly profile?:  CommandProfile | undefined;
 }
 
 /** Render the validate-gate prompt for a STANDALONE (no-plan) build. Same
@@ -277,8 +327,7 @@ export function renderStandaloneValidatePrompt(spec: StandaloneValidateSpec): st
 		'',
 		'You can read the repository with your read, search and list tools, or with read-only ' +
 		'commands that print, search or list files (`cat`, `rg`, `ls`, `git diff`, `git log`). ' +
-		'Do not try to run the typecheck or the tests: the daemon has already run them and ' +
-		'reports the results below. Do not change anything.',
+		`${checkGuidance(spec.profile ?? defaultCommandProfile('node')).judgeNote} Do not change anything.`,
 		'',
 	];
 	if (spec.lldMdRel !== undefined) {

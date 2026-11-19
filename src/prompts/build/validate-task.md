@@ -8,8 +8,7 @@ is not evidence.
 
 You can read the repository with your read, search and list tools, or with
 read-only commands that print, search or list files (`cat`, `rg`, `ls`,
-`git diff`, `git log`). Do not try to run the typecheck or the tests: the daemon
-has already run them and reports the results below. Do not change anything.
+`git diff`, `git log`). {{daemonChecksNote}} Do not change anything.
 
 ## The Task that was to be implemented
 `{{taskId}}` — {{taskTitle}}  ({{issueRef}}, Story `{{storyId}}`)

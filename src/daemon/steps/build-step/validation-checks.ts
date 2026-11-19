@@ -91,10 +91,10 @@ export function detectProjectType(repoPath: string): ProjectType {
  *  runs only the Node default or a repo setting, never these. */
 export const PROJECT_TYPE_GUIDANCE: Readonly<Record<ProjectType, { readonly typecheck: string; readonly test: string }>> = {
 	node:    { typecheck: 'npx tsc --noEmit', test: "npx tsx --test 'src/**/__tests__/*.test.ts'" },
-	python:  { typecheck: 'mypy . (or pyright)', test: 'pytest' },
+	python:  { typecheck: 'mypy .', test: 'pytest' },
 	go:      { typecheck: 'go vet ./...', test: 'go test ./...' },
 	rust:    { typecheck: 'cargo check', test: 'cargo test' },
-	jvm:     { typecheck: 'mvn -q compile (or gradle compileJava / sbt compile)', test: 'mvn -q test (or gradle test / sbt test)' },
+	jvm:     { typecheck: 'mvn -q compile', test: 'mvn -q test' },
 	unknown: { typecheck: "the project's own typecheck or compile command", test: "the project's own test command" },
 };
 
@@ -294,8 +294,8 @@ function basePlan(profile: CommandProfile): Pick<ValidationCheckPlan, 'typecheck
 	};
 }
 
-/** The profile a build is gated by: the commands of the repository's project type. */
-function profileOf(repoPath: string): CommandProfile {
+/** The profile a build is gated by and prompted with: the commands of the repository's project type. */
+export function commandProfileOf(repoPath: string): CommandProfile {
 	return defaultCommandProfile(detectProjectType(repoPath));
 }
 
@@ -426,7 +426,7 @@ export async function planTaskCheckPlan(
 	const namedTests: NamedTestPlan[] = [];
 	for (const t of task.tests) namedTests.push(await planNamedTest(repoPath, t, byName.get(t.name)));
 	return {
-		...basePlan(profileOf(repoPath)), testFiles: sortedUnion(namedTests),
+		...basePlan(commandProfileOf(repoPath)), testFiles: sortedUnion(namedTests),
 		unresolvedTests: namedTests.filter(n => n.source === 'none').map(n => n.name),
 		namedTests,
 		...(task.tests.length === 0 ? { noTests: { ok: false, note: 'the plan task names no tests' } } : {}),
@@ -448,10 +448,10 @@ export async function smallStandaloneCheckPlan(
 	for (const t of subjects) namedTests.push(await planNamedTest(repoPath, t, byName.get(t.name)));
 	const runnable = namedTests.filter(n => n.source === 'mapping' || LEADING_TEST_FILE.test(n.name));
 	if (runnable.length === 0) {
-		return { ...basePlan(profileOf(repoPath)), testFiles: [], unresolvedTests: [], namedTests, noTests: { ok: false, note: 'the LLD names no test file' } };
+		return { ...basePlan(commandProfileOf(repoPath)), testFiles: [], unresolvedTests: [], namedTests, noTests: { ok: false, note: 'the LLD names no test file' } };
 	}
 	return {
-		...basePlan(profileOf(repoPath)), testFiles: sortedUnion(namedTests),
+		...basePlan(commandProfileOf(repoPath)), testFiles: sortedUnion(namedTests),
 		// Only a subject that NAMES a file and resolves to none is unresolved.
 		unresolvedTests: namedTests.filter(n => n.source === 'none' && LEADING_TEST_FILE.test(n.name)).map(n => n.name),
 		namedTests,
@@ -490,7 +490,7 @@ export async function trivialCheckPlan(repoPath: string, base?: string | undefin
 		? { ok: false, note: `could not list the build's files: ${listError.split('\n')[0]}` }
 		: { ok: true, note: 'no tests named for a trivial build' };
 	return {
-		...basePlan(profileOf(repoPath)), testFiles, unresolvedTests: [],
+		...basePlan(commandProfileOf(repoPath)), testFiles, unresolvedTests: [],
 		namedTests: testFiles.map(file => ({ name: file, source: 'touched' as const, cases: [], files: [file] })),
 		...(testFiles.length === 0 ? { noTests } : {}),
 	};

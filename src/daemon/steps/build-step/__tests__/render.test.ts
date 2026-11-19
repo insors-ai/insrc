@@ -11,10 +11,14 @@
  */
 
 import assert from 'node:assert/strict';
-import { test } from 'node:test';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { after, test } from 'node:test';
 
 import { SMALLEST_CHANGE_RULE } from '../../../../workflow/runners/scope-prompts.js';
 
+import { defaultCommandProfile } from '../validation-checks.js';
 import {
 	renderImplementPrompt,
 	renderStandaloneImplementPrompt,
@@ -40,6 +44,18 @@ const TASK: ResolvedTask = {
 	},
 };
 
+/** A repository root of a project of the given type: only its marker file. */
+function markerDir(marker: string | undefined): string {
+	const dir = mkdtempSync(join(tmpdir(), 'insrc-render-'));
+	if (marker !== undefined) writeFileSync(join(dir, marker), '');
+	cleanup.push(dir);
+	return dir;
+}
+const cleanup: string[] = [];
+after(() => { for (const d of cleanup) rmSync(d, { recursive: true, force: true }); });
+/** A Node project: the gate's default commands apply. */
+const NODE_REPO = markerDir('package.json');
+
 const SWEEP = "npx tsx --test 'src/**/__tests__/*.test.ts'";
 const TYPECHECK = 'npx tsc --noEmit';
 
@@ -48,7 +64,7 @@ const RUN_INSTRUCTION = /\b(run|execute)\b[^.\n]*(`|npx|tsc|tsx|test|git )/i;
 
 function validatePrompts(evidence: string): string[] {
 	return [
-		renderValidatePrompt('/repo', TASK, evidence),
+		renderValidatePrompt(NODE_REPO, TASK, evidence),
 		renderStandaloneValidatePrompt({ storyId: 'S001', sizeClass: 'small', lldMdRel: 'docs/x/LLD.md', evidence }),
 		renderStandaloneValidatePrompt({ storyId: 'S001', sizeClass: 'trivial', evidence }),
 	];
@@ -67,7 +83,7 @@ test('the validate prompts no longer instruct running the repo-wide sweep or any
 		assert.match(prompt, /do not try to run the typecheck or the tests/i);
 	}
 
-	const implement = renderImplementPrompt('/repo', TASK, '');
+	const implement = renderImplementPrompt(NODE_REPO, TASK, '');
 	assert.ok(implement.includes(SWEEP));
 	assert.ok(implement.includes(TYPECHECK));
 	const standaloneImplement = renderStandaloneImplementPrompt({ epicHash: 'f1bf0fb3085c629c', storyId: 'S001', sizeClass: 'small', producesLld: true, focus: 'x', resolvedDecisions: '' });
@@ -95,7 +111,7 @@ test('both validate prompts place the given evidence text in an evidence section
 
 test('the implement prompts tell the implementer to merge upstream with --no-ff and commit the merge on its own', () => {
 	const prompts = [
-		renderImplementPrompt('/repo', TASK, ''),
+		renderImplementPrompt(NODE_REPO, TASK, ''),
 		renderStandaloneImplementPrompt({ epicHash: 'f1bf0fb3085c629c', storyId: 'S001', sizeClass: 'small', producesLld: true, focus: 'x', resolvedDecisions: '' }),
 		renderStandaloneImplementPrompt({ epicHash: 'f1bf0fb3085c629c', storyId: 'S001', sizeClass: 'trivial', producesLld: false, focus: 'x', resolvedDecisions: '' }),
 	];
@@ -161,7 +177,7 @@ test("the judge's evidence lists each named test with its cases and results; wit
 
 test("the implement prompt tells the builder to pass the cases for each listed test at the validate turn, and the judge's evidence lists each named test with its cases and results; with no named tests the evidence reads as before", async () => {
 	// The plan-driven implement prompt: the rule sits under the Task's listed tests.
-	const implement = renderImplementPrompt('/repo', TASK, '');
+	const implement = renderImplementPrompt(NODE_REPO, TASK, '');
 	const listed = implement.indexOf("- unit: render.test.ts: 'x'");
 	const rule = implement.indexOf('**Say which test cases carry each test.**');
 	assert.ok(listed !== -1 && rule > listed, 'the mapping rule follows the listed tests');
@@ -175,7 +191,7 @@ test("the implement prompt tells the builder to pass the cases for each listed t
 	assert.ok(!renderStandaloneImplementPrompt({ epicHash: 'f1bf0fb3085c629c', storyId: 'S001', sizeClass: 'trivial', producesLld: false, focus: 'f', resolvedDecisions: '' }).includes('## Submitting the tests'));
 
 	// The judge is told what to check about the named tests and the reported results, on both routes.
-	for (const prompt of [renderValidatePrompt('/repo', TASK, 'E'), renderStandaloneValidatePrompt({ storyId: 'S001', sizeClass: 'small', lldMdRel: 'docs/x/LLD.md', evidence: 'E' })]) {
+	for (const prompt of [renderValidatePrompt(NODE_REPO, TASK, 'E'), renderStandaloneValidatePrompt({ storyId: 'S001', sizeClass: 'small', lldMdRel: 'docs/x/LLD.md', evidence: 'E' })]) {
 		assert.ok(prompt.includes('do exercise what its name says'), 'the judge checks the cases against the name');
 		assert.ok(prompt.includes('**REPORTED BY THE BUILDER**') && prompt.includes('check that the evidence it points to exists'));
 		assert.ok(!prompt.includes('{{'), 'no placeholder is left unfilled');
@@ -204,7 +220,7 @@ test("the implement prompt tells the builder to pass the cases for each listed t
 // ---------------------------------------------------------------------------
 
 const implementPrompts = (): string[] => [
-	renderImplementPrompt('/repo', TASK, ''),
+	renderImplementPrompt(NODE_REPO, TASK, ''),
 	renderStandaloneImplementPrompt({ epicHash: 'f1bf0fb3085c629c', storyId: 'S001', sizeClass: 'small', producesLld: true, focus: 'x', lldMdRel: 'docs/x/LLD.md', resolvedDecisions: '' }),
 	renderStandaloneImplementPrompt({ epicHash: 'f1bf0fb3085c629c', storyId: 'S001', sizeClass: 'trivial', producesLld: false, focus: 'x', resolvedDecisions: '' }),
 ];
@@ -269,4 +285,55 @@ test('a trivial standalone validate prompt carries the build\'s stated scope; a 
 	const small = renderStandaloneValidatePrompt({ storyId: 'S001', sizeClass: 'small', lldMdRel: 'docs/x/LLD.md', scope: 'ignored', evidence: 'E' });
 	assert.equal(small.includes('## Stated scope'), false);
 	assert.ok(small.includes('docs/x/LLD.md'));
+});
+
+// ---------------------------------------------------------------------------
+// The prompts name the commands of the project's type (LLD-787434000fa22691-s1, t4)
+// ---------------------------------------------------------------------------
+
+test("the prompt of a Node project still names npx tsc --noEmit and the Node test command", () => {
+	const implement = renderImplementPrompt(NODE_REPO, TASK, '');
+	assert.ok(implement.includes(`\`${TYPECHECK}\` and \`${SWEEP}\``), 'the process step names both commands');
+	const standalone = renderStandaloneImplementPrompt({ epicHash: 'f1bf0fb3085c629c', storyId: 'S001', sizeClass: 'small', producesLld: true, focus: 'x', resolvedDecisions: '' });
+	assert.ok(standalone.includes(`- \`${TYPECHECK}\` is clean.`) && standalone.includes(`- \`${SWEEP}\` passes`));
+	for (const prompt of [renderValidatePrompt(NODE_REPO, TASK, 'E'), renderStandaloneValidatePrompt({ storyId: 'S001', sizeClass: 'small', evidence: 'E' })]) {
+		assert.match(prompt, /the daemon\s+has already run them and reports the results below/);
+	}
+});
+
+test("the implement-task prompt and the Definition of done for a Python, Go, Rust and JVM project name that type's commands and no npx tsc or npx tsx", () => {
+	const cases: ReadonlyArray<readonly [string, 'python' | 'go' | 'rust' | 'jvm', string, string]> = [
+		['pyproject.toml', 'python', 'mypy .', 'pytest'],
+		['go.mod', 'go', 'go vet ./...', 'go test ./...'],
+		['Cargo.toml', 'rust', 'cargo check', 'cargo test'],
+		['pom.xml', 'jvm', 'mvn -q compile', 'mvn -q test'],
+	];
+	for (const [marker, type, typecheck, tests] of cases) {
+		const repo = markerDir(marker);
+		const implement = renderImplementPrompt(repo, TASK, '');
+		const standalone = renderStandaloneImplementPrompt({
+			epicHash: 'f1bf0fb3085c629c', storyId: 'S001', sizeClass: 'small', producesLld: true, focus: 'x', resolvedDecisions: '',
+			profile: defaultCommandProfile(type),
+		});
+		for (const prompt of [implement, standalone]) {
+			assert.ok(prompt.includes(typecheck) && prompt.includes(tests), `${type}: names its commands`);
+			assert.equal(/npx tsc|npx tsx/.test(prompt), false, `${type}: no Node command`);
+		}
+	}
+	// A project of no known type is told to find its own commands.
+	const unknown = renderImplementPrompt(markerDir(undefined), TASK, '');
+	assert.match(unknown, /project's own typecheck or compile command and the project's own test command, found in its build files/);
+	assert.equal(/npx tsc|npx tsx/.test(unknown), false);
+});
+
+test("the 'daemon already ran' text is absent when commandsSource is none", () => {
+	const go = markerDir('go.mod');
+	for (const prompt of [
+		renderValidatePrompt(go, TASK, 'E'),
+		renderStandaloneValidatePrompt({ storyId: 'S001', sizeClass: 'small', evidence: 'E', profile: defaultCommandProfile('go') }),
+	]) {
+		assert.equal(/already run them/.test(prompt), false);
+		assert.match(prompt, /The daemon ran no typecheck or tests/);
+		assert.match(prompt, /Do not change anything/);
+	}
 });

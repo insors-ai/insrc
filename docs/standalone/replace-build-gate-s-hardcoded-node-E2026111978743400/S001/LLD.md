@@ -260,6 +260,8 @@ As a1 for the prompt: a table of per-type commands renders the guidance, so no h
   - **resolved**: Define both as new symbols — User approved 2026-11-19: no existing equivalents were found; CommandProfile and InvalidCommandSetting are new. _(2026-11-19T18:27:07.976Z)_
 - `q8c62c1f9` — ep3 partial: the invariants cite c2, c3 and c4, assumed to be the ids of the s1 bundles in order and given below as citations.
   - **resolved**: Verify existing IDs — Verified 2026-11-19: c1-c4 in the LLD are the four s1 analyze bundles in order (search.text, module.profile, usage.example, test.locate); c2, c3 and c4 cite the intended bundles. _(2026-11-19T18:27:55.231Z)_
+- `q59c82aa2` — ts1 partial: the Story has no acceptance criteria, so ac1 to ac5 were written by this LLD and need the user's confirmation as the acceptance criteria.
+  - **resolved**: Confirm ac1–ac5 — User was offered ac1-ac5 for amendment on 2026-11-19, said 'yes, resolve all' and asked for no changes, so the five LLD-authored criteria stand as the Story's acceptance criteria. _(2026-11-19T18:28:31.456Z)_
 
 ## Citations
 

@@ -5,7 +5,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { checkTestMapping, type NamedTest, type TestMappingEntry } from '../test-mapping.js';
+import { checkTestMapping, usableStoredMapping, type NamedTest, type TestMappingEntry } from '../test-mapping.js';
 
 const TRACKED = ['src/a/__tests__/x.test.ts', 'src/a/__tests__/y.test.ts', 'src/a/x.ts', 'README.md'];
 const NAMED: NamedTest[] = [
@@ -111,4 +111,26 @@ test('a stored mapping is reused only as far as the rules still allow: a stale n
 	// A mapping that passes the checks comes through unchanged.
 	const good = [{ name: 'the unit one', cases: [X] }, { name: 'the smoke one', cases: [X], reported: { result: 'fail' as const, evidence: 'the log' } }];
 	assert.deepEqual(usableStoredMapping(good, NAMED), good);
+});
+
+// --- t7 (LLD-787434000fa22691-s1): a project whose commands a repo setting states names its own test files ---
+
+test("a Node plan refuses a case file that is not .test.ts and a repo-setting plan accepts its own test file", () => {
+	const tracked = [...TRACKED, 'tests/test_x.py', 'pkg/x_test.go'];
+	const named: NamedTest[] = [{ level: 'unit', name: 'the unit one' }];
+	const py = [{ name: 'the unit one', cases: [{ file: 'tests/test_x.py', title: 'test_x' }, { file: 'pkg/x_test.go', title: 'TestX' }] }];
+	// The Node rule is unchanged: a Python or Go file is not a '.test.ts' file.
+	const node = checkTestMapping(py, named, tracked);
+	assert.equal(node.length, 2, JSON.stringify(node));
+	assert.ok(node.every(f => /not a tracked '\.test\.ts' file/.test(f)));
+	// With a repo setting any tracked file of the repository may be a case's file ...
+	assert.deepEqual(checkTestMapping(py, named, tracked, true), []);
+	// ... but not an untracked one, and not one outside the repository.
+	const faults = checkTestMapping([{ name: 'the unit one', cases: [{ file: 'tests/test_gone.py', title: 't' }, { file: '../x_test.go', title: 't' }] }], named, tracked, true);
+	assert.equal(faults.length, 2);
+	assert.match(faults[0]!, /'tests\/test_gone\.py' is not a tracked file of the repository/);
+	assert.match(faults[1]!, /is not a path inside the repository/);
+	// A stored mapping keeps such a case only for a repo-setting plan.
+	assert.deepEqual(usableStoredMapping(py, named), []);
+	assert.deepEqual(usableStoredMapping(py, named, true), py);
 });

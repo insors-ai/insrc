@@ -100,6 +100,16 @@ export const PROJECT_TYPE_GUIDANCE: Readonly<Record<ProjectType, { readonly type
 	unknown: { typecheck: "the project's own typecheck or compile command", test: "the project's own test command" },
 };
 
+/** How a project of each type names its test files, for the trivial route (the test files a build touched). */
+export const PROJECT_TEST_FILE: Readonly<Record<ProjectType, RegExp>> = {
+	node:    /(^|\/)__tests__\/.*\.test\.ts$/,
+	python:  /(^|\/)(test_[^/]*|[^/]*_test)\.py$/,
+	go:      /_test\.go$/,
+	rust:    /(^|\/)tests\/[^/]+\.rs$/,
+	jvm:     /(^|\/)src\/test\//,
+	unknown: /(^|\/)(tests?|__tests__)\/|[._-]tests?\.[A-Za-z]+$/,
+};
+
 /** The profile of a project with no repo setting: today's Node gate for a Node
  *  project, no command for any other type. */
 export function defaultCommandProfile(projectType: ProjectType): CommandProfile {
@@ -506,11 +516,17 @@ export async function smallStandaloneCheckPlan(
  * test files of the Story's own commits that still exist (ISSUE-b97752e9), and no
  * base fails the listing rather than running the HEAD commit's tests.
  */
-export async function trivialCheckPlan(repoPath: string, base?: string | undefined, storyKey?: string | undefined): Promise<ValidationCheckPlan> {
+export async function trivialCheckPlan(
+	repoPath: string, base?: string | undefined, storyKey?: string | undefined,
+	profile: CommandProfile = commandProfileOf(repoPath),
+): Promise<ValidationCheckPlan> {
 	let touched: string[] = [];
 	// A listing that failed is not "no tests": it fails the tests check rather than passing it.
 	let listError: string | undefined;
-	const isTest = (f: string): boolean => f.endsWith('.test.ts') && f.split('/').includes('__tests__');
+	// This repository's own convention, unless a repo setting states the commands of another kind of project.
+	const isTest = (f: string): boolean => profile.commandsSource === 'repo-setting'
+		? PROJECT_TEST_FILE[profile.projectType].test(f)
+		: f.endsWith('.test.ts') && f.split('/').includes('__tests__');
 	try {
 		if (storyKey !== undefined) {
 			// The Story's commits list a file it deleted too: only one that still
@@ -530,7 +546,7 @@ export async function trivialCheckPlan(repoPath: string, base?: string | undefin
 		? { ok: false, note: `could not list the build's files: ${listError.split('\n')[0]}` }
 		: { ok: true, note: 'no tests named for a trivial build' };
 	return {
-		...basePlan(commandProfileOf(repoPath)), testFiles, unresolvedTests: [],
+		...basePlan(profile), testFiles, unresolvedTests: [],
 		namedTests: testFiles.map(file => ({ name: file, source: 'touched' as const, cases: [], files: [file] })),
 		...(testFiles.length === 0 ? { noTests } : {}),
 	};

@@ -22,6 +22,7 @@ import {
 	TYPECHECK_ARGV,
 	InvalidCommandSetting,
 	commandProfileOf,
+	profileFromSetting,
 	commandSettingError,
 	defaultCommandProfile,
 	detectProjectType,
@@ -1038,4 +1039,25 @@ test('a repo setting wins over the default; an empty command or an unknown resul
 		for (const r of [node, py]) rmSync(r, { recursive: true, force: true });
 		for (const c of cfg) rmSync(dirname(c), { recursive: true, force: true });
 	}
+});
+
+test("the trivial plan keeps a repo-setting project's own test files as tests", async () => {
+	const files = {
+		'go.mod': 'module x\n', 'pkg/x_test.go': '', 'pkg/x.go': '',
+		'tests/test_a.py': '', 'tests/helper.py': '', 'src/a/__tests__/n.test.ts': '',
+	};
+	const repo = gitRepo(files);
+	try {
+		const go = profileFromSetting('go', { typecheckCommand: 'go vet ./...', testCommand: 'go test', resultFormat: 'exit-code' });
+		// A Go project with a setting: its '_test.go' files are tests; a '.test.ts' file in a __tests__ directory is not.
+		const plan = await trivialCheckPlan(repo, undefined, undefined, go);
+		assert.deepEqual(plan.testFiles, ['pkg/x_test.go']);
+		assert.deepEqual([plan.commandsSource, plan.resultFormat, plan.testCommand], ['repo-setting', 'exit-code', ['go', 'test']]);
+		// The type decides: a Python project with a setting.
+		const py = profileFromSetting('python', { typecheckCommand: 'mypy .', testCommand: 'pytest' });
+		assert.deepEqual((await trivialCheckPlan(repo, undefined, undefined, py)).testFiles, ['tests/test_a.py']);
+		// A Node plan is unchanged: the '.test.ts' files in __tests__ directories, and nothing else.
+		const node = profileFromSetting('node', {});
+		assert.deepEqual((await trivialCheckPlan(repo, undefined, undefined, node)).testFiles, ['src/a/__tests__/n.test.ts']);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
 });

@@ -8,7 +8,7 @@
  * Pure, synchronous, no I/O -- callers supply any already-read file content or hash.
  */
 
-import { resolve, sep } from 'node:path';
+import { isAbsolute, resolve, sep } from 'node:path';
 
 import type { Pointer, StalenessResult, PathValidationResult } from './types.js';
 
@@ -24,6 +24,12 @@ export type PointerPathValidator = (pointer: Pointer, registeredRepoRoot: string
 
 /** Mirrors src/db/repos.ts's own repo-path normalization: compare post-`resolve` to stay inside the root. */
 export const validatePointerPath: PointerPathValidator = (pointer, registeredRepoRoot) => {
+	// `path.resolve` discards `root` for an absolute `pointer.path`, so an absolute path must be
+	// rejected before resolving -- otherwise one that happens to fall inside the root would pass
+	// containment while still being a machine-specific, non-repo-relative Pointer.
+	if (isAbsolute(pointer.path)) {
+		return { ok: false, violations: [`'${pointer.path}' is absolute; Pointer.path must be repo-relative`] };
+	}
 	const root = resolve(registeredRepoRoot);
 	const resolved = resolve(root, pointer.path);
 	if (resolved === root || resolved.startsWith(root + sep)) {

@@ -89,4 +89,12 @@ describe('PointerStalenessCheck and PointerPathValidator', () => {
 		assert.equal(result.violations.length, 1);
 		assert.match(result.violations[0]!, /etc\/passwd/);
 	});
+
+	it('PointerPathValidator returns ok:false with a named violation for an absolute Pointer.path, even one that falls inside registeredRepoRoot', () => {
+		const pointer: Pointer = { path: '/repo/root/docs/HLD.md' };
+		const result = validatePointerPath(pointer, '/repo/root');
+		assert.equal(result.ok, false);
+		assert.equal(result.violations.length, 1);
+		assert.match(result.violations[0]!, /absolute/);
+	});
 });

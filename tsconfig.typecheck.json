@@ -7,7 +7,7 @@
     "sourceMap": false
   },
   "include": [
-    "**/__type-tests__/**/*.ts"
+    "src/daemon/tools/__type-tests__/**/*.ts"
   ],
   "exclude": []
 }

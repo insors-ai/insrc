@@ -7,6 +7,8 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { Pointer, ReviewTargets } from '../types.js';
+import { validatePointerPath } from '../pointer-checks.js';
+import * as types from '../types.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..');
 const TSC = resolve(ROOT, 'node_modules/typescript/bin/tsc');
@@ -47,5 +49,64 @@ describe('ReviewTargets', () => {
 
 		const empty: ReviewTargets = { entries: [] };
 		assert.deepEqual(empty.entries, []);
+	});
+
+	it('a ReviewTargets built from a fresh Pointer list contains exactly those entries, nothing else', () => {
+		const pointer1: Pointer = { path: 'a.md' };
+		const pointer2: Pointer = { path: 'b.md' };
+		const targets: ReviewTargets = { entries: [pointer1, pointer2] };
+		assert.deepEqual(Object.keys(targets), ['entries']);
+		assert.deepEqual(targets.entries, [pointer1, pointer2]);
+	});
+
+	it("no builder, factory or merge function exists anywhere in ReviewTargets' exported surface (a1's deliberate absence of such an API)", () => {
+		// The interface itself produces no runtime export (types are erased); this directly
+		// checks the module's real runtime surface for any name that could be such a function.
+		const reviewTargetsRelated = Object.keys(types).filter((key) => /reviewtargets/i.test(key));
+		assert.deepEqual(reviewTargetsRelated, []);
+	});
+
+	it('two ReviewTargets instances built for consecutive rounds on the same artifact are independent objects sharing no entries by construction', () => {
+		const roundOnePointers: readonly Pointer[] = [{ path: 'round-one.md' }];
+		const roundOne: ReviewTargets = { entries: roundOnePointers };
+
+		const roundTwoPointers: readonly Pointer[] = [{ path: 'round-two.md' }];
+		const roundTwo: ReviewTargets = { entries: roundTwoPointers };
+
+		assert.notEqual(roundOne, roundTwo);
+		assert.notEqual(roundOne.entries, roundTwo.entries);
+		for (const pointer of roundTwo.entries) assert.ok(!roundOne.entries.includes(pointer));
+	});
+
+	it("ReviewTargets' exported surface contains no validator, allow-list or restriction function of any kind that could cap investigation to entries", () => {
+		const reviewTargetsRelated = Object.keys(types).filter((key) => /reviewtargets/i.test(key));
+		assert.deepEqual(reviewTargetsRelated, []);
+	});
+
+	it('a ReviewTargets with zero entries is structurally valid', () => {
+		const targets: ReviewTargets = { entries: [] };
+		assert.deepEqual(targets.entries, []);
+	});
+
+	it('entries with a duplicate Pointer (same path and section) is accepted', () => {
+		const pointer: Pointer = { path: 'a.md', section: { kind: 'symbol', value: 'x' } };
+		const targets: ReviewTargets = { entries: [pointer, pointer] };
+		assert.equal(targets.entries.length, 2);
+		assert.deepEqual(targets.entries[0], targets.entries[1]);
+	});
+
+	it('entries mixing whole-file Pointers (no section) and region-pinned Pointers (section populated) is accepted', () => {
+		const wholeFile: Pointer = { path: 'a.md' };
+		const regionPinned: Pointer = { path: 'b.md', section: { kind: 'lineRange', value: '1-10' } };
+		const targets: ReviewTargets = { entries: [wholeFile, regionPinned] };
+		assert.equal(targets.entries[0]!.section, undefined);
+		assert.deepEqual(targets.entries[1]!.section, regionPinned.section);
+	});
+
+	it("every ReviewTargets.entries[] Pointer can be passed directly to sc6's PointerPathValidator with no reshaping", () => {
+		const targets: ReviewTargets = { entries: [{ path: 'a.md' }, { path: '../../etc/passwd' }] };
+		const results = targets.entries.map((pointer) => validatePointerPath(pointer, '/repo/root'));
+		assert.equal(results[0]!.ok, true);
+		assert.equal(results[1]!.ok, false);
 	});
 });

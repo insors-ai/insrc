@@ -211,6 +211,11 @@ Instead of two separate ScopeValidator-typed exports, export a single function m
 
 - [dm1 / missed] All three dataModel entries (Scope, ValidationResult, ScopeFieldRequirement) cite callSites: ['src/workflow/artifact-core/types.ts'], but this Story's own s1.analyzeBundles[*].pathsCited never actually lists that path -- it only cites the three indexer/parser Scope files and the five review-history files. The landing location is correct (it matches Story s1's own approved LLD and this Epic's established module), but it was not freshly grounded by an analyze call in this Story's own context.assemble step. Should be closed by a module.profile/concept.resolve pass on src/workflow/artifact-core/types.ts before this LLD proceeds to build, so the citation is genuinely satisfied rather than carried over by assumption from the sibling Story.
 
+## Resolved questions
+
+- `dm1` — [dm1 / missed] All three dataModel entries (Scope, ValidationResult, ScopeFieldRequirement) cite callSites: ['src/workflow/artifact-core/types.ts'], but this Story's own s1.analyzeBundles[*].pathsCited never actually lists that path -- it only cites the three indexer/parser Scope files and the five review-history files. The landing location is correct (it matches Story s1's own approved LLD and this Epic's established module), but it was not freshly grounded by an analyze call in this Story's own context.assemble step. Should be closed by a module.profile/concept.resolve pass on src/workflow/artifact-core/types.ts before this LLD proceeds to build, so the citation is genuinely satisfied rather than carried over by assumption from the sibling Story.
+  - **resolved**: Ground before planning — types.ts now carries Locator/Pointer/StalenessResult/PathValidationResult from Story s1's approved build; grounding s2's LLD citation against the real file closes the gap before planning s2. _(2026-11-19T10:02:04.658Z)_
+
 ## Citations
 
 - **[[c1]]** `analyze-bundle` `s1 capability-discovery bundle (Scope/ValidationResult/Validator naming collision check)` — "Three unrelated interface Scope declarations in src/indexer/parser/{cpp,rust,csharp}.ts ... no naming collision risk."

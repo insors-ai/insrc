@@ -45,12 +45,12 @@ function typecheckFixture(): void {
 
 const finding = (id: string, category: Finding['category'] = 'correctness', severity = 'HIGH'): Finding => ({ id, category, severity });
 
-/** A classify stub returning the given verdicts in order, recording every call. */
+/** A classify stub that resolves in one pass (needsAuditTrail: false), recording every call. */
 function stubClassify(verdicts: readonly ReconciliationVerdict[]) {
 	const calls: Array<{ reviewId: string; priorFindings: readonly Finding[]; currentFindings: readonly Finding[]; auditTrail: string | undefined }> = [];
-	const classify = async (reviewId: string, priorFindings: readonly Finding[], currentFindings: readonly Finding[], auditTrail: string | undefined): Promise<readonly ReconciliationVerdict[]> => {
+	const classify = async (reviewId: string, priorFindings: readonly Finding[], currentFindings: readonly Finding[], auditTrail: string | undefined) => {
 		calls.push({ reviewId, priorFindings, currentFindings, auditTrail });
-		return verdicts;
+		return { verdicts, needsAuditTrail: false };
 	};
 	return { classify, calls };
 }

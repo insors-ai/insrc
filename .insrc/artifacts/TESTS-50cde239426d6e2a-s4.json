@@ -1,0 +1,239 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 6,
+        "contentHash": "f9e3ecac0001d9945b9fb43bec326cb2fc1dfd73c42252c1706ebf6c3b126f00",
+        "at": "2026-11-19T12:54:32.481Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "50cde239426d6e2a",
+    "storyId": "s4",
+    "createdAt": "2026-11-19T11:43:57.160Z",
+    "updatedAt": "2026-11-19T12:54:32.327Z",
+    "epicCreatedAt": "2026-11-18T04:59:27.796Z",
+    "epicSlug": "shared-reviewcontext-data-model",
+    "revision": 6
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "239079899",
+        "ranAt": "2026-11-19T11:43:57.160Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CommentParty, CommentEntry and ReviewContextRound are exported with the exact documented field shapes",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/comment-entry.test.ts",
+                "title": "are exported with the exact documented field shapes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifact-core/__tests__/comment-entry.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 781,
+            "titles": [
+              {
+                "title": "are exported with the exact documented field shapes",
+                "result": "pass"
+              },
+              {
+                "title": "CommentParty, CommentEntry and ReviewContextRound",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "072ca9303",
+        "ranAt": "2026-11-19T12:54:32.327Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a ReviewContextRound built for attempt N carries round=N at the root level",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/comment-entry.test.ts",
+                "title": "a ReviewContextRound built for attempt N carries round=N at the root level",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a CommentEntry carries round, party, timestamp and text as first-class fields",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/comment-entry.test.ts",
+                "title": "a CommentEntry carries round, party, timestamp and text as first-class fields",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "CommentEntry's exported shape contains no verdict, severity or dimension field of any kind",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/comment-entry.test.ts",
+                "title": "CommentEntry's exported shape contains no verdict, severity or dimension field of any kind",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a CommentEntry.party value outside 'submitter'|'reviewer' is rejected at compile time (type-level check, not a runtime test)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/comment-entry.test.ts",
+                "title": "a CommentEntry.party value outside 'submitter'|'reviewer' is rejected at compile time (type-level check, not a runtime test)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "CommentEntry's and ReviewContextRound's exported shapes contain no artifactId or other cross-artifact scoping field of any kind",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/comment-entry.test.ts",
+                "title": "CommentEntry's and ReviewContextRound's exported shapes contain no artifactId or other cross-artifact scoping field of any kind",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a ReviewContextRound with an empty comments array is structurally valid",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/comment-entry.test.ts",
+                "title": "a ReviewContextRound with an empty comments array is structurally valid",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "multiple CommentEntry values in the same round from different parties with identical timestamps are both recorded",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/comment-entry.test.ts",
+                "title": "multiple CommentEntry values in the same round from different parties with identical timestamps are both recorded",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a CommentEntry.text that is an empty string is structurally valid",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/comment-entry.test.ts",
+                "title": "a CommentEntry.text that is an empty string is structurally valid",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifact-core/__tests__/comment-entry.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4640,
+            "titles": [
+              {
+                "title": "are exported with the exact documented field shapes",
+                "result": "pass"
+              },
+              {
+                "title": "a ReviewContextRound built for attempt N carries round=N at the root level",
+                "result": "pass"
+              },
+              {
+                "title": "a CommentEntry carries round, party, timestamp and text as first-class fields",
+                "result": "pass"
+              },
+              {
+                "title": "CommentEntry's exported shape contains no verdict, severity or dimension field of any kind",
+                "result": "pass"
+              },
+              {
+                "title": "a CommentEntry.party value outside 'submitter'|'reviewer' is rejected at compile time (type-level check, not a runtime test)",
+                "result": "pass"
+              },
+              {
+                "title": "CommentEntry's and ReviewContextRound's exported shapes contain no artifactId or other cross-artifact scoping field of any kind",
+                "result": "pass"
+              },
+              {
+                "title": "a ReviewContextRound with an empty comments array is structurally valid",
+                "result": "pass"
+              },
+              {
+                "title": "multiple CommentEntry values in the same round from different parties with identical timestamps are both recorded",
+                "result": "pass"
+              },
+              {
+                "title": "a CommentEntry.text that is an empty string is structurally valid",
+                "result": "pass"
+              },
+              {
+                "title": "CommentParty, CommentEntry and ReviewContextRound",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

@@ -27,7 +27,7 @@
     "storyTitle": "Comments carries the submitter's freeform context and round tracking across repeated rounds on the same artifact",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "approved",
+      "status": "completed",
       "revision": {
         "number": 1,
         "contentHash": "50f0657612a0f72f19f0d1793d1c0f503576e1f17907c05b7b9570b4a1aa1166",

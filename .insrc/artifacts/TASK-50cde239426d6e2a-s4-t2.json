@@ -1,0 +1,116 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-7baccb2a-4476-461a-ad3a-cfba6b0f2ca2",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-19T11:40:37.191Z",
+    "epicCreatedAt": "2026-11-18T04:59:27.796Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "50cde239426d6e2a",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Write unit tests for CommentParty, CommentEntry and ReviewContextRound",
+      "parent": {
+        "entityId": "STORY-50cde239426d6e2a-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-50cde239426d6e2a-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-50cde239426d6e2a-s4-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#210",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "3ebfe1c6e5bdcd50dc36e9faadf3c1a7aed0fcc551fdc315588c37ac79140279",
+        "at": "2026-11-19T11:40:37.191Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-19T11:40:37.192Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Write unit tests for CommentParty, CommentEntry and ReviewContextRound",
+    "summary": "Add a flat kebab-case *.test.ts file under src/workflow/artifact-core/__tests__/ covering: the root-level round field, CommentEntry's exact field set (no verdict/severity/dimension), the absence of any cross-artifact scoping field, and the documented empty/duplicate-timestamp/empty-text edge cases -- one test case per testStrategy.testLevels subject, matching ac1/ac2/ac3's acceptanceMapping verbatim.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "Every subject named in the LLD's testStrategy.testLevels has a corresponding test case",
+      "ac1, ac2 and ac3's provingTests from the LLD's acceptanceMapping all pass",
+      "npx tsx --test for the new test file passes with zero failures"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "a ReviewContextRound built for attempt N carries round=N at the root level"
+      },
+      {
+        "level": "unit",
+        "name": "a CommentEntry carries round, party, timestamp and text as first-class fields"
+      },
+      {
+        "level": "unit",
+        "name": "CommentEntry's exported shape contains no verdict, severity or dimension field of any kind"
+      },
+      {
+        "level": "unit",
+        "name": "a CommentEntry.party value outside 'submitter'|'reviewer' is rejected at compile time (type-level check, not a runtime test)"
+      },
+      {
+        "level": "unit",
+        "name": "CommentEntry's and ReviewContextRound's exported shapes contain no artifactId or other cross-artifact scoping field of any kind"
+      },
+      {
+        "level": "unit",
+        "name": "a ReviewContextRound with an empty comments array is structurally valid"
+      },
+      {
+        "level": "unit",
+        "name": "multiple CommentEntry values in the same round from different parties with identical timestamps are both recorded"
+      },
+      {
+        "level": "unit",
+        "name": "a CommentEntry.text that is an empty string is structurally valid"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

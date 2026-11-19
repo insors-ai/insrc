@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 6,
+        "contentHash": "959410aa5181471b7ea51361228a1b3a12c5666196d5e8ec7f7090d2aefc8127",
+        "at": "2026-11-19T12:55:12.154Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 6,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-19T13:26:34.718Z"
+      }
+    },
+    "workflow": "build",
+    "runId": "store-c392f964-d1a5-462e-8e0e-62f06aeff78e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-19T11:43:57.160Z",
+    "epicCreatedAt": "2026-11-18T04:59:27.796Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "50cde239426d6e2a",
+    "storyId": "s4",
+    "revision": 6,
+    "updatedAt": "2026-11-19T12:54:32.327Z",
+    "authoredBy": "controller",
+    "epicSlug": "shared-reviewcontext-data-model"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      }
+    ],
+    "summary": "Per-field @ts-expect-error checks (verdict, severity, dimension, artifactId) only catch those specific names -- adding any other field, e.g. scopeId, would leave every existing check passing. Added a type-level Equal<keyof T, ...> assertion for both CommentEntry and ReviewContextRound: it fails to compile for an added or removed key of any name, since keyof T would then differ from the expected literal union. Verified by temporarily adding an unrelated scopeId field and confirming the typecheck fixture now fails to compile, then restoring.",
+    "testRecord": {
+      "md": "docs/epics/shared-reviewcontext-data-model-E2026111850cde239/S004/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/__tests__/comment-entry.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-19T12:54:32.327Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/__type-tests__/comment-entry.typecheck.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-19T12:54:32.327Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-19T12:54:32.327Z"
+      }
+    ],
+    "commit": "072ca9303"
+  },
+  "citations": []
+}

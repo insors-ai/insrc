@@ -12,6 +12,20 @@
     "envelope": {
       "description": "",
       "references": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#195",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": [
+          {
+            "kind": "design",
+            "at": "2026-11-18T05:46:40.069Z"
+          }
+        ]
+      },
       "attachments": [
         {
           "target": {
@@ -101,24 +115,10 @@
           "at": "2026-11-19T10:39:51.294Z",
           "externalId": "7002033581"
         }
-      ],
-      "binding": {
-        "reference": {
-          "entityId": "insors-ai/insrc#195",
-          "type": "github:issue",
-          "relation": "tracked-by"
-        },
-        "createdAtRevision": 1,
-        "posted": [
-          {
-            "kind": "design",
-            "at": "2026-11-18T05:46:40.069Z"
-          }
-        ]
-      }
+      ]
     },
     "lifecycle": {
-      "status": "draft",
+      "status": "completed",
       "revision": {
         "number": 1,
         "contentHash": "7f67311f00c6101c952763f219208b46e606b381c765f6354708dffd623980a3",

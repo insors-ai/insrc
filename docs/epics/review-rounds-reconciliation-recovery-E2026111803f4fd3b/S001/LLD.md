@@ -184,6 +184,8 @@ Replace sc1's flat interfaceSketch with a union so each reviewKind's hook fields
 
 - `q7db2a4dc` — cd3 (partial at audit, resolved before this synthesis): api.errors was initially left empty despite s5 documenting a concrete RangeError for an invalid round; this synthesis adds { type: 'RangeError', condition: 'round is not a positive integer' } to runReviewRound's errors so the contract and error-paths sections agree.
   - **ignored**: left to implementer judgment — Not an actual open design question -- it's a changelog note recording that the cd3 audit gap (api.errors left empty) was already fixed within this same synthesis call. The LLD's contract details section 2.1 already lists the RangeError. _(2026-11-19T13:38:29.498Z)_
+- `qfec4fe60` — Cross-review (post-synthesis) found runReviewRound's original signature omitted reviewId entirely, even though the round-driver is the one Story that must call sc4's ReviewReportDocgenCall{reviewId, round} and sc5's writeCheckpoint/readCheckpoint/finalizeReview, all of which require a reviewId. Fixed by adding reviewId: string as this function's first parameter, with a postcondition that it is threaded through unchanged to those calls.
+  - **resolved**: Explicit first parameter — This is exactly the fix already applied to the approved LLD: reviewId is runReviewRound's first parameter, threaded unchanged into the sc4/sc5 calls. _(2026-11-19T14:52:08.177Z)_
 
 ## Citations
 

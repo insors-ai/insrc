@@ -56,6 +56,13 @@
         "status": "ignored",
         "rationale": "Not an actual open design question -- it's a changelog note recording that the cd3 audit gap (api.errors left empty) was already fixed within this same synthesis call. The LLD's contract details section 2.1 already lists the RangeError.",
         "resolvedAt": "2026-11-19T13:38:29.498Z"
+      },
+      "qfec4fe60": {
+        "question": "Cross-review (post-synthesis) found runReviewRound's original signature omitted reviewId entirely, even though the round-driver is the one Story that must call sc4's ReviewReportDocgenCall{reviewId, round} and sc5's writeCheckpoint/readCheckpoint/finalizeReview, all of which require a reviewId. Fixed by adding reviewId: string as this function's first parameter, with a postcondition that it is threaded through unchanged to those calls.",
+        "status": "resolved",
+        "choice": "Explicit first parameter",
+        "rationale": "This is exactly the fix already applied to the approved LLD: reviewId is runReviewRound's first parameter, threaded unchanged into the sc4/sc5 calls.",
+        "resolvedAt": "2026-11-19T14:52:08.177Z"
       }
     },
     "envelope": {

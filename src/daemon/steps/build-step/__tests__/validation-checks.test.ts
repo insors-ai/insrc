@@ -930,3 +930,50 @@ test('no Node command constant is the source of a non-Node plan', async () => {
 		} finally { rmSync(repo, { recursive: true, force: true }); }
 	}
 });
+
+// --- t3: the exit-code format and the non-Node typecheck skip ---
+
+test('an exit-code plan passes when every file exits 0 and fails on a non-zero exit', async () => {
+	const calls: string[][] = [];
+	const exits: Record<string, number> = { 'tests/a_test.py': 0, 'tests/b_test.py': 0 };
+	const run = async (command: string, args: readonly string[]) => {
+		calls.push([command, ...args]);
+		const file = args[args.length - 1] ?? '';
+		return { exitCode: command === 'pytest' ? (exits[file] ?? 0) : 0, stdout: 'collected 3 items\n', stderr: '', timedOut: false, durationMs: 1 } as never;
+	};
+	const plan: ValidationCheckPlan = {
+		typecheck: ['mypy', '.'], testCommand: ['pytest', '-q'], testFiles: ['tests/a_test.py', 'tests/b_test.py'],
+		unresolvedTests: [], namedTests: [
+			{ name: 'works', level: 'unit', source: 'mapping', cases: [{ file: 'tests/a_test.py', title: 'test_a' }], files: [] },
+		],
+		typecheckTimeoutMs: 10_000, testTimeoutMs: 20_000, resultFormat: 'exit-code', commandsSource: 'repo-setting',
+	};
+	const writeOutput = (f: string): string => `/tmp/${f}`;
+	const ok = await runValidationChecks('/nowhere', plan, { run, writeOutput });
+	// The command is the plan's own with the file appended: no TAP reporter flag is added.
+	assert.deepEqual(calls, [['mypy', '.'], ['pytest', '-q', 'tests/a_test.py'], ['pytest', '-q', 'tests/b_test.py']]);
+	assert.equal(ok.typecheck.ok, true);
+	assert.equal(ok.tests.ok, true);
+	// The case takes its file's exit code, and the record says it was not checked on its own.
+	assert.deepEqual(ok.tests.namedTests![0]!.cases.map(c => c.result), ['pass']);
+	assert.match(ok.tests.files![0]!.note ?? '', /not checked individually/);
+
+	exits['tests/b_test.py'] = 1;
+	const bad = await runValidationChecks('/nowhere', plan, { run, writeOutput });
+	assert.equal(bad.tests.ok, false);
+	assert.deepEqual(bad.tests.files!.map(f => f.exitCode), [0, 1]);
+	// A run that prints no TAP is not "not understood" under this format.
+	assert.ok(bad.tests.files!.every(f => f.understood === undefined));
+});
+
+test('withTypecheckProjects makes no tsconfig search for a non-Node plan', async () => {
+	const repo = gitRepo({ 'tsconfig.json': '{}', 'plugin/tsconfig.json': '{}', 'plugin/x.ts': '' });
+	try {
+		const node = nodePlan({ testFiles: ['plugin/x.ts'] });
+		assert.deepEqual((await withTypecheckProjects(repo, node)).typecheckProjects, ['plugin']);
+		for (const commandsSource of ['none', 'repo-setting'] as const) {
+			const other = nodePlan({ testFiles: ['plugin/x.ts'], commandsSource });
+			assert.equal(await withTypecheckProjects(repo, other), other, commandsSource);   // the very same plan
+		}
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});

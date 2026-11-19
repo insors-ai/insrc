@@ -370,6 +370,9 @@ export function owningTypecheckProjects(repoPath: string, files: readonly string
  * added; with no base that leaves only the test files' projects.
  */
 export async function withTypecheckProjects(repoPath: string, plan: ValidationCheckPlan, base?: string, storyKey?: string): Promise<ValidationCheckPlan> {
+	// The extra projects are tsconfig directories, which only the Node default typecheck
+	// (tsc) checks: a plan with a command of the project's own, or none, is left as it is.
+	if (plan.commandsSource !== 'node-default') return plan;
 	let built: string[];
 	if (storyKey === undefined) {
 		built = await changedFiles(repoPath, base);
@@ -600,10 +603,57 @@ function testRunEnv(): NodeJS.ProcessEnv {
 	return env;
 }
 
+/** The note on a run judged by its exit code alone. */
+const NOTE_EXIT_CODE_ONLY = 'judged by its exit code alone: its test cases are not checked individually';
+
+/**
+ * Run one test file for a plan whose format is 'exit-code': the plan's command
+ * with the file appended, and no report: the file passes when the command exits
+ * with 0 within the limit. What the command printed is the evidence.
+ */
+async function runTestFileByExitCode(
+	repoPath: string, plan: ValidationCheckPlan, file: string, remainingMs: number, deps: CheckRunnerDeps,
+): Promise<{ readonly run: TestFileRun; readonly output: string }> {
+	const argv = [...plan.testCommand, file];
+	const command = argv.join(' ');
+	const [cmd, ...args] = argv;
+	if (remainingMs <= 0) {
+		return { run: { file, command, exitCode: null, timedOut: true, durationMs: 0, titles: [], note: NOTE_LIMIT_USED_UP }, output: '' };
+	}
+	if (cmd === undefined) {
+		return { run: { file, command, exitCode: null, timedOut: false, durationMs: 0, titles: [], note: 'empty command' }, output: '' };
+	}
+	const r = await deps.run(cmd, args, { cwd: repoPath, timeoutMs: remainingMs, env: testRunEnv() });
+	const output = r.stderr.length === 0 ? r.stdout : `${r.stdout}\n${r.stderr}`;
+	const notes: string[] = [];
+	if (r.spawnError !== undefined) notes.push(`could not start: ${r.spawnError}`);
+	if (r.timedOut) notes.push(`timed out after ${Math.round(remainingMs / 1000)} s`);
+	if (r.spawnError === undefined && !r.timedOut) notes.push(NOTE_EXIT_CODE_ONLY);
+	let outputPath: string | undefined;
+	try {
+		outputPath = (deps.writeOutput ?? writeOutputFile)(file, output);
+	} catch (err) {
+		notes.push(`the whole output could not be written to a file: ${err instanceof Error ? err.message : String(err)}`);
+	}
+	return {
+		run: {
+			file, command,
+			exitCode:   r.spawnError !== undefined || r.timedOut ? null : r.exitCode,
+			timedOut:   r.timedOut,
+			durationMs: r.durationMs,
+			titles:     [],
+			...(outputPath !== undefined ? { outputPath } : {}),
+			...(notes.length > 0 ? { note: notes.join('; ') } : {}),
+		},
+		output,
+	};
+}
+
 /** Run one test file on its own, under what is left of the shared limit. */
 async function runTestFile(
 	repoPath: string, plan: ValidationCheckPlan, file: string, remainingMs: number, deps: CheckRunnerDeps,
 ): Promise<{ readonly run: TestFileRun; readonly output: string }> {
+	if (plan.resultFormat === 'exit-code') return runTestFileByExitCode(repoPath, plan, file, remainingMs, deps);
 	if (remainingMs <= 0) {
 		const command = [...plan.testCommand, TAP_REPORTER_ARG, file].join(' ');
 		return { run: { file, command, exitCode: null, timedOut: true, durationMs: 0, titles: [], note: NOTE_LIMIT_USED_UP }, output: '' };
@@ -662,7 +712,7 @@ async function runTestFile(
 
 /** Each named test with a result on each of its cases. A case whose file was
  *  not run, or whose title did not run in it, is `not found`. */
-function namedResults(named: readonly NamedTestPlan[], runs: readonly TestFileRun[]): TestRecordNamedTest[] {
+function namedResults(named: readonly NamedTestPlan[], runs: readonly TestFileRun[], format: ResultFormat = 'tap'): TestRecordNamedTest[] {
 	const byFile = new Map(runs.map(r => [r.file, r]));
 	return named.map((n): TestRecordNamedTest => ({
 		name: n.name,
@@ -670,7 +720,10 @@ function namedResults(named: readonly NamedTestPlan[], runs: readonly TestFileRu
 		source: n.source,
 		cases: n.cases.map(c => {
 			const run = byFile.get(c.file);
-			const result: TestCaseResult = run === undefined ? 'not found' : resultOfTitle({ understood: true, titles: run.titles }, c.title);
+			// 'exit-code': no title is read, so a case takes its file's exit code (see NOTE_EXIT_CODE_ONLY).
+			const result: TestCaseResult = run === undefined ? 'not found'
+				: format === 'exit-code' ? (run.exitCode === 0 && !run.timedOut ? 'pass' : 'fail')
+				: resultOfTitle({ understood: true, titles: run.titles }, c.title);
 			return { file: c.file, title: c.title, result };
 		}),
 		files: n.source === 'mapping' ? [] : [...n.files],
@@ -732,7 +785,7 @@ export async function runValidationChecks(
 			runs.push(run);
 			if (output.length > 0) lastOutput = output;
 		}
-		const results = namedResults(named, runs);
+		const results = namedResults(named, runs, plan.resultFormat);
 		const badCases = results.flatMap(n => n.cases.filter(c => c.result !== 'pass').map(c => `${c.result}: '${c.title}' in ${c.file}`));
 		// A run whose output is not TAP gave no result for any title: with no cases
 		// named (a name run by its file) nothing else would notice, and exit code 0

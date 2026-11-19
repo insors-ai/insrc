@@ -1,0 +1,430 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1795095121944-ody2m8",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-19T13:38:06.946Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 362094,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-11-18T06:14:00.057Z",
+    "epicHash": "03f4fd3b9102aab8",
+    "epicSlug": "review-rounds-reconciliation-recovery",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1794986545330-2wntv5",
+    "hldEffectiveHash": "6d57abfa68accf993485dc920a80409335ebda32202c80baa14902fde616994d",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "Initial Review and Correction-and-Re-review share one round-driven execution process",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "b6c2c36cfd51d8ed0da13359e550ef89326e3bcc7c5c2f2c6ee4d08cec9f2ff6",
+        "at": "2026-11-19T13:38:07.872Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1,
+    "questionResolutions": {
+      "q7db2a4dc": {
+        "question": "cd3 (partial at audit, resolved before this synthesis): api.errors was initially left empty despite s5 documenting a concrete RangeError for an invalid round; this synthesis adds { type: 'RangeError', condition: 'round is not a positive integer' } to runReviewRound's errors so the contract and error-paths sections agree.",
+        "status": "ignored",
+        "rationale": "Not an actual open design question -- it's a changelog note recording that the cd3 audit gap (api.errors left empty) was already fixed within this same synthesis call. The LLD's contract details section 2.1 already lists the RangeError.",
+        "resolvedAt": "2026-11-19T13:38:29.498Z"
+      }
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "This Story adds the one shared function every review round runs through, whatever round number it is on and whatever kind of review it is. A caller supplies a small per-review-type hook set (sc1) plus the round's targets; the function always re-derives findings from scratch, never trusting a prior round's output. A review type that wants a security pass opts in with a flag on the call, defaulting to on, rather than a new kind of review -- the nested pass runs inside the same round, through the same discipline.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Alternative a2 wins: one shared round-driver function in a new sibling module under src/workflow/ (outside review-history/, which is being retired from rather than extended) takes a small per-review-type hook set -- the grounding/findings call, checkpoint granularity, and finding taxonomy/severity -- and runs the identical round cycle, checkpoint lifecycle, and reconciliation call for every review type.",
+      "ownedContracts": [
+        {
+          "id": "sc1",
+          "name": "Review-type hook set",
+          "purpose": "The small hook set (grounding/findings call, checkpoint granularity, taxonomy/severity) that is the only thing legitimately differing per review type, consumed by the round-driver, per the Epic's one-shared-process framing (Story s1 ac1/ac2).",
+          "interfaceSketch": "type ReviewKind = 'design' | 'code';\ninterface RoundDriverHooks {\n  readonly reviewKind: ReviewKind;\n  readonly checkpointGranularity: 'round' | 'task';\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        }
+      ],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [
+          "sc1"
+        ],
+        "depends": [],
+        "internal": "The round-driver function itself -- what it does internally to run the grounding+findings, reconciliation, render+present and checkpoint-write cycle -- stays private to s1; no other Story's type depends on the driver's internals, only on the hook contract sc1 exposes."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc2"
+          ],
+          "depends": [
+            "sc1"
+          ],
+          "internal": "Which exact per-review-type severity scales exist beyond the HIGH/MED default, and how a review type's Feedback implementation declares its own, stay internal to s2; no other Story's type depends on Finding's shape."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc3"
+          ],
+          "depends": [
+            "sc1"
+          ],
+          "internal": "How the reconciliation LLM call is actually prompted, and how it reads the temp folder's audit trail when needed, stay internal to s3; no other Story's type depends on ReconciliationResult's internals beyond its verdict shape."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc4"
+          ],
+          "depends": [
+            "sc1"
+          ],
+          "internal": "The exact docgen docType registration and MD rendering logic (including the resolved/still-open/contradicted annotation rule scoped to this round's own corrections) stay internal to s4; no other Story's type depends on the renderer's internals."
+        },
+        {
+          "storyId": "s5",
+          "owns": [
+            "sc5"
+          ],
+          "depends": [
+            "sc1"
+          ],
+          "internal": "The exact per-review-type granularity mapping (round-level for design review, per-Task for code review) and the durable-copy-before-deletion mechanics stay internal to s5; no other Story's type depends on ReviewCheckpoint's internals beyond what sc1's round-driver needs to call it."
+        }
+      ],
+      "rolloutPhase": "Phase A — the shared round-driver",
+      "nonFunctional": {
+        "performance": "Checkpoint write/read (sc5) is a single small JSON file write/read per completed unit of work (a round, or a Task), adding no I/O beyond what the round cycle already performs.",
+        "durability": "The final round's review-output JSON is copied into durable artifact storage before the .insrc/tmp/<reviewId>/ folder is deleted at a terminal state (k7), so a completed review's result survives after the ephemeral working folder is gone."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "runReviewRound",
+          "signature": "function runReviewRound<F = unknown>(hooks: RoundDriverHooks<F>, round: number, targets: ReviewTargets, opts?: { readonly runSecurityPass?: boolean }): Promise<RoundResult<F>>",
+          "parameters": [
+            {
+              "name": "hooks",
+              "type": "RoundDriverHooks<F>",
+              "purpose": "The per-review-type hook set (sc1): reviewKind, checkpointGranularity, the grounding/findings call, and an optional nested security pass.",
+              "optional": false
+            },
+            {
+              "name": "round",
+              "type": "number",
+              "purpose": "The round number (1 = Initial Review, >1 = Correction-and-Re-review). The only input that varies between an ac1 call and an ac2 call -- no other branching exists.",
+              "optional": false
+            },
+            {
+              "name": "targets",
+              "type": "ReviewTargets",
+              "purpose": "The full, reset-each-round scope to ground against (src/workflow/artifact-core/types.ts:345-347) -- always the entire scope, never a filtered subset of what a prior round already covered.",
+              "optional": false
+            },
+            {
+              "name": "opts",
+              "type": "{ readonly runSecurityPass?: boolean }",
+              "purpose": "Caller-side opt-out for the nested security pass. Defaults to true per the resolved cross-epic decision: when true and hooks.security is supplied, the security pass runs nested inside this same round, not as a separate reviewKind.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<RoundResult<F>>",
+            "meaning": "This round's self-contained finding set (plus any nested security findings merged in), produced solely from this call's own re-grounding -- never derived from or filtered by a prior round's output."
+          },
+          "errors": [
+            {
+              "type": "RangeError",
+              "condition": "round is not a positive integer (not Number.isInteger(round) or round < 1)"
+            }
+          ],
+          "preconditions": [
+            "round >= 1",
+            "targets is the Story's full ReviewTargets for this review, not a subset carried over from a prior round"
+          ],
+          "postconditions": [
+            "hooks.ground(targets, round) is called exactly once, every round, with the complete targets and no prior-findings argument -- satisfies ac1 (round 1) and ac2 (round>1 via the identical call shape)",
+            "When opts.runSecurityPass is not explicitly false and hooks.security is defined, hooks.security(targets, round) is also called once, nested inside this same round call, and its findings are merged into the same RoundResult -- the security pass never becomes a third reviewKind",
+            "No submitter rationale carried on targets/the artifact is stripped, filtered or withheld before being handed to hooks.ground or hooks.security -- independence is enforced only by the hook implementation's own steering instructions (ac3/k2), never by this function removing content"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "ReviewKind",
+        "change": "new",
+        "details": "type ReviewKind = 'design' | 'code'; -- exactly the HLD's sc1 interfaceSketch, unchanged by the resolved security question (security runs nested, not as a third member).",
+        "callSites": []
+      },
+      {
+        "entity": "RoundDriverHooks",
+        "change": "new",
+        "details": "interface RoundDriverHooks<F = unknown> { readonly reviewKind: ReviewKind; readonly checkpointGranularity: 'round' | 'task'; ground(targets: ReviewTargets, round: number): Promise<readonly F[]>; security?: (targets: ReviewTargets, round: number) => Promise<readonly F[]>; } -- adds .ground and optional .security to sc1's two HLD-sketched fields; F is left generic so this Story does not own Finding's shape (that is sc2, s2's contract).",
+        "callSites": []
+      },
+      {
+        "entity": "RoundResult",
+        "change": "new",
+        "details": "interface RoundResult<F = unknown> { readonly round: number; readonly findings: readonly F[]; } -- the round-driver's own output shape; a self-contained finding set for exactly the round that was asked for, with the nested security pass's findings (when run) merged into the same array rather than kept in a separate channel.",
+        "callSites": []
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "implements",
+        "howDetails": "RoundDriverHooks is authored here as sc1's concrete shape, implementing the HLD interfaceSketch's reviewKind + checkpointGranularity fields verbatim and adding the .ground grounding call plus the optional .security nested hook that carries the resolved cross-epic security-pass decision. s2-s5 consume this same type; none of its fields change shape for them."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "round is not a positive integer (zero, negative, or non-integer)",
+          "detection": "runReviewRound validates round at entry (!Number.isInteger(round) || round < 1) before invoking any hook",
+          "response": "throws a RangeError synchronously, before hooks.ground or hooks.security is ever called",
+          "userImpact": "the caller gets an immediate, local failure instead of a nonsensical round number reaching a hook and silently corrupting a checkpoint or finding set keyed by round",
+          "recoverable": true
+        },
+        {
+          "scenario": "hooks.ground rejects (the grounding/findings call itself fails, e.g. an LLM call errors or times out)",
+          "detection": "the Promise returned by hooks.ground rejects",
+          "response": "runReviewRound propagates the rejection unchanged to the caller and does not call hooks.security for that round",
+          "userImpact": "the caller sees the round as having failed outright, rather than getting back an empty finding set indistinguishable from \"nothing was found\"",
+          "recoverable": true
+        },
+        {
+          "scenario": "hooks.security rejects while the nested security pass is in effect (hooks.security defined, opts.runSecurityPass not false)",
+          "detection": "the Promise returned by hooks.security rejects, after hooks.ground has already resolved",
+          "response": "runReviewRound propagates the rejection rather than returning hooks.ground's findings alone -- a nested pass that failed must not be silently dropped from the round's result",
+          "userImpact": "the caller sees the whole round as failed instead of receiving a RoundResult that looks complete but silently omits the security pass's coverage",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "targets.entries is an empty array",
+          "expected": "hooks.ground(targets, round) is still called with the empty ReviewTargets exactly as supplied; runReviewRound does not special-case or reject an empty scope"
+        },
+        {
+          "input": "opts is omitted entirely",
+          "expected": "runSecurityPass behaves as true (its documented default) -- hooks.security runs whenever it is supplied, with no need for the caller to pass opts at all"
+        },
+        {
+          "input": "opts.runSecurityPass is explicitly false and hooks.security is defined",
+          "expected": "hooks.security is never called for that round; RoundResult.findings contains only hooks.ground's findings"
+        },
+        {
+          "input": "hooks.security is undefined (this review type has no security hook) and opts.runSecurityPass is true or omitted",
+          "expected": "runReviewRound calls nothing for the security pass and does not throw -- an absent hook is a no-op, not a misconfiguration"
+        },
+        {
+          "input": "round is a large number (e.g. round=50, many correction rounds deep)",
+          "expected": "runs through the identical code path as round=1 or round=2 -- no round-number-based branching beyond passing the number itself through to hooks.ground/hooks.security"
+        }
+      ],
+      "invariantsToPreserve": []
+    },
+    "testStrategy": {
+      "testFramework": "node:test, run via npx tsx --test (matches this epic's and the shared-reviewcontext-data-model epic's artifact-core test convention)",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove runReviewRound's one-process-per-round contract (ac1/ac2/ac3), its round-number validation, and both hooks' error propagation and the security-pass opt-out, with stub hooks -- no real LLM calls needed since hooks.ground/hooks.security are caller-supplied functions.",
+          "subjects": [
+            "a round 1 call invokes hooks.ground once with the complete targets and no prior-findings argument",
+            "a round 2 (Correction-and-Re-review) call invokes hooks.ground through the identical call shape as round 1, differing only in the round number passed",
+            "hooks.ground receives the full targets/artifact unmodified -- nothing is stripped or withheld before grounding runs",
+            "round 0 is rejected with a RangeError before any hook is called",
+            "a negative round is rejected with a RangeError before any hook is called",
+            "a non-integer round is rejected with a RangeError before any hook is called",
+            "a rejecting hooks.ground propagates its rejection and hooks.security is never called for that round",
+            "a rejecting hooks.security propagates its rejection rather than returning hooks.ground's findings alone",
+            "an empty ReviewTargets.entries array is passed through to hooks.ground unchanged, with no special-casing",
+            "opts omitted defaults runSecurityPass to true -- hooks.security runs when it is supplied",
+            "opts.runSecurityPass:false suppresses hooks.security even when it is supplied",
+            "hooks.security undefined is a no-op, not a thrown error, when runSecurityPass is true or omitted",
+            "a large round number (e.g. 50) runs through the identical code path as round 1, with no round-number-based branching"
+          ],
+          "fixturesNeeded": [
+            "a stub RoundDriverHooks with a spyable ground() that records its call count and arguments",
+            "a stub RoundDriverHooks with an added spyable security() for the nested-pass tests",
+            "a minimal ReviewTargets fixture (both populated and empty entries[])"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "a round 1 call invokes hooks.ground once with the complete targets and no prior-findings argument"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "a round 2 (Correction-and-Re-review) call invokes hooks.ground through the identical call shape as round 1, differing only in the round number passed"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "hooks.ground receives the full targets/artifact unmodified -- nothing is stripped or withheld before grounding runs"
+          ]
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Single round-driver function + plain hooks object + boolean security flag",
+        "oneLineSummary": "One exported function, `runReviewRound(hooks, round, targets, priorRound?)`, taking sc1's RoundDriverHooks object plus a `runSecurityPass` boolean (default true) that nests the security pass inside the same round when set.",
+        "approach": "A new sibling module (e.g. src/workflow/review-round/driver.ts, outside review-history/) exports one function matching sc1's interfaceSketch: `RoundDriverHooks { reviewKind: 'design'|'code'; checkpointGranularity: 'round'|'task'; ground(targets, priorFindings?): Promise<FindingSet>; }` plus an entry function `runReviewRound(hooks: RoundDriverHooks, round: number, targets: ReviewTargets, opts?: { runSecurityPass?: boolean }): Promise<RoundResult>`. `runSecurityPass` defaults to true; when true, the driver runs hooks.ground for round N exactly the same way whether round===1 or round>1 (ac1/ac2), then -- as a nested step inside that same round, not a new reviewKind -- invokes a security sub-pass through a second, equally-shaped hook if the caller's hooks object supplies one (hooks.security?), using the identical re-grounding discipline (ac3): no structural stripping of submitter rationale. reviewKind stays exactly 'design'|'code' per the resolved cross-epic question; security is purely an optional nested hook, invoked when the caller both supplies hooks.security AND does not pass runSecurityPass:false. Round number is the only thing that varies the call -- no round-1-vs-round>1 branching inside the function body beyond passing priorFindings to reconciliation (s3's contract, not s1's).",
+        "pros": [
+          "Smallest shape that satisfies ac1/ac2/ac3 and sc1's own interfaceSketch verbatim -- no new abstraction beyond what the HLD already specified.",
+          "The security flag lives on the call, not on the type -- exactly the resolved decision, and costs one optional field.",
+          "Trivially testable: round 1 and round 2 calls through the identical function with different `round` values and a stub hooks.ground prove ac1/ac2's \"same process\" claim directly."
+        ],
+        "cons": [
+          "Hooks object as a plain interface, with .ground as a method, means a caller must pass a working grounding implementation even in tests -- slightly more test setup than a pure-data configuration object (acceptable: the Story is explicitly about running a process, not just data)."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Stateful RoundDriver class, hooks injected via constructor",
+        "oneLineSummary": "A `RoundDriver` class holds hooks + accumulated round state across a review's lifetime; `driver.runRound(round, targets)` advances it.",
+        "approach": "`class RoundDriver { constructor(hooks: RoundDriverHooks); runRound(round: number, targets: ReviewTargets): Promise<RoundResult>; }`. The class retains internal round history across calls so round>1 calls can look back without the caller re-passing prior state explicitly. Security nesting would be a constructor option (`{ runSecurityPass }`) fixed for the review's lifetime rather than per-call.",
+        "pros": [
+          "Caller doesn't need to re-thread prior-round state through every call -- the object does it.",
+          "A natural home for future per-review mutable state (e.g. in-memory round counters) if a later Story needs it."
+        ],
+        "cons": [
+          "Introduces statefulness and a constructor-time decision (fixed runSecurityPass) the Story's acceptance criteria don't ask for -- ac1-ac3 only talk about a round's cycle running, not about an object's lifetime.",
+          "Harder to unit test in isolation per round (needs to construct + advance through prior rounds to reach round N), where a1's plain function takes exactly what one round needs.",
+          "No consuming Story (s2-s5) asked for stateful driver semantics in the HLD context slice -- adds a shape nothing downstream needs."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Introduces unrequested statefulness (fixed-at-construction security flag, retained round history) that adds risk relative to a1 without serving any acceptance criterion or consuming Story's stated need; scored partial on ac2."
+      },
+      {
+        "id": "a3",
+        "name": "Discriminated-union hooks keyed by reviewKind, with per-kind runner functions",
+        "oneLineSummary": "`RoundDriverHooks` becomes a discriminated union (`{reviewKind:'design'; ...} | {reviewKind:'code'; ...}`), dispatched through a lookup table of per-kind runner functions instead of one shared function.",
+        "approach": "Replace sc1's flat interfaceSketch with a union so each reviewKind's hook fields are independently typed, and add a `runnersByKind: Record<ReviewKind, (hooks, round, targets) => Promise<RoundResult>>` dispatch table the entry point selects from.",
+        "pros": [
+          "Lets each reviewKind's hook fields diverge in shape without an escape hatch, if a future reviewKind ever needs materially different hook data."
+        ],
+        "cons": [
+          "Directly undercuts lc1 / the Epic's whole point: \"one execution process distinguished purely by round number, with no divergent steering/checklist logic\" -- a per-kind runner table is structurally the divergent-logic-per-type pattern the Epic exists to retire.",
+          "sc1's HLD interfaceSketch is already a flat interface, not a union; this alternative contradicts the approved HLD shape rather than refining it.",
+          "No current reviewKind ('design'|'code') actually needs divergent hook shapes today -- pure speculative flexibility."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "A per-kind dispatch table is structurally the per-review-type divergence lc1/ac2 explicitly rule out, and it replaces sc1's approved flat interfaceSketch with a discriminated union -- violates both ac2 and sc1."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "cd3 (partial at audit, resolved before this synthesis): api.errors was initially left empty despite s5 documenting a concrete RangeError for an invalid round; this synthesis adds { type: 'RangeError', condition: 'round is not a positive integer' } to runReviewRound's errors so the contract and error-paths sections agree."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/artifact-core/types.ts:345-347"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/artifact-core/types.ts:353"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/artifact-core/types.ts:356-361"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/artifact-core/types.ts:364-367"
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/review-history/review/design-review/admission-checkpoint.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/review-history/review/design-review/preparation-checkpoint.ts"
+    },
+    {
+      "id": "c7",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/review-history/review/design-review/checkpoint.ts"
+    },
+    {
+      "id": "c8",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/review-history/code-review/task-review/admission-checkpoint.ts"
+    },
+    {
+      "id": "c9",
+      "kind": "analyze-bundle",
+      "ref": "src/mcp/docgen/handler.ts"
+    },
+    {
+      "id": "c10",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/review-history/compatibility.ts"
+    },
+    {
+      "id": "c11",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/review-history/index.ts"
+    },
+    {
+      "id": "c12",
+      "kind": "prior-artifact",
+      "ref": "HLD-03f4fd3b9102aab8#sc1"
+    }
+  ]
+}

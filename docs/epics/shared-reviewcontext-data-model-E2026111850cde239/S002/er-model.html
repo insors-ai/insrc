@@ -85,7 +85,7 @@ margin:0;box-sizing:border-box;min-height:100vh;padding-top:56px;background:var(
 <table class="ref">
 <tr><th>Work item</th><td>STORY-50cde239426d6e2a-s2</td></tr>
 <tr><th>Source doc</th><td><a href="./LLD.md">LLD-50cde239426d6e2a-s2</a></td></tr>
-<tr><th>Date</th><td>2026-11-19 13:11</td></tr>
+<tr><th>Date</th><td>2026-11-19 11:36</td></tr>
 <tr><th>User</th><td>Subho Ghosh</td></tr>
 </table>
 </header>
@@ -100,12 +100,15 @@ margin:0;box-sizing:border-box;min-height:100vh;padding-top:56px;background:var(
   }
   Pointer {
     string path
-    string section
     string contentHash
   }
   ValidationResult {
     boolean ok
     string_list violations
+  }
+  Locator {
+    string kind
+    string value
   }
   Scope ||--o| Pointer : &quot;def&quot;
   Scope ||--o| Pointer : &quot;hld&quot;
@@ -113,12 +116,13 @@ margin:0;box-sizing:border-box;min-height:100vh;padding-top:56px;background:var(
   Scope ||--o| Pointer : &quot;plan&quot;
   Scope ||--o{ Pointer : &quot;tasks&quot;
   Scope ||--o| Pointer : &quot;extension&quot;
-  Scope ||--o| Pointer : &quot;amendment&quot;</pre></div></div>
+  Scope ||--o| Pointer : &quot;amendment&quot;
+  Pointer ||--o| Locator : &quot;section&quot;</pre></div></div>
 
 <pre class="iv-src" id="iv-src"></pre>
 </div></section>
-<section class="blk desc"><h2>Description</h2><h3>Entities</h3><p class="lead">3 entities, 14 columns. Relationships are listed against the owning entity.</p><table class="dt"><thead><tr><th>Entity</th><th>Description</th><th>Key</th><th>Relationships</th></tr></thead><tbody><tr><td>Scope</td><td>Describes which review family (scopeType) and chain depth (scopeLevel) a review attempt covers, self-inclusive at the artifact under review.</td><td class="missing">—</td><td>def → Pointer, hld → Pointer, lld → Pointer, plan → Pointer, tasks → Pointer, extension → Pointer, amendment → Pointer</td></tr><tr><td>Pointer</td><td>Owned by sibling Story s1 (sc1) -- references an existing authored file directly, optionally with an exact region and a content hash. Shown here only as the range target for Scope&#39;s named per-kind fields; not redesigned by this Story.</td><td class="missing">—</td><td class="missing">—</td></tr><tr><td>ValidationResult</td><td>The outcome of a ScopeValidator checking a populated Scope against its own (scopeType, scopeLevel) pair.</td><td class="missing">—</td><td class="missing">—</td></tr></tbody></table><h3>Scope</h3><table class="dt"><thead><tr><th>Column</th><th>Type</th><th>Required</th><th>Multi-valued</th><th>Key</th><th>Description</th></tr></thead><tbody><tr><td>scopeType</td><td>string</td><td>yes</td><td>no</td><td class="missing">—</td><td>&#39;design&#39; | &#39;code&#39; -- which review family this Scope belongs to.</td></tr><tr><td>scopeLevel</td><td>string</td><td>yes</td><td>no</td><td class="missing">—</td><td>&#39;def&#39; | &#39;hld&#39; | &#39;lld&#39; | &#39;plan&#39; | &#39;task&#39; -- the chain depth, self-inclusive at the artifact under review.</td></tr><tr><td>def</td><td>Pointer</td><td>no</td><td>no</td><td><span class="tag fk">FK</span></td><td>Pointer to the DEF under or behind this review, if applicable at this depth.</td></tr><tr><td>hld</td><td>Pointer</td><td>no</td><td>no</td><td><span class="tag fk">FK</span></td><td>Pointer to the HLD under or behind this review, if applicable at this depth.</td></tr><tr><td>lld</td><td>Pointer</td><td>no</td><td>no</td><td><span class="tag fk">FK</span></td><td>Pointer to the LLD under or behind this review, if applicable at this depth.</td></tr><tr><td>plan</td><td>Pointer</td><td>no</td><td>no</td><td><span class="tag fk">FK</span></td><td>Pointer to the PLAN under or behind this review, if applicable at this depth.</td></tr><tr><td>tasks</td><td>Pointer</td><td>no</td><td>yes</td><td><span class="tag fk">FK</span></td><td>Pointers to the Tasks under or behind this review, if applicable at this depth.</td></tr><tr><td>extension</td><td>Pointer</td><td>no</td><td>no</td><td><span class="tag fk">FK</span></td><td>Pointer to an extension artifact, if this review covers one.</td></tr><tr><td>amendment</td><td>Pointer</td><td>no</td><td>no</td><td><span class="tag fk">FK</span></td><td>Pointer to an amendment artifact, if this review covers one.</td></tr></tbody></table><h3>Pointer</h3><table class="dt"><thead><tr><th>Column</th><th>Type</th><th>Required</th><th>Multi-valued</th><th>Key</th><th>Description</th></tr></thead><tbody><tr><td>path</td><td>string</td><td>yes</td><td>no</td><td class="missing">—</td><td>Repo-relative path to an existing authored file.</td></tr><tr><td>section</td><td>string</td><td>no</td><td>no</td><td class="missing">—</td><td>An optional Locator pinning the exact region within path this Pointer names.</td></tr><tr><td>contentHash</td><td>string</td><td>no</td><td>no</td><td class="missing">—</td><td>sha256 hex digest of path&#39;s content when this Pointer was built.</td></tr></tbody></table><h3>ValidationResult</h3><table class="dt"><thead><tr><th>Column</th><th>Type</th><th>Required</th><th>Multi-valued</th><th>Key</th><th>Description</th></tr></thead><tbody><tr><td>ok</td><td>boolean</td><td>yes</td><td>no</td><td class="missing">—</td><td>True when exactly the fields valid for this Scope&#39;s (scopeType, scopeLevel) pair are populated.</td></tr><tr><td>violations</td><td>string</td><td>yes</td><td>yes</td><td class="missing">—</td><td>A human-readable violation per field that is wrongly present or wrongly absent.</td></tr></tbody></table></section>
-<footer class="ft"><span>Generated by insrc · companion of LLD-50cde239426d6e2a-s2</span><span>2026-11-19 13:11</span></footer>
+<section class="blk desc"><h2>Description</h2><h3>Entities</h3><p class="lead">4 entities, 16 columns. Relationships are listed against the owning entity.</p><table class="dt"><thead><tr><th>Entity</th><th>Description</th><th>Key</th><th>Relationships</th></tr></thead><tbody><tr><td>Scope</td><td>Describes which review family (scopeType) and chain depth (scopeLevel) a review attempt covers, self-inclusive at the artifact under review.</td><td class="missing">—</td><td>def → Pointer, hld → Pointer, lld → Pointer, plan → Pointer, tasks → Pointer, extension → Pointer, amendment → Pointer</td></tr><tr><td>Pointer</td><td>Owned by sibling Story s1 (sc1) -- references an existing authored file directly, optionally with an exact region and a content hash. Shown here only as the range target for Scope&#39;s named per-kind fields; not redesigned by this Story.</td><td class="missing">—</td><td>section → Locator</td></tr><tr><td>ValidationResult</td><td>The outcome of a ScopeValidator checking a populated Scope against its own (scopeType, scopeLevel) pair.</td><td class="missing">—</td><td class="missing">—</td></tr><tr><td>Locator</td><td>Owned by sibling Story s1 (sc1) -- pins an exact region within an authored file via an open (non-exhaustive) kind discriminant. Shown here only as the range target for Pointer.section; not redesigned by this Story.</td><td class="missing">—</td><td class="missing">—</td></tr></tbody></table><h3>Scope</h3><table class="dt"><thead><tr><th>Column</th><th>Type</th><th>Required</th><th>Multi-valued</th><th>Key</th><th>Description</th></tr></thead><tbody><tr><td>scopeType</td><td>string</td><td>yes</td><td>no</td><td class="missing">—</td><td>&#39;design&#39; | &#39;code&#39; -- which review family this Scope belongs to.</td></tr><tr><td>scopeLevel</td><td>string</td><td>yes</td><td>no</td><td class="missing">—</td><td>&#39;def&#39; | &#39;hld&#39; | &#39;lld&#39; | &#39;plan&#39; | &#39;task&#39; -- the chain depth, self-inclusive at the artifact under review.</td></tr><tr><td>def</td><td>Pointer</td><td>no</td><td>no</td><td><span class="tag fk">FK</span></td><td>Pointer to the DEF under or behind this review, if applicable at this depth.</td></tr><tr><td>hld</td><td>Pointer</td><td>no</td><td>no</td><td><span class="tag fk">FK</span></td><td>Pointer to the HLD under or behind this review, if applicable at this depth.</td></tr><tr><td>lld</td><td>Pointer</td><td>no</td><td>no</td><td><span class="tag fk">FK</span></td><td>Pointer to the LLD under or behind this review, if applicable at this depth.</td></tr><tr><td>plan</td><td>Pointer</td><td>no</td><td>no</td><td><span class="tag fk">FK</span></td><td>Pointer to the PLAN under or behind this review, if applicable at this depth.</td></tr><tr><td>tasks</td><td>Pointer</td><td>no</td><td>yes</td><td><span class="tag fk">FK</span></td><td>Pointers to the Tasks under or behind this review, if applicable at this depth.</td></tr><tr><td>extension</td><td>Pointer</td><td>no</td><td>no</td><td><span class="tag fk">FK</span></td><td>Pointer to an extension artifact, if this review covers one.</td></tr><tr><td>amendment</td><td>Pointer</td><td>no</td><td>no</td><td><span class="tag fk">FK</span></td><td>Pointer to an amendment artifact, if this review covers one.</td></tr></tbody></table><h3>Pointer</h3><table class="dt"><thead><tr><th>Column</th><th>Type</th><th>Required</th><th>Multi-valued</th><th>Key</th><th>Description</th></tr></thead><tbody><tr><td>path</td><td>string</td><td>yes</td><td>no</td><td class="missing">—</td><td>Repo-relative path to an existing authored file.</td></tr><tr><td>section</td><td>Locator</td><td>no</td><td>no</td><td><span class="tag fk">FK</span></td><td>An optional Locator pinning the exact region within path this Pointer names.</td></tr><tr><td>contentHash</td><td>string</td><td>no</td><td>no</td><td class="missing">—</td><td>sha256 hex digest of path&#39;s content when this Pointer was built.</td></tr></tbody></table><h3>ValidationResult</h3><table class="dt"><thead><tr><th>Column</th><th>Type</th><th>Required</th><th>Multi-valued</th><th>Key</th><th>Description</th></tr></thead><tbody><tr><td>ok</td><td>boolean</td><td>yes</td><td>no</td><td class="missing">—</td><td>True when exactly the fields valid for this Scope&#39;s (scopeType, scopeLevel) pair are populated.</td></tr><tr><td>violations</td><td>string</td><td>yes</td><td>yes</td><td class="missing">—</td><td>A human-readable violation per field that is wrongly present or wrongly absent.</td></tr></tbody></table><h3>Locator</h3><table class="dt"><thead><tr><th>Column</th><th>Type</th><th>Required</th><th>Multi-valued</th><th>Key</th><th>Description</th></tr></thead><tbody><tr><td>kind</td><td>string</td><td>yes</td><td>no</td><td class="missing">—</td><td>LocatorKind | string -- read structurally, never via exhaustive switch.</td></tr><tr><td>value</td><td>string</td><td>yes</td><td>no</td><td class="missing">—</td><td>One opaque string formatted per kind.</td></tr></tbody></table></section>
+<footer class="ft"><span>Generated by insrc · companion of LLD-50cde239426d6e2a-s2</span><span>2026-11-19 11:36</span></footer>
 </div>
 <script>(function(JM,Ag){typeof exports=="object"&&typeof module<"u"?module.exports=Ag():typeof define=="function"&&define.amd?define(Ag):(JM=typeof globalThis<"u"?globalThis:JM||self,JM.mermaid=Ag())})(this,function(){var FWe,RWe;"use strict";function JM(i){for(var s=[],u=1;u<arguments.length;u++)s[u-1]=arguments[u];var d=Array.from(typeof i=="string"?[i]:i);d[d.length-1]=d[d.length-1].replace(/\r?\n([\t ]*)$/,"");var p=d.reduce(function(y,T){var _=T.match(/\n([\t ]+|(?!\s).)/g);return _?y.concat(_.map(function(A){var P,R;return(R=(P=A.match(/[\t ]/g))===null||P===void 0?void 0:P.length)!==null&&R!==void 0?R:0})):y},[]);if(p.length){var v=new RegExp(`
 [	 ]{`+Math.min.apply(Math,p)+"}","g");d=d.map(function(y){return y.replace(v,`
@@ -2358,24 +2362,8 @@ window.insrcPz={fit:function(){pz.fit();},reset:function(){pz.reset();},zoomTo:f
   var CSS_TEXT=root.getAttribute('data-iv-export-css')||'';
   // The tested export serializer, embedded verbatim so the in-browser export
   // runs the same code the unit tests exercise (R12).
-  var EXPORT_SVG=function exportableSvg(svgText, opts) {
-    const { bg, style } = opts;
-    // insert background rect + style right after the opening <svg ...> tag
-    const openEnd = svgText.indexOf('>');
-    if (openEnd === -1)
-        return svgText;
-    let open = svgText.slice(0, openEnd + 1);
-    const rest = svgText.slice(openEnd + 1);
-    if (!open.includes('xmlns='))
-        open = open.replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" ');
-    const vb = /viewBox="([^"]+)"/.exec(open)?.[1]?.split(/\s+/).map(Number);
-    const w = vb && Number.isFinite(vb[2]) ? vb[2] : 800;
-    const h = vb && Number.isFinite(vb[3]) ? vb[3] : 600;
-    return `<?xml version="1.0" encoding="UTF-8"?>\n` +
-        open +
-        `<rect width="${w}" height="${h}" fill="${bg}"/><style>${style.replace(/<\//g, '<\\/')}</style>` +
-        rest;
-};
+  var EXPORT_SVG=function exportableSvg(svgText,opts){const{bg,style}=opts;const openEnd=svgText.indexOf(">");if(openEnd===-1)return svgText;let open=svgText.slice(0,openEnd+1);const rest=svgText.slice(openEnd+1);if(!open.includes("xmlns="))open=open.replace("<svg ",'<svg xmlns="http://www.w3.org/2000/svg" ');const vb=/viewBox="([^"]+)"/.exec(open)?.[1]?.split(/\s+/).map(Number);const w=vb&&Number.isFinite(vb[2])?vb[2]:800;const h=vb&&Number.isFinite(vb[3])?vb[3]:600;return`<?xml version="1.0" encoding="UTF-8"?>
+`+open+`<rect width="${w}" height="${h}" fill="${bg}"/><style>${style.replace(/<\//g,"<\\/")}</style>`+rest};
   function applyMode(m,rerender){
     mode=m;if(root)root.setAttribute('data-theme',m);
     document.querySelectorAll('style[data-iv-mode]').forEach(function(s){s.disabled=(s.getAttribute('data-iv-mode')!==m);});

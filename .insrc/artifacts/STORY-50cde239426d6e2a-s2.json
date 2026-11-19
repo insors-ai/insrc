@@ -18,6 +18,24 @@
         "relation": "derived-from"
       },
       "references": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#198",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": [
+          {
+            "kind": "task-list",
+            "at": "2026-11-19T08:25:35.236Z"
+          },
+          {
+            "kind": "design",
+            "at": "2026-11-19T08:25:37.495Z"
+          }
+        ]
+      },
       "attachments": [
         {
           "target": {
@@ -63,28 +81,10 @@
           "at": "2026-11-19T10:41:38.546Z",
           "externalId": "7006760569"
         }
-      ],
-      "binding": {
-        "reference": {
-          "entityId": "insors-ai/insrc#198",
-          "type": "github:issue",
-          "relation": "tracked-by"
-        },
-        "createdAtRevision": 1,
-        "posted": [
-          {
-            "kind": "task-list",
-            "at": "2026-11-19T08:25:35.236Z"
-          },
-          {
-            "kind": "design",
-            "at": "2026-11-19T08:25:37.495Z"
-          }
-        ]
-      }
+      ]
     },
     "lifecycle": {
-      "status": "draft",
+      "status": "completed",
       "revision": {
         "number": 1,
         "contentHash": "7f67311f00c6101c952763f219208b46e606b381c765f6354708dffd623980a3",

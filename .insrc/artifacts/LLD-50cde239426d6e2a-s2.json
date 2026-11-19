@@ -27,7 +27,7 @@
     "storyTitle": "Scope describes which depth and chain a review attempt belongs to, including the artifact under review itself",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "approved",
+      "status": "completed",
       "revision": {
         "number": 4,
         "contentHash": "42a25178457b0f49c5949ea3d6de1c0c9519885617ba7298eb34bc134af72f16",

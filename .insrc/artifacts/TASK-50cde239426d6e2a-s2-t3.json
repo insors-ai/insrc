@@ -1,0 +1,133 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c6ac8496-8540-4edc-968f-7b4cbf361cb0",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-19T10:06:06.080Z",
+    "epicCreatedAt": "2026-11-18T04:59:27.796Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "50cde239426d6e2a",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Write unit and integration tests for Scope and its validators",
+      "parent": {
+        "entityId": "STORY-50cde239426d6e2a-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-50cde239426d6e2a-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-50cde239426d6e2a-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-50cde239426d6e2a-s2-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#206",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "03a01690b56b0409c78278bd8c32242228844328d4ec5945505b3364c00dee7e",
+        "at": "2026-11-19T10:06:06.080Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-19T10:06:06.081Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Write unit and integration tests for Scope and its validators",
+    "summary": "Add flat kebab-case *.test.ts files under src/workflow/artifact-core/__tests__/ covering: Scope's independently-addressable named fields and a minimal valid design-review Scope, the self-inclusive depth model, each validator's exact field-presence enforcement per (scopeType, scopeLevel), and the sc6 PointerPathValidator integration rejecting an escaping Pointer path -- one test case per testStrategy.testLevels subject, matching ac1/ac2/ac3's acceptanceMapping verbatim.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "Every subject named in the LLD's testStrategy.testLevels has a corresponding test case",
+      "ac1, ac2 and ac3's provingTests from the LLD's acceptanceMapping all pass",
+      "npx tsx --test for the new test files passes with zero failures"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "a Scope with distinct def/hld/lld/plan/tasks/extension/amendment Pointers keeps each field independently addressable"
+      },
+      {
+        "level": "unit",
+        "name": "a minimal valid design-review Scope (scopeType='design', scopeLevel='def', only def populated) validates ok:true"
+      },
+      {
+        "level": "unit",
+        "name": "validateDesignScope returns ok:false when scopeLevel='hld' but hld is absent while def is populated"
+      },
+      {
+        "level": "unit",
+        "name": "validateDesignScope returns ok:true when scopeLevel='hld' and both def and hld are populated"
+      },
+      {
+        "level": "unit",
+        "name": "validateDesignScope/validateCodeScope return ok:false with a named violation when called on the wrong scopeType"
+      },
+      {
+        "level": "unit",
+        "name": "validateCodeScope returns ok:false when a field deeper than scopeLevel is populated"
+      },
+      {
+        "level": "unit",
+        "name": "validateCodeScope returns ok:false when scope.tasks is an empty array at a scopeLevel requiring tasks"
+      },
+      {
+        "level": "unit",
+        "name": "a validator returns ok:false naming the (scopeType, scopeLevel) combination itself as invalid when no requirement-table entry exists for it"
+      },
+      {
+        "level": "unit",
+        "name": "extension and amendment populated or absent independent of scopeLevel do not affect ok/violations"
+      },
+      {
+        "level": "integration",
+        "name": "validateDesignScope returns ok:false with a named violation when a populated Pointer-typed field's path escapes registeredRepoRoot"
+      },
+      {
+        "level": "integration",
+        "name": "validateCodeScope returns ok:false with a named violation when a populated Pointer-typed field's path escapes registeredRepoRoot"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

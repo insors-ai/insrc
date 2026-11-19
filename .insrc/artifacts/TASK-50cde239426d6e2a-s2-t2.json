@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-90373e8f-102f-4953-b44b-50163434b63e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-19T10:06:06.078Z",
+    "epicCreatedAt": "2026-11-18T04:59:27.796Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "50cde239426d6e2a",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Implement validateDesignScope and validateCodeScope",
+      "parent": {
+        "entityId": "STORY-50cde239426d6e2a-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-50cde239426d6e2a-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-50cde239426d6e2a-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#205",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "6418d6979cbbc074568814afdc062ff615d9f5d74e22e7dfc1de9ecb5c1f7172",
+        "at": "2026-11-19T10:06:06.078Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-19T10:06:06.079Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement validateDesignScope and validateCodeScope",
+    "summary": "Add a private declarative (scopeType, scopeLevel) -> required/must-be-absent field table and one shared comparison engine in a new src/workflow/artifact-core/scope-checks.ts, then export validateDesignScope and validateCodeScope (each ScopeValidator-typed) as thin closures over that engine (alternative a1). Each validator first checks scope.scopeType matches its own dedicated literal, then the self-inclusive field-presence table, then calls sc6's validatePointerPath (from pointer-checks.ts) against every populated Pointer-typed field, folding any violation into the same ValidationResult.violations array.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "validateDesignScope/validateCodeScope return ok:false with a named violation when called on the wrong scopeType",
+      "A field required at the Scope's own declared scopeLevel being absent, or a field deeper than scopeLevel being populated, each returns ok:false with a named violation (self-inclusive chain, ac2)",
+      "An invalid (scopeType, scopeLevel) combination with no table entry returns ok:false naming the combination itself, not a field-level error",
+      "scope.tasks as an empty array at a scopeLevel requiring tasks is treated as absent",
+      "Both validators call validatePointerPath against every populated Pointer-typed field and fold ok:false violations into the same violations array (sc6 consumption, closes the cross-LLD security gap)",
+      "Neither validator performs file I/O itself"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "validateDesignScope and validateCodeScope are exported with their documented signatures and enforce the field-presence table and sc6 path validation, with no file I/O"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

@@ -1,0 +1,407 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 10,
+        "contentHash": "8d9b4aecddc73f49281058d461f5f575b98e8ddc32149e53071848a7a20ba5d7",
+        "at": "2026-11-19T11:01:28.439Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "50cde239426d6e2a",
+    "storyId": "s2",
+    "createdAt": "2026-11-19T10:10:20.217Z",
+    "updatedAt": "2026-11-19T11:01:28.291Z",
+    "epicCreatedAt": "2026-11-18T04:59:27.796Z",
+    "epicSlug": "shared-reviewcontext-data-model",
+    "revision": 10
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "0480ee661",
+        "ranAt": "2026-11-19T10:14:17.565Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Scope, ScopeType, ScopeLevel, ValidationResult and ScopeValidator are exported with the exact documented field shapes",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/scope.test.ts",
+                "title": "are exported with the exact documented field shapes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifact-core/__tests__/scope.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 857,
+            "titles": [
+              {
+                "title": "are exported with the exact documented field shapes",
+                "result": "pass"
+              },
+              {
+                "title": "Scope, ScopeType, ScopeLevel, ValidationResult and ScopeValidator",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "4fb9abd16",
+        "ranAt": "2026-11-19T11:01:28.291Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "validateDesignScope and validateCodeScope are exported with their documented signatures and enforce the field-presence table and sc6 path validation, with no file I/O",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/scope-checks.test.ts",
+                "title": "are exported with their documented signatures and enforce the field-presence table and sc6 path validation, with no file I/O",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifact-core/__tests__/scope-checks.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 453,
+            "titles": [
+              {
+                "title": "are exported with their documented signatures and enforce the field-presence table and sc6 path validation, with no file I/O",
+                "result": "pass"
+              },
+              {
+                "title": "validateDesignScope/validateCodeScope return ok:false with a named violation when called on the wrong scopeType",
+                "result": "pass"
+              },
+              {
+                "title": "validateDesignScope returns ok:false when scopeLevel='hld' but hld is absent while def is populated",
+                "result": "pass"
+              },
+              {
+                "title": "validateDesignScope returns ok:true when scopeLevel='hld' and both def and hld are populated",
+                "result": "pass"
+              },
+              {
+                "title": "validateCodeScope returns ok:false when a field deeper than scopeLevel is populated",
+                "result": "pass"
+              },
+              {
+                "title": "validateDesignScope returns ok:false when scope.tasks is an empty array at a scopeLevel where tasks must be absent",
+                "result": "pass"
+              },
+              {
+                "title": "validateCodeScope returns ok:false when scope.tasks is an empty array at scopeLevel='plan', where tasks must be absent",
+                "result": "pass"
+              },
+              {
+                "title": "validateCodeScope returns ok:false when scope.tasks is an empty array at a scopeLevel requiring tasks",
+                "result": "pass"
+              },
+              {
+                "title": "a validator returns ok:false naming the (scopeType, scopeLevel) combination itself as invalid when no requirement-table entry exists for it",
+                "result": "pass"
+              },
+              {
+                "title": "extension and amendment populated or absent independent of scopeLevel do not affect ok/violations",
+                "result": "pass"
+              },
+              {
+                "title": "validateDesignScope returns ok:false with a named violation when a populated Pointer-typed field's path escapes registeredRepoRoot",
+                "result": "pass"
+              },
+              {
+                "title": "validateCodeScope returns ok:false with a named violation when a populated Pointer-typed field's path escapes registeredRepoRoot",
+                "result": "pass"
+              },
+              {
+                "title": "validateDesignScope returns ok:false when scope.plan or scope.tasks is populated, even at scopeLevel='def'",
+                "result": "pass"
+              },
+              {
+                "title": "an escaping path that reuses a path segment name does not slip through",
+                "result": "pass"
+              },
+              {
+                "title": "validateDesignScope and validateCodeScope",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "5120ab5ad",
+        "ranAt": "2026-11-19T10:48:28.502Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a Scope with distinct def/hld/lld/plan/tasks/extension/amendment Pointers keeps each field independently addressable",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/scope.test.ts",
+                "title": "a Scope with distinct def/hld/lld/plan/tasks/extension/amendment Pointers keeps each field independently addressable",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a minimal valid design-review Scope (scopeType='design', scopeLevel='def', only def populated) validates ok:true",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/scope.test.ts",
+                "title": "a minimal valid design-review Scope (scopeType='design', scopeLevel='def', only def populated) validates ok:true",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "validateDesignScope returns ok:false when scopeLevel='hld' but hld is absent while def is populated",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/scope-checks.test.ts",
+                "title": "validateDesignScope returns ok:false when scopeLevel='hld' but hld is absent while def is populated",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "validateDesignScope returns ok:true when scopeLevel='hld' and both def and hld are populated",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/scope-checks.test.ts",
+                "title": "validateDesignScope returns ok:true when scopeLevel='hld' and both def and hld are populated",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "validateDesignScope/validateCodeScope return ok:false with a named violation when called on the wrong scopeType",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/scope-checks.test.ts",
+                "title": "validateDesignScope/validateCodeScope return ok:false with a named violation when called on the wrong scopeType",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "validateCodeScope returns ok:false when a field deeper than scopeLevel is populated",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/scope-checks.test.ts",
+                "title": "validateCodeScope returns ok:false when a field deeper than scopeLevel is populated",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "validateCodeScope returns ok:false when scope.tasks is an empty array at a scopeLevel requiring tasks",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/scope-checks.test.ts",
+                "title": "validateCodeScope returns ok:false when scope.tasks is an empty array at a scopeLevel requiring tasks",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a validator returns ok:false naming the (scopeType, scopeLevel) combination itself as invalid when no requirement-table entry exists for it",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/scope-checks.test.ts",
+                "title": "a validator returns ok:false naming the (scopeType, scopeLevel) combination itself as invalid when no requirement-table entry exists for it",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "extension and amendment populated or absent independent of scopeLevel do not affect ok/violations",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/scope-checks.test.ts",
+                "title": "extension and amendment populated or absent independent of scopeLevel do not affect ok/violations",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "validateDesignScope returns ok:false with a named violation when a populated Pointer-typed field's path escapes registeredRepoRoot",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/scope-checks.test.ts",
+                "title": "validateDesignScope returns ok:false with a named violation when a populated Pointer-typed field's path escapes registeredRepoRoot",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "validateCodeScope returns ok:false with a named violation when a populated Pointer-typed field's path escapes registeredRepoRoot",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/scope-checks.test.ts",
+                "title": "validateCodeScope returns ok:false with a named violation when a populated Pointer-typed field's path escapes registeredRepoRoot",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifact-core/__tests__/scope-checks.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 453,
+            "titles": [
+              {
+                "title": "are exported with their documented signatures and enforce the field-presence table and sc6 path validation, with no file I/O",
+                "result": "pass"
+              },
+              {
+                "title": "validateDesignScope/validateCodeScope return ok:false with a named violation when called on the wrong scopeType",
+                "result": "pass"
+              },
+              {
+                "title": "validateDesignScope returns ok:false when scopeLevel='hld' but hld is absent while def is populated",
+                "result": "pass"
+              },
+              {
+                "title": "validateDesignScope returns ok:true when scopeLevel='hld' and both def and hld are populated",
+                "result": "pass"
+              },
+              {
+                "title": "validateCodeScope returns ok:false when a field deeper than scopeLevel is populated",
+                "result": "pass"
+              },
+              {
+                "title": "validateCodeScope returns ok:false when scope.tasks is an empty array at a scopeLevel requiring tasks",
+                "result": "pass"
+              },
+              {
+                "title": "a validator returns ok:false naming the (scopeType, scopeLevel) combination itself as invalid when no requirement-table entry exists for it",
+                "result": "pass"
+              },
+              {
+                "title": "extension and amendment populated or absent independent of scopeLevel do not affect ok/violations",
+                "result": "pass"
+              },
+              {
+                "title": "validateDesignScope returns ok:false with a named violation when a populated Pointer-typed field's path escapes registeredRepoRoot",
+                "result": "pass"
+              },
+              {
+                "title": "validateCodeScope returns ok:false with a named violation when a populated Pointer-typed field's path escapes registeredRepoRoot",
+                "result": "pass"
+              },
+              {
+                "title": "validateDesignScope returns ok:false when scope.plan or scope.tasks is populated, even at scopeLevel='def'",
+                "result": "pass"
+              },
+              {
+                "title": "an escaping path that reuses a path segment name does not slip through",
+                "result": "pass"
+              },
+              {
+                "title": "validateDesignScope and validateCodeScope",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/artifact-core/__tests__/scope.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 858,
+            "titles": [
+              {
+                "title": "are exported with the exact documented field shapes",
+                "result": "pass"
+              },
+              {
+                "title": "a Scope with distinct def/hld/lld/plan/tasks/extension/amendment Pointers keeps each field independently addressable",
+                "result": "pass"
+              },
+              {
+                "title": "a minimal valid design-review Scope (scopeType='design', scopeLevel='def', only def populated) validates ok:true",
+                "result": "pass"
+              },
+              {
+                "title": "Scope, ScopeType, ScopeLevel, ValidationResult and ScopeValidator",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

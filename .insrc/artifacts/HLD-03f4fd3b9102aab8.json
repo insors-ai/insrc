@@ -24,30 +24,30 @@
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 3,
-        "contentHash": "f2ab3bb802ba867924a0cd9480fba7e99d6e3e2f6534d89305047e570c327b25",
-        "at": "2026-11-19T06:44:31.135Z",
+        "number": 4,
+        "contentHash": "e009ce356322e9de7945b32b82b6fbe62b51a30301ad416d22112032c1091c77",
+        "at": "2026-11-19T14:17:20.245Z",
         "by": {
           "id": "insrc:controller",
-          "kind": "person",
+          "kind": "system",
           "properties": {}
         }
       },
       "signoffs": [],
       "approval": {
-        "revision": 3,
+        "revision": 4,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-11-19T06:49:31.937Z",
+        "at": "2026-11-19T14:17:20.245Z",
         "override": {
-          "reason": "Automated design review is retired/unavailable while being rewritten (insrc_review_step errors immediately). Revision 3 adds one open question + one risky-bit row surfacing a cross-Epic coupling gap found in a controller-led cross-design review against the sibling security-extension-points Story's LLD (RoundDriverHooks.reviewKind closed to 'design'|'code' with no 'security' member anticipated). No other content changed. User approved explicitly in chat for this batch of 3 artifacts."
+          "reason": "Automated design review is retired/unavailable while being rewritten (insrc_review_step errors immediately). Revision 4 is a fieldAdd amendment to sc2 (Finding.id: string, non-breaking) resolving a cross-Story identity gap s3's reconciliation pass needs (found + approved to fix during a controller-led cross-review of all five Stories' LLDs). No other sharedContract changed. User approved explicitly in chat."
         }
       }
     },
-    "revision": 3,
+    "revision": 4,
     "envelope": {
       "description": "",
       "references": [],
@@ -91,9 +91,12 @@
         "id": "sc2",
         "name": "Finding taxonomy + severity scale",
         "purpose": "The fixed design-review-specific taxonomy and the per-review-type-configurable severity scale every finding carries, per lc1/lc2.",
-        "interfaceSketch": "type FindingCategory = 'correctness' | 'functional-completeness' | 'security' | 'quality' | 'maintainability';\ninterface Finding {\n  readonly category: FindingCategory;\n  readonly severity: string;\n}",
+        "interfaceSketch": "type FindingCategory = 'correctness' | 'functional-completeness' | 'security' | 'quality' | 'maintainability';\ninterface Finding {\n  readonly id: string;\n  readonly category: FindingCategory;\n  readonly severity: string;\n}",
         "ownedByStory": "s2",
-        "consumedByStories": [],
+        "consumedByStories": [
+          "s3",
+          "s4"
+        ],
         "assumptions": [
           "c1"
         ]
@@ -286,7 +289,8 @@
     ],
     "chosenAlternative": "a2",
     "openQuestions": [
-      "A new standalone Story (STORY-779e9a08142cb057-s1, 'security review extension points', seeded from approved SPEC-5a5f556b77d7aa31) extends SecurityFinding from this HLD's sc2 Finding and frames security as 'ONE new review type' running a 'security reviewer pass' within a round. sc1's RoundDriverHooks.reviewKind is closed to 'design'|'code' with no third value. Must resolve: does the security pass run nested inside the primary round's existing reviewKind (no enum change), or does reviewKind need a third 'security' member? This changes the round-driver's (s1's) implementation structure."
+      "A new standalone Story (STORY-779e9a08142cb057-s1, 'security review extension points', seeded from approved SPEC-5a5f556b77d7aa31) extends SecurityFinding from this HLD's sc2 Finding and frames security as 'ONE new review type' running a 'security reviewer pass' within a round. sc1's RoundDriverHooks.reviewKind is closed to 'design'|'code' with no third value. Must resolve: does the security pass run nested inside the primary round's existing reviewKind (no enum change), or does reviewKind need a third 'security' member? This changes the round-driver's (s1's) implementation structure.",
+      "Revision 4 amendment (fieldAdd, non-breaking): sc2's Finding gained an id: string field. s3's reconciliation pass needs a stable per-finding identity to key ReconciliationResult.priorFindingRef off of; Finding previously had only category+severity, which cross-Story review found gave s3 no way to distinguish two findings sharing both. sc2.consumedByStories corrected to list s3 and s4, which both already depend on Finding's shape. No other sharedContracts field changed."
     ],
     "sequenceDefinition": {
       "id": "review-round-cycle",

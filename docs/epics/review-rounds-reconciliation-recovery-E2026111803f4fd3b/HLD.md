@@ -62,6 +62,7 @@ interface RoundDriverHooks {
 ### 5.2 sc2: Finding taxonomy + severity scale
 
 **Owner Story:** `s2`
+**Consumed by:** `s3`, `s4`
 
 **Purpose:** The fixed design-review-specific taxonomy and the per-review-type-configurable severity scale every finding carries, per lc1/lc2.
 
@@ -70,6 +71,7 @@ interface RoundDriverHooks {
 ```
 type FindingCategory = 'correctness' | 'functional-completeness' | 'security' | 'quality' | 'maintainability';
 interface Finding {
+  readonly id: string;
   readonly category: FindingCategory;
   readonly severity: string;
 }
@@ -265,14 +267,4 @@ Reconciliation and docgen rendering would read the event log's audit trail direc
 ## 11. Open questions
 
 - A new standalone Story (STORY-779e9a08142cb057-s1, 'security review extension points', seeded from approved SPEC-5a5f556b77d7aa31) extends SecurityFinding from this HLD's sc2 Finding and frames security as 'ONE new review type' running a 'security reviewer pass' within a round. sc1's RoundDriverHooks.reviewKind is closed to 'design'|'code' with no third value. Must resolve: does the security pass run nested inside the primary round's existing reviewKind (no enum change), or does reviewKind need a third 'security' member? This changes the round-driver's (s1's) implementation structure.
-
-## Resolved questions
-
-- `q9dcccc7f` — A new standalone Story (STORY-779e9a08142cb057-s1, 'security review extension points', seeded from approved SPEC-5a5f556b77d7aa31) extends SecurityFinding from this HLD's sc2 Finding and frames security as 'ONE new review type' running a 'security reviewer pass' within a round. sc1's RoundDriverHooks.reviewKind is closed to 'design'|'code' with no third value. Must resolve: does the security pass run nested inside the primary round's existing reviewKind (no enum change), or does reviewKind need a third 'security' member? This changes the round-driver's (s1's) implementation structure.
-  - **resolved**: Nested security pass — Security runs nested inside an existing design/code round; reviewKind stays 'design'|'code' with no third member. The round-entry/review call takes a boolean flag (default true) controlling whether the nested security pass runs for that round, so callers that want to skip it explicitly opt out rather than opt in. _(2026-11-19T13:31:51.181Z)_
-
-## Citations
-
-- **[[c1]]** `prior-artifact` `SPEC-e8632c1ae22c3bf8` — "docs/standalone/review-process-rounds-reconciliation-recovery-E20261117e8632c1a/SPEC.md"
-- **[[c2]]** `analyze-bundle` `capability-discovery: review-history checkpoint files + docgen docType registry` — "admission-checkpoint.ts / preparation-checkpoint.ts / checkpoint.ts (per-review-type, retired); src/mcp/docgen/handler.ts docType registry has no 'review-report'"
-- **[[c3]]** `analyze-bundle` `structural-map: src/workflow/review-history import-graph + src/workflow/ convention.detect` — "review-history/ totalInDegree 67 vs totalOutDegree 13 (reuse hub); src/workflow/ file naming mixed, kebab-case (448) dominant over snake_case (233); baseClassIdioms: []"
+- Revision 4 amendment (fieldAdd, non-breaking): sc2's Finding gained an id: string field. s3's reconciliation pass needs a stable per-finding identity to key ReconciliationResult.priorFindingRef off of; Finding previously had only category+severity, which cross-Story review found gave s3 no way to distinguish two findings sharing both. sc2.consumedByStories corrected to list s3 and s4, which both already depend on Finding's shape. No other sharedContracts field changed.

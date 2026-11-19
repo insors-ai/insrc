@@ -24,26 +24,26 @@
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 2,
-        "contentHash": "e014ce0643cc20cdad5b748666f1a46113f2e670f4fd47b0c640ebe6d33b77e2",
-        "at": "2026-11-18T06:51:38.090Z",
+        "number": 3,
+        "contentHash": "d4faba0f7040d468b8933e201a03379958a656a5cdd1db218c15fca20cbc694e",
+        "at": "2026-11-19T06:44:31.136Z",
         "by": {
-          "id": "insrc:system",
-          "kind": "system",
+          "id": "insrc:controller",
+          "kind": "person",
           "properties": {}
         }
       },
       "signoffs": [],
       "approval": {
-        "revision": 2,
+        "revision": 3,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-11-18T06:54:48.429Z",
+        "at": "2026-11-19T06:51:00.319Z",
         "override": {
-          "reason": "Automated design review is retired/unavailable while being rewritten. Controller-authored HLD revision 2, self-reviewed via checklist.verify (one honest partial on f2, no hard-fails); user approved explicitly in chat."
+          "reason": "Automated design review is retired/unavailable while being rewritten (insrc_review_step errors immediately). Revision 3 adds two open questions + two risky-bit rows surfacing cross-Epic coupling gaps found in a controller-led cross-design review against the sibling security-extension-points Story's LLD: (1) SecurityLocator's extension target is ambiguous between sc1's two distinct types Locator{kind,value} and Pointer{path,section,contentHash}; (2) Scope.scopeType closed to 'design'|'code' with no 'security' member anticipated. No other content changed. User approved explicitly in chat for this batch of 3 artifacts."
         }
       }
     },
@@ -52,7 +52,7 @@
       "references": [],
       "attachments": []
     },
-    "revision": 2
+    "revision": 3
   },
   "body": {
     "summary": {
@@ -352,6 +352,16 @@
           "area": "Per-Story types drift from what the deferred assembly Epic will actually need",
           "why": "Because no Story in this graph combines Scope + ReviewTargets + CommentEntry into one ReviewContext container (the assembly is an explicit Non-Goal deferred to a later Epic), a field named or shaped slightly differently across s2/s3/s4's independently-written LLDs could force an awkward adapter layer -- or a breaking rename -- when that later Epic tries to compose them.",
           "mitigation": "Each Story's LLD must use the exact field names and types already fixed in this HLD's sharedContracts (sc3/sc4/sc5) verbatim, not re-derive its own naming, so the later assembly Epic composes them with no adapter."
+        },
+        {
+          "area": "A third Epic's Story (security review extension points) assumes SecurityLocator can extend 'Locator/Pointer' as one combined concept",
+          "why": "sc1 deliberately keeps Locator{kind,value} and Pointer{path,section,contentHash} as two separate types with no common shape. STORY-779e9a08142cb057-s1's LLD extends both at once without saying which, found during a cross-design review on 2026-11-18/19, not by this Epic's own Stories.",
+          "mitigation": "Resolve explicitly, either in s1's own LLD or back-flowed from STORY-779e9a08142cb057-s1's LLD once its matching open question is answered, before s1's Locator/Pointer types are built; s1's LLD must show which type SecurityLocator actually extends."
+        },
+        {
+          "area": "A third Epic's Story (security review extension points) assumes 'security' plugs into the existing round cycle without a new Scope.scopeType member",
+          "why": "sc3's scopeType is closed to 'design'|'code'. STORY-779e9a08142cb057-s1's LLD never states whether the security reviewer pass runs nested inside the primary round's existing scopeType (reusing s2's Scope as-is) or needs a third enum member added to sc3 -- found during a cross-design review on 2026-11-18/19, not by this Epic's own Stories.",
+          "mitigation": "Resolve explicitly, either in s2's own LLD or back-flowed from STORY-779e9a08142cb057-s1's LLD once its matching open question is answered, before s2's Scope type is built; s2's LLD must show which reading it implements."
         }
       ]
     },
@@ -407,7 +417,10 @@
       }
     ],
     "chosenAlternative": "a2",
-    "openQuestions": [],
+    "openQuestions": [
+      "STORY-779e9a08142cb057-s1 ('security review extension points', sibling Epic, standalone) proposes a SecurityLocator that extends 'the review framework's Locator/Pointer type' -- but sc1 defines Locator{kind,value} (a region pin within a file) and Pointer{path,section?:Locator,contentHash?} (a file-level reference, optionally carrying a Locator region) as two distinct, structurally unrelated types; SecurityLocator cannot structurally extend both at once. Found during a cross-design review on 2026-11-18/19. Must resolve before that Story's build: does SecurityLocator extend Locator (adding trustBoundaryId/taintPathStepIndex to the region-pin, used inside a Pointer.section), or does a security-graph citation need a separate SecurityPointer wrapping a Locator-compatible region alongside a file path?",
+      "The same sibling Story frames 'security' as 'ONE new review type' running a 'security reviewer pass' within a round. sc3's Scope.scopeType is closed to 'design'|'code' with no third value. Must resolve: does the security pass run nested inside the primary round's existing scopeType (no enum change), or does scopeType need a third 'security' member? This changes Scope's (s2's) implementation structure, not just the sibling Story's."
+    ],
     "companions": [
       {
         "kind": "diagram-mermaid",

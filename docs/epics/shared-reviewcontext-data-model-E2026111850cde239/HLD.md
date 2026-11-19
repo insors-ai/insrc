@@ -20,6 +20,7 @@ This HLD defines one shared ReviewContext data model that both design review and
 8. [Rollout](#8-rollout)
 9. [Alternatives considered](#9-alternatives-considered)
 10. [References](#10-references)
+11. [Open questions](#11-open-questions)
 
 ## 1. Problem context
 
@@ -209,6 +210,8 @@ s2, s3 and s4 each depend only on s1 (already landed in Phase A) and have no dep
 | Locator's open-string `kind` field | A consumer that still writes an exhaustive switch over today's known LocatorKind literals (symbol/lineRange/docSection) instead of treating `kind` structurally would break ac2/lc1 the first time a new kind is introduced, even though the type itself stays open. | s1's LLD must show at least one real consumer reading `kind` non-exhaustively (e.g. a lookup by string key, not a switch with no default), and code review for s2/s3's Story checks that their Locator-consuming code follows the same shape. |
 | Staleness check reimplemented per consumer instead of reused | k5 requires ONE shared staleness-detection function; if s2's and s3's LLDs each write their own ad hoc contentHash comparison instead of importing sc2's PointerStalenessCheck, the Epic silently ends up with two staleness implementations that can drift (e.g. different hash normalization) and fail the k5 constraint without any test catching it. | s2 and s3's LLDs must cite sc2's concrete file/export directly as what they import, not re-derive their own comparison; code review for both Stories checks for a second staleness implementation. |
 | Per-Story types drift from what the deferred assembly Epic will actually need | Because no Story in this graph combines Scope + ReviewTargets + CommentEntry into one ReviewContext container (the assembly is an explicit Non-Goal deferred to a later Epic), a field named or shaped slightly differently across s2/s3/s4's independently-written LLDs could force an awkward adapter layer -- or a breaking rename -- when that later Epic tries to compose them. | Each Story's LLD must use the exact field names and types already fixed in this HLD's sharedContracts (sc3/sc4/sc5) verbatim, not re-derive its own naming, so the later assembly Epic composes them with no adapter. |
+| A third Epic's Story (security review extension points) assumes SecurityLocator can extend 'Locator/Pointer' as one combined concept | sc1 deliberately keeps Locator{kind,value} and Pointer{path,section,contentHash} as two separate types with no common shape. STORY-779e9a08142cb057-s1's LLD extends both at once without saying which, found during a cross-design review on 2026-11-18/19, not by this Epic's own Stories. | Resolve explicitly, either in s1's own LLD or back-flowed from STORY-779e9a08142cb057-s1's LLD once its matching open question is answered, before s1's Locator/Pointer types are built; s1's LLD must show which type SecurityLocator actually extends. |
+| A third Epic's Story (security review extension points) assumes 'security' plugs into the existing round cycle without a new Scope.scopeType member | sc3's scopeType is closed to 'design'\|'code'. STORY-779e9a08142cb057-s1's LLD never states whether the security reviewer pass runs nested inside the primary round's existing scopeType (reusing s2's Scope as-is) or needs a third enum member added to sc3 -- found during a cross-design review on 2026-11-18/19, not by this Epic's own Stories. | Resolve explicitly, either in s2's own LLD or back-flowed from STORY-779e9a08142cb057-s1's LLD once its matching open question is answered, before s2's Scope type is built; s2's LLD must show which reading it implements. |
 
 ## 9. Alternatives considered
 
@@ -277,6 +280,11 @@ This mirrors classic OOP extension and is the shape later Epic work (e.g. Securi
 - **[[c1]]** `prior-artifact` `SPEC-0add47b5b1f72874` — "docs/standalone/reviewcontext-data-model-design-code-review-E202611170add47b5/SPEC.md"
 - **[[c2]]** `analyze-bundle` `capability-discovery: src/workflow/review-history reuse-check + convention.detect` — "0 clear-match / 5 partial-match across 50 candidates; baseClassIdioms: []"
 - **[[c3]]** `analyze-bundle` `structural-map: src/workflow/review-history + src/workflow/artifact-core` — "review-history/ topImportees include src/workflow/artifact-core/types.ts and src/workflow/artifact-core/lifecycle.ts; artifact-core/ convention.detect: baseClassIdioms: []"
+
+## 11. Open questions
+
+- STORY-779e9a08142cb057-s1 ('security review extension points', sibling Epic, standalone) proposes a SecurityLocator that extends 'the review framework's Locator/Pointer type' -- but sc1 defines Locator{kind,value} (a region pin within a file) and Pointer{path,section?:Locator,contentHash?} (a file-level reference, optionally carrying a Locator region) as two distinct, structurally unrelated types; SecurityLocator cannot structurally extend both at once. Found during a cross-design review on 2026-11-18/19. Must resolve before that Story's build: does SecurityLocator extend Locator (adding trustBoundaryId/taintPathStepIndex to the region-pin, used inside a Pointer.section), or does a security-graph citation need a separate SecurityPointer wrapping a Locator-compatible region alongside a file path?
+- The same sibling Story frames 'security' as 'ONE new review type' running a 'security reviewer pass' within a round. sc3's Scope.scopeType is closed to 'design'|'code' with no third value. Must resolve: does the security pass run nested inside the primary round's existing scopeType (no enum change), or does scopeType need a third 'security' member? This changes Scope's (s2's) implementation structure, not just the sibling Story's.
 
 ## Citations
 

@@ -73,6 +73,13 @@
         "choice": "Define both as new symbols",
         "rationale": "User approved 2026-11-19: no existing equivalents were found; CommandProfile and InvalidCommandSetting are new.",
         "resolvedAt": "2026-11-19T18:27:07.976Z"
+      },
+      "q8c62c1f9": {
+        "question": "ep3 partial: the invariants cite c2, c3 and c4, assumed to be the ids of the s1 bundles in order and given below as citations.",
+        "status": "resolved",
+        "choice": "Verify existing IDs",
+        "rationale": "Verified 2026-11-19: c1-c4 in the LLD are the four s1 analyze bundles in order (search.text, module.profile, usage.example, test.locate); c2, c3 and c4 cite the intended bundles.",
+        "resolvedAt": "2026-11-19T18:27:55.231Z"
       }
     }
   },

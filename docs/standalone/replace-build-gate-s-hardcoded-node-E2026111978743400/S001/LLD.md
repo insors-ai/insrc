@@ -256,6 +256,8 @@ As a1 for the prompt: a table of per-type commands renders the guidance, so no h
 
 - `q188e74ee` — Confirm alternative a4 (guidance by type, with an optional repo setting that gives a non-Node project an independent gate run): the request did not choose between guidance only and configured commands.
   - **resolved**: Guidance with an optional gate — User approved the LLD with alternative a4 (2026-11-19): guidance by project type plus an optional repo setting for an independent gate run. _(2026-11-19T18:26:12.000Z)_
+- `q0c9c644b` — cd1 partial: CommandProfile and InvalidCommandSetting are new symbols, declared as new rather than taken from an existing symbol.
+  - **resolved**: Define both as new symbols — User approved 2026-11-19: no existing equivalents were found; CommandProfile and InvalidCommandSetting are new. _(2026-11-19T18:27:07.976Z)_
 
 ## Citations
 

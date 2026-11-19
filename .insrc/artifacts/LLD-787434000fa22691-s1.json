@@ -66,6 +66,13 @@
         "choice": "Guidance with an optional gate",
         "rationale": "User approved the LLD with alternative a4 (2026-11-19): guidance by project type plus an optional repo setting for an independent gate run.",
         "resolvedAt": "2026-11-19T18:26:12.000Z"
+      },
+      "q0c9c644b": {
+        "question": "cd1 partial: CommandProfile and InvalidCommandSetting are new symbols, declared as new rather than taken from an existing symbol.",
+        "status": "resolved",
+        "choice": "Define both as new symbols",
+        "rationale": "User approved 2026-11-19: no existing equivalents were found; CommandProfile and InvalidCommandSetting are new.",
+        "resolvedAt": "2026-11-19T18:27:07.976Z"
       }
     }
   },

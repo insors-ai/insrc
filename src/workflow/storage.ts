@@ -276,6 +276,7 @@ export function prepareArtifactWrite(
 	path: string, next: unknown, kind: WriteKind,
 	opts: { readonly replaceUnreadable?: boolean | undefined; readonly by?: Actor | undefined; readonly at?: string | undefined } = {},
 ): PreparedArtifactWrite {
+	assertNoSessionPersistence();
 	if (!isRecord(next) || !isRecord(next['meta'])) {
 		throw new TypeError(`writeArtifact: ${path}: the artifact must be an object with a meta object`);
 	}

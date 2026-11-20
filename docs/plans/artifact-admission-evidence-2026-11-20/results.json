@@ -1,0 +1,128 @@
+{
+  "runId": "193fe7d4-0d3f-4626-adb1-28984c6081aa",
+  "runtime": {
+    "executable": "/opt/homebrew/Cellar/node@22/22.23.2/bin/node",
+    "version": "v22.23.2"
+  },
+  "budgets": {
+    "buildMs": 600000,
+    "fileMs": 600000,
+    "runMs": 5400000,
+    "cleanupMs": 5000
+  },
+  "selectedFiles": [
+    "src/workflow/__tests__/prepare-artifact-write.test.ts",
+    "src/workflow/__tests__/prepare-lifecycle.test.ts",
+    "src/workflow/__tests__/temporary-artifact-preparation.test.ts"
+  ],
+  "requestedConcurrency": 1,
+  "effectiveConcurrency": 1,
+  "diagnosticFlags": [
+    "DEBUG"
+  ],
+  "liveTests": "unset",
+  "results": [
+    {
+      "file": "src/workflow/__tests__/prepare-artifact-write.test.ts",
+      "childId": "630f7f2f-979d-43de-81de-138f3a831278",
+      "log": "docs/plans/artifact-admission-evidence-2026-11-20/0.tap",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "sha256": "7e8d9041ff0fc79b534a10f582621c568dd0fe61b3c1d6017043127d99d84d99"
+    },
+    {
+      "file": "src/workflow/__tests__/prepare-lifecycle.test.ts",
+      "childId": "715de712-1b75-4fd6-8640-aa0fa611c7f8",
+      "log": "docs/plans/artifact-admission-evidence-2026-11-20/1.tap",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "sha256": "0162ca1d7eaa85943294bf23756f57e4ad2981b957de421d34892ad4433d9478"
+    },
+    {
+      "file": "src/workflow/__tests__/temporary-artifact-preparation.test.ts",
+      "childId": "c1544216-593f-430c-a566-ac86d2a2f085",
+      "log": "docs/plans/artifact-admission-evidence-2026-11-20/2.tap",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "sha256": "19f074cb11624e2846f2e03bb2d3aab19513a02ae92d0d8bd16e4c7b37083279"
+    }
+  ],
+  "incomplete": false,
+  "cleanup": {
+    "confirmedClosed": true,
+    "interrupted": false,
+    "cancellationErrors": [],
+    "evidenceErrors": [],
+    "childCloseJournal": "child-results.jsonl"
+  },
+  "preparedBuild": {
+    "runId": "193fe7d4-0d3f-4626-adb1-28984c6081aa",
+    "canonicalRoot": "/Users/subhagho/work/projects/insors/insrc",
+    "runtimeExecutable": "/opt/homebrew/Cellar/node@22/22.23.2/bin/node",
+    "buildExitCode": 0,
+    "completedAt": "2026-11-20T08:55:29.041Z",
+    "inputFingerprint": "2afeed70819337fc8687884f3fbef7c1b9f1096cdd115bd438484a0e876707a3",
+    "outputFingerprint": "950414e11889ee66e08d3afd536db50cfe9d670e03a6dee47253356470dcd12d",
+    "requiredArtifacts": [
+      "out/daemon/index.js",
+      "out/bin/insrc-process-broker",
+      "out/bin/insrc-shutdown-watchdog.js",
+      "out/daemon/shutdown.js",
+      "out/daemon/shutdown-watchdog.js",
+      "out/shared/daemon-run-files.js",
+      "out/cli/services/daemon.js",
+      "out/cli/services/maintenance.js",
+      "out/daemon/server.js",
+      "out/shared/daemon-process.js",
+      "out/daemon/run-file-ownership.js",
+      "out/bin/insrc-darwin-lifecycle"
+    ]
+  },
+  "totals": {
+    "tests": 3,
+    "pass": 3,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  }
+}

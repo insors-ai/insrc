@@ -277,6 +277,48 @@ test('build-commands-doc.test.ts: docs/daemon.md describes the schemaVersion at 
 		for (const status of seen) assert.ok(section.includes(`\`${status}\``), `the subsection names the status ${status}`);
 	} finally { rmSync(dir, { recursive: true, force: true }); }
 
+	// each row of the comparison table says what the code does for that stored value: the cell that names the stored value, whether
+	// steps ran, whether the file was written, and the status, all read from a run with a recording step
+	const rows = section.split('\n').filter(l => l.startsWith('| ') && l.includes('`') && /`(applied|up-to-date|newer-schema|schema-version-invalid|file-unreadable)`\s*\|\s*$/.test(l));
+	const cells = (row: string): string[] => row.split('|').slice(1, -1).map(c => c.trim());
+	const dir2 = mkdtempSync(join(tmpdir(), 'insrc-doc-rows-'));
+	try {
+		const file2 = join(dir2, fileName);
+		const expectedVersion = REPO_CONFIG_SCHEMA_VERSION;
+		const scenarios: ReadonlyArray<{ cell: RegExp; contents: ReadonlyArray<string | undefined>; ran: boolean; written: boolean; status: string }> = [
+			{ cell: /^absent, `null` or `0`/, contents: [undefined, '{}', '{"schemaVersion":null}', '{"schemaVersion":0}'], ran: true, written: true, status: 'applied' },
+			{ cell: /^below the expected version/, contents: expectedVersion > 1 ? [`{"schemaVersion":${expectedVersion - 1}}`] : [], ran: true, written: true, status: 'applied' },
+			{ cell: /^equal to the expected version/, contents: [`{"schemaVersion":${expectedVersion}}`], ran: false, written: false, status: 'up-to-date' },
+			{ cell: /^above the expected version/, contents: [`{"schemaVersion":${expectedVersion + 5}}`], ran: false, written: false, status: 'newer-schema' },
+			{ cell: /^present but not a non-negative integer/, contents: ['{"schemaVersion":"1"}', '{"schemaVersion":1.5}', '{"schemaVersion":-1}'], ran: false, written: false, status: 'schema-version-invalid' },
+			{ cell: /^the file cannot be read/, contents: ['{not json', '[]', '{"repos":[]}'], ran: false, written: false, status: 'file-unreadable' },
+		];
+		for (const sc of scenarios) {
+			const row = rows.find(r => sc.cell.test(cells(r)[0] ?? ''));
+			assert.ok(row !== undefined, `the table has a row for ${sc.cell}`);
+			const [, action, statusCell] = cells(row);
+			assert.equal(statusCell, `\`${sc.status}\``, `${sc.cell}: the row's status`);
+			for (const content of sc.contents) {
+				rmSync(file2, { force: true });
+				if (content !== undefined) writeFileSync(file2, content);
+				const before = existsSync(file2) ? readFileSync(file2, 'utf8') : undefined;
+				let ranSteps = 0;
+				const r = await runSchemaMigrations({ registeredRepos: async () => [], configPath: file2, steps: [{ version: 1, run: async () => { ranSteps++; return { clean: true }; } }] });
+				const after = existsSync(file2) ? readFileSync(file2, 'utf8') : undefined;
+				assert.equal(r.status, sc.status, `${content}: the status`);
+				assert.equal(ranSteps > 0, sc.ran, `${content}: whether steps ran`);
+				assert.equal(after !== before, sc.written, `${content}: whether the file was written`);
+			}
+			// what the row says about running and writing is what was observed
+			assert.equal(/nothing is run/.test(action ?? ''), !sc.ran, `${sc.cell}: the row ${sc.ran ? 'does not say' : 'says'} that nothing is run`);
+			assert.equal(/nothing is written|is not overwritten/.test(action ?? ''), !sc.written, `${sc.cell}: the row ${sc.written ? 'does not say' : 'says'} that nothing is written`);
+			if (sc.ran) assert.match(action ?? '', /^runs (every step numbered above it|the steps above it), in order, and stamps the highest (version whose steps ran clean|clean version)$/, `${sc.cell}: the row says what is run and stamped`);
+			if (sc.status === 'schema-version-invalid') assert.match(action ?? '', /not taken as 0/);
+			if (sc.status === 'newer-schema') assert.match(action ?? '', /never lowered/);
+		}
+		assert.equal(rows.length, scenarios.length, 'the table has no row the test does not read');
+	} finally { rmSync(dir2, { recursive: true, force: true }); }
+
 	// the rules, as the code behaves
 	assert.match(section, /absent, `null` or `0`/, 'absent, null and 0 apply');
 	assert.match(section, /not taken as 0/, 'an invalid value is not taken as 0');

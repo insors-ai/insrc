@@ -137,8 +137,7 @@ export async function runGrepSearch(opts: GrepSearchOptions): Promise<SearchGrep
 	// Never admit a recursive external reader over the store's own files.
 	// The Node walker checks each candidate before reading its contents.
 	const canonicalRoot = resolveStorePath(root);
-	const live = resolveStorePath(PATHS.lmdb);
-	const containsStore = [live, `${live}-lock`].some(path => {
+	const containsStore = [PATHS.lmdb, `${PATHS.lmdb}-lock`].some(path => {
 		const rel = relative(canonicalRoot, resolveStorePath(path));
 		return rel === '' || (rel !== '..' && !rel.startsWith(`..${sep}`) && !isAbsolute(rel));
 	});

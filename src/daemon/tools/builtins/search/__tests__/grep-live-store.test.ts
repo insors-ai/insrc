@@ -65,13 +65,22 @@ test('Store ancestor and directory aliases use guarded Node in bounded and compl
 		const target = join(outside, 'actual-lock'); writeFileSync(target, 'PRIVATE_LOCK_NEEDLE\n');
 		writeFileSync(join(outside, 'allowed.txt'), 'ALLOWED_NEEDLE\n');
 		unlinkSync(lock); symlinkSync(target, lock);
+		const dataOutside = join(fixture, 'data-only'); mkdirSync(dataOutside);
+		const dataTarget = join(dataOutside, 'actual-data'); writeFileSync(dataTarget, 'PRIVATE_DATA_NEEDLE\n');
+		unlinkSync(data); symlinkSync(dataTarget, data);
 		try {
 			assert.equal(isLiveStoreFile(target), true);
+			assert.equal(isLiveStoreFile(dataTarget), true);
 			for (const complete of [false, true]) {
+				for (const root of [data, lock, dataTarget, target, dataAlias, lockAlias]) {
+					await assert.rejects(runGrepSearch({ root, pattern: 'NEEDLE', complete, _backend: { rgCommand: sentinel } }), /Refusing to touch/);
+				}
 				const r = await runGrepSearch({ root: outside, pattern: 'NEEDLE', complete, _backend: { rgCommand: sentinel } });
 				assert.equal(r.usedRipgrep, false); assert.deepEqual(r.hits.map(h => h.text), ['ALLOWED_NEEDLE']);
+				const d = await runGrepSearch({ root: dataOutside, pattern: 'NEEDLE', complete, _backend: { rgCommand: sentinel } });
+				assert.equal(d.usedRipgrep, false); assert.deepEqual(d.hits, []);
 			}
-		} finally { unlinkSync(lock); writeFileSync(lock, 'PRIVATE_LOCK_NEEDLE\n'); }
+		} finally { unlinkSync(lock); writeFileSync(lock, 'PRIVATE_LOCK_NEEDLE\n'); unlinkSync(data); writeFileSync(data, 'PRIVATE_DATA_NEEDLE\n'); }
 	});
 });
 

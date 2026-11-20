@@ -84,7 +84,7 @@ test("role-router-global-tiers.test.ts: a repo's tasks choice picks the tier whi
 	assert.equal((core.provider as unknown as { defaultModel?: string }).defaultModel, 'gpt-6.1-sol');
 });
 
-test('role-router-global-tiers.test.ts: the RoleResolution keeps role, tier, runner, model, effort, clampedByFloor and adds fallback; workflow-rpc and workflow-review-rpc labels unchanged for a CLI and an Ollama tier', () => {
+test('role-router-global-tiers.test.ts: the RoleResolution keeps role, tier, runner, model, effort, clampedByFloor and adds fallback; active workflow labels unchanged while retired review delegates to unavailable', () => {
 	// A tier set to an unlisted model falls back to the tier default and the record says so.
 	const fell = config({ tiers: { core: { runner: 'cli-claude', model: 'claude-retired', effort: 'high' }, cheap: { runner: 'ollama', model: 'qwen3.6:27b' } } });
 	const r = resolveRole(CRITICAL, fell, undefined);
@@ -96,18 +96,18 @@ test('role-router-global-tiers.test.ts: the RoleResolution keeps role, tier, run
 	const summariser = createRoleRouter({}).resolveSummariser(fell);
 	assert.equal(summariser.resolution.fallback, undefined);
 
-	// The labels both daemon paths build from the record keep their `runner:model` shape.
+	// Active workflow attribution and retained historical rendering keep their runner:model shape.
 	const cfg = config();
 	const cli = resolveRole(CRITICAL, cfg, undefined);
 	const local = resolveRole(PERIPHERAL, cfg, REPO);
 	const stamps = [cli, local].map(x => ({ role: x.role, tier: x.tier, runner: x.runner, model: x.model }));   // workflow-rpc providerFor
-	assert.deepEqual(stamps.map(s => `${s.runner}:${s.model}`), ['cli-codex:gpt-6.1-sol', 'ollama:qwen3.6:27b']);   // workflow-review-rpc label
+	assert.deepEqual(stamps.map(s => `${s.runner}:${s.model}`), ['cli-codex:gpt-6.1-sol', 'ollama:qwen3.6:27b']);   // historical attribution label
 	assert.equal(modelSummary({ attribution: { outputs: [stamps[0]!] } } as never), 'cli-codex:gpt-6.1-sol');
 	assert.equal(modelSummary({ attribution: { outputs: stamps } } as never), 'mixed(2: cli-codex:gpt-6.1-sol, ollama:qwen3.6:27b)');
 	const rpc = readFileSync(join(SRC, 'daemon', 'workflow-rpc.ts'), 'utf8');
 	assert.match(rpc, /stampByOutput\.set\(outputKey, \{ role: r\.role, tier: r\.tier, runner: r\.runner, model: r\.model \}\)/);
 	const review = readFileSync(join(SRC, 'daemon', 'workflow-review-rpc.ts'), 'utf8');
-	assert.match(review, /const label = `\$\{resolution\.runner\}:\$\{resolution\.model\}`;/);
+	assert.match(review, /return reviewUnavailable\('design', \.\.\.args\)/);
 });
 
 test('role-router-global-tiers.test.ts: no source references readRepoOverride or resolveRepoShaper*', () => {

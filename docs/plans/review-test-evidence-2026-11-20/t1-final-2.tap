@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: Retired review surfaces reject before argument inspection, providers or IO
+ok 1 - Retired review surfaces reject before argument inspection, providers or IO
+  ---
+  duration_ms: 1.564792
+  type: 'test'
+  ...
+# Subtest: in-daemon cwd lookup and unary failures keep current client semantics
+ok 2 - in-daemon cwd lookup and unary failures keep current client semantics
+  ---
+  duration_ms: 1.372959
+  type: 'test'
+  ...
+# Subtest: Generic client progress, synchronous errors and abort drains retain coverage on supported handlers
+ok 3 - Generic client progress, synchronous errors and abort drains retain coverage on supported handlers
+  ---
+  duration_ms: 1.140042
+  type: 'test'
+  ...
+# Subtest: in-daemon client: wait limit wording uses whole minutes or bounded seconds
+ok 4 - in-daemon client: wait limit wording uses whole minutes or bounded seconds
+  ---
+  duration_ms: 0.073583
+  type: 'test'
+  ...
+# Subtest: the in-daemon client treats inherited-property methods as unknown
+ok 5 - the in-daemon client treats inherited-property methods as unknown
+  ---
+  duration_ms: 0.219875
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 221.893625

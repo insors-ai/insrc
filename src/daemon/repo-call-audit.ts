@@ -109,7 +109,7 @@ export const RPC_AUDIT: Readonly<Record<string, AuditEntry>> = {
 	"repo.search_cross_repo": {"kind": "read-only", "evidence": "handler-runtime.ts/source-roots-rpc.ts read graph, vector, session or document relations under existing search scoping"} ,
 	"repo.settings.get": {"kind": "read-only", "evidence": "repo-settings.ts reads the exact registered repository settings, tracker identity and policy"} ,
 	"repo.settings.set": {"kind": "modifying", "repoParam": "repo", "pathParams": [], "evidence": "repo-settings.ts validates the exact registered repo before writing daemon config or applying repository git hooks; preserves its structured refusal envelope"} ,
-	"repo.trackerConfig.ensure": {"kind": "daemon-store", "evidence": "repo-settings.ts validates exact registered repo identity and writes only daemon-owned ~/.insrc/github.json"} ,
+	"repo.trackerConfig.ensure": {"kind": "daemon-store", "evidence": "repo-settings.ts validates exact registered repo identity and writes only daemon-owned ~/.insrc/repo-config.json"} ,
 	"search.by_file": {"kind": "read-only", "evidence": "handler-runtime.ts/source-roots-rpc.ts read graph, vector, session or document relations under existing search scoping"} ,
 	"search.callers_nhop": {"kind": "read-only", "evidence": "handler-runtime.ts/source-roots-rpc.ts read graph, vector, session or document relations under existing search scoping"} ,
 	"search.doc_relations": {"kind": "read-only", "evidence": "handler-runtime.ts/source-roots-rpc.ts read graph, vector, session or document relations under existing search scoping"} ,

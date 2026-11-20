@@ -1,7 +1,7 @@
 /** Checkout-local test/build ownership. No daemon state or production stores. */
 import {
 	constants, closeSync, fstatSync, lstatSync, mkdirSync, openSync, readFileSync,
-	realpathSync, renameSync, rmdirSync, unlinkSync, writeFileSync,
+	readdirSync, realpathSync, renameSync, rmdirSync, unlinkSync, writeFileSync,
 } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import { delimiter, dirname, isAbsolute, join } from 'node:path';
@@ -119,7 +119,7 @@ export function createRun(rootPath, { mode = 'test', selectedFiles = [], budgets
 	}
 	function release({ confirmedClosed = false } = {}) {
 		assertOwner();
-		if (!confirmedClosed) {
+		if (!confirmedClosed || readdirSync(active).some(name => name !== 'run.json')) {
 			if (record.phase !== 'blocked') transition('blocked');
 			throw harnessError('cleanup-unconfirmed', 'Owned actor closure is unconfirmed; checkout remains blocked.');
 		}

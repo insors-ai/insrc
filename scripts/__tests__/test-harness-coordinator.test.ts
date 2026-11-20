@@ -116,3 +116,17 @@ test('Selector deduplication, explicit budgets and bounded concurrency reject in
 	for (const args of [['--concurrency=0'], ['--concurrency=5'], ['--file-ms=0'], ['../foreign.test.ts'], ['src/empty/*.test.ts']]) assert.throws(() => parseArgs(root, args));
 	assert.equal(existsSync(join(root, '.insrc')), false);
 });
+
+test('A timed-out writer retains its reservation until its child closes', { timeout: 5000 }, async t => {
+	const root = rootFixture(t), run = createRun(root, { budgets: { buildMs: 300, cleanupMs: 600 } });
+	await withRun(run, async scope => {
+		const first = prepareBuild(run, scope, { ...options, stages: [['-e', "require('node:fs').writeFileSync('writer-ready','yes');process.on('SIGTERM',()=>{});setInterval(()=>{},1000)"]] });
+		const rejected = assert.rejects(first, { code: 'harness-build-failed' });
+		await waitReady(join(root, 'writer-ready'));
+		await new Promise(resolve => setTimeout(resolve, 350));
+		assert.equal(existsSync(join(run.active, 'writer')), true);
+		await assert.rejects(prepareBuild(run, scope, options), { code: 'harness-busy' });
+		await rejected;
+		assert.equal(existsSync(join(run.active, 'writer')), false);
+	});
+});

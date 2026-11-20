@@ -70,6 +70,7 @@ export async function prepareBuild(run, scope, { stages = buildStages(run), requ
 	const writer = join(run.active, 'writer');
 	try { mkdirSync(writer); } catch (error) { if (error.code === 'EEXIST') throw harnessError('busy', 'Another writer is active.'); throw error; }
 	const before = fingerprint(run.root, INPUTS);
+	let completed = false;
 	try {
 		const started = performance.now();
 		for (const args of stages) {
@@ -79,8 +80,15 @@ export async function prepareBuild(run, scope, { stages = buildStages(run), requ
 			if (result.code !== 0 || result.timedOut || result.interrupted || result.launchError) throw harnessError('build-failed', `Build stage failed: ${relative(run.root, resolve(run.root, args[0]))}; ${JSON.stringify(result)}`);
 		}
 		if (before !== fingerprint(run.root, INPUTS)) throw harnessError('build-drift', 'Build input changed during preparation.');
-		return publishPrepared(run, requiredArtifacts);
-	} finally { run.assertOwner(); rmdirSync(writer); }
+		const prepared = publishPrepared(run, requiredArtifacts);
+		completed = true;
+		return prepared;
+	} finally {
+		// A deadline returns before close. Keep writer ownership through draining.
+		const closed = completed || await scope.drain();
+		run.assertOwner();
+		if (closed) rmdirSync(writer);
+	}
 }
 
 export async function mainBuild(root = ROOT) {

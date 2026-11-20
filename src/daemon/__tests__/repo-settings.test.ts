@@ -12,7 +12,7 @@ import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, syml
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { createRepoSettingsHandlers, mapSignin } from '../repo-settings.js';
+import { applyBuildDefaults, createRepoSettingsHandlers, mapSignin } from '../repo-settings.js';
 import { REPO_TRACKER_FIELDS, validateRepoSetting } from '../../config/repo-fields.js';
 import type { RepoSettingsDeps, RepoSettingsPayload, SettingsResult } from '../repo-settings.js';
 import { IpcServer, directDispatch } from '../server.js';
@@ -434,4 +434,100 @@ test('the gitHooks setting reads false when absent, is validated as a boolean an
 		await f.call('repo.settings.set', { repo: REPO, key: 'gitHooks', value: false });
 		assert.equal(payloadOf(await f.call('repo.settings.get', { repo: REPO })).values['gitHooks'], false);
 	} finally { f.cleanup(); }
+});
+
+// ---- t1 (LLD f8cbf44536347149-s1): build defaults and buildSetup ----
+
+/** A temporary repository holding only the given marker files. */
+function markerRepo(...markers: string[]): string {
+	const dir = mkdtempSync(join(tmpdir(), 'insrc-marker-repo-'));
+	for (const m of markers) writeFileSync(join(dir, m), '');
+	return dir;
+}
+const buildKeysOf = (path: string, repo: string): Record<string, unknown> => {
+	const entry = (JSON.parse(readFileSync(path, 'utf8')) as Record<string, any>)['repos']?.[repo] ?? {};
+	return Object.fromEntries(['typecheckCommand', 'testCommand', 'resultFormat'].filter(k => Object.hasOwn(entry, k)).map(k => [k, entry[k]]));
+};
+
+test('applyBuildDefaults writes the type\'s typecheck and test commands and resultFormat exit-code together for a Python, Go, Rust and JVM repo with no build key, and writes nothing for a Node repo, an unknown repo and an entry that already sets any of the three keys', async () => {
+	const dir = mkdtempSync(join(tmpdir(), 'insrc-defaults-'));
+	const path = join(dir, 'github.json');
+	const made: string[] = [];
+	try {
+		const expected: Array<[string, string, string, string]> = [
+			['pyproject.toml', 'python', 'mypy .', 'pytest'],
+			['go.mod', 'go', 'go vet ./...', 'go test ./...'],
+			['Cargo.toml', 'rust', 'cargo check', 'cargo test'],
+			['pom.xml', 'jvm', 'mvn -q compile', 'mvn -q test'],
+		];
+		for (const [marker, type, typecheck, test] of expected) {
+			const repo = markerRepo(marker); made.push(repo);
+			assert.deepEqual(await applyBuildDefaults(repo, { configPath: path }), { applied: true, projectType: type });
+			assert.deepEqual(buildKeysOf(path, repo), { typecheckCommand: typecheck, testCommand: test, resultFormat: 'exit-code' });
+		}
+		const node = markerRepo('package.json'); made.push(node);
+		assert.deepEqual(await applyBuildDefaults(node, { configPath: path }), { applied: false, reason: 'node-default' });
+		assert.deepEqual(buildKeysOf(path, node), {});
+		const unknown = markerRepo(); made.push(unknown);
+		assert.deepEqual(await applyBuildDefaults(unknown, { configPath: path }), { applied: false, reason: 'no-typical-commands' });
+		assert.deepEqual(buildKeysOf(path, unknown), {});
+
+		// any one of the three keys already set: nothing is overwritten
+		for (const key of ['typecheckCommand', 'testCommand', 'resultFormat']) {
+			const repo = markerRepo('go.mod'); made.push(repo);
+			writeFileSync(path, JSON.stringify({ repos: { [repo]: { [key]: key === 'resultFormat' ? 'tap' : 'mine' } } }));
+			assert.deepEqual(await applyBuildDefaults(repo, { configPath: path }), { applied: false, reason: 'already-set' });
+			assert.deepEqual(buildKeysOf(path, repo), { [key]: key === 'resultFormat' ? 'tap' : 'mine' });
+		}
+	} finally { for (const r of made) rmSync(r, { recursive: true, force: true }); rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('applyBuildDefaults never throws and reports write-failed when the entry cannot be read or the write fails, leaving no lone command', async () => {
+	const dir = mkdtempSync(join(tmpdir(), 'insrc-defaults-'));
+	const path = join(dir, 'github.json');
+	const repo = markerRepo('pyproject.toml');
+	try {
+		// the file is malformed: the entry cannot be read
+		writeFileSync(path, '{ not json');
+		const unreadable = await applyBuildDefaults(repo, { configPath: path });
+		assert.equal(unreadable.applied, false);
+		assert.equal((unreadable as { reason: string }).reason, 'write-failed');
+		assert.equal(readFileSync(path, 'utf8'), '{ not json', 'an unreadable file is left as it is');
+
+		// the write returns a failure, then throws: both are outcomes, never exceptions
+		writeFileSync(path, '{}');
+		const refused = await applyBuildDefaults(repo, { configPath: path, writeKeys: async () => ({ ok: false, error: { code: 'write-failed', message: 'disk full' } }) });
+		assert.deepEqual(refused, { applied: false, reason: 'write-failed', note: 'disk full' });
+		const thrown = await applyBuildDefaults(repo, { configPath: path, writeKeys: async () => { throw new Error('boom'); } });
+		assert.deepEqual(thrown, { applied: false, reason: 'write-failed', note: 'boom' });
+		assert.deepEqual(buildKeysOf(path, repo), {}, 'no lone command is left');
+	} finally { rmSync(repo, { recursive: true, force: true }); rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('repo.settings.get returns buildSetup with the type, the commands source and the suggestion for a repo with none, and writes nothing', async () => {
+	const py = markerRepo('pyproject.toml');
+	const node = markerRepo('package.json');
+	const unknown = markerRepo();
+	const own = markerRepo('go.mod');
+	const bad = markerRepo('go.mod');
+	const file = JSON.stringify({ repos: {
+		[py]: { type: 'github', owner: 'o', repo: 'r' },
+		[own]: { typecheckCommand: 'go vet ./...', testCommand: 'go test ./...' },
+		[bad]: { typecheckCommand: 'go vet ./...' },
+	} });
+	const f = fixture({ file, repos: [py, node, unknown, own, bad] });
+	try {
+		const before = readFileSync(f.path, 'utf8');
+		assert.deepEqual(payloadOf(await f.call('repo.settings.get', { repo: py })).buildSetup, {
+			projectType: 'python', commandsSource: 'none',
+			suggestion: { typecheckCommand: 'mypy .', testCommand: 'pytest', resultFormat: 'exit-code' },
+		});
+		assert.deepEqual(payloadOf(await f.call('repo.settings.get', { repo: node })).buildSetup, { projectType: 'node', commandsSource: 'node-default' });
+		assert.deepEqual(payloadOf(await f.call('repo.settings.get', { repo: unknown })).buildSetup, { projectType: 'unknown', commandsSource: 'none' });
+		assert.deepEqual(payloadOf(await f.call('repo.settings.get', { repo: own })).buildSetup, { projectType: 'go', commandsSource: 'repo-setting' });
+		const invalid = payloadOf(await f.call('repo.settings.get', { repo: bad })).buildSetup;
+		assert.equal(invalid.commandsSource, 'invalid');
+		assert.match(invalid.note ?? '', /testCommand/);
+		assert.equal(readFileSync(f.path, 'utf8'), before, 'get writes nothing');
+	} finally { f.cleanup(); for (const r of [py, node, unknown, own, bad]) rmSync(r, { recursive: true, force: true }); }
 });

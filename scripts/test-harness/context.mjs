@@ -141,12 +141,23 @@ export function createRun(rootPath, { mode = 'test', selectedFiles = [], budgets
 export function recoverRun(rootPath, { runId, confirmedActorsEnded = false } = {}) {
 	if (!confirmedActorsEnded) throw harnessError('cleanup-unconfirmed', 'Confirm all old actors ended before recovery.');
 	const root = realpathSync(rootPath);
-	const active = join(harnessDirectory(root), 'active');
+	const directory = harnessDirectory(root);
+	const active = join(directory, 'active');
 	identity(active);
 	const record = readRecord(active);
 	if (record.runId !== runId || record.canonicalRoot !== root) throw harnessError('context-invalid', 'Recovery run identity mismatch.');
-	unlinkSync(join(active, 'run.json'));
-	rmdirSync(active);
+	const entries = readdirSync(active);
+	if (entries.some(name => name !== 'run.json' && name !== 'writer')) throw harnessError('context-invalid', 'Unexpected lease entry; ownership metadata was retained.');
+	if (entries.includes('writer')) {
+		identity(join(active, 'writer'));
+		if (readdirSync(join(active, 'writer')).length) throw harnessError('context-invalid', 'Unexpected writer contents; ownership metadata was retained.');
+	}
+	const recovered = join(directory, 'recovered');
+	try { mkdirSync(recovered, { mode: 0o700 }); } catch (error) { if (error.code !== 'EEXIST') throw error; }
+	identity(recovered);
+	// Preserve metadata and any empty reservation in one rename. A failed
+	// recovery must not leave an active directory whose owner record was lost.
+	renameSync(active, join(recovered, `${runId}-${randomUUID()}`));
 }
 
 /** Environment selects a participant; the on-disk lease and runtime authorize it. */

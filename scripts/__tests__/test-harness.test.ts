@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, renameSync, rmSync, symlinkSync, writeFileSync, existsSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, readdirSync, renameSync, rmSync, symlinkSync, writeFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -75,8 +75,19 @@ test('Abandoned ownership cannot be stolen by age or PID absence', t => {
 	assert.throws(() => createRun(root), { code: 'harness-busy' });
 	assert.throws(() => recoverRun(root, { runId: abandoned.runId }), { code: 'harness-cleanup-unconfirmed' });
 	assert.throws(() => recoverRun(root, { runId: 'wrong', confirmedActorsEnded: true }), { code: 'harness-context-invalid' });
+	mkdirSync(join(abandoned.active, 'writer'));
+	writeFileSync(join(abandoned.active, 'unknown'), 'foreign entry');
+	const beforeRecovery = readFileSync(path, 'utf8');
+	assert.throws(() => recoverRun(root, { runId: abandoned.runId, confirmedActorsEnded: true }), { code: 'harness-context-invalid' });
+	assert.equal(readFileSync(path, 'utf8'), beforeRecovery);
+	rmSync(join(abandoned.active, 'unknown'));
 	recoverRun(root, { runId: abandoned.runId, confirmedActorsEnded: true });
 	assert.equal(existsSync(abandoned.active), false);
+	const recovered = join(root, '.insrc/tmp/test-harness/recovered');
+	const archived = readdirSync(recovered).find(name => name.startsWith(abandoned.runId));
+	assert.ok(archived);
+	assert.equal(readFileSync(join(recovered, archived, 'run.json'), 'utf8'), beforeRecovery);
+	assert.equal(existsSync(join(recovered, archived, 'writer')), true);
 	assert.equal(existsSync(record.workspace), true); // Recovery does not sweep old workspaces.
 	const run = createRun(root);
 	assert.throws(() => run.release(), { code: 'harness-cleanup-unconfirmed' });

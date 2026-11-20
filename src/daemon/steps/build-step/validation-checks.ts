@@ -484,12 +484,13 @@ export async function planTaskCheckPlan(
 	repoPath: string,
 	task:     { readonly tests: readonly { readonly level?: string | undefined; readonly name: string }[] },
 	mapping?: readonly TestMappingEntry[],
+	profile: CommandProfile = commandProfileOf(repoPath),
 ): Promise<ValidationCheckPlan> {
 	const byName = new Map((mapping ?? []).map(e => [e.name, e]));
 	const namedTests: NamedTestPlan[] = [];
 	for (const t of task.tests) namedTests.push(await planNamedTest(repoPath, t, byName.get(t.name)));
 	return {
-		...basePlan(commandProfileOf(repoPath)), testFiles: sortedUnion(namedTests),
+		...basePlan(profile), testFiles: sortedUnion(namedTests),
 		unresolvedTests: namedTests.filter(n => n.source === 'none').map(n => n.name),
 		namedTests,
 		...(task.tests.length === 0 ? { noTests: { ok: false, note: 'the plan task names no tests' } } : {}),
@@ -504,6 +505,7 @@ export async function smallStandaloneCheckPlan(
 	repoPath: string,
 	testStrategy: { readonly testLevels: readonly { readonly level?: string | undefined; readonly subjects: readonly string[] }[] } | undefined,
 	mapping?: readonly TestMappingEntry[],
+	profile: CommandProfile = commandProfileOf(repoPath),
 ): Promise<ValidationCheckPlan> {
 	const byName = new Map((mapping ?? []).map(e => [e.name, e]));
 	const subjects: NamedTest[] = (testStrategy?.testLevels ?? []).flatMap(l => l.subjects.map(name => ({ name, ...(l.level !== undefined ? { level: l.level } : {}) })));
@@ -511,10 +513,10 @@ export async function smallStandaloneCheckPlan(
 	for (const t of subjects) namedTests.push(await planNamedTest(repoPath, t, byName.get(t.name)));
 	const runnable = namedTests.filter(n => n.source === 'mapping' || LEADING_TEST_FILE.test(n.name));
 	if (runnable.length === 0) {
-		return { ...basePlan(commandProfileOf(repoPath)), testFiles: [], unresolvedTests: [], namedTests, noTests: { ok: false, note: 'the LLD names no test file' } };
+		return { ...basePlan(profile), testFiles: [], unresolvedTests: [], namedTests, noTests: { ok: false, note: 'the LLD names no test file' } };
 	}
 	return {
-		...basePlan(commandProfileOf(repoPath)), testFiles: sortedUnion(namedTests),
+		...basePlan(profile), testFiles: sortedUnion(namedTests),
 		// Only a subject that NAMES a file and resolves to none is unresolved.
 		unresolvedTests: namedTests.filter(n => n.source === 'none' && LEADING_TEST_FILE.test(n.name)).map(n => n.name),
 		namedTests,
@@ -884,13 +886,24 @@ export async function runValidationChecks(
 	return { typecheck, tests };
 }
 
-/** The error a build phase returns when the repo's build-command setting is invalid; `undefined` when it is fine. */
-export function commandSettingError(phase: 'implement' | 'validate', repoPath: string, configPath?: string): BuildStepError | undefined {
+/**
+ * The profile a build phase works with, resolved ONCE at the phase's entry and passed through its mapping check, its
+ * check plan and its prompts, so a settings edit made while the phase runs cannot change how its own evidence is
+ * read. An invalid setting is the phase's error, before anything runs.
+ */
+export function resolveCommandProfile(
+	phase: 'implement' | 'validate', repoPath: string, configPath?: string,
+): { readonly ok: true; readonly profile: CommandProfile } | { readonly ok: false; readonly error: BuildStepError } {
 	try {
-		commandProfileOf(repoPath, configPath);
-		return undefined;
+		return { ok: true, profile: commandProfileOf(repoPath, configPath) };
 	} catch (err) {
 		if (!(err instanceof InvalidCommandSetting)) throw err;
-		return { next: 'error', error: { code: 'invalid-command-setting', message: `insrc_build_step[${phase}]: ${err.message}. Fix it with repo.settings.set or in ~/.insrc/github.json (see docs/daemon.md, "Build commands").`, retryable: false } };
+		return { ok: false, error: { next: 'error', error: { code: 'invalid-command-setting', message: `insrc_build_step[${phase}]: ${err.message}. Fix it with repo.settings.set or in ~/.insrc/github.json (see docs/daemon.md, "Build commands").`, retryable: false } } };
 	}
+}
+
+/** The error a build phase returns when the repo's build-command setting is invalid; `undefined` when it is fine. */
+export function commandSettingError(phase: 'implement' | 'validate', repoPath: string, configPath?: string): BuildStepError | undefined {
+	const r = resolveCommandProfile(phase, repoPath, configPath);
+	return r.ok ? undefined : r.error;
 }

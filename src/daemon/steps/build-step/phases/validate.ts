@@ -45,8 +45,7 @@ import { inheritedStoryStandalone, lldMdRel, readEpicDefinitionCore, workItemAnc
 import { checkTestMapping, oneLine, usableStoredMapping, type NamedTest, type TestMappingEntry } from '../test-mapping.js';
 import type { BuildStandaloneContext, BuildStepDone, BuildStepError, BuildStepInputValidate } from '../types.js';
 import {
-	commandProfileOf,
-	commandSettingError,
+	resolveCommandProfile,
 	namesOwnTestFiles,
 	planTaskCheckPlan,
 	runValidationChecks,
@@ -55,6 +54,7 @@ import {
 	trivialCheckPlan,
 	withTypecheckProjects,
 	type CheckResult,
+	type CommandProfile,
 	type ValidationCheckPlan,
 	type ValidationCheckResults,
 } from '../validation-checks.js';
@@ -217,9 +217,12 @@ export async function handleValidate(input: BuildStepInputValidate): Promise<Bui
 	// A merge must be committed on its own before the next round of Story work
 	// (ISSUE-f9ced66a): refuse before doing anything else while one is open.
 	if (await mergeInProgress(repoPath)) return mergeInProgressError('validate');
-	// A bad build-command setting is refused here: nothing is run, judged or written.
-	const setting = commandSettingError('validate', repoPath);
-	if (setting !== undefined) return setting;
+	// The build-command setting is resolved ONCE, here, and this profile is passed through the mapping check, the
+	// check plan and the prompts: a settings edit made while the phase runs cannot change how its own evidence is
+	// read. A bad setting is refused here: nothing is run, judged or written.
+	const profiled = resolveCommandProfile('validate', repoPath);
+	if (!profiled.ok) return profiled.error;
+	const profile = profiled.profile;
 
 	// S002: standalone (no-plan) validate — a triage-routed Small story. Resolve the
 	// story identity from the standalone context (mirroring handleStandaloneImplement)
@@ -227,7 +230,7 @@ export async function handleValidate(input: BuildStepInputValidate): Promise<Bui
 	// the SAME verdict session + persist-on-verdict path and lands a BUILD record for
 	// the completion gate to approve. The plan-driven path below is untouched.
 	if (input.standalone !== undefined) {
-		return handleStandaloneValidate(repoPath, input.standalone, input.summary, input.tests);
+		return handleStandaloneValidate(repoPath, profile, input.standalone, input.summary, input.tests);
 	}
 
 	const resolved = resolveTaskRef(repoPath, input.target, input.epicHash);
@@ -235,13 +238,13 @@ export async function handleValidate(input: BuildStepInputValidate): Promise<Bui
 
 	const ref = resolved.ref;
 	await assertMayBuild(repoPath, ref);   // team gate: before any check runs or record is written
-	const mapping = await resolveMapping(repoPath, input.tests, ref.task.tests, { epicHash: ref.epicHash, storyId: ref.storyId, taskId: ref.taskId });
+	const mapping = await resolveMapping(repoPath, profile, input.tests, ref.task.tests, { epicHash: ref.epicHash, storyId: ref.storyId, taskId: ref.taskId });
 	if (!mapping.ok) return mapping.error;
-	const done = await runValidateSession(repoPath, evidence => renderValidatePrompt(repoPath, ref, evidence), {
+	const done = await runValidateSession(repoPath, evidence => renderValidatePrompt(repoPath, ref, evidence, profile), {
 		epicHash: ref.epicHash,
 		storyId:  ref.storyId,
 		taskId:   ref.taskId,
-	}, await planTaskCheckPlan(repoPath, ref.task, mapping.entries), input.summary, mapping.note);
+	}, await planTaskCheckPlan(repoPath, ref.task, mapping.entries, profile), input.summary, mapping.note);
 	if (done.next !== 'done') return done;
 	const commentSync = await runTaskCommentSync(repoPath, ref.epicHash, ref.storyId, ref.taskId);
 	return commentSync === undefined ? done : { ...done, commentSync };
@@ -259,12 +262,13 @@ export async function handleValidate(input: BuildStepInputValidate): Promise<Bui
  */
 async function resolveMapping(
 	repoPath: string,
+	profile:  CommandProfile,
 	supplied: readonly TestMappingEntry[] | undefined,
 	named:    readonly NamedTest[],
 	ident:    { readonly epicHash: string; readonly storyId: string; readonly taskId: string },
 ): Promise<{ readonly ok: true; readonly entries: readonly TestMappingEntry[] | undefined; readonly note?: string | undefined } | { readonly ok: false; readonly error: BuildStepError }> {
 	// A project that is not a Node one, with commands a repo setting states: its cases name its own test files.
-	const anyTestFile = namesOwnTestFiles(commandProfileOf(repoPath));
+	const anyTestFile = namesOwnTestFiles(profile);
 	if (supplied !== undefined) {
 		const faults = checkTestMapping(supplied, named, await trackedFiles(repoPath), anyTestFile);
 		if (faults.length > 0) {
@@ -333,6 +337,7 @@ export function _setBuildValidateRouteReaderForTests(reader: typeof readEpicDefi
  *  session + persist path as the plan-driven branch. */
 async function handleStandaloneValidate(
 	repoPath: string,
+	profile:  CommandProfile,
 	ctx:      BuildStandaloneContext,
 	summary?: string,
 	suppliedTests?: readonly TestMappingEntry[],
@@ -374,17 +379,17 @@ async function handleStandaloneValidate(
 	if (producesLld) {
 		// The subjects of the design's test strategy are this route's test names.
 		const named: NamedTest[] = (testStrategy?.testLevels ?? []).flatMap(l => l.subjects.map(name => ({ name, ...(l.level !== undefined ? { level: l.level } : {}) })));
-		const mapping = await resolveMapping(repoPath, suppliedTests, named, { epicHash, storyId, taskId: storyId });
+		const mapping = await resolveMapping(repoPath, profile, suppliedTests, named, { epicHash, storyId, taskId: storyId });
 		if (!mapping.ok) return mapping.error;
-		checks = await smallStandaloneCheckPlan(repoPath, testStrategy, mapping.entries);
+		checks = await smallStandaloneCheckPlan(repoPath, testStrategy, mapping.entries, profile);
 		mappingNote = mapping.note;
 	} else {
 		// A trivial build names no tests: `tests` is ignored, and the test files
 		// the build's range touched are run.
 		checks = await trivialCheckPlan(repoPath, await resolveStoryRangeBase(repoPath, epicHash, storyId),
-			epicHash.length > 0 && storyId.length > 0 ? `${epicHash}/${storyId}` : undefined);
+			epicHash.length > 0 && storyId.length > 0 ? `${epicHash}/${storyId}` : undefined, profile);
 	}
-	const prompt = (evidence: string): string => renderStandaloneValidatePrompt({ storyId, sizeClass, lldMdRel: lldMdRelPath, scope: producesLld ? undefined : ctx.focus, evidence, profile: commandProfileOf(repoPath) });
+	const prompt = (evidence: string): string => renderStandaloneValidatePrompt({ storyId, sizeClass, lldMdRel: lldMdRelPath, scope: producesLld ? undefined : ctx.focus, evidence, profile });
 	// Carry the route the caller declared into the persist. This branch KNOWS it is
 	// serving a standalone story; discarding that here left the shared persist to
 	// re-derive it from a definition head a Small story does not have (ISSUE-0855311b).

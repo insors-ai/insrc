@@ -31,7 +31,7 @@ import { persistStandaloneBuildRecord } from '../../../../workflow/runners/build
 import { roundWriterFor } from '../../../lifecycle-registry.js';
 import { runTaskCommentSync } from '../../../tracker-sync-comments.js';
 import { assertMayBuild, settleBeforeBuild } from '../../../../workflow/team/author-gate.js';
-import { commandProfileOf, commandSettingError } from '../validation-checks.js';
+import { resolveCommandProfile, type CommandProfile } from '../validation-checks.js';
 import { mergeInProgressError, renderImplementPrompt, renderStandaloneImplementPrompt, resolveRepoPath, resolveTaskRef } from '../render.js';
 import type {
 	BuildStandaloneContext,
@@ -53,15 +53,17 @@ export async function handleImplement(
 	// A merge must be committed on its own before the next round of Story work
 	// (ISSUE-f9ced66a): refuse before doing anything else while one is open.
 	if (await mergeInProgress(repoPath)) return mergeInProgressError('implement');
-	// A bad build-command setting is refused here, before any prompt is built from it.
-	const setting = commandSettingError('implement', repoPath);
-	if (setting !== undefined) return setting;
+	// The build-command setting is resolved once, here, and this profile is what every prompt of the phase is built
+	// from. A bad setting is refused here, before any prompt is built from it.
+	const profiled = resolveCommandProfile('implement', repoPath);
+	if (!profiled.ok) return profiled.error;
+	const profile = profiled.profile;
 
 	// Standalone (no-plan) build — a triage-routed Small (LLD → build) or Trivial
 	// (build only) feature. Bypasses task/tracker resolution; the spec is the
 	// standalone LLD or the scope statement. See `docs/plans/feature-triage-router.md`.
 	if (input.standalone?.standalone === true) {
-		return handleStandaloneImplement(repoPath, input.standalone);
+		return handleStandaloneImplement(repoPath, input.standalone, profile);
 	}
 
 	const resolved = resolveTaskRef(repoPath, input.target, input.epicHash);
@@ -98,7 +100,7 @@ export async function handleImplement(
 
 	// Sync first, so feedback this turn reads from the issue is already recorded when the prompt is built.
 	const commentSync = await runTaskCommentSync(repoPath, ref.epicHash, ref.storyId, ref.taskId);
-	const prompt = renderImplementPrompt(repoPath, ref, resolvedDecisions);
+	const prompt = renderImplementPrompt(repoPath, ref, resolvedDecisions, profile);
 	log.info({ taskId: ref.taskId, storyId: ref.storyId, workflowId: ref.workflowId }, 'insrc_build_step[implement]: emitting prompt');
 	return {
 		next:       'implement',
@@ -129,6 +131,7 @@ async function noteBuildStart(repoPath: string, epicHash: string, storyId: strin
 async function handleStandaloneImplement(
 	repoPath: string,
 	ctx:      BuildStandaloneContext,
+	profile:  CommandProfile,
 ): Promise<BuildStepImplement | BuildStepRefused | BuildStepError> {
 	const sizeClass   = ctx.sizeClass ?? 'small';
 	const producesLld = sizeClass !== 'trivial';
@@ -196,7 +199,7 @@ async function handleStandaloneImplement(
 
 	const prompt = renderStandaloneImplementPrompt({
 		epicHash, storyId, sizeClass, producesLld, focus: specFocus,
-		lldMdRel: lldMdRelPath, resolvedDecisions, profile: commandProfileOf(repoPath),
+		lldMdRel: lldMdRelPath, resolvedDecisions, profile,
 	});
 	log.info({ storyId, sizeClass, standalone: true, producesLld }, 'insrc_build_step[implement]: emitting standalone prompt');
 	return { next: 'implement', taskId: storyId, workflowId: epicHash, issueRef: undefined, prompt };

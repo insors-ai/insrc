@@ -290,6 +290,8 @@ A new PATHS entry for a small JSON file holding { schemaVersion }, read and writ
 
 - `qd1a25ef3` — Confirm the constraints k1-k6 this LLD authored from your statements (once only; decided by the root schemaVersion in repo-config.json, with absent, null or below the current version applying the pending steps, never by commit ids; never blocks or fails startup; a failure is not silently lost; the daemon is the only writer and keeps the rest of repo-config.json; stay small and keep the on-demand method). They are the scoring basis for the alternatives.
   - **resolved**: Confirm k1–k6 unchanged — User approved the LLD in chat, which listed this as its open confirmation. _(2026-11-20T19:17:42.404Z)_
+- `q6a214165` — Confirm the acceptance criteria ac1-ac5 this LLD authored, since the Story carries none: ac1 a stored schemaVersion that is absent, null or below the daemon's version makes the boot apply the pending steps once and stamp the version, with no commit ids involved; ac2 a current or higher version runs nothing, and a failed step is not stamped and is retried at the next boot; ac3 the pass never delays or fails startup; ac4 the stamp keeps the rest of repo-config.json, and a command cleared after the stamp is not re-applied at boot while the manual method still can; ac5 the behaviour is documented in docs/daemon.md.
+  - **resolved**: Accept ac1–ac5 as written — ac3 already says the pass never delays or fails startup; user approved the LLD in chat. _(2026-11-20T19:18:18.575Z)_
 
 ## Citations
 

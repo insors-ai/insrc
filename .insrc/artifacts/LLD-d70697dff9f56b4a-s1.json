@@ -74,6 +74,13 @@
         "choice": "Accept ac1–ac5 as written",
         "rationale": "ac3 already says the pass never delays or fails startup; user approved the LLD in chat.",
         "resolvedAt": "2026-11-20T19:18:18.575Z"
+      },
+      "qe89f12be": {
+        "question": "Confirm the new symbol names and constant (runSchemaMigrations, readSchemaVersion, writeSchemaVersion, REPO_CONFIG_SCHEMA_VERSION = 1, SchemaMigrationStep, SchemaMigrationResult). They do not exist yet, so no analyzer bundle can cite them.",
+        "status": "resolved",
+        "choice": "Adopt the proposed names",
+        "rationale": "User approved the LLD in chat.",
+        "resolvedAt": "2026-11-20T19:18:43.279Z"
       }
     }
   },

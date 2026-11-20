@@ -292,6 +292,8 @@ A new PATHS entry for a small JSON file holding { schemaVersion }, read and writ
   - **resolved**: Confirm k1–k6 unchanged — User approved the LLD in chat, which listed this as its open confirmation. _(2026-11-20T19:17:42.404Z)_
 - `q6a214165` — Confirm the acceptance criteria ac1-ac5 this LLD authored, since the Story carries none: ac1 a stored schemaVersion that is absent, null or below the daemon's version makes the boot apply the pending steps once and stamp the version, with no commit ids involved; ac2 a current or higher version runs nothing, and a failed step is not stamped and is retried at the next boot; ac3 the pass never delays or fails startup; ac4 the stamp keeps the rest of repo-config.json, and a command cleared after the stamp is not re-applied at boot while the manual method still can; ac5 the behaviour is documented in docs/daemon.md.
   - **resolved**: Accept ac1–ac5 as written — ac3 already says the pass never delays or fails startup; user approved the LLD in chat. _(2026-11-20T19:18:18.575Z)_
+- `qe89f12be` — Confirm the new symbol names and constant (runSchemaMigrations, readSchemaVersion, writeSchemaVersion, REPO_CONFIG_SCHEMA_VERSION = 1, SchemaMigrationStep, SchemaMigrationResult). They do not exist yet, so no analyzer bundle can cite them.
+  - **resolved**: Adopt the proposed names — User approved the LLD in chat. _(2026-11-20T19:18:43.279Z)_
 
 ## Citations
 

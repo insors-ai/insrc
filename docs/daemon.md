@@ -1400,6 +1400,12 @@ setting it could not read. The keys are rows of the repo settings table (`REPO_T
 daemon's settings catalog, and only a registered repository can set them. The extra tsconfig projects are checked only for
 the Node default.
 
+A build phase reads a repository's setting once, when it starts, and uses that one profile for its mapping check, its check
+plan and its prompts, so an edit made while a build runs takes effect from the next phase. The builder's instructions for the
+`tests` mapping follow the profile too: they name the test files the project may map (native ones for a configured non-Node
+project) and say whether each case is checked on its own (`tap`, and the Node default) or takes its file's exit code
+(`exit-code`; the record says so), or that the gate runs nothing when the repository states no commands.
+
 Test file names follow the commands. For a project that is not a Node one and whose commands a repo setting states, a case of the `tests` mapping may
 name any tracked file of the repository (not only a `.test.ts` file), and a Trivial build runs the test files its commits
 touched by the project type's own naming: `test_*.py`, `*_test.py` (python), `*_test.go` (go), `tests/*.rs` (rust), files under

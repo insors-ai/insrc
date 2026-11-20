@@ -112,3 +112,7 @@ backend sweep. See the [failure audit](plans/failing-tests-2026-11-20.md),
 [batch index](plans/test-remediation-batches-2026-11-20.md), and
 [Batch 01 evidence](plans/test-harness-build-2026-11-20.md) for remaining failures
 and the scope of validation actually performed.
+
+## Shared search fixtures
+
+Live-store search tests isolate HOME before importing application modules. Shared grep refuses the live data/lock as direct roots; roots containing either resolved protected target use the guarded Node walker. These searches report Node ignore/size semantics even when ripgrep is installed. Other roots use ripgrep without ambient config or symlink following. See [Batch 03 evidence](plans/live-store-search-fix-2026-11-20.md) for the read-exclusion controls and remaining fixture failures.

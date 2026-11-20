@@ -1,0 +1,32 @@
+TAP version 13
+# Subtest: file tools: each tool's own execute refuses the store file and its lock file, by direct path and through a symbolic link
+not ok 1 - file tools: each tool's own execute refuses the store file and its lock file, by direct path and through a symbolic link
+  ---
+  duration_ms: 13.548125
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/src/daemon/tools/builtins/file/__tests__/live-store-file-refusal.test.ts:1:3476'
+  failureType: 'testCodeFailure'
+  error: "Cannot read properties of undefined (reading 'connectionExecution')"
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    executeTool (/Users/subhagho/work/projects/insors/insrc/src/daemon/tools/executor.ts:87:41)
+    TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/tools/builtins/file/__tests__/live-store-file-refusal.test.ts:117:20)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: a file tool call on any other path behaves as before
+ok 2 - a file tool call on any other path behaves as before
+  ---
+  duration_ms: 44.483375
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 1
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 321.286833

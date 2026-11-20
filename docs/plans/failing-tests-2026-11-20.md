@@ -657,3 +657,7 @@ backend/IDE failures remain assigned to the other coherent batch issues.
 ## Batch 02 validation checkpoint
 
 Approved issue `ISSUE-939c138296f56a8f`: temporary provider errors are projected before prototype inspection, and lookup terminal reasons use identity-only WeakMap projection. The original three diagnostic failures reproduced; the final focused run passed 14/14 with no skips/cancellations and confirmed cleanup. Source and compiled provider/RPC fixtures retain privacy, authority and saved-mode controls. A later stale RPC continuation assertion now requires the current `emit_part` response and safe failure payload. See [evidence and limits](temporary-error-sanitization-2026-11-20.md). BUILD human approval was recorded on 2026-11-20 and the Batch 02 story/epic completed; no broader suite or qualification claim.
+
+## Batch 03 validation checkpoint
+
+The approved shared-grep fix excludes live-store reads before backend admission, including directory aliases and independently relocated configured data/lock targets. Final focused run: **29 pass, 1 fail, no cancellations/skips**, complete coverage and confirmed actor closure. The remaining file-tool fixture failure is now a stale `executeTool` call with no dependencies (Batch 11), after the original store-leak assertion passes. The unchanged 300ms fake-rg timing test failed in the baseline and passed in the final run. [Evidence and limits](live-store-search-fix-2026-11-20.md). BUILD approval remains pending; no broad-suite or qualification claim.

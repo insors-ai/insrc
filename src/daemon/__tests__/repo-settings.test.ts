@@ -500,6 +500,11 @@ test('applyBuildDefaults never throws and reports write-failed when the entry ca
 		assert.deepEqual(refused, { applied: false, reason: 'write-failed', note: 'disk full' });
 		const thrown = await applyBuildDefaults(repo, { configPath: path, writeKeys: async () => { throw new Error('boom'); } });
 		assert.deepEqual(thrown, { applied: false, reason: 'write-failed', note: 'boom' });
+		// a rejection with a value that is not an Error (null, undefined, a string) is still an outcome
+		for (const value of [null, undefined, 'plain string']) {
+			const odd = await applyBuildDefaults(repo, { configPath: path, writeKeys: () => Promise.reject(value) });
+			assert.deepEqual(odd, { applied: false, reason: 'write-failed', note: String(value) });
+		}
 		assert.deepEqual(buildKeysOf(path, repo), {}, 'no lone command is left');
 	} finally { rmSync(repo, { recursive: true, force: true }); rmSync(dir, { recursive: true, force: true }); }
 });

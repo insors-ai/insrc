@@ -216,8 +216,9 @@ export async function applyBuildDefaults(
 		if (!written.ok) return { applied: false, reason: 'write-failed', note: written.error.message };
 		return { applied: true, projectType };
 	} catch (e) {
-		log.warn({ repoPath, err: (e as Error).message }, 'applyBuildDefaults failed');
-		return { applied: false, reason: 'write-failed', note: (e as Error).message };
+		const note = e instanceof Error ? e.message : String(e);   // a rejection may carry any value, null included
+		log.warn({ repoPath, err: note }, 'applyBuildDefaults failed');
+		return { applied: false, reason: 'write-failed', note };
 	}
 }
 

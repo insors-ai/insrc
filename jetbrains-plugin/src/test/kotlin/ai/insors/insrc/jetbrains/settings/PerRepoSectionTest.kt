@@ -27,7 +27,7 @@ class PerRepoSectionTest {
             TrackerFixtures.fields,
             linkedMapOf(
                 a to TrackerFixtures.loaded(a),
-                b to RepoSettingsResult.Rejected("/home/u/.insrc/github.json: is not valid JSON"),
+                b to RepoSettingsResult.Rejected("/home/u/.insrc/repo-config.json: is not valid JSON"),
                 c to RepoSettingsResult.Unavailable("daemon is not running"),
             ),
         )
@@ -36,7 +36,7 @@ class PerRepoSectionTest {
         assertNull(model.failure(a))
         assertEquals(TrackerFixtures.fields.size, model.rows(a).size)
 
-        assertEquals("/home/u/.insrc/github.json: is not valid JSON", model.failure(b))
+        assertEquals("/home/u/.insrc/repo-config.json: is not valid JSON", model.failure(b))
         assertTrue(model.rows(b).isEmpty(), "a refused repo shows no rows")
         assertEquals("daemon is not running", model.failure(c))
         assertTrue(model.rows(c).isEmpty())

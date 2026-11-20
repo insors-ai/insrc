@@ -104,9 +104,9 @@ class InsrcSettingsTrackerTest {
         assertEquals("2026-10-17T00:00:00.000Z", s.policy.sourceFetchedAt)
 
         val refused = DaemonGatewayImpl(FakeDaemonRpc { _, _ ->
-            DaemonResult(ok = true, data = mapOf("ok" to false, "error" to mapOf("code" to "github-json-unreadable", "message" to "github.json: is not valid JSON")))
+            DaemonResult(ok = true, data = mapOf("ok" to false, "error" to mapOf("code" to "repo-config-unreadable", "message" to "repo-config.json: is not valid JSON")))
         }).readRepoSettings("/work/a")
-        assertEquals("github.json: is not valid JSON", assertInstanceOf(RepoSettingsResult.Rejected::class.java, refused).reason)
+        assertEquals("repo-config.json: is not valid JSON", assertInstanceOf(RepoSettingsResult.Rejected::class.java, refused).reason)
 
         val framed = DaemonGatewayImpl(FakeDaemonRpc { _, _ -> DaemonResult(ok = false, error = "unknown method") }).readRepoSettings("/work/a")
         assertInstanceOf(RepoSettingsResult.Unavailable::class.java, framed)

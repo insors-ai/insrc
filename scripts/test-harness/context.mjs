@@ -141,3 +141,17 @@ export function recoverRun(rootPath, { runId, confirmedActorsEnded = false } = {
 	unlinkSync(join(active, 'run.json'));
 	rmdirSync(active);
 }
+
+/** Environment selects a participant; the on-disk lease and runtime authorize it. */
+export function participantContext(rootPath = process.env.INSRC_TEST_ROOT) {
+	if (!rootPath || !process.env.INSRC_TEST_RUN_ID) throw harnessError('context-invalid', 'Use npm test -- <repo-relative test file> under Node 22.');
+	const root = realpathSync(rootPath), runtime = runtimeContext();
+	const directory = join(root, '.insrc/tmp/test-harness');
+	for (const path of [join(root, '.insrc'), join(root, '.insrc/tmp'), directory]) identity(path);
+	const active = join(directory, 'active');
+	identity(active);
+	const record = readRecord(active);
+	if (record.runId !== process.env.INSRC_TEST_RUN_ID || record.canonicalRoot !== root || record.runtimeExecutable !== runtime.executable || record.runtimeVersion !== runtime.version || ['draining', 'blocked'].includes(record.phase)) throw harnessError('context-invalid', 'No matching admitted run. Use the supported test selector command.');
+	identity(record.workspace);
+	return { ...record, root, active, runtime };
+}

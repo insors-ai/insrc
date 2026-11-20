@@ -1367,8 +1367,10 @@ before anything reads the file, an existing `github.json` is moved to `repo-conf
 atomically and without replacing anything, as a hard link (the file system refuses it when the destination exists; NTFS and
 ReFS support hard links, so this holds on Windows) or, for a symbolic-link `github.json`, a new symbolic link to the same target
 (on Windows that needs the privilege to create links, and without it the move fails and is retried). Nothing is copied. Then the
-old name is removed, but only if it is still the file that was published: a `github.json` that an editor replaced in the
-meantime is kept. The daemon never deletes `repo-config.json`, and a `repo-config.json` that another process creates at any point
+old name is removed by claiming it: `github.json` is renamed to a name only the daemon knows, and only that name is ever
+deleted, so a `github.json` that an editor saves at any moment is never deleted by mistake. If what was claimed is not the file
+that was published, an editor had replaced it, and it is linked back under `github.json` so both files are kept; `github.json`
+is briefly absent while it is claimed. The daemon never deletes `repo-config.json`, and a `repo-config.json` that another process creates at any point
 before it is published is never replaced. On a volume without hard links (FAT, exFAT, some shares) the move fails, is logged
 with a note to rename the file by hand, and is tried again at the next boot; a copy would be neither complete nor
 non-replacing with the calls the daemon has, so it is not attempted. This is the same on Linux, macOS and Windows. If both files

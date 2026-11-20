@@ -170,7 +170,9 @@ test("each indexing-class method runs on the code-indexing worker's thread id", 
 			'index.languages': r => { assert.equal(r.error, undefined); assert.ok((r.result as { languages: { language: string; available: boolean }[] }).languages.some(l => l.language === 'typescript' && l.available)); },
 			// The worker's own store (Epic c2ba6fa6 s8): the repository's subsystems with what they rest on.
 			'index.subsystems': r => { assert.equal(r.error, undefined); assert.equal((r.result as { repoPath: string }).repoPath, REPO); },
-			'repo.reindex': ok, 'index.file': ok, 'config.enqueue': ok, 'config.reindex': ok, 'repo.add': ok, 'repo.remove': ok,
+			'repo.reindex': ok, 'index.file': ok, 'config.enqueue': ok, 'config.reindex': ok, 'repo.remove': ok,
+			// repo.add also reports the build defaults it stored (none for a directory with no project marker)
+			'repo.add': r => { assert.equal(r.error, undefined); assert.deepEqual(r.result, { ok: true, buildDefaults: { applied: false, reason: 'no-typical-commands' } }); },
 			'mcp.register': r => { assert.equal(r.error, undefined); assert.equal((r.result as { code?: string }).code, 'repo-missing', 'the repo gate answers first, as data'); },
 			'daemon.backup': r => { assert.equal(r.error, undefined); assert.equal((r.result as { targetDir?: string }).targetDir, join(backupDir, 'b')); },
 			'docRelations.measure': r => assert.equal(r.error, 'docRelations.measure: repoPath must be a non-empty string', 'its own validation ran'),

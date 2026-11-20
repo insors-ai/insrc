@@ -51,6 +51,13 @@
         "choice": "Define all three as new symbols",
         "rationale": "User asked to resolve the open questions (2026-11-20): applyBuildDefaults, BuildDefaultsOutcome and BuildSetup have no existing equivalents and are new symbols.",
         "resolvedAt": "2026-11-20T06:43:35.862Z"
+      },
+      "qa898cbc6": {
+        "question": "ep3 partial: the invariants cite c1 to c4, assumed to be the ids of the s1 bundles in order and given below as citations.",
+        "status": "resolved",
+        "choice": "Verify existing IDs",
+        "rationale": "Verified 2026-11-20: c1-c4 in the LLD are the four s1 analyze bundles in order (search.text, module.profile, usage.example, test.locate), and the invariants cite the intended bundles.",
+        "resolvedAt": "2026-11-20T06:44:52.268Z"
       }
     }
   },

@@ -305,6 +305,8 @@ Render the Build rows as a section of their own on the terminal screen, the VS C
 
 - `q9af5e00a` — cd1 partial: applyBuildDefaults, BuildDefaultsOutcome and BuildSetup are new symbols, declared as new rather than taken from an existing symbol.
   - **resolved**: Define all three as new symbols — User asked to resolve the open questions (2026-11-20): applyBuildDefaults, BuildDefaultsOutcome and BuildSetup have no existing equivalents and are new symbols. _(2026-11-20T06:43:35.862Z)_
+- `qa898cbc6` — ep3 partial: the invariants cite c1 to c4, assumed to be the ids of the s1 bundles in order and given below as citations.
+  - **resolved**: Verify existing IDs — Verified 2026-11-20: c1-c4 in the LLD are the four s1 analyze bundles in order (search.text, module.profile, usage.example, test.locate), and the invariants cite the intended bundles. _(2026-11-20T06:44:52.268Z)_
 
 ## Citations
 

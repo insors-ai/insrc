@@ -307,6 +307,8 @@ Render the Build rows as a section of their own on the terminal screen, the VS C
   - **resolved**: Define all three as new symbols — User asked to resolve the open questions (2026-11-20): applyBuildDefaults, BuildDefaultsOutcome and BuildSetup have no existing equivalents and are new symbols. _(2026-11-20T06:43:35.862Z)_
 - `qa898cbc6` — ep3 partial: the invariants cite c1 to c4, assumed to be the ids of the s1 bundles in order and given below as citations.
   - **resolved**: Verify existing IDs — Verified 2026-11-20: c1-c4 in the LLD are the four s1 analyze bundles in order (search.text, module.profile, usage.example, test.locate), and the invariants cite the intended bundles. _(2026-11-20T06:44:52.268Z)_
+- `q59c82aa2` — ts1 partial: the Story has no acceptance criteria, so ac1 to ac5 were written by this LLD and need the user's confirmation as the acceptance criteria.
+  - **resolved**: Confirm ac1-ac5 — The user asked on 2026-11-20 to resolve the open questions after the five LLD-authored criteria were presented; ac1-ac5 stand as written as the Story's acceptance criteria (no amendment was requested). _(2026-11-20T06:45:44.050Z)_
 
 ## Citations
 

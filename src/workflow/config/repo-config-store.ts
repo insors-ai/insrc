@@ -16,9 +16,11 @@
  */
 
 import { createHash } from 'node:crypto';
-import { readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { lstatSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 import { getLogger } from '../../shared/logger.js';
+import { PATHS } from '../../shared/paths.js';
 import { repoConfigPath } from './repo-config.js';
 import type { RepoConfigFile, RepoConfigEntry } from './repo-config.js';
 
@@ -228,4 +230,54 @@ export function writeRepoEntryKeys(
 	});
 	queueTail = run;
 	return run;
+}
+
+// ---------------------------------------------------------------------------
+// Move of the file's old name
+// ---------------------------------------------------------------------------
+
+/** What {@link moveLegacyRepoConfig} did. `note` explains `both-exist` and `failed`. */
+export interface LegacyRepoConfigMove {
+	readonly status: 'moved' | 'nothing-to-move' | 'both-exist' | 'failed';
+	readonly note?: string;
+}
+
+/** Whether something is at `path`, a dangling symbolic link included; only ENOENT means absent. */
+function present(path: string): boolean {
+	try {
+		lstatSync(path);
+		return true;
+	} catch (e) {
+		if ((e as NodeJS.ErrnoException).code === 'ENOENT') return false;
+		throw e;
+	}
+}
+
+/**
+ * Moves the settings file from its old name, `github.json`, to `repo-config.json` in `dir` with one rename, so
+ * nothing is copied and no old file is left. Called once at daemon boot, before anything reads the file.
+ * Nothing is moved when there is no old file; when both files exist neither is touched, so a `repo-config.json`
+ * is never overwritten. Never throws: a failed rename is the `failed` result and the old file stays.
+ */
+export function moveLegacyRepoConfig(
+	dir: string = PATHS.insrc,
+	seams: { readonly rename?: (from: string, to: string) => void } = {},
+): LegacyRepoConfigMove {
+	const from = join(dir, 'github.json');
+	const to = join(dir, 'repo-config.json');
+	try {
+		if (!present(from)) return { status: 'nothing-to-move' };
+		if (present(to)) {
+			const note = `${from} and ${to} both exist; neither was changed and ${to} is the file in use`;
+			log.warn({ from, to }, 'old and new settings files both exist');
+			return { status: 'both-exist', note };
+		}
+		(seams.rename ?? renameSync)(from, to);
+		log.info({ from, to }, 'moved the settings file to its new name');
+		return { status: 'moved' };
+	} catch (e) {
+		const note = e instanceof Error ? e.message : String(e);
+		log.warn({ from, to, err: note }, 'could not move the settings file to its new name; it is tried again at the next boot');
+		return { status: 'failed', note };
+	}
 }

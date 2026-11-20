@@ -20,6 +20,7 @@ import { mkdirSync, existsSync, rmSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { runBootSteeringRefresh } from './steering-inject.js';
 import { PATHS } from '../shared/paths.js';
+import { moveLegacyRepoConfig } from '../workflow/config/repo-config-store.js';
 import { openProgressRuntime } from './task-progress/runtime.js';
 import { registerExecutorProducers } from './task-progress/executor-measurements.js';
 import type { ExecutorDetails } from './task-progress/executor-measurements.js';
@@ -136,6 +137,18 @@ async function main(): Promise<void> {
 
 	// 2. Ensure directories
 	mkdirSync(PATHS.insrc, { recursive: true });
+
+	// 2-repo-config. The per-repository settings file was ~/.insrc/github.json and is now repo-config.json. Move an
+	// existing file to its new name straight away, before anything reads it. One rename, never over an existing
+	// repo-config.json, and skipped when INSRC_REPO_CONFIG overrides the location. A failure is logged and retried at
+	// the next boot; it never stops the daemon starting.
+	if ((process.env['INSRC_REPO_CONFIG'] ?? '').length === 0) {
+		try {
+			moveLegacyRepoConfig();
+		} catch (err) {
+			log.warn({ err: err instanceof Error ? err.message : String(err) }, 'settings file move failed -- non-fatal, retry on next boot');
+		}
+	}
 
 	// One-time cleanup of orphaned legacy on-disk state from prior
 	// storage substrates. Idempotent: silently no-ops once the files

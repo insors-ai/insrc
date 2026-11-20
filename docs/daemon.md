@@ -1363,8 +1363,9 @@ is not named after it. `INSRC_REPO_CONFIG` overrides the location (the tests use
 longer read.
 
 The file was `~/.insrc/github.json`. At the first boot of an updated daemon, straight after its directories are ensured and
-before anything reads the file, an existing `github.json` is moved to `repo-config.json` with one rename: nothing is copied and
-no `github.json` is left. If both files exist neither is touched, `repo-config.json` is the one the daemon reads, and the boot logs
+before anything reads the file, an existing `github.json` is moved to `repo-config.json`: the new name is created exclusively and then the old one
+removed, so nothing is copied, no `github.json` is left, and a `repo-config.json` that another process creates at that moment is
+never replaced. If both files exist neither is touched, `repo-config.json` is the one the daemon reads, and the boot logs
 that both exist; a move that fails is logged and tried again at the next boot, and never stops the daemon starting. The move
 is skipped when `INSRC_REPO_CONFIG` is set. A `github.json` created by hand afterwards is ignored: the settings now live in
 `repo-config.json`, and the settings methods are the way to change them. To go back to an older daemon, rename the file back

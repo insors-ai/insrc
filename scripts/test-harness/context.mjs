@@ -30,6 +30,9 @@ export function runtimeContext() {
 export function childEnvironment(runtime, inherited = process.env) {
 	const env = { ...inherited };
 	for (const key of DIAGNOSTICS) delete env[key];
+	// A coordinator may itself be exercised by node:test. Its children are new
+	// runners, not the parent's internal worker (which would skip all files).
+	delete env.NODE_TEST_CONTEXT;
 	env.PATH = [dirname(runtime.executable), inherited.PATH ?? ''].join(delimiter);
 	return env;
 }

@@ -1,8 +1,9 @@
 import { spawn } from 'node:child_process';
-import { appendFileSync, closeSync, mkdirSync, openSync, readdirSync, unlinkSync, writeFileSync } from 'node:fs';
+import { appendFileSync, closeSync, existsSync, mkdirSync, openSync, readdirSync, unlinkSync, writeFileSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import { join } from 'node:path';
 import { harnessError, participantContext } from './context.mjs';
+const markers = new WeakMap();
 
 /** A fixture retains its handle; a marker survives abrupt fixture death. */
 export function registerChild(child, context = participantContext()) {
@@ -10,6 +11,7 @@ export function registerChild(child, context = participantContext()) {
 	mkdirSync(actors, { recursive: true, mode: 0o700 });
 	const marker = join(actors, `${randomUUID()}.json`);
 	writeFileSync(marker, JSON.stringify({ runId: context.runId, kind: 'child', pid: child.pid ?? null }), { flag: 'wx', mode: 0o600 });
+	markers.set(child, marker);
 	child.once('close', () => { try { unlinkSync(marker); } catch { /* A surviving marker prevents confirmed release. */ } });
 	return child;
 }
@@ -19,8 +21,9 @@ export function actorsClosed(run) {
 	catch (error) { if (error.code === 'ENOENT') return true; throw error; }
 }
 
-export function processScope(run) {
+export function processScope(run, { includeForeignActors = true } = {}) {
 	const children = new Set();
+	const ownedMarkers = new Set();
 	const sent = new WeakMap();
 	const cancellationErrors = [];
 	const evidenceErrors = [];
@@ -46,6 +49,7 @@ export function processScope(run) {
 		const fd = stdout === undefined && stderr === undefined ? openSync(log, 'wx', 0o600) : undefined;
 		const child = spawn(command, args, { cwd, env, detached: process.platform !== 'win32', stdio: ['ignore', stdout ?? fd, stderr ?? fd] });
 		registerChild(child, run);
+		ownedMarkers.add(markers.get(child));
 		const entry = { child, childId, ended: undefined };
 		children.add(entry);
 		let timedOut = false, launchError;
@@ -76,7 +80,8 @@ export function processScope(run) {
 		for (const { child } of children) cancel(child, 'SIGKILL');
 		await Promise.race([Promise.all([...children].map(entry => entry.ended)), new Promise(resolve => { timer = setTimeout(resolve, run.budgets.cleanupMs / 2); })]);
 		clearTimeout(timer);
-		const closed = children.size === 0 && actorsClosed(run) && cancellationErrors.length === 0 && evidenceErrors.length === 0;
+		const markersClosed = includeForeignActors ? actorsClosed(run) : [...ownedMarkers].every(path => !existsSync(path));
+		const closed = children.size === 0 && markersClosed && cancellationErrors.length === 0 && evidenceErrors.length === 0;
 		if (!closed) {
 			// Do not wait forever on inherited pipes. The lease remains blocked;
 			// detaching these observers does not assert descendant disposal.

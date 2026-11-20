@@ -1,3 +1,4 @@
+import { requirePreparedBuild } from '../../../scripts/test-harness/build.mjs';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { after, before, test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -13,7 +14,7 @@ import { readProcessIdentity } from '../../shared/daemon-process.js';
 const root = fileURLToPath(new URL('../../../', import.meta.url));
 const dir = mkdtempSync(join(tmpdir(), 'insrc-watchdog-'));
 const children: ChildProcess[] = [];
-before(() => { execFileSync('npm', ['run', 'build'], { cwd: root, stdio: 'pipe', timeout: 120000 }); });
+before(() => { requirePreparedBuild(root); });
 after(() => { for (const child of children) if (child.exitCode === null && child.signalCode === null) child.kill('SIGKILL'); rmSync(dir, { recursive: true, force: true }); });
 async function run(mode: string) {
  const testDir = mkdtempSync(join(dir, 'parent-')); const entryDir = join(testDir, 'daemon'); mkdirSync(entryDir);

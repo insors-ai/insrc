@@ -102,7 +102,7 @@ export async function mainBuild(root = ROOT) {
 		if (!['preparing', 'mutating'].includes(context.phase)) throw harnessError('write-during-read', 'A test reader cannot rebuild shared output.');
 		// A nested writer consumes existing ownership and never releases its parent.
 		const run = { ...context, record: context, environment: () => ({ ...process.env }), assertOwner: () => { const current = participantContext(root); if (current.phase !== context.phase) throw harnessError('context-invalid', 'Writer phase changed.'); } };
-		const scope = processScope(run);
+		const scope = processScope(run, { includeForeignActors: false });
 		try { return await prepareBuild(run, scope); }
 		finally { if (!await scope.drain()) throw harnessError('cleanup-unconfirmed', 'Nested build did not close.'); }
 	}

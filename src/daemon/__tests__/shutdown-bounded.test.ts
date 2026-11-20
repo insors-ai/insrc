@@ -1,3 +1,4 @@
+import { requirePreparedBuild } from '../../../scripts/test-harness/build.mjs';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { after, before, test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -9,7 +10,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 const root = fileURLToPath(new URL('../../../', import.meta.url));
 const dir = mkdtempSync('/tmp/insrc-bounded-'); const children: ChildProcess[] = [];
-before(() => { execFileSync('npm', ['run', 'build'], { cwd: root, stdio: 'pipe', timeout: 120000 }); });
+before(() => { requirePreparedBuild(root); });
 after(() => { for (const c of children) if (c.exitCode === null && c.signalCode === null) c.kill('SIGKILL'); rmSync(dir, { recursive: true, force: true }); });
 async function scenario(mode: string) {
  const home = mkdtempSync(join(dir, 'parent-')), entryDir = join(home, 'daemon'); mkdirSync(entryDir);

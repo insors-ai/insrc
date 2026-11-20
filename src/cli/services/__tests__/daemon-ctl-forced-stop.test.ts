@@ -1,3 +1,4 @@
+import { requirePreparedBuild } from '../../../../scripts/test-harness/build.mjs';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { after, before, test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -11,7 +12,7 @@ import { captureStopTarget } from '../../../shared/daemon-process-client.js';
 import type { StopTarget } from '../../../shared/daemon-process-client.js';
 const repo = fileURLToPath(new URL('../../../../', import.meta.url)), script = join(repo, 'scripts/daemon-ctl.sh');
 const children: ChildProcess[] = [], targets: StopTarget[] = [], homes: string[] = [];
-before(() => { execFileSync('npm', ['run', 'build'], { cwd: repo, stdio: 'pipe', timeout: 120000 }); });
+before(() => { requirePreparedBuild(repo); });
 after(async () => {
  for (const c of children) if (c.exitCode === null && c.signalCode === null) { const ended = once(c, 'exit'); c.kill('SIGKILL'); await ended; }
  for (const target of targets) { try { await target.handle.terminate(); } finally { await target.handle.close(); } }

@@ -1,3 +1,4 @@
+import { requirePreparedBuild } from '../../../scripts/test-harness/build.mjs';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { after, before, test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -14,7 +15,7 @@ const root = fileURLToPath(new URL('../../../', import.meta.url));
 const base = mkdtempSync('/tmp/insrc-shutdown-evidence-');
 const children: ChildProcess[] = [], targets: StopTarget[] = [];
 const moduleUrl = (path: string) => new URL(`../../../out/${path}.js`, import.meta.url).href;
-before(() => { execFileSync('npm', ['run', 'build'], { cwd: root, stdio: 'pipe', timeout: 120000 }); });
+before(() => { requirePreparedBuild(root); });
 after(async () => {
  for (const child of children) if (child.exitCode === null && child.signalCode === null) { const ended = once(child, 'exit'); child.kill('SIGKILL'); await ended; }
  for (const target of targets) { try { await target.handle.terminate(); } finally { await target.handle.close(); } }

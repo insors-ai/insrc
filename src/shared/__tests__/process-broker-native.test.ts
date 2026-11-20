@@ -1,3 +1,4 @@
+import { requirePreparedBuild } from '../../../scripts/test-harness/build.mjs';
 import { after, afterEach, before, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn, execFileSync } from 'node:child_process';
@@ -18,8 +19,8 @@ const supported = process.platform === 'linux' || process.platform === 'darwin';
 
 before(() => {
 	if (!supported) return;
-	// Exercise the actual package build, not just a test-only compiler invocation.
-	execFileSync('npm', ['run', 'build'], { cwd: root, stdio: 'pipe', timeout: 120_000 });
+	// Consume the coordinator's actual package build; never rebuild beside readers.
+	requirePreparedBuild(root);
 	execFileSync(process.env['CC'] || 'cc', ['-std=c11', '-Wall', '-Wextra', '-Werror', '-I', join(root, 'src/native/process-broker'), join(root, 'src/native/process-broker/main.c'), join(root, 'src/shared/__tests__/fixtures/process-broker-fake-backend.c'), '-o', fake], { stdio: 'pipe', timeout: 30_000 });
 });
 afterEach(async () => {

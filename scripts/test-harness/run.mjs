@@ -42,7 +42,8 @@ export function parseArgs(root, args) {
 	return { files, testFlags, concurrency, budgets: checkedBudgets(budgets), suite };
 }
 
-export async function runHarness(root, selection, { buildOptions, testArgs = file => ['--import', 'tsx', '--test', '--test-concurrency=1', ...selection.testFlags, file], syncAssets = selection.suite === 'vscode' } = {}) {
+export async function runHarness(root, selection, { buildOptions, testArgs, syncAssets = selection.suite === 'vscode' } = {}) {
+	const argsForTest = testArgs ?? (file => ['--import', 'tsx', '--test', '--test-concurrency=1', '--test-reporter=tap', ...selection.testFlags, file]);
 	const run = createRun(root, { selectedFiles: selection.files, budgets: selection.budgets });
 	const results = [];
 	const report = { runId: run.runId, runtime: run.runtime, budgets: run.budgets, selectedFiles: selection.files, diagnosticFlags: run.record.diagnosticFlags, liveTests: process.env.INSRC_LIVE_TESTS ?? 'unset', results, cleanupPath: relative(run.root, join(run.workspace, 'cleanup.json')), incomplete: true };
@@ -58,20 +59,22 @@ export async function runHarness(root, selection, { buildOptions, testArgs = fil
 			async function execute(file) {
 				const log = join(run.workspace, `${results.length}-${file.replaceAll('/', '_')}.log`), fd = openSync(log, 'wx', 0o600);
 				try {
-					const result = await scope.start(run.runtime.executable, testArgs(file), { budgetMs: run.budgets.fileMs, stdout: fd, stderr: fd, logPath: log });
+					const result = await scope.start(run.runtime.executable, argsForTest(file), { budgetMs: run.budgets.fileMs, stdout: fd, stderr: fd, logPath: log });
 					const destination = selection.testFlags.find(flag => flag.startsWith('--test-reporter-destination='))?.split('=').slice(1).join('=');
 					let text = '', coverageError;
 					try { text = readFileSync(destination ? resolve(run.root, destination) : log, 'utf8'); } catch (error) { coverageError = error.code; }
 					const counts = Object.fromEntries(['tests', 'pass', 'fail', 'cancelled', 'skipped', 'todo'].map(name => [name, [...text.matchAll(new RegExp(`^# ${name} (\\d+)$`, 'gm'))].at(-1)?.[1]]).filter(([, value]) => value !== undefined).map(([name, value]) => [name, Number(value)]));
-					results.push({ file, ...result, log: relative(run.root, log), coverage: { status: Object.hasOwn(counts, 'tests') ? 'reported' : 'unavailable', counts, ...(coverageError ? { error: coverageError } : {}) } });
-					process.stdout.write(`${file}: ${result.code === 0 && !result.timedOut ? 'passed' : 'failed/incomplete'} (${relative(run.root, log)})\n`);
-					return result;
+					const coverageIncomplete = testArgs === undefined && !Object.hasOwn(counts, 'tests');
+					const fileResult = { file, ...result, log: relative(run.root, log), coverageIncomplete, coverage: { status: Object.hasOwn(counts, 'tests') ? 'reported' : 'unavailable', counts, ...(coverageError ? { error: coverageError } : {}) } };
+					results.push(fileResult);
+					process.stdout.write(`${file}: ${result.code === 0 && !result.timedOut && !coverageIncomplete ? 'passed' : 'failed/incomplete'} (${relative(run.root, log)})\n`);
+					return fileResult;
 				} finally { closeSync(fd); save(); }
 			}
 			if (selection.files.includes(MUTATION_FILE)) {
 				run.transition('mutating');
 				const result = await execute(MUTATION_FILE);
-				if (result.code !== 0 || result.timedOut) throw harnessError('test-failed', 'Output-mutating regression failed; readers were not admitted.');
+				if (result.code !== 0 || result.timedOut || result.coverageIncomplete) throw harnessError('test-failed', 'Output-mutating regression failed; readers were not admitted.');
 				if (inputFingerprint(run.root) !== preparedInput) throw harnessError('build-drift', 'Source changed during the mutation lane.');
 				publishPrepared(run, buildOptions?.requiredArtifacts);
 			}
@@ -83,13 +86,13 @@ export async function runHarness(root, selection, { buildOptions, testArgs = fil
 				while (cursor < readers.length && !scope.stopped) {
 					const file = readers[cursor++];
 					const result = await execute(file);
-					if (result.unconfirmed || result.interrupted || result.timedOut) scope.stop();
+					if (result.unconfirmed || result.interrupted || result.timedOut || result.coverageIncomplete) scope.stop();
 				}
 			}
 			await Promise.all(Array.from({ length: Math.min(selection.concurrency, readers.length) }, worker));
 			if (fingerprint(run.root, ['out', 'packages/project-memory/dist']) !== prepared.outputFingerprint) throw harnessError('build-drift', 'Output changed while tests were reading.');
 			if (inputFingerprint(run.root) !== prepared.inputFingerprint) throw harnessError('build-drift', 'Source changed during validation.');
-			report.incomplete = scope.stopped || results.length !== selection.files.length || results.some(result => result.timedOut || result.interrupted || result.unconfirmed);
+			report.incomplete = scope.stopped || results.length !== selection.files.length || results.some(result => result.timedOut || result.interrupted || result.unconfirmed || result.coverageIncomplete);
 			save();
 			return { runId: run.runId, workspace: run.workspace, results, code: report.incomplete || results.some(result => result.code !== 0) ? 1 : 0 };
 		});

@@ -181,6 +181,8 @@ Register 'review-report' into src/docgen/registry.ts (as in a2) purely so it is 
 
 - `q62f7c578` — The contract section's renderReviewReport signature currently lists three parameters (call, findings, reconciliation); error-paths/test-strategy identified that a fourth parameter, priorFindings: readonly Finding[] | undefined, is required so each ReconciliationResult.priorFindingRef can be resolved back to the prior finding's own category/severity for a meaningful inline annotation. The Task implementing this Story must carry the corrected four-parameter signature.
   - **resolved**: Add priorFindings as a fourth parameter — ReconciliationResult only carries priorFindingRef + verdict (sc3's own interfaceSketch), not the prior finding's own category/severity -- renderReviewReport needs priorFindings: readonly Finding[] | undefined (the exact set s3's reconcileRound was called with) to render a meaningful annotation. The implementing Task carries this corrected four-parameter signature: (call, findings, reconciliation, priorFindings). _(2026-11-20T06:38:26.237Z)_
+- `q8c471cdf` — The contract section's api.errors lists type 'Error' for an invalid round; error-paths names this specifically as a RangeError (mirroring runReviewRound's own RangeError for an invalid round). The Task implementing this Story must align to RangeError.
+  - **resolved**: Specify RangeError consistently — Matches error-paths' own detail and the established runReviewRound precedent (src/workflow/review-round/driver.ts), which already throws a RangeError for an invalid round -- removes ambiguity rather than leaving a broad Error type that undersells the actual, more specific contract. _(2026-11-20T06:38:52.987Z)_
 
 ## Citations
 

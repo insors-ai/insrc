@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: daemon-doc-repo-table.test.ts: docs/daemon.md lists the methods of the table and the refusal codes
+ok 1 - daemon-doc-repo-table.test.ts: docs/daemon.md lists the methods of the table and the refusal codes
+  ---
+  duration_ms: 1.333583
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 177.050792

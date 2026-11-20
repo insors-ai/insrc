@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: repo-gate-dispatch.test.ts: each method in the table called with no repo is refused and leaves the file system unchanged
+ok 1 - repo-gate-dispatch.test.ts: each method in the table called with no repo is refused and leaves the file system unchanged
+  ---
+  duration_ms: 26.432084
+  type: 'test'
+  ...
+# Subtest: repo-gate-dispatch.test.ts: artifact.feedback.append through the gated handler tables stores the entry when the call names the repo and a relative artifactPath, and refuses it without the repo
+ok 2 - repo-gate-dispatch.test.ts: artifact.feedback.append through the gated handler tables stores the entry when the call names the repo and a relative artifactPath, and refuses it without the repo
+  ---
+  duration_ms: 34.423958
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 925.249875

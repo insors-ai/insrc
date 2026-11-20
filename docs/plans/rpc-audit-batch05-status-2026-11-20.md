@@ -139,3 +139,18 @@ The workflow completed STORY-807fa9e8fb678f4b-s1 and EPIC-807fa9e8fb678f4b.
 The 74/74 focused result remains the pre-integration evidence. Earlier pending
 and rejected checkpoints are historical. GitHub issue attachment remains
 unbound because the existing ISSUE-anchored tracker route requests a Define.
+
+
+## Post-merge validation checkpoint
+
+All pending workflow records were committed at `de7fa6759`. Merge `533b69263`
+integrated origin/v2 through `86062f822`, retaining both local diagnostic/tool
+regressions and the upstream build-default migration test. The eight artifact
+conflicts contained only sync timestamps; the newer timestamps were retained.
+
+Coordinator run `78dcc6ba-b4de-44f6-bf21-2107d8026549` passed **94/94 tests
+across 18 complete files**, with zero skips, cancellations, failures or todos
+and confirmed child closure. This adds the upstream repo-settings and build
+commands documentation suites to Batch05's 16-file selection. Evidence is in
+`docs/plans/rpc-audit-evidence-2026-11-20/post-merge/`. No repository-wide or
+release qualification result is claimed.

@@ -1,0 +1,270 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1795174013020-0x2gia",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-20T11:27:28.983Z",
+    "epicCreatedAt": "2026-11-20T04:36:30.764Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 35660,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "807fa9e8fb678f4b",
+    "epicSlug": "reconcile-daemon-rpc-registration-audit-coverage",
+    "storyId": "s1",
+    "lldRunId": "wf-1795173501200-iln8uq",
+    "lldEffectiveHash": "bce6337fee05292a2212fb6d2e91ef7798f0de7667874bbfcfb22ef7305c64da",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ef18e9e3dafd3a8f09a3dcf197e840a4240deed4ea4d1b01a3c5fe96743b80ba",
+        "at": "2026-11-20T11:27:29.083Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T11:28:47.969Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "4fe395a5b24d41389a654a2f37490b530ce9b878"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Complete Batch05 in three ordered tasks: reconcile explicit classifications and independent exact inventories; prove modifying dispatch and worker ownership; update documentation and retain complete coordinated test evidence. Preserve the handler snapshot correction already merged from upstream and validate the merged tree before claiming remaining failure counts."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Reconcile explicit classifications and exact inventory checks",
+        "summary": "Reconcile missing rows in src/daemon/repo-call-audit.ts and src/daemon/threads/method-class.ts against current callable handlers and phase schemas. Class qualificationState as unary session/read-only; retain retired-review no-work boundary and explicit main-daemon overrides. Replace regex-only registration discovery and filename-only phase inference in the audit/table tests with independent constructed runtime and callable-contract inventories. Preserve the upstream handler snapshot fix. Strengthen method-class drift and explicit retired-review ownership checks.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "qualificationState has an evidenced read-only audit entry and unary ordinary session class; it is absent from shared-state and FIFO-exempt sets.",
+          "design-review-step.cancel and any other callable phase omissions receive evidence-based classifications, with no stale phase rows or deleted review execution restored.",
+          "No IPC shape, store schema, repo fallback, worker runtime import or public failure behavior changes.",
+          "Audits exactly cover the merged RPC/stream maps and callable phases, with valid evidence and disjoint modifying/nonmodifying partition.",
+          "Independent negative controls fail for missing/stale/unknown keys, duplicate classification entries and wrong stream flags; no blanket family exemptions.",
+          "Upstream handler snapshot additions remain intact; full handler-runtime file passes without regenerating expected keys from the table under test.",
+          "Retired-review ownership checks use the exact main-daemon override sets and current router precedence; supported shared-state families still route correctly."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/daemon/__tests__/repo-call-audit.test.ts — exact constructed RPC/stream and callable phase coverage; valid evidence and repo rules; missing/stale negative controls."
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/__tests__/repo-call-table.test.ts — exact disjoint table partition and unknown-name control."
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/threads/__tests__/method-class.test.ts — exact classes/transport, duplicates and drift, explicit retired ownership, worker-safe imports."
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/__tests__/handler-runtime.test.ts — retain reviewed upstream snapshot additions and full runtime construction coverage."
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Verify modifying dispatch and qualification ownership",
+        "summary": "Replace the fixed modifying-method minimum in src/daemon/__tests__/repo-gate-dispatch.test.ts with exact identity coverage. Preserve positive registered writes and existing refusal controls; verify qualificationState dispatch and directly affected ownership/refusal boundaries in isolated fixtures. Put the isolated unqualified qualificationState control in src/daemon/__tests__/handler-runtime.test.ts and class/target assertions in src/daemon/threads/__tests__/method-class.test.ts.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Every modifying registered RPC/stream is exercised and counted by exact name; missing repo returns existing refusal without filesystem changes even with conflicting cwd/environment.",
+          "Positive artifact.feedback.append still writes only the named registered repository; all repository gate tests and supported token/path controls pass.",
+          "An isolated full-runtime qualificationState call reaches its existing unqualified error, not an unknown-method or fabricated success; class/route evidence excludes the admin-only map and shared-state owner.",
+          "Directly affected retired-review dispatcher/router controls preserve local no-work refusal without provider calls, worker allocation or writes. Tests use managed children and no installed live stores."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/daemon/__tests__/repo-gate-dispatch.test.ts — exact modifying dispatch coverage, no-write refusal and positive registered feedback append."
+          },
+          {
+            "level": "integration",
+            "name": "src/daemon/__tests__/handler-runtime.test.ts — isolated qualificationState reaches existing unqualified error."
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/threads/__tests__/method-class.test.ts — qualification ordinary session target, excluding admin/shared/FIFO ownership."
+          },
+          {
+            "level": "integration",
+            "name": "src/daemon/__tests__/repo-call-gate.test.ts and src/daemon/__tests__/step-repo-gate.test.ts — canonical repo/path/token refusal and continuation controls."
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Reconcile documentation and retain final batch evidence",
+        "summary": "Update docs/daemon.md repository gate table to current audited modifying methods, retaining repo parameter/refusal explanations. Run the seven affected files serially on the merged tree plus directly affected regressions, and record evidence in docs/plans and batch/failure indexes.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "Documented modifying names and repo parameters exactly match FILE_MODIFYING_METHODS and retain all six refusal codes and no-fallback explanation.",
+          "Complete affected files pass through Node22 coordinator with build/source-output ownership, accounted results, no timeout/cancel/skip concealment and confirmed child cleanup.",
+          "Baseline counts are labeled pre-merge historical evidence; final evidence identifies the merged revision and records any remaining failures by coherent scope.",
+          "Validated BUILD is presented for human approval before completion; no qualification release regeneration, installed daemon restart or automated review endpoint is invoked."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/daemon/__tests__/daemon-doc-repo-table.test.ts — exact modifying method/parameter and refusal documentation parity."
+          },
+          {
+            "level": "smoke",
+            "name": "Node22 coordinator --concurrency=1 runs all seven baseline files, plus step-repo-gate and directly affected retired-review/router regressions as needed; retain whole-file results and confirmed child cleanup under docs/plans."
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "src/daemon/__tests__/handler-runtime.test.ts: reviewed compatibility snapshots include explained cancellation and qualification additions; constructed maps include spread registrations.",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/daemon/__tests__/repo-call-audit.test.ts: exact RPC/stream union and callable phase coverage, valid kinds/evidence and repo rules; detect missing/stale rows.",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/daemon/__tests__/repo-call-table.test.ts: exact disjoint modifying/nonmodifying partition over actual registration and callable phases, with unknown-name negative control.",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/daemon/threads/__tests__/method-class.test.ts: unique complete method classes and stream flags; missing/stale/duplicate/wrong-transport controls; worker-safe imports and explicit retired-review ownership.",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/daemon/__tests__/daemon-doc-repo-table.test.ts: exact modifying-method names/repo params and six refusal codes.",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/daemon/__tests__/repo-gate-dispatch.test.ts: exercise every modifying RPC/stream by exact identity without repo, assert unchanged filesystem, retain successful registered feedback append.",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/daemon/__tests__/repo-call-gate.test.ts: preserve refusal codes, canonical paths, cross-repo and validated continuation semantics.",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "qualificationState: isolated full-runtime unary dispatch rejects an unqualified fixture with its existing error rather than unknown-method; routing/class tests prove ordinary session ownership and no admin-board/shared-state dispatch.",
+        "coveredByTaskIds": [
+          "t1",
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "Retired review router precedence and no-work refusal controls from Batch04 remain regression evidence; rerun directly affected router/unavailability files if routing assumptions change.",
+        "coveredByTaskIds": [
+          "t1",
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "Run all seven baseline files through Node22 scripts/test-harness/run.mjs --concurrency=1; broaden only to directly affected dispatch/phase regressions.",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "Retain TAP/results/cleanup evidence under docs/plans; report whole-file failures honestly, no skip/force-exit suppression.",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/reconcile-daemon-rpc-registration-audit-coverage-E20261120807fa9e8/S001/LLD.md#2-contract-details"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/reconcile-daemon-rpc-registration-audit-coverage-E20261120807fa9e8/S001/LLD.md#3-error-paths"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/reconcile-daemon-rpc-registration-audit-coverage-E20261120807fa9e8/S001/LLD.md#4-test-strategy"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/reconcile-daemon-rpc-registration-audit-coverage-E20261120807fa9e8/S001/LLD.md#5-migration"
+    }
+  ]
+}

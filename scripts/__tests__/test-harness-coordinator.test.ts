@@ -68,10 +68,14 @@ test('SIGINT/SIGTERM and deadline drain registered actors or retain blocked inco
 		try {
 			const ended = once(child, 'close');
 			await waitReady(join(root, 'ready'));
+			const record = JSON.parse(readFileSync(join(root, '.insrc/tmp/test-harness/active/run.json'), 'utf8'));
 			child.kill(signal);
 			const [code] = await ended;
 			assert.equal(code, 1, output);
 			assert.equal(existsSync(join(root, '.insrc/tmp/test-harness/active')), false);
+			assert.equal(JSON.parse(readFileSync(join(record.workspace, 'cleanup.json'), 'utf8')).confirmedClosed, true);
+			const closes = readFileSync(join(record.workspace, 'child-results.jsonl'), 'utf8').trim().split('\n').map(line => JSON.parse(line));
+			assert.ok(closes.some(close => close.signal === 'SIGKILL'), 'actual escalated child closure is recorded');
 		} finally { if (child.exitCode === null && child.signalCode === null) { const ended = once(child, 'close'); child.kill('SIGKILL'); await ended; } }
 	}
 	const root = rootFixture(t);
@@ -83,6 +87,26 @@ test('SIGINT/SIGTERM and deadline drain registered actors or retain blocked inco
 	const blocked = createRun(root);
 	await assert.rejects(withRun(blocked, async () => { mkdirSync(join(blocked.workspace, 'actors')); writeFileSync(join(blocked.workspace, 'actors', 'unacknowledged.json'), '{}'); }), { code: 'harness-cleanup-unconfirmed' });
 	assert.equal(JSON.parse(readFileSync(join(blocked.active, 'run.json'), 'utf8')).phase, 'blocked');
+});
+
+test('Missing TAP destinations and failed build stages retain logs, actual closure and unavailable coverage', async t => {
+	const root = rootFixture(t);
+	const selection = parseArgs(root, ['--test-reporter-destination=missing.tap', 'src/__tests__/a.test.ts']);
+	const result = await runHarness(root, selection, { buildOptions: options, testArgs: () => ['-e', "process.stdout.write('failed fixture output');process.exitCode=7"] });
+	assert.equal(result.code, 1);
+	const report = JSON.parse(readFileSync(join(result.workspace, 'results.json'), 'utf8'));
+	assert.equal(report.results[0].code, 7);
+	assert.equal(report.results[0].coverage.status, 'unavailable');
+	assert.equal(report.results[0].coverage.error, 'ENOENT');
+	assert.match(readFileSync(join(root, report.results[0].log), 'utf8'), /failed fixture output/);
+	const closes = readFileSync(join(result.workspace, 'child-results.jsonl'), 'utf8').trim().split('\n').map(line => JSON.parse(line));
+	assert.equal(closes.find(close => close.childId === report.results[0].childId).code, 7);
+	const run = createRun(root);
+	await assert.rejects(withRun(run, scope => prepareBuild(run, scope, { ...options, stages: [['-e', "process.stderr.write('build failure detail');process.exitCode=17"]] })), { code: 'harness-build-failed' });
+	const failure = JSON.parse(readFileSync(join(run.workspace, 'child-results.jsonl'), 'utf8').trim());
+	assert.equal(failure.code, 17);
+	assert.match(readFileSync(failure.log, 'utf8'), /build failure detail/);
+	assert.equal(JSON.parse(readFileSync(join(run.workspace, 'cleanup.json'), 'utf8')).confirmedClosed, true);
 });
 
 test('Selector deduplication, explicit budgets and bounded concurrency reject invalid admission', t => {

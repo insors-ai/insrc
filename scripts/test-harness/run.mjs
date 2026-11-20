@@ -58,11 +58,12 @@ export async function runHarness(root, selection, { buildOptions, testArgs = fil
 			async function execute(file) {
 				const log = join(run.workspace, `${results.length}-${file.replaceAll('/', '_')}.log`), fd = openSync(log, 'wx', 0o600);
 				try {
-					const result = await scope.start(run.runtime.executable, testArgs(file), { budgetMs: run.budgets.fileMs, stdout: fd, stderr: fd });
+					const result = await scope.start(run.runtime.executable, testArgs(file), { budgetMs: run.budgets.fileMs, stdout: fd, stderr: fd, logPath: log });
 					const destination = selection.testFlags.find(flag => flag.startsWith('--test-reporter-destination='))?.split('=').slice(1).join('=');
-					const text = readFileSync(destination ? resolve(run.root, destination) : log, 'utf8');
+					let text = '', coverageError;
+					try { text = readFileSync(destination ? resolve(run.root, destination) : log, 'utf8'); } catch (error) { coverageError = error.code; }
 					const counts = Object.fromEntries(['tests', 'pass', 'fail', 'cancelled', 'skipped', 'todo'].map(name => [name, [...text.matchAll(new RegExp(`^# ${name} (\\d+)$`, 'gm'))].at(-1)?.[1]]).filter(([, value]) => value !== undefined).map(([name, value]) => [name, Number(value)]));
-					results.push({ file, log: relative(run.root, log), ...result, coverage: { status: Object.hasOwn(counts, 'tests') ? 'reported' : 'unavailable', counts } });
+					results.push({ file, ...result, log: relative(run.root, log), coverage: { status: Object.hasOwn(counts, 'tests') ? 'reported' : 'unavailable', counts, ...(coverageError ? { error: coverageError } : {}) } });
 					process.stdout.write(`${file}: ${result.code === 0 && !result.timedOut ? 'passed' : 'failed/incomplete'} (${relative(run.root, log)})\n`);
 					return result;
 				} finally { closeSync(fd); save(); }
@@ -82,7 +83,7 @@ export async function runHarness(root, selection, { buildOptions, testArgs = fil
 				while (cursor < readers.length && !scope.stopped) {
 					const file = readers[cursor++];
 					const result = await execute(file);
-					if (result.unconfirmed || result.interrupted) scope.stop();
+					if (result.unconfirmed || result.interrupted || result.timedOut) scope.stop();
 				}
 			}
 			await Promise.all(Array.from({ length: Math.min(selection.concurrency, readers.length) }, worker));

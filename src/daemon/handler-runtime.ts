@@ -473,19 +473,10 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 					log.warn({ repo: normalisedPath, err: err instanceof Error ? err.message : String(err) }, 'mcp registration failed');
 				}
 			}
-			// The project type's typical build commands, stored with no client input: never
-			// overwrites a repo's commands and never fails the add (applyBuildDefaults never throws).
-			const buildDefaults: BuildDefaultsOutcome = await applyBuildDefaults(
-				normalisedPath, deps.buildDefaultsWriter !== undefined ? { writeKeys: deps.buildDefaultsWriter } : {},
-			);
-			if (!buildDefaults.applied && buildDefaults.reason === 'write-failed') {
-				log.warn({ repo: normalisedPath, note: buildDefaults.note }, 'build defaults not stored; repo registered regardless');
-			}
 			return {
 				ok: true,
 				...(steering !== undefined ? { steering } : {}),
 				...(mcp !== undefined ? { mcp } : {}),
-				buildDefaults,
 			};
 		},
 

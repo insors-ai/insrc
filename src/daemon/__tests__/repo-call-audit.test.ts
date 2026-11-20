@@ -1,40 +1,24 @@
 /**
  * Story 64703b708590bd68/s1, task t1: the audit lists every registered RPC method and every step phase.
- * Run: npx tsx --test-force-exit src/daemon/__tests__/repo-call-audit.test.ts
+ * Run: npm test -- src/daemon/__tests__/repo-call-audit.test.ts
  */
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { after } from 'node:test';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
-import { DESIGN_REVIEW_PHASES } from '../../mcp/review-input-schemas.js';
+const testHome = mkdtempSync(join(tmpdir(), 'insrc-call-inventory-'));
+process.env['HOME'] = testHome;
+after(() => rmSync(testHome, { recursive: true, force: true }));
+const { registeredMethods, stepPhases } = await import('./helpers/call-inventory.js');
 import { RPC_AUDIT, STEP_PHASE_AUDIT } from '../repo-call-audit.js';
 
-const DAEMON = join(dirname(fileURLToPath(import.meta.url)), '..');
-
-/** The RPC method names the handler registry declares, read from its source (a quoted dotted key at the start of an entry). */
-function registeredMethods(): string[] {
-	const text = ['handler-runtime.ts', 'task-progress/rpc.ts'].map(file => readFileSync(join(DAEMON, file), 'utf8')).join('\n');
-	return [...new Set([...text.matchAll(/^\s*'([a-zA-Z]+(?:\.[a-zA-Z]+)+)':\s*(?:async|\()/gm)].map(m => m[1]!))].sort();
-}
-
-/** The step phases, from the phase files of each step folder (a file name with a hyphen becomes the phase name with an underscore). */
-function stepPhases(): string[] {
-	const out: string[] = DESIGN_REVIEW_PHASES.map(phase=>`design-review-step.${phase}`);
-	const steps = join(DAEMON, 'steps');
-	for (const step of readdirSync(steps, { withFileTypes: true })) {
-		const dir = join(steps, step.name, 'phases');
-		if (!step.isDirectory() || !existsSync(dir)) continue;
-		for (const f of readdirSync(dir)) if (f.endsWith('.ts')) out.push(`${step.name}.${f.slice(0, -3).replace(/-/g, '_')}`);
-	}
-	return out.sort();
-}
-
-test('repo-call-audit.test.ts: every method of the handler registry and every step phase has an audit entry marked modifying, read-only or daemon-store', () => {
+test('repo-call-audit.test.ts: every method of the handler registry and every step phase has an audit entry marked modifying, read-only or daemon-store', async () => {
 	assert.deepEqual(Object.keys(RPC_AUDIT).sort(), registeredMethods(), 'the audit lists exactly the registered RPC methods');
-	assert.deepEqual(Object.keys(STEP_PHASE_AUDIT).sort(), stepPhases().filter(p => !p.startsWith('review-step.') && !p.startsWith('code-review-step.')), 'the audit lists exactly the step phases');
+	assert.deepEqual(Object.keys(STEP_PHASE_AUDIT).sort(), await stepPhases(), 'the audit lists exactly the step phases');
 	for (const [name, e] of [...Object.entries(RPC_AUDIT), ...Object.entries(STEP_PHASE_AUDIT)]) {
 		assert.ok(['modifying', 'read-only', 'daemon-store'].includes(e.kind), `${name}: kind`);
 		assert.ok(e.evidence.length > 20, `${name}: evidence`);
@@ -47,4 +31,14 @@ test('repo-call-audit.test.ts: every method of the handler registry and every st
 	}
 	// the call that was misrouted on 2026-11-01 is a modifying entry with a path param
 	assert.deepEqual(RPC_AUDIT['workflow.approve'], { ...RPC_AUDIT['workflow.approve']!, kind: 'modifying', repoParam: 'repo', pathParams: ['artifactPath'] });
+});
+
+
+test('audit coverage detects missing and stale registrations independently', () => {
+ const registered = registeredMethods();
+ const audited = Object.keys(RPC_AUDIT);
+ const missing = registered.filter(name => !audited.filter(n => n !== 'repo.list').includes(name));
+ assert.deepEqual(missing, ['repo.list']);
+ assert.deepEqual([...audited, 'brand.newMethod'].filter(name => !registered.includes(name)), ['brand.newMethod']);
+ assert.ok(registered.includes('daemon.update') && registered.includes('progress.subscribe'), 'spread unary and stream registrations are covered');
 });

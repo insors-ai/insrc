@@ -28,7 +28,8 @@ import { getDb } from '../db/client.js';
 import { gateHandlers, gateRepoCall } from './repo-call-gate.js';
 
 /** The methods gated inside their own handlers (the approval family): the table-wide wrapper leaves them alone. */
-const APPROVAL_FAMILY: ReadonlySet<string> = new Set(['workflow.approve', 'workflow.approvePipeline']);
+// These adapters validate repository authority themselves and preserve their own error envelopes.
+const SELF_GATED_METHODS: ReadonlySet<string> = new Set(['workflow.approve', 'workflow.approvePipeline', 'repo.settings.set']);
 import { listRepos, addRepo, removeRepo, repoContainingCwd, InvalidRepoPathError, validateRepoPath } from '../db/repos.js';
 import type { AllTaskDetails } from './task-progress/detail-compatibility.js';
 import { createProgressRoutes } from './task-progress/rpc.js';
@@ -1899,7 +1900,7 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 	Object.assign(rpcHandlers, progressRoutes.rpc);
 	Object.assign(streamHandlers, progressRoutes.streams);
 	// Every other file-modifying call goes through the repo gate too (the approval family is gated inside its handlers above).
-	gateHandlers(rpcHandlers as never, 'rpc', registeredRepos, APPROVAL_FAMILY);
+	gateHandlers(rpcHandlers as never, 'rpc', registeredRepos, SELF_GATED_METHODS);
 	gateHandlers(streamHandlers as never, 'stream', registeredRepos);
 	return { rpcHandlers, streamHandlers, understandingRoutes };
 }

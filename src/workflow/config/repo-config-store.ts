@@ -16,7 +16,7 @@
  */
 
 import { createHash } from 'node:crypto';
-import { lstatSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { linkSync, lstatSync, readFileSync, readlinkSync, renameSync, rmSync, statSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { getLogger } from '../../shared/logger.js';
@@ -254,25 +254,56 @@ function present(path: string): boolean {
 }
 
 /**
- * Moves the settings file from its old name, `github.json`, to `repo-config.json` in `dir` with one rename, so
- * nothing is copied and no old file is left. Called once at daemon boot, before anything reads the file.
- * Nothing is moved when there is no old file; when both files exist neither is touched, so a `repo-config.json`
- * is never overwritten. Never throws: a failed rename is the `failed` result and the old file stays.
+ * Creates `to` as a new name for the file at `from`, and fails with EEXIST, changing nothing, when `to` already exists.
+ * `rename` replaces its destination, so it cannot be the move: a hard link (or, for a symbolic link, a new symbolic link
+ * to the same target) is created exclusively by the kernel, which is the no-replace step this needs.
+ */
+function createExclusively(from: string, to: string): void {
+	if (lstatSync(from).isSymbolicLink()) symlinkSync(readlinkSync(from), to);
+	else linkSync(from, to);
+}
+
+/**
+ * Moves the settings file from its old name, `github.json`, to `repo-config.json` in `dir`, once, at daemon boot, before
+ * anything reads it. The new name is created exclusively and then the old one is removed, so the content is never copied
+ * and, however another process interleaves, an existing `repo-config.json` is never replaced: when one appears at any
+ * moment before the new name is created, neither file is changed and the result is `both-exist`. Nothing is moved when there
+ * is no old file. A failure is the `failed` result and the old file stays. Should the process die between the two steps both
+ * files exist with the same content, which the next boot reports as `both-exist`; nothing is lost. Never throws.
  */
 export function moveLegacyRepoConfig(
 	dir: string = PATHS.insrc,
-	seams: { readonly rename?: (from: string, to: string) => void } = {},
+	seams: {
+		/** Replaces the exclusive create, to fail it in a test. */
+		readonly create?: (from: string, to: string) => void;
+		/** Runs between the presence checks and the create, to interleave another process in a test. */
+		readonly beforeCreate?: () => void;
+	} = {},
 ): LegacyRepoConfigMove {
 	const from = join(dir, 'github.json');
 	const to = join(dir, 'repo-config.json');
+	const bothExist = (): LegacyRepoConfigMove => {
+		const note = `${from} and ${to} both exist; neither was changed and ${to} is the file in use`;
+		log.warn({ from, to }, 'old and new settings files both exist');
+		return { status: 'both-exist', note };
+	};
 	try {
 		if (!present(from)) return { status: 'nothing-to-move' };
-		if (present(to)) {
-			const note = `${from} and ${to} both exist; neither was changed and ${to} is the file in use`;
-			log.warn({ from, to }, 'old and new settings files both exist');
-			return { status: 'both-exist', note };
+		if (present(to)) return bothExist();
+		seams.beforeCreate?.();
+		try {
+			(seams.create ?? createExclusively)(from, to);
+		} catch (e) {
+			if ((e as NodeJS.ErrnoException).code === 'EEXIST') return bothExist();
+			throw e;
 		}
-		(seams.rename ?? renameSync)(from, to);
+		try {
+			unlinkSync(from);
+		} catch (e) {
+			const note = `${to} was created but ${from} could not be removed (${e instanceof Error ? e.message : String(e)}); both exist with the same content`;
+			log.warn({ from, to }, 'the settings file was linked to its new name but the old name could not be removed');
+			return { status: 'failed', note };
+		}
 		log.info({ from, to }, 'moved the settings file to its new name');
 		return { status: 'moved' };
 	} catch (e) {

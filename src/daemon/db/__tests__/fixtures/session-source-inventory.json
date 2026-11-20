@@ -15272,6 +15272,10 @@
           "log.warn"
         ],
         [
+          "diagnostic",
+          "log.warn"
+        ],
+        [
           "filesystem-write",
           "mkdirSync"
         ],
@@ -15312,9 +15316,9 @@
           "writePid"
         ]
       ],
-      "siteCount": 70,
-      "sitesDigest": "3c5c0fcea1f1d0fd9d261869da45c491a03d9aa2b168d79499ce69811f20f940",
-      "sourceDigest": "ec593c9839446fae7933322b51782bf2f4fc65db81c69f3f82fd4156ebce43e4"
+      "siteCount": 71,
+      "sitesDigest": "974e81c620f34713fb093bfb99671bc98d3e2cc2930e2036ec1c24a9c38a5e49",
+      "sourceDigest": "cf4e0fc7d45abaa5f576e67376bf3f1021f9d5c234f2dde3b3ff623c2c77da51"
     },
     "src/daemon/legacy-daemon-cutover.ts": {
       "classification": "daemon-admission-boundary",

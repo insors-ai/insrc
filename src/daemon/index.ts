@@ -423,7 +423,7 @@ async function main(): Promise<void> {
 	// Fire-and-forget like 5b: runSchemaMigrations never rejects, and a slow or failing pass never delays boot-ready.
 	void runSchemaMigrations({ registeredRepos: async () => (await listRepos(db)).map(r => r.path) })
 		.then(result => log.info(result, 'boot schema migrations finished'))
-		.catch(() => { /* never rejects; belt-and-suspenders so boot can't see an unhandled rejection */ });
+		.catch((err: unknown) => log.warn({ err: err instanceof Error ? err.message : String(err) }, 'boot schema migrations failed'));   // never rejects; belt-and-suspenders
 
 	// Run queue in background (never awaited until shutdown)
 	const queueDone = startQueue();

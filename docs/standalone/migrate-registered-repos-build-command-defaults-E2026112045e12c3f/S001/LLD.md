@@ -259,6 +259,8 @@ Make the read of a repo's build settings (repo.settings.get, or the build step's
   - **resolved**: Source is c2 — User asked to resolve the open questions (2026-11-20): the second producer of BuildDefaultsOutcome that the invariant-change names is the repo.add handler listed in the usage.example bundle, c2. _(2026-11-20T11:25:02.716Z)_
 - `qa3035316` — ep3 partial: the invariants cite c1 to c5, assumed to be the ids of the five s1 bundles in order and given below as citations.
   - **resolved**: Verify existing IDs — Verified 2026-11-20: c1-c5 in the LLD are the five s1 analyze bundles in order (symbol.locate, usage.example, search.text walk, search.text registries, test.locate), and the invariants cite the intended bundles. _(2026-11-20T11:25:51.260Z)_
+- `q59c82aa2` — ts1 partial: the Story has no acceptance criteria, so ac1 to ac5 were written by this LLD and need the user's confirmation as the acceptance criteria.
+  - **resolved**: Confirm ac1-ac5 — The user asked on 2026-11-20 to go ahead after the five LLD-authored criteria were presented; ac1-ac5 stand as written as the Story's acceptance criteria (no amendment was requested). _(2026-11-20T11:26:23.488Z)_
 
 ## Citations
 

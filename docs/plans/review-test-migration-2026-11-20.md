@@ -1,6 +1,6 @@
 # Batch 04 — retired-review test migration
 
-Approved ISSUE/LLD/PLAN: `03bd849749a52b41/s1`. This record preserves per-task history. Current checkpoint: t1–t4 passed daemon validation; final t5 evidence is submitted. All implementation work is done, with human BUILD approval still required for Batch04 and its separately tracked persistence blocker.
+Approved ISSUE/LLD/PLAN: `03bd849749a52b41/s1`. This record preserves per-task history. Current checkpoint: all five tasks passed daemon validation. Human approvals on 2026-11-20 completed both Batch04 and its separately tracked persistence blocker. GitHub tracker attachment remains unbound.
 
 ## t1: boundary, client and label controls
 
@@ -85,3 +85,7 @@ The general graph audit still has one failing parent case whose analyze-step chi
 The only production change since the Batch04 checkpoint is the separately tracked one-line early persistence guard in `src/workflow/storage.ts`; all other src changes are tests/fixtures. Caller/store/request/session ownership and persistent entity shapes remain unchanged; assertion mappings and conditional refusal order are documented in prose, so no ERD/UX/sequence companion is needed. No visual rendering verification is claimed.
 
 All five tasks must pass daemon validation before asking for Batch04 BUILD approval. The independent blocker BUILD-81be53b2b0f003a7-s1 is validated but not yet human-approved; neither it nor Batch04 is marked complete by this evidence record.
+
+## Human completion
+
+On 2026-11-20, BUILD-81be53b2b0f003a7-s1 and BUILD-03bd849749a52b41-s1 were explicitly approved in chat and through the registered approval tool. Both stories and epics completed successfully. Earlier pending/blocked paragraphs preserve historical checkpoints. GitHub tracker attachment failed because the stories are not bound to GitHub issues; no tracker publication is claimed. The Batch11 analyze-fixture failure remains recorded.

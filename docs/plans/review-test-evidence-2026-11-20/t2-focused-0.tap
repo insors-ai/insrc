@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: indexing port gets the worker's real codeIndexWorkFor while retired freshness rejects without asking it
+ok 1 - indexing port gets the worker's real codeIndexWorkFor while retired freshness rejects without asking it
+  ---
+  duration_ms: 2806.124667
+  type: 'test'
+  ...
+# Subtest: the main thread's depthForRepo asks the code-indexing worker's queue
+ok 2 - the main thread's depthForRepo asks the code-indexing worker's queue
+  ---
+  duration_ms: 4.088916
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3920.61525

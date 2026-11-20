@@ -13,6 +13,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { MessageChannel, threadId as mainThreadId } from 'node:worker_threads';
 
+import { reviewUnavailable } from '../../../workflow/review-unavailable.js';
 import { RequestLifetime } from '../../request-context.js';
 import { createApprovalRpc } from '../../approval.js';
 import { ApprovalBroker } from '../../approval-broker.js';
@@ -65,6 +66,8 @@ function harness(): Harness {
 	const ports: MessageChannel[] = [];
 	const stops: (() => void)[] = [];
 	const local: RpcHandlers = {
+		'codeReview.run': async () => reviewUnavailable('code'),
+		'step.call': async p => reviewUnavailable((p as { tool?: string }).tool === 'insrc_review_step' ? 'design' : 'code'),
 		'x.local': async () => { log.push('local x.local'); return 'local'; },
 		'db.listConnections': async () => { log.push('local db.listConnections'); return []; },
 		'workflow.run.abort': async () => { log.push('local workflow.run.abort'); return { ok: true }; },
@@ -95,7 +98,6 @@ function harness(): Harness {
 				// Story 5d393a4b: families moved to the shared-state worker.
 				'models.check': async () => { log.push(`${name} models.check`); return { checkId: 'c1' }; },
 				'models.approve': async () => { log.push(`${name} models.approve`); return { ok: true }; },
-				'codeReview.run': async () => { log.push(`${name} codeReview.run`); return { ok: true }; },
 				'step.call': async p => { log.push(`${name} step.call ${(p as { tool: string }).tool}`); return { ok: true }; },
 				// Replies at once; work it registers keeps its completion message (the ack) back until the test opens 'drain <tag>'.
 				'x.drain': async (p, ctx) => {
@@ -682,19 +684,23 @@ test("router: FIFO-exempt and unattributed requests keep today's ends: they neve
 	} finally { h.gates.open('drain n1'); h.gates.open('drain e1'); h.close(); }
 });
 
-test("router: two sessions' model checks and code-review turns reach the one shared-state worker; other step tools stay on the session's worker (Story 5d393a4b)", { timeout: 10_000 }, async () => {
+test("router: two sessions share model checks, retired reviews reject locally and supported steps retain session workers", { timeout: 10_000 }, async () => {
 	const h = harness();
 	try {
 		const B: SessionId = { label: 'codex', pid: 1002 };
 		await h.ask('m1', 'models.check', {}, { session: A }).done;
 		await h.ask('m2', 'models.approve', {}, { session: B }).done;
-		await h.ask('m3', 'codeReview.run', {}, { session: B }).done;
-		await h.ask('m4', 'step.call', { tool: 'insrc_code_review_step' }, { session: A }).done;
+		const started = h.pool.started.length;
+		const retired = h.ask('m3', 'codeReview.run', {}, { session: B }); await retired.done;
+		assert.deepEqual(retired.replies, [{ kind: 'reply', requestId: 'm3', error: 'Code review functionality is being rewritten.' }]);
+		const step = h.ask('m4', 'step.call', { tool: 'insrc_code_review_step' }, { session: A }); await step.done;
+		assert.deepEqual(step.replies, [{ kind: 'reply', requestId: 'm4', error: 'Code review functionality is being rewritten.' }]);
+		assert.equal(h.pool.started.length, started, 'retired calls start no session worker');
 		await h.ask('m5', 'step.call', { tool: 'insrc_analyze_step' }, { session: B }).done;
 		assert.deepEqual(h.log, [
-			'shared models.check', 'shared models.approve', 'shared codeReview.run',
+			'shared models.check', 'shared models.approve',
 			'codex:1002 step.call insrc_analyze_step',
-		], "a check started by one session is decided by another on the same worker; code-review turns from any session share it");
+		], "model checks share one worker; retired calls do no worker work and supported steps remain session-owned");
 	} finally { h.close(); }
 });
 

@@ -1,0 +1,45 @@
+TAP version 13
+# Subtest: router: two sessions' model checks and code-review turns reach the one shared-state worker; other step tools stay on the session's worker (Story 5d393a4b)
+not ok 1 - router: two sessions' model checks and code-review turns reach the one shared-state worker; other step tools stay on the session's worker (Story 5d393a4b)
+  ---
+  duration_ms: 10.768583
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/src/daemon/threads/__tests__/router-session.test.ts:1:29363'
+  failureType: 'testCodeFailure'
+  error: |-
+    a check started by one session is decided by another on the same worker; code-review turns from any session share it
+    + actual - expected
+    
+      [
+        'shared models.check',
+        'shared models.approve',
+    -   'shared codeReview.run',
+        'codex:1002 step.call insrc_analyze_step'
+      ]
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0: 'shared models.check'
+    1: 'shared models.approve'
+    2: 'shared codeReview.run'
+    3: 'codex:1002 step.call insrc_analyze_step'
+  actual:
+    0: 'shared models.check'
+    1: 'shared models.approve'
+    2: 'codex:1002 step.call insrc_analyze_step'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/threads/__tests__/router-session.test.ts:694:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 259.588375

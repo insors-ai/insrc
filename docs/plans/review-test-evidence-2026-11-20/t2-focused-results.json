@@ -1,0 +1,106 @@
+{
+  "runId": "2a90076f-f02e-49a7-b391-591e9e49db1e",
+  "runtime": {
+    "executable": "/opt/homebrew/Cellar/node@22/22.23.2/bin/node",
+    "version": "v22.23.2"
+  },
+  "budgets": {
+    "buildMs": 600000,
+    "fileMs": 600000,
+    "runMs": 5400000,
+    "cleanupMs": 5000
+  },
+  "selectedFiles": [
+    "src/daemon/threads/__tests__/indexing-port.test.ts",
+    "src/daemon/threads/__tests__/router-session.test.ts",
+    "src/daemon/threads/__tests__/s3-acceptance.test.ts"
+  ],
+  "requestedConcurrency": 1,
+  "effectiveConcurrency": 1,
+  "diagnosticFlags": [
+    "DEBUG"
+  ],
+  "liveTests": "unset",
+  "results": [
+    {
+      "file": "src/daemon/threads/__tests__/indexing-port.test.ts",
+      "childId": "c772a782-c00a-4714-80b4-292f8482f7e6",
+      "log": "docs/plans/review-test-evidence-2026-11-20/t2-focused-0.tap",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "sha256": "08315981c3ef0968bb7437ccdb53bbbfe8c9e13381dbbf71d60ddda2fc9e2c40"
+    },
+    {
+      "file": "src/daemon/threads/__tests__/router-session.test.ts",
+      "childId": "ab293698-4524-4dbf-883c-dc0321bc4c6f",
+      "log": "docs/plans/review-test-evidence-2026-11-20/t2-focused-1.tap",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "sha256": "57ae31f45edf06f11f34c3fd236d283510aea55fec7dc0e5128b6498e1c53fc7"
+    },
+    {
+      "file": "src/daemon/threads/__tests__/s3-acceptance.test.ts",
+      "childId": "ec33f679-7bc6-4630-9f8d-9b6ebdc04ccc",
+      "log": "docs/plans/review-test-evidence-2026-11-20/t2-focused-2.tap",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "sha256": "70790a1c7d037bbb098e0ad4843ef3be41182abbc732790fa916e4871ba6f0ca"
+    }
+  ],
+  "incomplete": false,
+  "cleanup": {
+    "confirmedClosed": true,
+    "interrupted": false,
+    "cancellationErrors": [],
+    "evidenceErrors": [],
+    "childCloseJournal": "child-results.jsonl"
+  },
+  "totals": {
+    "tests": 4,
+    "pass": 4,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "selectionNote": "Explicit test-name-pattern: only review-specific routing/token checks plus supported depthForRepo were selected; not full-file coverage."
+}

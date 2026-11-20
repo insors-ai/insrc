@@ -193,31 +193,34 @@ test("ac5: a recording provider shows a session's provider calls strictly sequen
 	assert.ok(second.calls[0]!.startedAt >= first.calls[1]!.endedAt, 'the later run began only after the earlier one finished');
 });
 
-test('ac6: a token of each step kind resumes on a new worker after an idle release', { timeout: 60_000 }, async () => {
-	const A = { label: 'mcp', pid: 7401 };
-	const minted: Record<string, string> = {};
+test('ac6: supported worker tokens survive idle release and preserve separate session payloads while retired kinds reject', { timeout: 60_000 }, async () => {
+	const A = { label: 'mcp', pid: 7401 }, B = { label: 'codex', pid: 7402 };
+	const minted: Record<string, string> = {}, other: Record<string, string> = {};
 	let first = 0;
-	for (const kind of ['analyze', 'workflow', 'review', 'code-review']) {
-		const r = (await once('test.stepState', { op: 'mint', kind, payload: { kind, step: 1 } }, A)).result as { threadId: number; token: string };
-		minted[kind] = r.token;
-		first = r.threadId;
+	for (const kind of ['review', 'code-review']) {
+		const denied = await once('test.stepState', { op: 'mint', kind, payload: {} }, A);
+		assert.equal(denied.result, undefined); assert.match(denied.error ?? '', /unknown step kind/);
+	}
+	for (const kind of ['analyze', 'workflow']) {
+		const reply = await once('test.stepState', { op: 'mint', kind, payload: { kind, step: 1 } }, A);
+		assert.equal(reply.error, undefined);
+		const r = reply.result as { threadId: number; token: string };
+		assert.equal(typeof r.token, 'string'); minted[kind] = r.token; first = r.threadId;
+		const b = (await once('test.stepState', { op: 'mint', kind, payload: { kind, step: 'B' } }, B)).result as { threadId: number; token: string };
+		assert.notEqual(b.threadId, r.threadId, 'sessions own separate workers');
+		assert.notEqual(b.token, r.token); other[kind] = b.token;
 	}
 	await new Promise(r => setTimeout(r, IDLE_MS * 2 + 1_000));
 	const second = threadOf(await once('test.servingThread', null, A));
-	assert.notEqual(second, first, 'the session is on a new worker after the idle release');
-	for (const kind of ['analyze', 'workflow', 'review', 'code-review']) {
+	assert.notEqual(second, first, 'the session is on a new worker after idle release');
+	for (const kind of ['analyze', 'workflow']) {
 		const read = (await once('test.stepState', { op: 'read', kind, token: minted[kind] }, A)).result as { payload: unknown };
-		assert.deepEqual(read.payload, { kind, step: 1 }, `${kind}: the token minted on the released worker resumes`);
+		assert.deepEqual(read.payload, { kind, step: 1 });
 		const next = ((await once('test.stepState', { op: 'update', kind, token: minted[kind], payload: { kind, step: 2 } }, A)).result as { token: string }).token;
-		const old = ((await once('test.stepState', { op: 'read', kind, token: minted[kind] }, A)).result as { payload: unknown }).payload;
-		if (kind === 'review') {
-			assert.equal(next, minted[kind], 'review keeps its token');
-			assert.deepEqual(old, { kind, step: 2 });
-		} else {
-			assert.notEqual(next, minted[kind], `${kind}: a new token`);
-			assert.equal(old, null, `${kind}: the old token no longer resolves`);
-			assert.deepEqual(((await once('test.stepState', { op: 'read', kind, token: next }, A)).result as { payload: unknown }).payload, { kind, step: 2 });
-		}
+		assert.notEqual(next, minted[kind]);
+		assert.equal(((await once('test.stepState', { op: 'read', kind, token: minted[kind] }, A)).result as { payload: unknown }).payload, null);
+		assert.deepEqual(((await once('test.stepState', { op: 'read', kind, token: next }, A)).result as { payload: unknown }).payload, { kind, step: 2 });
+		assert.deepEqual(((await once('test.stepState', { op: 'read', kind, token: other[kind] }, B)).result as { payload: unknown }).payload, { kind, step: 'B' }, "A's update did not alter B's continuation");
 	}
 });
 

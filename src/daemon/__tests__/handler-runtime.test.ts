@@ -13,7 +13,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -74,7 +74,7 @@ const RECORDED_STREAM = [
 /** Methods the tables gained after the move: approval, team hand-over, feedback and identity, repo settings and conversion, tracker attach and sync, task code review. */
 const ADDED_RPC = [
 	'approval.answer', 'artifact.feedback.add', 'artifact.feedback.list', 'identity.declare', 'identity.show', 'repo.convert',
-	'repo.gitHooks.install', 'repo.gitHooks.status', 'repo.gitHooks.uninstall', 'repo.settings.get', 'repo.settings.set', 'repo.trackerConfig.ensure', 'team.claim', 'team.park', 'team.refresh', 'team.release', 'team.resume', 'team.settle',
+	'repo.buildDefaults.migrate', 'repo.gitHooks.install', 'repo.gitHooks.status', 'repo.gitHooks.uninstall', 'repo.settings.get', 'repo.settings.set', 'repo.trackerConfig.ensure', 'team.claim', 'team.park', 'team.refresh', 'team.release', 'team.resume', 'team.settle',
 	'tracker.attach', 'tracker.setup', 'tracker.sync', 'tracker.syncComments', 'workflow.approvePipeline',
 	'workflow.reviewArtifact', 'workflow.resolveFinding',
 	'codeReview.task.activity', 'codeReview.task.assignment', 'codeReview.task.cancel', 'codeReview.task.cleanup', 'codeReview.task.progress', 'codeReview.task.publish',
@@ -287,4 +287,41 @@ test('src/daemon/__tests__/handler-runtime.test.ts: repo.add on a repo whose ent
 		assert.deepEqual(added.result.buildDefaults, { applied: false, reason: 'already-set' });
 		assert.deepEqual(added.config()['repos'][go], mine, 'the commands the entry holds are kept');
 	} finally { rmSync(go, { recursive: true, force: true }); }
+});
+
+test('src/daemon/__tests__/handler-runtime.test.ts: the handler tables hold repo.buildDefaults.migrate beside the recorded methods and repo.buildDefaults.migrate answers through the runtime', async () => {
+	assert.ok(ADDED_RPC.includes('repo.buildDefaults.migrate'), 'recorded beside the other methods added since the move');
+	const py = mkdtempSync(join(tmpdir(), 'insrc-hr-migrate-'));
+	writeFileSync(join(py, 'pyproject.toml'), '');
+	const dir = mkdtempSync(join(tmpdir(), 'insrc-hr-migrate-cfg-'));
+	const config = join(dir, 'github.json');
+	setGraphStorePath(join(dir, 'graph.lmdb'));
+	const previous = process.env['INSRC_GITHUB_CONFIG'];
+	process.env['INSRC_GITHUB_CONFIG'] = config;
+	try {
+		// the repo is registered while the add-time write is refused, so it holds no commands: what a repo added before the defaults looks like
+		const runtime = buildHandlerRuntime({
+			db: undefined as never, configStore: untouchable('configStore'), queue: untouchable('queue'),
+			indexer: { addRepo: async () => {} } as never,
+			startedAt: 0, shutdown: () => { throw new Error('shutdown called'); }, attachedClients: () => [], understandingService: () => undefined,
+			buildDefaultsWriter: async () => ({ ok: false, error: { code: 'write-failed', message: 'refused for the test' } }),
+		});
+		assert.equal(typeof runtime.rpcHandlers['repo.buildDefaults.migrate'], 'function');
+		const added = await runtime.rpcHandlers['repo.add']!({ path: py }) as { buildDefaults: { applied: boolean } };
+		assert.equal(added.buildDefaults.applied, false);
+		assert.equal(existsSync(config), false, 'the registered repo holds no commands yet');
+
+		const report = await runtime.rpcHandlers['repo.buildDefaults.migrate']!({}) as { ok: boolean; repos: Array<{ repo: string; outcome: { applied: boolean } }>; counts: Record<string, number> };
+		assert.equal(report.ok, true);
+		assert.deepEqual(report.repos.map(e => [e.repo, e.outcome.applied]), [[py, true]]);
+		assert.equal(report.counts['applied'], 1);
+		assert.deepEqual((JSON.parse(readFileSync(config, 'utf8')) as Record<string, any>)['repos'][py], { typecheckCommand: 'mypy .', testCommand: 'pytest', resultFormat: 'exit-code' });
+
+		const again = await runtime.rpcHandlers['repo.buildDefaults.migrate']!({}) as { counts: Record<string, number> };
+		assert.equal(again.counts['already-set'], 1, 'a second call changes nothing');
+	} finally {
+		await closeGraphStore();
+		if (previous === undefined) delete process.env['INSRC_GITHUB_CONFIG']; else process.env['INSRC_GITHUB_CONFIG'] = previous;
+		rmSync(py, { recursive: true, force: true }); rmSync(dir, { recursive: true, force: true });
+	}
 });

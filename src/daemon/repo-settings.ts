@@ -37,7 +37,7 @@ const log = getLogger('repo-settings');
 // ---------------------------------------------------------------------------
 
 export type RepoSettingsError = {
-	readonly code: WriteError['code'] | 'unknown-key' | 'read-only-key' | 'invalid-value' | 'repo-not-registered';
+	readonly code: WriteError['code'] | 'unknown-key' | 'read-only-key' | 'invalid-value' | 'repo-not-registered' | 'registry-unreadable';
 	readonly message: string;
 };
 
@@ -81,6 +81,22 @@ export interface BuildSetup {
 export type BuildDefaultsOutcome =
 	| { readonly applied: true; readonly projectType: ProjectType }
 	| { readonly applied: false; readonly reason: 'already-set' | 'node-default' | 'no-typical-commands' | 'write-failed'; readonly note?: string };
+
+/** One registered repo's result in a migration run: the repo path as the registry holds it, and what applyBuildDefaults did. */
+export interface BuildMigrationEntry {
+	readonly repo: string;
+	readonly outcome: BuildDefaultsOutcome;
+}
+
+/** The outcomes a migration counts: 'applied' and every reason a repo is left as it is. */
+export type BuildMigrationOutcomeKey = 'applied' | 'already-set' | 'node-default' | 'no-typical-commands' | 'write-failed';
+
+/** The report of one migration run. Not stored anywhere. `counts` has a key for every outcome and adds up to `repos.length`. */
+export interface BuildMigrationReport {
+	readonly ok: true;
+	readonly repos: readonly BuildMigrationEntry[];
+	readonly counts: Readonly<Record<BuildMigrationOutcomeKey, number>>;
+}
 
 export interface RepoSettingsPayload {
 	readonly repo: string;
@@ -222,6 +238,27 @@ export async function applyBuildDefaults(
 	}
 }
 
+/**
+ * Applies the build defaults to each of `repos`, one at a time, through applyBuildDefaults: which alone decides whether
+ * to write (never over an entry that sets any of the three keys, one write, never throws). A repo's failure is its own
+ * outcome and does not stop the rest. Idempotent: a second run reports already-set for the repos the first one set.
+ * applyBuildDefaults reads an entry and then writes it as separate steps, so a repo.settings.set that lands between
+ * the two can be overwritten; that window is the same as at repo.add.
+ */
+export async function migrateBuildDefaults(
+	repos: readonly string[],
+	deps: { readonly configPath?: string; readonly writeKeys?: typeof writeRepoEntryKeys } = {},
+): Promise<BuildMigrationReport> {
+	const counts: Record<BuildMigrationOutcomeKey, number> = { 'applied': 0, 'already-set': 0, 'node-default': 0, 'no-typical-commands': 0, 'write-failed': 0 };
+	const entries: BuildMigrationEntry[] = [];
+	for (const repo of repos) {
+		const outcome = await applyBuildDefaults(repo, deps);
+		counts[outcome.applied ? 'applied' : outcome.reason] += 1;
+		entries.push({ repo, outcome });
+	}
+	return { ok: true, repos: entries, counts };
+}
+
 async function resolveTarget(file: GithubConfigFile, entry: GithubEntry | undefined, repo: string): Promise<ResolvedTarget> {
 	try {
 		const r = await resolveGithubConfigFromFile(file, repo);
@@ -297,6 +334,24 @@ export function createRepoSettingsHandlers(deps: RepoSettingsDeps): RpcHandlers 
 				return failed;
 			}
 			return await payloadFor(repo);
+		},
+
+		// Applies the build defaults to every registered repo that has none (LLD-45e12c3f47cefb2b-s1); run by the user once after
+		// updating the daemon. Writes only ~/.insrc/github.json, through the daemon's writer, never a file of a repository.
+		'repo.buildDefaults.migrate': async () => {
+			let repos: readonly string[];
+			try {
+				repos = await deps.registeredRepos();
+			} catch (e) {
+				log.warn({ err: e instanceof Error ? e.message : String(e) }, 'repo.buildDefaults.migrate: the registry could not be listed');
+				return fail('registry-unreadable', e instanceof Error ? e.message : String(e));
+			}
+			const report = await migrateBuildDefaults(repos, {
+				configPath: configPath(),
+				...(deps.writeKeys !== undefined ? { writeKeys: deps.writeKeys } : {}),
+			});
+			log.info({ repos: report.repos.length, counts: report.counts }, 'repo.buildDefaults.migrate finished');
+			return report;
 		},
 
 		'repo.trackerConfig.ensure': async (params) => {

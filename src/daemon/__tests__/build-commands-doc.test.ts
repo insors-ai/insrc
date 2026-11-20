@@ -12,7 +12,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { PROJECT_TYPE_GUIDANCE } from '../steps/build-step/validation-checks.js';
-import { applyBuildDefaults } from '../repo-settings.js';
+import { applyBuildDefaults, migrateBuildDefaults } from '../repo-settings.js';
 
 const DOC = readFileSync(fileURLToPath(new URL('../../../docs/daemon.md', import.meta.url)), 'utf8');
 const SECTION = /### Build commands([\s\S]*?)### What the record holds/.exec(DOC)?.[1] ?? '';
@@ -59,4 +59,22 @@ test('docs/daemon.md: the Build commands section is read against the shipped beh
 	// a default is a typical command, not a verified one, and where to change it
 	assert.match(SECTION, /typical command, not a verified one/);
 	assert.match(SECTION, /repo\.settings\.set/);
+});
+
+test('src/daemon/__tests__/build-commands-doc.test.ts: the Build commands section of docs/daemon.md names repo.buildDefaults.migrate, its report fields and its outcome counts, and says a cleared command is applied again when it is run', async () => {
+	assert.ok(SECTION.includes('repo.buildDefaults.migrate'), 'the method is named');
+	// the report fields and the keys of counts are the ones the function returns
+	const dir = mkdtempSync(join(tmpdir(), 'insrc-doc-migrate-'));
+	try {
+		const repo = mkdtempSync(join(dir, 'r-'));
+		writeFileSync(join(repo, 'go.mod'), '');
+		const report = await migrateBuildDefaults([repo], { configPath: join(dir, 'github.json') });
+		for (const field of [...Object.keys(report), ...Object.keys(report.repos[0]!), ...Object.keys(report.counts)]) {
+			assert.ok(SECTION.includes(`"${field}"`), `the report field ${field} is shown`);
+		}
+	} finally { rmSync(dir, { recursive: true, force: true }); }
+	assert.match(SECTION, /registry-unreadable/);
+	assert.match(SECTION, /counts` has a key for every outcome/);
+	assert.match(SECTION, /cleared on purpose[\s\S]*applied again/, 'a cleared command is applied again');
+	assert.match(SECTION, /read[s]? a repository's entry and then writes it/, 'the read-then-write window is stated');
 });

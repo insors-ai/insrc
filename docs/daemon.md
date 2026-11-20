@@ -1448,6 +1448,30 @@ writes the three keys through `repo.settings.set` only when it is used, one cons
 written when one is refused, so no lone command is left. In the terminal, press `u` on the settings screen; in VS Code and
 JetBrains it is a button in the Build section.
 
+#### Migrating repositories registered before the defaults
+
+`repo.add` stores the defaults only for a repository added from now on, so a repository registered earlier has none of the three
+keys. After the daemon is updated, run `repo.buildDefaults.migrate` once (it takes no parameters and nothing runs it by itself): it
+walks the registered repositories in registry order, calls the same function `repo.add` uses for each, one at a time, and returns
+
+```json
+{ "ok": true,
+  "repos": [ { "repo": "/home/me/work/svc", "outcome": { "applied": true, "projectType": "python" } },
+             { "repo": "/home/me/work/web", "outcome": { "applied": false, "reason": "node-default" } } ],
+  "counts": { "applied": 1, "already-set": 0, "node-default": 1, "no-typical-commands": 0, "write-failed": 0 } }
+```
+
+`counts` has a key for every outcome and adds up to the number of repositories. The rules are those of the add-time defaults:
+a repository whose entry sets any one of the three keys is kept as it is (`already-set`), Node and unknown repositories are not
+written, and a failed write (including an unreadable `github.json`, which fails every repository and leaves the file as it was)
+is that repository's `write-failed` outcome and does not stop the others. Running it again changes nothing for the repositories
+it already set. If the registry cannot be listed the reply is `{ "ok": false, "error": { "code": "registry-unreadable", "message": "..." } }`
+and nothing is written. Only `~/.insrc/github.json` is written, through the daemon's writer; no file of a repository is.
+
+Two limits. A command you cleared on purpose (with `repo.settings.set` and `null`) is applied again the next time the method
+is run, because nothing records a clear. And the function reads a repository's entry and then writes it, as separate steps, so a
+`repo.settings.set` that lands between the two can be overwritten; that is the same window as at `repo.add`.
+
 A build phase reads a repository's setting once, when it starts, and uses that one profile for its mapping check, its check
 plan and its prompts, so an edit made while a build runs takes effect from the next phase. The builder's instructions for the
 `tests` mapping follow the profile too: they name the test files the project may map (native ones for a configured non-Node

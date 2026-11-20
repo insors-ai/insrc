@@ -30,7 +30,7 @@
     "triageRationale": "One story, clear approach, mostly reuse of applyBuildDefaults and the registry listing; one IPC method plus its registry entries, tests and a doc line.",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "approved",
+      "status": "completed",
       "revision": {
         "number": 1,
         "contentHash": "f500eeb706281f28dd4316854d993724ea3c6b4262865a49536d0c1faa0a3b9b",

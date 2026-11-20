@@ -1,0 +1,272 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "9ded439a478d2f7e9b5fb24e5f4bc70e498d00d50599f20cefcfc3b8dc5ffcaf",
+        "at": "2026-11-20T11:40:53.950Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "45e12c3f47cefb2b",
+    "storyId": "s1",
+    "createdAt": "2026-11-20T11:40:53.822Z",
+    "updatedAt": "2026-11-20T11:40:53.822Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-20T09:50:08.502Z",
+    "epicSlug": "migrate-registered-repos-build-command-defaults",
+    "revision": 1
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "e3b6c2bdf",
+        "ranAt": "2026-11-20T11:40:53.822Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/__tests__/repo-settings.test.ts: migrateBuildDefaults writes the typecheck and test commands and resultFormat exit-code together for each Python, Go, Rust and JVM repo with none of them, and writes nothing for a Node repo, an unknown repo, a repo whose directory is gone and an entry that sets any one of the three keys",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/repo-settings.test.ts",
+                "title": "migrateBuildDefaults writes the typecheck and test commands and resultFormat exit-code together for each Python, Go, Rust and JVM repo with none of them, and writes nothing for a Node repo, an unknown repo, a repo whose directory is gone and an entry that sets any one of the three keys",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/__tests__/repo-settings.test.ts: migrateBuildDefaults run twice changes nothing the second time and reports already-set for the repos the first run set, and a user's own value set between the runs is kept",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/repo-settings.test.ts",
+                "title": "migrateBuildDefaults run twice changes nothing the second time and reports already-set for the repos the first run set, and a user's own value set between the runs is kept",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/__tests__/repo-settings.test.ts: migrateBuildDefaults keeps going when one repo's write is refused or throws, reports write-failed with its note for that repo only, and reports write-failed for every repo, leaving the file as it was, when github.json is malformed",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/repo-settings.test.ts",
+                "title": "migrateBuildDefaults keeps going when one repo's write is refused or throws, reports write-failed with its note for that repo only, and reports write-failed for every repo, leaving the file as it was, when github.json is malformed",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/__tests__/repo-settings.test.ts: the repo.buildDefaults.migrate handler returns ok, one entry per registered repo in registry order and counts with a key for every outcome that add up to the number of repos, returns zero counts for no repos, and returns registry-unreadable as data when the registry cannot be listed, writing nothing",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/repo-settings.test.ts",
+                "title": "the repo.buildDefaults.migrate handler returns ok, one entry per registered repo in registry order and counts with a key for every outcome that add up to the number of repos, returns zero counts for no repos, and returns registry-unreadable as data when the registry cannot be listed, writing nothing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/__tests__/handler-runtime.test.ts: the handler tables hold repo.buildDefaults.migrate beside the recorded methods and repo.buildDefaults.migrate answers through the runtime",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/handler-runtime.test.ts",
+                "title": "src/daemon/__tests__/handler-runtime.test.ts: the handler tables hold repo.buildDefaults.migrate beside the recorded methods and repo.buildDefaults.migrate answers through the runtime",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/__tests__/build-commands-doc.test.ts: the Build commands section of docs/daemon.md names repo.buildDefaults.migrate, its report fields and its outcome counts, and says a cleared command is applied again when it is run",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/build-commands-doc.test.ts",
+                "title": "src/daemon/__tests__/build-commands-doc.test.ts: the Build commands section of docs/daemon.md names repo.buildDefaults.migrate, its report fields and its outcome counts, and says a cleared command is applied again when it is run",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/build-commands-doc.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 659,
+            "titles": [
+              {
+                "title": "docs/daemon.md: the Build commands section is read against the shipped behaviour and states the add-time defaults, buildSetup and the Build section",
+                "result": "pass"
+              },
+              {
+                "title": "src/daemon/__tests__/build-commands-doc.test.ts: the Build commands section of docs/daemon.md names repo.buildDefaults.migrate, its report fields and its outcome counts, and says a cleared command is applied again when it is run",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/handler-runtime.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 934,
+            "titles": [
+              {
+                "title": "the runtime function builds the handler tables with stub indexing dependencies and their key sets equal the recorded single-thread key sets plus the methods added since",
+                "result": "pass"
+              },
+              {
+                "title": "src/daemon/__tests__/handler-runtime.test.ts: the only code review methods added after the move are the nine task ones, with no duplicate or renamed method",
+                "result": "pass"
+              },
+              {
+                "title": "workflow.approvePipeline, tracker.sync and tracker.setup are registered and answer their requests",
+                "result": "pass"
+              },
+              {
+                "title": "team.refresh, team.claim and team.release are registered and return the old results",
+                "result": "pass"
+              },
+              {
+                "title": "handler-runtime.test.ts: RECORDED_RPC includes models.check, models.approve, models.reject; method-class classifies them as session",
+                "result": "pass"
+              },
+              {
+                "title": "session.delete refuses a session id that is a path ('..', a separator) before anything is purged",
+                "result": "pass"
+              },
+              {
+                "title": "the session purge's tmp directory is the id's direct child of the tmp root, and nothing for an id that names anything else",
+                "result": "pass"
+              },
+              {
+                "title": "handler-runtime.test.ts: mcp.register and mcp.status are served; mcp.register refuses a malformed path before touching the store",
+                "result": "pass"
+              },
+              {
+                "title": "src/daemon/__tests__/handler-runtime.test.ts: repo.add on a Python repo registers it and stores the default commands with no prompt, reports buildDefaults applied, and a failing write still registers the repo",
+                "result": "pass"
+              },
+              {
+                "title": "src/daemon/__tests__/handler-runtime.test.ts: repo.add on a repo whose entry already holds commands keeps them and reports already-set",
+                "result": "pass"
+              },
+              {
+                "title": "src/daemon/__tests__/handler-runtime.test.ts: the handler tables hold repo.buildDefaults.migrate beside the recorded methods and repo.buildDefaults.migrate answers through the runtime",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/repo-settings.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 695,
+            "titles": [
+              {
+                "title": "buildRepoSettings values, resolved target and policy rows",
+                "result": "pass"
+              },
+              {
+                "title": "sign-in mapping for every whoAmI outcome",
+                "result": "pass"
+              },
+              {
+                "title": "repo identity uses the exact registered path",
+                "result": "pass"
+              },
+              {
+                "title": "get returns what set wrote and shows an outside write",
+                "result": "pass"
+              },
+              {
+                "title": "set refuses read-only, unknown, invalid and unregistered inputs and writes nothing",
+                "result": "pass"
+              },
+              {
+                "title": "only the signed-in-user read runs through s1's adapter",
+                "result": "pass"
+              },
+              {
+                "title": "malformed files return github-json-unreadable and keep their bytes",
+                "result": "pass"
+              },
+              {
+                "title": "get reads once, never writes, and resolves from the git remote when there is no own target",
+                "result": "pass"
+              },
+              {
+                "title": "ensure writes the five keys once and concurrent sets both land",
+                "result": "pass"
+              },
+              {
+                "title": "the gitHooks setting reads false when absent, is validated as a boolean and round-trips through github.json",
+                "result": "pass"
+              },
+              {
+                "title": "applyBuildDefaults writes the type's typecheck and test commands and resultFormat exit-code together for a Python, Go, Rust and JVM repo with no build key, and writes nothing for a Node repo, an unknown repo and an entry that already sets any of the three keys",
+                "result": "pass"
+              },
+              {
+                "title": "applyBuildDefaults never throws and reports write-failed when the entry cannot be read or the write fails, leaving no lone command",
+                "result": "pass"
+              },
+              {
+                "title": "repo.settings.get returns buildSetup with the type, the commands source and the suggestion for a repo with none, and writes nothing",
+                "result": "pass"
+              },
+              {
+                "title": "migrateBuildDefaults writes the typecheck and test commands and resultFormat exit-code together for each Python, Go, Rust and JVM repo with none of them, and writes nothing for a Node repo, an unknown repo, a repo whose directory is gone and an entry that sets any one of the three keys",
+                "result": "pass"
+              },
+              {
+                "title": "migrateBuildDefaults run twice changes nothing the second time and reports already-set for the repos the first run set, and a user's own value set between the runs is kept",
+                "result": "pass"
+              },
+              {
+                "title": "migrateBuildDefaults keeps going when one repo's write is refused or throws, reports write-failed with its note for that repo only, and reports write-failed for every repo, leaving the file as it was, when github.json is malformed",
+                "result": "pass"
+              },
+              {
+                "title": "the repo.buildDefaults.migrate handler returns ok, one entry per registered repo in registry order and counts with a key for every outcome that add up to the number of repos, returns zero counts for no repos, and returns registry-unreadable as data when the registry cannot be listed, writing nothing",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

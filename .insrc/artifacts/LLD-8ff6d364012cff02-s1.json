@@ -51,6 +51,13 @@
         "choice": "Confirm all k1–k6",
         "rationale": "The user asked on 2026-11-20 to go ahead with the proposed resolutions. The old variable is dropped with no alias and the existing file is moved once with no copy kept. Correction to the LLD's backwardCompat line: a search of scripts, CI, package.json, plugin main sources, shell profiles, Claude settings, running process environments and the installed daemon found nothing outside src and docs that sets INSRC_GITHUB_CONFIG or reads github.json. The real exposures are the user's own ~/.insrc/github.json (moved at the first boot after the update; github.json.bak-before-fake-repo-removal is not touched), live docs that tell users to hand-write the file (docs/workflow.md, docs/installation.md, docs/index.html, which this Story updates; a user who still creates github.json after the move has it ignored, logged only as both-exist at the next boot), and two JetBrains Kotlin test fixtures that name github.json and the error code.",
         "resolvedAt": "2026-11-20T16:38:15.093Z"
+      },
+      "q100118bb": {
+        "question": "Confirm the acceptance criteria ac1-ac5 this LLD authored, since the Story carries none: ac1 the file, path function, variable, store and types carry the new names and nothing under src still names the old ones; ac2 an existing github.json is moved once at the first boot to repo-config.json without overwriting anything, and a failure or both files existing is logged and loses nothing; ac3 reading and writing the settings, and the GitHub-tracker code, behave as before; ac4 the live docs and tests use the new names; ac5 the move runs after the directories are ensured and before any reader, and never blocks startup.",
+        "status": "resolved",
+        "choice": "Adopt ac1–ac5",
+        "rationale": "The user asked on 2026-11-20 to go ahead. ac1 prohibits the identifiers INSRC_GITHUB_CONFIG, githubConfigPath, github-store, GithubConfigFile, GithubEntry, loadGithubConfigFile and GithubConfigError under src; ac5 means the move runs synchronously after the directories are ensured and, being one rename inside a try/catch, cannot block or fail startup. The Story's file list also includes two JetBrains Kotlin test fixtures (jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/PerRepoSectionTest.kt and InsrcSettingsTrackerTest.kt) and the three live docs that tell users to hand-write the file, with the docs noting that the file is now repo-config.json and that a hand-created github.json is ignored.",
+        "resolvedAt": "2026-11-20T16:39:23.843Z"
       }
     }
   },

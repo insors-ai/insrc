@@ -79,6 +79,13 @@
         "choice": "Confirm constraints before proceeding",
         "rationale": "The user asked on 2026-11-20 to go ahead; the six constraints k1-k6 (idempotent and never overwrites or throws; reports each repo; daemon owns github.json; method tables and audits consistent; run by the user after updating; stay small) derive from the Story text and the user's statements and are the scoring basis; no Story, Epic or HLD constraints exist.",
         "resolvedAt": "2026-11-20T11:26:59.732Z"
+      },
+      "q609ec4a0": {
+        "question": "sbdry4 note: the edge case that says a user's own repo.settings.set during a call is never overwritten is too strong. applyBuildDefaults reads the entry and then writes, as separate steps, so a set landing between the two can be overwritten; the window is the same as at repo.add and the build must document it rather than claim it away.",
+        "status": "resolved",
+        "choice": "Document the read-then-write window; do not claim it away",
+        "rationale": "The user asked on 2026-11-20 to go ahead with the proposed resolution. The edge case's claim that a user's own set is never overwritten is too strong: applyBuildDefaults reads the entry then writes as separate steps, so a set landing between them can be overwritten (same window as repo.add); the build documents this and does not claim it away. Also: the edge case about a partial entry names 'typecheckCommand, typecheckCommand or resultFormat' by a typing slip and means 'typecheckCommand, testCommand or resultFormat'.",
+        "resolvedAt": "2026-11-20T11:27:21.472Z"
       }
     }
   },

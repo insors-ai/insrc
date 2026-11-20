@@ -1,5 +1,7 @@
 # Which daemon calls modify files in a user repository (audit for the repo gate)
 
+> Historical 2026-11-01 snapshot. Batch05 on 2026-11-20 replaced incomplete source-regex inventories with exact constructed RPC/stream maps and registered callable phase schemas. Current classifications and evidence are in `src/daemon/repo-call-audit.ts`; the current modifying contract is in `docs/daemon.md`. The counts and rows below describe the original audit, not the current endpoint set. See `docs/plans/rpc-audit-batch05-status-2026-11-20.md`.
+
 Written by task t1 of Story `64703b708590bd68/s1` (ISSUE-64703b708590bd68). The data is `src/daemon/repo-call-audit.ts`; `src/daemon/__tests__/repo-call-audit.test.ts` checks that it lists exactly the methods registered in `src/daemon/handler-runtime.ts` and the phase files of each step. The gate (t2) is built from the `modifying` entries.
 
 Counts (RPC modifying, read-only, daemon-store | step phases modifying, read-only): 26 47 66 | 10 7

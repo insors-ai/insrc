@@ -67,3 +67,18 @@ ISSUE-81be53b2b0f003a7 is approved and its production guard correction passed bu
 ## Batch 04 completed
 
 All five tasks passed validation. On 2026-11-20 the user approved BUILD-03bd849749a52b41-s1 and BUILD-81be53b2b0f003a7-s1; both stories/epics completed. GitHub tracker attachment remains unbound. The earlier blocker/pending checkpoints are historical. Batch05 ISSUE-807fa9e8fb678f4b is next and awaits its own human approval.
+
+
+## Batch 05 implementation validation checkpoint
+
+Batch05 (`ISSUE-807fa9e8fb678f4b`) reconciles incomplete RPC/stream/phase
+inventories, qualification classification, retired-review ownership and stale
+mutation documentation/count assertions. The stricter inventory found 107
+omitted registrations, an internal-only stale RPC row and a non-callable phase.
+The separately approved design correction preserves earlier tool failures while
+checking registered-repo authority before admitted execution. Tasks one and two
+passed build validation. The combined run passed **74/74 tests across 16 files**,
+with no skips/cancellations, complete coverage and confirmed cleanup. Task three
+submits documentation and final evidence for validation; human BUILD approval
+is pending. This is not a repository-wide green or deployment/push claim.
+[Details and evidence](rpc-audit-batch05-status-2026-11-20.md).

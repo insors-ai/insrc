@@ -673,3 +673,18 @@ After separately approved ISSUE-81be53b2b0f003a7 fixed early artifact-persistenc
 ## Batch 04 completion
 
 Human approval of both validated BUILDs on 2026-11-20 completed Batch04 and the separately tracked artifact-preparation guard defect (81be53b2b0f003a7). Final focused evidence remains59/59 passes; the unrelated Batch11 analyze-fixture failure is still open. Earlier blocked/pending checkpoints are historical, and GitHub tracker attachment remains unbound.
+
+
+## Batch 05 implementation validation checkpoint
+
+Batch05 (`ISSUE-807fa9e8fb678f4b`) reconciles incomplete RPC/stream/phase
+inventories, qualification classification, retired-review ownership and stale
+mutation documentation/count assertions. The stricter inventory found 107
+omitted registrations, an internal-only stale RPC row and a non-callable phase.
+The separately approved design correction preserves earlier tool failures while
+checking registered-repo authority before admitted execution. Tasks one and two
+passed build validation. The combined run passed **74/74 tests across 16 files**,
+with no skips/cancellations, complete coverage and confirmed cleanup. Task three
+submits documentation and final evidence for validation; human BUILD approval
+is pending. This is not a repository-wide green or deployment/push claim.
+[Details and evidence](rpc-audit-batch05-status-2026-11-20.md).

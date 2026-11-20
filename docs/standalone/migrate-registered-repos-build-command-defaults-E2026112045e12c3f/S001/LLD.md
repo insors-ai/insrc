@@ -261,6 +261,8 @@ Make the read of a repo's build settings (repo.settings.get, or the build step's
   - **resolved**: Verify existing IDs — Verified 2026-11-20: c1-c5 in the LLD are the five s1 analyze bundles in order (symbol.locate, usage.example, search.text walk, search.text registries, test.locate), and the invariants cite the intended bundles. _(2026-11-20T11:25:51.260Z)_
 - `q59c82aa2` — ts1 partial: the Story has no acceptance criteria, so ac1 to ac5 were written by this LLD and need the user's confirmation as the acceptance criteria.
   - **resolved**: Confirm ac1-ac5 — The user asked on 2026-11-20 to go ahead after the five LLD-authored criteria were presented; ac1-ac5 stand as written as the Story's acceptance criteria (no amendment was requested). _(2026-11-20T11:26:23.488Z)_
+- `qd7c28639` — alt2 partial: alternatives were scored against six constraints k1 to k6 derived from the Story text and the user's statements, since no Story, Epic or HLD constraints exist.
+  - **resolved**: Confirm constraints before proceeding — The user asked on 2026-11-20 to go ahead; the six constraints k1-k6 (idempotent and never overwrites or throws; reports each repo; daemon owns github.json; method tables and audits consistent; run by the user after updating; stay small) derive from the Story text and the user's statements and are the scoring basis; no Story, Epic or HLD constraints exist. _(2026-11-20T11:26:59.732Z)_
 
 ## Citations
 

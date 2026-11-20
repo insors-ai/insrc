@@ -72,6 +72,13 @@
         "choice": "Confirm ac1-ac5",
         "rationale": "The user asked on 2026-11-20 to go ahead after the five LLD-authored criteria were presented; ac1-ac5 stand as written as the Story's acceptance criteria (no amendment was requested).",
         "resolvedAt": "2026-11-20T11:26:23.488Z"
+      },
+      "qd7c28639": {
+        "question": "alt2 partial: alternatives were scored against six constraints k1 to k6 derived from the Story text and the user's statements, since no Story, Epic or HLD constraints exist.",
+        "status": "resolved",
+        "choice": "Confirm constraints before proceeding",
+        "rationale": "The user asked on 2026-11-20 to go ahead; the six constraints k1-k6 (idempotent and never overwrites or throws; reports each repo; daemon owns github.json; method tables and audits consistent; run by the user after updating; stay small) derive from the Story text and the user's statements and are the scoring basis; no Story, Epic or HLD constraints exist.",
+        "resolvedAt": "2026-11-20T11:26:59.732Z"
       }
     }
   },

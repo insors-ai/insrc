@@ -121,7 +121,7 @@ class InsrcSettingsTrackerTest {
         val calls = mutableListOf<Pair<String, Map<String, Any?>>>()
         val saved = DaemonGatewayImpl(FakeDaemonRpc { m, p -> calls.add(m to p); DaemonResult(ok = true, data = mapOf("ok" to true)) })
             .writeRepoSetting("/work/a", "ghHost", "ghe.example.com")
-        assertEquals(SaveResult.Saved, saved)
+        assertEquals(SaveResult.Saved(), saved)
         assertEquals("repo.settings.set", calls.single().first, "not config.write")
         assertEquals(mapOf<String, Any?>("repo" to "/work/a", "key" to "ghHost", "value" to "ghe.example.com"), calls.single().second)
 
@@ -180,11 +180,11 @@ class InsrcSettingsTrackerTest {
                 }
                 "writeSetting" -> {
                     calls.add("writeSetting ${(args[0] as List<*>).joinToString(".")}")
-                    SaveResult.Saved
+                    SaveResult.Saved()
                 }
                 "clearSetting" -> {
                     calls.add("clearSetting ${(args[0] as List<*>).joinToString(".")}")
-                    SaveResult.Saved
+                    SaveResult.Saved()
                 }
                 else -> throw AssertionError("unexpected gateway call ${method.name}")
             }
@@ -205,7 +205,7 @@ class InsrcSettingsTrackerTest {
     @Test
     fun `a ghHost edit goes to writeRepoSetting, a model-tier edit still goes to writeSetting`() {
         val calls = mutableListOf<String>()
-        val sec = section(gatewayRecording(calls) { _, _, _ -> SaveResult.Saved })
+        val sec = section(gatewayRecording(calls) { _, _, _ -> SaveResult.Saved() })
         val root = sec.component()
         assertFalse(sec.isModified())
 
@@ -224,7 +224,7 @@ class InsrcSettingsTrackerTest {
         val model = PerRepoOverridesModel(listOf("/work/a"), listOf(RoleDto("review", "core")), listOf("cheap", "mid", "core"), emptyMap())
         model.addOverride("/work/a")
         model.setCoreFloor("/work/a", "core")
-        val sec2 = PerRepoSection(model, gatewayRecording(calls) { _, _, _ -> SaveResult.Saved }, TrackerFixtures.fields, mapOf("/work/a" to TrackerFixtures.loaded("/work/a")))
+        val sec2 = PerRepoSection(model, gatewayRecording(calls) { _, _, _ -> SaveResult.Saved() }, TrackerFixtures.fields, mapOf("/work/a" to TrackerFixtures.loaded("/work/a")))
         sec2.apply()
         assertTrue(calls.any { it.startsWith("writeSetting models.byRepo./work/a") }, "model-tier edits keep using writeSetting: $calls")
         assertTrue(calls.none { it.startsWith("writeRepoSetting") })

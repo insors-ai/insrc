@@ -1,0 +1,655 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1795149678886-t22m35",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-20T04:57:08.112Z",
+    "epicCreatedAt": "2026-11-20T04:34:20.119Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 948891,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3275fb2e9a542cd6",
+    "epicSlug": "make-test-harness-hermetic-bounded",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1795149678886-t22m35",
+    "hldEffectiveHash": "4889d3eb4e7c3be2acdc0260155e0e5920b5687a3255da0a117eca8cede2f9e7",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "Make the test harness hermetic and bounded",
+    "standalone": true,
+    "sizeClass": "bugfix",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "81094a12ff911b4fd0eddf87c4eacae1ce9b644608d2dcfb88bedf4849ab831d",
+        "at": "2026-11-20T04:57:08.246Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T05:02:19.060Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "d7bcd4f9ae10162c710d9f10ebca145a62d8b2d9"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Give repository test and build commands one explicit owner for shared generated output, a validated Node-22 runtime and a disposable probe workspace. Build-dependent tests consume one prepared build; regression cases that intentionally rebuild execute separately under exclusive ownership. Owned ports and fixture children drain before release, while an uncatchable crash leaves a visible blocked record rather than permitting another run to overwrite output."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Make the test harness hermetic and bounded"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "typecheckAgainstPanel",
+          "signature": "typecheckAgainstPanel(t: Skipper, snippet: (moduleSpecifier: string) => string): Promise<{ ok: boolean; out: string }>",
+          "parameters": [
+            {
+              "name": "t",
+              "type": "Skipper",
+              "purpose": "Existing local test context; coordinator preflight requires the compiler rather than silently counting a missing compiler as a passing check.",
+              "optional": false
+            },
+            {
+              "name": "snippet",
+              "type": "(moduleSpecifier: string) => string",
+              "purpose": "Construct the existing positive or negative type probe using the coordinator-provided path to the real panel module; preserve intentional type errors.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<{ ok: boolean; out: string }>",
+            "meaning": "Actual compiler result and diagnostics for one probe; ok is true only for compiler exit zero. A negative type test still verifies its intended diagnostic."
+          },
+          "errors": [
+            {
+              "type": "Error & { code: 'harness-context-invalid' | 'harness-runtime-unsupported' | 'harness-compiler-unavailable' }",
+              "condition": "Missing/mismatched active run, unsupported runtime or compiler prerequisite."
+            },
+            {
+              "type": "Error & { code: 'harness-child-timeout' | 'harness-cleanup-unconfirmed' }",
+              "condition": "The owned compiler does not complete within its declared budget, or its close/cleanup cannot be confirmed."
+            }
+          ],
+          "preconditions": [
+            "Source module path is within the canonical checkout; run-owned probe directory is outside both backend and extension source include trees.",
+            "One supported Node 22.22.1-or-newer 22.x binary has been validated by the coordinator; no automatic installation or fallback to Node 26."
+          ],
+          "postconditions": [
+            "No __sc4probe_ source is created under vscode-plugin/src; test snippets import the actual production type rather than a copied declaration.",
+            "Compiler launch failure is distinguishable from an expected type-check rejection; permitted positive controls still compile.",
+            "Normal completion or catchable cancellation reaps the retained child and removes only its owned probe directory. Abrupt-death residue remains under the ignored run workspace and cannot enter normal compilation."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "HarnessRunRecord (new, test-only coordination record)",
+        "change": "new",
+        "callSites": [
+          "package.json",
+          "scripts/clean-output.mjs",
+          "src/cli/services/__tests__/daemon-ctl-forced-stop.test.ts",
+          "src/shared/__tests__/process-broker-native.test.ts",
+          "src/daemon/__tests__/shutdown-lifecycle-evidence.test.ts",
+          "src/daemon/__tests__/shutdown-watchdog.test.ts",
+          "src/daemon/__tests__/review-retirement-package.test.ts",
+          "src/daemon/__tests__/shutdown-bounded.test.ts"
+        ],
+        "schemaDiff": "version: 1; runId: string; canonicalRoot: absolute-path; runtimeExecutable: absolute-path; runtimeVersion: string; phase: 'preparing'|'mutating'|'reading'|'draining'|'blocked'; mode: 'test'|'build'; selectedFiles: string[]; budgets: { buildMs: number; fileMs: number; runMs: number; cleanupMs: number }; workspace: absolute-path; outcome?: { code: number|null; signal: string|null; incomplete: boolean }; diagnosticFlags: string[]",
+        "details": "Proposed ownership: canonical checkout -> at most one active harness lease at .insrc/tmp/test-harness/active; the lease -> exactly one runId and one ignored workspace .insrc/tmp/test-harness/runs/<runId>. Acquisition is atomic before any output mutation; publication must complete before child admission. Overlap, malformed metadata, a symlinked lease or a replacement runId refuses promptly. Ownership is not transferred by age, PID absence or an environment variable alone. A stale record is never automatically stolen. Normal release requires matching runId plus confirmed owned-child closure; inability to confirm closure retains phase blocked. Uncatchable process death deliberately preserves the record; recovery is an explicit operator action after confirming the old run's actors have ended. PID values are diagnostics only and never authorize a signal. No LMDB/Lance/daemon socket/global ~/.insrc state is touched."
+      },
+      {
+        "entity": "PreparedBuild (new, run-scoped prerequisite)",
+        "change": "new",
+        "callSites": [
+          "package.json",
+          "scripts/clean-output.mjs",
+          "src/cli/services/__tests__/daemon-ctl-forced-stop.test.ts",
+          "src/shared/__tests__/process-broker-native.test.ts",
+          "src/daemon/__tests__/shutdown-lifecycle-evidence.test.ts",
+          "src/daemon/__tests__/shutdown-watchdog.test.ts",
+          "src/daemon/__tests__/shutdown-bounded.test.ts",
+          "src/daemon/__tests__/review-retirement-package.test.ts"
+        ],
+        "schemaDiff": "runId: string; canonicalRoot: absolute-path; runtimeExecutable: absolute-path; buildExitCode: 0; completedAt: ISO-string; inputFingerprint: string; outputFingerprint: string; requiredArtifacts: string[]",
+        "details": "Coordinator -> one current prepared-build record, usable only by that run's readers. Test entrypoint is proposed scripts/test-harness/run.mjs (backend/vscode suite or explicit files); build entrypoint is proposed scripts/test-harness/build.mjs, preserving the current build stages and argv-based subprocess execution. Proposed support is scripts/test-harness/context.mjs; these are new script locations, not claims of existing APIs. Root and VS Code npm test routes delegate to the coordinator. A standalone root npm build acquires the same checkout ownership. Coordinator build calls join only the matching active preparing/mutating context and a nested single-writer reservation; ordinary reading-phase tests cannot rebuild. Prepare once, run the true output-mutating retirement-package regression separately, refresh the prepared record after its successful rebuild, then admit ordinary consumers. Replace the other five rebuild hooks with prepared-build checks; direct raw build-dependent test invocations fail with the supported selector command instead of silently rebuilding. A missing helper fails setup before fake-daemon creation. Existing package build/typecheck/native/assets checks remain semantically enforced; adapt only their exposure to the wrapper in this batch, leaving stale tool snapshots/exemptions to Batch 09. Fingerprint drift invalidates the run's validation claim; this metadata never grants production release qualification."
+      },
+      {
+        "entity": "HarnessChild and ProbeWorkspace (new, internal lifetime relation)",
+        "change": "new",
+        "callSites": [
+          "src/daemon/tools/__tests__/_proc.ts",
+          "src/daemon/steps/__tests__/peer-state-store-leakfree.test.ts",
+          "vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts",
+          "src/daemon/tools/shell-helper.ts"
+        ],
+        "schemaDiff": "childId: string; runId: string; kind: 'build'|'test'|'fixture'|'compiler'; state: 'starting'|'ready'|'closing'|'closed'|'unconfirmed'; budgetMs: positive-integer; probeDirectory?: absolute-path",
+        "details": "One run owns 0..N retained ChildProcess records; each compiler owns exactly one isolated probe directory. Helpers register actors at spawn and observe close, with cleanup in per-test finally/afterEach rather than one after-all cleanup that lets a failed case poison the next. Short cancellation tests start their asserted deadline after a bounded fixture-ready handshake, not before spawn scheduling; do not increase production deadlines or suppress assertions. The obsolete zero-test peer fixture must allocate no ports at module load; retained meaningful channel coverage is exercised in an actual test that owns setup/finally cleanup without restoring removed reviews. The type probe uses the existing repository's NodeNext/type resolution and real module, but stores snippets under the ignored run workspace. Inherit a cloned environment with the selected Node directory first on PATH, no ambient NODE_OPTIONS injection, and known SDK debug switches cleared for baseline tests; negative environment tests explicitly set their own switches. Preserve explicit live-test opt-ins and report them; never enable paid/live services implicitly. Default ordinary test-file concurrency is 2, bounded 1–4; build-mutating cases are serial. Initial harness ceilings are build 10 minutes, file 10 minutes, run 90 minutes and drain 5 seconds, selectable explicitly when a documented file needs more; record budgets and preserve longer intentional case requirements. Timeouts remain nonzero/incomplete outcomes, not green results. Cleanup only signals retained test-owned child/process-group handles through existing owned lifecycle behavior; never kill by a discovered PID or change production shell/native semantics. Escaped descendants require fixture-owned registration/parent-death cleanup or an explicit unconfirmed outcome before ownership release."
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Another run/build already owns the canonical checkout.",
+          "detection": "Atomic acquisition finds an existing active lease; owner metadata is validated only for diagnostics, never for age/PID-based takeover.",
+          "response": "Return nonzero harness-busy before cleaning or reading shared output. Name the existing run and supported retry/recovery path without printing its nonce.",
+          "userImpact": "Second invocation ends promptly instead of racing or hanging.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Unsupported Node runtime or missing npm/compiler/native build prerequisite.",
+          "detection": "Preflight probes the selected absolute executable/version and required local entrypoints before output mutation or fake-daemon startup.",
+          "response": "Return a distinct setup failure with the required supported runtime/prerequisite command; do not auto-install, switch runtimes silently or count a skipped setup as pass.",
+          "userImpact": "Environment problems remain distinguishable from product defects.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A build child fails or exceeds its declared ceiling.",
+          "detection": "Retained build process emits nonzero/signal/error or its monotonic budget expires.",
+          "response": "Do not publish PreparedBuild or start output readers. Drain owned actors; release only on confirmed closure, otherwise retain blocked ownership. Preserve the real build log and failure code.",
+          "userImpact": "One primary setup failure replaces cascades of missing helpers.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A reading-phase test tries to rebuild, or a raw direct invocation lacks a prepared context.",
+          "detection": "The build wrapper/context check compares active runId, canonical root, allowed phase and current prepared manifest; the single-writer reservation also refuses concurrent writers.",
+          "response": "Refuse with harness-context-invalid or harness-write-during-read and the supported coordinator selector command. The true mutation regression runs only in its serial phase.",
+          "userImpact": "Historical one-file debugging remains available through selectors without unsafe implicit rebuilds.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Lease path/record is malformed, replaced, foreign or symlinked.",
+          "detection": "Validate the canonical fixed lease location, record schema, same-run identity and ownership before any transition/removal; detect missing/changed identity on release.",
+          "response": "Fail closed and never remove another run's record or source tree. Incomplete publication is blocked, not interpreted as free output.",
+          "userImpact": "Recovery is explicit; unrelated files and active runs remain untouched.",
+          "recoverable": false
+        },
+        {
+          "scenario": "A fixture case fails before its expected startup marker.",
+          "detection": "A bounded ready/exit observation fails before the behavioral deadline is admitted.",
+          "response": "Report fixture-startup failure, reclaim the retained actor in per-case finally, and prevent the next case from inheriting its socket/PID/probe residue. Do not inflate the asserted behavioral timeout.",
+          "userImpact": "Cancellation/termination failures are not mislabeled when nothing had started.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Compiler negative probe cannot launch, hangs, or reports an unrelated diagnostic.",
+          "detection": "Retain the compiler spawn outcome/exit and assert the intended negative diagnostic plus a valid positive control.",
+          "response": "Raise a setup/timeout failure rather than treating every nonzero exit as proof of a type guarantee. Keep snippets outside normal source includes.",
+          "userImpact": "Type assertions remain meaningful and interrupted probes cannot break the plugin build.",
+          "recoverable": true
+        },
+        {
+          "scenario": "SIGINT/SIGTERM or whole-run deadline interrupts a run.",
+          "detection": "The coordinator receives the signal/deadline while it still retains child ownership.",
+          "response": "Stop new admission, transition to draining, cancel registered actors within the cleanup ceiling and close logs/ports/probes. Return an interrupted/incomplete nonzero result. Unconfirmed disposal retains blocked ownership; no next build is admitted.",
+          "userImpact": "A cancellation does not become a green test run or leave a silently reusable output lease.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Supervisor or fixture is killed by an uncatchable signal.",
+          "detection": "A later invocation observes the unreleased active record, or a retained parent observes its child die without confirmed cleanup.",
+          "response": "Keep the previous record blocked and refuse automatic re-use. Document explicit recovery after old actors are confirmed ended. Run-local residue is isolated from source includes; do not claim guaranteed detached-descendant cleanup after arbitrary SIGKILL.",
+          "userImpact": "May require deliberate recovery, preserving output correctness instead of unsafe automatic lock theft.",
+          "recoverable": false
+        },
+        {
+          "scenario": "A descendant escapes normal group ownership or disposal cannot be established.",
+          "detection": "Registered child/fixture close acknowledgments are missing at the bounded drain boundary.",
+          "response": "Report harness-cleanup-unconfirmed, retain blocked state, and never signal a PID discovered by scanning the system. Fixture-owned registration/parent-death handling must provide its actual cleanup guarantee.",
+          "userImpact": "The run remains incomplete and cannot silently authorize another build.",
+          "recoverable": false
+        },
+        {
+          "scenario": "Source/output fingerprints drift during a validation run.",
+          "detection": "Compare the run's prepared inputs/outputs with its final snapshots outside explicitly admitted mutation phases.",
+          "response": "Mark validation incomplete/nonzero and retain logs; never update release/qualification evidence automatically to bless the new bytes.",
+          "userImpact": "Results cannot be reported as validating a different source/build.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Native broker permission denied or a sibling product test fails after valid setup.",
+          "detection": "The underlying test reports its actual error, such as denied errno 1 or a real assertion failure.",
+          "response": "Preserve the failing result and coverage. This batch changes neither native admission nor sibling assertions; record the corresponding batch dependency.",
+          "userImpact": "Harness improvements do not hide remaining product/platform failures.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "The same checkout is reached through /var and /private/var aliases.",
+          "expected": "One canonical ownership identity is used; the second run cannot acquire a second lease."
+        },
+        {
+          "input": "No selected test file, repeated selectors, or an out-of-checkout path.",
+          "expected": "Empty/invalid selection fails before mutation; duplicates are deduplicated and every selected file is reported once."
+        },
+        {
+          "input": "A supported test file contains no registered test.",
+          "expected": "It allocates no module-scope resource and terminates. The peer-store fixture retains meaningful coverage only in an actual owned test; no tests/handles are restored for removed review engines."
+        },
+        {
+          "input": "A valid compiler snippet is intentionally type-invalid.",
+          "expected": "Its expected diagnostic is reported as the test's negative control; launch/setup failure remains a different error."
+        },
+        {
+          "input": "The environment contains DEBUG/NODE_DEBUG or NODE_OPTIONS.",
+          "expected": "Baseline child environment is explicitly controlled and recorded by flag names only; tests of those variables set their own negative cases. Parent environment and production configuration are unchanged."
+        },
+        {
+          "input": "A documented expensive fixture needs more than the default harness file ceiling.",
+          "expected": "An explicit recorded selector budget can be used; the 60-second audit cap is not imposed as a production/test correctness requirement."
+        },
+        {
+          "input": "A second cleanup notification or late close arrives after closure.",
+          "expected": "Cleanup is idempotent for the same owned actor and never deletes a replacement run/workspace."
+        },
+        {
+          "input": "User runs npm build without starting tests.",
+          "expected": "The same build stages run under an independently acquired checkout lease; normal developer/install builds do not require a preexisting test context."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The complete existing TypeScript/workspace/tool typecheck/native/assets build stages remain enforced; only their harness ownership changes.",
+          "source": "c1"
+        },
+        {
+          "text": "Existing production shell/channel signatures and native refusal behavior remain unchanged; helpers are consumed rather than weakened.",
+          "source": "c1"
+        },
+        {
+          "text": "Compiler fixtures test real published types with positive and intended-negative controls, not copied declarations or inert ts-expect-error comments.",
+          "source": "c1"
+        },
+        {
+          "text": "No daemon-owned LMDB/Lance stores, daemon sockets, cloud provider sessions or release-ready evidence are mutated by harness coordination.",
+          "source": "c1"
+        },
+        {
+          "text": "All paths in the design are repository-relative; local ic* constraints identify issue-derived checks, not invented upstream criterion IDs.",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test with node:assert/strict and tsx for TypeScript tests, matching the current .test.ts fixtures and imports. ac1–ac6 are local acceptance labels mapped one-to-one to the issue-derived ic1–ic6 checks; this standalone issue has no upstream acceptance IDs. Harness subprocess integration tests use retained disposable child handles and readiness barriers; no cloud/Ollama calls or broad overlapping sweeps.",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Validate preflight/record/phase/budget parsing and idempotent ownership checks, including replacement and path-alias refusals; assert observable outcomes rather than copying helper internals.",
+          "subjects": [
+            "unsupported Node exits before output mutation",
+            "a changed lease or source/output fingerprint never produces successful validation"
+          ],
+          "fixturesNeeded": [
+            "Proposed scripts/__tests__/test-harness.test.ts with temporary checkouts and injectable process/build entrypoints; no real repository output deletion."
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Exercise two independent contenders, real child lifetimes, failed setup and catchable interruption under one owned temporary root.",
+          "subjects": [
+            "one checkout owner protects prepared output from a second test or build",
+            "output-mutating tests run alone and ordinary consumers reuse the prepared build",
+            "all nested Node and npm children use the validated runtime",
+            "a failing fixture closes its own socket and child before the next case",
+            "startup readiness is bounded separately from the asserted cancellation deadline",
+            "timeouts and unconfirmed cleanup remain nonzero incomplete results"
+          ],
+          "fixturesNeeded": [
+            "Two controllable test/build child programs with IPC-ready barriers and a protected-output marker; fake npm records its actual Node executable.",
+            "A disposable fixture that replies, fails startup, ignores a first cancellation, or retains a registered descendant; never scan or kill unrelated system PIDs."
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "Keep current build stages, real published type checks, explicit native refusal and no-sibling-scope promises intact.",
+          "subjects": [
+            "type probes distinguish intended diagnostics from launch failure and retain positive controls",
+            "native refusal and saved-mode assertions are preserved",
+            "the coordinator uses existing build/process boundaries without production API changes"
+          ],
+          "fixturesNeeded": [
+            "Existing vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts positive/negative real-type snippets, plus a fake compiler launch/timeout control.",
+            "Existing package build/typecheck/native/assets and six build-dependent fixture entrypoints; narrowly adapt wrapper exposure checks without refreshing sibling snapshots."
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "Verify that actual owned ports/probes terminate and do not contaminate later focused runs; include abrupt-death limitation as a fail-closed outcome.",
+          "subjects": [
+            "the peer-state fixture registers a real test and releases both ports",
+            "interrupted type probes cannot enter normal source includes",
+            "uncatchable owner death leaves blocked ownership without lock stealing"
+          ],
+          "fixturesNeeded": [
+            "Disposable fresh Node process loading src/daemon/steps/__tests__/peer-state-store-leakfree.test.ts with a hard outer budget; no removal of meaningful coverage.",
+            "Run-owned compiler workspace outside source includes; compare before/after normal compiler input discovery and exercise an actual plugin type-check after interruption.",
+            "Simulated abandoned run record with no auto-reaping; do not require proof that arbitrary SIGKILL can clean detached processes."
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "one checkout owner protects prepared output from a second test or build",
+            "output-mutating tests run alone and ordinary consumers reuse the prepared build"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "unsupported Node exits before output mutation",
+            "all nested Node and npm children use the validated runtime"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "a failing fixture closes its own socket and child before the next case",
+            "the peer-state fixture registers a real test and releases both ports",
+            "interrupted type probes cannot enter normal source includes",
+            "uncatchable owner death leaves blocked ownership without lock stealing"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "type probes distinguish intended diagnostics from launch failure and retain positive controls",
+            "native refusal and saved-mode assertions are preserved"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "the coordinator uses existing build/process boundaries without production API changes"
+          ]
+        },
+        {
+          "criterionId": "ac6",
+          "provingTests": [
+            "startup readiness is bounded separately from the asserted cancellation deadline",
+            "timeouts and unconfirmed cleanup remain nonzero incomplete results",
+            "a changed lease or source/output fingerprint never produces successful validation"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "s1 bundle c1 identifies six test files invoking independent shared-root npm builds, the cleanup script removing the common output tree, the peer fixture's module-scope MessageChannel, and the panel helper's source-adjacent synchronous TypeScript probe. The approved audit records output races, runtime drift and probe residue. A bounded isolated design experiment confirmed afterFired:false and two live MessagePort resources one second after importing the zero-test peer fixture; the experiment exited its own process deliberately and made no source change.",
+      "stateAfter": "Supported build/test entrypoints use one checkout-local coordinator lease, a validated Node-22 runtime, one prepared build with an explicit serial mutation phase, per-case retained resources and run-local compiler probes outside source includes. Failure and abrupt-death recovery are explicit; no production store/API/release-readiness state is migrated.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Confirm no previous test/build owner remains before rollout. Preserve the failure audit and report any legacy source-adjacent probe residue for explicit owner-confirmed cleanup; do not sweep unknown files or stop the real daemon.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Introduce the new script-level run/build/context entrypoints and their temporary-root integration controls without switching default commands yet. Preserve the existing full build pipeline as the delegated build stages.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Route root npm test and npm build through checkout ownership. Route the VS Code package's npm test through the same coordinator with canonical repository cwd. Move its mutating pretest asset synchronization into the admitted preparing phase while retaining the existing sync-assets command and asset semantics; refuse overlapping commands before any shared mutation.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Convert the five ordinary rebuild hooks to prepared-build prerequisite checks. Classify the retirement-package rebuild regression as the serial mutation phase and preserve its stale-output/package assertions. Require explicit participant context for build-dependent direct file selections.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Give the peer channel fixture real test-owned setup/finally cleanup; migrate panel probes and their call sites to asynchronous real-module compilation in run-owned ignored directories. Update fixture readiness/per-case cleanup at the audited process helpers without changing production timer or security semantics.",
+          "rollbackable": true
+        },
+        {
+          "order": 6,
+          "action": "Make existing specialized regression/build launchers participate at the ownership boundary only, preserving their build stages, proof contents and gate policy. Their changed script fingerprints remain pending independent requalification in Batch 15; do not generate or approve qualification evidence here.",
+          "rollbackable": true
+        },
+        {
+          "order": 7,
+          "action": "Publish the supported focused selector/runtime/recovery commands and explicit interruption limits. Adapt only compatibility assertions needed to keep existing build-stage checks effective under the wrapper; leave unrelated stale schemas, review contracts and native permission diagnosis to their batches.",
+          "rollbackable": true
+        },
+        {
+          "order": 8,
+          "action": "Validate the new harness against isolated adversarial fixtures, then one sequential focused run of the affected files. Record remaining sibling/platform failures as such; broaden only after the focused ownership/cleanup controls pass and no actor from the prior run remains.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Root npm build retains its complete build-stage semantics and normal standalone use; npm test still selects the backend by default and supports documented focused selectors/Node test flags. The VS Code package's npm test retains asset synchronization under ownership and runs from canonical repo cwd. Raw direct invocations of build-dependent files now fail with the supported selector command when no prepared context exists; ordinary independent tests remain directly runnable. The local typecheckAgainstPanel helper changes to Promise + snippet factory and all of its test callers migrate together. No daemon IPC, provider, storage or native public contract changes. Rollback requires a quiescent harness and cannot remove a foreign/blocked ownership record merely because the code is reverted.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "One coordinator with a fail-closed checkout lease",
+        "oneLineSummary": "A test-only run record owns one build, bounded child lifetimes and isolated probe workspaces for the full invocation.",
+        "approach": "Use one supported test entrypoint and one cooperating build entrypoint with explicit checkout-local lease ownership. Prepare the build once, run ordinary consumers against that prepared output, and run true output-mutating regression cases in an exclusive serial phase. Pin child Node/npm to the validated runtime. Keep probe files outside production source includes. Normal completion and catchable interruptions drain owned children before release; abrupt death leaves a visible blocked ownership record requiring explicit recovery, never age/PID-based lock stealing. Existing production shell/storage/native APIs remain unchanged.",
+        "pros": [
+          "Smallest ownership contract that protects both writers and readers without copying the repository or adding native dependencies.",
+          "Overlap is rejected before destructive output changes; source-tree probe contamination is structurally prevented.",
+          "Preserves focused direct-file use through documented coordinator selectors and explicit prerequisite errors."
+        ],
+        "cons": [
+          "A supported coordinator becomes required for build-dependent test files; raw bypasses must refuse rather than silently race.",
+          "Uncatchable supervisor death can leave a blocked record; safe recovery is explicit instead of pretending all detached children were reclaimed."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Independent full test workspace per invocation",
+        "oneLineSummary": "Each run builds and reads its own complete source/dependency snapshot.",
+        "approach": "Give every invocation an independent checkout/build/probe root, including correctly rebound workspace dependencies and the current uncommitted source being validated. All fixture roots resolve to that snapshot. Child runtime and resource-lifetime contracts remain explicit, but generated output is never shared with another invocation.",
+        "pros": [
+          "Independent generated outputs avoid cross-run reader/writer races.",
+          "Abrupt death leaves disposable run-local residue rather than a shared output directory."
+        ],
+        "cons": [
+          "Accurate snapshots must preserve worktree changes, Git-history-dependent tests, native dependencies and workspace symlink semantics.",
+          "Touches many path-sensitive fixtures and costs substantial disk/copy work; a thin symlinked snapshot would test the wrong workspace artifacts."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Per-run snapshots can satisfy ic1 and isolate crash residue under ic3, but ic5 is only partial because correct Git/workspace/native dependency and uncommitted-source rebinding expands the harness significantly."
+      },
+      {
+        "id": "a3",
+        "name": "Kernel advisory locks with distributed reader/writer participation",
+        "oneLineSummary": "Builds and every output-consuming process hold explicit native advisory ownership.",
+        "approach": "A native lock contract admits build writers exclusively and output consumers as readers, with ownership retained across relevant subprocess lifetimes. Runtime and probe isolation remain required. Treat package-private NativeLock/loadNative as a separate ownership boundary rather than importing the storage host into test scripts.",
+        "pros": [
+          "Kernel ownership can release descriptor locks on process exit.",
+          "Can permit nonmutating readers to coexist when their full process lifetimes participate correctly."
+        ],
+        "cons": [
+          "Adds native harness prerequisites and descriptor/exec inheritance contracts across nested Node/npm/native processes.",
+          "A parent-only lock is insufficient when descendants survive; implementing correct distributed participation is materially larger than the approved harness repair."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "ic1 and ic3 remain partial until every relevant descendant/exec lifetime participates correctly; a parent-only lock is insufficient. ic5 is partial because the package-private native lock adapter is not a shared test contract and a new native harness dependency would need its own qualification."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [],
+    "sequenceDefinition": {
+      "id": "harness-output-ownership",
+      "narrative": "Proposed ordering for Batch 01: one checkout owner prepares output before readers and retains ownership until test processes, ports and compiler probes drain. Abrupt death or unconfirmed cleanup blocks another build; this is a fail-closed recovery contract. Grounding and proposed changes: c1–c4.",
+      "participants": [
+        {
+          "id": "command",
+          "label": "Developer command",
+          "description": "Supported npm test or build invocation for this checkout."
+        },
+        {
+          "id": "coordinator",
+          "label": "Harness coordinator",
+          "description": "Proposed test-only owner of admission, runtime, child handles and result accounting."
+        },
+        {
+          "id": "lease",
+          "label": "Checkout lease",
+          "description": "At most one active run; protects both output writers and readers."
+        },
+        {
+          "id": "build",
+          "label": "Build and mutation lane",
+          "description": "Existing complete build pipeline and genuine rebuild regression, admitted serially."
+        },
+        {
+          "id": "tests",
+          "label": "Test children",
+          "description": "Prepared-output readers with test-owned fixture processes and ports."
+        },
+        {
+          "id": "probe",
+          "label": "Compiler workspace",
+          "description": "Real-module compiler probes in ignored run-local directories outside source includes."
+        }
+      ],
+      "messages": [
+        {
+          "from": "command",
+          "to": "coordinator",
+          "label": "Select files and validate Node 22",
+          "description": "Reject invalid runtime or selection before mutation."
+        },
+        {
+          "from": "coordinator",
+          "to": "lease",
+          "label": "Acquire exclusive checkout ownership",
+          "description": "Overlap refuses before asset synchronization or build cleanup."
+        },
+        {
+          "from": "coordinator",
+          "to": "build",
+          "label": "Prepare output and run serial mutation regression",
+          "description": "Only the matching admitted writer may change shared output; refresh prepared metadata after success."
+        },
+        {
+          "from": "build",
+          "to": "coordinator",
+          "label": "Return prepared build",
+          "description": "Check successful build, artifacts and fingerprints before admitting readers."
+        },
+        {
+          "from": "coordinator",
+          "to": "tests",
+          "label": "Run bounded prepared-output consumers",
+          "description": "Retain child handles and establish readiness before short behavior deadlines."
+        },
+        {
+          "from": "tests",
+          "to": "probe",
+          "label": "Compile positive and intended-negative snippets",
+          "description": "Import actual panel types; probe files never enter normal source includes."
+        },
+        {
+          "from": "probe",
+          "to": "tests",
+          "label": "Return diagnostics and confirmed close",
+          "description": "Launch failures and timeouts remain distinct from expected type rejection."
+        },
+        {
+          "from": "tests",
+          "to": "coordinator",
+          "label": "Report results and fixture disposal",
+          "description": "Per-case cleanup closes owned processes, sockets and ports."
+        },
+        {
+          "from": "coordinator",
+          "to": "lease",
+          "label": "Release only after confirmed drain",
+          "description": "Failure or catchable interruption drains first. Unconfirmed cleanup or abrupt owner death retains blocked ownership."
+        },
+        {
+          "from": "coordinator",
+          "to": "command",
+          "label": "Return coverage and outcome",
+          "description": "Timeout, interruption, fingerprint drift and unconfirmed cleanup are nonzero/incomplete."
+        }
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/standalone/make-test-harness-hermetic-bounded-E202611203275fb2e/S001/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "design.story s1",
+      "quotedText": "Thirteen scoped lookups establish package/build cleanup entrypoints, existing process helpers and channel APIs. Six test files independently call npm run build: daemon-ctl-forced-stop, process-broker-native, shutdown-lifecycle-evidence, shutdown-watchdog, review-retirement-package and shutdown-bounded. The docs-review panel allocates __sc4probe_ snippets adjacent to production source and invokes tsc synchronously, with only local finally cleanup. The peer-store file profiles as zero indexed entities and its audited source allocates MessageChannel ports without test declarations. Profiles/search establish integration paths, not complete call graphs; no production lifecycle or security changes belong here. Detailed observations and limitations remain in docs/plans/failing-tests-2026-11-20.md."
+    },
+    {
+      "id": "c2",
+      "kind": "step-output",
+      "ref": "design.story s2–s4",
+      "quotedText": "Alternatives and proposed ownership/runtime/helper contracts derived from the approved issue."
+    },
+    {
+      "id": "c3",
+      "kind": "step-output",
+      "ref": "design.story s5–s8",
+      "quotedText": "Failure handling, local acceptance mapping, migration and self-check evidence; implementation validation remains pending."
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/make-test-harness-hermetic-bounded-E202611203275fb2e/ISSUE.md"
+    }
+  ]
+}

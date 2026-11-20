@@ -1,4 +1,4 @@
-import { childLine, fixtureOwnerScript, ownChild, stopOwnedChildren } from '../../../daemon/tools/__tests__/_proc.js';
+import { childLine, fixtureOwnerScript, ownChild, stopOwnedChildren, stopOwnedTargets } from '../../../daemon/tools/__tests__/_proc.js';
 import { requirePreparedBuild } from '../../../../scripts/test-harness/build.mjs';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { after, afterEach, before, test } from 'node:test';
@@ -16,7 +16,7 @@ const children: ChildProcess[] = [], targets: StopTarget[] = [], homes: string[]
 before(() => { requirePreparedBuild(repo); });
 afterEach(async () => {
  await stopOwnedChildren(children);
- for (const target of targets.splice(0)) { try { await target.handle.terminate(); } finally { await target.handle.close(); } }
+ await stopOwnedTargets(targets);
  for (const home of homes.splice(0)) rmSync(home, { recursive: true, force: true });
 });
 function fixture() {

@@ -12,6 +12,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { observeOwnedProcessDisposal } from '../../../shared/process-group.js';
 import type { ProcessDisposal } from '../../../shared/process-group.js';
+import type { StopTarget } from '../../../shared/daemon-process-client.js';
 import { participantContext } from '../../../../scripts/test-harness/context.mjs';
 
 const owned = new WeakMap<ChildProcess, { disposal: () => ProcessDisposal; marker: string | undefined }>();
@@ -33,16 +34,36 @@ export function ownChild<T extends ChildProcess>(child: T): T {
 
 export async function stopOwnedChildren(children: ChildProcess[]): Promise<void> {
 	const failures: Error[] = [];
-	for (const child of children.splice(0)) {
+	for (const child of [...children]) {
 		const state = owned.get(child);
 		if (!state) { failures.push(new Error('Fixture child was not registered at spawn.')); continue; }
 		try {
-			if (child.exitCode === null && child.signalCode === null) child.kill('SIGKILL');
+			if (state.disposal().state !== 'confirmed' && child.exitCode === null && child.signalCode === null) {
+				if (child.pid === undefined || !Number.isInteger(child.pid) || child.pid <= 0) throw new Error('Fixture never acquired a process handle.');
+				child.kill('SIGKILL');
+			}
 			if (!await waitFor(() => state.disposal().state === 'confirmed')) throw new Error('Fixture disposal remains unconfirmed.');
 			if (state.marker) { unlinkSync(state.marker); state.marker = undefined; }
+			children.splice(children.indexOf(child), 1);
 		} catch (error) { failures.push(error as Error); }
 	}
 	if (failures.length) throw new AggregateError(failures, 'Owned fixture cleanup failed.');
+}
+
+export async function stopOwnedTargets(targets: StopTarget[]): Promise<void> {
+	const failures: Error[] = [];
+	for (const target of [...targets]) {
+		try {
+			await target.handle.terminate();
+			const end = performance.now() + 3000;
+			let exited = await target.handle.hasExited();
+			while (!exited && performance.now() < end) { await tick(20); exited = await target.handle.hasExited(); }
+			if (!exited) throw new Error('Captured fixture disposal remains unconfirmed.');
+			await target.handle.close();
+			targets.splice(targets.indexOf(target), 1);
+		} catch (error) { failures.push(error as Error); }
+	}
+	if (failures.length) throw new AggregateError(failures, 'Captured fixture cleanup failed.');
 }
 
 export function childLine(child: ChildProcess, ms = 3000): Promise<string> {
@@ -68,7 +89,11 @@ export async function runUntilAbort<T>(start: (signal: AbortSignal) => Promise<T
 		if (!await waitFor(() => ready() || settled) || !ready()) throw new Error('Fixture did not reach readiness before command settlement.');
 		const started = performance.now(); timer = setTimeout(() => controller.abort(), delayMs);
 		return { result: await pending, elapsedMs: performance.now() - started };
-	} finally { clearTimeout(timer); controller.abort(); await pending.catch(() => {}); }
+	} finally {
+		clearTimeout(timer); controller.abort();
+		if (!await waitFor(() => settled)) throw new Error('Fixture command cleanup remains unconfirmed.');
+		await pending.catch(() => {});
+	}
 }
 
 /** Detached stand-ins self-report lifetime and end when their test worker dies. */

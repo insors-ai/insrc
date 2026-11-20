@@ -1,7 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
-import type { ChildProcess } from 'node:child_process';
+import { ChildProcess, spawn } from 'node:child_process';
 import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { childLine, fixtureOwnerScript, ownChild, runUntilAbort, stopOwnedChildren, waitFor } from './_proc.js';
@@ -56,4 +55,18 @@ test('Detached fixture acknowledgments are drained before checkout release', asy
 		});
 		assert.equal(existsSync(run.active), false, 'owner waits for detached acknowledgment before releasing');
 	} finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('Unconfirmed cleanup retains handles and readiness failure cannot wait forever', { timeout: 10000 }, async () => {
+	const child = ownChild(new ChildProcess()), children = [child];
+	child.kill = () => { throw new Error('controlled disposal refusal'); };
+	await assert.rejects(stopOwnedChildren(children), /Owned fixture cleanup failed/);
+	assert.equal(children[0], child, 'an unconfirmed retained handle remains available');
+	child.kill = () => false; // An unspawned control must never signal an OS process.
+	child.emit('error', new Error('controlled launch failure'));
+	await stopOwnedChildren(children);
+	assert.equal(children.length, 0);
+	const started = performance.now();
+	await assert.rejects(runUntilAbort(() => new Promise<never>(() => {}), () => false, 75), /cleanup remains unconfirmed/);
+	assert.ok(performance.now() - started < 8000, 'readiness and cleanup have separate bounded waits');
 });

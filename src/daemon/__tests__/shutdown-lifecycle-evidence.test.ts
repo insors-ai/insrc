@@ -1,4 +1,4 @@
-import { childLine, fixtureOwnerScript, ownChild, stopOwnedChildren } from '../tools/__tests__/_proc.js';
+import { childLine, fixtureOwnerScript, ownChild, stopOwnedChildren, stopOwnedTargets } from '../tools/__tests__/_proc.js';
 import { requirePreparedBuild } from '../../../scripts/test-harness/build.mjs';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { after, afterEach, before, test } from 'node:test';
@@ -19,7 +19,7 @@ const moduleUrl = (path: string) => new URL(`../../../out/${path}.js`, import.me
 before(() => { requirePreparedBuild(root); });
 afterEach(async () => {
  await stopOwnedChildren(children);
- for (const target of targets.splice(0)) { try { await target.handle.terminate(); } finally { await target.handle.close(); } }
+ await stopOwnedTargets(targets);
 });
 after(() => { rmSync(base, { recursive: true, force: true }); });
 async function until(predicate: () => boolean) { for (let i = 0; i < 200; i++) { if (predicate()) return; await new Promise(r => setTimeout(r, 20)); } assert.fail('fixture deadline expired'); }
@@ -62,7 +62,7 @@ async function scenario(mode: 'healthy' | 'blocked' | 'guard-death') {
  const result = await restart(() => {}, { stopDaemon: () => stopDaemon({ stopWaitMs: 2000, replyBoundMs: 300 }), startDaemon: async () => {
   appendFileSync(${JSON.stringify(starts)}, 'start\\n');
   const child = spawn(process.execPath, [${JSON.stringify(entry)}], { detached: true, env: { ...process.env, INSRC_EVIDENCE_MODE: 'healthy' }, stdio: ['ignore', 'pipe', 'ignore'] });
-  await once(child.stdout, 'data'); child.stdout.destroy(); child.unref();
+  await once(child.stdout, 'data', { signal: AbortSignal.timeout(3000) }); child.stdout.destroy(); child.unref();
   return { started: true, alreadyRunning: false, logPath: '', pid: child.pid };
  } }); process.stdout.write(JSON.stringify(result));`);
  const startedAt = new Date().toISOString(), started = Date.now();

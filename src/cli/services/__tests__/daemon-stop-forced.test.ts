@@ -189,7 +189,7 @@ test('Real orphaned guard owner death prevents maintenance restart', async () =>
   const result = await restart(() => {}, { stopDaemon: () => stopDaemon({ stopWaitMs: 0, requestShutdown: async () => {
    const module = new URL('../../../shared/daemon-run-files.ts', import.meta.url).href;
    guardOwner = spawn(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', `import { acquireRunFileGuard } from ${JSON.stringify(module)}; acquireRunFileGuard(${JSON.stringify(PATHS.daemonRunGuard)}); process.stdout.write('ready'); setInterval(() => {}, 1000);`], { stdio: ['ignore', 'pipe', 'inherit'] }); children.push(guardOwner); ownChild(guardOwner);
-   await once(guardOwner.stdout!, 'data'); const ended = once(guardOwner, 'exit'); guardOwner.kill('SIGKILL'); await ended;
+   await childLine(guardOwner); const ended = once(guardOwner, 'exit'); guardOwner.kill('SIGKILL'); await ended;
    return 'no-reply';
   } }), startDaemon: async () => { starts++; return { started: true, alreadyRunning: false, logPath: '' }; } });
   assert.equal(result.ok, false); assert.match(result.error!, /owner pid=.*state=gone/); assert.equal(starts, 0);

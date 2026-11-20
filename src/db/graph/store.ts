@@ -401,7 +401,7 @@ function resolvedStorePath(path: string, depth = 0): string {
 export function isLiveStoreFile(path: string): boolean {
 	const p = resolvedStorePath(path);
 	const live = resolvedStorePath(PATHS.lmdb);
-	return p === live || p === `${live}-lock`;
+	return p === live || p === resolvedStorePath(`${live}-lock`);
 }
 
 /** Throws `LmdbStoreNotOwnerError` when `path` is the live store and this

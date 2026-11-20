@@ -296,7 +296,8 @@ function createExclusively(from: string, to: string, hooks: { readonly link: (fr
  * neither file is changed and the result is `both-exist`. Nothing is moved when there is no old file. A failure is the
  * `failed` result and the old file stays. Should the old name not be removable (Windows refuses to delete a file another
  * program has open), or the process die between the two steps, both files exist with the same content; the next boot
- * finishes the move by removing the old name, because a copy that is byte for byte the same loses nothing. Never throws.
+ * reports `both-exist` and touches neither, and the daemon uses `repo-config.json`, so a leftover `github.json` is harmless
+ * and can be deleted by hand. Never throws.
  */
 export function moveLegacyRepoConfig(
 	dir: string = PATHS.insrc,
@@ -318,13 +319,6 @@ export function moveLegacyRepoConfig(
 		copy: seams.copy ?? ((a: string, b: string): void => copyFileSync(a, b, constants.COPYFILE_EXCL)),
 	};
 	const bothExist = (): LegacyRepoConfigMove => {
-		try {
-			if (sameRegularContent(from, to)) {
-				unlinkSync(from);
-				log.info({ from, to }, 'finished an earlier move: the old settings file was a byte-for-byte copy and is removed');
-				return { status: 'moved', note: `${to} already held the same content; ${from} was removed` };
-			}
-		} catch { /* the old name cannot be removed or read now; it is reported below and tried at the next boot */ }
 		const note = `${from} and ${to} both exist; neither was changed and ${to} is the file in use`;
 		log.warn({ from, to }, 'old and new settings files both exist');
 		return { status: 'both-exist', note };
@@ -342,7 +336,7 @@ export function moveLegacyRepoConfig(
 		try {
 			unlinkSync(from);
 		} catch (e) {
-			const note = `${to} was created but ${from} could not be removed (${e instanceof Error ? e.message : String(e)}); both exist with the same content and the next boot removes the old one`;
+			const note = `${to} was created but ${from} could not be removed (${e instanceof Error ? e.message : String(e)}); both exist with the same content; the daemon uses the new one and the old one can be deleted`;
 			log.warn({ from, to }, 'the settings file was created under its new name but the old name could not be removed');
 			return { status: 'failed', note };
 		}

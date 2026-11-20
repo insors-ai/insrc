@@ -123,7 +123,7 @@ test('repo-config.test.ts: a repo-config.json created between the presence check
 	});
 });
 
-test('repo-config.test.ts: where hard links are not supported the move falls back to an exclusive copy that never replaces repo-config.json and removes a partial or wrong copy, and a second boot finishes an interrupted move', () => {
+test('repo-config.test.ts: where hard links are not supported the move falls back to an exclusive copy that never replaces repo-config.json and removes a partial or wrong copy, and an interrupted move leaves both names untouched', () => {
 	const noHardLinks = (): never => { throw Object.assign(new Error('EPERM: operation not permitted, link'), { code: 'EPERM' }); };
 	// a volume without hard links (FAT, exFAT, some shares): the new name is created by an exclusive copy, the old one removed
 	inTempDir(dir => {
@@ -161,22 +161,17 @@ test('repo-config.test.ts: where hard links are not supported the move falls bac
 		assert.equal(existsSync(join(dir, 'repo-config.json')), false, 'a wrong copy is removed');
 		assert.equal(readFileSync(join(dir, 'github.json'), 'utf8'), '{"legacy":true}');
 	});
-	// an interrupted move (both names, same bytes) is finished by the next boot; a different new file is never touched
-	inTempDir(dir => {
-		writeFileSync(join(dir, 'github.json'), '{"same":true}');
-		writeFileSync(join(dir, 'repo-config.json'), '{"same":true}');
-		const finished = moveLegacyRepoConfig(dir);
-		assert.equal(finished.status, 'moved');
-		assert.match(finished.note ?? '', /already held the same content/);
-		assert.equal(existsSync(join(dir, 'github.json')), false);
-		assert.equal(readFileSync(join(dir, 'repo-config.json'), 'utf8'), '{"same":true}');
-	});
-	inTempDir(dir => {
-		writeFileSync(join(dir, 'github.json'), '{"same":true}');
-		writeFileSync(join(dir, 'repo-config.json'), '{"same":true,"edited":1}');
-		assert.equal(moveLegacyRepoConfig(dir).status, 'both-exist');
-		assert.equal(existsSync(join(dir, 'github.json')), true);
-	});
+	// an interrupted move (both names, same bytes) is left alone by the next boot, like any other case of both names: the daemon
+	// uses repo-config.json and the stale github.json is harmless
+	for (const newer of ['{"same":true}', '{"same":true,"edited":1}']) {
+		inTempDir(dir => {
+			writeFileSync(join(dir, 'github.json'), '{"same":true}');
+			writeFileSync(join(dir, 'repo-config.json'), newer);
+			assert.equal(moveLegacyRepoConfig(dir).status, 'both-exist');
+			assert.equal(readFileSync(join(dir, 'github.json'), 'utf8'), '{"same":true}');
+			assert.equal(readFileSync(join(dir, 'repo-config.json'), 'utf8'), newer);
+		});
+	}
 });
 
 test('repo-config.test.ts: a second move after a successful one returns nothing-to-move, and a symbolic-link github.json is moved as a link', () => {

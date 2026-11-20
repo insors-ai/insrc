@@ -199,3 +199,13 @@ test("the catalog declares models.tiers.{core,mid,cheap}.effort as enum ['', 'lo
 		assert.deepEqual([row.type, row.default, row.enumValues, row.group], ['enum', '', ['', 'low', 'medium', 'high', 'xhigh', 'max', 'ultra', 'off'], 'Models — tiers']);
 	}
 });
+
+test('the config.catalog payload carries the build commands as repo rows (typecheckCommand, testCommand, resultFormat), and they are no row of the global catalog', async () => {
+	const { buildSettingsCatalog } = await import('../settings-catalog.js');
+	const repoFields = buildSettingsCatalog({}).repoFields;
+	const build = repoFields.filter(r => r.group === 'Build');
+	assert.deepEqual(build.map(r => [r.key, r.kind]), [['typecheckCommand', 'local'], ['testCommand', 'local'], ['resultFormat', 'local']]);
+	assert.deepEqual(build.find(r => r.key === 'resultFormat')?.enumValues, ['tap', 'exit-code']);
+	// The commands belong to one registered repository: the global catalog has no `build` row and so no global default.
+	assert.equal(FROM_CONFIG.some(r => r.path === 'build' || r.path.startsWith('build.')), false);
+});

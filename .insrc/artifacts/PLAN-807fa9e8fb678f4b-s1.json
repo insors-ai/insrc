@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "plan",
-    "runId": "wf-1795175406920-su8kqi",
+    "runId": "wf-1795176437875-ygrqas",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-11-20T11:51:09.588Z",
+    "createdAt": "2026-11-20T12:07:51.411Z",
     "epicCreatedAt": "2026-11-20T04:36:30.764Z",
     "standalone": true,
     "attribution": {
@@ -16,7 +16,7 @@
         }
       ]
     },
-    "elapsedMs": 62210,
+    "elapsedMs": 33253,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "807fa9e8fb678f4b",
@@ -28,9 +28,9 @@
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 2,
-        "contentHash": "3d3d4bcd2f32bb64eb622357a809ee62f8572626c1d38d685f0056bde193738d",
-        "at": "2026-11-20T11:51:09.689Z",
+        "number": 3,
+        "contentHash": "0f92a0f924886f44963f8f294b71dee658c64e137cb98ebc1223120b19cc2c9a",
+        "at": "2026-11-20T12:07:51.503Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
@@ -39,13 +39,13 @@
       },
       "signoffs": [],
       "approval": {
-        "revision": 2,
+        "revision": 3,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-11-20T11:52:14.358Z"
+        "at": "2026-11-20T12:10:12.167Z"
       }
     },
     "envelope": {
@@ -53,13 +53,13 @@
       "references": [],
       "attachments": []
     },
-    "revision": 2,
-    "rangeBase": "3b85d02f40fd852b9ba99d5b5c68c6dcdb6aa5e9"
+    "revision": 3,
+    "rangeBase": "89864ad5769707ab4015cb3bd56c2590600ce281"
   },
   "body": {
     "summary": {
       "audience": "technical",
-      "prose": "Finish Batch05 in three ordered tasks, retaining the existing inventory and retired-router checks. Correct tools.call authority at final execution admission while preserving prior failures, then complete dispatch/qualification controls and documentation with full coordinated evidence. The newly approved repository refusal behavior replaces the original plan's blanket failure-preservation condition."
+      "prose": "Retain Batch05's three implementation tasks and all named tests. Clarify only the final task's ordering: validation records its verdict before the updated BUILD is presented for explicit human approval. Technical readiness is the task acceptance check; human BUILD approval remains mandatory before completion."
     },
     "tasks": [
       {
@@ -172,7 +172,7 @@
           "Documented modifying names and repo parameters exactly match FILE_MODIFYING_METHODS and retain all six refusal codes and no-fallback explanation.",
           "Complete affected files pass through Node22 coordinator with build/source-output ownership, accounted results, no timeout/cancel/skip concealment and confirmed child cleanup.",
           "Baseline counts are labeled pre-merge historical evidence; final evidence identifies the merged revision and records any remaining failures by coherent scope.",
-          "Validated BUILD is presented for human approval before completion; no qualification release regeneration, installed daemon restart or automated review endpoint is invoked."
+          "Technical evidence and BUILD inputs are ready for final presentation once this task's validation verdict is recorded. Then declare the updated BUILD through insrc_present and obtain explicit human BUILD approval before completion. Presentation of an already validated BUILD is not a precondition of recording this verdict. No qualification release regeneration, installed daemon restart or automated review endpoint is invoked."
         ],
         "derivedFrom": [
           "c1",

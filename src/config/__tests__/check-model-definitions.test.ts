@@ -32,7 +32,7 @@ function runGate(catalogDir: string | undefined, env: NodeJS.ProcessEnv = proces
 	return { status: r.status, out: `${r.stdout}${r.stderr}` };
 }
 
-test('check-model-definitions.test.ts: the build gate exits non-zero naming the entry for a structurally invalid copy and zero for the shipped file', () => {
+test('check-model-definitions.test.ts: the build gate exits non-zero naming the entry for a structurally invalid copy and zero for the shipped file', async () => {
 	const ok = runGate(undefined);
 	assert.equal(ok.status, 0, ok.out);
 	assert.match(ok.out, /model definitions v\d+ valid/);
@@ -56,10 +56,12 @@ test('check-model-definitions.test.ts: the build gate exits non-zero naming the 
 
 	// The gate runs after tsc and before copy-assets in the build.
 	const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')) as { scripts: Record<string, string> };
-	const steps = pkg.scripts['build']!.split(/\s*&&\s*/);
-	const compile = steps.findIndex(step => /^tsc(?:\s|$)/.test(step));
-	const validate = steps.indexOf('node scripts/check-model-definitions.mjs');
-	const copy = steps.indexOf('node copy-assets.mjs');
+	assert.equal(pkg.scripts['build'], 'node scripts/test-harness/build.mjs');
+	const { buildStages } = await import('../../../scripts/test-harness/build.mjs');
+	const steps = buildStages({ environment: () => process.env });
+	const compile = steps.findIndex(args => args[0] === 'node_modules/typescript/bin/tsc');
+	const validate = steps.findIndex(args => args[0] === 'scripts/check-model-definitions.mjs');
+	const copy = steps.findIndex(args => args[0] === 'copy-assets.mjs');
 	// Workspace builds may precede the backend compile. Preserve the gate's
 	// required ordering without freezing unrelated build preparation steps.
 	assert.ok(compile >= 0 && validate > compile && copy > validate);

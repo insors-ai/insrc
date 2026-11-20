@@ -37,19 +37,21 @@ export function parseArgs(root, args) {
 		else selectors.push(arg);
 	}
 	if (!Number.isInteger(concurrency) || concurrency < 1 || concurrency > 4) throw harnessError('context-invalid', 'Concurrency must be 1–4.');
-	const files = selectFiles(root, selectors.length ? selectors : [suite === 'vscode' ? 'vscode-plugin/src/**/__tests__/*.test.ts' : 'src/**/__tests__/*.test.ts']);
+	const selected = suite === 'vscode' ? selectors.map(path => path.startsWith('src/') ? `vscode-plugin/${path}` : path) : selectors;
+	const files = selectFiles(root, selected.length ? selected : [suite === 'vscode' ? 'vscode-plugin/src/**/__tests__/*.test.ts' : 'src/**/__tests__/*.test.ts']);
 	if (files.length > 1 && testFlags.some(flag => flag.startsWith('--test-reporter-destination='))) throw harnessError('context-invalid', 'A reporter destination requires exactly one selected file.');
 	return { files, testFlags, concurrency, budgets: checkedBudgets(budgets), suite };
 }
 
-export async function runHarness(root, selection, { buildOptions, testArgs, syncAssets = selection.suite === 'vscode' } = {}) {
+export async function runHarness(root, selection, { buildOptions, testArgs, syncAssets = selection.suite === 'vscode', ownedRun, ownedScope } = {}) {
 	const argsForTest = testArgs ?? (file => ['--import', 'tsx', '--test', '--test-concurrency=1', '--test-reporter=tap', ...selection.testFlags, file]);
-	const run = createRun(root, { selectedFiles: selection.files, budgets: selection.budgets });
+	if ((ownedRun === undefined) !== (ownedScope === undefined)) throw harnessError('context-invalid', 'An existing owner requires its retained scope.');
+	const run = ownedRun ?? createRun(root, { selectedFiles: selection.files, budgets: selection.budgets });
 	const results = [];
-	const report = { runId: run.runId, runtime: run.runtime, budgets: run.budgets, selectedFiles: selection.files, diagnosticFlags: run.record.diagnosticFlags, liveTests: process.env.INSRC_LIVE_TESTS ?? 'unset', results, cleanupPath: relative(run.root, join(run.workspace, 'cleanup.json')), incomplete: true };
+	const report = { runId: run.runId, runtime: run.runtime, budgets: run.budgets, selectedFiles: selection.files, diagnosticFlags: run.record.diagnosticFlags, liveTests: run.environment().INSRC_LIVE_TESTS ?? 'unset', results, cleanupPath: relative(run.root, join(run.workspace, 'cleanup.json')), incomplete: true };
 	const save = () => writeFileSync(join(run.workspace, 'results.json'), JSON.stringify(report, null, 2) + '\n');
 	try {
-		return await withRun(run, async scope => {
+		const work = async scope => {
 			if (syncAssets) {
 				const result = await scope.start(run.runtime.executable, [npmEntrypoint(run.environment()), 'run', 'sync-assets', '--prefix', 'vscode-plugin'], { budgetMs: run.budgets.buildMs });
 				if (result.code !== 0) throw harnessError('build-failed', 'VSCode asset synchronization failed.');
@@ -95,7 +97,8 @@ export async function runHarness(root, selection, { buildOptions, testArgs, sync
 			report.incomplete = scope.stopped || results.length !== selection.files.length || results.some(result => result.timedOut || result.interrupted || result.unconfirmed || result.coverageIncomplete);
 			save();
 			return { runId: run.runId, workspace: run.workspace, results, code: report.incomplete || results.some(result => result.code !== 0) ? 1 : 0 };
-		});
+		};
+		return await (ownedScope ? work(ownedScope) : withRun(run, work));
 	} catch (error) { report.error = { code: error.code, message: error.message }; report.incomplete = true; save(); throw error; }
 }
 

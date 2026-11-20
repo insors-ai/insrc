@@ -69,14 +69,27 @@ export function requirePreparedBuild(root = ROOT) {
 	return prepared;
 }
 
-export async function prepareBuild(run, scope, { stages = buildStages(run), requiredArtifacts = REQUIRED } = {}) {
+export async function withWriter(run, scope, work) {
 	run.assertOwner();
 	if (!['preparing', 'mutating'].includes(run.record.phase)) throw harnessError('write-during-read', 'Build may run only in the admitted writer phase.');
 	const writer = join(run.active, 'writer');
 	try { mkdirSync(writer); } catch (error) { if (error.code === 'EEXIST') throw harnessError('busy', 'Another writer is active.'); throw error; }
-	const before = fingerprint(run.root, INPUTS);
 	let completed = false;
 	try {
+		const result = await work();
+		completed = true;
+		return result;
+	} finally {
+		// A deadline returns before close. Keep writer ownership through draining.
+		const closed = completed || await scope.drain();
+		run.assertOwner();
+		if (closed) rmdirSync(writer);
+	}
+}
+
+export async function prepareBuild(run, scope, { stages = buildStages(run), requiredArtifacts = REQUIRED } = {}) {
+	return withWriter(run, scope, async () => {
+		const before = fingerprint(run.root, INPUTS);
 		const started = performance.now();
 		for (const args of stages) {
 			const remaining = run.budgets.buildMs - (performance.now() - started);
@@ -85,15 +98,8 @@ export async function prepareBuild(run, scope, { stages = buildStages(run), requ
 			if (result.code !== 0 || result.timedOut || result.interrupted || result.launchError) throw harnessError('build-failed', `Build stage failed: ${relative(run.root, resolve(run.root, args[0]))}; ${JSON.stringify(result)}`);
 		}
 		if (before !== fingerprint(run.root, INPUTS)) throw harnessError('build-drift', 'Build input changed during preparation.');
-		const prepared = publishPrepared(run, requiredArtifacts);
-		completed = true;
-		return prepared;
-	} finally {
-		// A deadline returns before close. Keep writer ownership through draining.
-		const closed = completed || await scope.drain();
-		run.assertOwner();
-		if (closed) rmdirSync(writer);
-	}
+		return publishPrepared(run, requiredArtifacts);
+	});
 }
 
 export async function mainBuild(root = ROOT) {

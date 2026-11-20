@@ -16,6 +16,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { buildStages } from '../../../../scripts/test-harness/build.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..');
 const TSC = join(ROOT, 'node_modules/typescript/bin/tsc');
@@ -42,7 +43,10 @@ test('typecheck-config.test.ts: tsconfig.typecheck.json includes the fixtures wi
 	assert.deepEqual(cfg.exclude, [], 'the fixtures are not excluded here');
 	const scripts = (json('package.json') as { scripts: Record<string, string> }).scripts;
 	assert.equal(scripts['typecheck:tools'], 'tsc -p tsconfig.typecheck.json');
-	assert.match(scripts['build']!, /^tsc && npm run typecheck:tools && /);
+	assert.equal(scripts['build'], 'node scripts/test-harness/build.mjs');
+	const stages = buildStages({ environment: () => process.env });
+	const compile = stages.findIndex(args => args[0] === 'node_modules/typescript/bin/tsc');
+	assert.ok(compile >= 0 && stages[compile + 1]?.slice(1).join(' ') === 'run typecheck:tools');
 });
 
 test('typecheck-config.test.ts: the fixtures compile, and an unused @ts-expect-error fails typecheck:tools', () => {

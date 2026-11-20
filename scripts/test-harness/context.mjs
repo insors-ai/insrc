@@ -113,8 +113,12 @@ export function createRun(rootPath, { mode = 'test', selectedFiles = [], budgets
 	}
 	function transition(phase, outcome) {
 		assertOwner();
-		const allowed = { preparing: ['mutating', 'reading', 'draining', 'blocked'], mutating: ['reading', 'draining', 'blocked'], reading: ['draining', 'blocked'], draining: ['blocked'], blocked: [] };
+		const allowed = { preparing: ['mutating', 'reading', 'draining', 'blocked'], mutating: ['reading', 'draining', 'blocked'], reading: ['mutating', 'draining', 'blocked'], draining: ['blocked'], blocked: [] };
 		if (!allowed[record.phase].includes(phase)) throw harnessError('context-invalid', `Invalid harness transition ${record.phase} to ${phase}.`);
+		if (record.phase === 'reading' && phase === 'mutating') {
+			try { if (readdirSync(join(workspace, 'actors')).length) throw harnessError('busy', 'Readers must close before the coordinator admits another writer.'); }
+			catch (error) { if (error.code !== 'ENOENT') throw error; }
+		}
 		record = { ...record, phase, ...(outcome === undefined ? {} : { outcome }) };
 		const pending = join(active, 'run.next.json');
 		writeFileSync(pending, JSON.stringify(record, null, 2) + '\n', { flag: 'wx', mode: 0o600 });

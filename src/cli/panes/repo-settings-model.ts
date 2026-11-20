@@ -94,30 +94,30 @@ export function offeredSuggestion(payload: RepoSettingsPayload | null): Readonly
 	return setup !== undefined && setup.commandsSource === 'none' ? setup.suggestion : undefined;
 }
 
-export type SuggestedResult =
-	| { readonly ok: true; readonly payload: RepoSettingsPayload }
+export type SuggestedResult<P> =
+	| { readonly ok: true; readonly payload: P }
 	| { readonly ok: false; readonly message: string };
 
 /**
  * Writes the suggested values one key at a time through `set` (repo.settings.set). When a write is
  * refused, or throws, the keys already written are cleared again so no lone command is left, and the
- * reason is returned. Never throws.
+ * reason is returned. Never throws. `P` is what a successful write hands back (the payload, for a client that shows it).
  */
-export async function writeSuggested(
+export async function writeSuggested<P>(
 	suggestion: Readonly<Record<(typeof SUGGESTED_KEYS)[number], string>>,
-	set: (key: string, value: string | null) => Promise<{ ok: true; payload: RepoSettingsPayload } | { ok: false; error: { message: string } }>,
-): Promise<SuggestedResult> {
+	set: (key: string, value: string | null) => Promise<{ ok: true; payload: P } | { ok: false; error: { message: string } }>,
+): Promise<SuggestedResult<P>> {
 	const written: string[] = [];
-	let last: RepoSettingsPayload | undefined;
-	const reason = async (key: string): Promise<string | undefined> => {
+	let last: { payload: P } | undefined;
+	const attempt = async (key: (typeof SUGGESTED_KEYS)[number]): Promise<string | undefined> => {
 		try {
-			const r = await set(key, suggestion[key as (typeof SUGGESTED_KEYS)[number]]);
-			if (r.ok) { last = r.payload; written.push(key); return undefined; }
+			const r = await set(key, suggestion[key]);
+			if (r.ok) { last = { payload: r.payload }; written.push(key); return undefined; }
 			return r.error.message;
 		} catch (e) { return e instanceof Error ? e.message : String(e); }
 	};
 	for (const key of SUGGESTED_KEYS) {
-		const failure = await reason(key);
+		const failure = await attempt(key);
 		if (failure === undefined) continue;
 		const stuck: string[] = [];
 		for (const done of written.reverse()) {
@@ -125,5 +125,5 @@ export async function writeSuggested(
 		}
 		return { ok: false, message: `${failure} (suggested commands were not applied${stuck.length > 0 ? `; could not clear ${stuck.join(', ')}` : ''})` };
 	}
-	return last === undefined ? { ok: false, message: 'nothing was written' } : { ok: true, payload: last };
+	return last === undefined ? { ok: false, message: 'nothing was written' } : { ok: true, payload: last.payload };
 }

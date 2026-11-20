@@ -257,6 +257,8 @@ Make the read of a repo's build settings (repo.settings.get, or the build step's
   - **resolved**: Define both as new symbols — User asked to resolve the open questions (2026-11-20): migrateBuildDefaults and repo.buildDefaults.migrate have no existing equivalents and are new symbols. _(2026-11-20T11:24:03.259Z)_
 - `q74389aa5` — dm2 partial: the one invariant-change (BuildDefaultsOutcome gains a second producer) does not cite an s1 bundle by id; the producer it names is in the usage.example bundle (c2).
   - **resolved**: Source is c2 — User asked to resolve the open questions (2026-11-20): the second producer of BuildDefaultsOutcome that the invariant-change names is the repo.add handler listed in the usage.example bundle, c2. _(2026-11-20T11:25:02.716Z)_
+- `qa3035316` — ep3 partial: the invariants cite c1 to c5, assumed to be the ids of the five s1 bundles in order and given below as citations.
+  - **resolved**: Verify existing IDs — Verified 2026-11-20: c1-c5 in the LLD are the five s1 analyze bundles in order (symbol.locate, usage.example, search.text walk, search.text registries, test.locate), and the invariants cite the intended bundles. _(2026-11-20T11:25:51.260Z)_
 
 ## Citations
 

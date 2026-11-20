@@ -58,6 +58,13 @@
         "choice": "Source is c2",
         "rationale": "User asked to resolve the open questions (2026-11-20): the second producer of BuildDefaultsOutcome that the invariant-change names is the repo.add handler listed in the usage.example bundle, c2.",
         "resolvedAt": "2026-11-20T11:25:02.716Z"
+      },
+      "qa3035316": {
+        "question": "ep3 partial: the invariants cite c1 to c5, assumed to be the ids of the five s1 bundles in order and given below as citations.",
+        "status": "resolved",
+        "choice": "Verify existing IDs",
+        "rationale": "Verified 2026-11-20: c1-c5 in the LLD are the five s1 analyze bundles in order (symbol.locate, usage.example, search.text walk, search.text registries, test.locate), and the invariants cite the intended bundles.",
+        "resolvedAt": "2026-11-20T11:25:51.260Z"
       }
     }
   },

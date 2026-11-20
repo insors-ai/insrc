@@ -78,6 +78,22 @@ test('repo-config.test.ts: moveLegacyRepoConfig leaves both files untouched and 
 		assert.equal(existsSync(join(dir, 'repo-config.json')), false);
 		// a non-Error rejection is still a result, not an exception
 		assert.equal(moveLegacyRepoConfig(dir, { link: () => { throw 'nope'; } }).status, 'failed');
+	});
+	// the rename that claims the old name throws (Windows refuses to rename a file another program has open): the new name was
+	// published, the old one stays, both hold the same content, the result says so, and nothing throws
+	inTempDir(dir => {
+		writeFileSync(join(dir, 'github.json'), '{"legacy":true}');
+		const failed = moveLegacyRepoConfig(dir, { rename: () => { throw Object.assign(new Error('EBUSY: resource busy or locked, rename'), { code: 'EBUSY' }); } });
+		assert.equal(failed.status, 'failed');
+		assert.match(failed.note ?? '', /could not be set aside.*EBUSY/);
+		assert.equal(readFileSync(join(dir, 'github.json'), 'utf8'), '{"legacy":true}', 'the old file stays');
+		assert.equal(readFileSync(join(dir, 'repo-config.json'), 'utf8'), '{"legacy":true}', 'the new name holds the same content');
+		assert.equal(readdirSync(dir).filter(n => n.endsWith('.removing')).length, 0);
+		// a non-Error rejection is still a result
+		inTempDir(other => {
+			writeFileSync(join(other, 'github.json'), '{}');
+			assert.equal(moveLegacyRepoConfig(other, { rename: () => { throw 'nope'; } }).status, 'failed');
+		});
 		// a directory that cannot be read is a failed result, not an exception
 		assert.equal(moveLegacyRepoConfig(join(dir, 'github.json', 'not-a-directory')).status, 'failed');
 	});

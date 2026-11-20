@@ -296,6 +296,8 @@ export function moveLegacyRepoConfig(
 	seams: {
 		/** Replaces the hard link step, to fail it (or make a file system without hard links) in a test. */
 		readonly link?: (from: string, to: string) => void;
+		/** Replaces claiming the old name (the rename), to fail it in a test. */
+		readonly rename?: (from: string, to: string) => void;
 		/** Replaces deleting the claimed name, to fail it in a test. */
 		readonly unlink?: (path: string) => void;
 		/** Runs between the presence checks and publishing, to interleave another process in a test. */
@@ -335,7 +337,7 @@ export function moveLegacyRepoConfig(
 		// claim the old name: after this rename the path is ours alone, so nothing can replace it between a check and a delete
 		const claimed = join(dir, `.github.json.${process.pid}.${Math.random().toString(36).slice(2, 10)}.removing`);
 		try {
-			renameSync(from, claimed);
+			(seams.rename ?? renameSync)(from, claimed);
 		} catch (e) {
 			const code = (e as NodeJS.ErrnoException).code;
 			if (code === 'ENOENT') {

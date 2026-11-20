@@ -311,6 +311,8 @@ Render the Build rows as a section of their own on the terminal screen, the VS C
   - **resolved**: Confirm ac1-ac5 — The user asked on 2026-11-20 to resolve the open questions after the five LLD-authored criteria were presented; ac1-ac5 stand as written as the Story's acceptance criteria (no amendment was requested). _(2026-11-20T06:45:44.050Z)_
 - `q8988339c` — alt2 partial: alternatives were scored against six constraints k1 to k6 derived from the user's decision to apply defaults automatically, since no Story, Epic or HLD constraints exist.
   - **resolved**: Confirm constraints before proceeding — The user asked on 2026-11-20 to resolve the open questions; the six constraints k1-k6 (no intervention at add, never overwrite, a failure never fails the add, Build section on every client, reuse the writer and keep the table in the daemon, stay small) derive from the user's own decision and are the scoring basis; no Story, Epic or HLD constraints exist. _(2026-11-20T06:46:23.797Z)_
+- `qf0ab7bee` — sbdry4 partial: the criterion ids ac1 to ac5, the constraint ids k1 to k6 and the citation ids c1 to c4 are labels this LLD assigned.
+  - **resolved**: Keep LLD-local labels — User asked to resolve the open questions (2026-11-20): ac1-ac5, k1-k6 and c1-c4 are labels assigned by LLD-f8cbf44536347149-s1 and resolve within it; no upstream identity is claimed. _(2026-11-20T06:46:47.221Z)_
 
 ## Citations
 

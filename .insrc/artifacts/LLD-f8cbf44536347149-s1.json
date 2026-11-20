@@ -72,6 +72,13 @@
         "choice": "Confirm constraints before proceeding",
         "rationale": "The user asked on 2026-11-20 to resolve the open questions; the six constraints k1-k6 (no intervention at add, never overwrite, a failure never fails the add, Build section on every client, reuse the writer and keep the table in the daemon, stay small) derive from the user's own decision and are the scoring basis; no Story, Epic or HLD constraints exist.",
         "resolvedAt": "2026-11-20T06:46:23.797Z"
+      },
+      "qf0ab7bee": {
+        "question": "sbdry4 partial: the criterion ids ac1 to ac5, the constraint ids k1 to k6 and the citation ids c1 to c4 are labels this LLD assigned.",
+        "status": "resolved",
+        "choice": "Keep LLD-local labels",
+        "rationale": "User asked to resolve the open questions (2026-11-20): ac1-ac5, k1-k6 and c1-c4 are labels assigned by LLD-f8cbf44536347149-s1 and resolve within it; no upstream identity is claimed.",
+        "resolvedAt": "2026-11-20T06:46:47.221Z"
       }
     }
   },

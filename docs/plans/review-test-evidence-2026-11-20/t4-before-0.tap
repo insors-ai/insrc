@@ -1,0 +1,164 @@
+TAP version 13
+# Subtest: the two formerly live-store test files pass against a temporary store and create nothing at the default path
+ok 1 - the two formerly live-store test files pass against a temporary store and create nothing at the default path
+  ---
+  duration_ms: 1377.255375
+  type: 'test'
+  ...
+# Subtest: the review probe test, found by the same search, creates nothing at the default path either
+not ok 2 - the review probe test, found by the same search, creates nothing at the default path either
+  ---
+  duration_ms: 66.218334
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/src/db/graph/__tests__/no-live-store-in-tests.test.ts:2:514'
+  failureType: 'testCodeFailure'
+  error: |-
+    src/workflow/review/__tests__/probe-source-roots.test.ts passes
+    Could not find 'src/workflow/review/__tests__/probe-source-roots.test.ts'
+    
+    
+    1 !== 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    assertCleanRun (/Users/subhagho/work/projects/insors/insrc/src/db/graph/__tests__/no-live-store-in-tests.test.ts:51:9)
+    TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/db/graph/__tests__/no-live-store-in-tests.test.ts:63:2)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: three daemon request tests, found by the same search, create nothing at the default path
+not ok 3 - three daemon request tests, found by the same search, create nothing at the default path
+  ---
+  duration_ms: 868.960958
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/src/db/graph/__tests__/no-live-store-in-tests.test.ts:2:695'
+  failureType: 'testCodeFailure'
+  error: |-
+    src/daemon/__tests__/code-review-rpc.test.ts passes
+    Could not find 'src/daemon/__tests__/code-review-rpc.test.ts'
+    
+    
+    1 !== 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    assertCleanRun (/Users/subhagho/work/projects/insors/insrc/src/db/graph/__tests__/no-live-store-in-tests.test.ts:51:9)
+    TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/db/graph/__tests__/no-live-store-in-tests.test.ts:68:2)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: the MCP step and review tests, found by the full audit, create nothing at the default path
+not ok 4 - the MCP step and review tests, found by the full audit, create nothing at the default path
+  ---
+  duration_ms: 694.798875
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/src/db/graph/__tests__/no-live-store-in-tests.test.ts:2:987'
+  failureType: 'testCodeFailure'
+  error: |-
+    src/daemon/steps/__tests__/analyze-step-handler.test.ts passes
+    e
+      operator: 'notStrictEqual'
+      stack: |-
+        TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/steps/__tests__/analyze-step-handler.test.ts:89:9)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+      ...
+    # Subtest: start with no repo + no INSRC_REPO env → clear no-repo error
+    ok 5 - start with no repo + no INSRC_REPO env → clear no-repo error
+      ---
+      duration_ms: 0.236375
+      type: 'test'
+      ...
+    # Subtest: plan phase with a garbage state blob returns wrong-state error
+    ok 6 - plan phase with a garbage state blob returns wrong-state error
+      ---
+      duration_ms: 0.245834
+      type: 'test'
+      ...
+    # Subtest: bundle phase with awaiting_plan state returns wrong-stage error
+    not ok 7 - bundle phase with awaiting_plan state returns wrong-stage error
+      ---
+      duration_ms: 0.645084
+      type: 'test'
+      location: '/Users/subhagho/work/projects/insors/insrc/src/daemon/steps/__tests__/analyze-step-handler.test.ts:1:3164'
+      failureType: 'testCodeFailure'
+      error: |-
+        The input did not match the regular expression /out of order|awaiting_bundle/. Input:
+        
+        'state token is not a valid shape (expected 22-char URL-safe base64; got undefined).'
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected:
+      actual: 'state token is not a valid shape (expected 22-char URL-safe base64; got undefined).'
+      operator: 'match'
+      stack: |-
+        TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/steps/__tests__/analyze-step-handler.test.ts:168:9)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+      ...
+    # Subtest: envelope is { content: [{type:"text", text: JSON}] }
+    ok 8 - envelope is { content: [{type:"text", text: JSON}] }
+      ---
+      duration_ms: 0.157042
+      type: 'test'
+      ...
+    1..8
+    # tests 8
+    # suites 0
+    # pass 6
+    # fail 2
+    # cancelled 0
+    # skipped 0
+    # todo 0
+    # duration_ms 627.178458
+    
+    
+    1 !== 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    assertCleanRun (/Users/subhagho/work/projects/insors/insrc/src/db/graph/__tests__/no-live-store-in-tests.test.ts:51:9)
+    TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/db/graph/__tests__/no-live-store-in-tests.test.ts:83:5)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: the check sees a store that IS opened at the default path
+ok 5 - the check sees a store that IS opened at the default path
+  ---
+  duration_ms: 404.427542
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 2
+# fail 3
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3593.334042

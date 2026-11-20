@@ -1,0 +1,106 @@
+{
+  "runId": "1d346e15-388e-46e1-8e77-a5e52f6caf0f",
+  "runtime": {
+    "executable": "/opt/homebrew/Cellar/node@22/22.23.2/bin/node",
+    "version": "v22.23.2"
+  },
+  "budgets": {
+    "buildMs": 600000,
+    "fileMs": 600000,
+    "runMs": 5400000,
+    "cleanupMs": 5000
+  },
+  "selectedFiles": [
+    "src/db/graph/__tests__/no-live-store-in-tests.test.ts",
+    "src/db/graph/__tests__/review-store-isolation.test.ts"
+  ],
+  "requestedConcurrency": 1,
+  "effectiveConcurrency": 1,
+  "diagnosticFlags": [
+    "DEBUG"
+  ],
+  "liveTests": "unset",
+  "results": [
+    {
+      "file": "src/db/graph/__tests__/no-live-store-in-tests.test.ts",
+      "childId": "84c9ff56-7cf2-451e-a404-cd393aa7b1b9",
+      "log": "docs/plans/review-test-evidence-2026-11-20/t4-after-0.tap",
+      "code": 1,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 4,
+          "pass": 3,
+          "fail": 1,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "sha256": "ed0abed2fd51948244d62bc15673d192445489a4e8cc17fdd738d49b8a101994"
+    },
+    {
+      "file": "src/db/graph/__tests__/review-store-isolation.test.ts",
+      "childId": "63136834-1dcc-4266-88f3-8ddef853ece0",
+      "log": "docs/plans/review-test-evidence-2026-11-20/t4-after-1.tap",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "sha256": "b461b66fea3faee9adc36c4b1c17f9922d30458a41ef8f650534dc1d1af23280"
+    }
+  ],
+  "incomplete": false,
+  "cleanup": {
+    "confirmedClosed": true,
+    "interrupted": false,
+    "cancellationErrors": [],
+    "evidenceErrors": [],
+    "childCloseJournal": "child-results.jsonl"
+  },
+  "preparedBuild": {
+    "runId": "1d346e15-388e-46e1-8e77-a5e52f6caf0f",
+    "canonicalRoot": "/Users/subhagho/work/projects/insors/insrc",
+    "runtimeExecutable": "/opt/homebrew/Cellar/node@22/22.23.2/bin/node",
+    "buildExitCode": 0,
+    "completedAt": "2026-11-20T09:01:52.418Z",
+    "inputFingerprint": "b0cf6b37d75d98cb4e1daa66c2aa32dc2ce0a546288e9c5dc80df7defec49cec",
+    "outputFingerprint": "87e416cc5673614957be861c48c2f680fe3a10975373aa5fa4054d2eacf19443",
+    "requiredArtifacts": [
+      "out/daemon/index.js",
+      "out/bin/insrc-process-broker",
+      "out/bin/insrc-shutdown-watchdog.js",
+      "out/daemon/shutdown.js",
+      "out/daemon/shutdown-watchdog.js",
+      "out/shared/daemon-run-files.js",
+      "out/cli/services/daemon.js",
+      "out/cli/services/maintenance.js",
+      "out/daemon/server.js",
+      "out/shared/daemon-process.js",
+      "out/daemon/run-file-ownership.js",
+      "out/bin/insrc-darwin-lifecycle"
+    ]
+  },
+  "totals": {
+    "tests": 5,
+    "pass": 4,
+    "fail": 1,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  }
+}

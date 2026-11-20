@@ -51,3 +51,18 @@ ISSUE-81be53b2b0f003a7 is approved; commit `0d3505056` adds the early shared pre
 With that guard, the original persistence matrix passes in owned run `4ad062d7-7bd6-4128-8937-5eeb0e4e9a13`: one parent test, one nested matrix, zero failures/skips/cancellations, complete coverage and confirmed actor closure. [Results/TAP](review-test-evidence-2026-11-20/t3-final-results.json). The late runtime/session-expiry, hostile getter, executor refusal, task/cache/checkpoint/history/trace/graph/Lance canary checks remain unchanged and now all execute. The new current artifact saved write/read-back also succeeds. No obsolete writer export or production review work was restored, and no privacy assertion was weakened.
 
 This supersedes the earlier blocked status for t3's local test outcome; task gate validation and t4/t5 still follow. The two matrix layers are not counted as independent top-level tests.
+
+## t4: review isolation inventory replacements
+
+The nine removed review fixture entries are explicitly mapped in `src/db/graph/__tests__/review-store-isolation.test.ts`:
+
+- old review probe → current before-work unavailable contract;
+- old code/workflow RPC suites → current endpoint refusal and human lifecycle wiring;
+- old review step/routing suites → current MCP and in-daemon client refusal/transport controls;
+- old spec approval, review, same-party and template suites → retained history readers and current human lifecycle/build completion gates.
+
+The seven distinct replacement suites run serially in fresh temporary HOMEs, with positive TAP counts, zero fail/cancel/skip/todo, successful normal child completion and no default graph or Lance files. The audit uses managed children and no test-force-exit flag. Actual graph/Lance default-opening fixtures falsify both absence checks in their own temporary HOMEs; both are detected. These are nine child runs within one top-level audit, not nine independent top-level passes.
+
+The unrelated general graph inventory stays in its original file with its valid analyze assertions intact. Its remaining failure is the existing analyze-step-handler child (two schema/state assertions), retained for Batch11. Moving the coherent retired-review portion to a focused audit allows its result to be assessed separately; no unrelated failing check was skipped or declared fixed. The unchanged vector audit passed on its full budget, so the historical 60-second cancellation is retained as an audit limit, not called a repaired defect.
+
+Baseline `b96feb79-a04a-42ec-8496-a256dba356bf`: graph audit2pass/3fail and vector audit2pass, no skips/cancellations, confirmed cleanup. After `1d346e15-388e-46e1-8e77-a5e52f6caf0f`: general graph3pass/1fail plus replacement review audit1pass, no skips/cancellations, confirmed cleanup. The latter run remains non-green overall. Exact [before](review-test-evidence-2026-11-20/t4-before-results.json) and [after](review-test-evidence-2026-11-20/t4-after-results.json) evidence retains TAP/hash/fingerprint details.

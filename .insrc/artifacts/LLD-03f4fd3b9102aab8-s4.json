@@ -27,7 +27,7 @@
     "storyTitle": "Each round's findings are rendered and presented through a new review-report docgen document",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 2,
         "contentHash": "b62327ff09e35046fecbd8f68bcd34448707c0f08bbb840f764c2cb8d2a887d5",
@@ -38,9 +38,20 @@
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T07:18:14.636Z"
+      }
     },
     "envelope": {
+      "description": "",
+      "references": [],
       "attachments": []
     },
     "revision": 2,

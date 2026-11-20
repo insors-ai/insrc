@@ -1367,10 +1367,10 @@ before anything reads the file, an existing `github.json` is moved to `repo-conf
 (a hard link, or, on a volume without hard links such as FAT or exFAT, an exclusive copy that is checked against the original)
 and then the old one is removed, so nothing is left under the old name and a `repo-config.json` that another process creates
 at that moment is never replaced. This is the same on Linux, macOS and Windows; on Windows a symbolic-link `github.json`
-needs the privilege to create links, and without it the move fails and is retried. If both files exist and differ, neither is
-touched, `repo-config.json` is the one the daemon reads, and the boot logs that both exist. If both hold the same bytes (a
-move that was interrupted, or Windows refusing to delete a file another program has open) the next boot removes `github.json`.
-A move that fails is logged and tried again at the next boot, and never stops the daemon starting. The move is skipped when
+needs the privilege to create links, and without it the move fails and is retried. If both files exist, whatever they hold,
+neither is touched, `repo-config.json` is the one the daemon reads, and the boot logs that both exist; this is also what an
+interrupted move leaves, or one where Windows refuses to delete a file another program has open, and the leftover
+`github.json` is harmless and can be deleted by hand. A move that fails is logged and tried again at the next boot, and never stops the daemon starting. The move is skipped when
 `INSRC_REPO_CONFIG` is set. A `github.json` created by hand afterwards is ignored: the settings now live in
 `repo-config.json`, and the settings methods are the way to change them. To go back to an older daemon, rename the file back
 by hand, because the older daemon reads `github.json` and would see no settings.

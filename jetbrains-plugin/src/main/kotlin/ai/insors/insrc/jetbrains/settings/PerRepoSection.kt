@@ -210,7 +210,7 @@ class PerRepoSection(
         rowPanel.alignmentX = Component.LEFT_ALIGNMENT
         rowPanel.add(JLabel(row.label), BorderLayout.WEST)
         if (row.editable) {
-            val text = JTextField(row.current, 20)
+            val text = PlaceholderTextField(row.current, 20, row.placeholder)
             text.toolTipText = row.note
             text.document.addDocumentListener(object : DocumentListener {
                 private fun changed() {
@@ -221,12 +221,6 @@ class PerRepoSection(
                 override fun changedUpdate(e: DocumentEvent) = changed()
             })
             rowPanel.add(text, BorderLayout.EAST)
-            // the typical value of the repo's project type, shown beside an unset Build field
-            row.placeholder?.let {
-                val hint = JLabel("suggested: $it")
-                hint.foreground = java.awt.Color.GRAY
-                rowPanel.add(hint, BorderLayout.CENTER)
-            }
         } else {
             rowPanel.add(JLabel("${row.value} (read-only)"), BorderLayout.EAST)
         }
@@ -321,5 +315,25 @@ class PerRepoSection(
         rowPanel.add(combo, BorderLayout.EAST)
         rowPanel.maximumSize = Dimension(Int.MAX_VALUE, rowPanel.preferredSize.height)
         return rowPanel
+    }
+}
+
+/**
+ * A text field that shows [placeholder] in grey while it is empty: the typical value of a repo's project type
+ * for an unset Build command. The placeholder is only painted, never the field's text, so it is never written.
+ */
+internal class PlaceholderTextField(text: String, columns: Int, val placeholder: String?) : JTextField(text, columns) {
+    override fun paintComponent(g: java.awt.Graphics) {
+        super.paintComponent(g)
+        val hint = placeholder
+        if (hint != null && text.isEmpty()) {
+            val g2 = g.create() as java.awt.Graphics2D
+            try {
+                g2.color = java.awt.Color.GRAY
+                g2.drawString(hint, insets.left + 2, insets.top + g2.fontMetrics.ascent)
+            } finally {
+                g2.dispose()
+            }
+        }
     }
 }

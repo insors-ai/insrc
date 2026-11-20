@@ -146,6 +146,9 @@ class RepoFieldsContractTest {
         assertEquals(fields.count { it["kind"] == "local" }, fieldCount(root))
     }
 
+    private fun textFields(c: Container): List<PlaceholderTextField> =
+        c.components.flatMap { if (it is PlaceholderTextField) listOf(it) else if (it is Container) textFields(it) else emptyList() }
+
     private fun buttons(c: Container): List<JButton> =
         c.components.flatMap { if (it is JButton) listOf(it) else if (it is Container) buttons(it) else emptyList() }
 
@@ -215,8 +218,13 @@ class RepoFieldsContractTest {
             assertTrue(inBuild.contains(f.label), "the Build block shows ${f.key}")
             assertTrue(!inTracker.contains(f.label), "the Tracker block does not show ${f.key}")
         }
-        assertTrue(inBuild.contains("suggested: mypy ."))
-        assertTrue(inBuild.contains("suggested: pytest"))
+        // the suggestion is the placeholder of the unset field itself, and the field's text stays empty
+        val fieldsInBuild = textFields(buildBlock)
+        assertEquals(
+            mapOf("mypy ." to "", "pytest" to "", "exit-code" to ""),
+            fieldsInBuild.mapNotNull { f -> f.placeholder?.let { it to f.text } }.toMap(),
+        )
+        assertTrue(textFields(trackerBlock).all { it.placeholder == null })
         assertEquals(listOf("Use suggested build commands"), buttons(buildBlock).map { it.text })
 
         // a repo that has commands, or a payload with no buildSetup, shows no placeholder and no action
@@ -228,7 +236,7 @@ class RepoFieldsContractTest {
         for (other in others) {
             val plain = titled(sectionFor(repo, fields, other)).toMap()["$repo — build"]!!
             assertTrue(buttons(plain).isEmpty(), "no action for ${other.settings.buildSetup}")
-            assertTrue(labels(plain).none { it.text.startsWith("suggested: ") }, "no placeholder for ${other.settings.buildSetup}")
+            assertTrue(textFields(plain).all { it.placeholder == null }, "no placeholder for ${other.settings.buildSetup}")
             assertEquals(null, RepoTrackerModel(fields, mapOf(repo to other)).suggestion(repo))
         }
     }

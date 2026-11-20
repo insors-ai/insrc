@@ -273,28 +273,37 @@ const NO_HARD_LINKS = new Set(['EPERM', 'ENOTSUP', 'EOPNOTSUPP', 'ENOSYS', 'EXDE
  * anything reads it. The new name is published atomically and without replacing anything: a hard link, which the file system
  * refuses when the destination exists (NTFS and ReFS support it, so this holds on Windows too), or, for a symbolic-link
  * `github.json`, a new symbolic link to the same target (on Windows that needs the privilege to create links). `rename`
- * replaces its destination on every platform, Windows included, so it is not used, and nothing is copied: a copy cannot be
- * published both completely and without replacing an existing file with the calls Node has. Then the old name is removed,
- * but only if it is still the file that was published (same device, inode, size and time as before): an editor that
- * atomically replaced it meanwhile keeps its newer file and both names stay. This code never deletes `repo-config.json`.
+ * replaces its destination on every platform, Windows included, so it never publishes the new name, and nothing is copied: a
+ * copy cannot be published both completely and without replacing an existing file with the calls Node has.
+ *
+ * The old name is then removed by claiming it: it is renamed to a name only this call knows, and only that name is ever
+ * deleted, so no check can be interleaved with the removal. If the claimed file is still the one that was published (same
+ * device, inode, size and time as before) it is deleted. If it is not, an editor replaced `github.json` in the meantime and
+ * the claimed file is its newer one: it is linked back under `github.json`, which is exclusive, and both names are kept; if
+ * even that is refused (a newer `github.json` appeared again, or links fail) the newer file stays under the claimed name and
+ * the result says where. `github.json` is absent for the length of two calls while claimed. This code never deletes
+ * `repo-config.json`.
+ *
  * When a `repo-config.json` appears at any moment before it is published, neither file is changed and the result is
  * `both-exist`. Nothing is moved when there is no old file. A failure is the `failed` result and the old file stays; on a
- * volume without hard links its note says to rename the file by hand. Should the old name not be removable (Windows refuses
- * to delete a file another program has open), or the process die between the steps, both files exist with the same content;
- * the next boot reports `both-exist` and touches neither, and the daemon uses `repo-config.json`, so the leftover
- * `github.json` is harmless and can be deleted by hand. Never throws.
+ * volume without hard links its note says to rename the file by hand. Should the old name not be claimable (Windows refuses
+ * to rename a file another program has open), both files exist with the same content; the next boot reports `both-exist` and
+ * touches neither, and the daemon uses `repo-config.json`, so the leftover `github.json` is harmless and can be deleted by
+ * hand. Never throws.
  */
 export function moveLegacyRepoConfig(
 	dir: string = PATHS.insrc,
 	seams: {
 		/** Replaces the hard link step, to fail it (or make a file system without hard links) in a test. */
 		readonly link?: (from: string, to: string) => void;
-		/** Replaces removing the old name, to fail it in a test. */
+		/** Replaces deleting the claimed name, to fail it in a test. */
 		readonly unlink?: (path: string) => void;
 		/** Runs between the presence checks and publishing, to interleave another process in a test. */
 		readonly beforeCreate?: () => void;
-		/** Runs after the new name was published and before the old name is removed. */
-		readonly beforeRemoveSource?: () => void;
+		/** Runs after the new name was published and before the old name is claimed. */
+		readonly beforeClaim?: () => void;
+		/** Runs after the old name was claimed and before the claimed file is judged. */
+		readonly afterClaim?: () => void;
 	} = {},
 ): LegacyRepoConfigMove {
 	const from = join(dir, 'github.json');
@@ -322,25 +331,43 @@ export function moveLegacyRepoConfig(
 			}
 			throw e;
 		}
-		seams.beforeRemoveSource?.();
-		let stillSource: boolean;
+		seams.beforeClaim?.();
+		// claim the old name: after this rename the path is ours alone, so nothing can replace it between a check and a delete
+		const claimed = join(dir, `.github.json.${process.pid}.${Math.random().toString(36).slice(2, 10)}.removing`);
 		try {
-			stillSource = sameIdentity(before, identityOf(from));
+			renameSync(from, claimed);
 		} catch (e) {
-			if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw e;
-			log.info({ from, to }, 'moved the settings file to its new name; the old name was already gone');
-			return { status: 'moved' };
-		}
-		if (!stillSource) return bothExist(`${from} changed while it was being moved and was left in place`);
-		try {
-			(seams.unlink ?? unlinkSync)(from);
-		} catch (e) {
-			const note = `${to} was created but ${from} could not be removed (${e instanceof Error ? e.message : String(e)}); both exist with the same content; the daemon uses the new one and the old one can be deleted`;
-			log.warn({ from, to }, 'the settings file was created under its new name but the old name could not be removed');
+			const code = (e as NodeJS.ErrnoException).code;
+			if (code === 'ENOENT') {
+				log.info({ from, to }, 'moved the settings file to its new name; the old name was already gone');
+				return { status: 'moved' };
+			}
+			const note = `${to} was created but ${from} could not be set aside to be removed (${e instanceof Error ? e.message : String(e)}); both exist with the same content; the daemon uses the new one and the old one can be deleted`;
+			log.warn({ from, to }, 'the settings file was created under its new name but the old name could not be claimed');
 			return { status: 'failed', note };
 		}
-		log.info({ from, to }, 'moved the settings file to its new name');
-		return { status: 'moved' };
+		seams.afterClaim?.();
+		if (sameIdentity(before, identityOf(claimed))) {
+			try {
+				(seams.unlink ?? unlinkSync)(claimed);
+			} catch (e) {
+				const note = `${to} was created and ${from} was set aside as ${claimed} but that could not be deleted (${e instanceof Error ? e.message : String(e)}); it is a copy of the settings and can be deleted by hand`;
+				log.warn({ from, to, claimed }, 'the settings file was moved but its old name could not be deleted');
+				return { status: 'moved', note };
+			}
+			log.info({ from, to }, 'moved the settings file to its new name');
+			return { status: 'moved' };
+		}
+		// an editor replaced github.json before it was claimed: what was claimed is its newer file, so give the name back
+		try {
+			linkSync(claimed, from);
+			unlinkSync(claimed);
+			return bothExist(`${from} changed while it was being moved and was left in place`);
+		} catch {
+			const note = `${from} changed while it was being moved and ${to} holds the earlier settings; the newer settings are kept as ${claimed} because ${from} could not be restored; rename it back by hand`;
+			log.warn({ from, to, claimed }, 'a newer settings file was set aside and could not be restored under its name');
+			return { status: 'both-exist', note };
+		}
 	} catch (e) {
 		const note = e instanceof Error ? e.message : String(e);
 		log.warn({ from, to, err: note }, 'could not move the settings file to its new name; it is tried again at the next boot');

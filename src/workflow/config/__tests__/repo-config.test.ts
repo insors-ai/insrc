@@ -5,7 +5,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, linkSync, lstatSync, mkdtempSync, readdirSync, readFileSync, readlinkSync, renameSync, rmSync, statSync, symlinkSync, utimesSync, writeFileSync } from 'node:fs';
+import { existsSync, linkSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, readlinkSync, renameSync, rmSync, statSync, symlinkSync, unlinkSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -111,15 +111,6 @@ test('repo-config.test.ts: a repo-config.json created between the presence check
 		assert.equal(readFileSync(join(dir, 'repo-config.json'), 'utf8'), '{"newer":true}');
 		assert.equal(readFileSync(join(dir, 'github.json'), 'utf8'), '{"legacy":true}');
 	});
-	// removing the old name fails after the new one was published: both exist with the same content and nothing is lost
-	inTempDir(dir => {
-		writeFileSync(join(dir, 'github.json'), '{"legacy":true}');
-		const result = moveLegacyRepoConfig(dir, { unlink: () => { throw Object.assign(new Error('EBUSY: resource busy or locked'), { code: 'EBUSY' }); } });
-		assert.equal(result.status, 'failed');
-		assert.match(result.note ?? '', /was created but .*github\.json could not be removed/);
-		assert.equal(readFileSync(join(dir, 'repo-config.json'), 'utf8'), '{"legacy":true}');
-		assert.equal(readFileSync(join(dir, 'github.json'), 'utf8'), '{"legacy":true}');
-	});
 });
 
 /** What an editor that saves atomically does to a file: writes a temporary file and renames it over the path. */
@@ -129,30 +120,74 @@ function replaceAtomically(path: string, content: string): void {
 }
 
 test('repo-config.test.ts: the old name is removed only if it is still the file that was moved, so a newer github.json that replaced it is kept', () => {
+	const removing = (dir: string): string[] => readdirSync(dir).filter(n => n.endsWith('.removing'));
+	// an editor saves a newer github.json (atomically, by renaming a temporary file over it) before the old name is claimed
+	inTempDir(dir => {
+		writeFileSync(join(dir, 'github.json'), '{"older":true}');
+		const result = moveLegacyRepoConfig(dir, { beforeClaim: () => replaceAtomically(join(dir, 'github.json'), '{"newer":true,"longer":"content"}') });
+		assert.equal(result.status, 'both-exist');
+		assert.match(result.note ?? '', /changed while it was being moved and was left in place/);
+		assert.equal(readFileSync(join(dir, 'github.json'), 'utf8'), '{"newer":true,"longer":"content"}', 'the newer legacy settings are kept under their name');
+		assert.equal(readFileSync(join(dir, 'repo-config.json'), 'utf8'), '{"older":true}', 'repo-config.json holds what was moved');
+		assert.deepEqual(removing(dir), [], 'the claimed name is given back');
+	});
+	// an in-place edit (same inode, later time) changes the identity too
+	inTempDir(dir => {
+		writeFileSync(join(dir, 'github.json'), '{"a":1}');
+		const result = moveLegacyRepoConfig(dir, { beforeClaim: () => { const at = new Date(Date.now() + 5000); writeFileSync(join(dir, 'github.json'), '{"a":2}'); utimesSync(join(dir, 'github.json'), at, at); } });
+		assert.equal(result.status, 'both-exist');
+		assert.equal(readFileSync(join(dir, 'github.json'), 'utf8'), '{"a":2}');
+		assert.deepEqual(removing(dir), []);
+	});
+	// the interval a check-then-delete cannot close: the editor replaces github.json after the identity would have been checked,
+	// at the moment of the delete. Only the claimed name is deleted, so the newer file survives.
+	inTempDir(dir => {
+		writeFileSync(join(dir, 'github.json'), '{"older":true}');
+		const result = moveLegacyRepoConfig(dir, { unlink: path => { replaceAtomically(join(dir, 'github.json'), '{"newer":true}'); unlinkSync(path); } });
+		assert.equal(result.status, 'moved');
+		assert.equal(readFileSync(join(dir, 'github.json'), 'utf8'), '{"newer":true}', 'the newer settings survive the delete');
+		assert.equal(readFileSync(join(dir, 'repo-config.json'), 'utf8'), '{"older":true}');
+		assert.deepEqual(removing(dir), []);
+	});
+	// and when the editor saves right after the claim, before the claimed file is judged
+	inTempDir(dir => {
+		writeFileSync(join(dir, 'github.json'), '{"older":true}');
+		const result = moveLegacyRepoConfig(dir, { afterClaim: () => writeFileSync(join(dir, 'github.json'), '{"newer":true}') });
+		assert.equal(result.status, 'moved');
+		assert.equal(readFileSync(join(dir, 'github.json'), 'utf8'), '{"newer":true}');
+		assert.deepEqual(removing(dir), []);
+	});
+	// the newer file was claimed and its name cannot be given back because yet another github.json appeared: nothing is lost
 	inTempDir(dir => {
 		writeFileSync(join(dir, 'github.json'), '{"older":true}');
 		const result = moveLegacyRepoConfig(dir, {
-			// an editor saves a newer github.json between publishing the new name and removing the old one
-			beforeRemoveSource: () => replaceAtomically(join(dir, 'github.json'), '{"newer":true,"longer":"content"}'),
+			beforeClaim: () => replaceAtomically(join(dir, 'github.json'), '{"newer":true,"longer":"content"}'),
+			afterClaim: () => writeFileSync(join(dir, 'github.json'), '{"newest":true}'),
 		});
 		assert.equal(result.status, 'both-exist');
-		assert.match(result.note ?? '', /changed while it was being moved and was left in place/);
-		assert.equal(readFileSync(join(dir, 'github.json'), 'utf8'), '{"newer":true,"longer":"content"}', 'the newer legacy settings are kept');
-		assert.equal(readFileSync(join(dir, 'repo-config.json'), 'utf8'), '{"older":true}', 'repo-config.json holds what was moved');
-	});
-	// an in-place edit of the same size and a later time changes the identity too
-	inTempDir(dir => {
-		writeFileSync(join(dir, 'github.json'), '{"a":1}');
-		const result = moveLegacyRepoConfig(dir, { beforeRemoveSource: () => { const at = new Date(Date.now() + 5000); writeFileSync(join(dir, 'github.json'), '{"a":2}'); utimesSync(join(dir, 'github.json'), at, at); } });
-		assert.equal(result.status, 'both-exist');
-		assert.equal(readFileSync(join(dir, 'github.json'), 'utf8'), '{"a":2}');
+		const kept = removing(dir);
+		assert.equal(kept.length, 1, 'the newer file stays under the claimed name');
+		assert.match(result.note ?? '', new RegExp(kept[0]!.replace(/\./g, '\\.')));
+		assert.equal(readFileSync(join(dir, kept[0]!), 'utf8'), '{"newer":true,"longer":"content"}');
+		assert.equal(readFileSync(join(dir, 'github.json'), 'utf8'), '{"newest":true}', 'the newest file is untouched');
+		assert.equal(readFileSync(join(dir, 'repo-config.json'), 'utf8'), '{"older":true}');
 	});
 	// the old name already gone is not a failure
 	inTempDir(dir => {
 		writeFileSync(join(dir, 'github.json'), '{"legacy":true}');
-		const result = moveLegacyRepoConfig(dir, { beforeRemoveSource: () => rmSync(join(dir, 'github.json')) });
+		const result = moveLegacyRepoConfig(dir, { beforeClaim: () => rmSync(join(dir, 'github.json')) });
 		assert.equal(result.status, 'moved');
 		assert.equal(readFileSync(join(dir, 'repo-config.json'), 'utf8'), '{"legacy":true}');
+	});
+	// the claimed copy cannot be deleted (a locked file on Windows): the move is done, the leftover is named and harmless
+	inTempDir(dir => {
+		writeFileSync(join(dir, 'github.json'), '{"legacy":true}');
+		const result = moveLegacyRepoConfig(dir, { unlink: () => { throw Object.assign(new Error('EBUSY: resource busy or locked'), { code: 'EBUSY' }); } });
+		assert.equal(result.status, 'moved');
+		assert.match(result.note ?? '', /could not be deleted.*by hand/);
+		assert.equal(existsSync(join(dir, 'github.json')), false);
+		assert.equal(readFileSync(join(dir, 'repo-config.json'), 'utf8'), '{"legacy":true}');
+		assert.equal(removing(dir).length, 1);
 	});
 });
 

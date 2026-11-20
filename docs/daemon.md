@@ -1376,8 +1376,9 @@ needs the privilege to create links, and without it the move fails and is retrie
 neither is touched, `repo-config.json` is the one the daemon reads, and the boot logs that both exist; this is also what an
 interrupted move leaves, or one where Windows refuses to delete a file another program has open, and the leftover
 `github.json` is harmless and can be deleted by hand. A move that fails is logged and tried again at the next boot, and never
-stops the daemon starting. The move is skipped when `INSRC_REPO_CONFIG` is set. A `github.json` created by hand afterwards is
-ignored: the settings now live in `repo-config.json`, and the settings methods are the way to change them. To go back to an
+stops the daemon starting. The move is skipped when `INSRC_REPO_CONFIG` is set.
+A `github.json` created by hand afterwards is ignored: the settings now live in `repo-config.json`, and the settings methods are
+the way to change them. To go back to an
 older daemon, rename the file back by hand, because the older daemon reads `github.json` and would see no settings.
 
 ### Build commands

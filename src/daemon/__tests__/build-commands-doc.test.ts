@@ -153,9 +153,15 @@ test('build-commands-doc.test.ts: docs/daemon.md and the other live docs name re
 	for (const doc of ['workflow.md', 'plans/workflow-implementation.md', 'plans/meta-workflow-framework.md']) {
 		assert.match(readFileSync(join(DOCS_DIR, doc), 'utf8'), new RegExp(`├── ${fileName.replace('.', '\\.')}`), `${doc}'s tree listing names ${fileName}`);
 	}
-	// the docs that document the override name the variable the code reads
-	for (const doc of ['daemon.md', 'installation.md', 'index.html']) {
-		assert.ok(readFileSync(join(DOCS_DIR, doc), 'utf8').includes('INSRC_REPO_CONFIG'), `${doc} names INSRC_REPO_CONFIG`);
+	// every override variable a live doc names is the one the code reads (or the old one, named as no longer read)
+	for (const doc of LIVE_DOCS) {
+		for (const name of readFileSync(join(DOCS_DIR, doc), 'utf8').match(/\bINSRC_[A-Z_]*CONFIG\b/g) ?? []) {
+			assert.ok(name === 'INSRC_REPO_CONFIG' || name === OLD_VAR, `${doc} names ${name}, which is neither the variable the code reads nor the old one`);
+		}
+	}
+	// the docs that document the override name the variable the code reads, as often as they did when they were updated
+	for (const [doc, count] of Object.entries({ 'daemon.md': 2, 'installation.md': 1, 'index.html': 1 })) {
+		assert.ok(readFileSync(join(DOCS_DIR, doc), 'utf8').split('INSRC_REPO_CONFIG').length - 1 >= count, `${doc} names INSRC_REPO_CONFIG at least ${count} times`);
 	}
 	for (const doc of ['workflow.md', 'installation.md', 'index.html']) {
 		const text = readFileSync(join(DOCS_DIR, doc), 'utf8');

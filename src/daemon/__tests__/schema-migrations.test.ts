@@ -8,6 +8,7 @@ import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { readSchemaVersion, writeRepoEntryKeys, writeSchemaVersion } from '../../workflow/config/repo-config-store.js';
 import { REPO_CONFIG_SCHEMA_VERSION, SCHEMA_MIGRATION_STEPS, createRepoSettingsHandlers, runSchemaMigrations } from '../repo-settings.js';
@@ -255,4 +256,33 @@ test('schema-migrations.test.ts: a command cleared after the stamp is not re-app
 		assert.equal(parse(file)['schemaVersion'], 1, 'and leaves schemaVersion as it was');
 		assert.deepEqual((parse(file)['repos'] as Record<string, unknown>)[py], { typecheckCommand: 'mypy .', testCommand: 'pytest', resultFormat: 'exit-code' });
 	});
+});
+
+// ---- t3: the boot hook ----
+
+test('schema-migrations.test.ts: a source check that src/daemon/index.ts calls runSchemaMigrations as a fire-and-forget pass after the registry loads, with a catch, and not awaited', () => {
+	const src = readFileSync(fileURLToPath(new URL('../index.ts', import.meta.url)), 'utf8');
+	const call = src.indexOf('runSchemaMigrations({');
+	const registry = src.indexOf('await listRepos(db)');      // the registry is loaded here
+	const steering = src.indexOf('void runBootSteeringRefresh()');
+	const queue = src.indexOf('const queueDone = startQueue()');
+	const getDb = src.indexOf('await getDb()');
+	assert.ok(call > 0 && registry > 0 && steering > 0 && queue > 0 && getDb > 0, 'the anchors exist in main');
+	assert.equal(src.split('runSchemaMigrations(').length - 1, 1, 'it is called once');
+	assert.ok(getDb < registry && registry < call, 'the pass starts after the database is open and the registry is loaded');
+	assert.ok(steering < call && call < queue, 'it sits beside the steering refresh, before the queue starts');
+
+	// the statement: `void runSchemaMigrations(...)` followed by a then and a catch, ending before the next statement
+	const statementStart = src.lastIndexOf('void ', call);
+	assert.equal(src.slice(statementStart, call), 'void ', 'the call is the operand of void, directly');
+	const end = src.indexOf(';\n', call);
+	const statement = src.slice(statementStart, end);
+	assert.match(statement, /\.then\(/, 'the result is logged');
+	assert.match(statement, /\.catch\(/, 'a rejection is caught');
+	assert.doesNotMatch(src, /await\s+runSchemaMigrations/, 'it is never awaited');
+	assert.doesNotMatch(src, /(?:return|=)\s*runSchemaMigrations/, 'its promise is not kept or returned');
+	// the registry is listed lazily, from the DB the daemon already holds
+	assert.match(statement, /registeredRepos:\s*async \(\) => \(await listRepos\(db\)\)\.map\(r => r\.path\)/);
+	// and the earlier legacy-file move keeps its place before the pass
+	assert.ok(src.indexOf('moveLegacyRepoConfig();') < call);
 });

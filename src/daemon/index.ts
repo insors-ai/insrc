@@ -21,6 +21,7 @@ import { fileURLToPath } from 'node:url';
 import { runBootSteeringRefresh } from './steering-inject.js';
 import { PATHS } from '../shared/paths.js';
 import { moveLegacyRepoConfig } from '../workflow/config/repo-config-store.js';
+import { runSchemaMigrations } from './repo-settings.js';
 import { openProgressRuntime } from './task-progress/runtime.js';
 import { registerExecutorProducers } from './task-progress/executor-measurements.js';
 import type { ExecutorDetails } from './task-progress/executor-measurements.js';
@@ -415,6 +416,14 @@ async function main(): Promise<void> {
 			log.info({ refreshed, skipped, files: report.length }, 'boot steering refresh complete');
 		}
 	}).catch(() => { /* wrapper never rejects; belt-and-suspenders so boot can't see an unhandled rejection */ });
+
+	// 5c. Boot-time schema migrations — compares the root `schemaVersion` of repo-config.json with the version this
+	// daemon expects and, when it is absent, null or lower, runs the pending steps once (step 1: the build defaults
+	// over every registered repo) and stamps the version. Decided by the stored version, never by commit ids.
+	// Fire-and-forget like 5b: runSchemaMigrations never rejects, and a slow or failing pass never delays boot-ready.
+	void runSchemaMigrations({ registeredRepos: async () => (await listRepos(db)).map(r => r.path) })
+		.then(result => log.info(result, 'boot schema migrations finished'))
+		.catch(() => { /* never rejects; belt-and-suspenders so boot can't see an unhandled rejection */ });
 
 	// Run queue in background (never awaited until shutdown)
 	const queueDone = startQueue();

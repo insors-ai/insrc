@@ -1,6 +1,6 @@
 # Batch 03 — live-store search exclusion
 
-Scope: approved `ISSUE-9c2482c594fd8df5`, `LLD-9c2482c594fd8df5-s1` and `PLAN-9c2482c594fd8df5-s1`. Implementation commits `bbe489829` and `d955c581b`; t1 passed daemon validation after correction. t2 validation and human BUILD approval are pending.
+Scope: approved `ISSUE-9c2482c594fd8df5`, `LLD-9c2482c594fd8df5-s1` and `PLAN-9c2482c594fd8df5-s1`. Implementation commits `bbe489829` and `d955c581b`; t1 passed daemon validation after correction. t2 also passed daemon validation. Human BUILD approval on 2026-11-20 completed the story and epic; GitHub tracker attachment remains unbound.
 
 ## Result and compatibility
 

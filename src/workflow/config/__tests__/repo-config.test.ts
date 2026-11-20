@@ -5,10 +5,11 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, linkSync, lstatSync, mkdtempSync, readdirSync, readFileSync, readlinkSync, rmSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { existsSync, linkSync, lstatSync, mkdtempSync, readdirSync, readFileSync, readlinkSync, renameSync, rmSync, statSync, symlinkSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { createRepoSettingsHandlers } from '../../../daemon/repo-settings.js';
 import type { SettingsResult } from '../../../daemon/repo-settings.js';
@@ -71,13 +72,13 @@ test('repo-config.test.ts: moveLegacyRepoConfig leaves both files untouched and 
 	});
 	inTempDir(dir => {
 		writeFileSync(join(dir, 'github.json'), '{"old":true}');
-		const failed = moveLegacyRepoConfig(dir, { create: () => { throw new Error('EACCES: permission denied'); } });
+		const failed = moveLegacyRepoConfig(dir, { link: () => { throw new Error('EACCES: permission denied'); }, copy: () => { throw new Error('EACCES: permission denied'); } });
 		assert.equal(failed.status, 'failed');
 		assert.match(failed.note ?? '', /EACCES/);
 		assert.equal(readFileSync(join(dir, 'github.json'), 'utf8'), '{"old":true}', 'the old file stays');
 		assert.equal(existsSync(join(dir, 'repo-config.json')), false);
 		// a non-Error rejection is still a result, not an exception
-		assert.equal(moveLegacyRepoConfig(dir, { create: () => { throw 'nope'; } }).status, 'failed');
+		assert.equal(moveLegacyRepoConfig(dir, { link: () => { throw 'nope'; }, copy: () => { throw 'nope'; } }).status, 'failed');
 		// a directory that cannot be read is a failed result, not an exception
 		assert.equal(moveLegacyRepoConfig(join(dir, 'github.json', 'not-a-directory')).status, 'failed');
 	});
@@ -89,7 +90,7 @@ test('repo-config.test.ts: a repo-config.json created between the presence check
 		writeFileSync(join(dir, 'github.json'), '{"legacy":true}');
 		const result = moveLegacyRepoConfig(dir, { beforeCreate: () => writeFileSync(join(dir, 'repo-config.json'), '{"newer":true}') });
 		assert.equal(result.status, 'both-exist');
-		assert.match(result.note ?? '', /both exist; neither was changed/);
+		assert.match(result.note ?? '', /both exist.*neither was changed/);
 		assert.equal(readFileSync(join(dir, 'repo-config.json'), 'utf8'), '{"newer":true}', 'the newer settings are not replaced');
 		assert.equal(readFileSync(join(dir, 'github.json'), 'utf8'), '{"legacy":true}', 'the legacy file is not removed');
 	});
@@ -103,29 +104,68 @@ test('repo-config.test.ts: a repo-config.json created between the presence check
 		assert.equal(readFileSync(join(dir, 'repo-config.json'), 'utf8'), '{"newer":true}');
 		assert.equal(lstatSync(join(dir, 'github.json')).isSymbolicLink(), true);
 	});
-	// and when the new file appears even later, at the create itself, the kernel's exclusive create refuses it
+	// and when the new file appears at the link itself, the file system's exclusive link refuses it
 	inTempDir(dir => {
 		writeFileSync(join(dir, 'github.json'), '{"legacy":true}');
-		const result = moveLegacyRepoConfig(dir, { create: (from, to) => { writeFileSync(to, '{"newer":true}'); linkSync(from, to); } });
+		const result = moveLegacyRepoConfig(dir, { link: (from, to) => { writeFileSync(to, '{"newer":true}'); linkSync(from, to); } });
 		assert.equal(result.status, 'both-exist');
 		assert.equal(readFileSync(join(dir, 'repo-config.json'), 'utf8'), '{"newer":true}');
 		assert.equal(readFileSync(join(dir, 'github.json'), 'utf8'), '{"legacy":true}');
 	});
-	// removing the old name fails after the new one was created: both exist with the same content and nothing is lost
+	// removing the old name fails after the new one was published: both exist with the same content and nothing is lost
 	inTempDir(dir => {
 		writeFileSync(join(dir, 'github.json'), '{"legacy":true}');
-		const bytes = readFileSync(join(dir, 'github.json'));
-		// the old name disappears under the move, so removing it fails
-		const result = moveLegacyRepoConfig(dir, { create: (from, to) => { linkSync(from, to); rmSync(from); } });
+		const result = moveLegacyRepoConfig(dir, { unlink: () => { throw Object.assign(new Error('EBUSY: resource busy or locked'), { code: 'EBUSY' }); } });
 		assert.equal(result.status, 'failed');
 		assert.match(result.note ?? '', /was created but .*github\.json could not be removed/);
-		assert.deepEqual(readFileSync(join(dir, 'repo-config.json')), bytes, 'the new file holds the legacy content');
+		assert.equal(readFileSync(join(dir, 'repo-config.json'), 'utf8'), '{"legacy":true}');
+		assert.equal(readFileSync(join(dir, 'github.json'), 'utf8'), '{"legacy":true}');
 	});
 });
 
-test('repo-config.test.ts: where hard links are not supported the move falls back to an exclusive copy that never replaces repo-config.json and removes a partial or wrong copy, and an interrupted move leaves both names untouched', () => {
+/** What an editor that saves atomically does to a file: writes a temporary file and renames it over the path. */
+function replaceAtomically(path: string, content: string): void {
+	writeFileSync(`${path}.editor-tmp`, content);
+	renameSync(`${path}.editor-tmp`, path);
+}
+
+test('repo-config.test.ts: the old name is removed only if it is still the file that was moved, so a newer github.json that replaced it is kept', () => {
 	const noHardLinks = (): never => { throw Object.assign(new Error('EPERM: operation not permitted, link'), { code: 'EPERM' }); };
-	// a volume without hard links (FAT, exFAT, some shares): the new name is created by an exclusive copy, the old one removed
+	for (const viaCopy of [false, true]) {
+		const label = viaCopy ? 'copy fallback' : 'hard link';
+		inTempDir(dir => {
+			writeFileSync(join(dir, 'github.json'), '{"older":true}');
+			const result = moveLegacyRepoConfig(dir, {
+				...(viaCopy ? { link: noHardLinks } : {}),
+				// an editor saves a newer github.json between publishing the new name and removing the old one
+				beforeRemoveSource: () => replaceAtomically(join(dir, 'github.json'), '{"newer":true,"longer":"content"}'),
+			});
+			assert.equal(result.status, 'both-exist', label);
+			assert.match(result.note ?? '', /changed while it was being moved and was left in place/, label);
+			assert.equal(readFileSync(join(dir, 'github.json'), 'utf8'), '{"newer":true,"longer":"content"}', `${label}: the newer legacy settings are kept`);
+			assert.equal(readFileSync(join(dir, 'repo-config.json'), 'utf8'), '{"older":true}', `${label}: repo-config.json holds what was moved`);
+		});
+	}
+	// an in-place edit of the same size and a later time changes the identity too
+	inTempDir(dir => {
+		writeFileSync(join(dir, 'github.json'), '{"a":1}');
+		const result = moveLegacyRepoConfig(dir, { beforeRemoveSource: () => { const at = new Date(Date.now() + 5000); writeFileSync(join(dir, 'github.json'), '{"a":2}'); utimesSync(join(dir, 'github.json'), at, at); } });
+		assert.equal(result.status, 'both-exist');
+		assert.equal(readFileSync(join(dir, 'github.json'), 'utf8'), '{"a":2}');
+	});
+	// the old name already gone is not a failure
+	inTempDir(dir => {
+		writeFileSync(join(dir, 'github.json'), '{"legacy":true}');
+		const result = moveLegacyRepoConfig(dir, { beforeRemoveSource: () => rmSync(join(dir, 'github.json')) });
+		assert.equal(result.status, 'moved');
+		assert.equal(readFileSync(join(dir, 'repo-config.json'), 'utf8'), '{"legacy":true}');
+	});
+});
+
+test('repo-config.test.ts: where hard links are not supported the move publishes a checked copy by rename, never writes into repo-config.json, and removes only its own temporary file', () => {
+	const noHardLinks = (): never => { throw Object.assign(new Error('EPERM: operation not permitted, link'), { code: 'EPERM' }); };
+	const leftovers = (dir: string): string[] => readdirSync(dir).filter(n => n.endsWith('.tmp'));
+	// a volume without hard links (FAT, exFAT, some shares): a complete copy is renamed into place and the old name removed
 	inTempDir(dir => {
 		const bytes = Buffer.from('{"repos":{"/a":{"owner":"o"}}}\r\n', 'utf8');
 		writeFileSync(join(dir, 'github.json'), bytes);
@@ -133,45 +173,78 @@ test('repo-config.test.ts: where hard links are not supported the move falls bac
 		assert.deepEqual(readFileSync(join(dir, 'repo-config.json')), bytes);
 		assert.equal(lstatSync(join(dir, 'repo-config.json')).isFile(), true);
 		assert.equal(existsSync(join(dir, 'github.json')), false);
+		assert.deepEqual(leftovers(dir), [], 'no temporary file is left');
 	});
-	// the copy refuses to replace a repo-config.json that appears first, whether before the link attempt or during it
-	for (const interleave of ['before', 'during'] as const) {
-		inTempDir(dir => {
-			writeFileSync(join(dir, 'github.json'), '{"legacy":true}');
-			const newer = (): void => writeFileSync(join(dir, 'repo-config.json'), '{"newer":true}');
-			const result = moveLegacyRepoConfig(dir, interleave === 'before'
-				? { link: noHardLinks, beforeCreate: newer }
-				: { link: () => { newer(); return noHardLinks(); } });
-			assert.equal(result.status, 'both-exist', interleave);
-			assert.equal(readFileSync(join(dir, 'repo-config.json'), 'utf8'), '{"newer":true}', `${interleave}: the newer settings are not replaced`);
-			assert.equal(readFileSync(join(dir, 'github.json'), 'utf8'), '{"legacy":true}', `${interleave}: the legacy file stays`);
-		});
-	}
-	// a copy that fails part way, or does not match, is removed again; the old file stays
+	// a copy that fails part way or does not match is discarded: repo-config.json is never created, the old file stays
 	inTempDir(dir => {
 		writeFileSync(join(dir, 'github.json'), '{"legacy":true}');
-		const partial = moveLegacyRepoConfig(dir, { link: noHardLinks, copy: (_from, to) => { writeFileSync(to, '{"leg'); throw Object.assign(new Error('ENOSPC: no space left on device'), { code: 'ENOSPC' }); } });
+		const partial = moveLegacyRepoConfig(dir, { link: noHardLinks, copy: (_from, tmp) => { writeFileSync(tmp, '{"leg'); throw Object.assign(new Error('ENOSPC: no space left on device'), { code: 'ENOSPC' }); } });
 		assert.equal(partial.status, 'failed');
 		assert.match(partial.note ?? '', /ENOSPC/);
-		assert.equal(existsSync(join(dir, 'repo-config.json')), false, 'the partial copy is removed');
-		assert.equal(readFileSync(join(dir, 'github.json'), 'utf8'), '{"legacy":true}');
-		const wrong = moveLegacyRepoConfig(dir, { link: noHardLinks, copy: (_from, to) => writeFileSync(to, '{"other":1}') });
+		const wrong = moveLegacyRepoConfig(dir, { link: noHardLinks, copy: (_from, tmp) => writeFileSync(tmp, '{"other":1}') });
 		assert.equal(wrong.status, 'failed');
 		assert.match(wrong.note ?? '', /does not match/);
-		assert.equal(existsSync(join(dir, 'repo-config.json')), false, 'a wrong copy is removed');
-		assert.equal(readFileSync(join(dir, 'github.json'), 'utf8'), '{"legacy":true}');
+		for (const label of ['partial', 'wrong']) {
+			assert.equal(existsSync(join(dir, 'repo-config.json')), false, `${label}: repo-config.json is never created`);
+			assert.equal(readFileSync(join(dir, 'github.json'), 'utf8'), '{"legacy":true}', `${label}: the old file stays`);
+		}
+		assert.deepEqual(leftovers(dir), [], 'only this call\'s own temporary files were made, and they are removed');
 	});
-	// an interrupted move (both names, same bytes) is left alone by the next boot, like any other case of both names: the daemon
-	// uses repo-config.json and the stale github.json is harmless
-	for (const newer of ['{"same":true}', '{"same":true,"edited":1}']) {
+	// a repo-config.json that another process creates is never replaced and never removed, wherever it appears
+	const newer = (dir: string): (() => void) => () => writeFileSync(join(dir, 'repo-config.json'), '{"newer":true}');
+	const cases: Array<[string, (dir: string) => Parameters<typeof moveLegacyRepoConfig>[1]]> = [
+		['before the link attempt', dir => ({ link: noHardLinks, beforeCreate: newer(dir) })],
+		['during the link attempt', dir => ({ link: () => { newer(dir)(); return noHardLinks(); } })],
+		['after the copy was checked, before it is published', dir => ({ link: noHardLinks, beforePublish: newer(dir) })],
+		['and the copy then fails', dir => ({ link: () => { newer(dir)(); return noHardLinks(); }, copy: () => { throw Object.assign(new Error('ENOSPC'), { code: 'ENOSPC' }); } })],
+		['and the copy does not match', dir => ({ link: () => { newer(dir)(); return noHardLinks(); }, copy: (_from, tmp) => writeFileSync(tmp, '{"other":1}') })],
+	];
+	for (const [when, seams] of cases) {
 		inTempDir(dir => {
-			writeFileSync(join(dir, 'github.json'), '{"same":true}');
-			writeFileSync(join(dir, 'repo-config.json'), newer);
-			assert.equal(moveLegacyRepoConfig(dir).status, 'both-exist');
-			assert.equal(readFileSync(join(dir, 'github.json'), 'utf8'), '{"same":true}');
-			assert.equal(readFileSync(join(dir, 'repo-config.json'), 'utf8'), newer);
+			writeFileSync(join(dir, 'github.json'), '{"legacy":true}');
+			const result = moveLegacyRepoConfig(dir, seams(dir));
+			assert.ok(result.status === 'both-exist' || result.status === 'failed', `${when}: ${result.status}`);
+			assert.equal(readFileSync(join(dir, 'repo-config.json'), 'utf8'), '{"newer":true}', `${when}: the newer settings are neither replaced nor removed`);
+			assert.equal(readFileSync(join(dir, 'github.json'), 'utf8'), '{"legacy":true}', `${when}: the legacy file stays`);
+			assert.deepEqual(leftovers(dir), [], `${when}: no temporary file is left`);
 		});
 	}
+	// both names, whatever they hold, are left alone by the next boot
+	for (const current of ['{"same":true}', '{"same":true,"edited":1}']) {
+		inTempDir(dir => {
+			writeFileSync(join(dir, 'github.json'), '{"same":true}');
+			writeFileSync(join(dir, 'repo-config.json'), current);
+			assert.equal(moveLegacyRepoConfig(dir).status, 'both-exist');
+			assert.equal(readFileSync(join(dir, 'github.json'), 'utf8'), '{"same":true}');
+			assert.equal(readFileSync(join(dir, 'repo-config.json'), 'utf8'), current);
+		});
+	}
+});
+
+test('repo-config.test.ts: a move killed part way through the copy leaves no repo-config.json, and the next boot completes it and sweeps the dead process\'s temporary file', () => {
+	inTempDir(dir => {
+		const legacy = '{"repos":{"/a":{"owner":"o","repo":"r"}},"note":"long enough that a partial copy is visibly shorter"}';
+		writeFileSync(join(dir, 'github.json'), legacy);
+		const script = join(dir, 'kill-during-copy.mts');
+		writeFileSync(script, `
+			import { writeFileSync } from 'node:fs';
+			import { moveLegacyRepoConfig } from ${JSON.stringify(pathToFileURL(fileURLToPath(new URL('../repo-config-store.ts', import.meta.url))).href)};
+			moveLegacyRepoConfig(${JSON.stringify(dir)}, {
+				link: () => { throw Object.assign(new Error('EPERM'), { code: 'EPERM' }); },
+				copy: (_from, tmp) => { writeFileSync(tmp, '{"repos":{"/a"'); process.kill(process.pid, 'SIGKILL'); },
+			});
+		`);
+		const child = spawnSync(process.execPath, ['--import', 'tsx', script], { cwd: fileURLToPath(new URL('../../../../', import.meta.url)), encoding: 'utf8', timeout: 60000 });
+		assert.equal(child.signal, 'SIGKILL', `the child was killed during the copy: ${child.stderr}`);
+		assert.equal(existsSync(join(dir, 'repo-config.json')), false, 'no partial repo-config.json was published');
+		assert.equal(readFileSync(join(dir, 'github.json'), 'utf8'), legacy, 'the legacy settings are intact');
+		assert.equal(readdirSync(dir).filter(n => n.endsWith('.tmp')).length, 1, "the dead process's partial temporary file is still there");
+		const next = moveLegacyRepoConfig(dir);
+		assert.equal(next.status, 'moved');
+		assert.equal(readFileSync(join(dir, 'repo-config.json'), 'utf8'), legacy, 'the next boot publishes the complete settings');
+		assert.equal(existsSync(join(dir, 'github.json')), false);
+		assert.deepEqual(readdirSync(dir).filter(n => n.endsWith('.tmp')), [], "the dead process's temporary file was swept");
+	});
 });
 
 test('repo-config.test.ts: a second move after a successful one returns nothing-to-move, and a symbolic-link github.json is moved as a link', () => {

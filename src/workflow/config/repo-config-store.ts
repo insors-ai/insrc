@@ -16,7 +16,7 @@
  */
 
 import { createHash } from 'node:crypto';
-import { constants, copyFileSync, linkSync, lstatSync, readFileSync, readlinkSync, renameSync, rmSync, statSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs';
+import { closeSync, constants, copyFileSync, fsyncSync, linkSync, lstatSync, openSync, readdirSync, readFileSync, readlinkSync, renameSync, rmSync, statSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { getLogger } from '../../shared/logger.js';
@@ -260,81 +260,135 @@ function sameRegularContent(a: string, b: string): boolean {
 	return sa.isFile() && sb.isFile() && sa.size === sb.size && readFileSync(a).equals(readFileSync(b));
 }
 
+/** What identifies a file as the one that was looked at: an atomic replacement changes the inode, an edit the size or time. */
+interface FileIdentity { readonly dev: bigint; readonly ino: bigint; readonly size: bigint; readonly mtimeNs: bigint }
+
+function identityOf(path: string): FileIdentity {
+	const st = lstatSync(path, { bigint: true });
+	return { dev: st.dev, ino: st.ino, size: st.size, mtimeNs: st.mtimeNs };
+}
+
+function sameIdentity(a: FileIdentity, b: FileIdentity): boolean {
+	return a.dev === b.dev && a.ino === b.ino && a.size === b.size && a.mtimeNs === b.mtimeNs;
+}
+
+const TEMP_NAME = /^\.repo-config\.json\.(\d+)\.[a-z0-9]+\.tmp$/;
+
+/** Removes temporary copies an earlier, killed run of this move left (named for its process id, which is no longer running). */
+function sweepStaleTemps(dir: string): void {
+	try {
+		for (const name of readdirSync(dir)) {
+			const pid = TEMP_NAME.exec(name)?.[1];
+			if (pid === undefined || Number(pid) === process.pid) continue;
+			try { process.kill(Number(pid), 0); continue; } catch (e) { if ((e as NodeJS.ErrnoException).code !== 'ESRCH') continue; }
+			rmSync(join(dir, name), { force: true });
+		}
+	} catch { /* the directory cannot be listed; a leftover temporary copy is harmless */ }
+}
+
 /**
- * Creates `to` as a new name for the file at `from`, and fails with EEXIST, changing nothing, when `to` already exists.
- * `rename` replaces its destination on every platform (on Windows too), so it cannot be the move. A hard link is created
- * exclusively by the file system, which is the no-replace step this needs. A symbolic link is recreated as one (it needs
- * the privilege to make links on Windows, and is reported as failed without it). Where hard links are not supported
- * (FAT and exFAT volumes, some network shares), or fail for another reason, the new name is created by an exclusive copy,
- * which also refuses an existing destination; the copy is checked against the original, and a partial or wrong copy that
- * this call made is removed again.
+ * Where hard links are not supported (FAT and exFAT volumes, some shares): copies `from` into a temporary file of this call
+ * in `dir`, flushes and checks it against the original, and only then renames it to `to`, so `to` never holds partial
+ * content, even if the process is killed part way. Only that temporary file is ever removed; `to` is never deleted here.
+ * Returns false, with `to` untouched, when `to` appeared meanwhile. No portable rename refuses an existing destination, so
+ * this is a presence check immediately before an atomic rename, with a window of the length of one call; it is used only on
+ * volumes where the exclusive hard link above is not available.
  */
-function createExclusively(from: string, to: string, hooks: { readonly link: (from: string, to: string) => void; readonly copy: (from: string, to: string) => void }): void {
-	if (lstatSync(from).isSymbolicLink()) {
-		symlinkSync(readlinkSync(from), to);
-		return;
-	}
+function publishByCopy(
+	dir: string, from: string, to: string, before: FileIdentity,
+	hooks: { readonly copy: (from: string, to: string) => void; readonly beforePublish?: (() => void) | undefined },
+): boolean {
+	const tmp = join(dir, `.repo-config.json.${process.pid}.${Math.random().toString(36).slice(2, 10)}.tmp`);
 	try {
-		hooks.link(from, to);
-		return;
+		hooks.copy(from, tmp);
+		const fd = openSync(tmp, 'r+');
+		try { fsyncSync(fd); } finally { closeSync(fd); }
+		if (!sameRegularContent(from, tmp)) throw new Error(`the copy at ${tmp} does not match ${from}`);
+		if (!sameIdentity(before, identityOf(from))) throw new Error(`${from} changed while it was being copied`);
+		hooks.beforePublish?.();
+		if (present(to)) { rmSync(tmp, { force: true }); return false; }
+		renameSync(tmp, to);
+		return true;
 	} catch (e) {
-		if ((e as NodeJS.ErrnoException).code === 'EEXIST') throw e;
-	}
-	try {
-		hooks.copy(from, to);
-		if (!sameRegularContent(from, to)) throw new Error(`the copy at ${to} does not match ${from}`);
-	} catch (e) {
-		if ((e as NodeJS.ErrnoException).code !== 'EEXIST') rmSync(to, { force: true });
+		rmSync(tmp, { force: true });
 		throw e;
 	}
 }
 
 /**
  * Moves the settings file from its old name, `github.json`, to `repo-config.json` in `dir`, once, at daemon boot, before
- * anything reads it. The new name is created exclusively and then the old one is removed, so an existing `repo-config.json`
- * is never replaced, however another process interleaves: when one appears at any moment before the new name is created,
- * neither file is changed and the result is `both-exist`. Nothing is moved when there is no old file. A failure is the
- * `failed` result and the old file stays. Should the old name not be removable (Windows refuses to delete a file another
- * program has open), or the process die between the two steps, both files exist with the same content; the next boot
- * reports `both-exist` and touches neither, and the daemon uses `repo-config.json`, so a leftover `github.json` is harmless
- * and can be deleted by hand. Never throws.
+ * anything reads it. The new name is published without replacing an existing file: a hard link, which the file system
+ * refuses when the destination exists, or a symbolic link recreated as one (on Windows that needs the privilege to create
+ * links); where hard links are unavailable, a checked copy renamed into place (see {@link publishByCopy}). `rename` alone
+ * replaces its destination on every platform, Windows included, so it is not the move. Then the old name is removed, but only
+ * if it is still the file that was published: an editor that atomically replaced it meanwhile keeps its newer file and both
+ * names stay. When a `repo-config.json` appears at any moment before it is published, neither file is changed and the
+ * result is `both-exist`. Nothing is moved when there is no old file. A failure is the `failed` result. Should the old name
+ * not be removable (Windows refuses to delete a file another program has open), or the process die between the steps, both
+ * files exist with the same content; the next boot reports `both-exist` and touches neither, and the daemon uses
+ * `repo-config.json`, so the leftover `github.json` is harmless and can be deleted by hand. Never throws.
  */
 export function moveLegacyRepoConfig(
 	dir: string = PATHS.insrc,
 	seams: {
-		/** Replaces the whole exclusive create, to fail it in a test. */
-		readonly create?: (from: string, to: string) => void;
-		/** Replaces the hard link step, to make a file system without hard links in a test. */
+		/** Replaces the hard link step, to make a file system without hard links, or to fail it, in a test. */
 		readonly link?: (from: string, to: string) => void;
-		/** Replaces the exclusive copy fallback, to fail it in a test. */
-		readonly copy?: (from: string, to: string) => void;
-		/** Runs between the presence checks and the create, to interleave another process in a test. */
+		/** Replaces the copy into the temporary file, to fail it or leave it partial in a test. */
+		readonly copy?: (from: string, tmp: string) => void;
+		/** Replaces removing the old name, to fail it in a test. */
+		readonly unlink?: (path: string) => void;
+		/** Runs between the presence checks and publishing, to interleave another process in a test. */
 		readonly beforeCreate?: () => void;
+		/** Runs after a copy was checked and before it is renamed into place. */
+		readonly beforePublish?: () => void;
+		/** Runs after the new name was published and before the old name is removed. */
+		readonly beforeRemoveSource?: () => void;
 	} = {},
 ): LegacyRepoConfigMove {
 	const from = join(dir, 'github.json');
 	const to = join(dir, 'repo-config.json');
-	const hooks = {
-		link: seams.link ?? linkSync,
-		copy: seams.copy ?? ((a: string, b: string): void => copyFileSync(a, b, constants.COPYFILE_EXCL)),
-	};
-	const bothExist = (): LegacyRepoConfigMove => {
-		const note = `${from} and ${to} both exist; neither was changed and ${to} is the file in use`;
+	const bothExist = (why?: string): LegacyRepoConfigMove => {
+		const note = `${from} and ${to} both exist${why === undefined ? '' : ` (${why})`}; neither was changed and ${to} is the file in use`;
 		log.warn({ from, to }, 'old and new settings files both exist');
 		return { status: 'both-exist', note };
 	};
 	try {
 		if (!present(from)) return { status: 'nothing-to-move' };
+		sweepStaleTemps(dir);
 		if (present(to)) return bothExist();
+		const before = identityOf(from);
 		seams.beforeCreate?.();
 		try {
-			(seams.create ?? ((a: string, b: string) => createExclusively(a, b, hooks)))(from, to);
+			if (lstatSync(from).isSymbolicLink()) {
+				symlinkSync(readlinkSync(from), to);
+			} else {
+				try {
+					(seams.link ?? linkSync)(from, to);
+				} catch (e) {
+					if ((e as NodeJS.ErrnoException).code === 'EEXIST') throw e;
+					const published = publishByCopy(dir, from, to, before, {
+						copy: seams.copy ?? ((a: string, b: string): void => copyFileSync(a, b, constants.COPYFILE_EXCL)),
+						beforePublish: seams.beforePublish,
+					});
+					if (!published) return bothExist();
+				}
+			}
 		} catch (e) {
 			if ((e as NodeJS.ErrnoException).code === 'EEXIST') return bothExist();
 			throw e;
 		}
+		seams.beforeRemoveSource?.();
+		let stillSource: boolean;
 		try {
-			unlinkSync(from);
+			stillSource = sameIdentity(before, identityOf(from));
+		} catch (e) {
+			if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw e;
+			log.info({ from, to }, 'moved the settings file to its new name; the old name was already gone');
+			return { status: 'moved' };
+		}
+		if (!stillSource) return bothExist(`${from} changed while it was being moved and was left in place`);
+		try {
+			(seams.unlink ?? unlinkSync)(from);
 		} catch (e) {
 			const note = `${to} was created but ${from} could not be removed (${e instanceof Error ? e.message : String(e)}); both exist with the same content; the daemon uses the new one and the old one can be deleted`;
 			log.warn({ from, to }, 'the settings file was created under its new name but the old name could not be removed');

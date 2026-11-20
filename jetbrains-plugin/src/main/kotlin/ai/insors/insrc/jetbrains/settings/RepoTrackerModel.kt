@@ -4,6 +4,7 @@ import ai.insors.insrc.jetbrains.daemon.PolicyRowsDto
 import ai.insors.insrc.jetbrains.daemon.RepoFieldDto
 import ai.insors.insrc.jetbrains.daemon.RepoSettingsResult
 import ai.insors.insrc.jetbrains.daemon.ResolvedTargetDto
+import ai.insors.insrc.jetbrains.daemon.SaveResult
 import ai.insors.insrc.jetbrains.daemon.SigninDto
 
 /**
@@ -21,6 +22,10 @@ data class TrackerRow(
     val current: String,
     val editable: Boolean,
     val note: String?,
+    /** The section the row belongs to: the daemon's `group` (`Tracker` or `Build`). */
+    val group: String = "Tracker",
+    /** For an unset Build row of a repo with no commands: the typical value of its project type, shown as the field's placeholder. */
+    val placeholder: String? = null,
 )
 
 /** One pending tracker edit ready to write: a null [value] clears the row. */
@@ -69,11 +74,27 @@ class RepoTrackerModel(
                 "status" -> if (f.key == "signin") signinText(loaded.signin) else targetText(loaded.resolved)
                 else -> policyText(loaded.policy, f.key)
             }
+            val setup = loaded.buildSetup
+            val placeholder = if (f.group == "Build" && f.kind == "local" && own == null && setup != null && setup.commandsSource == "none") {
+                setup.suggestion[f.key]
+            } else {
+                null
+            }
             TrackerRow(
                 key = f.key, label = f.label, kind = f.kind, type = f.type,
                 value = value, current = current, editable = f.kind == "local", note = f.note,
+                group = f.group, placeholder = placeholder,
             )
         }
+    }
+
+    /**
+     * The typical build commands offered for a repo, keyed by repo setting key, or null. Offered only when the
+     * repo's commands source is `none` and its project type has a suggestion; never for a repo that has commands.
+     */
+    fun suggestion(repoPath: String): Map<String, String>? {
+        val setup = (results[repoPath] as? RepoSettingsResult.Loaded)?.settings?.buildSetup ?: return null
+        return if (setup.commandsSource == "none" && setup.suggestion.isNotEmpty()) setup.suggestion else null
     }
 
     /**
@@ -108,6 +129,32 @@ class RepoTrackerModel(
     }
 
     companion object {
+        /** The keys the "use suggested" action writes, in write order. */
+        private val SUGGESTED_KEYS = listOf("typecheckCommand", "testCommand", "resultFormat")
+
+        /**
+         * Writes the suggested values one key at a time through [write] (`repo.settings.set`). When a write is
+         * refused, the keys already written are cleared again so no lone command is left. Returns null when all
+         * were written, else the reason (with the keys it could not clear). Never throws for a refused write.
+         */
+        fun writeSuggested(suggestion: Map<String, String>, write: (key: String, value: String?) -> SaveResult): String? {
+            val written = mutableListOf<String>()
+            for (key in SUGGESTED_KEYS) {
+                val value = suggestion[key] ?: continue
+                val failure = when (val r = write(key, value)) {
+                    is SaveResult.Saved -> { written.add(key); null }
+                    is SaveResult.Rejected -> r.message
+                    is SaveResult.Unavailable -> r.reason
+                }
+                if (failure != null) {
+                    val stuck = written.reversed().filter { write(it, null) !is SaveResult.Saved }
+                    val tail = if (stuck.isEmpty()) "" else "; could not clear ${stuck.joinToString(", ")}"
+                    return "$failure (suggested commands were not applied$tail)"
+                }
+            }
+            return null
+        }
+
         fun signinText(s: SigninDto): String {
             if (s.state == "signed-in") return "signed in as ${s.login ?: "?"}"
             val reason = s.reason

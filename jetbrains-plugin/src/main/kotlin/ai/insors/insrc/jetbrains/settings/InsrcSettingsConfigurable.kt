@@ -7,6 +7,7 @@ import ai.insors.insrc.jetbrains.daemon.ModelDefinitionsResult
 import ai.insors.insrc.jetbrains.daemon.PerRepoOverridesResult
 import ai.insors.insrc.jetbrains.daemon.PerRoleOverridesResult
 import ai.insors.insrc.jetbrains.daemon.RegisteredReposResult
+import ai.insors.insrc.jetbrains.daemon.RepoSettingsResult
 import ai.insors.insrc.jetbrains.daemon.SaveResult
 import ai.insors.insrc.jetbrains.daemon.SettingsCatalogResult
 import ai.insors.insrc.jetbrains.lifecycle.DaemonLifecycleCommandRunner
@@ -97,10 +98,14 @@ class InsrcSettingsConfigurable : Configurable {
             // Epic ce99b72065d03b1b s7: the daemon's model definitions — the only source of the
             // tiers' runner, model and effort choices — read off the EDT with the rest.
             val definitions = gateway.modelDefinitions()
+            // Story s3: each registered repo's tracker and build settings, read here on the pooled thread so no
+            // socket round trip runs on the EDT. A failed repo keeps its own reason.
+            val repoSettings: Map<String, RepoSettingsResult> =
+                if (registered is RegisteredReposResult.Loaded) registered.repos.associateWith { gateway.readRepoSettings(it) } else emptyMap()
             ApplicationManager.getApplication().invokeLater({
                 // Only render if this component is still the live page.
                 if (root === scroll) {
-                    scroll.setViewportView(renderBody(catalog, overrides, perRepo, registered, definitions, gateway))
+                    scroll.setViewportView(renderBody(catalog, overrides, perRepo, registered, definitions, repoSettings, gateway))
                     scroll.revalidate()
                     scroll.repaint()
                 }
@@ -220,6 +225,7 @@ class InsrcSettingsConfigurable : Configurable {
         perRepo: PerRepoOverridesResult,
         registered: RegisteredReposResult,
         definitions: ModelDefinitionsResult,
+        repoSettings: Map<String, RepoSettingsResult>,
         gateway: DaemonGatewayService,
     ): JComponent = when (result) {
         is SettingsCatalogResult.Unavailable -> {
@@ -265,6 +271,8 @@ class InsrcSettingsConfigurable : Configurable {
                     PerRepoSection(
                         PerRepoOverridesModel(registered.repos, catalog.roles, catalog.tierNames, perRepo.overrides),
                         gateway,
+                        fullCatalog.repoFields,
+                        repoSettings,
                     ),
                 )
             } else {

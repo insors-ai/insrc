@@ -1,0 +1,66 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1795149390791-82uise",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-20T04:36:30.891Z",
+    "epicCreatedAt": "2026-11-20T04:36:30.891Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 100,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "1e2052060dec3efb",
+    "epicSlug": "synchronize-model-settings-catalog-contract-tests",
+    "standalone": true,
+    "magnitude": "small",
+    "kind": "defect",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "d2dad9c48dab99d50e299439ed0d7bc41ab21188632fea88aa07a19e06291408",
+        "at": "2026-11-20T04:36:30.900Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Synchronize model settings and catalog contract tests",
+    "reproduction": "Manifest/catalog tests and the clean bundle check find missing build.resultFormat. indexer.docRelations defaults to mid in the extension while the taxonomy says cheap. The retired-role test rejects tools.convertEscalate despite nativeRoleKey deliberately mapping tools.convert.escalate to that native alias. The model literal scan also flags the documented local-provider guard.",
+    "rootCause": "The committed extension settings diverged from the catalog, and some assertions compare native aliases to raw role IDs or assume an outdated model-owner exclusion policy. The audit established the alias mapping and the missing/defaulted rows; the provider guard's ownership policy must be verified rather than removed blindly.",
+    "fixIntent": "Synchronize extension settings with authoritative catalog/taxonomy values, test native aliases through the supported mapping, and reconcile the doc-relations model guard with its explicit ownership policy. Acceptance: manifest checks, idempotent sync, clean compile/bundle key-map coverage, per-role defaults and model policy scans pass while preserving core-floor accuracy and local-only embeddings."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "docs/plans/failing-tests-2026-11-20.md"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/config/role-taxonomy.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "vscode-plugin/src/config/key-map.ts"
+    }
+  ]
+}

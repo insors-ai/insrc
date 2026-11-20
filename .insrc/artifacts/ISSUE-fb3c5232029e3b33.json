@@ -1,0 +1,66 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1795149466462-m0d6kz",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-20T04:37:46.606Z",
+    "epicCreatedAt": "2026-11-20T04:37:46.606Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 144,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "fb3c5232029e3b33",
+    "epicSlug": "requalify-connection-management-ownership-release-evidence",
+    "standalone": true,
+    "magnitude": "sized",
+    "kind": "defect",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "d7388770965d2d6f98ec5f07b1bafe4d68a353a4b2dedfc4879559f3791a6775",
+        "at": "2026-11-20T04:37:46.613Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Requalify connection-management ownership and release evidence",
+    "reproduction": "Source/module-state inventories retain removed review/budget entries and omit changed structured-schema state. Connection release checks reject changed method-class and ipc-client hashes; a synthetic positive release-verifier control fails. These failures block claims that the current source and compiled bundle satisfy their recorded proof.",
+    "rootCause": "Recorded reviewed inventories and release fingerprints no longer describe the present source/module state. Some failures may also depend on incomplete compiled output from overlapping builds, so a clean isolated build is a prerequisite before classifying the remaining evidence gaps.",
+    "fixIntent": "After runtime, registry and retirement fixes, independently re-audit changed boundaries, classify every real mutable state owner and regenerate source/compiled evidence from one clean build. Acceptance: verifier positive controls pass, stale/mixed/forged controls still fail closed, every changed ownership boundary has actual review evidence, and unavailable external prerequisites remain explicitly pending. Never refresh digests, mark proof verified or enable release merely to turn tests green."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "docs/plans/failing-tests-2026-11-20.md"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/daemon/db/management-enablement.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/daemon/handler-runtime.ts"
+    }
+  ]
+}

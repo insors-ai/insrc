@@ -1,0 +1,66 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1795149390614-8t2csl",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-20T04:36:30.764Z",
+    "epicCreatedAt": "2026-11-20T04:36:30.764Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 150,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "807fa9e8fb678f4b",
+    "epicSlug": "reconcile-daemon-rpc-registration-audit-coverage",
+    "standalone": true,
+    "magnitude": "sized",
+    "kind": "defect",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "24195391f0a984395591ab21370e22b93616a97932dc7798f5aa9d4c883fb9d5",
+        "at": "2026-11-20T04:36:30.772Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Reconcile daemon RPC registration and audit coverage",
+    "reproduction": "Handler-runtime, repo-call-audit/table, repo-gate-dispatch, method-class and daemon-doc-repo-table tests disagree with current handlers. Examples include daemon.qualificationState and design-review-step.cancel missing reviewed classification, newer cancellation keys absent from snapshots, and a fixed minimum count of modifying methods.",
+    "rootCause": "Several independent literal inventories and documentation tables were not reconciled with additions and review retirement. Some tests rely on historical counts instead of checking the actual supported handler set; classification omissions must still be assessed as real scoping/routing gaps.",
+    "fixIntent": "Make every registered RPC/stream/step phase have an explicit correct classification, repository-scoping rule and documented contract, then validate exact coverage against constructed handler tables. Preserve refusal behavior and ownership boundaries; do not simply whitelist unknown methods or reduce assertions to counts. Acceptance: runtime, routing, audit and documentation key sets agree with no stale or unclassified entry. Review endpoint behavioral replacement remains in batch 04."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "docs/plans/failing-tests-2026-11-20.md"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/daemon/handler-runtime.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/daemon/repo-call-gate.ts"
+    }
+  ]
+}

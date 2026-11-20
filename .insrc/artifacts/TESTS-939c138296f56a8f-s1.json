@@ -1,0 +1,68 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "ec2fd8305e7d97a7c430eada5a153c1bcc4ef067359872a826e353f60aef9199",
+        "at": "2026-11-20T07:28:19.923Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "939c138296f56a8f",
+    "storyId": "s1",
+    "createdAt": "2026-11-20T07:28:19.911Z",
+    "updatedAt": "2026-11-20T07:28:19.911Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-20T04:36:15.364Z",
+    "epicSlug": "sanitize-temporary-errors-before-inspecting-untrusted",
+    "revision": 1
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "370a617f8",
+        "ranAt": "2026-11-20T07:28:19.911Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/agent/providers/__tests__/structured-retry-vibe-refusal.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/agent/providers/__tests__/structured-retry-vibe-refusal.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/structured-retry-vibe-refusal.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 489,
+            "titles": [
+              {
+                "title": "Saved structured retry preserves Vibe refusal identity and never retries",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

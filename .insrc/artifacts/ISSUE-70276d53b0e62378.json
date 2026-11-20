@@ -1,0 +1,61 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1795149390911-hmkmke",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-20T04:36:31.019Z",
+    "epicCreatedAt": "2026-11-20T04:36:31.019Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 107,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "70276d53b0e62378",
+    "epicSlug": "update-chat-theme-tests-current-shell",
+    "standalone": true,
+    "magnitude": "small",
+    "kind": "defect",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "ce5d519efb1cfc85529b6f0cf95c417f9e2da9e8dfe66fca86536571a6e802cb",
+        "at": "2026-11-20T04:36:31.026Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Update chat theme tests for the current shell structure",
+    "reproduction": "Six chat-theme assertions expect two style blocks, select the last as the layout stylesheet, and require the old exact history-chip markup. The shell now has three blocks and a new-chat button before the history chip, so later root/body/selector assertions inspect the wrong source.",
+    "rootCause": "The tests identify stylesheet ownership by historical position and freeze markup from before the intentional chrome addition. Their structural assumptions no longer match the rendered shell; the audit did not establish a visual regression.",
+    "fixIntent": "Restore accurate coverage of stylesheet ownership, token-only colors, selectors, CSP and history/new-chat behavior against the current shell. Acceptance: all six affected assertions and positive/negative theme controls pass, and any actual visual discrepancy discovered is fixed within the existing design rather than hidden by weaker snapshots. Keep general probe-process lifetime in batch 01."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "docs/plans/failing-tests-2026-11-20.md"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-panel.ts"
+    }
+  ]
+}

@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1795149375150-skko37",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-20T04:36:15.364Z",
+    "epicCreatedAt": "2026-11-20T04:36:15.364Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 211,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "939c138296f56a8f",
+    "epicSlug": "sanitize-temporary-errors-before-inspecting-untrusted",
+    "standalone": true,
+    "magnitude": "small",
+    "kind": "defect",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9ad33d5b140fb10bf8136a83993421546f2b44b69c9ce348ee72df078a957cb8",
+        "at": "2026-11-20T04:36:15.372Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T07:23:13.104Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "parentRef": {
+      "epicHash": "939c138296f56a8f",
+      "slug": "EPIC-939c138296f56a8f"
+    }
+  },
+  "body": {
+    "title": "Sanitize temporary errors before inspecting untrusted prototypes",
+    "reproduction": "The provider-diagnostics fixture throws a proxy whose property/prototype traps throw a private canary. It expects unsupported-temporary but gets an unclassified error. The rpc-diagnostics fixture similarly reports CM_PRIVATE_RAW_GETTER from failedOutput rather than a safe temporary failure. Both are captured in the failure audit.",
+    "rootCause": "withStructuredRetry checks instanceof VibeTurnError before its session-memory safe conversion, and failedOutput checks instanceof LookupFailedError before its temporary-mode branch. instanceof can invoke getPrototypeOf on an untrusted proxy, bypassing the intended safe error path.",
+    "fixIntent": "Ensure temporary requests produce safe typed failures without touching untrusted error properties or prototypes, preserving saved-mode diagnostics, nonretryable refusals and authority checks. Acceptance: provider and RPC hostile-proxy fixtures pass, no private canary reaches logs/envelopes, and saved positive controls retain normal diagnostics. Scope excludes general test cleanup and reviewed-evidence regeneration."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "docs/plans/failing-tests-2026-11-20.md"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/agent/providers/structured-output.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/analyze/explore/executor.ts"
+    }
+  ]
+}

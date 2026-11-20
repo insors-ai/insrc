@@ -1,0 +1,61 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1795149462912-o7p4e5",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-20T04:37:43.059Z",
+    "epicCreatedAt": "2026-11-20T04:37:43.059Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 147,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "db9c6369d10fdfda",
+    "epicSlug": "make-backend-failure-assertions-match-public",
+    "standalone": true,
+    "magnitude": "small",
+    "kind": "defect",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "2e1196a4935b8ee99e0a584dee6b6165152d0580cd800cf106076b8ea73b640c",
+        "at": "2026-11-20T04:37:43.067Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Make backend failure assertions match public error contracts",
+    "reproduction": "The failed-lookups test demands EACCES but installed ripgrep returns Permission denied (os error 13), correctly framed as a failed lookup. The DuckDB path-escape test demands resolves outside the repo root but receives the current ManagementInputError public message. Both wording mismatches reproduce in focused runs.",
+    "rootCause": "Assertions couple expected diagnostics to the Node fallback spelling or an earlier internal error instead of the currently supported failure shape. The audit shows refusal, not a successful forbidden access.",
+    "fixIntent": "Assert portable semantic failure codes/shapes and supported diagnostics for permission and path-escape refusals, with both ripgrep and fallback controls where available. Acceptance: protected cases still refuse and readable/allowed-path cases succeed; no raw sensitive detail is exposed to satisfy an old regular expression. Short-deadline search readiness belongs to the harness batch, not a weakened failure assertion."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "docs/plans/failing-tests-2026-11-20.md"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/analyze/explore/__tests__/failed-lookups.test.ts"
+    }
+  ]
+}

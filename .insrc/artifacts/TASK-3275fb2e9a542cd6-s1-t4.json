@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-79babff2-f808-47d0-adbb-53538e9ee236",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-20T05:10:31.169Z",
+    "epicCreatedAt": "2026-11-20T04:34:20.119Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3275fb2e9a542cd6",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Migrate rebuild fixtures to prepared output",
+      "parent": {
+        "entityId": "STORY-3275fb2e9a542cd6-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-3275fb2e9a542cd6-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-3275fb2e9a542cd6-s1-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 2,
+        "contentHash": "b37e3bfcd6a10efb715b50163fdfa58cbed9e1973dda2f6d25180bfaf07eb7e4",
+        "at": "2026-11-20T06:02:21.964Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T05:10:31.171Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Migrate rebuild fixtures to prepared output",
+    "summary": "Replace five ordinary build hooks with prepared-context checks; keep src/daemon/__tests__/review-retirement-package.test.ts as a real exclusive rebuild regression.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "All six audited consumers participate; direct unsupported invocations fail with an actionable selector command before fake-daemon startup.",
+      "The retirement regression still plants stale output and asserts its removal/package behavior; prepared output refreshes before readers.",
+      "Focused consumers cannot lose compiled helpers through concurrent cleanup; no native refusal assertion is weakened.",
+      "Positive reuse evidence executes all five actual consumer files under prepared ownership, preserves their assertions and logs, and explicitly distinguishes remaining native/platform failures from missing prerequisites or harness races; repeating the prerequisite function alone is insufficient."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Five prepared consumers reuse helpers and raw invocations refuse missing context"
+      },
+      {
+        "level": "integration",
+        "name": "Retirement-package stale-output rebuild remains a serial mutation regression"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

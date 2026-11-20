@@ -1,0 +1,692 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 19,
+        "contentHash": "0c5b0abdf407657af5010dced4a68fb2a995b1953180cda1a81f110701d46d51",
+        "at": "2026-11-20T07:03:08.923Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "3275fb2e9a542cd6",
+    "storyId": "s1",
+    "createdAt": "2026-11-20T05:11:29.464Z",
+    "updatedAt": "2026-11-20T07:03:08.903Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-20T04:34:20.119Z",
+    "epicSlug": "make-test-harness-hermetic-bounded",
+    "revision": 19
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "46a1e851d",
+        "ranAt": "2026-11-20T05:12:45.381Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Baseline commit, upstream overlap and quiescent-owner evidence",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/plans/test-harness-baseline-2026-11-20.json records exact commands, filters, timestamp and empty results; docs/plans/test-harness-build-2026-11-20.md explains limits. Commit 46a1e851d; baseline merge 97ec6496f."
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
+      },
+      {
+        "taskId": "t2",
+        "commit": "7139f79e0",
+        "ranAt": "2026-11-20T05:18:46.393Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Canonical-path contenders refuse overlap and preserve foreign/replaced/symlinked ownership",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/test-harness.test.ts",
+                "title": "Canonical-path contenders refuse overlap and preserve foreign/replaced/symlinked ownership",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/test-harness.test.ts",
+                "title": "Malformed lease records and parent symlinks refuse without removal",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Unsupported Node refuses before mutation and child environment resolves selected runtime",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/test-harness.test.ts",
+                "title": "Unsupported Node refuses before mutation and child environment resolves selected runtime",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Abandoned ownership cannot be stolen by age or PID absence",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/test-harness.test.ts",
+                "title": "Abandoned ownership cannot be stolen by age or PID absence",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "scripts/__tests__/test-harness.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 512,
+            "titles": [
+              {
+                "title": "Canonical-path contenders refuse overlap and preserve foreign/replaced/symlinked ownership",
+                "result": "pass"
+              },
+              {
+                "title": "Unsupported Node refuses before mutation and child environment resolves selected runtime",
+                "result": "pass"
+              },
+              {
+                "title": "Abandoned ownership cannot be stolen by age or PID absence",
+                "result": "pass"
+              },
+              {
+                "title": "Malformed lease records and parent symlinks refuse without removal",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "e27d221f5",
+        "ranAt": "2026-11-20T05:33:51.742Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Prepared build excludes simultaneous writers and readers, validates helpers and rejects fingerprint drift",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/test-harness-coordinator.test.ts",
+                "title": "Prepared build excludes simultaneous writers and readers, validates helpers and rejects fingerprint drift",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/test-harness-coordinator.test.ts",
+                "title": "Output mutation lane precedes ordinary prepared readers and source drift never passes",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/test-harness-coordinator.test.ts",
+                "title": "A timed-out writer retains its reservation until its child closes",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/test-harness-coordinator.test.ts",
+                "title": "Default prepared output requires the host native lifecycle helper",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "SIGINT/SIGTERM and deadline drain registered actors or retain blocked incomplete outcome",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/test-harness-coordinator.test.ts",
+                "title": "SIGINT/SIGTERM and deadline drain registered actors or retain blocked incomplete outcome",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/test-harness-coordinator.test.ts",
+                "title": "Missing TAP destinations and failed build stages retain logs, actual closure and unavailable coverage",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Selector deduplication, explicit budgets and bounded concurrency reject invalid admission",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/test-harness-coordinator.test.ts",
+                "title": "Selector deduplication, explicit budgets and bounded concurrency reject invalid admission",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "scripts/__tests__/test-harness-coordinator.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2738,
+            "titles": [
+              {
+                "title": "Prepared build excludes simultaneous writers and readers, validates helpers and rejects fingerprint drift",
+                "result": "pass"
+              },
+              {
+                "title": "Output mutation lane precedes ordinary prepared readers and source drift never passes",
+                "result": "pass"
+              },
+              {
+                "title": "SIGINT/SIGTERM and deadline drain registered actors or retain blocked incomplete outcome",
+                "result": "pass"
+              },
+              {
+                "title": "Missing TAP destinations and failed build stages retain logs, actual closure and unavailable coverage",
+                "result": "pass"
+              },
+              {
+                "title": "Selector deduplication, explicit budgets and bounded concurrency reject invalid admission",
+                "result": "pass"
+              },
+              {
+                "title": "A timed-out writer retains its reservation until its child closes",
+                "result": "pass"
+              },
+              {
+                "title": "Default prepared output requires the host native lifecycle helper",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "1106cf2af",
+        "ranAt": "2026-11-20T06:19:14.359Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Five prepared consumers reuse helpers and raw invocations refuse missing context",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/test-harness-consumers.test.ts",
+                "title": "Five prepared consumers reuse helpers and raw invocations refuse missing context",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Retirement-package stale-output rebuild remains a serial mutation regression",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/test-harness-consumers.test.ts",
+                "title": "Retirement-package stale-output rebuild remains a serial mutation regression",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "scripts/__tests__/test-harness-consumers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 82284,
+            "titles": [
+              {
+                "title": "Five prepared consumers reuse helpers and raw invocations refuse missing context",
+                "result": "pass"
+              },
+              {
+                "title": "Retirement-package stale-output rebuild remains a serial mutation regression",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "c3b307a56",
+        "ranAt": "2026-11-20T06:10:10.669Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Root and VSCode command overlap refuses before asset synchronization",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/test-harness-commands.test.ts",
+                "title": "Root and VSCode command overlap refuses before asset synchronization",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Build stages and specialized launcher gate policies survive wrapper integration",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/test-harness-commands.test.ts",
+                "title": "Build stages and specialized launcher gate policies survive wrapper integration",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/test-harness-commands.test.ts",
+                "title": "Specialized stages retain writer ownership and reader closure precedes later mutation",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Native refusal and saved-mode controls remain enforced",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/test-harness-commands.test.ts",
+                "title": "Native refusal and saved-mode controls remain enforced",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "scripts/__tests__/test-harness-commands.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 29976,
+            "titles": [
+              {
+                "title": "Root and VSCode command overlap refuses before asset synchronization",
+                "result": "pass"
+              },
+              {
+                "title": "Build stages and specialized launcher gate policies survive wrapper integration",
+                "result": "pass"
+              },
+              {
+                "title": "Specialized stages retain writer ownership and reader closure precedes later mutation",
+                "result": "pass"
+              },
+              {
+                "title": "Native refusal and saved-mode controls remain enforced",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "521592d7c",
+        "ranAt": "2026-11-20T06:34:13.277Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Peer state round-trip terminates with both MessagePorts closed",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/peer-state-store-leakfree.test.ts",
+                "title": "Peer state round-trip terminates with both MessagePorts closed",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Failed fixture readiness reclaims socket and child before the next case",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/fixture-lifetime.test.ts",
+                "title": "Failed fixture readiness reclaims socket and child before the next case",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/tools/__tests__/fixture-lifetime.test.ts",
+                "title": "Detached fixture acknowledgments are drained before checkout release",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/tools/__tests__/fixture-lifetime.test.ts",
+                "title": "Unconfirmed cleanup retains handles and readiness failure cannot wait forever",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/tools/__tests__/fixture-lifetime.test.ts",
+                "title": "Owned groups retain descendants with independent stdio until disposal",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/tools/__tests__/fixture-lifetime.test.ts",
+                "title": "An escaped descendant with independent stdio blocks release until its acknowledgment",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Ready handshake precedes behavioral cancellation deadline",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/fixture-lifetime.test.ts",
+                "title": "Ready handshake precedes behavioral cancellation deadline",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/git-abort.test.ts",
+                "title": "git-abort.test.ts: git_show starts no command after an abort between its header, diff and stat commands",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/__tests__/peer-state-store-leakfree.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 331,
+            "titles": [
+              {
+                "title": "Peer state round-trip terminates with both MessagePorts closed",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/tools/__tests__/fixture-lifetime.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 7911,
+            "titles": [
+              {
+                "title": "Failed fixture readiness reclaims socket and child before the next case",
+                "result": "pass"
+              },
+              {
+                "title": "Ready handshake precedes behavioral cancellation deadline",
+                "result": "pass"
+              },
+              {
+                "title": "Detached fixture acknowledgments are drained before checkout release",
+                "result": "pass"
+              },
+              {
+                "title": "Unconfirmed cleanup retains handles and readiness failure cannot wait forever",
+                "result": "pass"
+              },
+              {
+                "title": "Owned groups retain descendants with independent stdio until disposal",
+                "result": "pass"
+              },
+              {
+                "title": "An escaped descendant with independent stdio blocks release until its acknowledgment",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/tools/builtins/git/__tests__/git-abort.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4602,
+            "titles": [
+              {
+                "title": "git-abort.test.ts: every refresh tool fails rejected on an already-aborted signal and starts no git",
+                "result": "pass"
+              },
+              {
+                "title": "git-abort.test.ts: every refresh tool stops its running command on an abort while running and returns a rejected failure",
+                "result": "pass"
+              },
+              {
+                "title": "git-abort.test.ts: git_show starts no command after an abort between its header, diff and stat commands",
+                "result": "pass"
+              },
+              {
+                "title": "git-abort.test.ts: git_show returns a cancelled failure, never a success, when the abort comes after the header and the diff and during the stat",
+                "result": "pass"
+              },
+              {
+                "title": "git-abort.test.ts: the git helper fail() reports an aborted command as cancelled, and a mutating one adds that its outcome is unknown",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "90b744fd1",
+        "ranAt": "2026-11-20T06:40:34.477Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Real panel type probes preserve positive and intended-negative diagnostics",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/test-harness-probes.test.ts",
+                "title": "Real panel type probes preserve positive and intended-negative diagnostics",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Compiler launch failure and interruption cannot pass a negative probe or pollute source includes",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/test-harness-probes.test.ts",
+                "title": "Compiler launch failure and interruption cannot pass a negative probe or pollute source includes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "scripts/__tests__/test-harness-probes.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 51077,
+            "titles": [
+              {
+                "title": "Real panel type probes preserve positive and intended-negative diagnostics",
+                "result": "pass"
+              },
+              {
+                "title": "Compiler launch failure and interruption cannot pass a negative probe or pollute source includes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "63177dc29",
+        "ranAt": "2026-11-20T07:03:08.903Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Sequential focused validation reports actual coverage, remaining failures and closed actors",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/plans/test-harness-final-validation-2026-11-20.json and docs/plans/test-harness-build-2026-11-20.md: 19 sequential controller checks pass at 3fd825b00, separate 8-check coordinator follow-up passes at 02c2fbe8b (7 repeated plus 1 live-serial disposable control); backend run 70018a3b-5b68-400b-b5be-a49d03bf37a4 has 28 pass/2 existing Linux-only skips, cleanup confirmed and complete coverage. Full native diagnostics remain 8 pass/11 fail/1 cancel/3 skips; retained for Batch17, not reported green. Tracked TAP logs and source/output fingerprints supplied. Final process snapshot reports no matching actors, active lease or source probes. Sequence definition validated with no findings; browser rendering unavailable and explicitly unverified."
+            }
+          },
+          {
+            "name": "Documented runtime, selector, budget and blocked-recovery commands match observed behavior",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/test-harness.test.ts",
+                "title": "Abandoned ownership cannot be stolen by age or PID absence",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/test-harness.test.ts",
+                "title": "Unsupported Node refuses before mutation and child environment resolves selected runtime",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/test-harness-coordinator.test.ts",
+                "title": "Selector deduplication, explicit budgets and bounded concurrency reject invalid admission",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/test-harness-coordinator.test.ts",
+                "title": "Explicit live opt-in admits files serially without enabling services in the control",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "scripts/__tests__/test-harness-coordinator.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 8549,
+            "titles": [
+              {
+                "title": "Prepared build excludes simultaneous writers and readers, validates helpers and rejects fingerprint drift",
+                "result": "pass"
+              },
+              {
+                "title": "Output mutation lane precedes ordinary prepared readers and source drift never passes",
+                "result": "pass"
+              },
+              {
+                "title": "SIGINT/SIGTERM and deadline drain registered actors or retain blocked incomplete outcome",
+                "result": "pass"
+              },
+              {
+                "title": "Missing TAP destinations and failed build stages retain logs, actual closure and unavailable coverage",
+                "result": "pass"
+              },
+              {
+                "title": "Selector deduplication, explicit budgets and bounded concurrency reject invalid admission",
+                "result": "pass"
+              },
+              {
+                "title": "A timed-out writer retains its reservation until its child closes",
+                "result": "pass"
+              },
+              {
+                "title": "Default prepared output requires the host native lifecycle helper",
+                "result": "pass"
+              },
+              {
+                "title": "Explicit live opt-in admits files serially without enabling services in the control",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "scripts/__tests__/test-harness.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 456,
+            "titles": [
+              {
+                "title": "Canonical-path contenders refuse overlap and preserve foreign/replaced/symlinked ownership",
+                "result": "pass"
+              },
+              {
+                "title": "Unsupported Node refuses before mutation and child environment resolves selected runtime",
+                "result": "pass"
+              },
+              {
+                "title": "Abandoned ownership cannot be stolen by age or PID absence",
+                "result": "pass"
+              },
+              {
+                "title": "Malformed lease records and parent symlinks refuse without removal",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

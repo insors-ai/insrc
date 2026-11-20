@@ -1,0 +1,66 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1795149458708-tbjtmb",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-20T04:37:38.858Z",
+    "epicCreatedAt": "2026-11-20T04:37:38.858Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 149,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "3e6982f04ac2815d",
+    "epicSlug": "refresh-tool-schema-build-contract-assertions",
+    "standalone": true,
+    "magnitude": "small",
+    "kind": "defect",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "157e66e664da0b601540be5fd6256f28f47fe9c749e742616edd110eca1a76f7",
+        "at": "2026-11-20T04:37:38.867Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Refresh tool schema and build contract assertions",
+    "reproduction": "Git approval/schema snapshots reject existing git_diff.objectPair and git_cat_file.metadataOnly fields. The typecheck-config test expects the build string to start with tsc even though it now cleans output and builds the memory workspace first. The spawn-scan build test hardcodes three exemptions but the scanner now has a justified managed-release-staging exemption.",
+    "rootCause": "Historical literal snapshots assert old schemas and build/exemption lists instead of the currently intended contracts. These failures are distinct from GitHub CLI command/flag coverage and from output-directory races.",
+    "fixIntent": "Reconcile git tool schema, build-step ordering and spawn-exemption assertions with their authoritative current contracts, preserving validation, per-input approval checks and explicit reasons for every exemption. Acceptance: git schema/approval, build-script, typecheck-config and scanner tests pass with meaningful negative controls; an unexpected field, bypassed typecheck or unjustified exemption still fails. Do not weaken runtime validation merely to match snapshots."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "docs/plans/failing-tests-2026-11-20.md"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/daemon/tools/builtins/git/diff.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "scripts/clean-output.mjs"
+    }
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1795149463231-iejuii",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-20T04:37:43.372Z",
+    "epicCreatedAt": "2026-11-20T04:37:43.372Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 141,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "ea90a8d530a0b69d",
+    "epicSlug": "handle-rejected-queue-drains-without-losing",
+    "standalone": true,
+    "magnitude": "small",
+    "kind": "defect",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "a935834f8705751173862221ea8b229cc97c7c91e40b98ce70d8d09c9926b784",
+        "at": "2026-11-20T04:37:43.380Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Handle rejected queue drains without losing cleanup ownership",
+    "reproduction": "The session-cleanup child matrix case rejected queue drain still closes native resources and ends once with failure raises an unhandled private-queue-failure at its fixture. The parent EXPIRY and RECONNECT tests share the rejected matrix promise and both fail, despite the child explicitly clearing diagnostic environment variables.",
+    "rootCause": "The queue-drain rejection escapes the expected bounded cleanup/error-completion path in the child matrix. Two parent failures arise from the same rejected matrix, not independently proven expiry and reconnect defects. Whether the escaping rejection is fixture timing or production ownership handling must be established.",
+    "fixIntent": "Ensure queue-drain failure is observed through the supported failure boundary while native resources and retained ownership are released exactly once. Acceptance: the rejecting-drain case completes once with an intentional failure outcome, all owned resources close, no unhandled rejection/private canary escapes, and the shared expiry/reconnect matrix passes without hiding unexpected errors."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "docs/plans/failing-tests-2026-11-20.md"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/daemon/db/__tests__/fixtures/session-cleanup-child.ts"
+    }
+  ]
+}

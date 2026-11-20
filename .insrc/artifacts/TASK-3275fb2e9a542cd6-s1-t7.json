@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-97f690a6-f68e-44a4-84b0-880aec5d5cea",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-20T05:10:31.181Z",
+    "epicCreatedAt": "2026-11-20T04:34:20.119Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3275fb2e9a542cd6",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Route supported commands and regression launchers",
+      "parent": {
+        "entityId": "STORY-3275fb2e9a542cd6-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-3275fb2e9a542cd6-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-3275fb2e9a542cd6-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 2,
+        "contentHash": "5fd81ad3f0825a8f354eb09bceeb8e0c07017937a43aaae2a766b6bbc0b1b846",
+        "at": "2026-11-20T06:02:21.958Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T05:10:31.184Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Route supported commands and regression launchers",
+    "summary": "Switch root build/test and VSCode test commands to ownership, move mutating pretest asset sync inside admission, and adapt specialized regression launchers at their ownership seam.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "Both packages use canonical checkout ownership; asset sync cannot run before overlap refusal and keeps existing semantics.",
+      "Existing workspace/typecheck/spawn-scan/native/model/assets stages remain checked; only wrapper exposure assertions change here.",
+      "Specialized scripts retain proof/gate policy; altered fingerprints stay pending Batch15 with no fabricated qualification."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Root and VSCode command overlap refuses before asset synchronization"
+      },
+      {
+        "level": "integration",
+        "name": "Build stages and specialized launcher gate policies survive wrapper integration"
+      },
+      {
+        "level": "integration",
+        "name": "Native refusal and saved-mode controls remain enforced"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

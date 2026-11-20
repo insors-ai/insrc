@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-80c782c5-9115-4afd-ba4c-5aeecb050002",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-20T05:10:31.166Z",
+    "epicCreatedAt": "2026-11-20T04:34:20.119Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3275fb2e9a542cd6",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Coordinate builds and test admission",
+      "parent": {
+        "entityId": "STORY-3275fb2e9a542cd6-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-3275fb2e9a542cd6-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-3275fb2e9a542cd6-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "ef1e462699641a415e06ffe0ceb1ef02ba312f58e585180714f48a1e22e8e462",
+        "at": "2026-11-20T05:10:31.166Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T05:10:31.167Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Coordinate builds and test admission",
+    "summary": "Add proposed scripts/test-harness/build.mjs and run.mjs; preserve all existing build stages, prepare output once and schedule a serial mutation lane before bounded readers.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "Second build/test refuses before shared mutation; standalone build acquires ownership; only admitted preparing/mutating writers can join with one writer reservation.",
+      "Prepared metadata requires successful build, required helpers and stable input/output fingerprints; drift invalidates validation.",
+      "Selectors deduplicate and reject empty/outside paths; default concurrency2 bounded1–4; documented longer intentional file budgets remain possible and recorded.",
+      "Owned child results, logs, coverage and close confirmation survive failures and catchable signals.",
+      "Real disposable-child SIGINT and SIGTERM controls stop admission, drain owned actors and return incomplete/nonzero; no closure acknowledgment retains blocked ownership."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Prepared build excludes simultaneous writers and readers, validates helpers and rejects fingerprint drift"
+      },
+      {
+        "level": "integration",
+        "name": "SIGINT/SIGTERM and deadline drain registered actors or retain blocked incomplete outcome"
+      },
+      {
+        "level": "unit",
+        "name": "Selector deduplication, explicit budgets and bounded concurrency reject invalid admission"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

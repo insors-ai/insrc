@@ -123,6 +123,62 @@ test('repo-config.test.ts: a repo-config.json created between the presence check
 	});
 });
 
+test('repo-config.test.ts: where hard links are not supported the move falls back to an exclusive copy that never replaces repo-config.json and removes a partial or wrong copy, and a second boot finishes an interrupted move', () => {
+	const noHardLinks = (): never => { throw Object.assign(new Error('EPERM: operation not permitted, link'), { code: 'EPERM' }); };
+	// a volume without hard links (FAT, exFAT, some shares): the new name is created by an exclusive copy, the old one removed
+	inTempDir(dir => {
+		const bytes = Buffer.from('{"repos":{"/a":{"owner":"o"}}}\r\n', 'utf8');
+		writeFileSync(join(dir, 'github.json'), bytes);
+		assert.deepEqual(moveLegacyRepoConfig(dir, { link: noHardLinks }), { status: 'moved' });
+		assert.deepEqual(readFileSync(join(dir, 'repo-config.json')), bytes);
+		assert.equal(lstatSync(join(dir, 'repo-config.json')).isFile(), true);
+		assert.equal(existsSync(join(dir, 'github.json')), false);
+	});
+	// the copy refuses to replace a repo-config.json that appears first, whether before the link attempt or during it
+	for (const interleave of ['before', 'during'] as const) {
+		inTempDir(dir => {
+			writeFileSync(join(dir, 'github.json'), '{"legacy":true}');
+			const newer = (): void => writeFileSync(join(dir, 'repo-config.json'), '{"newer":true}');
+			const result = moveLegacyRepoConfig(dir, interleave === 'before'
+				? { link: noHardLinks, beforeCreate: newer }
+				: { link: () => { newer(); return noHardLinks(); } });
+			assert.equal(result.status, 'both-exist', interleave);
+			assert.equal(readFileSync(join(dir, 'repo-config.json'), 'utf8'), '{"newer":true}', `${interleave}: the newer settings are not replaced`);
+			assert.equal(readFileSync(join(dir, 'github.json'), 'utf8'), '{"legacy":true}', `${interleave}: the legacy file stays`);
+		});
+	}
+	// a copy that fails part way, or does not match, is removed again; the old file stays
+	inTempDir(dir => {
+		writeFileSync(join(dir, 'github.json'), '{"legacy":true}');
+		const partial = moveLegacyRepoConfig(dir, { link: noHardLinks, copy: (_from, to) => { writeFileSync(to, '{"leg'); throw Object.assign(new Error('ENOSPC: no space left on device'), { code: 'ENOSPC' }); } });
+		assert.equal(partial.status, 'failed');
+		assert.match(partial.note ?? '', /ENOSPC/);
+		assert.equal(existsSync(join(dir, 'repo-config.json')), false, 'the partial copy is removed');
+		assert.equal(readFileSync(join(dir, 'github.json'), 'utf8'), '{"legacy":true}');
+		const wrong = moveLegacyRepoConfig(dir, { link: noHardLinks, copy: (_from, to) => writeFileSync(to, '{"other":1}') });
+		assert.equal(wrong.status, 'failed');
+		assert.match(wrong.note ?? '', /does not match/);
+		assert.equal(existsSync(join(dir, 'repo-config.json')), false, 'a wrong copy is removed');
+		assert.equal(readFileSync(join(dir, 'github.json'), 'utf8'), '{"legacy":true}');
+	});
+	// an interrupted move (both names, same bytes) is finished by the next boot; a different new file is never touched
+	inTempDir(dir => {
+		writeFileSync(join(dir, 'github.json'), '{"same":true}');
+		writeFileSync(join(dir, 'repo-config.json'), '{"same":true}');
+		const finished = moveLegacyRepoConfig(dir);
+		assert.equal(finished.status, 'moved');
+		assert.match(finished.note ?? '', /already held the same content/);
+		assert.equal(existsSync(join(dir, 'github.json')), false);
+		assert.equal(readFileSync(join(dir, 'repo-config.json'), 'utf8'), '{"same":true}');
+	});
+	inTempDir(dir => {
+		writeFileSync(join(dir, 'github.json'), '{"same":true}');
+		writeFileSync(join(dir, 'repo-config.json'), '{"same":true,"edited":1}');
+		assert.equal(moveLegacyRepoConfig(dir).status, 'both-exist');
+		assert.equal(existsSync(join(dir, 'github.json')), true);
+	});
+});
+
 test('repo-config.test.ts: a second move after a successful one returns nothing-to-move, and a symbolic-link github.json is moved as a link', () => {
 	inTempDir(dir => {
 		writeFileSync(join(dir, 'github.json'), '{}');

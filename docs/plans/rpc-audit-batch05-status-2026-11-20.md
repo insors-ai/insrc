@@ -2,7 +2,7 @@
 
 Tracked issue: `ISSUE-807fa9e8fb678f4b`; Story `s1`.
 
-Status: **implementation tested; tasks one and two validated; corrected PLAN approved and task-three revalidation in progress**. The original
+Status: **all three tasks validated; final human BUILD approval pending**. The original
 plan was approved, but task one failed build validation twice despite passing
 its mapped whole-file tests and typecheck. No BUILD approval or deployment is
 claimed.
@@ -121,3 +121,12 @@ PLAN was approved on 2026-11-20 at 12:10:12 UTC. Task-three revalidation follows
 that approval; no failed verdict or task status was manually patched. The
 technical evidence and BUILD inputs are ready for presentation after validation
 records its verdict. Explicit human BUILD approval remains a separate gate.
+
+## Final validated BUILD
+
+After approval of the corrected PLAN, task three passed daemon build validation.
+All three tasks now have passing verdicts. The final BUILD is ready for explicit
+human approval; earlier failed/pending checkpoints above remain historical.
+Combined evidence is still 74/74 tests across 16 files with complete coverage
+and confirmed child cleanup. No additional source change, installed daemon
+restart, release qualification or repository-wide green claim is implied.

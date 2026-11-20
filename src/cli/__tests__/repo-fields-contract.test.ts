@@ -62,3 +62,27 @@ test('a row added to a copy of the table appears in the terminal rows with no cl
   assert.equal(added.value, '(not set)');
   assert.equal(added.note, 'saved; not used yet');
 });
+
+test('the shared fixture\'s repo.settings.get payload carries buildSetup and the terminal rows still equal the fixture\'s rows', () => {
+  assert.deepEqual(FIXTURE.settings.buildSetup, {
+    projectType: 'python', commandsSource: 'none',
+    suggestion: { typecheckCommand: 'mypy .', testCommand: 'pytest', resultFormat: 'exit-code' },
+  });
+  const rows = buildSettingsRows(FIXTURE.repoFields, FIXTURE.settings);
+  assert.deepEqual(contract(rows), contract(FIXTURE.repoFields), 'key, label, kind and note per row, in order');
+  // An unset Build row of a repo with a suggestion shows the suggestion as its placeholder; no other row has one.
+  assert.deepEqual(
+    rows.filter((r) => r.placeholder !== undefined).map((r) => [r.key, r.placeholder]),
+    [['typecheckCommand', 'mypy .'], ['testCommand', 'pytest'], ['resultFormat', 'exit-code']],
+  );
+  assert.equal(rows.find((r) => r.key === 'testCommand')?.value, '(not set)', 'the placeholder is not the value');
+  // A set row has no placeholder; a repo with commands, or a payload with no buildSetup, renders as before.
+  const own = { ...FIXTURE.settings, values: { ...FIXTURE.settings.values, testCommand: 'make test' } };
+  assert.equal(buildSettingsRows(FIXTURE.repoFields, own).find((r) => r.key === 'testCommand')?.placeholder, undefined);
+  const withCommands = { ...FIXTURE.settings, buildSetup: { projectType: 'python', commandsSource: 'repo-setting' } } as RepoSettingsPayload;
+  assert.ok(buildSettingsRows(FIXTURE.repoFields, withCommands).every((r) => r.placeholder === undefined));
+  const { buildSetup: _omitted, ...legacy } = FIXTURE.settings;
+  const before = buildSettingsRows(FIXTURE.repoFields, legacy as RepoSettingsPayload);
+  assert.ok(before.every((r) => !('placeholder' in r)), 'a payload with no buildSetup renders exactly as before');
+  assert.deepEqual(before.map((r) => r.value), rows.map((r) => r.value));
+});

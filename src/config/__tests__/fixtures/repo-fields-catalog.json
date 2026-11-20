@@ -241,6 +241,15 @@
         "ref": "origin/main",
         "fetchedAt": "2026-10-17T00:00:00.000Z"
       }
+    },
+    "buildSetup": {
+      "projectType": "python",
+      "commandsSource": "none",
+      "suggestion": {
+        "typecheckCommand": "mypy .",
+        "testCommand": "pytest",
+        "resultFormat": "exit-code"
+      }
     }
   }
 }

@@ -23,6 +23,8 @@ export interface SettingsRow {
 	/** Only local rows are editable. */
 	readonly editable: boolean;
 	readonly note?: string;
+	/** For an unset Build row of a repo with no commands: the typical value of its project type, shown as the row's placeholder. */
+	readonly placeholder?: string;
 	readonly type: RepoFieldDef['type'];
 }
 
@@ -51,6 +53,14 @@ function policyText(policy: RepoSettingsPayload['policy'], key: string): string 
 	return key in policy.values ? policyValueText(policy.values[key]) : '(not set)';
 }
 
+/** The suggested value of an unset Build row; a daemon that sends no buildSetup gives none. */
+function suggestedValue(f: RepoFieldDef, payload: RepoSettingsPayload): string | undefined {
+	if (f.group !== 'Build' || f.kind !== 'local' || payload.values[f.key] !== undefined) return undefined;
+	const setup = payload.buildSetup as RepoSettingsPayload['buildSetup'] | undefined;
+	if (setup === undefined || setup.commandsSource !== 'none') return undefined;
+	return (setup.suggestion as Readonly<Record<string, string>> | undefined)?.[f.key];
+}
+
 /** One row per field, in table order. */
 export function buildSettingsRows(fields: readonly RepoFieldDef[], payload: RepoSettingsPayload): SettingsRow[] {
 	return fields.map((f): SettingsRow => {
@@ -64,9 +74,11 @@ export function buildSettingsRows(fields: readonly RepoFieldDef[], payload: Repo
 		} else {
 			value = policyText(payload.policy, f.key);
 		}
+		const placeholder = suggestedValue(f, payload);
 		return {
 			key: f.key, label: f.label, kind: f.kind, value, current, editable: f.kind === 'local', type: f.type,
 			...(f.note !== undefined ? { note: f.note } : {}),
+			...(placeholder !== undefined ? { placeholder } : {}),
 		};
 	});
 }

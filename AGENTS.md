@@ -81,16 +81,20 @@ binary registered with Claude Code / Codex is `out/bin/insrc-mcp.js`.
 ```bash
 npm install                           # installs runtime + dev deps
 npm run build                         # tsc + copy-assets.mjs
-npx tsx --test 'src/**/__tests__/*.test.ts'   # full test sweep
+npm test   # full test sweep
 ```
 
 Fast subsets for iteration:
 
 ```bash
-npx tsx --test 'src/workflow/**/*.test.ts' 'src/mcp/**/*.test.ts'   # ~5 s
-npx tsx --test 'src/db/**/*.test.ts'                                # LMDB / Lance / graph
-npx tsx --test 'src/analyze/**/*.test.ts'                           # analyze framework
+npm test -- 'src/workflow/**/*.test.ts' 'src/mcp/**/*.test.ts'
+npm test -- 'src/db/**/*.test.ts'                                # LMDB / Lance / graph
+npm test -- 'src/analyze/**/*.test.ts'                           # analyze framework
 ```
+
+Use Node 22.22.1 or newer within Node 22. The test coordinator builds once,
+owns its child processes, and bounds each test file. See [testing](docs/testing.md)
+for selectors, budgets, controller checks, logs, and blocked-run recovery.
 
 Live-service tests gate behind env vars (`INSRC_LIVE_TESTS=1` for Ollama /
 CliProvider suites) and skip cleanly when unset.

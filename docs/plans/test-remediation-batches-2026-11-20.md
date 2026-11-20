@@ -1,0 +1,57 @@
+# Test remediation batches — 2026-11-20
+
+Source: [failure audit](failing-tests-2026-11-20.md). One tracked IssueArtifact per coherent scope; no issue was created per test failure. These are local workflow records awaiting human approval, not a claim that GitHub tracker publication has occurred.
+
+The audit was captured at `d7bcd4f9ae10162c710d9f10ebca145a62d8b2d9`. At batch creation the checkout remains on that commit, with four newer commits already known on `origin/v2`; their inspected changes concern build-test mapping and an existing workflow plan, not these fixes. Recheck overlapping upstream changes before each approved build. No source/test fixes have been made in this batch-creation turn.
+
+## Execution order
+
+Start with **01 (harness reliability)** so validation is isolated and owned resources are reclaimed. Then address **02–03 (confirmed runtime/privacy failures)** and the focused contract/IDE batches. Native lifecycle **17** needs a clean isolated reproduction after 01; it must not reinterpret permission refusals as permission to bypass ownership checks. Run **15–16 (reviewed/native/performance evidence)** last after their source dependencies stabilize.
+
+Small defects follow issue → build after approval. Sized defects follow issue → design.story → plan → build, preserving the human gates. Approval is artifact-specific; this index does not approve any issue. The audit's 60-second cancellations, ambient DEBUG refusal and overlapping-run failures are diagnosis/validation inputs, not assumed independent production defects. Preserve meaningful assertions; no blanket skips, larger deadlines or digest refreshes merely to produce green output.
+
+## Batch issues
+
+Batch 01: ISSUE, LLD and revised PLAN are approved. Implementation tasks t1–t7 have passed daemon validation (execution order t1, t2, t3, t7, t4, t5, t6). Final t8 evidence is submitted through the build gate; the Story BUILD requires human approval. See [build evidence](test-harness-build-2026-11-20.md) and [supported commands](../testing.md). Sequential controls passed 19/19 and eight targeted follow-up controls passed; focused backend checks passed 28 with two existing platform skips. Native diagnostic failures remain non-green for Batch 17, and qualification remains pending Batches 15/16. Other IssueArtifacts remain separately pending approval; this index does not approve them or claim successful GitHub tracker publication.
+
+| Batch | Issue | Route | Scope | Prerequisites |
+| --- | --- | --- | --- | --- |
+| 01 | [Make the test harness hermetic and bounded](../../docs/standalone/make-test-harness-hermetic-bounded-E202611203275fb2e/ISSUE.md) — `ISSUE-3275fb2e9a542cd6` | Issue → design → plan → build | Output ownership, Node 22 child runtimes, empty-file handles, interrupted probes, environment prerequisites and test startup/readiness. Establish safe focused execution; audit timeouts are not assumed defects. | None |
+| 02 | [Sanitize temporary errors before inspecting untrusted prototypes](../../docs/standalone/sanitize-temporary-errors-before-inspecting-untrusted-E20261120939c1382/ISSUE.md) — `ISSUE-939c138296f56a8f` | Issue → build | Provider/analyzer temporary-error proxy traps and safe typed failure handling. | Focused fixture; use 01's isolation policy |
+| 03 | [Exclude the live store from directory searches](../../docs/standalone/exclude-live-store-from-directory-searches-E202611209c2482c5/ISSUE.md) — `ISSUE-9c2482c594fd8df5` | Issue → design → plan → build | Live store/lock-file exclusion through directories, symlinks and both search backends. | 01 for trustworthy native/search runs; 02 if shared error handling changes |
+| 04 | [Align historical tests with the retired review contract](../../docs/standalone/align-historical-tests-retired-review-contract-E2026112003bd8497/ISSUE.md) — `ISSUE-03bd849749a52b41` | Issue → design → plan → build | Removed review behavior, deleted fixture imports, unavailable responses and retained-history coverage. | 01 |
+| 05 | [Reconcile daemon RPC registration and audit coverage](../../docs/standalone/reconcile-daemon-rpc-registration-audit-coverage-E20261120807fa9e8/ISSUE.md) — `ISSUE-807fa9e8fb678f4b` | Issue → design → plan → build | RPC/stream/step registration, repository mutation gates, worker method classification and API documentation. | 04 for retired method expectations |
+| 06 | [Synchronize model settings and catalog contract tests](../../docs/standalone/synchronize-model-settings-catalog-contract-tests-E202611201e205206/ISSUE.md) — `ISSUE-1e2052060dec3efb` | Issue → build | Missing build.resultFormat, role defaults/native aliases, per-repo role rendering and explicit doc-relations model ownership policy. | Independent focused batch |
+| 07 | [Update chat theme tests for the current shell structure](../../docs/standalone/update-chat-theme-tests-current-shell-E2026112070276d53/ISSUE.md) — `ISSUE-70276d53b0e62378` | Issue → build | Chat stylesheet ownership, theme tokens, history/new-chat chrome, selectors and CSP tests. | 01 for renderer/probe lifetime |
+| 08 | [Restore the JetBrains plugin test build](../../docs/standalone/restore-jetbrains-plugin-test-build-E20261120f5856579/ISSUE.md) — `ISSUE-f585657934058a38` | Issue → design → plan → build | Kotlin settings/transport fixture compilation and Gradle backend-assets configuration caching. | 01 for bounded compiler/process cleanup |
+| 09 | [Refresh tool schema and build contract assertions](../../docs/standalone/refresh-tool-schema-build-contract-assertions-E202611203e6982f0/ISSUE.md) — `ISSUE-3e6982f04ac2815d` | Issue → build | Git input-schema snapshots, build/typecheck order and justified spawn-scan exemptions. | 01; authoritative existing tool definitions |
+| 10 | [Reconcile GitHub CLI coverage and noninteractive flags](../../docs/standalone/reconcile-github-cli-coverage-noninteractive-flags-E20261120a395798d/ISSUE.md) — `ISSUE-a395798d1ad21992` | Issue → design → plan → build | Installed gh command/flag coverage and noninteractive operations, including gist delete. | 01; declared supported gh version/range |
+| 11 | [Make repository and indexing fixtures honor current contracts](../../docs/standalone/make-repository-indexing-fixtures-honor-current-E202611200e2215b0/ISSUE.md) — `ISSUE-0e2215b02b392752` | Issue → design → plan → build | Registered/canonical repo fixtures, embedding markers, deterministic indexing windows and valid analyzer/MCP state. | 01; coordinate analyzer error boundaries with 02 |
+| 12 | [Make backend failure assertions match public error contracts](../../docs/standalone/make-backend-failure-assertions-match-public-E20261120db9c6369/ISSUE.md) — `ISSUE-db9c6369d10fdfda` | Issue → build | Portable permission and path-escape public error assertions; refusal behavior stays enforced. | Independent focused batch |
+| 13 | [Deduplicate fallback events for newly discovered directories](../../docs/standalone/deduplicate-fallback-events-newly-discovered-directories-E20261120392eecdf/ISSUE.md) — `ISSUE-392eecdfdbf26269` | Issue → build | Watcher fallback discovery duplicate notifications when a new directory subscription fails. | 01 for a stable watcher reproduction |
+| 14 | [Handle rejected queue drains without losing cleanup ownership](../../docs/standalone/handle-rejected-queue-drains-without-losing-E20261120ea90a8d5/ISSUE.md) — `ISSUE-ea90a8d530a0b69d` | Issue → build | Rejected queue-drain ownership, native resource closure and one intentional completion. | 01; coordinate native shutdown findings with 17 |
+| 15 | [Requalify connection-management ownership and release evidence](../../docs/standalone/requalify-connection-management-ownership-release-evidence-E20261120fb3c5232/ISSUE.md) — `ISSUE-fb3c5232029e3b33` | Issue → design → plan → build | Connection-management source/compiled proof, mutable-state ownership classifications and fail-closed verifier controls. | After 02, 04, 05, 14 and all touched ownership sources stabilize |
+| 16 | [Refresh project-memory platform and performance qualification](../../docs/standalone/refresh-project-memory-platform-performance-qualification-E20261120358d7c83/ISSUE.md) — `ISSUE-358d7c83530cde0b` | Issue → design → plan → build | Authentic project-memory native/crash/packed-consumer and performance requalification on required platforms. | After relevant package/harness source changes stabilize; real platform access required |
+| 17 | [Diagnose macOS native lifecycle capability failures](../../docs/standalone/diagnose-macos-native-lifecycle-capability-failures-E20261120869155c5/ISSUE.md) — `ISSUE-869155c5c2c15e67` | Issue → design → plan → build | Isolated macOS broker/identity/peer failure diagnosis, preserving process identity and fail-closed ownership. | 01 clean isolated Node-22/native build first |
+
+## Historical overlap
+
+Older records were checked before expanding the backlog. These references provide context, not automatic supersession, closure or approval of any earlier artifact.
+
+| Current batch | Prior issue | Relationship |
+| --- | --- | --- |
+| 01 | [ISSUE-ed920ce9247c9d92](../../.insrc/artifacts/ISSUE-ed920ce9247c9d92.json) | Earlier overlapping-run hang; current batch adds concrete output/handle/probe evidence. |
+| 01 | [ISSUE-4b33600426ce4112](../../.insrc/artifacts/ISSUE-4b33600426ce4112.json) | Earlier suite-exit investigation; do not close it automatically. |
+| 05 | [ISSUE-32d02eabd856ca2c](../../.insrc/artifacts/ISSUE-32d02eabd856ca2c.json) | Previous handler key-set update; current failures include newer cancellation/qualification/classification drift. |
+| 06 | [ISSUE-aecdd0ff26e7b233](../../.insrc/artifacts/ISSUE-aecdd0ff26e7b233.json) | Previous settings catalog drift; current rows/defaults and alias semantics are different. |
+| 06–07 | [ISSUE-dc557863fa52ecf5](../../.insrc/artifacts/ISSUE-dc557863fa52ecf5.json) | Earlier VS Code failure batch; preserve its decisions while addressing the current audit. |
+| 13 | [ISSUE-75eaf053e7b7cddd](../../.insrc/artifacts/ISSUE-75eaf053e7b7cddd.json) | Earlier nested-directory watcher fix; current scope is duplicate fallback delivery, not restoring retired freshness execution. |
+
+## Validation and delivery rules
+
+- Run focused checks for the approved batch under the supported Node runtime, with required generated/native prerequisites prepared once under explicit ownership.
+- Record the actual failing/passing cases, tool/runtime versions and any remaining unavailable evidence. Do not treat a cascade or audit cancellation as a separately fixed bug.
+- Keep environment-isolation controls and saved/allowed-path positive controls beside refusal tests.
+- Update the original audit with batch results when a batch validates; keep prior observations as history.
+- Present every workflow artifact before requesting approval. No automated design/code review endpoint is invoked while those endpoints are unavailable.
+

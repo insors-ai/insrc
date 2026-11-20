@@ -1,0 +1,67 @@
+TAP version 13
+# Subtest: Prepared build excludes simultaneous writers and readers, validates helpers and rejects fingerprint drift
+ok 1 - Prepared build excludes simultaneous writers and readers, validates helpers and rejects fingerprint drift
+  ---
+  duration_ms: 363.309458
+  type: 'test'
+  ...
+# src/daemon/__tests__/review-retirement-package.test.ts: passed (.insrc/tmp/test-harness/runs/b179b6ae-fe3b-46d6-a6af-5a6ec887e29e/0-src_daemon___tests___review-retirement-package.test.ts.log)
+# src/__tests__/a.test.ts: passed (.insrc/tmp/test-harness/runs/b179b6ae-fe3b-46d6-a6af-5a6ec887e29e/1-src___tests___a.test.ts.log)
+# src/daemon/__tests__/review-retirement-package.test.ts: passed (.insrc/tmp/test-harness/runs/cd43751d-9c3a-480b-8f02-ed6206a36d28/0-src_daemon___tests___review-retirement-package.test.ts.log)
+# src/__tests__/a.test.ts: passed (.insrc/tmp/test-harness/runs/b56d9654-b8bf-4069-ab85-b7b89b3a8cc9/0-src___tests___a.test.ts.log)
+# Subtest: Output mutation lane precedes ordinary prepared readers and source drift never passes
+ok 2 - Output mutation lane precedes ordinary prepared readers and source drift never passes
+  ---
+  duration_ms: 423.838125
+  type: 'test'
+  ...
+# src/__tests__/a.test.ts: failed/incomplete (.insrc/tmp/test-harness/runs/e0bb888c-00fb-4381-91d4-6fa186db7d37/0-src___tests___a.test.ts.log)
+# src/__tests__/a.test.ts: failed/incomplete (.insrc/tmp/test-harness/runs/ab88dfec-99e6-4671-b185-cb811e2cca51/0-src___tests___a.test.ts.log)
+# Subtest: SIGINT/SIGTERM and deadline drain registered actors or retain blocked incomplete outcome
+ok 3 - SIGINT/SIGTERM and deadline drain registered actors or retain blocked incomplete outcome
+  ---
+  duration_ms: 6071.032333
+  type: 'test'
+  ...
+# src/__tests__/a.test.ts: failed/incomplete (.insrc/tmp/test-harness/runs/c0ee7a08-0c72-420f-bc67-a3f762cb18e8/0-src___tests___a.test.ts.log)
+# Subtest: Missing TAP destinations and failed build stages retain logs, actual closure and unavailable coverage
+ok 4 - Missing TAP destinations and failed build stages retain logs, actual closure and unavailable coverage
+  ---
+  duration_ms: 175.898917
+  type: 'test'
+  ...
+# Subtest: Selector deduplication, explicit budgets and bounded concurrency reject invalid admission
+ok 5 - Selector deduplication, explicit budgets and bounded concurrency reject invalid admission
+  ---
+  duration_ms: 5.338125
+  type: 'test'
+  ...
+# Subtest: A timed-out writer retains its reservation until its child closes
+ok 6 - A timed-out writer retains its reservation until its child closes
+  ---
+  duration_ms: 616.67
+  type: 'test'
+  ...
+# Subtest: Default prepared output requires the host native lifecycle helper
+ok 7 - Default prepared output requires the host native lifecycle helper
+  ---
+  duration_ms: 6.01175
+  type: 'test'
+  ...
+# src/__tests__/a.test.ts: passed (.insrc/tmp/test-harness/runs/f6b4054d-a04e-4db0-a647-518789e4856f/0-src___tests___a.test.ts.log)
+# src/__tests__/b.test.ts: passed (.insrc/tmp/test-harness/runs/f6b4054d-a04e-4db0-a647-518789e4856f/1-src___tests___b.test.ts.log)
+# Subtest: Explicit live opt-in admits files serially without enabling services in the control
+ok 8 - Explicit live opt-in admits files serially without enabling services in the control
+  ---
+  duration_ms: 574.601417
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 8490.103625

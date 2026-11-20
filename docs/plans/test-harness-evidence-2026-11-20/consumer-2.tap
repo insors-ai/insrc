@@ -1,0 +1,38 @@
+TAP version 13
+# Subtest: Guard-owner death reclaims the stale guard so the restart proceeds like the healthy control
+not ok 1 - Guard-owner death reclaims the stale guard so the restart proceeds like the healthy control
+  ---
+  duration_ms: 151.544416
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/shutdown-lifecycle-evidence.test.ts:28:2290'
+  failureType: 'testCodeFailure'
+  error: 'process capability broker refused: denied (errno 1)'
+  code: 'ERR_TEST_FAILURE'
+  name: 'ProcessCapabilityError'
+  stack: |-
+    nativeError (/Users/subhagho/work/projects/insors/insrc/src/shared/daemon-process-client.ts:46:9)
+    BrokerClient.line (/Users/subhagho/work/projects/insors/insrc/src/shared/daemon-process-client.ts:120:11)
+    BrokerClient.receive (/Users/subhagho/work/projects/insors/insrc/src/shared/daemon-process-client.ts:103:15)
+    <anonymous> (/Users/subhagho/work/projects/insors/insrc/src/shared/daemon-process-client.ts:80:46)
+    Socket.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/shared/utf8-stream.ts:10:3)
+    Socket.emit (node:events:519:28)
+    addChunk (node:internal/streams/readable:561:12)
+    readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+    Readable.push (node:internal/streams/readable:392:5)
+    Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
+  ...
+# Subtest: Compiled helper packaging and affected lifecycle regression suites
+ok 2 - Compiled helper packaging and affected lifecycle regression suites
+  ---
+  duration_ms: 1.787709
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 1
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 620.436792

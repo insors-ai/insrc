@@ -20,7 +20,7 @@ import type { PortResult, TrackerPort } from '../workflow/tracker/port.js';
 import { GithubConfigError, OWNER_NAME_RE, REPO_NAME_RE, resolveGithubConfigFromFile } from '../workflow/config/github.js';
 import { repoConfigPath } from '../workflow/config/repo-config.js';
 import type { RepoConfigFile, RepoConfigEntry } from '../workflow/config/repo-config.js';
-import { readRepoEntry, writeRepoEntryKeys } from '../workflow/config/repo-config-store.js';
+import { readRepoEntry, readSchemaVersion, writeRepoEntryKeys, writeSchemaVersion } from '../workflow/config/repo-config-store.js';
 import type { WriteError, WriteResult } from '../workflow/config/repo-config-store.js';
 import { InvalidCommandSetting, PROJECT_TYPE_GUIDANCE, detectProjectType, profileFromSetting } from './steps/build-step/validation-checks.js';
 import type { CommandsSource, ProjectType } from './steps/build-step/validation-checks.js';
@@ -256,6 +256,126 @@ export async function migrateBuildDefaults(
 		entries.push({ repo, outcome });
 	}
 	return { ok: true, repos: entries, counts };
+}
+
+// ---------------------------------------------------------------------------
+// Schema migrations
+// ---------------------------------------------------------------------------
+
+/** The `schemaVersion` this daemon expects at the root of repo-config.json: 1 is "the build defaults were applied". */
+export const REPO_CONFIG_SCHEMA_VERSION = 1;
+
+/** What a step gets: the registered repos, and the settings file and writer the pass was given (tests; defaults otherwise). */
+export interface SchemaMigrationContext {
+	readonly repos: readonly string[];
+	readonly configPath?: string | undefined;
+	readonly writeKeys?: typeof writeRepoEntryKeys | undefined;
+}
+
+/** One numbered migration. A step that is not `clean` is not stamped and runs again at the next boot, so it must be idempotent. */
+export interface SchemaMigrationStep {
+	readonly version: number;
+	readonly run: (ctx: SchemaMigrationContext) => Promise<{ readonly clean: boolean; readonly counts?: BuildMigrationReport['counts'] }>;
+}
+
+/** The static, ascending list. Step 1 is migrateBuildDefaults, clean when no repo reported write-failed. */
+export const SCHEMA_MIGRATION_STEPS: readonly SchemaMigrationStep[] = [
+	{
+		version: 1,
+		run: async (ctx) => {
+			const report = await migrateBuildDefaults(ctx.repos, {
+				...(ctx.configPath !== undefined ? { configPath: ctx.configPath } : {}),
+				...(ctx.writeKeys !== undefined ? { writeKeys: ctx.writeKeys } : {}),
+			});
+			return { clean: report.counts['write-failed'] === 0, counts: report.counts };
+		},
+	},
+];
+
+export interface SchemaMigrationDeps {
+	readonly registeredRepos: () => Promise<readonly string[]>;
+	readonly configPath?: string;
+	readonly steps?: readonly SchemaMigrationStep[];
+	readonly currentVersion?: number;
+	readonly writeKeys?: typeof writeRepoEntryKeys;
+	readonly writeVersion?: typeof writeSchemaVersion;
+}
+
+/** What one boot pass did. Logged, never stored. `from` is the stored version (null when absent); `to` the version stamped. */
+export interface SchemaMigrationResult {
+	readonly status: 'applied' | 'up-to-date' | 'newer-schema' | 'not-clean' | 'registry-unreadable' | 'file-unreadable' | 'schema-version-invalid' | 'failed';
+	readonly from: number | null;
+	readonly to?: number;
+	readonly note?: string;
+}
+
+/**
+ * The boot pass: when the stored root `schemaVersion` is absent, null or below the expected one, runs each step
+ * numbered above it in ascending order, stops at the first that is not clean or throws, and stamps the highest
+ * version whose steps (and all before it) ran clean. An unreadable file or an invalid stored value runs nothing and
+ * is neither overwritten nor taken as 0. A step that was not stamped runs again at the next boot. Never rejects.
+ */
+export async function runSchemaMigrations(deps: SchemaMigrationDeps): Promise<SchemaMigrationResult> {
+	let from: number | null = null;
+	try {
+		const configPath = deps.configPath ?? repoConfigPath();
+		const expected = deps.currentVersion ?? REPO_CONFIG_SCHEMA_VERSION;
+		const read = readSchemaVersion(configPath);
+		if (!read.ok) {
+			log.warn({ configPath, reason: read.reason }, 'schema migrations: the stored schemaVersion cannot be used; nothing was run');
+			return { status: read.code === 'schema-version-invalid' ? 'schema-version-invalid' : 'file-unreadable', from, note: read.reason };
+		}
+		from = read.version;
+		const stored = from ?? 0;
+		if (stored > expected) return { status: 'newer-schema', from, note: `the file is at ${stored}, this daemon expects ${expected}` };
+		const pending = [...(deps.steps ?? SCHEMA_MIGRATION_STEPS)]
+			.filter(step => step.version > stored && step.version <= expected)
+			.sort((a, b) => a.version - b.version);
+		if (pending.length === 0) return { status: 'up-to-date', from };
+
+		let repos: readonly string[];
+		try {
+			repos = await deps.registeredRepos();
+		} catch (e) {
+			const note = e instanceof Error ? e.message : String(e);
+			log.warn({ err: note }, 'schema migrations: the registry could not be listed');
+			return { status: 'registry-unreadable', from, note };
+		}
+
+		let reached: number | undefined;
+		let stop: { readonly status: 'not-clean' | 'failed'; readonly note: string } | undefined;
+		for (const step of pending) {
+			try {
+				const outcome = await step.run({ repos, configPath: deps.configPath, writeKeys: deps.writeKeys });
+				if (!outcome.clean) {
+					stop = { status: 'not-clean', note: `step ${step.version} did not run clean${outcome.counts !== undefined ? `: ${JSON.stringify(outcome.counts)}` : ''}` };
+					break;
+				}
+				reached = step.version;
+			} catch (e) {
+				stop = { status: 'failed', note: `step ${step.version} threw: ${e instanceof Error ? e.message : String(e)}` };
+				break;
+			}
+		}
+
+		if (reached !== undefined) {
+			const stamped = await (deps.writeVersion ?? writeSchemaVersion)(reached, configPath);
+			if (!stamped.ok) {
+				log.warn({ configPath, err: stamped.error.message }, 'schema migrations: the steps ran but the version could not be stamped');
+				return { status: 'failed', from, note: `could not stamp ${reached}: ${stamped.error.message}` };
+			}
+		}
+		if (stop !== undefined) {
+			log.warn({ from, stampedTo: reached, note: stop.note }, 'schema migrations: stopped before the expected version; the rest runs again at the next boot');
+			return { status: stop.status, from, ...(reached !== undefined ? { to: reached } : {}), note: stop.note };
+		}
+		log.info({ from, to: reached }, 'schema migrations applied');
+		return { status: 'applied', from, ...(reached !== undefined ? { to: reached } : {}) };
+	} catch (e) {
+		const note = e instanceof Error ? e.message : String(e);   // a rejection may carry any value, null included
+		log.warn({ err: note }, 'schema migrations failed');
+		return { status: 'failed', from, note };
+	}
 }
 
 async function resolveTarget(file: RepoConfigFile, entry: RepoConfigEntry | undefined, repo: string): Promise<ResolvedTarget> {

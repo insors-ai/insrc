@@ -30,7 +30,7 @@
     "triageRationale": "Revision of the approved-pending LLD: the add-time step becomes an automatic daemon default instead of a client prompt; same story, same modules.",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 2,
         "contentHash": "15a15a4d9932ce9b7900990f5c043083684fd55eb897498d9b0e9995c44023f6",
@@ -41,7 +41,19 @@
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T06:50:18.795Z",
+        "override": {
+          "reason": "Automated design review is unavailable while being rewritten. The LLD was authored by the controller and presented to the user, who approved it in chat on 2026-11-20 after revising it for automatic defaults at repo add and after the five open questions were resolved."
+        }
+      }
     },
     "revision": 2,
     "questionResolutions": {
@@ -80,7 +92,13 @@
         "rationale": "User asked to resolve the open questions (2026-11-20): ac1-ac5, k1-k6 and c1-c4 are labels assigned by LLD-f8cbf44536347149-s1 and resolve within it; no upstream identity is claimed.",
         "resolvedAt": "2026-11-20T06:46:47.221Z"
       }
-    }
+    },
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "c71a5a8817f138d90e2cc168be78704299641c75"
   },
   "body": {
     "summary": {

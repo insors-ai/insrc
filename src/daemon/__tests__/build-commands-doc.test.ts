@@ -87,10 +87,21 @@ const OLD_VAR = ['INSRC', 'GITHUB', 'CONFIG'].join('_');
 const DOCS_DIR = fileURLToPath(new URL('../../../docs/', import.meta.url));
 const LIVE_DOCS = ['daemon.md', 'workflow.md', 'installation.md', 'index.html', ...readdirSync(join(DOCS_DIR, 'plans')).filter(f => f.endsWith('.md')).map(f => `plans/${f}`)];
 
-// The ~/.insrc/*.json files the live docs may name: the settings file the code reads, the daemon's own config and identity
-// files, and the old name (which the checks below allow only where a line says it was renamed). Any other name given with
-// the ~/.insrc path, such as another name for the settings file, fails the test.
-const KNOWN_INSRC_JSON = new Set(['repo-config.json', 'config.json', 'identity.json', 'github.json']);
+// The .json file names each doc edited for the settings file's rename may mention, whether or not it gives the ~/.insrc path.
+// Any other name fails the test, so a doc that gives the settings file a different name fails wherever it does so; a doc that
+// gains a legitimate mention of another .json file adds it here. github.json is the old name, allowed only where a line says it
+// was renamed (checked below for the four user-facing docs, and the plans may not name it at all).
+const DOC_JSON_NAMES: Readonly<Record<string, readonly string[]>> = {
+	'daemon.md': ['config.json', 'github.json', 'package.json', 'repo-config.json', 'settings.local.json', 't02.t01.json'],
+	'workflow.md': ['-1.json', '-2.json', '-s1.json', '-s2.json', 'github.json', 'repo-config.json'],
+	'installation.md': ['config.json', 'github.json', 'repo-config.json'],
+	'index.html': ['config.json', 'github.json', 'repo-config.json'],
+	'plans/meta-workflow-framework.md': ['foo.json', 'repo-config.json'],
+	'plans/repo-call-audit.md': ['repo-config.json'],
+	'plans/team-workflow.md': ['policy.json', 'repo-config.json', 'team.json', 'tool-surface.golden.json'],
+	'plans/workflow-define.md': ['repo-config.json'],
+	'plans/workflow-implementation.md': ['repo-config.json'],
+};
 
 test('build-commands-doc.test.ts: docs/daemon.md and the other live docs name repo-config.json and INSRC_REPO_CONFIG in line with the code', () => {
 	// the file name and the variable the docs give are the ones the code uses
@@ -135,12 +146,12 @@ test('build-commands-doc.test.ts: docs/daemon.md and the other live docs name re
 			assert.ok(!text.includes(OLD_VAR), `${doc}: a plan never names ${OLD_VAR}`);
 		}
 	}
-	// every ~/.insrc/<name>.json a live doc names is the settings file the code reads or one of the daemon's other known files,
-	// so a doc that gives the settings file another name fails, wherever it does so
-	for (const doc of LIVE_DOCS) {
-		for (const m of readFileSync(join(DOCS_DIR, doc), 'utf8').matchAll(/~\/\.insrc\/([A-Za-z0-9._-]+\.json)/g)) {
-			assert.ok(KNOWN_INSRC_JSON.has(m[1]!), `${doc} names ~/.insrc/${m[1]}, which is neither the settings file ${fileName} nor a known daemon file`);
-		}
+	// every .json name an edited doc mentions is one it was known to mention, so a doc that gives the settings file another name
+	// fails, with or without the ~/.insrc path
+	for (const [doc, allowed] of Object.entries(DOC_JSON_NAMES)) {
+		const names = new Set((readFileSync(join(DOCS_DIR, doc), 'utf8').match(/[A-Za-z0-9_@./-]*[A-Za-z0-9_-]+\.json\b/g) ?? []).map(n => n.replace(/^.*\//, '')));
+		for (const name of names) assert.ok(allowed.includes(name), `${doc} names ${name}, which is neither the settings file ${fileName} nor a .json file it was known to mention`);
+		if (!doc.startsWith('plans/')) assert.ok(names.has(fileName), `${doc} names ${fileName}`);
 	}
 	// the tree listings in workflow.md and the plans keep the file's line
 	for (const doc of ['workflow.md', 'plans/workflow-implementation.md', 'plans/meta-workflow-framework.md']) {

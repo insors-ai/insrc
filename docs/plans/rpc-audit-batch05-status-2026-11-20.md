@@ -2,7 +2,7 @@
 
 Tracked issue: `ISSUE-807fa9e8fb678f4b`; Story `s1`.
 
-Status: **implementation tested; tasks one and two validated; task three final validation and human BUILD approval pending**. The original
+Status: **implementation tested; tasks one and two validated; corrected PLAN approved and task-three revalidation in progress**. The original
 plan was approved, but task one failed build validation twice despite passing
 its mapped whole-file tests and typecheck. No BUILD approval or deployment is
 claimed.
@@ -109,3 +109,15 @@ again and explicit human approval requested. The Story is not completed and
 BUILD approval is not inferred from the approved PLAN. This is the documented
 build workflow's validate → present → human approval → completion ordering; the
 pre-verdict task status is not a claim that task three has already passed.
+
+The next task-three verdict again accepted the technical checks but rejected
+the absence of an already validated-and-presented BUILD. This creates a circular
+precondition: the validator will not record a passing task-three verdict until
+that same verdict is already reflected in the presented BUILD. A replacement
+PLAN changes only that acceptance check to technical readiness for presentation
+after the verdict is recorded. All implementation scope and tests are unchanged;
+explicit human BUILD approval remains mandatory before completion. The revised
+PLAN was approved on 2026-11-20 at 12:10:12 UTC. Task-three revalidation follows
+that approval; no failed verdict or task status was manually patched. The
+technical evidence and BUILD inputs are ready for presentation after validation
+records its verdict. Explicit human BUILD approval remains a separate gate.

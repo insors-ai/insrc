@@ -149,13 +149,13 @@ test("a settings edit while the checks run changes neither the plan, the judge p
 	const repo = repoWith(true);
 	writeFileSync(join(repo, 'go.mod'), 'module x\n');
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-github-config-'));
-	const config = join(dir, 'github.json');
+	const config = join(dir, 'repo-config.json');
 	const entry = { typecheckCommand: 'go vet ./...', testCommand: 'go test', resultFormat: 'exit-code' };
 	const prompts: string[] = [];
 	const plans: ValidationCheckPlan[] = [];
 	const edits: Array<Record<string, unknown>> = [{}, { typecheckCommand: 'go vet ./...' }];   // clear both commands; leave one command set
-	const saved = process.env['INSRC_GITHUB_CONFIG'];
-	process.env['INSRC_GITHUB_CONFIG'] = config;
+	const saved = process.env['INSRC_REPO_CONFIG'];
+	process.env['INSRC_REPO_CONFIG'] = config;
 	try {
 		for (const edit of edits) {
 			writeFileSync(config, JSON.stringify({ repos: { [repo]: entry } }));
@@ -178,7 +178,7 @@ test("a settings edit while the checks run changes neither the plan, the judge p
 			assert.doesNotMatch(prompts[0]!, /The daemon ran no typecheck or tests/, label);
 		}
 	} finally {
-		if (saved === undefined) delete process.env['INSRC_GITHUB_CONFIG']; else process.env['INSRC_GITHUB_CONFIG'] = saved;
+		if (saved === undefined) delete process.env['INSRC_REPO_CONFIG']; else process.env['INSRC_REPO_CONFIG'] = saved;
 		_setBuildValidateCheckRunnerForTests(async () => PASSING);
 		_setBuildValidateProviderForTests(undefined);
 		rmSync(dir, { recursive: true, force: true });
@@ -190,10 +190,10 @@ test('src/daemon/steps/build-step/__tests__/validate-task-round.test.ts: a repo 
 	const repo = repoWith(true);
 	writeFileSync(join(repo, 'pyproject.toml'), '');
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-github-config-'));
-	const config = join(dir, 'github.json');
+	const config = join(dir, 'repo-config.json');
 	const plans: ValidationCheckPlan[] = [];
-	const saved = process.env['INSRC_GITHUB_CONFIG'];
-	process.env['INSRC_GITHUB_CONFIG'] = config;
+	const saved = process.env['INSRC_REPO_CONFIG'];
+	process.env['INSRC_REPO_CONFIG'] = config;
 	try {
 		// the commands are stored the way repo.add stores them, then the gate reads them like any setting
 		assert.deepEqual(await applyBuildDefaults(repo, { configPath: config }), { applied: true, projectType: 'python' });
@@ -207,7 +207,7 @@ test('src/daemon/steps/build-step/__tests__/validate-task-round.test.ts: a repo 
 			['repo-setting', ['mypy', '.'], ['pytest'], 'exit-code'],
 		);
 	} finally {
-		if (saved === undefined) delete process.env['INSRC_GITHUB_CONFIG']; else process.env['INSRC_GITHUB_CONFIG'] = saved;
+		if (saved === undefined) delete process.env['INSRC_REPO_CONFIG']; else process.env['INSRC_REPO_CONFIG'] = saved;
 		_setBuildValidateCheckRunnerForTests(async () => PASSING);
 		rmSync(dir, { recursive: true, force: true });
 		rmSync(repo, { recursive: true, force: true });

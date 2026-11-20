@@ -9,7 +9,7 @@
  * against, so every client learns the rows from the daemon and none keeps a copy.
  *
  * Row kinds:
- *   - `local`  — editable; stored in the repo's own entry of `~/.insrc/github.json`.
+ *   - `local`  — editable; stored in the repo's own entry of `~/.insrc/repo-config.json`.
  *   - `status` — derived and read-only (sign-in status, the resolved target).
  *   - `policy` — read-only; comes from the team policy (sc2).
  *
@@ -18,7 +18,7 @@
  * this row and nothing else.
  */
 
-import type { GithubEntry } from '../workflow/config/github.js';
+import type { RepoConfigEntry } from '../workflow/config/repo-config.js';
 import { OWNER_NAME_RE, REPO_NAME_RE } from '../workflow/config/github-names.js';
 import type { TeamPolicy } from '../workflow/team/types.js';
 
@@ -102,8 +102,8 @@ export const REPO_TRACKER_FIELDS: readonly RepoFieldDef[] = [
 	...POLICY_ROWS,
 ];
 
-// Compile-time: every local key is a GithubEntry field.
-const _localKeys = ['type', 'owner', 'repo', 'ghPath', 'ghHost', 'branchPattern', 'gitHooks', 'typecheckCommand', 'testCommand', 'resultFormat'] as const satisfies readonly (keyof GithubEntry)[];
+// Compile-time: every local key is a RepoConfigEntry field.
+const _localKeys = ['type', 'owner', 'repo', 'ghPath', 'ghHost', 'branchPattern', 'gitHooks', 'typecheckCommand', 'testCommand', 'resultFormat'] as const satisfies readonly (keyof RepoConfigEntry)[];
 void _localKeys;
 
 // ---------------------------------------------------------------------------

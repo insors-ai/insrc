@@ -69,9 +69,9 @@ describe('commit-denial-callers.test.ts: a denied commit posts no comment and ha
 
 	it('a denied commit makes recordResolution throw the denial and posts no tracker comment', async () => {
 		initGit();
-		writeFileSync(join(repo, 'github.json'), JSON.stringify({ repos: { [repo]: { type: 'github', owner: 'acme', repo: 'demo' } } }));
-		const prior = process.env['INSRC_GITHUB_CONFIG'];
-		process.env['INSRC_GITHUB_CONFIG'] = join(repo, 'github.json');
+		writeFileSync(join(repo, 'repo-config.json'), JSON.stringify({ repos: { [repo]: { type: 'github', owner: 'acme', repo: 'demo' } } }));
+		const prior = process.env['INSRC_REPO_CONFIG'];
+		process.env['INSRC_REPO_CONFIG'] = join(repo, 'repo-config.json');
 		try {
 			ghBin = installStandInBin('gh', 'echo "gh was called: $*" >> "$(dirname "$0")/calls"; echo ok');
 			const lld = join(repo, ARTIFACTS_DIR, `${lldArtifactId(HASH, 's4')}.json`);
@@ -89,6 +89,6 @@ describe('commit-denial-callers.test.ts: a denied commit posts no comment and ha
 			_setApprovalGateForTests(() => decline);
 			await assert.rejects(recordResolution(repo, 'lld', HASH, 's4', 'q1', 'resolved', 'yes'), (e: unknown) => e instanceof ToolDenied);
 			assert.deepEqual(ghBin.calls(), [], 'no gh call was made after the denied commit');
-		} finally { if (prior === undefined) delete process.env['INSRC_GITHUB_CONFIG']; else process.env['INSRC_GITHUB_CONFIG'] = prior; }
+		} finally { if (prior === undefined) delete process.env['INSRC_REPO_CONFIG']; else process.env['INSRC_REPO_CONFIG'] = prior; }
 	});
 });

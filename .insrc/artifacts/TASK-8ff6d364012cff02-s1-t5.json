@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-6e9bdd9a-f8f9-422b-a771-8151c5127893",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-20T16:49:20.263Z",
+    "epicCreatedAt": "2026-11-20T12:31:06.431Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8ff6d364012cff02",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Update the live documentation and the doc test",
+      "parent": {
+        "entityId": "STORY-8ff6d364012cff02-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-8ff6d364012cff02-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-8ff6d364012cff02-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "aa15bdacf329e785c93ae24f747235b5b2275cb773dd48d95fa4dd6c4487d21c",
+        "at": "2026-11-20T16:49:20.267Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T16:49:20.268Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Update the live documentation and the doc test",
+    "summary": "Update docs/daemon.md, docs/workflow.md (including the shell example that writes the file by hand and the tree listing), docs/installation.md, docs/index.html and the plans under docs/plans to name repo-config.json and INSRC_REPO_CONFIG, state that an existing github.json is moved at the first boot of the updated daemon and that a github.json created by hand afterwards is ignored because the settings now live in repo-config.json, and extend build-commands-doc.test.ts to keep this section equal to the code. Approved Story and Epic records are left as they are.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "The live docs name repo-config.json and INSRC_REPO_CONFIG and none of them tells a user to create github.json.",
+      "The docs state that an existing github.json is moved at the first boot of the updated daemon and that a github.json created by hand afterwards is ignored.",
+      "build-commands-doc.test.ts passes and fails when the docs name a different file or variable than the code.",
+      "Approved Story and Epic records under docs/standalone and docs/epics are unchanged."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "build-commands-doc.test.ts: docs/daemon.md and the other live docs name repo-config.json and INSRC_REPO_CONFIG in line with the code"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

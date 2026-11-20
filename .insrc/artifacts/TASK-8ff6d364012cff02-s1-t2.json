@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a6c49f2e-f75a-42c4-964b-2930ceaf021a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-20T16:49:20.245Z",
+    "epicCreatedAt": "2026-11-20T12:31:06.431Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8ff6d364012cff02",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add the first-boot move of github.json to repo-config.json, with its tests",
+      "parent": {
+        "entityId": "STORY-8ff6d364012cff02-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-8ff6d364012cff02-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-8ff6d364012cff02-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "182c0011f933d35772e15002de28434ac23ace925e2d9ef0650c49a088082214",
+        "at": "2026-11-20T16:49:20.249Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T16:49:20.250Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the first-boot move of github.json to repo-config.json, with its tests",
+    "summary": "Add moveLegacyRepoConfig and LegacyRepoConfigMove beside the store, and call it from src/daemon/index.ts straight after the directories are ensured and before the database is opened, only when INSRC_REPO_CONFIG is unset, inside a try/catch that logs: rename github.json to repo-config.json when only the old file exists, touch nothing when both exist, do nothing when there is no old file, never overwrite, never throw. Write in src/workflow/config/__tests__/repo-config.test.ts the move cases (only-old, none, both, failing rename, second boot, symbolic link) and the source check on the boot call's order, guard and try/catch.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "With only github.json present the move renames it to repo-config.json byte for byte and leaves no github.json; with neither present it returns nothing-to-move.",
+      "With both files present neither is touched and the result is both-exist; a failing rename returns failed with a note, leaves github.json in place and does not throw.",
+      "A second move after a successful one returns nothing-to-move, and a symbolic-link github.json is moved as a link.",
+      "The boot calls the move after the directories are ensured and before the database is opened, inside a try/catch, and skips it when INSRC_REPO_CONFIG is set; the source check fails when any of these is changed."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "repo-config.test.ts: moveLegacyRepoConfig renames github.json to repo-config.json when only the old file exists, leaving no github.json and the same content byte for byte, and returns nothing-to-move when there is no github.json"
+      },
+      {
+        "level": "unit",
+        "name": "repo-config.test.ts: moveLegacyRepoConfig leaves both files untouched and returns both-exist when both exist, never overwrites an existing repo-config.json, returns failed with a note and leaves github.json in place when the rename throws, and never throws"
+      },
+      {
+        "level": "unit",
+        "name": "repo-config.test.ts: a second move after a successful one returns nothing-to-move, and a symbolic-link github.json is moved as a link"
+      },
+      {
+        "level": "integration",
+        "name": "repo-config.test.ts: a source check that src/daemon/index.ts calls moveLegacyRepoConfig after the directories are ensured and before the database is opened, inside a try/catch and only when INSRC_REPO_CONFIG is unset"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

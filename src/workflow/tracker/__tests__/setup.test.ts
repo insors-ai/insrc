@@ -6,8 +6,8 @@
 /**
  * Unit tests for the tracker-setup engine — driven entirely against a
  * fake `gh`/`git` via `installExecStandIn`, with the github config
- * redirected off the real `~/.insrc/github.json` through
- * `INSRC_GITHUB_CONFIG`.
+ * redirected off the real `~/.insrc/repo-config.json` through
+ * `INSRC_REPO_CONFIG`.
  *
  * Run: npx tsx --test src/workflow/tracker/__tests__/setup.test.ts
  */
@@ -71,19 +71,19 @@ function fakeGh(o: FakeOpts = {}) {
 	return { fn, calls };
 }
 
-/** Fresh temp dir + INSRC_GITHUB_CONFIG pointing at a github.json inside it. */
+/** Fresh temp dir + INSRC_REPO_CONFIG pointing at a repo-config.json inside it. */
 function withCfg(seed?: unknown): { cfgPath: string; dir: string } {
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-setup-'));
-	const cfgPath = join(dir, 'github.json');
+	const cfgPath = join(dir, 'repo-config.json');
 	if (seed !== undefined) writeFileSync(cfgPath, JSON.stringify(seed, null, 2));
-	process.env['INSRC_GITHUB_CONFIG'] = cfgPath;
+	process.env['INSRC_REPO_CONFIG'] = cfgPath;
 	_setWorkflowToolDepsForTests({ approvalMode: 'auto' });   // issue-type and project writes are common-class calls
 	_setApprovalGateForTests(() => ({ async ask(r) { return { requestId: r.requestId, decision: 'approve' }; } }));   // approvals asked for in a real run are answered yes
 	return { cfgPath, dir };
 }
 
 function cleanup(dir: string): void {
-	delete process.env['INSRC_GITHUB_CONFIG'];
+	delete process.env['INSRC_REPO_CONFIG'];
 	installExecStandIn();
 	_setWorkflowToolDepsForTests();
 	_setApprovalGateForTests(undefined);
@@ -149,7 +149,7 @@ test('missing scopes: issue-types + project are manual carrying the refresh comm
 // (c) missing config — the step writes it
 // ---------------------------------------------------------------------------
 
-test('missing config: the config step writes github.json and reports done', async () => {
+test('missing config: the config step writes repo-config.json and reports done', async () => {
 	const { cfgPath, dir } = withCfg();   // no seed → file absent
 	installExecStandIn(fakeGh().fn);
 	try {

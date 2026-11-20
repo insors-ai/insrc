@@ -28,8 +28,8 @@ import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 
 import { getLogger } from '../../shared/logger.js';
-import { githubConfigPath, loadGithubConfigFile, type GithubConfigFile } from '../config/github.js';
-import { readRepoEntry } from '../config/github-store.js';
+import { repoConfigPath, loadRepoConfigFile, type RepoConfigFile } from '../config/repo-config.js';
+import { readRepoEntry } from '../config/repo-config-store.js';
 import { STATUS_LABELS } from './conventions.js';
 import { createRegistryTable, workflowToolDeps } from './registry-table.js';
 import type { RegistryTable } from './registry-table.js';
@@ -66,7 +66,7 @@ export interface TrackerSetupOptions {
 	/** Also create a Projects v2 board (needs the `project` scope). */
 	readonly includeProject?: boolean | undefined;
 	/** The config step's result, computed by the caller (the terminal client asks the
-	 *  daemon, the only writer of github.json). When given, the config step reports it
+	 *  daemon, the only writer of repo-config.json). When given, the config step reports it
 	 *  verbatim and does not read or write the file; without it the step runs in-process. */
 	readonly configOutcome?: ConfigOutcome | undefined;
 }
@@ -141,7 +141,7 @@ export async function runTrackerSetup(repoPath: string, opts: TrackerSetupOption
 	// owner/repo, needed by config + every gh target step.
 	const remote = await table.gitOriginOwnerRepo(repoPath);
 
-	// 3. ~/.insrc/github.json config (no gh needed — always runs). A caller-supplied
+	// 3. ~/.insrc/repo-config.json config (no gh needed — always runs). A caller-supplied
 	// outcome is reported as is and the file is not touched.
 	steps.push(opts.configOutcome !== undefined
 		? { key: CONFIG_KEY, title: CONFIG_TITLE, status: opts.configOutcome.status, detail: opts.configOutcome.detail }
@@ -168,7 +168,7 @@ export async function runTrackerSetup(repoPath: string, opts: TrackerSetupOption
 // ---------------------------------------------------------------------------
 
 const CONFIG_KEY = 'config';
-const CONFIG_TITLE = '~/.insrc/github.json config';
+const CONFIG_TITLE = '~/.insrc/repo-config.json config';
 
 const NO_ORIGIN_DETAIL = 'could not determine owner/repo from `git remote get-url origin` — add a GitHub origin remote';
 
@@ -190,7 +190,7 @@ export function configAlreadyDetail(path: string, owner: string, name: string): 
  * dereferenced while null. Only a structurally valid file reaches the completeness
  * test the setup has always used. Never throws.
  */
-export async function planTrackerConfig(repoPath: string, path: string = githubConfigPath(), table: RegistryTable = createRegistryTable(workflowToolDeps(repoPath))): Promise<TrackerConfigPlan> {
+export async function planTrackerConfig(repoPath: string, path: string = repoConfigPath(), table: RegistryTable = createRegistryTable(workflowToolDeps(repoPath))): Promise<TrackerConfigPlan> {
 	const read = readRepoEntry(repoPath, path);
 	if (!read.ok) return { status: 'failed', detail: read.error.message };
 	const remote = await table.gitOriginOwnerRepo(repoPath);
@@ -213,8 +213,8 @@ function ensureConfig(repoPath: string, remote: OwnerRepo | null): TrackerSetupS
 	if (remote === null) {
 		return { key: CONFIG_KEY, title: CONFIG_TITLE, status: 'failed', detail: NO_ORIGIN_DETAIL };
 	}
-	const path = githubConfigPath();
-	const file = loadGithubConfigFile(path);
+	const path = repoConfigPath();
+	const file = loadRepoConfigFile(path);
 	const entry = file.repos?.[repoPath] ?? file.default;
 	const complete = entry !== undefined
 		&& entry.type === 'github'
@@ -225,7 +225,7 @@ function ensureConfig(repoPath: string, remote: OwnerRepo | null): TrackerSetupS
 	if (complete) {
 		return { key: CONFIG_KEY, title: CONFIG_TITLE, status: 'already', detail: configAlreadyDetail(path, entry!.owner!, entry!.repo!) };
 	}
-	const next: GithubConfigFile = {
+	const next: RepoConfigFile = {
 		...file,
 		repos: {
 			...file.repos,

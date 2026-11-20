@@ -95,7 +95,7 @@ import * as todosRpc from './todos-rpc.js';
 import { createGitHooks } from './git-hooks-methods.js';
 import { applyBuildDefaults, createRepoSettingsHandlers } from './repo-settings.js';
 import type { BuildDefaultsOutcome } from './repo-settings.js';
-import type { writeRepoEntryKeys } from '../workflow/config/github-store.js';
+import type { writeRepoEntryKeys } from '../workflow/config/repo-config-store.js';
 import { handoffRpcHandlers } from './steps/workflow-step/handoff-rpc.js';
 import { approvalAnswer, approvalSubscribe } from './approval.js';
 import { toolsCall } from './tools/call-handler.js';
@@ -155,7 +155,7 @@ export interface HandlerRuntimeDeps {
  readonly stepCallHandler?: StreamHandler | undefined;
 	/** Test seam: the registered repositories' paths (default: the registry in `db`). */
 	readonly registeredRepos?: (() => Promise<ReadonlySet<string>>) | undefined;
-	/** Test seam: the writer `repo.add` stores the build defaults with (default: the github.json writer). */
+	/** Test seam: the writer `repo.add` stores the build defaults with (default: the repo-config.json writer). */
 	readonly buildDefaultsWriter?: typeof writeRepoEntryKeys | undefined;
 	readonly db: Awaited<ReturnType<typeof getDb>>;
 	readonly configStore: ConfigStore;
@@ -1420,7 +1420,7 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		...sharedAdminHandlers(deps.shutdown),
 
 		// Repo-scoped tracker settings (Story s3): the daemon is the only writer of
-		// ~/.insrc/github.json, so every client edits it through these methods.
+		// ~/.insrc/repo-config.json, so every client edits it through these methods.
 		...repoSettingsHandlers,
 
 		// docgen: generate a self-contained HTML document from the code graph

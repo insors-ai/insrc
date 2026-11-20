@@ -3,7 +3,7 @@
  * A ToolDenied is not caught here: it reaches the client as the error of the call.
  */
 
-import { githubConfigPath } from '../workflow/config/github.js';
+import { repoConfigPath } from '../workflow/config/repo-config.js';
 import {
 	configAlreadyDetail, configWrittenDetail, planTrackerConfig, runTrackerSetup,
 } from '../workflow/tracker/setup.js';
@@ -50,7 +50,7 @@ type EnsureReply = { readonly ok: true; readonly changed: boolean } | { readonly
 
 /**
  * `tracker.setup` {repoPath, opts}: plan the config step, have the daemon's own repo.trackerConfig.ensure write it when it needs
- * writing (the daemon is the only writer of github.json), then run the checklist with that outcome.
+ * writing (the daemon is the only writer of repo-config.json), then run the checklist with that outcome.
  */
 export async function handleTrackerSetup(params: unknown, ensure: RpcHandler): Promise<TrackerSetupReport | { error: string }> {
 	const p = (params ?? {}) as { repoPath?: unknown; opts?: unknown };
@@ -61,7 +61,7 @@ export async function handleTrackerSetup(params: unknown, ensure: RpcHandler): P
 	if (plan.status !== 'needs-write') {
 		configOutcome = { status: plan.status, detail: plan.detail };
 	} else {
-		const path = githubConfigPath();
+		const path = repoConfigPath();
 		try {
 			const reply = await ensure({ repo: p.repoPath, owner: plan.owner, name: plan.name }) as EnsureReply;
 			configOutcome = !reply.ok ? { status: 'failed', detail: reply.error.message }

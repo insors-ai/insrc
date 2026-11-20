@@ -101,15 +101,15 @@ function writeJson(path: string, obj: unknown): void {
 	writeFileSync(path, JSON.stringify(obj, null, 2) + '\n');
 }
 
-/** tmp repo with a github.json (type: github → git-remote fallback) and
+/** tmp repo with a repo-config.json (type: github → git-remote fallback) and
  *  the Define/HLD/LLD artifact JSONs. */
 function setup(): { repo: string; hldJson: string; lldJson: string; defineJson: string; cleanup: () => void } {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-tracker-'));
 	mkdirSync(join(repo, 'docs/defines'), { recursive: true });
 	mkdirSync(join(repo, 'docs/designs'), { recursive: true });
-	const ghCfg = join(repo, 'github.json');
+	const ghCfg = join(repo, 'repo-config.json');
 	writeFileSync(ghCfg, JSON.stringify({ default: { type: 'github' } }));
-	process.env['INSRC_GITHUB_CONFIG'] = ghCfg;
+	process.env['INSRC_REPO_CONFIG'] = ghCfg;
 
 	const defineJson = join(repo, '.insrc/artifacts', `DEF-${HASH}.json`);
 	writeJson(defineJson, {
@@ -129,7 +129,7 @@ function setup(): { repo: string; hldJson: string; lldJson: string; defineJson: 
 	const lldJson = join(repo, '.insrc/artifacts', `LLD-${HASH}-s1.json`);
 	writeJson(lldJson, { meta: { workflow: 'design.story', runId: 'l1', repoPath: repo, epicHash: HASH, epicSlug: SLUG, storyId: 's1', hldBaseRunId: 'h1', hldEffectiveHash: 'deadbeefcafe', hldAmendmentsApplied: [], schemaVersion: 1 }, body: {} });
 
-	return { repo, hldJson, lldJson, defineJson, cleanup: () => { delete process.env['INSRC_GITHUB_CONFIG']; installExecStandIn(); rmSync(repo, { recursive: true, force: true }); } };
+	return { repo, hldJson, lldJson, defineJson, cleanup: () => { delete process.env['INSRC_REPO_CONFIG']; installExecStandIn(); rmSync(repo, { recursive: true, force: true }); } };
 }
 
 function trackerOf(jsonPath: string): Record<string, unknown> {
@@ -213,9 +213,9 @@ test('tracker disabled (no config) skips cleanly', async () => {
 	installExecStandIn(gh.fn);
 	const s = setup();
 	// Point at a path that does not exist → the loader returns {} → type: none.
-	// (Deleting the env var would fall back to the user's real ~/.insrc/github.json,
+	// (Deleting the env var would fall back to the user's real ~/.insrc/repo-config.json,
 	// making the test non-hermetic — it fails whenever a real tracker is configured.)
-	process.env['INSRC_GITHUB_CONFIG'] = join(s.repo, 'no-such-github.json');
+	process.env['INSRC_REPO_CONFIG'] = join(s.repo, 'no-such-repo-config.json');
 	try {
 		const r = await autoPushEpicOnHld(s.hldJson);
 		assert.equal(r.status, 'skipped');
@@ -285,7 +285,7 @@ function makeFailableGh(failOn: (args: readonly string[]) => boolean = () => fal
 /** setup() plus a plan with two tasks and task push (and optionally milestones) switched on. */
 function setupWithPlan(useMilestones = false): ReturnType<typeof setup> & { planJson: string } {
 	const s = setup();
-	writeFileSync(join(s.repo, 'github.json'), JSON.stringify({ default: { type: 'github', pushTasks: true, useMilestones } }));
+	writeFileSync(join(s.repo, 'repo-config.json'), JSON.stringify({ default: { type: 'github', pushTasks: true, useMilestones } }));
 	const planJson = planArtifactPaths(s.repo, HASH, 's1', CREATED, 'epic', SLUG).json;
 	writeJson(planJson, {
 		meta: { workflow: 'plan', runId: 'p1', repoPath: s.repo, epicHash: HASH, epicSlug: SLUG, storyId: 's1', lldRunId: 'l1', lldEffectiveHash: 'deadbeefcafe', schemaVersion: 1 },

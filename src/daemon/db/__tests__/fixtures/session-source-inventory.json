@@ -8036,7 +8036,7 @@
       ],
       "siteCount": 5,
       "sitesDigest": "4d9cad0d223f446481f1aae5b324362f58c9f5f2dd8738a72392a4ed9905cba5",
-      "sourceDigest": "a2e67e70d3157455fa63dc6a2a194808f5dc72636a5b12600a789b8417bdc412"
+      "sourceDigest": "aa6e54ca82be8109ea4379c39f8f806036b1b0625a18a293b1037304247bf9bc"
     },
     "src/cli/ui/ApprovalPrompt.tsx": {
       "classification": "client-process-boundary",
@@ -14054,7 +14054,7 @@
       ],
       "siteCount": 3,
       "sitesDigest": "e866ad83c79a97de0696dbc3a0fb530e8e8ba1e1ca8fb26cfa85f2a04d557a7f",
-      "sourceDigest": "4702565172fe5a8346f021ab4b9c69556a3658e39c5b7d824763f2e13dec5666"
+      "sourceDigest": "a65639a43184773bc2ae0787a04fef9f5c4e9c7d6228ecd5080788a478800d72"
     },
     "src/daemon/git-hooks/hook-block.ts": {
       "classification": "daemon-admission-boundary",
@@ -39155,7 +39155,7 @@
       ],
       "siteCount": 3,
       "sitesDigest": "bb9a3e4c2e13892e1cca6ced5fbfcb8a7faf4aa083de16be9123cfe2c98f5be1",
-      "sourceDigest": "874b731beee71fabd2805b5f01291db614a4b8c76809257051a36412c2b1d0ce"
+      "sourceDigest": "1b188cedc53548097682ae2dd2a6e02fb337b261e6014cf97faa5a43766b8a10"
     },
     "src/workflow/artifacts/companion/adaptive-cards.ts": {
       "classification": "forbidden-session-service",
@@ -40742,7 +40742,24 @@
       "sitesDigest": "4d589ed76011180b408082c9060aba1be58978af5e9b6d97eba47d9efca92793",
       "sourceDigest": "e149b4575d97902b7252a995c5f90b8e2d9d919265401e4caafcc74d8a3a7406"
     },
-    "src/workflow/config/github-store.ts": {
+    "src/workflow/config/github.ts": {
+      "classification": "forbidden-session-service",
+      "rationale": "Persistent workflow/document-generation/knowledge-service execution is outside supported session methods. Reject before dispatch; this inventory does not grant a temporary route into the service.",
+      "sites": [
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "filesystem-read",
+          "readFileSync"
+        ]
+      ],
+      "siteCount": 2,
+      "sitesDigest": "bbce14460b45db436153b6e141c05eb47662f82c16044d5c9e8186e1eb2e3ce2",
+      "sourceDigest": "58def91d4f04b4230a966079cab440f2f83ad25b9730a7d1140c6381b21b1ce1"
+    },
+    "src/workflow/config/repo-config-store.ts": {
       "classification": "forbidden-session-service",
       "rationale": "Persistent workflow/document-generation/knowledge-service execution is outside supported session methods. Reject before dispatch; this inventory does not grant a temporary route into the service.",
       "sites": [
@@ -40812,10 +40829,10 @@
         ]
       ],
       "siteCount": 16,
-      "sitesDigest": "4d40a620517c451348a19d7040b8b242c44e94300787d4f68fd8bcd9759db872",
-      "sourceDigest": "c866871ae63d6a07ab45905e64cc9e3ae8f51ee98a5915ccffe6fc5b5678bc2c"
+      "sitesDigest": "007d2f4521b3c0cb1c4c1aa62745b74a3112e5701a5b8d20cc49cb8710416c3c",
+      "sourceDigest": "8b42ba4cb04665b65f177997d5535dd32c2e858863ca4165b2bfa013ba802e2f"
     },
-    "src/workflow/config/github.ts": {
+    "src/workflow/config/repo-config.ts": {
       "classification": "forbidden-session-service",
       "rationale": "Persistent workflow/document-generation/knowledge-service execution is outside supported session methods. Reject before dispatch; this inventory does not grant a temporary route into the service.",
       "sites": [
@@ -40824,21 +40841,13 @@
           "JSON.parse"
         ],
         [
-          "serialization",
-          "JSON.parse"
-        ],
-        [
-          "filesystem-read",
-          "readFileSync"
-        ],
-        [
           "filesystem-read",
           "readFileSync"
         ]
       ],
-      "siteCount": 4,
-      "sitesDigest": "074e6e6947102653130f1164ee384b504e68094cdf25bfee43e43460e9b08bb7",
-      "sourceDigest": "9a037b3ddc3ee7b04f72f398c51e83f9d0050fb59aa3c1192e0b0763641df2e9"
+      "siteCount": 2,
+      "sitesDigest": "5f307ea2832a68c19573c0f0c964da9ffefb7b1e68d217ee7ec89893549b2eba",
+      "sourceDigest": "93d11c0f7d49cbdb3f09ece674099a31d3510df840ef8a9f1415bd37109af46b"
     },
     "src/workflow/convert/amendments.ts": {
       "classification": "forbidden-session-service",
@@ -43764,7 +43773,7 @@
       ],
       "siteCount": 2,
       "sitesDigest": "d8596424b39836e3f071ec6c7d2f8842c7a7ac2a3daac81b945f290924052ff8",
-      "sourceDigest": "73d00b3e45cea4abf187c9810c24b5ebee20306110ba06363f98f8b52ab548aa"
+      "sourceDigest": "a41afe5671210a17e146d875c3b3cec1820e825692fc6f552111a9aaa7322b54"
     },
     "src/workflow/runners/tracker/index.ts": {
       "classification": "forbidden-session-service",
@@ -44469,7 +44478,7 @@
       ],
       "siteCount": 8,
       "sitesDigest": "8a8a1cf1baf479ab64e6d46b0620b22feb27bc8ef414cfe3d58c03c9243356be",
-      "sourceDigest": "104c2c7bf0bbc7ffe34cc8c8926e769307b4380b6c715b4d641393896b22bcf6"
+      "sourceDigest": "9485b48222745a824e8fe62169fb6b6128d7882be69ee0941423f9721349f3ee"
     },
     "src/workflow/tracker/attach-unit.ts": {
       "classification": "forbidden-session-service",
@@ -44777,7 +44786,7 @@
       ],
       "siteCount": 6,
       "sitesDigest": "1fa0ef2e9fe0a58e34182fa4979a6cdb4692922606c30bedc3f0432ebe053aaa",
-      "sourceDigest": "0c57923335258e053e39579c840b5e9a64ae8725fff07df08748ee3baa8afe28"
+      "sourceDigest": "1a537e64541d43dbb0378297a696678231adfc01bd8622be3c5102fc71bb08d8"
     },
     "src/workflow/tracker/sync.ts": {
       "classification": "forbidden-session-service",

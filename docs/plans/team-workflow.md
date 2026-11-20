@@ -85,7 +85,7 @@ other-party review, local approval, signoff request opened, completion.
 | | Policy | Config |
 |---|---|---|
 | Contents | team mode on/off, `signoffStages` (starter default: DEF, HLD, LLD, BUILD completion), claim enforcement, claim units | adapter and target override, `gh`/`glab` binary and auth, branch prefix, `commitArtifacts` |
-| Where | a file in the repo (e.g. `.insrc/policy.json`) read from the **remote default branch ref**, never the working tree | per-repo entry in `~/.insrc/github.json` (extended), per-user items in the user config |
+| Where | a file in the repo (e.g. `.insrc/policy.json`) read from the **remote default branch ref**, never the working tree | per-repo entry in `~/.insrc/repo-config.json` (extended), per-user items in the user config |
 | Override | none locally; changed by a reviewed change under the tracker's own rules | by each developer, via the VS Code and TUI settings |
 | Surface | edited as a file; `insrc team init` writes the starter profile | added to the daemon `CONFIG_CATALOG` (rendered via `config.catalog` in VS Code and the TUI Setup pane) |
 
@@ -118,8 +118,8 @@ Repos without the policy file behave exactly as today (solo mode).
   sign-in. `ghPath`, `ghHost` and `branchPattern` are stored and shown only;
   their consumers are an s1 follow-up (gh runner) and s6 (branch naming), and the
   rows say "saved; not used yet" until then.
-- **s3 single writer of github.json (accepted 2026-10-17, s3 LLD revision 12):**
-  the daemon is the only process that writes `~/.insrc/github.json`, through one
+- **s3 single writer of repo-config.json (accepted 2026-10-17, s3 LLD revision 12):**
+  the daemon is the only process that writes `~/.insrc/repo-config.json`, through one
   in-process queue with a verify-before-rename check; there is no cross-process
   lock. This supersedes the earlier answer to question sg4 (tracker setup stays
   on a shared direct writer): the terminal `trackerSetup` becomes asynchronous
@@ -327,7 +327,7 @@ The plan PLAN-315d510cb28100e2-s9 was approved on 2026-11-02 and built in tasks 
 4. **Amendments.** `AMD-315d510cb28100e2-31` (`sharedContract.methodAdd` on sc1: the optional `TrackerPort.readIssueStatus` and the `status-read` capability) and `AMD-315d510cb28100e2-32` (`nonFunctional.retarget`: every registry tool call has its own limit and the status refresh has a 120-second budget) are the amendments of this Story. They are drafts, like `AMD-...-29` and `-30` (earlier authorings of the same methodAdd, stale) and are approved in the amendment store when the Story is completed. The implementation matches the signature of AMD-31: `readIssueStatus?(issue): Promise<PortResult<{ state: 'open' | 'closed'; labels: string[] }>>` (async, as every port method is).
 5. **Deviations.**
    - A refresh the Deadline stops writes nothing for that Epic and reports it skipped with 'time limit reached'. The LLD allowed a partial `storyStatus`; a partial write would drop the status of Stories not read.
-   - An unparseable `github.json` is read by the lenient loader as no setting (tracker off), as the terminal approve reads it. The malformed configuration the draft hook reports as not-ready is an entry with `type: github` and no target that the origin remote cannot supply.
+   - An unparseable `repo-config.json` is read by the lenient loader as no setting (tracker off), as the terminal approve reads it. The malformed configuration the draft hook reports as not-ready is an entry with `type: github` and no target that the origin remote cannot supply.
    - The chain report's per-Story `artifactId` and `revision` are those of the Story's LLD (0 when it has none); the Epic's are those of the Define.
    - The hooks take the registered repositories from the daemon's repo registry (`registerTrackerRefreshHooks` in the daemon start-up).
 

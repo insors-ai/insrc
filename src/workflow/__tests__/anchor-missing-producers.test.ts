@@ -176,11 +176,11 @@ test('the finalizers, tracker-auto, tracker/link, workflow-rpc and synthesize ea
 	// tracker-auto, team and legacy: no issue is created and no file is touched
 	for (const mode of ['team', 'legacy'] as const) {
 		const r = tempRepo();
-		const cfgPath = join(r.repo, 'github.json');
-		const prior = process.env['INSRC_GITHUB_CONFIG'];
+		const cfgPath = join(r.repo, 'repo-config.json');
+		const prior = process.env['INSRC_REPO_CONFIG'];
 		try {
 			writeFileSync(cfgPath, JSON.stringify({ repos: { [r.repo]: { type: 'github', owner: 'acme', repo: 'demo', pushTasks: false } } }));
-			process.env['INSRC_GITHUB_CONFIG'] = cfgPath;
+			process.env['INSRC_REPO_CONFIG'] = cfgPath;
 			seedTimelessDefine(r.repo);
 			const meta = { workflow: 'design.epic', epicHash: HASH, epicSlug: SLUG, repoPath: r.repo, storyId: 's1', createdAt: '2026-07-17T00:00:00.000Z' };
 			const hldJson = join(r.repo, '.insrc', 'artifacts', `HLD-${HASH}.json`);
@@ -203,7 +203,7 @@ test('the finalizers, tracker-auto, tracker/link, workflow-rpc and synthesize ea
 			assert.equal(readFileSync(hldJson, 'utf8'), hldBefore, `${mode}: the HLD record is untouched`);
 		} finally {
 			_setAutoPushDepsForTests();
-			if (prior === undefined) delete process.env['INSRC_GITHUB_CONFIG']; else process.env['INSRC_GITHUB_CONFIG'] = prior;
+			if (prior === undefined) delete process.env['INSRC_REPO_CONFIG']; else process.env['INSRC_REPO_CONFIG'] = prior;
 			r.done();
 		}
 	}

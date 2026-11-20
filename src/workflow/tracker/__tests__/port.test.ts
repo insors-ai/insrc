@@ -24,14 +24,14 @@ import { resolveStrictTrackerTarget } from '../../config/github.js';
 import { loadTracker } from '../github-adapter.js';
 import { installExecStandIn, installNoPrograms } from '../../__tests__/helpers/exec-stand-in.js';
 
-afterEach(() => { installExecStandIn(); delete process.env['INSRC_GITHUB_CONFIG']; });
+afterEach(() => { installExecStandIn(); delete process.env['INSRC_REPO_CONFIG']; });
 
 const set = (...c: Capability[]): ReadonlySet<Capability> => new Set(c);
 
 async function withConfigAsync<T>(content: string | object, fn: (configPath: string, dir: string) => T | Promise<T>): Promise<T> {
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-strict-'));
 	try {
-		const p = join(dir, 'github.json');
+		const p = join(dir, 'repo-config.json');
 		writeFileSync(p, typeof content === 'string' ? content : JSON.stringify(content));
 		return await fn(p, dir);
 	} finally {
@@ -42,7 +42,7 @@ async function withConfigAsync<T>(content: string | object, fn: (configPath: str
 function withConfig<T>(content: string | object, fn: (configPath: string, dir: string) => T): T {
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-strict-'));
 	try {
-		const p = join(dir, 'github.json');
+		const p = join(dir, 'repo-config.json');
 		writeFileSync(p, typeof content === 'string' ? content : JSON.stringify(content));
 		return fn(p, dir);
 	} finally {
@@ -166,10 +166,10 @@ test('the signature fixture compiles with resolveIssueId and its broken twin doe
 // loadTracker
 // ---------------------------------------------------------------------------
 
-/** Run `fn` with a github.json that targets acme/demo for repo '/r' and a fake gh. */
+/** Run `fn` with a repo-config.json that targets acme/demo for repo '/r' and a fake gh. */
 async function withLoader<T>(exec: (args: readonly string[]) => string, fn: (calls: string[][]) => T | Promise<T>): Promise<T> {
 	return await withConfigAsync({ repos: { '/r': { owner: 'acme', repo: 'demo' } } }, async configPath => {
-		process.env['INSRC_GITHUB_CONFIG'] = configPath;
+		process.env['INSRC_REPO_CONFIG'] = configPath;
 		const calls: string[][] = [];
 		installExecStandIn((_cmd, args) => { calls.push([...args]); return exec(args); });
 		return fn(calls);
@@ -193,7 +193,7 @@ test('loadTracker succeeds when every needed capability is declared', async () =
 });
 
 test('loadTracker with an empty needed set validates configuration and sign-in', async () => {
-	process.env['INSRC_GITHUB_CONFIG'] = '/does/not/exist.json';   // never read the real ~/.insrc/github.json
+	process.env['INSRC_REPO_CONFIG'] = '/does/not/exist.json';   // never read the real ~/.insrc/repo-config.json
 	assert.match(refusal(await loadTracker('/r', set())), /does not exist/);
 	await withLoader(() => { throw execError({ stderr: 'To get started with GitHub CLI, please run:  gh auth login' }); }, async () => {
 		const r = await loadTracker('/r', set());

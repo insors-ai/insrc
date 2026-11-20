@@ -13,7 +13,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { applyBuildDefaults, createRepoSettingsHandlers, mapSignin, migrateBuildDefaults } from '../repo-settings.js';
-import { writeRepoEntryKeys } from '../../workflow/config/github-store.js';
+import { writeRepoEntryKeys } from '../../workflow/config/repo-config-store.js';
 import { REPO_TRACKER_FIELDS, validateRepoSetting } from '../../config/repo-fields.js';
 import type { RepoSettingsDeps, RepoSettingsPayload, SettingsResult } from '../repo-settings.js';
 import { IpcServer, directDispatch } from '../server.js';
@@ -42,7 +42,7 @@ interface Fixture {
 
 function fixture(over: Partial<RepoSettingsDeps> & { repos?: string[]; file?: string; who?: () => PortResult<string> } = {}): Fixture {
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-repo-settings-'));
-	const path = join(dir, 'github.json');
+	const path = join(dir, 'repo-config.json');
 	if (over.file !== undefined) writeFileSync(path, over.file);
 	const whoCalls: string[] = [];
 	const handlers = createRepoSettingsHandlers({
@@ -124,7 +124,7 @@ test('repo identity uses the exact registered path', async () => {
 		const link = join(base, 'link');
 		mkdirSync(real);
 		symlinkSync(real, link);
-		const cfg = join(base, 'github.json');
+		const cfg = join(base, 'repo-config.json');
 		const make = (repos: string[]) => createRepoSettingsHandlers({
 			registeredRepos: async () => repos, configPath: () => cfg,
 			readPolicy: async () => ({ ok: true, value: 'none' }), makeTracker: () => ({ whoAmI: () => ({ ok: true, value: 'u' }) }),
@@ -235,7 +235,7 @@ test('set refuses read-only, unknown, invalid and unregistered inputs and writes
 test('only the signed-in-user read runs through s1\'s adapter', async () => {
 	const ran: string[] = [];
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-repo-gh-'));
-	const path = join(dir, 'github.json');
+	const path = join(dir, 'repo-config.json');
 	installExecStandIn((cmd, args) => {
 		ran.push([cmd, ...args].join(' '));
 		return cmd === 'gh' ? '{"login":"octocat"}' : '';
@@ -268,7 +268,7 @@ test('only the signed-in-user read runs through s1\'s adapter', async () => {
 	} finally { installExecStandIn(); rmSync(dir, { recursive: true, force: true }); }
 });
 
-test('malformed files return github-json-unreadable and keep their bytes', async () => {
+test('malformed files return repo-config-unreadable and keep their bytes', async () => {
 	const files: Array<[string, string]> = [
 		['null own entry with a complete default', JSON.stringify({ default: { type: 'github', owner: 'd', repo: 'd' }, repos: { [REPO]: null } })],
 		['null default', '{"default":null}'],
@@ -281,11 +281,11 @@ test('malformed files return github-json-unreadable and keep their bytes', async
 		try {
 			const get = await f.call('repo.settings.get', { repo: REPO });
 			assert.equal(get.ok, false, label);
-			assert.equal(get.error.code, 'github-json-unreadable', label);
+			assert.equal(get.error.code, 'repo-config-unreadable', label);
 			const set = await f.call('repo.settings.set', { repo: REPO, key: 'ghHost', value: 'h' });
-			assert.equal(set.error.code, 'github-json-unreadable', label);
+			assert.equal(set.error.code, 'repo-config-unreadable', label);
 			const ensure = await f.call('repo.trackerConfig.ensure', { repo: REPO, owner: 'o', name: 'r' });
-			assert.equal(ensure.error.code, 'github-json-unreadable', label);
+			assert.equal(ensure.error.code, 'repo-config-unreadable', label);
 			assert.equal(readFileSync(f.path, 'utf8'), content, `${label}: bytes untouched`);
 			assert.equal(f.whoCalls.length, 0, `${label}: no tracker call`);
 		} finally { f.cleanup(); }
@@ -364,9 +364,9 @@ test('get reads once, never writes, and resolves from the git remote when there 
 test('ensure writes the five keys once and concurrent sets both land', async () => {
 	let writes = 0;
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-repo-ensure-'));
-	const path = join(dir, 'github.json');
+	const path = join(dir, 'repo-config.json');
 	try {
-		const { writeRepoEntryKeys } = await import('../../workflow/config/github-store.js');
+		const { writeRepoEntryKeys } = await import('../../workflow/config/repo-config-store.js');
 		const handlers = createRepoSettingsHandlers({
 			registeredRepos: async () => [REPO], configPath: () => path,
 			readPolicy: async () => ({ ok: true, value: 'none' }),
@@ -408,7 +408,7 @@ test('ensure writes the five keys once and concurrent sets both land', async () 
 	} finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
-test('the gitHooks setting reads false when absent, is validated as a boolean and round-trips through github.json', async () => {
+test('the gitHooks setting reads false when absent, is validated as a boolean and round-trips through repo-config.json', async () => {
 	const row = REPO_TRACKER_FIELDS.find(r => r.key === 'gitHooks');
 	assert.ok(row !== undefined && row.type === 'boolean' && row.default === false && row.kind === 'local', 'a local boolean row that defaults to false');
 	assert.deepEqual(validateRepoSetting('gitHooks', true), { ok: true, value: true });
@@ -452,7 +452,7 @@ const buildKeysOf = (path: string, repo: string): Record<string, unknown> => {
 
 test('applyBuildDefaults writes the type\'s typecheck and test commands and resultFormat exit-code together for a Python, Go, Rust and JVM repo with no build key, and writes nothing for a Node repo, an unknown repo and an entry that already sets any of the three keys', async () => {
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-defaults-'));
-	const path = join(dir, 'github.json');
+	const path = join(dir, 'repo-config.json');
 	const made: string[] = [];
 	try {
 		const expected: Array<[string, string, string, string]> = [
@@ -485,7 +485,7 @@ test('applyBuildDefaults writes the type\'s typecheck and test commands and resu
 
 test('applyBuildDefaults never throws and reports write-failed when the entry cannot be read or the write fails, leaving no lone command', async () => {
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-defaults-'));
-	const path = join(dir, 'github.json');
+	const path = join(dir, 'repo-config.json');
 	const repo = markerRepo('pyproject.toml');
 	try {
 		// the file is malformed: the entry cannot be read
@@ -542,7 +542,7 @@ test('repo.settings.get returns buildSetup with the type, the commands source an
 
 test('migrateBuildDefaults writes the typecheck and test commands and resultFormat exit-code together for each Python, Go, Rust and JVM repo with none of them, and writes nothing for a Node repo, an unknown repo, a repo whose directory is gone and an entry that sets any one of the three keys', async () => {
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-migrate-'));
-	const path = join(dir, 'github.json');
+	const path = join(dir, 'repo-config.json');
 	const made: string[] = [];
 	const repo = (...markers: string[]): string => { const r = markerRepo(...markers); made.push(r); return r; };
 	try {
@@ -571,7 +571,7 @@ test('migrateBuildDefaults writes the typecheck and test commands and resultForm
 
 test('migrateBuildDefaults run twice changes nothing the second time and reports already-set for the repos the first run set, and a user\'s own value set between the runs is kept', async () => {
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-migrate-'));
-	const path = join(dir, 'github.json');
+	const path = join(dir, 'repo-config.json');
 	const py = markerRepo('pyproject.toml'), go = markerRepo('go.mod');
 	try {
 		const first = await migrateBuildDefaults([py, go], { configPath: path });
@@ -590,9 +590,9 @@ test('migrateBuildDefaults run twice changes nothing the second time and reports
 	} finally { rmSync(py, { recursive: true, force: true }); rmSync(go, { recursive: true, force: true }); rmSync(dir, { recursive: true, force: true }); }
 });
 
-test('migrateBuildDefaults keeps going when one repo\'s write is refused or throws, reports write-failed with its note for that repo only, and reports write-failed for every repo, leaving the file as it was, when github.json is malformed', async () => {
+test('migrateBuildDefaults keeps going when one repo\'s write is refused or throws, reports write-failed with its note for that repo only, and reports write-failed for every repo, leaving the file as it was, when repo-config.json is malformed', async () => {
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-migrate-'));
-	const path = join(dir, 'github.json');
+	const path = join(dir, 'repo-config.json');
 	const py = markerRepo('pyproject.toml'), go = markerRepo('go.mod'), rust = markerRepo('Cargo.toml'), jvm = markerRepo('pom.xml');
 	try {
 		const writeKeys: typeof writeRepoEntryKeys = async (repo, patch, configPath) => {
@@ -609,7 +609,7 @@ test('migrateBuildDefaults keeps going when one repo\'s write is refused or thro
 		assert.deepEqual(report.counts, { 'applied': 2, 'already-set': 0, 'node-default': 0, 'no-typical-commands': 0, 'write-failed': 2 });
 		assert.deepEqual(buildKeysOf(path, go), {}, 'no lone command is left');
 
-		// a malformed github.json: every repo reports write-failed and the file is left as it was
+		// a malformed repo-config.json: every repo reports write-failed and the file is left as it was
 		writeFileSync(path, '{ not json');
 		const bad = await migrateBuildDefaults([py, go, rust, jvm], { configPath: path });
 		assert.equal(bad.counts['write-failed'], 4);
@@ -641,7 +641,7 @@ test('the repo.buildDefaults.migrate handler returns ok, one entry per registere
 
 	// the registry cannot be listed: an error as data, and nothing written
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-migrate-'));
-	const path = join(dir, 'github.json');
+	const path = join(dir, 'repo-config.json');
 	try {
 		const handlers = createRepoSettingsHandlers({ registeredRepos: async () => { throw new Error('registry store unreadable'); }, configPath: () => path });
 		const failed = await handlers['repo.buildDefaults.migrate']!(undefined) as { ok: boolean; error: { code: string; message: string } };

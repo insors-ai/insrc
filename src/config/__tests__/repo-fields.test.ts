@@ -8,7 +8,7 @@ import { CONFIG_CATALOG } from '../config-catalog.js';
 import { SIGNOFF_STAGES } from '../../workflow/team/types.js';
 import type { TeamPolicy } from '../../workflow/team/types.js';
 
-test('table keys, kinds, GithubEntry fields and one policy row per TeamPolicy rule', () => {
+test('table keys, kinds, RepoConfigEntry fields and one policy row per TeamPolicy rule', () => {
 	const keys = REPO_TRACKER_FIELDS.map(r => r.key);
 	assert.equal(new Set(keys).size, keys.length, 'keys are unique');
 	for (const r of REPO_TRACKER_FIELDS) {

@@ -203,7 +203,7 @@ Output: `docs/designs/LLD-<h16>-s1.md`. Approve.
 
 ### 5. Push to GitHub (optional)
 
-**The tracker is opt-in.** When `~/.insrc/github.json` is absent or
+**The tracker is opt-in.** When `~/.insrc/repo-config.json` is absent or
 no entry matches, `resolveGithubConfig` returns `{ type: 'none' }` —
 the approve-time auto-push short-circuits with
 `skipped (tracker disabled ...)`, and the manual `tracker.push` /
@@ -215,7 +215,7 @@ To enable the GitHub adapter:
 
 ```
 mkdir -p ~/.insrc
-cat > ~/.insrc/github.json <<'JSON'
+cat > ~/.insrc/repo-config.json <<'JSON'
 {
   "default": { "type": "github", "owner": "myorg", "repo": "myrepo", "useMilestones": false }
 }
@@ -226,6 +226,9 @@ insrc workflow gh-config
 
 # Push Epic + Stories via the MCP tool
 ```
+
+> The settings file was `~/.insrc/github.json`. An existing file is moved to `repo-config.json` at the first boot of the updated
+> daemon; a `github.json` created by hand afterwards is ignored, because the settings now live in `repo-config.json`.
 
 The `type` field selects the tracker adapter:
 
@@ -374,7 +377,7 @@ so `docs/` stays clean.
     └── AMD-<h16>-2.json
 
 ~/.insrc/
-├── github.json                          # GitHub tracker config
+├── repo-config.json                          # GitHub tracker config
 └── workflow-runs/
     └── <h16>/                           # jsonl trace logs (outside repo)
         ├── define-<runId>.jsonl

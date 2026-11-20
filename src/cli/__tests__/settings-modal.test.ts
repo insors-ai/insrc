@@ -202,11 +202,11 @@ test('the modal lists payload rows, edits local rows only and shows an error mes
 	} finally { unmount(); }
 
 	// An ok:false result on open shows the message and no rows.
-	const refused = fixture({ ok: false, error: { code: 'github-json-unreadable', message: '/home/u/.insrc/github.json: is not valid JSON' } });
+	const refused = fixture({ ok: false, error: { code: 'repo-config-unreadable', message: '/home/u/.insrc/repo-config.json: is not valid JSON' } });
 	const r = await openModal(refused);
 	try {
 		const frame = r.lastFrame() ?? '';
-		assert.match(frame, /✗ \/home\/u\/\.insrc\/github\.json: is not valid JSON/);
+		assert.match(frame, /✗ \/home\/u\/\.insrc\/repo-config\.json: is not valid JSON/);
 		assert.doesNotMatch(frame, /GitHub host/);
 	} finally { r.unmount(); }
 
@@ -260,13 +260,13 @@ test('the terminal Repo Configuration screen shows the Build rows as a section o
 	h.svc.config.setRepoSetting = async (repo, key, value) => {
 		h.sets.push({ repo, key, value });
 		return key === 'testCommand' && value !== null
-			? { ok: false, error: { code: 'write-failed', message: 'github.json is read-only' } }
+			? { ok: false, error: { code: 'write-failed', message: 'repo-config.json is read-only' } }
 			: { ok: true, payload: NO_COMMANDS };
 	};
 	const w = await openModal(h);
 	try {
 		w.stdin.write('u'); await settle();
 		assert.deepEqual(h.sets.map(x => [x.key, x.value]), [['typecheckCommand', 'mypy .'], ['testCommand', 'pytest'], ['typecheckCommand', null]]);
-		assert.match(w.lastFrame() ?? '', /✗ github\.json is read-only/);
+		assert.match(w.lastFrame() ?? '', /✗ repo-config\.json is read-only/);
 	} finally { w.unmount(); }
 });

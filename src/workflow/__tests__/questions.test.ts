@@ -202,15 +202,15 @@ test('listDeferred enumerates deferred questions across DEF + HLD + LLDs', async
 // The tracker comment goes through the GitHub adapter (s1/t9)
 // ---------------------------------------------------------------------------
 
-afterEach(() => { installExecStandIn(); delete process.env['INSRC_GITHUB_CONFIG']; });
+afterEach(() => { installExecStandIn(); delete process.env['INSRC_REPO_CONFIG']; });
 
-/** A repo whose Epic head is bound to an issue and whose github.json targets acme/demo for it. */
+/** A repo whose Epic head is bound to an issue and whose repo-config.json targets acme/demo for it. */
 function seedTrackedHld(repo: string): void {
 	seedHld(repo, ['[sc1 / missed] Case-insensitive tags?']);
 	seedBoundUnits(repo, HASH, 'acme/demo#5', {}, CREATED_AT);
-	const cfg = join(repo, 'github.json');
+	const cfg = join(repo, 'repo-config.json');
 	writeFileSync(cfg, JSON.stringify({ repos: { [repo]: { owner: 'acme', repo: 'demo' } } }));
-	process.env['INSRC_GITHUB_CONFIG'] = cfg;
+	process.env['INSRC_REPO_CONFIG'] = cfg;
 }
 
 test('the comment goes through the adapter with the same argv and a failure is logged in the existing catch', async () => {

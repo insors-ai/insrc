@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-25f3c941-f6ab-4942-bbf5-2c3b08786051",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-20T16:49:20.251Z",
+    "epicCreatedAt": "2026-11-20T12:31:06.431Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8ff6d364012cff02",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add the path-function test, the source scans and the settings round trip",
+      "parent": {
+        "entityId": "STORY-8ff6d364012cff02-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-8ff6d364012cff02-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-8ff6d364012cff02-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-8ff6d364012cff02-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "f471c115e296e173827618086fb0b2670bb5364d0947c90b3affac3fa54e7551",
+        "at": "2026-11-20T16:49:20.255Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T16:49:20.256Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the path-function test, the source scans and the settings round trip",
+    "summary": "In src/workflow/config/__tests__/repo-config.test.ts add the repoConfigPath test (the override, the default and the ignored old variable), the source scan that no old identifier remains under src (skipping its own file, and not covering the pinned fixtures' directories), the scan that the tracker names stay exported from github.ts and the file layer from repo-config.ts, and a settings round trip through the real repo.settings handlers after a boot move.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "repoConfigPath returns the INSRC_REPO_CONFIG value when it is set and non-empty, PATHS.insrc/repo-config.json otherwise, and ignores INSRC_GITHUB_CONFIG.",
+      "The old-identifier scan passes on the renamed tree and fails when one of the old identifiers is reintroduced in a source file; it skips its own file.",
+      "The tracker-names scan fails when one of those names is renamed or moved out of github.ts.",
+      "After a boot move, repo.settings.get and repo.settings.set read and write repo-config.json and keep the repo's entry."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "repo-config.test.ts: repoConfigPath returns the INSRC_REPO_CONFIG value when it is set and non-empty, PATHS.insrc/repo-config.json otherwise, and ignores INSRC_GITHUB_CONFIG"
+      },
+      {
+        "level": "integration",
+        "name": "repo-config.test.ts: after a boot move, repo.settings.get and repo.settings.set through the real handlers read and write repo-config.json and keep the repo's entry"
+      },
+      {
+        "level": "integration",
+        "name": "repo-config.test.ts: a source scan finds no file under src that names INSRC_GITHUB_CONFIG, githubConfigPath, github-store, GithubConfigFile, GithubEntry, loadGithubConfigFile or GithubConfigError"
+      },
+      {
+        "level": "integration",
+        "name": "repo-config.test.ts: a source scan finds the GitHub-tracker names (resolveGithubConfig, resolveGithubConfigFromFile, resolveBranchPattern, resolveStrictTrackerTarget, parseGithubRemoteUrl) still exported from github.ts and the file layer exported from repo-config.ts"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

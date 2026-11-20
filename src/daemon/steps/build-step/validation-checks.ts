@@ -357,7 +357,7 @@ export function commandProfileOf(repoPath: string, configPath?: string): Command
 		setting = readBuildCommandSetting(repoPath, configPath);
 	} catch (err) {
 		if (!(err instanceof BuildSettingUnreadable)) throw err;
-		throw new InvalidCommandSetting('github.json', `cannot be read, so the build commands of this repository are not known: ${err.message}`);
+		throw new InvalidCommandSetting('repo-config.json', `cannot be read, so the build commands of this repository are not known: ${err.message}`);
 	}
 	return setting === undefined ? defaultCommandProfile(projectType) : profileFromSetting(projectType, setting);
 }
@@ -898,7 +898,7 @@ export function resolveCommandProfile(
 		return { ok: true, profile: commandProfileOf(repoPath, configPath) };
 	} catch (err) {
 		if (!(err instanceof InvalidCommandSetting)) throw err;
-		return { ok: false, error: { next: 'error', error: { code: 'invalid-command-setting', message: `insrc_build_step[${phase}]: ${err.message}. Fix it with repo.settings.set or in ~/.insrc/github.json (see docs/daemon.md, "Build commands").`, retryable: false } } };
+		return { ok: false, error: { next: 'error', error: { code: 'invalid-command-setting', message: `insrc_build_step[${phase}]: ${err.message}. Fix it with repo.settings.set or in ~/.insrc/repo-config.json (see docs/daemon.md, "Build commands").`, retryable: false } } };
 	}
 }
 

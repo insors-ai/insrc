@@ -7,7 +7,7 @@
  * The repo-scoped tracker settings methods (Story s3): `repo.settings.get`,
  * `repo.settings.set` and `repo.trackerConfig.ensure`.
  *
- * The daemon is the only writer of `~/.insrc/github.json`; every client reaches
+ * The daemon is the only writer of `~/.insrc/repo-config.json`; every client reaches
  * the file through these methods. Business errors are returned as data
  * (`{ ok: false, error }`), never thrown. Repo identity is the exact registered
  * path string: no alias lookup and no symlink resolution.
@@ -17,12 +17,11 @@ import { REPO_TRACKER_FIELDS, validateRepoSetting } from '../config/repo-fields.
 import { getLogger } from '../shared/logger.js';
 import { createGithubTracker } from '../workflow/tracker/github-adapter.js';
 import type { PortResult, TrackerPort } from '../workflow/tracker/port.js';
-import {
-	GithubConfigError, OWNER_NAME_RE, REPO_NAME_RE, githubConfigPath, resolveGithubConfigFromFile,
-} from '../workflow/config/github.js';
-import type { GithubConfigFile, GithubEntry } from '../workflow/config/github.js';
-import { readRepoEntry, writeRepoEntryKeys } from '../workflow/config/github-store.js';
-import type { WriteError, WriteResult } from '../workflow/config/github-store.js';
+import { GithubConfigError, OWNER_NAME_RE, REPO_NAME_RE, resolveGithubConfigFromFile } from '../workflow/config/github.js';
+import { repoConfigPath } from '../workflow/config/repo-config.js';
+import type { RepoConfigFile, RepoConfigEntry } from '../workflow/config/repo-config.js';
+import { readRepoEntry, writeRepoEntryKeys } from '../workflow/config/repo-config-store.js';
+import type { WriteError, WriteResult } from '../workflow/config/repo-config-store.js';
 import { InvalidCommandSetting, PROJECT_TYPE_GUIDANCE, detectProjectType, profileFromSetting } from './steps/build-step/validation-checks.js';
 import type { CommandsSource, ProjectType } from './steps/build-step/validation-checks.js';
 import { policyReader } from '../workflow/team/policy-reader.js';
@@ -170,7 +169,7 @@ async function mapPolicy(read: PolicyReader, repo: string): Promise<PolicyRows> 
 }
 
 /** The repo's own local-row values: only keys its own entry sets, never the default entry. */
-function ownValues(entry: GithubEntry | undefined): Record<string, string | boolean> {
+function ownValues(entry: RepoConfigEntry | undefined): Record<string, string | boolean> {
 	const values: Record<string, string | boolean> = {};
 	if (entry === undefined) return values;
 	for (const row of REPO_TRACKER_FIELDS) {
@@ -191,7 +190,7 @@ function typicalCommands(type: ProjectType): BuildSuggestion | undefined {
 }
 
 /** The build setup of the repo at `repoPath` with its own entry: reads, never writes. */
-export function buildSetupFor(repoPath: string, entry: GithubEntry | undefined): BuildSetup {
+export function buildSetupFor(repoPath: string, entry: RepoConfigEntry | undefined): BuildSetup {
 	const projectType = detectProjectType(repoPath);
 	const own = entry as Record<string, unknown> | undefined;
 	const setting: Record<string, unknown> = {};
@@ -219,7 +218,7 @@ export async function applyBuildDefaults(
 	deps: { readonly configPath?: string; readonly writeKeys?: typeof writeRepoEntryKeys } = {},
 ): Promise<BuildDefaultsOutcome> {
 	try {
-		const configPath = deps.configPath ?? githubConfigPath();
+		const configPath = deps.configPath ?? repoConfigPath();
 		const read = readRepoEntry(repoPath, configPath);
 		if (!read.ok) return { applied: false, reason: 'write-failed', note: read.error.message };
 		const own = read.entry as Record<string, unknown> | undefined;
@@ -259,7 +258,7 @@ export async function migrateBuildDefaults(
 	return { ok: true, repos: entries, counts };
 }
 
-async function resolveTarget(file: GithubConfigFile, entry: GithubEntry | undefined, repo: string): Promise<ResolvedTarget> {
+async function resolveTarget(file: RepoConfigFile, entry: RepoConfigEntry | undefined, repo: string): Promise<ResolvedTarget> {
 	try {
 		const r = await resolveGithubConfigFromFile(file, repo);
 		return r.type === 'github'
@@ -276,7 +275,7 @@ async function resolveTarget(file: GithubConfigFile, entry: GithubEntry | undefi
 // ---------------------------------------------------------------------------
 
 export function createRepoSettingsHandlers(deps: RepoSettingsDeps): RpcHandlers {
-	const configPath = (): string => deps.configPath?.() ?? githubConfigPath();
+	const configPath = (): string => deps.configPath?.() ?? repoConfigPath();
 	const readPolicy = deps.readPolicy ?? policyReader;
 	const makeTracker = deps.makeTracker ?? createGithubTracker;
 	const writeKeys = deps.writeKeys ?? writeRepoEntryKeys;
@@ -337,7 +336,7 @@ export function createRepoSettingsHandlers(deps: RepoSettingsDeps): RpcHandlers 
 		},
 
 		// Applies the build defaults to every registered repo that has none (LLD-45e12c3f47cefb2b-s1); run by the user once after
-		// updating the daemon. Writes only ~/.insrc/github.json, through the daemon's writer, never a file of a repository.
+		// updating the daemon. Writes only ~/.insrc/repo-config.json, through the daemon's writer, never a file of a repository.
 		'repo.buildDefaults.migrate': async () => {
 			let repos: readonly string[];
 			try {

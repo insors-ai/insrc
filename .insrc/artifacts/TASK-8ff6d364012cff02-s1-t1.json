@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-7c64462c-7d7d-48a3-b557-446d8c9b4806",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-20T16:49:20.238Z",
+    "epicCreatedAt": "2026-11-20T12:31:06.431Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8ff6d364012cff02",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Rename the settings file layer, store, path function, variable and error code across the code and tests",
+      "parent": {
+        "entityId": "STORY-8ff6d364012cff02-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-8ff6d364012cff02-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "c6a7ad62fbd569bb972973b367de9b5135f050666e4ce9f3bfba290e5226ac2d",
+        "at": "2026-11-20T16:49:20.242Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T16:49:20.244Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Rename the settings file layer, store, path function, variable and error code across the code and tests",
+    "summary": "In this order inside the one task: create src/workflow/config/repo-config.ts holding repoConfigPath (default repo-config.json, override INSRC_REPO_CONFIG, the old variable not read), RepoConfigFile, RepoConfigEntry, loadRepoConfigFile and RepoConfigError, moved out of github.ts, which keeps only the tracker-specific code and imports them; rename github-store.ts to repo-config-store.ts with its default path on repoConfigPath and the error code renamed to repo-config-unreadable; update every importer and user-facing message in the 20 non-test sources and the artifact-write inventory entry; then the 37 test files and the two pinned JSON fixtures (module-state-inventory.json, session-source-inventory.json). It is one task because the type check covers the tests and the plan forbids aliases, so a partial rename would not compile.",
+    "size": "L",
+    "order": 1,
+    "acceptanceChecks": [
+      "The project type-checks with no reference to githubConfigPath, github-store, GithubConfigFile, GithubEntry, loadGithubConfigFile, GithubConfigError or INSRC_GITHUB_CONFIG under src.",
+      "resolveGithubConfig, resolveGithubConfigFromFile, resolveBranchPattern, resolveStrictTrackerTarget, TrackerAdapter and the remote-url parsers are still exported from github.ts under their names and behave as before.",
+      "The store's reader, merge and writer are unchanged in behaviour and report the error code repo-config-unreadable.",
+      "Every test file that named the old names, updated to the new names, passes, as do the module-state and session-source inventory tests that read the two fixtures.",
+      "The two fixtures are edited only for the renamed paths and names; the inventory tests that read them pass with no other change to their content."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "repo-settings.test.ts and the existing tracker, build-step and daemon tests that named the old names, updated to the new names, still pass"
+      },
+      {
+        "level": "integration",
+        "name": "the module-state and session-source inventory tests pass against the two fixtures edited only for the renamed paths and names"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

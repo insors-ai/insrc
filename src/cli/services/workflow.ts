@@ -334,7 +334,7 @@ export interface TrackerSetupDeps {
 }
 
 /** Bootstrap the GitHub tracker for a repo — auth/scope preflight, config, labels, issue types, and (optionally) a Projects board — in the
- *  daemon, which owns github.json and reaches gh and git through the registry. Returns the structured checklist; the command layer renders it. */
+ *  daemon, which owns repo-config.json and reaches gh and git through the registry. Returns the structured checklist; the command layer renders it. */
 export async function trackerSetup(repoPath: string, opts: TrackerSetupOptions = {}, deps: TrackerSetupDeps = {}): Promise<TrackerSetupReport> {
 	return await callDaemon<TrackerSetupReport>('tracker.setup', { repoPath: toAbsPath(repoPath), opts }, deps.connect);
 }

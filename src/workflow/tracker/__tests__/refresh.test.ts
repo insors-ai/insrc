@@ -131,12 +131,12 @@ test('a ToolDenied is rethrown and a non-GitHub fake port gets the same fields',
 
 test('the default GitHub path hands the Deadline signal to gh, so a call that never answers is cancelled and the sync is skipped', async () => {
 	const repo = seedRepo([A]);
-	const cfg = join(repo, 'github.json');
-	const prior = process.env['INSRC_GITHUB_CONFIG'];
+	const cfg = join(repo, 'repo-config.json');
+	const prior = process.env['INSRC_REPO_CONFIG'];
 	const deadline = createDeadline(400);
 	try {
 		writeFileSync(cfg, JSON.stringify({ repos: { [repo]: { type: 'github', owner: 'o', repo: 'r' } } }));
-		process.env['INSRC_GITHUB_CONFIG'] = cfg;
+		process.env['INSRC_REPO_CONFIG'] = cfg;
 		installExecStandIn((_cmd, args) => (args[0] === 'api' && args[1] === 'user' ? JSON.stringify({ login: 'me' }) : new Promise<string>(() => undefined)));
 		const started = Date.now();
 		const result = await syncTracker(repo, A, undefined, { deadline });
@@ -144,18 +144,18 @@ test('the default GitHub path hands the Deadline signal to gh, so a call that ne
 		assert.ok(Date.now() - started < 5_000, 'returned long before the registry limit of the call');
 	} finally {
 		deadline.dispose(); installExecStandIn();
-		if (prior === undefined) delete process.env['INSRC_GITHUB_CONFIG']; else process.env['INSRC_GITHUB_CONFIG'] = prior;
+		if (prior === undefined) delete process.env['INSRC_REPO_CONFIG']; else process.env['INSRC_REPO_CONFIG'] = prior;
 		rmSync(repo, { recursive: true, force: true });
 	}
 });
 
 test('a repo whose tracker setting is none has nothing to refresh: no result, no warning and no tracker call', async () => {
 	const repo = seedRepo([A]);
-	const cfg = join(repo, 'github.json');
-	const prior = process.env['INSRC_GITHUB_CONFIG'];
+	const cfg = join(repo, 'repo-config.json');
+	const prior = process.env['INSRC_REPO_CONFIG'];
 	try {
 		writeFileSync(cfg, JSON.stringify({ repos: { [repo]: { type: 'none' } } }));
-		process.env['INSRC_GITHUB_CONFIG'] = cfg;
+		process.env['INSRC_REPO_CONFIG'] = cfg;
 		let calls = 0;
 		installExecStandIn(() => { calls += 1; return ''; });
 		const all = await refreshTrackerStatus(repo);
@@ -166,7 +166,7 @@ test('a repo whose tracker setting is none has nothing to refresh: no result, no
 		assert.equal(named.results[0]?.result.status, 'skipped');
 	} finally {
 		installExecStandIn();
-		if (prior === undefined) delete process.env['INSRC_GITHUB_CONFIG']; else process.env['INSRC_GITHUB_CONFIG'] = prior;
+		if (prior === undefined) delete process.env['INSRC_REPO_CONFIG']; else process.env['INSRC_REPO_CONFIG'] = prior;
 		rmSync(repo, { recursive: true, force: true });
 	}
 });

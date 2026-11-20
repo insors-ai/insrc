@@ -214,7 +214,7 @@ data class SettingsCatalogDto(
 /**
  * One repo-scoped tracker row definition (Story s3), forwarded verbatim from the
  * `config.catalog` payload's `repoFields`. [kind] is `local` (editable, stored in
- * github.json), `status` (derived, read-only) or `policy` (read-only, from the team
+ * repo-config.json), `status` (derived, read-only) or `policy` (read-only, from the team
  * policy). [note] is a short hint such as "saved; not used yet".
  */
 data class RepoFieldDto(
@@ -284,7 +284,7 @@ data class RepoSettingsDto(
 
 /**
  * The result of a `repo.settings.get` read (Story s3). Three-state: [Loaded], a
- * business refusal from the daemon ([Rejected], e.g. an unreadable github.json,
+ * business refusal from the daemon ([Rejected], e.g. an unreadable repo-config.json,
  * with the daemon's message) and a transport fault ([Unavailable]). A repo whose
  * read is not [Loaded] shows its reason without affecting the other repos.
  */
@@ -1535,7 +1535,7 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
         const val METHOD_CONFIG_CATALOG = "config.catalog"
         const val METHOD_CONFIG_WRITE = "config.write"
         const val METHOD_CONFIG_SHOW = "config.show"
-        // Repo-scoped tracker settings (Story s3): the daemon is the only writer of github.json.
+        // Repo-scoped tracker settings (Story s3): the daemon is the only writer of repo-config.json.
         const val METHOD_REPO_SETTINGS_GET = "repo.settings.get"
         const val METHOD_REPO_SETTINGS_SET = "repo.settings.set"
         const val PARAM_KEY = "key"

@@ -37,7 +37,7 @@ const COMPLETE = { type: 'github', owner: 'acme', repo: 'demo', pushTasks: true,
 
 test('planTrackerConfig already, needs-write and no-origin cases', async () => withDir(async dir => {
 	fakeExec(true);
-	const path = join(dir, 'github.json');
+	const path = join(dir, 'repo-config.json');
 
 	// No file: needs-write with the owner and name from the origin remote.
 	assert.deepEqual(await planTrackerConfig(REPO, path), { status: 'needs-write', owner: 'acme', name: 'demo' });
@@ -81,7 +81,7 @@ test('planTrackerConfig already, needs-write and no-origin cases', async () => w
 
 test('planTrackerConfig fails on malformed files without throwing, calling the daemon or writing', async () => withDir(async dir => {
 	fakeExec(true);
-	const path = join(dir, 'github.json');
+	const path = join(dir, 'repo-config.json');
 	const bad: Array<[string, string, RegExp]> = [
 		['null own entry with a complete default', JSON.stringify({ default: COMPLETE, repos: { [REPO]: null } }), new RegExp(`repos\\["${REPO_RE}"\\]`)],
 		['null default', '{"default":null}', /"default"/],
@@ -101,14 +101,14 @@ test('planTrackerConfig fails on malformed files without throwing, calling the d
 		assert.match((plan as { detail: string }).detail, re, label);
 		assert.equal(readFileSync(path, 'utf8'), content, `${label}: file untouched`);
 	}
-	assert.deepEqual(readdirSync(dir), ['github.json'], 'no temp or extra file was written');
+	assert.deepEqual(readdirSync(dir), ['repo-config.json'], 'no temp or extra file was written');
 }));
 
 test('runTrackerSetup reports a configOutcome verbatim and touches no file; existing behaviour without it', async () => withDir(async dir => {
 	fakeExec(true);
-	const path = join(dir, 'github.json');
-	const prev = process.env['INSRC_GITHUB_CONFIG'];
-	process.env['INSRC_GITHUB_CONFIG'] = path;
+	const path = join(dir, 'repo-config.json');
+	const prev = process.env['INSRC_REPO_CONFIG'];
+	process.env['INSRC_REPO_CONFIG'] = path;
 	try {
 		for (const outcome of [
 			{ status: 'done', detail: 'wrote it' },
@@ -136,6 +136,6 @@ test('runTrackerSetup reports a configOutcome verbatim and touches no file; exis
 		assert.deepEqual(stored.repos[REPO], COMPLETE);
 		assert.equal((await runTrackerSetup(REPO)).steps.find(s => s.key === 'config')?.status, 'already');
 	} finally {
-		if (prev === undefined) delete process.env['INSRC_GITHUB_CONFIG']; else process.env['INSRC_GITHUB_CONFIG'] = prev;
+		if (prev === undefined) delete process.env['INSRC_REPO_CONFIG']; else process.env['INSRC_REPO_CONFIG'] = prev;
 	}
 }));

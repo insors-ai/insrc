@@ -83,7 +83,7 @@ function describe(v: unknown): string {
 }
 
 /** Validates a parsed file level by level and selects the repo's own entry. */
-function validateSnapshot(parsed: unknown, repoPath: string, configPath: string): ReadResult {
+function validateSnapshot(parsed: unknown, repoPath: string | undefined, configPath: string): ReadResult {
 	if (!isPlainObject(parsed)) return unreadable(configPath, `the top level must be an object, found ${describe(parsed)}`);
 	if ('default' in parsed && !isPlainObject(parsed['default'])) {
 		return unreadable(configPath, `"default" must be an object, found ${describe(parsed['default'])}`);
@@ -93,7 +93,7 @@ function validateSnapshot(parsed: unknown, repoPath: string, configPath: string)
 	}
 	const repos = parsed['repos'] as Record<string, unknown> | undefined;
 	let entry: RepoConfigEntry | undefined;
-	if (repos !== undefined && Object.hasOwn(repos, repoPath)) {
+	if (repoPath !== undefined && repos !== undefined && Object.hasOwn(repos, repoPath)) {
 		const own = repos[repoPath];
 		if (!isPlainObject(own)) return unreadable(configPath, `repos["${repoPath}"] must be an object, found ${describe(own)}`);
 		entry = own as RepoConfigEntry;
@@ -107,6 +107,11 @@ function validateSnapshot(parsed: unknown, repoPath: string, configPath: string)
  * `default`, `repos` or the repo's own entry is reported, naming the level.
  */
 export function readRepoEntry(repoPath: string, configPath: string = repoConfigPath()): ReadResult {
+	return readSnapshot(repoPath, configPath);
+}
+
+/** The strict read shared by the repo-entry and the root-level callers; `undefined` selects no entry. */
+function readSnapshot(repoPath: string | undefined, configPath: string): ReadResult {
 	let raw: string;
 	try {
 		raw = readFileSync(configPath, 'utf8');
@@ -183,12 +188,14 @@ function failed(code: WriteError['code'], message: string): { ok: false; error: 
 let queueTail: Promise<unknown> = Promise.resolve();
 let tempCounter = 0;
 
-async function writeOnce(repoPath: string, patch: EntryPatch, configPath: string, seams: StoreSeams): Promise<WriteResult> {
+type Merge = (file: RepoConfigFile) => { readonly file: RepoConfigFile; readonly changed: boolean };
+
+async function writeOnce(repoPath: string | undefined, merge: Merge, configPath: string, seams: StoreSeams): Promise<WriteResult> {
 	for (let attempt = 1; attempt <= MAX_WRITE_ATTEMPTS; attempt++) {
 		const before = fingerprint(configPath);
-		const read = readRepoEntry(repoPath, configPath);
+		const read = readSnapshot(repoPath, configPath);
 		if (!read.ok) return read;
-		const merged = mergeRepoEntryKeys(read.file, repoPath, patch);
+		const merged = merge(read.file);
 		if (!merged.changed) return { ok: true, changed: false };
 
 		const temp = `${configPath}.${process.pid}.${++tempCounter}.tmp`;
@@ -220,9 +227,14 @@ export function writeRepoEntryKeys(
 	configPath: string = repoConfigPath(),
 	seams: StoreSeams = DEFAULT_SEAMS,
 ): Promise<WriteResult> {
+	return enqueue(repoPath, file => mergeRepoEntryKeys(file, repoPath, patch), configPath, seams);
+}
+
+/** Runs one write on the single in-process queue; never rejects and never stalls the calls queued after it. */
+function enqueue(repoPath: string | undefined, merge: Merge, configPath: string, seams: StoreSeams): Promise<WriteResult> {
 	const run = queueTail.then(async (): Promise<WriteResult> => {
 		try {
-			return await writeOnce(repoPath, patch, configPath, seams);
+			return await writeOnce(repoPath, merge, configPath, seams);
 		} catch (e) {
 			log.warn({ err: (e as Error).message }, 'repo-config.json write failed');
 			return failed('write-failed', (e as Error).message);
@@ -230,6 +242,51 @@ export function writeRepoEntryKeys(
 	});
 	queueTail = run;
 	return run;
+}
+
+// ---------------------------------------------------------------------------
+// Root schemaVersion
+// ---------------------------------------------------------------------------
+
+export type SchemaVersionRead =
+	| { readonly ok: true; readonly version: number | null }
+	| { readonly ok: false; readonly reason: string; readonly code: 'repo-config-unreadable' | 'schema-version-invalid' };
+
+function isSchemaVersion(v: unknown): v is number {
+	return typeof v === 'number' && Number.isInteger(v) && v >= 0;
+}
+
+/**
+ * Reads the root `schemaVersion`. A missing file, a missing key and `null` are `null`; a value that is not a
+ * non-negative integer is reported as data, never treated as 0. The file is never created or changed.
+ */
+export function readSchemaVersion(configPath: string = repoConfigPath()): SchemaVersionRead {
+	const read = readSnapshot(undefined, configPath);
+	if (!read.ok) return { ok: false, reason: read.error.message, code: 'repo-config-unreadable' };
+	const value = (read.file as Record<string, unknown>)['schemaVersion'];
+	if (value === undefined || value === null) return { ok: true, version: null };
+	if (!isSchemaVersion(value)) {
+		return { ok: false, code: 'schema-version-invalid', reason: `${configPath}: "schemaVersion" must be a non-negative integer or null, found ${JSON.stringify(value)}` };
+	}
+	return { ok: true, version: value };
+}
+
+/**
+ * Stamps the root `schemaVersion` through the same queue and read-merge-write-verify loop as the repo-entry writer.
+ * Keeps `default`, `repos` and unknown keys, creates the file when it is absent, reports `changed: false` when the
+ * version is already stored and never lowers a stored version.
+ */
+export function writeSchemaVersion(
+	version: number,
+	configPath: string = repoConfigPath(),
+	seams: StoreSeams = DEFAULT_SEAMS,
+): Promise<WriteResult> {
+	if (!isSchemaVersion(version)) return Promise.resolve(failed('write-failed', `schemaVersion must be a non-negative integer, got ${String(version)}`));
+	return enqueue(undefined, file => {
+		const stored = (file as Record<string, unknown>)['schemaVersion'];
+		if (isSchemaVersion(stored) && stored >= version) return { file, changed: false };
+		return { file: { ...file, schemaVersion: version }, changed: true };
+	}, configPath, seams);
 }
 
 // ---------------------------------------------------------------------------

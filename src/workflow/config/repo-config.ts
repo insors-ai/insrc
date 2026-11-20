@@ -80,6 +80,8 @@ export interface RepoConfigEntry {
 }
 
 export interface RepoConfigFile {
+	/** Written only by the daemon, after the pending schema migrations ran clean. Absent or null means 0. */
+	readonly schemaVersion?: number | null;
 	readonly default?: RepoConfigEntry;
 	readonly repos?:   Readonly<Record<string, RepoConfigEntry>>;
 }

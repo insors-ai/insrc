@@ -309,6 +309,8 @@ Render the Build rows as a section of their own on the terminal screen, the VS C
   - **resolved**: Verify existing IDs — Verified 2026-11-20: c1-c4 in the LLD are the four s1 analyze bundles in order (search.text, module.profile, usage.example, test.locate), and the invariants cite the intended bundles. _(2026-11-20T06:44:52.268Z)_
 - `q59c82aa2` — ts1 partial: the Story has no acceptance criteria, so ac1 to ac5 were written by this LLD and need the user's confirmation as the acceptance criteria.
   - **resolved**: Confirm ac1-ac5 — The user asked on 2026-11-20 to resolve the open questions after the five LLD-authored criteria were presented; ac1-ac5 stand as written as the Story's acceptance criteria (no amendment was requested). _(2026-11-20T06:45:44.050Z)_
+- `q8988339c` — alt2 partial: alternatives were scored against six constraints k1 to k6 derived from the user's decision to apply defaults automatically, since no Story, Epic or HLD constraints exist.
+  - **resolved**: Confirm constraints before proceeding — The user asked on 2026-11-20 to resolve the open questions; the six constraints k1-k6 (no intervention at add, never overwrite, a failure never fails the add, Build section on every client, reuse the writer and keep the table in the daemon, stay small) derive from the user's own decision and are the scoring basis; no Story, Epic or HLD constraints exist. _(2026-11-20T06:46:23.797Z)_
 
 ## Citations
 

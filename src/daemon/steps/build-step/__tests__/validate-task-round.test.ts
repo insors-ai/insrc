@@ -12,6 +12,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
 import { handleBuildStep } from '../handler.js';
+import { applyBuildDefaults } from '../../../repo-settings.js';
 import { _setBuildValidateCheckRunnerForTests, _setBuildValidateProviderForTests } from '../phases/validate.js';
 import { TEST_RUNNER_ARGV, TYPECHECK_ARGV, type ValidationCheckPlan, type ValidationCheckResults } from '../validation-checks.js';
 import { createCompletionEvidence } from '../../../../workflow/artifact-core/completion-evidence.js';
@@ -180,6 +181,34 @@ test("a settings edit while the checks run changes neither the plan, the judge p
 		if (saved === undefined) delete process.env['INSRC_GITHUB_CONFIG']; else process.env['INSRC_GITHUB_CONFIG'] = saved;
 		_setBuildValidateCheckRunnerForTests(async () => PASSING);
 		_setBuildValidateProviderForTests(undefined);
+		rmSync(dir, { recursive: true, force: true });
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
+test('src/daemon/steps/build-step/__tests__/validate-task-round.test.ts: a repo whose commands came from the add defaults is gated by those commands as an ordinary repo setting', async () => {
+	const repo = repoWith(true);
+	writeFileSync(join(repo, 'pyproject.toml'), '');
+	const dir = mkdtempSync(join(tmpdir(), 'insrc-github-config-'));
+	const config = join(dir, 'github.json');
+	const plans: ValidationCheckPlan[] = [];
+	const saved = process.env['INSRC_GITHUB_CONFIG'];
+	process.env['INSRC_GITHUB_CONFIG'] = config;
+	try {
+		// the commands are stored the way repo.add stores them, then the gate reads them like any setting
+		assert.deepEqual(await applyBuildDefaults(repo, { configPath: config }), { applied: true, projectType: 'python' });
+		_setBuildValidateCheckRunnerForTests(async (_repo, plan) => { plans.push(plan); return PASSING; });
+		const out = await validate(repo, true, 'all checks hold');
+		assert.equal(out['next'], 'done');
+		assert.equal(out['passed'], true);
+		assert.equal(plans.length, 1);
+		assert.deepEqual(
+			[plans[0]!.commandsSource, plans[0]!.typecheck, plans[0]!.testCommand, plans[0]!.resultFormat],
+			['repo-setting', ['mypy', '.'], ['pytest'], 'exit-code'],
+		);
+	} finally {
+		if (saved === undefined) delete process.env['INSRC_GITHUB_CONFIG']; else process.env['INSRC_GITHUB_CONFIG'] = saved;
+		_setBuildValidateCheckRunnerForTests(async () => PASSING);
 		rmSync(dir, { recursive: true, force: true });
 		rmSync(repo, { recursive: true, force: true });
 	}

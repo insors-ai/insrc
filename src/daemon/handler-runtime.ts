@@ -92,7 +92,9 @@ import { getModelRegistry } from './model-registry.js';
 import { searchConfig, resolveTemplate } from '../config/search.js';
 import * as todosRpc from './todos-rpc.js';
 import { createGitHooks } from './git-hooks-methods.js';
-import { createRepoSettingsHandlers } from './repo-settings.js';
+import { applyBuildDefaults, createRepoSettingsHandlers } from './repo-settings.js';
+import type { BuildDefaultsOutcome } from './repo-settings.js';
+import type { writeRepoEntryKeys } from '../workflow/config/github-store.js';
 import { handoffRpcHandlers } from './steps/workflow-step/handoff-rpc.js';
 import { approvalAnswer, approvalSubscribe } from './approval.js';
 import { toolsCall } from './tools/call-handler.js';
@@ -152,6 +154,8 @@ export interface HandlerRuntimeDeps {
  readonly stepCallHandler?: StreamHandler | undefined;
 	/** Test seam: the registered repositories' paths (default: the registry in `db`). */
 	readonly registeredRepos?: (() => Promise<ReadonlySet<string>>) | undefined;
+	/** Test seam: the writer `repo.add` stores the build defaults with (default: the github.json writer). */
+	readonly buildDefaultsWriter?: typeof writeRepoEntryKeys | undefined;
 	readonly db: Awaited<ReturnType<typeof getDb>>;
 	readonly configStore: ConfigStore;
 	readonly queue: RuntimeQueue;
@@ -402,10 +406,19 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 					);
 				}
 			}
+			// The project type's typical build commands, stored with no client input: never
+			// overwrites a repo's commands and never fails the add (applyBuildDefaults never throws).
+			const buildDefaults: BuildDefaultsOutcome = await applyBuildDefaults(
+				normalisedPath, deps.buildDefaultsWriter !== undefined ? { writeKeys: deps.buildDefaultsWriter } : {},
+			);
+			if (!buildDefaults.applied && buildDefaults.reason === 'write-failed') {
+				log.warn({ repo: normalisedPath, note: buildDefaults.note }, 'build defaults not stored; repo registered regardless');
+			}
 			return {
 				ok: true,
 				...(steering !== undefined ? { steering } : {}),
 				...(mcp !== undefined ? { mcp } : {}),
+				buildDefaults,
 			};
 		},
 
@@ -460,10 +473,19 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 					log.warn({ repo: normalisedPath, err: err instanceof Error ? err.message : String(err) }, 'mcp registration failed');
 				}
 			}
+			// The project type's typical build commands, stored with no client input: never
+			// overwrites a repo's commands and never fails the add (applyBuildDefaults never throws).
+			const buildDefaults: BuildDefaultsOutcome = await applyBuildDefaults(
+				normalisedPath, deps.buildDefaultsWriter !== undefined ? { writeKeys: deps.buildDefaultsWriter } : {},
+			);
+			if (!buildDefaults.applied && buildDefaults.reason === 'write-failed') {
+				log.warn({ repo: normalisedPath, note: buildDefaults.note }, 'build defaults not stored; repo registered regardless');
+			}
 			return {
 				ok: true,
 				...(steering !== undefined ? { steering } : {}),
 				...(mcp !== undefined ? { mcp } : {}),
+				buildDefaults,
 			};
 		},
 

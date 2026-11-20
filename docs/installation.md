@@ -129,7 +129,10 @@ Two files under `~/.insrc/`:
 > (`"failed to parse grammar"`). For the analyze/workflow reasoning, prefer a
 > `cli-*` provider until that's hardened; embeddings are unaffected.
 
-### `~/.insrc/github.json` — tracker (optional)
+### `~/.insrc/repo-config.json` — repository settings, including the tracker (optional)
+
+> This file was `~/.insrc/github.json`. An existing file is moved to the new name at the first boot of the updated daemon; a
+> `github.json` created by hand afterwards is ignored. `INSRC_REPO_CONFIG` overrides the location.
 
 GitHub Issues integration. **Opt-in** — absent/`"type": "none"` disables it.
 

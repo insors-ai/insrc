@@ -634,4 +634,4 @@ Inherited from the meta framework:
   the tracker?** Migration story matters. Deferred to Phase B.
 - **How does `insrc workflow push` handle a repo whose GitHub
   remote isn't the intended tracker target?** Config in
-  `~/.insrc/github.json` per-repo. Details in Phase F.
+  `~/.insrc/repo-config.json` per-repo. Details in Phase F.

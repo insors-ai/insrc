@@ -1354,6 +1354,22 @@ Other rules:
 - A Trivial standalone build names no tests: `tests` is ignored and the test
   files its commit touched are run.
 
+### The settings file: repo-config.json
+
+The daemon keeps each registered repository's settings (its tracker, its build commands, its git hooks) in
+`~/.insrc/repo-config.json`, a file of the shape `{ default?, repos? }`. The daemon is the only writer; the terminal, VS Code and
+JetBrains edit it through the `repo.settings.*` methods. GitHub is only one of the repo types it serves, which is why the file
+is not named after it. `INSRC_REPO_CONFIG` overrides the location (the tests use it); the older `INSRC_GITHUB_CONFIG` is no
+longer read.
+
+The file was `~/.insrc/github.json`. At the first boot of an updated daemon, straight after its directories are ensured and
+before anything reads the file, an existing `github.json` is moved to `repo-config.json` with one rename: nothing is copied and
+no `github.json` is left. If both files exist neither is touched, `repo-config.json` is the one the daemon reads, and the boot logs
+that both exist; a move that fails is logged and tried again at the next boot, and never stops the daemon starting. The move
+is skipped when `INSRC_REPO_CONFIG` is set. A `github.json` created by hand afterwards is ignored: the settings now live in
+`repo-config.json`, and the settings methods are the way to change them. To go back to an older daemon, rename the file back
+by hand, because the older daemon reads `github.json` and would see no settings.
+
 ### Build commands
 
 The gate runs the typecheck and the tests itself, and the prompts name them to the builder. Which commands those are depends on
@@ -1376,7 +1392,7 @@ Several types at the root, or none, is `unknown`; a file in a subdirectory is ne
   stay in this state for a type that has typical commands: see [Defaults at repo add](#defaults-at-repo-add). The builder's prompt names the commands typical
   for the type (for example `go vet ./...` and `go test ./...`) as guidance only, and the judge is told the daemon ran nothing.
 - **A project that states its commands** gets an independent run. The commands are settings of one registered
-  repository, so there is no global default: each repository sets its own, in its entry of `~/.insrc/github.json`, through
+  repository, so there is no global default: each repository sets its own, in its entry of `~/.insrc/repo-config.json`, through
   `repo.settings.set` (the terminal settings screen, the VS Code Repo Configuration page and the JetBrains repo settings each list
   them as a "Build" section of their own; the daemon is the only writer of the file):
 
@@ -1396,7 +1412,7 @@ Several types at the root, or none, is `unknown`; a file in a subdirectory is ne
 
 The two commands are set together. A key that is absent is not set (`repo.settings.set` with `null` removes one); a command
 that is empty is refused when it is set, and so is a result format other than `tap` or `exit-code`. If a repository's
-entry still holds a bad value, or `github.json` cannot be read, the build phase returns the error `invalid-command-setting`,
+entry still holds a bad value, or `repo-config.json` cannot be read, the build phase returns the error `invalid-command-setting`,
 naming the key, before any prompt is built, check is run or record is written; a build never falls back to a default on a
 setting it could not read. The keys are rows of the repo settings table (`REPO_TRACKER_FIELDS`, group `Build`), not rows of the
 daemon's settings catalog, and only a registered repository can set them. The extra tsconfig projects are checked only for
@@ -1406,7 +1422,7 @@ the Node default.
 
 `repo.add` stores the project type's typical commands for the new repository, with no client prompt (registration is mostly
 non-interactive, so the terminal, VS Code and JetBrains do nothing extra at add). After the repository is registered and
-indexing has started, the daemon reads the repository's own entry of `~/.insrc/github.json`; when the entry sets none of
+indexing has started, the daemon reads the repository's own entry of `~/.insrc/repo-config.json`; when the entry sets none of
 `typecheckCommand`, `testCommand` and `resultFormat`, and the type has typical commands, it writes all three in one write, so a
 lone command is never left:
 
@@ -1420,7 +1436,7 @@ lone command is never left:
 A Node project is left alone (it already has the Node default), and so is an `unknown` type, which has no typical commands.
 Nothing is ever overwritten: an entry that sets any one of the three keys is kept as it is. The `repo.add` reply carries the
 outcome as `buildDefaults`: `{ applied: true, projectType }`, or `{ applied: false, reason }` with the reason `already-set`,
-`node-default`, `no-typical-commands` or `write-failed` (with a `note`). A failure, including an unreadable `github.json`,
+`node-default`, `no-typical-commands` or `write-failed` (with a `note`). A failure, including an unreadable `repo-config.json`,
 is logged and never fails the add; the repository is registered regardless and keeps today's behaviour of no gate run.
 
 A default is a typical command, not a verified one: the daemon does not check that `mypy`, `go`, `cargo` or `mvn` is
@@ -1463,10 +1479,10 @@ walks the registered repositories in registry order, calls the same function `re
 
 `counts` has a key for every outcome and adds up to the number of repositories. The rules are those of the add-time defaults:
 a repository whose entry sets any one of the three keys is kept as it is (`already-set`), Node and unknown repositories are not
-written, and a failed write (including an unreadable `github.json`, which fails every repository and leaves the file as it was)
+written, and a failed write (including an unreadable `repo-config.json`, which fails every repository and leaves the file as it was)
 is that repository's `write-failed` outcome and does not stop the others. Running it again changes nothing for the repositories
 it already set. If the registry cannot be listed the reply is `{ "ok": false, "error": { "code": "registry-unreadable", "message": "..." } }`
-and nothing is written. Only `~/.insrc/github.json` is written, through the daemon's writer; no file of a repository is.
+and nothing is written. Only `~/.insrc/repo-config.json` is written, through the daemon's writer; no file of a repository is.
 
 Two limits. A command you cleared on purpose (with `repo.settings.set` and `null`) is applied again the next time the method
 is run, because nothing records a clear. And the function reads a repository's entry and then writes it, as separate steps, so a

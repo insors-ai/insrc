@@ -36,7 +36,7 @@ The rule covers writes under a user repository. `config.*`, `keys.*`, `session.*
 | `team.refresh` | `repoPath` | — |  | team-review-handlers.ts:50-52 fetches the policy and writes the sighting record under the repository; repoPath is required (repoOf) |
 | `team.release` | `repoPath` | — |  | team-review-handlers.ts:70-72 releases a unit and records it in the repository's artifacts; repoPath is required |
 | `tracker.attach` | `repo` | — |  | tracker-attach.ts:33-44 attaches documents to the unit's issue and records the links in the artifacts; repo falls back to INSRC_REPO |
-| `tracker.setup` | `repoPath` | — |  | tracker-setup-handlers.ts:35-52 writes github.json through repo.trackerConfig.ensure and runs the checklist; repoPath is required |
+| `tracker.setup` | `repoPath` | — |  | tracker-setup-handlers.ts:35-52 writes repo-config.json through repo.trackerConfig.ensure and runs the checklist; repoPath is required |
 | `tracker.sync` | `repoPath` | — |  | tracker-setup-handlers.ts:15-19 -> syncTracker patches meta.tracker in the Define; repoPath is required |
 | `tracker.syncComments` | `repo` | — |  | tracker-sync-comments.ts:34-51 reads issue comments into the repository's feedback store; repo falls back to INSRC_REPO |
 | `workflow.approve` | `repo` | `artifactPath` |  | workflow-approve.ts:28-62 approves in the repository's lifecycle store; repo falls back to the daemon's INSRC_REPO and a single artifact takes its repository from the path |

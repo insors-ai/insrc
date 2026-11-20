@@ -206,7 +206,8 @@ ollama pull qwen3.6:35b-a3b        # analyzer core — skip if reasoning runs on
       grammar engine, which can reject some strict schemas (<code>"failed to parse grammar"</code>). For analyze/workflow
       reasoning, prefer a <code>cli-*</code> provider until that's hardened; embeddings are unaffected.</div>
 
-    <h3><code>~/.insrc/github.json</code> — tracker (optional)</h3>
+    <h3><code>~/.insrc/repo-config.json</code> — repository settings, including the tracker (optional)</h3>
+    <div class="note">This file was <code>~/.insrc/github.json</code>. An existing file is moved to the new name at the first boot of the updated daemon; a <code>github.json</code> created by hand afterwards is ignored. <code>INSRC_REPO_CONFIG</code> overrides the location.</div>
     <p>GitHub Issues integration. <strong>Opt-in</strong> — absent / <code>"type": "none"</code> disables it.</p>
     <pre><code>{
   "default": {

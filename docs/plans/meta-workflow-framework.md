@@ -572,7 +572,7 @@ If we ever add another tracker with a different native shape
 abstraction at that point — the artificial hierarchy for GitHub
 wouldn't generalise cleanly anyway.
 
-Configuration lives at `~/.insrc/github.json` — one entry per
+Configuration lives at `~/.insrc/repo-config.json` — one entry per
 repo, plus a default. See `docs/plans/workflow-implementation.md`
 §6.F for the structure.
 
@@ -655,7 +655,7 @@ plans/
     └── <story-id>.json           # canonical, parsed by build
 
 ~/.insrc/
-├── github.json                   # GitHub tracker config (§7.4)
+├── repo-config.json                   # GitHub tracker config (§7.4)
 └── workflow-runs/
     └── <epic-slug>/
         └── <workflow>-<runId>.jsonl   # full step log per run

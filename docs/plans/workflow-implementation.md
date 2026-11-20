@@ -111,7 +111,7 @@ We do NOT rebuild these. The workflow framework consumes them:
 | Amendment machinery | `workflow/amendments/` | Types, on-disk store, applier, effective-HLD computation, staleness detection. |
 | Gate + approval | `workflow/gates.ts` | Approved-artifact reads, back-flow signal handling, ack-stale overrides. |
 | GitHub prompts | `prompts/workflow/tracker/` | Prompt + schema files. The framework does NOT wrap `gh`; the LLM invokes `gh` directly. See §6.F. |
-| Config surface | `workflow/config.ts` | `~/.insrc/github.json` loader, per-workflow retry limits, model overrides. |
+| Config surface | `workflow/config.ts` | `~/.insrc/repo-config.json` loader, per-workflow retry limits, model overrides. |
 | MCP tool | `mcp/workflow-step/` | `insrc_workflow_step` handler mirroring `insrc_analyze_step`. |
 | CLI | `cli/commands/workflow.ts` | `insrc workflow start | approve | reject | list | status | amend | sync | push | ack-stale`. |
 | Prompts | `prompts/workflow/` | Per-step-type LLM prompts. |
@@ -129,7 +129,7 @@ src/
 │   ├── slug.ts                        # slug derivation
 │   ├── storage.ts                     # file I/O, atomic writes
 │   ├── gates.ts                       # approval + back-flow + ack-stale
-│   ├── config.ts                      # github.json + workflow config
+│   ├── config.ts                      # repo-config.json + workflow config
 │   ├── runners/
 │   │   ├── define/                    # define step runners
 │   │   ├── design-epic/               # HLD step runners
@@ -174,7 +174,7 @@ src/
         └── tracker/                   # push / sync / post prompts + schemas
 
 ~/.insrc/
-├── github.json                        # GitHub tracker config
+├── repo-config.json                        # GitHub tracker config
 └── workflow-runs/                     # per-run logs
     └── <epic-slug>/
         └── <workflow>-<runId>.jsonl
@@ -492,7 +492,7 @@ Runners are three-step coarse handoffs:
 - Output schemas: `workflow/artifacts/tracker.ts` — zod / ajv
   schemas for what the LLM must return from execute (refs +
   notes) and from verify (pass / fail + failed items).
-- Config: `~/.insrc/github.json` with per-repo mappings +
+- Config: `~/.insrc/repo-config.json` with per-repo mappings +
   `default` fallback. Structure:
   ```json
   {
@@ -904,7 +904,7 @@ A (skeleton) ──► B (define) ──► C (HLD) ──► D (LLD) ──► 
   the `test` design doc.
 - **Should `insrc workflow push` auto-detect the GitHub
   owner/repo from the git remote?** The `context.assemble` step
-  falls back to the remote if `~/.insrc/github.json` has no
+  falls back to the remote if `~/.insrc/repo-config.json` has no
   per-repo entry. Refuses if there are multiple remotes or no
   `origin`. Lean: yes; simplifies first-time UX considerably.
 - **Partial-failure recovery** (rate-limited after 3 of 5 Story
@@ -916,7 +916,7 @@ A (skeleton) ──► B (define) ──► C (HLD) ──► D (LLD) ──► 
 - **Label collisions** are the LLM's problem too. The push
   prompt tells it what to do: warn but don't touch existing
   labels; user can override the label prefix via
-  `~/.insrc/github.json` if their repo already uses `epic:*`
+  `~/.insrc/repo-config.json` if their repo already uses `epic:*`
   for something else.
 
 ## 12. First implementation step

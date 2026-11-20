@@ -195,3 +195,12 @@ test('retired review router precedence rejects through actual local handlers bef
   } finally { cancel(); }
  }
 });
+
+
+test('qualificationState is unary ordinary session work without admin shared or FIFO routing', () => {
+ assert.deepEqual(methodClasses.entries().find(e => e.method === 'daemon.qualificationState'),
+  { method: 'daemon.qualificationState', cls: 'session', stream: false });
+ assert.equal(SHARED_STATE_METHODS.has('daemon.qualificationState'), false);
+ assert.equal(FIFO_EXEMPT_METHODS.has('daemon.qualificationState'), false);
+ assert.equal(inDaemonTarget('daemon.qualificationState', { routed: new Set(['admin', 'indexing', 'session']), onSharedWorker: false }), undefined);
+});

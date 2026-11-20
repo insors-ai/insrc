@@ -336,6 +336,8 @@ The strict reader tries repo-config.json and, if it does not exist, reads github
   - **resolved**: Confirm proposed module split — The user asked on 2026-11-20 to go ahead. The names are recorded as planned additions, not existing analyzer evidence. The split is as in the LLD: repo-config.ts holds repoConfigPath, the file and entry types, loadRepoConfigFile and RepoConfigError; repo-config-store.ts holds the strict reader, merge, writer and moveLegacyRepoConfig with LegacyRepoConfigMove. _(2026-11-20T16:40:47.396Z)_
 - `q0c40ecf5` — Confirm the citation mapping: c1 is the bundle on the names and where they are defined, c2 the bundle on who calls them, c3 the bundle on the override variable and the daemon-only access, c4 the boot-order bundle, c5 the tests-and-docs bundle (invariant sources use these). The facts came from reading the source and text searches, not an analyzer pass.
   - **resolved**: Confirm mapping with source provenance — The user asked on 2026-11-20 to go ahead. c1-c5 map as stated, and the evidence is recorded as source reads and text searches, not an analyzer pass. _(2026-11-20T16:41:14.694Z)_
+- `qbdb955aa` — Order of work: this Story is built first, and LLD-d70697dff9f56b4a-s1 (the schemaVersion boot migration) is then retargeted at repo-config.json; that LLD still names github.json and is not approved.
+  - **resolved**: Build this Story first — The user asked on 2026-11-20 to split the work. This rename Story is built first; LLD-d70697dff9f56b4a-s1 (the schemaVersion boot migration) is then retargeted at repo-config.json and must be approved before it is built. It currently names github.json and is not approved. _(2026-11-20T16:41:31.182Z)_
 
 ## Citations
 

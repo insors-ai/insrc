@@ -14,6 +14,7 @@ import { fileURLToPath } from 'node:url';
 import { _setReconciliationDepsForTests, reconcileRound } from '../reconciliation.js';
 import type { ReconciliationVerdict } from '../reconciliation.js';
 import type { Finding } from '../finding.js';
+import { _setResolveForCwdForTests } from '../../../daemon/steps/resolve-repo.js';
 import { runInStepContext } from '../../../shared/step-context.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..');
@@ -48,13 +49,17 @@ const finding = (id: string, category: Finding['category'] = 'correctness', seve
 
 /** A classify stub returning the given verdicts in order, recording every call. */
 function stubClassify(verdicts: readonly ReconciliationVerdict[]) {
-	const calls: Array<{ reviewId: string; priorFindings: readonly Finding[]; currentFindings: readonly Finding[]; auditTrail: string | undefined }> = [];
-	const classify = async (reviewId: string, priorFindings: readonly Finding[], currentFindings: readonly Finding[], auditTrail: string | undefined): Promise<readonly ReconciliationVerdict[]> => {
-		calls.push({ reviewId, priorFindings, currentFindings, auditTrail });
+	const calls: Array<{ reviewId: string; priorFindings: readonly Finding[]; currentFindings: readonly Finding[]; auditTrail: string | undefined; repoRoot: string }> = [];
+	const classify = async (reviewId: string, priorFindings: readonly Finding[], currentFindings: readonly Finding[], auditTrail: string | undefined, repoRoot: string): Promise<readonly ReconciliationVerdict[]> => {
+		calls.push({ reviewId, priorFindings, currentFindings, auditTrail, repoRoot });
 		return verdicts;
 	};
 	return { classify, calls };
 }
+
+/** Every test not specifically exercising repo resolution itself injects this fixed root,
+ *  bypassing the canonical resolver's own daemon-client/registry plumbing entirely. */
+const resolveRepoRoot = async (): Promise<string> => ROOT;
 
 describe('reconcileRound and ReconciliationResult', () => {
 	it("reconcileRound produces exactly one ReconciliationResult per entry in priorFindings, keyed by that finding's own id", async () => {
@@ -64,7 +69,7 @@ describe('reconcileRound and ReconciliationResult', () => {
 		const priorFindings = [finding('f1'), finding('f2'), finding('f3')];
 		const currentFindings = [finding('f4')];
 		const { classify } = stubClassify(['confirmed', 'still-open', 'no-longer-surfaced']);
-		_setReconciliationDepsForTests({ classify, auditTrailExists: () => false });
+		_setReconciliationDepsForTests({ classify, auditTrailExists: () => false, resolveRepoRoot });
 
 		const results = await reconcileRound('review-1', priorFindings, currentFindings);
 
@@ -86,7 +91,7 @@ describe('reconcileRound and ReconciliationResult', () => {
 
 	it('ReconciliationResult\'s exported shape contains exactly priorFindingRef and verdict, with no severity, blocking, or gate-facing field of any kind', async () => {
 		const { classify } = stubClassify(['confirmed']);
-		_setReconciliationDepsForTests({ classify, auditTrailExists: () => false });
+		_setReconciliationDepsForTests({ classify, auditTrailExists: () => false, resolveRepoRoot });
 
 		const [result] = await reconcileRound('review-shape', [finding('f1')], []);
 
@@ -103,7 +108,7 @@ describe('reconcileRound and ReconciliationResult', () => {
 	it('a rejecting reconcileRound call propagates its rejection rather than returning partial or fabricated results', async () => {
 		const failure = new Error('classification provider unavailable');
 		const classify = async (): Promise<readonly ReconciliationVerdict[]> => { throw failure; };
-		_setReconciliationDepsForTests({ classify, auditTrailExists: () => false });
+		_setReconciliationDepsForTests({ classify, auditTrailExists: () => false, resolveRepoRoot });
 
 		await assert.rejects(
 			() => reconcileRound('review-reject', [finding('f1'), finding('f2')], []),
@@ -116,7 +121,7 @@ describe('reconcileRound and ReconciliationResult', () => {
 
 	it('priorFindings as an empty array returns an empty array, not an error', async () => {
 		const { classify, calls } = stubClassify([]);
-		_setReconciliationDepsForTests({ classify, auditTrailExists: () => false });
+		_setReconciliationDepsForTests({ classify, auditTrailExists: () => false, resolveRepoRoot });
 
 		const results = await reconcileRound('review-empty', [], [finding('f1')]);
 
@@ -130,7 +135,7 @@ describe('reconcileRound and ReconciliationResult', () => {
 		const priorFindings = [finding('f1', 'correctness', 'HIGH'), finding('f2', 'correctness', 'HIGH')];
 		const currentFindings = [finding('f3', 'correctness', 'HIGH')];
 		const { classify } = stubClassify(['confirmed', 'confirmed']);
-		_setReconciliationDepsForTests({ classify, auditTrailExists: () => false });
+		_setReconciliationDepsForTests({ classify, auditTrailExists: () => false, resolveRepoRoot });
 
 		const results = await reconcileRound('review-dup', priorFindings, currentFindings);
 
@@ -148,12 +153,11 @@ describe('reconcileRound and ReconciliationResult', () => {
 		writeFileSync(join(dir, 'audit-trail.json'), auditTrailContent, 'utf8');
 
 		try {
-			// No classify.auditTrailExists/readAuditTrail override here: this exercises the
-			// real default implementation, which resolves the path from reviewId alone, under
-			// the process's own cwd -- proving reconcileRound reads it internally, since its
-			// own signature (proven above) has no auditTrail parameter for a caller to fill.
+			// No auditTrailExists/readAuditTrail override here: this exercises the real default
+			// implementation, proving reconcileRound reads it internally -- its own signature
+			// (proven above) has no auditTrail parameter for a caller to fill.
 			const { classify, calls } = stubClassify(['still-open']);
-			_setReconciliationDepsForTests({ classify });
+			_setReconciliationDepsForTests({ classify, resolveRepoRoot });
 
 			// Ambiguous: no currentFindings entry shares this prior finding's own id.
 			await reconcileRound(reviewId, [finding('f1', 'correctness', 'HIGH')], [finding('f2', 'security', 'MED')]);
@@ -168,7 +172,7 @@ describe('reconcileRound and ReconciliationResult', () => {
 
 	it('a reviewId containing a path-traversal segment is rejected before any filesystem access, rather than being joined into the audit-trail path unvalidated', async () => {
 		const { classify, calls } = stubClassify(['confirmed']);
-		_setReconciliationDepsForTests({ classify });
+		_setReconciliationDepsForTests({ classify, resolveRepoRoot });
 
 		try {
 			await assert.rejects(
@@ -193,7 +197,7 @@ describe('reconcileRound and ReconciliationResult', () => {
 			// Same category+severity, different id -- must be ambiguous (reads the audit trail),
 			// not treated as a literal recurrence the way a category+severity match alone would be.
 			const { classify, calls } = stubClassify(['contradicted']);
-			_setReconciliationDepsForTests({ classify });
+			_setReconciliationDepsForTests({ classify, resolveRepoRoot });
 
 			await reconcileRound(reviewId, [finding('prior-1', 'correctness', 'HIGH')], [finding('other-1', 'correctness', 'HIGH')]);
 
@@ -205,7 +209,11 @@ describe('reconcileRound and ReconciliationResult', () => {
 		}
 	});
 
-	it('outside any bound request, the audit trail and the classification provider fall back to the process\'s own INSRC_REPO, not its cwd', async () => {
+	// --- Repo resolution: the real defaultResolveRepoRoot, through the canonical
+	// precedence chain (explicit > registered-repo-for-cwd > envRepo > undefined),
+	// resolveForCwd mocked per test via _setResolveForCwdForTests. ---
+
+	it('outside any bound request, with no registered repo for the process cwd, the audit trail and the classify provider fall back to the process\'s own INSRC_REPO', async () => {
 		const reviewId = `review-repo-${process.pid}-${Date.now()}`;
 		const pinnedRepo = mkdtempSync(join(tmpdir(), 'insrc-reconciliation-repo-'));
 		const dir = join(pinnedRepo, '.insrc/tmp', reviewId);
@@ -215,6 +223,7 @@ describe('reconcileRound and ReconciliationResult', () => {
 
 		const previousRepo = process.env.INSRC_REPO;
 		process.env.INSRC_REPO = pinnedRepo;
+		_setResolveForCwdForTests(async () => null); // no registered repo matches any cwd
 		try {
 			const { classify, calls } = stubClassify(['still-open']);
 			_setReconciliationDepsForTests({ classify });
@@ -222,69 +231,72 @@ describe('reconcileRound and ReconciliationResult', () => {
 			await reconcileRound(reviewId, [finding('f1', 'correctness', 'HIGH')], [finding('f2', 'security', 'MED')]);
 
 			assert.equal(calls.length, 1);
-			assert.equal(calls[0]!.auditTrail, auditTrailContent, 'the audit trail must be read from INSRC_REPO\'s .insrc/tmp/<reviewId>/, not the process cwd, when INSRC_REPO is pinned to a different repository');
+			assert.equal(calls[0]!.auditTrail, auditTrailContent, 'the audit trail must be read from INSRC_REPO\'s .insrc/tmp/<reviewId>/ when no registered repo matches cwd');
+			assert.equal(calls[0]!.repoRoot, pinnedRepo);
 		} finally {
 			if (previousRepo === undefined) delete process.env.INSRC_REPO; else process.env.INSRC_REPO = previousRepo;
+			_setResolveForCwdForTests(undefined);
 			rmSync(pinnedRepo, { recursive: true, force: true });
 			_setReconciliationDepsForTests({});
 		}
 	});
 
-	it('a bound request\'s own repository wins over a process-wide INSRC_REPO pin -- repo resolution is per-request, not process-global', async () => {
-		const reviewId = `review-perreq-${process.pid}-${Date.now()}`;
-		const globalPinRepo = mkdtempSync(join(tmpdir(), 'insrc-reconciliation-global-'));
-		const requestRepo = mkdtempSync(join(tmpdir(), 'insrc-reconciliation-request-'));
-		const requestDir = join(requestRepo, '.insrc/tmp', reviewId);
-		const requestAuditTrail = JSON.stringify({ note: 'request-repo audit trail, must win over the global pin' });
-		mkdirSync(requestDir, { recursive: true });
-		writeFileSync(join(requestDir, 'audit-trail.json'), requestAuditTrail, 'utf8');
-		// Deliberately do NOT create a matching .insrc/tmp/<reviewId>/ under globalPinRepo:
-		// if resolution fell through to the global pin, the read would simply find nothing.
+	it('the registered repo for the request\'s cwd wins over its own envRepo pin -- the canonical precedence, not envRepo-first', async () => {
+		const reviewId = `review-precedence-${process.pid}-${Date.now()}`;
+		const repoB = mkdtempSync(join(tmpdir(), 'insrc-reconciliation-repob-'));
+		const repoA = mkdtempSync(join(tmpdir(), 'insrc-reconciliation-repoa-'));
+		const dirB = join(repoB, '.insrc/tmp', reviewId);
+		const auditTrailB = JSON.stringify({ note: 'repo B audit trail -- must win' });
+		mkdirSync(dirB, { recursive: true });
+		writeFileSync(join(dirB, 'audit-trail.json'), auditTrailB, 'utf8');
+		// Deliberately no matching .insrc/tmp/<reviewId>/ under repoA: if resolution fell
+		// through to envRepo instead of the registered cwd match, the read would find nothing.
 
-		const previousRepo = process.env.INSRC_REPO;
-		process.env.INSRC_REPO = globalPinRepo;
+		const requestCwd = join(repoB, 'some', 'nested', 'dir');
+		mkdirSync(requestCwd, { recursive: true });
+		_setResolveForCwdForTests(async (cwd) => (cwd === requestCwd ? repoB : null));
 		try {
 			const { classify, calls } = stubClassify(['still-open']);
 			_setReconciliationDepsForTests({ classify });
 
-			await runInStepContext({ cwd: requestRepo, envRepo: requestRepo }, () =>
+			await runInStepContext({ cwd: requestCwd, envRepo: repoA }, () =>
 				reconcileRound(reviewId, [finding('f1', 'correctness', 'HIGH')], [finding('f2', 'security', 'MED')]));
 
 			assert.equal(calls.length, 1);
-			assert.equal(calls[0]!.auditTrail, requestAuditTrail, 'the bound request\'s own repo must be used, not the process-wide INSRC_REPO pin');
+			assert.equal(calls[0]!.repoRoot, repoB, 'the registered repo for cwd must be used as the resolved root, not envRepo');
+			assert.equal(calls[0]!.auditTrail, auditTrailB, 'repo B\'s audit trail must be read, not repo A\'s (envRepo), even though cwd is only a subdirectory of B');
 		} finally {
-			if (previousRepo === undefined) delete process.env.INSRC_REPO; else process.env.INSRC_REPO = previousRepo;
-			rmSync(globalPinRepo, { recursive: true, force: true });
-			rmSync(requestRepo, { recursive: true, force: true });
+			_setResolveForCwdForTests(undefined);
+			rmSync(repoB, { recursive: true, force: true });
+			rmSync(repoA, { recursive: true, force: true });
 			_setReconciliationDepsForTests({});
 		}
 	});
 
-	it('a bound request\'s own cwd is used even with no envRepo and no global INSRC_REPO pin -- never the daemon process\'s own cwd', async () => {
-		const reviewId = `review-perreqcwd-${process.pid}-${Date.now()}`;
-		const requestRepo = mkdtempSync(join(tmpdir(), 'insrc-reconciliation-request-cwd-'));
-		const requestDir = join(requestRepo, '.insrc/tmp', reviewId);
-		const requestAuditTrail = JSON.stringify({ note: 'request-cwd audit trail' });
-		mkdirSync(requestDir, { recursive: true });
-		writeFileSync(join(requestDir, 'audit-trail.json'), requestAuditTrail, 'utf8');
-
+	it('when neither a registered repo for cwd nor an envRepo/INSRC_REPO pin resolves, reconcileRound rejects rather than silently defaulting to cwd', async () => {
 		const previousRepo = process.env.INSRC_REPO;
 		delete process.env.INSRC_REPO;
+		_setResolveForCwdForTests(async () => null);
 		try {
 			const { classify, calls } = stubClassify(['still-open']);
 			_setReconciliationDepsForTests({ classify });
 
-			await runInStepContext({ cwd: requestRepo }, () =>
-				reconcileRound(reviewId, [finding('f1', 'correctness', 'HIGH')], [finding('f2', 'security', 'MED')]));
-
-			assert.equal(calls.length, 1);
-			assert.equal(calls[0]!.auditTrail, requestAuditTrail, 'the bound request\'s own cwd must be used, not the daemon process\'s own cwd');
+			await assert.rejects(
+				() => runInStepContext({ cwd: mkdtempSync(join(tmpdir(), 'insrc-reconciliation-unresolved-')) }, () =>
+					reconcileRound(`review-unresolved-${process.pid}-${Date.now()}`, [finding('f1')], [])),
+				/could not resolve the reviewed repository/,
+				'with nothing resolving, reconcileRound must reject rather than quietly using the daemon\'s own cwd',
+			);
+			assert.equal(calls.length, 0, 'classify must never run once repo resolution has failed');
 		} finally {
 			if (previousRepo === undefined) delete process.env.INSRC_REPO; else process.env.INSRC_REPO = previousRepo;
-			rmSync(requestRepo, { recursive: true, force: true });
+			_setResolveForCwdForTests(undefined);
 			_setReconciliationDepsForTests({});
 		}
 	});
+
+	// --- Symlink containment: both an escape outside .insrc/tmp entirely, and an
+	// alias to a SIBLING review's own genuine directory/file within it. ---
 
 	it('a symlinked review directory pointing outside .insrc/tmp is not followed -- its audit trail is never read', async () => {
 		const reviewId = `review-symlinkdir-${process.pid}-${Date.now()}`;
@@ -299,7 +311,7 @@ describe('reconcileRound and ReconciliationResult', () => {
 
 		try {
 			const { classify, calls } = stubClassify(['still-open']);
-			_setReconciliationDepsForTests({ classify });
+			_setReconciliationDepsForTests({ classify, resolveRepoRoot });
 
 			await reconcileRound(reviewId, [finding('f1', 'correctness', 'HIGH')], [finding('f2', 'security', 'MED')]);
 
@@ -325,7 +337,7 @@ describe('reconcileRound and ReconciliationResult', () => {
 
 		try {
 			const { classify, calls } = stubClassify(['still-open']);
-			_setReconciliationDepsForTests({ classify });
+			_setReconciliationDepsForTests({ classify, resolveRepoRoot });
 
 			await reconcileRound(reviewId, [finding('f1', 'correctness', 'HIGH')], [finding('f2', 'security', 'MED')]);
 
@@ -334,6 +346,63 @@ describe('reconcileRound and ReconciliationResult', () => {
 		} finally {
 			rmSync(reviewDir, { recursive: true, force: true });
 			rmSync(secretDir, { recursive: true, force: true });
+			_setReconciliationDepsForTests({});
+		}
+	});
+
+	it('review A\'s own directory aliased (via symlink) to sibling review B\'s genuine directory is rejected -- B\'s audit trail never reaches A\'s classification', async () => {
+		const reviewIdB = `review-siblingdir-b-${process.pid}-${Date.now()}`;
+		const reviewIdA = `review-siblingdir-a-${process.pid}-${Date.now()}`;
+		const tmpRoot = join(ROOT, '.insrc/tmp');
+		mkdirSync(tmpRoot, { recursive: true });
+		const dirB = join(tmpRoot, reviewIdB);
+		const dirA = join(tmpRoot, reviewIdA);
+		const auditTrailB = JSON.stringify({ note: 'sibling review B\'s own genuine audit trail' });
+		mkdirSync(dirB, { recursive: true });
+		writeFileSync(join(dirB, 'audit-trail.json'), auditTrailB, 'utf8');
+		// review A's own directory IS a symlink, but to a SIBLING's genuine directory --
+		// still legitimately inside .insrc/tmp, so a root-containment check alone would pass it.
+		symlinkSync(dirB, dirA, 'dir');
+
+		try {
+			const { classify, calls } = stubClassify(['still-open']);
+			_setReconciliationDepsForTests({ classify, resolveRepoRoot });
+
+			await reconcileRound(reviewIdA, [finding('f1', 'correctness', 'HIGH')], [finding('f2', 'security', 'MED')]);
+
+			assert.equal(calls.length, 1);
+			assert.equal(calls[0]!.auditTrail, undefined, 'review A must never receive review B\'s audit trail through a directory alias');
+		} finally {
+			rmSync(dirA, { force: true });
+			rmSync(dirB, { recursive: true, force: true });
+			_setReconciliationDepsForTests({});
+		}
+	});
+
+	it('review A\'s own audit-trail.json aliased (via symlink) to sibling review B\'s genuine audit-trail.json is rejected', async () => {
+		const reviewIdB = `review-siblingfile-b-${process.pid}-${Date.now()}`;
+		const reviewIdA = `review-siblingfile-a-${process.pid}-${Date.now()}`;
+		const tmpRoot = join(ROOT, '.insrc/tmp');
+		const dirB = join(tmpRoot, reviewIdB);
+		const dirA = join(tmpRoot, reviewIdA);
+		const auditTrailB = JSON.stringify({ note: 'sibling review B\'s own genuine audit trail' });
+		mkdirSync(dirB, { recursive: true });
+		mkdirSync(dirA, { recursive: true });
+		writeFileSync(join(dirB, 'audit-trail.json'), auditTrailB, 'utf8');
+		// review A's own directory is genuine; only its audit-trail.json is a symlink to B's.
+		symlinkSync(join(dirB, 'audit-trail.json'), join(dirA, 'audit-trail.json'), 'file');
+
+		try {
+			const { classify, calls } = stubClassify(['still-open']);
+			_setReconciliationDepsForTests({ classify, resolveRepoRoot });
+
+			await reconcileRound(reviewIdA, [finding('f1', 'correctness', 'HIGH')], [finding('f2', 'security', 'MED')]);
+
+			assert.equal(calls.length, 1);
+			assert.equal(calls[0]!.auditTrail, undefined, 'review A must never receive review B\'s audit trail through a file alias');
+		} finally {
+			rmSync(dirA, { recursive: true, force: true });
+			rmSync(dirB, { recursive: true, force: true });
 			_setReconciliationDepsForTests({});
 		}
 	});

@@ -12,13 +12,13 @@
  * internal to this module (HLD boundary).
  */
 
-import { existsSync, readFileSync, realpathSync } from 'node:fs';
+import { existsSync, lstatSync, readFileSync, realpathSync } from 'node:fs';
 import { isAbsolute, join, relative, sep } from 'node:path';
 
 import { createRoleRouter } from '../../analyze/context/role-router.js';
 import { loadAnalyzeConfig } from '../../config/analyze.js';
 import type { RoleId } from '../../config/role-taxonomy.js';
-import { stepCwd, stepEnvRepo } from '../../shared/step-context.js';
+import { resolveRepoPath } from '../../daemon/steps/resolve-repo.js';
 import type { LLMMessage, StructuredSchema } from '../../shared/types.js';
 import type { Finding } from './finding.js';
 
@@ -56,11 +56,15 @@ const CLASSIFY_SCHEMA: StructuredSchema = {
  *  src/workflow/team/signoff.ts's _setSignoffDepsForTests convention). `classify`
  *  returns exactly one verdict per entry in priorFindings, in the same order --
  *  reconcileRound itself pairs each verdict with its finding's own id, so
- *  priorFindingRef is never derived from (and never trusts) the model's own echo. */
+ *  priorFindingRef is never derived from (and never trusts) the model's own echo.
+ *  `resolveRepoRoot` is resolved once per call and reused for both the audit-trail
+ *  read and the classify call's own provider resolution -- never two independently
+ *  resolved roots for the same round. */
 export interface ReconciliationDeps {
-	readonly classify?:          ((reviewId: string, priorFindings: readonly Finding[], currentFindings: readonly Finding[], auditTrail: string | undefined) => Promise<readonly ReconciliationVerdict[]>) | undefined;
-	readonly auditTrailExists?:  ((reviewId: string) => boolean) | undefined;
-	readonly readAuditTrail?:    ((reviewId: string) => string) | undefined;
+	readonly resolveRepoRoot?:  (() => Promise<string>) | undefined;
+	readonly classify?:          ((reviewId: string, priorFindings: readonly Finding[], currentFindings: readonly Finding[], auditTrail: string | undefined, repoRoot: string) => Promise<readonly ReconciliationVerdict[]>) | undefined;
+	readonly auditTrailExists?:  ((reviewId: string, repoRoot: string) => boolean) | undefined;
+	readonly readAuditTrail?:    ((reviewId: string, repoRoot: string) => string) | undefined;
 }
 
 let testDeps: ReconciliationDeps = {};
@@ -80,35 +84,73 @@ function requireValidReviewId(reviewId: string): void {
 	}
 }
 
-/** The repository the ACTIVE REQUEST's review belongs to, not a process-wide pin: a
- *  process-wide INSRC_REPO is only a headless-caller fallback, not the repository of
- *  every daemon request, and the daemon's own cwd is never the reviewed repo's cwd
- *  either when the supervisor launches it from its install directory. stepEnvRepo()/
- *  stepCwd() (src/shared/step-context.ts) are the established per-request readers --
- *  the caller's own values inside a step call (an AsyncLocalStorage-bound request),
- *  falling back to the process's only when no request is bound (e.g. a direct,
- *  unattached call outside any step context). */
-function reconciliationRepoRoot(): string {
-	return stepEnvRepo() ?? stepCwd();
+/** The repository the ACTIVE REQUEST's review belongs to, resolved through the ONE
+ *  established precedence chain (src/shared/resolve-repo-core.ts, via
+ *  src/daemon/steps/resolve-repo.ts): the registered repo containing the request's
+ *  own cwd takes precedence over its own INSRC_REPO, which in turn is only a
+ *  headless-caller fallback -- neither a bare per-request cwd/envRepo pair nor a
+ *  process-wide pin is the resolver on its own. No explicit `repo` argument exists
+ *  here (reconcileRound's own signature has none, by ac1), so this always resolves
+ *  through the request's own cwd/envRepo/registry lookup. Rejects rather than
+ *  silently defaulting when nothing resolves -- matching the chain's own documented
+ *  behavior that an unresolved repo is the caller's to raise, never guessed. */
+async function defaultResolveRepoRoot(): Promise<string> {
+	const repo = await resolveRepoPath(undefined);
+	if (repo === undefined) {
+		throw new Error('reconcileRound: could not resolve the reviewed repository (no registered repo for the request\'s cwd, and no INSRC_REPO fallback)');
+	}
+	return repo;
 }
 
-function auditTrailDir(reviewId: string): string {
-	return join(reconciliationRepoRoot(), '.insrc/tmp', reviewId);
+function auditTrailDir(reviewId: string, repoRoot: string): string {
+	return join(repoRoot, '.insrc/tmp', reviewId);
 }
 
-function auditTrailPath(reviewId: string): string {
-	return join(auditTrailDir(reviewId), 'audit-trail.json');
+function auditTrailPath(reviewId: string, repoRoot: string): string {
+	return join(auditTrailDir(reviewId, repoRoot), 'audit-trail.json');
+}
+
+/** True only when `dir` is itself a genuine directory entry, never a symlink --
+ *  lstat (unlike stat) reports the link itself, so a symlinked directory reports
+ *  isDirectory() false regardless of what it points at. This is what actually
+ *  distinguishes THIS review's own directory from a sibling review's directory
+ *  aliased in under the same name: a containment check against the shared
+ *  .insrc/tmp root alone cannot tell them apart, since a sibling's real directory
+ *  is legitimately inside that root too. */
+function isGenuineReviewDirectory(dir: string): boolean {
+	try {
+		return lstatSync(dir).isDirectory();
+	} catch {
+		return false;
+	}
+}
+
+/** True only when `path` is itself a genuine regular file, never a symlink -- the
+ *  same reasoning as isGenuineReviewDirectory, applied to audit-trail.json itself:
+ *  a symlink from this review's audit-trail.json to a sibling review's own
+ *  (genuine) audit-trail.json would otherwise pass a root-containment check, since
+ *  the sibling's file is legitimately inside .insrc/tmp too. */
+function isGenuineAuditTrailFile(path: string): boolean {
+	try {
+		return lstatSync(path).isFile();
+	} catch {
+		return false;
+	}
 }
 
 /** True only when `path`, after resolving every symlink in it, is truly inside the
- *  resolved `.insrc/tmp` directory for the repo -- rejects a symlinked review
- *  directory (`.insrc/tmp/<reviewId>` itself pointing elsewhere) or a symlinked
- *  `audit-trail.json` pointing outside it. requireValidReviewId already blocks a
- *  LEXICAL escape (`../../../private`); existsSync/readFileSync still follow
- *  symlinks regardless of the lexical path, so containment must be re-checked
- *  against the REAL, resolved path, not the one requireValidReviewId validated. */
-function isContainedAuditPath(path: string): boolean {
-	const tmpRoot = join(reconciliationRepoRoot(), '.insrc/tmp');
+ *  resolved `.insrc/tmp` directory for the repo AND both `dir` (this review's own
+ *  directory) and `path` (its audit-trail.json) are genuine entries, not symlinks.
+ *  requireValidReviewId already blocks a LEXICAL escape (`../../../private`), and
+ *  existsSync/readFileSync still follow symlinks regardless of the lexical path, so
+ *  containment must be re-checked against the REAL, resolved path. The root-only
+ *  containment check alone is not enough: a symlinked review directory, or a
+ *  symlinked audit-trail.json, pointing at a SIBLING review's own (genuine) entry
+ *  under the very same .insrc/tmp tree would still satisfy it -- the identity checks
+ *  on `dir`/`path` themselves are what reject that specific aliasing. */
+function isContainedAuditPath(path: string, dir: string, repoRoot: string): boolean {
+	if (!isGenuineReviewDirectory(dir) || !isGenuineAuditTrailFile(path)) return false;
+	const tmpRoot = join(repoRoot, '.insrc/tmp');
 	let realTmpRoot: string;
 	let realTarget: string;
 	try {
@@ -121,15 +163,17 @@ function isContainedAuditPath(path: string): boolean {
 	return rel !== '' && rel !== '..' && !rel.startsWith(`..${sep}`) && !isAbsolute(rel);
 }
 
-function defaultAuditTrailExists(reviewId: string): boolean {
-	const path = auditTrailPath(reviewId);
-	return existsSync(path) && isContainedAuditPath(path);
+function defaultAuditTrailExists(reviewId: string, repoRoot: string): boolean {
+	const dir = auditTrailDir(reviewId, repoRoot);
+	const path = auditTrailPath(reviewId, repoRoot);
+	return existsSync(path) && isContainedAuditPath(path, dir, repoRoot);
 }
 
-function defaultReadAuditTrail(reviewId: string): string {
-	const path = auditTrailPath(reviewId);
-	if (!isContainedAuditPath(path)) {
-		throw new Error(`reconcileRound: audit trail for reviewId ${JSON.stringify(reviewId)} resolves outside the review's own .insrc/tmp directory`);
+function defaultReadAuditTrail(reviewId: string, repoRoot: string): string {
+	const dir = auditTrailDir(reviewId, repoRoot);
+	const path = auditTrailPath(reviewId, repoRoot);
+	if (!isContainedAuditPath(path, dir, repoRoot)) {
+		throw new Error(`reconcileRound: audit trail for reviewId ${JSON.stringify(reviewId)} is not a genuine entry under this review's own .insrc/tmp directory`);
 	}
 	return readFileSync(path, 'utf8');
 }
@@ -160,9 +204,10 @@ async function defaultClassify(
 	priorFindings: readonly Finding[],
 	currentFindings: readonly Finding[],
 	auditTrail: string | undefined,
+	repoRoot: string,
 ): Promise<readonly ReconciliationVerdict[]> {
 	const cfg = loadAnalyzeConfig();
-	const { provider } = createRoleRouter().resolveProviderForRole(CLASSIFY_ROLE, cfg, reconciliationRepoRoot());
+	const { provider } = createRoleRouter().resolveProviderForRole(CLASSIFY_ROLE, cfg, repoRoot);
 	const messages: LLMMessage[] = [
 		{
 			role:    'system',
@@ -190,7 +235,9 @@ async function defaultClassify(
  * two finding sets alone do not resolve every prior finding's classification
  * (findingSetsResolveClassification) AND a file exists for this reviewId --
  * a missing or unneeded audit trail is never an error, and this function
- * never attempts the read otherwise.
+ * never attempts the read otherwise. The reviewed repository is resolved ONCE
+ * per call and reused for both the audit-trail path and the classify call's
+ * own provider resolution.
  */
 export async function reconcileRound(
 	reviewId: string,
@@ -199,13 +246,15 @@ export async function reconcileRound(
 ): Promise<readonly ReconciliationResult[]> {
 	requireValidReviewId(reviewId);
 	if (priorFindings.length === 0) return [];
+	const resolveRepoRoot = testDeps.resolveRepoRoot ?? defaultResolveRepoRoot;
 	const auditTrailExists = testDeps.auditTrailExists ?? defaultAuditTrailExists;
 	const readAuditTrail = testDeps.readAuditTrail ?? defaultReadAuditTrail;
 	const classify = testDeps.classify ?? defaultClassify;
 
+	const repoRoot = await resolveRepoRoot();
 	const needsAuditTrail = !findingSetsResolveClassification(priorFindings, currentFindings);
-	const auditTrail = needsAuditTrail && auditTrailExists(reviewId) ? readAuditTrail(reviewId) : undefined;
-	const verdicts = await classify(reviewId, priorFindings, currentFindings, auditTrail);
+	const auditTrail = needsAuditTrail && auditTrailExists(reviewId, repoRoot) ? readAuditTrail(reviewId, repoRoot) : undefined;
+	const verdicts = await classify(reviewId, priorFindings, currentFindings, auditTrail, repoRoot);
 	if (verdicts.length !== priorFindings.length) {
 		throw new Error(`reconcileRound: classification returned ${verdicts.length} verdicts for ${priorFindings.length} prior findings`);
 	}

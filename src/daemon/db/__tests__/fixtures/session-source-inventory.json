@@ -15156,6 +15156,10 @@
           "listRepos"
         ],
         [
+          "storage-call",
+          "listRepos"
+        ],
+        [
           "diagnostic",
           "log.error"
         ],
@@ -15210,6 +15214,14 @@
         [
           "diagnostic",
           "log.info"
+        ],
+        [
+          "diagnostic",
+          "log.info"
+        ],
+        [
+          "diagnostic",
+          "log.warn"
         ],
         [
           "diagnostic",
@@ -15300,9 +15312,9 @@
           "writePid"
         ]
       ],
-      "siteCount": 67,
-      "sitesDigest": "c47ce5f473873416f61d250f588392fff495e593ce6ec4c7f69618e5eca682d6",
-      "sourceDigest": "4fa6d10e35390de5a767d8baff2e97e45d05b4c13e8286ab3e81bc4170b6b174"
+      "siteCount": 70,
+      "sitesDigest": "3c5c0fcea1f1d0fd9d261869da45c491a03d9aa2b168d79499ce69811f20f940",
+      "sourceDigest": "ec593c9839446fae7933322b51782bf2f4fc65db81c69f3f82fd4156ebce43e4"
     },
     "src/daemon/legacy-daemon-cutover.ts": {
       "classification": "daemon-admission-boundary",

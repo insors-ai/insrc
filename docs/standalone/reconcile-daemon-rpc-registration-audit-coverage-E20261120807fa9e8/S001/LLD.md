@@ -5,10 +5,10 @@
 ## Summary
 
 **Epic:** `reconcile-daemon-rpc-registration-audit-coverage`
-**HLD base run:** `wf-1795173501200-iln8uq`
-**HLD effective hash:** `bce6337fee05...`
+**HLD base run:** `wf-1795175116137-nrshbf`
+**HLD effective hash:** `3a1654ebd181...`
 
-Reconcile daemon registrations, repository-scope audit rules and execution classifications against the handlers the runtime actually constructs. Add missing qualification and retired-review cancellation coverage, replace stale inventories and count assumptions with exact contract checks, and update the repository-gate documentation. Public payloads, storage formats and retired-review refusal behavior remain compatible.
+Keep Batch05's exact registration, audit, routing and documentation reconciliation. Correct the discovered authority gap in modifying RPC routes while preserving existing error/result shapes. For tools.call, preserve unknown-tool, schema, cancellation and approval-denial behavior, then enforce explicit registered-repository authority immediately before capability execution; the new refusal for an otherwise admitted operation is an intentional compatibility change requiring approval.
 
 ## Contents
 
@@ -50,6 +50,7 @@ buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime
 - Retired review methods retain explicit main-daemon refusal ownership. Tests must verify membership in the named retired-review ownership sets and existing router precedence, rather than assume the entire codeReview family runs on shared-state workers.
 - Callable step phase contracts, including frozen inert review schemas, are the independent expected phase inventory. Include design-review-step.cancel as read-only with unavailability evidence and reconcile any additional missing/stale phases only against their actual callable dispatcher/schema. Never restore deleted review execution.
 - docs/daemon.md lists exactly FILE_MODIFYING_METHODS with the correct repo parameter and all six refusal codes. Remove retired-review modifying rows and document current modifying registrations.
+- Previously unaudited team.park/team.resume/team.settle are modifying repo-scoped operations; their new explicit repo refusals are intentional. repo.settings.set remains modifying but preserves its own exact-registration check and structured error envelope. tools.call is explicitly modifying, with its authority check placed at execution admission rather than generic stream entry.
 
 ### 2.2 `requireRepoForCall`
 
@@ -93,6 +94,30 @@ inDaemonTarget(method: string, view: InDaemonRouteView): { readonly cls: MethodC
 - Explicitly test unknown, missing, stale, duplicate and wrong-transport inventory drift. Do not add family fallbacks or blanket reviewed exemptions.
 - Ownership relationships are metadata lookups: each registered key has one execution class and one audited repo-scope kind, while transport membership is checked independently. Existing main-thread overrides take priority over session class. No domain entity, module-dependency or public IPC shape changes require a new ERD or interaction diagram; these explicit ownership rules suffice.
 
+### 2.4 `executeTool`
+
+```typescript
+executeTool(toolId: string, input: ToolInput, deps: ToolDeps): Promise<ToolResult>
+```
+
+**Parameters:**
+- `toolId: string` — Existing registry capability key.
+- `input: ToolInput` — Existing untrusted capability input.
+- `deps: ToolDeps` — Existing daemon execution context; the tools.call adapter supplies an internal repository-authority check using the daemon registry, never a caller-supplied wire callback.
+
+**Returns:** `Promise<ToolResult>` — Existing result shape, including unsuccessful results for earlier failures or denied repository authority.
+
+**Preconditions:**
+- No duplicated executor validation or new executor framework. No new IPC fields or direct cloud REST.
+
+**Postconditions:**
+- Preserve this order: tool lookup and existing temporary-session checks; existing input-schema rejection; cancellation; approval description and denial; final cancellation; repository authority for otherwise admitted tools.call; capability execution and successful hooks.
+- Unknown tool, invalid schema, cancelled call or declined approval must preserve its existing result/error and perform no repository registry lookup.
+- At final admission, an invalid/unregistered repo yields an unsuccessful ToolResult using the existing failure shape, with the existing repo refusal code in its error text; no capability execute or success hook runs.
+- Only the daemon installs the admission check for tools.call. Existing other executor callers retain their current contracts; no transport argument can supply a callback or waive authority.
+- For an admitted operation, canonicalize repoPath from the authority check before execution. Preserve stream done/error envelopes and existing successful tool result shape.
+- The new refusal for an otherwise admitted tools.call targeting an invalid repository is an intentional authority correction. Earlier blanket no-public-failure-change wording is superseded by these explicit ordering and compatibility rules.
+
 ## 3. Error paths
 
 **Error cases**
@@ -113,6 +138,14 @@ inDaemonTarget(method: string, view: InDaemonRouteView): { readonly cls: MethodC
   - Detection: Existing handler guards and an isolated negative dispatch control.
   - Response: Keep the existing no-completed-qualification or missing-fixture error; never return fabricated success or route to an admin worker lacking the handler.
   - User impact: Qualification reports failure accurately.
+- **tools.call is unknown, input-schema-invalid, cancelled or denied while its repoPath is invalid/unregistered.** (recoverable)
+  - Detection: Dedicated executor/stream regression controls with a repository checker spy that fails if called.
+  - Response: Return the existing earlier executor result unchanged; never replace it with repository refusal.
+  - User impact: Existing actionable failures retain their precedence and format.
+- **An otherwise admitted tools.call would execute in an invalid or unregistered repository.** (recoverable)
+  - Detection: Daemon-supplied final admission check after existing validation, cancellation and approval denial handling.
+  - Response: Return an unsuccessful ToolResult in the existing done envelope, carrying the repo refusal code in error text; execute and success hooks are untouched.
+  - User impact: Intentional new authority refusal; caller supplies a valid registered repo before retrying.
 
 **Edge cases**
 
@@ -145,6 +178,9 @@ inDaemonTarget(method: string, view: InDaemonRouteView): { readonly cls: MethodC
 - **smoke** — Compile and run the complete affected files with accountable cleanup.
   - Subjects: `Run all seven baseline files through Node22 scripts/test-harness/run.mjs --concurrency=1; broaden only to directly affected dispatch/phase regressions.`, `Retain TAP/results/cleanup evidence under docs/plans; report whole-file failures honestly, no skip/force-exit suppression.`
   - Fixtures: `Baseline run 8aecf395-5b83-4e46-8b56-cf5a90f04dc3: 24 tests, 17 pass, 7 fail, no incomplete coverage, confirmed child closure.`
+- **integration** — Prove final tool admission authority with preserved earlier executor failures.
+  - Subjects: `src/daemon/tools/__tests__/call-handler.test.ts and src/daemon/tools/__tests__/executor.test.ts: unknown tool, invalid schema, cancelled call and denied approval preserve existing results and never invoke the repository checker; admitted valid registered calls execute with canonical repoPath; refused calls execute no capability or success hook.`, `src/daemon/__tests__/repo-gate-dispatch.test.ts: exact modifying identities include tool dispatch and self-gated settings; preserve their own existing malformed/registration envelopes and check valid tool requests against unregistered repositories.`, `src/daemon/threads/__tests__/method-class.test.ts: actual Router and runtime handler test proves retired review local refusal precedes session-worker lookup.`
+  - Fixtures: `Fake registry capabilities, approval broker controls and checker spies; isolated HOME and registered/unregistered temporary repos, no live provider.`
 
 **Acceptance mapping**
 
@@ -154,38 +190,39 @@ inDaemonTarget(method: string, view: InDaemonRouteView): { readonly cls: MethodC
 | `ac2` | `Full modifying dispatch identity coverage, refusal code/canonicalization controls and successful registered-repo feedback append preserve repository authority.` |
 | `ac3` | `qualificationState owner/class and negative dispatch controls, retired-review main-thread refusal checks and worker-safe imports preserve execution ownership.` |
 | `ac4` | `Exact daemon documentation parity plus complete seven-file coordinated run and cleanup evidence establish coherent maintained coverage.` |
+| `ac5` | `New authority/ordering controls prove the deliberate compatibility correction while all existing earlier tool failures remain unchanged. This is an LLD-local label.` |
 
 ## 5. Migration
 
-**State before:** Six of seven baseline files fail because qualificationState lacks audit and class entries, cancel additions are absent from compatibility snapshots, review ownership expectations and repo-gate docs are stale, and dispatch coverage relies on a fixed modifying-method count. The repository gate's own tests pass.
+**State before:** Task-one code and all mapped tests/typecheck pass, but two build validation attempts reject the tools.call authority ordering under the original blanket failure-preservation requirement. The current early callback is unfinished, unapproved build work.
 
-**State after:** Existing explicit audit/class/phase inventories agree with actual constructed registrations and callable contracts; authority and refusal behavior stay enforced, ownership is explicit, docs match modifying methods, and independent negative controls detect drift.
+**State after:** Exact inventories remain reconciled and final tool admission authority preserves earlier executor failures. Only otherwise admitted operations gain the explicitly approved repository refusal.
 
 **Zero downtime:** no — **Data rewrite:** no
 
 **Steps**
 
-1. After human LLD and PLAN approvals, repair only evidenced audit/class omissions and the related independent registration/phase and ownership expectations. Preserve public endpoint shapes and review unavailability. — ↩ rollbackable
+1. Obtain human approval of this revised LLD and a replacement PLAN before continuing implementation. Replace the unfinished early tools.call callback with the approved final admission ordering; keep completed inventory/retired-router checks. — ↩ rollbackable
 2. Reconcile documentation with reviewed modifying rules; run the complete affected files serially through the coordinator, retain evidence and update the failure/batch record. — ↩ rollbackable
 3. Present validated BUILD for human approval before completion. Deployment/restart uses the normal separate daemon lifecycle; no installed daemon change or release qualification is required to validate this batch. — ↩ rollbackable
 
-**Backward compat:** No persisted schema, entity, RPC parameter or result shape changes. Existing refusal messages/codes and retired callable review schema compatibility stay intact. qualificationState gains explicit unary session classification matching an existing full-runtime owner. Reverting code/tests/docs restores previous metadata without data conversion.
+**Backward compat:** Public parameter/result schemas, storage formats and existing malformed/unknown/schema/cancellation/denial responses remain unchanged. Previously unaudited modifying team routes gain explicit repo refusal. Otherwise admitted tools.call operations with invalid/unregistered repos gain an intentional unsuccessful ToolResult before capability execution; registered successful operations keep their prior shape. No data rewrite or installed daemon restart is required.
 
 ## 6. Alternatives considered
 
-### 6.1 a1: Reconcile explicit contracts — **CHOSEN**
+### 6.1 a1: Authorize immediately before admitted tool execution — **CHOSEN**
 
-Repair existing inventories and validate against assembled handler maps and callable phase contracts.
+Preserve earlier executor failures and enforce explicit repository authority before any admitted capability runs.
 
-Keep RPC_AUDIT, STEP_PHASE_AUDIT, methodClasses and explicit ownership sets. Add evidence-based missing classifications and use independent exact comparisons against constructed RPC/stream maps and callable phase contracts. Retain reviewed endpoint snapshots as compatibility evidence, current refusal behavior and worker-safe routing imports; reconcile docs with the modifying table.
+Retain explicit RPC/phase/class reconciliation and independent exact inventories. For tools.call, reuse the existing executor after unknown-tool, schema, cancellation and approval-denial handling; apply repository authority before capability execution and hooks. Define new repository refusals as an intentional compatibility change only for otherwise admitted operations.
 
-### 6.2 a2: Unified endpoint descriptors
+### 6.2 a2: Gate every tool request at the stream boundary
 
-Replace registration, audit and routing inventories with one descriptor per endpoint.
+Authorize before resolving and validating the selected capability.
 
-Create descriptors containing handlers, transport, repo rules, class and ownership, then derive runtime registrations and documentation from them. Preserve independent behavior tests because generated metadata agreement alone cannot prove correct classification.
+Use the current generic modifying stream gate or the early toolsCall repository callback before executeTool. This is simple but changes unknown-tool, invalid schema, cancellation and denial precedence for requests with invalid repositories.
 
-**Rejected because:** Can satisfy coverage but introduces unnecessary handler-registration and worker-safe import migration; a single generated metadata source does not prove its own correctness.
+**Rejected because:** Build validation rejected this ordering because it replaces existing executor failures before any capability could execute.
 
 ## 7. References
 
@@ -193,8 +230,8 @@ Create descriptors containing handlers, transport, repo rules, class and ownersh
 - **[[c2]]** `code` `src/daemon/threads/method-class.ts`
 - **[[c3]]** `prior-artifact` `docs/standalone/reconcile-daemon-rpc-registration-audit-coverage-E20261120807fa9e8/ISSUE.md`
 - **[[c4]]** `code` `src/daemon/handler-runtime.ts`
-- **[[c5]]** `code` `src/daemon/threads/session-worker.ts`
-- **[[c6]]** `code` `src/daemon/threads/admin-worker.ts`
+- **[[c5]]** `code` `src/daemon/tools/call-handler.ts`
+- **[[c6]]** `code` `src/daemon/tools/executor.ts`
 - **[[c7]]** `code` `src/daemon/repo-call-audit.ts`
-- **[[c8]]** `code` `src/mcp/review-input-schemas.ts`
+- **[[c8]]** `prior-artifact` `docs/standalone/reconcile-daemon-rpc-registration-audit-coverage-E20261120807fa9e8/S001/BUILD.md`
 - **[[c9]]** `doc` `docs/testing.md`

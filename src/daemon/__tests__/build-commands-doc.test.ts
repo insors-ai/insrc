@@ -113,12 +113,24 @@ test('build-commands-doc.test.ts: docs/daemon.md and the other live docs name re
 	assert.match(section, /first boot of an updated daemon/);
 	assert.match(section, /created by hand afterwards is ignored/, 'it says a github.json created by hand afterwards is ignored');
 
-	// the four user-facing docs name the file, and no live doc, plans included, tells a user to create the old one; the old name appears only to say it was renamed
+	// the four user-facing docs name the file, and no live doc, plans included, tells a user to create the old one;
+	// the old name appears only to say it was renamed, and never in the plans
 	for (const doc of LIVE_DOCS) {
 		const text = readFileSync(join(DOCS_DIR, doc), 'utf8');
-		if (!doc.startsWith('plans/')) assert.ok(text.includes(fileName), `${doc} names ${fileName}`);
+		const isPlan = doc.startsWith('plans/');
+		if (!isPlan) assert.ok(text.includes(`~/.insrc/${fileName}`), `${doc} names ~/.insrc/${fileName}`);
 		assert.doesNotMatch(text, /(cat\s*>>?|tee\s+(-a\s+)?|touch\s+|(^|\n)\s*>\s*)~\/\.insrc\/github\.json/, `${doc} does not tell a user to create github.json`);
 		assert.ok(!/INSRC_GITHUB_CONFIG/.test(text.replace(/`INSRC_GITHUB_CONFIG`/g, '')), `${doc} gives INSRC_GITHUB_CONFIG only as the variable that is no longer read`);
+		// a shell example that writes the settings file writes the file the code reads
+		for (const m of text.matchAll(/cat\s*>\s*~\/\.insrc\/(\S+)\s*<</g)) assert.equal(m[1], fileName, `${doc}: the shell example writes ${fileName}`);
+		if (isPlan) {
+			assert.ok(!text.includes('github.json'), `${doc}: a plan never names github.json`);
+			assert.ok(!text.includes('INSRC_GITHUB_CONFIG'), `${doc}: a plan never names INSRC_GITHUB_CONFIG`);
+		}
+	}
+	// the docs that document the override name the variable the code reads
+	for (const doc of ['daemon.md', 'installation.md', 'index.html']) {
+		assert.ok(readFileSync(join(DOCS_DIR, doc), 'utf8').includes('INSRC_REPO_CONFIG'), `${doc} names INSRC_REPO_CONFIG`);
 	}
 	for (const doc of ['workflow.md', 'installation.md', 'index.html']) {
 		const text = readFileSync(join(DOCS_DIR, doc), 'utf8');

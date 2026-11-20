@@ -73,15 +73,16 @@ export function processScope(run, { includeForeignActors = true } = {}) {
 	}
 	async function drain() {
 		stopped = true;
+		const markersClosed = () => includeForeignActors ? actorsClosed(run) : [...ownedMarkers].every(path => !existsSync(path));
+		async function waitClosed(ms) {
+			const end = performance.now() + ms;
+			while ((children.size || !markersClosed()) && performance.now() < end) await new Promise(resolve => setTimeout(resolve, Math.min(10, Math.max(1, end - performance.now()))));
+		}
 		for (const { child } of children) cancel(child, 'SIGTERM');
-		let timer;
-		await Promise.race([Promise.all([...children].map(entry => entry.ended)), new Promise(resolve => { timer = setTimeout(resolve, run.budgets.cleanupMs / 2); })]);
-		clearTimeout(timer);
+		await waitClosed(run.budgets.cleanupMs / 2);
 		for (const { child } of children) cancel(child, 'SIGKILL');
-		await Promise.race([Promise.all([...children].map(entry => entry.ended)), new Promise(resolve => { timer = setTimeout(resolve, run.budgets.cleanupMs / 2); })]);
-		clearTimeout(timer);
-		const markersClosed = includeForeignActors ? actorsClosed(run) : [...ownedMarkers].every(path => !existsSync(path));
-		const closed = children.size === 0 && markersClosed && cancellationErrors.length === 0 && evidenceErrors.length === 0;
+		await waitClosed(run.budgets.cleanupMs / 2);
+		const closed = children.size === 0 && markersClosed() && cancellationErrors.length === 0 && evidenceErrors.length === 0;
 		if (!closed) {
 			// Do not wait forever on inherited pipes. The lease remains blocked;
 			// detaching these observers does not assert descendant disposal.

@@ -1,3 +1,4 @@
+import { childLine, ownChild, stopOwnedChildren } from '../../daemon/tools/__tests__/_proc.js';
 import { requirePreparedBuild } from '../../../scripts/test-harness/build.mjs';
 import { after, afterEach, before, test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -24,15 +25,13 @@ before(() => {
 	execFileSync(process.env['CC'] || 'cc', ['-std=c11', '-Wall', '-Wextra', '-Werror', '-I', join(root, 'src/native/process-broker'), join(root, 'src/native/process-broker/main.c'), join(root, 'src/shared/__tests__/fixtures/process-broker-fake-backend.c'), '-o', fake], { stdio: 'pipe', timeout: 30_000 });
 });
 afterEach(async () => {
-	for (const child of children.splice(0)) {
-		if (child.exitCode === null && child.signalCode === null) { const ended = once(child, 'exit'); child.kill('SIGKILL'); await ended; }
-	}
+	await stopOwnedChildren(children);
 });
 after(() => { rmSync(dir, { recursive: true, force: true }); });
 
 function session(pid: number | string, executable = binary, env: NodeJS.ProcessEnv = process.env) {
 	const child = spawn(executable, [String(pid)], { env, stdio: ['pipe', 'pipe', 'pipe'] });
-	children.push(child);
+	children.push(child); ownChild(child);
 	const lines: string[] = [];
 	let waiter: { resolve: (line: string) => void; reject: (error: Error) => void; timer: ReturnType<typeof setTimeout> } | undefined;
 	let ended = false;
@@ -61,8 +60,8 @@ async function daemonStandIn(named = true): Promise<ChildProcess> {
 	const entry = join(mkdtempSync(join(dir, 'target-')), 'démon', named ? 'daemon' : 'other', 'index.js');
 	mkdirSync(dirname(entry), { recursive: true });
 	writeFileSync(entry, "process.stdout.write('ready\\n'); setInterval(() => {}, 1000);");
-	const child = spawn(process.execPath, [entry], { stdio: ['ignore', 'pipe', 'pipe'] }); children.push(child);
-	await once(child.stdout!, 'data'); return child;
+	const child = spawn(process.execPath, [entry], { stdio: ['ignore', 'pipe', 'pipe'] }); children.push(child); ownChild(child);
+	await childLine(child); return child;
 }
 
 test('normal build ships the host broker with no numeric-PID kill symbol', { skip: !supported }, () => {

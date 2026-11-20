@@ -1,6 +1,7 @@
+import { childLine, fixtureOwnerScript, ownChild, stopOwnedChildren } from '../../../daemon/tools/__tests__/_proc.js';
 import { requirePreparedBuild } from '../../../../scripts/test-harness/build.mjs';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
-import { after, before, test } from 'node:test';
+import { after, afterEach, before, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn, spawnSync, execFileSync } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
@@ -13,10 +14,10 @@ import type { StopTarget } from '../../../shared/daemon-process-client.js';
 const repo = fileURLToPath(new URL('../../../../', import.meta.url)), script = join(repo, 'scripts/daemon-ctl.sh');
 const children: ChildProcess[] = [], targets: StopTarget[] = [], homes: string[] = [];
 before(() => { requirePreparedBuild(repo); });
-after(async () => {
- for (const c of children) if (c.exitCode === null && c.signalCode === null) { const ended = once(c, 'exit'); c.kill('SIGKILL'); await ended; }
- for (const target of targets) { try { await target.handle.terminate(); } finally { await target.handle.close(); } }
- for (const home of homes) rmSync(home, { recursive: true, force: true });
+afterEach(async () => {
+ await stopOwnedChildren(children);
+ for (const target of targets.splice(0)) { try { await target.handle.terminate(); } finally { await target.handle.close(); } }
+ for (const home of homes.splice(0)) rmSync(home, { recursive: true, force: true });
 });
 function fixture() {
  const home = mkdtempSync('/tmp/insrc-ctl-'); homes.push(home);
@@ -30,6 +31,7 @@ function fixture() {
 type Fixture = ReturnType<typeof fixture>;
 function source(f: Fixture, mode: string): string {
  return `const net = require('node:net'), fs = require('node:fs');
+ ${fixtureOwnerScript()}
  const mode = ${JSON.stringify(mode)};
  const stop = () => { if (mode === 'stubborn') return; fs.rmSync(${JSON.stringify(f.pid)}, { force: true }); fs.rmSync(${JSON.stringify(f.sock)}, { force: true }); process.exit(0); };
  const server = net.createServer(sock => { sock.on('error', () => {}); sock.on('data', data => {
@@ -45,7 +47,7 @@ function source(f: Fixture, mode: string): string {
 async function standIn(f: Fixture, mode: string, valid = true) {
  const folder = join(f.home, valid ? 'stub/daemon' : 'other'); mkdirSync(folder, { recursive: true });
  const entry = join(folder, valid ? 'index.js' : 'server.js'); writeFileSync(entry, source(f, mode));
- const child = spawn(process.execPath, [entry], { stdio: ['ignore', 'pipe', 'inherit'] }); children.push(child); await once(child.stdout!, 'data'); return child;
+ const child = spawn(process.execPath, [entry], { stdio: ['ignore', 'pipe', 'inherit'] }); children.push(child); ownChild(child); await childLine(child); return child;
 }
 function ctl(f: Fixture, command: string, extraEnv: Record<string, string> = {}) {
  const r = spawnSync('bash', [script, command, '--skip-sync', '--skip-install', '--skip-build', '--branch', 'main'], { env: { ...process.env, HOME: f.home, INSRC_DAEMON_ROOT: f.root, INSRC_CTL_LOG_DIR: join(f.home, 'logs'), INSRC_CTL_STOP_WAIT_SECS: '0.1', ...extraEnv }, encoding: 'utf8', timeout: 15000 });

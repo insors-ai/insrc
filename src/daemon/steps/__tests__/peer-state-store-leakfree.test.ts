@@ -1,45 +1,28 @@
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Procix Software India. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
-
-/**
- * E20260929c71f7106:S001 t4/t5 — peer-store leak-free REGRESSION guards.
- *
- * The state-token eviction fix (replaceState/reencodeState) is applied ONLY to the
- * two stores that leak (workflow-step + analyze-step). The other two peer stores are
- * ALREADY leak-free by other means and are LEFT UNCHANGED:
- *   - review-step holds ONE token per run via updateState (in-place; never mints a
- *     new token per turn), so a multi-turn run keeps _reviewStateStoreSize bounded.
- *   - code-review-step releases the incoming token on each transition + on consume,
- *     preserving single-use-on-consume (a resend of a released token fails loadState).
- * These assertions pin that already-correct behaviour so a future change cannot
- * silently regress it.
- *
- * Run: npx tsx --test src/daemon/steps/__tests__/peer-state-store-leakfree.test.ts
- */
-
-import { after, before, test } from 'node:test';
+import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { once } from 'node:events';
 import { MessageChannel } from 'node:worker_threads';
-
 import { HubClient, serveHub } from '../../threads/channel.js';
-import {
-	HubStepStateStore,
-	installStepStateStore,
-	LocalStepStateStore,
-	stepStateHubHandlers,
-} from '../../threads/step-state.js';
+import { getStepStateStore, HubStepStateStore, installStepStateStore, LocalStepStateStore, stepStateHubHandlers } from '../../threads/step-state.js';
 
-// Both stores are reached through the hub, as they are from a session worker
-// (Epic 86197ac6 s1/t9).
-const hubChannel = new MessageChannel();
-before(() => {
-	serveHub(hubChannel.port1, stepStateHubHandlers(new LocalStepStateStore()));
-	installStepStateStore(new HubStepStateStore(new HubClient(hubChannel.port2)));
-});
-after(() => {
-	installStepStateStore(new LocalStepStateStore());
-	hubChannel.port1.close();
-	hubChannel.port2.close();
+test('Peer state round-trip terminates with both MessagePorts closed', async () => {
+ const original = getStepStateStore(), channel = new MessageChannel();
+ const stopServing = serveHub(channel.port1, stepStateHubHandlers(new LocalStepStateStore()));
+ const store = new HubStepStateStore(new HubClient(channel.port2));
+ installStepStateStore(store);
+ try {
+  assert.equal(getStepStateStore(), store);
+  for (const kind of ['workflow', 'analyze'] as const) {
+   const token = await store.mint(kind, { value: 1 });
+   assert.deepEqual((await store.read(kind, token))?.payload, { value: 1 });
+   const next = await store.update(kind, token, { value: 2 });
+   assert.notEqual(next, token); assert.equal(await store.read(kind, token), undefined);
+   assert.deepEqual((await store.read(kind, next))?.payload, { value: 2 });
+   await store.release(kind, next); assert.equal(await store.read(kind, next), undefined);
+  }
+ } finally {
+  installStepStateStore(original); stopServing();
+  const closed = [once(channel.port1, 'close'), once(channel.port2, 'close')];
+  channel.port1.close(); channel.port2.close(); await Promise.all(closed);
+ }
 });

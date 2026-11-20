@@ -1,6 +1,7 @@
+import { childLine, ownChild, stopOwnedChildren } from '../tools/__tests__/_proc.js';
 import { requirePreparedBuild } from '../../../scripts/test-harness/build.mjs';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
-import { after, before, test } from 'node:test';
+import { after, afterEach, before, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn, execFileSync } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
@@ -11,7 +12,8 @@ import { fileURLToPath } from 'node:url';
 const root = fileURLToPath(new URL('../../../', import.meta.url));
 const dir = mkdtempSync('/tmp/insrc-bounded-'); const children: ChildProcess[] = [];
 before(() => { requirePreparedBuild(root); });
-after(() => { for (const c of children) if (c.exitCode === null && c.signalCode === null) c.kill('SIGKILL'); rmSync(dir, { recursive: true, force: true }); });
+afterEach(async () => { await stopOwnedChildren(children); });
+after(() => { rmSync(dir, { recursive: true, force: true }); });
 async function scenario(mode: string) {
  const home = mkdtempSync(join(dir, 'parent-')), entryDir = join(home, 'daemon'); mkdirSync(entryDir);
  const events = join(home, 'events'), log = join(home, 'last.log');
@@ -31,7 +33,7 @@ async function scenario(mode: string) {
  shutdown('SIGTERM'); shutdown('SIGINT');
  setInterval(() => {}, 1000);
  })();`);
- const child = spawn(process.execPath, [entry], { env: { ...process.env, HOME: home }, stdio: ['ignore', 'ignore', 'pipe'] }); children.push(child);
+ const child = spawn(process.execPath, [entry], { env: { ...process.env, HOME: home }, stdio: ['ignore', 'ignore', 'pipe'] }); children.push(child); ownChild(child);
  const ended = once(child, 'exit'); const started = Date.now();
  const result = await ended;
  assert.ok(Date.now() - started < 3000);

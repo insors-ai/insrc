@@ -9,14 +9,14 @@
  * Run: npx tsx --test src/daemon/tools/builtins/git/__tests__/git-cat-file-tree-kill.test.ts
  */
 
-import test, { after } from 'node:test';
+import test, { after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { chmodSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { setShellTimeoutScaleForTests } from '../../../shell-helper.js';
 import { gitCatFileTool } from '../cat-file.js';
-import { alive, cleanup, readPid, tmp, waitFor } from '../../../__tests__/_proc.js';
+import { alive, cleanup, readPid, runUntilAbort, tmp, waitFor } from '../../../__tests__/_proc.js';
 
 const dir = tmp();
 const pidFile = join(dir, 'git.pid');
@@ -27,16 +27,15 @@ const oldPath = process.env['PATH'];
 process.env['PATH'] = `${dir}:${oldPath}`;
 after(() => { process.env['PATH'] = oldPath; setShellTimeoutScaleForTests(undefined); cleanup(dir); });
 
+beforeEach(() => { rmSync(pidFile, { force: true }); });
+
 const deps = (signal?: AbortSignal) => ({ sessionId: 's', repoPath: dir, send: () => {}, requestId: 1, ...(signal ? { signal } : {}) });
 
 test('git-cat-file-tree-kill.test.ts: an abort kills the stand-in git and its descendant and returns a rejected failure within the bound', async () => {
-	const c = new AbortController();
-	setTimeout(() => c.abort(), 300);
-	const t0 = Date.now();
-	const r = await gitCatFileTool.execute({ cwd: dir, rev: 'HEAD', exists: true }, deps(c.signal));
+	const { result: r, elapsedMs } = await runUntilAbort(signal => gitCatFileTool.execute({ cwd: dir, rev: 'HEAD', exists: true }, deps(signal)), () => existsSync(pidFile), 300);
 	assert.equal(r.success, false);
 	assert.equal(r.failure?.kind, 'rejected');
-	assert.ok(Date.now() - t0 < 300 + 2000 + 1500);
+	assert.ok(elapsedMs < 300 + 2000 + 1500);
 	const pid = readPid(pidFile);
 	assert.equal(await waitFor(() => !alive(pid)), true, 'the descendant is gone');
 });

@@ -154,13 +154,77 @@ describe('reconcileRound and ReconciliationResult', () => {
 			const { classify, calls } = stubClassify(['still-open']);
 			_setReconciliationDepsForTests({ classify });
 
-			// Ambiguous: no currentFindings entry shares this prior finding's category+severity.
+			// Ambiguous: no currentFindings entry shares this prior finding's own id.
 			await reconcileRound(reviewId, [finding('f1', 'correctness', 'HIGH')], [finding('f2', 'security', 'MED')]);
 
 			assert.equal(calls.length, 1);
 			assert.equal(calls[0]!.auditTrail, auditTrailContent, 'the audit trail read from .insrc/tmp/<reviewId>/audit-trail.json must be the one passed through to classify');
 		} finally {
 			rmSync(dir, { recursive: true, force: true });
+			_setReconciliationDepsForTests({});
+		}
+	});
+
+	it('a reviewId containing a path-traversal segment is rejected before any filesystem access, rather than being joined into the audit-trail path unvalidated', async () => {
+		const { classify, calls } = stubClassify(['confirmed']);
+		_setReconciliationDepsForTests({ classify });
+
+		try {
+			await assert.rejects(
+				() => reconcileRound('../../../private', [finding('f1')], []),
+				/invalid reviewId/,
+				'a reviewId with a traversal segment must be rejected, not joined into a filesystem path',
+			);
+			assert.equal(calls.length, 0, 'classify must never run once reviewId validation has failed');
+		} finally {
+			_setReconciliationDepsForTests({});
+		}
+	});
+
+	it('two findings sharing category and severity but with different ids are NOT treated as a recurrence -- only a matching id is unambiguous', async () => {
+		const reviewId = `review-identity-${process.pid}-${Date.now()}`;
+		const dir = join(ROOT, '.insrc/tmp', reviewId);
+		const auditTrailContent = JSON.stringify({ note: 'identity-ambiguity audit trail' });
+		mkdirSync(dir, { recursive: true });
+		writeFileSync(join(dir, 'audit-trail.json'), auditTrailContent, 'utf8');
+
+		try {
+			// Same category+severity, different id -- must be ambiguous (reads the audit trail),
+			// not treated as a literal recurrence the way a category+severity match alone would be.
+			const { classify, calls } = stubClassify(['contradicted']);
+			_setReconciliationDepsForTests({ classify });
+
+			await reconcileRound(reviewId, [finding('prior-1', 'correctness', 'HIGH')], [finding('other-1', 'correctness', 'HIGH')]);
+
+			assert.equal(calls.length, 1);
+			assert.equal(calls[0]!.auditTrail, auditTrailContent, 'a category+severity coincidence must still be ambiguous enough to read the audit trail');
+		} finally {
+			rmSync(dir, { recursive: true, force: true });
+			_setReconciliationDepsForTests({});
+		}
+	});
+
+	it('the audit trail and the classification provider are resolved against the reviewed repository (INSRC_REPO when set), not the daemon process\'s own cwd', async () => {
+		const reviewId = `review-repo-${process.pid}-${Date.now()}`;
+		const pinnedRepo = mkdtempSync(join(tmpdir(), 'insrc-reconciliation-repo-'));
+		const dir = join(pinnedRepo, '.insrc/tmp', reviewId);
+		const auditTrailContent = JSON.stringify({ note: 'pinned-repo audit trail' });
+		mkdirSync(dir, { recursive: true });
+		writeFileSync(join(dir, 'audit-trail.json'), auditTrailContent, 'utf8');
+
+		const previousRepo = process.env.INSRC_REPO;
+		process.env.INSRC_REPO = pinnedRepo;
+		try {
+			const { classify, calls } = stubClassify(['still-open']);
+			_setReconciliationDepsForTests({ classify });
+
+			await reconcileRound(reviewId, [finding('f1', 'correctness', 'HIGH')], [finding('f2', 'security', 'MED')]);
+
+			assert.equal(calls.length, 1);
+			assert.equal(calls[0]!.auditTrail, auditTrailContent, 'the audit trail must be read from INSRC_REPO\'s .insrc/tmp/<reviewId>/, not the process cwd, when INSRC_REPO is pinned to a different repository');
+		} finally {
+			if (previousRepo === undefined) delete process.env.INSRC_REPO; else process.env.INSRC_REPO = previousRepo;
+			rmSync(pinnedRepo, { recursive: true, force: true });
 			_setReconciliationDepsForTests({});
 		}
 	});

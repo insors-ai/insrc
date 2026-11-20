@@ -67,8 +67,31 @@ let testDeps: ReconciliationDeps = {};
 /** Test seam: inject the classification call and the audit-trail existence check/reader; no argument resets. */
 export function _setReconciliationDepsForTests(deps: ReconciliationDeps = {}): void { testDeps = deps; }
 
+/** A literal review identifier only -- no path separator or `..` segment, matching
+ *  the established convention (src/workflow/review-history/review/design-review/checkpoint.ts's
+ *  designCheckpointPath). reviewId is joined directly into a filesystem path below, so an
+ *  unvalidated value (e.g. `../../../private`) could escape the review's own temp directory. */
+const REVIEW_ID_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$/;
+
+function requireValidReviewId(reviewId: string): void {
+	if (!REVIEW_ID_PATTERN.test(reviewId)) {
+		throw new Error(`reconcileRound: invalid reviewId ${JSON.stringify(reviewId)} -- expected a literal identifier, got a value that cannot be a path segment`);
+	}
+}
+
+/** The repository the review belongs to, not the daemon process's own cwd: the supervisor can
+ *  launch the daemon from its installation directory, which differs from the reviewed repo.
+ *  INSRC_REPO is the project's own established headless/fallback repo pin (see CLAUDE.md); this
+ *  module stays synchronous, so it does not perform the full cwd-registry lookup the MCP/daemon
+ *  boundary does (src/shared/resolve-repo-core.ts) -- it only refuses to default to cwd when a
+ *  pinned repo is available. */
+function reconciliationRepoRoot(): string {
+	const pinned = process.env.INSRC_REPO;
+	return pinned !== undefined && pinned.length > 0 ? pinned : process.cwd();
+}
+
 function auditTrailPath(reviewId: string): string {
-	return join(process.cwd(), '.insrc/tmp', reviewId, 'audit-trail.json');
+	return join(reconciliationRepoRoot(), '.insrc/tmp', reviewId, 'audit-trail.json');
 }
 
 function defaultAuditTrailExists(reviewId: string): boolean {
@@ -80,18 +103,18 @@ function defaultReadAuditTrail(reviewId: string): string {
 }
 
 /**
- * Whether one prior finding's disposition is unambiguous from the two
- * finding sets alone: an exact (category AND severity) match recurs in
- * currentFindings -- unambiguously confirmed. Every other case -- no finding
- * shares its category, or one does but at a different severity -- is
- * ambiguous: an absence could mean the issue was fixed (no-longer-surfaced)
- * OR that the prior finding was simply wrong to begin with (contradicted),
- * and a severity mismatch could mean either 'still-open' or 'contradicted'.
- * The two finding sets alone cannot distinguish these without the audit
- * trail; only a literal recurrence is safe to treat as settled.
+ * Whether one prior finding's disposition is unambiguous from the two finding
+ * sets alone: the SAME finding -- by its own stable id (sc2, HLD rev4) --
+ * recurs in currentFindings -- unambiguously confirmed. Matching category and
+ * severity alone does NOT establish recurrence: two unrelated findings can
+ * independently share a category and severity (e.g. two different
+ * correctness/HIGH issues), and treating that coincidence as a literal
+ * recurrence would wrongly suppress the audit trail even when the prior
+ * finding's actual disposition -- fixed, still open, or mistaken -- is still
+ * genuinely unresolved. Only a matching id is safe to treat as settled.
  */
 function isUnambiguous(prior: Finding, currentFindings: readonly Finding[]): boolean {
-	return currentFindings.some(c => c.category === prior.category && c.severity === prior.severity);
+	return currentFindings.some(c => c.id === prior.id);
 }
 
 /** Whether the two finding sets ALONE resolve every prior finding's
@@ -107,7 +130,7 @@ async function defaultClassify(
 	auditTrail: string | undefined,
 ): Promise<readonly ReconciliationVerdict[]> {
 	const cfg = loadAnalyzeConfig();
-	const { provider } = createRoleRouter().resolveProviderForRole(CLASSIFY_ROLE, cfg, process.cwd());
+	const { provider } = createRoleRouter().resolveProviderForRole(CLASSIFY_ROLE, cfg, reconciliationRepoRoot());
 	const messages: LLMMessage[] = [
 		{
 			role:    'system',
@@ -142,6 +165,7 @@ export async function reconcileRound(
 	priorFindings: readonly Finding[],
 	currentFindings: readonly Finding[],
 ): Promise<readonly ReconciliationResult[]> {
+	requireValidReviewId(reviewId);
 	if (priorFindings.length === 0) return [];
 	const auditTrailExists = testDeps.auditTrailExists ?? defaultAuditTrailExists;
 	const readAuditTrail = testDeps.readAuditTrail ?? defaultReadAuditTrail;

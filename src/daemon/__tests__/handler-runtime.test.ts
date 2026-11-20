@@ -77,9 +77,10 @@ const ADDED_RPC = [
 	'repo.gitHooks.install', 'repo.gitHooks.status', 'repo.gitHooks.uninstall', 'repo.settings.get', 'repo.settings.set', 'repo.trackerConfig.ensure', 'team.claim', 'team.park', 'team.refresh', 'team.release', 'team.resume', 'team.settle',
 	'tracker.attach', 'tracker.setup', 'tracker.sync', 'tracker.syncComments', 'workflow.approvePipeline',
 	'workflow.reviewArtifact', 'workflow.resolveFinding',
-	'codeReview.task.activity', 'codeReview.task.assignment', 'codeReview.task.cleanup', 'codeReview.task.progress', 'codeReview.task.publish',
+	'codeReview.task.activity', 'codeReview.task.assignment', 'codeReview.task.cancel', 'codeReview.task.cleanup', 'codeReview.task.progress', 'codeReview.task.publish',
 	'codeReview.task.result', 'codeReview.task.scope', 'codeReview.task.start',
-	'designReview.activity', 'designReview.assignment', 'designReview.failure', 'designReview.impact', 'designReview.plan', 'designReview.progress', 'designReview.recover',
+	'daemon.qualificationState',
+	'designReview.activity', 'designReview.assignment', 'designReview.cancel', 'designReview.failure', 'designReview.impact', 'designReview.plan', 'designReview.progress', 'designReview.recover',
 	'designReview.result', 'designReview.start',
 	'progress.attach', 'progress.control', 'progress.detach', 'progress.origin.bind',
 	'progress.origin.open', 'progress.origin.revoke', 'progress.read',
@@ -105,12 +106,12 @@ test('the runtime function builds the handler tables with stub indexing dependen
 	}
 });
 
-test('src/daemon/__tests__/handler-runtime.test.ts: the only code review methods added after the move are the eight task ones, with no duplicate or renamed method', () => {
+test('src/daemon/__tests__/handler-runtime.test.ts: the only code review methods added after the move are the nine task ones, with no duplicate or renamed method', () => {
 	// codeReview.freshness queues file jobs from its existing handler: no method was added for it
 	assert.ok(RECORDED_RPC.includes('codeReview.freshness'));
 	assert.deepEqual(
 		ADDED_RPC.filter(m => m.startsWith('codeReview.')).sort(),
-		['activity', 'assignment', 'cleanup', 'progress', 'publish', 'result', 'scope', 'start'].map(m => `codeReview.task.${m}`),
+		['activity', 'assignment', 'cancel', 'cleanup', 'progress', 'publish', 'result', 'scope', 'start'].map(m => `codeReview.task.${m}`),
 	);
 	assert.ok(!ADDED_STREAM.some(m => m.startsWith('codeReview.')));
 	assert.equal(new Set([...RECORDED_RPC, ...ADDED_RPC]).size, RECORDED_RPC.length + ADDED_RPC.length, 'no duplicate or renamed method');

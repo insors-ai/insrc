@@ -6,7 +6,12 @@ import { createRun, harnessError, participantContext } from './context.mjs';
 import { processScope, withRun } from './process.mjs';
 
 export const ROOT = fileURLToPath(new URL('../../', import.meta.url));
-const REQUIRED = ['out/daemon/index.js', 'out/bin/insrc-process-broker', 'out/bin/insrc-shutdown-watchdog.js'];
+export const REQUIRED_ARTIFACTS = ['out/daemon/index.js', 'out/bin/insrc-process-broker', 'out/bin/insrc-shutdown-watchdog.js',
+	'out/daemon/shutdown.js', 'out/daemon/shutdown-watchdog.js', 'out/shared/daemon-run-files.js',
+	'out/cli/services/daemon.js', 'out/cli/services/maintenance.js', 'out/daemon/server.js',
+	'out/shared/daemon-process.js', 'out/daemon/run-file-ownership.js',
+	...(process.platform === 'darwin' ? ['out/bin/insrc-darwin-lifecycle'] : [])];
+const REQUIRED = REQUIRED_ARTIFACTS;
 const INPUTS = ['src', 'scripts', 'packages/project-memory/src', 'packages/project-memory/package.json', 'packages/project-memory/tsconfig.json', 'package.json', 'package-lock.json', 'tsconfig.json', 'tsconfig.typecheck.json', 'build-process-broker.mjs', 'build-shutdown-watchdog.mjs', 'copy-assets.mjs', 'vscode-plugin/src', 'vscode-plugin/package.json'];
 export const inputFingerprint = root => fingerprint(root, INPUTS);
 

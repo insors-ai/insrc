@@ -7,7 +7,7 @@ import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { pathToFileURL } from 'node:url';
 import { createRun } from '../test-harness/context.mjs';
-import { prepareBuild, requirePreparedBuild } from '../test-harness/build.mjs';
+import { prepareBuild, publishPrepared, REQUIRED_ARTIFACTS } from '../test-harness/build.mjs';
 import { withRun } from '../test-harness/process.mjs';
 import { MUTATION_FILE, parseArgs, runHarness } from '../test-harness/run.mjs';
 
@@ -129,4 +129,11 @@ test('A timed-out writer retains its reservation until its child closes', { time
 		await rejected;
 		assert.equal(existsSync(join(run.active, 'writer')), false);
 	});
+});
+
+test('Default prepared output requires the host native lifecycle helper', async t => {
+	const root = rootFixture(t), run = createRun(root);
+	const missing = process.platform === 'darwin' ? 'out/bin/insrc-darwin-lifecycle' : 'out/bin/insrc-process-broker';
+	for (const file of REQUIRED_ARTIFACTS.filter(file => file !== missing)) { mkdirSync(resolve(root, file, '..'), { recursive: true }); writeFileSync(join(root, file), 'fixture prerequisite'); }
+	await withRun(run, async () => { assert.throws(() => publishPrepared(run), error => error.code === 'harness-build-incomplete' && error.message.includes(missing)); });
 });

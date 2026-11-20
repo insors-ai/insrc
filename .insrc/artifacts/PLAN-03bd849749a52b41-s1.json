@@ -1,0 +1,288 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1795163521329-b1axlv",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-20T08:33:46.626Z",
+    "epicCreatedAt": "2026-11-20T04:36:15.580Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 105024,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "03bd849749a52b41",
+    "epicSlug": "align-historical-tests-retired-review-contract",
+    "storyId": "s1",
+    "lldRunId": "wf-1795162828625-eehjjh",
+    "lldEffectiveHash": "0c2d5db0d8b7d5b025f13dda4ab27428f28c7a58a8c8e971f866eb33a7c36466",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "46716391b155018bef2ee3d242ab4c019eef30941a06136c0b10c7d908996259",
+        "at": "2026-11-20T08:33:46.718Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T08:34:21.770Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "f97781c5d1262fbdba3869859a303daf976d5a32"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Migrate obsolete review tests in five focused tasks while preserving transport, worker/token, persistence, isolation and retained-history/lifecycle controls. Run current baselines and map each valid old assertion to a surviving control; no production review implementation or compatibility shim is added."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Migrate review boundary and client assertions",
+        "summary": "Capture focused baseline and assertion map; align review-specific labels, lifecycle wiring, in-daemon client and MCP checks with exact unavailable responses. Move valid generic transport assertions to supported or explicit test-only handlers.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Retired design/code surfaces reject with exact current family response before poisoned-argument reads, providers or IO; no synthetic success on review-named surfaces.",
+          "Progress/done, synchronous throws, cancellation/drain and cwd/repo lookup retain equivalent positive controls on supported/test-only generic methods.",
+          "Review-only label expectations change without weakening active model-role tier assertions or modifying production review/RPC classification.",
+          "Record baseline and old-assertion→current-control mapping; preserve meaningful assertions rather than skipping/deleting suites."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Retired review surfaces reject before argument inspection, providers or IO"
+          },
+          {
+            "level": "integration",
+            "name": "Generic client progress, synchronous errors and abort drains retain coverage on supported handlers"
+          },
+          {
+            "level": "integration",
+            "name": "Review-only label assertions reflect unavailable execution without changing active role tier tests"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Migrate worker routing and token lifecycle fixtures",
+        "summary": "Update indexing-port, router-session and s3 acceptance review assumptions to current supported operations/kinds while preserving worker ownership and session lifecycle coverage.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Current analyze/workflow token mint/read/update behavior survives idle worker release, with session isolation and old-token semantics preserved.",
+          "Retired review/code-review kinds reject without fabricated tokens; no worker/provider review execution restored.",
+          "Supported routing/indexing-port controls retain worker identity and shared/session placement evidence using real workers where the original test requires them.",
+          "Use bounded readiness, owned worker cleanup and fresh focused baseline; classify unrelated RPC/mutable-state failures separately without editing production method tables."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Supported worker tokens survive idle release and preserve session isolation while retired kinds reject"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Repair current persistence fixture entry points",
+        "summary": "Remove the deleted provenance writer import and map its valid assertions to current guarded boundaries/sinks and saved artifact/history controls, preserving the complete canary matrix.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Persistence fixture imports current modules and executes real assertions rather than failing during module loading.",
+          "Temporary task/report/checkpoint/history/trace/cache/vector canaries remain absent from durable sinks; hostile getters remain unread at boundaries that guarantee preflight rejection.",
+          "Saved artifact/history/cache/trace positive controls demonstrably persist and read back; no fake review records or resurrected writer export.",
+          "Document replacement assertion mapping; if current APIs expose an independent production defect, triage it separately and do not weaken the test or claim green."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Temporary persistence canaries remain absent while saved artifact and history controls persist"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Replace deleted review isolation inventory entries",
+        "summary": "Update store-isolation inventories to exercise current real coverage after the repaired fixtures are available. Preserve default-path negative evidence and deliberate-opening positive controls for graph and vectors.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "Each removed fixture entry has a mapped current test/control, with real child execution proven by exit status and TAP cases; empty, skipped-only or failed child runs cannot prove isolation.",
+          "Isolated HOME is established before application imports, and no live default LMDB/Lance artifact is created by the applicable current fixtures.",
+          "Deliberate default-store-opening positive controls remain and prove the audit can detect violations.",
+          "Only review-related inventory drift changes; unrelated failing fixture contracts remain visible in evidence rather than being removed or reclassified to force a pass.",
+          "Replacement suites contain named applicable assertions with positive TAP counts and verified normal cleanup; forced exit alone never proves closure or isolation."
+        ],
+        "derivedFrom": [
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Current isolation inventories execute real tests and detect deliberate default-store opening"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Validate preserved history and publish Batch 04 evidence",
+        "summary": "Run final focused groups sequentially, verify retained history and human lifecycle/integrity guarantees, and record actual outcomes, assertion mappings, cleanup and remaining sibling failures.",
+        "size": "S",
+        "order": 5,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "All seven LLD test subjects and ac1–ac4 map to actual test evidence; current retained history/rendering, human approval, integrity and task/build completion controls pass without fake review entries.",
+          "Root typecheck and appropriate source/compiled checks run under supported Node22 with exact pass/fail/skip/cancel counts and confirmed actor closure; no overlapping broad sweeps.",
+          "Audit and batch index preserve original observations, replacement mappings and remaining defects; do not claim green for failed/incomplete cases or refresh qualification evidence.",
+          "Document unchanged production behavior/API/data and visual relevance; no new review implementation, RPC classification, deprecated IDE compatibility or untracked production fix.",
+          "Any independent defect that prevents an acceptance check leaves that task non-green until resolved through an approved tracked path; final evidence distinguishes completed and blocked work."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Retained review history and human lifecycle gates remain readable and enforced"
+          },
+          {
+            "level": "smoke",
+            "name": "Batch 04 assertion mapping, actual focused results and actor closure are recorded"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "Retired review surfaces reject before argument inspection, providers or IO",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "Generic client progress, synchronous errors and abort drains retain coverage on supported handlers",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "Supported worker tokens survive idle release and preserve session isolation while retired kinds reject",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "Temporary persistence canaries remain absent while saved artifact and history controls persist",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "Current isolation inventories execute real tests and detect deliberate default-store opening",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "Retained review history and human lifecycle gates remain readable and enforced",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Review-only label assertions reflect unavailable execution without changing active role tier tests",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/align-historical-tests-retired-review-contract-E2026112003bd8497/S001/LLD.md#2-contract-details"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/align-historical-tests-retired-review-contract-E2026112003bd8497/S001/LLD.md#3-error-paths"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/align-historical-tests-retired-review-contract-E2026112003bd8497/S001/LLD.md#4-test-strategy"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/align-historical-tests-retired-review-contract-E2026112003bd8497/S001/LLD.md#5-migration"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/align-historical-tests-retired-review-contract-E2026112003bd8497/S001/LLD.md#4-test-strategy"
+    }
+  ]
+}

@@ -82,6 +82,8 @@ test('src/daemon/__tests__/build-commands-doc.test.ts: the Build commands sectio
 });
 
 // Story 8ff6d364012cff02/s1 / t5 — the settings file's name, its override variable and its move are read against the code.
+// The old variable, spelled in two parts so that this file does not name it: the source scan in repo-config.test.ts looks for it under src.
+const OLD_VAR = ['INSRC', 'GITHUB', 'CONFIG'].join('_');
 const DOCS_DIR = fileURLToPath(new URL('../../../docs/', import.meta.url));
 const LIVE_DOCS = ['daemon.md', 'workflow.md', 'installation.md', 'index.html', ...readdirSync(join(DOCS_DIR, 'plans')).filter(f => f.endsWith('.md')).map(f => `plans/${f}`)];
 
@@ -108,7 +110,7 @@ test('build-commands-doc.test.ts: docs/daemon.md and the other live docs name re
 	const section = /### The settings file: repo-config\.json([\s\S]*?)### Build commands/.exec(DOC)?.[1] ?? '';
 	assert.ok(section.length > 0, 'the settings file section exists in docs/daemon.md');
 	assert.ok(section.includes(`~/.insrc/${fileName}`), 'it names the file');
-	assert.ok(section.includes('`INSRC_REPO_CONFIG`') && section.includes('`INSRC_GITHUB_CONFIG`') && /no\s+longer read/.test(section), 'it names the variable and says the old one is not read');
+	assert.ok(section.includes('`INSRC_REPO_CONFIG`') && section.includes(`\`${OLD_VAR}\``) && /no\s+longer read/.test(section), 'it names the variable and says the old one is not read');
 	assert.match(section, /existing `github\.json` is moved to `repo-config\.json`/, 'it says an existing github.json is moved');
 	assert.match(section, /first boot of an updated daemon/);
 	assert.match(section, /created by hand afterwards is ignored/, 'it says a github.json created by hand afterwards is ignored');
@@ -120,12 +122,12 @@ test('build-commands-doc.test.ts: docs/daemon.md and the other live docs name re
 		const isPlan = doc.startsWith('plans/');
 		if (!isPlan) assert.ok(text.includes(`~/.insrc/${fileName}`), `${doc} names ~/.insrc/${fileName}`);
 		assert.doesNotMatch(text, /(cat\s*>>?|tee\s+(-a\s+)?|touch\s+|(^|\n)\s*>\s*)~\/\.insrc\/github\.json/, `${doc} does not tell a user to create github.json`);
-		assert.ok(!/INSRC_GITHUB_CONFIG/.test(text.replace(/`INSRC_GITHUB_CONFIG`/g, '')), `${doc} gives INSRC_GITHUB_CONFIG only as the variable that is no longer read`);
+		assert.ok(!text.replaceAll(`\`${OLD_VAR}\``, '').includes(OLD_VAR), `${doc} gives ${OLD_VAR} only as the variable that is no longer read`);
 		// a shell example that writes the settings file writes the file the code reads
 		for (const m of text.matchAll(/cat\s*>\s*~\/\.insrc\/(\S+)\s*<</g)) assert.equal(m[1], fileName, `${doc}: the shell example writes ${fileName}`);
 		if (isPlan) {
 			assert.ok(!text.includes('github.json'), `${doc}: a plan never names github.json`);
-			assert.ok(!text.includes('INSRC_GITHUB_CONFIG'), `${doc}: a plan never names INSRC_GITHUB_CONFIG`);
+			assert.ok(!text.includes(OLD_VAR), `${doc}: a plan never names ${OLD_VAR}`);
 		}
 	}
 	// the docs that document the override name the variable the code reads

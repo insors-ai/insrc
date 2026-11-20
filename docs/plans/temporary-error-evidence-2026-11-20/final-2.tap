@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: Saved structured retry preserves Vibe refusal identity and never retries
+ok 1 - Saved structured retry preserves Vibe refusal identity and never retries
+  ---
+  duration_ms: 0.842125
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 254.217125

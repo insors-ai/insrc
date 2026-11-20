@@ -227,10 +227,11 @@ export async function withStructuredRetry<T>(
 			raw = await call(note);
 			assertConnectionProviderAttempt(execution);
 		} catch (err) {
-			// Budget admission is not a failed model answer and must never be retried/wrapped.
-			if (err instanceof VibeTurnError) throw err;
 			assertConnectionProviderAttempt(execution);
 			if (execution?.mode === 'session-memory') throw new ConnectionExecutionError(connectionExecutionErrorCode(err) ?? 'unsupported-temporary');
+			// Inspect provider errors only after temporary failures have been safely projected.
+			// Budget admission is not a failed model answer and must never be retried/wrapped.
+			if (err instanceof VibeTurnError) throw err;
 			if (err instanceof ConnectionExecutionError) throw err;
 			// A cancelled call ends the helper as it was raised: it is neither
 			// retried nor reported as a failure of shape or of the model.

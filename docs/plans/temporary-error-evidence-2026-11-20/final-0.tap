@@ -1,0 +1,37 @@
+TAP version 13
+# Subtest: codex input_too_large becomes an InputTooLargeError with maxChars and actualChars; the message is unchanged
+ok 1 - codex input_too_large becomes an InputTooLargeError with maxChars and actualChars; the message is unchanged
+  ---
+  duration_ms: 2.708459
+  type: 'test'
+  ...
+# Subtest: withStructuredRetry rethrows an InputTooLargeError after one call
+ok 2 - withStructuredRetry rethrows an InputTooLargeError after one call
+  ---
+  duration_ms: 0.752083
+  type: 'test'
+  ...
+# [07:27:15] [33mWARN[39m: [36m[providers:structured-output] structured-output: call threw; treating as validation failure for retry[39m
+#     [35mmodule[39m: "providers:structured-output"
+#     [35mattempt[39m: 1
+#     [35mmaxAttempts[39m: 3
+#     error: "the model returned text"
+# [07:27:15] [33mWARN[39m: [36m[providers:structured-output] structured-output: call threw; treating as validation failure for retry[39m
+#     [35mmodule[39m: "providers:structured-output"
+#     [35mattempt[39m: 2
+#     [35mmaxAttempts[39m: 3
+#     error: "the model returned text"
+# [07:27:15] [33mWARN[39m: [36m[providers:structured-output] structured-output: call threw; treating as validation failure for retry[39m
+#     [35mmodule[39m: "providers:structured-output"
+#     [35mattempt[39m: 3
+#     [35mmaxAttempts[39m: 3
+#     error: "the model returned text"
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 344.739625

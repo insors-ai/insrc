@@ -653,3 +653,7 @@ proofs were not refreshed; Batches 15/16 remain pending.
 The final capture found no remaining matching test/compiler/owned-fixture
 processes, active checkout lease or source-adjacent compiler probe. Broader
 backend/IDE failures remain assigned to the other coherent batch issues.
+
+## Batch 02 validation checkpoint
+
+Approved issue `ISSUE-939c138296f56a8f`: temporary provider errors are projected before prototype inspection, and lookup terminal reasons use identity-only WeakMap projection. The original three diagnostic failures reproduced; the final focused run passed 14/14 with no skips/cancellations and confirmed cleanup. Source and compiled provider/RPC fixtures retain privacy, authority and saved-mode controls. A later stale RPC continuation assertion now requires the current `emit_part` response and safe failure payload. See [evidence and limits](temporary-error-sanitization-2026-11-20.md). BUILD human approval remains pending; no broader suite or qualification claim.

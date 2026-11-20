@@ -1,0 +1,76 @@
+{
+  "runId": "29f77fe1-322f-4686-88d0-953a7a311eb4",
+  "runtime": {
+    "executable": "/opt/homebrew/Cellar/node@22/22.23.2/bin/node",
+    "version": "v22.23.2"
+  },
+  "budgets": {
+    "buildMs": 600000,
+    "fileMs": 600000,
+    "runMs": 5400000,
+    "cleanupMs": 5000
+  },
+  "selectedFiles": [
+    "src/daemon/steps/__tests__/provider-diagnostics.test.ts",
+    "src/daemon/steps/__tests__/rpc-diagnostics.test.ts"
+  ],
+  "requestedConcurrency": 1,
+  "effectiveConcurrency": 1,
+  "diagnosticFlags": [
+    "DEBUG"
+  ],
+  "liveTests": "unset",
+  "results": [
+    {
+      "file": "src/daemon/steps/__tests__/provider-diagnostics.test.ts",
+      "childId": "1fcd88a9-2278-49fb-8d04-85f94fa42ff8",
+      "log": "docs/plans/temporary-error-evidence-2026-11-20/before-0.tap",
+      "code": 1,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 2,
+          "pass": 0,
+          "fail": 2,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "sha256": "7dc037f092030d6bb8214244ca8dbd15c2744a3927dcecbff4313b431ee0ea15"
+    },
+    {
+      "file": "src/daemon/steps/__tests__/rpc-diagnostics.test.ts",
+      "childId": "9e8dc69f-5c21-499c-89dc-6ff629dee124",
+      "log": "docs/plans/temporary-error-evidence-2026-11-20/before-1.tap",
+      "code": 1,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 1,
+          "pass": 0,
+          "fail": 1,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "sha256": "61b6a2b4775b2432f98846298d1caacd77bd6bbf8b7cf4eff4c825d3706da528"
+    }
+  ],
+  "incomplete": false,
+  "cleanup": {
+    "confirmedClosed": true,
+    "interrupted": false,
+    "cancellationErrors": [],
+    "evidenceErrors": [],
+    "childCloseJournal": "child-results.jsonl"
+  },
+  "closeJournal": "child-close journal retained in local owned run directory"
+}

@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "plan",
-    "runId": "wf-1795150951356-tag5bi",
+    "runId": "wf-1795153418058-q9m2o2",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-11-20T05:04:17.122Z",
+    "createdAt": "2026-11-20T05:45:03.812Z",
     "epicCreatedAt": "2026-11-20T04:34:20.119Z",
     "standalone": true,
     "attribution": {
@@ -16,7 +16,7 @@
         }
       ]
     },
-    "elapsedMs": 105448,
+    "elapsedMs": 85451,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "3275fb2e9a542cd6",
@@ -28,9 +28,9 @@
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 1,
-        "contentHash": "944875d1bd2327a702784f6bdbc8a7cb809cf74c06c20b3525d28c03e55cc3ef",
-        "at": "2026-11-20T05:04:17.204Z",
+        "number": 2,
+        "contentHash": "7e330ddb630e3e385ef379569388580021c262ffcad2e847431003c3be6bdfd3",
+        "at": "2026-11-20T05:45:03.896Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
@@ -39,27 +39,27 @@
       },
       "signoffs": [],
       "approval": {
-        "revision": 1,
+        "revision": 2,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-11-20T05:10:29.562Z"
+        "at": "2026-11-20T06:02:20.309Z"
       }
     },
-    "revision": 1,
     "envelope": {
       "description": "",
       "references": [],
       "attachments": []
     },
-    "rangeBase": "020c992ea75592d4b6e1d2a5bef91333e0eb7618"
+    "revision": 2,
+    "rangeBase": "b53720136064997b2767eee05bdee018f018114c"
   },
   "body": {
     "summary": {
       "audience": "technical",
-      "prose": "Build one checkout-level owner for generated output and bounded test lifetimes, then migrate rebuild fixtures, process readiness and compiler probes onto it. Route developer commands through the same Node-22 context and verify adversarial failure paths before a sequential focused run. Preserve production behavior, native refusals and qualification policy; interrupted runs with unconfirmed cleanup remain visibly blocked."
+      "prose": "Build one checkout-level owner for generated output and bounded test lifetimes, and route developer commands through it before migrating consumers. Then repair fixture readiness and isolated compiler probes, followed by focused validation. This revision changes task order and strengthens actual-consumer evidence; completed ownership/coordinator work and the approved design scope are retained."
     },
     "tasks": [
       {
@@ -154,22 +154,59 @@
         ]
       },
       {
-        "id": "t4",
-        "title": "Migrate rebuild fixtures to prepared output",
-        "summary": "Replace five ordinary build hooks with prepared-context checks; keep src/daemon/__tests__/review-retirement-package.test.ts as a real exclusive rebuild regression.",
+        "id": "t7",
+        "title": "Route supported commands and regression launchers",
+        "summary": "Switch root build/test and VSCode test commands to ownership, move mutating pretest asset sync inside admission, and adapt specialized regression launchers at their ownership seam.",
         "size": "M",
         "order": 4,
         "dependsOn": [
           "t3"
         ],
         "acceptanceChecks": [
-          "All six audited consumers participate; direct unsupported invocations fail with an actionable selector command before fake-daemon startup.",
-          "The retirement regression still plants stale output and asserts its removal/package behavior; prepared output refreshes before readers.",
-          "Focused consumers cannot lose compiled helpers through concurrent cleanup; no native refusal assertion is weakened."
+          "Both packages use canonical checkout ownership; asset sync cannot run before overlap refusal and keeps existing semantics.",
+          "Existing workspace/typecheck/spawn-scan/native/model/assets stages remain checked; only wrapper exposure assertions change here.",
+          "Specialized scripts retain proof/gate policy; altered fingerprints stay pending Batch15 with no fabricated qualification."
         ],
         "derivedFrom": [
           "c1",
-          "c3"
+          "c2",
+          "c4",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Root and VSCode command overlap refuses before asset synchronization"
+          },
+          {
+            "level": "integration",
+            "name": "Build stages and specialized launcher gate policies survive wrapper integration"
+          },
+          {
+            "level": "integration",
+            "name": "Native refusal and saved-mode controls remain enforced"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Migrate rebuild fixtures to prepared output",
+        "summary": "Replace five ordinary build hooks with prepared-context checks; keep src/daemon/__tests__/review-retirement-package.test.ts as a real exclusive rebuild regression.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "All six audited consumers participate; direct unsupported invocations fail with an actionable selector command before fake-daemon startup.",
+          "The retirement regression still plants stale output and asserts its removal/package behavior; prepared output refreshes before readers.",
+          "Focused consumers cannot lose compiled helpers through concurrent cleanup; no native refusal assertion is weakened.",
+          "Positive reuse evidence executes all five actual consumer files under prepared ownership, preserves their assertions and logs, and explicitly distinguishes remaining native/platform failures from missing prerequisites or harness races; repeating the prerequisite function alone is insufficient."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c6"
         ],
         "tests": [
           {
@@ -187,9 +224,9 @@
         "title": "Repair fixture readiness and resource lifetimes",
         "summary": "Use existing process/channel helpers with per-case cleanup and bounded ready handshakes; move peer MessageChannel allocation into a meaningful test with finally cleanup.",
         "size": "M",
-        "order": 5,
+        "order": 6,
         "dependsOn": [
-          "t3"
+          "t7"
         ],
         "acceptanceChecks": [
           "Importing the peer file creates no unowned module-scope port; its real state round-trip test terminates and both ports close.",
@@ -221,9 +258,9 @@
         "title": "Move compiler probes outside source includes",
         "summary": "Migrate typecheckAgainstPanel and every caller to the approved async snippet-factory contract and retained compiler lifecycle in the ignored run workspace.",
         "size": "M",
-        "order": 6,
+        "order": 7,
         "dependsOn": [
-          "t3"
+          "t7"
         ],
         "acceptanceChecks": [
           "Snippets import real panel types with correct NodeNext/package resolution; intended negative diagnostic and positive controls remain enforced.",
@@ -247,48 +284,15 @@
         ]
       },
       {
-        "id": "t7",
-        "title": "Route supported commands and regression launchers",
-        "summary": "Switch root build/test and VSCode test commands to ownership, move mutating pretest asset sync inside admission, and adapt specialized regression launchers at their ownership seam.",
-        "size": "M",
-        "order": 7,
-        "dependsOn": [
-          "t4",
-          "t5",
-          "t6"
-        ],
-        "acceptanceChecks": [
-          "Both packages use canonical checkout ownership; asset sync cannot run before overlap refusal and keeps existing semantics.",
-          "Existing workspace/typecheck/spawn-scan/native/model/assets stages remain checked; only wrapper exposure assertions change here.",
-          "Specialized scripts retain proof/gate policy; altered fingerprints stay pending Batch15 with no fabricated qualification."
-        ],
-        "derivedFrom": [
-          "c1",
-          "c2",
-          "c4"
-        ],
-        "tests": [
-          {
-            "level": "integration",
-            "name": "Root and VSCode command overlap refuses before asset synchronization"
-          },
-          {
-            "level": "integration",
-            "name": "Build stages and specialized launcher gate policies survive wrapper integration"
-          },
-          {
-            "level": "integration",
-            "name": "Native refusal and saved-mode controls remain enforced"
-          }
-        ]
-      },
-      {
         "id": "t8",
         "title": "Validate and document the supported harness",
         "summary": "Run isolated adversarial controls then sequential affected suites; document selectors, runtime setup, budgets, recovery and remaining sibling failures in the audit/index.",
         "size": "M",
         "order": 8,
         "dependsOn": [
+          "t4",
+          "t5",
+          "t6",
           "t7"
         ],
         "acceptanceChecks": [
@@ -444,6 +448,12 @@
       "kind": "analyze-bundle",
       "ref": "plan s1",
       "quotedText": "Approved LLD grounding reused for sizing. v2 is ahead one local approval commit and behind four upstream commits; reconcile before implementation. No tracker publication is claimed."
+    },
+    {
+      "id": "c6",
+      "kind": "step-output",
+      "ref": "plan s1",
+      "quotedText": "t4 validation found command routing deferred until t7 prevented t4 acceptance: npm test guidance remained unusable and raw npm build could race. It also required actual consumer invocations rather than repeated synthetic prerequisite checks. Move t7 immediately after validated t3 and require unchanged consumer assertion logs with explicit platform-failure accounting."
     }
   ]
 }

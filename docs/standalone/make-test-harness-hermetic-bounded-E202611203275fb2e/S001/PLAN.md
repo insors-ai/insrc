@@ -8,7 +8,7 @@
 **LLD run:** `wf-1795149678886-t22m35`
 **LLD effective hash:** `4889d3eb4e7c...`
 
-Build one checkout-level owner for generated output and bounded test lifetimes, then migrate rebuild fixtures, process readiness and compiler probes onto it. Route developer commands through the same Node-22 context and verify adversarial failure paths before a sequential focused run. Preserve production behavior, native refusals and qualification policy; interrupted runs with unconfirmed cleanup remain visibly blocked.
+Build one checkout-level owner for generated output and bounded test lifetimes, and route developer commands through it before migrating consumers. Then repair fixture readiness and isolated compiler probes, followed by focused validation. This revision changes task order and strengthens actual-consumer evidence; completed ownership/coordinator work and the approved design scope are retained.
 
 ## Contents
 
@@ -20,14 +20,14 @@ Build one checkout-level owner for generated output and bounded test lifetimes, 
 
 | # | Task | Size | Status | Depends on | Tests | Derived from |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| 1 | **`t1`** Reconcile the implementation baseline | S | — | — | smoke: Baseline commit, upstream overlap and quiescent-owner evidence | [[c1]] [[c5]] |
-| 2 | **`t2`** Establish run ownership and runtime context | M | — | `t1` | integration: Canonical-path contenders refuse overlap and preserve foreign/replaced/symlinked ownership; unit: Unsupported Node refuses before mutation and child environment resolves selected runtime; integration: Abandoned ownership cannot be stolen by age or PID absence | [[c1]] [[c2]] |
-| 3 | **`t3`** Coordinate builds and test admission | M | — | `t2` | integration: Prepared build excludes simultaneous writers and readers, validates helpers and rejects fingerprint drift; integration: SIGINT/SIGTERM and deadline drain registered actors or retain blocked incomplete outcome; unit: Selector deduplication, explicit budgets and bounded concurrency reject invalid admission | [[c1]] [[c2]] [[c3]] |
-| 4 | **`t4`** Migrate rebuild fixtures to prepared output | M | — | `t3` | integration: Five prepared consumers reuse helpers and raw invocations refuse missing context; integration: Retirement-package stale-output rebuild remains a serial mutation regression | [[c1]] [[c3]] |
-| 5 | **`t5`** Repair fixture readiness and resource lifetimes | M | — | `t3` | smoke: Peer state round-trip terminates with both MessagePorts closed; integration: Failed fixture readiness reclaims socket and child before the next case; integration: Ready handshake precedes behavioral cancellation deadline | [[c1]] [[c2]] [[c3]] |
-| 6 | **`t6`** Move compiler probes outside source includes | M | — | `t3` | integration: Real panel type probes preserve positive and intended-negative diagnostics; integration: Compiler launch failure and interruption cannot pass a negative probe or pollute source includes | [[c1]] [[c2]] [[c3]] |
-| 7 | **`t7`** Route supported commands and regression launchers | M | — | `t4`, `t5`, `t6` | integration: Root and VSCode command overlap refuses before asset synchronization; integration: Build stages and specialized launcher gate policies survive wrapper integration; integration: Native refusal and saved-mode controls remain enforced | [[c1]] [[c2]] [[c4]] |
-| 8 | **`t8`** Validate and document the supported harness | M | — | `t7` | smoke: Sequential focused validation reports actual coverage, remaining failures and closed actors; smoke: Documented runtime, selector, budget and blocked-recovery commands match observed behavior | [[c1]] [[c2]] [[c3]] [[c4]] |
+| 1 | **`t1`** Reconcile the implementation baseline | S | approved r1 | — | smoke: Baseline commit, upstream overlap and quiescent-owner evidence | [[c1]] [[c5]] |
+| 2 | **`t2`** Establish run ownership and runtime context | M | approved r1 | `t1` | integration: Canonical-path contenders refuse overlap and preserve foreign/replaced/symlinked ownership; unit: Unsupported Node refuses before mutation and child environment resolves selected runtime; integration: Abandoned ownership cannot be stolen by age or PID absence | [[c1]] [[c2]] |
+| 3 | **`t3`** Coordinate builds and test admission | M | approved r1 | `t2` | integration: Prepared build excludes simultaneous writers and readers, validates helpers and rejects fingerprint drift; integration: SIGINT/SIGTERM and deadline drain registered actors or retain blocked incomplete outcome; unit: Selector deduplication, explicit budgets and bounded concurrency reject invalid admission | [[c1]] [[c2]] [[c3]] |
+| 4 | **`t7`** Route supported commands and regression launchers | M | approved r1 | `t3` | integration: Root and VSCode command overlap refuses before asset synchronization; integration: Build stages and specialized launcher gate policies survive wrapper integration; integration: Native refusal and saved-mode controls remain enforced | [[c1]] [[c2]] [[c4]] [[c6]] |
+| 5 | **`t4`** Migrate rebuild fixtures to prepared output | M | approved r1 | `t7` | integration: Five prepared consumers reuse helpers and raw invocations refuse missing context; integration: Retirement-package stale-output rebuild remains a serial mutation regression | [[c1]] [[c3]] [[c6]] |
+| 6 | **`t5`** Repair fixture readiness and resource lifetimes | M | approved r1 | `t7` | smoke: Peer state round-trip terminates with both MessagePorts closed; integration: Failed fixture readiness reclaims socket and child before the next case; integration: Ready handshake precedes behavioral cancellation deadline | [[c1]] [[c2]] [[c3]] |
+| 7 | **`t6`** Move compiler probes outside source includes | M | approved r1 | `t7` | integration: Real panel type probes preserve positive and intended-negative diagnostics; integration: Compiler launch failure and interruption cannot pass a negative probe or pollute source includes | [[c1]] [[c2]] [[c3]] |
+| 8 | **`t8`** Validate and document the supported harness | M | approved r1 | `t4`, `t5`, `t6`, `t7` | smoke: Sequential focused validation reports actual coverage, remaining failures and closed actors; smoke: Documented runtime, selector, budget and blocked-recovery commands match observed behavior | [[c1]] [[c2]] [[c3]] [[c4]] |
 
 ### 1.1 TASK-3275fb2e9a542cd6-s1-t1 — Reconcile the implementation baseline
 
@@ -57,7 +57,16 @@ Add proposed scripts/test-harness/build.mjs and run.mjs; preserve all existing b
 - Owned child results, logs, coverage and close confirmation survive failures and catchable signals.
 - Real disposable-child SIGINT and SIGTERM controls stop admission, drain owned actors and return incomplete/nonzero; no closure acknowledgment retains blocked ownership.
 
-### 1.4 TASK-3275fb2e9a542cd6-s1-t4 — Migrate rebuild fixtures to prepared output
+### 1.4 TASK-3275fb2e9a542cd6-s1-t7 — Route supported commands and regression launchers
+
+Switch root build/test and VSCode test commands to ownership, move mutating pretest asset sync inside admission, and adapt specialized regression launchers at their ownership seam.
+
+**Acceptance checks:**
+- Both packages use canonical checkout ownership; asset sync cannot run before overlap refusal and keeps existing semantics.
+- Existing workspace/typecheck/spawn-scan/native/model/assets stages remain checked; only wrapper exposure assertions change here.
+- Specialized scripts retain proof/gate policy; altered fingerprints stay pending Batch15 with no fabricated qualification.
+
+### 1.5 TASK-3275fb2e9a542cd6-s1-t4 — Migrate rebuild fixtures to prepared output
 
 Replace five ordinary build hooks with prepared-context checks; keep src/daemon/__tests__/review-retirement-package.test.ts as a real exclusive rebuild regression.
 
@@ -65,8 +74,9 @@ Replace five ordinary build hooks with prepared-context checks; keep src/daemon/
 - All six audited consumers participate; direct unsupported invocations fail with an actionable selector command before fake-daemon startup.
 - The retirement regression still plants stale output and asserts its removal/package behavior; prepared output refreshes before readers.
 - Focused consumers cannot lose compiled helpers through concurrent cleanup; no native refusal assertion is weakened.
+- Positive reuse evidence executes all five actual consumer files under prepared ownership, preserves their assertions and logs, and explicitly distinguishes remaining native/platform failures from missing prerequisites or harness races; repeating the prerequisite function alone is insufficient.
 
-### 1.5 TASK-3275fb2e9a542cd6-s1-t5 — Repair fixture readiness and resource lifetimes
+### 1.6 TASK-3275fb2e9a542cd6-s1-t5 — Repair fixture readiness and resource lifetimes
 
 Use existing process/channel helpers with per-case cleanup and bounded ready handshakes; move peer MessageChannel allocation into a meaningful test with finally cleanup.
 
@@ -75,7 +85,7 @@ Use existing process/channel helpers with per-case cleanup and bounded ready han
 - Failed fixture startup releases owned socket/process before next case; short behavior deadlines begin only after bounded readiness.
 - Cancellation and disposal retain actual handles; escaped/unconfirmed children block release rather than authorizing PID scans or production lifecycle changes.
 
-### 1.6 TASK-3275fb2e9a542cd6-s1-t6 — Move compiler probes outside source includes
+### 1.7 TASK-3275fb2e9a542cd6-s1-t6 — Move compiler probes outside source includes
 
 Migrate typecheckAgainstPanel and every caller to the approved async snippet-factory contract and retained compiler lifecycle in the ignored run workspace.
 
@@ -83,15 +93,6 @@ Migrate typecheckAgainstPanel and every caller to the approved async snippet-fac
 - Snippets import real panel types with correct NodeNext/package resolution; intended negative diagnostic and positive controls remain enforced.
 - Launch failure/unrelated diagnostics/timeouts cannot pass negative type tests; catchable interruption drains compiler.
 - No probe file enters backend or extension source includes, including after interruption; normal extension typecheck still works.
-
-### 1.7 TASK-3275fb2e9a542cd6-s1-t7 — Route supported commands and regression launchers
-
-Switch root build/test and VSCode test commands to ownership, move mutating pretest asset sync inside admission, and adapt specialized regression launchers at their ownership seam.
-
-**Acceptance checks:**
-- Both packages use canonical checkout ownership; asset sync cannot run before overlap refusal and keeps existing semantics.
-- Existing workspace/typecheck/spawn-scan/native/model/assets stages remain checked; only wrapper exposure assertions change here.
-- Specialized scripts retain proof/gate policy; altered fingerprints stay pending Batch15 with no fabricated qualification.
 
 ### 1.8 TASK-3275fb2e9a542cd6-s1-t8 — Validate and document the supported harness
 
@@ -130,3 +131,4 @@ Run isolated adversarial controls then sequential affected suites; document sele
 - **[[c3]]** `prior-artifact` `LLD s1 testStrategy` — "Local ac1–ac6 and all fourteen test-level subjects retain meaningful assertions and actual coverage."
 - **[[c4]]** `prior-artifact` `LLD s1 migration` — "Command routing, admitted asset sync, specialized-launcher ownership only, compatibility and qualification boundaries."
 - **[[c5]]** `analyze-bundle` `plan s1` — "Approved LLD grounding reused for sizing. v2 is ahead one local approval commit and behind four upstream commits; reconcile before implementation. No tracker publication is claimed."
+- **[[c6]]** `step-output` `plan s1` — "t4 validation found command routing deferred until t7 prevented t4 acceptance: npm test guidance remained unusable and raw npm build could race. It also required actual consumer invocations rather tha"

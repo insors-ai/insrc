@@ -16187,8 +16187,56 @@
       "rationale": "Process/service infrastructure or non-session RPC. No implicit session admission: unsupported stateful methods refuse at dispatch; coarse lifecycle/background diagnostics must not receive temporary payloads.",
       "sites": [
         [
+          "serialization",
+          "(deps.writeKeys ?? writeRepoEntryKeys)"
+        ],
+        [
+          "serialization",
+          "(deps.writeVersion ?? writeSchemaVersion)"
+        ],
+        [
           "diagnostic",
           "getLogger"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "diagnostic",
+          "log.info"
+        ],
+        [
+          "diagnostic",
+          "log.info"
+        ],
+        [
+          "diagnostic",
+          "log.warn"
+        ],
+        [
+          "diagnostic",
+          "log.warn"
+        ],
+        [
+          "diagnostic",
+          "log.warn"
+        ],
+        [
+          "diagnostic",
+          "log.warn"
+        ],
+        [
+          "diagnostic",
+          "log.warn"
+        ],
+        [
+          "diagnostic",
+          "log.warn"
+        ],
+        [
+          "diagnostic",
+          "log.warn"
         ],
         [
           "diagnostic",
@@ -16207,9 +16255,9 @@
           "writeKeys"
         ]
       ],
-      "siteCount": 5,
-      "sitesDigest": "ce89731b9cafa8b87d25788c92885c68dcc01f593a54bede16bf1d14baaf5e87",
-      "sourceDigest": "019117d1a318e8f2c63b7674dee5ca1a3242638edf613ad5946524646f7438c7"
+      "siteCount": 17,
+      "sitesDigest": "0ae79719ea25d04d569ed6b2db31f0eb02d64e7d0cb51fed205c0c78d9977e69",
+      "sourceDigest": "cd7760e55568504b9271aec422b48e1cc9b9b9f6619e9cab2429152406f74c45"
     },
     "src/daemon/repo-stats.ts": {
       "classification": "daemon-admission-boundary",

@@ -59,7 +59,16 @@
       "references": [],
       "attachments": []
     },
-    "rangeBase": "1efcf5a5578881fb8b3d5ddf442fe552f76ea14c"
+    "rangeBase": "1efcf5a5578881fb8b3d5ddf442fe552f76ea14c",
+    "questionResolutions": {
+      "qd1a25ef3": {
+        "question": "Confirm the constraints k1-k6 this LLD authored from your statements (once only; decided by the root schemaVersion in repo-config.json, with absent, null or below the current version applying the pending steps, never by commit ids; never blocks or fails startup; a failure is not silently lost; the daemon is the only writer and keeps the rest of repo-config.json; stay small and keep the on-demand method). They are the scoring basis for the alternatives.",
+        "status": "resolved",
+        "choice": "Confirm k1–k6 unchanged",
+        "rationale": "User approved the LLD in chat, which listed this as its open confirmation.",
+        "resolvedAt": "2026-11-20T19:17:42.404Z"
+      }
+    }
   },
   "body": {
     "summary": {

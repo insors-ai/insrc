@@ -103,6 +103,63 @@ const DOC_JSON_NAMES: Readonly<Record<string, readonly string[]>> = {
 	'plans/workflow-implementation.md': ['repo-config.json'],
 };
 
+// The text around every mention of the settings file in each edited doc, as it stands now. A mention changed to another name
+// (even one that is allowed elsewhere) breaks its window, so the doc fails the test; change a window when its text is edited on purpose.
+const FILE_MENTION_CONTEXT: Readonly<Record<string, readonly string[]>> = {
+	"daemon.md": [
+		" neither is touched, `repo-config.json` is the one the daemo",
+		"## The settings file: repo-config.json",
+		"-config.json`, and a `repo-config.json` that another process",
+		"`~/.insrc/repo-config.json`, a file of the shape",
+		"daemon never deletes `repo-config.json`, and a `repo-config.",
+		"itten. Only `~/.insrc/repo-config.json` is written, through ",
+		"luding an unreadable `repo-config.json`,",
+		"luding an unreadable `repo-config.json`, which fails every r",
+		"olds a bad value, or `repo-config.json` cannot be read, the ",
+		"settings now live in `repo-config.json`, and the settings me",
+		"ts entry of `~/.insrc/repo-config.json`, through",
+		"ub.json` is moved to `repo-config.json`. The new name is pub",
+		"wn entry of `~/.insrc/repo-config.json`; when the entry sets",
+	],
+	"workflow.md": [
+		"-in.** When `~/.insrc/repo-config.json` is absent or",
+		"cat > ~/.insrc/repo-config.json <<'JSON'",
+		"ing file is moved to `repo-config.json` at the first boot of",
+		"settings now live in `repo-config.json`.",
+		"├── repo-config.json                      ",
+	],
+	"installation.md": [
+		"### `~/.insrc/repo-config.json` — repository setting",
+	],
+	"index.html": [
+		"   <h3><code>~/.insrc/repo-config.json</code> — repository s",
+	],
+	"plans/meta-workflow-framework.md": [
+		"on lives at `~/.insrc/repo-config.json` — one entry per",
+		"├── repo-config.json                   # G",
+	],
+	"plans/repo-call-audit.md": [
+		"dlers.ts:35-52 writes repo-config.json through repo.trackerC",
+	],
+	"plans/team-workflow.md": [
+		"   - An unparseable `repo-config.json` is read by the lenie",
+		"**s3 single writer of repo-config.json (accepted 2026-10-17,",
+		"po entry in `~/.insrc/repo-config.json` (extended), per-user",
+		"that writes `~/.insrc/repo-config.json`, through one",
+	],
+	"plans/workflow-define.md": [
+		"  `~/.insrc/repo-config.json` per-repo. Details in",
+	],
+	"plans/workflow-implementation.md": [
+		"                    # repo-config.json + workflow config",
+		"  `~/.insrc/repo-config.json` if their repo alread",
+		"- Config: `~/.insrc/repo-config.json` with per-repo mappin",
+		"e remote if `~/.insrc/repo-config.json` has no",
+		"onfig.ts` | `~/.insrc/repo-config.json` loader, per-workflow",
+		"├── repo-config.json                      ",
+	],
+};
+
 test('build-commands-doc.test.ts: docs/daemon.md and the other live docs name repo-config.json and INSRC_REPO_CONFIG in line with the code', () => {
 	// the file name and the variable the docs give are the ones the code uses
 	const before = process.env['INSRC_REPO_CONFIG'];
@@ -152,6 +209,11 @@ test('build-commands-doc.test.ts: docs/daemon.md and the other live docs name re
 		const names = new Set((readFileSync(join(DOCS_DIR, doc), 'utf8').match(/[A-Za-z0-9_@./-]*[A-Za-z0-9_-]+\.json\b/g) ?? []).map(n => n.replace(/^.*\//, '')));
 		for (const name of names) assert.ok(allowed.includes(name), `${doc} names ${name}, which is neither the settings file ${fileName} nor a .json file it was known to mention`);
 		if (!doc.startsWith('plans/')) assert.ok(names.has(fileName), `${doc} names ${fileName}`);
+	}
+	// every mention of the settings file is still the text it was, so none was changed to another name
+	for (const [doc, windows] of Object.entries(FILE_MENTION_CONTEXT)) {
+		const text = readFileSync(join(DOCS_DIR, doc), 'utf8');
+		for (const w of windows) assert.ok(text.includes(w), `${doc}: the mention of ${fileName} near "${w}" was changed`);
 	}
 	// the tree listings in workflow.md and the plans keep the file's line
 	for (const doc of ['workflow.md', 'plans/workflow-implementation.md', 'plans/meta-workflow-framework.md']) {

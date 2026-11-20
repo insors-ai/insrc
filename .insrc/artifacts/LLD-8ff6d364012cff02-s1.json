@@ -58,6 +58,13 @@
         "choice": "Adopt ac1–ac5",
         "rationale": "The user asked on 2026-11-20 to go ahead. ac1 prohibits the identifiers INSRC_GITHUB_CONFIG, githubConfigPath, github-store, GithubConfigFile, GithubEntry, loadGithubConfigFile and GithubConfigError under src; ac5 means the move runs synchronously after the directories are ensured and, being one rename inside a try/catch, cannot block or fail startup. The Story's file list also includes two JetBrains Kotlin test fixtures (jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/PerRepoSectionTest.kt and InsrcSettingsTrackerTest.kt) and the three live docs that tell users to hand-write the file, with the docs noting that the file is now repo-config.json and that a hand-created github.json is ignored.",
         "resolvedAt": "2026-11-20T16:39:23.843Z"
+      },
+      "q35cf2868": {
+        "question": "Decide whether the store's error code string 'github-json-unreadable' should be renamed too (for example to 'repo-config-unreadable'). I kept it, so no client sees a changed code, but it still names the old file. Renaming it changes a string any client matching on it would see.",
+        "status": "resolved",
+        "choice": "Rename the code",
+        "rationale": "The user asked on 2026-11-20 to go ahead with renaming the code. A search of the terminal, the VS Code plugin and the JetBrains main sources found no client that matches on 'github-json-unreadable'; they only pass it through, and the message already carries the file path. It becomes 'repo-config-unreadable' in the store's error type and its one producer, and the two JetBrains test fixtures that use the old string are updated.",
+        "resolvedAt": "2026-11-20T16:40:09.991Z"
       }
     }
   },

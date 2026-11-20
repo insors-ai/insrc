@@ -16,6 +16,8 @@ export interface SettingsRow {
 	readonly key: string;
 	readonly label: string;
 	readonly kind: RepoFieldKind;
+	/** The section the row belongs to: the daemon's `group`. */
+	readonly group: RepoFieldDef['group'];
 	/** What the row shows. */
 	readonly value: string;
 	/** The repo's own stored value, as the edit prompt's starting text; empty when unset. */
@@ -76,9 +78,52 @@ export function buildSettingsRows(fields: readonly RepoFieldDef[], payload: Repo
 		}
 		const placeholder = suggestedValue(f, payload);
 		return {
-			key: f.key, label: f.label, kind: f.kind, value, current, editable: f.kind === 'local', type: f.type,
+			key: f.key, label: f.label, kind: f.kind, group: f.group, value, current, editable: f.kind === 'local', type: f.type,
 			...(f.note !== undefined ? { note: f.note } : {}),
 			...(placeholder !== undefined ? { placeholder } : {}),
 		};
 	});
+}
+
+/** The keys the 'use suggested' action writes, in write order. */
+const SUGGESTED_KEYS = ['typecheckCommand', 'testCommand', 'resultFormat'] as const;
+
+/** The typical build commands offered for a repo that has none: only when its commands source is 'none' and its type has a suggestion. */
+export function offeredSuggestion(payload: RepoSettingsPayload | null): Readonly<Record<(typeof SUGGESTED_KEYS)[number], string>> | undefined {
+	const setup = payload?.buildSetup as RepoSettingsPayload['buildSetup'] | undefined;
+	return setup !== undefined && setup.commandsSource === 'none' ? setup.suggestion : undefined;
+}
+
+export type SuggestedResult =
+	| { readonly ok: true; readonly payload: RepoSettingsPayload }
+	| { readonly ok: false; readonly message: string };
+
+/**
+ * Writes the suggested values one key at a time through `set` (repo.settings.set). When a write is
+ * refused, or throws, the keys already written are cleared again so no lone command is left, and the
+ * reason is returned. Never throws.
+ */
+export async function writeSuggested(
+	suggestion: Readonly<Record<(typeof SUGGESTED_KEYS)[number], string>>,
+	set: (key: string, value: string | null) => Promise<{ ok: true; payload: RepoSettingsPayload } | { ok: false; error: { message: string } }>,
+): Promise<SuggestedResult> {
+	const written: string[] = [];
+	let last: RepoSettingsPayload | undefined;
+	const reason = async (key: string): Promise<string | undefined> => {
+		try {
+			const r = await set(key, suggestion[key as (typeof SUGGESTED_KEYS)[number]]);
+			if (r.ok) { last = r.payload; written.push(key); return undefined; }
+			return r.error.message;
+		} catch (e) { return e instanceof Error ? e.message : String(e); }
+	};
+	for (const key of SUGGESTED_KEYS) {
+		const failure = await reason(key);
+		if (failure === undefined) continue;
+		const stuck: string[] = [];
+		for (const done of written.reverse()) {
+			try { const r = await set(done, null); if (!r.ok) stuck.push(done); } catch { stuck.push(done); }
+		}
+		return { ok: false, message: `${failure} (suggested commands were not applied${stuck.length > 0 ? `; could not clear ${stuck.join(', ')}` : ''})` };
+	}
+	return last === undefined ? { ok: false, message: 'nothing was written' } : { ok: true, payload: last };
 }

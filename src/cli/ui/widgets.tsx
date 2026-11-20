@@ -39,6 +39,8 @@ export function KeyHints(props: { hints: readonly (readonly [string, string])[] 
 export function TextPrompt(props: {
 	label: string;
 	initial?: string;
+	/** Dim text shown while the field is empty. */
+	placeholder?: string;
 	onSubmit: (value: string) => void;
 	onCancel: () => void;
 }): ReactElement {
@@ -47,7 +49,7 @@ export function TextPrompt(props: {
 	return (
 		<Box>
 			<Text color="cyan">{props.label} </Text>
-			<TextInput value={value} onChange={setValue} onSubmit={() => props.onSubmit(value)} />
+			<TextInput value={value} onChange={setValue} onSubmit={() => props.onSubmit(value)} {...(props.placeholder !== undefined ? { placeholder: props.placeholder } : {})} />
 		</Box>
 	);
 }

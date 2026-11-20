@@ -137,3 +137,18 @@ test('Default prepared output requires the host native lifecycle helper', async 
 	for (const file of REQUIRED_ARTIFACTS.filter(file => file !== missing)) { mkdirSync(resolve(root, file, '..'), { recursive: true }); writeFileSync(join(root, file), 'fixture prerequisite'); }
 	await withRun(run, async () => { assert.throws(() => publishPrepared(run), error => error.code === 'harness-build-incomplete' && error.message.includes(missing)); });
 });
+
+test('Explicit live opt-in admits files serially without enabling services in the control', async t => {
+	const root = rootFixture(t), selection = parseArgs(root, ['--concurrency=4', 'src/__tests__/a.test.ts', 'src/__tests__/b.test.ts']);
+	const run = createRun(root, { selectedFiles: selection.files });
+	const environment = run.environment;
+	run.environment = () => ({ ...environment(), INSRC_LIVE_TESTS: '1' });
+	// These disposable children never import or call a provider.
+	await withRun(run, async scope => {
+		const result = await runHarness(root, selection, { ownedRun: run, ownedScope: scope, buildOptions: options, testArgs: file => ['-e', `const f=require('node:fs');f.appendFileSync('events','start:'+${JSON.stringify(file)}+'\\n');setTimeout(()=>f.appendFileSync('events','end:'+${JSON.stringify(file)}+'\\n'),200);`] });
+		assert.equal(result.code, 0);
+	});
+	assert.deepEqual(readFileSync(join(root, 'events'), 'utf8').trim().split('\n'), ['build', 'start:src/__tests__/a.test.ts', 'end:src/__tests__/a.test.ts', 'start:src/__tests__/b.test.ts', 'end:src/__tests__/b.test.ts']);
+	const report = JSON.parse(readFileSync(join(run.workspace, 'results.json'), 'utf8'));
+	assert.equal(report.requestedConcurrency, 4); assert.equal(report.effectiveConcurrency, 1); assert.equal(report.liveTests, '1');
+});

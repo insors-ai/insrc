@@ -47,8 +47,10 @@ export async function runHarness(root, selection, { buildOptions, testArgs, sync
 	const argsForTest = testArgs ?? (file => ['--import', 'tsx', '--test', '--test-concurrency=1', '--test-reporter=tap', ...selection.testFlags, file]);
 	if ((ownedRun === undefined) !== (ownedScope === undefined)) throw harnessError('context-invalid', 'An existing owner requires its retained scope.');
 	const run = ownedRun ?? createRun(root, { selectedFiles: selection.files, budgets: selection.budgets });
+	// Live providers must remain serial, including calls made by different files.
+	const effectiveConcurrency = run.environment().INSRC_LIVE_TESTS === '1' ? 1 : selection.concurrency;
 	const results = [];
-	const report = { runId: run.runId, runtime: run.runtime, budgets: run.budgets, selectedFiles: selection.files, diagnosticFlags: run.record.diagnosticFlags, liveTests: run.environment().INSRC_LIVE_TESTS ?? 'unset', results, cleanupPath: relative(run.root, join(run.workspace, 'cleanup.json')), incomplete: true };
+	const report = { runId: run.runId, runtime: run.runtime, budgets: run.budgets, selectedFiles: selection.files, requestedConcurrency: selection.concurrency, effectiveConcurrency, diagnosticFlags: run.record.diagnosticFlags, liveTests: run.environment().INSRC_LIVE_TESTS ?? 'unset', results, cleanupPath: relative(run.root, join(run.workspace, 'cleanup.json')), incomplete: true };
 	const save = () => writeFileSync(join(run.workspace, 'results.json'), JSON.stringify(report, null, 2) + '\n');
 	try {
 		const work = async scope => {
@@ -91,7 +93,8 @@ export async function runHarness(root, selection, { buildOptions, testArgs, sync
 					if (result.unconfirmed || result.interrupted || result.timedOut || result.coverageIncomplete) scope.stop();
 				}
 			}
-			await Promise.all(Array.from({ length: Math.min(selection.concurrency, readers.length) }, worker));
+			if (effectiveConcurrency === 1) await worker();
+			else await Promise.all(Array.from({ length: Math.min(effectiveConcurrency, readers.length) }, worker));
 			if (fingerprint(run.root, ['out', 'packages/project-memory/dist']) !== prepared.outputFingerprint) throw harnessError('build-drift', 'Output changed while tests were reading.');
 			if (inputFingerprint(run.root) !== prepared.inputFingerprint) throw harnessError('build-drift', 'Source changed during validation.');
 			report.incomplete = scope.stopped || results.length !== selection.files.length || results.some(result => result.timedOut || result.interrupted || result.unconfirmed || result.coverageIncomplete);

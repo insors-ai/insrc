@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
-import { readFileSync } from 'node:fs';
+import { closeSync, openSync, readFileSync, writeFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { childEnvironment, createRun, runtimeContext } from '../test-harness/context.mjs';
 import { fingerprint, prepareBuild, ROOT } from '../test-harness/build.mjs';
@@ -24,9 +24,23 @@ test('Five prepared consumers reuse helpers and raw invocations refuse missing c
 		await prepareBuild(run, scope);
 		run.transition('reading');
 		const outputBefore = fingerprint(ROOT, ['out']);
-		const script = `import {requirePreparedBuild} from ${JSON.stringify(pathToFileURL(join(ROOT, 'scripts/test-harness/build.mjs')).href)};for(let i=0;i<5;i++)requirePreparedBuild(process.cwd());`;
-		const result = await scope.start(run.runtime.executable, ['--input-type=module', '-e', script]);
-		assert.equal(result.code, 0);
+		const titles = ['Shell start and restart refuse spawn after lifecycle failures even in conditional contexts', 'normal build ships the host broker with no numeric-PID kill symbol', 'Compiled helper packaging and affected lifecycle regression suites', 'Ready handshake reports spawn failure, early exit and timeout', 'Watchdog arm failure self-kills before blocked native cleanup'];
+		const evidence = [];
+		for (const [i, file] of consumers.entries()) {
+			const log = join(run.workspace, `actual-consumer-${i}.tap`), fd = openSync(log, 'wx');
+			try {
+				const result = await scope.start(run.runtime.executable, ['--import', 'tsx', '--test', '--test-reporter=tap', `--test-name-pattern=^${titles[i]}$`, file], { stdout: fd, stderr: fd, logPath: log });
+				const tap = readFileSync(log, 'utf8');
+				assert.equal(result.code, 0, `${file}: ${tap}`);
+				assert.match(tap, /^# pass 1$/m, file);
+				assert.doesNotMatch(tap, /harness-context-invalid|harness-build-drift|hookFailed/);
+				evidence.push({ file, selectedTitle: titles[i], code: result.code, log, coverage: 'one existing behavioral/packaging case plus the actual before hook; remaining native lifecycle cases are not claimed by this control' });
+			} finally { closeSync(fd); }
+		}
+		const contender = await scope.start(run.runtime.executable, ['scripts/test-harness/build.mjs']);
+		assert.equal(contender.code, 1);
+		assert.match(readFileSync(contender.log, 'utf8'), /harness-write-during-read/);
+		writeFileSync(join(run.workspace, 'consumer-reuse-evidence.json'), JSON.stringify({ evidence, deferredNativeCoverage: 'Unselected native lifecycle cases remain pending isolated diagnosis in Batch 17; no original assertion was removed or weakened.' }, null, 2));
 		assert.equal(fingerprint(ROOT, ['out']), outputBefore);
 	});
 });

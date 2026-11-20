@@ -1,0 +1,107 @@
+{
+  "evidence": [
+    {
+      "file": "src/cli/services/__tests__/daemon-ctl-forced-stop.test.ts",
+      "code": 1,
+      "log": ".insrc/tmp/test-harness/runs/217e333b-2b87-41b4-b1b7-f50658a0ef52/actual-consumer-0.tap",
+      "counts": {
+        "tests": 6,
+        "pass": 2,
+        "fail": 4,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failedCases": [
+        "Control script retains the original target across run-file removal",
+        "Control script refuses reused identity and replacement files, and reclaims an orphan guard whose owner died",
+        "Disposable clean and forced script restart paths preserve commands",
+        "Fresh HOME shell stop and start work without a pre-existing insrc directory"
+      ],
+      "classification": "native capability/permission failure observed after verified prerequisites; keep original failures for Batch 17",
+      "nativeDenialObserved": true
+    },
+    {
+      "file": "src/shared/__tests__/process-broker-native.test.ts",
+      "code": 0,
+      "log": ".insrc/tmp/test-harness/runs/217e333b-2b87-41b4-b1b7-f50658a0ef52/actual-consumer-1.tap",
+      "counts": {
+        "tests": 6,
+        "pass": 3,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 3
+      },
+      "failedCases": [],
+      "classification": "passed in isolated prepared run",
+      "nativeDenialObserved": true
+    },
+    {
+      "file": "src/daemon/__tests__/shutdown-lifecycle-evidence.test.ts",
+      "code": 1,
+      "log": ".insrc/tmp/test-harness/runs/217e333b-2b87-41b4-b1b7-f50658a0ef52/actual-consumer-2.tap",
+      "counts": {
+        "tests": 2,
+        "pass": 1,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failedCases": [
+        "Guard-owner death reclaims the stale guard so the restart proceeds like the healthy control"
+      ],
+      "classification": "native capability/permission failure observed after verified prerequisites; keep original failures for Batch 17",
+      "nativeDenialObserved": true
+    },
+    {
+      "file": "src/daemon/__tests__/shutdown-watchdog.test.ts",
+      "code": 1,
+      "log": ".insrc/tmp/test-harness/runs/217e333b-2b87-41b4-b1b7-f50658a0ef52/actual-consumer-3.tap",
+      "counts": {
+        "tests": 6,
+        "pass": 1,
+        "fail": 4,
+        "cancelled": 1,
+        "skipped": 0
+      },
+      "failedCases": [
+        "Independent watchdog bounds a disposable blocked parent and disarms after healthy exit",
+        "Watchdog never signals after reparenting and imports only Node built-ins",
+        "Watchdog IPC disconnect during readiness releases its shared broker session without signalling the parent",
+        "IPC transport loss never disarms the deadline for a blocked parent or blocked exit hook",
+        "Backward wall-clock adjustment cannot extend the independent monotonic shutdown duration"
+      ],
+      "classification": "unresolved lifecycle assertion after verified prerequisites; not a demonstrated missing-helper/build-race failure or proven platform-only defect",
+      "nativeDenialObserved": false
+    },
+    {
+      "file": "src/daemon/__tests__/shutdown-bounded.test.ts",
+      "code": 1,
+      "log": ".insrc/tmp/test-harness/runs/217e333b-2b87-41b4-b1b7-f50658a0ef52/actual-consumer-4.tap",
+      "counts": {
+        "tests": 3,
+        "pass": 1,
+        "fail": 2,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failedCases": [
+        "Bounded shutdown preserves lock-loss, fatal and normal cleanup behavior",
+        "Repeated signals and guarded async close preserve ownership"
+      ],
+      "classification": "native capability/permission failure observed after verified prerequisites; keep original failures for Batch 17",
+      "nativeDenialObserved": true
+    }
+  ],
+  "limits": "Complete consumer files ran serially with original assertions. Their nonzero native/lifecycle outcomes remain failures, not green product tests. Classification does not establish platform-only causality; Batch 17 owns diagnosis. All prerequisites and output fingerprints were verified.",
+  "runId": "217e333b-2b87-41b4-b1b7-f50658a0ef52",
+  "runtimeExecutable": "/opt/homebrew/Cellar/node@22/22.23.2/bin/node",
+  "inputFingerprint": "958d587501d8480d59a37adf6aee23e4d9ca13a5b4a7ac3c09c28b07c63f5728",
+  "outputFingerprint": "eb2dd6c7a300ae0b39668e2b73962ea7eaaf27e8dbca8662d6597d39293e9201",
+  "cleanup": {
+    "confirmedClosed": true,
+    "interrupted": false,
+    "cancellationErrors": [],
+    "evidenceErrors": [],
+    "childCloseJournal": "child-results.jsonl"
+  }
+}

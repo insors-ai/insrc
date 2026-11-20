@@ -44,7 +44,11 @@ const PAYLOAD: RepoSettingsPayload = {
 		},
 		source: { ref: 'origin/main', fetchedAt: '2026-10-17T00:00:00.000Z' },
 	},
+	buildSetup: { projectType: 'node', commandsSource: 'node-default' },
 };
+
+const SUGGESTION = { typecheckCommand: 'mypy .', testCommand: 'pytest', resultFormat: 'exit-code' } as const;
+const NO_COMMANDS: RepoSettingsPayload = { ...PAYLOAD, buildSetup: { projectType: 'python', commandsSource: 'none', suggestion: SUGGESTION } };
 
 function status(): DaemonStatus {
 	return { uptime: 1, repos: [{ path: REPO, name: 'repoA', addedAt: '', status: 'ready' }], queueDepth: 0, embeddingsPending: 0, installedCommit: '' };
@@ -136,7 +140,7 @@ test('the modal lists payload rows, edits local rows only and shows an error mes
 	const rows = buildSettingsRows(REPO_TRACKER_FIELDS, PAYLOAD);
 	assert.deepEqual(rows.map(r => r.key), REPO_TRACKER_FIELDS.map(r => r.key));
 	assert.deepEqual(rows.map(r => r.label), REPO_TRACKER_FIELDS.map(r => r.label));
-	assert.deepEqual(rows.filter(r => r.editable).map(r => r.key), ['type', 'owner', 'repo', 'ghPath', 'ghHost', 'branchPattern', 'gitHooks']);
+	assert.deepEqual(rows.filter(r => r.editable).map(r => r.key), ['type', 'owner', 'repo', 'ghPath', 'ghHost', 'branchPattern', 'gitHooks', 'typecheckCommand', 'testCommand', 'resultFormat']);
 	const byKey = Object.fromEntries(rows.map(r => [r.key, r]));
 	assert.equal(byKey['ghHost']?.value, 'ghe.example.com');
 	assert.equal(byKey['ghPath']?.value, '(not set)');
@@ -167,13 +171,13 @@ test('the modal lists payload rows, edits local rows only and shows an error mes
 		frame = lastFrame() ?? '';
 		assert.match(frame, /Sign-in is read-only/);
 		assert.equal(f.sets.length, 0);
-		for (let i = 0; i < 3; i++) { stdin.write('\u001B[B'); await settle(); }   // on into the policy rows
+		for (let i = 0; i < 6; i++) { stdin.write('\u001B[B'); await settle(); }   // on into the policy rows (past git hooks, the Build rows and the target)
 		stdin.write('\r'); await settle();
 		assert.match(lastFrame() ?? '', /is read-only/);
 		assert.equal(f.sets.length, 0);
 
 		// Back up to ghHost (row 4), edit it.
-		for (let i = 0; i < 5; i++) { stdin.write('\u001B[A'); await settle(); }
+		for (let i = 0; i < 8; i++) { stdin.write('\u001B[A'); await settle(); }
 		stdin.write('\r'); await settle();
 		assert.match(lastFrame() ?? '', /GitHub host \(empty clears\):/);
 		stdin.write('.eu'); await settle();                   // the prompt starts from the stored value
@@ -211,4 +215,58 @@ test('the modal lists payload rows, edits local rows only and shows an error mes
 	down.svc.config.repoSettings = async () => { throw new Error('daemon is not running — start it with: insrc daemon start'); };
 	const d = await openModal(down);
 	try { assert.match(d.lastFrame() ?? '', /✗ daemon is not running/); } finally { d.unmount(); }
+});
+
+test('the terminal Repo Configuration screen shows the Build rows as a section of their own with the suggestion as the placeholder of an unset row', async () => {
+	// a repo with no commands whose type has typical ones
+	const f = fixture({ ok: true, payload: NO_COMMANDS });
+	f.svc.config.setRepoSetting = async (repo, key, value) => { f.sets.push({ repo, key, value }); return { ok: true, payload: NO_COMMANDS }; };
+	const { lastFrame, stdin, unmount } = await openModal(f);
+	try {
+		const frame = lastFrame() ?? '';
+		const lines = frame.split('\n');
+		const header = lines.findIndex(l => /^\s*Build\s*$/.test(l.replace(/[│┃|]/g, '')));
+		assert.ok(header >= 0, `a Build section header is shown:\n${frame}`);
+		const after = lines.slice(header + 1, header + 4).join('\n');
+		assert.match(after, /Typecheck command\s+\(not set\)\s+suggested: mypy \./);
+		assert.match(after, /Test command\s+\(not set\)\s+suggested: pytest/);
+		assert.match(after, /Test result format\s+exit-code \(default\)\s+suggested: exit-code/);
+		assert.match(frame, /use suggested build commands/, 'the action is offered');
+		assert.equal(f.sets.length, 0, 'nothing is written until the action is used');
+
+		stdin.write('u'); await settle();
+		assert.deepEqual(f.sets.map(x => [x.key, x.value]), [['typecheckCommand', 'mypy .'], ['testCommand', 'pytest'], ['resultFormat', 'exit-code']]);
+		assert.match(lastFrame() ?? '', /applied the suggested build commands/);
+	} finally { unmount(); }
+
+	// a repo that has commands, or whose type has no typical ones, is not offered the action and 'u' writes nothing
+	for (const payload of [
+		{ ...PAYLOAD, buildSetup: { projectType: 'go', commandsSource: 'repo-setting' } } as RepoSettingsPayload,
+		{ ...PAYLOAD, buildSetup: { projectType: 'unknown', commandsSource: 'none' } } as RepoSettingsPayload,
+		PAYLOAD,
+	]) {
+		const g = fixture({ ok: true, payload });
+		const r = await openModal(g);
+		try {
+			assert.doesNotMatch(r.lastFrame() ?? '', /use suggested build commands/);
+			assert.doesNotMatch(r.lastFrame() ?? '', /suggested: /);
+			r.stdin.write('u'); await settle();
+			assert.equal(g.sets.length, 0);
+		} finally { r.unmount(); }
+	}
+
+	// the second write is refused: the first key is cleared again and the reason is shown, so no lone command is left
+	const h = fixture({ ok: true, payload: NO_COMMANDS });
+	h.svc.config.setRepoSetting = async (repo, key, value) => {
+		h.sets.push({ repo, key, value });
+		return key === 'testCommand' && value !== null
+			? { ok: false, error: { code: 'write-failed', message: 'github.json is read-only' } }
+			: { ok: true, payload: NO_COMMANDS };
+	};
+	const w = await openModal(h);
+	try {
+		w.stdin.write('u'); await settle();
+		assert.deepEqual(h.sets.map(x => [x.key, x.value]), [['typecheckCommand', 'mypy .'], ['testCommand', 'pytest'], ['typecheckCommand', null]]);
+		assert.match(w.lastFrame() ?? '', /✗ github\.json is read-only/);
+	} finally { w.unmount(); }
 });

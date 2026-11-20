@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4d6c0e48-3495-4051-90d5-703ce4654f96",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-20T07:18:58.852Z",
+    "epicCreatedAt": "2026-11-20T06:25:36.857Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f8cbf44536347149",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Call applyBuildDefaults from repo.add as a guarded follow-up",
+      "parent": {
+        "entityId": "STORY-f8cbf44536347149-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f8cbf44536347149-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-f8cbf44536347149-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "3191aaa10ca369d7f95e36946a774f20ffd280eb2eb1f53b0b73373dcc765723",
+        "at": "2026-11-20T07:18:58.856Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T07:18:58.857Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Call applyBuildDefaults from repo.add as a guarded follow-up",
+    "summary": "In the repo.add handler of src/daemon/handler-runtime.ts, after the registration and the indexing start, call applyBuildDefaults(normalisedPath) with the handler's own configPath and writer, guarded like the steering and MCP follow-ups, and return its outcome as buildDefaults in the result. A failure is logged and never fails the add; no client input is needed. Its tests are in src/daemon/__tests__/handler-runtime.test.ts and, for the gate reading a stored default as an ordinary setting, src/daemon/steps/build-step/__tests__/validate-task-round.test.ts.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "repo.add on a Python repo registers it, stores the default commands with no prompt and reports buildDefaults applied",
+      "repo.add on a repo whose entry already holds commands keeps them and reports already-set",
+      "A failing write still registers the repo and the add succeeds",
+      "A repo whose commands came from the add defaults is gated by those commands as an ordinary repo setting"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/daemon/__tests__/handler-runtime.test.ts: repo.add on a Python repo registers it and stores the default commands with no prompt, reports buildDefaults applied, and a failing write still registers the repo"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/__tests__/handler-runtime.test.ts: repo.add on a repo whose entry already holds commands keeps them and reports already-set"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/steps/build-step/__tests__/validate-task-round.test.ts: a repo whose commands came from the add defaults is gated by those commands as an ordinary repo setting"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

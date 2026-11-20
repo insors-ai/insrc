@@ -30,7 +30,7 @@
     "triageRationale": "One cohesive change in the build step (validation-checks.ts, render.ts, implement-task.md) with real design choices: how results of a non-Node runner are read, since the gate parses the Node test runner's TAP report (tap-results.ts).",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "approved",
+      "status": "completed",
       "revision": {
         "number": 1,
         "contentHash": "486b08a4c4f188554323324866e0d47e91a5a5ea294fcb04d7da04756df9840b",

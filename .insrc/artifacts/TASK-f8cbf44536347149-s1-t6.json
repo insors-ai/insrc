@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c6acbaf4-5ac5-4264-ab20-9f493f2f2163",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-20T07:18:58.876Z",
+    "epicCreatedAt": "2026-11-20T06:25:36.857Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f8cbf44536347149",
+    "storyId": "s1",
+    "envelope": {
+      "description": "JetBrains: a Build section and a 'use suggested' action in the repo settings",
+      "parent": {
+        "entityId": "STORY-f8cbf44536347149-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f8cbf44536347149-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-f8cbf44536347149-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "d341c6ee1004460f995ec3c2602054e086b4c321bbbc7a8f296d279a239a4d39",
+        "at": "2026-11-20T07:18:58.880Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T07:18:58.882Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "JetBrains: a Build section and a 'use suggested' action in the repo settings",
+    "summary": "In jetbrains-plugin add buildSetup to RepoSettingsDto (parsed in DaemonGateway.kt) and render the Build rows as a section of their own in RepoTrackerModel's settings view, with the suggestion as the placeholder and the same 'use suggested' write with the clear-the-first rollback. Its Kotlin tests cannot be run here: the Task is verified by reading and by the user's Gradle run, and its smoke-level test is reported by the builder with evidence, not claimed as run.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "RepoSettingsDto carries an optional buildSetup and a payload without it parses as before",
+      "The repo settings view lists the Build rows as a section of their own with the suggestion as the placeholder",
+      "The 'use suggested' action is offered only when commands source is 'none' and a suggestion exists, writes only when invoked and clears the first key if the second write fails",
+      "The Kotlin contract test is updated and reported as not run here, with where the evidence is"
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/RepoFieldsContractTest.kt: the JetBrains repo settings render the Build rows as a section of their own"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

@@ -27,7 +27,7 @@
     "storyTitle": "A dedicated reconciliation pass tracks prior findings without ever gating approval",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "approved",
+      "status": "completed",
       "revision": {
         "number": 3,
         "contentHash": "48ecc8b8f1103e2068e92532146de8644b4e49bc7c21a5c52373533d3fe1431d",

@@ -23,6 +23,8 @@ import {
 import type { GithubConfigFile, GithubEntry } from '../workflow/config/github.js';
 import { readRepoEntry, writeRepoEntryKeys } from '../workflow/config/github-store.js';
 import type { WriteError, WriteResult } from '../workflow/config/github-store.js';
+import { InvalidCommandSetting, PROJECT_TYPE_GUIDANCE, detectProjectType, profileFromSetting } from './steps/build-step/validation-checks.js';
+import type { CommandsSource, ProjectType } from './steps/build-step/validation-checks.js';
 import { policyReader } from '../workflow/team/policy-reader.js';
 import type { PolicyReader } from '../workflow/team/types.js';
 import { isToolDenied } from '../workflow/tracker/tool-denied.js';
@@ -58,6 +60,28 @@ export type PolicyRows =
 	| { readonly ok: true; readonly mode: 'team'; readonly values: Readonly<Record<string, unknown>>; readonly source: { readonly ref: string; readonly fetchedAt: string } }
 	| { readonly ok: false; readonly reason: string };
 
+/** The three build keys a project type's typical commands fill, written together. */
+export interface BuildSuggestion {
+	readonly typecheckCommand: string;
+	readonly testCommand: string;
+	readonly resultFormat: 'exit-code';
+}
+
+/** Read-only: what the build gate would use for a repo, and what could be set when it has no commands. */
+export interface BuildSetup {
+	readonly projectType: ProjectType;
+	readonly commandsSource: CommandsSource | 'invalid';
+	/** Why the stored commands are 'invalid'. */
+	readonly note?: string;
+	/** Typical commands for the type; only for a repo with no commands whose type has them. */
+	readonly suggestion?: BuildSuggestion;
+}
+
+/** What `applyBuildDefaults` did at repo add. A default is a typical command, never a verified one. */
+export type BuildDefaultsOutcome =
+	| { readonly applied: true; readonly projectType: ProjectType }
+	| { readonly applied: false; readonly reason: 'already-set' | 'node-default' | 'no-typical-commands' | 'write-failed'; readonly note?: string };
+
 export interface RepoSettingsPayload {
 	readonly repo: string;
 	/** Only the keys the repo's own entry sets. */
@@ -65,6 +89,7 @@ export interface RepoSettingsPayload {
 	readonly resolved: ResolvedTarget;
 	readonly signin: SigninStatus;
 	readonly policy: PolicyRows;
+	readonly buildSetup: BuildSetup;
 }
 
 export type SettingsResult =
@@ -140,6 +165,63 @@ function ownValues(entry: GithubEntry | undefined): Record<string, string | bool
 	return values;
 }
 
+const BUILD_KEYS = ['typecheckCommand', 'testCommand', 'resultFormat'] as const;
+
+/** The typical commands of a type that has them (every type but node and unknown). */
+function typicalCommands(type: ProjectType): BuildSuggestion | undefined {
+	if (type === 'node' || type === 'unknown') return undefined;
+	const g = PROJECT_TYPE_GUIDANCE[type];
+	return { typecheckCommand: g.typecheck, testCommand: g.test, resultFormat: 'exit-code' };
+}
+
+/** The build setup of the repo at `repoPath` with its own entry: reads, never writes. */
+export function buildSetupFor(repoPath: string, entry: GithubEntry | undefined): BuildSetup {
+	const projectType = detectProjectType(repoPath);
+	const own = entry as Record<string, unknown> | undefined;
+	const setting: Record<string, unknown> = {};
+	for (const key of BUILD_KEYS) if (own !== undefined && Object.hasOwn(own, key)) setting[key] = own[key];
+	if (Object.keys(setting).length === 0) {
+		const suggestion = typicalCommands(projectType);
+		return projectType === 'node'
+			? { projectType, commandsSource: 'node-default' }
+			: { projectType, commandsSource: 'none', ...(suggestion !== undefined ? { suggestion } : {}) };
+	}
+	try {
+		return { projectType, commandsSource: profileFromSetting(projectType, setting).commandsSource };
+	} catch (e) {
+		if (!(e instanceof InvalidCommandSetting)) throw e;
+		return { projectType, commandsSource: 'invalid', note: e.message };
+	}
+}
+
+/**
+ * At repo add: stores the project type's typical commands when the repo's own entry sets none of the three
+ * keys. One write, so no lone command is left; never overwrites; never throws.
+ */
+export async function applyBuildDefaults(
+	repoPath: string,
+	deps: { readonly configPath?: string; readonly writeKeys?: typeof writeRepoEntryKeys } = {},
+): Promise<BuildDefaultsOutcome> {
+	try {
+		const configPath = deps.configPath ?? githubConfigPath();
+		const read = readRepoEntry(repoPath, configPath);
+		if (!read.ok) return { applied: false, reason: 'write-failed', note: read.error.message };
+		const own = read.entry as Record<string, unknown> | undefined;
+		if (own !== undefined && BUILD_KEYS.some(k => Object.hasOwn(own, k))) return { applied: false, reason: 'already-set' };
+		const projectType = detectProjectType(repoPath);
+		if (projectType === 'node') return { applied: false, reason: 'node-default' };
+		const typical = typicalCommands(projectType);
+		if (typical === undefined) return { applied: false, reason: 'no-typical-commands' };
+		const written = await (deps.writeKeys ?? writeRepoEntryKeys)(repoPath, { ...typical }, configPath);
+		if (!written.ok) return { applied: false, reason: 'write-failed', note: written.error.message };
+		return { applied: true, projectType };
+	} catch (e) {
+		const note = e instanceof Error ? e.message : String(e);   // a rejection may carry any value, null included
+		log.warn({ repoPath, err: note }, 'applyBuildDefaults failed');
+		return { applied: false, reason: 'write-failed', note };
+	}
+}
+
 async function resolveTarget(file: GithubConfigFile, entry: GithubEntry | undefined, repo: string): Promise<ResolvedTarget> {
 	try {
 		const r = await resolveGithubConfigFromFile(file, repo);
@@ -183,7 +265,7 @@ export function createRepoSettingsHandlers(deps: RepoSettingsDeps): RpcHandlers 
 		const signin: SigninStatus = resolved.type === 'github'
 			? await mapSignin(() => makeTracker(resolved.owner ?? '', resolved.repo ?? '').whoAmI())
 			: { state: 'disabled', reason: 'the tracker is off for this repo' };
-		return { ok: true, payload: { repo, values: ownValues(read.entry), resolved, signin, policy: await mapPolicy(readPolicy, repo) } };
+		return { ok: true, payload: { repo, values: ownValues(read.entry), resolved, signin, policy: await mapPolicy(readPolicy, repo), buildSetup: buildSetupFor(repo, read.entry) } };
 	}
 
 	const asData = (r: WriteResult | { ok: false; error: RepoSettingsError }): { ok: false; error: RepoSettingsError } | null =>

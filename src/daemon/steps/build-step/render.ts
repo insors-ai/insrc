@@ -21,7 +21,7 @@ import { hldMdRel, lldMdRel, planMdRel } from '../../../workflow/storage.js';
 import { SMALLEST_CHANGE_RULE } from '../../../workflow/runners/scope-prompts.js';
 import { resolveWorkflowRef, type ResolvedRef } from '../../../workflow/tracker/resolve.js';
 import type { PlanTask } from '../../../workflow/artifacts/plan.js';
-import { commandProfileOf, defaultCommandProfile, PROJECT_TYPE_GUIDANCE, type CommandProfile } from './validation-checks.js';
+import { commandProfileOf, defaultCommandProfile, namesOwnTestFiles, PROJECT_TYPE_GUIDANCE, type CommandProfile } from './validation-checks.js';
 import type { BuildStepError } from './types.js';
 
 const IMPLEMENT_TEMPLATE_REL = 'prompts/build/implement-task.md';
@@ -130,7 +130,7 @@ function fill(template: string, vars: Readonly<Record<string, string>>): string 
 }
 
 /** Common placeholder values shared by both templates. */
-function baseVars(repoPath: string, ref: ResolvedTask): Record<string, string> {
+function baseVars(ref: ResolvedTask, profile: CommandProfile): Record<string, string> {
 	const task = ref.task;
 	const acceptanceChecks = task.acceptanceChecks.length > 0
 		? task.acceptanceChecks.map(c => `- ${c}`).join('\n')
@@ -139,7 +139,8 @@ function baseVars(repoPath: string, ref: ResolvedTask): Record<string, string> {
 		? task.tests.map(t => `- ${t.level}: ${t.name}`).join('\n')
 		: '- (none stated)';
 	const dependsOn = task.dependsOn.length > 0 ? task.dependsOn.join(', ') : 'none';
-	const guidance = checkGuidance(commandProfileOf(repoPath));
+	const guidance = checkGuidance(profile);
+	const mapping = mappingGuidance(profile, 'Task');
 	return {
 		taskId:           ref.taskId,
 		storyId:          ref.storyId,
@@ -156,6 +157,8 @@ function baseVars(repoPath: string, ref: ResolvedTask): Record<string, string> {
 		hldPath:          hldMdRel(ref.epicHash, ref.createdAt, 'epic', ref.epicSlug),
 		planPath:         planMdRel(ref.epicHash, ref.createdAt, 'epic', ref.epicSlug, ref.storyId),
 		checkCommands:    guidance.commands,
+		caseFileDesc:     mapping.caseFile,
+		caseResultRule:   mapping.resultRule,
 		daemonChecksNote: guidance.judgeNote,
 		judgeNamedTestsRule: JUDGE_NAMED_TESTS_RULE,
 	};
@@ -171,17 +174,53 @@ export const JUDGE_NAMED_TESTS_RULE =
 	'marked **REPORTED BY THE BUILDER** was not run by the daemon: check that the evidence it points to exists ' +
 	'and shows that result, and fail the check if it does not. A named test with nothing run for it is not met.';
 
+/** What the builder is told about the cases of its `tests` mapping, by the project's profile. */
+export interface MappingGuidance {
+	/** What a case's `file` may be. */
+	readonly caseFile:   string;
+	/** What the gate does with the mapped files, and what it can and cannot tell about a case. */
+	readonly resultRule: string;
+}
+
+/**
+ * The mapping instructions of a project's profile. A Node project (and any project that reads TAP) is checked case
+ * by case in `.test.ts` files; a project that is not a Node one and states its own commands may name its own test
+ * files, and with the `exit-code` format the gate judges each FILE by its exit code, so every case takes its file's
+ * result and is not checked on its own; a project with no commands has nothing the gate can run.
+ */
+export function mappingGuidance(profile: CommandProfile, unit: 'Task' | 'Story'): MappingGuidance {
+	const tapRule = `The daemon runs each of those files itself and records a result for every case in the Story's test record ` +
+		`(\`TESTS.md\` beside \`BUILD.md\`). A case that fails, is skipped, or is not found in its file fails the ${unit}.`;
+	const fileRule = `The daemon runs each of those files itself with the project's test command and judges each file by its exit code: ` +
+		`the cases are NOT checked one by one, so every case you list takes the result of its file (pass when the file's command exits 0), ` +
+		`and the Story's test record (\`TESTS.md\` beside \`BUILD.md\`) says so. A file whose command exits non-zero, or does not run, fails the ${unit}.`;
+	if (profile.commandsSource === 'none') {
+		return {
+			caseFile: 'repo-relative path of the `.test.ts` file',
+			resultRule: `The daemon has no test command for this project, so it runs nothing: the mapping is recorded but no case is run, and the ${unit} cannot pass the gate until the repository states its commands (\`repo.settings.set\`: typecheckCommand and testCommand).`,
+		};
+	}
+	const own = namesOwnTestFiles(profile);
+	return {
+		caseFile: own
+			? 'repo-relative path of a tracked test file of the project, in its own language (for example `tests/test_example.py`), not only a `.test.ts` file'
+			: 'repo-relative path of the `.test.ts` file',
+		resultRule: profile.resultFormat === 'exit-code' && profile.commandsSource === 'repo-setting' ? fileRule : tapRule,
+	};
+}
+
 /** What a standalone build with a design tells the validate turn about its tests
  *  (LLD-9b4a74dc-S001): the mapping from the design's test subjects to test cases. */
-export const STANDALONE_MAPPING_RULE =
-	'When you submit the Story to the validation gate, pass `tests`: one entry per subject of the design\'s ' +
-	'test strategy that you wrote a test for, with `name` the subject\'s text exactly as the design states it, ' +
-	'and `cases` the test cases that carry it, each a `file` (repo-relative path of the `.test.ts` file) and a ' +
-	'`title` (the test\'s title exactly as the file declares it). The daemon runs each of those files itself and ' +
-	'records a result for every case in the Story\'s test record (`TESTS.md` beside `BUILD.md`). A case that fails, ' +
-	'is skipped, or is not found in its file fails the Story. For a `live` or `smoke` subject the daemon cannot ' +
-	'run, give `reported` instead: the `result` you observed and `evidence`, where the proof is; it is recorded ' +
-	'as reported by you, not run by the gate.';
+export function standaloneMappingRule(profile: CommandProfile): string {
+	const g = mappingGuidance(profile, 'Story');
+	return 'When you submit the Story to the validation gate, pass `tests`: one entry per subject of the design\'s ' +
+		'test strategy that you wrote a test for, with `name` the subject\'s text exactly as the design states it, ' +
+		`and \`cases\` the test cases that carry it, each a \`file\` (${g.caseFile}) and a ` +
+		'`title` (the test\'s title exactly as the file declares it). ' + g.resultRule +
+		' For a `live` or `smoke` subject the daemon cannot ' +
+		'run, give `reported` instead: the `result` you observed and `evidence`, where the proof is; it is recorded ' +
+		'as reported by you, not run by the gate.';
+}
 
 /** The git trailer every commit of a Story carries (ISSUE-b47dadc7): the code
  *  review keeps only the commits naming its Story, so another Story's commits on
@@ -214,13 +253,14 @@ export function mergeInProgressError(phase: 'implement' | 'validate'): BuildStep
 	};
 }
 
-export function renderImplementPrompt(repoPath: string, ref: ResolvedTask, resolvedDecisions: string): string {
+/** `profile` is the one the phase resolved at its entry; it is read from the repo only when a caller supplies none. */
+export function renderImplementPrompt(repoPath: string, ref: ResolvedTask, resolvedDecisions: string, profile: CommandProfile = commandProfileOf(repoPath)): string {
 	const template = loadTemplate(IMPLEMENT_TEMPLATE_REL);
 	const decisions = resolvedDecisions.trim().length > 0
 		? resolvedDecisions
 		: '_No design decisions were resolved for this Task; use your judgment within the stated scope._';
 	return fill(template, {
-		...baseVars(repoPath, ref), resolvedDecisions: decisions, mergeRule: MERGE_RULE, smallestChangeRule: SMALLEST_CHANGE_RULE,
+		...baseVars(ref, profile), resolvedDecisions: decisions, mergeRule: MERGE_RULE, smallestChangeRule: SMALLEST_CHANGE_RULE,
 		storyTrailerRule: storyTrailerRule(ref.epicHash, ref.storyId),
 	});
 }
@@ -231,9 +271,9 @@ const NO_EVIDENCE = '_No check results were supplied._';
 /** Render the validate-task prompt for the read-only judge: it reads the change
  *  and judges it against the daemon's check results (`evidence`), which the
  *  daemon ran itself. The prompt never asks the judge to run a command. */
-export function renderValidatePrompt(repoPath: string, ref: ResolvedTask, evidence = ''): string {
+export function renderValidatePrompt(repoPath: string, ref: ResolvedTask, evidence = '', profile: CommandProfile = commandProfileOf(repoPath)): string {
 	const template = loadTemplate(VALIDATE_TEMPLATE_REL);
-	return fill(template, { ...baseVars(repoPath, ref), evidence: evidence.trim().length > 0 ? evidence : NO_EVIDENCE });
+	return fill(template, { ...baseVars(ref, profile), evidence: evidence.trim().length > 0 ? evidence : NO_EVIDENCE });
 }
 
 /** The spec a standalone (no-plan) build implements. */
@@ -288,7 +328,7 @@ export function renderStandaloneImplementPrompt(spec: StandaloneBuildSpec): stri
 		checks.doneTests,
 		'- The edit is minimal and matches the surrounding conventions.',
 		'', '## Committing', '', storyTrailerRule(spec.epicHash, spec.storyId),
-		...(spec.lldMdRel !== undefined ? ['', '## Submitting the tests', '', STANDALONE_MAPPING_RULE] : []),
+		...(spec.lldMdRel !== undefined ? ['', '## Submitting the tests', '', standaloneMappingRule(spec.profile ?? defaultCommandProfile('node'))] : []),
 		'', '## Merging upstream', '', MERGE_RULE,
 	);
 	return lines.join('\n');

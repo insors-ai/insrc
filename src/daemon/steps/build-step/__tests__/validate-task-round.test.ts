@@ -12,6 +12,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
 import { handleBuildStep } from '../handler.js';
+import { applyBuildDefaults } from '../../../repo-settings.js';
 import { _setBuildValidateCheckRunnerForTests, _setBuildValidateProviderForTests } from '../phases/validate.js';
 import { TEST_RUNNER_ARGV, TYPECHECK_ARGV, type ValidationCheckPlan, type ValidationCheckResults } from '../validation-checks.js';
 import { createCompletionEvidence } from '../../../../workflow/artifact-core/completion-evidence.js';
@@ -140,6 +141,75 @@ test('a project with no commands is not passed and its record says the gate ran 
 		assert.equal(await createCompletionEvidence(repo).taskBuildPassed(TASK), false);
 	} finally {
 		_setBuildValidateCheckRunnerForTests(async () => PASSING);
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
+test("a settings edit while the checks run changes neither the plan, the judge prompt nor the settings refusal: the profile is resolved once, at the phase's entry", async () => {
+	const repo = repoWith(true);
+	writeFileSync(join(repo, 'go.mod'), 'module x\n');
+	const dir = mkdtempSync(join(tmpdir(), 'insrc-github-config-'));
+	const config = join(dir, 'github.json');
+	const entry = { typecheckCommand: 'go vet ./...', testCommand: 'go test', resultFormat: 'exit-code' };
+	const prompts: string[] = [];
+	const plans: ValidationCheckPlan[] = [];
+	const edits: Array<Record<string, unknown>> = [{}, { typecheckCommand: 'go vet ./...' }];   // clear both commands; leave one command set
+	const saved = process.env['INSRC_GITHUB_CONFIG'];
+	process.env['INSRC_GITHUB_CONFIG'] = config;
+	try {
+		for (const edit of edits) {
+			writeFileSync(config, JSON.stringify({ repos: { [repo]: entry } }));
+			prompts.length = 0; plans.length = 0;
+			_setBuildValidateCheckRunnerForTests(async (_repo, plan) => {
+				plans.push(plan);
+				writeFileSync(config, JSON.stringify({ repos: { [repo]: edit } }));   // the edit lands while the checks run
+				return PASSING;
+			});
+			_setBuildValidateProviderForTests({ async runReadOnlySession<T>(prompt: string) { prompts.push(prompt); return judge(true, 'ok') as T; } });
+			const env = await handleBuildStep({ phase: 'validate', target: 's1/t1', repo });
+			const out = JSON.parse(env.content[0]!.text) as Record<string, unknown>;
+			const label = JSON.stringify(edit);
+			// The verdict session ran, on the profile the phase started with (not a refusal after the checks).
+			assert.equal(out['next'], 'done', label);
+			assert.equal(plans.length, 1, label);
+			assert.deepEqual([plans[0]!.commandsSource, plans[0]!.testCommand], ['repo-setting', ['go', 'test']], label);
+			assert.equal(prompts.length, 1, label);
+			assert.match(prompts[0]!, /the daemon\s+has already run them/, `${label}: the checks ran, and the judge is told so`);
+			assert.doesNotMatch(prompts[0]!, /The daemon ran no typecheck or tests/, label);
+		}
+	} finally {
+		if (saved === undefined) delete process.env['INSRC_GITHUB_CONFIG']; else process.env['INSRC_GITHUB_CONFIG'] = saved;
+		_setBuildValidateCheckRunnerForTests(async () => PASSING);
+		_setBuildValidateProviderForTests(undefined);
+		rmSync(dir, { recursive: true, force: true });
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
+test('src/daemon/steps/build-step/__tests__/validate-task-round.test.ts: a repo whose commands came from the add defaults is gated by those commands as an ordinary repo setting', async () => {
+	const repo = repoWith(true);
+	writeFileSync(join(repo, 'pyproject.toml'), '');
+	const dir = mkdtempSync(join(tmpdir(), 'insrc-github-config-'));
+	const config = join(dir, 'github.json');
+	const plans: ValidationCheckPlan[] = [];
+	const saved = process.env['INSRC_GITHUB_CONFIG'];
+	process.env['INSRC_GITHUB_CONFIG'] = config;
+	try {
+		// the commands are stored the way repo.add stores them, then the gate reads them like any setting
+		assert.deepEqual(await applyBuildDefaults(repo, { configPath: config }), { applied: true, projectType: 'python' });
+		_setBuildValidateCheckRunnerForTests(async (_repo, plan) => { plans.push(plan); return PASSING; });
+		const out = await validate(repo, true, 'all checks hold');
+		assert.equal(out['next'], 'done');
+		assert.equal(out['passed'], true);
+		assert.equal(plans.length, 1);
+		assert.deepEqual(
+			[plans[0]!.commandsSource, plans[0]!.typecheck, plans[0]!.testCommand, plans[0]!.resultFormat],
+			['repo-setting', ['mypy', '.'], ['pytest'], 'exit-code'],
+		);
+	} finally {
+		if (saved === undefined) delete process.env['INSRC_GITHUB_CONFIG']; else process.env['INSRC_GITHUB_CONFIG'] = saved;
+		_setBuildValidateCheckRunnerForTests(async () => PASSING);
+		rmSync(dir, { recursive: true, force: true });
 		rmSync(repo, { recursive: true, force: true });
 	}
 });

@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c5cd5c08-8dc1-42da-8aaf-6e55e961915d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-19T18:37:15.965Z",
+    "epicCreatedAt": "2026-11-19T18:15:53.783Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "787434000fa22691",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Exit-code result format and non-Node typecheck project skip",
+      "parent": {
+        "entityId": "STORY-787434000fa22691-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-787434000fa22691-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-787434000fa22691-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "f1de8050397914e334ed5be336a3209951955693e14e9ad888de8cd37117e69b",
+        "at": "2026-11-19T18:37:15.969Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-19T18:37:15.970Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Exit-code result format and non-Node typecheck project skip",
+    "summary": "Add the exit-code path to runTestFile: a test file command passes when it exits 0, with no per-case results, and namedResults records that cases were not checked per case while keeping builder-reported results as reported. withTypecheckProjects makes no tsconfig search for a non-Node plan.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "An exit-code plan passes when every file exits 0 and fails on a non-zero exit",
+      "Named tests under an exit-code plan are recorded as not checked per case",
+      "withTypecheckProjects makes no tsconfig search for a non-Node plan",
+      "A tap plan is judged exactly as before"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts: an exit-code plan passes when every file exits 0 and fails on a non-zero exit"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts: withTypecheckProjects makes no tsconfig search for a non-Node plan"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

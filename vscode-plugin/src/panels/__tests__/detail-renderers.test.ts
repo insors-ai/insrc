@@ -118,11 +118,11 @@ test('source-scan: the webview bootstraps post only the sanctioned message shape
   const repo = /const REPO_BOOTSTRAP = `([\s\S]*?)`;/.exec(src);
   assert.ok(repo, 'the REPO_BOOTSTRAP script constant is present');
   const repoPosts = [...repo![1]!.matchAll(/postMessage\(\{\s*type:\s*'([^']+)'/g)].map((m) => m[1]);
-  assert.deepEqual(repoPosts.sort(), ['repoRegisterProviders', 'repoTrackerWrite', 'repoWrite', 'selectRepo'], 'the repo bootstrap posts only registered repo actions');
+  assert.deepEqual(repoPosts.sort(), ['repoBuildSuggested', 'repoRegisterProviders', 'repoTrackerWrite', 'repoWrite', 'selectRepo'], 'the repo bootstrap posts only registered repo actions');
 
   // The union across both bootstraps is the full closed set — nothing else is posted.
   const union = [...new Set([...detailPosts, ...repoPosts])].sort();
-  assert.deepEqual(union, ['action', 'ready', 'refresh', 'repoRegisterProviders', 'repoTrackerWrite', 'repoWrite', 'selectRepo', 'switchTab'], 'the closed message set');
+  assert.deepEqual(union, ['action', 'ready', 'refresh', 'repoBuildSuggested', 'repoRegisterProviders', 'repoTrackerWrite', 'repoWrite', 'selectRepo', 'switchTab'], 'the closed message set');
 });
 
 test('editing the ghHost row of the rendered tracker section posts repoTrackerWrite with repoPath, key and value', async () => {

@@ -1,0 +1,1549 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 22,
+        "contentHash": "2455a8605af48485b2bb302a42e846040350383be61d4ff4fea99233c4e1eee2",
+        "at": "2026-11-20T05:48:05.334Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "787434000fa22691",
+    "storyId": "s1",
+    "createdAt": "2026-11-19T18:39:05.994Z",
+    "updatedAt": "2026-11-20T05:48:04.883Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-19T18:15:53.783Z",
+    "epicSlug": "replace-build-gate-s-hardcoded-node",
+    "revision": 22
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "8cf85dc13",
+        "ranAt": "2026-11-19T18:39:05.994Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts: project type is detected from root marker files and mixed or no markers give unknown",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts",
+                "title": "project type is detected from root marker files and mixed or no markers give unknown",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts: the Node default profile equals today's argv and tap format",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts",
+                "title": "the Node default profile equals today's argv and tap format",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5865,
+            "titles": [
+              {
+                "title": "resolveTaskTestFiles maps plan test names to tracked __tests__ files, de-duplicates, and lists names with no match as unresolved",
+                "result": "pass"
+              },
+              {
+                "title": "a base name under two __tests__ directories resolves to both files",
+                "result": "pass"
+              },
+              {
+                "title": "the plan-driven, small and trivial routes each build the expected check plan",
+                "result": "pass"
+              },
+              {
+                "title": "a trivial build with a range base runs the test files touched across base..HEAD, not only the HEAD commit's (ISSUE-91640defac1b5816)",
+                "result": "pass"
+              },
+              {
+                "title": "a test name whose only *.test.ts token is not a leading prefix is unresolved, and the file it mentions is not run",
+                "result": "pass"
+              },
+              {
+                "title": "a plan is given the other TypeScript projects that own a file the build changed since its base, or a test file; a build inside the root project names none",
+                "result": "pass"
+              },
+              {
+                "title": "the typecheck is run in the root and in each named project; it is clean only when all are, and each command and output is kept",
+                "result": "pass"
+              },
+              {
+                "title": "a passing and a failing command give ok true and ok false with their exit codes and output tails",
+                "result": "pass"
+              },
+              {
+                "title": "a command past its limit is reported timedOut and its whole process group, grandchild included, is gone",
+                "result": "pass"
+              },
+              {
+                "title": "a test file that keeps its process alive after its tests pass still finishes under --test-force-exit",
+                "result": "pass"
+              },
+              {
+                "title": "an unresolved test name makes tests fail with a note naming it",
+                "result": "pass"
+              },
+              {
+                "title": "a trivial build that deletes a test file does not ask to run it",
+                "result": "pass"
+              },
+              {
+                "title": "with no mapping, planTaskCheckPlan and smallStandaloneCheckPlan return the same testFiles, unresolvedTests and noTests as before, and namedTests marks each name 'prefix' or 'none'",
+                "result": "pass"
+              },
+              {
+                "title": "with a mapping, a name with no prefix is no longer unresolved, its files are in testFiles once, and a name with both a mapping and a prefix uses the mapping (mutation: keep the prefix's files as well)",
+                "result": "pass"
+              },
+              {
+                "title": "smallStandaloneCheckPlan with a mapping and no prefixed subject runs the mapped files and is not 'the LLD names no test file'; an unmapped prose subject is listed as not mapped and does not fail",
+                "result": "pass"
+              },
+              {
+                "title": "runValidationChecks runs each file in its own process, in order, with the TAP reporter, and returns per file its exit code and titles (mutation: run all files in one command)",
+                "result": "pass"
+              },
+              {
+                "title": "a mapped case that passes, one that fails, one that is skipped and one whose title is not in the file get those four results, and the check is not ok when any is fail, skipped or not found (mutations: count not found as pass; count skipped as pass)",
+                "result": "pass"
+              },
+              {
+                "title": "a file that exits non-zero while its mapped cases pass fails the check and lists the other failing titles",
+                "result": "pass"
+              },
+              {
+                "title": "a file that times out, and a file not started because the time limit was used up, are recorded with that note, their cases are not found, and the check is not ok",
+                "result": "pass"
+              },
+              {
+                "title": "a run's whole output is written to a file and its path returned, with nothing cut; when that file cannot be written the results stand and the entry carries a note",
+                "result": "pass"
+              },
+              {
+                "title": "a reported pass on a live test runs nothing and leaves the check's result to the other tests; a reported fail makes the check not ok; a Task whose tests are all reported as pass runs no file and passes with the note, while a Task with no file and an unreported name still fails (mutation: fail every run that has no file)",
+                "result": "pass"
+              },
+              {
+                "title": "trivialCheckPlan marks each touched file 'touched' and the result lists every title of each file",
+                "result": "pass"
+              },
+              {
+                "title": "a file whose output is not TAP fails the check even when it exits with 0 and no case is named for it",
+                "result": "pass"
+              },
+              {
+                "title": "a line a test prints that looks like a result line, or like the start of a YAML block, is not read as one: the runner reports a test's output as comments",
+                "result": "pass"
+              },
+              {
+                "title": "the whole output is still written after the output directory has been removed, and files older than the retention are pruned",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-7ba8cf15: a file with many tests is reported in full under the gate's runner, every case found (mutation: run the file under --test, whose force-exited child cuts the report short)",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-7ba8cf15: in its own process a failing test still fails the file",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-7ba8cf15: when no report file can be made the file is not run, its entry says why and the check fails, and nothing throws",
+                "result": "pass"
+              },
+              {
+                "title": "with a storyKey, typecheckProjects holds the Story's projects and its test files' projects, and not a project that owns only unrelated uncommitted or untracked files",
+                "result": "pass"
+              },
+              {
+                "title": "with a storyKey, the trivial plan runs only the Story's test files, and with no base fails the listing instead of running the HEAD commit's tests",
+                "result": "pass"
+              },
+              {
+                "title": "with a storyKey, a trivial build that deletes a test file does not ask to run it",
+                "result": "pass"
+              },
+              {
+                "title": "project type is detected from root marker files and mixed or no markers give unknown",
+                "result": "pass"
+              },
+              {
+                "title": "the Node default profile equals today's argv and tap format",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "5a862ba31",
+        "ranAt": "2026-11-19T18:43:45.201Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts: a Node project with no setting gets the same argv and TAP judging as before",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts",
+                "title": "a Node project with no setting gets the same argv and TAP judging as before",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/build-step/__tests__/tap-results.test.ts",
+                "title": "the captured run in the Story's tap-sample folder gives the result of each of its titles: pass, fail, skipped for ' # SKIP' with and without a reason, and skipped for ' # TODO'",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/build-step/__tests__/tap-results.test.ts",
+                "title": "a title nested in a suite or a subtest is found at its depth by its own title",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/build-step/__tests__/tap-results.test.ts",
+                "title": "TAP's escaping of '#' and backslash in a title is reversed, so the title as declared matches (mutation: compare the raw line)",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/build-step/__tests__/tap-results.test.ts",
+                "title": "a title that occurs twice fails if either occurrence failed, passes if one passed and none failed, and is skipped if both were skipped",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/build-step/__tests__/tap-results.test.ts",
+                "title": "output with no TAP version line and no result line is reported as not understood, with no titles",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/build-step/__tests__/validation-checks-registry.test.ts",
+                "title": "validation-checks-registry.test.ts: trackedFiles, changedFiles and trivialCheckPlan return the old file lists including deleted and untracked files",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/build-step/__tests__/validation-checks-registry.test.ts",
+                "title": "validation-checks-registry.test.ts: no execFileSync call remains in validation-checks.ts for git",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts: a project with no known commands makes no process call and both checks are ok false with a note",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts",
+                "title": "a project with no known commands makes no process call and both checks are ok false with a note",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts: no Node command constant is the source of a non-Node plan",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts",
+                "title": "no Node command constant is the source of a non-Node plan",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/build-step/__tests__/tap-results.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 353,
+            "titles": [
+              {
+                "title": "the captured run in the Story's tap-sample folder gives the result of each of its titles: pass, fail, skipped for ' # SKIP' with and without a reason, and skipped for ' # TODO'",
+                "result": "pass"
+              },
+              {
+                "title": "a title nested in a suite or a subtest is found at its depth by its own title",
+                "result": "pass"
+              },
+              {
+                "title": "TAP's escaping of '#' and backslash in a title is reversed, so the title as declared matches (mutation: compare the raw line)",
+                "result": "pass"
+              },
+              {
+                "title": "a title that occurs twice fails if either occurrence failed, passes if one passed and none failed, and is skipped if both were skipped",
+                "result": "pass"
+              },
+              {
+                "title": "output with no TAP version line and no result line is reported as not understood, with no titles",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/build-step/__tests__/validation-checks-registry.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 639,
+            "titles": [
+              {
+                "title": "validation-checks-registry.test.ts: trackedFiles, changedFiles and trivialCheckPlan return the old file lists including deleted and untracked files",
+                "result": "pass"
+              },
+              {
+                "title": "validation-checks-registry.test.ts: no execFileSync call remains in validation-checks.ts for git",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 6025,
+            "titles": [
+              {
+                "title": "resolveTaskTestFiles maps plan test names to tracked __tests__ files, de-duplicates, and lists names with no match as unresolved",
+                "result": "pass"
+              },
+              {
+                "title": "a base name under two __tests__ directories resolves to both files",
+                "result": "pass"
+              },
+              {
+                "title": "the plan-driven, small and trivial routes each build the expected check plan",
+                "result": "pass"
+              },
+              {
+                "title": "a trivial build with a range base runs the test files touched across base..HEAD, not only the HEAD commit's (ISSUE-91640defac1b5816)",
+                "result": "pass"
+              },
+              {
+                "title": "a test name whose only *.test.ts token is not a leading prefix is unresolved, and the file it mentions is not run",
+                "result": "pass"
+              },
+              {
+                "title": "a plan is given the other TypeScript projects that own a file the build changed since its base, or a test file; a build inside the root project names none",
+                "result": "pass"
+              },
+              {
+                "title": "the typecheck is run in the root and in each named project; it is clean only when all are, and each command and output is kept",
+                "result": "pass"
+              },
+              {
+                "title": "a passing and a failing command give ok true and ok false with their exit codes and output tails",
+                "result": "pass"
+              },
+              {
+                "title": "a command past its limit is reported timedOut and its whole process group, grandchild included, is gone",
+                "result": "pass"
+              },
+              {
+                "title": "a test file that keeps its process alive after its tests pass still finishes under --test-force-exit",
+                "result": "pass"
+              },
+              {
+                "title": "an unresolved test name makes tests fail with a note naming it",
+                "result": "pass"
+              },
+              {
+                "title": "a trivial build that deletes a test file does not ask to run it",
+                "result": "pass"
+              },
+              {
+                "title": "with no mapping, planTaskCheckPlan and smallStandaloneCheckPlan return the same testFiles, unresolvedTests and noTests as before, and namedTests marks each name 'prefix' or 'none'",
+                "result": "pass"
+              },
+              {
+                "title": "with a mapping, a name with no prefix is no longer unresolved, its files are in testFiles once, and a name with both a mapping and a prefix uses the mapping (mutation: keep the prefix's files as well)",
+                "result": "pass"
+              },
+              {
+                "title": "smallStandaloneCheckPlan with a mapping and no prefixed subject runs the mapped files and is not 'the LLD names no test file'; an unmapped prose subject is listed as not mapped and does not fail",
+                "result": "pass"
+              },
+              {
+                "title": "runValidationChecks runs each file in its own process, in order, with the TAP reporter, and returns per file its exit code and titles (mutation: run all files in one command)",
+                "result": "pass"
+              },
+              {
+                "title": "a mapped case that passes, one that fails, one that is skipped and one whose title is not in the file get those four results, and the check is not ok when any is fail, skipped or not found (mutations: count not found as pass; count skipped as pass)",
+                "result": "pass"
+              },
+              {
+                "title": "a file that exits non-zero while its mapped cases pass fails the check and lists the other failing titles",
+                "result": "pass"
+              },
+              {
+                "title": "a file that times out, and a file not started because the time limit was used up, are recorded with that note, their cases are not found, and the check is not ok",
+                "result": "pass"
+              },
+              {
+                "title": "a run's whole output is written to a file and its path returned, with nothing cut; when that file cannot be written the results stand and the entry carries a note",
+                "result": "pass"
+              },
+              {
+                "title": "a reported pass on a live test runs nothing and leaves the check's result to the other tests; a reported fail makes the check not ok; a Task whose tests are all reported as pass runs no file and passes with the note, while a Task with no file and an unreported name still fails (mutation: fail every run that has no file)",
+                "result": "pass"
+              },
+              {
+                "title": "trivialCheckPlan marks each touched file 'touched' and the result lists every title of each file",
+                "result": "pass"
+              },
+              {
+                "title": "a file whose output is not TAP fails the check even when it exits with 0 and no case is named for it",
+                "result": "pass"
+              },
+              {
+                "title": "a line a test prints that looks like a result line, or like the start of a YAML block, is not read as one: the runner reports a test's output as comments",
+                "result": "pass"
+              },
+              {
+                "title": "the whole output is still written after the output directory has been removed, and files older than the retention are pruned",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-7ba8cf15: a file with many tests is reported in full under the gate's runner, every case found (mutation: run the file under --test, whose force-exited child cuts the report short)",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-7ba8cf15: in its own process a failing test still fails the file",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-7ba8cf15: when no report file can be made the file is not run, its entry says why and the check fails, and nothing throws",
+                "result": "pass"
+              },
+              {
+                "title": "with a storyKey, typecheckProjects holds the Story's projects and its test files' projects, and not a project that owns only unrelated uncommitted or untracked files",
+                "result": "pass"
+              },
+              {
+                "title": "with a storyKey, the trivial plan runs only the Story's test files, and with no base fails the listing instead of running the HEAD commit's tests",
+                "result": "pass"
+              },
+              {
+                "title": "with a storyKey, a trivial build that deletes a test file does not ask to run it",
+                "result": "pass"
+              },
+              {
+                "title": "project type is detected from root marker files and mixed or no markers give unknown",
+                "result": "pass"
+              },
+              {
+                "title": "the Node default profile equals today's argv and tap format",
+                "result": "pass"
+              },
+              {
+                "title": "a Node project with no setting gets the same argv and TAP judging as before",
+                "result": "pass"
+              },
+              {
+                "title": "a project with no known commands makes no process call and both checks are ok false with a note",
+                "result": "pass"
+              },
+              {
+                "title": "no Node command constant is the source of a non-Node plan",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "4199c00d2",
+        "ranAt": "2026-11-19T18:48:34.713Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts: an exit-code plan passes when every file exits 0 and fails on a non-zero exit",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts",
+                "title": "an exit-code plan passes when every file exits 0 and fails on a non-zero exit",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts",
+                "title": "runValidationChecks runs each file in its own process, in order, with the TAP reporter, and returns per file its exit code and titles (mutation: run all files in one command)",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/runners/build/__tests__/test-record.test.ts",
+                "title": "a named test whose cases took their file's exit code carries its note into the document, above its table",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts: withTypecheckProjects makes no tsconfig search for a non-Node plan",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts",
+                "title": "withTypecheckProjects makes no tsconfig search for a non-Node plan",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/build-step/__tests__/validation-checks-registry.test.ts",
+                "title": "validation-checks-registry.test.ts: trackedFiles, changedFiles and trivialCheckPlan return the old file lists including deleted and untracked files",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/build-step/__tests__/validation-checks-registry.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 621,
+            "titles": [
+              {
+                "title": "validation-checks-registry.test.ts: trackedFiles, changedFiles and trivialCheckPlan return the old file lists including deleted and untracked files",
+                "result": "pass"
+              },
+              {
+                "title": "validation-checks-registry.test.ts: no execFileSync call remains in validation-checks.ts for git",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 6021,
+            "titles": [
+              {
+                "title": "resolveTaskTestFiles maps plan test names to tracked __tests__ files, de-duplicates, and lists names with no match as unresolved",
+                "result": "pass"
+              },
+              {
+                "title": "a base name under two __tests__ directories resolves to both files",
+                "result": "pass"
+              },
+              {
+                "title": "the plan-driven, small and trivial routes each build the expected check plan",
+                "result": "pass"
+              },
+              {
+                "title": "a trivial build with a range base runs the test files touched across base..HEAD, not only the HEAD commit's (ISSUE-91640defac1b5816)",
+                "result": "pass"
+              },
+              {
+                "title": "a test name whose only *.test.ts token is not a leading prefix is unresolved, and the file it mentions is not run",
+                "result": "pass"
+              },
+              {
+                "title": "a plan is given the other TypeScript projects that own a file the build changed since its base, or a test file; a build inside the root project names none",
+                "result": "pass"
+              },
+              {
+                "title": "the typecheck is run in the root and in each named project; it is clean only when all are, and each command and output is kept",
+                "result": "pass"
+              },
+              {
+                "title": "a passing and a failing command give ok true and ok false with their exit codes and output tails",
+                "result": "pass"
+              },
+              {
+                "title": "a command past its limit is reported timedOut and its whole process group, grandchild included, is gone",
+                "result": "pass"
+              },
+              {
+                "title": "a test file that keeps its process alive after its tests pass still finishes under --test-force-exit",
+                "result": "pass"
+              },
+              {
+                "title": "an unresolved test name makes tests fail with a note naming it",
+                "result": "pass"
+              },
+              {
+                "title": "a trivial build that deletes a test file does not ask to run it",
+                "result": "pass"
+              },
+              {
+                "title": "with no mapping, planTaskCheckPlan and smallStandaloneCheckPlan return the same testFiles, unresolvedTests and noTests as before, and namedTests marks each name 'prefix' or 'none'",
+                "result": "pass"
+              },
+              {
+                "title": "with a mapping, a name with no prefix is no longer unresolved, its files are in testFiles once, and a name with both a mapping and a prefix uses the mapping (mutation: keep the prefix's files as well)",
+                "result": "pass"
+              },
+              {
+                "title": "smallStandaloneCheckPlan with a mapping and no prefixed subject runs the mapped files and is not 'the LLD names no test file'; an unmapped prose subject is listed as not mapped and does not fail",
+                "result": "pass"
+              },
+              {
+                "title": "runValidationChecks runs each file in its own process, in order, with the TAP reporter, and returns per file its exit code and titles (mutation: run all files in one command)",
+                "result": "pass"
+              },
+              {
+                "title": "a mapped case that passes, one that fails, one that is skipped and one whose title is not in the file get those four results, and the check is not ok when any is fail, skipped or not found (mutations: count not found as pass; count skipped as pass)",
+                "result": "pass"
+              },
+              {
+                "title": "a file that exits non-zero while its mapped cases pass fails the check and lists the other failing titles",
+                "result": "pass"
+              },
+              {
+                "title": "a file that times out, and a file not started because the time limit was used up, are recorded with that note, their cases are not found, and the check is not ok",
+                "result": "pass"
+              },
+              {
+                "title": "a run's whole output is written to a file and its path returned, with nothing cut; when that file cannot be written the results stand and the entry carries a note",
+                "result": "pass"
+              },
+              {
+                "title": "a reported pass on a live test runs nothing and leaves the check's result to the other tests; a reported fail makes the check not ok; a Task whose tests are all reported as pass runs no file and passes with the note, while a Task with no file and an unreported name still fails (mutation: fail every run that has no file)",
+                "result": "pass"
+              },
+              {
+                "title": "trivialCheckPlan marks each touched file 'touched' and the result lists every title of each file",
+                "result": "pass"
+              },
+              {
+                "title": "a file whose output is not TAP fails the check even when it exits with 0 and no case is named for it",
+                "result": "pass"
+              },
+              {
+                "title": "a line a test prints that looks like a result line, or like the start of a YAML block, is not read as one: the runner reports a test's output as comments",
+                "result": "pass"
+              },
+              {
+                "title": "the whole output is still written after the output directory has been removed, and files older than the retention are pruned",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-7ba8cf15: a file with many tests is reported in full under the gate's runner, every case found (mutation: run the file under --test, whose force-exited child cuts the report short)",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-7ba8cf15: in its own process a failing test still fails the file",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-7ba8cf15: when no report file can be made the file is not run, its entry says why and the check fails, and nothing throws",
+                "result": "pass"
+              },
+              {
+                "title": "with a storyKey, typecheckProjects holds the Story's projects and its test files' projects, and not a project that owns only unrelated uncommitted or untracked files",
+                "result": "pass"
+              },
+              {
+                "title": "with a storyKey, the trivial plan runs only the Story's test files, and with no base fails the listing instead of running the HEAD commit's tests",
+                "result": "pass"
+              },
+              {
+                "title": "with a storyKey, a trivial build that deletes a test file does not ask to run it",
+                "result": "pass"
+              },
+              {
+                "title": "project type is detected from root marker files and mixed or no markers give unknown",
+                "result": "pass"
+              },
+              {
+                "title": "the Node default profile equals today's argv and tap format",
+                "result": "pass"
+              },
+              {
+                "title": "a Node project with no setting gets the same argv and TAP judging as before",
+                "result": "pass"
+              },
+              {
+                "title": "a project with no known commands makes no process call and both checks are ok false with a note",
+                "result": "pass"
+              },
+              {
+                "title": "no Node command constant is the source of a non-Node plan",
+                "result": "pass"
+              },
+              {
+                "title": "an exit-code plan passes when every file exits 0 and fails on a non-zero exit",
+                "result": "pass"
+              },
+              {
+                "title": "withTypecheckProjects makes no tsconfig search for a non-Node plan",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/runners/build/__tests__/test-record.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 620,
+            "titles": [
+              {
+                "title": "the first write creates the record with one Task; a second Task is added; writing the first Task again replaces its entry only and keeps createdAt",
+                "result": "pass"
+              },
+              {
+                "title": "the json is TESTS-<epicHash>-<storyId>.json and the document is TESTS.md in the same folder as the Story's BUILD.md, for an Epic's Story and for a standalone one (mutation: derive the folder from the record's own time)",
+                "result": "pass"
+              },
+              {
+                "title": "the document shows totals, then per Task and per named test a table of result, title and file, the tests reported by the builder with their evidence, and the failures outside the named cases",
+                "result": "pass"
+              },
+              {
+                "title": "the stored mapping of a Task is read back as the mapping that was supplied, and an unreadable or misshapen record reads as no stored mapping",
+                "result": "pass"
+              },
+              {
+                "title": "when the document cannot be written after the json was, the json is put back: a first write leaves no record, a later one leaves the earlier run",
+                "result": "pass"
+              },
+              {
+                "title": "text that came from the builder is rendered on one line, so it cannot add lines that read as the record's own; and an unreadable record is told from an absent one",
+                "result": "pass"
+              },
+              {
+                "title": "a named test whose cases took their file's exit code carries its note into the document, above its table",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "3acdac40a",
+        "ranAt": "2026-11-20T05:44:20.781Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/steps/build-step/__tests__/render.test.ts: the prompt of a Node project still names npx tsc --noEmit and the Node test command",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/build-step/__tests__/render.test.ts",
+                "title": "the prompt of a Node project still names npx tsc --noEmit and the Node test command",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/build-step/__tests__/render.test.ts",
+                "title": "the validate prompts no longer instruct running the repo-wide sweep or any shell command, and the implement prompt still cites it",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/build-step/__tests__/render.test.ts",
+                "title": "the implement prompt tells the builder to pass the cases for each listed test at the validate turn, and the judge's evidence lists each named test with its cases and results; with no named tests the evidence reads as before",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/steps/build-step/__tests__/render.test.ts: the implement-task prompt and the Definition of done for a Python, Go, Rust and JVM project name that type's commands and no npx tsc or npx tsx",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/build-step/__tests__/render.test.ts",
+                "title": "the implement-task prompt and the Definition of done for a Python, Go, Rust and JVM project name that type's commands and no npx tsc or npx tsx",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/build-step/__tests__/render.test.ts",
+                "title": "the 'daemon already ran' text is absent when commandsSource is none",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/build-step/__tests__/render.test.ts",
+                "title": "the mapping instructions follow the project's profile: native test files and file-level checking for a configured non-Node project, per-case checking in .test.ts files for Node",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/build-step/__tests__/render.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 777,
+            "titles": [
+              {
+                "title": "the validate prompts no longer instruct running the repo-wide sweep or any shell command, and the implement prompt still cites it",
+                "result": "pass"
+              },
+              {
+                "title": "both validate prompts place the given evidence text in an evidence section and ask for the judge verdict shape",
+                "result": "pass"
+              },
+              {
+                "title": "the implement prompts tell the implementer to merge upstream with --no-ff and commit the merge on its own",
+                "result": "pass"
+              },
+              {
+                "title": "the judge's evidence lists each named test with its cases and results; with no named tests the evidence reads as before",
+                "result": "pass"
+              },
+              {
+                "title": "the implement prompt tells the builder to pass the cases for each listed test at the validate turn, and the judge's evidence lists each named test with its cases and results; with no named tests the evidence reads as before",
+                "result": "pass"
+              },
+              {
+                "title": "every implement prompt, plan-driven and standalone Small and Trivial, carries the smallest-complete-change section with the rule filled in and no placeholder left",
+                "result": "pass"
+              },
+              {
+                "title": "the build rule names each step of the ladder and the analyzer check, and the limits: the Task or LLD is the spec, the named tests stay required, and validation, error handling, security and accessibility are never cut",
+                "result": "pass"
+              },
+              {
+                "title": "the implement prompts keep every section and rule they had before the new section was added",
+                "result": "pass"
+              },
+              {
+                "title": "a trivial standalone validate prompt carries the build's stated scope; a small one points at its LLD instead",
+                "result": "pass"
+              },
+              {
+                "title": "the prompt of a Node project still names npx tsc --noEmit and the Node test command",
+                "result": "pass"
+              },
+              {
+                "title": "the implement-task prompt and the Definition of done for a Python, Go, Rust and JVM project name that type's commands and no npx tsc or npx tsx",
+                "result": "pass"
+              },
+              {
+                "title": "the 'daemon already ran' text is absent when commandsSource is none",
+                "result": "pass"
+              },
+              {
+                "title": "the mapping instructions follow the project's profile: native test files and file-level checking for a configured non-Node project, per-case checking in .test.ts files for Node",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "3acdac40a",
+        "ranAt": "2026-11-20T05:46:10.341Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts: a repo setting wins over the default; an empty command or an unknown result format is refused with InvalidCommandSetting",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts",
+                "title": "a repo setting wins over the default; an empty command or an unknown result format is refused with InvalidCommandSetting",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts",
+                "title": "the build commands are rows of the repo settings table, in the Build group, and no row of the global catalog",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts",
+                "title": "repo.settings validates the build rows: a command is a non-empty string, the format is tap or exit-code, and null clears",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts",
+                "title": "an exit-code plan passes when every file exits 0 and fails on a non-zero exit",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/steps/build-step/__tests__/validate-task-round.test.ts: a Node project's round is unchanged",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/build-step/__tests__/validate-task-round.test.ts",
+                "title": "a Node project's round is unchanged",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/build-step/__tests__/validate-task-round.test.ts",
+                "title": "a settings edit while the checks run changes neither the plan, the judge prompt nor the settings refusal: the profile is resolved once, at the phase's entry",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/steps/build-step/__tests__/validate-task-round.test.ts: a project with no commands is not passed and its record says the gate ran nothing",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/build-step/__tests__/validate-task-round.test.ts",
+                "title": "a project with no commands is not passed and its record says the gate ran nothing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/build-step/__tests__/validate-task-round.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1072,
+            "titles": [
+              {
+                "title": "a validate turn records its round in the Task's own log, and a Task with no head writes the BUILD record only and has no round",
+                "result": "pass"
+              },
+              {
+                "title": "a Node project's round is unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "a project with no commands is not passed and its record says the gate ran nothing",
+                "result": "pass"
+              },
+              {
+                "title": "a settings edit while the checks run changes neither the plan, the judge prompt nor the settings refusal: the profile is resolved once, at the phase's entry",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5995,
+            "titles": [
+              {
+                "title": "resolveTaskTestFiles maps plan test names to tracked __tests__ files, de-duplicates, and lists names with no match as unresolved",
+                "result": "pass"
+              },
+              {
+                "title": "a base name under two __tests__ directories resolves to both files",
+                "result": "pass"
+              },
+              {
+                "title": "the plan-driven, small and trivial routes each build the expected check plan",
+                "result": "pass"
+              },
+              {
+                "title": "a trivial build with a range base runs the test files touched across base..HEAD, not only the HEAD commit's (ISSUE-91640defac1b5816)",
+                "result": "pass"
+              },
+              {
+                "title": "a test name whose only *.test.ts token is not a leading prefix is unresolved, and the file it mentions is not run",
+                "result": "pass"
+              },
+              {
+                "title": "a plan is given the other TypeScript projects that own a file the build changed since its base, or a test file; a build inside the root project names none",
+                "result": "pass"
+              },
+              {
+                "title": "the typecheck is run in the root and in each named project; it is clean only when all are, and each command and output is kept",
+                "result": "pass"
+              },
+              {
+                "title": "a passing and a failing command give ok true and ok false with their exit codes and output tails",
+                "result": "pass"
+              },
+              {
+                "title": "a command past its limit is reported timedOut and its whole process group, grandchild included, is gone",
+                "result": "pass"
+              },
+              {
+                "title": "a test file that keeps its process alive after its tests pass still finishes under --test-force-exit",
+                "result": "pass"
+              },
+              {
+                "title": "an unresolved test name makes tests fail with a note naming it",
+                "result": "pass"
+              },
+              {
+                "title": "a trivial build that deletes a test file does not ask to run it",
+                "result": "pass"
+              },
+              {
+                "title": "with no mapping, planTaskCheckPlan and smallStandaloneCheckPlan return the same testFiles, unresolvedTests and noTests as before, and namedTests marks each name 'prefix' or 'none'",
+                "result": "pass"
+              },
+              {
+                "title": "with a mapping, a name with no prefix is no longer unresolved, its files are in testFiles once, and a name with both a mapping and a prefix uses the mapping (mutation: keep the prefix's files as well)",
+                "result": "pass"
+              },
+              {
+                "title": "smallStandaloneCheckPlan with a mapping and no prefixed subject runs the mapped files and is not 'the LLD names no test file'; an unmapped prose subject is listed as not mapped and does not fail",
+                "result": "pass"
+              },
+              {
+                "title": "runValidationChecks runs each file in its own process, in order, with the TAP reporter, and returns per file its exit code and titles (mutation: run all files in one command)",
+                "result": "pass"
+              },
+              {
+                "title": "a mapped case that passes, one that fails, one that is skipped and one whose title is not in the file get those four results, and the check is not ok when any is fail, skipped or not found (mutations: count not found as pass; count skipped as pass)",
+                "result": "pass"
+              },
+              {
+                "title": "a file that exits non-zero while its mapped cases pass fails the check and lists the other failing titles",
+                "result": "pass"
+              },
+              {
+                "title": "a file that times out, and a file not started because the time limit was used up, are recorded with that note, their cases are not found, and the check is not ok",
+                "result": "pass"
+              },
+              {
+                "title": "a run's whole output is written to a file and its path returned, with nothing cut; when that file cannot be written the results stand and the entry carries a note",
+                "result": "pass"
+              },
+              {
+                "title": "a reported pass on a live test runs nothing and leaves the check's result to the other tests; a reported fail makes the check not ok; a Task whose tests are all reported as pass runs no file and passes with the note, while a Task with no file and an unreported name still fails (mutation: fail every run that has no file)",
+                "result": "pass"
+              },
+              {
+                "title": "trivialCheckPlan marks each touched file 'touched' and the result lists every title of each file",
+                "result": "pass"
+              },
+              {
+                "title": "a file whose output is not TAP fails the check even when it exits with 0 and no case is named for it",
+                "result": "pass"
+              },
+              {
+                "title": "a line a test prints that looks like a result line, or like the start of a YAML block, is not read as one: the runner reports a test's output as comments",
+                "result": "pass"
+              },
+              {
+                "title": "the whole output is still written after the output directory has been removed, and files older than the retention are pruned",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-7ba8cf15: a file with many tests is reported in full under the gate's runner, every case found (mutation: run the file under --test, whose force-exited child cuts the report short)",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-7ba8cf15: in its own process a failing test still fails the file",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-7ba8cf15: when no report file can be made the file is not run, its entry says why and the check fails, and nothing throws",
+                "result": "pass"
+              },
+              {
+                "title": "with a storyKey, typecheckProjects holds the Story's projects and its test files' projects, and not a project that owns only unrelated uncommitted or untracked files",
+                "result": "pass"
+              },
+              {
+                "title": "with a storyKey, the trivial plan runs only the Story's test files, and with no base fails the listing instead of running the HEAD commit's tests",
+                "result": "pass"
+              },
+              {
+                "title": "with a storyKey, a trivial build that deletes a test file does not ask to run it",
+                "result": "pass"
+              },
+              {
+                "title": "project type is detected from root marker files and mixed or no markers give unknown",
+                "result": "pass"
+              },
+              {
+                "title": "the Node default profile equals today's argv and tap format",
+                "result": "pass"
+              },
+              {
+                "title": "a Node project with no setting gets the same argv and TAP judging as before",
+                "result": "pass"
+              },
+              {
+                "title": "a project with no known commands makes no process call and both checks are ok false with a note",
+                "result": "pass"
+              },
+              {
+                "title": "no Node command constant is the source of a non-Node plan",
+                "result": "pass"
+              },
+              {
+                "title": "an exit-code plan passes when every file exits 0 and fails on a non-zero exit",
+                "result": "pass"
+              },
+              {
+                "title": "withTypecheckProjects makes no tsconfig search for a non-Node plan",
+                "result": "pass"
+              },
+              {
+                "title": "a repo setting wins over the default; an empty command or an unknown result format is refused with InvalidCommandSetting",
+                "result": "pass"
+              },
+              {
+                "title": "the build commands are rows of the repo settings table, in the Build group, and no row of the global catalog",
+                "result": "pass"
+              },
+              {
+                "title": "repo.settings validates the build rows: a command is a non-empty string, the format is tap or exit-code, and null clears",
+                "result": "pass"
+              },
+              {
+                "title": "the trivial plan keeps a repo-setting project's own test files as tests",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "3acdac40a",
+        "ranAt": "2026-11-20T05:48:04.883Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/config/__tests__/config-catalog-contract.test.ts: the catalog contract holds with the new build-commands row",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/config/__tests__/config-catalog-contract.test.ts",
+                "title": "the config.catalog payload carries the build commands as repo rows (typecheckCommand, testCommand, resultFormat), and they are no row of the global catalog",
+                "result": "pass"
+              },
+              {
+                "file": "src/config/__tests__/config-catalog-contract.test.ts",
+                "title": "real CONFIG_CATALOG self-consistency: every row in-domain, every default satisfies its predicate",
+                "result": "pass"
+              },
+              {
+                "file": "src/config/__tests__/config-catalog-contract.test.ts",
+                "title": "enrichment (S001): every enum row carries a non-empty enumValues; every non-enum row omits it",
+                "result": "pass"
+              },
+              {
+                "file": "src/config/__tests__/repo-fields.test.ts",
+                "title": "table keys, kinds, GithubEntry fields and one policy row per TeamPolicy rule",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/__tests__/repo-fields-contract.test.ts",
+                "title": "the shared fixture equals the daemon table and the config.catalog payload",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/cli/__tests__/repo-fields-contract.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 451,
+            "titles": [
+              {
+                "title": "the shared fixture equals the daemon table and the config.catalog payload",
+                "result": "pass"
+              },
+              {
+                "title": "terminal rows equal the shared catalog fixture",
+                "result": "pass"
+              },
+              {
+                "title": "a row added to a copy of the table appears in the terminal rows with no client change",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/config/__tests__/config-catalog-contract.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 437,
+            "titles": [
+              {
+                "title": "src/config/** contains no import of src/cli (static scan of resolved specifiers)",
+                "result": "pass"
+              },
+              {
+                "title": "src/config/config-catalog.ts is the single definition site of CONFIG_CATALOG and ConfigOption",
+                "result": "pass"
+              },
+              {
+                "title": "the src/cli re-export is reference-identical to the src/config definition (no duplicate literal)",
+                "result": "pass"
+              },
+              {
+                "title": "the real CONFIG_CATALOG has 41 rows (the old review settings codeReview.*, review.chunkTokens and designReview.* are retired with the review engine; models.shaper.ollamaNumCtx and permissions.mode retired; + daemonUpdate.repoUrl, daemonUpdate.branch and tools.commonApproval; flat models.* surface; three models.tiers.*.effort rows; models.local.embeddingKeepAlive; analyzer.dataSourceListingTimeoutMs; daemon.threads.enabled; four daemon.maintenance.* rows)",
+                "result": "pass"
+              },
+              {
+                "title": "RETIRED_PATHS covers exactly the 7 declared legacy entries and is disjoint from every CONFIG_CATALOG path",
+                "result": "pass"
+              },
+              {
+                "title": "real CONFIG_CATALOG self-consistency: every row in-domain, every default satisfies its predicate",
+                "result": "pass"
+              },
+              {
+                "title": "reconcileConfig({}, CONFIG_CATALOG) is idempotent on the real catalog — second pass changed === false",
+                "result": "pass"
+              },
+              {
+                "title": "ConfigCatalogError is the class thrown for catalog-integrity failures (not a bare Error)",
+                "result": "pass"
+              },
+              {
+                "title": "enrichment (S001): every catalog row has a non-empty group",
+                "result": "pass"
+              },
+              {
+                "title": "enrichment (S001): every enum row carries a non-empty enumValues; every non-enum row omits it",
+                "result": "pass"
+              },
+              {
+                "title": "the old review settings are retired with the review engine: no codeReview.*, review.chunkTokens or designReview.* row",
+                "result": "pass"
+              },
+              {
+                "title": "the catalog declares models.tiers.{core,mid,cheap}.effort as enum ['', 'low','medium','high','xhigh','max','ultra','off'] (the shipped efforts) with default ''",
+                "result": "pass"
+              },
+              {
+                "title": "the config.catalog payload carries the build commands as repo rows (typecheckCommand, testCommand, resultFormat), and they are no row of the global catalog",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/config/__tests__/repo-fields.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 441,
+            "titles": [
+              {
+                "title": "table keys, kinds, GithubEntry fields and one policy row per TeamPolicy rule",
+                "result": "pass"
+              },
+              {
+                "title": "branchPattern validator accepts and rejects every listed form with the failing rule",
+                "result": "pass"
+              },
+              {
+                "title": "a table copy with another placeholder changes what the validator accepts",
+                "result": "pass"
+              },
+              {
+                "title": "buildSettingsCatalog keeps existing fields, adds repoFields and never throws",
+                "result": "pass"
+              },
+              {
+                "title": "validateRepoSetting per row for type, owner, repo, ghPath and ghHost",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "d3e78f03f",
+        "ranAt": "2026-11-19T19:09:06.849Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/steps/build-step/__tests__/test-mapping.test.ts: a Node plan refuses a case file that is not .test.ts and a repo-setting plan accepts its own test file",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/build-step/__tests__/test-mapping.test.ts",
+                "title": "a Node plan refuses a case file that is not .test.ts and a repo-setting plan accepts its own test file",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/build-step/__tests__/test-mapping.test.ts",
+                "title": "a mapping is refused, with every fault listed, for an unknown name, a repeated name, a file that is not a tracked '.test.ts' file in the repository, a path that leaves the repository, an empty title, an entry with neither cases nor a reported result, and a reported result on a unit, an integration and a contract test and on a test with no level",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts: the trivial plan keeps a repo-setting project's own test files as tests",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts",
+                "title": "the trivial plan keeps a repo-setting project's own test files as tests",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts",
+                "title": "trivialCheckPlan marks each touched file 'touched' and the result lists every title of each file",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/build-step/__tests__/test-mapping.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 386,
+            "titles": [
+              {
+                "title": "a mapping is refused, with every fault listed, for an unknown name, a repeated name, a file that is not a tracked '.test.ts' file in the repository, a path that leaves the repository, an empty title, an entry with neither cases nor a reported result, and a reported result on a unit, an integration and a contract test and on a test with no level",
+                "result": "pass"
+              },
+              {
+                "title": "a correct mapping with cases, with a reported result on a live test, and with both, is accepted",
+                "result": "pass"
+              },
+              {
+                "title": "text the builder supplies must be one line: a title or evidence with a line break is a fault",
+                "result": "pass"
+              },
+              {
+                "title": "a stored mapping is reused only as far as the rules still allow: a stale name, a reported result on a test that is no longer live or smoke, and a file outside the repository are dropped, without a fault",
+                "result": "pass"
+              },
+              {
+                "title": "a Node plan refuses a case file that is not .test.ts and a repo-setting plan accepts its own test file",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 6185,
+            "titles": [
+              {
+                "title": "resolveTaskTestFiles maps plan test names to tracked __tests__ files, de-duplicates, and lists names with no match as unresolved",
+                "result": "pass"
+              },
+              {
+                "title": "a base name under two __tests__ directories resolves to both files",
+                "result": "pass"
+              },
+              {
+                "title": "the plan-driven, small and trivial routes each build the expected check plan",
+                "result": "pass"
+              },
+              {
+                "title": "a trivial build with a range base runs the test files touched across base..HEAD, not only the HEAD commit's (ISSUE-91640defac1b5816)",
+                "result": "pass"
+              },
+              {
+                "title": "a test name whose only *.test.ts token is not a leading prefix is unresolved, and the file it mentions is not run",
+                "result": "pass"
+              },
+              {
+                "title": "a plan is given the other TypeScript projects that own a file the build changed since its base, or a test file; a build inside the root project names none",
+                "result": "pass"
+              },
+              {
+                "title": "the typecheck is run in the root and in each named project; it is clean only when all are, and each command and output is kept",
+                "result": "pass"
+              },
+              {
+                "title": "a passing and a failing command give ok true and ok false with their exit codes and output tails",
+                "result": "pass"
+              },
+              {
+                "title": "a command past its limit is reported timedOut and its whole process group, grandchild included, is gone",
+                "result": "pass"
+              },
+              {
+                "title": "a test file that keeps its process alive after its tests pass still finishes under --test-force-exit",
+                "result": "pass"
+              },
+              {
+                "title": "an unresolved test name makes tests fail with a note naming it",
+                "result": "pass"
+              },
+              {
+                "title": "a trivial build that deletes a test file does not ask to run it",
+                "result": "pass"
+              },
+              {
+                "title": "with no mapping, planTaskCheckPlan and smallStandaloneCheckPlan return the same testFiles, unresolvedTests and noTests as before, and namedTests marks each name 'prefix' or 'none'",
+                "result": "pass"
+              },
+              {
+                "title": "with a mapping, a name with no prefix is no longer unresolved, its files are in testFiles once, and a name with both a mapping and a prefix uses the mapping (mutation: keep the prefix's files as well)",
+                "result": "pass"
+              },
+              {
+                "title": "smallStandaloneCheckPlan with a mapping and no prefixed subject runs the mapped files and is not 'the LLD names no test file'; an unmapped prose subject is listed as not mapped and does not fail",
+                "result": "pass"
+              },
+              {
+                "title": "runValidationChecks runs each file in its own process, in order, with the TAP reporter, and returns per file its exit code and titles (mutation: run all files in one command)",
+                "result": "pass"
+              },
+              {
+                "title": "a mapped case that passes, one that fails, one that is skipped and one whose title is not in the file get those four results, and the check is not ok when any is fail, skipped or not found (mutations: count not found as pass; count skipped as pass)",
+                "result": "pass"
+              },
+              {
+                "title": "a file that exits non-zero while its mapped cases pass fails the check and lists the other failing titles",
+                "result": "pass"
+              },
+              {
+                "title": "a file that times out, and a file not started because the time limit was used up, are recorded with that note, their cases are not found, and the check is not ok",
+                "result": "pass"
+              },
+              {
+                "title": "a run's whole output is written to a file and its path returned, with nothing cut; when that file cannot be written the results stand and the entry carries a note",
+                "result": "pass"
+              },
+              {
+                "title": "a reported pass on a live test runs nothing and leaves the check's result to the other tests; a reported fail makes the check not ok; a Task whose tests are all reported as pass runs no file and passes with the note, while a Task with no file and an unreported name still fails (mutation: fail every run that has no file)",
+                "result": "pass"
+              },
+              {
+                "title": "trivialCheckPlan marks each touched file 'touched' and the result lists every title of each file",
+                "result": "pass"
+              },
+              {
+                "title": "a file whose output is not TAP fails the check even when it exits with 0 and no case is named for it",
+                "result": "pass"
+              },
+              {
+                "title": "a line a test prints that looks like a result line, or like the start of a YAML block, is not read as one: the runner reports a test's output as comments",
+                "result": "pass"
+              },
+              {
+                "title": "the whole output is still written after the output directory has been removed, and files older than the retention are pruned",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-7ba8cf15: a file with many tests is reported in full under the gate's runner, every case found (mutation: run the file under --test, whose force-exited child cuts the report short)",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-7ba8cf15: in its own process a failing test still fails the file",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-7ba8cf15: when no report file can be made the file is not run, its entry says why and the check fails, and nothing throws",
+                "result": "pass"
+              },
+              {
+                "title": "with a storyKey, typecheckProjects holds the Story's projects and its test files' projects, and not a project that owns only unrelated uncommitted or untracked files",
+                "result": "pass"
+              },
+              {
+                "title": "with a storyKey, the trivial plan runs only the Story's test files, and with no base fails the listing instead of running the HEAD commit's tests",
+                "result": "pass"
+              },
+              {
+                "title": "with a storyKey, a trivial build that deletes a test file does not ask to run it",
+                "result": "pass"
+              },
+              {
+                "title": "project type is detected from root marker files and mixed or no markers give unknown",
+                "result": "pass"
+              },
+              {
+                "title": "the Node default profile equals today's argv and tap format",
+                "result": "pass"
+              },
+              {
+                "title": "a Node project with no setting gets the same argv and TAP judging as before",
+                "result": "pass"
+              },
+              {
+                "title": "a project with no known commands makes no process call and both checks are ok false with a note",
+                "result": "pass"
+              },
+              {
+                "title": "no Node command constant is the source of a non-Node plan",
+                "result": "pass"
+              },
+              {
+                "title": "an exit-code plan passes when every file exits 0 and fails on a non-zero exit",
+                "result": "pass"
+              },
+              {
+                "title": "withTypecheckProjects makes no tsconfig search for a non-Node plan",
+                "result": "pass"
+              },
+              {
+                "title": "a repo setting wins over the default; an empty command or an unknown result format is refused with InvalidCommandSetting",
+                "result": "pass"
+              },
+              {
+                "title": "the trivial plan keeps a repo-setting project's own test files as tests",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

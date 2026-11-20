@@ -85,8 +85,8 @@ test('the src/cli re-export is reference-identical to the src/config definition 
 	assert.equal(FROM_CLI, FROM_CONFIG);
 });
 
-test('the real CONFIG_CATALOG has 42 rows (the old review settings codeReview.*, review.chunkTokens and designReview.* are retired with the review engine; models.shaper.ollamaNumCtx and permissions.mode retired; + daemonUpdate.repoUrl, daemonUpdate.branch and tools.commonApproval; flat models.* surface; three models.tiers.*.effort rows; models.local.embeddingKeepAlive; analyzer.dataSourceListingTimeoutMs; daemon.threads.enabled; four daemon.maintenance.* rows; build.resultFormat)', () => {
-	assert.equal(FROM_CONFIG.length, 42);
+test('the real CONFIG_CATALOG has 41 rows (the old review settings codeReview.*, review.chunkTokens and designReview.* are retired with the review engine; models.shaper.ollamaNumCtx and permissions.mode retired; + daemonUpdate.repoUrl, daemonUpdate.branch and tools.commonApproval; flat models.* surface; three models.tiers.*.effort rows; models.local.embeddingKeepAlive; analyzer.dataSourceListingTimeoutMs; daemon.threads.enabled; four daemon.maintenance.* rows)', () => {
+	assert.equal(FROM_CONFIG.length, 41);
 	const live = new Set(FROM_CONFIG.map(r => r.path));
 	// the derived + old-nested paths must NOT be live catalog rows
 	for (const p of [
@@ -192,10 +192,20 @@ test('the old review settings are retired with the review engine: no codeReview.
 });
 
 test("the catalog declares models.tiers.{core,mid,cheap}.effort as enum ['', 'low','medium','high','xhigh','max','ultra','off'] (the shipped efforts) with default ''", () => {
-	assert.equal(FROM_CONFIG.length, 42);
+	assert.equal(FROM_CONFIG.length, 41);
 	for (const tier of ['core', 'mid', 'cheap']) {
 		const row = FROM_CONFIG.find(r => r.path === `models.tiers.${tier}.effort`);
 		assert.ok(row, `models.tiers.${tier}.effort is declared`);
 		assert.deepEqual([row.type, row.default, row.enumValues, row.group], ['enum', '', ['', 'low', 'medium', 'high', 'xhigh', 'max', 'ultra', 'off'], 'Models — tiers']);
 	}
+});
+
+test('the config.catalog payload carries the build commands as repo rows (typecheckCommand, testCommand, resultFormat), and they are no row of the global catalog', async () => {
+	const { buildSettingsCatalog } = await import('../settings-catalog.js');
+	const repoFields = buildSettingsCatalog({}).repoFields;
+	const build = repoFields.filter(r => r.group === 'Build');
+	assert.deepEqual(build.map(r => [r.key, r.kind]), [['typecheckCommand', 'local'], ['testCommand', 'local'], ['resultFormat', 'local']]);
+	assert.deepEqual(build.find(r => r.key === 'resultFormat')?.enumValues, ['tap', 'exit-code']);
+	// The commands belong to one registered repository: the global catalog has no `build` row and so no global default.
+	assert.equal(FROM_CONFIG.some(r => r.path === 'build' || r.path.startsWith('build.')), false);
 });

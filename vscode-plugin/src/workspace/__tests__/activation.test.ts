@@ -92,7 +92,8 @@ test('S006 sc9: extension.ts wires the debug renderer + tabController + onDetail
 
 test('S007 sc9: extension.ts wires the repo renderer + the consent-gated per-repo write over the shared sc8 gateway', () => {
   const entry = readFileSync(join(PKG, 'src', 'extension.ts'), 'utf8');
-  assert.match(entry, /import \{ renderRepoConfig, createRepoConfigWriteHandler, createRepoRegisterProvidersHandler, createRepoTrackerWriteHandler \} from '\.\/panels\/repo-config\.js'/, 'the repo-config seams are imported');
+  assert.match(entry, /import \{ renderRepoConfig, createRepoConfigWriteHandler, createRepoRegisterProvidersHandler, createRepoTrackerWriteHandler, createRepoBuildSuggestedHandler \} from '\.\/panels\/repo-config\.js'/, 'the repo-config seams are imported');
+  assert.match(entry, /onRepoBuildSuggested:\s*createRepoBuildSuggestedHandler\(\{[\s\S]*?consent,[\s\S]*?writeRepoSetting:\s*\(repoPath, key, value\)\s*=>\s*configGateway\.writeRepoSetting\(repoPath, key, value\)/, 'the suggested build commands go through repo.settings.set behind the same consent');
   // The sc8 ConfigGateway is constructed once and reused by the panel (no new capability).
   assert.match(entry, /const configGateway = createDaemonConfigGateway\(client, readDaemon\)/, 'the gateway shares the extension read boundary');
   assert.match(entry, /repoRenderer:\s*renderRepoConfig\(\{[\s\S]*?registeredRepos:[\s\S]*?rawConfig:\s*\(\)\s*=>\s*configGateway\.rawConfig\(repoConfigReadTimeoutMs\)/, 'the repo renderer uses a bounded model-config read');

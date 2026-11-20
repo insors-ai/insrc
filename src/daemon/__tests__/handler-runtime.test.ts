@@ -13,7 +13,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -21,6 +21,7 @@ const HOME = mkdtempSync(join(tmpdir(), 'insrc-handler-runtime-'));
 process.env['HOME'] = HOME;
 const { buildHandlerRuntime } = await import('../handler-runtime.js');
 const { methodClasses } = await import('../threads/method-class.js');
+const { closeGraphStore, setGraphStorePath } = await import('../../db/graph/store.js');
 
 /** The rpc methods main() built before the move (recorded 2026-10-22 from src/daemon/index.ts). */
 const RECORDED_RPC = [
@@ -76,9 +77,10 @@ const ADDED_RPC = [
 	'repo.gitHooks.install', 'repo.gitHooks.status', 'repo.gitHooks.uninstall', 'repo.settings.get', 'repo.settings.set', 'repo.trackerConfig.ensure', 'team.claim', 'team.park', 'team.refresh', 'team.release', 'team.resume', 'team.settle',
 	'tracker.attach', 'tracker.setup', 'tracker.sync', 'tracker.syncComments', 'workflow.approvePipeline',
 	'workflow.reviewArtifact', 'workflow.resolveFinding',
-	'codeReview.task.activity', 'codeReview.task.assignment', 'codeReview.task.cleanup', 'codeReview.task.progress', 'codeReview.task.publish',
+	'codeReview.task.activity', 'codeReview.task.assignment', 'codeReview.task.cancel', 'codeReview.task.cleanup', 'codeReview.task.progress', 'codeReview.task.publish',
 	'codeReview.task.result', 'codeReview.task.scope', 'codeReview.task.start',
-	'designReview.activity', 'designReview.assignment', 'designReview.failure', 'designReview.impact', 'designReview.plan', 'designReview.progress', 'designReview.recover',
+	'daemon.qualificationState',
+	'designReview.activity', 'designReview.assignment', 'designReview.cancel', 'designReview.failure', 'designReview.impact', 'designReview.plan', 'designReview.progress', 'designReview.recover',
 	'designReview.result', 'designReview.start',
 	'progress.attach', 'progress.control', 'progress.detach', 'progress.origin.bind',
 	'progress.origin.open', 'progress.origin.revoke', 'progress.read',
@@ -104,12 +106,12 @@ test('the runtime function builds the handler tables with stub indexing dependen
 	}
 });
 
-test('src/daemon/__tests__/handler-runtime.test.ts: the only code review methods added after the move are the eight task ones, with no duplicate or renamed method', () => {
+test('src/daemon/__tests__/handler-runtime.test.ts: the only code review methods added after the move are the nine task ones, with no duplicate or renamed method', () => {
 	// codeReview.freshness queues file jobs from its existing handler: no method was added for it
 	assert.ok(RECORDED_RPC.includes('codeReview.freshness'));
 	assert.deepEqual(
 		ADDED_RPC.filter(m => m.startsWith('codeReview.')).sort(),
-		['activity', 'assignment', 'cleanup', 'progress', 'publish', 'result', 'scope', 'start'].map(m => `codeReview.task.${m}`),
+		['activity', 'assignment', 'cancel', 'cleanup', 'progress', 'publish', 'result', 'scope', 'start'].map(m => `codeReview.task.${m}`),
 	);
 	assert.ok(!ADDED_STREAM.some(m => m.startsWith('codeReview.')));
 	assert.equal(new Set([...RECORDED_RPC, ...ADDED_RPC]).size, RECORDED_RPC.length + ADDED_RPC.length, 'no duplicate or renamed method');
@@ -227,4 +229,62 @@ test('handler-runtime.test.ts: mcp.register and mcp.status are served; mcp.regis
 	const refused = await runtime.rpcHandlers['mcp.register']!({ path: 42 }) as { code?: string; error?: string };
 	assert.equal(refused.code, 'repo-missing');
 	assert.match(refused.error ?? '', /mcp\.register: `path`/);
+});
+
+/** repo.add over a real registry in a temporary HOME, a stand-in indexer and a temporary github.json. */
+async function addRepoOver(repo: string, over: { file?: string; writer?: Parameters<typeof buildHandlerRuntime>[0]['buildDefaultsWriter'] } = {}) {
+	const dir = mkdtempSync(join(tmpdir(), 'insrc-hr-add-'));
+	const config = join(dir, 'github.json');
+	setGraphStorePath(join(dir, 'graph.lmdb'));   // a test may open only a temporary store
+	if (over.file !== undefined) writeFileSync(config, over.file);
+	const previous = process.env['INSRC_GITHUB_CONFIG'];
+	process.env['INSRC_GITHUB_CONFIG'] = config;
+	try {
+		const indexed: string[] = [];
+		const runtime = buildHandlerRuntime({
+			db: undefined as never, configStore: untouchable('configStore'), queue: untouchable('queue'),
+			indexer: { addRepo: async (p: string) => { indexed.push(p); } } as never,
+			startedAt: 0, shutdown: () => { throw new Error('shutdown called'); }, attachedClients: () => [], understandingService: () => undefined,
+			...(over.writer !== undefined ? { buildDefaultsWriter: over.writer } : {}),
+		});
+		const result = await runtime.rpcHandlers['repo.add']!({ path: repo }) as { ok: boolean; buildDefaults: unknown };
+		return { result, indexed, config: (): Record<string, any> => JSON.parse(readFileSync(config, 'utf8')) as Record<string, any> };
+	} finally {
+		await closeGraphStore();
+		if (previous === undefined) delete process.env['INSRC_GITHUB_CONFIG']; else process.env['INSRC_GITHUB_CONFIG'] = previous;
+	}
+}
+
+test('src/daemon/__tests__/handler-runtime.test.ts: repo.add on a Python repo registers it and stores the default commands with no prompt, reports buildDefaults applied, and a failing write still registers the repo', async () => {
+	const py = mkdtempSync(join(tmpdir(), 'insrc-hr-py-'));
+	writeFileSync(join(py, 'pyproject.toml'), '');
+	const broken = mkdtempSync(join(tmpdir(), 'insrc-hr-py-'));
+	writeFileSync(join(broken, 'pyproject.toml'), '');
+	try {
+		const ok = await addRepoOver(py);
+		assert.equal(ok.result.ok, true);
+		assert.deepEqual(ok.indexed, [py], 'the repo is registered and indexing started');
+		assert.deepEqual(ok.result.buildDefaults, { applied: true, projectType: 'python' });
+		assert.deepEqual(ok.config()['repos'][py], { typecheckCommand: 'mypy .', testCommand: 'pytest', resultFormat: 'exit-code' });
+
+		// a failing write: the add still succeeds and the outcome says why
+		const failed = await addRepoOver(broken, { writer: async () => ({ ok: false, error: { code: 'write-failed', message: 'disk full' } }) });
+		assert.equal(failed.result.ok, true);
+		assert.deepEqual(failed.indexed, [broken]);
+		assert.deepEqual(failed.result.buildDefaults, { applied: false, reason: 'write-failed', note: 'disk full' });
+	} finally {
+		rmSync(py, { recursive: true, force: true }); rmSync(broken, { recursive: true, force: true });
+	}
+});
+
+test('src/daemon/__tests__/handler-runtime.test.ts: repo.add on a repo whose entry already holds commands keeps them and reports already-set', async () => {
+	const go = mkdtempSync(join(tmpdir(), 'insrc-hr-go-'));
+	writeFileSync(join(go, 'go.mod'), '');
+	try {
+		const mine = { typecheckCommand: 'make check', testCommand: 'make test' };
+		const added = await addRepoOver(go, { file: JSON.stringify({ repos: { [go]: mine } }) });
+		assert.equal(added.result.ok, true);
+		assert.deepEqual(added.result.buildDefaults, { applied: false, reason: 'already-set' });
+		assert.deepEqual(added.config()['repos'][go], mine, 'the commands the entry holds are kept');
+	} finally { rmSync(go, { recursive: true, force: true }); }
 });

@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-7e22e9b0-d1e4-4c52-a7db-2a9ed2a681bc",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-20T07:18:58.870Z",
+    "epicCreatedAt": "2026-11-20T06:25:36.857Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f8cbf44536347149",
+    "storyId": "s1",
+    "envelope": {
+      "description": "VS Code: a Build section and a 'use suggested' action on the Repo Configuration page",
+      "parent": {
+        "entityId": "STORY-f8cbf44536347149-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f8cbf44536347149-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-f8cbf44536347149-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "e1d90def42f58a3acb18e0c9aafb081631266dc4ac53220c110001922233eb47",
+        "at": "2026-11-20T07:18:58.874Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T07:18:58.875Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "VS Code: a Build section and a 'use suggested' action on the Repo Configuration page",
+    "summary": "In vscode-plugin/src/panels/repo-config.ts render the Build rows as a section of their own (not a sub-heading of the Tracker grid), with the suggestion as the placeholder of an unset row and an action that writes the three suggested values through the panel's existing repo-setting write with the same clear-the-first rollback. Keep the shared repo-fields contract: the same key, label, kind and note per row.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "The page renders the Build rows in a section of their own with the keys, labels and kinds of the shared fixture",
+      "An unset Build row shows the suggestion as its placeholder",
+      "The 'use suggested' action is offered only when commands source is 'none' and a suggestion exists, writes only when invoked and rolls the first key back when the second write fails",
+      "vscode-plugin's contract and renderer tests pass and its typecheck is clean"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "vscode-plugin/src/panels/__tests__/repo-fields-contract.test.ts: the VS Code Repo Configuration page renders the Build rows in a section of their own with the keys, labels and kinds of the shared fixture, and shows the suggestion as the placeholder of an unset row"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

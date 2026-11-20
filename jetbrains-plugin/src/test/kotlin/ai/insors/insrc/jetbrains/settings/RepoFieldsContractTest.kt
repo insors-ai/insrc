@@ -1,9 +1,11 @@
 package ai.insors.insrc.jetbrains.settings
 
+import ai.insors.insrc.jetbrains.daemon.BuildSetupDto
 import ai.insors.insrc.jetbrains.daemon.DaemonGatewayImpl
 import ai.insors.insrc.jetbrains.daemon.DaemonResult
 import ai.insors.insrc.jetbrains.daemon.DaemonRpc
 import ai.insors.insrc.jetbrains.daemon.RepoSettingsResult
+import ai.insors.insrc.jetbrains.daemon.SaveResult
 import ai.insors.insrc.jetbrains.daemon.SettingsCatalogResult
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -14,8 +16,11 @@ import org.junit.jupiter.api.Test
 import java.awt.Container
 import java.io.File
 import java.lang.reflect.Proxy
+import javax.swing.JButton
+import javax.swing.JComponent
 import javax.swing.JLabel
 import javax.swing.JTextField
+import javax.swing.border.TitledBorder
 import ai.insors.insrc.jetbrains.daemon.DaemonGateway
 
 /**
@@ -139,5 +144,117 @@ class RepoFieldsContractTest {
         // Every local row is a text field; status and policy rows are not.
         fun fieldCount(c: Container): Int = c.components.sumOf { if (it is JTextField) 1 else if (it is Container) fieldCount(it) else 0 }
         assertEquals(fields.count { it["kind"] == "local" }, fieldCount(root))
+    }
+
+    private fun textFields(c: Container): List<PlaceholderTextField> =
+        c.components.flatMap { if (it is PlaceholderTextField) listOf(it) else if (it is Container) textFields(it) else emptyList() }
+
+    private fun buttons(c: Container): List<JButton> =
+        c.components.flatMap { if (it is JButton) listOf(it) else if (it is Container) buttons(it) else emptyList() }
+
+    /** Every titled panel under [c], by its border title. */
+    private fun titled(c: Container): List<Pair<String, Container>> = c.components.flatMap {
+        val border = (it as? JComponent)?.border as? TitledBorder
+        val here = if (border != null && it is Container) listOf((border.title ?: "") to it) else emptyList()
+        here + (if (it is Container) titled(it) else emptyList())
+    }
+
+    private fun loadedRepo(): Triple<String, List<ai.insors.insrc.jetbrains.daemon.RepoFieldDto>, RepoSettingsResult.Loaded> {
+        val repo = fixtureSettings()["repo"] as String
+        val catalog = DaemonGatewayImpl(FakeDaemonRpc { _, _ ->
+            DaemonResult(ok = true, data = mapOf<String, Any?>(
+                "options" to emptyList<Any?>(), "groups" to emptyList<Any?>(), "roles" to emptyList<Any?>(),
+                "tierNames" to emptyList<Any?>(), "values" to emptyMap<String, Any?>(), "repoFields" to fixtureFields(),
+            ))
+        }).settingsCatalog()
+        val fields = assertInstanceOf(SettingsCatalogResult.Loaded::class.java, catalog).catalog.repoFields
+        val settings = DaemonGatewayImpl(FakeDaemonRpc { _, _ ->
+            DaemonResult(ok = true, data = mapOf("ok" to true, "payload" to fixtureSettings()))
+        }).readRepoSettings(repo)
+        return Triple(repo, fields, assertInstanceOf(RepoSettingsResult.Loaded::class.java, settings))
+    }
+
+    private fun sectionFor(repo: String, fields: List<ai.insors.insrc.jetbrains.daemon.RepoFieldDto>, loaded: RepoSettingsResult): Container {
+        val gateway = Proxy.newProxyInstance(DaemonGateway::class.java.classLoader, arrayOf(DaemonGateway::class.java)) { _, m, _ ->
+            throw AssertionError("rendering must not call the gateway: ${m.name}")
+        } as DaemonGateway
+        return PerRepoSection(PerRepoOverridesModel(listOf(repo), emptyList(), emptyList(), emptyMap()), gateway, fields, mapOf(repo to loaded)).component()
+    }
+
+    @Test
+    fun `the JetBrains repo settings render the Build rows as a section of their own`() {
+        val (repo, fields, loaded) = loadedRepo()
+        // the payload's buildSetup is parsed, and a payload without one parses as before
+        assertEquals(
+            BuildSetupDto("python", "none", null, mapOf("typecheckCommand" to "mypy .", "testCommand" to "pytest", "resultFormat" to "exit-code")),
+            loaded.settings.buildSetup,
+        )
+        val without = DaemonGatewayImpl(FakeDaemonRpc { _, _ ->
+            DaemonResult(ok = true, data = mapOf("ok" to true, "payload" to fixtureSettings().filterKeys { it != "buildSetup" }))
+        }).readRepoSettings(repo)
+        assertEquals(null, assertInstanceOf(RepoSettingsResult.Loaded::class.java, without).settings.buildSetup)
+
+        // the rows: the Build rows carry the suggestion as their placeholder, the others none
+        val model = RepoTrackerModel(fields, mapOf(repo to loaded))
+        val build = fields.filter { it.group == "Build" }
+        assertTrue(build.isNotEmpty())
+        val rows = model.rows(repo)
+        assertEquals(fields.map { it.key }, rows.map { it.key }, "the daemon's order")
+        assertEquals(
+            mapOf("typecheckCommand" to "mypy .", "testCommand" to "pytest", "resultFormat" to "exit-code"),
+            rows.filter { it.placeholder != null }.associate { it.key to it.placeholder },
+        )
+        assertEquals(build.map { it.key }, rows.filter { it.group == "Build" }.map { it.key })
+
+        // the view: a Build block beside the Tracker block, holding exactly the Build rows
+        val root = sectionFor(repo, fields, loaded)
+        val blocks = titled(root).toMap()
+        val buildBlock = blocks["$repo — build"]
+        val trackerBlock = blocks["$repo — tracker"]
+        assertTrue(buildBlock != null && trackerBlock != null, "a Build block and a Tracker block: ${blocks.keys}")
+        val inBuild = labels(buildBlock!!).map { it.text }
+        val inTracker = labels(trackerBlock!!).map { it.text }
+        for (f in build) {
+            assertTrue(inBuild.contains(f.label), "the Build block shows ${f.key}")
+            assertTrue(!inTracker.contains(f.label), "the Tracker block does not show ${f.key}")
+        }
+        // the suggestion is the placeholder of the unset field itself, and the field's text stays empty
+        val fieldsInBuild = textFields(buildBlock)
+        assertEquals(
+            mapOf("mypy ." to "", "pytest" to "", "exit-code" to ""),
+            fieldsInBuild.mapNotNull { f -> f.placeholder?.let { it to f.text } }.toMap(),
+        )
+        assertTrue(textFields(trackerBlock).all { it.placeholder == null })
+        assertEquals(listOf("Use suggested build commands"), buttons(buildBlock).map { it.text })
+
+        // a repo that has commands, or a payload with no buildSetup, shows no placeholder and no action
+        val others = listOf(
+            RepoSettingsResult.Loaded(loaded.settings.copy(buildSetup = BuildSetupDto("go", "repo-setting"))),
+            RepoSettingsResult.Loaded(loaded.settings.copy(buildSetup = BuildSetupDto("unknown", "none"))),
+            RepoSettingsResult.Loaded(loaded.settings.copy(buildSetup = null)),
+        )
+        for (other in others) {
+            val plain = titled(sectionFor(repo, fields, other)).toMap()["$repo — build"]!!
+            assertTrue(buttons(plain).isEmpty(), "no action for ${other.settings.buildSetup}")
+            assertTrue(textFields(plain).all { it.placeholder == null }, "no placeholder for ${other.settings.buildSetup}")
+            assertEquals(null, RepoTrackerModel(fields, mapOf(repo to other)).suggestion(repo))
+        }
+    }
+
+    @Test
+    fun `the suggested build commands clear the first key when the second is refused`() {
+        val suggestion = mapOf("typecheckCommand" to "mypy .", "testCommand" to "pytest", "resultFormat" to "exit-code")
+
+        val all = mutableListOf<Pair<String, String?>>()
+        assertEquals(null, RepoTrackerModel.writeSuggested(suggestion) { k, v -> all.add(k to v); SaveResult.Saved() })
+        assertEquals(listOf("typecheckCommand" to "mypy .", "testCommand" to "pytest", "resultFormat" to "exit-code"), all)
+
+        val calls = mutableListOf<Pair<String, String?>>()
+        val failure = RepoTrackerModel.writeSuggested(suggestion) { k, v ->
+            calls.add(k to v)
+            if (k == "testCommand" && v != null) SaveResult.Rejected("read only") else SaveResult.Saved()
+        }
+        assertEquals(listOf("typecheckCommand" to "mypy .", "testCommand" to "pytest", "typecheckCommand" to null), calls)
+        assertTrue(failure != null && failure.contains("read only") && failure.contains("not applied"), "the reason is returned: $failure")
     }
 }

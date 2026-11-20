@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-699c387d-4928-4e1e-a210-ab03e36dd37e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-20T07:18:58.884Z",
+    "epicCreatedAt": "2026-11-20T06:25:36.857Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f8cbf44536347149",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Document the automatic defaults and the Build section",
+      "parent": {
+        "entityId": "STORY-f8cbf44536347149-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f8cbf44536347149-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-f8cbf44536347149-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-f8cbf44536347149-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-f8cbf44536347149-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-f8cbf44536347149-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "56c3a1276b8b61f808850f0bafecfe3db996c8027d2b3c04b87a9472aac7ba74",
+        "at": "2026-11-20T07:18:58.888Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T07:18:58.889Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Document the automatic defaults and the Build section",
+    "summary": "In docs/daemon.md, extend the 'Build commands' section: the defaults written at repo add (which types, never overwriting, the buildDefaults result, that a default is a guess the user edits), buildSetup and the 'use suggested' action for repos with none, and the Build section on each client's Repo Configuration page.",
+    "size": "S",
+    "order": 7,
+    "acceptanceChecks": [
+      "docs/daemon.md describes the add-time defaults, the types they cover and that nothing is overwritten",
+      "It describes buildSetup, the suggestion and the Build section on the terminal, VS Code and JetBrains pages",
+      "It says a default is a typical command, not a verified one, and where to change it"
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "docs/daemon.md: the Build commands section is read against the shipped behaviour and states the add-time defaults, buildSetup and the Build section"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

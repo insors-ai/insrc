@@ -8,7 +8,8 @@
  * Lists the rows the daemon defines (`repoFields` from config.catalog) with this
  * repo's values (`repo.settings.get`). Local rows are editable; sign-in, target and
  * policy rows are read-only. A refusal from the daemon is shown as its message.
- * ↑/↓ select · enter edit · esc close. An empty edit clears the row.
+ * ↑/↓ select · enter edit · esc close. An empty edit clears the row. The Build rows are a section of their
+ * own; for a repo with no build commands whose type has typical ones, `u` writes them (use suggested).
  */
 
 import { Box, Text, useInput } from 'ink';
@@ -19,7 +20,7 @@ import type { RepoFieldDef } from '../../config/repo-fields.js';
 import type { RepoSettingsPayload } from '../../daemon/repo-settings.js';
 import { useServices } from '../ui/context.js';
 import { Panel, KeyHints, TextPrompt } from '../ui/widgets.js';
-import { buildSettingsRows } from './repo-settings-model.js';
+import { buildSettingsRows, offeredSuggestion, writeSuggested } from './repo-settings-model.js';
 import type { SettingsRow } from './repo-settings-model.js';
 
 export function RepoSettingsModal(props: { repo: string; onClose: () => void }): ReactElement {
@@ -68,8 +69,20 @@ export function RepoSettingsModal(props: { repo: string; onClose: () => void }):
 		})();
 	};
 
+	const suggestion = offeredSuggestion(payload);
+
+	const useSuggested = (): void => {
+		if (suggestion === undefined) return;
+		void (async () => {
+			const result = await writeSuggested(suggestion, (key, value) => svc.config.setRepoSetting(props.repo, key, value));
+			if (result.ok) { setPayload(result.payload); setError(null); setNote('applied the suggested build commands'); }
+			else { setError(result.message); setNote(null); }
+		})();
+	};
+
 	useInput((input, key) => {
 		if (key.escape || input === 'q') props.onClose();
+		else if (input === 'u') useSuggested();
 		else if (key.upArrow) setCursor(c => Math.max(0, c - 1));
 		else if (key.downArrow) setCursor(c => Math.min(rows.length - 1, c + 1));
 		else if (key.return && row !== undefined) {
@@ -83,11 +96,14 @@ export function RepoSettingsModal(props: { repo: string; onClose: () => void }):
 			{loading ? <Text dimColor>loading…</Text> : null}
 			{error !== null ? <Text color="red">✗ {error}</Text> : null}
 			{rows.map((r, i) => (
-				<Box key={r.key}>
-					<Text {...(i === at ? { color: 'cyan' as const } : {})}>{i === at ? '❯ ' : '  '}</Text>
-					<Text bold={i === at}>{r.label.padEnd(18)}</Text>
-					<Text> {r.value}</Text>
-					<Text dimColor>{r.editable ? '' : '  (read-only)'}{r.note !== undefined ? `  ${r.note}` : ''}</Text>
+				<Box key={r.key} flexDirection="column">
+					{i === 0 || rows[i - 1]?.group !== r.group ? <Text bold underline>{r.group}</Text> : null}
+					<Box>
+						<Text {...(i === at ? { color: 'cyan' as const } : {})}>{i === at ? '❯ ' : '  '}</Text>
+						<Text bold={i === at}>{r.label.padEnd(18)}</Text>
+						<Text> {r.value}</Text>
+						<Text dimColor>{r.placeholder !== undefined ? `  suggested: ${r.placeholder}` : ''}{r.editable ? '' : '  (read-only)'}{r.note !== undefined ? `  ${r.note}` : ''}</Text>
+					</Box>
 				</Box>
 			))}
 			{note !== null ? <Text dimColor>{note}</Text> : null}
@@ -97,12 +113,13 @@ export function RepoSettingsModal(props: { repo: string; onClose: () => void }):
 						<TextPrompt
 							label={`${editing.label} (empty clears):`}
 							initial={editing.current}
+							{...(editing.placeholder !== undefined ? { placeholder: editing.placeholder } : {})}
 							onSubmit={(text) => save(editing, text)}
 							onCancel={() => setEditing(null)}
 						/>
 					</Box>
 				)
-				: <Box marginTop={1}><KeyHints hints={[['↑/↓', 'select'], ['enter', 'edit'], ['esc', 'close']]} /></Box>}
+				: <Box marginTop={1}><KeyHints hints={[['↑/↓', 'select'], ['enter', 'edit'], ...(suggestion !== undefined ? [['u', 'use suggested build commands'] as [string, string]] : []), ['esc', 'close']]} /></Box>}
 		</Panel>
 	);
 }

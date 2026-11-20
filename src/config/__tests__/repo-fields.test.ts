@@ -13,14 +13,14 @@ test('table keys, kinds, GithubEntry fields and one policy row per TeamPolicy ru
 	assert.equal(new Set(keys).size, keys.length, 'keys are unique');
 	for (const r of REPO_TRACKER_FIELDS) {
 		assert.ok(['local', 'status', 'policy'].includes(r.kind), `${r.key} kind`);
-		assert.equal(r.group, 'Tracker');
+		assert.ok(['Tracker', 'Build'].includes(r.group), `${r.key} group`);
 		assert.ok(r.label.length > 0 && r.description.length > 0, `${r.key} text`);
 		if (r.type === 'enum') assert.ok((r.enumValues ?? []).length > 0, `${r.key} enum values`);
 	}
 
 	const local = REPO_TRACKER_FIELDS.filter(r => r.kind === 'local').map(r => r.key);
-	assert.deepEqual(local, ['type', 'owner', 'repo', 'ghPath', 'ghHost', 'branchPattern', 'gitHooks']);
-	const sample: Record<string, unknown> = { type: 'github', owner: 'o', repo: 'r', ghPath: 'p', ghHost: 'h', branchPattern: 'b', gitHooks: true };
+	assert.deepEqual(local, ['type', 'owner', 'repo', 'ghPath', 'ghHost', 'branchPattern', 'gitHooks', 'typecheckCommand', 'testCommand', 'resultFormat']);
+	const sample: Record<string, unknown> = { type: 'github', owner: 'o', repo: 'r', ghPath: 'p', ghHost: 'h', branchPattern: 'b', gitHooks: true, typecheckCommand: 'c', testCommand: 't', resultFormat: 'tap' };
 	assert.deepEqual(Object.keys(sample).sort(), [...local].sort());
 
 	// One policy row per rule of a real TeamPolicy value (every key except its provenance).

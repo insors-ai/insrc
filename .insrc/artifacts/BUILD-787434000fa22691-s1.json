@@ -1,0 +1,272 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 22,
+        "contentHash": "6aa0e0681dccd961b06102b08c8bdd35bfd1fff21c4fb9b4745acb7ea5765ed2",
+        "at": "2026-11-20T05:49:00.425Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 22,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T06:00:36.218Z",
+        "override": {
+          "reason": "Automated code review is unavailable while being rewritten. Self-review by the controller (author of the code), recorded in /tmp/.insrc/review-packet-787434000fa22691-s1.md, plus an external review of revision 442da4081 whose two P2 findings were reproduced and fixed (ce84e27a6, 6e5e3737e). All seven Tasks pass the daemon validation gate at 3acdac40a. Approved by the user in chat."
+        }
+      }
+    },
+    "workflow": "build",
+    "runId": "store-aced5edc-6f65-48c6-ba5d-f59c654e8850",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-19T18:39:05.994Z",
+    "epicCreatedAt": "2026-11-19T18:15:53.783Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "787434000fa22691",
+    "storyId": "s1",
+    "revision": 22,
+    "updatedAt": "2026-11-20T05:48:04.883Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicSlug": "replace-build-gate-s-hardcoded-node"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
+      }
+    ],
+    "testRecord": {
+      "md": "docs/standalone/replace-build-gate-s-hardcoded-node-E2026111978743400/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T05:48:04.883Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/validation-checks.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T05:48:04.883Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/__tests__/build-step.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T05:48:04.883Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/__tests__/validation-checks-registry.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T05:48:04.883Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/__tests__/test-record.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T05:48:04.883Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/test-record.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T05:48:04.883Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/__tests__/render.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T05:48:04.883Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/phases/implement.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T05:48:04.883Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/phases/validate.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T05:48:04.883Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/render.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T05:48:04.883Z"
+      },
+      {
+        "target": {
+          "file": "src/prompts/build/implement-task.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T05:48:04.883Z"
+      },
+      {
+        "target": {
+          "file": "src/prompts/build/validate-task.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T05:48:04.883Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/__tests__/validate-task-round.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T05:48:04.883Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/command-setting.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T05:48:04.883Z"
+      },
+      {
+        "target": {
+          "file": "docs/daemon.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T05:48:04.883Z"
+      },
+      {
+        "target": {
+          "file": "src/config/config-catalog.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T05:48:04.883Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/__tests__/command-setting.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T05:48:04.883Z"
+      },
+      {
+        "target": {
+          "file": "src/config/__tests__/config-catalog-contract.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T05:48:04.883Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/__tests__/test-mapping.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T05:48:04.883Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/test-mapping.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T05:48:04.883Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/__tests__/settings-modal.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T05:48:04.883Z"
+      },
+      {
+        "target": {
+          "file": "src/config/__tests__/fixtures/repo-fields-catalog.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T05:48:04.883Z"
+      },
+      {
+        "target": {
+          "file": "src/config/__tests__/repo-fields.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T05:48:04.883Z"
+      },
+      {
+        "target": {
+          "file": "src/config/repo-fields.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T05:48:04.883Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/config/github.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T05:48:04.883Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/panels/repo-config.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T05:48:04.883Z"
+      }
+    ],
+    "commit": "3acdac40a",
+    "summary": "The build commands are per registered repository (rows of the repo settings table, group Build), not global catalog rows; the config.catalog payload carries them as repoFields, which the catalog contract test now checks."
+  },
+  "citations": []
+}

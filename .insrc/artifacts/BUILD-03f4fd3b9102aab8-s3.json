@@ -1,0 +1,104 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 13,
+        "contentHash": "b9d4ea1c8761c4402a050625a94257861e1a1f52cfd14e69f923f6027406b837",
+        "at": "2026-11-20T06:01:58.573Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 13,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T06:12:24.212Z",
+        "override": {
+          "reason": "Automated code review is retired/unavailable (CLAUDE.md); self-review packet + SELF-REVIEW.md stand in. Both Tasks passed the build-validation gate; all 7 externally-reported P2 defects across 3 rounds fixed and re-validated (201/201 tests). User approved in chat."
+        }
+      }
+    },
+    "workflow": "build",
+    "runId": "store-19ccde51-8c4c-4e70-9e2c-4c695bc16dc8",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-19T19:32:33.166Z",
+    "epicCreatedAt": "2026-11-18T06:14:00.057Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "03f4fd3b9102aab8",
+    "storyId": "s3",
+    "revision": 13,
+    "updatedAt": "2026-11-20T06:01:04.310Z",
+    "authoredBy": "controller",
+    "epicSlug": "review-rounds-reconciliation-recovery"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      }
+    ],
+    "summary": "Narrowed isUnambiguous to only the genuinely safe case: an exact category+severity match recurring in currentFindings (confirmed). Every other case -- absence, a same-category/different-severity match, or an empty currentFindings set -- is now ambiguous and reads the audit trail when one exists, fixing the gap where an empty currentFindings set made the audit trail unreachable.",
+    "testRecord": {
+      "md": "docs/epics/review-rounds-reconciliation-recovery-E2026111803f4fd3b/S003/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/config/role-taxonomy.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T06:01:04.310Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-round/__tests__/reconciliation.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T06:01:04.310Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-round/__type-tests__/reconciliation-result.typecheck.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T06:01:04.310Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-round/reconciliation.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T06:01:04.310Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/review-rounds-reconciliation-recovery-E2026111803f4fd3b/S003/SELF-REVIEW.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T06:01:04.310Z"
+      }
+    ],
+    "commit": "68dfdbc3d"
+  },
+  "citations": []
+}

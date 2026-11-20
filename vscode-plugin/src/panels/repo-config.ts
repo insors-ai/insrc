@@ -28,10 +28,11 @@
 import { reasoningRoleTaxonomy } from '../../../src/config/role-taxonomy.js';
 import type { Criticality, RoleDescriptor } from '../../../src/config/role-taxonomy.js';
 import { validateRepoSetting, type RepoFieldDef } from '../../../src/config/repo-fields.js';
-import { buildSettingsRows } from '../../../src/cli/panes/repo-settings-model.js';
+import { buildSettingsRows, offeredSuggestion, writeSuggested } from '../../../src/cli/panes/repo-settings-model.js';
 import { escapeHtml } from './html.js';
 import type { McpRegistrationView, RepoConfigRenderer, RepoConfigRendererDeps, RepoConfigWrite, RepoProviderRegistration, RepoRef, RepoTrackerWrite } from './types.js';
 import type { ConfigWriteResult } from '../config/types.js';
+import type { SettingsResult } from '../../../src/daemon/repo-settings.js';
 import type { ConsentGate } from '../surfaces/consent-gate.js';
 import type { StatusSurface } from '../surfaces/status-surface.js';
 import type { McpClient, McpClientOutcome, SteeringSelection } from '../../../src/shared/types.js';
@@ -116,15 +117,21 @@ function trackerSection(content: string): string {
   return `<details id="insrc-tracker" class="section"><summary class="section-head">Tracker</summary><div class="tracker-body">${content}</div></details>`;
 }
 
+/** The Build commands: a section of their own beside Tracker, opened when there is a suggestion to apply. */
+function buildSection(content: string, open: boolean): string {
+  return `<details id="insrc-build" class="section"${open ? ' open' : ''}><summary class="section-head" style="display: list-item; padding: 4px 0">Build</summary><div class="tracker-body">${content}</div></details>`;
+}
+
 async function renderTrackerSection(deps: RepoConfigRendererDeps, repoPath: string): Promise<string> {
   const unavailable = () => trackerSection('<p class="hint">Tracker settings are unavailable. Reopen Repo Configuration to retry.</p>');
   if (!deps.repoFields || !deps.repoSettings) return unavailable();
   try {
-    const fields = (await deps.repoFields()).filter(field => field.group === 'Tracker');
+    const fields = (await deps.repoFields()).filter(field => field.group === 'Tracker' || field.group === 'Build');
     if (fields.length === 0) return unavailable();
     const result = await deps.repoSettings(repoPath);
     if (!result.ok) return trackerSection(`<p class="error">${escapeHtml(result.error.message)} Reopen Repo Configuration to retry.</p>`);
     const config: string[] = [];
+    const build: string[] = [];
     const status: string[] = [];
     const policies: string[] = [];
     for (const [index, row] of buildSettingsRows(fields, result.payload).entries()) {
@@ -142,15 +149,16 @@ async function renderTrackerSection(deps: RepoConfigRendererDeps, repoPath: stri
       }
       let control: string;
       if (field.type === 'string') {
-        control = `<input type="text" data-tracker-key="${key}" value="${escapeHtml(row.current)}" placeholder="${escapeHtml(row.value)}" />`;
+        control = `<input type="text" data-tracker-key="${key}" value="${escapeHtml(row.current)}" placeholder="${escapeHtml(row.placeholder ?? row.value)}" />`;
       } else {
         const values = field.type === 'boolean' ? ['true', 'false'] : (field.enumValues ?? []);
         const fallback = field.default === undefined ? '(not set)' : `${String(field.default)} (default)`;
         const options = ['', ...values].map(value => `<option value="${escapeHtml(value)}"${value === row.current ? ' selected' : ''}>${escapeHtml(value || fallback)}</option>`).join('');
         control = `<select data-tracker-key="${key}" data-tracker-type="${field.type}">${options}</select>`;
       }
-      const source = row.current !== '' ? 'Repo override' : row.value;
-      config.push(`<label class="tracker-field" data-kind="local"><span class="tracker-label">${label}</span>${control}<span class="tracker-source">${escapeHtml(source)}</span>${note}</label>`);
+      const source = row.current !== '' ? 'Repo override' : row.placeholder !== undefined ? `${row.value} · suggested: ${row.placeholder}` : row.value;
+      // The Build commands are a section of their own, not part of the Tracker grid.
+      (field.group === 'Build' ? build : config).push(`<label class="tracker-field" data-kind="local"><span class="tracker-label">${label}</span>${control}<span class="tracker-source">${escapeHtml(source)}</span>${note}</label>`);
     }
     const policy = result.payload.policy;
     const policyBody = !policy.ok
@@ -158,12 +166,20 @@ async function renderTrackerSection(deps: RepoConfigRendererDeps, repoPath: stri
       : policy.mode === 'none'
         ? '<p class="hint">No team policy is configured for this repo.</p>'
         : `<table class="tracker-policies" aria-labelledby="tracker-policies-heading"><thead><tr><th scope="col">Policy</th><th scope="col">Value</th></tr></thead><tbody>${policies.join('')}</tbody></table>`;
+    const suggestion = offeredSuggestion(result.payload);
+    const action = suggestion === undefined ? '' :
+      `<p class="hint">This repository has no build commands. The typical commands for its project type can be applied together.</p>` +
+      `<button id="insrc-use-suggested" type="button">Use suggested build commands</button>`;
+    const buildBody = build.length === 0 ? '' : buildSection(
+      `<section aria-labelledby="build-config-heading"><h3 id="build-config-heading">Build commands</h3>` +
+      `<p class="hint">The commands the build gate runs for this repository. Set both commands together.</p>` +
+      `<div class="tracker-grid">${build.join('')}</div>${action}</section>`, suggestion !== undefined);
     return trackerSection(
       `<section aria-labelledby="tracker-config-heading"><h3 id="tracker-config-heading">Tracker configuration</h3>` +
       `<dl class="tracker-status">${status.join('')}</dl>` +
       `<p class="hint">Clear a field to use its default or leave it unset.</p><div class="tracker-grid">${config.join('')}</div></section>` +
       `<section aria-labelledby="tracker-policies-heading"><h3 id="tracker-policies-heading">Policies</h3>${policyBody}</section>`,
-    );
+    ) + buildBody;
   } catch {
     return unavailable();
   }
@@ -276,6 +292,48 @@ export function createRepoTrackerWriteHandler(deps: RepoTrackerWriteDeps): (writ
       } catch (err) {
         deps.logger.warn(`insrc: tracker setting write failed — ${err instanceof Error ? err.message : String(err)}`);
         report('Could not update the tracker setting.');
+      } finally {
+        if (isCurrent()) deps.refresh();
+      }
+    })();
+  };
+}
+
+interface RepoBuildSuggestedDeps extends Pick<RepoConfigWriteDeps, 'registeredRepos' | 'consent' | 'status' | 'logger' | 'refresh'> {
+  repoSettings(repoPath: string): Promise<SettingsResult>;
+  writeRepoSetting(repoPath: string, key: string, value: string | boolean | null): Promise<ConfigWriteResult>;
+}
+
+/**
+ * The 'Use suggested build commands' action: one consent, then the three suggested keys through the
+ * panel's own repo-setting write. The suggestion is read from the daemon here, never taken from the
+ * page; it is applied only for a repo with no commands. When a write is refused the keys already
+ * written are cleared, so no lone command is left. Never throws.
+ */
+export function createRepoBuildSuggestedHandler(deps: RepoBuildSuggestedDeps): (repoPath: string, isCurrent: () => boolean) => void {
+  return (repoPath, isCurrent) => {
+    const report = (detail: string) => deps.status.set({ state: deps.status.current().state, detail });
+    void (async () => {
+      try {
+        if (!isCurrent()) return;
+        if (!(await deps.registeredRepos()).some(repo => repo.path === repoPath)) { report('This repository is no longer registered.'); return; }
+        const read = await deps.repoSettings(repoPath);
+        const suggestion = read.ok ? offeredSuggestion(read.payload) : undefined;
+        if (suggestion === undefined) { report('There are no suggested build commands for this repository.'); return; }
+        const outcome = await deps.consent.ask({
+          title: 'Apply the suggested build commands?',
+          detail: `Set ${suggestion.typecheckCommand} and ${suggestion.testCommand} as the build commands of ${repoPath}?`,
+          acceptLabel: 'Apply',
+        });
+        if (!isCurrent() || outcome !== 'accepted') return;
+        const result = await writeSuggested(suggestion, async (key, value) => {
+          const written = await deps.writeRepoSetting(repoPath, key, value);
+          return written.ok ? { ok: true as const, payload: true } : { ok: false as const, error: { message: written.reason } };
+        });
+        report(result.ok ? `Applied the suggested build commands for ${repoPath}.` : `Suggested build commands refused: ${result.message}`);
+      } catch (err) {
+        deps.logger.warn(`insrc: applying the suggested build commands failed — ${err instanceof Error ? err.message : String(err)}`);
+        report('Could not apply the suggested build commands.');
       } finally {
         if (isCurrent()) deps.refresh();
       }

@@ -1,7 +1,10 @@
 package ai.insors.insrc.jetbrains.settings
 
 import ai.insors.insrc.jetbrains.daemon.DaemonGateway
+import ai.insors.insrc.jetbrains.daemon.RepoFieldDto
+import ai.insors.insrc.jetbrains.daemon.RepoSettingsResult
 import ai.insors.insrc.jetbrains.daemon.SaveResult
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.options.ConfigurationException
 import java.awt.BorderLayout
 import java.awt.Component
@@ -14,6 +17,9 @@ import javax.swing.JComboBox
 import javax.swing.JComponent
 import javax.swing.JLabel
 import javax.swing.JPanel
+import javax.swing.SwingUtilities
+import javax.swing.event.DocumentEvent
+import javax.swing.event.DocumentListener
 
 /**
  * The per-repo overrides sub-section (Story S005), plugged into the sc3
@@ -36,7 +42,14 @@ import javax.swing.JPanel
 class PerRepoSection(
     private val model: PerRepoOverridesModel,
     private val gateway: DaemonGateway,
+    /** The repo-scoped tracker rows from config.catalog (Story s3); empty hides the Tracker and Build blocks. */
+    repoFields: List<RepoFieldDto> = emptyList(),
+    /** Each registered repo's `repo.settings.get` result, loaded on a pooled thread by the host. */
+    trackerSettings: Map<String, RepoSettingsResult> = emptyMap(),
 ) : SettingsSection {
+
+    /** The Tracker and Build blocks' model: their edits go to writeRepoSetting; model-tier edits stay on writeSetting. */
+    private val tracker = RepoTrackerModel(repoFields, trackerSettings)
 
     /** The tier chooser's first item — selecting it clears that leaf's override. */
     private val useDefault = "(use default)"
@@ -56,7 +69,7 @@ class PerRepoSection(
         return panel
     }
 
-    override fun isModified(): Boolean = model.isModified()
+    override fun isModified(): Boolean = model.isModified() || tracker.isModified()
 
     /** Set when a write of the last apply was saved with the daemon's restartRequired. */
     @Volatile
@@ -66,6 +79,7 @@ class PerRepoSection(
 
     override fun reset() {
         model.revert()
+        tracker.revert()
         rebuild()
     }
 
@@ -91,6 +105,21 @@ class PerRepoSection(
                 is SaveResult.Unavailable -> failures.add("$label: ${result.reason}")
             }
         }
+        // Tracker and Build rows: each pending edit goes through repo.settings.set, not config.write.
+        var trackerSaved = false
+        for (w in tracker.collectWrites()) {
+            when (val result = gateway.writeRepoSetting(w.repoPath, w.key, w.value)) {
+                is SaveResult.Saved -> {
+                    tracker.onSaved(w.repoPath, w.key)
+                    // Re-read this repo's settings (this method already runs off the EDT).
+                    tracker.replace(w.repoPath, gateway.readRepoSettings(w.repoPath))
+                    trackerSaved = true
+                }
+                is SaveResult.Rejected -> failures.add("${w.repoPath}/${w.key}: ${result.message}")
+                is SaveResult.Unavailable -> failures.add("${w.repoPath}/${w.key}: ${result.reason}")
+            }
+        }
+        if (trackerSaved) SwingUtilities.invokeLater { rebuild() }
         if (failures.isNotEmpty()) {
             throw ConfigurationException(
                 "Some per-repo overrides could not be saved:\n" + failures.joinToString("\n"),
@@ -108,6 +137,10 @@ class PerRepoSection(
             panel.removeAll()
             panel.add(addRow())
             for (row in model.rows()) panel.add(repoPanel(row))
+            for (repoPath in tracker.repos()) {
+                panel.add(trackerPanel(repoPath))
+                buildPanel(repoPath)?.let { panel.add(it) }
+            }
             panel.revalidate()
             panel.repaint()
         } finally {
@@ -168,6 +201,98 @@ class PerRepoSection(
 
         panel.maximumSize = Dimension(Int.MAX_VALUE, panel.preferredSize.height)
         return panel
+    }
+
+    /** One row of the Tracker or Build block: local rows are text fields (blank clears); the others are read-only labels. */
+    private fun settingRow(repoPath: String, row: TrackerRow): JComponent {
+        val rowPanel = JPanel(BorderLayout())
+        rowPanel.alignmentX = Component.LEFT_ALIGNMENT
+        rowPanel.add(JLabel(row.label), BorderLayout.WEST)
+        if (row.editable) {
+            val text = PlaceholderTextField(row.current, 20, row.placeholder)
+            text.toolTipText = row.note
+            text.document.addDocumentListener(object : DocumentListener {
+                private fun changed() {
+                    if (!suppressEdits) tracker.setEdit(repoPath, row.key, text.text)
+                }
+                override fun insertUpdate(e: DocumentEvent) = changed()
+                override fun removeUpdate(e: DocumentEvent) = changed()
+                override fun changedUpdate(e: DocumentEvent) = changed()
+            })
+            rowPanel.add(text, BorderLayout.EAST)
+        } else {
+            rowPanel.add(JLabel("${row.value} (read-only)"), BorderLayout.EAST)
+        }
+        // the row's note ("saved; not used yet", "set by the team policy"), as the terminal and VS Code show it
+        row.note?.let {
+            val noteLabel = JLabel(it)
+            noteLabel.foreground = java.awt.Color.GRAY
+            rowPanel.add(noteLabel, BorderLayout.SOUTH)
+        }
+        rowPanel.maximumSize = Dimension(Int.MAX_VALUE, rowPanel.preferredSize.height)
+        return rowPanel
+    }
+
+    /**
+     * One registered repo's Tracker block (Story s3): the daemon's tracker rows with this repo's values. A repo
+     * whose settings did not load shows its reason instead of rows, so one repo's failure never blanks the others.
+     * The Build commands are a block of their own, see [buildPanel].
+     */
+    private fun trackerPanel(repoPath: String): JComponent {
+        val panel = JPanel()
+        panel.layout = BoxLayout(panel, BoxLayout.Y_AXIS)
+        panel.border = BorderFactory.createTitledBorder("$repoPath — tracker")
+        panel.alignmentX = Component.LEFT_ALIGNMENT
+        val failure = tracker.failure(repoPath)
+        if (failure != null) {
+            val note = JLabel("Tracker settings unavailable — $failure")
+            note.alignmentX = Component.LEFT_ALIGNMENT
+            panel.add(note)
+        }
+        for (row in tracker.rows(repoPath).filter { it.group != "Build" }) panel.add(settingRow(repoPath, row))
+        panel.maximumSize = Dimension(Int.MAX_VALUE, panel.preferredSize.height)
+        return panel
+    }
+
+    /**
+     * One repo's Build block, a section of its own beside its Tracker block: the build commands with the
+     * suggestion as the placeholder of an unset field, and, for a repo with no commands whose project type has
+     * typical ones, a "Use suggested build commands" button. Null when the repo's settings did not load or
+     * the daemon defines no Build rows.
+     */
+    private fun buildPanel(repoPath: String): JComponent? {
+        val rows = tracker.rows(repoPath).filter { it.group == "Build" }
+        if (rows.isEmpty()) return null
+        val panel = JPanel()
+        panel.layout = BoxLayout(panel, BoxLayout.Y_AXIS)
+        panel.border = BorderFactory.createTitledBorder("$repoPath — build")
+        panel.alignmentX = Component.LEFT_ALIGNMENT
+        for (row in rows) panel.add(settingRow(repoPath, row))
+        val suggestion = tracker.suggestion(repoPath)
+        if (suggestion != null) {
+            val button = JButton("Use suggested build commands")
+            button.alignmentX = Component.LEFT_ALIGNMENT
+            button.addActionListener { useSuggested(repoPath, suggestion, button) }
+            panel.add(button)
+        }
+        panel.maximumSize = Dimension(Int.MAX_VALUE, panel.preferredSize.height)
+        return panel
+    }
+
+    /**
+     * The "use suggested" action: writes the three suggested keys through repo.settings.set off the EDT, and
+     * clears the keys already written when one is refused, so no lone command is left. Only a click writes.
+     */
+    private fun useSuggested(repoPath: String, suggestion: Map<String, String>, button: JButton) {
+        button.isEnabled = false
+        ApplicationManager.getApplication().executeOnPooledThread {
+            val failure = RepoTrackerModel.writeSuggested(suggestion) { key, value -> gateway.writeRepoSetting(repoPath, key, value) }
+            tracker.replace(repoPath, gateway.readRepoSettings(repoPath))
+            SwingUtilities.invokeLater {
+                rebuild()
+                if (failure != null) javax.swing.JOptionPane.showMessageDialog(body, failure, "Suggested build commands", javax.swing.JOptionPane.ERROR_MESSAGE)
+            }
+        }
     }
 
     /**

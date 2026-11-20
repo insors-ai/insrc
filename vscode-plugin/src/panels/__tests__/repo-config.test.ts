@@ -51,7 +51,7 @@ test('renderRepoConfig: discrete per-repo form fields from models.byRepo[repoPat
 
   // A repo with NO byRepo entry -> every field 'global'.
   const missing = await renderRepoConfig({ registeredRepos: async () => REPOS, rawConfig: async () => ({}), mcpRegistration: async () => [] })('/Users/x/work/repo-two');
-  assert.match(missing, new RegExp(`data-segments="${seg(['tasks', 'review'])}"><option value="" selected>global</option>`), 'a missing byRepo entry -> all-global form');
+  assert.match(missing, new RegExp(`data-segments="${seg(['tasks', 'build'])}"><option value="" selected>global</option>`), 'a missing byRepo entry -> all-global form');
 });
 
 test('renderRepoConfig groups the taxonomy into open critical and closed peripheral roles', async () => {
@@ -123,7 +123,7 @@ test('renderRepoConfig: an unregistered selected repo falls back to picker-only'
 
 test('renderRepoConfig: every repo path/name + field value HTML-escaped; a registeredRepos()/rawConfig() rejection propagates', async () => {
   const evilRepos: RepoRef[] = [{ path: '/r/<x>', name: '<b>&' }];
-  const raw = { models: { byRepo: { '/r/<x>': { tasks: { review: '<script>x</script>' } } } } };
+  const raw = { models: { byRepo: { '/r/<x>': { tasks: { build: '<script>x</script>' } } } } };
   const html = await renderRepoConfig({ registeredRepos: async () => evilRepos, rawConfig: async () => raw, mcpRegistration: async () => [] })('/r/<x>');
   assert.doesNotMatch(html, /<script>x<\/script>/, 'a stored value is never echoed raw (only fixed tier options render)');
   assert.match(html, /data-repo="\/r\/&lt;x&gt;"/, 'the repo path is escaped');

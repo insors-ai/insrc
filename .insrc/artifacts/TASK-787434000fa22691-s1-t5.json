@@ -1,0 +1,98 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-265b3d8e-5752-4610-b9b6-5ac5fb68367e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-19T18:37:15.977Z",
+    "epicCreatedAt": "2026-11-19T18:15:53.783Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "787434000fa22691",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Read and validate the optional repo setting; wire the phases",
+      "parent": {
+        "entityId": "STORY-787434000fa22691-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-787434000fa22691-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-787434000fa22691-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-787434000fa22691-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-787434000fa22691-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "fb727ed5467403636320ffe5bbf182cb5c71913dd5511f1e68d65fc611791e49",
+        "at": "2026-11-19T18:37:15.981Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-19T18:37:15.982Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Read and validate the optional repo setting; wire the phases",
+    "summary": "Read an optional per-repo setting for the typecheck command, test command and result format; validate it in basePlan (empty command or a format other than tap or exit-code is refused with InvalidCommandSetting); the setting wins over the Node default with commandsSource 'repo-setting'. Wire the validate and implement phases to pass the profile to the plan and the prompt.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "A repo setting wins over the default for a Node and a non-Node project",
+      "An empty command or unknown result format is refused naming the field and nothing runs",
+      "A non-Node project with a setting gets an independent run judged as stated",
+      "validate-task-round test shows a no-command build does not read as passed and a Node round is unchanged"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts: a repo setting wins over the default; an empty command or an unknown result format is refused with InvalidCommandSetting"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/steps/build-step/__tests__/validate-task-round.test.ts: a Node project's round is unchanged"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/steps/build-step/__tests__/validate-task-round.test.ts: a project with no commands is not passed and its record says the gate ran nothing"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

@@ -337,3 +337,43 @@ test("the 'daemon already ran' text is absent when commandsSource is none", () =
 		assert.match(prompt, /Do not change anything/);
 	}
 });
+
+// ---------------------------------------------------------------------------
+// The mapping instructions follow the profile (the builder's `tests` mapping)
+// ---------------------------------------------------------------------------
+
+test("the mapping instructions follow the project's profile: native test files and file-level checking for a configured non-Node project, per-case checking in .test.ts files for Node", () => {
+	const repo = markerDir('pyproject.toml');
+	const py = (resultFormat: 'exit-code' | 'tap') => ({ ...defaultCommandProfile('python'), typecheck: ['mypy', '.'], testCommand: ['pytest'], resultFormat, commandsSource: 'repo-setting' as const });
+	const standalone = (profile: ReturnType<typeof py> | ReturnType<typeof defaultCommandProfile>) => renderStandaloneImplementPrompt({
+		epicHash: 'f1bf0fb3085c629c', storyId: 'S001', sizeClass: 'small', producesLld: true, focus: 'x', lldMdRel: 'docs/x/LLD.md', resolvedDecisions: '', profile,
+	});
+
+	// Node, no setting: as before: `.test.ts` files, each case checked on its own.
+	for (const prompt of [renderImplementPrompt(NODE_REPO, TASK, ''), standalone(defaultCommandProfile('node'))]) {
+		assert.ok(prompt.includes('repo-relative path of the `.test.ts` file'));
+		assert.ok(prompt.includes('is skipped, or is not found'));
+		assert.equal(prompt.includes('NOT checked one by one'), false);
+	}
+	// A configured Python project, exit-code: its own test files are accepted, and the instructions say the cases are not checked one by one.
+	for (const prompt of [renderImplementPrompt(repo, TASK, '', py('exit-code')), standalone(py('exit-code'))]) {
+		assert.ok(prompt.includes('tests/test_example.py') && prompt.includes('not only a `.test.ts` file'), 'native files are accepted');
+		assert.ok(prompt.includes('NOT checked one by one') && prompt.includes('exit code'), 'file-level checking is stated');
+		assert.equal(prompt.includes('is skipped, or is not found'), false, 'no per-case promise');
+		assert.equal(prompt.includes('repo-relative path of the `.test.ts` file)'), false);
+	}
+	// A configured Python project reading TAP: native files, and each case is checked.
+	for (const prompt of [renderImplementPrompt(repo, TASK, '', py('tap')), standalone(py('tap'))]) {
+		assert.ok(prompt.includes('tests/test_example.py') && prompt.includes('is skipped, or is not found'));
+		assert.equal(prompt.includes('NOT checked one by one'), false);
+	}
+	// A Node project with commands of its own keeps the `.test.ts` rule, checked by file when its format is exit-code.
+	const nodeOwn = { ...defaultCommandProfile('node'), typecheck: ['tsc'], testCommand: ['npm', 'test'], resultFormat: 'exit-code' as const, commandsSource: 'repo-setting' as const };
+	const nodeOwnPrompt = standalone(nodeOwn);
+	assert.ok(nodeOwnPrompt.includes('repo-relative path of the `.test.ts` file') && nodeOwnPrompt.includes('NOT checked one by one'));
+	// A project the gate has no command for: nothing is run, and the instructions say so.
+	const none = renderImplementPrompt(repo, TASK, '', defaultCommandProfile('python'));
+	assert.ok(none.includes('so it runs nothing') && none.includes('repo.settings.set'));
+	assert.equal(none.includes('is skipped, or is not found'), false);
+	for (const prompt of [renderImplementPrompt(repo, TASK, '', py('tap')), standalone(py('exit-code'))]) assert.equal(prompt.includes('{{'), false, 'no placeholder is left unfilled');
+});

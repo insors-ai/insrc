@@ -256,6 +256,20 @@ data class PolicyRowsDto(
     val sourceFetchedAt: String? = null,
 )
 
+/**
+ * What the build gate would use for a repo, and the typical commands that could be set when it has none
+ * (LLD-f8cbf44536347149-s1), mirroring the `buildSetup` of the daemon's `repo.settings.get` reply.
+ */
+data class BuildSetupDto(
+    val projectType: String,
+    /** `node-default`, `repo-setting`, `none` or `invalid`. */
+    val commandsSource: String,
+    /** Why the stored commands are `invalid`. */
+    val note: String? = null,
+    /** Typical commands keyed by repo setting key; only for a repo with none whose project type has them. */
+    val suggestion: Map<String, String> = emptyMap(),
+)
+
 /** One repo's tracker settings payload (Story s3), mirroring the daemon's `repo.settings.get` reply. */
 data class RepoSettingsDto(
     val repo: String,
@@ -264,6 +278,8 @@ data class RepoSettingsDto(
     val resolved: ResolvedTargetDto,
     val signin: SigninDto,
     val policy: PolicyRowsDto,
+    /** Null for a daemon that sends no `buildSetup`: the payload then reads as before. */
+    val buildSetup: BuildSetupDto? = null,
 )
 
 /**
@@ -1792,6 +1808,7 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
             val policyValues = (policy["values"] as? Map<*, *>)?.entries
                 ?.associate { (k, v) -> k.toString() to v } ?: emptyMap()
             val policySource = policy["source"] as? Map<*, *>
+            val buildSetup = payload["buildSetup"] as? Map<*, *>
             return RepoSettingsDto(
                 repo = str(payload["repo"]),
                 values = values,
@@ -1815,6 +1832,15 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
                     sourceRef = (policySource?.get("ref") as? String)?.takeIf { it.isNotEmpty() },
                     sourceFetchedAt = (policySource?.get("fetchedAt") as? String)?.takeIf { it.isNotEmpty() },
                 ),
+                buildSetup = buildSetup?.let { b ->
+                    BuildSetupDto(
+                        projectType = str(b["projectType"]),
+                        commandsSource = str(b["commandsSource"]),
+                        note = (b["note"] as? String)?.takeIf { it.isNotEmpty() },
+                        suggestion = (b["suggestion"] as? Map<*, *>)?.entries
+                            ?.mapNotNull { (k, v) -> (v as? String)?.let { k.toString() to it } }?.toMap() ?: emptyMap(),
+                    )
+                },
             )
         }
 

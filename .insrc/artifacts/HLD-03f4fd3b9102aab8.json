@@ -60,6 +60,13 @@
         "choice": "Nested security pass",
         "rationale": "Security runs nested inside an existing design/code round; reviewKind stays 'design'|'code' with no third member. The round-entry/review call takes a boolean flag (default true) controlling whether the nested security pass runs for that round, so callers that want to skip it explicitly opt out rather than opt in.",
         "resolvedAt": "2026-11-19T13:31:51.181Z"
+      },
+      "qf81983cc": {
+        "question": "Revision 4 amendment (fieldAdd, non-breaking): sc2's Finding gained an id: string field. s3's reconciliation pass needs a stable per-finding identity to key ReconciliationResult.priorFindingRef off of; Finding previously had only category+severity, which cross-Story review found gave s3 no way to distinguish two findings sharing both. sc2.consumedByStories corrected to list s3 and s4, which both already depend on Finding's shape. No other sharedContracts field changed.",
+        "status": "resolved",
+        "choice": "Producer-assigned persistent ID",
+        "rationale": "Consistent with s3's own resolution of the same HLD rev4 question: Finding.id is producer-assigned and preserved across rounds, which s3's reconcileRound already relies on for priorFindingRef identity.",
+        "resolvedAt": "2026-11-20T06:22:49.212Z"
       }
     }
   },

@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1a7f99f0-e439-42e6-90ab-45150b9cfc04",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-19T18:37:15.960Z",
+    "epicCreatedAt": "2026-11-19T18:15:53.783Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "787434000fa22691",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Route basePlan and the plan fields through the profile; no-command result",
+      "parent": {
+        "entityId": "STORY-787434000fa22691-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-787434000fa22691-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-787434000fa22691-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "e2a5bc6f9c95e6bf76c0cd42c5f0d346bbed707564ed647e9e27008ba9ea87d5",
+        "at": "2026-11-19T18:37:15.964Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-19T18:37:15.964Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Route basePlan and the plan fields through the profile; no-command result",
+    "summary": "basePlan takes a CommandProfile and returns the commands plus resultFormat and commandsSource; ValidationCheckPlan gains both fields and allows empty commands. runValidationChecks makes no process call for commandsSource 'none' and returns typecheck and tests results that are ok false with a note saying nothing ran. The four route builders keep spreading basePlan.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "A Node project with no setting gets exactly today's plan and TAP judging",
+      "A plan with commandsSource 'none' makes no process call and both checks are ok false with a note",
+      "Existing validation-checks, tap-results and registry tests pass unchanged for the Node default"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts: a Node project with no setting gets the same argv and TAP judging as before"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts: a project with no known commands makes no process call and both checks are ok false with a note"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts: no Node command constant is the source of a non-Node plan"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

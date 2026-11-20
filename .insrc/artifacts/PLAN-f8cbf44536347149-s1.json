@@ -1,0 +1,356 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1795157434607-hqht2y",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-20T06:53:58.638Z",
+    "epicCreatedAt": "2026-11-20T06:25:36.857Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "claude-sonnet-5-5"
+        }
+      ]
+    },
+    "elapsedMs": 197451,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f8cbf44536347149",
+    "epicSlug": "set-build-commands-when-repo-added",
+    "storyId": "s1",
+    "lldRunId": "wf-1795156338735-68c2uy",
+    "lldEffectiveHash": "36e0a66fc3acb816d014ae81deaba7267d544578312045550a47e32e249bcc8c",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "a9ad227ec93bf9c2ce1a87a89860c5bb226a50905608d4f492f9064208c4be4b",
+        "at": "2026-11-20T06:54:00.199Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T07:18:56.865Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "1c0184f76eb5be914f6ec11325e31aa0d4c324e4"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Repo registration now stores a project type's typical build and test commands by itself, with no client prompt, and never overwrites or fails the add. The daemon owns the type table and the guarded writer; repo.settings.get gains a read-only buildSetup block. The terminal, VS Code and JetBrains Repo Configuration pages then show the Build rows as a section of their own, with the suggestion as the placeholder and a 'use suggested' action for repos with no commands. The work runs daemon first (t1, t2), then the shared fixture (t3), the three clients, and the docs."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add buildSetupFor and applyBuildDefaults in the repo settings module; return buildSetup from repo.settings.get",
+        "summary": "In src/daemon/repo-settings.ts add the types BuildSetup and BuildDefaultsOutcome, buildSetupFor(repoPath, entry) (project type from detectProjectType, commands source from the entry and the gate's profile rules, suggestion from PROJECT_TYPE_GUIDANCE only for python, go, rust and jvm with no commands) and applyBuildDefaults(repoPath, deps?) (reads the repo's own entry, writes the three keys in one writeKeys call only when none is set and the type has typical commands, never throws). repo.settings.get and repo.settings.set return payload.buildSetup. Nothing calls applyBuildDefaults yet.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "applyBuildDefaults writes typecheckCommand, testCommand and resultFormat 'exit-code' together for a Python, Go, Rust and JVM repo with no build key",
+          "It writes nothing for a Node repo, an unknown repo, and an entry that sets any one of the three keys, and reports the reason",
+          "It never throws: an unreadable entry or a failed write is { applied: false, reason: 'write-failed', note } and leaves no lone command",
+          "repo.settings.get returns buildSetup (type, commands source, suggestion for a repo with none, 'invalid' with a note for a bad entry) and writes nothing",
+          "Typecheck passes"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/daemon/__tests__/repo-settings.test.ts: applyBuildDefaults writes the type's typecheck and test commands and resultFormat exit-code together for a Python, Go, Rust and JVM repo with no build key, and writes nothing for a Node repo, an unknown repo and an entry that already sets any of the three keys"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/__tests__/repo-settings.test.ts: applyBuildDefaults never throws and reports write-failed when the entry cannot be read or the write fails, leaving no lone command"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/__tests__/repo-settings.test.ts: repo.settings.get returns buildSetup with the type, the commands source and the suggestion for a repo with none, and writes nothing"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Call applyBuildDefaults from repo.add as a guarded follow-up",
+        "summary": "In the repo.add handler of src/daemon/handler-runtime.ts, after the registration and the indexing start, call applyBuildDefaults(normalisedPath) with the handler's own configPath and writer, guarded like the steering and MCP follow-ups, and return its outcome as buildDefaults in the result. A failure is logged and never fails the add; no client input is needed. Its tests are in src/daemon/__tests__/handler-runtime.test.ts and, for the gate reading a stored default as an ordinary setting, src/daemon/steps/build-step/__tests__/validate-task-round.test.ts.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "repo.add on a Python repo registers it, stores the default commands with no prompt and reports buildDefaults applied",
+          "repo.add on a repo whose entry already holds commands keeps them and reports already-set",
+          "A failing write still registers the repo and the add succeeds",
+          "A repo whose commands came from the add defaults is gated by those commands as an ordinary repo setting"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/daemon/__tests__/handler-runtime.test.ts: repo.add on a Python repo registers it and stores the default commands with no prompt, reports buildDefaults applied, and a failing write still registers the repo"
+          },
+          {
+            "level": "integration",
+            "name": "src/daemon/__tests__/handler-runtime.test.ts: repo.add on a repo whose entry already holds commands keeps them and reports already-set"
+          },
+          {
+            "level": "integration",
+            "name": "src/daemon/steps/build-step/__tests__/validate-task-round.test.ts: a repo whose commands came from the add defaults is gated by those commands as an ordinary repo setting"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Regenerate the shared fixture with buildSetup and show the suggestion in the terminal rows model",
+        "summary": "Add a buildSetup to the repo.settings.get payload of src/config/__tests__/fixtures/repo-fields-catalog.json, and make buildSettingsRows in src/cli/panes/repo-settings-model.ts show the suggestion as the placeholder of an unset Build row (a repo with commandsSource 'none' and a suggestion). Rows keep the daemon's order, labels and kinds; a payload without buildSetup behaves as before.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "The shared fixture's payload carries buildSetup and the terminal rows still equal the fixture's rows",
+          "An unset Build row of a repo with a suggestion shows the suggestion as its placeholder text",
+          "A payload with no buildSetup renders exactly as before",
+          "Typecheck passes"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/cli/__tests__/repo-fields-contract.test.ts: the shared fixture's repo.settings.get payload carries buildSetup and the terminal rows still equal the fixture's rows"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Terminal: a Build section and a 'use suggested' action on the Repo Configuration screen",
+        "summary": "In the terminal settings modal (src/cli/panes/RepoSettingsModal.tsx) show the Build rows as a section of their own and, for a repo with commands source 'none' and a suggestion, offer an action that writes the three suggested values with repo.settings.set, clearing the first key when the second cannot be written (the LLD's lone-command rule). Nothing else about the modal changes.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "The modal shows the Build rows as a section of their own with the suggestion as the placeholder of an unset row",
+          "The 'use suggested' action is offered only when commands source is 'none' and a suggestion exists, and never for a repo that has commands",
+          "It writes the three keys through repo.settings.set only when invoked, and writes nothing otherwise",
+          "When the second write fails the first key is cleared and the reason is shown, so no lone command is left",
+          "The existing modal tests pass with the section"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/cli/__tests__/settings-modal.test.ts: the terminal Repo Configuration screen shows the Build rows as a section of their own with the suggestion as the placeholder of an unset row"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "VS Code: a Build section and a 'use suggested' action on the Repo Configuration page",
+        "summary": "In vscode-plugin/src/panels/repo-config.ts render the Build rows as a section of their own (not a sub-heading of the Tracker grid), with the suggestion as the placeholder of an unset row and an action that writes the three suggested values through the panel's existing repo-setting write with the same clear-the-first rollback. Keep the shared repo-fields contract: the same key, label, kind and note per row.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "The page renders the Build rows in a section of their own with the keys, labels and kinds of the shared fixture",
+          "An unset Build row shows the suggestion as its placeholder",
+          "The 'use suggested' action is offered only when commands source is 'none' and a suggestion exists, writes only when invoked and rolls the first key back when the second write fails",
+          "vscode-plugin's contract and renderer tests pass and its typecheck is clean"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "vscode-plugin/src/panels/__tests__/repo-fields-contract.test.ts: the VS Code Repo Configuration page renders the Build rows in a section of their own with the keys, labels and kinds of the shared fixture, and shows the suggestion as the placeholder of an unset row"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "JetBrains: a Build section and a 'use suggested' action in the repo settings",
+        "summary": "In jetbrains-plugin add buildSetup to RepoSettingsDto (parsed in DaemonGateway.kt) and render the Build rows as a section of their own in RepoTrackerModel's settings view, with the suggestion as the placeholder and the same 'use suggested' write with the clear-the-first rollback. Its Kotlin tests cannot be run here: the Task is verified by reading and by the user's Gradle run, and its smoke-level test is reported by the builder with evidence, not claimed as run.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "RepoSettingsDto carries an optional buildSetup and a payload without it parses as before",
+          "The repo settings view lists the Build rows as a section of their own with the suggestion as the placeholder",
+          "The 'use suggested' action is offered only when commands source is 'none' and a suggestion exists, writes only when invoked and clears the first key if the second write fails",
+          "The Kotlin contract test is updated and reported as not run here, with where the evidence is"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/RepoFieldsContractTest.kt: the JetBrains repo settings render the Build rows as a section of their own"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Document the automatic defaults and the Build section",
+        "summary": "In docs/daemon.md, extend the 'Build commands' section: the defaults written at repo add (which types, never overwriting, the buildDefaults result, that a default is a guess the user edits), buildSetup and the 'use suggested' action for repos with none, and the Build section on each client's Repo Configuration page.",
+        "size": "S",
+        "order": 7,
+        "dependsOn": [
+          "t2",
+          "t4",
+          "t5",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "docs/daemon.md describes the add-time defaults, the types they cover and that nothing is overwritten",
+          "It describes buildSetup, the suggestion and the Build section on the terminal, VS Code and JetBrains pages",
+          "It says a default is a typical command, not a verified one, and where to change it"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "docs/daemon.md: the Build commands section is read against the shipped behaviour and states the add-time defaults, buildSetup and the Build section"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "src/daemon/__tests__/repo-settings.test.ts: applyBuildDefaults writes the type's typecheck and test commands and resultFormat exit-code together for a Python, Go, Rust and JVM repo with no build key, and writes nothing for a Node repo, an unknown repo and an entry that already sets any of the three keys",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/daemon/__tests__/repo-settings.test.ts: applyBuildDefaults never throws and reports write-failed when the entry cannot be read or the write fails, leaving no lone command",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/daemon/__tests__/repo-settings.test.ts: repo.settings.get returns buildSetup with the type, the commands source and the suggestion for a repo with none, and writes nothing",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/cli/__tests__/repo-fields-contract.test.ts: the shared fixture's repo.settings.get payload carries buildSetup and the terminal rows still equal the fixture's rows",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/cli/__tests__/settings-modal.test.ts: the terminal Repo Configuration screen shows the Build rows as a section of their own with the suggestion as the placeholder of an unset row",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "vscode-plugin/src/panels/__tests__/repo-fields-contract.test.ts: the VS Code Repo Configuration page renders the Build rows in a section of their own with the keys, labels and kinds of the shared fixture, and shows the suggestion as the placeholder of an unset row",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/daemon/__tests__/handler-runtime.test.ts: repo.add on a Python repo registers it and stores the default commands with no prompt, reports buildDefaults applied, and a failing write still registers the repo",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/daemon/__tests__/handler-runtime.test.ts: repo.add on a repo whose entry already holds commands keeps them and reports already-set",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/daemon/steps/build-step/__tests__/validate-task-round.test.ts: a repo whose commands came from the add defaults is gated by those commands as an ordinary repo setting",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/RepoFieldsContractTest.kt: the JetBrains repo settings render the Build rows as a section of their own",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/daemon/handler-runtime.ts",
+      "quotedText": "the repo.add handler, where the guarded follow-ups (steering, MCP) run and the add result is built; the LLD's applyBuildDefaults call sits here"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/daemon/repo-settings.ts",
+      "quotedText": "repo.settings.get/set handlers, RepoSettingsPayload, and the injectable writeKeys/configPath that applyBuildDefaults and buildSetup reuse"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/daemon/steps/build-step/validation-checks.ts",
+      "quotedText": "detectProjectType and PROJECT_TYPE_GUIDANCE, the project-type table the defaults and the suggestion are taken from"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/config/__tests__/fixtures/repo-fields-catalog.json",
+      "quotedText": "the shared repo-fields fixture that the terminal, VS Code and JetBrains contract tests all read"
+    }
+  ]
+}

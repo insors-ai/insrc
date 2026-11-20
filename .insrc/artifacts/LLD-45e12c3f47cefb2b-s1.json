@@ -30,7 +30,7 @@
     "triageRationale": "One story, clear approach, mostly reuse of applyBuildDefaults and the registry listing; one IPC method plus its registry entries, tests and a doc line.",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 1,
         "contentHash": "f500eeb706281f28dd4316854d993724ea3c6b4262865a49536d0c1faa0a3b9b",
@@ -41,7 +41,19 @@
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T11:37:23.211Z",
+        "override": {
+          "reason": "User approved LLD-45e12c3f47cefb2b-s1 in chat (2026-11-20) after its six open questions were resolved; automated design review is unavailable, so approval is by the user's explicit yes."
+        }
+      }
     },
     "revision": 1,
     "questionResolutions": {
@@ -87,7 +99,13 @@
         "rationale": "The user asked on 2026-11-20 to go ahead with the proposed resolution. The edge case's claim that a user's own set is never overwritten is too strong: applyBuildDefaults reads the entry then writes as separate steps, so a set landing between them can be overwritten (same window as repo.add); the build documents this and does not claim it away. Also: the edge case about a partial entry names 'typecheckCommand, typecheckCommand or resultFormat' by a typing slip and means 'typecheckCommand, testCommand or resultFormat'.",
         "resolvedAt": "2026-11-20T11:27:21.472Z"
       }
-    }
+    },
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "9820a78217b01f23e00fedaaefafedd1f4945c47"
   },
   "body": {
     "summary": {

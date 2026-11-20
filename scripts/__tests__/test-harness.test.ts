@@ -53,6 +53,10 @@ test('Unsupported Node refuses before mutation and child environment resolves se
 	assert.equal(env.NODE_OPTIONS, undefined);
 	assert.equal(env.GRPC_TRACE, undefined);
 	assert.equal(env.INSRC_LIVE_TESTS, '1');
+	const run = createRun(root);
+	assert.doesNotMatch(JSON.stringify(run.record), /private-value|private-trace|--require \/private/);
+	run.transition('draining');
+	run.release({ confirmedClosed: true });
 	const nested = spawnSync('node', ['-p', 'JSON.stringify({exe:process.execPath,version:process.version,live:process.env.INSRC_LIVE_TESTS,debug:process.env.DEBUG})'], { env, encoding: 'utf8', timeout: 5000 });
 	assert.equal(nested.status, 0, nested.stderr);
 	assert.deepEqual(JSON.parse(nested.stdout), { exe: runtime.executable, version: runtime.version, live: '1' });

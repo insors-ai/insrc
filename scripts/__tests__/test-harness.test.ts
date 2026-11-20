@@ -91,6 +91,15 @@ test('Abandoned ownership cannot be stolen by age or PID absence', t => {
 
 test('Malformed lease records and parent symlinks refuse without removal', t => {
 	const root = temporary(t), run = createRun(root);
+	const original = run.record;
+	for (const malformed of [{ ...original, budgets: {} }, { ...original, diagnosticFlags: [123] }, { ...original, workspace: '/foreign' }, { ...original, runtimeVersion: 'v26.0.0' }]) {
+		const bytes = JSON.stringify(malformed);
+		writeFileSync(join(run.active, 'run.json'), bytes);
+		assert.throws(() => run.transition('draining'), { code: 'harness-context-invalid' });
+		assert.throws(() => run.release({ confirmedClosed: true }), { code: 'harness-context-invalid' });
+		assert.throws(() => recoverRun(root, { runId: run.runId, confirmedActorsEnded: true }));
+		assert.equal(readFileSync(join(run.active, 'run.json'), 'utf8'), bytes);
+	}
 	writeFileSync(join(run.active, 'run.json'), '{');
 	assert.throws(() => run.transition('draining'), { code: 'harness-context-invalid' });
 	assert.throws(() => recoverRun(root, { runId: run.runId, confirmedActorsEnded: true }));

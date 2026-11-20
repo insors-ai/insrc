@@ -4,7 +4,8 @@ import {
 	realpathSync, renameSync, rmdirSync, unlinkSync, writeFileSync,
 } from 'node:fs';
 import { randomUUID } from 'node:crypto';
-import { delimiter, dirname, join } from 'node:path';
+import { delimiter, dirname, isAbsolute, join } from 'node:path';
+import { isDeepStrictEqual } from 'node:util';
 
 export const DEFAULT_BUDGETS = Object.freeze({ buildMs: 600_000, fileMs: 600_000, runMs: 5_400_000, cleanupMs: 5_000 });
 const PHASES = ['preparing', 'mutating', 'reading', 'draining', 'blocked'];
@@ -66,8 +67,14 @@ function readRecord(active) {
 		if (record.version !== 1 || typeof record.runId !== 'string' || !/^[a-f0-9-]{36}$/.test(record.runId) || !PHASES.includes(record.phase)
 			|| typeof record.canonicalRoot !== 'string' || typeof record.workspace !== 'string' || typeof record.runtimeExecutable !== 'string'
 			|| typeof record.runtimeVersion !== 'string' || !['test', 'build'].includes(record.mode) || !Array.isArray(record.selectedFiles)
-			|| record.selectedFiles.some(file => typeof file !== 'string') || !Array.isArray(record.diagnosticFlags) || typeof record.budgets !== 'object' || record.budgets === null) throw harnessError('context-invalid', 'Invalid lease record.');
+			|| record.selectedFiles.some(file => typeof file !== 'string') || !Array.isArray(record.diagnosticFlags)
+			|| record.diagnosticFlags.some(flag => !DIAGNOSTICS.includes(flag)) || typeof record.budgets !== 'object' || record.budgets === null
+			|| Object.keys(record.budgets).length !== Object.keys(DEFAULT_BUDGETS).length
+			|| Object.keys(DEFAULT_BUDGETS).some(key => !Object.hasOwn(record.budgets, key))
+			|| !isAbsolute(record.canonicalRoot) || !isAbsolute(record.runtimeExecutable)
+			|| record.workspace !== join(record.canonicalRoot, '.insrc/tmp/test-harness/runs', record.runId)) throw harnessError('context-invalid', 'Invalid lease record.');
 		checkedBudgets(record.budgets);
+		assertSupportedVersion(record.runtimeVersion);
 		return record;
 	} finally { closeSync(fd); }
 }
@@ -98,7 +105,7 @@ export function createRun(rootPath, { mode = 'test', selectedFiles = [], budgets
 			for (const path of [join(root, '.insrc'), join(root, '.insrc/tmp'), directory]) identity(path);
 			const current = identity(active);
 			const disk = readRecord(active);
-			if (current.dev !== leaseIdentity.dev || current.ino !== leaseIdentity.ino || disk.runId !== runId || disk.canonicalRoot !== root || disk.workspace !== workspace || disk.phase !== record.phase) throw new Error('changed');
+			if (current.dev !== leaseIdentity.dev || current.ino !== leaseIdentity.ino || !isDeepStrictEqual(disk, record)) throw new Error('changed');
 		} catch { throw harnessError('context-invalid', 'Lease identity changed; refusing transition or removal.'); }
 	}
 	function transition(phase, outcome) {

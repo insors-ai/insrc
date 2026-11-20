@@ -135,3 +135,32 @@ test('call-handler.test.ts: a registered hook runs for a tools.call with caller 
 	assert.deepEqual(seen.map(s => s.caller), ['agent', 'workflow']);
 	assert.ok(seen.every(s => s.signal === undefined));
 });
+
+test('tools.call preserves unknown tool done results without looking up an invalid repository', async () => {
+ const frames: IpcStreamMessage[] = [];
+ await toolsCall(good('unknown-admission', { repoPath: '/unregistered', authorizeRepository: 'bypass' }), m => frames.push(m), new AbortController().signal, undefined,
+  async () => assert.fail('unknown tool consulted repo registry'));
+ const result = doneOf(frames).result;
+ assert.equal(result.success, false); assert.match(result.error ?? '', /No tool registered/);
+ assert.equal(frames.at(-1)?.stream, 'done');
+});
+
+test('tools.call authority refuses unregistered execution and admits canonical registered success without wire bypass', async () => {
+ const { mkdtempSync, realpathSync, rmSync } = await import('node:fs');
+ const { join } = await import('node:path'); const { tmpdir } = await import('node:os');
+ const repo = realpathSync(mkdtempSync(join(tmpdir(), 'insrc-tool-admission-')));
+ const seen: string[] = [];
+ registerTool(tool('ch_admission', { async execute(_input, context) { seen.push(context.repoPath); return OK; } }));
+ let hooks = 0; registerToolHook({ id: 'ch-admission-hook', toolId: 'ch_admission', run: async () => { hooks++; } });
+ const collect = async (registered: ReadonlySet<string>) => {
+  const frames: IpcStreamMessage[] = [];
+  await toolsCall(good('ch_admission', { repoPath: `${repo}/.`, authorizeRepository: 'bypass', registeredRepos: [repo] }), m => frames.push(m), new AbortController().signal, undefined, async () => registered);
+  assert.equal(frames.at(-1)?.stream, 'done'); return doneOf(frames).result;
+ };
+ try {
+  const refused = await collect(new Set());
+  assert.equal(refused.success, false); assert.match(refused.error ?? '', /repo-not-registered/);
+  assert.deepEqual(seen, []); assert.equal(hooks, 0);
+  assert.deepEqual(await collect(new Set([repo])), OK); assert.deepEqual(seen, [repo]); assert.equal(hooks, 1);
+ } finally { rmSync(repo, { recursive: true, force: true }); }
+});

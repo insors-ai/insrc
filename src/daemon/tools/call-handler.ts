@@ -49,18 +49,16 @@ export async function toolsCall(
 		send({ id: 0, stream: 'error', data: { code: 'invalid-params', message: `tools.call: ${p}`, recoverable: true } });
 		return;
 	}
-	let repoPath = p.repoPath;
-	// Keep structural invalid-params errors ahead of repository authority checks.
-	if (registeredRepos !== undefined) {
-		const checked = await gateRepoCall('tools.call', p, registeredRepos);
-		if (!checked.ok) throw new Error(`${checked.code}: ${checked.message}`);
-		repoPath = checked.repo;
-	}
 	const requestId = ++nextRequestId;
 	const deps: ToolDeps = {
 		connectionExecution: context?.connectionExecution,
 		sessionId: context === undefined ? 'tools-call' : `tools-call:${context.connectionIdentity}`,
-		repoPath,
+		repoPath: p.repoPath,
+		...(registeredRepos === undefined ? {} : { authorizeRepository: async () => {
+			const checked = await gateRepoCall('tools.call', p, registeredRepos);
+			if (!checked.ok) throw new Error(`${checked.code}: ${checked.message}`);
+			return checked.repo;
+		} }),
 		send,
 		requestId,
 		signal,

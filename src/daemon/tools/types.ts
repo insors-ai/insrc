@@ -126,6 +126,8 @@ export interface ConversionProviders {
 }
 
 export interface ToolDeps {
+	/** Internal tools.call admission only; returns the authorized canonical repo before execution. Never read from wire args. */
+	readonly authorizeRepository?: (() => Promise<string>) | undefined;
 	/** Daemon-only execution authority; never reconstructed from tool arguments. */
 	readonly connectionExecution?: ConnectionExecutionContext | undefined;
 	/** Active session id. Used by tools that maintain per-session state. */

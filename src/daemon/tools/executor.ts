@@ -160,6 +160,19 @@ export async function executeTool(
 	}
 
 	if (aborted()) return cancelledResult();
+	// Preserve all earlier validation, cancellation and approval-denial outcomes.
+	// Only the daemon's tools.call adapter supplies this execution authority.
+	if (deps.authorizeRepository !== undefined) {
+		try {
+			const repoPath = await deps.authorizeRepository();
+			if (aborted()) return cancelledResult();
+			const { authorizeRepository: _authority, ...authorized } = deps;
+			deps = { ...authorized, repoPath };
+		} catch (err) {
+			if (aborted()) return cancelledResult();
+			return failed('rejected', err instanceof Error ? err.message : String(err));
+		}
+	}
 	try {
 		const result = await runWithToolSignal(signal, () => runWithConnectionExecution(execution, () => tool.execute(input, deps)));
 		assertAnalysisConnectionExecution(deps.connectionExecution);

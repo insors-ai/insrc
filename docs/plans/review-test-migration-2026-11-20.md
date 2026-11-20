@@ -31,3 +31,15 @@ No live provider, production automatic review, RPC classification change, qualif
 The continuation hub intentionally shares saved state across workers; the new test proves separate tokens/payloads and worker ownership, not an invented cross-session saved-token secrecy guarantee. No production token kind, router classification or worker policy changed. No fake successful code-review handler remains in the router fixture.
 
 Focused baseline `4e277f5d-7d43-4c8d-9ae7-a89118daaf4e` selected four relevant tests: one pass/three failures. Corrected focused run `2a90076f-f02e-49a7-b391-591e9e49db1e` passed all four with confirmed cleanup. Selection used an explicit test-name pattern; this is not a full-file suite result. The build gate will execute the complete mapped files, including real-worker tests. Exact scoped counts/TAP and selection notes are retained in the evidence directory.
+
+The t2 gate subsequently passed root typecheck and all three full mapped files, including the real-daemon s3 session/CPU/idle-release/parity tests. [Gate evidence](review-test-evidence-2026-11-20/t2-gate-results.json) retains each test result from the daemon record; this is a separate execution from the focused four-test run.
+
+## t3: non-green — production persistence boundary blocker
+
+Owned baseline `41db5e1d-3777-41d7-9971-b492067cd2b8` fails before running the matrix because the removed provenance writer module cannot load. The fixture now imports current `writeArtifact`, retains the same hostile-payload refusal assertion, and adds an explicit saved artifact write/read-back positive control.
+
+A direct source-only diagnostic (no overlapping harness/build) reaches the real current API and fails at the unchanged privacy check: `prepareArtifactWrite` reads the payload getter before the `writeAtomic` persistence guard. Expected `unsupported-temporary`; observed private test canary exception. Saved artifact write/read-back passes before that assertion. [Retained failing TAP](review-test-evidence-2026-11-20/t3-current-writer-failure.tap) records the stack at workflow/storage.ts:279. Later matrix assertions have not executed and are not claimed passing.
+
+This production defect is separately triaged as small bugfix [ISSUE-81be53b2b0f003a7](../standalone/refuse-temporary-artifact-preparation-before-payload-E2026112081be53b2/ISSUE.md), pending human approval. Proposed scope: early reuse of the current temporary-persistence guard before artifact payload/filesystem inspection, with poisoned-input and saved lifecycle/revision compatibility controls. No production fix is included in Batch04's test-only changes.
+
+Task status: t1/t2 passed daemon validation; t3 remains non-green/in progress, and dependent t4/t5 have not begun. No Batch04 BUILD approval is requested. The plan explicitly forbids weakening canary checks or marking a blocked task green; after the separately approved defect is fixed, resume the remaining matrix and inventory work.

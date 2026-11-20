@@ -1,0 +1,204 @@
+{
+  "taskId": "t2",
+  "commit": "2fb3cd094",
+  "ranAt": "2026-11-20T08:44:23.509Z",
+  "testsPassed": true,
+  "tests": [
+    {
+      "name": "Supported worker tokens survive idle release and preserve session isolation while retired kinds reject",
+      "level": "integration",
+      "source": "mapping",
+      "cases": [
+        {
+          "file": "src/daemon/threads/__tests__/s3-acceptance.test.ts",
+          "title": "ac6: supported worker tokens survive idle release and preserve separate session payloads while retired kinds reject",
+          "result": "pass"
+        },
+        {
+          "file": "src/daemon/threads/__tests__/indexing-port.test.ts",
+          "title": "indexing port gets the worker's real codeIndexWorkFor while retired freshness rejects without asking it",
+          "result": "pass"
+        },
+        {
+          "file": "src/daemon/threads/__tests__/router-session.test.ts",
+          "title": "router: two sessions share model checks, retired reviews reject locally and supported steps retain session workers",
+          "result": "pass"
+        }
+      ],
+      "files": []
+    }
+  ],
+  "files": [
+    {
+      "file": "src/daemon/threads/__tests__/indexing-port.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 4608,
+      "titles": [
+        {
+          "title": "indexing port gets the worker's real codeIndexWorkFor while retired freshness rejects without asking it",
+          "result": "pass"
+        },
+        {
+          "title": "the main thread's depthForRepo asks the code-indexing worker's queue",
+          "result": "pass"
+        },
+        {
+          "title": "a nested in-daemon call from a step handler to repo.reindex runs on the code-indexing worker",
+          "result": "pass"
+        },
+        {
+          "title": "daemon.status queue fields reflect the code-indexing worker's real lanes",
+          "result": "pass"
+        },
+        {
+          "title": "No indexing object is constructed on the main thread with the flag on",
+          "result": "pass"
+        }
+      ],
+      "otherFailures": []
+    },
+    {
+      "file": "src/daemon/threads/__tests__/router-session.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 992,
+      "titles": [
+        {
+          "title": "router: approval subscriptions leave Tracker reads unblocked and answers can finish a pending request",
+          "result": "pass"
+        },
+        {
+          "title": "router: one session's three requests reach its worker in arrival order; a stream ends at its done/error frame",
+          "result": "pass"
+        },
+        {
+          "title": "router: FIFO-exempt methods are forwarded during a long request; a cancelled queued request is removed",
+          "result": "pass"
+        },
+        {
+          "title": "router: connection-scoped requests stay local; unattributed requests interleave without a FIFO",
+          "result": "pass"
+        },
+        {
+          "title": "router: a queued stream cancelled by its socket keeps the next request queued and its worker busy until the worker acks it, with or without a lifetime (ISSUE-7c39e5cd)",
+          "result": "pass"
+        },
+        {
+          "title": "router: workflow.run.abort reaches a worker-owned run's owner as a busy request, and a main-thread run here",
+          "result": "pass"
+        },
+        {
+          "title": "router-session.test.ts: workflow.run.abort with an unknown-to-the-board runId answers {ok:true} when a live session worker still holds that run, broadcasting to every live session thread rather than only the asking session's own worker",
+          "result": "pass"
+        },
+        {
+          "title": "router-session.test.ts: workflow.run.abort with a runId no live worker holds (board unknown AND every live worker answers {ok:false}) still answers {ok:false}, matching today's behavior for a genuinely unknown run",
+          "result": "pass"
+        },
+        {
+          "title": "router-session.test.ts: an unrelated workflow.run.poll / analyze.run.status request is routed exactly as before (no new fan-out) \u2014 the broadcast is scoped to workflow.run.abort only",
+          "result": "pass"
+        },
+        {
+          "title": "router: a session worker's exit fails its queued requests but keeps one bound for the shared-state worker",
+          "result": "pass"
+        },
+        {
+          "title": "router: a request cancelled while its worker is still starting never leaves the worker busy",
+          "result": "pass"
+        },
+        {
+          "title": "router: a request awaiting its ack stays pending past its reply; a duplicate or unknown completion message is ignored and onAck runs once (ISSUE-7c39e5cd)",
+          "result": "pass"
+        },
+        {
+          "title": "router: a postMessage failure answers 'request channel unavailable' and calls the ack once (ISSUE-7c39e5cd)",
+          "result": "pass"
+        },
+        {
+          "title": "router: detach answers a request awaiting its ack through the caller and hands back its ack; failWorker calls it after answering (ISSUE-7c39e5cd)",
+          "result": "pass"
+        },
+        {
+          "title": "router: a pool start failure, a missing worker port and a cancel before the worker resolved each call the ack once; the pool ends an acked request at its ack (ISSUE-7c39e5cd)",
+          "result": "pass"
+        },
+        {
+          "title": "router: a shared-state request sent with an ack waits for the shared-state worker's ack, whether that worker is attached or reached through the pool (ISSUE-7c39e5cd)",
+          "result": "pass"
+        },
+        {
+          "title": "router: a queued unary request whose socket closes while it runs keeps the next request queued until the worker acks the first, after its handler settled (ISSUE-7c39e5cd)",
+          "result": "pass"
+        },
+        {
+          "title": "router: a queued unary reply is delivered at once, but the session's next request starts only after the worker's ack, after the work it registered with registerDrain is done (ISSUE-7c39e5cd)",
+          "result": "pass"
+        },
+        {
+          "title": "router: a worker exit answers the session's running request with 'session worker failed' and the next queued request runs (ISSUE-7c39e5cd)",
+          "result": "pass"
+        },
+        {
+          "title": "router: FIFO-exempt and unattributed requests keep today's ends: they never wait for an ack (ISSUE-7c39e5cd)",
+          "result": "pass"
+        },
+        {
+          "title": "router: two sessions share model checks, retired reviews reject locally and supported steps retain session workers",
+          "result": "pass"
+        },
+        {
+          "title": "router: a queued request refused under the maintenance lock is still acked by its worker and the session's queue moves on (ISSUE-7c39e5cd)",
+          "result": "pass"
+        }
+      ],
+      "otherFailures": []
+    },
+    {
+      "file": "src/daemon/threads/__tests__/s3-acceptance.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 45798,
+      "titles": [
+        {
+          "title": "ac1: session B is answered on its own thread while session A's worker spins",
+          "result": "pass"
+        },
+        {
+          "title": "ac2/ac3: one session over two connections runs in order on one worker thread, released after idle",
+          "result": "pass"
+        },
+        {
+          "title": "ac4: a session worker failure is contained; a throwing handler keeps its worker",
+          "result": "pass"
+        },
+        {
+          "title": "ac5: no Promise.all over provider calls in the modules s3 adds or changes",
+          "result": "pass"
+        },
+        {
+          "title": "ac5: a recording provider shows a session's provider calls strictly sequential, over two of its connections at once",
+          "result": "pass"
+        },
+        {
+          "title": "ac6: supported worker tokens survive idle release and preserve separate session payloads while retired kinds reject",
+          "result": "pass"
+        },
+        {
+          "title": "ac7: daemon.status answers within 100 ms at p99 of 200 calls while a session worker spins",
+          "result": "pass"
+        },
+        {
+          "title": "parity: moved session methods answer over the socket as the single-thread daemon does",
+          "result": "pass"
+        },
+        {
+          "title": "a session worker thread has the analyze template catalog and the task runtimes, as the main thread has",
+          "result": "pass"
+        }
+      ],
+      "otherFailures": []
+    }
+  ]
+}

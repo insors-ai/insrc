@@ -55,3 +55,7 @@ Older records were checked before expanding the backlog. These references provid
 - Update the original audit with batch results when a batch validates; keep prior observations as history.
 - Present every workflow artifact before requesting approval. No automated design/code review endpoint is invoked while those endpoints are unavailable.
 
+
+## Batch 04 blocker discovered during fixture repair
+
+Batch04 ISSUE, LLD and PLAN are approved. Tasks t1/t2 passed validation; t3 is non-green and t4/t5 are not started. The current writer touches hostile temporary payloads before persistence refusal. This separately triaged production boundary defect is [ISSUE-81be53b2b0f003a7](../standalone/refuse-temporary-artifact-preparation-before-payload-E2026112081be53b2/ISSUE.md), pending approval, routed issue → build. It is a coherent artifact-write admission fix, not an issue per failed assertion. See [partial evidence](review-test-migration-2026-11-20.md); do not mark Batch04 complete or relax its canary checks.

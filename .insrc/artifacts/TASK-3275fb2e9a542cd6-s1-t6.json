@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-57935dcd-4bb1-4e84-8ff2-949d0a7d90f0",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-20T05:10:31.177Z",
+    "epicCreatedAt": "2026-11-20T04:34:20.119Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3275fb2e9a542cd6",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Move compiler probes outside source includes",
+      "parent": {
+        "entityId": "STORY-3275fb2e9a542cd6-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-3275fb2e9a542cd6-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-3275fb2e9a542cd6-s1-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 2,
+        "contentHash": "c3785e95e176570c85b7f8be7ede8729ed26f4b36d9d863eec813edb031cf230",
+        "at": "2026-11-20T06:02:21.979Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T05:10:31.179Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Move compiler probes outside source includes",
+    "summary": "Migrate typecheckAgainstPanel and every caller to the approved async snippet-factory contract and retained compiler lifecycle in the ignored run workspace.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "Snippets import real panel types with correct NodeNext/package resolution; intended negative diagnostic and positive controls remain enforced.",
+      "Launch failure/unrelated diagnostics/timeouts cannot pass negative type tests; catchable interruption drains compiler.",
+      "No probe file enters backend or extension source includes, including after interruption; normal extension typecheck still works."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Real panel type probes preserve positive and intended-negative diagnostics"
+      },
+      {
+        "level": "integration",
+        "name": "Compiler launch failure and interruption cannot pass a negative probe or pollute source includes"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

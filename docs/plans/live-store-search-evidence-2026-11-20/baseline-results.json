@@ -1,0 +1,129 @@
+{
+  "runId": "0e08a40d-5df6-4a56-94e5-99fa223b5b73",
+  "runtime": {
+    "executable": "/opt/homebrew/Cellar/node@22/22.23.2/bin/node",
+    "version": "v22.23.2"
+  },
+  "budgets": {
+    "buildMs": 600000,
+    "fileMs": 600000,
+    "runMs": 5400000,
+    "cleanupMs": 5000
+  },
+  "selectedFiles": [
+    "src/daemon/tools/builtins/file/__tests__/live-store-file-refusal.test.ts",
+    "src/daemon/tools/builtins/search/__tests__/grep-core.test.ts",
+    "src/daemon/tools/builtins/search/__tests__/grep-omitted.test.ts"
+  ],
+  "requestedConcurrency": 1,
+  "effectiveConcurrency": 1,
+  "diagnosticFlags": [
+    "DEBUG"
+  ],
+  "liveTests": "unset",
+  "results": [
+    {
+      "file": "src/daemon/tools/builtins/file/__tests__/live-store-file-refusal.test.ts",
+      "childId": "f2319689-f739-45dd-bef3-346f208d8fcf",
+      "log": "docs/plans/live-store-search-evidence-2026-11-20/baseline-0.tap",
+      "code": 1,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 2,
+          "pass": 1,
+          "fail": 1,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "sha256": "86a540c3f589e77c976c0995743950e7feaf6e6048d4adb557e034fd056cbe1d"
+    },
+    {
+      "file": "src/daemon/tools/builtins/search/__tests__/grep-core.test.ts",
+      "childId": "6f9b727e-4e0b-4c0d-9da5-35fc8962342b",
+      "log": "docs/plans/live-store-search-evidence-2026-11-20/baseline-1.tap",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 3,
+          "pass": 3,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "sha256": "a827a7b4b9d9554cd2149223d00ad027b94a7179a567f88dd1d491d49f047afa"
+    },
+    {
+      "file": "src/daemon/tools/builtins/search/__tests__/grep-omitted.test.ts",
+      "childId": "7965448c-066a-4cff-9233-3d4d7de62eeb",
+      "log": "docs/plans/live-store-search-evidence-2026-11-20/baseline-2.tap",
+      "code": 1,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 12,
+          "pass": 11,
+          "fail": 1,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "sha256": "539557ea415c4095e6616c723d2ff710f3f9804d17fd540dd517e6d0ee9aa50d"
+    }
+  ],
+  "incomplete": false,
+  "cleanup": {
+    "confirmedClosed": true,
+    "interrupted": false,
+    "cancellationErrors": [],
+    "evidenceErrors": [],
+    "childCloseJournal": "child-results.jsonl"
+  },
+  "preparedBuild": {
+    "runId": "0e08a40d-5df6-4a56-94e5-99fa223b5b73",
+    "canonicalRoot": "/Users/subhagho/work/projects/insors/insrc",
+    "runtimeExecutable": "/opt/homebrew/Cellar/node@22/22.23.2/bin/node",
+    "buildExitCode": 0,
+    "completedAt": "2026-11-20T07:41:10.043Z",
+    "inputFingerprint": "3d997d9d14c17009a5035a55a3c1c004e03e862c0c8ee5c7fa883b9f9a62dc0f",
+    "outputFingerprint": "835b05464133d9edd6aab7fc8193f27ee503b29af9f1d25e40dd2883c1758401",
+    "requiredArtifacts": [
+      "out/daemon/index.js",
+      "out/bin/insrc-process-broker",
+      "out/bin/insrc-shutdown-watchdog.js",
+      "out/daemon/shutdown.js",
+      "out/daemon/shutdown-watchdog.js",
+      "out/shared/daemon-run-files.js",
+      "out/cli/services/daemon.js",
+      "out/cli/services/maintenance.js",
+      "out/daemon/server.js",
+      "out/shared/daemon-process.js",
+      "out/daemon/run-file-ownership.js",
+      "out/bin/insrc-darwin-lifecycle"
+    ]
+  },
+  "totals": {
+    "tests": 17,
+    "pass": 15,
+    "fail": 2,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "closeJournal": "Retained in original local run directory; cleanup confirms closure."
+}

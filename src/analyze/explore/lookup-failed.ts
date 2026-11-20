@@ -22,6 +22,13 @@ import type { PartFailure } from '../context/failure-data.js';
 /** The prefix of a failed lookup's error code when its final answer could not be written; the reason follows. */
 export const ANSWER_STEP_CODE_PREFIX = 'answer-step:';
 
+const answerStepReasons = new WeakMap<object, AnswerStepFailureReason>();
+
+/** Identity-only terminal reason: never inspect a thrown object's properties or prototype. */
+export function lookupAnswerStepReason(error: unknown): AnswerStepFailureReason | undefined {
+	return error !== null && (typeof error === 'object' || typeof error === 'function') ? answerStepReasons.get(error) : undefined;
+}
+
 export class LookupFailedError extends Error {
 	readonly partial: readonly PartialFinding[];
 	/** How the answer step that failed was handled, for a failure of the answer-writing step (Story s3). */
@@ -46,6 +53,7 @@ export class LookupFailedError extends Error {
 		this.partial = partial;
 		this.handling = options?.handling;
 		this.answerStepReason = options?.answerStepReason;
+		if (options?.answerStepReason !== undefined) answerStepReasons.set(this, options.answerStepReason);
 		this.partFailures = options?.partFailures;
 	}
 }

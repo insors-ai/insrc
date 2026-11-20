@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1795149375384-ed2a04",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-20T04:36:15.472Z",
+    "epicCreatedAt": "2026-11-20T04:36:15.472Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 88,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "9c2482c594fd8df5",
+    "epicSlug": "exclude-live-store-from-directory-searches",
+    "standalone": true,
+    "magnitude": "sized",
+    "kind": "defect",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d137923913c686ae2005f16f99bd067ad77ca0640c43bfb0f64ce088bd4e6974",
+        "at": "2026-11-20T04:36:15.480Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T07:39:31.260Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "parentRef": {
+      "epicHash": "9c2482c594fd8df5",
+      "slug": "EPIC-9c2482c594fd8df5"
+    }
+  },
+  "body": {
+    "title": "Exclude the live store from directory searches",
+    "reproduction": "The live-store-file-refusal test searches a fixture .insrc directory for NEEDLE and receives graph.lmdb and lock-file content. Expected: the live store and lock file remain excluded, including containing-directory and symbolic-link access.",
+    "rootCause": "The audited directory-search result demonstrates that existing direct-file refusal is insufficient for descendants traversed by the shared grep primitive. Which backend/path-resolution checks must enforce the same boundary requires confirmation in the design; the returned fixture content is established, not hypothetical.",
+    "fixIntent": "Apply the live-store exclusion consistently to search traversal through supported backends and aliases while preserving legitimate repository matches and truthful completeness/error reporting. Acceptance: direct, directory, symlink and alternate-backend regression cases return no store or lock-file content, and allowed-file positive controls still work. Do not broaden this issue into general filesystem access policy."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "docs/plans/failing-tests-2026-11-20.md"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/daemon/tools/builtins/search/grep.ts"
+    }
+  ]
+}

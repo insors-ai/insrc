@@ -1,0 +1,61 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1795149463082-b9bost",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-20T04:37:43.208Z",
+    "epicCreatedAt": "2026-11-20T04:37:43.208Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 126,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "392eecdfdbf26269",
+    "epicSlug": "deduplicate-fallback-events-newly-discovered-directories",
+    "standalone": true,
+    "magnitude": "small",
+    "kind": "defect",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "b25cc4633ad58093d454f8a3d62673bdb215feff73d1abe90c1f4b2f71134278",
+        "at": "2026-11-20T04:37:43.215Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Deduplicate fallback events for newly discovered directories",
+    "reproduction": "watcher-new-directories injects a rejecting per-directory subscription after a real repository subscription. The existing file must still be reported exactly once, but the audit observes four reports and fails 4 !== 1.",
+    "rootCause": "Multiple discovery/event paths in the subscription-failure scenario produce duplicate notifications for the same file. The exact filesystem-event interleaving was not isolated by the audit, so the batch must first establish a deterministic reproduction.",
+    "fixIntent": "Ensure fallback discovery and ordinary watcher events provide the intended per-change notification semantics after subscription failure without losing files, suppressing real later changes or producing unhandled rejections. Acceptance: nested/new-directory failure cases report each initial file once, independent later modifications are delivered, and existing ignore/filter behavior remains intact. Keep retired review freshness behavior out of scope."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "docs/plans/failing-tests-2026-11-20.md"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/indexer/watcher.ts"
+    }
+  ]
+}

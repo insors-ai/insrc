@@ -7,12 +7,13 @@
  */
 
 import { promises as fs, statSync } from 'node:fs';
-import { join, resolve, relative } from 'node:path';
+import { join, resolve, relative, isAbsolute, sep } from 'node:path';
+import { PATHS } from '../../../../shared/paths.js';
 import { onUtf8Data } from '../../../../shared/utf8-stream.js';
 import { runShell, spawnManaged } from '../../shell-helper.js';
 import type { Tool, ToolInput, ToolResult } from '../../types.js';
 import { refuseLiveStoreFile, searchAccess } from '../file/helpers.js';
-import { isLiveStoreFile } from '../../../../db/graph/store.js';
+import { isLiveStoreFile, resolveStorePath } from '../../../../db/graph/store.js';
 
 export interface GrepHit {
   path: string;
@@ -74,10 +75,12 @@ const RG_TIMEOUT_MS = 30_000;
 const RG_MAX_OUTPUT_BYTES = 4 * 1024 * 1024;
 
 export const RIPGREP_EXCLUDED_BY_RULE =
+  'live graph data and lock files; ' +
   'files and directories matched by an ignore file (.gitignore, .ignore, .rgignore), ' +
   'hidden files and directories (names starting with a dot), and binary files';
 
 export const NODE_EXCLUDED_BY_RULE =
+  'live graph data and lock files; ' +
   `directories named ${[...IGNORE_DIRS].join(', ')}; ` +
   'every entry whose name starts with a dot, files and directories alike; ' +
   'and every entry that is neither a regular file nor a directory, such as a symbolic link';
@@ -131,7 +134,14 @@ export async function runGrepSearch(opts: GrepSearchOptions): Promise<SearchGrep
 	refuseLiveStoreFile(root);
 	const limit = Math.min(Math.max(1, opts.limit ?? DEFAULT_LIMIT), MAX_LIMIT);
 	const context = typeof opts.context === 'number' ? Math.floor(opts.context) : 0;
-	const rg = opts.complete === true
+	// Never admit a recursive external reader over the store's own files.
+	// The Node walker checks each candidate before reading its contents.
+	const canonicalRoot = resolveStorePath(root);
+	const containsStore = [PATHS.lmdb, `${PATHS.lmdb}-lock`].some(path => {
+		const rel = relative(canonicalRoot, resolveStorePath(path));
+		return rel === '' || (rel !== '..' && !rel.startsWith(`..${sep}`) && !isAbsolute(rel));
+	});
+	const rg: RipgrepAttempt = containsStore ? { data: null } : opts.complete === true
 		? await tryRipgrepComplete(opts.pattern, root, {
 			...(opts.glob !== undefined ? { glob: opts.glob } : {}),
 			caseInsensitive: opts.caseInsensitive === true,
@@ -301,7 +311,7 @@ async function tryRipgrepRaw(
     rgCommand?: string | undefined; rgTimeoutMs?: number | undefined;
   },
 ): Promise<RipgrepAttempt> {
-  const argv = [opts.rgCommand ?? 'rg', '--no-heading', '--line-number', '--color=never'];
+  const argv = [opts.rgCommand ?? 'rg', '--no-config', '--no-follow', '--no-heading', '--line-number', '--color=never'];
   if (opts.caseInsensitive) { argv.push('-i'); }
   if (opts.glob) { argv.push('-g', opts.glob); }
   if (opts.context > 0) { argv.push('-C', String(opts.context)); }
@@ -375,7 +385,7 @@ async function tryRipgrepComplete(
 	opts: { glob?: string | undefined; caseInsensitive: boolean; context: number; rgCommand?: string | undefined; rgTimeoutMs?: number | undefined },
 ): Promise<RipgrepAttempt> {
 	// --with-filename: given a single file as the root, ripgrep prints no path, and every line would fail to parse.
-	const argv = [opts.rgCommand ?? 'rg', '--no-heading', '--with-filename', '--line-number', '--color=never'];
+	const argv = [opts.rgCommand ?? 'rg', '--no-config', '--no-follow', '--no-heading', '--with-filename', '--line-number', '--color=never'];
 	if (opts.caseInsensitive) { argv.push('-i'); }
 	if (opts.glob) { argv.push('-g', opts.glob); }
 	if (opts.context > 0) { argv.push('-C', String(opts.context)); }

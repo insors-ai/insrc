@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: Failed fixture readiness reclaims socket and child before the next case
+ok 1 - Failed fixture readiness reclaims socket and child before the next case
+  ---
+  duration_ms: 217.461833
+  type: 'test'
+  ...
+# Subtest: Ready handshake precedes behavioral cancellation deadline
+ok 2 - Ready handshake precedes behavioral cancellation deadline
+  ---
+  duration_ms: 354.70325
+  type: 'test'
+  ...
+# Subtest: Detached fixture acknowledgments are drained before checkout release
+ok 3 - Detached fixture acknowledgments are drained before checkout release
+  ---
+  duration_ms: 336.677917
+  type: 'test'
+  ...
+# Subtest: Unconfirmed cleanup retains handles and readiness failure cannot wait forever
+ok 4 - Unconfirmed cleanup retains handles and readiness failure cannot wait forever
+  ---
+  duration_ms: 6011.681541
+  type: 'test'
+  ...
+# Subtest: Owned groups retain descendants with independent stdio until disposal
+ok 5 - Owned groups retain descendants with independent stdio until disposal
+  ---
+  duration_ms: 191.662166
+  type: 'test'
+  ...
+# Subtest: An escaped descendant with independent stdio blocks release until its acknowledgment
+ok 6 - An escaped descendant with independent stdio blocks release until its acknowledgment
+  ---
+  duration_ms: 622.573834
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 7855.441542

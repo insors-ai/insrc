@@ -1,7 +1,9 @@
+import { childLine, fixtureOwnerScript, ownChild, spawnFixture, stopOwnedChildren, stopOwnedTargets } from '../tools/__tests__/_proc.js';
+import { requirePreparedBuild } from '../../../scripts/test-harness/build.mjs';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
-import { after, before, test } from 'node:test';
+import { after, afterEach, before, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { spawn, execFileSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
 import { once } from 'node:events';
 import { connect } from 'node:net';
@@ -14,12 +16,12 @@ const root = fileURLToPath(new URL('../../../', import.meta.url));
 const base = mkdtempSync('/tmp/insrc-shutdown-evidence-');
 const children: ChildProcess[] = [], targets: StopTarget[] = [];
 const moduleUrl = (path: string) => new URL(`../../../out/${path}.js`, import.meta.url).href;
-before(() => { execFileSync('npm', ['run', 'build'], { cwd: root, stdio: 'pipe', timeout: 120000 }); });
-after(async () => {
- for (const child of children) if (child.exitCode === null && child.signalCode === null) { const ended = once(child, 'exit'); child.kill('SIGKILL'); await ended; }
- for (const target of targets) { try { await target.handle.terminate(); } finally { await target.handle.close(); } }
- rmSync(base, { recursive: true, force: true });
+before(() => { requirePreparedBuild(root); });
+afterEach(async () => {
+ await stopOwnedChildren(children);
+ await stopOwnedTargets(targets);
 });
+after(() => { rmSync(base, { recursive: true, force: true }); });
 async function until(predicate: () => boolean) { for (let i = 0; i < 200; i++) { if (predicate()) return; await new Promise(r => setTimeout(r, 20)); } assert.fail('fixture deadline expired'); }
 async function scenario(mode: 'healthy' | 'blocked' | 'guard-death') {
  const home = mkdtempSync(join(base, 'case-')), daemonDir = join(home, 'daemon'); mkdirSync(daemonDir);
@@ -30,6 +32,7 @@ async function scenario(mode: 'healthy' | 'blocked' | 'guard-death') {
  const { daemonRunFiles, endForRunFileConflict } = await import(${JSON.stringify(moduleUrl('daemon/run-file-ownership'))});
  const { createShutdown, realEndDeps } = await import(${JSON.stringify(moduleUrl('daemon/shutdown'))});
  const { armShutdownWatchdog } = await import(${JSON.stringify(moduleUrl('daemon/shutdown-watchdog'))});
+ ${fixtureOwnerScript()}
  const fs = require('node:fs'); const mode = process.env.INSRC_EVIDENCE_MODE || ${JSON.stringify(mode)};
  const publication = daemonRunFiles.lease(); daemonRunFiles.writePid();
  const server = new IpcServer(directDispatch({ 'daemon.shutdown': async () => { shutdown('RPC'); return { ok: true }; } }));
@@ -45,11 +48,12 @@ async function scenario(mode: 'healthy' | 'blocked' | 'guard-death') {
  await server.listen(); publication.release(); process.stdout.write('ready');
  })();`);
  const env = { ...process.env, HOME: home, INSRC_LOG_LEVEL: 'silent' };
- const child = spawn(process.execPath, [entry], { env, stdio: ['ignore', 'pipe', 'inherit'] }); children.push(child);
- const ended = once(child, 'exit'); await once(child.stdout!, 'data');
+ const child = spawnFixture(process.execPath, [entry], { env, stdio: ['ignore', 'pipe', 'inherit'] }); children.push(child); ownChild(child);
+ const ended = once(child, 'exit'); await childLine(child);
  const original = await captureStopTarget(child.pid!); assert.ok(original);
  const identity = { pid: original.pid, startedAt: original.startedAt, commandLine: original.commandLine }; await original.handle.close();
  const heldClient = mode === 'guard-death' ? connect(join(home, '.insrc/daemon.sock')) : undefined;
+ try {
  if (heldClient) { heldClient.on('error', () => {}); await once(heldClient, 'connect'); }
  const controller = join(home, 'controller.mjs'), starts = join(home, 'starts');
  writeFileSync(controller, `import { restart } from ${JSON.stringify(moduleUrl('cli/services/maintenance'))};
@@ -58,11 +62,11 @@ async function scenario(mode: 'healthy' | 'blocked' | 'guard-death') {
  const result = await restart(() => {}, { stopDaemon: () => stopDaemon({ stopWaitMs: 2000, replyBoundMs: 300 }), startDaemon: async () => {
   appendFileSync(${JSON.stringify(starts)}, 'start\\n');
   const child = spawn(process.execPath, [${JSON.stringify(entry)}], { detached: true, env: { ...process.env, INSRC_EVIDENCE_MODE: 'healthy' }, stdio: ['ignore', 'pipe', 'ignore'] });
-  await once(child.stdout, 'data'); child.stdout.destroy(); child.unref();
+  await once(child.stdout, 'data', { signal: AbortSignal.timeout(3000) }); child.stdout.destroy(); child.unref();
   return { started: true, alreadyRunning: false, logPath: '', pid: child.pid };
  } }); process.stdout.write(JSON.stringify(result));`);
  const startedAt = new Date().toISOString(), started = Date.now();
- const ctl = spawn(process.execPath, [controller], { env, stdio: ['ignore', 'pipe', 'inherit'] }); children.push(ctl);
+ const ctl = spawnFixture(process.execPath, [controller], { env, stdio: ['ignore', 'pipe', 'inherit'] }); children.push(ctl); ownChild(ctl);
  let output = ''; ctl.stdout!.on('data', data => { output += String(data); }); const controllerEnded = once(ctl, 'exit');
  let guardOwner: unknown;
  if (mode === 'guard-death') {
@@ -96,6 +100,7 @@ async function scenario(mode: 'healthy' | 'blocked' | 'guard-death') {
  }
  if (mode === 'blocked' || mode === 'guard-death') assert.equal(signal, 'SIGKILL'); else assert.equal(exitCode, 0);
  return { mode, startedAt, original: identity, configuredDeadlineMs: bound, elapsedMs, termination: { exitCode, signal }, restart: result, startCount, guardRemains, guardOwner, watchdogPid: Number(readFileSync(watchdogFile, 'utf8')), log: readFileSync(log, 'utf8') };
+ } finally { heldClient?.destroy(); }
 }
 test('Guard-owner death reclaims the stale guard so the restart proceeds like the healthy control', { timeout: 15000 }, async () => {
  const cases = [];

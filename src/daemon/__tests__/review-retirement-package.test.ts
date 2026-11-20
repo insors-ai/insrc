@@ -1,3 +1,4 @@
+import { participantContext, harnessError } from '../../../scripts/test-harness/context.mjs';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -7,9 +8,11 @@ import { tmpdir } from 'node:os';
 
 const removed = ['workflow/review/review.js','workflow/code-review/runner.js','daemon/threads/review-workers.js','daemon/threads/review-worker-runtime.js','daemon/review-service.js','shared/review-native-guard.js','agent/providers/review-activity-stream.js'];
 test('clean build and package remove retired runtime and planted stale output', {timeout:180000},()=>{
+ const context=participantContext(resolve('.'));
+ if(context.phase!=='mutating')throw harnessError('write-during-read','Run this rebuild regression through the coordinator mutation lane.');
  for(const path of removed){const target=resolve('out',path);mkdirSync(dirname(target),{recursive:true});writeFileSync(target,'throw new Error("planted stale review output");\n');}
- const output=execFileSync('npm',['run','build'],{encoding:'utf8',timeout:150000,maxBuffer:8*1024*1024});
- writeFileSync('/tmp/insrc-review-retirement-package-build.log',output);
+ const output=execFileSync(process.execPath,['scripts/test-harness/build.mjs'],{encoding:'utf8',timeout:150000,maxBuffer:8*1024*1024});
+ writeFileSync(join(context.workspace,'retirement-package-build.log'),output);
  for(const path of removed)assert.equal(existsSync(resolve('out',path)),false,path);
  const scratch=mkdtempSync(join(tmpdir(),'insrc-retirement-package-'));
  try {

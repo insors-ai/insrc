@@ -1,0 +1,100 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3976c148-99a1-4c4f-8440-5a3e2cf00dbb",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-20T05:10:31.186Z",
+    "epicCreatedAt": "2026-11-20T04:34:20.119Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3275fb2e9a542cd6",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Validate and document the supported harness",
+      "parent": {
+        "entityId": "STORY-3275fb2e9a542cd6-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-3275fb2e9a542cd6-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-3275fb2e9a542cd6-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-3275fb2e9a542cd6-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-3275fb2e9a542cd6-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-3275fb2e9a542cd6-s1-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "a3e05a58cad13206111e1789502518a7db502ba988bbdd19d2b4f61828b8a88c",
+        "at": "2026-11-20T05:10:31.186Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T05:10:31.188Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Validate and document the supported harness",
+    "summary": "Run isolated adversarial controls then sequential affected suites; document selectors, runtime setup, budgets, recovery and remaining sibling failures in the audit/index.",
+    "size": "M",
+    "order": 8,
+    "acceptanceChecks": [
+      "All local ac1–ac6 checks have recorded evidence including contention, runtime drift, failed startup, positive/negative probes, interruption and blocked recovery.",
+      "No overlapping broad sweeps; broaden only after focused controls pass and prior actors close; report actual pass/fail/cancelled coverage and environment.",
+      "Document explicit abrupt-death limits and recovery; preserve sibling failures/security refusals and leave release qualification pending.",
+      "Inspect generated sequence source against implementation ordering and verify rendering if available; report unavailable evidence.",
+      "Exercise real catchable signals separately from abandoned/replaced-record controls; do not claim all detached descendants can be reclaimed after arbitrary SIGKILL."
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "Sequential focused validation reports actual coverage, remaining failures and closed actors"
+      },
+      {
+        "level": "smoke",
+        "name": "Documented runtime, selector, budget and blocked-recovery commands match observed behavior"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

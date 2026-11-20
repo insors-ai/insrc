@@ -1,0 +1,87 @@
+{
+  "capturedAt": "2026-11-20T06:59:07.821290+00:00",
+  "sourceCommit": "02c2fbe8b136ebbc08313aa7fadd8afaf03a0361",
+  "runtime": {
+    "executable": "/opt/homebrew/Cellar/node@22/22.23.2/bin/node",
+    "version": "v22.23.2"
+  },
+  "controllers": {
+    "command": "INSRC_LOG_LEVEL=error /opt/homebrew/opt/node@22/bin/node --import tsx --test --test-concurrency=1 scripts/__tests__/test-harness.test.ts scripts/__tests__/test-harness-coordinator.test.ts scripts/__tests__/test-harness-commands.test.ts scripts/__tests__/test-harness-consumers.test.ts scripts/__tests__/test-harness-probes.test.ts",
+    "exitCode": 0,
+    "log": "docs/plans/test-harness-evidence-2026-11-20/controllers.tap",
+    "sha256": "6eac0243406c20526a1cda921f8affbc8ae831a688410372c20d7ad12c784634",
+    "counts": {
+      "tests": 19,
+      "pass": 19,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0
+    },
+    "sourceCommit": "3fd825b005332c36c66743b4bc94c1e2c82ba87b"
+  },
+  "backend": {
+    "command": "INSRC_LOG_LEVEL=error /opt/homebrew/opt/node@22/bin/node scripts/test-harness/run.mjs --concurrency=1 src/config/__tests__/check-model-definitions.test.ts src/daemon/db/__tests__/driver-log-policy.test.ts src/daemon/steps/__tests__/peer-state-store-leakfree.test.ts src/daemon/tools/__tests__/fixture-lifetime.test.ts src/daemon/tools/__tests__/typecheck-config.test.ts src/daemon/tools/builtins/git/__tests__/git-abort.test.ts src/daemon/tools/builtins/git/__tests__/git-cat-file-tree-kill.test.ts src/shared/__tests__/daemon-process-client.test.ts",
+    "exitCode": 0,
+    "runId": "70018a3b-5b68-400b-b5be-a49d03bf37a4",
+    "results": "docs/plans/test-harness-evidence-2026-11-20/backend-results.json",
+    "counts": {
+      "tests": 30,
+      "pass": 28,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 2
+    },
+    "confirmedClosed": true,
+    "incomplete": false,
+    "selectionOrder": "Normalized by coordinator; all eight selected files appear in backend-results.json.",
+    "sourceCommit": "02c2fbe8b136ebbc08313aa7fadd8afaf03a0361"
+  },
+  "nativeConsumerDiagnostics": {
+    "evidence": "docs/plans/test-harness-consumer-results-2026-11-20.json",
+    "counts": {
+      "tests": 23,
+      "pass": 8,
+      "fail": 11,
+      "cancelled": 1,
+      "skipped": 3
+    },
+    "confirmedClosed": true,
+    "status": "Nonzero native/lifecycle cases remain failing for Batch17; these counts are not controller-suite results.",
+    "sourceCommit": "3fd825b005332c36c66743b4bc94c1e2c82ba87b"
+  },
+  "visual": {
+    "sourceValidationFindings": [],
+    "participants": 6,
+    "messages": 10,
+    "rendering": "Unavailable: CUA browser access host unavailable. No visual rendering claim."
+  },
+  "qualification": "No qualification scripts executed; no gate or release evidence refreshed. Batch15/16 remain pending.",
+  "quiescence": {
+    "capturedAt": "2026-11-20T06:59:07.889154+00:00",
+    "command": [
+      "ps",
+      "-axo",
+      "pid,ppid,etime,comm,args"
+    ],
+    "filter": "Node/npm/tsx/tsc test/compiler/harness and audited disposable fixture command patterns; excludes inspection shell/python",
+    "matchingProcesses": [],
+    "activeCheckoutLease": false,
+    "sourceProbeFiles": [],
+    "removalOrSignalActions": []
+  },
+  "coordinatorFollowup": {
+    "sourceCommit": "02c2fbe8b136ebbc08313aa7fadd8afaf03a0361",
+    "command": "INSRC_LOG_LEVEL=error /opt/homebrew/opt/node@22/bin/node --import tsx --test scripts/__tests__/test-harness-coordinator.test.ts",
+    "exitCode": 0,
+    "log": "docs/plans/test-harness-evidence-2026-11-20/coordinator-followup.tap",
+    "sha256": "428ec532bb0dfdf3b89f3b82ac1944d259ef4aa02fd966239d238ed57a98d729",
+    "counts": {
+      "tests": 8,
+      "pass": 8,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0
+    },
+    "limit": "Seven cases repeat the full controller run; one new disposable-child case checks serial live admission. No live service called."
+  }
+}

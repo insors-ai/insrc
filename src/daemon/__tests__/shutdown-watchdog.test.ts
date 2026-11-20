@@ -1,7 +1,9 @@
+import { childLine, ownChild, spawnFixture, stopOwnedChildren } from '../tools/__tests__/_proc.js';
+import { requirePreparedBuild } from '../../../scripts/test-harness/build.mjs';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
-import { after, before, test } from 'node:test';
+import { after, afterEach, before, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { spawn, execFileSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
 import { once } from 'node:events';
 import { performance } from 'node:perf_hooks';
@@ -13,8 +15,9 @@ import { readProcessIdentity } from '../../shared/daemon-process.js';
 const root = fileURLToPath(new URL('../../../', import.meta.url));
 const dir = mkdtempSync(join(tmpdir(), 'insrc-watchdog-'));
 const children: ChildProcess[] = [];
-before(() => { execFileSync('npm', ['run', 'build'], { cwd: root, stdio: 'pipe', timeout: 120000 }); });
-after(() => { for (const child of children) if (child.exitCode === null && child.signalCode === null) child.kill('SIGKILL'); rmSync(dir, { recursive: true, force: true }); });
+before(() => { requirePreparedBuild(root); });
+afterEach(async () => { await stopOwnedChildren(children); });
+after(() => { rmSync(dir, { recursive: true, force: true }); });
 async function run(mode: string) {
  const testDir = mkdtempSync(join(dir, 'parent-')); const entryDir = join(testDir, 'daemon'); mkdirSync(entryDir);
  const entry = join(entryDir, 'index.js'), log = join(testDir, 'watchdog.log'), hook = join(testDir, 'hook');
@@ -53,9 +56,9 @@ async function run(mode: string) {
  else setTimeout(() => process.exit(0), 50);
  } catch (error) { process.stdout.write(JSON.stringify({ error: error.message }) + '\\n'); process.exit(0); }
  })();`);
- const child = spawn(process.execPath, [entry], { stdio: ['ignore', 'pipe', 'pipe'] }); children.push(child);
+ const child = spawnFixture(process.execPath, [entry], { stdio: ['ignore', 'pipe', 'pipe'] }); children.push(child); ownChild(child);
  const ended = once(child, 'exit');
- const [data] = await once(child.stdout!, 'data'); const value = JSON.parse(String(data));
+ const value = JSON.parse(await childLine(child));
  return { child, ended, value, log, hook };
 }
 async function gone(pid: number): Promise<void> {

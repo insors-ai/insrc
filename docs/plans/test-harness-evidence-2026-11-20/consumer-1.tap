@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: normal build ships the host broker with no numeric-PID kill symbol
+ok 1 - normal build ships the host broker with no numeric-PID kill symbol
+  ---
+  duration_ms: 34.084209
+  type: 'test'
+  ...
+# Subtest: Linux native handle retains the original target through termination and exit without retargeting
+ok 2 - Linux native handle retains the original target through termination and exit without retargeting # SKIP
+  ---
+  duration_ms: 0.210917
+  type: 'test'
+  ...
+# Subtest: closing or abandoning a native handle does not terminate its target
+ok 3 - closing or abandoning a native handle does not terminate its target # SKIP
+  ---
+  duration_ms: 0.044459
+  type: 'test'
+  ...
+# Subtest: native framing rejects malformed requests and non-daemon targets without signalling
+ok 4 - native framing rejects malformed requests and non-daemon targets without signalling # SKIP
+  ---
+  duration_ms: 0.039542
+  type: 'test'
+  ...
+# Subtest: Darwin-style denied and unsupported capability seams fail before readiness and never enable termination
+ok 5 - Darwin-style denied and unsupported capability seams fail before readiness and never enable termination
+  ---
+  duration_ms: 345.337042
+  type: 'test'
+  ...
+# Subtest: missing identity metadata is unverifiable rather than positive process-exit evidence
+ok 6 - missing identity metadata is unverifiable rather than positive process-exit evidence
+  ---
+  duration_ms: 27.755666
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 3
+# todo 0
+# duration_ms 916.72475

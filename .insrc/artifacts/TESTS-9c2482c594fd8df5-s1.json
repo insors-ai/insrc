@@ -1,0 +1,175 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 3,
+        "contentHash": "408173a0c21b580f4d7cd56cb6332fcd87ba1329023c890951b58fcfee6470b9",
+        "at": "2026-11-20T08:08:21.519Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "9c2482c594fd8df5",
+    "storyId": "s1",
+    "createdAt": "2026-11-20T08:02:49.015Z",
+    "updatedAt": "2026-11-20T08:08:21.507Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-20T04:36:15.472Z",
+    "epicSlug": "exclude-live-store-from-directory-searches",
+    "revision": 3
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "d955c581b",
+        "ranAt": "2026-11-20T08:04:51.316Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Protected direct roots refuse before backend or content access",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/search/__tests__/grep-live-store.test.ts",
+                "title": "Protected direct roots refuse before backend or content access",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Store ancestor and directory aliases use guarded Node in bounded and complete modes",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/search/__tests__/grep-live-store.test.ts",
+                "title": "Store ancestor and directory aliases use guarded Node in bounded and complete modes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Allowed roots retain real ripgrep without ambient configuration or symlink following",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/search/__tests__/grep-live-store.test.ts",
+                "title": "Allowed roots retain real ripgrep without ambient configuration or symlink following",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/builtins/search/__tests__/grep-live-store.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 365,
+            "titles": [
+              {
+                "title": "Protected direct roots refuse before backend or content access",
+                "result": "pass"
+              },
+              {
+                "title": "Store ancestor and directory aliases use guarded Node in bounded and complete modes",
+                "result": "pass"
+              },
+              {
+                "title": "Allowed roots retain real ripgrep without ambient configuration or symlink following",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "0db0d3c87",
+        "ranAt": "2026-11-20T08:08:21.507Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Grep result shapes and Node/ripgrep omission rules remain truthful",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/search/__tests__/grep-compatibility.test.ts",
+                "title": "Grep result shapes and Node/ripgrep omission rules remain truthful",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Complete-mode failure preserves allowed partial hits",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/search/__tests__/grep-compatibility.test.ts",
+                "title": "Complete-mode failure preserves allowed partial hits",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Recorded focused validation reports actual coverage, baseline timing failures and closed actors",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/plans/live-store-search-fix-2026-11-20.md and live-store-search-evidence-2026-11-20/{baseline,final}-results.json with retained TAP hashes: baseline15pass/2fail (store leak and fake-rg300ms startup), final29pass/1fail (stale executeTool missing deps), no cancelled/skipped, coverage complete, cleanup confirmed. Final compiled safety smoke passed; no actual daemon store touched. t1 validation initially rejected simultaneous data/lock relocation; correction and expanded test passed. Current callers, cardinality/ownership, backend semantic change and path-race/hardlink limitations documented; no visual necessary or rendering claim. Qualification not refreshed."
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/builtins/search/__tests__/grep-compatibility.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1172,
+            "titles": [
+              {
+                "title": "Grep result shapes and Node/ripgrep omission rules remain truthful",
+                "result": "pass"
+              },
+              {
+                "title": "Complete-mode failure preserves allowed partial hits",
+                "result": "pass"
+              },
+              {
+                "title": "Compiled shared grep applies store admission in both modes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

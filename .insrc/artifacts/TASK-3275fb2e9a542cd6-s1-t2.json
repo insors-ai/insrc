@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-5ac60486-3626-4112-935f-77486c97004f",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-20T05:10:31.163Z",
+    "epicCreatedAt": "2026-11-20T04:34:20.119Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3275fb2e9a542cd6",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Establish run ownership and runtime context",
+      "parent": {
+        "entityId": "STORY-3275fb2e9a542cd6-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-3275fb2e9a542cd6-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-3275fb2e9a542cd6-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "e7213a30ddb4df58b2a1ddf89f167781051055ff50666bdce10da5807713ef10",
+        "at": "2026-11-20T05:10:31.163Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T05:10:31.164Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Establish run ownership and runtime context",
+    "summary": "Add proposed scripts/test-harness/context.mjs contracts for canonical-root lease identity, runtime preflight, child environment, bounded budgets, run workspace and explicit recovery.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "Two checkout aliases contend for one lease; malformed/replaced/symlinked/abandoned records fail closed without PID/age takeover.",
+      "Unsupported runtime fails before mutation; nested child environment uses the validated Node22 binary, preserves explicit live opt-ins, and never leaks environment values.",
+      "Record transitions permit release only with matching identity and confirmed closure; unconfirmed cleanup or abandoned ownership retains blocked state. t3 integrates actual actor draining."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Canonical-path contenders refuse overlap and preserve foreign/replaced/symlinked ownership"
+      },
+      {
+        "level": "unit",
+        "name": "Unsupported Node refuses before mutation and child environment resolves selected runtime"
+      },
+      {
+        "level": "integration",
+        "name": "Abandoned ownership cannot be stolen by age or PID absence"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

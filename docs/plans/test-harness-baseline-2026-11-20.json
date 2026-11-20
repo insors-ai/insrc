@@ -1,0 +1,22 @@
+{
+  "capturedAt": "2026-11-20T05:12:30.591482+00:00",
+  "baselineMerge": "97ec6496f0594b8e512186e3829be1b7d99944a1",
+  "head": "f539f73e7b49e514cc45523957fc692ec696b507",
+  "processCommand": [
+    "ps",
+    "-axo",
+    "pid,ppid,etime,comm,args"
+  ],
+  "filter": "comm basename node/npm/npx/tsx/tsc plus --test, tsc or npm test/run build args; excludes inspection shell/python",
+  "matchingProcesses": [],
+  "probeCommand": [
+    "rg",
+    "--files",
+    "--hidden",
+    "vscode-plugin/src"
+  ],
+  "probeFilter": "filename contains __sc4probe_",
+  "matchingProbes": [],
+  "activeLeaseExists": false,
+  "processOrFileRemovalActions": []
+}

@@ -1,0 +1,185 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1795160878298-cj84ra",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-20T07:48:47.416Z",
+    "epicCreatedAt": "2026-11-20T04:36:15.472Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 48885,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9c2482c594fd8df5",
+    "epicSlug": "exclude-live-store-from-directory-searches",
+    "storyId": "s1",
+    "lldRunId": "wf-1795160392350-y0gcd5",
+    "lldEffectiveHash": "bf8e1e95dccc889b08cc3bdd78bad945a195224ee6d7a1d127dbc3826aa90439",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "4fad3f0a3b10698d4f5c738af3019f5da9f59c0746b0c8d661b1ea7c168549ac",
+        "at": "2026-11-20T07:48:47.494Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T07:59:27.169Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "ff084726959f2b8dafa272c1d769467dd9e615bc"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Implement and prove pre-read live-store exclusion in shared grep, then validate compatibility and record evidence. Canonical store-containing roots use the guarded Node walker; ordinary roots retain explicitly non-following ripgrep. No public API or persistent-model change."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Guard shared grep admission and prove store read exclusion",
+        "summary": "Implement approved canonical, component-safe root ancestry decision for both data and lock targets before either rg branch. Refuse direct protected roots, reuse guarded Node for containing roots, and enforce --no-config/--no-follow on rg elsewhere. Add isolated read/spawn instrumentation and alias/allowed controls without changing public APIs or generic file policy.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Direct protected roots and symlink aliases refuse before any backend spawn or protected content read.",
+          "Containing roots and directory aliases choose Node before rg spawn in bounded and complete modes; data and lock targets are checked independently and Node skips protected content reads.",
+          "Ordinary roots keep real rg, ignore ambient config and do not follow nested symlinks; allowed same-name files and component-prefix siblings remain searchable.",
+          "usedRipgrep, excludedByRule, limits and failures accurately describe actual execution; no output-only filtering, new public options or storage/IPC shape changes.",
+          "Instrument content reads and backend spawn in isolated fixtures; explicitly cover independently resolved lock target, canonical-prefix collision and aliases."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Protected direct roots refuse before backend or content access"
+          },
+          {
+            "level": "integration",
+            "name": "Store ancestor and directory aliases use guarded Node in bounded and complete modes"
+          },
+          {
+            "level": "integration",
+            "name": "Allowed roots retain real ripgrep without ambient configuration or symlink following"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Validate shared search compatibility and record Batch 03 evidence",
+        "summary": "Run focused serial safety and existing search/file/analyzer regressions under supported Node22 with clean owned output. Preserve complete-mode partial-failure semantics and report any existing startup timing failure distinctly; update audit and batch status with actual counts, closure evidence and limits.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "ac1–ac4 have recorded focused test evidence, including original leak reproduction, protected read absence and allowed matches.",
+          "Root typecheck and relevant focused checks are run with actual pass/fail/skip/cancel counts, runtime/backend details and confirmed cleanup; no overlapping broad sweep.",
+          "Complete-mode timeout/exit failures preserve allowed partial hits; unchanged baseline 300ms fake-rg startup failure remains reported rather than skipped, disguised or fixed by enlarging deadlines.",
+          "Document Node semantics for store-ancestor searches, existing path replacement/hardlink limits, unchanged public contract and unrefreshed qualification; assess visual relevance from the final change.",
+          "A deterministic complete-mode nonzero-exit control emits an allowed hit before failing and verifies typed failure plus that partial hit independently of the existing startup-timed fixture."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Grep result shapes and Node/ripgrep omission rules remain truthful"
+          },
+          {
+            "level": "integration",
+            "name": "Complete-mode failure preserves allowed partial hits"
+          },
+          {
+            "level": "smoke",
+            "name": "Recorded focused validation reports actual coverage, baseline timing failures and closed actors"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "Protected direct roots refuse before backend or content access",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "Store ancestor and directory aliases use guarded Node in bounded and complete modes",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "Allowed roots retain real ripgrep without ambient configuration or symlink following",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "Grep result shapes and Node/ripgrep omission rules remain truthful",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "Complete-mode failure preserves allowed partial hits",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/exclude-live-store-from-directory-searches-E202611209c2482c5/S001/LLD.md#2-contract-details"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/exclude-live-store-from-directory-searches-E202611209c2482c5/S001/LLD.md#3-error-paths"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/exclude-live-store-from-directory-searches-E202611209c2482c5/S001/LLD.md#5-migration"
+    }
+  ]
+}

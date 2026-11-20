@@ -77,7 +77,19 @@ try {
 	const { beginSessionReuse, rememberSessionContinuation } = await load('analyze/session-reuse.js');
 	const { encodeState } = await load('daemon/steps/analyze-step/state.js');
 	const { handleAnalyzeStep } = await load('daemon/steps/analyze-step/handler.js'); const { handlePlan } = await load('daemon/steps/analyze-step/phases/plan.js'); const { handleNarrow } = await load('daemon/steps/analyze-step/phases/narrow.js'); const { handleBundle } = await load('daemon/steps/analyze-step/phases/bundle.js');
-	const { _overrideNarrowRunnerForTest } = await load('analyze/explore/executor.js');
+	const { _overrideNarrowRunnerForTest, failedOutput } = await load('analyze/explore/executor.js');
+	const { LookupFailedError } = await load('analyze/explore/lookup-failed.js');
+	const failedExploration = { id: 'safe-error', type: 'search.text', purpose: 'fixture', params: {} };
+	for (const reason of ['model-failed', 'invalid-answer', 'invalid-bundle', 'input-does-not-fit']) {
+		const terminal = new LookupFailedError('CM_PRIVATE_LOOKUP_DETAIL', [{ source: 'private', content: 'CM_PRIVATE_FINDING' }], { answerStepReason: reason });
+		for (const key of ['message', 'partial', 'handling', 'partFailures', 'answerStepReason']) Object.defineProperty(terminal, key, { get() { rawReads++; throw Error('CM_PRIVATE_RAW_GETTER'); } });
+		assert.deepEqual(failedOutput(failedExploration, terminal, execution), { type: 'failed', requested: 'search.text', errorCode: `answer-step:${reason}`, message: 'Temporary exploration failed.' });
+	}
+	assert.equal(failedOutput(failedExploration, raw, execution).errorCode, 'temporary-failure');
+	const revoked = Proxy.revocable({}, {}); revoked.revoke();
+	assert.equal(failedOutput(failedExploration, revoked.proxy, execution).errorCode, 'temporary-failure');
+	const savedLookup = failedOutput(failedExploration, new LookupFailedError('SAVED_LOOKUP_DETAIL', [{ source: 'saved', content: 'saved finding' }], { answerStepReason: 'model-failed' }));
+	assert.equal(savedLookup.message, 'SAVED_LOOKUP_DETAIL'); assert.equal(savedLookup.errorCode, 'answer-step:model-failed'); assert.equal(savedLookup.partial[0].content, 'saved finding');
 	await beginSessionReuse(execution);
 	const badPhase = await handleAnalyzeStep({ phase: 'CM_PRIVATE_BAD_PHASE' }, execution); assert.equal(JSON.stringify(badPhase).includes('CM_PRIVATE_'), false);
 	const phaseIntent = { target: 'data', scope: 'S', focused: true, focus: 'fixture', scopeRef: { kind: 'repo', value: root }, reasoning: 'fixture' };
@@ -99,7 +111,7 @@ try {
 	const narrowState = { ...phaseState, stage: 'awaiting_narrow', plan: { answerType: 'capability-discovery', explorations: [exploration], synthesisHint: 'fixture' }, narrow: { explorationId: 'e1', explorationType: exploration.type, preparedBlob: {}, resumeState } };
 	const mismatch = await handleNarrow({ phase: 'narrow', explorationId: 'CM_PRIVATE_WRONG_ID', state: await encodeState(narrowState, execution), narrow: {} }, execution); assert.equal(mismatch.error.code, 'wrong-exploration'); assert.equal(JSON.stringify(mismatch).includes('CM_PRIVATE_'), false);
 	const restoreNarrow = _overrideNarrowRunnerForTest(exploration.type, { schema: { type: 'object' }, prepare() { throw Error('unused prepare'); }, finalize() { throw raw; } });
-	try { const finalized = await handleNarrow({ phase: 'narrow', explorationId: 'e1', state: await encodeState(narrowState, execution), narrow: { marker: 'CM_PRIVATE_NARROW_INPUT' } }, execution); assert.equal(finalized.next, 'emit_bundle'); assert.equal(JSON.stringify(finalized).includes('CM_PRIVATE_'), false); } finally { restoreNarrow(); }
+	try { const finalized = await handleNarrow({ phase: 'narrow', explorationId: 'e1', state: await encodeState(narrowState, execution), narrow: { marker: 'CM_PRIVATE_NARROW_INPUT' } }, execution); assert.equal(finalized.next, 'emit_part'); assert.match(finalized.userTurn, /temporary-failure/); assert.equal(JSON.stringify(finalized).includes('CM_PRIVATE_'), false); } finally { restoreNarrow(); }
 	const frames = [...await request('fixture.raw'), ...await request('fixture.typed'), ...await request('fixture.failure'), ...await request('fixture.progress', true), ...await request('fixture.error', true)]; assert.equal(JSON.stringify(frames).includes('CM_PRIVATE_'), false); assert.ok(JSON.stringify(frames).includes('upgrade-required'));
 	assert.equal(failureMessage(raw, 'CM_PRIVATE_METHOD', { connectionIdentity: 'fixture', daemonEpoch: 'fixture', connectionExecution: execution }), 'unsupported-temporary');
 	rpc.makeProgressEmitter(() => { throw raw; }, 'CM_PRIVATE_RUN', execution)(poison);

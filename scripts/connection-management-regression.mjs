@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 /** Explicit final build/sweep runner. Never runs adoption, stops a daemon or accesses credentials. */
 import {readdir,readFile,writeFile,mkdir} from 'node:fs/promises';
-import {spawn} from 'node:child_process';
 import {createHash} from 'node:crypto';
 import {resolve,relative,join} from 'node:path';
+import {withSpecializedOwnership} from './test-harness/specialized.mjs';
 const root=resolve(import.meta.dirname,'..');
+await withSpecializedOwnership(root, async execute => {
 const evidence=join(root,'docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S001/evidence');
 await mkdir(evidence,{recursive:true});
 const gatePath=join(root,'src/assets/connection-management-gates.json');
@@ -13,11 +14,9 @@ async function walk(directory){const paths=[];for(const entry of await readdir(d
 async function sourceSnapshot(){const result={};const inputs=[...(await walk(join(root,'src'))).filter(path=>/\.(?:tsx?|json|mjs)$/.test(path)),...['package.json','package-lock.json','tsconfig.json','copy-assets.mjs','scripts/connection-management-regression.mjs'].map(path=>join(root,path))];for(const path of inputs)result[relative(root,path)]=createHash('sha256').update(await readFile(path)).digest('hex');return result;}
 const testedSources=await sourceSnapshot();
 async function run(args,name){
- const {createWriteStream}=await import('node:fs');const output=join(evidence,name+'.log'),stream=createWriteStream(output);
- const started=new Date().toISOString();const child=spawn(process.execPath,args,{cwd:root,env:{...process.env,INSRC_LOG_LEVEL:'error',INSRC_LIVE_TESTS:'0'},stdio:['ignore','pipe','pipe']});
- child.stdout.pipe(stream,{end:false});child.stderr.pipe(stream,{end:false});
- const result=await new Promise((accept,reject)=>{child.once('error',reject);child.once('exit',(code,signal)=>accept({code,signal}));});
- await new Promise(accept=>stream.end(accept));const text=await readFile(output,'utf8');
+ const output=join(evidence,name+'.log'),started=new Date().toISOString();
+ const result=await execute(args,output);
+ const text=await readFile(output,'utf8');
  return{name,args,started,finished:new Date().toISOString(),...result,log:relative(root,output),digest:createHash('sha256').update(text).digest('hex')};
 }
 const build=await run(['node_modules/typescript/bin/tsc'],'t23-build');
@@ -38,3 +37,5 @@ if(report.ready){
 }
 process.stdout.write(JSON.stringify({ready:report.ready,files:files.length,report:relative(root,join(evidence,'t23-regression.json'))})+'\n');
 process.exitCode=report.ready?0:1;
+
+});

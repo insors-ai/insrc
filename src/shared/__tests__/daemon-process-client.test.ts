@@ -1,3 +1,4 @@
+import { requirePreparedBuild } from '../../../scripts/test-harness/build.mjs';
 import { afterEach, before, beforeEach, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
@@ -14,7 +15,7 @@ import { readProcessIdentity } from '../daemon-process.js';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 let dir: string, count = 0;
 const targets: ChildProcess[] = [], handles: StopTarget[] = [];
-before(() => { if (process.platform === 'linux') execFileSync(process.execPath, ['build-process-broker.mjs'], { cwd: root, timeout: 30000 }); });
+before(() => { if (process.platform === 'linux') requirePreparedBuild(root); });
 beforeEach(() => { dir = mkdtempSync(join(tmpdir(), 'insrc-cap-client-')); });
 afterEach(async () => {
 	for (const target of handles.splice(0)) await target.handle.close().catch(() => {});

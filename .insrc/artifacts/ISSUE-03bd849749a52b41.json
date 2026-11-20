@@ -1,0 +1,66 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1795149375489-6blzo9",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-20T04:36:15.580Z",
+    "epicCreatedAt": "2026-11-20T04:36:15.580Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 91,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "03bd849749a52b41",
+    "epicSlug": "align-historical-tests-retired-review-contract",
+    "standalone": true,
+    "magnitude": "sized",
+    "kind": "defect",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "47abb614d4a32b6dc51b271019baa48950b25ecd1d43d18e3ae1b66308963a26",
+        "at": "2026-11-20T04:36:15.587Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Align historical tests with the retired review contract",
+    "reproduction": "Review-label, lifecycle-wiring, in-daemon-client, indexing-port, router-session and worker-token tests still expect automated reviews to run. They now receive Design/Code review functionality is being rewritten. Store-isolation audits launch deleted review test files; the persistence fixture imports removed provenance writer code.",
+    "rootCause": "Review execution was intentionally retired, but several tests and fixture inventories still depend on the removed implementation, tokens and paths. This is established contract drift, separate from the new RPC coverage omissions.",
+    "fixIntent": "Replace obsolete execution expectations with coverage of the supported unavailable response and retained history/lifecycle guarantees; remove dependencies on deleted review fixtures and restore meaningful persistence/isolation controls against current APIs. Acceptance: affected backend, worker, MCP and store-isolation cases exercise current behavior without restoring automated reviews, deleting valid assertions or adding deprecated insrc-ide compatibility. Keep RPC table classification in its separate batch."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "docs/plans/failing-tests-2026-11-20.md"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/review-unavailable.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/daemon/handler-runtime.ts"
+    }
+  ]
+}

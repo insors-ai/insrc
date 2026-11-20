@@ -1,0 +1,887 @@
+TAP version 13
+# Subtest: git-abort.test.ts: every refresh tool fails rejected on an already-aborted signal and starts no git
+ok 1 - git-abort.test.ts: every refresh tool fails rejected on an already-aborted signal and starts no git
+  ---
+  duration_ms: 22.517125
+  type: 'test'
+  ...
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_status"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_log"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_diff"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_show"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_blame"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_branch"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_stage"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_commit"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_amend"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_push"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_pull"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_fetch"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_checkout"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_merge"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_rebase"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_stash"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_reset"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_revert"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git:cherry-pick"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_tag"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_remote"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_worktree"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_for_each_ref"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_cat_file"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_ls_tree"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_ls_files"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_rev_list"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_rev_parse"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_fetch_refs"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_path_history"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_hash_object"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_merge_base"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_show_ref"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_symbolic_ref"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_config"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_ls_remote"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_update_ref"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_rm"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_diff_tree"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_merge_tree"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_inspect"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_text"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_objects"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_patch"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_tree"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_maintenance"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_setup"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_refs"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_reflog"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "git_fetch"
+# [06:57:48] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "git_fetch_refs"
+# [06:57:48] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "git_rev_parse"
+# [06:57:48] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "git_symbolic_ref"
+# [06:57:48] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "git_ls_tree"
+# [06:57:48] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "git_cat_file"
+# [06:57:48] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "git_show"
+# [06:57:48] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "git_ls_remote"
+# [06:57:48] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "git_config"
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_status"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_log"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_diff"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_show"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_blame"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_branch"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_stage"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_commit"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_amend"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_push"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_pull"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_fetch"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_checkout"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_merge"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_rebase"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_stash"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_reset"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_revert"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git:cherry-pick"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_tag"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_remote"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_worktree"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_for_each_ref"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_cat_file"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_ls_tree"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_ls_files"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_rev_list"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_rev_parse"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_fetch_refs"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_path_history"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_hash_object"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_merge_base"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_show_ref"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_symbolic_ref"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_config"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_ls_remote"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_update_ref"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_rm"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_diff_tree"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_merge_tree"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_inspect"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_text"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_objects"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_patch"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_tree"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_maintenance"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_setup"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_refs"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_reflog"
+#     [35maliases[39m: []
+# [06:57:48] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "git_fetch"
+# [06:57:49] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "git_fetch_refs"
+# [06:57:49] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "git_rev_parse"
+# [06:57:49] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "git_symbolic_ref"
+# [06:57:49] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "git_ls_tree"
+# [06:57:50] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "git_cat_file"
+# [06:57:50] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "git_show"
+# [06:57:50] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "git_ls_remote"
+# [06:57:50] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "git_config"
+# Subtest: git-abort.test.ts: every refresh tool stops its running command on an abort while running and returns a rejected failure
+ok 2 - git-abort.test.ts: every refresh tool stops its running command on an abort while running and returns a rejected failure
+  ---
+  duration_ms: 2042.914583
+  type: 'test'
+  ...
+# [06:57:50] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_status"
+#     [35maliases[39m: []
+# [06:57:50] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_log"
+#     [35maliases[39m: []
+# [06:57:50] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_diff"
+#     [35maliases[39m: []
+# [06:57:50] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_show"
+#     [35maliases[39m: []
+# [06:57:50] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_blame"
+#     [35maliases[39m: []
+# [06:57:50] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_branch"
+#     [35maliases[39m: []
+# [06:57:50] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_stage"
+#     [35maliases[39m: []
+# [06:57:50] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_commit"
+#     [35maliases[39m: []
+# [06:57:50] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_amend"
+#     [35maliases[39m: []
+# [06:57:50] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_push"
+#     [35maliases[39m: []
+# [06:57:50] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_pull"
+#     [35maliases[39m: []
+# [06:57:50] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_fetch"
+#     [35maliases[39m: []
+# [06:57:50] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_checkout"
+#     [35maliases[39m: []
+# [06:57:50] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_merge"
+#     [35maliases[39m: []
+# [06:57:50] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_rebase"
+#     [35maliases[39m: []
+# [06:57:50] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_stash"
+#     [35maliases[39m: []
+# [06:57:50] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_reset"
+#     [35maliases[39m: []
+# [06:57:50] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_revert"
+#     [35maliases[39m: []
+# [06:57:50] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git:cherry-pick"
+#     [35maliases[39m: []
+# [06:57:50] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_tag"
+#     [35maliases[39m: []
+# [06:57:50] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_remote"
+#     [35maliases[39m: []
+# [06:57:50] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_worktree"
+#     [35maliases[39m: []
+# [06:57:50] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_for_each_ref"
+#     [35maliases[39m: []
+# [06:57:50] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_cat_file"
+#     [35maliases[39m: []
+# [06:57:50] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_ls_tree"
+#     [35maliases[39m: []
+# [06:57:50] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_ls_files"
+#     [35maliases[39m: []
+# [06:57:50] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_rev_list"
+#     [35maliases[39m: []
+# [06:57:50] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_rev_parse"
+#     [35maliases[39m: []
+# [06:57:50] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_fetch_refs"
+#     [35maliases[39m: []
+# [06:57:50] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_path_history"
+#     [35maliases[39m: []
+# [06:57:50] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_hash_object"
+#     [35maliases[39m: []
+# [06:57:50] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_merge_base"
+#     [35maliases[39m: []
+# [06:57:50] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_show_ref"
+#     [35maliases[39m: []
+# [06:57:50] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_symbolic_ref"
+#     [35maliases[39m: []
+# [06:57:50] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_config"
+#     [35maliases[39m: []
+# [06:57:50] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_ls_remote"
+#     [35maliases[39m: []
+# [06:57:50] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_update_ref"
+#     [35maliases[39m: []
+# [06:57:50] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_rm"
+#     [35maliases[39m: []
+# [06:57:50] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_diff_tree"
+#     [35maliases[39m: []
+# [06:57:50] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_merge_tree"
+#     [35maliases[39m: []
+# [06:57:50] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_inspect"
+#     [35maliases[39m: []
+# [06:57:50] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_text"
+#     [35maliases[39m: []
+# [06:57:50] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_objects"
+#     [35maliases[39m: []
+# [06:57:50] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_patch"
+#     [35maliases[39m: []
+# [06:57:50] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_tree"
+#     [35maliases[39m: []
+# [06:57:50] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_maintenance"
+#     [35maliases[39m: []
+# [06:57:50] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_setup"
+#     [35maliases[39m: []
+# [06:57:50] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_refs"
+#     [35maliases[39m: []
+# [06:57:50] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_reflog"
+#     [35maliases[39m: []
+# [06:57:50] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "git_show"
+# [06:57:51] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "git_show"
+# Subtest: git-abort.test.ts: git_show starts no command after an abort between its header, diff and stat commands
+ok 3 - git-abort.test.ts: git_show starts no command after an abort between its header, diff and stat commands
+  ---
+  duration_ms: 1207.698792
+  type: 'test'
+  ...
+# [06:57:52] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_status"
+#     [35maliases[39m: []
+# [06:57:52] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_log"
+#     [35maliases[39m: []
+# [06:57:52] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_diff"
+#     [35maliases[39m: []
+# [06:57:52] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_show"
+#     [35maliases[39m: []
+# [06:57:52] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_blame"
+#     [35maliases[39m: []
+# [06:57:52] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_branch"
+#     [35maliases[39m: []
+# [06:57:52] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_stage"
+#     [35maliases[39m: []
+# [06:57:52] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_commit"
+#     [35maliases[39m: []
+# [06:57:52] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_amend"
+#     [35maliases[39m: []
+# [06:57:52] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_push"
+#     [35maliases[39m: []
+# [06:57:52] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_pull"
+#     [35maliases[39m: []
+# [06:57:52] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_fetch"
+#     [35maliases[39m: []
+# [06:57:52] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_checkout"
+#     [35maliases[39m: []
+# [06:57:52] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_merge"
+#     [35maliases[39m: []
+# [06:57:52] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_rebase"
+#     [35maliases[39m: []
+# [06:57:52] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_stash"
+#     [35maliases[39m: []
+# [06:57:52] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_reset"
+#     [35maliases[39m: []
+# [06:57:52] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_revert"
+#     [35maliases[39m: []
+# [06:57:52] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git:cherry-pick"
+#     [35maliases[39m: []
+# [06:57:52] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_tag"
+#     [35maliases[39m: []
+# [06:57:52] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_remote"
+#     [35maliases[39m: []
+# [06:57:52] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_worktree"
+#     [35maliases[39m: []
+# [06:57:52] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_for_each_ref"
+#     [35maliases[39m: []
+# [06:57:52] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_cat_file"
+#     [35maliases[39m: []
+# [06:57:52] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_ls_tree"
+#     [35maliases[39m: []
+# [06:57:52] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_ls_files"
+#     [35maliases[39m: []
+# [06:57:52] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_rev_list"
+#     [35maliases[39m: []
+# [06:57:52] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_rev_parse"
+#     [35maliases[39m: []
+# [06:57:52] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_fetch_refs"
+#     [35maliases[39m: []
+# [06:57:52] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_path_history"
+#     [35maliases[39m: []
+# [06:57:52] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_hash_object"
+#     [35maliases[39m: []
+# [06:57:52] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_merge_base"
+#     [35maliases[39m: []
+# [06:57:52] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_show_ref"
+#     [35maliases[39m: []
+# [06:57:52] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_symbolic_ref"
+#     [35maliases[39m: []
+# [06:57:52] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_config"
+#     [35maliases[39m: []
+# [06:57:52] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_ls_remote"
+#     [35maliases[39m: []
+# [06:57:52] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_update_ref"
+#     [35maliases[39m: []
+# [06:57:52] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_rm"
+#     [35maliases[39m: []
+# [06:57:52] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_diff_tree"
+#     [35maliases[39m: []
+# [06:57:52] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_merge_tree"
+#     [35maliases[39m: []
+# [06:57:52] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_inspect"
+#     [35maliases[39m: []
+# [06:57:52] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_text"
+#     [35maliases[39m: []
+# [06:57:52] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_objects"
+#     [35maliases[39m: []
+# [06:57:52] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_patch"
+#     [35maliases[39m: []
+# [06:57:52] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_tree"
+#     [35maliases[39m: []
+# [06:57:52] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_maintenance"
+#     [35maliases[39m: []
+# [06:57:52] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_setup"
+#     [35maliases[39m: []
+# [06:57:52] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_refs"
+#     [35maliases[39m: []
+# [06:57:52] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "git_reflog"
+#     [35maliases[39m: []
+# [06:57:52] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "git_show"
+# Subtest: git-abort.test.ts: git_show returns a cancelled failure, never a success, when the abort comes after the header and the diff and during the stat
+ok 4 - git-abort.test.ts: git_show returns a cancelled failure, never a success, when the abort comes after the header and the diff and during the stat
+  ---
+  duration_ms: 719.551917
+  type: 'test'
+  ...
+# Subtest: git-abort.test.ts: the git helper fail() reports an aborted command as cancelled, and a mutating one adds that its outcome is unknown
+ok 5 - git-abort.test.ts: the git helper fail() reports an aborted command as cancelled, and a mutating one adds that its outcome is unknown
+  ---
+  duration_ms: 0.464667
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4329.324709

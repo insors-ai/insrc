@@ -1,0 +1,185 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 2,
+        "contentHash": "c56e7886bbcce0133e6f2544aaf07afd5f74c8ef2fa0d447847749b66f08dbbe",
+        "at": "2026-11-20T07:29:13.380Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T07:37:47.394Z"
+      }
+    },
+    "workflow": "build",
+    "runId": "store-cc350328-eee5-40c7-a23a-631024108296",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-20T07:23:24.840Z",
+    "epicCreatedAt": "2026-11-20T04:36:15.364Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "939c138296f56a8f",
+    "storyId": "s1",
+    "revision": 2,
+    "standalone": true,
+    "sizeClass": "trivial",
+    "authoredBy": "controller",
+    "epicSlug": "sanitize-temporary-errors-before-inspecting-untrusted",
+    "updatedAt": "2026-11-20T07:28:19.911Z"
+  },
+  "body": {
+    "focus": "Ensure temporary requests produce safe typed failures without touching untrusted error properties or prototypes, preserving saved-mode diagnostics, nonretryable refusals and authority checks. Acceptance: provider and RPC hostile-proxy fixtures pass, no private canary reaches logs/envelopes, and saved positive controls retain normal diagnostics. Scope excludes general test cleanup and reviewed-evidence regeneration.",
+    "producesLld": false,
+    "commit": "370a617f8",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "Temporary structured-retry failures are projected by trusted identity before prototype inspection; temporary lookup failures retain terminal reasons through an owned WeakMap without touching thrown-object getters or prototypes. All 14 focused tests passed in owned sequential run 699b7ba3-6dc9-4b09-9892-a72850feaf19, with source/compiled provider and RPC privacy sinks, saved diagnostics/refusal controls and confirmed cleanup. Evidence and exact counts are in docs/plans/temporary-error-sanitization-2026-11-20.md and temporary-error-evidence-2026-11-20/final-results.json; no broad sweep or release evidence refresh.",
+    "testRecord": {
+      "md": "docs/standalone/sanitize-temporary-errors-before-inspecting-untrusted-E20261120939c1382/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "docs/plans/failing-tests-2026-11-20.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T07:28:19.911Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/temporary-error-evidence-2026-11-20/before-0.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T07:28:19.911Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/temporary-error-evidence-2026-11-20/before-1.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T07:28:19.911Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/temporary-error-evidence-2026-11-20/before-results.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T07:28:19.911Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/temporary-error-evidence-2026-11-20/final-0.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T07:28:19.911Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/temporary-error-evidence-2026-11-20/final-1.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T07:28:19.911Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/temporary-error-evidence-2026-11-20/final-2.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T07:28:19.911Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/temporary-error-evidence-2026-11-20/final-3.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T07:28:19.911Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/temporary-error-evidence-2026-11-20/final-4.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T07:28:19.911Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/temporary-error-evidence-2026-11-20/final-results.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T07:28:19.911Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/temporary-error-sanitization-2026-11-20.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T07:28:19.911Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/test-remediation-batches-2026-11-20.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T07:28:19.911Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/structured-retry-vibe-refusal.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T07:28:19.911Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/structured-output.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T07:28:19.911Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/executor.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T07:28:19.911Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/lookup-failed.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T07:28:19.911Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/__tests__/fixtures/rpc-diagnostics.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T07:28:19.911Z"
+      }
+    ]
+  },
+  "citations": []
+}

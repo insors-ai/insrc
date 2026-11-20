@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: native StopTarget remains bound after PID-file replacement and terminates only the original process
+ok 1 - native StopTarget remains bound after PID-file replacement and terminates only the original process # SKIP
+  ---
+  duration_ms: 0.659042
+  type: 'test'
+  ...
+# Subtest: native close and cancellation release the broker without terminating an unrequested target
+ok 2 - native close and cancellation release the broker without terminating an unrequested target # SKIP
+  ---
+  duration_ms: 0.082375
+  type: 'test'
+  ...
+# Subtest: chunked readiness and out-of-order replies preserve one immutable identity and request correlation
+ok 3 - chunked readiness and out-of-order replies preserve one immutable identity and request correlation
+  ---
+  duration_ms: 506.281333
+  type: 'test'
+  ...
+# Subtest: spawn, readiness, malformed identity and native permission failures refuse capture and clean helpers
+ok 4 - spawn, readiness, malformed identity and native permission failures refuse capture and clean helpers
+  ---
+  duration_ms: 3965.04325
+  type: 'test'
+  ...
+# Subtest: readiness and operation timeouts close a stuck helper without a target-signal fallback
+ok 5 - readiness and operation timeouts close a stuck helper without a target-signal fallback
+  ---
+  duration_ms: 1121.0175
+  type: 'test'
+  ...
+# Subtest: abort before capture and during readiness or a pending request leaves no helper
+ok 6 - abort before capture and during readiness or a pending request leaves no helper
+  ---
+  duration_ms: 996.592458
+  type: 'test'
+  ...
+# Subtest: unknown reply IDs, operation mismatches and request errors close the capability session
+ok 7 - unknown reply IDs, operation mismatches and request errors close the capability session
+  ---
+  duration_ms: 1540.059458
+  type: 'test'
+  ...
+# Subtest: invalid target IDs and timer bounds are rejected before spawning
+ok 8 - invalid target IDs and timer bounds are rejected before spawning
+  ---
+  duration_ms: 0.889125
+  type: 'test'
+  ...
+# Subtest: oversized readiness and partial request replies never become process-exit evidence
+ok 9 - oversized readiness and partial request replies never become process-exit evidence
+  ---
+  duration_ms: 817.218583
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 2
+# todo 0
+# duration_ms 9077.668208

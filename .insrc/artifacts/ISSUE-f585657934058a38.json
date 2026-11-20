@@ -1,0 +1,66 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1795149391037-bnv3zm",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-20T04:36:31.135Z",
+    "epicCreatedAt": "2026-11-20T04:36:31.135Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 98,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "f585657934058a38",
+    "epicSlug": "restore-jetbrains-plugin-test-build",
+    "standalone": true,
+    "magnitude": "sized",
+    "kind": "defect",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "93279409e28cfb5b548389728c9f023fc247a42ddbcb73245f6460c322d17245",
+        "at": "2026-11-20T04:36:31.142Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Restore the JetBrains plugin test build",
+    "reproduction": "Both Gradle test invocations stop at compileTestKotlin. Settings tests use SaveResult.Saved as a singleton, call removed requestLine, and pass obsolete PerRepoSection constructor arguments. The default run additionally fails storing the configuration cache for bundleBackendAssets; disabling the cache leaves the Kotlin errors.",
+    "rootCause": "Test fixtures were not updated when Saved became a data class and transport/settings constructors changed. The asset Copy task also captures script/project references in provider mapping that Gradle cannot serialize for configuration caching.",
+    "fixIntent": "Bring settings and transport fixtures onto supported APIs while preserving their wire/null-value and save-result assertions, and make backend asset bundling compatible with the intended Gradle configuration-cache behavior. Acceptance: test compilation succeeds, focused settings tests execute and pass, and two normal test-build invocations reuse the cache without the Copy-task serialization error. Do not introduce a compatibility gate for the deprecated IDE fork."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "docs/plans/failing-tests-2026-11-20.md"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "jetbrains-plugin/build.gradle.kts"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/PerRepoSection.kt"
+    }
+  ]
+}

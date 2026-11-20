@@ -3,7 +3,7 @@
   "version": "0.2.1",
   "private": true,
   "type": "module",
-  "description": "insrc backend — daemon, agent, indexer, graph/vector DB",
+  "description": "insrc backend \u2014 daemon, agent, indexer, graph/vector DB",
   "engines": {
     "node": ">=22.13.0"
   },
@@ -14,9 +14,9 @@
   },
   "scripts": {
     "typecheck:tools": "tsc -p tsconfig.typecheck.json",
-    "build": "node scripts/clean-output.mjs && npm run build --workspace @insrc/project-memory && tsc --inlineSources && npm run typecheck:tools && node scripts/forbidden-spawn-scan.mjs --fail && node build-process-broker.mjs && node build-shutdown-watchdog.mjs && node scripts/check-model-definitions.mjs && node copy-assets.mjs",
+    "build": "node scripts/test-harness/build.mjs",
     "insrc": "tsx src/cli/index.tsx",
-    "test": "tsx --test --test-force-exit src/**/__tests__/*.test.ts",
+    "test": "node scripts/test-harness/run.mjs",
     "test:memory": "npm test --workspace @insrc/project-memory"
   },
   "dependencies": {

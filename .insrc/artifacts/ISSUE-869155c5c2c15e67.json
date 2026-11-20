@@ -1,0 +1,61 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1795149466771-qvitdt",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-20T04:37:46.887Z",
+    "epicCreatedAt": "2026-11-20T04:37:46.887Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 116,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "869155c5c2c15e67",
+    "epicSlug": "diagnose-macos-native-lifecycle-capability-failures",
+    "standalone": true,
+    "magnitude": "sized",
+    "kind": "defect",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "f52fdff84c107f5921f839181cfe50c7b1d08eb8ffcd0e867ad0316c81a1e12c",
+        "at": "2026-11-20T04:37:46.896Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Diagnose macOS native lifecycle capability failures",
+    "reproduction": "With the audit's native fixtures, the process broker refuses capture with denied (errno 1), while identity/peer observer prerequisites fail without a more specific captured diagnostic. Stop/restart, watchdog and installation-mutation tests then fail before their later ownership assertions. Missing helpers from shared-output races are a separate prerequisite, not this native diagnosis.",
+    "rootCause": "The immediate established failures are broker admission refusal and unsuccessful native identity/peer observation. The underlying entitlement, host-policy, helper packaging or native API cause has not been diagnosed. A clean Node-22 build and isolated disposable-process reproduction are required before changing lifecycle behavior.",
+    "fixIntent": "Identify the exact native admission/observation failure on macOS and correct only the diagnosed capability or packaging defect, retaining immutable identity, PID-reuse protection, peer verification and fail-closed ownership. Acceptance: supported disposable stop/restart/observer fixtures succeed; permission denial, wrong peer, reused PID, replacement run files and competing installation mutations remain correctly refused; healthy and forced shutdown paths terminate within their documented bounds. Do not bypass native security checks or infer a product defect from audit timeouts."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "docs/plans/failing-tests-2026-11-20.md"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/shared/darwin-lifecycle.ts"
+    }
+  ]
+}

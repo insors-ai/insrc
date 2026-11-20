@@ -1,0 +1,53 @@
+TAP version 13
+# Subtest: CM-S3-CONSUMER-LOGS: tool/RPC/progress/error/throwing-delivery envelopes and normal sink, saved concurrent marker
+not ok 1 - CM-S3-CONSUMER-LOGS: tool/RPC/progress/error/throwing-delivery envelopes and normal sink, saved concurrent marker
+  ---
+  duration_ms: 2211.989667
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/src/daemon/steps/__tests__/rpc-diagnostics.test.ts:1:1680'
+  failureType: 'testCodeFailure'
+  error: |-
+    (node:93562) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+    (Use `node --trace-warnings ...` to show where the warning was created)
+    /Users/subhagho/work/projects/insors/insrc/src/daemon/steps/__tests__/fixtures/rpc-diagnostics.ts:35
+    const raw = new Proxy({}, { get() { rawReads++; throw Error('CM_PRIVATE_RAW_GETTER'); }, getPrototypeOf() { rawReads++; throw Error('CM_PRIVATE_RAW_GETTER'); } });
+                                                                                                                                  ^
+    
+    Error: CM_PRIVATE_RAW_GETTER
+        at Object.getPrototypeOf (/Users/subhagho/work/projects/insors/insrc/src/daemon/steps/__tests__/fixtures/rpc-diagnostics.ts:35:127)
+        at [Symbol.hasInstance] (<anonymous>)
+        at failedOutput (/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/executor.ts:696:17)
+        at handleNarrow (/Users/subhagho/work/projects/insors/insrc/src/daemon/steps/analyze-step/phases/narrow.ts:171:21)
+        at async <anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/steps/__tests__/fixtures/rpc-diagnostics.ts:102:26)
+    
+    Node.js v22.23.2
+    
+    
+    1 !== 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    Object.getPrototypeOf (/Users/subhagho/work/projects/insors/insrc/src/daemon/steps/__tests__/fixtures/rpc-diagnostics.ts:35:127)
+    [Symbol.hasInstance] (<anonymous>)
+    failedOutput (/Users/subhagho/work/projects/insors/insrc/src/analyze/explore/executor.ts:696:17)
+    handleNarrow (/Users/subhagho/work/projects/insors/insrc/src/daemon/steps/analyze-step/phases/narrow.ts:171:21)
+    async <anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/steps/__tests__/fixtures/rpc-diagnostics.ts:102:26)
+    <anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/steps/__tests__/rpc-diagnostics.test.ts:18:150)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/steps/__tests__/rpc-diagnostics.test.ts:23:137)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2332.493583

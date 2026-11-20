@@ -1,0 +1,113 @@
+{
+  "evidence": [
+    {
+      "file": "src/cli/services/__tests__/daemon-ctl-forced-stop.test.ts",
+      "code": 1,
+      "log": "docs/plans/test-harness-evidence-2026-11-20/consumer-0.tap",
+      "counts": {
+        "tests": 6,
+        "pass": 2,
+        "fail": 4,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failedCases": [
+        "Control script retains the original target across run-file removal",
+        "Control script refuses reused identity and replacement files, and reclaims an orphan guard whose owner died",
+        "Disposable clean and forced script restart paths preserve commands",
+        "Fresh HOME shell stop and start work without a pre-existing insrc directory"
+      ],
+      "classification": "native capability/permission failure observed after verified prerequisites; keep original failures for Batch 17",
+      "nativeDenialObserved": true,
+      "logSha256": "a9dc72e5f5cd415a90474c7e7160abdf14b1bf70fe1cef9f88fd0cc0a99a0133"
+    },
+    {
+      "file": "src/shared/__tests__/process-broker-native.test.ts",
+      "code": 0,
+      "log": "docs/plans/test-harness-evidence-2026-11-20/consumer-1.tap",
+      "counts": {
+        "tests": 6,
+        "pass": 3,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 3
+      },
+      "failedCases": [],
+      "classification": "passed in isolated prepared run",
+      "nativeDenialObserved": true,
+      "logSha256": "a901d78a4bc0bfbec238db01b93187d905f801ff0706cc6e01d5b315bdb38dd9"
+    },
+    {
+      "file": "src/daemon/__tests__/shutdown-lifecycle-evidence.test.ts",
+      "code": 1,
+      "log": "docs/plans/test-harness-evidence-2026-11-20/consumer-2.tap",
+      "counts": {
+        "tests": 2,
+        "pass": 1,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failedCases": [
+        "Guard-owner death reclaims the stale guard so the restart proceeds like the healthy control"
+      ],
+      "classification": "native capability/permission failure observed after verified prerequisites; keep original failures for Batch 17",
+      "nativeDenialObserved": true,
+      "logSha256": "d0c95c60e546daceac827184d8805dcdbae5675b92bd8088e144d15e0a208842"
+    },
+    {
+      "file": "src/daemon/__tests__/shutdown-watchdog.test.ts",
+      "code": 1,
+      "log": "docs/plans/test-harness-evidence-2026-11-20/consumer-3.tap",
+      "counts": {
+        "tests": 6,
+        "pass": 1,
+        "fail": 4,
+        "cancelled": 1,
+        "skipped": 0
+      },
+      "failedCases": [
+        "Independent watchdog bounds a disposable blocked parent and disarms after healthy exit",
+        "Watchdog never signals after reparenting and imports only Node built-ins",
+        "Watchdog IPC disconnect during readiness releases its shared broker session without signalling the parent",
+        "IPC transport loss never disarms the deadline for a blocked parent or blocked exit hook",
+        "Backward wall-clock adjustment cannot extend the independent monotonic shutdown duration"
+      ],
+      "classification": "unresolved lifecycle assertion after verified prerequisites; not a demonstrated missing-helper/build-race failure or proven platform-only defect",
+      "nativeDenialObserved": false,
+      "logSha256": "5b6f1be936d7bd6876783cd2e2d79218971222c6af3b316ff17123c96165ea51"
+    },
+    {
+      "file": "src/daemon/__tests__/shutdown-bounded.test.ts",
+      "code": 1,
+      "log": "docs/plans/test-harness-evidence-2026-11-20/consumer-4.tap",
+      "counts": {
+        "tests": 3,
+        "pass": 1,
+        "fail": 2,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "failedCases": [
+        "Bounded shutdown preserves lock-loss, fatal and normal cleanup behavior",
+        "Repeated signals and guarded async close preserve ownership"
+      ],
+      "classification": "native capability/permission failure observed after verified prerequisites; keep original failures for Batch 17",
+      "nativeDenialObserved": true,
+      "logSha256": "bba48f1f2e13ee6dea3447a423a40c5b41d7d4a50b5d9acf9ba35c39c939169a"
+    }
+  ],
+  "limits": "Complete consumer files ran serially with original assertions. Their nonzero native/lifecycle outcomes remain failures, not green product tests. Classification does not establish platform-only causality; Batch 17 owns diagnosis. All prerequisites and output fingerprints were verified.",
+  "runId": "f7765751-a506-433e-891d-22ea7e857280",
+  "sourceCommit": "3fd825b005332c36c66743b4bc94c1e2c82ba87b",
+  "runtimeExecutable": "/opt/homebrew/Cellar/node@22/22.23.2/bin/node",
+  "inputFingerprint": "e0fb98c5396250f3324dfda5a51f8102a2ffeedc16617dce9e961e1ccbe018cf",
+  "outputFingerprint": "3c63078dfca8f9ace1f46f4cb3ecc626f24393f8324a267e388fef1564047a5d",
+  "cleanup": {
+    "confirmedClosed": true,
+    "interrupted": false,
+    "cancellationErrors": [],
+    "evidenceErrors": [],
+    "childCloseJournal": "child-results.jsonl"
+  }
+}

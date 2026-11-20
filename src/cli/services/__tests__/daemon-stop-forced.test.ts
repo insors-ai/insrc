@@ -1,3 +1,5 @@
+import { requirePreparedBuild } from '../../../../scripts/test-harness/build.mjs';
+import { childLine, ownChild, spawnFixture, stopOwnedChildren } from '../../../daemon/tools/__tests__/_proc.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -16,9 +18,9 @@
  * Run: npx tsx --test src/cli/services/__tests__/daemon-stop-forced.test.ts
  */
 
-import { after, test } from 'node:test';
+import { after, afterEach, before, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { spawn, execFileSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -38,10 +40,13 @@ assert.equal(PATHS.daemonRunGuard, join(testHome, '.insrc/daemon.run-files.guard
 assert.ok(testHome.startsWith('/tmp/insrc-stop-'));
 
 const children: ChildProcess[] = [];
-after(() => {
-	for (const c of children) { try { c.kill('SIGKILL'); } catch { /* gone */ } }
-	rmSync(testHome, { recursive: true, force: true });
+before(() => requirePreparedBuild(fileURLToPath(new URL('../../../../', import.meta.url))));
+afterEach(async () => {
+ await stopOwnedChildren(children);
+ for (const file of [PATHS.pidFile, PATHS.sockFile]) rmSync(file, { force: true });
+ rmSync(PATHS.daemonRunGuard, { recursive: true, force: true });
 });
+after(() => { rmSync(testHome, { recursive: true, force: true }); });
 
 /** A stand-in daemon. `reply` — whether it answers the shutdown request. */
 function stubbornDaemonSource(reply: boolean, removeFiles = false): string {
@@ -74,12 +79,9 @@ async function startStubborn(reply: boolean, removeFiles = false): Promise<Child
 	mkdirSync(dir, { recursive: true });
 	const entry = join(dir, 'index.js');
 	writeFileSync(entry, stubbornDaemonSource(reply, removeFiles));
-	const child = spawn(process.execPath, [entry], { stdio: ['ignore', 'pipe', 'inherit'] });
-	children.push(child);
-	await new Promise<void>((resolve, reject) => {
-		child.stdout?.once('data', () => resolve());
-		child.once('exit', code => reject(new Error(`stand-in daemon exited early (${code})`)));
-	});
+	const child = spawnFixture(process.execPath, [entry], { stdio: ['ignore', 'pipe', 'inherit'] });
+	children.push(child); ownChild(child);
+	await childLine(child);
 	return child;
 }
 
@@ -130,7 +132,7 @@ test('Retained stop target survives run-file removal and RPC failure', async () 
 
 test('Verified forced termination preserves StopOutcome and never targets reused PIDs', async () => {
  const child = await startStubborn(true);
- const bystander = spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], { stdio: 'ignore' }); children.push(bystander);
+ const bystander = spawnFixture(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], { stdio: 'ignore' }); children.push(bystander); ownChild(bystander);
  const { captureDaemon } = await import('../lifecycle.js');
  const original = await captureDaemon();
  writeFileSync(PATHS.pidFile, String(bystander.pid));
@@ -186,8 +188,8 @@ test('Real orphaned guard owner death prevents maintenance restart', async () =>
  try {
   const result = await restart(() => {}, { stopDaemon: () => stopDaemon({ stopWaitMs: 0, requestShutdown: async () => {
    const module = new URL('../../../shared/daemon-run-files.ts', import.meta.url).href;
-   guardOwner = spawn(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', `import { acquireRunFileGuard } from ${JSON.stringify(module)}; acquireRunFileGuard(${JSON.stringify(PATHS.daemonRunGuard)}); process.stdout.write('ready'); setInterval(() => {}, 1000);`], { stdio: ['ignore', 'pipe', 'inherit'] }); children.push(guardOwner);
-   await once(guardOwner.stdout!, 'data'); const ended = once(guardOwner, 'exit'); guardOwner.kill('SIGKILL'); await ended;
+   guardOwner = spawnFixture(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', `import { acquireRunFileGuard } from ${JSON.stringify(module)}; acquireRunFileGuard(${JSON.stringify(PATHS.daemonRunGuard)}); process.stdout.write('ready'); setInterval(() => {}, 1000);`], { stdio: ['ignore', 'pipe', 'inherit'] }); children.push(guardOwner); ownChild(guardOwner);
+   await childLine(guardOwner); const ended = once(guardOwner, 'exit'); guardOwner.kill('SIGKILL'); await ended;
    return 'no-reply';
   } }), startDaemon: async () => { starts++; return { started: true, alreadyRunning: false, logPath: '' }; } });
   assert.equal(result.ok, false); assert.match(result.error!, /owner pid=.*state=gone/); assert.equal(starts, 0);

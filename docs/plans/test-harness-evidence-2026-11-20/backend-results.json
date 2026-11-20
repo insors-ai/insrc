@@ -1,0 +1,220 @@
+{
+  "runId": "70018a3b-5b68-400b-b5be-a49d03bf37a4",
+  "runtime": {
+    "executable": "/opt/homebrew/Cellar/node@22/22.23.2/bin/node",
+    "version": "v22.23.2"
+  },
+  "budgets": {
+    "buildMs": 600000,
+    "fileMs": 600000,
+    "runMs": 5400000,
+    "cleanupMs": 5000
+  },
+  "selectedFiles": [
+    "src/config/__tests__/check-model-definitions.test.ts",
+    "src/daemon/db/__tests__/driver-log-policy.test.ts",
+    "src/daemon/steps/__tests__/peer-state-store-leakfree.test.ts",
+    "src/daemon/tools/__tests__/fixture-lifetime.test.ts",
+    "src/daemon/tools/__tests__/typecheck-config.test.ts",
+    "src/daemon/tools/builtins/git/__tests__/git-abort.test.ts",
+    "src/daemon/tools/builtins/git/__tests__/git-cat-file-tree-kill.test.ts",
+    "src/shared/__tests__/daemon-process-client.test.ts"
+  ],
+  "requestedConcurrency": 1,
+  "effectiveConcurrency": 1,
+  "diagnosticFlags": [
+    "DEBUG"
+  ],
+  "liveTests": "unset",
+  "results": [
+    {
+      "file": "src/config/__tests__/check-model-definitions.test.ts",
+      "childId": "05bb5bca-cfb1-44c7-9ba3-9ee1eda4fde8",
+      "log": "docs/plans/test-harness-evidence-2026-11-20/backend-0.tap",
+      "closeJournal": ".insrc/tmp/test-harness/runs/70018a3b-5b68-400b-b5be-a49d03bf37a4/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "logSha256": "077ea95a7b8744aeedaaf64d77deab6d7490a73a1fbd9cacaa4e1314e7b32bde"
+    },
+    {
+      "file": "src/daemon/db/__tests__/driver-log-policy.test.ts",
+      "childId": "4312233d-303b-4469-b9c3-05b14787919f",
+      "log": "docs/plans/test-harness-evidence-2026-11-20/backend-1.tap",
+      "closeJournal": ".insrc/tmp/test-harness/runs/70018a3b-5b68-400b-b5be-a49d03bf37a4/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 3,
+          "pass": 3,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "logSha256": "1a470e032f28a56caaea7af30dc1ca5692507099e9263c5f45f1ab36d8899614"
+    },
+    {
+      "file": "src/daemon/steps/__tests__/peer-state-store-leakfree.test.ts",
+      "childId": "2fa86dcd-2751-4191-99ec-2280c41c5142",
+      "log": "docs/plans/test-harness-evidence-2026-11-20/backend-2.tap",
+      "closeJournal": ".insrc/tmp/test-harness/runs/70018a3b-5b68-400b-b5be-a49d03bf37a4/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "logSha256": "26b861d85f7b98fdadfb16ea0d845a208094d06ab8d1a3b88143b26384348fe0"
+    },
+    {
+      "file": "src/daemon/tools/__tests__/fixture-lifetime.test.ts",
+      "childId": "701f4577-1d04-423b-ab3f-f92b4be6fdaa",
+      "log": "docs/plans/test-harness-evidence-2026-11-20/backend-3.tap",
+      "closeJournal": ".insrc/tmp/test-harness/runs/70018a3b-5b68-400b-b5be-a49d03bf37a4/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 6,
+          "pass": 6,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "logSha256": "5a3d323af0021aefe12af612adeefdce8bcb6ccc81286afff19e63599dafd4dc"
+    },
+    {
+      "file": "src/daemon/tools/__tests__/typecheck-config.test.ts",
+      "childId": "a27aa5a1-ba65-4360-8e29-be0fb1130ab1",
+      "log": "docs/plans/test-harness-evidence-2026-11-20/backend-4.tap",
+      "closeJournal": ".insrc/tmp/test-harness/runs/70018a3b-5b68-400b-b5be-a49d03bf37a4/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 3,
+          "pass": 3,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "logSha256": "5fbc1b43ae25b2d8bd488d955e9d2b140a0d005beeae0a0650d3397bd1b92a70"
+    },
+    {
+      "file": "src/daemon/tools/builtins/git/__tests__/git-abort.test.ts",
+      "childId": "c31c70a3-da9c-46be-9d0c-259763ede994",
+      "log": "docs/plans/test-harness-evidence-2026-11-20/backend-5.tap",
+      "closeJournal": ".insrc/tmp/test-harness/runs/70018a3b-5b68-400b-b5be-a49d03bf37a4/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 5,
+          "pass": 5,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "logSha256": "59ba16be6141103ac17af17005d3fc4c78bc0555457d560c06f349045c1b52dc"
+    },
+    {
+      "file": "src/daemon/tools/builtins/git/__tests__/git-cat-file-tree-kill.test.ts",
+      "childId": "50de26d9-d561-43ef-8f5d-493b6603c24d",
+      "log": "docs/plans/test-harness-evidence-2026-11-20/backend-6.tap",
+      "closeJournal": ".insrc/tmp/test-harness/runs/70018a3b-5b68-400b-b5be-a49d03bf37a4/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "logSha256": "00e55fedba7c84447d755287fd0b3c93d0dd3d9c2864cba202ebb657f29d3c60"
+    },
+    {
+      "file": "src/shared/__tests__/daemon-process-client.test.ts",
+      "childId": "7e40ccc5-02fe-44a7-a907-7b3f6e5f25c0",
+      "log": "docs/plans/test-harness-evidence-2026-11-20/backend-7.tap",
+      "closeJournal": ".insrc/tmp/test-harness/runs/70018a3b-5b68-400b-b5be-a49d03bf37a4/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 9,
+          "pass": 7,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 2,
+          "todo": 0
+        }
+      },
+      "logSha256": "d7cb41c34ba973744f1be9c0825b46d385dd77bc4d81ffe34662d2829b4f4c37"
+    }
+  ],
+  "cleanupPath": ".insrc/tmp/test-harness/runs/70018a3b-5b68-400b-b5be-a49d03bf37a4/cleanup.json",
+  "incomplete": false,
+  "cleanup": {
+    "confirmedClosed": true,
+    "interrupted": false,
+    "cancellationErrors": [],
+    "evidenceErrors": [],
+    "childCloseJournal": "child-results.jsonl"
+  },
+  "preparedFingerprints": {
+    "inputFingerprint": "f978cc5a5b4e8138fee6effb0054abff362719f05456a4efc0b02409984076c1",
+    "outputFingerprint": "13111ee82673ea622660d89d29791898babfda2ba1449c6332501cf09e45e358"
+  }
+}

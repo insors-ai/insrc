@@ -1,0 +1,217 @@
+{
+  "runId": "c264fefe-d90f-4144-bf50-3960ecba16cc",
+  "runtime": {
+    "executable": "/opt/homebrew/Cellar/node@22/22.23.2/bin/node",
+    "version": "v22.23.2"
+  },
+  "budgets": {
+    "buildMs": 600000,
+    "fileMs": 600000,
+    "runMs": 5400000,
+    "cleanupMs": 5000
+  },
+  "selectedFiles": [
+    "src/analyze/explore/__tests__/search-text-params.test.ts",
+    "src/daemon/tools/builtins/file/__tests__/live-store-file-refusal.test.ts",
+    "src/daemon/tools/builtins/search/__tests__/grep-compatibility.test.ts",
+    "src/daemon/tools/builtins/search/__tests__/grep-core.test.ts",
+    "src/daemon/tools/builtins/search/__tests__/grep-live-store.test.ts",
+    "src/daemon/tools/builtins/search/__tests__/grep-omitted.test.ts",
+    "src/db/graph/__tests__/live-store-refusal.test.ts"
+  ],
+  "requestedConcurrency": 1,
+  "effectiveConcurrency": 1,
+  "diagnosticFlags": [
+    "DEBUG"
+  ],
+  "liveTests": "unset",
+  "results": [
+    {
+      "file": "src/analyze/explore/__tests__/search-text-params.test.ts",
+      "childId": "6ca4cfcd-e251-4742-989d-bb93c34fcc8b",
+      "log": "docs/plans/live-store-search-evidence-2026-11-20/final-0.tap",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 5,
+          "pass": 5,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "sha256": "85d6556fdeca61308cfafc51de524151b1d8237b930b611040c1dddb261b1d4a"
+    },
+    {
+      "file": "src/daemon/tools/builtins/file/__tests__/live-store-file-refusal.test.ts",
+      "childId": "55dc155e-b145-49da-8968-e23bdbae6530",
+      "log": "docs/plans/live-store-search-evidence-2026-11-20/final-1.tap",
+      "code": 1,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 2,
+          "pass": 1,
+          "fail": 1,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "sha256": "63878fae572ba0e483483ac6250181226f7d817c94049dcdb75e0bab5af1479d"
+    },
+    {
+      "file": "src/daemon/tools/builtins/search/__tests__/grep-compatibility.test.ts",
+      "childId": "87c88e40-e476-4259-8d18-dc18a179f0fa",
+      "log": "docs/plans/live-store-search-evidence-2026-11-20/final-2.tap",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 3,
+          "pass": 3,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "sha256": "127e0a4ce5a651bb8daf2f0e07f7bb7247dd6c9fcfbeed707f3d224b4ae5b1c1"
+    },
+    {
+      "file": "src/daemon/tools/builtins/search/__tests__/grep-core.test.ts",
+      "childId": "2e68c9a2-63f8-4e02-94c9-ee1347aa748a",
+      "log": "docs/plans/live-store-search-evidence-2026-11-20/final-3.tap",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 3,
+          "pass": 3,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "sha256": "2a59e52842ec154abca933333ab8084084402e8f40ec5dccdd004392629a7891"
+    },
+    {
+      "file": "src/daemon/tools/builtins/search/__tests__/grep-live-store.test.ts",
+      "childId": "74a12da9-5988-4e3c-af76-efdcc8a26500",
+      "log": "docs/plans/live-store-search-evidence-2026-11-20/final-4.tap",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 3,
+          "pass": 3,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "sha256": "54cdd09e65304b0101b5aad0d87955f69df502f7b252c4446f08f316b07dd9cf"
+    },
+    {
+      "file": "src/daemon/tools/builtins/search/__tests__/grep-omitted.test.ts",
+      "childId": "e9f4efdd-f79e-4d3a-a6eb-384fa885d6d9",
+      "log": "docs/plans/live-store-search-evidence-2026-11-20/final-5.tap",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 12,
+          "pass": 12,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "sha256": "2a649c8e0d72062118f699f855064d15ac5930ecce1d513bd458516cc4c6b7c9"
+    },
+    {
+      "file": "src/db/graph/__tests__/live-store-refusal.test.ts",
+      "childId": "7dc53516-eec9-4bf4-a171-ae95fca9ca55",
+      "log": "docs/plans/live-store-search-evidence-2026-11-20/final-6.tap",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "sha256": "4b5c34acf0688c3dba7baa54e42fddd0a68b562b7c20a804a371fba20d227579"
+    }
+  ],
+  "incomplete": false,
+  "cleanup": {
+    "confirmedClosed": true,
+    "interrupted": false,
+    "cancellationErrors": [],
+    "evidenceErrors": [],
+    "childCloseJournal": "child-results.jsonl"
+  },
+  "preparedBuild": {
+    "runId": "c264fefe-d90f-4144-bf50-3960ecba16cc",
+    "canonicalRoot": "/Users/subhagho/work/projects/insors/insrc",
+    "runtimeExecutable": "/opt/homebrew/Cellar/node@22/22.23.2/bin/node",
+    "buildExitCode": 0,
+    "completedAt": "2026-11-20T08:06:39.707Z",
+    "inputFingerprint": "c14bbeb12a247d26534849c310ae153ffdd289b3c736f80b5f6ff351de61b5ec",
+    "outputFingerprint": "f0c89a82605baaf1d5c3cec4d85b6e2f42dd4bf18efcac6aaa9e610b16803597",
+    "requiredArtifacts": [
+      "out/daemon/index.js",
+      "out/bin/insrc-process-broker",
+      "out/bin/insrc-shutdown-watchdog.js",
+      "out/daemon/shutdown.js",
+      "out/daemon/shutdown-watchdog.js",
+      "out/shared/daemon-run-files.js",
+      "out/cli/services/daemon.js",
+      "out/cli/services/maintenance.js",
+      "out/daemon/server.js",
+      "out/shared/daemon-process.js",
+      "out/daemon/run-file-ownership.js",
+      "out/bin/insrc-darwin-lifecycle"
+    ]
+  },
+  "totals": {
+    "tests": 30,
+    "pass": 29,
+    "fail": 1,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "closeJournal": "Retained in original local run directory; cleanup confirms closure."
+}

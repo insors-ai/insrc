@@ -1,0 +1,68 @@
+TAP version 13
+# Subtest: Watchdog arm failure self-kills before blocked native cleanup
+ok 1 - Watchdog arm failure self-kills before blocked native cleanup
+  ---
+  duration_ms: 522.742708
+  type: 'test'
+  ...
+# Subtest: Bounded shutdown preserves lock-loss, fatal and normal cleanup behavior
+not ok 2 - Bounded shutdown preserves lock-loss, fatal and normal cleanup behavior
+  ---
+  duration_ms: 865.742084
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/shutdown-bounded.test.ts:15:705'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /shutdown deadline exceeded/. Input:
+    
+    '{"time":"2026-11-20T06:52:52.758Z","module":"shutdown-stage","signal":"SIGTERM","stage":"watchdog arm","health":{"state":"ok"}}\n' +
+      '{"time":"2026-11-20T06:52:53.370Z","module":"shutdown-watchdog","pid":59380,"timeoutMs":600,"elapsedMs":41.19395900000001,"stage":"watchdog capture","reason":"broker capture failed: process capability broker refused: denied (errno 1)"}\n' +
+      '{"time":"2026-11-20T06:52:53.393Z","module":"shutdown-stage","signal":"SIGTERM","stage":"shutdown failed: broker capture failed: process capability broker refused: denied (errno 1)","health":{"state":"ok"}}\n'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: |-
+    {"time":"2026-11-20T06:52:52.758Z","module":"shutdown-stage","signal":"SIGTERM","stage":"watchdog arm","health":{"state":"ok"}}
+    {"time":"2026-11-20T06:52:53.370Z","module":"shutdown-watchdog","pid":59380,"timeoutMs":600,"elapsedMs":41.19395900000001,"stage":"watchdog capture","reason":"broker capture failed: process capability broker refused: denied (errno 1)"}
+    {"time":"2026-11-20T06:52:53.393Z","module":"shutdown-stage","signal":"SIGTERM","stage":"shutdown failed: broker capture failed: process capability broker refused: denied (errno 1)","health":{"state":"ok"}}
+    
+  operator: 'match'
+  stack: |-
+    TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/shutdown-bounded.test.ts:51:18)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: Repeated signals and guarded async close preserve ownership
+not ok 3 - Repeated signals and guarded async close preserve ownership
+  ---
+  duration_ms: 1082.815208
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/shutdown-bounded.test.ts:15:1304'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    0 !== 1
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 1
+  actual: 0
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/shutdown-bounded.test.ts:56:117)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 1
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4472.463792

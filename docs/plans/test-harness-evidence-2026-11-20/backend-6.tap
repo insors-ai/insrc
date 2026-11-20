@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: git-cat-file-tree-kill.test.ts: an abort kills the stand-in git and its descendant and returns a rejected failure within the bound
+ok 1 - git-cat-file-tree-kill.test.ts: an abort kills the stand-in git and its descendant and returns a rejected failure within the bound
+  ---
+  duration_ms: 624.0785
+  type: 'test'
+  ...
+# Subtest: git-cat-file-tree-kill.test.ts: its time-out kills the stand-in git and its descendant and returns a failure within the bound
+ok 2 - git-cat-file-tree-kill.test.ts: its time-out kills the stand-in git and its descendant and returns a failure within the bound
+  ---
+  duration_ms: 307.440375
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1098.083875

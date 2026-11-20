@@ -1,0 +1,392 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1795162828625-eehjjh",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-20T08:24:02.381Z",
+    "epicCreatedAt": "2026-11-20T04:36:15.580Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 213452,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "03bd849749a52b41",
+    "epicSlug": "align-historical-tests-retired-review-contract",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1795162828625-eehjjh",
+    "hldEffectiveHash": "0c2d5db0d8b7d5b025f13dda4ab27428f28c7a58a8c8e971f866eb33a7c36466",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "Align historical tests with the retired review contract",
+    "standalone": true,
+    "sizeClass": "bugfix",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2d0cda307b56178b329c0765412c93db364b46344075ecd5a04391a4735023e0",
+        "at": "2026-11-20T08:24:02.471Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T08:31:27.346Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "aa76e132b4f7d5cfa44c9d81651aa10bf09b5205"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Repair historical tests and fixture inventories for the intentionally retired automated-review contract. Assert exact unavailable responses before provider, parser or IO work; preserve generic transport, worker/token, lifecycle, historical-data and temporary-versus-saved persistence coverage through current supported surfaces. Production review execution and RPC classification remain unchanged."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Align historical tests with the retired review contract"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "reviewUnavailable",
+          "signature": "reviewUnavailable(family: 'design' | 'code' = 'design', ..._args: readonly unknown[]): never",
+          "parameters": [
+            {
+              "name": "family",
+              "type": "'design' | 'code'",
+              "purpose": "Select existing family-specific unavailable message.",
+              "optional": true
+            },
+            {
+              "name": "_args",
+              "type": "readonly unknown[]",
+              "purpose": "Retained arguments remain uninspected.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "never",
+            "meaning": "Existing exact Design/Code review functionality is being rewritten exception."
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "Every retired execution, grounding/freshness, lifecycle operation and review step; no provider/IO side effects."
+            }
+          ],
+          "preconditions": [
+            "Test inputs may be malformed/poisoned to prove no argument inspection.",
+            "Do not bypass production refusal through synthetic success mocks on review-named surfaces."
+          ],
+          "postconditions": [
+            "Use exact family messages and current error envelopes for daemon, step and MCP boundaries; no start/poll provider review workload.",
+            "Move still-valid generic progress/done, synchronous-throw, abort/drain, cwd lookup and worker identity assertions to supported methods or explicitly test-only generic handlers.",
+            "Worker token lifecycle covers current analyze/workflow kinds and explicit rejection of retired kinds; preserve session isolation, update/old-token and idle-release assertions for supported kinds.",
+            "Current inert historical rendering/metadata and human lifecycle/integrity/build completion gates remain tested, with no fake review entry or provider execution.",
+            "Replace deleted fixture paths with real current suites; require child execution evidence and zero live LMDB/Lance artifacts, plus deliberate-opening positive controls.",
+            "Persistence repair maps removed writer checks to current guarded sinks and supported entry points: retain hostile-input zero-read/no-write checks at boundaries that guarantee them, and saved artifact/history/cache/trace positives. Do not silently claim a low-level writer offers stronger preflight guarantees than its implementation; any uncovered production defect requires separate triage.",
+            "Relationship impact is test-only: tests invoke existing boundaries; daemon owns stores, request owns child/drain lifetime, session owns supported continuation tokens, artifacts retain existing historical records. No production ownership/cardinality/API/IPC/entity/UX change. Prose and assertion mapping suffice; no ERD or companion visual required."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Historical test expects a retired review to execute or mint a token.",
+          "detection": "Current exact unavailable exception or unsupported-kind result.",
+          "response": "Require that refusal and absence of work, while moving generic transport/token assertions to supported operations.",
+          "userImpact": "Tests match intentional retirement without simulating successful reviews.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Isolation inventory names a deleted test or nested runner executes no cases.",
+          "detection": "Verify path existence, child exit, TAP pass count and no cancellations before checking store absence.",
+          "response": "Replace entry with current real coverage; do not accept empty/failed child runs as isolation proof.",
+          "userImpact": "Trustworthy no-live-store assertions retain deliberate-open positive controls.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Persistence fixture imports removed provenance writer.",
+          "detection": "Module-load failure from original audit; current writer and guarded sink source inspection.",
+          "response": "Remove obsolete import, map valid assertion intent onto current guarded entry/sink and saved persistence control. Keep hostile getters/canaries and reject any claimed safety not actually observed.",
+          "userImpact": "Persistence matrix runs meaningfully rather than failing at import.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Replacement exposes an independent production/privacy/routing defect.",
+          "detection": "Reproduce with current supported API and separate from removed contract assumptions.",
+          "response": "Record and route separately; do not relax assertions or change production authority to force this batch green.",
+          "userImpact": "Remaining failures are explicit and linked to correct scope.",
+          "recoverable": false
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Review call receives poison getters, missing repo, stale token or malformed phase.",
+          "expected": "Exact family refusal before inspection/work; no provider call or persisted review output."
+        },
+        {
+          "input": "Generic test previously used review methods as transport stand-ins.",
+          "expected": "Use supported or explicit test-only handlers and preserve progress/done, sync throw, cancellation/drain, cwd/repo behavior."
+        },
+        {
+          "input": "Idle worker release and session change.",
+          "expected": "Supported token kinds retain their current continuity, isolation and invalidation semantics; retired kinds reject without fabricated tokens."
+        },
+        {
+          "input": "Old review findings/history and approved BUILD records.",
+          "expected": "Inert history/presentation and current approval/integrity/build/task accounting remain valid; no fake review generated."
+        },
+        {
+          "input": "RPC method coverage, inventory classification, generic role defaults or spawn exemptions drift.",
+          "expected": "Keep Batch05, Batch15 and Batch06/09 responsibilities separate; change only retired-review assumptions in shared tests, recording sibling failures."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Automated design/code reviews remain unavailable; no provider/IO execution is restored.",
+          "source": "c1"
+        },
+        {
+          "text": "History, human approval, integrity, task accounting and build completion guarantees remain exercised.",
+          "source": "c2"
+        },
+        {
+          "text": "Temporary no-persistence and saved positive controls, true child execution and live-store isolation evidence remain meaningful.",
+          "source": "c3"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "integration",
+          "purpose": "Verify retired contract at backend/client/MCP boundaries with no execution.",
+          "subjects": [
+            "Retired review surfaces reject before argument inspection, providers or IO",
+            "Generic client progress, synchronous errors and abort drains retain coverage on supported handlers"
+          ],
+          "fixturesNeeded": [
+            "Existing review-unavailable suite; poison inputs and provider/IO sentinels.",
+            "In-daemon client and lifecycle wiring fixtures with supported or explicit test-only handlers; no production method additions."
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Preserve worker and session continuation semantics independently of retired reviews.",
+          "subjects": [
+            "Supported worker tokens survive idle release and preserve session isolation while retired kinds reject"
+          ],
+          "fixturesNeeded": [
+            "Existing indexing-port, router-session and s3 acceptance fixtures with bounded readiness and owned workers."
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Restore meaningful persistence and default-store isolation probes.",
+          "subjects": [
+            "Temporary persistence canaries remain absent while saved artifact and history controls persist",
+            "Current isolation inventories execute real tests and detect deliberate default-store opening"
+          ],
+          "fixturesNeeded": [
+            "task-persistence current guarded sinks and saved artifact/history/cache/trace fixtures.",
+            "Temporary HOME before imports; actual LMDB/Lance sentinels and nested TAP execution counts; replace deleted review fixture paths with current suites."
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "Preserve historical records and lifecycle gates while aligning review-specific labels.",
+          "subjects": [
+            "Retained review history and human lifecycle gates remain readable and enforced",
+            "Review-only label assertions reflect unavailable execution without changing active role tier tests"
+          ],
+          "fixturesNeeded": [
+            "Existing review-retirement-workflow and inert history report/resolution tests; valid and failing gate controls.",
+            "Original role-router-global-tiers suite retaining active tier assertions."
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "Retired review surfaces reject before argument inspection, providers or IO",
+            "Review-only label assertions reflect unavailable execution without changing active role tier tests"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "Generic client progress, synchronous errors and abort drains retain coverage on supported handlers",
+            "Supported worker tokens survive idle release and preserve session isolation while retired kinds reject"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "Temporary persistence canaries remain absent while saved artifact and history controls persist",
+            "Current isolation inventories execute real tests and detect deliberate default-store opening"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "Retained review history and human lifecycle gates remain readable and enforced"
+          ]
+        }
+      ],
+      "testFramework": "node:test with tsx on supported Node22 under the owned coordinator, serial focused groups. Run baseline before each group's edits; retain actual counts/failures, not blanket skips or longer deadlines. Audit dates back to d7bcd4f9; current checkpoint aa76e132b may expose different later failures. Preserve generic test semantics with an old-assertion→current-control mapping. Typecheck and appropriate source/compiled worker checks; inspect cleanup and final quiescence. No live provider or automatic review session, broad overlapping sweep or release qualification."
+    },
+    "migration": {
+      "stateBefore": "Tests mix valid transport/isolation/history assertions with obsolete review execution, labels, tokens, fixture paths and a removed writer import; the historical audit records resulting failures.",
+      "stateAfter": "Focused tests assert current unavailable responses and preserve surviving semantics through supported operations/current persistence sinks; inventories reference executable suites with genuine isolation controls. Production review behavior and persisted records are unchanged.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Inventory affected assertions and capture current focused baselines, mapping each legitimate intent to a current supported control before editing.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Migrate backend/client/MCP and worker review-specific assumptions, retaining positive transport/token/lifecycle controls; do not alter RPC classification.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Repair removed writer import and deleted isolation inventories using current boundaries and meaningful saved/temporary/store-opening controls; record any independent production gap rather than weakening tests.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Run serial focused verification, typecheck and needed compiled worker checks; document counts, cleanup, assertion mapping and sibling failures, then obtain human BUILD approval.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Tests/fixtures only. Current public error text/envelopes, APIs/IPC, token types, artifact formats, model roles and historical data stay unchanged. No data deletion, review restoration, shim exports or production policy bypass.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Migrate tests to current contracts",
+        "oneLineSummary": "Separate unavailable-review assertions from supported transport, worker, history and persistence controls.",
+        "approach": "Keep review production behavior unchanged. Replace obsolete model-label/execution/token assumptions with exact family-specific rejection and pre-work assertions. Rehome generic transport/lifecycle/worker assertions onto supported analyze/workflow/model operations or test-only handlers. Replace deleted fixture inventory entries with current real suites, and replace removed persistence writer imports with supported guarded storage calls while retaining canary and saved positive controls.",
+        "pros": [
+          "Preserves the intent of meaningful assertions without reviving removed execution.",
+          "Uses current contracts and keeps Batch05 RPC classification separate."
+        ],
+        "cons": [
+          "Requires explicit mapping of each removed expectation to a surviving control.",
+          "Some replacement fixture setup may reveal sibling defects, which must be recorded separately."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Compatibility shims for old review fixtures",
+        "oneLineSummary": "Reintroduce old review tokens/writer exports solely to keep historical tests running.",
+        "approach": "Provide compatibility functions and retained routes that emulate removed review behavior so unchanged tests still receive execution-shaped results.",
+        "pros": [
+          "Fewer test edits."
+        ],
+        "cons": [
+          "Violates intentional review retirement and creates production compatibility work solely for obsolete expectations.",
+          "Risks restoring provider/IO side effects and misleading test coverage."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Production shims contradict the retired contract."
+      },
+      {
+        "id": "a3",
+        "name": "Delete or skip obsolete tests",
+        "oneLineSummary": "Drop any failing test that references review.",
+        "approach": "Remove review-related suites and their isolation/persistence entries without establishing equivalent current controls.",
+        "pros": [
+          "Small patch."
+        ],
+        "cons": [
+          "Loses valid history, cleanup, transport, persistence and store-isolation assertions; violates issue acceptance."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Deletion/skip is not equivalent retained-history or isolation evidence."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/review-unavailable.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/__tests__/review-retirement-workflow.test.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/daemon/steps/__tests__/fixtures/task-persistence.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/align-historical-tests-retired-review-contract-E2026112003bd8497/ISSUE.md"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/db/graph/__tests__/no-live-store-in-tests.test.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/workflow/review-history/index.ts"
+    },
+    {
+      "id": "c7",
+      "kind": "analyze-bundle",
+      "ref": "s1.analyzeBundles[0]"
+    }
+  ]
+}

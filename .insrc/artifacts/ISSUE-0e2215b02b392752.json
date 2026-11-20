@@ -1,0 +1,66 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1795149459001-mq8vy6",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-20T04:37:39.106Z",
+    "epicCreatedAt": "2026-11-20T04:37:39.106Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 105,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "0e2215b02b392752",
+    "epicSlug": "make-repository-indexing-fixtures-honor-current",
+    "standalone": true,
+    "magnitude": "sized",
+    "kind": "defect",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "501b6ea9ca272bdadb398df384f1345af7302d618110e5bf8a7a4b18530160c0",
+        "at": "2026-11-20T04:37:39.114Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Make repository and indexing fixtures honor current contracts",
+    "reproduction": "repo-completeness expects a seeded repository to be complete but receives unembedded:4. Search-filter/guard tests wait 180 seconds without observing the expected indexing refusal. Analyze-step fixtures hardcode a deprecated insrc-ide path and then pass undefined state tokens after start fails. MCP pass-through compares /private/var/folders with /var/folders for the same repository.",
+    "rootCause": "The seeded helper writes low-level Lance vectors after empty-embedding entity upserts, bypassing the graph embedding markers now used for completeness. Other fixtures assume a particular checkout and noncanonical temporary path. The exact reason the indexing window is missed remains unverified and must be diagnosed with a deterministic fixture rather than guessed.",
+    "fixIntent": "Make repository fixtures isolated, explicitly registered, embedding-marker consistent and path-canonical across in-process and MCP use; make the indexing-state tests deterministically reach the state they claim to test. Acceptance: completeness positive controls are actually complete, indexing refusal/filter assertions run during a verified index, analyzer continuation uses a valid returned token, and MCP prompt comparisons agree without deprecated-fork dependencies. Do not relax production scoping or fabricate completeness."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "docs/plans/failing-tests-2026-11-20.md"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/daemon/__tests__/helpers/seeded-daemon.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/analyze/explore/executor.ts"
+    }
+  ]
+}

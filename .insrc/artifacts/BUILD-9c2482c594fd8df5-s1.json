@@ -1,0 +1,207 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 3,
+        "contentHash": "d72a70644b46e107a54ffa110e913e4faeb40a9945c6f7d3d004d0a453c10b99",
+        "at": "2026-11-20T08:09:03.078Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 3,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T08:14:43.241Z"
+      }
+    },
+    "workflow": "build",
+    "runId": "store-437ce3b1-0743-4234-9201-f6c0ba45344f",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-20T08:02:49.015Z",
+    "epicCreatedAt": "2026-11-20T04:36:15.472Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9c2482c594fd8df5",
+    "storyId": "s1",
+    "revision": 3,
+    "updatedAt": "2026-11-20T08:08:21.507Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicSlug": "exclude-live-store-from-directory-searches"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      }
+    ],
+    "summary": "Implemented pre-read shared grep admission with independently resolved data/lock identities, guarded Node traversal for containing roots and config-independent non-following rg elsewhere. Final sequential 30-test run c264fefe-d90f-4144-bf50-3960ecba16cc: 29 pass, one stale executeTool fixture-dependency failure retained for Batch11, zero skips/cancellations, complete coverage and confirmed cleanup. All safety/compatibility, compiled guard, grep core/omission, analyzer parameter and cross-process store checks pass; earlier 300ms timing failure is retained in baseline evidence without deadline changes. No broad-sweep or qualification claim.",
+    "testRecord": {
+      "md": "docs/standalone/exclude-live-store-from-directory-searches-E202611209c2482c5/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/search/__tests__/grep-live-store.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:08:21.507Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/search/grep.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:08:21.507Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/store.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:08:21.507Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/failing-tests-2026-11-20.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:08:21.507Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/live-store-search-evidence-2026-11-20/baseline-0.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:08:21.507Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/live-store-search-evidence-2026-11-20/baseline-1.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:08:21.507Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/live-store-search-evidence-2026-11-20/baseline-2.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:08:21.507Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/live-store-search-evidence-2026-11-20/baseline-results.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:08:21.507Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/live-store-search-evidence-2026-11-20/final-0.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:08:21.507Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/live-store-search-evidence-2026-11-20/final-1.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:08:21.507Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/live-store-search-evidence-2026-11-20/final-2.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:08:21.507Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/live-store-search-evidence-2026-11-20/final-3.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:08:21.507Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/live-store-search-evidence-2026-11-20/final-4.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:08:21.507Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/live-store-search-evidence-2026-11-20/final-5.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:08:21.507Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/live-store-search-evidence-2026-11-20/final-6.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:08:21.507Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/live-store-search-evidence-2026-11-20/final-results.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:08:21.507Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/live-store-search-fix-2026-11-20.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:08:21.507Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/test-remediation-batches-2026-11-20.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:08:21.507Z"
+      },
+      {
+        "target": {
+          "file": "docs/testing.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:08:21.507Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/search/__tests__/grep-compatibility.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:08:21.507Z"
+      }
+    ],
+    "commit": "0db0d3c87"
+  },
+  "citations": []
+}

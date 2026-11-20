@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b1318c80-1af6-44d6-a959-4d97bda94d6a",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-20T07:59:28.737Z",
+    "epicCreatedAt": "2026-11-20T04:36:15.472Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9c2482c594fd8df5",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Validate shared search compatibility and record Batch 03 evidence",
+      "parent": {
+        "entityId": "STORY-9c2482c594fd8df5-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9c2482c594fd8df5-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-9c2482c594fd8df5-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "f81f57cf8195c524a10d41165057485ac2ed4c3e7e4720433f964470bee6d86b",
+        "at": "2026-11-20T07:59:28.737Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T07:59:28.738Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Validate shared search compatibility and record Batch 03 evidence",
+    "summary": "Run focused serial safety and existing search/file/analyzer regressions under supported Node22 with clean owned output. Preserve complete-mode partial-failure semantics and report any existing startup timing failure distinctly; update audit and batch status with actual counts, closure evidence and limits.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "ac1–ac4 have recorded focused test evidence, including original leak reproduction, protected read absence and allowed matches.",
+      "Root typecheck and relevant focused checks are run with actual pass/fail/skip/cancel counts, runtime/backend details and confirmed cleanup; no overlapping broad sweep.",
+      "Complete-mode timeout/exit failures preserve allowed partial hits; unchanged baseline 300ms fake-rg startup failure remains reported rather than skipped, disguised or fixed by enlarging deadlines.",
+      "Document Node semantics for store-ancestor searches, existing path replacement/hardlink limits, unchanged public contract and unrefreshed qualification; assess visual relevance from the final change.",
+      "A deterministic complete-mode nonzero-exit control emits an allowed hit before failing and verifies typed failure plus that partial hit independently of the existing startup-timed fixture."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Grep result shapes and Node/ripgrep omission rules remain truthful"
+      },
+      {
+        "level": "integration",
+        "name": "Complete-mode failure preserves allowed partial hits"
+      },
+      {
+        "level": "smoke",
+        "name": "Recorded focused validation reports actual coverage, baseline timing failures and closed actors"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

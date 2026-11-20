@@ -1,0 +1,114 @@
+TAP version 13
+# Subtest: Independent watchdog bounds a disposable blocked parent and disarms after healthy exit
+not ok 1 - Independent watchdog bounds a disposable blocked parent and disarms after healthy exit
+  ---
+  duration_ms: 152.991542
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/shutdown-watchdog.test.ts:32:461'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + undefined
+    - true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/shutdown-watchdog.test.ts:70:59)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: Ready handshake reports spawn failure, early exit and timeout
+ok 2 - Ready handshake reports spawn failure, early exit and timeout
+  ---
+  duration_ms: 686.5635
+  type: 'test'
+  ...
+# Subtest: Watchdog never signals after reparenting and imports only Node built-ins
+not ok 3 - Watchdog never signals after reparenting and imports only Node built-ins
+  ---
+  duration_ms: 2312.451917
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/shutdown-watchdog.test.ts:32:1446'
+  failureType: 'testCodeFailure'
+  error: 'watchdog undefined remains alive'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  operator: 'fail'
+  stack: |-
+    gone (/Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/shutdown-watchdog.test.ts:66:9)
+    async TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/shutdown-watchdog.test.ts:84:71)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: Watchdog IPC disconnect during readiness releases its shared broker session without signalling the parent
+not ok 4 - Watchdog IPC disconnect during readiness releases its shared broker session without signalling the parent
+  ---
+  duration_ms: 252.72275
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/shutdown-watchdog.test.ts:32:2241'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    true !== false
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: false
+  actual: true
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/shutdown-watchdog.test.ts:98:77)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: IPC transport loss never disarms the deadline for a blocked parent or blocked exit hook
+not ok 5 - IPC transport loss never disarms the deadline for a blocked parent or blocked exit hook
+  ---
+  duration_ms: 10031.912125
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/shutdown-watchdog.test.ts:32:2573'
+  failureType: 'testTimeoutFailure'
+  error: 'test timed out after 10000ms'
+  code: 'ERR_TEST_FAILURE'
+  ...
+# Subtest: Backward wall-clock adjustment cannot extend the independent monotonic shutdown duration
+not ok 6 - Backward wall-clock adjustment cannot extend the independent monotonic shutdown duration
+  ---
+  duration_ms: 187.352458
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/shutdown-watchdog.test.ts:32:3019'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + undefined
+    - true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/shutdown-watchdog.test.ts:113:77)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 1
+# fail 4
+# cancelled 1
+# skipped 0
+# todo 0
+# duration_ms 14082.204625

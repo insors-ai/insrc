@@ -1,3 +1,4 @@
+import { compileProbe } from '../../../../scripts/test-harness/probe.mjs';
 /**
  * Story E20260925edb76e2e:S007 / t6 — docs-review host unit + rendered-shell contract.
  *
@@ -20,7 +21,7 @@ const NOOP_LOGGER = { warn: () => {}, error: () => {} };
 import { mkdtempSync, rmSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { execFileSync, spawnSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { deriveSectionIndex } from '../docs-sections.js';
 import { allOf, bodyStub, fire, textNode, type BodyStub } from './fake-dom.js';
@@ -2489,32 +2490,14 @@ test('t2 (contract): protocol.ts indexes all three off DocsContent rather than r
  * `tsc --noEmit` never sees this file and any `@ts-expect-error` written here is
  * INERT — it would decorate a test without checking anything. A type-level
  * guarantee is only real if something executes the check, so the probe writes a
- * file next to the module (relative import resolves) and runs tsc over it. When
- * the compiler is not installed it skips the test and returns null.
+ * file in the ignored run workspace and imports the actual module. The
+ * compiler is required; launch failure is a setup error rather than a skip.
  */
-function typecheckAgainstPanel(t: Skipper, snippet: string): { ok: boolean; out: string } | null {
-  const tsc = tscOrSkip(t);
-  if (!tsc) return null;
-  const probe = fileURLToPath(new URL(`../__sc4probe_${process.pid}_${Math.random().toString(36).slice(2)}__.ts`, import.meta.url));
-  try {
-    writeFileSync(probe, snippet);
-    const r = spawnSync(
-      process.execPath,
-      [tsc, '--noEmit', '--strict', '--exactOptionalPropertyTypes',
-       '--module', 'nodenext', '--moduleResolution', 'nodenext', '--target', 'es2022', probe],
-      { encoding: 'utf8' },
-    );
-    const out = `${r.stdout}${r.stderr}`;
-    // A probe that failed to START would also exit non-zero, which would make
-    // "tsc rejected it" pass for the wrong reason. Rule that out explicitly.
-    assert.doesNotMatch(out, /Cannot find module '.*typescript|MODULE_NOT_FOUND/, 'the probe itself must run');
-    return { ok: r.status === 0, out };
-  } finally {
-    rmSync(probe, { force: true });
-  }
+async function typecheckAgainstPanel(_t: Skipper, snippet: (moduleSpecifier: string) => string): Promise<{ ok: boolean; out: string }> {
+  return compileProbe({ root: REPO_ROOT, target: fileURLToPath(new URL('../docs-review-panel.ts', import.meta.url)), compiler: TSC, snippet });
 }
 
-test("t3: the 'absent' state carries NO member other than state — enforced by the TYPE, not just at runtime", (t) => {
+test("t3: the 'absent' state carries NO member other than state — enforced by the TYPE, not just at runtime", async (t) => {
   const absent: CompanionSlotState = { state: 'absent' };
   // Runtime shape: exactly one own key.
   assert.deepEqual(Object.keys(absent), ['state']);
@@ -2524,14 +2507,13 @@ test("t3: the 'absent' state carries NO member other than state — enforced by 
   // accident. Reading any other member off the narrowed absent arm must be a
   // COMPILE error against the real published union.
   for (const member of ['label', 'body', 'linkOut', 'kind', 'reason']) {
-    const probe = typecheckAgainstPanel(t, `
-      import type { CompanionSlotState } from './docs-review-panel.js';
+    const probe = await typecheckAgainstPanel(t, moduleSpecifier => `
+      import type { CompanionSlotState } from ${JSON.stringify(moduleSpecifier)};
       export function probe(s: CompanionSlotState): unknown {
         if (s.state === 'absent') return s.${member};
         return undefined;
       }
     `);
-    if (!probe) return;
     const { ok, out } = probe;
     assert.equal(ok, false, `reading '${member}' off the absent arm must NOT compile`);
     assert.match(out, /Property '.*' does not exist on type/, `and fail because '${member}' is absent from the arm`);
@@ -2539,11 +2521,10 @@ test("t3: the 'absent' state carries NO member other than state — enforced by 
 
   // The positive control: `state` itself IS readable, so the probe is capable of
   // passing and the failures above are about the members, not a broken probe.
-  const control = typecheckAgainstPanel(t, `
-    import type { CompanionSlotState } from './docs-review-panel.js';
+  const control = await typecheckAgainstPanel(t, moduleSpecifier => `
+    import type { CompanionSlotState } from ${JSON.stringify(moduleSpecifier)};
     export function probe(s: CompanionSlotState): string { return s.state; }
   `);
-  if (!control) return;
   assert.equal(control.ok, true, `the probe must accept valid code too — got: ${control.out}`);
 });
 
@@ -2566,7 +2547,7 @@ test('t3: companionVisualKind maps the closed union TOTALLY — both diagram kin
   assert.equal(Object.keys(every).length, 3, 'the union is three members wide');
 });
 
-test('t3: an unhandled companion kind is a COMPILE error, not an unlabelled slot', (t) => {
+test('t3: an unhandled companion kind is a COMPILE error, not an unlabelled slot', async (t) => {
   // The exhaustiveness guarantee is invisible at runtime: a bare `default` would
   // pass every assertion above while silently swallowing a new kind. So compile a
   // copy of the mapping with one branch removed and require tsc to REJECT it.
@@ -2586,32 +2567,10 @@ test('t3: an unhandled companion kind is a COMPILE error, not an unlabelled slot
       }
     }
   `;
-  const dir = mkdtempSync(join(tmpdir(), 'insrc-sc4-exh-'));
-  try {
-    const file = join(dir, 'probe.ts');
-    writeFileSync(file, src);
-    // tsc lives at the REPO ROOT, not under vscode-plugin. Resolved relative to
-    // this file so the probe does not depend on the cwd the suite was started
-    // from — and checked to exist first, because a missing binary ALSO exits
-    // non-zero and would make the "tsc rejected it" assertion pass for entirely
-    // the wrong reason. (It did, on the first run; the message assertion below is
-    // what caught it.) Missing, the test skips with that reason.
-    const tsc = tscOrSkip(t);
-    if (!tsc) return;
-
-    const r = spawnSync(process.execPath, [tsc, '--noEmit', '--strict', file], { encoding: 'utf8' });
-    const out = `${r.stdout}${r.stderr}`;
-    assert.notEqual(r.status, 0, 'tsc must REJECT a mapping that leaves a union member unhandled');
-    assert.match(
-      out,
-      /not assignable to type 'never'/,
-      'and reject it precisely because the never witness cannot absorb the missing member',
-    );
-    // The probe really did compile the code we wrote, rather than failing to start.
-    assert.doesNotMatch(out, /Cannot find module|MODULE_NOT_FOUND/, 'the failure is a type error, not a broken probe');
-  } finally {
-    rmSync(dir, { recursive: true, force: true });
-  }
+  const { ok, out } = await typecheckAgainstPanel(t, () => src);
+  assert.equal(ok, false, 'tsc must REJECT a mapping that leaves a union member unhandled');
+  assert.match(out, /not assignable to type 'never'/, 'the never witness cannot absorb the missing member');
+  assert.doesNotMatch(out, /Cannot find module|MODULE_NOT_FOUND/, 'the failure is a type error, not a broken probe');
 
   // AND the SHIPPED function actually uses that pattern. The probe above compiles
   // a synthetic copy, so on its own it would stay green even if the real mapping

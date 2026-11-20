@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-253ffbcc-091b-476d-a891-2253375031f3",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-20T07:59:28.734Z",
+    "epicCreatedAt": "2026-11-20T04:36:15.472Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9c2482c594fd8df5",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Guard shared grep admission and prove store read exclusion",
+      "parent": {
+        "entityId": "STORY-9c2482c594fd8df5-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9c2482c594fd8df5-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "6becd155c7aaf388cac7d32c90c69e7d6eeb8b770db22aa658536c65944d6546",
+        "at": "2026-11-20T07:59:28.734Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T07:59:28.735Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Guard shared grep admission and prove store read exclusion",
+    "summary": "Implement approved canonical, component-safe root ancestry decision for both data and lock targets before either rg branch. Refuse direct protected roots, reuse guarded Node for containing roots, and enforce --no-config/--no-follow on rg elsewhere. Add isolated read/spawn instrumentation and alias/allowed controls without changing public APIs or generic file policy.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "Direct protected roots and symlink aliases refuse before any backend spawn or protected content read.",
+      "Containing roots and directory aliases choose Node before rg spawn in bounded and complete modes; data and lock targets are checked independently and Node skips protected content reads.",
+      "Ordinary roots keep real rg, ignore ambient config and do not follow nested symlinks; allowed same-name files and component-prefix siblings remain searchable.",
+      "usedRipgrep, excludedByRule, limits and failures accurately describe actual execution; no output-only filtering, new public options or storage/IPC shape changes.",
+      "Instrument content reads and backend spawn in isolated fixtures; explicitly cover independently resolved lock target, canonical-prefix collision and aliases."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Protected direct roots refuse before backend or content access"
+      },
+      {
+        "level": "integration",
+        "name": "Store ancestor and directory aliases use guarded Node in bounded and complete modes"
+      },
+      {
+        "level": "integration",
+        "name": "Allowed roots retain real ripgrep without ambient configuration or symlink following"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

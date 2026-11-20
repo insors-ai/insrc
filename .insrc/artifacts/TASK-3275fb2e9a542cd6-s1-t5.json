@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-dcc55b72-811e-40c8-a408-26081e4c3b86",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-20T05:10:31.173Z",
+    "epicCreatedAt": "2026-11-20T04:34:20.119Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3275fb2e9a542cd6",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Repair fixture readiness and resource lifetimes",
+      "parent": {
+        "entityId": "STORY-3275fb2e9a542cd6-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-3275fb2e9a542cd6-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-3275fb2e9a542cd6-s1-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 2,
+        "contentHash": "ff2ca1cc395ae2aad830d9a58917f500f2ab44a670764fd4f40ad330c7ad8163",
+        "at": "2026-11-20T06:02:21.973Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T05:10:31.175Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Repair fixture readiness and resource lifetimes",
+    "summary": "Use existing process/channel helpers with per-case cleanup and bounded ready handshakes; move peer MessageChannel allocation into a meaningful test with finally cleanup.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "Importing the peer file creates no unowned module-scope port; its real state round-trip test terminates and both ports close.",
+      "Failed fixture startup releases owned socket/process before next case; short behavior deadlines begin only after bounded readiness.",
+      "Cancellation and disposal retain actual handles; escaped/unconfirmed children block release rather than authorizing PID scans or production lifecycle changes."
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "Peer state round-trip terminates with both MessagePorts closed"
+      },
+      {
+        "level": "integration",
+        "name": "Failed fixture readiness reclaims socket and child before the next case"
+      },
+      {
+        "level": "integration",
+        "name": "Ready handshake precedes behavioral cancellation deadline"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

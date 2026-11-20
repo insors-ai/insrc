@@ -1,0 +1,61 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1795149458879-wal4e3",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-20T04:37:38.978Z",
+    "epicCreatedAt": "2026-11-20T04:37:38.978Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 99,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "a395798d1ad21992",
+    "epicSlug": "reconcile-github-cli-coverage-noninteractive-flags",
+    "standalone": true,
+    "magnitude": "sized",
+    "kind": "defect",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "b003428c97d747a163c6906dedf477e0d87c91ffdeb76c1c42ba037485d7e3f8",
+        "at": "2026-11-20T04:37:38.986Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Reconcile GitHub CLI coverage and noninteractive flags",
+    "reproduction": "Against gh 2.101.0, the coverage test finds unclassified discussion, PR, release and repository subcommands. Input coverage lacks auth status --active, and the prompt sweep finds gh_gist.delete does not always provide the prompt-skipping --yes flag. These failures reproduced in both audit continuations.",
+    "rootCause": "The installed CLI help has evolved beyond the explicit coverage/input tables, and the gist-delete operation does not satisfy the current noninteractive contract. Every new command must be intentionally covered or excluded; this is not a request to expose every CLI capability automatically.",
+    "fixIntent": "Classify installed commands with justified supported/excluded decisions, account for current flags and positionals, and ensure registered operations cannot unexpectedly prompt. Acceptance: installed-help coverage and input audits pass, gist-delete prompt avoidance is verified without deleting real user data, and all existing per-input approvals and tool schemas remain correct. Validate the declared CLI support range rather than pinning one workstation's help output blindly."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "docs/plans/failing-tests-2026-11-20.md"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/daemon/tools/builtins/gh/coverage.ts"
+    }
+  ]
+}

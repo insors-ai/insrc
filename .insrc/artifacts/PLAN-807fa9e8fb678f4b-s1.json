@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "plan",
-    "runId": "wf-1795174013020-0x2gia",
+    "runId": "wf-1795175406920-su8kqi",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-11-20T11:27:28.983Z",
+    "createdAt": "2026-11-20T11:51:09.588Z",
     "epicCreatedAt": "2026-11-20T04:36:30.764Z",
     "standalone": true,
     "attribution": {
@@ -16,21 +16,21 @@
         }
       ]
     },
-    "elapsedMs": 35660,
+    "elapsedMs": 62210,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "807fa9e8fb678f4b",
     "epicSlug": "reconcile-daemon-rpc-registration-audit-coverage",
     "storyId": "s1",
-    "lldRunId": "wf-1795173501200-iln8uq",
-    "lldEffectiveHash": "bce6337fee05292a2212fb6d2e91ef7798f0de7667874bbfcfb22ef7305c64da",
+    "lldRunId": "wf-1795175116137-nrshbf",
+    "lldEffectiveHash": "3a1654ebd181c8626cd85a309712200d3515585d21b129c48c7a64f84cd01de7",
     "authoredBy": "controller",
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 1,
-        "contentHash": "ef18e9e3dafd3a8f09a3dcf197e840a4240deed4ea4d1b01a3c5fe96743b80ba",
-        "at": "2026-11-20T11:27:29.083Z",
+        "number": 2,
+        "contentHash": "3d3d4bcd2f32bb64eb622357a809ee62f8572626c1d38d685f0056bde193738d",
+        "at": "2026-11-20T11:51:09.689Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
@@ -39,44 +39,49 @@
       },
       "signoffs": [],
       "approval": {
-        "revision": 1,
+        "revision": 2,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-11-20T11:28:47.969Z"
+        "at": "2026-11-20T11:52:14.358Z"
       }
     },
-    "revision": 1,
     "envelope": {
       "description": "",
       "references": [],
       "attachments": []
     },
-    "rangeBase": "4fe395a5b24d41389a654a2f37490b530ce9b878"
+    "revision": 2,
+    "rangeBase": "3b85d02f40fd852b9ba99d5b5c68c6dcdb6aa5e9"
   },
   "body": {
     "summary": {
       "audience": "technical",
-      "prose": "Complete Batch05 in three ordered tasks: reconcile explicit classifications and independent exact inventories; prove modifying dispatch and worker ownership; update documentation and retain complete coordinated test evidence. Preserve the handler snapshot correction already merged from upstream and validate the merged tree before claiming remaining failure counts."
+      "prose": "Finish Batch05 in three ordered tasks, retaining the existing inventory and retired-router checks. Correct tools.call authority at final execution admission while preserving prior failures, then complete dispatch/qualification controls and documentation with full coordinated evidence. The newly approved repository refusal behavior replaces the original plan's blanket failure-preservation condition."
     },
     "tasks": [
       {
         "id": "t1",
         "title": "Reconcile explicit classifications and exact inventory checks",
-        "summary": "Reconcile missing rows in src/daemon/repo-call-audit.ts and src/daemon/threads/method-class.ts against current callable handlers and phase schemas. Class qualificationState as unary session/read-only; retain retired-review no-work boundary and explicit main-daemon overrides. Replace regex-only registration discovery and filename-only phase inference in the audit/table tests with independent constructed runtime and callable-contract inventories. Preserve the upstream handler snapshot fix. Strengthen method-class drift and explicit retired-review ownership checks.",
+        "summary": "Reconcile missing rows in src/daemon/repo-call-audit.ts and src/daemon/threads/method-class.ts against current callable handlers and phase schemas. Class qualificationState as unary session/read-only; retain retired-review no-work boundary and explicit main-daemon overrides. Replace regex-only registration discovery and filename-only phase inference in the audit/table tests with independent constructed runtime and callable-contract inventories. Preserve the upstream handler snapshot fix. Strengthen method-class drift and explicit retired-review ownership checks. Replace the unfinished early tools.call repository check with daemon-supplied final admission in the existing executor after its prior lookup/schema/cancellation/approval-denial paths, before capability execution and successful hooks. Keep existing RPC parameter/result schemas.",
         "size": "M",
         "order": 1,
         "dependsOn": [],
         "acceptanceChecks": [
           "qualificationState has an evidenced read-only audit entry and unary ordinary session class; it is absent from shared-state and FIFO-exempt sets.",
           "design-review-step.cancel and any other callable phase omissions receive evidence-based classifications, with no stale phase rows or deleted review execution restored.",
-          "No IPC shape, store schema, repo fallback, worker runtime import or public failure behavior changes.",
+          "No IPC parameter/result schema, storage schema, repo fallback or worker runtime import change. Previously unaudited modifying team RPCs and otherwise admitted tools.call gain intentional registered-repo refusals under the revised LLD.",
           "Audits exactly cover the merged RPC/stream maps and callable phases, with valid evidence and disjoint modifying/nonmodifying partition.",
           "Independent negative controls fail for missing/stale/unknown keys, duplicate classification entries and wrong stream flags; no blanket family exemptions.",
           "Upstream handler snapshot additions remain intact; full handler-runtime file passes without regenerating expected keys from the table under test.",
-          "Retired-review ownership checks use the exact main-daemon override sets and current router precedence; supported shared-state families still route correctly."
+          "Retired-review ownership checks use the exact main-daemon override sets and current router precedence; supported shared-state families still route correctly.",
+          "Unknown tool, existing input-schema rejection, cancellation and approval denial preserve their exact prior ToolResult/envelopes and perform no repository lookup.",
+          "The daemon alone supplies the internal tools.call admission dependency; no wire callback or bypass is accepted. Other executeTool callers retain their existing contracts.",
+          "Immediately before capability execution, an invalid/unregistered repo yields an unsuccessful ToolResult with the existing repo refusal code in its error text; neither capability execution nor successful hooks run.",
+          "An admitted call with a valid registered repo executes with canonical repoPath and preserves its successful result/done shape. Recheck cancellation if an asynchronous authority lookup was in flight.",
+          "Retain explicit registration/phase metadata and real retired-review router precedence tests, and rerun the full mapped files before resubmitting task one."
         ],
         "derivedFrom": [
           "c1",
@@ -99,20 +104,32 @@
           {
             "level": "unit",
             "name": "src/daemon/__tests__/handler-runtime.test.ts — retain reviewed upstream snapshot additions and full runtime construction coverage."
+          },
+          {
+            "level": "integration",
+            "name": "src/daemon/tools/__tests__/call-handler.test.ts and src/daemon/tools/__tests__/executor.test.ts — preserve earlier unknown/schema/cancellation/approval-denial results without registry lookup; enforce final admission, canonical registered success, no execution/hooks on refusal, and cancellation during authority lookup."
+          },
+          {
+            "level": "integration",
+            "name": "src/daemon/tools/__tests__/executor-approval.test.ts and src/daemon/tools/__tests__/executor-abort.test.ts — existing approval and abort contracts remain unchanged after adding tools.call final authority admission."
+          },
+          {
+            "level": "integration",
+            "name": "src/daemon/__tests__/review-retirement-endpoints.test.ts and src/daemon/threads/__tests__/review-retirement-runtime.test.ts — retired review no-work responses and local ownership remain intact."
           }
         ]
       },
       {
         "id": "t2",
         "title": "Verify modifying dispatch and qualification ownership",
-        "summary": "Replace the fixed modifying-method minimum in src/daemon/__tests__/repo-gate-dispatch.test.ts with exact identity coverage. Preserve positive registered writes and existing refusal controls; verify qualificationState dispatch and directly affected ownership/refusal boundaries in isolated fixtures. Put the isolated unqualified qualificationState control in src/daemon/__tests__/handler-runtime.test.ts and class/target assertions in src/daemon/threads/__tests__/method-class.test.ts.",
+        "summary": "Replace the fixed modifying-method minimum in src/daemon/__tests__/repo-gate-dispatch.test.ts with exact identity coverage. Preserve positive registered writes and existing refusal controls; verify qualificationState dispatch and directly affected ownership/refusal boundaries in isolated fixtures. Put the isolated unqualified qualificationState control in src/daemon/__tests__/handler-runtime.test.ts and class/target assertions in src/daemon/threads/__tests__/method-class.test.ts. Account explicitly for the settings writer's structured registration refusal and tools.call's existing malformed/earlier-executor outcomes versus final repository authority.",
         "size": "M",
         "order": 2,
         "dependsOn": [
           "t1"
         ],
         "acceptanceChecks": [
-          "Every modifying registered RPC/stream is exercised and counted by exact name; missing repo returns existing refusal without filesystem changes even with conflicting cwd/environment.",
+          "Every modifying registered RPC/stream is exercised and counted by exact name. Generic gates retain repo refusal behavior; self-gated settings and tools.call preserve their existing structural/registration envelopes and refuse unauthorized admitted mutations without filesystem changes, even with conflicting cwd/environment.",
           "Positive artifact.feedback.append still writes only the named registered repository; all repository gate tests and supported token/path controls pass.",
           "An isolated full-runtime qualificationState call reaches its existing unqualified error, not an unknown-method or fabricated success; class/route evidence excludes the admin-only map and shared-state owner.",
           "Directly affected retired-review dispatcher/router controls preserve local no-work refusal without provider calls, worker allocation or writes. Tests use managed children and no installed live stores."
@@ -241,6 +258,24 @@
         "lldStrategyItem": "Retain TAP/results/cleanup evidence under docs/plans; report whole-file failures honestly, no skip/force-exit suppression.",
         "coveredByTaskIds": [
           "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/daemon/tools/__tests__/call-handler.test.ts and src/daemon/tools/__tests__/executor.test.ts: unknown tool, invalid schema, cancelled call and denied approval preserve existing results and never invoke the repository checker; admitted valid registered calls execute with canonical repoPath; refused calls execute no capability or success hook.",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/daemon/__tests__/repo-gate-dispatch.test.ts: exact modifying identities include tool dispatch and self-gated settings; preserve their own existing malformed/registration envelopes and check valid tool requests against unregistered repositories.",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/daemon/threads/__tests__/method-class.test.ts: actual Router and runtime handler test proves retired review local refusal precedes session-worker lookup.",
+        "coveredByTaskIds": [
+          "t1"
         ]
       }
     ]

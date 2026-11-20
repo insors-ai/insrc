@@ -1216,11 +1216,11 @@
     "class": "per-thread",
     "reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
   },
-  "src/workflow/config/github-store.ts#queueTail": {
+  "src/workflow/config/repo-config-store.ts#queueTail": {
     "class": "per-thread",
     "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see GitHub issue 99."
   },
-  "src/workflow/config/github-store.ts#tempCounter": {
+  "src/workflow/config/repo-config-store.ts#tempCounter": {
     "class": "per-thread",
     "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see GitHub issue 99."
   },

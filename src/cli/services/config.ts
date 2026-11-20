@@ -42,7 +42,7 @@ export function getRepoSettings(repo: string): Promise<SettingsResult> {
 	return rpc<SettingsResult>('repo.settings.get', { repo });
 }
 
-/** Set (or, with `null`, clear) one local tracker row of a repo. The daemon is the only writer of github.json. */
+/** Set (or, with `null`, clear) one local tracker row of a repo. The daemon is the only writer of repo-config.json. */
 export function setRepoSetting(repo: string, key: string, value: string | boolean | null): Promise<SettingsResult> {
 	return rpc<SettingsResult>('repo.settings.set', { repo, key, value });
 }

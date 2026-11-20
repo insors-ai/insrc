@@ -9,15 +9,15 @@ import {
 	mergeRepoEntryKeys,
 	readRepoEntry,
 	writeRepoEntryKeys,
-} from '../github-store.js';
-import type { StoreSeams } from '../github-store.js';
+} from '../repo-config-store.js';
+import type { StoreSeams } from '../repo-config-store.js';
 
 const REPO = '/work/repo';
 
 function tmp(): string { return mkdtempSync(join(tmpdir(), 'insrc-gh-store-')); }
 
 function fileAt(dir: string, content: string): string {
-	const p = join(dir, 'github.json');
+	const p = join(dir, 'repo-config.json');
 	writeFileSync(p, content);
 	return p;
 }
@@ -51,7 +51,7 @@ test('readRepoEntry rejects each malformed level and accepts missing parts', () 
 			const r = readRepoEntry(REPO, fileAt(dir, content));
 			assert.equal(r.ok, false, label);
 			if (!r.ok) {
-				assert.equal(r.error.code, 'github-json-unreadable', label);
+				assert.equal(r.error.code, 'repo-config-unreadable', label);
 				assert.match(r.error.message, re, label);
 			}
 		}
@@ -74,13 +74,13 @@ test('readRepoEntry rejects each malformed level and accepts missing parts', () 
 		if (typeof process.getuid === 'function' && process.getuid() !== 0) {
 			const locked = join(dir, 'locked');
 			mkdirSync(locked);
-			writeFileSync(join(locked, 'github.json'), '{}\n');
+			writeFileSync(join(locked, 'repo-config.json'), '{}\n');
 			chmodSync(locked, 0o000);
 			try {
-				const r = readRepoEntry(REPO, join(locked, 'github.json'));
+				const r = readRepoEntry(REPO, join(locked, 'repo-config.json'));
 				assert.equal(r.ok, false);
 				if (!r.ok) {
-					assert.equal(r.error.code, 'github-json-unreadable');
+					assert.equal(r.error.code, 'repo-config-unreadable');
 					assert.match(r.error.message, /EACCES/);
 				}
 			} finally { chmodSync(locked, 0o700); }
@@ -133,7 +133,7 @@ test('mergeRepoEntryKeys changes only the named keys', () => {
 test('concurrent writes all land one at a time and a failure does not stall the queue', async () => {
 	const dir = tmp();
 	try {
-		const path = join(dir, 'github.json');
+		const path = join(dir, 'repo-config.json');
 		let active = 0;
 		let maxActive = 0;
 		const observed: StoreSeams = {
@@ -170,7 +170,7 @@ test('concurrent writes all land one at a time and a failure does not stall the 
 		// The queue still accepts work after the failure.
 		const after = await writeRepoEntryKeys(REPO, { ghPath: '/usr/bin/gh' }, path, realSeams);
 		assert.deepEqual(after, { ok: true, changed: true });
-		assert.deepEqual(readdirSync(dir), ['github.json']);
+		assert.deepEqual(readdirSync(dir), ['repo-config.json']);
 	} finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
@@ -187,7 +187,7 @@ test('write-failed leaves the file and temp file as they were', async () => {
 		assert.ok(!tempFails.ok && tempFails.error.code === 'write-failed');
 		assert.match(tempFails.error.message, /ENOSPC/);
 		assert.equal(readFileSync(path, 'utf8'), original);
-		assert.deepEqual(readdirSync(dir), ['github.json']);
+		assert.deepEqual(readdirSync(dir), ['repo-config.json']);
 
 		const renameFails = await writeRepoEntryKeys(REPO, { repo: 'r' }, path, {
 			writeFile: realSeams.writeFile,
@@ -196,12 +196,12 @@ test('write-failed leaves the file and temp file as they were', async () => {
 		assert.ok(!renameFails.ok && renameFails.error.code === 'write-failed');
 		assert.match(renameFails.error.message, /EXDEV/);
 		assert.equal(readFileSync(path, 'utf8'), original);
-		assert.deepEqual(readdirSync(dir), ['github.json']);
+		assert.deepEqual(readdirSync(dir), ['repo-config.json']);
 
 		// A structurally invalid file is refused and left untouched.
 		const badPath = fileAt(dir, '{"repos":{"/work/repo":null}}');
 		const refused = await writeRepoEntryKeys(REPO, { repo: 'r' }, badPath, realSeams);
-		assert.ok(!refused.ok && refused.error.code === 'github-json-unreadable');
+		assert.ok(!refused.ok && refused.error.code === 'repo-config-unreadable');
 		assert.equal(readFileSync(badPath, 'utf8'), '{"repos":{"/work/repo":null}}');
 	} finally { rmSync(dir, { recursive: true, force: true }); }
 });
@@ -224,7 +224,7 @@ test('verify step re-merges after an outside change and returns file-changed aft
 		assert.equal(calls, 2);
 		const merged = JSON.parse(readFileSync(path, 'utf8')) as { repos: Record<string, Record<string, string>> };
 		assert.deepEqual(merged.repos[REPO], { owner: 'o', ghHost: 'outside', repo: 'r' });
-		assert.deepEqual(readdirSync(dir), ['github.json']);
+		assert.deepEqual(readdirSync(dir), ['repo-config.json']);
 
 		// A change on every attempt: file-changed, nothing written, no temp left.
 		let n = 0;
@@ -236,7 +236,7 @@ test('verify step re-merges after an outside change and returns file-changed aft
 		assert.ok(!always.ok && always.error.code === 'file-changed');
 		assert.equal(n, MAX_WRITE_ATTEMPTS);
 		assert.equal(readFileSync(path, 'utf8'), outsideLast());
-		assert.deepEqual(readdirSync(dir), ['github.json']);
+		assert.deepEqual(readdirSync(dir), ['repo-config.json']);
 
 		// A same-size outside change is still seen (content hash).
 		const p2 = fileAt(dir, '{"repos":{"/work/repo":{"owner":"a"}}}\n');
@@ -263,7 +263,7 @@ test('an unwritable directory returns write-failed with the operating-system mes
 	const dir = tmp();
 	try {
 		// Missing directory: the temp file cannot be created.
-		const missing = await writeRepoEntryKeys(REPO, { owner: 'o' }, join(dir, 'nope', 'github.json'));
+		const missing = await writeRepoEntryKeys(REPO, { owner: 'o' }, join(dir, 'nope', 'repo-config.json'));
 		assert.ok(!missing.ok && missing.error.code === 'write-failed');
 		assert.match(missing.error.message, /ENOENT/);
 
@@ -271,13 +271,13 @@ test('an unwritable directory returns write-failed with the operating-system mes
 		if (typeof process.getuid === 'function' && process.getuid() !== 0) {
 			const ro = join(dir, 'ro');
 			mkdirSync(ro);
-			writeFileSync(join(ro, 'github.json'), '{}\n');
+			writeFileSync(join(ro, 'repo-config.json'), '{}\n');
 			chmodSync(ro, 0o500);
 			try {
-				const r = await writeRepoEntryKeys(REPO, { owner: 'o' }, join(ro, 'github.json'));
+				const r = await writeRepoEntryKeys(REPO, { owner: 'o' }, join(ro, 'repo-config.json'));
 				assert.ok(!r.ok && r.error.code === 'write-failed');
 				assert.match(r.error.message, /EACCES/);
-				assert.equal(readFileSync(join(ro, 'github.json'), 'utf8'), '{}\n');
+				assert.equal(readFileSync(join(ro, 'repo-config.json'), 'utf8'), '{}\n');
 			} finally { chmodSync(ro, 0o700); }
 		}
 	} finally { rmSync(dir, { recursive: true, force: true }); }

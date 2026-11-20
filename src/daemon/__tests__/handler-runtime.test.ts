@@ -231,14 +231,14 @@ test('handler-runtime.test.ts: mcp.register and mcp.status are served; mcp.regis
 	assert.match(refused.error ?? '', /mcp\.register: `path`/);
 });
 
-/** repo.add over a real registry in a temporary HOME, a stand-in indexer and a temporary github.json. */
+/** repo.add over a real registry in a temporary HOME, a stand-in indexer and a temporary repo-config.json. */
 async function addRepoOver(repo: string, over: { file?: string; writer?: Parameters<typeof buildHandlerRuntime>[0]['buildDefaultsWriter'] } = {}) {
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-hr-add-'));
-	const config = join(dir, 'github.json');
+	const config = join(dir, 'repo-config.json');
 	setGraphStorePath(join(dir, 'graph.lmdb'));   // a test may open only a temporary store
 	if (over.file !== undefined) writeFileSync(config, over.file);
-	const previous = process.env['INSRC_GITHUB_CONFIG'];
-	process.env['INSRC_GITHUB_CONFIG'] = config;
+	const previous = process.env['INSRC_REPO_CONFIG'];
+	process.env['INSRC_REPO_CONFIG'] = config;
 	try {
 		const indexed: string[] = [];
 		const runtime = buildHandlerRuntime({
@@ -251,7 +251,7 @@ async function addRepoOver(repo: string, over: { file?: string; writer?: Paramet
 		return { result, indexed, config: (): Record<string, any> => JSON.parse(readFileSync(config, 'utf8')) as Record<string, any> };
 	} finally {
 		await closeGraphStore();
-		if (previous === undefined) delete process.env['INSRC_GITHUB_CONFIG']; else process.env['INSRC_GITHUB_CONFIG'] = previous;
+		if (previous === undefined) delete process.env['INSRC_REPO_CONFIG']; else process.env['INSRC_REPO_CONFIG'] = previous;
 	}
 }
 
@@ -294,10 +294,10 @@ test('src/daemon/__tests__/handler-runtime.test.ts: the handler tables hold repo
 	const py = mkdtempSync(join(tmpdir(), 'insrc-hr-migrate-'));
 	writeFileSync(join(py, 'pyproject.toml'), '');
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-hr-migrate-cfg-'));
-	const config = join(dir, 'github.json');
+	const config = join(dir, 'repo-config.json');
 	setGraphStorePath(join(dir, 'graph.lmdb'));
-	const previous = process.env['INSRC_GITHUB_CONFIG'];
-	process.env['INSRC_GITHUB_CONFIG'] = config;
+	const previous = process.env['INSRC_REPO_CONFIG'];
+	process.env['INSRC_REPO_CONFIG'] = config;
 	try {
 		// the repo is registered while the add-time write is refused, so it holds no commands: what a repo added before the defaults looks like
 		const runtime = buildHandlerRuntime({
@@ -321,7 +321,7 @@ test('src/daemon/__tests__/handler-runtime.test.ts: the handler tables hold repo
 		assert.equal(again.counts['already-set'], 1, 'a second call changes nothing');
 	} finally {
 		await closeGraphStore();
-		if (previous === undefined) delete process.env['INSRC_GITHUB_CONFIG']; else process.env['INSRC_GITHUB_CONFIG'] = previous;
+		if (previous === undefined) delete process.env['INSRC_REPO_CONFIG']; else process.env['INSRC_REPO_CONFIG'] = previous;
 		rmSync(py, { recursive: true, force: true }); rmSync(dir, { recursive: true, force: true });
 	}
 });

@@ -20,7 +20,7 @@ import { makeServices } from '../services/index.js';
 import { IpcServer, directDispatch } from '../../daemon/server.js';
 import { createRepoSettingsHandlers } from '../../daemon/repo-settings.js';
 import { installExecStandIn } from '../../workflow/__tests__/helpers/exec-stand-in.js';
-import { githubConfigPath } from '../../workflow/config/github.js';
+import { repoConfigPath } from '../../workflow/config/repo-config.js';
 import { handleTrackerSetup } from '../../daemon/tracker-setup-handlers.js';
 import type { TrackerSetupReport } from '../../workflow/tracker/setup.js';
 
@@ -36,16 +36,16 @@ interface Env {
 	cleanup(): void;
 }
 
-/** A temp repo with an acme/widgets origin, a github.json path in a temp dir, and a fake gh that is not signed in. */
+/** A temp repo with an acme/widgets origin, a repo-config.json path in a temp dir, and a fake gh that is not signed in. */
 function setup(): Env {
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-tracker-svc-'));
 	const repo = join(dir, 'repo');
 	mkdirSync(repo);
 	execFileSync('git', ['init', '-q', repo]);
 	execFileSync('git', ['-C', repo, 'remote', 'add', 'origin', 'https://github.com/acme/widgets.git']);
-	const cfg = join(dir, 'github.json');
-	const prev = process.env['INSRC_GITHUB_CONFIG'];
-	process.env['INSRC_GITHUB_CONFIG'] = cfg;
+	const cfg = join(dir, 'repo-config.json');
+	const prev = process.env['INSRC_REPO_CONFIG'];
+	process.env['INSRC_REPO_CONFIG'] = cfg;
 	const realGit = execFileSync('which', ['git'], { encoding: 'utf8' }).trim();   // resolved before the stand-ins shadow it on PATH
 	installExecStandIn((cmd, args, opts) => {
 		if (cmd === 'git') return execFileSync(realGit, [...args], { ...opts, encoding: 'utf8' }) as string;
@@ -56,7 +56,7 @@ function setup(): Env {
 		dir, repo, cfg, realGit, ensureCalls: 0,
 		cleanup: () => {
 			installExecStandIn();
-			if (prev === undefined) delete process.env['INSRC_GITHUB_CONFIG']; else process.env['INSRC_GITHUB_CONFIG'] = prev;
+			if (prev === undefined) delete process.env['INSRC_REPO_CONFIG']; else process.env['INSRC_REPO_CONFIG'] = prev;
 			rmSync(dir, { recursive: true, force: true });
 		},
 	};
@@ -65,7 +65,7 @@ function setup(): Env {
 
 /** The real tracker.setup handler behind a real connection handler on a temp socket; counts ensure calls. `registered` is the repos the daemon knows. */
 async function daemon(env: Env, registered: string[] = [env.repo]): Promise<{ connect: () => Socket; close: () => Promise<void> }> {
-	const handlers = createRepoSettingsHandlers({ registeredRepos: async () => registered, configPath: githubConfigPath });
+	const handlers = createRepoSettingsHandlers({ registeredRepos: async () => registered, configPath: repoConfigPath });
 	const ensure = handlers['repo.trackerConfig.ensure']!;
 	const counting = async (p: unknown) => { env.ensureCalls++; return await ensure(p); };
 	const ipc = new IpcServer(directDispatch({ 'tracker.setup': async (p) => await handleTrackerSetup(p, counting) }));
@@ -150,7 +150,7 @@ test('a daemon that is absent, closes early or does not know the method is a cle
 	} finally { env.cleanup(); }
 });
 
-test('malformed github.json fails the config step with no write requested', async () => {
+test('malformed repo-config.json fails the config step with no write requested', async () => {
 	const env = setup();
 	const d = await daemon(env);
 	try {

@@ -989,10 +989,10 @@ test('withTypecheckProjects makes no tsconfig search for a non-Node plan', async
 
 // --- t5: the repo setting ---
 
-/** A github.json holding `entry` as the settings of the registered repo at `repo`, and `extra` beside it. */
+/** A repo-config.json holding `entry` as the settings of the registered repo at `repo`, and `extra` beside it. */
 function configWith(repo: string, entry: unknown, extra: Record<string, unknown> = {}): string {
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-build-config-'));
-	const path = join(dir, 'github.json');
+	const path = join(dir, 'repo-config.json');
 	writeFileSync(path, JSON.stringify({ ...extra, repos: { [repo]: entry } }));
 	return path;
 }
@@ -1018,7 +1018,7 @@ test('a repo setting wins over the default; an empty command or an unknown resul
 		assert.equal(profile(node, {}).commandsSource, 'node-default');
 		assert.equal(profile(py, {}).commandsSource, 'none');
 		assert.equal(profile(py, { owner: 'o', repo: 'r' }).commandsSource, 'none', 'tracker keys are not build keys');
-		assert.equal(commandProfileOf(py, join(tmpdir(), 'no-such-insrc-github.json')).commandsSource, 'none');
+		assert.equal(commandProfileOf(py, join(tmpdir(), 'no-such-insrc-repo-config.json')).commandsSource, 'none');
 		// The setting is per registered repository: another repo's entry and the file's `default` entry do not apply.
 		const other = file('/some/other/repo', { typecheckCommand: 'x', testCommand: 'y' }, { default: { typecheckCommand: 'global-check', testCommand: 'global-test' } });
 		assert.equal(commandProfileOf(py, other).commandsSource, 'none');
@@ -1038,7 +1038,7 @@ test('a repo setting wins over the default; an empty command or an unknown resul
 		// A settings file that cannot be read is not a reason to use a default: the build is refused.
 		const broken = join(dirname(file(py, {})), 'broken.json');
 		writeFileSync(broken, '{ not json');
-		assert.throws(() => commandProfileOf(py, broken), (e: unknown) => e instanceof InvalidCommandSetting && e.field === 'github.json');
+		assert.throws(() => commandProfileOf(py, broken), (e: unknown) => e instanceof InvalidCommandSetting && e.field === 'repo-config.json');
 
 		// A phase refuses a bad setting before anything runs, with a message that names the field.
 		const refusal = commandSettingError('validate', py, file(py, { typecheckCommand: ' ', testCommand: 'pytest' }));

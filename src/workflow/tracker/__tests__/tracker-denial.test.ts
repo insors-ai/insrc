@@ -17,9 +17,9 @@ import { ToolDenied } from '../tool-denied.js';
 
 const isDenied = (e: unknown): boolean => e instanceof ToolDenied && e.reason === 'declined';
 
-/** The repository's github.json with milestones on, so the milestone extra is a step of the push. */
+/** The repository's repo-config.json with milestones on, so the milestone extra is a step of the push. */
 function withMilestones(repo: string): void {
-	const cfg = join(repo, 'github.json');
+	const cfg = join(repo, 'repo-config.json');
 	const j = JSON.parse(readFileSync(cfg, 'utf8')) as { repos: Record<string, Record<string, unknown>> };
 	for (const k of Object.keys(j.repos)) j.repos[k]!['useMilestones'] = true;
 	writeFileSync(cfg, JSON.stringify(j));

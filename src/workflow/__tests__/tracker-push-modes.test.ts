@@ -84,7 +84,7 @@ test('the three approve-time pushes run one path in team mode and in individual 
 	for (const [mode, policy] of MODES) {
 		const none = seed({ pushTasks: true });
 		try {
-			writeFileSync(join(none.repo, 'github.json'), JSON.stringify({ repos: { [none.repo]: { type: 'none' } } }));
+			writeFileSync(join(none.repo, 'repo-config.json'), JSON.stringify({ repos: { [none.repo]: { type: 'none' } } }));
 			const w = watched(false);
 			const run = await viaPort(w.port, policy);
 			const results = [await run(async () => await autoPushEpicOnHld(none.hld)), await run(async () => await autoPushStoryOnLld(none.lld)), await run(async () => await autoPushTasksOnPlan(none.plan))];

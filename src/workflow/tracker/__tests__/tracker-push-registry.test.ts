@@ -107,11 +107,11 @@ describe('tracker-push-registry.test.ts: a push, sync, setup, question and comme
 
 	it('setup ensures the fixed labels through the registry and skips the steps that need scopes it was not given; the same run again ensures the same labels', async () => {
 		const repo = mkdtempSync(join(tmpdir(), 'insrc-push-setup-'));
-		const prior = process.env['INSRC_GITHUB_CONFIG'];
+		const prior = process.env['INSRC_REPO_CONFIG'];
 		try {
 			execFileSync('git', ['init', '-q'], { cwd: repo });
 			execFileSync('git', ['remote', 'add', 'origin', 'https://github.com/acme/demo.git'], { cwd: repo });
-			process.env['INSRC_GITHUB_CONFIG'] = join(repo, 'github.json');
+			process.env['INSRC_REPO_CONFIG'] = join(repo, 'repo-config.json');
 			const g = gh([['*label*', ''], ['*api*user*', '{"login":"me"}'], ['*', '', 1, 'HTTP 403: scopes']]);
 			const first = await runTrackerSetup(repo);
 			const labels = first.steps.find(s => s.key === 'labels');
@@ -121,18 +121,18 @@ describe('tracker-push-registry.test.ts: a push, sync, setup, question and comme
 			const second = await runTrackerSetup(repo);
 			assert.equal(second.steps.find(s => s.key === 'labels')?.status, 'done');
 			assert.equal(g.calls().filter(c => /^label create/.test(c)).length, created.length * 2);
-		} finally { if (prior === undefined) delete process.env['INSRC_GITHUB_CONFIG']; else process.env['INSRC_GITHUB_CONFIG'] = prior; rmSync(repo, { recursive: true, force: true }); }
+		} finally { if (prior === undefined) delete process.env['INSRC_REPO_CONFIG']; else process.env['INSRC_REPO_CONFIG'] = prior; rmSync(repo, { recursive: true, force: true }); }
 	});
 
 	it('sync reads the Epic issue state through the registry and records its status on the Define; it writes nothing to GitHub', async () => {
 		const repo = mkdtempSync(join(tmpdir(), 'insrc-push-sync-'));
-		const prior = process.env['INSRC_GITHUB_CONFIG'];
+		const prior = process.env['INSRC_REPO_CONFIG'];
 		const HASH = 'a3f4b8c9d1e2f3a4';
 		const CREATED = '2026-07-17T07:42:28.275Z';
 		try {
 			mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
-			writeFileSync(join(repo, 'github.json'), JSON.stringify({ repos: { [repo]: { type: 'github', owner: 'acme', repo: 'demo' } } }));
-			process.env['INSRC_GITHUB_CONFIG'] = join(repo, 'github.json');
+			writeFileSync(join(repo, 'repo-config.json'), JSON.stringify({ repos: { [repo]: { type: 'github', owner: 'acme', repo: 'demo' } } }));
+			process.env['INSRC_REPO_CONFIG'] = join(repo, 'repo-config.json');
 			writeFileSync(artifactJsonPath(repo, defineArtifactId(HASH)), JSON.stringify({
 				meta: { workflow: 'define', runId: 'd1', repoPath: repo, epicHash: HASH, epicSlug: 'tag-filtering', createdAt: CREATED, epicCreatedAt: CREATED, schemaVersion: 1 },
 				body: { flavor: 'enhancement', problem: 'Users cannot filter todos by tag today. Only status filtering exists.', nonGoals: [], assumptions: [], constraints: [], stories: [{ id: 's1', title: 'Filter by tag', userValue: 'x', acceptanceCriteria: [] }], openQuestions: [] },
@@ -143,7 +143,7 @@ describe('tracker-push-registry.test.ts: a push, sync, setup, question and comme
 			const r = await syncTracker(repo, HASH);
 			assert.equal(r.status, 'synced', JSON.stringify(r));
 			assert.ok(g.calls().every(c => /^(api|issue view)/.test(c)), g.calls().join(' | '));
-		} finally { if (prior === undefined) delete process.env['INSRC_GITHUB_CONFIG']; else process.env['INSRC_GITHUB_CONFIG'] = prior; rmSync(repo, { recursive: true, force: true }); }
+		} finally { if (prior === undefined) delete process.env['INSRC_REPO_CONFIG']; else process.env['INSRC_REPO_CONFIG'] = prior; rmSync(repo, { recursive: true, force: true }); }
 	});
 
 	it('a question resolution and a comment resolution post their tracker comment through the registry as one issue comment each', async () => {

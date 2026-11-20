@@ -4,8 +4,8 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * Pins the lenient github.json resolver before and after it is split into
- * `loadGithubConfigFile` + `resolveGithubConfigFromFile` (s3 t1).
+ * Pins the lenient repo-config.json resolver before and after it is split into
+ * `loadRepoConfigFile` + `resolveGithubConfigFromFile` (s3 t1).
  *
  * Run:
  *   npx tsx --test src/workflow/config/__tests__/github-split.test.ts
@@ -17,13 +17,14 @@ import { chmodSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { loadGithubConfigFile, resolveGithubConfig, resolveGithubConfigFromFile } from '../github.js';
+import { resolveGithubConfig, resolveGithubConfigFromFile } from '../github.js';
+import { loadRepoConfigFile } from '../repo-config.js';
 
 const REPO = '/abs/repo-under-test';
 
 async function withFile(contents: string | undefined, fn: (path: string) => void | Promise<void>, mode?: number): Promise<void> {
 	const dir = mkdtempSync(join(tmpdir(), 'github-split-'));
-	const path = join(dir, 'github.json');
+	const path = join(dir, 'repo-config.json');
 	try {
 		if (contents !== undefined) writeFileSync(path, contents, 'utf8');
 		if (mode !== undefined) chmodSync(path, mode);
@@ -50,8 +51,8 @@ test('resolveGithubConfig returns none for a missing, unreadable, invalid-JSON a
 		await withFile('{"default":{"type":"none"}}', async (p) => assert.deepEqual(await resolveGithubConfig(REPO, p), none), 0o000);
 	}
 	// The loader gives an empty file for every one of these inputs.
-	await withFile('{ not json', async (p) => assert.deepEqual(loadGithubConfigFile(p), {}));
-	await withFile('null', async (p) => assert.deepEqual(loadGithubConfigFile(p), {}));
+	await withFile('{ not json', async (p) => assert.deepEqual(loadRepoConfigFile(p), {}));
+	await withFile('null', async (p) => assert.deepEqual(loadRepoConfigFile(p), {}));
 });
 
 test('characterization of a null own entry and a null default is unchanged by the split', async () => {
@@ -62,7 +63,7 @@ test('characterization of a null own entry and a null default is unchanged by th
 	for (const contents of [nullOwn, nullDefault, nullOwnCompleteDefault]) {
 		await withFile(contents, async (p) => {
 			const viaPath = await outcome(() => resolveGithubConfig(REPO, p));
-			const viaFile = await outcome(() => resolveGithubConfigFromFile(loadGithubConfigFile(p), REPO));
+			const viaFile = await outcome(() => resolveGithubConfigFromFile(loadRepoConfigFile(p), REPO));
 			// Today a null entry reaches `entry.type` and throws a TypeError; the split must not change that.
 			assert.equal(viaPath.threw, 'TypeError');
 			assert.deepEqual(viaFile, viaPath);
@@ -76,7 +77,7 @@ test('resolveGithubConfigFromFile gives the same result as resolveGithubConfig f
 		repos: { [REPO]: { type: 'none' } },
 	});
 	await withFile(contents, async (p) => {
-		assert.deepEqual(await resolveGithubConfigFromFile(loadGithubConfigFile(p), REPO), await resolveGithubConfig(REPO, p));
+		assert.deepEqual(await resolveGithubConfigFromFile(loadRepoConfigFile(p), REPO), await resolveGithubConfig(REPO, p));
 		assert.deepEqual(await resolveGithubConfig(REPO, p), { type: 'none', source: 'per-repo-config' });
 	});
 });

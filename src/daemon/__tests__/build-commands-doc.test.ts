@@ -30,7 +30,7 @@ test('docs/daemon.md: the Build commands section is read against the shipped beh
 
 	// every outcome reason the function can report is named, and `buildDefaults` is the reply's field
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-doc-'));
-	const config = join(dir, 'github.json');
+	const config = join(dir, 'repo-config.json');
 	try {
 		const seen = new Set<string>();
 		const repo = (marker?: string): string => { const d = mkdtempSync(join(dir, 'r-')); if (marker !== undefined) writeFileSync(join(d, marker), ''); return d; };
@@ -68,7 +68,7 @@ test('src/daemon/__tests__/build-commands-doc.test.ts: the Build commands sectio
 	try {
 		const repo = mkdtempSync(join(dir, 'r-'));
 		writeFileSync(join(repo, 'go.mod'), '');
-		const report = await migrateBuildDefaults([repo], { configPath: join(dir, 'github.json') });
+		const report = await migrateBuildDefaults([repo], { configPath: join(dir, 'repo-config.json') });
 		for (const field of [...Object.keys(report), ...Object.keys(report.repos[0]!), ...Object.keys(report.counts)]) {
 			assert.ok(SECTION.includes(`"${field}"`), `the report field ${field} is shown`);
 		}

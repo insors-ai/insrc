@@ -73,9 +73,9 @@ const validate = async (repo: string): Promise<Record<string, unknown>> => {
 test('comment-sync-callers.test.ts: implement and validate run the comment sync for the Task and the daemon method tracker.syncComments runs it on request, and neither is failed by it', async () => {
 	const repo = repoWithTask();
 	const t = fakeTracker();
-	const cfg = join(repo, 'github.json');
-	const prior = process.env['INSRC_GITHUB_CONFIG'];
-	process.env['INSRC_GITHUB_CONFIG'] = cfg;
+	const cfg = join(repo, 'repo-config.json');
+	const prior = process.env['INSRC_REPO_CONFIG'];
+	process.env['INSRC_REPO_CONFIG'] = cfg;
 	try {
 		writeFileSync(cfg, JSON.stringify({ repos: { [repo]: { type: 'github', owner: 'acme', repo: 'demo' } } }));
 		_setAutoPushDepsForTests({ port: t.port });
@@ -121,7 +121,7 @@ test('comment-sync-callers.test.ts: implement and validate run the comment sync 
 		assert.equal(bare['commentSync'], undefined);
 		assert.match((await handleTrackerSyncComments({ repo, epicHash: HASH, storyId: 's1', taskId: 't1' }, undefined) as { error: string }).error, /no GitHub tracker/);
 	} finally {
-		if (prior === undefined) delete process.env['INSRC_GITHUB_CONFIG']; else process.env['INSRC_GITHUB_CONFIG'] = prior;
+		if (prior === undefined) delete process.env['INSRC_REPO_CONFIG']; else process.env['INSRC_REPO_CONFIG'] = prior;
 		_setAutoPushDepsForTests();
 		rmSync(repo, { recursive: true, force: true });
 	}

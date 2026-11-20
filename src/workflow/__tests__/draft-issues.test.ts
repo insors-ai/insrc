@@ -285,11 +285,11 @@ test('a repo with no team policy and a tracker that is on creates the Epic and S
 	} finally { fx.cleanup(); }
 });
 
-test('tracker type none makes no tracker call, a malformed github.json is not-ready, an entry with no type agrees with the lenient port, and a declined call is rethrown', async () => {
-	const prior = process.env['INSRC_GITHUB_CONFIG'];
+test('tracker type none makes no tracker call, a malformed repo-config.json is not-ready, an entry with no type agrees with the lenient port, and a declined call is rethrown', async () => {
+	const prior = process.env['INSRC_REPO_CONFIG'];
 	const fx = seed();
-	const cfg = join(fx.repo, 'github.json');
-	process.env['INSRC_GITHUB_CONFIG'] = cfg;
+	const cfg = join(fx.repo, 'repo-config.json');
+	process.env['INSRC_REPO_CONFIG'] = cfg;
 	try {
 		// type none: nothing is called and the draft sees no new field
 		writeFileSync(cfg, JSON.stringify({ repos: { [fx.repo]: { type: 'none' } } }));
@@ -323,23 +323,23 @@ test('tracker type none makes no tracker call, a malformed github.json is not-re
 		const refusing = new Proxy({ kind: 'github', capabilities: new Set(['issue-create']) }, { get: (t, k) => (k in t ? (t as never)[k] : () => { throw denied; }) }) as unknown as TrackerPort;
 		const fx2 = seed();
 		try {
-			writeFileSync(join(fx2.repo, 'github.json'), JSON.stringify({ repos: { [fx2.repo]: { owner: 'acme', repo: 'demo' } } }));
-			process.env['INSRC_GITHUB_CONFIG'] = join(fx2.repo, 'github.json');
+			writeFileSync(join(fx2.repo, 'repo-config.json'), JSON.stringify({ repos: { [fx2.repo]: { owner: 'acme', repo: 'demo' } } }));
+			process.env['INSRC_REPO_CONFIG'] = join(fx2.repo, 'repo-config.json');
 			await assert.rejects(() => ensureDraftIssues(fx2.define, { readPolicy: none, createTracker: () => refusing, ensure: { now: () => '2026-10-18T00:00:00.000Z' } }), (e: unknown) => e === denied);
 		} finally { fx2.cleanup(); }
 	} finally {
-		if (prior === undefined) delete process.env['INSRC_GITHUB_CONFIG']; else process.env['INSRC_GITHUB_CONFIG'] = prior;
+		if (prior === undefined) delete process.env['INSRC_REPO_CONFIG']; else process.env['INSRC_REPO_CONFIG'] = prior;
 		fx.cleanup();
 	}
 });
 
 test('the terminal approve over issues the daemon already created creates nothing and no duplicate', async () => {
-	const prior = process.env['INSRC_GITHUB_CONFIG'];
+	const prior = process.env['INSRC_REPO_CONFIG'];
 	const fx = seed();
-	const cfg = join(fx.repo, 'github.json');
+	const cfg = join(fx.repo, 'repo-config.json');
 	try {
 		writeFileSync(cfg, JSON.stringify({ repos: { [fx.repo]: { type: 'github', owner: 'acme', repo: 'demo', pushTasks: false } } }));
-		process.env['INSRC_GITHUB_CONFIG'] = cfg;
+		process.env['INSRC_REPO_CONFIG'] = cfg;
 		const h = harness({ soloConfig: CFG });
 		assert.equal((await ensureDraftIssues(fx.lld, h.deps(none))).status, 'ready');
 		assert.equal(h.issues.length, 2, 'the draft hook made the Epic and Story issues');
@@ -351,7 +351,7 @@ test('the terminal approve over issues the daemon already created creates nothin
 		assert.equal(h.seen.creates, 2);
 	} finally {
 		_setAutoPushDepsForTests();
-		if (prior === undefined) delete process.env['INSRC_GITHUB_CONFIG']; else process.env['INSRC_GITHUB_CONFIG'] = prior;
+		if (prior === undefined) delete process.env['INSRC_REPO_CONFIG']; else process.env['INSRC_REPO_CONFIG'] = prior;
 		fx.cleanup();
 	}
 });

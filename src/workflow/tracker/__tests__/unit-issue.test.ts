@@ -30,10 +30,10 @@ import { CFG, HASH, MEMBERSHIP, SLUG, bound, deps, epic, fakeTracker, ref, seed,
 
 test('ensureUnitIssue takes a unit and a port and returns a PortResult without a phase', async () => {
 	const fx = seed();
-	const cfgPath = join(fx.repo, 'github.json');
+	const cfgPath = join(fx.repo, 'repo-config.json');
 	writeFileSync(cfgPath, JSON.stringify({ repos: { [fx.repo]: { type: 'github', owner: 'acme', repo: 'demo' } } }));
-	const priorCfg = process.env['INSRC_GITHUB_CONFIG'];
-	process.env['INSRC_GITHUB_CONFIG'] = cfgPath;
+	const priorCfg = process.env['INSRC_REPO_CONFIG'];
+	process.env['INSRC_REPO_CONFIG'] = cfgPath;
 	try {
 		const t = fakeTracker();
 		const ok = await ensureUnitIssue(epic(fx.repo), t.port);
@@ -42,7 +42,7 @@ test('ensureUnitIssue takes a unit and a port and returns a PortResult without a
 		assert.equal(bad.ok, false);
 		assert.deepEqual(Object.keys(bad).sort(), ['kind', 'ok', 'reason'], 'the failure carries the sc1 fields and no phase');
 	} finally {
-		if (priorCfg === undefined) delete process.env['INSRC_GITHUB_CONFIG']; else process.env['INSRC_GITHUB_CONFIG'] = priorCfg;
+		if (priorCfg === undefined) delete process.env['INSRC_REPO_CONFIG']; else process.env['INSRC_REPO_CONFIG'] = priorCfg;
 		fx.cleanup();
 	}
 });

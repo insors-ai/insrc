@@ -11,8 +11,8 @@ import { isAbsolute, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getLogger } from '../shared/logger.js';
 import { revParseValues } from '../workflow/git-calls.js';
-import { githubConfigPath } from '../workflow/config/github.js';
-import { writeRepoEntryKeys } from '../workflow/config/github-store.js';
+import { repoConfigPath } from '../workflow/config/repo-config.js';
+import { writeRepoEntryKeys } from '../workflow/config/repo-config-store.js';
 import { applyBlock, removeBlock } from './git-hooks/hook-block.js';
 import { inspectHook } from './git-hooks/hook-inspect.js';
 import type { HookInspection } from './git-hooks/hook-inspect.js';
@@ -44,7 +44,7 @@ export interface GitHooksDeps {
 	readonly entryPath?: string | undefined;
 	/** Resolves the hooks directory; defaults to the typed git_rev_parse gitPath query (honours core.hooksPath). */
 	readonly hooksDir?: ((repo: string) => Promise<string>) | undefined;
-	/** Writes the gitHooks setting; defaults to github.json through the store. */
+	/** Writes the gitHooks setting; defaults to repo-config.json through the store. */
 	readonly setFlag?: ((repo: string, value: boolean) => Promise<{ ok: true } | { ok: false; message: string }>) | undefined;
 }
 
@@ -66,7 +66,7 @@ export function createGitHooks(deps: GitHooksDeps): GitHooks {
 	const entry = deps.entryPath ?? defaultEntry();
 	const hooksDirOf = deps.hooksDir ?? defaultHooksDir;
 	const setFlag = deps.setFlag ?? (async (repo: string, value: boolean) => {
-		const written = await writeRepoEntryKeys(repo, { gitHooks: value }, githubConfigPath());
+		const written = await writeRepoEntryKeys(repo, { gitHooks: value }, repoConfigPath());
 		return written.ok ? { ok: true as const } : { ok: false as const, message: written.error.message };
 	});
 	const fail = (code: GitHooksError['code'], message: string): GitHooksResult => ({ ok: false, error: { code, message } });

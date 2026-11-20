@@ -47,12 +47,12 @@ const define = (withTracker: boolean) => ({
 
 test('a re-draft keeps the bound Epic and Story issues and the tracker block for sync, chain report and Task approval', async () => {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-redraft-'));
-	const cfg = join(repo, 'github.json');
-	const prior = process.env['INSRC_GITHUB_CONFIG'];
+	const cfg = join(repo, 'repo-config.json');
+	const prior = process.env['INSRC_REPO_CONFIG'];
 	try {
 		mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
 		writeFileSync(cfg, JSON.stringify({ repos: { [repo]: { type: 'github', owner: 'acme', repo: 'demo', pushTasks: true } } }));
-		process.env['INSRC_GITHUB_CONFIG'] = cfg;
+		process.env['INSRC_REPO_CONFIG'] = cfg;
 		const defineJson = artifactJsonPath(repo, defineArtifactId(HASH));
 		const base = { repoPath: repo, epicHash: HASH, epicSlug: SLUG, createdAt: CREATED, epicCreatedAt: CREATED };
 		writeFileSync(defineJson, JSON.stringify({ ...define(true), meta: { ...define(true).meta, repoPath: repo } }, null, 2));
@@ -105,7 +105,7 @@ test('a re-draft keeps the bound Epic and Story issues and the tracker block for
 		assert.equal(tasks.status, 'created');
 		assert.ok(calls.some(c => c.join(' ').includes('repos/acme/demo/issues/2/sub_issues')), 'the Task is linked under the Story issue #2');
 	} finally {
-		if (prior === undefined) delete process.env['INSRC_GITHUB_CONFIG']; else process.env['INSRC_GITHUB_CONFIG'] = prior;
+		if (prior === undefined) delete process.env['INSRC_REPO_CONFIG']; else process.env['INSRC_REPO_CONFIG'] = prior;
 		installExecStandIn(); _setApprovalGateForTests(undefined); _setAutoPushDepsForTests();
 		rmSync(repo, { recursive: true, force: true });
 	}

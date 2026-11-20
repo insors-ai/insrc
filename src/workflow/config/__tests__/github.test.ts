@@ -6,7 +6,7 @@
 /**
  * GitHub tracker config resolution + git remote parsing.
  *
- * Note: `resolveGithubConfig` reads from `~/.insrc/github.json`,
+ * Note: `resolveGithubConfig` reads from `~/.insrc/repo-config.json`,
  * which we don't want to touch during tests. The tests here focus
  * on the pure parser + the git-remote fallback via a real git
  * command over a tmp repo.
@@ -22,13 +22,8 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import {
-	GithubConfigError,
-	loadGithubConfigFile,
-	parseGithubRemoteUrl,
-	parseGitRemoteOwnerRepo,
-	resolveGithubConfig,
-} from '../github.js';
+import { GithubConfigError, parseGithubRemoteUrl, parseGitRemoteOwnerRepo, resolveGithubConfig } from '../github.js';
+import { loadRepoConfigFile } from '../repo-config.js';
 
 // ---------------------------------------------------------------------------
 // parseGithubRemoteUrl
@@ -91,7 +86,7 @@ test('parseGitRemoteOwnerRepo returns null on a non-git dir', async () => {
 
 async function withTempConfig<T>(config: unknown, fn: (configPath: string) => T | Promise<T>): Promise<T> {
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-cfg-'));
-	const path = join(dir, 'github.json');
+	const path = join(dir, 'repo-config.json');
 	writeFileSync(path, JSON.stringify(config, null, 2));
 	try { return await fn(path); }
 	finally { rmSync(dir, { recursive: true, force: true }); }
@@ -272,11 +267,11 @@ test('lenient resolver behaviour is unchanged', async () => {
 		// A malformed file, a non-object file and an unsupported type all stay silent (no throw).
 		const bad = join(dir, 'bad.json');
 		writeFileSync(bad, '{ not json');
-		assert.deepEqual(loadGithubConfigFile(bad), {});
+		assert.deepEqual(loadRepoConfigFile(bad), {});
 		assert.equal((await resolveGithubConfig('/r', bad)).type, 'none');
 		const arr = join(dir, 'arr.json');
 		writeFileSync(arr, '"text"');
-		assert.deepEqual(loadGithubConfigFile(arr), {});
+		assert.deepEqual(loadRepoConfigFile(arr), {});
 		const own = join(dir, 'own.json');
 		writeFileSync(own, JSON.stringify({ repos: { '/r': { owner: 'acme', repo: 'demo' } }, default: { owner: 'x', repo: 'y' } }));
 		const cfg = await resolveGithubConfig('/r', own);

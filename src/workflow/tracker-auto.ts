@@ -325,7 +325,7 @@ async function pushTasks(planJsonPath: string, meta: MetaShape, deps: AutoPushDe
 	const { port, cfg } = g;
 	// Team mode makes a Task issue for every Task whatever pushTasks says (forceTaskIssues); individual mode keeps the setting.
 	if (mode === 'individual' && !cfg.pushTasks) {
-		return { status: 'skipped', reason: 'task push disabled (set "pushTasks": true in ~/.insrc/github.json to enable)' };
+		return { status: 'skipped', reason: 'task push disabled (set "pushTasks": true in ~/.insrc/repo-config.json to enable)' };
 	}
 
 	let tasks: readonly PlanTask[];

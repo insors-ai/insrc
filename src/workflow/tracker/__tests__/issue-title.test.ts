@@ -92,10 +92,10 @@ const task = (repo: string): UnitRef => ({ unit: 'task', repoPath: repo, epicHas
 
 test('unit-issue and the conventions bodies write an Epic, Story and Task title and marker that start with the artifact id', async () => {
 	const fx = seed();
-	const cfgPath = join(fx.repo, 'github.json');
+	const cfgPath = join(fx.repo, 'repo-config.json');
 	writeFileSync(cfgPath, JSON.stringify({ repos: { [fx.repo]: { type: 'github', owner: 'acme', repo: 'demo' } } }));
-	const prior = process.env['INSRC_GITHUB_CONFIG'];
-	process.env['INSRC_GITHUB_CONFIG'] = cfgPath;
+	const prior = process.env['INSRC_REPO_CONFIG'];
+	process.env['INSRC_REPO_CONFIG'] = cfgPath;
 	try {
 		const t = fakeTracker();
 		for (const [unit, id, title] of [
@@ -134,7 +134,7 @@ test('unit-issue and the conventions bodies write an Epic, Story and Task title 
 			assert.equal(older.issues[1]!.spec.title, 'E20260717a3f4b8c9:S001 \u2014 Filter by tag', 'the earlier title is untouched');
 		} finally { fresh.cleanup(); }
 	} finally {
-		if (prior === undefined) delete process.env['INSRC_GITHUB_CONFIG']; else process.env['INSRC_GITHUB_CONFIG'] = prior;
+		if (prior === undefined) delete process.env['INSRC_REPO_CONFIG']; else process.env['INSRC_REPO_CONFIG'] = prior;
 		fx.cleanup();
 	}
 });

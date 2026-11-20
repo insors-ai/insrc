@@ -53,23 +53,23 @@ function payload(env: Envelope): Record<string, unknown> {
 // Fixtures
 // ---------------------------------------------------------------------------
 
-/** Point the github config resolver at a temp `github.json` for the
+/** Point the github config resolver at a temp `repo-config.json` for the
  *  test run. Returns a disposer that restores the prior env var. */
 function stubGithubConfig(repo: string, entry: unknown): () => void {
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-gh-cfg-'));
-	const path = join(dir, 'github.json');
+	const path = join(dir, 'repo-config.json');
 	writeFileSync(path, JSON.stringify(entry, null, 2));
-	const prev = process.env['INSRC_GITHUB_CONFIG'];
-	process.env['INSRC_GITHUB_CONFIG'] = path;
+	const prev = process.env['INSRC_REPO_CONFIG'];
+	process.env['INSRC_REPO_CONFIG'] = path;
 	return () => {
-		if (prev === undefined) delete process.env['INSRC_GITHUB_CONFIG'];
-		else process.env['INSRC_GITHUB_CONFIG'] = prev;
+		if (prev === undefined) delete process.env['INSRC_REPO_CONFIG'];
+		else process.env['INSRC_REPO_CONFIG'] = prev;
 		rmSync(dir, { recursive: true, force: true });
 	};
 }
 
 /** Seed an approved Define artifact. When `withGithubConfig` is set,
- *  also points the resolver at a temp `github.json` with an owner+repo
+ *  also points the resolver at a temp `repo-config.json` with an owner+repo
  *  so the tracker workflows resolve to a github target. */
 function seedApprovedEpic(repo: string, epicHash: string, opts: { withGithubConfig: boolean }): (() => void) | null {
 	let disposer: (() => void) | null = null;

@@ -42,14 +42,14 @@ function payload(env: Envelope): Record<string, unknown> {
 
 function stubGithubConfig(repoPath: string, pushTasks: boolean): { path: string; dispose: () => void } {
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-gh-cfg-'));
-	const path = join(dir, 'github.json');
+	const path = join(dir, 'repo-config.json');
 	// A per-repo entry carries an explicit target legitimately (the repo's own
 	// config). A global `default` may NOT target a repo — its owner/repo is
 	// ignored in favour of the repo's git remote.
 	writeFileSync(path, JSON.stringify({ repos: { [repoPath]: { type: 'github', owner: 'myorg', repo: 'myrepo', ...(pushTasks ? { pushTasks: true } : {}) } } }));
-	const prev = process.env['INSRC_GITHUB_CONFIG'];
-	process.env['INSRC_GITHUB_CONFIG'] = path;
-	return { path, dispose: () => { if (prev === undefined) delete process.env['INSRC_GITHUB_CONFIG']; else process.env['INSRC_GITHUB_CONFIG'] = prev; rmSync(dir, { recursive: true, force: true }); } };
+	const prev = process.env['INSRC_REPO_CONFIG'];
+	process.env['INSRC_REPO_CONFIG'] = path;
+	return { path, dispose: () => { if (prev === undefined) delete process.env['INSRC_REPO_CONFIG']; else process.env['INSRC_REPO_CONFIG'] = prev; rmSync(dir, { recursive: true, force: true }); } };
 }
 
 function seed(repo: string, opts: { approvePlan: boolean }): void {

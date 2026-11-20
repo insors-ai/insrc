@@ -93,9 +93,9 @@ function setup(pushTasks: boolean): { repo: string; hldJson: string; lldJson: st
 	mkdirSync(join(repo, 'docs/defines'), { recursive: true });
 	mkdirSync(join(repo, 'docs/designs'), { recursive: true });
 	mkdirSync(join(repo, 'docs/plans'), { recursive: true });
-	const ghCfg = join(repo, 'github.json');
+	const ghCfg = join(repo, 'repo-config.json');
 	writeFileSync(ghCfg, JSON.stringify({ default: { type: 'github', ...(pushTasks ? { pushTasks: true } : {}) } }));
-	process.env['INSRC_GITHUB_CONFIG'] = ghCfg;
+	process.env['INSRC_REPO_CONFIG'] = ghCfg;
 
 	const defineJson = join(repo, '.insrc/artifacts', `DEF-${HASH}.json`);
 	writeJson(defineJson, {
@@ -129,7 +129,7 @@ function setup(pushTasks: boolean): { repo: string; hldJson: string; lldJson: st
 	// the Task artifacts the approval of the plan makes: a Task's issue is recorded on its Task artifact
 	seedTaskHeads(repo, HASH, 's1', ['t1', 't2'], CREATED);
 
-	return { repo, hldJson, lldJson, planJson, cleanup: () => { delete process.env['INSRC_GITHUB_CONFIG']; installExecStandIn(); rmSync(repo, { recursive: true, force: true }); } };
+	return { repo, hldJson, lldJson, planJson, cleanup: () => { delete process.env['INSRC_REPO_CONFIG']; installExecStandIn(); rmSync(repo, { recursive: true, force: true }); } };
 }
 
 function trackerOf(jsonPath: string): Record<string, unknown> {

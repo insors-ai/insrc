@@ -6,7 +6,7 @@
 /**
  * GitHub tracker config — Phase F.
  *
- * Loads `~/.insrc/github.json`. Resolves per-repo entries with a
+ * Reads the per-repo settings (`~/.insrc/repo-config.json`, see `repo-config.ts`). Resolves per-repo entries with a
  * git-remote fallback for repos not explicitly configured. The
  * resolved config is what the tracker prompts embed so the LLM
  * knows which repo to `gh` against.
@@ -37,13 +37,15 @@
  */
 
 import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
 
-import { PATHS } from '../../shared/paths.js';
 import { parseGithubRemoteUrl } from '../tracker/github.js';
 import { createRegistryTable, workflowToolDeps } from '../tracker/registry-table.js';
 import type { PortResult } from '../tracker/port.js';
 import { OWNER_NAME_RE, REPO_NAME_RE } from './github-names.js';
+import { loadRepoConfigFile, repoConfigPath } from './repo-config.js';
+import type { RepoConfigEntry, RepoConfigFile, TrackerAdapter } from './repo-config.js';
+
+export type { TrackerAdapter };
 
 // Re-exported for back-compat (tests + callers import these here).
 export { parseGithubRemoteUrl };
@@ -55,63 +57,6 @@ const gitOriginOwnerRepo = parseGitRemoteOwnerRepo;
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
-
-/** Adapter type. `'github'` uses the `gh` CLI; `'none'` disables all
- *  tracker integration (approve-time auto-push AND manual
- *  `tracker.*` MCP workflows). The default when no matching entry
- *  is found (including when `~/.insrc/github.json` is absent) is
- *  `'none'` — the tracker is opt-in. Set `"type": "github"` with an
- *  owner + repo (or rely on the entry-level owner/repo for
- *  back-compat) to enable. */
-export type TrackerAdapter = 'github' | 'none';
-
-export interface GithubEntry {
-	/** Adapter selector. If omitted, defaults to `'github'`. Set to
-	 *  `'none'` to disable the tracker for this entry — owner/repo
-	 *  then become irrelevant and can be omitted. */
-	readonly type?:         TrackerAdapter;
-	readonly owner?:        string;
-	readonly repo?:         string;
-	readonly epicLabel?:    string;      // default 'insrc:epic'
-	readonly storyLabel?:   string;      // default 'insrc:story'
-	readonly taskLabel?:    string;      // default 'insrc:task'
-	readonly useMilestones?: boolean;    // default false
-	/** Push Task-tier issues (one per PlanTask) as native GitHub issues,
-	 *  sub-issues of the Story, when a plan is approved. Opt-in (default
-	 *  false) — Task issues can be numerous and lean on org features
-	 *  (issue types + sub-issues) that not every org enables. */
-	readonly pushTasks?:    boolean;     // default false
-	/** Commit + push the workflow artifacts (JSON + rendered MD) on approval, so
-	 *  the chain is portable (anyone who pulls can proceed). Default true. */
-	readonly commitArtifacts?: boolean;  // default true
-	/** Native GitHub issue-type name applied to Task issues. Set to ''
-	 *  to create untyped Task issues. Default 'Task'. Falls back to an
-	 *  untyped issue when the org has no such type. */
-	readonly taskIssueType?: string;    // default 'Task'
-	/** Native GitHub issue-type names for Epic + Story issues (fail-open to
-	 *  untyped when the org has no such type). Default 'Epic' / 'Story'. */
-	readonly epicIssueType?:  string;   // default 'Epic'
-	readonly storyIssueType?: string;   // default 'Story'
-	/** Where the `gh` program lives. Stored and shown only; the gh runner does not read it yet. */
-	readonly ghPath?:       string;
-	/** The host `gh` signs in to (default github.com). Stored and shown only; the gh runner does not read it yet. */
-	readonly ghHost?:       string;
-	/** Branch naming pattern. Stored and shown only; consumed later by the handoff story (s6). */
-	readonly branchPattern?: string;
-	/** The build gate's typecheck command line for this project, split on spaces. Used with `testCommand`; absent means the project type's default. */
-	readonly typecheckCommand?: string;
-	/** The build gate's test command line for this project; each test file is appended. Used with `typecheckCommand`. */
-	readonly testCommand?: string;
-	/** How the gate reads a run of these commands: 'exit-code' (default) or 'tap'. Applies only when both commands are set. */
-	readonly resultFormat?: string;
-	/** Whether the daemon installed the git hooks that refresh the tracker status for git run outside it (default false). Set by repo.gitHooks.install and uninstall. */
-	readonly gitHooks?: boolean;
-}
-
-export interface GithubConfigFile {
-	readonly default?: GithubEntry;
-	readonly repos?:   Readonly<Record<string, GithubEntry>>;
-}
 
 export type ResolvedGithubConfigSource = 'per-repo-config' | 'default-config' | 'git-remote';
 
@@ -152,35 +97,6 @@ const DEFAULT_EPIC_ISSUE_TYPE: string = 'Epic';
 const DEFAULT_STORY_ISSUE_TYPE: string = 'Story';
 
 // ---------------------------------------------------------------------------
-// Config path
-// ---------------------------------------------------------------------------
-
-/** Resolves the config file location. Honors `INSRC_GITHUB_CONFIG`
- *  when set — used by tests to keep the resolver away from the user's
- *  real `~/.insrc/github.json`. */
-export function githubConfigPath(): string {
-	const override = process.env['INSRC_GITHUB_CONFIG'];
-	if (typeof override === 'string' && override.length > 0) return override;
-	return join(PATHS.insrc, 'github.json');
-}
-
-// ---------------------------------------------------------------------------
-// Loader
-// ---------------------------------------------------------------------------
-
-export function loadGithubConfigFile(configPath: string = githubConfigPath()): GithubConfigFile {
-	if (!existsSync(configPath)) return {};
-	try {
-		const raw = readFileSync(configPath, 'utf8');
-		const parsed = JSON.parse(raw) as unknown;
-		if (typeof parsed !== 'object' || parsed === null) return {};
-		return parsed as GithubConfigFile;
-	} catch {
-		return {};
-	}
-}
-
-// ---------------------------------------------------------------------------
 // Resolution
 // ---------------------------------------------------------------------------
 
@@ -192,10 +108,10 @@ export class GithubConfigError extends Error {
 }
 
 /** Resolve the effective config for a repo. Precedence:
- *   1. `github.json` `repos.<repoPath>` entry — the repo's OWN config;
+ *   1. `repo-config.json` `repos.<repoPath>` entry — the repo's OWN config;
  *      may name an explicit owner/repo, or `{ type: 'github' }` to
  *      auto-detect the repo's git remote.
- *   2. `github.json` `default` entry — supplies github-enablement +
+ *   2. `repo-config.json` `default` entry — supplies github-enablement +
  *      shared label/behaviour settings ONLY. Its owner/repo (if any) is
  *      IGNORED: a repo's tracker target NEVER comes from a global
  *      default — it always resolves to the repo's own git remote.
@@ -213,17 +129,17 @@ export class GithubConfigError extends Error {
  *  Throws `GithubConfigError` only when github is enabled for the repo
  *  but no owner/repo could be resolved (per-repo entry named none, or
  *  the git remote could not be parsed). Callers gate on this. */
-export async function resolveGithubConfig(repoPath: string, configPath: string = githubConfigPath()): Promise<ResolvedGithubConfig> {
-	return await resolveGithubConfigFromFile(loadGithubConfigFile(configPath), repoPath);
+export async function resolveGithubConfig(repoPath: string, configPath: string = repoConfigPath()): Promise<ResolvedGithubConfig> {
+	return await resolveGithubConfigFromFile(loadRepoConfigFile(configPath), repoPath);
 }
 
 /**
  * The branch pattern the repo sets for handoff branches: its own entry's, else the default entry's; undefined when neither sets
  * one (the caller then uses its default). A config file that cannot be read has none.
  */
-export function resolveBranchPattern(repoPath: string, configPath: string = githubConfigPath()): string | undefined {
+export function resolveBranchPattern(repoPath: string, configPath: string = repoConfigPath()): string | undefined {
 	try {
-		const file = loadGithubConfigFile(configPath);
+		const file = loadRepoConfigFile(configPath);
 		const own = file.repos?.[repoPath]?.branchPattern;
 		const set = own !== undefined && own.length > 0 ? own : file.default?.branchPattern;
 		return set !== undefined && set.length > 0 ? set : undefined;
@@ -235,7 +151,7 @@ export function resolveBranchPattern(repoPath: string, configPath: string = gith
  *  of reading it again. The selection and resolution logic is the same code, only
  *  moved: it gives the same result for every file, including the structurally
  *  malformed ones the lenient loader does not reject. */
-export async function resolveGithubConfigFromFile(file: GithubConfigFile, repoPath: string): Promise<ResolvedGithubConfig> {
+export async function resolveGithubConfigFromFile(file: RepoConfigFile, repoPath: string): Promise<ResolvedGithubConfig> {
 	const perRepo = file.repos?.[repoPath];
 	if (perRepo !== undefined) {
 		// The repo's OWN entry — an explicit owner/repo here is intentional.
@@ -266,8 +182,8 @@ export async function resolveGithubConfigFromFile(file: GithubConfigFile, repoPa
  *  for the global default — a global default must never target a repo, so
  *  its owner/repo is skipped and the target resolves to the git remote. */
 async function resolveEntry(
-	entry: GithubEntry,
-	fallbackDefaults: GithubEntry | undefined,
+	entry: RepoConfigEntry,
+	fallbackDefaults: RepoConfigEntry | undefined,
 	repoPath: string,
 	source: ResolvedGithubConfigSource,
 	allowEntryTarget: boolean,
@@ -303,7 +219,7 @@ async function resolveEntry(
 			throw new GithubConfigError(
 				`GitHub tracker requested (type: 'github') for repo '${repoPath}' but no ` +
 				`owner/repo is set and 'git remote get-url origin' could not be parsed. ` +
-				`Add owner + repo to the entry in ${githubConfigPath()}.`,
+				`Add owner + repo to the entry in ${repoConfigPath()}.`,
 			);
 		}
 		return {
@@ -358,7 +274,7 @@ async function strictOrigin(repoPath: string, where: string): Promise<PortResult
  *  supplies a target), but every malformed or unsupported configuration is a
  *  refusal instead of a silent fallback to "no tracker". `resolveGithubConfig`
  *  stays lenient and untouched; only `loadTracker` calls this. */
-export async function resolveStrictTrackerTarget(repoPath: string, configPath: string = githubConfigPath()): Promise<PortResult<StrictTrackerTarget>> {
+export async function resolveStrictTrackerTarget(repoPath: string, configPath: string = repoConfigPath()): Promise<PortResult<StrictTrackerTarget>> {
 	if (!existsSync(configPath)) return strictRefuse(`no tracker is configured: ${configPath} does not exist`);
 	let parsed: unknown;
 	try {

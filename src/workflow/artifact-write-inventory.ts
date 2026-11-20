@@ -149,7 +149,7 @@ export const ARTIFACT_WRITE_INVENTORY: readonly InventoryEntry[] = [
 	{ file: 'src/daemon/update-runner.ts', class: 'non-artifact', via: 'raw', note: 'daemon update state' },
 	{ file: 'src/db/graph/store.ts', class: 'non-artifact', via: 'raw', note: 'graph store file moves' },
 	{ file: 'src/indexer/repo-ignore-config.ts', class: 'non-artifact', via: 'raw', note: 'repo ignore configuration' },
-	{ file: 'src/workflow/config/github-store.ts', class: 'non-artifact', via: 'raw', note: 'github.json, written only by the daemon' },
+	{ file: 'src/workflow/config/repo-config-store.ts', class: 'non-artifact', via: 'raw', note: 'repo-config.json, written only by the daemon' },
 	{ file: 'src/workflow/runners/build/range-base.ts', class: 'non-artifact', via: 'raw', note: 'temporary git index for the range base' },
 	{ file: 'src/workflow/team/create-only.ts', class: 'non-artifact', via: 'raw', note: 'the starter team policy file' },
 	{ file: 'src/workflow/team/handoff.ts', class: 'non-artifact', via: 'raw', note: 'the handoff checkpoint, written into a temporary worktree and committed to the handoff branch' },

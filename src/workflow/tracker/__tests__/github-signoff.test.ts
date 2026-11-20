@@ -20,7 +20,7 @@ import { createGithubTracker, loadTracker } from '../github-adapter.js';
 import { installExecStandIn, installNoPrograms } from '../../__tests__/helpers/exec-stand-in.js';
 import type { Capability, PortResult, SignoffRequestSpec } from '../port.js';
 
-afterEach(() => { installExecStandIn(); delete process.env['INSRC_GITHUB_CONFIG']; });
+afterEach(() => { installExecStandIn(); delete process.env['INSRC_REPO_CONFIG']; });
 
 const set = (...c: Capability[]): ReadonlySet<Capability> => new Set(c);
 
@@ -56,9 +56,9 @@ test('loadTracker accepts signoff-request once declared; openSignoffRequest open
 	// the capability: declared, and loadTracker accepts a need for it (and still refuses one the adapter lacks)
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-signoff-'));
 	try {
-		const config = join(dir, 'github.json');
+		const config = join(dir, 'repo-config.json');
 		writeFileSync(config, JSON.stringify({ repos: { '/r': { owner: 'acme', repo: 'demo' } } }));
-		process.env['INSRC_GITHUB_CONFIG'] = config;
+		process.env['INSRC_REPO_CONFIG'] = config;
 		const calls = fakeGh(() => '{"login":"octo"}');
 		const loaded = await loadTracker('/r', set('claim', 'signoff-request'));
 		assert.equal(loaded.ok, true, 'signoff-request is accepted');

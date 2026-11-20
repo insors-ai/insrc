@@ -20,7 +20,7 @@ function fixture() {
 	const flags: boolean[] = [];
 	const hooks = createGitHooks({ registeredRepos: async () => [repo, plain], entryPath: ENTRY, setFlag: async (_r, v) => { flags.push(v); return { ok: true }; } });
 	const settings = createRepoSettingsHandlers({
-		registeredRepos: async () => [repo, plain], configPath: () => join(root, 'github.json'),
+		registeredRepos: async () => [repo, plain], configPath: () => join(root, 'repo-config.json'),
 		readPolicy: async () => ({ ok: true, value: 'none' }),
 		makeTracker: () => ({ whoAmI: () => ({ ok: true, value: 'octocat' }) }),
 		applyGitHooks: (r, enabled) => hooks.apply(r, enabled),
@@ -56,7 +56,7 @@ test('src/daemon/__tests__/git-hooks-methods.test.ts: repo.gitHooks.install, uni
 		assert.ok(existsSync(f.hook('post-rewrite')));
 		const refused = await f.settings['repo.settings.set']!({ repo: f.plain, key: 'gitHooks', value: true }) as any;
 		assert.equal(refused.ok, false);
-		assert.equal(existsSync(join(f.root, 'github.json')), false, 'the key was not written when the install failed');
+		assert.equal(existsSync(join(f.root, 'repo-config.json')), false, 'the key was not written when the install failed');
 
 		const removed = await h['repo.gitHooks.uninstall']!({ repo: f.repo }) as any;
 		assert.deepEqual([removed.ok, removed.setting], [true, false]);

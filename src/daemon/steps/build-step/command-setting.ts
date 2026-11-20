@@ -6,7 +6,7 @@
 /**
  * The commands a project states for the build gate (LLD-787434000fa22691-s1, task t5): the
  * `typecheckCommand`, `testCommand` and `resultFormat` keys of the repository's own entry in
- * `~/.insrc/github.json`, the daemon's per-registered-repository settings store (edited through
+ * `~/.insrc/repo-config.json`, the daemon's per-registered-repository settings store (edited through
  * `repo.settings.set`, rows in src/config/repo-fields.ts). There is no global layer: a repository
  * that sets none of them gets its project type's default.
  *
@@ -15,8 +15,8 @@
  * is built (validation-checks.ts).
  */
 
-import { githubConfigPath } from '../../../workflow/config/github.js';
-import { readRepoEntry } from '../../../workflow/config/github-store.js';
+import { repoConfigPath } from '../../../workflow/config/repo-config.js';
+import { readRepoEntry } from '../../../workflow/config/repo-config-store.js';
 
 /** The raw values of the setting: a key that is not set is absent; a value that is not a string is kept as read. */
 export interface BuildCommandSetting {
@@ -38,7 +38,7 @@ const KEYS = ['typecheckCommand', 'testCommand', 'resultFormat'] as const;
  * BuildSettingUnreadable when the file is unreadable or malformed: the gate must not fall back to a
  * default on a setting it could not read.
  */
-export function readBuildCommandSetting(repoPath: string, configPath: string = githubConfigPath()): BuildCommandSetting | undefined {
+export function readBuildCommandSetting(repoPath: string, configPath: string = repoConfigPath()): BuildCommandSetting | undefined {
 	const read = readRepoEntry(repoPath, configPath);
 	if (!read.ok) throw new BuildSettingUnreadable(read.error.message);
 	const entry = read.entry as Record<string, unknown> | undefined;

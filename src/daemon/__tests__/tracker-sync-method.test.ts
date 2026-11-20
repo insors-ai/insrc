@@ -25,12 +25,12 @@ const CREATED = '2026-07-17T07:42:28.275Z';
 
 test('tracker.sync runs refreshTrackerStatus for the one Epic and returns its SyncResult', async () => {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-tracker-sync-'));
-	const cfg = join(repo, 'github.json');
-	const prior = process.env['INSRC_GITHUB_CONFIG'];
+	const cfg = join(repo, 'repo-config.json');
+	const prior = process.env['INSRC_REPO_CONFIG'];
 	try {
 		mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
 		writeFileSync(cfg, JSON.stringify({ repos: { [repo]: { type: 'github', owner: 'o', repo: 'r' } } }));
-		process.env['INSRC_GITHUB_CONFIG'] = cfg;
+		process.env['INSRC_REPO_CONFIG'] = cfg;
 		const defineJson = artifactJsonPath(repo, defineArtifactId(HASH));
 		writeFileSync(defineJson, JSON.stringify({
 			meta: { workflow: 'define', runId: 'd1', repoPath: repo, epicHash: HASH, epicSlug: 'e', createdAt: CREATED, epicCreatedAt: CREATED, schemaVersion: 1 },
@@ -58,7 +58,7 @@ test('tracker.sync runs refreshTrackerStatus for the one Epic and returns its Sy
 		assert.deepEqual(await handleTrackerSync({ repoPath: repo, epicHash: '' }), { error: 'tracker.sync: `epicHash` must be a non-empty string when given' });
 	} finally {
 		installExecStandIn();
-		if (prior === undefined) delete process.env['INSRC_GITHUB_CONFIG']; else process.env['INSRC_GITHUB_CONFIG'] = prior;
+		if (prior === undefined) delete process.env['INSRC_REPO_CONFIG']; else process.env['INSRC_REPO_CONFIG'] = prior;
 		rmSync(repo, { recursive: true, force: true });
 	}
 });
@@ -68,11 +68,11 @@ const HASH2 = 'b4c5d6e7f8091a2b';
 /** A repository with two Epics, each bound to an issue and one Story issue, and a stand-in that answers every issue view. */
 function twoEpicRepo(): { repo: string; views: () => number; done: () => void } {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-tracker-sync-all-'));
-	const cfg = join(repo, 'github.json');
-	const prior = process.env['INSRC_GITHUB_CONFIG'];
+	const cfg = join(repo, 'repo-config.json');
+	const prior = process.env['INSRC_REPO_CONFIG'];
 	mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
 	writeFileSync(cfg, JSON.stringify({ repos: { [repo]: { type: 'github', owner: 'o', repo: 'r' } } }));
-	process.env['INSRC_GITHUB_CONFIG'] = cfg;
+	process.env['INSRC_REPO_CONFIG'] = cfg;
 	for (const [hash, epic, story] of [[HASH, 'o/r#1', 'o/r#2'], [HASH2, 'o/r#3', 'o/r#4']] as const) {
 		writeFileSync(artifactJsonPath(repo, defineArtifactId(hash)), JSON.stringify({
 			meta: { workflow: 'define', runId: 'd-' + hash, repoPath: repo, epicHash: hash, epicSlug: 'e-' + hash, createdAt: CREATED, epicCreatedAt: CREATED, schemaVersion: 1 },
@@ -91,7 +91,7 @@ function twoEpicRepo(): { repo: string; views: () => number; done: () => void } 
 	});
 	return {
 		repo, views: () => views,
-		done: () => { installExecStandIn(); if (prior === undefined) delete process.env['INSRC_GITHUB_CONFIG']; else process.env['INSRC_GITHUB_CONFIG'] = prior; rmSync(repo, { recursive: true, force: true }); },
+		done: () => { installExecStandIn(); if (prior === undefined) delete process.env['INSRC_REPO_CONFIG']; else process.env['INSRC_REPO_CONFIG'] = prior; rmSync(repo, { recursive: true, force: true }); },
 	};
 }
 

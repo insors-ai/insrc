@@ -83,10 +83,10 @@ export function approveEveryToolCall(): void {
 export function seed(opts: { pushTasks?: boolean; taskHeads?: boolean } = {}): Fx {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-approve-fallback-'));
 	mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
-	const cfg = join(repo, 'github.json');
+	const cfg = join(repo, 'repo-config.json');
 	writeFileSync(cfg, JSON.stringify({ repos: { [repo]: { type: 'github', owner: 'acme', repo: 'demo', pushTasks: opts.pushTasks ?? false } } }));
-	const prior = process.env['INSRC_GITHUB_CONFIG'];
-	process.env['INSRC_GITHUB_CONFIG'] = cfg;
+	const prior = process.env['INSRC_REPO_CONFIG'];
+	process.env['INSRC_REPO_CONFIG'] = cfg;
 	const put = (id: string, doc: unknown): string => { const p = artifactJsonPath(repo, id); writeFileSync(p, JSON.stringify(doc, null, 2) + '\n'); return p; };
 	const base = { repoPath: repo, epicHash: HASH, epicSlug: SLUG, createdAt: CREATED, epicCreatedAt: CREATED };
 	put(defineArtifactId(HASH), {
@@ -120,7 +120,7 @@ export function seed(opts: { pushTasks?: boolean; taskHeads?: boolean } = {}): F
 	if (opts.taskHeads !== false) seedTaskHeads(repo, HASH, 's1', ['t1', 't2'], CREATED);
 	return {
 		repo, hld, lld, plan,
-		cleanup: () => { if (prior === undefined) delete process.env['INSRC_GITHUB_CONFIG']; else process.env['INSRC_GITHUB_CONFIG'] = prior; installExecStandIn(); _setApprovalGateForTests(undefined); _setAutoPushDepsForTests(); rmSync(repo, { recursive: true, force: true }); },
+		cleanup: () => { if (prior === undefined) delete process.env['INSRC_REPO_CONFIG']; else process.env['INSRC_REPO_CONFIG'] = prior; installExecStandIn(); _setApprovalGateForTests(undefined); _setAutoPushDepsForTests(); rmSync(repo, { recursive: true, force: true }); },
 	};
 }
 

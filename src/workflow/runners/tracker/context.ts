@@ -219,7 +219,7 @@ function requireGithubAdapter(cfg: ResolvedGithubConfig, workflow: string): Extr
 	if (cfg.type === 'none') {
 		throw new Error(
 			`${workflow}: tracker is disabled via config (type: none, source: ${cfg.source}). ` +
-			`Remove or change the entry in ~/.insrc/github.json to enable.`,
+			`Remove or change the entry in ~/.insrc/repo-config.json to enable.`,
 		);
 	}
 	return cfg;

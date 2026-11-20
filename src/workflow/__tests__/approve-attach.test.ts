@@ -121,7 +121,7 @@ test('approve() attaches the approved HLD, LLD and plan documents after its comm
 	const off = seed({ pushTasks: false });
 	try {
 		repoWithGit(off.repo); anchorAll(off.repo);
-		const cfgPath = process.env['INSRC_GITHUB_CONFIG'] as string;
+		const cfgPath = process.env['INSRC_REPO_CONFIG'] as string;
 		writeFileSync(cfgPath, JSON.stringify({ repos: { [off.repo]: { type: 'github', owner: 'acme', repo: 'demo', pushTasks: false, commitArtifacts: false } } }));
 		const t = fakeTracker();
 		installExecStandIn(realGitExec);

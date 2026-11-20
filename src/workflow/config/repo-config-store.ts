@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * Strict reader and serialised writer for `~/.insrc/github.json`.
+ * Strict reader and serialised writer for `~/.insrc/repo-config.json`.
  *
  * The daemon is the only process that writes the file. Writes are chained on one
  * in-process promise queue (no lock file). Each attempt reads and validates the
@@ -19,22 +19,22 @@ import { createHash } from 'node:crypto';
 import { readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 
 import { getLogger } from '../../shared/logger.js';
-import { githubConfigPath } from './github.js';
-import type { GithubConfigFile, GithubEntry } from './github.js';
+import { repoConfigPath } from './repo-config.js';
+import type { RepoConfigFile, RepoConfigEntry } from './repo-config.js';
 
-const log = getLogger('github-store');
+const log = getLogger('repo-config-store');
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
 export interface WriteError {
-	readonly code: 'github-json-unreadable' | 'file-changed' | 'write-failed';
+	readonly code: 'repo-config-unreadable' | 'file-changed' | 'write-failed';
 	readonly message: string;
 }
 
 export type ReadResult =
-	| { readonly ok: true; readonly file: GithubConfigFile; readonly entry: GithubEntry | undefined }
+	| { readonly ok: true; readonly file: RepoConfigFile; readonly entry: RepoConfigEntry | undefined }
 	| { readonly ok: false; readonly error: WriteError };
 
 export type WriteResult =
@@ -68,7 +68,7 @@ function isPlainObject(v: unknown): v is Record<string, unknown> {
 }
 
 function unreadable(configPath: string, detail: string): { ok: false; error: WriteError } {
-	return { ok: false, error: { code: 'github-json-unreadable', message: `${configPath}: ${detail}` } };
+	return { ok: false, error: { code: 'repo-config-unreadable', message: `${configPath}: ${detail}` } };
 }
 
 /** Only ENOENT means the file is absent; EACCES on a parent and the like are real read failures. */
@@ -90,21 +90,21 @@ function validateSnapshot(parsed: unknown, repoPath: string, configPath: string)
 		return unreadable(configPath, `"repos" must be an object, found ${describe(parsed['repos'])}`);
 	}
 	const repos = parsed['repos'] as Record<string, unknown> | undefined;
-	let entry: GithubEntry | undefined;
+	let entry: RepoConfigEntry | undefined;
 	if (repos !== undefined && Object.hasOwn(repos, repoPath)) {
 		const own = repos[repoPath];
 		if (!isPlainObject(own)) return unreadable(configPath, `repos["${repoPath}"] must be an object, found ${describe(own)}`);
-		entry = own as GithubEntry;
+		entry = own as RepoConfigEntry;
 	}
-	return { ok: true, file: parsed as GithubConfigFile, entry };
+	return { ok: true, file: parsed as RepoConfigFile, entry };
 }
 
 /**
- * Reads `github.json` strictly. A missing file is an empty snapshot; an
+ * Reads `repo-config.json` strictly. A missing file is an empty snapshot; an
  * unreadable file, invalid JSON, or a null/array/primitive at the top level,
  * `default`, `repos` or the repo's own entry is reported, naming the level.
  */
-export function readRepoEntry(repoPath: string, configPath: string = githubConfigPath()): ReadResult {
+export function readRepoEntry(repoPath: string, configPath: string = repoConfigPath()): ReadResult {
 	let raw: string;
 	try {
 		raw = readFileSync(configPath, 'utf8');
@@ -132,11 +132,11 @@ export function readRepoEntry(repoPath: string, configPath: string = githubConfi
  * actually set. Does not mutate its input.
  */
 export function mergeRepoEntryKeys(
-	file: GithubConfigFile,
+	file: RepoConfigFile,
 	repoPath: string,
 	patch: EntryPatch,
-): { readonly file: GithubConfigFile; readonly changed: boolean } {
-	const repos = (file.repos ?? {}) as Record<string, GithubEntry>;
+): { readonly file: RepoConfigFile; readonly changed: boolean } {
+	const repos = (file.repos ?? {}) as Record<string, RepoConfigEntry>;
 	const existing = Object.hasOwn(repos, repoPath) ? repos[repoPath] : undefined;
 	const next: Record<string, unknown> = { ...(existing ?? {}) };
 	let changed = false;
@@ -149,7 +149,7 @@ export function mergeRepoEntryKeys(
 		}
 	}
 	if (!changed) return { file, changed: false };
-	return { file: { ...file, repos: { ...repos, [repoPath]: next as GithubEntry } }, changed: true };
+	return { file: { ...file, repos: { ...repos, [repoPath]: next as RepoConfigEntry } }, changed: true };
 }
 
 // ---------------------------------------------------------------------------
@@ -208,21 +208,21 @@ async function writeOnce(repoPath: string, patch: EntryPatch, configPath: string
 }
 
 /**
- * Sets (or, with `null`, removes) keys of `repos[repoPath]` in `github.json`.
+ * Sets (or, with `null`, removes) keys of `repos[repoPath]` in `repo-config.json`.
  * Daemon-only. Calls run one at a time on a single in-process queue; the call
  * never rejects, and a failure never stalls the calls queued after it.
  */
 export function writeRepoEntryKeys(
 	repoPath: string,
 	patch: EntryPatch,
-	configPath: string = githubConfigPath(),
+	configPath: string = repoConfigPath(),
 	seams: StoreSeams = DEFAULT_SEAMS,
 ): Promise<WriteResult> {
 	const run = queueTail.then(async (): Promise<WriteResult> => {
 		try {
 			return await writeOnce(repoPath, patch, configPath, seams);
 		} catch (e) {
-			log.warn({ err: (e as Error).message }, 'github.json write failed');
+			log.warn({ err: (e as Error).message }, 'repo-config.json write failed');
 			return failed('write-failed', (e as Error).message);
 		}
 	});

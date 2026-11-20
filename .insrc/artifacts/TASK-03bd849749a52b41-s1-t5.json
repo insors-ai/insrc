@@ -1,0 +1,100 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3214d85a-0e59-447c-9308-4239e625308e",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-20T08:34:23.511Z",
+    "epicCreatedAt": "2026-11-20T04:36:15.580Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "03bd849749a52b41",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Validate preserved history and publish Batch 04 evidence",
+      "parent": {
+        "entityId": "STORY-03bd849749a52b41-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-03bd849749a52b41-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-03bd849749a52b41-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-03bd849749a52b41-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-03bd849749a52b41-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-03bd849749a52b41-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "82e6dd8b77d387d21542f5acbdb13bc3175a1f2107b0bd8b84d6bc88b72462bf",
+        "at": "2026-11-20T08:34:23.511Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T08:34:23.513Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Validate preserved history and publish Batch 04 evidence",
+    "summary": "Run final focused groups sequentially, verify retained history and human lifecycle/integrity guarantees, and record actual outcomes, assertion mappings, cleanup and remaining sibling failures.",
+    "size": "S",
+    "order": 5,
+    "acceptanceChecks": [
+      "All seven LLD test subjects and ac1–ac4 map to actual test evidence; current retained history/rendering, human approval, integrity and task/build completion controls pass without fake review entries.",
+      "Root typecheck and appropriate source/compiled checks run under supported Node22 with exact pass/fail/skip/cancel counts and confirmed actor closure; no overlapping broad sweeps.",
+      "Audit and batch index preserve original observations, replacement mappings and remaining defects; do not claim green for failed/incomplete cases or refresh qualification evidence.",
+      "Document unchanged production behavior/API/data and visual relevance; no new review implementation, RPC classification, deprecated IDE compatibility or untracked production fix.",
+      "Any independent defect that prevents an acceptance check leaves that task non-green until resolved through an approved tracked path; final evidence distinguishes completed and blocked work."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Retained review history and human lifecycle gates remain readable and enforced"
+      },
+      {
+        "level": "smoke",
+        "name": "Batch 04 assertion mapping, actual focused results and actor closure are recorded"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

@@ -2,7 +2,7 @@
 
 Tracked issue: `ISSUE-807fa9e8fb678f4b`; Story `s1`.
 
-Status: **all three tasks validated; final human BUILD approval pending**. The original
+Status: **BUILD approved; Batch05 Story and Epic completed**. The original
 plan was approved, but task one failed build validation twice despite passing
 its mapped whole-file tests and typecheck. No BUILD approval or deployment is
 claimed.
@@ -130,3 +130,12 @@ human approval; earlier failed/pending checkpoints above remain historical.
 Combined evidence is still 74/74 tests across 16 files with complete coverage
 and confirmed child cleanup. No additional source change, installed daemon
 restart, release qualification or repository-wide green claim is implied.
+
+
+## Batch05 human approval and completion
+
+BUILD-807fa9e8fb678f4b-s1 was explicitly approved on 2026-11-20 at 12:15:55 UTC.
+The workflow completed STORY-807fa9e8fb678f4b-s1 and EPIC-807fa9e8fb678f4b.
+The 74/74 focused result remains the pre-integration evidence. Earlier pending
+and rejected checkpoints are historical. GitHub issue attachment remains
+unbound because the existing ISSUE-anchored tracker route requests a Define.

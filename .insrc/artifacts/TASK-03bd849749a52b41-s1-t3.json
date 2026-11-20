@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-0b4ea158-0991-4a08-bf8a-ea68c41382cb",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-20T08:34:23.503Z",
+    "epicCreatedAt": "2026-11-20T04:36:15.580Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "03bd849749a52b41",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Repair current persistence fixture entry points",
+      "parent": {
+        "entityId": "STORY-03bd849749a52b41-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-03bd849749a52b41-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-03bd849749a52b41-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "03d2f0e1c35570a096f6a470f51e4595ab5eef462b680393f9c685fc9fb04964",
+        "at": "2026-11-20T08:34:23.503Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T08:34:23.505Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Repair current persistence fixture entry points",
+    "summary": "Remove the deleted provenance writer import and map its valid assertions to current guarded boundaries/sinks and saved artifact/history controls, preserving the complete canary matrix.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "Persistence fixture imports current modules and executes real assertions rather than failing during module loading.",
+      "Temporary task/report/checkpoint/history/trace/cache/vector canaries remain absent from durable sinks; hostile getters remain unread at boundaries that guarantee preflight rejection.",
+      "Saved artifact/history/cache/trace positive controls demonstrably persist and read back; no fake review records or resurrected writer export.",
+      "Document replacement assertion mapping; if current APIs expose an independent production defect, triage it separately and do not weaken the test or claim green."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Temporary persistence canaries remain absent while saved artifact and history controls persist"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

@@ -1,0 +1,519 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 7,
+        "contentHash": "ef33243d251688d3b5ffd225e80f58372f0ba4707cea439c18617de0e12a6748",
+        "at": "2026-11-20T12:11:49.409Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 7,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T12:15:55.451Z"
+      }
+    },
+    "workflow": "build",
+    "runId": "store-bdaaa561-59ff-436d-bad7-01413691554a",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-20T11:39:49.929Z",
+    "epicCreatedAt": "2026-11-20T04:36:30.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "807fa9e8fb678f4b",
+    "storyId": "s1",
+    "revision": 7,
+    "updatedAt": "2026-11-20T12:10:58.702Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicSlug": "reconcile-daemon-rpc-registration-audit-coverage"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      }
+    ],
+    "summary": "Batch05 reconciles explicit RPC/stream/phase/routing coverage and mutation documentation. Tool repository authority runs at final admission while preserving earlier failures; dispatch and qualification controls pass. Combined retained evidence: 74/74 tests across 16 files with complete coverage and confirmed cleanup. Corrected PLAN is approved; BUILD inputs are ready for presentation after this verdict. Human BUILD approval and completion have not occurred.",
+    "testRecord": {
+      "md": "docs/standalone/reconcile-daemon-rpc-registration-audit-coverage-E20261120807fa9e8/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/daemon/__tests__/helpers/call-inventory.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/repo-call-audit.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/repo-call-table.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/handler-runtime.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/repo-call-audit.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/method-class.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/method-class.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/handler-runtime.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/call-handler.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/__tests__/call-handler.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/__tests__/executor.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/executor.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/repo-gate-dispatch.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "docs/daemon.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/failing-tests-2026-11-20.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/repo-call-audit.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/rpc-audit-batch05-status-2026-11-20.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/rpc-audit-evidence-2026-11-20/child-results.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/rpc-audit-evidence-2026-11-20/cleanup.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/rpc-audit-evidence-2026-11-20/final/child-results.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/rpc-audit-evidence-2026-11-20/final/cleanup.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/rpc-audit-evidence-2026-11-20/final/prepared.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/rpc-audit-evidence-2026-11-20/final/results.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/rpc-audit-evidence-2026-11-20/results.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/test-remediation-batches-2026-11-20.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/rpc-audit-evidence-2026-11-20/0-src_daemon___tests___handler-runtime.test.ts.log"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/rpc-audit-evidence-2026-11-20/1-src_daemon___tests___repo-call-audit.test.ts.log"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/rpc-audit-evidence-2026-11-20/2-src_daemon___tests___repo-call-table.test.ts.log"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/rpc-audit-evidence-2026-11-20/3-src_daemon_threads___tests___method-class.test.ts.log"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/rpc-audit-evidence-2026-11-20/child-10e1c510-2de4-4c0f-b3f4-330dbd9f75de.log"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/rpc-audit-evidence-2026-11-20/child-49f2282a-da6e-484d-a3d1-b875d361c031.log"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/rpc-audit-evidence-2026-11-20/child-4b023bf9-586f-4d31-aee7-8d28ab63a2c7.log"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/rpc-audit-evidence-2026-11-20/child-5591dd7f-d190-41a7-9e55-d6cf3c333ec1.log"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/rpc-audit-evidence-2026-11-20/child-7820e87d-628e-4cfc-bf31-c6ca3dd1ba15.log"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/rpc-audit-evidence-2026-11-20/child-aea27f6f-0c50-4fe3-9a42-41c2cd25bcde.log"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/rpc-audit-evidence-2026-11-20/child-af3249f1-7066-4244-a6a0-a8c3c3c604de.log"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/rpc-audit-evidence-2026-11-20/child-b5526476-b8d3-411a-877e-494741a0893b.log"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/rpc-audit-evidence-2026-11-20/child-dea3e2b8-0671-4086-b4da-16ab8749eb1d.log"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/rpc-audit-evidence-2026-11-20/final/0-src_daemon___tests___daemon-doc-repo-table.test.ts.log"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/rpc-audit-evidence-2026-11-20/final/1-src_daemon___tests___handler-runtime.test.ts.log"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/rpc-audit-evidence-2026-11-20/final/10-src_daemon_threads___tests___review-retirement-runtime.test.ts.log"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/rpc-audit-evidence-2026-11-20/final/11-src_daemon_tools___tests___call-handler.test.ts.log"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/rpc-audit-evidence-2026-11-20/final/12-src_daemon_tools___tests___executor-abort.test.ts.log"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/rpc-audit-evidence-2026-11-20/final/13-src_daemon_tools___tests___executor-approval.test.ts.log"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/rpc-audit-evidence-2026-11-20/final/14-src_daemon_tools___tests___executor.test.ts.log"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/rpc-audit-evidence-2026-11-20/final/15-src_mcp___tests___schema-registry.test.ts.log"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/rpc-audit-evidence-2026-11-20/final/2-src_daemon___tests___repo-call-audit.test.ts.log"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/rpc-audit-evidence-2026-11-20/final/3-src_daemon___tests___repo-call-gate.test.ts.log"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/rpc-audit-evidence-2026-11-20/final/4-src_daemon___tests___repo-call-table.test.ts.log"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/rpc-audit-evidence-2026-11-20/final/5-src_daemon___tests___repo-gate-dispatch.test.ts.log"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/rpc-audit-evidence-2026-11-20/final/6-src_daemon___tests___review-retirement-audit.test.ts.log"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/rpc-audit-evidence-2026-11-20/final/7-src_daemon___tests___review-retirement-endpoints.test.ts.log"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/rpc-audit-evidence-2026-11-20/final/8-src_daemon___tests___step-repo-gate.test.ts.log"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/rpc-audit-evidence-2026-11-20/final/9-src_daemon_threads___tests___method-class.test.ts.log"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/rpc-audit-evidence-2026-11-20/final/child-64ce9f36-35a1-46ff-9952-b27e72efeacc.log"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/rpc-audit-evidence-2026-11-20/final/child-9b0e0f9f-0ba0-45fb-9609-dc40e26806b6.log"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/rpc-audit-evidence-2026-11-20/final/child-bb94bd2e-20bb-4dc2-8d17-68c16eee76a4.log"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/rpc-audit-evidence-2026-11-20/final/child-bde3bf41-444a-4686-9bb3-8a64d417844e.log"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/rpc-audit-evidence-2026-11-20/final/child-cbdd8521-7a50-4e65-a2fd-c38cdcfe768d.log"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/rpc-audit-evidence-2026-11-20/final/child-d6716e23-b9f4-404b-bf1e-b640f8ecb0fe.log"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/rpc-audit-evidence-2026-11-20/final/child-db97c81e-9fdd-42c0-a0c2-f9e698eaf226.log"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/rpc-audit-evidence-2026-11-20/final/child-dbf436f6-e712-42f0-b527-14786f02f3e0.log"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/rpc-audit-evidence-2026-11-20/final/child-f6ee8f4c-1732-4b88-ac02-0dc2638daf30.log"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T12:10:58.702Z"
+      }
+    ],
+    "commit": "ab1ff29f6"
+  },
+  "citations": []
+}

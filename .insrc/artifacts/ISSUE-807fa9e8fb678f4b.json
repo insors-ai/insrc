@@ -25,7 +25,7 @@
     "kind": "defect",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 1,
         "contentHash": "24195391f0a984395591ab21370e22b93616a97932dc7798f5aa9d4c883fb9d5",
@@ -36,9 +36,27 @@
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T09:46:58.416Z"
+      }
     },
-    "revision": 1
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "parentRef": {
+      "epicHash": "807fa9e8fb678f4b",
+      "slug": "EPIC-807fa9e8fb678f4b"
+    }
   },
   "body": {
     "title": "Reconcile daemon RPC registration and audit coverage",

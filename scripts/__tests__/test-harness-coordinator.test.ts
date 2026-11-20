@@ -49,6 +49,7 @@ test('Output mutation lane precedes ordinary prepared readers and source drift n
 		: `import fs from 'node:fs';import {requirePreparedBuild} from ${JSON.stringify(urls.build)};requirePreparedBuild(process.cwd());if(fs.readFileSync('out/helper','utf8')!=='mutated')throw Error('not refreshed');fs.appendFileSync('events','reader\\n');`] });
 	assert.equal(result.code, 0);
 	assert.deepEqual(readFileSync(join(root, 'events'), 'utf8').trim().split('\n'), ['build', 'mutation', 'reader']);
+	await assert.rejects(runHarness(root, parseArgs(root, [MUTATION_FILE]), { buildOptions: options, testArgs: () => ['-e', "require('node:fs').writeFileSync('src/__tests__/a.test.ts','mutation lane source drift')"] }), { code: 'harness-build-drift' });
 	await assert.rejects(runHarness(root, parseArgs(root, ['src/__tests__/a.test.ts']), { buildOptions: options, testArgs: () => ['-e', "require('node:fs').writeFileSync('src/__tests__/a.test.ts','source changed')"] }), { code: 'harness-build-drift' });
 });
 
@@ -76,6 +77,8 @@ test('SIGINT/SIGTERM and deadline drain registered actors or retain blocked inco
 	const root = rootFixture(t);
 	const result = await runHarness(root, parseArgs(root, ['--file-ms=200','--cleanup-ms=50','src/__tests__/a.test.ts']), { buildOptions: options, testArgs: () => ['-e', 'setInterval(()=>{},1000)'] });
 	assert.equal(result.code, 1); assert.equal(result.results[0].timedOut, true);
+	const cleanup = JSON.parse(readFileSync(join(result.workspace, 'cleanup.json'), 'utf8'));
+	assert.equal(cleanup.confirmedClosed, true);
 	await assert.rejects(runHarness(root, parseArgs(root, ['--run-ms=250','--cleanup-ms=50','src/__tests__/a.test.ts']), { buildOptions: options, testArgs: () => ['-e', 'setInterval(()=>{},1000)'] }), { code: 'harness-interrupted' });
 	const blocked = createRun(root);
 	await assert.rejects(withRun(blocked, async () => { mkdirSync(join(blocked.workspace, 'actors')); writeFileSync(join(blocked.workspace, 'actors', 'unacknowledged.json'), '{}'); }), { code: 'harness-cleanup-unconfirmed' });

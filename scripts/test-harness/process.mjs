@@ -10,7 +10,7 @@ export function registerChild(child, context = participantContext()) {
 	mkdirSync(actors, { recursive: true, mode: 0o700 });
 	const marker = join(actors, `${randomUUID()}.json`);
 	writeFileSync(marker, JSON.stringify({ runId: context.runId, kind: 'child', pid: child.pid ?? null }), { flag: 'wx', mode: 0o600 });
-	child.once('close', () => { unlinkSync(marker); });
+	child.once('close', () => { try { unlinkSync(marker); } catch { /* A surviving marker prevents confirmed release. */ } });
 	return child;
 }
 
@@ -21,16 +21,21 @@ export function actorsClosed(run) {
 
 export function processScope(run) {
 	const children = new Set();
+	const sent = new WeakMap();
+	const cancellationErrors = [];
 	let stopped = false;
 	let notifyStop;
 	const stopEvent = new Promise(resolve => { notifyStop = resolve; });
 	function cancel(child, signal) {
 		if (child.exitCode !== null || child.signalCode !== null) return;
+		const signals = sent.get(child) ?? new Set();
+		if (signals.has(signal)) return;
+		signals.add(signal); sent.set(child, signals);
 		try {
 			// This group was created by this retained ChildProcess, never discovered.
 			if (process.platform === 'win32') child.kill(signal);
 			else process.kill(-child.pid, signal);
-		} catch (error) { if (error.code !== 'ESRCH') throw error; }
+		} catch (error) { if (error.code !== 'ESRCH') cancellationErrors.push({ signal, code: error.code }); }
 	}
 	async function start(command, args, { cwd = run.root, env = run.environment(), budgetMs = run.budgets.fileMs, stdout, stderr } = {}) {
 		if (stopped) throw harnessError('interrupted', 'Harness admission stopped.');
@@ -68,7 +73,7 @@ export function processScope(run) {
 		for (const { child } of children) cancel(child, 'SIGKILL');
 		await Promise.race([Promise.all([...children].map(entry => entry.ended)), new Promise(resolve => { timer = setTimeout(resolve, run.budgets.cleanupMs); })]);
 		clearTimeout(timer);
-		const closed = children.size === 0 && actorsClosed(run);
+		const closed = children.size === 0 && actorsClosed(run) && cancellationErrors.length === 0;
 		if (!closed) {
 			// Do not wait forever on inherited pipes. The lease remains blocked;
 			// detaching these observers does not assert descendant disposal.
@@ -76,7 +81,7 @@ export function processScope(run) {
 		}
 		return closed;
 	}
-	return { start, drain, stop: () => { stopped = true; notifyStop(); for (const { child } of children) cancel(child, 'SIGTERM'); }, get stopped() { return stopped; } };
+	return { start, drain, stop: () => { if (stopped) return; stopped = true; notifyStop(); for (const { child } of children) cancel(child, 'SIGTERM'); }, get stopped() { return stopped; }, get cancellationErrors() { return [...cancellationErrors]; } };
 }
 
 export async function withRun(run, work) {
@@ -92,11 +97,12 @@ export async function withRun(run, work) {
 		try {
 			run.transition('draining');
 			const closed = await scope.drain();
+			writeFileSync(join(run.workspace, 'cleanup.json'), JSON.stringify({ confirmedClosed: closed, interrupted, cancellationErrors: scope.cancellationErrors }) + '\n');
 			run.release({ confirmedClosed: closed });
 		} catch (cause) { error ??= cause; }
 		process.off('SIGINT', interrupt); process.off('SIGTERM', interrupt);
 	}
-	if (error) throw error;
+	if (error && (!interrupted || error.code === 'harness-cleanup-unconfirmed')) throw error;
 	if (interrupted) throw harnessError('interrupted', 'Interrupted/deadline: validation is incomplete.');
 	return result;
 }

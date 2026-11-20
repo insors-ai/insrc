@@ -45,7 +45,7 @@ export function parseArgs(root, args) {
 export async function runHarness(root, selection, { buildOptions, testArgs = file => ['--import', 'tsx', '--test', '--test-concurrency=1', ...selection.testFlags, file], syncAssets = selection.suite === 'vscode' } = {}) {
 	const run = createRun(root, { selectedFiles: selection.files, budgets: selection.budgets });
 	const results = [];
-	const report = { runId: run.runId, runtime: run.runtime, budgets: run.budgets, selectedFiles: selection.files, diagnosticFlags: run.record.diagnosticFlags, liveTests: process.env.INSRC_LIVE_TESTS ?? 'unset', results, incomplete: true };
+	const report = { runId: run.runId, runtime: run.runtime, budgets: run.budgets, selectedFiles: selection.files, diagnosticFlags: run.record.diagnosticFlags, liveTests: process.env.INSRC_LIVE_TESTS ?? 'unset', results, cleanupPath: relative(run.root, join(run.workspace, 'cleanup.json')), incomplete: true };
 	const save = () => writeFileSync(join(run.workspace, 'results.json'), JSON.stringify(report, null, 2) + '\n');
 	try {
 		return await withRun(run, async scope => {
@@ -54,11 +54,15 @@ export async function runHarness(root, selection, { buildOptions, testArgs = fil
 				if (result.code !== 0) throw harnessError('build-failed', 'VSCode asset synchronization failed.');
 			}
 			await prepareBuild(run, scope, buildOptions);
+			const preparedInput = inputFingerprint(run.root);
 			async function execute(file) {
 				const log = join(run.workspace, `${results.length}-${file.replaceAll('/', '_')}.log`), fd = openSync(log, 'wx', 0o600);
 				try {
 					const result = await scope.start(run.runtime.executable, testArgs(file), { budgetMs: run.budgets.fileMs, stdout: fd, stderr: fd });
-					results.push({ file, log: relative(run.root, log), ...result });
+					const destination = selection.testFlags.find(flag => flag.startsWith('--test-reporter-destination='))?.split('=').slice(1).join('=');
+					const text = readFileSync(destination ? resolve(run.root, destination) : log, 'utf8');
+					const counts = Object.fromEntries(['tests', 'pass', 'fail', 'cancelled', 'skipped', 'todo'].map(name => [name, [...text.matchAll(new RegExp(`^# ${name} (\\d+)$`, 'gm'))].at(-1)?.[1]]).filter(([, value]) => value !== undefined).map(([name, value]) => [name, Number(value)]));
+					results.push({ file, log: relative(run.root, log), ...result, coverage: { status: Object.hasOwn(counts, 'tests') ? 'reported' : 'unavailable', counts } });
 					process.stdout.write(`${file}: ${result.code === 0 && !result.timedOut ? 'passed' : 'failed/incomplete'} (${relative(run.root, log)})\n`);
 					return result;
 				} finally { closeSync(fd); save(); }
@@ -67,6 +71,7 @@ export async function runHarness(root, selection, { buildOptions, testArgs = fil
 				run.transition('mutating');
 				const result = await execute(MUTATION_FILE);
 				if (result.code !== 0 || result.timedOut) throw harnessError('test-failed', 'Output-mutating regression failed; readers were not admitted.');
+				if (inputFingerprint(run.root) !== preparedInput) throw harnessError('build-drift', 'Source changed during the mutation lane.');
 				publishPrepared(run, buildOptions?.requiredArtifacts);
 			}
 			run.transition('reading');

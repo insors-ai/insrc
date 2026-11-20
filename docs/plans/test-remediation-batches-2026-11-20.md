@@ -12,7 +12,7 @@ Small defects follow issue → build after approval. Sized defects follow issue 
 
 ## Batch issues
 
-Batch 01: ISSUE, LLD and revised PLAN are approved. Implementation tasks t1–t7 have passed daemon validation (execution order t1, t2, t3, t7, t4, t5, t6). Final t8 evidence is submitted through the build gate; the Story BUILD requires human approval. See [build evidence](test-harness-build-2026-11-20.md) and [supported commands](../testing.md). Sequential controls passed 19/19 and eight targeted follow-up controls passed; focused backend checks passed 28 with two existing platform skips. Native diagnostic failures remain non-green for Batch 17, and qualification remains pending Batches 15/16. Other IssueArtifacts remain separately pending approval; this index does not approve them or claim successful GitHub tracker publication.
+Batch 01: ISSUE, LLD, revised PLAN and BUILD are approved. All eight tasks passed daemon validation (execution order t1, t2, t3, t7, t4, t5, t6, t8). Human BUILD approval on 2026-11-20 completed STORY-3275fb2e9a542cd6-s1 and EPIC-3275fb2e9a542cd6; tracker attachment remains unavailable because the story is not bound to a GitHub issue. See [build evidence](test-harness-build-2026-11-20.md) and [supported commands](../testing.md). Sequential controls passed 19/19 and eight targeted follow-up controls passed; focused backend checks passed 28 with two existing platform skips. Native diagnostic failures remain non-green for Batch 17, and qualification remains pending Batches 15/16. Other IssueArtifacts remain separately pending approval; this index does not approve them or claim successful GitHub tracker publication.
 
 | Batch | Issue | Route | Scope | Prerequisites |
 | --- | --- | --- | --- | --- |

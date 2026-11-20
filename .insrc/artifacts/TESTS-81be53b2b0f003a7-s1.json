@@ -1,0 +1,68 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "d0a4a6c3375b68c1bd62c93680749b5a440f12fc55e6655e4e8f7ce67d90d7df",
+        "at": "2026-11-20T08:56:06.395Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "81be53b2b0f003a7",
+    "storyId": "s1",
+    "createdAt": "2026-11-20T08:56:06.385Z",
+    "updatedAt": "2026-11-20T08:56:06.385Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-20T08:48:29.843Z",
+    "epicSlug": "refuse-temporary-artifact-preparation-before-payload",
+    "revision": 1
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "0d3505056",
+        "ranAt": "2026-11-20T08:56:06.385Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/__tests__/temporary-artifact-preparation.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/workflow/__tests__/temporary-artifact-preparation.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/temporary-artifact-preparation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 364,
+            "titles": [
+              {
+                "title": "Temporary artifact preparation and writing refuse before payload or filesystem inspection",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

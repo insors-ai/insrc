@@ -1,0 +1,23 @@
+TAP version 13
+# Subtest: prepareArtifactWrite with meta.lifecycle
+    # Subtest: prepareArtifactWrite reconciles meta.lifecycle for a content write, leaves it for a meta-only write, mints no revision for a metadata-only or key-order-only change, and prepares a head without meta.lifecycle as before
+    ok 1 - prepareArtifactWrite reconciles meta.lifecycle for a content write, leaves it for a meta-only write, mints no revision for a metadata-only or key-order-only change, and prepares a head without meta.lifecycle as before
+      ---
+      duration_ms: 5.151625
+      type: 'test'
+      ...
+    1..1
+ok 1 - prepareArtifactWrite with meta.lifecycle
+  ---
+  duration_ms: 5.656
+  type: 'suite'
+  ...
+1..1
+# tests 1
+# suites 1
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 203.982042

@@ -13,11 +13,11 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-const HOME = mkdtempSync(join(tmpdir(), 'insrc-handler-runtime-'));
+const HOME = realpathSync(mkdtempSync(join(tmpdir(), 'insrc-handler-runtime-')));
 process.env['HOME'] = HOME;
 const { buildHandlerRuntime } = await import('../handler-runtime.js');
 const { methodClasses } = await import('../threads/method-class.js');
@@ -287,6 +287,31 @@ test('src/daemon/__tests__/handler-runtime.test.ts: repo.add on a repo whose ent
 		assert.deepEqual(added.result.buildDefaults, { applied: false, reason: 'already-set' });
 		assert.deepEqual(added.config()['repos'][go], mine, 'the commands the entry holds are kept');
 	} finally { rmSync(go, { recursive: true, force: true }); }
+});
+
+
+test('tools.call preserves malformed request errors before repository authority checks', async () => {
+ const none = {} as never;
+ const runtime = buildHandlerRuntime({ db: none, configStore: none, queue: none, indexer: none,
+  startedAt: 0, shutdown: () => {}, attachedClients: () => [], understandingService: () => undefined });
+ const frames: unknown[] = [];
+ await runtime.streamHandlers['tools.call']!({}, frame => frames.push(frame), new AbortController().signal);
+ assert.deepEqual(frames, [{ id: 0, stream: 'error', data: { code: 'invalid-params', message: 'tools.call: toolId must be a non-empty string', recoverable: true } }]);
+});
+
+
+test('qualificationState dispatch reaches the existing unqualified diagnostic in an isolated home', async () => {
+ mkdirSync(join(HOME, '.insrc'), { recursive: true, mode: 0o700 });
+ const none = {} as never;
+ const runtime = buildHandlerRuntime({ db: none, configStore: none, queue: none, indexer: none,
+  startedAt: 0, shutdown: () => {}, attachedClients: () => [], understandingService: () => undefined });
+ assert.equal(methodClasses.classOf('daemon.qualificationState'), 'session');
+ try {
+  await assert.rejects(async () => runtime.rpcHandlers['daemon.qualificationState']!({}),
+   process.platform === 'darwin' && (process.getuid?.() ?? 0) > 0
+    ? { message: 'no completed development qualification on this daemon' }
+    : /managed lifecycle requires a macOS user/);
+ } finally { rmSync(HOME, { recursive: true, force: true }); }
 });
 
 test('src/daemon/__tests__/handler-runtime.test.ts: the handler tables hold repo.buildDefaults.migrate beside the recorded methods and repo.buildDefaults.migrate answers through the runtime', async () => {

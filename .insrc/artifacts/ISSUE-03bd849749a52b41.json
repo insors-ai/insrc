@@ -25,7 +25,7 @@
     "kind": "defect",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 1,
         "contentHash": "47abb614d4a32b6dc51b271019baa48950b25ecd1d43d18e3ae1b66308963a26",
@@ -36,9 +36,27 @@
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T08:20:05.127Z"
+      }
     },
-    "revision": 1
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "parentRef": {
+      "epicHash": "03bd849749a52b41",
+      "slug": "EPIC-03bd849749a52b41"
+    }
   },
   "body": {
     "title": "Align historical tests with the retired review contract",

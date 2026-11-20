@@ -1,0 +1,115 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 2,
+        "contentHash": "a8f05a2862047d103ea9bf894c960415e05fcc729d7fcbdff3a9007a1c18a128",
+        "at": "2026-11-20T08:56:43.393Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T09:13:47.176Z"
+      }
+    },
+    "workflow": "build",
+    "runId": "store-83ad2f8a-e2b5-440f-9a3c-15f9662c016d",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-20T08:53:56.517Z",
+    "epicCreatedAt": "2026-11-20T08:48:29.843Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "81be53b2b0f003a7",
+    "storyId": "s1",
+    "revision": 2,
+    "standalone": true,
+    "sizeClass": "trivial",
+    "authoredBy": "controller",
+    "epicSlug": "refuse-temporary-artifact-preparation-before-payload",
+    "updatedAt": "2026-11-20T08:56:06.385Z"
+  },
+  "body": {
+    "focus": "Reject prohibited temporary artifact preparation before inspecting payloads, prototypes, serialization, or artifact filesystem state, reusing the current trusted persistence policy. Cover direct preparation and wrapper writing, hostile getter/proxy inputs, and absence of artifact access/output. Preserve saved content/meta-only revision, lifecycle, tracker/envelope and history semantics with existing positive controls. No schema/API changes, review restoration or general storage rewrite.",
+    "producesLld": false,
+    "commit": "0d3505056",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "Added the existing temporary-persistence refusal at the first statement of shared prepareArtifactWrite, before input/options/serialization or filesystem inspection. The owned focused run passed hostile/revoked payload and filesystem-instrumentation controls for both modes and both entry points, plus existing preparation/revision/lifecycle compatibility tests. Exact results and confirmed cleanup: docs/plans/artifact-admission-evidence-2026-11-20/results.json. Batch04's remaining matrix is not yet claimed passing.",
+    "testRecord": {
+      "md": "docs/standalone/refuse-temporary-artifact-preparation-before-payload-E2026112081be53b2/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "docs/plans/artifact-admission-evidence-2026-11-20/0.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:56:06.385Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/artifact-admission-evidence-2026-11-20/1.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:56:06.385Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/artifact-admission-evidence-2026-11-20/2.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:56:06.385Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/artifact-admission-evidence-2026-11-20/results.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:56:06.385Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/artifact-admission-fix-2026-11-20.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:56:06.385Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/temporary-artifact-preparation.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:56:06.385Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/storage.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:56:06.385Z"
+      }
+    ]
+  },
+  "citations": []
+}

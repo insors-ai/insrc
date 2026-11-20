@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-323cd1e6-541e-4974-83f9-3adbdb11a643",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-20T11:28:49.832Z",
+    "epicCreatedAt": "2026-11-20T04:36:30.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "807fa9e8fb678f4b",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Reconcile documentation and retain final batch evidence",
+      "parent": {
+        "entityId": "STORY-807fa9e8fb678f4b-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-807fa9e8fb678f4b-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 3"
+        },
+        {
+          "entityId": "TASK-807fa9e8fb678f4b-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-807fa9e8fb678f4b-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 2,
+        "contentHash": "62cdfde126db08d0fe7c55d05f5a35ccbcaece385522d4ad316f5c8dc129c11e",
+        "at": "2026-11-20T12:10:13.975Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T11:28:49.833Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Reconcile documentation and retain final batch evidence",
+    "summary": "Update docs/daemon.md repository gate table to current audited modifying methods, retaining repo parameter/refusal explanations. Run the seven affected files serially on the merged tree plus directly affected regressions, and record evidence in docs/plans and batch/failure indexes.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "Documented modifying names and repo parameters exactly match FILE_MODIFYING_METHODS and retain all six refusal codes and no-fallback explanation.",
+      "Complete affected files pass through Node22 coordinator with build/source-output ownership, accounted results, no timeout/cancel/skip concealment and confirmed child cleanup.",
+      "Baseline counts are labeled pre-merge historical evidence; final evidence identifies the merged revision and records any remaining failures by coherent scope.",
+      "Technical evidence and BUILD inputs are ready for final presentation once this task's validation verdict is recorded. Then declare the updated BUILD through insrc_present and obtain explicit human BUILD approval before completion. Presentation of an already validated BUILD is not a precondition of recording this verdict. No qualification release regeneration, installed daemon restart or automated review endpoint is invoked."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/daemon/__tests__/daemon-doc-repo-table.test.ts — exact modifying method/parameter and refusal documentation parity."
+      },
+      {
+        "level": "smoke",
+        "name": "Node22 coordinator --concurrency=1 runs all seven baseline files, plus step-repo-gate and directly affected retired-review/router regressions as needed; retain whole-file results and confirmed child cleanup under docs/plans."
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

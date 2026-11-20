@@ -1,11 +1,14 @@
 /**
  * Story 64703b708590bd68/s1, task t5: every file-modifying method of the table is behind the repo gate in the handler tables
  * buildHandlerRuntime builds. Real store in a temporary home; the daemon's own cwd and INSRC_REPO are a registered repository.
- * Run: npx tsx --test-force-exit src/daemon/__tests__/repo-gate-dispatch.test.ts
+ * Run: npm test -- src/daemon/__tests__/repo-gate-dispatch.test.ts
  */
 
 import { after, before, test } from 'node:test';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
+import type { IpcStreamMessage } from '../../shared/types.js';
+import type { ToolResult } from '../tools/types.js';
 import { mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -18,13 +21,15 @@ const { closeLanceConn } = await import('../../db/lance/conn.js');
 const { getDb } = await import('../../db/client.js');
 const { addRepo } = await import('../../db/repos.js');
 const { buildHandlerRuntime } = await import('../handler-runtime.js');
+const { registerTool } = await import('../tools/registry.js');
+const { FILE_MODIFYING_METHODS } = await import('../repo-call-gate.js');
 const { RPC_AUDIT } = await import('../repo-call-audit.js');
 const { lifecycleFor } = await import('../lifecycle-registry.js');
 const { artifact: makeArtifact, H } = await import('../../workflow/artifact-core/__tests__/store-kit.js');
 await import('../../workflow/__tests__/helpers/converted-repos.js');
 
 const repo = realpathSync(mkdtempSync(join(tmpdir(), 'insrc-gate-dispatch-repo-')));
-const listing = (dir: string): string[] => readdirSync(dir, { recursive: true }).map(String).sort().map(f => `${f}:${(() => { try { return readFileSync(join(dir, f)).toString('utf8').length; } catch { return -1; } })()}`);
+const listing = (dir: string): string[] => readdirSync(dir, { recursive: true }).map(String).sort().map(f => `${f}:${(() => { try { return createHash('sha256').update(readFileSync(join(dir, f))).digest('hex'); } catch { return -1; } })()}`);
 let runtime: ReturnType<typeof buildHandlerRuntime>;
 
 before(async () => {
@@ -47,19 +52,37 @@ test('repo-gate-dispatch.test.ts: each method in the table called with no repo i
 	const savedEnv = process.env['INSRC_REPO']; const savedCwd = process.cwd();
 	const before = listing(repo);
 	const rpc = Object.keys(RPC_AUDIT).filter(m => RPC_AUDIT[m]!.kind === 'modifying');
-	assert.ok(rpc.length >= 20, 'the table has the modifying RPC methods');
+	assert.deepEqual(rpc.slice().sort(), Object.keys(FILE_MODIFYING_METHODS).filter(m => runtime.rpcHandlers[m] !== undefined || runtime.streamHandlers[m] !== undefined).sort(), 'exact registered modifying identities');
+	let capabilityCalls = 0;
+	registerTool({ id: 'batch05-gate-probe', description: 'Must never execute', inputSchema: { type: 'object' }, approval: 'none', execute: async () => { capabilityCalls++; return { output: 'unexpected', format: 'text', success: true }; } });
 	const seen: string[] = [];
 	try {
 		process.env['INSRC_REPO'] = repo; process.chdir(repo);
 		for (const method of rpc) {
 			const rpcHandler = runtime.rpcHandlers[method] as ((p: unknown) => Promise<unknown>) | undefined;
-			const streamHandler = runtime.streamHandlers[method] as ((p: unknown, send: () => void, signal: AbortSignal) => Promise<unknown>) | undefined;
+			const streamHandler = runtime.streamHandlers[method] as ((p: unknown, send: (frame: IpcStreamMessage) => void, signal: AbortSignal) => Promise<unknown>) | undefined;
 			assert.ok(rpcHandler !== undefined || streamHandler !== undefined, `${method} is registered`);
 			if (rpcHandler !== undefined) {
 				for (const params of [{}, undefined, { artifactPath: '.insrc/artifacts/keep.json', epicHash: 'deadbeefdeadbeef', repoPath: '', repo: '' }]) {
+					if (method === 'repo.settings.set') {
+						const reply = await rpcHandler(params) as { ok: boolean; error: { code: string } };
+						assert.equal(reply.ok, false); assert.equal(reply.error.code, 'repo-not-registered', 'settings preserves its structured exact-registration refusal');
+						continue;
+					}
 					const reply = await rpcHandler(params) as { error?: string; code?: string };
 					assert.equal(reply?.code, 'repo-missing', `${method} with ${JSON.stringify(params)}: ${JSON.stringify(reply)}`);
 					assert.match(reply.error ?? '', new RegExp(method.replace(/\./g, '\\.')));
+				}
+			} else if (method === 'tools.call') {
+				const malformed: IpcStreamMessage[] = [];
+				await streamHandler!({}, f => malformed.push(f), new AbortController().signal);
+				assert.equal((malformed[0]?.data as { code: string }).code, 'invalid-params');
+				for (const [repoPath, code] of [['relative', 'repo-not-absolute'], [HOME, 'repo-not-registered']]) {
+					const frames: IpcStreamMessage[] = [];
+					await streamHandler!({ toolId: 'batch05-gate-probe', input: {}, caller: 'agent', repoPath }, f => frames.push(f), new AbortController().signal);
+					const done = frames.find(f => f.stream === 'done'); assert.ok(done);
+					const result = (done.data as { result: ToolResult }).result;
+					assert.equal(result.success, false); assert.match(result.error ?? '', new RegExp(code!));
 				}
 			} else {
 				await assert.rejects(streamHandler!({}, () => {}, new AbortController().signal), /repo-missing/, method);
@@ -71,6 +94,7 @@ test('repo-gate-dispatch.test.ts: each method in the table called with no repo i
 		if (savedEnv === undefined) delete process.env['INSRC_REPO']; else process.env['INSRC_REPO'] = savedEnv;
 	}
 	assert.deepEqual(seen, rpc, 'every modifying method was called');
+	assert.equal(capabilityCalls, 0, 'unauthorized tool requests ran no capability');
 	assert.deepEqual(listing(repo), before, 'nothing was written');
 });
 

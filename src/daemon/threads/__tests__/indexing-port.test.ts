@@ -97,17 +97,16 @@ after(async () => {
 	for (const d of [HOME, REPO]) rmSync(d, { recursive: true, force: true });
 });
 
-test("codeReview.freshness on the main thread gets the code-indexing worker's codeIndexWorkFor result", async () => {
+test("indexing port gets the worker's real codeIndexWorkFor while retired freshness rejects without asking it", async () => {
 	portCalls.length = 0;
-	const result = await main.rpcHandlers['codeReview.freshness']!({ repo: REPO, epicHash: 'e', storyId: 's1', changedFiles: ['src/a.ts'] }) as {
-		isProcessing: boolean; inFlight: boolean; pendingCodeIndexJobs: number;
-	};
+	const work = await port.codeIndexWorkFor(REPO);
 	const asked = portCalls.filter(c => c.method === INDEXING_PORT.codeIndexWorkFor);
-	assert.equal(asked.length, 1, 'freshness asked the worker once');
-	const work = asked[0]!.result as { inFlight: boolean; pending: number };
-	assert.equal(result.inFlight, work.inFlight);
-	assert.equal(result.pendingCodeIndexJobs, work.pending);
-	assert.equal(result.isProcessing, work.inFlight || work.pending > 0);
+	assert.equal(asked.length, 1, 'supported indexing port asks the worker once');
+	assert.deepEqual(work, asked[0]!.result);
+	assert.deepEqual(work, { inFlight: false, pending: 0 }, 'the fixture finished code indexing');
+	portCalls.length = 0;
+	await assert.rejects(main.rpcHandlers['codeReview.freshness']!({ repo: REPO, epicHash: 'e', storyId: 's1', changedFiles: ['src/a.ts'] }), { message: 'Code review functionality is being rewritten.' });
+	assert.deepEqual(portCalls, [], 'retired freshness does not query the worker');
 });
 
 test("the main thread's depthForRepo asks the code-indexing worker's queue", async () => {

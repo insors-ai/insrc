@@ -62,6 +62,8 @@ const TABLE: readonly (readonly [string, MethodClass, boolean])[] = [
 	['daemon.backup', 'indexing', false],
 	['docSummary.restoreFromBackup', 'indexing', false],
 	// Session: every other unary method.
+	// Full-runtime diagnostic; the admin worker's limited handler map does not serve it.
+	['daemon.qualificationState', 'session', false],
 	['access.revoke', 'session', false],
 	['access.revokePrefix', 'session', false],
 	['access.snapshot', 'session', false],

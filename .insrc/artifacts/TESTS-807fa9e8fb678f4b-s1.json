@@ -1,0 +1,761 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 7,
+        "contentHash": "1ab7eb28934d5450f0878e9ad7b554d63c71826a36703ab0645c7a06b26cdf51",
+        "at": "2026-11-20T12:10:58.719Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "807fa9e8fb678f4b",
+    "storyId": "s1",
+    "createdAt": "2026-11-20T11:39:49.929Z",
+    "updatedAt": "2026-11-20T12:10:58.702Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-20T04:36:30.764Z",
+    "epicSlug": "reconcile-daemon-rpc-registration-audit-coverage",
+    "revision": 7
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "eca759b6d",
+        "ranAt": "2026-11-20T11:54:49.989Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/__tests__/repo-call-audit.test.ts — exact constructed RPC/stream and callable phase coverage; valid evidence and repo rules; missing/stale negative controls.",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/repo-call-audit.test.ts",
+                "title": "repo-call-audit.test.ts: every method of the handler registry and every step phase has an audit entry marked modifying, read-only or daemon-store",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/repo-call-audit.test.ts",
+                "title": "audit coverage detects missing and stale registrations independently",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/__tests__/repo-call-table.test.ts — exact disjoint table partition and unknown-name control.",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/repo-call-table.test.ts",
+                "title": "repo-call-table.test.ts: every registered RPC method and step phase is a table row or on the reviewed read-only list, and every row names a registered method",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/threads/__tests__/method-class.test.ts — exact classes/transport, duplicates and drift, explicit retired ownership, worker-safe imports.",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/method-class.test.ts",
+                "title": "retired review router precedence rejects through actual local handlers before any worker lookup",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/method-class.test.ts",
+                "title": "coverage: the method set equals the keys of the constructed rpcHandlers and streamHandlers after all merges, failing on a missing or a stale entry",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/__tests__/handler-runtime.test.ts — retain reviewed upstream snapshot additions and full runtime construction coverage.",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/handler-runtime.test.ts",
+                "title": "the runtime function builds the handler tables with stub indexing dependencies and their key sets equal the recorded single-thread key sets plus the methods added since",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/handler-runtime.test.ts",
+                "title": "tools.call preserves malformed request errors before repository authority checks",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/call-handler.test.ts and src/daemon/tools/__tests__/executor.test.ts — preserve earlier unknown/schema/cancellation/approval-denial results without registry lookup; enforce final admission, canonical registered success, no execution/hooks on refusal, and cancellation during authority lookup.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/executor.test.ts",
+                "title": "final authority preserves unknown schema cancellation and denial results without registry lookup",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/tools/__tests__/executor.test.ts",
+                "title": "final authority refusal runs neither capability nor success hooks and admitted execution uses canonical repo",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/tools/__tests__/executor.test.ts",
+                "title": "cancellation during final authority lookup prevents capability and hooks for either lookup outcome",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/tools/__tests__/call-handler.test.ts",
+                "title": "tools.call preserves unknown tool done results without looking up an invalid repository",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/tools/__tests__/call-handler.test.ts",
+                "title": "tools.call authority refuses unregistered execution and admits canonical registered success without wire bypass",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/executor-approval.test.ts and src/daemon/tools/__tests__/executor-abort.test.ts — existing approval and abort contracts remain unchanged after adding tools.call final authority admission.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/executor-approval.test.ts",
+                "title": "executor-approval.test.ts: a declined call returns a denied failure with reason declined and execute is never called",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/tools/__tests__/executor-abort.test.ts",
+                "title": "executor-abort.test.ts: an already-aborted signal returns denied cancelled, asks nobody and never starts the tool",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/__tests__/review-retirement-endpoints.test.ts and src/daemon/threads/__tests__/review-retirement-runtime.test.ts — retired review no-work responses and local ownership remain intact.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/review-retirement-endpoints.test.ts",
+                "title": "all preserved review operations and MCP phases return exact rewrite errors without review state",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/review-retirement-runtime.test.ts",
+                "title": "daemon startup shutdown and dispatch allocate no review runtime or hooks",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/handler-runtime.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1670,
+            "titles": [
+              {
+                "title": "the runtime function builds the handler tables with stub indexing dependencies and their key sets equal the recorded single-thread key sets plus the methods added since",
+                "result": "pass"
+              },
+              {
+                "title": "src/daemon/__tests__/handler-runtime.test.ts: the only code review methods added after the move are the nine task ones, with no duplicate or renamed method",
+                "result": "pass"
+              },
+              {
+                "title": "workflow.approvePipeline, tracker.sync and tracker.setup are registered and answer their requests",
+                "result": "pass"
+              },
+              {
+                "title": "team.refresh, team.claim and team.release are registered and return the old results",
+                "result": "pass"
+              },
+              {
+                "title": "handler-runtime.test.ts: RECORDED_RPC includes models.check, models.approve, models.reject; method-class classifies them as session",
+                "result": "pass"
+              },
+              {
+                "title": "session.delete refuses a session id that is a path ('..', a separator) before anything is purged",
+                "result": "pass"
+              },
+              {
+                "title": "the session purge's tmp directory is the id's direct child of the tmp root, and nothing for an id that names anything else",
+                "result": "pass"
+              },
+              {
+                "title": "handler-runtime.test.ts: mcp.register and mcp.status are served; mcp.register refuses a malformed path before touching the store",
+                "result": "pass"
+              },
+              {
+                "title": "src/daemon/__tests__/handler-runtime.test.ts: repo.add on a Python repo registers it and stores the default commands with no prompt, reports buildDefaults applied, and a failing write still registers the repo",
+                "result": "pass"
+              },
+              {
+                "title": "src/daemon/__tests__/handler-runtime.test.ts: repo.add on a repo whose entry already holds commands keeps them and reports already-set",
+                "result": "pass"
+              },
+              {
+                "title": "tools.call preserves malformed request errors before repository authority checks",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/repo-call-audit.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1157,
+            "titles": [
+              {
+                "title": "repo-call-audit.test.ts: every method of the handler registry and every step phase has an audit entry marked modifying, read-only or daemon-store",
+                "result": "pass"
+              },
+              {
+                "title": "audit coverage detects missing and stale registrations independently",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/repo-call-table.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 987,
+            "titles": [
+              {
+                "title": "repo-call-table.test.ts: every registered RPC method and step phase is a table row or on the reviewed read-only list, and every row names a registered method",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/review-retirement-endpoints.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 940,
+            "titles": [
+              {
+                "title": "all preserved review operations and MCP phases return exact rewrite errors without review state",
+                "result": "pass"
+              },
+              {
+                "title": "repeated unavailable MCP calls allocate no connections and preserve error envelopes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/method-class.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1152,
+            "titles": [
+              {
+                "title": "classOf/entries: the eleven admin and fourteen indexing methods have their class, every other entry is session, entries unique",
+                "result": "pass"
+              },
+              {
+                "title": "tools.call is classed session and stream, and equals the handler table",
+                "result": "pass"
+              },
+              {
+                "title": "coverage: the method set equals the keys of the constructed rpcHandlers and streamHandlers after all merges, failing on a missing or a stale entry",
+                "result": "pass"
+              },
+              {
+                "title": "method sets: every shared-state and FIFO-exempt member is a session-class method",
+                "result": "pass"
+              },
+              {
+                "title": "method sets: supported shared-state families and retired main-daemon refusals have explicit ownership",
+                "result": "pass"
+              },
+              {
+                "title": "in-daemon route: targetOf sends admin/indexing to their workers, shared-state methods to the shared-state target (inline on it), others inline",
+                "result": "pass"
+              },
+              {
+                "title": "the method-class module loads on a worker without importing a handler module",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-RPC/GATE: source and freshly compiled removal methods agree with handlers and main ownership",
+                "result": "pass"
+              },
+              {
+                "title": "retired review router precedence rejects through actual local handlers before any worker lookup",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/review-retirement-runtime.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 370,
+            "titles": [
+              {
+                "title": "daemon startup shutdown and dispatch allocate no review runtime or hooks",
+                "result": "pass"
+              },
+              {
+                "title": "shared worker hub step state and historical progress survive without review hooks",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/tools/__tests__/call-handler.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 314,
+            "titles": [
+              {
+                "title": "call-handler.test.ts: invalid params (an invalid caller, a missing field, a non-object input) give one error frame and run nothing",
+                "result": "pass"
+              },
+              {
+                "title": "call-handler.test.ts: ToolDeps carry the validated params and sessionId tools-call: plus the connection identity, or tools-call without a context",
+                "result": "pass"
+              },
+              {
+                "title": "call-handler.test.ts: one done frame carries the ToolResult, and an unknown tool is a done frame with a rejected failure, not an error",
+                "result": "pass"
+              },
+              {
+                "title": "call-handler.test.ts: tool progress frames go to the stream before the done frame",
+                "result": "pass"
+              },
+              {
+                "title": "call-handler.test.ts: no approval.subscribe client denies a destructive call with no-client and the done frame carries the denial",
+                "result": "pass"
+              },
+              {
+                "title": "call-handler.test.ts: an approval request reaches an approval.subscribe client and its answer lets the call run",
+                "result": "pass"
+              },
+              {
+                "title": "call-handler.test.ts: closing the stream aborts the signal and resolves a pending approval as cancelled",
+                "result": "pass"
+              },
+              {
+                "title": "call-handler.test.ts: a registered hook runs for a tools.call with caller workflow as for agent, and runs outside the signal context",
+                "result": "pass"
+              },
+              {
+                "title": "tools.call preserves unknown tool done results without looking up an invalid repository",
+                "result": "pass"
+              },
+              {
+                "title": "tools.call authority refuses unregistered execution and admits canonical registered success without wire bypass",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/tools/__tests__/executor-abort.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 317,
+            "titles": [
+              {
+                "title": "executor-abort.test.ts: an already-aborted signal returns denied cancelled, asks nobody and never starts the tool",
+                "result": "pass"
+              },
+              {
+                "title": "executor-abort.test.ts: an abort during preview construction returns cancelled before any ask",
+                "result": "pass"
+              },
+              {
+                "title": "executor-abort.test.ts: the preview runs inside the effective signal and the tool sees it",
+                "result": "pass"
+              },
+              {
+                "title": "executor-abort.test.ts: an abort between the approval answer and execute returns denied cancelled and the tool does not run",
+                "result": "pass"
+              },
+              {
+                "title": "executor-abort.test.ts: the broker is asked with the effective signal, so a nested call with no signal of its own is cancelled while it waits",
+                "result": "pass"
+              },
+              {
+                "title": "executor-abort.test.ts: a call with no signal anywhere behaves as before",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/tools/__tests__/executor-approval.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 323,
+            "titles": [
+              {
+                "title": "executor-approval.test.ts: a declined call returns a denied failure with reason declined and execute is never called",
+                "result": "pass"
+              },
+              {
+                "title": "executor-approval.test.ts: a timed-out call returns a denied failure with reason timed-out and the tool is not run",
+                "result": "pass"
+              },
+              {
+                "title": "executor-approval.test.ts: no client and a cancelled request return denied with their reasons",
+                "result": "pass"
+              },
+              {
+                "title": "executor-approval.test.ts: an approved call runs and returns the tool's result unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "executor-approval.test.ts: a second destructive call after an approved one raises its own request with a new id",
+                "result": "pass"
+              },
+              {
+                "title": "executor-approval.test.ts: a bad input is rejected before any prompt",
+                "result": "pass"
+              },
+              {
+                "title": "executor-approval.test.ts: only a matching approval runs the tool; a decline object, another request id or a gate that cannot describe the call do not",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/tools/__tests__/executor.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 330,
+            "titles": [
+              {
+                "title": "final authority preserves unknown schema cancellation and denial results without registry lookup",
+                "result": "pass"
+              },
+              {
+                "title": "final authority refusal runs neither capability nor success hooks and admitted execution uses canonical repo",
+                "result": "pass"
+              },
+              {
+                "title": "cancellation during final authority lookup prevents capability and hooks for either lookup outcome",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "993c4a3d5",
+        "ranAt": "2026-11-20T12:00:06.110Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/__tests__/repo-gate-dispatch.test.ts — exact modifying dispatch coverage, no-write refusal and positive registered feedback append.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/repo-gate-dispatch.test.ts",
+                "title": "repo-gate-dispatch.test.ts: each method in the table called with no repo is refused and leaves the file system unchanged",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/repo-gate-dispatch.test.ts",
+                "title": "repo-gate-dispatch.test.ts: artifact.feedback.append through the gated handler tables stores the entry when the call names the repo and a relative artifactPath, and refuses it without the repo",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/__tests__/handler-runtime.test.ts — isolated qualificationState reaches existing unqualified error.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/handler-runtime.test.ts",
+                "title": "qualificationState dispatch reaches the existing unqualified diagnostic in an isolated home",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/threads/__tests__/method-class.test.ts — qualification ordinary session target, excluding admin/shared/FIFO ownership.",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/method-class.test.ts",
+                "title": "qualificationState is unary ordinary session work without admin shared or FIFO routing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/__tests__/repo-call-gate.test.ts and src/daemon/__tests__/step-repo-gate.test.ts — canonical repo/path/token refusal and continuation controls.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/repo-call-gate.test.ts",
+                "title": "repo-call-gate.test.ts: a missing, empty, relative, non-directory and unregistered repo are each refused with their code and nothing is touched",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/step-repo-gate.test.ts",
+                "title": "step-repo-gate.test.ts: a modifying step phase with no repo and no token is refused, and a later phase cannot be redirected to another repository by a different repo",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/handler-runtime.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1446,
+            "titles": [
+              {
+                "title": "the runtime function builds the handler tables with stub indexing dependencies and their key sets equal the recorded single-thread key sets plus the methods added since",
+                "result": "pass"
+              },
+              {
+                "title": "src/daemon/__tests__/handler-runtime.test.ts: the only code review methods added after the move are the nine task ones, with no duplicate or renamed method",
+                "result": "pass"
+              },
+              {
+                "title": "workflow.approvePipeline, tracker.sync and tracker.setup are registered and answer their requests",
+                "result": "pass"
+              },
+              {
+                "title": "team.refresh, team.claim and team.release are registered and return the old results",
+                "result": "pass"
+              },
+              {
+                "title": "handler-runtime.test.ts: RECORDED_RPC includes models.check, models.approve, models.reject; method-class classifies them as session",
+                "result": "pass"
+              },
+              {
+                "title": "session.delete refuses a session id that is a path ('..', a separator) before anything is purged",
+                "result": "pass"
+              },
+              {
+                "title": "the session purge's tmp directory is the id's direct child of the tmp root, and nothing for an id that names anything else",
+                "result": "pass"
+              },
+              {
+                "title": "handler-runtime.test.ts: mcp.register and mcp.status are served; mcp.register refuses a malformed path before touching the store",
+                "result": "pass"
+              },
+              {
+                "title": "src/daemon/__tests__/handler-runtime.test.ts: repo.add on a Python repo registers it and stores the default commands with no prompt, reports buildDefaults applied, and a failing write still registers the repo",
+                "result": "pass"
+              },
+              {
+                "title": "src/daemon/__tests__/handler-runtime.test.ts: repo.add on a repo whose entry already holds commands keeps them and reports already-set",
+                "result": "pass"
+              },
+              {
+                "title": "tools.call preserves malformed request errors before repository authority checks",
+                "result": "pass"
+              },
+              {
+                "title": "qualificationState dispatch reaches the existing unqualified diagnostic in an isolated home",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/repo-call-gate.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 198,
+            "titles": [
+              {
+                "title": "repo-call-gate.test.ts: a missing, empty, relative, non-directory and unregistered repo are each refused with their code and nothing is touched",
+                "result": "pass"
+              },
+              {
+                "title": "repo-call-gate.test.ts: a relative path is joined to the repo, and a path with .., an absolute path elsewhere and a symlink that leaves the repo are refused",
+                "result": "pass"
+              },
+              {
+                "title": "repo-call-gate.test.ts: the gate never reads the daemon's INSRC_REPO or working directory, a run-token phase takes the recorded repo and a registry failure refuses",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/repo-gate-dispatch.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 866,
+            "titles": [
+              {
+                "title": "repo-gate-dispatch.test.ts: each method in the table called with no repo is refused and leaves the file system unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "repo-gate-dispatch.test.ts: artifact.feedback.append through the gated handler tables stores the entry when the call names the repo and a relative artifactPath, and refuses it without the repo",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/step-repo-gate.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1158,
+            "titles": [
+              {
+                "title": "step-repo-gate.test.ts: a modifying step phase with no repo and no token is refused, and a later phase cannot be redirected to another repository by a different repo",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/method-class.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1140,
+            "titles": [
+              {
+                "title": "classOf/entries: the eleven admin and fourteen indexing methods have their class, every other entry is session, entries unique",
+                "result": "pass"
+              },
+              {
+                "title": "tools.call is classed session and stream, and equals the handler table",
+                "result": "pass"
+              },
+              {
+                "title": "coverage: the method set equals the keys of the constructed rpcHandlers and streamHandlers after all merges, failing on a missing or a stale entry",
+                "result": "pass"
+              },
+              {
+                "title": "method sets: every shared-state and FIFO-exempt member is a session-class method",
+                "result": "pass"
+              },
+              {
+                "title": "method sets: supported shared-state families and retired main-daemon refusals have explicit ownership",
+                "result": "pass"
+              },
+              {
+                "title": "in-daemon route: targetOf sends admin/indexing to their workers, shared-state methods to the shared-state target (inline on it), others inline",
+                "result": "pass"
+              },
+              {
+                "title": "the method-class module loads on a worker without importing a handler module",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-RPC/GATE: source and freshly compiled removal methods agree with handlers and main ownership",
+                "result": "pass"
+              },
+              {
+                "title": "retired review router precedence rejects through actual local handlers before any worker lookup",
+                "result": "pass"
+              },
+              {
+                "title": "qualificationState is unary ordinary session work without admin shared or FIFO routing",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "ab1ff29f6",
+        "ranAt": "2026-11-20T12:10:58.702Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/__tests__/daemon-doc-repo-table.test.ts — exact modifying method/parameter and refusal documentation parity.",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/daemon-doc-repo-table.test.ts",
+                "title": "daemon-doc-repo-table.test.ts: docs/daemon.md lists the methods of the table and the refusal codes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Node22 coordinator --concurrency=1 runs all seven baseline files, plus step-repo-gate and directly affected retired-review/router regressions as needed; retain whole-file results and confirmed child cleanup under docs/plans.",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/plans/rpc-audit-evidence-2026-11-20/final/results.json and cleanup.json: run f8705ca8-1a3b-4f96-811d-1a889944437a, 74/74 tests across 16 complete files, zero skips/cancellations, confirmedClosed true. TAP and detailed checkpoints are retained alongside these records."
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/daemon-doc-repo-table.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 269,
+            "titles": [
+              {
+                "title": "daemon-doc-repo-table.test.ts: docs/daemon.md lists the methods of the table and the refusal codes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

@@ -1,0 +1,23 @@
+{
+  "runId": "f8705ca8-1a3b-4f96-811d-1a889944437a",
+  "canonicalRoot": "/Users/subhagho/work/projects/insors/insrc",
+  "runtimeExecutable": "/opt/homebrew/Cellar/node@22/22.23.2/bin/node",
+  "buildExitCode": 0,
+  "completedAt": "2026-11-20T12:02:09.358Z",
+  "inputFingerprint": "9ccecc44b46c0e86c0c496bb140981f56e753da4dc37eb3e522d9a203cfd7f96",
+  "outputFingerprint": "3ab9058fd551ac4d68a365faab1973c6a3b3e15f67617c1a2160f5fb453cf4ef",
+  "requiredArtifacts": [
+    "out/daemon/index.js",
+    "out/bin/insrc-process-broker",
+    "out/bin/insrc-shutdown-watchdog.js",
+    "out/daemon/shutdown.js",
+    "out/daemon/shutdown-watchdog.js",
+    "out/shared/daemon-run-files.js",
+    "out/cli/services/daemon.js",
+    "out/cli/services/maintenance.js",
+    "out/daemon/server.js",
+    "out/shared/daemon-process.js",
+    "out/daemon/run-file-ownership.js",
+    "out/bin/insrc-darwin-lifecycle"
+  ]
+}

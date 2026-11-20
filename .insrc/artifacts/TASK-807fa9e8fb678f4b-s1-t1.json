@@ -1,0 +1,107 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-57254159-14ac-44ca-b308-0d25d5833ee1",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-20T11:28:49.825Z",
+    "epicCreatedAt": "2026-11-20T04:36:30.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "807fa9e8fb678f4b",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Reconcile explicit classifications and exact inventory checks",
+      "parent": {
+        "entityId": "STORY-807fa9e8fb678f4b-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-807fa9e8fb678f4b-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 3"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 2,
+        "contentHash": "2e1360d591e2eb49b77d2f0b0820a4c8b428dc8cde5bb9f9e3ac19997c73d4b0",
+        "at": "2026-11-20T11:52:16.550Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T11:28:49.827Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Reconcile explicit classifications and exact inventory checks",
+    "summary": "Reconcile missing rows in src/daemon/repo-call-audit.ts and src/daemon/threads/method-class.ts against current callable handlers and phase schemas. Class qualificationState as unary session/read-only; retain retired-review no-work boundary and explicit main-daemon overrides. Replace regex-only registration discovery and filename-only phase inference in the audit/table tests with independent constructed runtime and callable-contract inventories. Preserve the upstream handler snapshot fix. Strengthen method-class drift and explicit retired-review ownership checks. Replace the unfinished early tools.call repository check with daemon-supplied final admission in the existing executor after its prior lookup/schema/cancellation/approval-denial paths, before capability execution and successful hooks. Keep existing RPC parameter/result schemas.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "qualificationState has an evidenced read-only audit entry and unary ordinary session class; it is absent from shared-state and FIFO-exempt sets.",
+      "design-review-step.cancel and any other callable phase omissions receive evidence-based classifications, with no stale phase rows or deleted review execution restored.",
+      "No IPC parameter/result schema, storage schema, repo fallback or worker runtime import change. Previously unaudited modifying team RPCs and otherwise admitted tools.call gain intentional registered-repo refusals under the revised LLD.",
+      "Audits exactly cover the merged RPC/stream maps and callable phases, with valid evidence and disjoint modifying/nonmodifying partition.",
+      "Independent negative controls fail for missing/stale/unknown keys, duplicate classification entries and wrong stream flags; no blanket family exemptions.",
+      "Upstream handler snapshot additions remain intact; full handler-runtime file passes without regenerating expected keys from the table under test.",
+      "Retired-review ownership checks use the exact main-daemon override sets and current router precedence; supported shared-state families still route correctly.",
+      "Unknown tool, existing input-schema rejection, cancellation and approval denial preserve their exact prior ToolResult/envelopes and perform no repository lookup.",
+      "The daemon alone supplies the internal tools.call admission dependency; no wire callback or bypass is accepted. Other executeTool callers retain their existing contracts.",
+      "Immediately before capability execution, an invalid/unregistered repo yields an unsuccessful ToolResult with the existing repo refusal code in its error text; neither capability execution nor successful hooks run.",
+      "An admitted call with a valid registered repo executes with canonical repoPath and preserves its successful result/done shape. Recheck cancellation if an asynchronous authority lookup was in flight.",
+      "Retain explicit registration/phase metadata and real retired-review router precedence tests, and rerun the full mapped files before resubmitting task one."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/daemon/__tests__/repo-call-audit.test.ts — exact constructed RPC/stream and callable phase coverage; valid evidence and repo rules; missing/stale negative controls."
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/__tests__/repo-call-table.test.ts — exact disjoint table partition and unknown-name control."
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/threads/__tests__/method-class.test.ts — exact classes/transport, duplicates and drift, explicit retired ownership, worker-safe imports."
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/__tests__/handler-runtime.test.ts — retain reviewed upstream snapshot additions and full runtime construction coverage."
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/__tests__/call-handler.test.ts and src/daemon/tools/__tests__/executor.test.ts — preserve earlier unknown/schema/cancellation/approval-denial results without registry lookup; enforce final admission, canonical registered success, no execution/hooks on refusal, and cancellation during authority lookup."
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/__tests__/executor-approval.test.ts and src/daemon/tools/__tests__/executor-abort.test.ts — existing approval and abort contracts remain unchanged after adding tools.call final authority admission."
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/__tests__/review-retirement-endpoints.test.ts and src/daemon/threads/__tests__/review-retirement-runtime.test.ts — retired review no-work responses and local ownership remain intact."
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

@@ -1,0 +1,499 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 5,
+        "contentHash": "52a05fd1f2b9f67261ec7e1d912f3574aeaa4a22d6ff1b638b5396f6b7bb6234",
+        "at": "2026-11-20T09:08:05.880Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 5,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T09:13:51.912Z"
+      }
+    },
+    "workflow": "build",
+    "runId": "store-1131825e-5863-44df-b95f-32250856979e",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-20T08:39:08.930Z",
+    "epicCreatedAt": "2026-11-20T04:36:15.580Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "03bd849749a52b41",
+    "storyId": "s1",
+    "revision": 5,
+    "updatedAt": "2026-11-20T09:07:06.559Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicSlug": "align-historical-tests-retired-review-contract"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      }
+    ],
+    "summary": "Batch04 migrates obsolete review tests to exact refusal and current transport/worker/token/persistence/isolation/history controls without restoring reviews. Final owned sequential run520589cc-0a25-4e32-afdb-9deda5d96fb8 passed59/59 across16 files, complete coverage, no skips/cancellations and confirmed cleanup. All assertion mappings and retained TAP are recorded. Independent approved blocker81be53b2b0f003a7 adds the only production change: an early artifact persistence guard, validated separately. General graph audit's unrelated analyze-fixture failure remains explicitly non-green for Batch11; no broad suite or qualification claim.",
+    "testRecord": {
+      "md": "docs/standalone/align-historical-tests-retired-review-contract-E2026112003bd8497/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "docs/plans/review-test-evidence-2026-11-20/t1-before-0.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/review-test-evidence-2026-11-20/t1-before-1.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/review-test-evidence-2026-11-20/t1-before-2.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/review-test-evidence-2026-11-20/t1-before-3.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/review-test-evidence-2026-11-20/t1-before-results.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/review-test-evidence-2026-11-20/t1-final-0.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/review-test-evidence-2026-11-20/t1-final-1.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/review-test-evidence-2026-11-20/t1-final-2.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/review-test-evidence-2026-11-20/t1-final-3.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/review-test-evidence-2026-11-20/t1-final-results.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/review-test-migration-2026-11-20.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/__tests__/role-router-global-tiers.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/lifecycle-wiring.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/__tests__/in-daemon-client.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/review-test-evidence-2026-11-20/t2-before-0.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/review-test-evidence-2026-11-20/t2-before-1.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/review-test-evidence-2026-11-20/t2-before-2.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/review-test-evidence-2026-11-20/t2-before-results.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/review-test-evidence-2026-11-20/t2-focused-0.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/review-test-evidence-2026-11-20/t2-focused-1.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/review-test-evidence-2026-11-20/t2-focused-2.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/review-test-evidence-2026-11-20/t2-focused-results.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/indexing-port.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/router-session.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/s3-acceptance.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/review-test-evidence-2026-11-20/t3-before-0.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/review-test-evidence-2026-11-20/t3-before-results.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/review-test-evidence-2026-11-20/t3-current-writer-failure.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/__tests__/fixtures/task-persistence.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/failing-tests-2026-11-20.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/review-test-evidence-2026-11-20/t2-gate-results.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/test-remediation-batches-2026-11-20.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/review-test-evidence-2026-11-20/t3-final-0.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/review-test-evidence-2026-11-20/t3-final-results.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/review-test-evidence-2026-11-20/t4-after-0.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/review-test-evidence-2026-11-20/t4-after-1.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/review-test-evidence-2026-11-20/t4-after-results.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/review-test-evidence-2026-11-20/t4-before-0.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/review-test-evidence-2026-11-20/t4-before-1.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/review-test-evidence-2026-11-20/t4-before-results.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/__tests__/no-live-store-in-tests.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/__tests__/review-store-isolation.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/artifact-admission-fix-2026-11-20.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/review-test-evidence-2026-11-20/final-0.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/review-test-evidence-2026-11-20/final-1.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/review-test-evidence-2026-11-20/final-10.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/review-test-evidence-2026-11-20/final-11.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/review-test-evidence-2026-11-20/final-12.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/review-test-evidence-2026-11-20/final-13.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/review-test-evidence-2026-11-20/final-14.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/review-test-evidence-2026-11-20/final-15.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/review-test-evidence-2026-11-20/final-2.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/review-test-evidence-2026-11-20/final-3.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/review-test-evidence-2026-11-20/final-4.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/review-test-evidence-2026-11-20/final-5.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/review-test-evidence-2026-11-20/final-6.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/review-test-evidence-2026-11-20/final-7.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/review-test-evidence-2026-11-20/final-8.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/review-test-evidence-2026-11-20/final-9.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/review-test-evidence-2026-11-20/final-results.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T09:07:06.559Z"
+      }
+    ],
+    "commit": "59bd322ff"
+  },
+  "citations": []
+}

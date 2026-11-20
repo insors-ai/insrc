@@ -661,3 +661,54 @@ Approved issue `ISSUE-939c138296f56a8f`: temporary provider errors are projected
 ## Batch 03 validation checkpoint
 
 The approved shared-grep fix excludes live-store reads before backend admission, including directory aliases and independently relocated configured data/lock targets. Final focused run: **29 pass, 1 fail, no cancellations/skips**, complete coverage and confirmed actor closure. The remaining file-tool fixture failure is now a stale `executeTool` call with no dependencies (Batch 11), after the original store-leak assertion passes. The unchanged 300ms fake-rg timing test failed in the baseline and passed in the final run. [Evidence and limits](live-store-search-fix-2026-11-20.md). BUILD approval was recorded on 2026-11-20 and the Batch 03 story/epic completed; no broad-suite or qualification claim.
+
+## Batch 04 partial checkpoint
+
+Tasks t1/t2 passed daemon validation: current unavailable boundaries, generic transport/lifecycle and active role controls, plus supported worker/token behavior. t1 fresh focused run passed12/12; t2 focused run passed4/4 and its later gate passed all three full mapped files. t3 remains non-green: replacing the removed writer import exposed an actual artifact preparation guard-order defect, tracked as `ISSUE-81be53b2b0f003a7` pending approval. Expected temporary refusal, observed hostile-payload getter/private test canary before the write guard. No production fix applied; later persistence assertions and dependent isolation/final tasks remain unverified. [Mapping/evidence](review-test-migration-2026-11-20.md).
+
+## Batch 04 final implementation checkpoint
+
+After separately approved ISSUE-81be53b2b0f003a7 fixed early artifact-persistence admission, the unchanged privacy matrix passed. Tasks t1–t4 passed daemon validation; t5 submits final evidence of **59/59 passing tests across16 files**, no skips/cancellations, complete coverage and confirmed actor closure. The general graph audit still has one failing parent case from two analyze-step fixture assertions (Batch11); it is explicitly outside this green selection. No repository-wide green or qualification claim. Both Batch04 BUILD and blocker BUILD require human approval before completion. [Final mapping, logs and limits](review-test-migration-2026-11-20.md).
+
+## Batch 04 completion
+
+Human approval of both validated BUILDs on 2026-11-20 completed Batch04 and the separately tracked artifact-preparation guard defect (81be53b2b0f003a7). Final focused evidence remains59/59 passes; the unrelated Batch11 analyze-fixture failure is still open. Earlier blocked/pending checkpoints are historical, and GitHub tracker attachment remains unbound.
+
+
+## Batch 05 implementation validation checkpoint
+
+Batch05 (`ISSUE-807fa9e8fb678f4b`) reconciles incomplete RPC/stream/phase
+inventories, qualification classification, retired-review ownership and stale
+mutation documentation/count assertions. The stricter inventory found 107
+omitted registrations, an internal-only stale RPC row and a non-callable phase.
+The separately approved design correction preserves earlier tool failures while
+checking registered-repo authority before admitted execution. Tasks one and two
+passed build validation. The combined run passed **74/74 tests across 16 files**,
+with no skips/cancellations, complete coverage and confirmed cleanup. Task three
+submits documentation and final evidence for validation; human BUILD approval
+is pending. This is not a repository-wide green or deployment/push claim.
+[Details and evidence](rpc-audit-batch05-status-2026-11-20.md).
+
+
+## Batch05 human approval and completion
+
+BUILD-807fa9e8fb678f4b-s1 was explicitly approved on 2026-11-20 at 12:15:55 UTC.
+The workflow completed STORY-807fa9e8fb678f4b-s1 and EPIC-807fa9e8fb678f4b.
+The 74/74 focused result remains the pre-integration evidence. Earlier pending
+and rejected checkpoints are historical. GitHub issue attachment remains
+unbound because the existing ISSUE-anchored tracker route requests a Define.
+
+
+## Post-merge validation checkpoint
+
+All pending workflow records were committed at `de7fa6759`. Merge `533b69263`
+integrated origin/v2 through `86062f822`, retaining both local diagnostic/tool
+regressions and the upstream build-default migration test. The eight artifact
+conflicts contained only sync timestamps; the newer timestamps were retained.
+
+Coordinator run `78dcc6ba-b4de-44f6-bf21-2107d8026549` passed **94/94 tests
+across 18 complete files**, with zero skips, cancellations, failures or todos
+and confirmed child closure. This adds the upstream repo-settings and build
+commands documentation suites to Batch05's 16-file selection. Evidence is in
+`docs/plans/rpc-audit-evidence-2026-11-20/post-merge/`. No repository-wide or
+release qualification result is claimed.

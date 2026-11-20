@@ -1,0 +1,150 @@
+{
+  "runId": "74edb219-77b6-4119-8a4f-398720266f3c",
+  "runtime": {
+    "executable": "/opt/homebrew/Cellar/node@22/22.23.2/bin/node",
+    "version": "v22.23.2"
+  },
+  "budgets": {
+    "buildMs": 600000,
+    "fileMs": 600000,
+    "runMs": 5400000,
+    "cleanupMs": 5000
+  },
+  "selectedFiles": [
+    "src/analyze/context/__tests__/role-router-global-tiers.test.ts",
+    "src/daemon/__tests__/lifecycle-wiring.test.ts",
+    "src/daemon/steps/__tests__/in-daemon-client.test.ts",
+    "src/workflow/__tests__/review-unavailable.test.ts"
+  ],
+  "requestedConcurrency": 1,
+  "effectiveConcurrency": 1,
+  "diagnosticFlags": [
+    "DEBUG"
+  ],
+  "liveTests": "unset",
+  "results": [
+    {
+      "file": "src/analyze/context/__tests__/role-router-global-tiers.test.ts",
+      "childId": "26f86d38-5341-425c-b2d9-f3ae2548a187",
+      "log": "docs/plans/review-test-evidence-2026-11-20/t1-before-0.tap",
+      "code": 1,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 3,
+          "pass": 2,
+          "fail": 1,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "sha256": "3048a606236086ecda87e65461ed274e57a93862fe983bcba47c9ba319df2c72"
+    },
+    {
+      "file": "src/daemon/__tests__/lifecycle-wiring.test.ts",
+      "childId": "35d4ba6d-c1c7-4b5b-aa60-8db7915bbee0",
+      "log": "docs/plans/review-test-evidence-2026-11-20/t1-before-1.tap",
+      "code": 1,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 2,
+          "pass": 1,
+          "fail": 1,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "sha256": "7fbf1e0a5e54de296442f4b7903ed2ef55767fa85a265f140a7a16f1cadd71b6"
+    },
+    {
+      "file": "src/daemon/steps/__tests__/in-daemon-client.test.ts",
+      "childId": "19259ed7-6089-4df6-937e-32e72675bee1",
+      "log": "docs/plans/review-test-evidence-2026-11-20/t1-before-2.tap",
+      "code": 1,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 5,
+          "pass": 2,
+          "fail": 3,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "sha256": "1b864d22eaa3213855d959f8fb3cbe329dbf5c695989d9cb17ae6a947e4a9f7a"
+    },
+    {
+      "file": "src/workflow/__tests__/review-unavailable.test.ts",
+      "childId": "d35c1087-789a-430b-8a8b-9a7fadeff6c2",
+      "log": "docs/plans/review-test-evidence-2026-11-20/t1-before-3.tap",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "sha256": "5aab443fd27051073cd14a2fff0854a37a6661f32772c1643ebd6dc4b05ace45"
+    }
+  ],
+  "incomplete": false,
+  "cleanup": {
+    "confirmedClosed": true,
+    "interrupted": false,
+    "cancellationErrors": [],
+    "evidenceErrors": [],
+    "childCloseJournal": "child-results.jsonl"
+  },
+  "totals": {
+    "tests": 12,
+    "pass": 7,
+    "fail": 5,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "preparedBuild": {
+    "runId": "74edb219-77b6-4119-8a4f-398720266f3c",
+    "canonicalRoot": "/Users/subhagho/work/projects/insors/insrc",
+    "runtimeExecutable": "/opt/homebrew/Cellar/node@22/22.23.2/bin/node",
+    "buildExitCode": 0,
+    "completedAt": "2026-11-20T08:35:23.789Z",
+    "inputFingerprint": "c14bbeb12a247d26534849c310ae153ffdd289b3c736f80b5f6ff351de61b5ec",
+    "outputFingerprint": "53f227a96be48d27f0914ee7d75395360cea08815fd96bef8f30c85980b00ca0",
+    "requiredArtifacts": [
+      "out/daemon/index.js",
+      "out/bin/insrc-process-broker",
+      "out/bin/insrc-shutdown-watchdog.js",
+      "out/daemon/shutdown.js",
+      "out/daemon/shutdown-watchdog.js",
+      "out/shared/daemon-run-files.js",
+      "out/cli/services/daemon.js",
+      "out/cli/services/maintenance.js",
+      "out/daemon/server.js",
+      "out/shared/daemon-process.js",
+      "out/daemon/run-file-ownership.js",
+      "out/bin/insrc-darwin-lifecycle"
+    ]
+  }
+}

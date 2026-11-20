@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-77d79e25-1127-4904-87ff-ffbd3572fb3d",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-20T11:28:49.829Z",
+    "epicCreatedAt": "2026-11-20T04:36:30.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "807fa9e8fb678f4b",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Verify modifying dispatch and qualification ownership",
+      "parent": {
+        "entityId": "STORY-807fa9e8fb678f4b-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-807fa9e8fb678f4b-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 3"
+        },
+        {
+          "entityId": "TASK-807fa9e8fb678f4b-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 2,
+        "contentHash": "4f83673ec59ad93d9e69c823bef5fcf97ee8ff2ba120641f014d30dc78d28639",
+        "at": "2026-11-20T11:52:16.555Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T11:28:49.830Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Verify modifying dispatch and qualification ownership",
+    "summary": "Replace the fixed modifying-method minimum in src/daemon/__tests__/repo-gate-dispatch.test.ts with exact identity coverage. Preserve positive registered writes and existing refusal controls; verify qualificationState dispatch and directly affected ownership/refusal boundaries in isolated fixtures. Put the isolated unqualified qualificationState control in src/daemon/__tests__/handler-runtime.test.ts and class/target assertions in src/daemon/threads/__tests__/method-class.test.ts. Account explicitly for the settings writer's structured registration refusal and tools.call's existing malformed/earlier-executor outcomes versus final repository authority.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "Every modifying registered RPC/stream is exercised and counted by exact name. Generic gates retain repo refusal behavior; self-gated settings and tools.call preserve their existing structural/registration envelopes and refuse unauthorized admitted mutations without filesystem changes, even with conflicting cwd/environment.",
+      "Positive artifact.feedback.append still writes only the named registered repository; all repository gate tests and supported token/path controls pass.",
+      "An isolated full-runtime qualificationState call reaches its existing unqualified error, not an unknown-method or fabricated success; class/route evidence excludes the admin-only map and shared-state owner.",
+      "Directly affected retired-review dispatcher/router controls preserve local no-work refusal without provider calls, worker allocation or writes. Tests use managed children and no installed live stores."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/daemon/__tests__/repo-gate-dispatch.test.ts — exact modifying dispatch coverage, no-write refusal and positive registered feedback append."
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/__tests__/handler-runtime.test.ts — isolated qualificationState reaches existing unqualified error."
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/threads/__tests__/method-class.test.ts — qualification ordinary session target, excluding admin/shared/FIFO ownership."
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/__tests__/repo-call-gate.test.ts and src/daemon/__tests__/step-repo-gate.test.ts — canonical repo/path/token refusal and continuation controls."
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

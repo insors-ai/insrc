@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4606d0dd-81ff-4c58-9efd-dcbe1170dc82",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-20T08:34:23.506Z",
+    "epicCreatedAt": "2026-11-20T04:36:15.580Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "03bd849749a52b41",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Replace deleted review isolation inventory entries",
+      "parent": {
+        "entityId": "STORY-03bd849749a52b41-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-03bd849749a52b41-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-03bd849749a52b41-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-03bd849749a52b41-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-03bd849749a52b41-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "3a1229a9acfd49302292ed10259dd4de593487eb6085bcea60f85a5bea453913",
+        "at": "2026-11-20T08:34:23.507Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T08:34:23.509Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Replace deleted review isolation inventory entries",
+    "summary": "Update store-isolation inventories to exercise current real coverage after the repaired fixtures are available. Preserve default-path negative evidence and deliberate-opening positive controls for graph and vectors.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "Each removed fixture entry has a mapped current test/control, with real child execution proven by exit status and TAP cases; empty, skipped-only or failed child runs cannot prove isolation.",
+      "Isolated HOME is established before application imports, and no live default LMDB/Lance artifact is created by the applicable current fixtures.",
+      "Deliberate default-store-opening positive controls remain and prove the audit can detect violations.",
+      "Only review-related inventory drift changes; unrelated failing fixture contracts remain visible in evidence rather than being removed or reclassified to force a pass.",
+      "Replacement suites contain named applicable assertions with positive TAP counts and verified normal cleanup; forced exit alone never proves closure or isolation."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Current isolation inventories execute real tests and detect deliberate default-store opening"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

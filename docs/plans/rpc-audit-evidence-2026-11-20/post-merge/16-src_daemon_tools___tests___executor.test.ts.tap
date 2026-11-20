@@ -1,0 +1,106 @@
+TAP version 13
+# Subtest: final authority preserves unknown schema cancellation and denial results without registry lookup
+ok 1 - final authority preserves unknown schema cancellation and denial results without registry lookup
+  ---
+  duration_ms: 16.809125
+  type: 'test'
+  ...
+# Subtest: final authority refusal runs neither capability nor success hooks and admitted execution uses canonical repo
+ok 2 - final authority refusal runs neither capability nor success hooks and admitted execution uses canonical repo
+  ---
+  duration_ms: 0.711542
+  type: 'test'
+  ...
+# Subtest: cancellation during final authority lookup prevents capability and hooks for either lookup outcome
+ok 3 - cancellation during final authority lookup prevents capability and hooks for either lookup outcome
+  ---
+  duration_ms: 0.240625
+  type: 'test'
+  ...
+# [12:17:39] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "admission"
+#     [35maliases[39m: []
+# [12:17:39] [31mERROR[39m: [36m[tools-executor] unknown tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mtoolId[39m: "unknown-admission"
+# [12:17:39] [31mERROR[39m: [36m[tools-executor] unknown tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mtoolId[39m: "unknown-admission"
+# [12:17:39] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "admission"
+# [12:17:39] [33mWARN[39m: [36m[tools-executor] tool input rejected[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "admission"
+# [12:17:39] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "admission"
+# [12:17:39] [33mWARN[39m: [36m[tools-executor] tool input rejected[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "admission"
+# [12:17:39] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "admission"
+# [12:17:39] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "admission"
+# [12:17:39] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "admission"
+# [12:17:39] [32mINFO[39m: [36m[tools-executor] asking for approval[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "admission"
+#     [35mapprovalClass[39m: "destructive"
+#     [35mrequestId[39m: "6cf89539-2aed-4da6-8196-85794ef4bce5"
+# [12:17:39] [33mWARN[39m: [36m[tools-executor] approval not given; tool not run[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "admission"
+#     [35mrequestId[39m: "6cf89539-2aed-4da6-8196-85794ef4bce5"
+#     [35mdenial[39m: "declined"
+# [12:17:39] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "admission"
+# [12:17:39] [32mINFO[39m: [36m[tools-executor] asking for approval[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "admission"
+#     [35mapprovalClass[39m: "destructive"
+#     [35mrequestId[39m: "0a697619-d5c3-4d4a-a465-49c2c03e8902"
+# [12:17:39] [33mWARN[39m: [36m[tools-executor] approval not given; tool not run[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "admission"
+#     [35mrequestId[39m: "0a697619-d5c3-4d4a-a465-49c2c03e8902"
+#     [35mdenial[39m: "declined"
+# [12:17:39] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "admission"
+#     [35maliases[39m: []
+# [12:17:39] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "admission"
+# [12:17:39] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "admission"
+# [12:17:39] [32mINFO[39m: [36m[tools-hooks] running tool hook[39m
+#     [35mmodule[39m: "tools-hooks"
+#     [35mhookId[39m: "admission-hook"
+#     [35mtoolId[39m: "admission"
+# [12:17:39] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "admission"
+#     [35maliases[39m: []
+# [12:17:39] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "admission"
+# [12:17:39] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "admission"
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 262.7615

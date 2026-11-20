@@ -1,0 +1,48 @@
+TAP version 13
+# Subtest: indexing port gets the worker's real codeIndexWorkFor while retired freshness rejects without asking it
+ok 1 - indexing port gets the worker's real codeIndexWorkFor while retired freshness rejects without asking it
+  ---
+  duration_ms: 2946.431917
+  type: 'test'
+  ...
+# Subtest: the main thread's depthForRepo asks the code-indexing worker's queue
+ok 2 - the main thread's depthForRepo asks the code-indexing worker's queue
+  ---
+  duration_ms: 3.555
+  type: 'test'
+  ...
+# fatal: cannot change to '/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-indexing-port-HdSHk1/.insrc/daemon': No such file or directory
+# fatal: cannot change to '/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-indexing-port-HdSHk1/.insrc/daemon': No such file or directory
+# Subtest: a nested in-daemon call from a step handler to repo.reindex runs on the code-indexing worker
+ok 3 - a nested in-daemon call from a step handler to repo.reindex runs on the code-indexing worker
+  ---
+  duration_ms: 104.953959
+  type: 'test'
+  ...
+# fatal: cannot change to '/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-indexing-port-HdSHk1/.insrc/daemon': No such file or directory
+# fatal: cannot change to '/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-indexing-port-HdSHk1/.insrc/daemon': No such file or directory
+# fatal: cannot change to '/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-indexing-port-HdSHk1/.insrc/daemon': No such file or directory
+# fatal: cannot change to '/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-indexing-port-HdSHk1/.insrc/daemon': No such file or directory
+# fatal: cannot change to '/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-indexing-port-HdSHk1/.insrc/daemon': No such file or directory
+# fatal: cannot change to '/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-indexing-port-HdSHk1/.insrc/daemon': No such file or directory
+# Subtest: daemon.status queue fields reflect the code-indexing worker's real lanes
+ok 4 - daemon.status queue fields reflect the code-indexing worker's real lanes
+  ---
+  duration_ms: 88.715792
+  type: 'test'
+  ...
+# Subtest: No indexing object is constructed on the main thread with the flag on
+ok 5 - No indexing object is constructed on the main thread with the flag on
+  ---
+  duration_ms: 1.349084
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3929.302208

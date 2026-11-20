@@ -59,27 +59,17 @@ test('the two formerly live-store test files pass against a temporary store and 
 	assertCleanRun('src/analyze/explore/__tests__/phase5-explorations-params.test.ts');
 });
 
-test('the review probe test, found by the same search, creates nothing at the default path either', () => {
-	assertCleanRun('src/workflow/review/__tests__/probe-source-roots.test.ts');
-});
+// Retired-review controls moved, with explicit replacement mapping, to review-store-isolation.test.ts.
 
-test('three daemon request tests, found by the same search, create nothing at the default path', () => {
+test('the daemon analyze request tests create nothing at the default path', () => {
 	assertCleanRun('src/daemon/__tests__/analyze-rpc.test.ts');
-	assertCleanRun('src/daemon/__tests__/code-review-rpc.test.ts');
-	assertCleanRun('src/daemon/__tests__/workflow-review-rpc.test.ts');
 });
 
-test('the MCP step and review tests, found by the full audit, create nothing at the default path', () => {
+test('the analyze step tests create nothing at the default path', () => {
 	for (const file of [
 		'src/daemon/steps/__tests__/analyze-step-handler.test.ts',
 		'src/daemon/steps/__tests__/analyze-step-narrow.test.ts',
 		'src/daemon/steps/__tests__/analyze-step-scope.test.ts',
-		'src/daemon/steps/review-step/__tests__/review-step-routing.test.ts',
-		'src/daemon/steps/review-step/__tests__/review-step.test.ts',
-		'src/workflow/__tests__/spec-review-approve.test.ts',
-		'src/workflow/review/__tests__/review.test.ts',
-		'src/workflow/review/__tests__/same-party-refusal.test.ts',
-		'src/workflow/review/__tests__/template-review.test.ts',
 	]) assertCleanRun(file);
 });
 

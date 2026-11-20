@@ -1,0 +1,12 @@
+[check-model-definitions] model definitions v1 valid (/Users/subhagho/work/projects/insors/insrc/src/assets/models)
+[11:38:58] [32mINFO[39m: [36m[daemon:model-catalog] model definitions validated[39m
+    [35mmodule[39m: "daemon:model-catalog"
+    [35mdir[39m: "/Users/subhagho/work/projects/insors/insrc/src/assets/models"
+    [35mversion[39m: 1
+    [35mmodels[39m: {
+      "cli-claude": 4,
+      "cli-codex": 7,
+      "cli-vibe": 5,
+      "ollama": 2,
+      "ollama-claude": 6
+    }

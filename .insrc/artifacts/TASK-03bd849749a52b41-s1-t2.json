@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-5ca97c1f-5253-4d53-ab52-359a5af845e5",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-20T08:34:23.499Z",
+    "epicCreatedAt": "2026-11-20T04:36:15.580Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "03bd849749a52b41",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Migrate worker routing and token lifecycle fixtures",
+      "parent": {
+        "entityId": "STORY-03bd849749a52b41-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-03bd849749a52b41-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-03bd849749a52b41-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "ff27d9ef633d7de2afa228d36e5a21620d49a2456a732bcbc10ae43d67768c29",
+        "at": "2026-11-20T08:34:23.499Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T08:34:23.501Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Migrate worker routing and token lifecycle fixtures",
+    "summary": "Update indexing-port, router-session and s3 acceptance review assumptions to current supported operations/kinds while preserving worker ownership and session lifecycle coverage.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "Current analyze/workflow token mint/read/update behavior survives idle worker release, with session isolation and old-token semantics preserved.",
+      "Retired review/code-review kinds reject without fabricated tokens; no worker/provider review execution restored.",
+      "Supported routing/indexing-port controls retain worker identity and shared/session placement evidence using real workers where the original test requires them.",
+      "Use bounded readiness, owned worker cleanup and fresh focused baseline; classify unrelated RPC/mutable-state failures separately without editing production method tables."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Supported worker tokens survive idle release and preserve session isolation while retired kinds reject"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

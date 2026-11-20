@@ -1,0 +1,506 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1795175116137-nrshbf",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-20T11:47:18.464Z",
+    "epicCreatedAt": "2026-11-20T04:36:30.764Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 122002,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "807fa9e8fb678f4b",
+    "epicSlug": "reconcile-daemon-rpc-registration-audit-coverage",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1795175116137-nrshbf",
+    "hldEffectiveHash": "3a1654ebd181c8626cd85a309712200d3515585d21b129c48c7a64f84cd01de7",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "Reconcile daemon RPC registration and audit coverage",
+    "standalone": true,
+    "sizeClass": "bugfix",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 2,
+        "contentHash": "1edb9a17ce6ee045a2a1e3cd847d1d2de815d5742f5fe681c7ed8977e2a5c626",
+        "at": "2026-11-20T11:47:18.563Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T11:49:48.650Z"
+      }
+    },
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "revision": 2,
+    "rangeBase": "c54ad6e79f712cd5e692d622cc25f147795e1175"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Keep Batch05's exact registration, audit, routing and documentation reconciliation. Correct the discovered authority gap in modifying RPC routes while preserving existing error/result shapes. For tools.call, preserve unknown-tool, schema, cancellation and approval-denial behavior, then enforce explicit registered-repository authority immediately before capability execution; the new refusal for an otherwise admitted operation is an intentional compatibility change requiring approval."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Reconcile daemon RPC registration and audit coverage"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "buildHandlerRuntime",
+          "signature": "buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime",
+          "parameters": [
+            {
+              "name": "deps",
+              "type": "HandlerRuntimeDeps",
+              "purpose": "Existing runtime services; contract tests use inert stubs for construction and isolated daemon-owned stores for dispatch.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "HandlerRuntime",
+            "meaning": "Assembled rpcHandlers and streamHandlers, including spread registrations; these actual maps are the registration inventory."
+          },
+          "errors": [],
+          "preconditions": [
+            "Construction-only checks must not execute provider calls or open the installed daemon's stores."
+          ],
+          "postconditions": [
+            "RPC_AUDIT keys equal the union of constructed unary and stream registrations with no missing or stale entries. Each audit row has reviewed evidence and a valid kind; modifying rows alone carry their existing repository/path rules.",
+            "methodClasses entries uniquely cover every constructed method with the exact transport flag. Preserve an independently reviewed compatibility key inventory, updating only explained added methods.",
+            "Add daemon.qualificationState as read-only in the repo audit and unary session-class in methodClasses: it reads journal/release/graph metadata through the full handler runtime. It is not shared state, FIFO-exempt or an admin-board method. Session workers already load this runtime and enter daemon store and maintenance guards.",
+            "Retired review methods retain explicit main-daemon refusal ownership. Tests must verify membership in the named retired-review ownership sets and existing router precedence, rather than assume the entire codeReview family runs on shared-state workers.",
+            "Callable step phase contracts, including frozen inert review schemas, are the independent expected phase inventory. Include design-review-step.cancel as read-only with unavailability evidence and reconcile any additional missing/stale phases only against their actual callable dispatcher/schema. Never restore deleted review execution.",
+            "docs/daemon.md lists exactly FILE_MODIFYING_METHODS with the correct repo parameter and all six refusal codes. Remove retired-review modifying rows and document current modifying registrations.",
+            "Previously unaudited team.park/team.resume/team.settle are modifying repo-scoped operations; their new explicit repo refusals are intentional. repo.settings.set remains modifying but preserves its own exact-registration check and structured error envelope. tools.call is explicitly modifying, with its authority check placed at execution admission rather than generic stream entry."
+          ]
+        },
+        {
+          "name": "requireRepoForCall",
+          "signature": "requireRepoForCall(method: string, params: unknown, registered: ReadonlySet<string>, opts?: RepoCallOptions): RepoCallCheck",
+          "parameters": [
+            {
+              "name": "method",
+              "type": "string",
+              "purpose": "Explicit audited modifying method or step phase.",
+              "optional": false
+            },
+            {
+              "name": "params",
+              "type": "unknown",
+              "purpose": "Untrusted request parameters.",
+              "optional": false
+            },
+            {
+              "name": "registered",
+              "type": "ReadonlySet<string>",
+              "purpose": "Registered canonical repository paths.",
+              "optional": false
+            },
+            {
+              "name": "opts",
+              "type": "RepoCallOptions",
+              "purpose": "Existing continuation token repository context when explicitly allowed by the phase rule.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "RepoCallCheck",
+            "meaning": "Existing checked canonical repository and rewritten parameters, or refusal code/error."
+          },
+          "errors": [],
+          "preconditions": [
+            "No fallback to daemon cwd, INSRC_REPO or session workspace establishes mutation authority."
+          ],
+          "postconditions": [
+            "Preserve repo-missing, repo-not-absolute, repo-not-directory, repo-not-registered, path-outside-repo and repo-mismatch behavior.",
+            "Every modifying registered RPC/stream and supported modifying phase remains covered by its gate; exact exercised-name sets replace a fixed lower bound. Keep successful registered-repo writes and no-write refusal controls.",
+            "Unavailability remains the first boundary for retired review endpoints; classify them as read-only refusals without forcing a repo gate."
+          ]
+        },
+        {
+          "name": "inDaemonTarget",
+          "signature": "inDaemonTarget(method: string, view: InDaemonRouteView): { readonly cls: MethodClass; readonly shared?: true } | undefined",
+          "parameters": [
+            {
+              "name": "method",
+              "type": "string",
+              "purpose": "Existing method routing key.",
+              "optional": false
+            },
+            {
+              "name": "view",
+              "type": "InDaemonRouteView",
+              "purpose": "Current routed classes and shared-worker identity.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "{ readonly cls: MethodClass; readonly shared?: true } | undefined",
+            "meaning": "Existing routed worker target or inline execution on the current daemon thread."
+          },
+          "errors": [],
+          "preconditions": [
+            "Method-class data remains worker-safe and imports no handler runtime."
+          ],
+          "postconditions": [
+            "Keep existing admin/indexing and shared-state routing behavior. qualificationState is ordinary session work: nested calls stay inline on the current full-runtime daemon thread.",
+            "Explicitly test unknown, missing, stale, duplicate and wrong-transport inventory drift. Do not add family fallbacks or blanket reviewed exemptions.",
+            "Ownership relationships are metadata lookups: each registered key has one execution class and one audited repo-scope kind, while transport membership is checked independently. Existing main-thread overrides take priority over session class. No domain entity, module-dependency or public IPC shape changes require a new ERD or interaction diagram; these explicit ownership rules suffice."
+          ]
+        },
+        {
+          "name": "executeTool",
+          "signature": "executeTool(toolId: string, input: ToolInput, deps: ToolDeps): Promise<ToolResult>",
+          "parameters": [
+            {
+              "name": "toolId",
+              "type": "string",
+              "purpose": "Existing registry capability key.",
+              "optional": false
+            },
+            {
+              "name": "input",
+              "type": "ToolInput",
+              "purpose": "Existing untrusted capability input.",
+              "optional": false
+            },
+            {
+              "name": "deps",
+              "type": "ToolDeps",
+              "purpose": "Existing daemon execution context; the tools.call adapter supplies an internal repository-authority check using the daemon registry, never a caller-supplied wire callback.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<ToolResult>",
+            "meaning": "Existing result shape, including unsuccessful results for earlier failures or denied repository authority."
+          },
+          "errors": [],
+          "preconditions": [
+            "No duplicated executor validation or new executor framework. No new IPC fields or direct cloud REST."
+          ],
+          "postconditions": [
+            "Preserve this order: tool lookup and existing temporary-session checks; existing input-schema rejection; cancellation; approval description and denial; final cancellation; repository authority for otherwise admitted tools.call; capability execution and successful hooks.",
+            "Unknown tool, invalid schema, cancelled call or declined approval must preserve its existing result/error and perform no repository registry lookup.",
+            "At final admission, an invalid/unregistered repo yields an unsuccessful ToolResult using the existing failure shape, with the existing repo refusal code in its error text; no capability execute or success hook runs.",
+            "Only the daemon installs the admission check for tools.call. Existing other executor callers retain their current contracts; no transport argument can supply a callback or waive authority.",
+            "For an admitted operation, canonicalize repoPath from the authority check before execution. Preserve stream done/error envelopes and existing successful tool result shape.",
+            "The new refusal for an otherwise admitted tools.call targeting an invalid repository is an intentional authority correction. Earlier blanket no-public-failure-change wording is superseded by these explicit ordering and compatibility rules."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A new or merged method lacks an audit/class entry, or an old row is no longer registered.",
+          "detection": "Bidirectional exact key comparison against constructed unary and stream maps, plus callable phase inventory.",
+          "response": "Fail the named contract test with missing/stale keys; do not synthesize a default classification.",
+          "userImpact": "Prevents silently ungated mutation or requests sent to unsupported owners.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Missing, relative, nonexistent, unregistered or mismatched repository, or path traversal outside it.",
+          "detection": "Existing requireRepoForCall and dispatch tests, including conflicting cwd/environment and continuation token cases.",
+          "response": "Retain the existing six refusal codes before repository mutation; stream refusal remains an error frame.",
+          "userImpact": "Caller gets the existing actionable refusal and repository files remain unchanged.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Unavailable review called through RPC or a frozen step phase, including cancel.",
+          "detection": "Existing Batch04 unavailable-boundary and router precedence controls.",
+          "response": "Preserve the current unavailable response before repo lookup, worker allocation or review work.",
+          "userImpact": "Retired reviews remain unavailable and cause no writes or provider calls.",
+          "recoverable": false
+        },
+        {
+          "scenario": "qualificationState has no completed rollback, release identity mismatch, or missing/wrong graph fixture.",
+          "detection": "Existing handler guards and an isolated negative dispatch control.",
+          "response": "Keep the existing no-completed-qualification or missing-fixture error; never return fabricated success or route to an admin worker lacking the handler.",
+          "userImpact": "Qualification reports failure accurately.",
+          "recoverable": true
+        },
+        {
+          "scenario": "tools.call is unknown, input-schema-invalid, cancelled or denied while its repoPath is invalid/unregistered.",
+          "detection": "Dedicated executor/stream regression controls with a repository checker spy that fails if called.",
+          "response": "Return the existing earlier executor result unchanged; never replace it with repository refusal.",
+          "userImpact": "Existing actionable failures retain their precedence and format.",
+          "recoverable": true
+        },
+        {
+          "scenario": "An otherwise admitted tools.call would execute in an invalid or unregistered repository.",
+          "detection": "Daemon-supplied final admission check after existing validation, cancellation and approval denial handling.",
+          "response": "Return an unsuccessful ToolResult in the existing done envelope, carrying the repo refusal code in error text; execute and success hooks are untouched.",
+          "userImpact": "Intentional new authority refusal; caller supplies a valid registered repo before retrying.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A method supplied by an object spread or auxiliary task-progress registration.",
+          "expected": "The constructed-map inventory includes it regardless of source formatting."
+        },
+        {
+          "input": "Unary/stream flag swapped, duplicate descriptor, missing method, stale method, or unknown method.",
+          "expected": "Independent negative controls detect each drift category; unknown methods receive no automatic audit exemption."
+        },
+        {
+          "input": "A retired codeReview method is still session-class but has an explicit main-daemon refusal override.",
+          "expected": "Ownership tests assert the exact explicit override and local refusal rather than shared-family membership."
+        },
+        {
+          "input": "A continuation supplies an opaque state token but no explicit repo.",
+          "expected": "Only phases already permitting repoFromRunToken consume their validated run repository; conflicting explicit repo is refused."
+        },
+        {
+          "input": "Changing numbers of modifying methods after retirement or legitimate additions.",
+          "expected": "Exact identity and exercised-method coverage governs dispatch validation; no arbitrary minimum count substitutes for coverage."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Repository authority derives from explicit registered canonical repo or an already-supported validated continuation token, never daemon environment/cwd.",
+          "source": "c1"
+        },
+        {
+          "text": "Daemon-owned storage, worker-safe classification imports and existing main-thread refusal ownership remain intact.",
+          "source": "c2"
+        },
+        {
+          "text": "Review implementation stays retired; frozen schemas remain inert compatibility data. Qualification evidence regeneration belongs to another batch.",
+          "source": "c3"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "contract",
+          "purpose": "Prove exact registration, classification, phase and documentation coverage independently of production metadata.",
+          "subjects": [
+            "src/daemon/__tests__/handler-runtime.test.ts: reviewed compatibility snapshots include explained cancellation and qualification additions; constructed maps include spread registrations.",
+            "src/daemon/__tests__/repo-call-audit.test.ts: exact RPC/stream union and callable phase coverage, valid kinds/evidence and repo rules; detect missing/stale rows.",
+            "src/daemon/__tests__/repo-call-table.test.ts: exact disjoint modifying/nonmodifying partition over actual registration and callable phases, with unknown-name negative control.",
+            "src/daemon/threads/__tests__/method-class.test.ts: unique complete method classes and stream flags; missing/stale/duplicate/wrong-transport controls; worker-safe imports and explicit retired-review ownership.",
+            "src/daemon/__tests__/daemon-doc-repo-table.test.ts: exact modifying-method names/repo params and six refusal codes."
+          ],
+          "fixturesNeeded": [
+            "Inert runtime construction dependencies; expected keys come from actual assembled runtime, never the audit under test.",
+            "Frozen callable phase schemas and current dispatch contracts, including unavailable review phases."
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove repository authority and real dispatch ownership rather than metadata equality alone.",
+          "subjects": [
+            "src/daemon/__tests__/repo-gate-dispatch.test.ts: exercise every modifying RPC/stream by exact identity without repo, assert unchanged filesystem, retain successful registered feedback append.",
+            "src/daemon/__tests__/repo-call-gate.test.ts: preserve refusal codes, canonical paths, cross-repo and validated continuation semantics.",
+            "qualificationState: isolated full-runtime unary dispatch rejects an unqualified fixture with its existing error rather than unknown-method; routing/class tests prove ordinary session ownership and no admin-board/shared-state dispatch.",
+            "Retired review router precedence and no-work refusal controls from Batch04 remain regression evidence; rerun directly affected router/unavailability files if routing assumptions change."
+          ],
+          "fixturesNeeded": [
+            "Managed temporary HOME and registered repositories, daemon store ownership, ordinary child cleanup; never installed live stores.",
+            "Use the existing coordinator for build/run ownership and serialized files. No live providers or qualification release regeneration."
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "Compile and run the complete affected files with accountable cleanup.",
+          "subjects": [
+            "Run all seven baseline files through Node22 scripts/test-harness/run.mjs --concurrency=1; broaden only to directly affected dispatch/phase regressions.",
+            "Retain TAP/results/cleanup evidence under docs/plans; report whole-file failures honestly, no skip/force-exit suppression."
+          ],
+          "fixturesNeeded": [
+            "Baseline run 8aecf395-5b83-4e46-8b56-cf5a90f04dc3: 24 tests, 17 pass, 7 fail, no incomplete coverage, confirmed child closure."
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove final tool admission authority with preserved earlier executor failures.",
+          "subjects": [
+            "src/daemon/tools/__tests__/call-handler.test.ts and src/daemon/tools/__tests__/executor.test.ts: unknown tool, invalid schema, cancelled call and denied approval preserve existing results and never invoke the repository checker; admitted valid registered calls execute with canonical repoPath; refused calls execute no capability or success hook.",
+            "src/daemon/__tests__/repo-gate-dispatch.test.ts: exact modifying identities include tool dispatch and self-gated settings; preserve their own existing malformed/registration envelopes and check valid tool requests against unregistered repositories.",
+            "src/daemon/threads/__tests__/method-class.test.ts: actual Router and runtime handler test proves retired review local refusal precedes session-worker lookup."
+          ],
+          "fixturesNeeded": [
+            "Fake registry capabilities, approval broker controls and checker spies; isolated HOME and registered/unregistered temporary repos, no live provider."
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "Exact assembled-handler audit and method-class coverage, reviewed snapshots, stream flags, phase coverage and drift controls establish complete explicit classifications. This is a local proving label for the issue's prose requirement; no upstream typed criterion was provided."
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "Full modifying dispatch identity coverage, refusal code/canonicalization controls and successful registered-repo feedback append preserve repository authority."
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "qualificationState owner/class and negative dispatch controls, retired-review main-thread refusal checks and worker-safe imports preserve execution ownership."
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "Exact daemon documentation parity plus complete seven-file coordinated run and cleanup evidence establish coherent maintained coverage."
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "New authority/ordering controls prove the deliberate compatibility correction while all existing earlier tool failures remain unchanged. This is an LLD-local label."
+          ]
+        }
+      ],
+      "testFramework": "node:test and node:assert/strict under the repository Node22 test coordinator; build once, concurrency=1, no live-service flag. Preserve source/out consistency and retain results/cleanup artifacts."
+    },
+    "migration": {
+      "stateBefore": "Task-one code and all mapped tests/typecheck pass, but two build validation attempts reject the tools.call authority ordering under the original blanket failure-preservation requirement. The current early callback is unfinished, unapproved build work.",
+      "stateAfter": "Exact inventories remain reconciled and final tool admission authority preserves earlier executor failures. Only otherwise admitted operations gain the explicitly approved repository refusal.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Obtain human approval of this revised LLD and a replacement PLAN before continuing implementation. Replace the unfinished early tools.call callback with the approved final admission ordering; keep completed inventory/retired-router checks.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Reconcile documentation with reviewed modifying rules; run the complete affected files serially through the coordinator, retain evidence and update the failure/batch record.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Present validated BUILD for human approval before completion. Deployment/restart uses the normal separate daemon lifecycle; no installed daemon change or release qualification is required to validate this batch.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Public parameter/result schemas, storage formats and existing malformed/unknown/schema/cancellation/denial responses remain unchanged. Previously unaudited modifying team routes gain explicit repo refusal. Otherwise admitted tools.call operations with invalid/unregistered repos gain an intentional unsuccessful ToolResult before capability execution; registered successful operations keep their prior shape. No data rewrite or installed daemon restart is required.",
+      "zeroDowntime": false,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Authorize immediately before admitted tool execution",
+        "oneLineSummary": "Preserve earlier executor failures and enforce explicit repository authority before any admitted capability runs.",
+        "approach": "Retain explicit RPC/phase/class reconciliation and independent exact inventories. For tools.call, reuse the existing executor after unknown-tool, schema, cancellation and approval-denial handling; apply repository authority before capability execution and hooks. Define new repository refusals as an intentional compatibility change only for otherwise admitted operations.",
+        "pros": [
+          "Preserves earlier actionable failures and existing transport/result shapes.",
+          "Closes the audited authority gap without duplicating executor validation."
+        ],
+        "cons": [
+          "An otherwise admitted operation targeting an invalid/unregistered repository now fails intentionally; requires human design approval."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Gate every tool request at the stream boundary",
+        "oneLineSummary": "Authorize before resolving and validating the selected capability.",
+        "approach": "Use the current generic modifying stream gate or the early toolsCall repository callback before executeTool. This is simple but changes unknown-tool, invalid schema, cancellation and denial precedence for requests with invalid repositories.",
+        "pros": [
+          "Small implementation."
+        ],
+        "cons": [
+          "Fails the required preservation of existing earlier executor errors and repeats the rejected build behavior."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Build validation rejected this ordering because it replaces existing executor failures before any capability could execute."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/daemon/repo-call-gate.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/daemon/threads/method-class.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/reconcile-daemon-rpc-registration-audit-coverage-E20261120807fa9e8/ISSUE.md"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/daemon/handler-runtime.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/daemon/tools/call-handler.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/daemon/tools/executor.ts"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/daemon/repo-call-audit.ts"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/reconcile-daemon-rpc-registration-audit-coverage-E20261120807fa9e8/S001/BUILD.md"
+    },
+    {
+      "id": "c9",
+      "kind": "doc",
+      "ref": "docs/testing.md"
+    }
+  ]
+}

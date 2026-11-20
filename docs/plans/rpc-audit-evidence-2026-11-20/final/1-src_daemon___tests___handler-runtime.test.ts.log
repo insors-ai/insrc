@@ -1,0 +1,82 @@
+TAP version 13
+# Subtest: the runtime function builds the handler tables with stub indexing dependencies and their key sets equal the recorded single-thread key sets plus the methods added since
+ok 1 - the runtime function builds the handler tables with stub indexing dependencies and their key sets equal the recorded single-thread key sets plus the methods added since
+  ---
+  duration_ms: 3.025417
+  type: 'test'
+  ...
+# Subtest: src/daemon/__tests__/handler-runtime.test.ts: the only code review methods added after the move are the nine task ones, with no duplicate or renamed method
+ok 2 - src/daemon/__tests__/handler-runtime.test.ts: the only code review methods added after the move are the nine task ones, with no duplicate or renamed method
+  ---
+  duration_ms: 0.143292
+  type: 'test'
+  ...
+# Subtest: workflow.approvePipeline, tracker.sync and tracker.setup are registered and answer their requests
+ok 3 - workflow.approvePipeline, tracker.sync and tracker.setup are registered and answer their requests
+  ---
+  duration_ms: 11.719917
+  type: 'test'
+  ...
+# Subtest: team.refresh, team.claim and team.release are registered and return the old results
+ok 4 - team.refresh, team.claim and team.release are registered and return the old results
+  ---
+  duration_ms: 41.789709
+  type: 'test'
+  ...
+# Subtest: handler-runtime.test.ts: RECORDED_RPC includes models.check, models.approve, models.reject; method-class classifies them as session
+ok 5 - handler-runtime.test.ts: RECORDED_RPC includes models.check, models.approve, models.reject; method-class classifies them as session
+  ---
+  duration_ms: 1.580209
+  type: 'test'
+  ...
+# Subtest: session.delete refuses a session id that is a path ('..', a separator) before anything is purged
+ok 6 - session.delete refuses a session id that is a path ('..', a separator) before anything is purged
+  ---
+  duration_ms: 0.441375
+  type: 'test'
+  ...
+# Subtest: the session purge's tmp directory is the id's direct child of the tmp root, and nothing for an id that names anything else
+ok 7 - the session purge's tmp directory is the id's direct child of the tmp root, and nothing for an id that names anything else
+  ---
+  duration_ms: 0.182291
+  type: 'test'
+  ...
+# Subtest: handler-runtime.test.ts: mcp.register and mcp.status are served; mcp.register refuses a malformed path before touching the store
+ok 8 - handler-runtime.test.ts: mcp.register and mcp.status are served; mcp.register refuses a malformed path before touching the store
+  ---
+  duration_ms: 0.227708
+  type: 'test'
+  ...
+# Subtest: src/daemon/__tests__/handler-runtime.test.ts: repo.add on a Python repo registers it and stores the default commands with no prompt, reports buildDefaults applied, and a failing write still registers the repo
+ok 9 - src/daemon/__tests__/handler-runtime.test.ts: repo.add on a Python repo registers it and stores the default commands with no prompt, reports buildDefaults applied, and a failing write still registers the repo
+  ---
+  duration_ms: 310.028584
+  type: 'test'
+  ...
+# Subtest: src/daemon/__tests__/handler-runtime.test.ts: repo.add on a repo whose entry already holds commands keeps them and reports already-set
+ok 10 - src/daemon/__tests__/handler-runtime.test.ts: repo.add on a repo whose entry already holds commands keeps them and reports already-set
+  ---
+  duration_ms: 147.665542
+  type: 'test'
+  ...
+# Subtest: tools.call preserves malformed request errors before repository authority checks
+ok 11 - tools.call preserves malformed request errors before repository authority checks
+  ---
+  duration_ms: 1.207375
+  type: 'test'
+  ...
+# Subtest: qualificationState dispatch reaches the existing unqualified diagnostic in an isolated home
+ok 12 - qualificationState dispatch reaches the existing unqualified diagnostic in an isolated home
+  ---
+  duration_ms: 3.821458
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1466.830166

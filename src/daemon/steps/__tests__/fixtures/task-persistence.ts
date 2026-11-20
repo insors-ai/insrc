@@ -48,8 +48,7 @@ import { upsertArtifactVec, getArtifactById } from '../../../../db/lance/artifac
 import { loadLocalProviderConfig } from '../../../../config/local.js';
 import { ConfigStore } from '../../../../config/store.js';
 import { recordFeedback } from '../../../../config/feedback.js';
-import { writeAtomic, appendRunLog, appendProgressLog } from '../../../../workflow/storage.js';
-import { writeArtifactJson } from '../../../../workflow/artifacts/provenance/writer.js';
+import { writeAtomic, writeArtifact, appendRunLog, appendProgressLog } from '../../../../workflow/storage.js';
 import { LocalStepStateStore, HubStepStateStore } from '../../../threads/step-state.js';
 import { writeTaskOutput, readTaskOutput, purgeTaskOutput, purgeAllTaskOutputs } from '../../../../analyze/executor/cache.js';
 import { registerTemplateRuntime, _resetRuntimeRegistryForTests } from '../../../../analyze/executor/registry.js';
@@ -85,7 +84,7 @@ test('task report history checkpoint trace and warm native sinks remain memory-o
 	await saveTurn(null, { sessionId: 'saved', idx: 1, user: saved, assistant: saved, entities: [], vector: [], repo: f.root });
 	await upsertArtifactVec({ id: 'saved-artifact', embedding: new Float32Array(loadLocalProviderConfig().embeddingDim), session_id: 'saved', intent: 'control', skill_id: 'fixture', timestamp: 1n, path: join(output, 'saved.json'), preview: saved });
 	const lance = await getLanceConn(), table = await lance.openTable('artifact_vec'), builder = table.mergeInsert('id').whenMatchedUpdateAll().whenNotMatchedInsertAll();
-	writeAtomic(join(output, 'checkpoint.json'), JSON.stringify({ saved })); writeTaskOutput('saved', { taskId: 't01', template: 'control', kind: 'leaf', produces: ['report'], status: 'ok', outputs: { report: saved } });
+	writeAtomic(join(output, 'checkpoint.json'), JSON.stringify({ saved })); writeArtifact(join(output, 'saved-artifact.json'), { meta: {}, body: { marker: saved } }, 'content'); assert.equal(JSON.parse(await readFile(join(output, 'saved-artifact.json'), 'utf8')).body.marker, saved); writeTaskOutput('saved', { taskId: 't01', template: 'control', kind: 'leaf', produces: ['report'], status: 'ok', outputs: { report: saved } });
 	const dump = saveToolResults([{ source: 'saved', content: saved }], join(output, 'tool-results')); assert.ok(dump); assert.ok((await readFile(dump.path, 'utf8')).includes(saved));
 	const shared = new LocalStepStateStore(), savedToken = await shared.mint('analyze', { saved }); assert.deepEqual((await shared.read<{ saved: string }>('analyze', savedToken))!.payload, { saved });
 	let rawReads = 0, unsafeCalls = 0, drainCallbacks = 0, hubCalls = 0;
@@ -114,7 +113,7 @@ test('task report history checkpoint trace and warm native sinks remain memory-o
 			assert.throws(() => graph.root.transactionSync(() => { drainCallbacks++; }), denied); assert.throws(() => graph.conversationTurn.put('private', poisoned), denied); assert.throws(() => graph.conversationTurn.get('private'), denied);
 			assert.equal(graph.entity.get(Buffer.alloc(8)), undefined); // Independent structural read still works.
 			await assert.rejects(getLanceConn(), denied); await assert.rejects(upsertArtifactVec(poisoned as never), denied); assert.throws(() => table.add([poisoned]), denied); assert.throws(() => builder.execute([poisoned]), denied);
-			assert.throws(() => writeAtomic(join(output, 'private-checkpoint.json'), source), denied); assert.throws(() => writeArtifactJson(join(output, 'artifact.json'), poisoned as never), denied); assert.throws(() => appendRunLog('private', 'analyze', 'source', { source }), denied); assert.throws(() => appendProgressLog('source', 'analyze', 'checkpoint', source), denied);
+			assert.throws(() => writeAtomic(join(output, 'private-checkpoint.json'), source), denied); assert.throws(() => writeArtifact(join(output, 'artifact.json'), poisoned, 'content'), denied); assert.throws(() => appendRunLog('private', 'analyze', 'source', { source }), denied); assert.throws(() => appendProgressLog('source', 'analyze', 'checkpoint', source), denied);
 			await assert.rejects(shared.mint('analyze', poisoned), denied); await assert.rejects(async () => hub.mint('workflow', poisoned), denied);
 			assert.equal(saveToolResults(poisoned as never, join(output, 'tool-results'), a.execution), undefined); assert.deepEqual(toolLoopExhausted(3, poisoned as never, a.execution).toolResults, []);
 			assert.equal(writeTaskOutput('source', poisoned as never, undefined, a.execution), ''); assert.equal(readTaskOutput('saved', 't01', undefined, a.execution), null); purgeTaskOutput('saved', 't01', a.execution); purgeAllTaskOutputs('saved', a.execution);

@@ -1,0 +1,4 @@
+
+> @insrc/backend@0.2.1 typecheck:tools
+> tsc -p tsconfig.typecheck.json
+

@@ -1,0 +1,127 @@
+TAP version 13
+# Subtest: executor-abort.test.ts: an already-aborted signal returns denied cancelled, asks nobody and never starts the tool
+ok 1 - executor-abort.test.ts: an already-aborted signal returns denied cancelled, asks nobody and never starts the tool
+  ---
+  duration_ms: 1.575666
+  type: 'test'
+  ...
+# Subtest: executor-abort.test.ts: an abort during preview construction returns cancelled before any ask
+ok 2 - executor-abort.test.ts: an abort during preview construction returns cancelled before any ask
+  ---
+  duration_ms: 2.02475
+  type: 'test'
+  ...
+# Subtest: executor-abort.test.ts: the preview runs inside the effective signal and the tool sees it
+ok 3 - executor-abort.test.ts: the preview runs inside the effective signal and the tool sees it
+  ---
+  duration_ms: 1.375
+  type: 'test'
+  ...
+# Subtest: executor-abort.test.ts: an abort between the approval answer and execute returns denied cancelled and the tool does not run
+ok 4 - executor-abort.test.ts: an abort between the approval answer and execute returns denied cancelled and the tool does not run
+  ---
+  duration_ms: 0.925958
+  type: 'test'
+  ...
+# Subtest: executor-abort.test.ts: the broker is asked with the effective signal, so a nested call with no signal of its own is cancelled while it waits
+ok 5 - executor-abort.test.ts: the broker is asked with the effective signal, so a nested call with no signal of its own is cancelled while it waits
+  ---
+  duration_ms: 5.253583
+  type: 'test'
+  ...
+# Subtest: executor-abort.test.ts: a call with no signal anywhere behaves as before
+ok 6 - executor-abort.test.ts: a call with no signal anywhere behaves as before
+  ---
+  duration_ms: 0.244375
+  type: 'test'
+  ...
+# [12:17:38] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "ab_destructive"
+#     [35maliases[39m: []
+# [12:17:38] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "ab_none"
+#     [35maliases[39m: []
+# [12:17:38] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ab_destructive"
+# [12:17:38] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ab_none"
+# [12:17:38] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "ab_preview"
+#     [35maliases[39m: []
+# [12:17:38] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ab_preview"
+# [12:17:38] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "ab_ctx"
+#     [35maliases[39m: []
+# [12:17:38] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ab_ctx"
+# [12:17:38] [32mINFO[39m: [36m[tools-executor] asking for approval[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ab_ctx"
+#     [35mapprovalClass[39m: "destructive"
+#     [35mrequestId[39m: "04551606-590b-4f4a-9c62-f38345170277"
+# [12:17:38] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "ab_after"
+#     [35maliases[39m: []
+# [12:17:38] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ab_after"
+# [12:17:38] [32mINFO[39m: [36m[tools-executor] asking for approval[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ab_after"
+#     [35mapprovalClass[39m: "destructive"
+#     [35mrequestId[39m: "06a8ab65-5dd9-435b-8692-8934d616c60f"
+# [12:17:38] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "ab_nested"
+#     [35maliases[39m: []
+# [12:17:38] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "ab_outer"
+#     [35maliases[39m: []
+# [12:17:38] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ab_outer"
+# [12:17:38] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ab_nested"
+# [12:17:38] [32mINFO[39m: [36m[tools-executor] asking for approval[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ab_nested"
+#     [35mapprovalClass[39m: "destructive"
+#     [35mrequestId[39m: "1cf95ecd-e085-4dfc-9dcf-0dca4cf14f90"
+# [12:17:38] [33mWARN[39m: [36m[tools-executor] approval not given; tool not run[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ab_nested"
+#     [35mrequestId[39m: "1cf95ecd-e085-4dfc-9dcf-0dca4cf14f90"
+#     [35mdenial[39m: "cancelled"
+# [12:17:38] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "ab_plain"
+#     [35maliases[39m: []
+# [12:17:38] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ab_plain"
+# [12:17:38] [32mINFO[39m: [36m[tools-executor] asking for approval[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ab_plain"
+#     [35mapprovalClass[39m: "destructive"
+#     [35mrequestId[39m: "6ee9ed8f-44d8-40d9-b38c-efa345d02e19"
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 272.953125

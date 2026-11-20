@@ -21,7 +21,7 @@ import { Worker } from 'node:worker_threads';
 
 const HOME = mkdtempSync(join(tmpdir(), 'insrc-method-class-'));
 process.env['HOME'] = HOME;
-const { FIFO_EXEMPT_METHODS, SHARED_STATE_METHODS, inDaemonTarget, methodClasses } = await import('../method-class.js');
+const { MAIN_DAEMON_TASK_REVIEW_METHODS, MAIN_DAEMON_DESIGN_REVIEW_METHODS, FIFO_EXEMPT_METHODS, SHARED_STATE_METHODS, inDaemonTarget, methodClasses } = await import('../method-class.js');
 const { createInDaemonClient } = await import('../../steps/daemon-client.js');
 const { buildHandlerRuntime } = await import('../../handler-runtime.js');
 
@@ -58,7 +58,9 @@ test('classOf/entries: the eleven admin and fourteen indexing methods have their
 	assert.deepEqual(entries.filter(e => e.cls === 'admin').map(e => e.method).sort(), [...ADMIN].sort());
 	assert.deepEqual(entries.filter(e => e.cls === 'indexing').map(e => e.method).sort(), [...INDEXING].sort());
 	assert.ok(entries.filter(e => e.cls !== 'admin' && e.cls !== 'indexing').every(e => e.cls === 'session'));
-	assert.equal(new Set(entries.map(e => e.method)).size, entries.length, 'no method listed twice');
+	const duplicates = (names: readonly string[]) => names.filter((name, i) => names.indexOf(name) !== i);
+	assert.deepEqual(duplicates(entries.map(e => e.method)), [], 'no method listed twice');
+	assert.deepEqual(duplicates([...entries.map(e => e.method), 'repo.list']), ['repo.list'], 'duplicate control');
 	assert.equal(methodClasses.classOf('step.call'), 'session');
 	assert.equal(methodClasses.classOf('no.such.method'), undefined);
 	assert.ok(Object.isFrozen(entries) && Object.isFrozen(entries[0]), 'the table is frozen');
@@ -91,13 +93,19 @@ test('method sets: every shared-state and FIFO-exempt member is a session-class 
 	for (const m of [...SHARED_STATE_METHODS, ...FIFO_EXEMPT_METHODS]) assert.equal(methodClasses.classOf(m), 'session', m);
 });
 
-test('method sets: every served chat.*, todos.*, understanding.*, models.* and codeReview.* method is in the shared-state set', () => {
-	const { rpc, stream } = servedTables();
-	const family = [...rpc, ...stream].filter(m => /^(chat|todos|understanding|models|codeReview)\./.test(m));
-	assert.ok(family.includes('chat.start') && family.includes('todos.subscribe') && family.includes('understanding.watch'), 'the three families are served');
-	assert.deepEqual(family.filter(m => !SHARED_STATE_METHODS.has(m)).sort(), [], 'every one runs on the shared-state worker');
-	assert.ok(family.includes('models.check') && family.includes('models.approve') && family.includes('codeReview.run'), 'models and codeReview are served (Story 5d393a4b)');
-	assert.deepEqual([...SHARED_STATE_METHODS].filter(m => !/^(chat|todos|understanding|models|codeReview)\./.test(m)), [], 'and nothing else does');
+test('method sets: supported shared-state families and retired main-daemon refusals have explicit ownership', () => {
+ const {rpc, stream} = servedTables();
+ const served = [...rpc, ...stream];
+ const shared = served.filter(m => /^(chat|todos|understanding|models)\./.test(m));
+ assert.deepEqual([...SHARED_STATE_METHODS].sort(), shared.sort());
+ const taskReview = served.filter(m => m.startsWith('codeReview.task.'));
+ const designReview = served.filter(m => m.startsWith('designReview.'));
+ assert.deepEqual([...MAIN_DAEMON_TASK_REVIEW_METHODS].sort(), taskReview.sort());
+ assert.deepEqual([...MAIN_DAEMON_DESIGN_REVIEW_METHODS].sort(), designReview.sort());
+ for (const m of [...taskReview, ...designReview, 'codeReview.run', 'codeReview.grounding', 'codeReview.freshness']) {
+  assert.ok(served.includes(m), m);
+  assert.equal(SHARED_STATE_METHODS.has(m), false, m);
+ }
 });
 
 test('in-daemon route: targetOf sends admin/indexing to their workers, shared-state methods to the shared-state target (inline on it), others inline', async () => {
@@ -157,4 +165,42 @@ test('CM-S4-RPC/GATE: source and freshly compiled removal methods agree with han
  }
  assert.deepEqual([...output.MAIN_DAEMON_CONNECTION_METHODS],[...MAIN_DAEMON_CONNECTION_METHODS]);
  assert.deepEqual(output.methodClasses.entries(),methodClasses.entries());
+});
+
+
+test('retired review router precedence rejects through actual local handlers before any worker lookup', async () => {
+ const { Router } = await import('../router.js');
+ const { TargetRegistry } = await import('../registry.js');
+ const { directDispatch } = await import('../../server.js');
+ const none = {} as never;
+ const runtime = buildHandlerRuntime({ db: none, configStore: none, queue: none, indexer: none,
+  startedAt: 0, shutdown: () => {}, attachedClients: () => [], understandingService: () => undefined });
+ const dispatch = directDispatch(runtime.rpcHandlers, runtime.streamHandlers);
+ const local: string[] = [];
+ const router = new Router({ classOf: methodClasses.classOf, registry: new TargetRegistry(),
+  routed: new Set(['admin', 'indexing', 'session']),
+  sessions: new Proxy({}, { get() { assert.fail('retired review touched the session pool'); } }) as never,
+  local: (request, deliver) => { local.push(request.method); return dispatch(request, deliver); } });
+ const methods = [...MAIN_DAEMON_TASK_REVIEW_METHODS, ...MAIN_DAEMON_DESIGN_REVIEW_METHODS,
+  'codeReview.run', 'codeReview.grounding', 'codeReview.freshness', 'workflow.review', 'workflow.reviewArtifact', 'workflow.resolveFinding'];
+ for (const method of methods) {
+  local.length = 0;
+  let delivered!: (reply: unknown) => void;
+  const reply = new Promise<unknown>(resolve => { delivered = resolve; });
+  const cancel = router.forward({ kind: 'request', requestId: method, method, params: {},
+   stream: runtime.streamHandlers[method] !== undefined, session: { label: 'codex', pid: 42 } }, delivered);
+  try {
+   assert.deepEqual(local, [method], 'explicit refusal takes precedence over a routed session class');
+   assert.match(JSON.stringify(await reply), /review functionality is being rewritten/);
+  } finally { cancel(); }
+ }
+});
+
+
+test('qualificationState is unary ordinary session work without admin shared or FIFO routing', () => {
+ assert.deepEqual(methodClasses.entries().find(e => e.method === 'daemon.qualificationState'),
+  { method: 'daemon.qualificationState', cls: 'session', stream: false });
+ assert.equal(SHARED_STATE_METHODS.has('daemon.qualificationState'), false);
+ assert.equal(FIFO_EXEMPT_METHODS.has('daemon.qualificationState'), false);
+ assert.equal(inDaemonTarget('daemon.qualificationState', { routed: new Set(['admin', 'indexing', 'session']), onSharedWorker: false }), undefined);
 });

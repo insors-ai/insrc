@@ -55,3 +55,54 @@ Older records were checked before expanding the backlog. These references provid
 - Update the original audit with batch results when a batch validates; keep prior observations as history.
 - Present every workflow artifact before requesting approval. No automated design/code review endpoint is invoked while those endpoints are unavailable.
 
+
+## Batch 04 blocker discovered during fixture repair
+
+Batch04 ISSUE, LLD and PLAN are approved. Tasks t1/t2 passed validation; t3 is non-green and t4/t5 are not started. The current writer touches hostile temporary payloads before persistence refusal. This separately triaged production boundary defect is [ISSUE-81be53b2b0f003a7](../standalone/refuse-temporary-artifact-preparation-before-payload-E2026112081be53b2/ISSUE.md), pending approval, routed issue → build. It is a coherent artifact-write admission fix, not an issue per failed assertion. See [partial evidence](review-test-migration-2026-11-20.md); do not mark Batch04 complete or relax its canary checks.
+
+## Batch 04 implementation checkpoint after blocker repair
+
+ISSUE-81be53b2b0f003a7 is approved and its production guard correction passed build validation. Batch04 t1–t4 passed validation; t5 submits final integrated59/59 passing tests with confirmed cleanup. The previous blocked checkpoint is historical. The general graph audit remains non-green for Batch11 analyze fixtures; this is recorded rather than removed. Both BUILD-03bd849749a52b41-s1 and BUILD-81be53b2b0f003a7-s1 await final human approval; no story/epic completion is claimed. See [final evidence](review-test-migration-2026-11-20.md).
+
+## Batch 04 completed
+
+All five tasks passed validation. On 2026-11-20 the user approved BUILD-03bd849749a52b41-s1 and BUILD-81be53b2b0f003a7-s1; both stories/epics completed. GitHub tracker attachment remains unbound. The earlier blocker/pending checkpoints are historical. Batch05 ISSUE-807fa9e8fb678f4b is next and awaits its own human approval.
+
+
+## Batch 05 implementation validation checkpoint
+
+Batch05 (`ISSUE-807fa9e8fb678f4b`) reconciles incomplete RPC/stream/phase
+inventories, qualification classification, retired-review ownership and stale
+mutation documentation/count assertions. The stricter inventory found 107
+omitted registrations, an internal-only stale RPC row and a non-callable phase.
+The separately approved design correction preserves earlier tool failures while
+checking registered-repo authority before admitted execution. Tasks one and two
+passed build validation. The combined run passed **74/74 tests across 16 files**,
+with no skips/cancellations, complete coverage and confirmed cleanup. Task three
+submits documentation and final evidence for validation; human BUILD approval
+is pending. This is not a repository-wide green or deployment/push claim.
+[Details and evidence](rpc-audit-batch05-status-2026-11-20.md).
+
+
+## Batch05 human approval and completion
+
+BUILD-807fa9e8fb678f4b-s1 was explicitly approved on 2026-11-20 at 12:15:55 UTC.
+The workflow completed STORY-807fa9e8fb678f4b-s1 and EPIC-807fa9e8fb678f4b.
+The 74/74 focused result remains the pre-integration evidence. Earlier pending
+and rejected checkpoints are historical. GitHub issue attachment remains
+unbound because the existing ISSUE-anchored tracker route requests a Define.
+
+
+## Post-merge validation checkpoint
+
+All pending workflow records were committed at `de7fa6759`. Merge `533b69263`
+integrated origin/v2 through `86062f822`, retaining both local diagnostic/tool
+regressions and the upstream build-default migration test. The eight artifact
+conflicts contained only sync timestamps; the newer timestamps were retained.
+
+Coordinator run `78dcc6ba-b4de-44f6-bf21-2107d8026549` passed **94/94 tests
+across 18 complete files**, with zero skips, cancellations, failures or todos
+and confirmed child closure. This adds the upstream repo-settings and build
+commands documentation suites to Batch05's 16-file selection. Evidence is in
+`docs/plans/rpc-audit-evidence-2026-11-20/post-merge/`. No repository-wide or
+release qualification result is claimed.

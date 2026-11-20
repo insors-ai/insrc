@@ -1,0 +1,267 @@
+TAP version 13
+# Subtest: executor-approval.test.ts: a declined call returns a denied failure with reason declined and execute is never called
+ok 1 - executor-approval.test.ts: a declined call returns a denied failure with reason declined and execute is never called
+  ---
+  duration_ms: 3.909458
+  type: 'test'
+  ...
+# Subtest: executor-approval.test.ts: a timed-out call returns a denied failure with reason timed-out and the tool is not run
+ok 2 - executor-approval.test.ts: a timed-out call returns a denied failure with reason timed-out and the tool is not run
+  ---
+  duration_ms: 0.316708
+  type: 'test'
+  ...
+# Subtest: executor-approval.test.ts: no client and a cancelled request return denied with their reasons
+ok 3 - executor-approval.test.ts: no client and a cancelled request return denied with their reasons
+  ---
+  duration_ms: 0.482375
+  type: 'test'
+  ...
+# Subtest: executor-approval.test.ts: an approved call runs and returns the tool's result unchanged
+ok 4 - executor-approval.test.ts: an approved call runs and returns the tool's result unchanged
+  ---
+  duration_ms: 0.627709
+  type: 'test'
+  ...
+# Subtest: executor-approval.test.ts: a second destructive call after an approved one raises its own request with a new id
+ok 5 - executor-approval.test.ts: a second destructive call after an approved one raises its own request with a new id
+  ---
+  duration_ms: 0.602917
+  type: 'test'
+  ...
+# Subtest: executor-approval.test.ts: a bad input is rejected before any prompt
+ok 6 - executor-approval.test.ts: a bad input is rejected before any prompt
+  ---
+  duration_ms: 14.091584
+  type: 'test'
+  ...
+# Subtest: executor-approval.test.ts: only a matching approval runs the tool; a decline object, another request id or a gate that cannot describe the call do not
+ok 7 - executor-approval.test.ts: only a matching approval runs the tool; a decline object, another request id or a gate that cannot describe the call do not
+  ---
+  duration_ms: 0.448333
+  type: 'test'
+  ...
+# [12:17:39] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "ap_destructive"
+#     [35maliases[39m: []
+# [12:17:39] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ap_destructive"
+# [12:17:39] [32mINFO[39m: [36m[tools-executor] asking for approval[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ap_destructive"
+#     [35mapprovalClass[39m: "destructive"
+#     [35mrequestId[39m: "d97af8c9-c596-49d3-9069-60a963dc7cd5"
+# [12:17:39] [33mWARN[39m: [36m[tools-executor] approval not given; tool not run[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ap_destructive"
+#     [35mrequestId[39m: "d97af8c9-c596-49d3-9069-60a963dc7cd5"
+#     [35mdenial[39m: "declined"
+# [12:17:39] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "ap_destructive"
+#     [35maliases[39m: []
+# [12:17:39] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ap_destructive"
+# [12:17:39] [32mINFO[39m: [36m[tools-executor] asking for approval[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ap_destructive"
+#     [35mapprovalClass[39m: "destructive"
+#     [35mrequestId[39m: "d8b8b3ad-b96e-4b53-bf2d-d238640f70b9"
+# [12:17:39] [33mWARN[39m: [36m[tools-executor] approval not given; tool not run[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ap_destructive"
+#     [35mrequestId[39m: "d8b8b3ad-b96e-4b53-bf2d-d238640f70b9"
+#     [35mdenial[39m: "timed-out"
+# [12:17:39] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "ap_destructive"
+#     [35maliases[39m: []
+# [12:17:39] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ap_destructive"
+# [12:17:39] [32mINFO[39m: [36m[tools-executor] asking for approval[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ap_destructive"
+#     [35mapprovalClass[39m: "destructive"
+#     [35mrequestId[39m: "96bebb9e-80a6-4e57-a480-7ff28fe4dc64"
+# [12:17:39] [33mWARN[39m: [36m[tools-executor] approval not given; tool not run[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ap_destructive"
+#     [35mrequestId[39m: "96bebb9e-80a6-4e57-a480-7ff28fe4dc64"
+#     [35mdenial[39m: "no-client"
+# [12:17:39] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ap_destructive"
+# [12:17:39] [32mINFO[39m: [36m[tools-executor] asking for approval[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ap_destructive"
+#     [35mapprovalClass[39m: "destructive"
+#     [35mrequestId[39m: "e8fa4119-ad53-4e6c-81e0-737f5619a362"
+# [12:17:39] [33mWARN[39m: [36m[tools-executor] approval not given; tool not run[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ap_destructive"
+#     [35mrequestId[39m: "e8fa4119-ad53-4e6c-81e0-737f5619a362"
+#     [35mdenial[39m: "cancelled"
+# [12:17:39] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ap_destructive"
+# [12:17:39] [32mINFO[39m: [36m[tools-executor] asking for approval[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ap_destructive"
+#     [35mapprovalClass[39m: "destructive"
+#     [35mrequestId[39m: "840296b5-92ed-41d0-94f7-9974615f08fa"
+# [12:17:39] [31mERROR[39m: [36m[tools-executor] approval gate failed; denying[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ap_destructive"
+#     err: "broker exploded"
+# [12:17:39] [33mWARN[39m: [36m[tools-executor] approval not given; tool not run[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ap_destructive"
+#     [35mrequestId[39m: "840296b5-92ed-41d0-94f7-9974615f08fa"
+#     [35mdenial[39m: "no-client"
+# [12:17:39] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "ap_destructive"
+#     [35maliases[39m: []
+# [12:17:39] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ap_destructive"
+# [12:17:39] [32mINFO[39m: [36m[tools-executor] asking for approval[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ap_destructive"
+#     [35mapprovalClass[39m: "destructive"
+#     [35mrequestId[39m: "cb8b0ade-acf0-4eb0-b313-6e7e9e06d71e"
+# [12:17:39] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "ap_common"
+#     [35maliases[39m: []
+# [12:17:39] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ap_common"
+# [12:17:39] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ap_common"
+# [12:17:39] [32mINFO[39m: [36m[tools-executor] asking for approval[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ap_common"
+#     [35mapprovalClass[39m: "common"
+#     [35mrequestId[39m: "2e679bd8-ad21-4899-8b1c-8e4223b07f84"
+# [12:17:39] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ap_common"
+# [12:17:39] [32mINFO[39m: [36m[tools-executor] asking for approval[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ap_common"
+#     [35mapprovalClass[39m: "common"
+#     [35mrequestId[39m: "40b2e4f8-ef8d-4318-a1b1-f15fd0551faa"
+# [12:17:39] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "ap_none"
+#     [35maliases[39m: []
+# [12:17:39] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ap_none"
+# [12:17:39] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "ap_destructive"
+#     [35maliases[39m: []
+# [12:17:39] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "ap_other_destructive"
+#     [35maliases[39m: []
+# [12:17:39] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ap_destructive"
+# [12:17:39] [32mINFO[39m: [36m[tools-executor] asking for approval[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ap_destructive"
+#     [35mapprovalClass[39m: "destructive"
+#     [35mrequestId[39m: "8ac50d65-9d1a-4a65-97c8-d766cc8497b4"
+# [12:17:39] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ap_destructive"
+# [12:17:39] [32mINFO[39m: [36m[tools-executor] asking for approval[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ap_destructive"
+#     [35mapprovalClass[39m: "destructive"
+#     [35mrequestId[39m: "092631c3-bb9f-4273-8b73-dbc2ccbb8beb"
+# [12:17:39] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ap_other_destructive"
+# [12:17:39] [32mINFO[39m <daemon>: [36m[tools-executor] asking for approval[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ap_other_destructive"
+#     [35mapprovalClass[39m: "destructive"
+#     [35mrequestId[39m: "166f3c7b-41df-4d4a-8b68-08941a9ae3f7"
+# [12:17:39] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "ap_typed"
+#     [35maliases[39m: []
+# [12:17:39] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ap_typed"
+# [12:17:39] [33mWARN[39m: [36m[tools-executor] tool input rejected[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ap_typed"
+# [12:17:39] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "ap_destructive"
+#     [35maliases[39m: []
+# [12:17:39] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ap_destructive"
+# [12:17:39] [32mINFO[39m: [36m[tools-executor] asking for approval[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ap_destructive"
+#     [35mapprovalClass[39m: "destructive"
+#     [35mrequestId[39m: "e1aebae8-52c2-47da-9086-64aba80ab7b5"
+# [12:17:39] [33mWARN[39m: [36m[tools-executor] approval not given; tool not run[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ap_destructive"
+#     [35mrequestId[39m: "e1aebae8-52c2-47da-9086-64aba80ab7b5"
+#     [35mdenial[39m: "declined"
+# [12:17:39] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ap_destructive"
+# [12:17:39] [32mINFO[39m: [36m[tools-executor] asking for approval[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ap_destructive"
+#     [35mapprovalClass[39m: "destructive"
+#     [35mrequestId[39m: "3b9eef2a-1da0-4b15-8d9a-58469ea74661"
+# [12:17:39] [33mWARN[39m: [36m[tools-executor] approval not given; tool not run[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ap_destructive"
+#     [35mrequestId[39m: "3b9eef2a-1da0-4b15-8d9a-58469ea74661"
+#     [35mdenial[39m: "declined"
+# [12:17:39] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ap_destructive"
+# [12:17:39] [32mINFO[39m: [36m[tools-executor] asking for approval[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ap_destructive"
+#     [35mapprovalClass[39m: "destructive"
+#     [35mrequestId[39m: "a08d8cab-e12f-413b-a76c-97f0e961ab15"
+# [12:17:39] [32mINFO[39m: [36m[tools-registry] tool registered[39m
+#     [35mmodule[39m: "tools-registry"
+#     [35mid[39m: "ap_broken_gate"
+#     [35maliases[39m: []
+# [12:17:39] [32mINFO[39m: [36m[tools-executor] executing tool[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ap_broken_gate"
+# [12:17:39] [32mINFO[39m: [36m[tools-executor] asking for approval[39m
+#     [35mmodule[39m: "tools-executor"
+#     [35mid[39m: "ap_broken_gate"
+#     [35mapprovalClass[39m: "destructive"
+#     [35mrequestId[39m: "19dd84e2-4066-4296-b974-f446d2510b10"
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 271.523125

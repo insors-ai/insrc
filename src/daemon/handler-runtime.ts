@@ -28,7 +28,8 @@ import { getDb } from '../db/client.js';
 import { gateHandlers, gateRepoCall } from './repo-call-gate.js';
 
 /** The methods gated inside their own handlers (the approval family): the table-wide wrapper leaves them alone. */
-const APPROVAL_FAMILY: ReadonlySet<string> = new Set(['workflow.approve', 'workflow.approvePipeline']);
+// These adapters validate repository authority themselves and preserve their own error envelopes.
+const SELF_GATED_METHODS: ReadonlySet<string> = new Set(['workflow.approve', 'workflow.approvePipeline', 'repo.settings.set']);
 import { listRepos, addRepo, removeRepo, repoContainingCwd, InvalidRepoPathError, validateRepoPath } from '../db/repos.js';
 import type { AllTaskDetails } from './task-progress/detail-compatibility.js';
 import { createProgressRoutes } from './task-progress/rpc.js';
@@ -1825,7 +1826,7 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		'chat.resumeDataAnalysis':     offlineStream('chat.resumeDataAnalysis'),
 		'todos.subscribe': todosRpc.subscribe,
 		// One registry tool run for a client with a validated caller; closing the stream cancels it.
-		'tools.call':                  toolsCall,
+		'tools.call': (params, send, signal, context) => toolsCall(params, send, signal, context, registeredRepos),
 		// Orchestrator end-to-end. Drives the full pipeline
 		// (classify -> buildRunBundle -> plan -> execute), persists
 		// run.json at every stage transition, and emits a stream of
@@ -1899,8 +1900,9 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 	Object.assign(rpcHandlers, progressRoutes.rpc);
 	Object.assign(streamHandlers, progressRoutes.streams);
 	// Every other file-modifying call goes through the repo gate too (the approval family is gated inside its handlers above).
-	gateHandlers(rpcHandlers as never, 'rpc', registeredRepos, APPROVAL_FAMILY);
-	gateHandlers(streamHandlers as never, 'stream', registeredRepos);
+	gateHandlers(rpcHandlers as never, 'rpc', registeredRepos, SELF_GATED_METHODS);
+	// tools.call validates its existing structural envelope before applying the repo gate.
+	gateHandlers(streamHandlers as never, 'stream', registeredRepos, new Set(['tools.call']));
 	return { rpcHandlers, streamHandlers, understandingRoutes };
 }
 

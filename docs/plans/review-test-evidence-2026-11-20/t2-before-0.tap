@@ -1,0 +1,33 @@
+TAP version 13
+# Subtest: codeReview.freshness on the main thread gets the code-indexing worker's codeIndexWorkFor result
+not ok 1 - codeReview.freshness on the main thread gets the code-indexing worker's codeIndexWorkFor result
+  ---
+  duration_ms: 3199.017958
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/src/daemon/threads/__tests__/indexing-port.test.ts:1:4804'
+  failureType: 'testCodeFailure'
+  error: 'Code review functionality is being rewritten.'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    reviewUnavailable (/Users/subhagho/work/projects/insors/insrc/src/workflow/review-unavailable.ts:3:8)
+    Object.codeReview.freshness (/Users/subhagho/work/projects/insors/insrc/src/daemon/handler-runtime.ts:728:48)
+    TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/threads/__tests__/indexing-port.test.ts:102:62)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: the main thread's depthForRepo asks the code-indexing worker's queue
+ok 2 - the main thread's depthForRepo asks the code-indexing worker's queue
+  ---
+  duration_ms: 7.077084
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 1
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4347.634708

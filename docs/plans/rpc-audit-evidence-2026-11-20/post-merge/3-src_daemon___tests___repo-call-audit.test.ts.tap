@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: repo-call-audit.test.ts: every method of the handler registry and every step phase has an audit entry marked modifying, read-only or daemon-store
+ok 1 - repo-call-audit.test.ts: every method of the handler registry and every step phase has an audit entry marked modifying, read-only or daemon-store
+  ---
+  duration_ms: 9.237209
+  type: 'test'
+  ...
+# Subtest: audit coverage detects missing and stale registrations independently
+ok 2 - audit coverage detects missing and stale registrations independently
+  ---
+  duration_ms: 1.588
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1101.486875

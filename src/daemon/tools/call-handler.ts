@@ -14,6 +14,7 @@
 import type { IpcStreamMessage, ToolsCallDone, ToolsCallParams } from '../../shared/types.js';
 import type { TrustedRpcContext } from '../request-context.js';
 import { executeTool } from './executor.js';
+import { gateRepoCall } from '../repo-call-gate.js';
 import type { ToolDeps } from './types.js';
 
 const CALLERS: readonly string[] = ['agent', 'daemon', 'workflow'];
@@ -41,6 +42,7 @@ export async function toolsCall(
 	send: (msg: IpcStreamMessage) => void,
 	signal: AbortSignal,
 	context?: TrustedRpcContext | undefined,
+	registeredRepos?: (() => Promise<ReadonlySet<string>>) | undefined,
 ): Promise<void> {
 	const p = validate(params);
 	if (typeof p === 'string') {
@@ -52,6 +54,11 @@ export async function toolsCall(
 		connectionExecution: context?.connectionExecution,
 		sessionId: context === undefined ? 'tools-call' : `tools-call:${context.connectionIdentity}`,
 		repoPath: p.repoPath,
+		...(registeredRepos === undefined ? {} : { authorizeRepository: async () => {
+			const checked = await gateRepoCall('tools.call', p, registeredRepos);
+			if (!checked.ok) throw new Error(`${checked.code}: ${checked.message}`);
+			return checked.repo;
+		} }),
 		send,
 		requestId,
 		signal,

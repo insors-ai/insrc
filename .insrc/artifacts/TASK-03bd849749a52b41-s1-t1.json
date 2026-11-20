@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-67247188-330f-469f-af62-6c2547bfcdb5",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-20T08:34:23.495Z",
+    "epicCreatedAt": "2026-11-20T04:36:15.580Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "03bd849749a52b41",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Migrate review boundary and client assertions",
+      "parent": {
+        "entityId": "STORY-03bd849749a52b41-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-03bd849749a52b41-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "b861ce2a7183f38e3fb0274ff8efd1f92679b2ac6d70b268f1b4911ccc420a24",
+        "at": "2026-11-20T08:34:23.495Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T08:34:23.498Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Migrate review boundary and client assertions",
+    "summary": "Capture focused baseline and assertion map; align review-specific labels, lifecycle wiring, in-daemon client and MCP checks with exact unavailable responses. Move valid generic transport assertions to supported or explicit test-only handlers.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "Retired design/code surfaces reject with exact current family response before poisoned-argument reads, providers or IO; no synthetic success on review-named surfaces.",
+      "Progress/done, synchronous throws, cancellation/drain and cwd/repo lookup retain equivalent positive controls on supported/test-only generic methods.",
+      "Review-only label expectations change without weakening active model-role tier assertions or modifying production review/RPC classification.",
+      "Record baseline and old-assertion→current-control mapping; preserve meaningful assertions rather than skipping/deleting suites."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Retired review surfaces reject before argument inspection, providers or IO"
+      },
+      {
+        "level": "integration",
+        "name": "Generic client progress, synchronous errors and abort drains retain coverage on supported handlers"
+      },
+      {
+        "level": "integration",
+        "name": "Review-only label assertions reflect unavailable execution without changing active role tier tests"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

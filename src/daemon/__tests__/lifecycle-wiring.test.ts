@@ -27,7 +27,7 @@ after(async () => {
 	rmSync(STORE_DIR, { recursive: true, force: true });
 });
 
-import type { IpcStreamMessage, LLMProvider } from '../../shared/types.js';
+import type { IpcStreamMessage } from '../../shared/types.js';
 import { artifact as makeArtifact, H } from '../../workflow/artifact-core/__tests__/store-kit.js';
 import { FileSidecarStore } from '../../workflow/artifact-core/sidecar-store.js';
 import type { LifecycleService } from '../../workflow/artifact-core/lifecycle-service.js';
@@ -65,7 +65,7 @@ async function seeded(): Promise<string> {
 const approving = (repo: string, id: string, actor?: unknown) =>
 	handleWorkflowApprove({ repo, artifactPath: artifactJsonPath(repo, id), ...(actor !== undefined ? { actor } : {}) }) as Promise<WorkflowApproveResult>;
 
-test('the daemon approve handler, the review-decision step and workflowReviewStart use the repository\'s durable LifecycleService, refuse a head ahead of its log, use the request\'s person actor or insrc:approval, and a repository whose registry entry cannot be created is refused', async () => {
+test('the daemon approve handler and review-decision step use the repository\'s durable LifecycleService, refuse a head ahead of its log, use the request\'s person actor or insrc:approval, and a repository whose registry entry cannot be created is refused', async () => {
 	const repo = await seeded();
 
 	// workflow.approve: the approval goes through the durable service, as the gate by default and as the person when the request names one.
@@ -118,20 +118,16 @@ test('the daemon approve handler, the review-decision step and workflowReviewSta
 	assert.equal(captured[0]?.actor?.id, 'insrc:approval');
 	assert.equal(captured[1]?.actor?.id, 'github:alice');
 
-	// workflow.review hands the review the repository's service.
-	const md = join(docs, 'PLAN.md');
+	// Retired workflow.review does not enter lifecycle/provider work or emit frames.
 	const sent: IpcStreamMessage[] = [];
-	let reviewLifecycle: LifecycleService | undefined;
-	await workflowReviewStart({ artifactPath: md, repo }, m => sent.push(m), new AbortController().signal, {
-		resolveProvider: () => ({ provider: {} as LLMProvider, model: 'fake' }),
-		lifecycleFor: r => lifecycleFor(r).service,
-		review: async opts => {
-			reviewLifecycle = opts.lifecycle;
-			return { report: { verdict: 'pass', counts: { high: 0, med: 0, low: 0 }, findings: [], artifact: PLAN_C, stage: 'plan', model: 'fake', reviewedAt: '2026-10-21T00:00:00.000Z' }, applied: [], pendingUser: [] } as never;
-		},
-	});
-	assert.equal(reviewLifecycle, lifecycleFor(repo).service);
-	assert.ok(sent.some(m => m.stream === 'done'), JSON.stringify(sent));
+	let work = 0;
+	await assert.rejects(workflowReviewStart({ artifactPath: join(docs, 'PLAN.md'), repo }, (m: IpcStreamMessage) => sent.push(m), new AbortController().signal, {
+		resolveProvider: () => { work++; throw new Error('provider must not resolve'); },
+		lifecycleFor: () => { work++; throw new Error('review lifecycle must not resolve'); },
+		review: async () => { work++; throw new Error('review must not run'); },
+	}), { message: 'Design review functionality is being rewritten.' });
+	assert.equal(work, 0); assert.deepEqual(sent, []);
+
 });
 
 test('one registry entry per repository however its path is written, and a single-artifact approval uses the repository the artifact sits in, not the environment\'s', async () => {

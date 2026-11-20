@@ -1382,6 +1382,42 @@ A `github.json` created by hand afterwards is ignored: the settings now live in 
 the way to change them. To go back to an older daemon, rename the file back by hand, because the older daemon reads
 `github.json` and would see no settings.
 
+#### The schemaVersion at the root, and the migration it decides
+
+`~/.insrc/repo-config.json` may carry an integer `schemaVersion` beside `default` and `repos`. It records which one-time
+migrations this install has had, so each runs once, however many commits an update skips: the stored number decides, never a
+commit id. The daemon is the only writer; it stamps the field through the same queue and the same verified write as every other
+setting, keeps `default`, `repos` and any other root key, and never lowers the value. A repository setting written later (with
+`repo.settings.set` or at `repo.add`) keeps it.
+
+At every boot, after the registry is loaded, the daemon starts a pass in the background and does not wait for it, so it never
+delays startup and a failure never stops the daemon (the boot log carries its result). The pass compares the stored value with the
+one this daemon expects, which is currently 1 (step 1: apply the build defaults to every registered repository, the same function
+`repo.buildDefaults.migrate` runs):
+
+| Stored `schemaVersion` | What the pass does | Result `status` |
+|---|---|---|
+| absent, `null` or `0` (also a missing file) | runs every step numbered above it, in order, and stamps the highest version whose steps ran clean | `applied` |
+| below the expected version | runs the steps above it, in order, and stamps the highest clean version | `applied` |
+| equal to the expected version | nothing is run and nothing is written | `up-to-date` |
+| above the expected version (written by a newer daemon, then rolled back) | nothing is run and nothing is written; the value is never lowered | `newer-schema` |
+| present but not a non-negative integer | nothing is run and nothing is written; it is not taken as 0, which would run the migration again | `schema-version-invalid` |
+| the file cannot be read (malformed JSON, a non-object top level, `default` or `repos`) | nothing is run and the file is not overwritten | `file-unreadable` |
+
+Other outcomes: a step that reports a failed write for any repository (`not-clean`) or throws (`failed`) stops the pass, and only
+the highest earlier clean version is stamped, so the step runs again at the next boot; repositories that already hold commands
+report `already-set`, so running it again is harmless. A registry that cannot be listed (`registry-unreadable`) runs nothing, and a
+stamp that cannot be written (`failed`) leaves the version unstamped, so the steps run again at the next boot. The migration may run
+again at each boot until the stamp can be written, and a command you cleared in between could be applied once more.
+
+At the first boot of the updated daemon on an existing install the version is absent, so step 1 runs once over every registered
+repository and 1 is stamped; a fresh install creates the file with `schemaVersion` 1. Later boots find it current and do nothing.
+A command you clear on purpose afterwards is not applied again at boot, because the version is current; only a manual
+`repo.buildDefaults.migrate` applies it again, and that method neither reads nor writes `schemaVersion`, so it can neither cause
+nor suppress the boot run. Removing the value, or lowering it by hand, makes the pending steps run once more at the next boot. Two
+daemons that boot at nearly the same time may both run step 1; it never overwrites an entry that sets a key and the stamp is an
+atomic write, so the result is the same, and the window is not locked.
+
 ### Build commands
 
 The gate runs the typecheck and the tests itself, and the prompts name them to the builder. Which commands those are depends on
@@ -1479,7 +1515,7 @@ JetBrains it is a button in the Build section.
 #### Migrating repositories registered before the defaults
 
 `repo.add` stores the defaults only for a repository added from now on, so a repository registered earlier has none of the three
-keys. After the daemon is updated, run `repo.buildDefaults.migrate` once (it takes no parameters and nothing runs it by itself): it
+keys. The daemon applies them once by itself, at the first boot after the update (see the schemaVersion above), so running `repo.buildDefaults.migrate` is no longer needed; the method stays for running it by hand (it takes no parameters). It
 walks the registered repositories in registry order, calls the same function `repo.add` uses for each, one at a time, and returns
 
 ```json
@@ -1497,7 +1533,7 @@ it already set. If the registry cannot be listed the reply is `{ "ok": false, "e
 and nothing is written. Only `~/.insrc/repo-config.json` is written, through the daemon's writer; no file of a repository is.
 
 Two limits. A command you cleared on purpose (with `repo.settings.set` and `null`) is applied again the next time the method
-is run, because nothing records a clear. And the function reads a repository's entry and then writes it, as separate steps, so a
+is run, because nothing records a clear; the boot pass does not do this once its version is stamped. And the function reads a repository's entry and then writes it, as separate steps, so a
 `repo.settings.set` that lands between the two can be overwritten; that is the same window as at `repo.add`.
 
 A build phase reads a repository's setting once, when it starts, and uses that one profile for its mapping check, its check

@@ -12,7 +12,7 @@ import { basename, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { PROJECT_TYPE_GUIDANCE } from '../steps/build-step/validation-checks.js';
-import { applyBuildDefaults, migrateBuildDefaults } from '../repo-settings.js';
+import { REPO_CONFIG_SCHEMA_VERSION, applyBuildDefaults, migrateBuildDefaults, runSchemaMigrations } from '../repo-settings.js';
 import { repoConfigPath } from '../../workflow/config/repo-config.js';
 import { moveLegacyRepoConfig } from '../../workflow/config/repo-config-store.js';
 
@@ -234,4 +234,57 @@ test('build-commands-doc.test.ts: docs/daemon.md and the other live docs name re
 		assert.match(text, /created by hand afterwards is ignored/, `${doc} says a github.json created by hand afterwards is ignored`);
 		for (const line of text.split('\n').filter(l => l.includes('github.json'))) assert.match(line, /was|moved|ignored|created by hand/, `${doc}: github.json appears only to say it was renamed: ${line.trim()}`);
 	}
+});
+
+// Story d70697dff9f56b4a/s1 / t4 — the schemaVersion and its boot migration are read against the code.
+test('build-commands-doc.test.ts: docs/daemon.md describes the schemaVersion at the root of repo-config.json and the boot migration in line with the code', async () => {
+	const fileName = (() => {
+		const before = process.env['INSRC_REPO_CONFIG'];
+		try { delete process.env['INSRC_REPO_CONFIG']; return basename(repoConfigPath()); }
+		finally { if (before !== undefined) process.env['INSRC_REPO_CONFIG'] = before; }
+	})();
+	assert.equal(fileName, 'repo-config.json');
+	const section = /#### The schemaVersion at the root, and the migration it decides([\s\S]*?)### Build commands/.exec(DOC)?.[1] ?? '';
+	assert.ok(section.length > 0, 'the subsection exists in docs/daemon.md');
+
+	// it is about the file the code reads, and the old name is not given to the field
+	assert.ok(section.includes(`~/.insrc/${fileName}`) && section.includes('`schemaVersion`'), 'it names the file and the field');
+	assert.ok(!section.includes('github.json'), 'the field is never placed in the old file');
+	// the expected version is the code's, and step 1 is the build defaults
+	assert.ok(section.includes(`currently ${REPO_CONFIG_SCHEMA_VERSION} (step 1`), `it states the expected version ${REPO_CONFIG_SCHEMA_VERSION}`);
+	assert.match(section, /step 1: apply the build defaults/);
+
+	// every status the pass can report, read by running it, is named with its backticks
+	const dir = mkdtempSync(join(tmpdir(), 'insrc-doc-schema-'));
+	const file = join(dir, fileName);
+	try {
+		const seen = new Set<string>();
+		const run = async (content: string | undefined, over: Record<string, unknown> = {}): Promise<void> => {
+			rmSync(file, { force: true });
+			if (content !== undefined) writeFileSync(file, content);
+			const r = await runSchemaMigrations({ registeredRepos: async () => [], configPath: file, ...over });
+			seen.add(r.status);
+		};
+		await run(undefined);                                                   // applied
+		await run(`{"schemaVersion":${REPO_CONFIG_SCHEMA_VERSION}}`);           // up-to-date
+		await run(`{"schemaVersion":${REPO_CONFIG_SCHEMA_VERSION + 1}}`);       // newer-schema
+		await run('{"schemaVersion":"x"}');                                     // schema-version-invalid
+		await run('{not json');                                                 // file-unreadable
+		await run('{}', { registeredRepos: async () => { throw new Error('x'); } });                                                  // registry-unreadable
+		await run('{}', { steps: [{ version: 1, run: async () => ({ clean: false }) }] });                                            // not-clean
+		await run('{}', { steps: [{ version: 1, run: async () => { throw new Error('x'); } }] });                                     // failed
+		assert.deepEqual([...seen].sort(), ['applied', 'failed', 'file-unreadable', 'newer-schema', 'not-clean', 'registry-unreadable', 'schema-version-invalid', 'up-to-date']);
+		for (const status of seen) assert.ok(section.includes(`\`${status}\``), `the subsection names the status ${status}`);
+	} finally { rmSync(dir, { recursive: true, force: true }); }
+
+	// the rules, as the code behaves
+	assert.match(section, /absent, `null` or `0`/, 'absent, null and 0 apply');
+	assert.match(section, /not taken as 0/, 'an invalid value is not taken as 0');
+	assert.match(section, /never a\s+commit id|never a commit id/, 'the decision is not by commit id');
+	assert.match(section, /never lowers the value/);
+	assert.match(section, /does not wait for it, so it never\s+delays startup and a failure never stops the daemon/, 'the pass does not delay or stop startup');
+	assert.match(section, /runs again at the next boot/, 'a step that did not run clean is retried');
+	assert.match(section, /neither reads nor writes `schemaVersion`/, 'the manual method does not touch the version');
+	assert.match(section, /not applied again at boot[\s\S]*only a manual\s+`repo\.buildDefaults\.migrate`/, 'a deliberate clear is not re-applied at boot');
+	assert.match(section, /Removing the value, or lowering it by hand/, 'lowering or removing it re-runs the steps');
 });

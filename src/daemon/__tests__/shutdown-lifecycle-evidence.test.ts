@@ -1,9 +1,9 @@
-import { childLine, fixtureOwnerScript, ownChild, stopOwnedChildren, stopOwnedTargets } from '../tools/__tests__/_proc.js';
+import { childLine, fixtureOwnerScript, ownChild, spawnFixture, stopOwnedChildren, stopOwnedTargets } from '../tools/__tests__/_proc.js';
 import { requirePreparedBuild } from '../../../scripts/test-harness/build.mjs';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { after, afterEach, before, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { spawn, execFileSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
 import { once } from 'node:events';
 import { connect } from 'node:net';
@@ -48,7 +48,7 @@ async function scenario(mode: 'healthy' | 'blocked' | 'guard-death') {
  await server.listen(); publication.release(); process.stdout.write('ready');
  })();`);
  const env = { ...process.env, HOME: home, INSRC_LOG_LEVEL: 'silent' };
- const child = spawn(process.execPath, [entry], { env, stdio: ['ignore', 'pipe', 'inherit'] }); children.push(child); ownChild(child);
+ const child = spawnFixture(process.execPath, [entry], { env, stdio: ['ignore', 'pipe', 'inherit'] }); children.push(child); ownChild(child);
  const ended = once(child, 'exit'); await childLine(child);
  const original = await captureStopTarget(child.pid!); assert.ok(original);
  const identity = { pid: original.pid, startedAt: original.startedAt, commandLine: original.commandLine }; await original.handle.close();
@@ -66,7 +66,7 @@ async function scenario(mode: 'healthy' | 'blocked' | 'guard-death') {
   return { started: true, alreadyRunning: false, logPath: '', pid: child.pid };
  } }); process.stdout.write(JSON.stringify(result));`);
  const startedAt = new Date().toISOString(), started = Date.now();
- const ctl = spawn(process.execPath, [controller], { env, stdio: ['ignore', 'pipe', 'inherit'] }); children.push(ctl); ownChild(ctl);
+ const ctl = spawnFixture(process.execPath, [controller], { env, stdio: ['ignore', 'pipe', 'inherit'] }); children.push(ctl); ownChild(ctl);
  let output = ''; ctl.stdout!.on('data', data => { output += String(data); }); const controllerEnded = once(ctl, 'exit');
  let guardOwner: unknown;
  if (mode === 'guard-death') {

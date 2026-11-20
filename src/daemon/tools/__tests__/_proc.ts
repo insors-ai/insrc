@@ -7,19 +7,28 @@
 
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
 import type { ChildProcess } from 'node:child_process';
+import { spawn as nodeSpawn } from 'node:child_process';
+import type { SpawnOptions } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { observeOwnedProcessDisposal } from '../../../shared/process-group.js';
+import { killProcessGroup, observeOwnedProcessDisposal } from '../../../shared/process-group.js';
 import type { ProcessDisposal } from '../../../shared/process-group.js';
 import type { StopTarget } from '../../../shared/daemon-process-client.js';
 import { participantContext } from '../../../../scripts/test-harness/context.mjs';
 
-const owned = new WeakMap<ChildProcess, { disposal: () => ProcessDisposal; marker: string | undefined }>();
+const owned = new WeakMap<ChildProcess, { disposal: () => ProcessDisposal; marker: string | undefined; groupOwned: boolean }>();
+export function spawnFixture(command: string, args: readonly string[], options: SpawnOptions): ChildProcess {
+	return ownChild(nodeSpawn(command, [...args], { ...options, detached: process.platform !== 'win32' }), true);
+}
 /** Register retained fixture handles; an unconfirmed disposal retains its run marker. */
-export function ownChild<T extends ChildProcess>(child: T): T {
+export function ownChild<T extends ChildProcess>(child: T, groupOwned = false): T {
 	if (owned.has(child)) return child;
-	const disposal = observeOwnedProcessDisposal(child);
+	const observed = observeOwnedProcessDisposal(child);
+	const disposal = (): ProcessDisposal => {
+		const result = observed();
+		return groupOwned || (result.state === 'confirmed' && result.reason === 'not_started') ? result : { state: 'unknown', reason: 'group_state_unknown' };
+	};
 	let marker: string | undefined;
 	if (process.env['INSRC_TEST_RUN_ID']) {
 		const context = participantContext();
@@ -27,7 +36,7 @@ export function ownChild<T extends ChildProcess>(child: T): T {
 		marker = join(actors, `${randomUUID()}.fixture.json`);
 		writeFileSync(marker, JSON.stringify({ runId: context.runId, kind: 'fixture', pid: child.pid ?? null }));
 	}
-	const state = { disposal, marker }; owned.set(child, state);
+	const state = { disposal, marker, groupOwned }; owned.set(child, state);
 	child.once('close', () => { if (state.marker && disposal().state === 'confirmed') { try { unlinkSync(state.marker); state.marker = undefined; } catch { /* Preserve unconfirmed marker state for teardown. */ } } });
 	return child;
 }
@@ -38,9 +47,10 @@ export async function stopOwnedChildren(children: ChildProcess[]): Promise<void>
 		const state = owned.get(child);
 		if (!state) { failures.push(new Error('Fixture child was not registered at spawn.')); continue; }
 		try {
-			if (state.disposal().state !== 'confirmed' && child.exitCode === null && child.signalCode === null) {
+			if (state.disposal().state !== 'confirmed') {
 				if (child.pid === undefined || !Number.isInteger(child.pid) || child.pid <= 0) throw new Error('Fixture never acquired a process handle.');
-				child.kill('SIGKILL');
+				if (state.groupOwned) killProcessGroup(child.pid);
+				else if (child.exitCode === null && child.signalCode === null) child.kill('SIGKILL');
 			}
 			if (!await waitFor(() => state.disposal().state === 'confirmed')) throw new Error('Fixture disposal remains unconfirmed.');
 			if (state.marker) { unlinkSync(state.marker); state.marker = undefined; }

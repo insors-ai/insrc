@@ -1,8 +1,8 @@
-import { childLine, ownChild, stopOwnedChildren } from '../../daemon/tools/__tests__/_proc.js';
+import { childLine, ownChild, spawnFixture, stopOwnedChildren } from '../../daemon/tools/__tests__/_proc.js';
 import { requirePreparedBuild } from '../../../scripts/test-harness/build.mjs';
 import { after, afterEach, before, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { spawn, execFileSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
 import { once } from 'node:events';
 import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
@@ -30,7 +30,7 @@ afterEach(async () => {
 after(() => { rmSync(dir, { recursive: true, force: true }); });
 
 function session(pid: number | string, executable = binary, env: NodeJS.ProcessEnv = process.env) {
-	const child = spawn(executable, [String(pid)], { env, stdio: ['pipe', 'pipe', 'pipe'] });
+	const child = spawnFixture(executable, [String(pid)], { env, stdio: ['pipe', 'pipe', 'pipe'] });
 	children.push(child); ownChild(child);
 	const lines: string[] = [];
 	let waiter: { resolve: (line: string) => void; reject: (error: Error) => void; timer: ReturnType<typeof setTimeout> } | undefined;
@@ -60,7 +60,7 @@ async function daemonStandIn(named = true): Promise<ChildProcess> {
 	const entry = join(mkdtempSync(join(dir, 'target-')), 'démon', named ? 'daemon' : 'other', 'index.js');
 	mkdirSync(dirname(entry), { recursive: true });
 	writeFileSync(entry, "process.stdout.write('ready\\n'); setInterval(() => {}, 1000);");
-	const child = spawn(process.execPath, [entry], { stdio: ['ignore', 'pipe', 'pipe'] }); children.push(child); ownChild(child);
+	const child = spawnFixture(process.execPath, [entry], { stdio: ['ignore', 'pipe', 'pipe'] }); children.push(child); ownChild(child);
 	await childLine(child); return child;
 }
 

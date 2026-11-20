@@ -1,9 +1,9 @@
-import { childLine, fixtureOwnerScript, ownChild, stopOwnedChildren, stopOwnedTargets } from '../../../daemon/tools/__tests__/_proc.js';
+import { childLine, fixtureOwnerScript, ownChild, spawnFixture, stopOwnedChildren, stopOwnedTargets } from '../../../daemon/tools/__tests__/_proc.js';
 import { requirePreparedBuild } from '../../../../scripts/test-harness/build.mjs';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { after, afterEach, before, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { spawn, spawnSync, execFileSync } from 'node:child_process';
+import { spawnSync, execFileSync } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
 import { once } from 'node:events';
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
@@ -47,7 +47,7 @@ function source(f: Fixture, mode: string): string {
 async function standIn(f: Fixture, mode: string, valid = true) {
  const folder = join(f.home, valid ? 'stub/daemon' : 'other'); mkdirSync(folder, { recursive: true });
  const entry = join(folder, valid ? 'index.js' : 'server.js'); writeFileSync(entry, source(f, mode));
- const child = spawn(process.execPath, [entry], { stdio: ['ignore', 'pipe', 'inherit'] }); children.push(child); ownChild(child); await childLine(child); return child;
+ const child = spawnFixture(process.execPath, [entry], { stdio: ['ignore', 'pipe', 'inherit'] }); children.push(child); ownChild(child); await childLine(child); return child;
 }
 function ctl(f: Fixture, command: string, extraEnv: Record<string, string> = {}) {
  const r = spawnSync('bash', [script, command, '--skip-sync', '--skip-install', '--skip-build', '--branch', 'main'], { env: { ...process.env, HOME: f.home, INSRC_DAEMON_ROOT: f.root, INSRC_CTL_LOG_DIR: join(f.home, 'logs'), INSRC_CTL_STOP_WAIT_SECS: '0.1', ...extraEnv }, encoding: 'utf8', timeout: 15000 });

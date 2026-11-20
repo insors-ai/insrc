@@ -1,9 +1,9 @@
-import { childLine, ownChild, stopOwnedChildren } from '../tools/__tests__/_proc.js';
+import { childLine, ownChild, spawnFixture, stopOwnedChildren } from '../tools/__tests__/_proc.js';
 import { requirePreparedBuild } from '../../../scripts/test-harness/build.mjs';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { after, afterEach, before, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { spawn, execFileSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
 import { once } from 'node:events';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -33,7 +33,7 @@ async function scenario(mode: string) {
  shutdown('SIGTERM'); shutdown('SIGINT');
  setInterval(() => {}, 1000);
  })();`);
- const child = spawn(process.execPath, [entry], { env: { ...process.env, HOME: home }, stdio: ['ignore', 'ignore', 'pipe'] }); children.push(child); ownChild(child);
+ const child = spawnFixture(process.execPath, [entry], { env: { ...process.env, HOME: home }, stdio: ['ignore', 'ignore', 'pipe'] }); children.push(child); ownChild(child);
  const ended = once(child, 'exit'); const started = Date.now();
  const result = await ended;
  assert.ok(Date.now() - started < 3000);

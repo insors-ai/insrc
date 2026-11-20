@@ -1,9 +1,9 @@
-import { childLine, ownChild, stopOwnedChildren } from '../tools/__tests__/_proc.js';
+import { childLine, ownChild, spawnFixture, stopOwnedChildren } from '../tools/__tests__/_proc.js';
 import { requirePreparedBuild } from '../../../scripts/test-harness/build.mjs';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { after, afterEach, before, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { spawn, execFileSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
 import { once } from 'node:events';
 import { performance } from 'node:perf_hooks';
@@ -56,7 +56,7 @@ async function run(mode: string) {
  else setTimeout(() => process.exit(0), 50);
  } catch (error) { process.stdout.write(JSON.stringify({ error: error.message }) + '\\n'); process.exit(0); }
  })();`);
- const child = spawn(process.execPath, [entry], { stdio: ['ignore', 'pipe', 'pipe'] }); children.push(child); ownChild(child);
+ const child = spawnFixture(process.execPath, [entry], { stdio: ['ignore', 'pipe', 'pipe'] }); children.push(child); ownChild(child);
  const ended = once(child, 'exit');
  const value = JSON.parse(await childLine(child));
  return { child, ended, value, log, hook };

@@ -30,7 +30,7 @@
     "triageRationale": "One cohesive story with a real design choice (the first-boot move of an existing github.json before anything reads it, and which names are GitHub-specific and stay) but mechanical breadth: about 110 files mention the old names. It touches a persisted-file boundary on every install, so it is not small.",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "approved",
+      "status": "completed",
       "revision": {
         "number": 1,
         "contentHash": "145624f42020a54c23c0b66e0c81fae34b5aa30bfe2b6c719c287f85c0356a81",

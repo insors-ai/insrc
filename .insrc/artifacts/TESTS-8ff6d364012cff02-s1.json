@@ -1,0 +1,1868 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 25,
+        "contentHash": "448cb30c4dec2dffefc7d4a8ce502e5b609028d6c30ff0b2957fd2bc84727e33",
+        "at": "2026-11-20T19:00:22.849Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "8ff6d364012cff02",
+    "storyId": "s1",
+    "createdAt": "2026-11-20T17:18:15.377Z",
+    "updatedAt": "2026-11-20T19:00:22.595Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-20T12:31:06.431Z",
+    "epicSlug": "rename-github-json-repo-config-json",
+    "revision": 25
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "13013e948",
+        "ranAt": "2026-11-20T17:18:15.377Z",
+        "testsPassed": false,
+        "tests": [
+          {
+            "name": "repo-settings.test.ts and the existing tracker, build-step and daemon tests that named the old names, updated to the new names, still pass",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/__tests__/settings-modal.test.ts",
+                "title": "makeServices exposes catalog, repoSettings and setRepoSetting and the fixtures satisfy Services",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/__tests__/tracker-setup-service.test.ts",
+                "title": "config step done, already and failed through the terminal service",
+                "result": "pass"
+              },
+              {
+                "file": "src/config/__tests__/repo-fields.test.ts",
+                "title": "table keys, kinds, RepoConfigEntry fields and one policy row per TeamPolicy rule",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/build-commands-doc.test.ts",
+                "title": "docs/daemon.md: the Build commands section is read against the shipped behaviour and states the add-time defaults, buildSetup and the Build section",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/git-hooks-methods.test.ts",
+                "title": "src/daemon/__tests__/git-hooks-methods.test.ts: repo.gitHooks.install, uninstall and status refuse an unregistered repository, write only through the daemon, and keep the gitHooks setting equal to what is installed",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/handler-runtime.test.ts",
+                "title": "the runtime function builds the handler tables with stub indexing dependencies and their key sets equal the recorded single-thread key sets plus the methods added since",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/repo-settings.test.ts",
+                "title": "buildRepoSettings values, resolved target and policy rows",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/tracker-sync-method.test.ts",
+                "title": "tracker.sync runs refreshTrackerStatus for the one Epic and returns its SyncResult",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/build-step/__tests__/comment-sync-callers.test.ts",
+                "title": "comment-sync-callers.test.ts: implement and validate run the comment sync for the Task and the daemon method tracker.syncComments runs it on request, and neither is failed by it",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/build-step/__tests__/validate-task-round.test.ts",
+                "title": "a validate turn records its round in the Task's own log, and a Task with no head writes the BUILD record only and has no round",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts",
+                "title": "resolveTaskTestFiles maps plan test names to tracked __tests__ files, de-duplicates, and lists names with no match as unresolved",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/workflow-step/__tests__/tracker-e2e.test.ts",
+                "title": "tracker.push: happy path binds the Epic and Story heads to the pushed issues",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/workflow-step/__tests__/tracker-tasks-coarse.test.ts",
+                "title": "coarse push with pushTasks: execute prompt carries the TASK TIER block + the approved plan tasks",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/anchor-missing-producers.test.ts",
+                "title": "the finalizers, tracker-auto, tracker/link, workflow-rpc and synthesize each fail before any file is created when no anchor exists",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/approve-attach.test.ts",
+                "title": "approve() attaches the approved HLD, LLD and plan documents after its commit so the files are clean and the links name that commit, commits the attachment records in a second commit, skips attachment with a stated reason when commitArtifacts is false, and tracker.attach attaches a diagram companion or any target refused as uncommitted once it is committed",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/commit-denial-callers.test.ts",
+                "title": "a denied commit makes handleResolveComment answer its error result with the recorded count, never success",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/draft-issues.test.ts",
+                "title": "ensureDraftIssues returns not-applicable without a team policy and maps policy and sc1 failures to messages",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/questions.test.ts",
+                "title": "questionId: parses a leading [id / verdict] tag; falls back to a stable sha",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/redraft-preserves-tracker.test.ts",
+                "title": "a re-draft keeps the bound Epic and Story issues and the tracker block for sync, chain report and Task approval",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/tracker-auto.test.ts",
+                "title": "HLD approve creates the Epic issue, binds it on the Epic head and links docs",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/tracker-push-modes.test.ts",
+                "title": "the three approve-time pushes run one path in team mode and in individual mode: each binds the Epic or Story, posts each comment once, retries a pending link, individual mode keeps its pushTasks policy and makes no claim, and a repository with no tracker has no binding",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/tracker-tasks.test.ts",
+                "title": "task push is opt-out by default (pushTasks unset) → skipped, no issues",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/config/__tests__/github-split.test.ts",
+                "title": "resolveGithubConfig returns none for a missing, unreadable, invalid-JSON and non-object file",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/config/__tests__/github.test.ts",
+                "title": "parseGithubRemoteUrl handles SSH remotes",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/config/__tests__/repo-config-store.test.ts",
+                "title": "readRepoEntry rejects each malformed level and accepts missing parts",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/tracker/__tests__/github-signoff.test.ts",
+                "title": "loadTracker accepts signoff-request once declared; openSignoffRequest opens a pull request from the branch, links it from the unit issue and returns its ref and url; readSignoffState maps review decision and merge state to open, changes-requested and completed; failure kinds map to PortResult kinds",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/tracker/__tests__/issue-title-guard.test.ts",
+                "title": "tracker-auto in team mode and individual mode writes artifact-id titles and markers",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/tracker/__tests__/issue-title.test.ts",
+                "title": "unit-issue and the conventions bodies write an Epic, Story and Task title and marker that start with the artifact id",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/tracker/__tests__/port.test.ts",
+                "title": "missingCapabilities names every capability the tracker does not declare",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/tracker/__tests__/refresh.test.ts",
+                "title": "refreshTrackerStatus writes epicStatus, storyStatus and lastSyncedAt only",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/tracker/__tests__/setup-plan.test.ts",
+                "title": "planTrackerConfig already, needs-write and no-origin cases",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/tracker/__tests__/setup.test.ts",
+                "title": "all-green: auth ok, scopes present, config exists, labels/types already, project skipped → manualRemaining 0",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/tracker/__tests__/tracker-denial.test.ts",
+                "title": "a denial at the milestone extra stops the Epic push: no comment is posted after it, the push throws the denial, and the Epic issue stays bound",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/tracker/__tests__/tracker-push-registry.test.ts",
+                "title": "a push creates the issue typed, links it under its parent, comments and closes it, in that order, through the registry",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/tracker/__tests__/unit-issue.test.ts",
+                "title": "ensureUnitIssue takes a unit and a port and returns a PortResult without a phase",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the module-state and session-source inventory tests pass against the two fixtures edited only for the renamed paths and names",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/module-state-inventory.test.ts",
+                "title": "module-state inventory: the scanner reports lets, constructed containers and written const literals, skips read-only and frozen tables, follows dynamic imports and skips modules outside the closure",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/module-state-inventory.test.ts",
+                "title": "module-state inventory: the scanner throws on an unreadable tsconfig and is deterministic",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/module-state-inventory.test.ts",
+                "title": "module-state inventory: the guard names a missing key, a stale key, an invalid class, a missing owner, a short reason and an unrouted shared-state owner, and reports nothing on a clean input",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/module-state-inventory.test.ts",
+                "title": "module-state inventory: every move candidate carries a recorded decision, and every one-owner or shared-store entry names its mechanism",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+                "title": "CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/cli/__tests__/settings-modal.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 8293,
+            "titles": [
+              {
+                "title": "makeServices exposes catalog, repoSettings and setRepoSetting and the fixtures satisfy Services",
+                "result": "pass"
+              },
+              {
+                "title": "the modal lists payload rows, edits local rows only and shows an error message",
+                "result": "pass"
+              },
+              {
+                "title": "the terminal Repo Configuration screen shows the Build rows as a section of their own with the suggestion as the placeholder of an unset row",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/cli/__tests__/tracker-setup-service.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1440,
+            "titles": [
+              {
+                "title": "config step done, already and failed through the terminal service",
+                "result": "pass"
+              },
+              {
+                "title": "a daemon that is absent, closes early or does not know the method is a clear error and nothing runs in the terminal",
+                "result": "pass"
+              },
+              {
+                "title": "malformed repo-config.json fails the config step with no write requested",
+                "result": "pass"
+              },
+              {
+                "title": "makeServices injects the daemon-calling wrapper, and the terminal service references no tracker setup code",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/config/__tests__/repo-fields.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 536,
+            "titles": [
+              {
+                "title": "table keys, kinds, RepoConfigEntry fields and one policy row per TeamPolicy rule",
+                "result": "pass"
+              },
+              {
+                "title": "branchPattern validator accepts and rejects every listed form with the failing rule",
+                "result": "pass"
+              },
+              {
+                "title": "a table copy with another placeholder changes what the validator accepts",
+                "result": "pass"
+              },
+              {
+                "title": "buildSettingsCatalog keeps existing fields, adds repoFields and never throws",
+                "result": "pass"
+              },
+              {
+                "title": "validateRepoSetting per row for type, owner, repo, ghPath and ghHost",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/build-commands-doc.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 802,
+            "titles": [
+              {
+                "title": "docs/daemon.md: the Build commands section is read against the shipped behaviour and states the add-time defaults, buildSetup and the Build section",
+                "result": "pass"
+              },
+              {
+                "title": "src/daemon/__tests__/build-commands-doc.test.ts: the Build commands section of docs/daemon.md names repo.buildDefaults.migrate, its report fields and its outcome counts, and says a cleared command is applied again when it is run",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/git-hooks-methods.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 792,
+            "titles": [
+              {
+                "title": "src/daemon/__tests__/git-hooks-methods.test.ts: repo.gitHooks.install, uninstall and status refuse an unregistered repository, write only through the daemon, and keep the gitHooks setting equal to what is installed",
+                "result": "pass"
+              },
+              {
+                "title": "src/daemon/__tests__/git-hooks-methods.test.ts: a failing hook file leaves the other hook installed and is reported with its reason",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/handler-runtime.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1068,
+            "titles": [
+              {
+                "title": "the runtime function builds the handler tables with stub indexing dependencies and their key sets equal the recorded single-thread key sets plus the methods added since",
+                "result": "pass"
+              },
+              {
+                "title": "src/daemon/__tests__/handler-runtime.test.ts: the only code review methods added after the move are the nine task ones, with no duplicate or renamed method",
+                "result": "pass"
+              },
+              {
+                "title": "workflow.approvePipeline, tracker.sync and tracker.setup are registered and answer their requests",
+                "result": "pass"
+              },
+              {
+                "title": "team.refresh, team.claim and team.release are registered and return the old results",
+                "result": "pass"
+              },
+              {
+                "title": "handler-runtime.test.ts: RECORDED_RPC includes models.check, models.approve, models.reject; method-class classifies them as session",
+                "result": "pass"
+              },
+              {
+                "title": "session.delete refuses a session id that is a path ('..', a separator) before anything is purged",
+                "result": "pass"
+              },
+              {
+                "title": "the session purge's tmp directory is the id's direct child of the tmp root, and nothing for an id that names anything else",
+                "result": "pass"
+              },
+              {
+                "title": "handler-runtime.test.ts: mcp.register and mcp.status are served; mcp.register refuses a malformed path before touching the store",
+                "result": "pass"
+              },
+              {
+                "title": "src/daemon/__tests__/handler-runtime.test.ts: repo.add on a Python repo registers it and stores the default commands with no prompt, reports buildDefaults applied, and a failing write still registers the repo",
+                "result": "pass"
+              },
+              {
+                "title": "src/daemon/__tests__/handler-runtime.test.ts: repo.add on a repo whose entry already holds commands keeps them and reports already-set",
+                "result": "pass"
+              },
+              {
+                "title": "src/daemon/__tests__/handler-runtime.test.ts: the handler tables hold repo.buildDefaults.migrate beside the recorded methods and repo.buildDefaults.migrate answers through the runtime",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/repo-settings.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 834,
+            "titles": [
+              {
+                "title": "buildRepoSettings values, resolved target and policy rows",
+                "result": "pass"
+              },
+              {
+                "title": "sign-in mapping for every whoAmI outcome",
+                "result": "pass"
+              },
+              {
+                "title": "repo identity uses the exact registered path",
+                "result": "pass"
+              },
+              {
+                "title": "get returns what set wrote and shows an outside write",
+                "result": "pass"
+              },
+              {
+                "title": "set refuses read-only, unknown, invalid and unregistered inputs and writes nothing",
+                "result": "pass"
+              },
+              {
+                "title": "only the signed-in-user read runs through s1's adapter",
+                "result": "pass"
+              },
+              {
+                "title": "malformed files return repo-config-unreadable and keep their bytes",
+                "result": "pass"
+              },
+              {
+                "title": "get reads once, never writes, and resolves from the git remote when there is no own target",
+                "result": "pass"
+              },
+              {
+                "title": "ensure writes the five keys once and concurrent sets both land",
+                "result": "pass"
+              },
+              {
+                "title": "the gitHooks setting reads false when absent, is validated as a boolean and round-trips through repo-config.json",
+                "result": "pass"
+              },
+              {
+                "title": "applyBuildDefaults writes the type's typecheck and test commands and resultFormat exit-code together for a Python, Go, Rust and JVM repo with no build key, and writes nothing for a Node repo, an unknown repo and an entry that already sets any of the three keys",
+                "result": "pass"
+              },
+              {
+                "title": "applyBuildDefaults never throws and reports write-failed when the entry cannot be read or the write fails, leaving no lone command",
+                "result": "pass"
+              },
+              {
+                "title": "repo.settings.get returns buildSetup with the type, the commands source and the suggestion for a repo with none, and writes nothing",
+                "result": "pass"
+              },
+              {
+                "title": "migrateBuildDefaults writes the typecheck and test commands and resultFormat exit-code together for each Python, Go, Rust and JVM repo with none of them, and writes nothing for a Node repo, an unknown repo, a repo whose directory is gone and an entry that sets any one of the three keys",
+                "result": "pass"
+              },
+              {
+                "title": "migrateBuildDefaults run twice changes nothing the second time and reports already-set for the repos the first run set, and a user's own value set between the runs is kept",
+                "result": "pass"
+              },
+              {
+                "title": "migrateBuildDefaults keeps going when one repo's write is refused or throws, reports write-failed with its note for that repo only, and reports write-failed for every repo, leaving the file as it was, when repo-config.json is malformed",
+                "result": "pass"
+              },
+              {
+                "title": "the repo.buildDefaults.migrate handler returns ok, one entry per registered repo in registry order and counts with a key for every outcome that add up to the number of repos, returns zero counts for no repos, and returns registry-unreadable as data when the registry cannot be listed, writing nothing",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/tracker-sync-method.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1260,
+            "titles": [
+              {
+                "title": "tracker.sync runs refreshTrackerStatus for the one Epic and returns its SyncResult",
+                "result": "pass"
+              },
+              {
+                "title": "tracker.sync without an epicHash refreshes every Epic once, a second call while one runs is skipped, and a call with an epicHash is unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+            "exitCode": 1,
+            "timedOut": false,
+            "durationMs": 16206,
+            "titles": [
+              {
+                "title": "CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
+                "result": "fail"
+              },
+              {
+                "title": "CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-GATE: reviewed removal sources include pure helpers owner boundaries and pending global affinity",
+                "result": "fail"
+              }
+            ],
+            "otherFailures": [
+              "CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
+              "CM-S4-GATE: reviewed removal sources include pure helpers owner boundaries and pending global affinity"
+            ]
+          },
+          {
+            "file": "src/daemon/steps/build-step/__tests__/comment-sync-callers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1062,
+            "titles": [
+              {
+                "title": "comment-sync-callers.test.ts: implement and validate run the comment sync for the Task and the daemon method tracker.syncComments runs it on request, and neither is failed by it",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/build-step/__tests__/validate-task-round.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1242,
+            "titles": [
+              {
+                "title": "a validate turn records its round in the Task's own log, and a Task with no head writes the BUILD record only and has no round",
+                "result": "pass"
+              },
+              {
+                "title": "a Node project's round is unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "a project with no commands is not passed and its record says the gate ran nothing",
+                "result": "pass"
+              },
+              {
+                "title": "a settings edit while the checks run changes neither the plan, the judge prompt nor the settings refusal: the profile is resolved once, at the phase's entry",
+                "result": "pass"
+              },
+              {
+                "title": "src/daemon/steps/build-step/__tests__/validate-task-round.test.ts: a repo whose commands came from the add defaults is gated by those commands as an ordinary repo setting",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 6394,
+            "titles": [
+              {
+                "title": "resolveTaskTestFiles maps plan test names to tracked __tests__ files, de-duplicates, and lists names with no match as unresolved",
+                "result": "pass"
+              },
+              {
+                "title": "a base name under two __tests__ directories resolves to both files",
+                "result": "pass"
+              },
+              {
+                "title": "the plan-driven, small and trivial routes each build the expected check plan",
+                "result": "pass"
+              },
+              {
+                "title": "a trivial build with a range base runs the test files touched across base..HEAD, not only the HEAD commit's (ISSUE-91640defac1b5816)",
+                "result": "pass"
+              },
+              {
+                "title": "a test name whose only *.test.ts token is not a leading prefix is unresolved, and the file it mentions is not run",
+                "result": "pass"
+              },
+              {
+                "title": "a plan is given the other TypeScript projects that own a file the build changed since its base, or a test file; a build inside the root project names none",
+                "result": "pass"
+              },
+              {
+                "title": "the typecheck is run in the root and in each named project; it is clean only when all are, and each command and output is kept",
+                "result": "pass"
+              },
+              {
+                "title": "a passing and a failing command give ok true and ok false with their exit codes and output tails",
+                "result": "pass"
+              },
+              {
+                "title": "a command past its limit is reported timedOut and its whole process group, grandchild included, is gone",
+                "result": "pass"
+              },
+              {
+                "title": "a test file that keeps its process alive after its tests pass still finishes under --test-force-exit",
+                "result": "pass"
+              },
+              {
+                "title": "an unresolved test name makes tests fail with a note naming it",
+                "result": "pass"
+              },
+              {
+                "title": "a trivial build that deletes a test file does not ask to run it",
+                "result": "pass"
+              },
+              {
+                "title": "with no mapping, planTaskCheckPlan and smallStandaloneCheckPlan return the same testFiles, unresolvedTests and noTests as before, and namedTests marks each name 'prefix' or 'none'",
+                "result": "pass"
+              },
+              {
+                "title": "with a mapping, a name with no prefix is no longer unresolved, its files are in testFiles once, and a name with both a mapping and a prefix uses the mapping (mutation: keep the prefix's files as well)",
+                "result": "pass"
+              },
+              {
+                "title": "smallStandaloneCheckPlan with a mapping and no prefixed subject runs the mapped files and is not 'the LLD names no test file'; an unmapped prose subject is listed as not mapped and does not fail",
+                "result": "pass"
+              },
+              {
+                "title": "runValidationChecks runs each file in its own process, in order, with the TAP reporter, and returns per file its exit code and titles (mutation: run all files in one command)",
+                "result": "pass"
+              },
+              {
+                "title": "a mapped case that passes, one that fails, one that is skipped and one whose title is not in the file get those four results, and the check is not ok when any is fail, skipped or not found (mutations: count not found as pass; count skipped as pass)",
+                "result": "pass"
+              },
+              {
+                "title": "a file that exits non-zero while its mapped cases pass fails the check and lists the other failing titles",
+                "result": "pass"
+              },
+              {
+                "title": "a file that times out, and a file not started because the time limit was used up, are recorded with that note, their cases are not found, and the check is not ok",
+                "result": "pass"
+              },
+              {
+                "title": "a run's whole output is written to a file and its path returned, with nothing cut; when that file cannot be written the results stand and the entry carries a note",
+                "result": "pass"
+              },
+              {
+                "title": "a reported pass on a live test runs nothing and leaves the check's result to the other tests; a reported fail makes the check not ok; a Task whose tests are all reported as pass runs no file and passes with the note, while a Task with no file and an unreported name still fails (mutation: fail every run that has no file)",
+                "result": "pass"
+              },
+              {
+                "title": "trivialCheckPlan marks each touched file 'touched' and the result lists every title of each file",
+                "result": "pass"
+              },
+              {
+                "title": "a file whose output is not TAP fails the check even when it exits with 0 and no case is named for it",
+                "result": "pass"
+              },
+              {
+                "title": "a line a test prints that looks like a result line, or like the start of a YAML block, is not read as one: the runner reports a test's output as comments",
+                "result": "pass"
+              },
+              {
+                "title": "the whole output is still written after the output directory has been removed, and files older than the retention are pruned",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-7ba8cf15: a file with many tests is reported in full under the gate's runner, every case found (mutation: run the file under --test, whose force-exited child cuts the report short)",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-7ba8cf15: in its own process a failing test still fails the file",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-7ba8cf15: when no report file can be made the file is not run, its entry says why and the check fails, and nothing throws",
+                "result": "pass"
+              },
+              {
+                "title": "with a storyKey, typecheckProjects holds the Story's projects and its test files' projects, and not a project that owns only unrelated uncommitted or untracked files",
+                "result": "pass"
+              },
+              {
+                "title": "with a storyKey, the trivial plan runs only the Story's test files, and with no base fails the listing instead of running the HEAD commit's tests",
+                "result": "pass"
+              },
+              {
+                "title": "with a storyKey, a trivial build that deletes a test file does not ask to run it",
+                "result": "pass"
+              },
+              {
+                "title": "project type is detected from root marker files and mixed or no markers give unknown",
+                "result": "pass"
+              },
+              {
+                "title": "the Node default profile equals today's argv and tap format",
+                "result": "pass"
+              },
+              {
+                "title": "a Node project with no setting gets the same argv and TAP judging as before",
+                "result": "pass"
+              },
+              {
+                "title": "a project with no known commands makes no process call and both checks are ok false with a note",
+                "result": "pass"
+              },
+              {
+                "title": "no Node command constant is the source of a non-Node plan",
+                "result": "pass"
+              },
+              {
+                "title": "an exit-code plan passes when every file exits 0 and fails on a non-zero exit",
+                "result": "pass"
+              },
+              {
+                "title": "withTypecheckProjects makes no tsconfig search for a non-Node plan",
+                "result": "pass"
+              },
+              {
+                "title": "a repo setting wins over the default; an empty command or an unknown result format is refused with InvalidCommandSetting",
+                "result": "pass"
+              },
+              {
+                "title": "the build commands are rows of the repo settings table, in the Build group, and no row of the global catalog",
+                "result": "pass"
+              },
+              {
+                "title": "repo.settings validates the build rows: a command is a non-empty string, the format is tap or exit-code, and null clears",
+                "result": "pass"
+              },
+              {
+                "title": "the trivial plan keeps a repo-setting project's own test files as tests",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/workflow-step/__tests__/tracker-e2e.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 899,
+            "titles": [
+              {
+                "title": "tracker.push: happy path binds the Epic and Story heads to the pushed issues",
+                "result": "pass"
+              },
+              {
+                "title": "tracker.push: checklist failure refuses synthesize + leaves meta untouched",
+                "result": "pass"
+              },
+              {
+                "title": "tracker.sync: happy path merges status + lastSyncedAt into meta.tracker",
+                "result": "pass"
+              },
+              {
+                "title": "tracker.sync: refuses when Epic has no prior tracker refs",
+                "result": "pass"
+              },
+              {
+                "title": "tracker.push: refuses without epicHash param",
+                "result": "pass"
+              },
+              {
+                "title": "tracker.push: refuses when Epic is unapproved",
+                "result": "pass"
+              },
+              {
+                "title": "tracker.post: completed comment produces an audit report without pending approval",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/workflow-step/__tests__/tracker-tasks-coarse.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 894,
+            "titles": [
+              {
+                "title": "coarse push with pushTasks: execute prompt carries the TASK TIER block + the approved plan tasks",
+                "result": "pass"
+              },
+              {
+                "title": "coarse push with pushTasks but an UNAPPROVED plan: no TASK TIER (plan excluded)",
+                "result": "pass"
+              },
+              {
+                "title": "coarse push with pushTasks OFF: execute prompt has no task instructions",
+                "result": "pass"
+              },
+              {
+                "title": "coarse push synthesize binds LLM-returned taskRefs to the Task artifacts and records nothing on the plan",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/module-state-inventory.test.ts",
+            "exitCode": 1,
+            "timedOut": false,
+            "durationMs": 3689,
+            "titles": [
+              {
+                "title": "module-state inventory: the scanner reports lets, constructed containers and written const literals, skips read-only and frozen tables, follows dynamic imports and skips modules outside the closure",
+                "result": "pass"
+              },
+              {
+                "title": "module-state inventory: the scanner throws on an unreadable tsconfig and is deterministic",
+                "result": "pass"
+              },
+              {
+                "title": "module-state inventory: the guard names a missing key, a stale key, an invalid class, a missing owner, a short reason and an unrouted shared-state owner, and reports nothing on a clean input",
+                "result": "pass"
+              },
+              {
+                "title": "module-state inventory: every scanned key under src/daemon/ has a valid fixture entry, and the s3 families are one-owner on the shared-state worker or shared-store",
+                "result": "fail"
+              },
+              {
+                "title": "module-state inventory: every module-scope mutable value the session worker can load is classified (full guard over the repo)",
+                "result": "fail"
+              },
+              {
+                "title": "module-state inventory: every move candidate carries a recorded decision, and every one-owner or shared-store entry names its mechanism",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": [
+              "module-state inventory: every scanned key under src/daemon/ has a valid fixture entry, and the s3 families are one-owner on the shared-state worker or shared-store",
+              "module-state inventory: every module-scope mutable value the session worker can load is classified (full guard over the repo)"
+            ]
+          },
+          {
+            "file": "src/workflow/__tests__/anchor-missing-producers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1706,
+            "titles": [
+              {
+                "title": "the finalizers, tracker-auto, tracker/link, workflow-rpc and synthesize each fail before any file is created when no anchor exists",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/__tests__/approve-attach.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3785,
+            "titles": [
+              {
+                "title": "approve() attaches the approved HLD, LLD and plan documents after its commit so the files are clean and the links name that commit, commits the attachment records in a second commit, skips attachment with a stated reason when commitArtifacts is false, and tracker.attach attaches a diagram companion or any target refused as uncommitted once it is committed",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/__tests__/commit-denial-callers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 854,
+            "titles": [
+              {
+                "title": "a denied commit makes handleResolveComment answer its error result with the recorded count, never success",
+                "result": "pass"
+              },
+              {
+                "title": "an ordinary git failure (not a work tree) is logged and the recording still succeeds",
+                "result": "pass"
+              },
+              {
+                "title": "a denied commit makes recordResolution throw the denial and posts no tracker comment",
+                "result": "pass"
+              },
+              {
+                "title": "commit-denial-callers.test.ts: a denied commit posts no comment and handleResolveComment returns the error result; ordinary git failures are logged and the stage continues",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/__tests__/draft-issues.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 814,
+            "titles": [
+              {
+                "title": "ensureDraftIssues returns not-applicable without a team policy and maps policy and sc1 failures to messages",
+                "result": "pass"
+              },
+              {
+                "title": "Define, LLD and plan drafts create one issue per unit, a second write creates none, and failures stop and report",
+                "result": "pass"
+              },
+              {
+                "title": "outcomeKnown wording for a failed lookup and for a create that times out",
+                "result": "pass"
+              },
+              {
+                "title": "a plan whose Story is recorded needs no Epic, and an issue that cannot be recorded is not reported ready",
+                "result": "pass"
+              },
+              {
+                "title": "a team repo creates the stage's issue as before",
+                "result": "pass"
+              },
+              {
+                "title": "a repo with no team policy and a tracker that is on creates the Epic and Story issues",
+                "result": "pass"
+              },
+              {
+                "title": "tracker type none makes no tracker call, a malformed repo-config.json is not-ready, an entry with no type agrees with the lenient port, and a declined call is rethrown",
+                "result": "pass"
+              },
+              {
+                "title": "the terminal approve over issues the daemon already created creates nothing and no duplicate",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/__tests__/questions.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 878,
+            "titles": [
+              {
+                "title": "questionId: parses a leading [id / verdict] tag; falls back to a stable sha",
+                "result": "pass"
+              },
+              {
+                "title": "openQuestions / unresolvedOpen reflect recorded resolutions",
+                "result": "pass"
+              },
+              {
+                "title": "recordResolution persists a resolved choice to HLD meta + renders section",
+                "result": "pass"
+              },
+              {
+                "title": "recordResolution ignore + defer persist the right status to DEF meta",
+                "result": "pass"
+              },
+              {
+                "title": "questions.test.ts: the question tests run on lifecycle fixtures",
+                "result": "pass"
+              },
+              {
+                "title": "recordResolution throws on an unknown questionId",
+                "result": "pass"
+              },
+              {
+                "title": "listDeferred enumerates deferred questions across DEF + HLD + LLDs",
+                "result": "pass"
+              },
+              {
+                "title": "the comment goes through the adapter with the same argv and a failure is logged in the existing catch",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/__tests__/redraft-preserves-tracker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1076,
+            "titles": [
+              {
+                "title": "a re-draft keeps the bound Epic and Story issues and the tracker block for sync, chain report and Task approval",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/__tests__/tracker-auto.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 13500,
+            "titles": [
+              {
+                "title": "HLD approve creates the Epic issue, binds it on the Epic head and links docs",
+                "result": "pass"
+              },
+              {
+                "title": "LLD approve creates the Story issue and binds it on the Story head; links the LLD doc",
+                "result": "pass"
+              },
+              {
+                "title": "re-approving the HLD is idempotent (no second issue)",
+                "result": "pass"
+              },
+              {
+                "title": "duplicate guard adopts an existing Epic issue instead of creating one",
+                "result": "pass"
+              },
+              {
+                "title": "tracker disabled (no config) skips cleanly",
+                "result": "pass"
+              },
+              {
+                "title": "missing required meta fields skip",
+                "result": "pass"
+              },
+              {
+                "title": "R4: posts the review report as an issue comment when the artifact carries a lifecycle review",
+                "result": "pass"
+              },
+              {
+                "title": "the three push functions run one path through the adapter: the issues, the sub-issue links, the milestones, the persisted refs and the binding, with failing side effects reported and not thrown",
+                "result": "pass"
+              },
+              {
+                "title": "a failing lookup in front of the create is a failed result, never a throw, and creates nothing",
+                "result": "pass"
+              },
+              {
+                "title": "a failing create is reported as a failed result, not thrown",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/__tests__/tracker-push-modes.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 808,
+            "titles": [
+              {
+                "title": "the three approve-time pushes run one path in team mode and in individual mode: each binds the Epic or Story, posts each comment once, retries a pending link, individual mode keeps its pushTasks policy and makes no claim, and a repository with no tracker has no binding",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/__tests__/tracker-tasks.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 6949,
+            "titles": [
+              {
+                "title": "task push is opt-out by default (pushTasks unset) → skipped, no issues",
+                "result": "pass"
+              },
+              {
+                "title": "pushTasks: creates a typed Task issue per PlanTask, linked as a sub-issue",
+                "result": "pass"
+              },
+              {
+                "title": "pushTasks: falls back to an untyped issue when the org lacks the issue type",
+                "result": "pass"
+              },
+              {
+                "title": "pushTasks: re-push is idempotent (adopts the bound Task issues, no new issues)",
+                "result": "pass"
+              },
+              {
+                "title": "pushTasks: makes the Epic and Story issues first when they do not exist yet, then the Tasks",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/config/__tests__/github-split.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 784,
+            "titles": [
+              {
+                "title": "resolveGithubConfig returns none for a missing, unreadable, invalid-JSON and non-object file",
+                "result": "pass"
+              },
+              {
+                "title": "characterization of a null own entry and a null default is unchanged by the split",
+                "result": "pass"
+              },
+              {
+                "title": "resolveGithubConfigFromFile gives the same result as resolveGithubConfig for a well-formed file",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/config/__tests__/github.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 767,
+            "titles": [
+              {
+                "title": "parseGithubRemoteUrl handles SSH remotes",
+                "result": "pass"
+              },
+              {
+                "title": "parseGithubRemoteUrl handles HTTPS remotes",
+                "result": "pass"
+              },
+              {
+                "title": "parseGithubRemoteUrl rejects other hosts",
+                "result": "pass"
+              },
+              {
+                "title": "parseGitRemoteOwnerRepo returns owner/repo for a repo with a GitHub origin",
+                "result": "pass"
+              },
+              {
+                "title": "parseGitRemoteOwnerRepo returns null on a repo with no origin",
+                "result": "pass"
+              },
+              {
+                "title": "parseGitRemoteOwnerRepo returns null on a non-git dir",
+                "result": "pass"
+              },
+              {
+                "title": "resolveGithubConfig honors per-repo \"type\": \"none\"",
+                "result": "pass"
+              },
+              {
+                "title": "resolveGithubConfig honors default \"type\": \"none\" when no per-repo entry",
+                "result": "pass"
+              },
+              {
+                "title": "resolveGithubConfig prefers per-repo \"none\" over default owner/repo",
+                "result": "pass"
+              },
+              {
+                "title": "resolveGithubConfig returns type=github with owner/repo when configured",
+                "result": "pass"
+              },
+              {
+                "title": "a global default NEVER targets a repo — an unlisted repo resolves to its OWN git remote, not the default owner/repo",
+                "result": "pass"
+              },
+              {
+                "title": "a default enabling github targets the repo remote even when the repo has an unrelated per-repo entry absence",
+                "result": "pass"
+              },
+              {
+                "title": "resolveGithubConfig defaults to type=none when no matching entry AND no config file",
+                "result": "pass"
+              },
+              {
+                "title": "resolveGithubConfig defaults to type=none when file exists but has no matching entry",
+                "result": "pass"
+              },
+              {
+                "title": "resolveGithubConfig defaults to type=none when default entry is empty {}",
+                "result": "pass"
+              },
+              {
+                "title": "resolveGithubConfig with explicit \"type\": \"github\" but no owner/repo throws when git remote is absent",
+                "result": "pass"
+              },
+              {
+                "title": "resolveGithubConfig with explicit \"type\": \"github\" resolves via git remote when owner/repo omitted",
+                "result": "pass"
+              },
+              {
+                "title": "resolveGithubConfig without a config file does NOT auto-detect from git remote",
+                "result": "pass"
+              },
+              {
+                "title": "lenient resolver behaviour is unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/config/__tests__/repo-config-store.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 644,
+            "titles": [
+              {
+                "title": "readRepoEntry rejects each malformed level and accepts missing parts",
+                "result": "pass"
+              },
+              {
+                "title": "mergeRepoEntryKeys changes only the named keys",
+                "result": "pass"
+              },
+              {
+                "title": "concurrent writes all land one at a time and a failure does not stall the queue",
+                "result": "pass"
+              },
+              {
+                "title": "write-failed leaves the file and temp file as they were",
+                "result": "pass"
+              },
+              {
+                "title": "verify step re-merges after an outside change and returns file-changed after the bounded attempts",
+                "result": "pass"
+              },
+              {
+                "title": "an unwritable directory returns write-failed with the operating-system message",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/tracker/__tests__/github-signoff.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1290,
+            "titles": [
+              {
+                "title": "loadTracker accepts signoff-request once declared; openSignoffRequest opens a pull request from the branch, links it from the unit issue and returns its ref and url; readSignoffState maps review decision and merge state to open, changes-requested and completed; failure kinds map to PortResult kinds",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/tracker/__tests__/issue-title-guard.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 816,
+            "titles": [
+              {
+                "title": "tracker-auto in team mode and individual mode writes artifact-id titles and markers",
+                "result": "pass"
+              },
+              {
+                "title": "an issue created earlier is adopted by its unit label or an exact artifact-id title",
+                "result": "pass"
+              },
+              {
+                "title": "a Task issue found by its title alone is adopted, and a Story with two unit-label matches creates nothing",
+                "result": "pass"
+              },
+              {
+                "title": "two Epic issues carrying the Epic labels are refused on both paths and nothing is created",
+                "result": "pass"
+              },
+              {
+                "title": "a failed Epic label lookup in individual mode creates no Epic issue",
+                "result": "pass"
+              },
+              {
+                "title": "s10 is never matched for s1 and t10 never for t1, several matches and a failed lookup create nothing",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/tracker/__tests__/issue-title.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 816,
+            "titles": [
+              {
+                "title": "unit-issue and the conventions bodies write an Epic, Story and Task title and marker that start with the artifact id",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/tracker/__tests__/port.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5174,
+            "titles": [
+              {
+                "title": "missingCapabilities names every capability the tracker does not declare",
+                "result": "pass"
+              },
+              {
+                "title": "missingCapabilities reports status-read for a declared set without it",
+                "result": "pass"
+              },
+              {
+                "title": "strict resolver refuses malformed or unsupported configuration",
+                "result": "pass"
+              },
+              {
+                "title": "strict resolver accepts an own entry without a type and falls back to the origin remote for type github",
+                "result": "pass"
+              },
+              {
+                "title": "strict resolver never takes a target from the default entry's owner and repo",
+                "result": "pass"
+              },
+              {
+                "title": "TrackerPort type exposes issueOps with the AMD-8 signatures",
+                "result": "pass"
+              },
+              {
+                "title": "the signature fixture compiles with resolveIssueId and its broken twin does not",
+                "result": "pass"
+              },
+              {
+                "title": "loadTracker succeeds when every needed capability is declared",
+                "result": "pass"
+              },
+              {
+                "title": "loadTracker with an empty needed set validates configuration and sign-in",
+                "result": "pass"
+              },
+              {
+                "title": "loadTracker refuses a needed completion capability naming it, and accepts signoff-request",
+                "result": "pass"
+              },
+              {
+                "title": "loadTracker names gh as the missing tool",
+                "result": "pass"
+              },
+              {
+                "title": "loadTracker names the missing sign-in",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/tracker/__tests__/refresh.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1333,
+            "titles": [
+              {
+                "title": "refreshTrackerStatus writes epicStatus, storyStatus and lastSyncedAt only",
+                "result": "pass"
+              },
+              {
+                "title": "a port without status-read fails naming the capability and a read that fails is a failed result",
+                "result": "pass"
+              },
+              {
+                "title": "a slow port hits the budget with an injected Deadline and the unread Epics and Stories are skipped with time limit reached",
+                "result": "pass"
+              },
+              {
+                "title": "a ToolDenied is rethrown and a non-GitHub fake port gets the same fields",
+                "result": "pass"
+              },
+              {
+                "title": "the default GitHub path hands the Deadline signal to gh, so a call that never answers is cancelled and the sync is skipped",
+                "result": "pass"
+              },
+              {
+                "title": "a repo whose tracker setting is none has nothing to refresh: no result, no warning and no tracker call",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/tracker/__tests__/setup-plan.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1316,
+            "titles": [
+              {
+                "title": "planTrackerConfig already, needs-write and no-origin cases",
+                "result": "pass"
+              },
+              {
+                "title": "planTrackerConfig fails on malformed files without throwing, calling the daemon or writing",
+                "result": "pass"
+              },
+              {
+                "title": "runTrackerSetup reports a configOutcome verbatim and touches no file; existing behaviour without it",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/tracker/__tests__/setup.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1753,
+            "titles": [
+              {
+                "title": "all-green: auth ok, scopes present, config exists, labels/types already, project skipped → manualRemaining 0",
+                "result": "pass"
+              },
+              {
+                "title": "missing scopes: issue-types + project are manual carrying the refresh command",
+                "result": "pass"
+              },
+              {
+                "title": "missing config: the config step writes repo-config.json and reports done",
+                "result": "pass"
+              },
+              {
+                "title": "project views step is always manual with the UI click-list",
+                "result": "pass"
+              },
+              {
+                "title": "ensureLabels with a timing-out label create records the label as failed and continues",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/tracker/__tests__/tracker-denial.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 806,
+            "titles": [
+              {
+                "title": "a denial at the milestone extra stops the Epic push: no comment is posted after it, the push throws the denial, and the Epic issue stays bound",
+                "result": "pass"
+              },
+              {
+                "title": "a denial at a comment extra stops the Story push: the later review comment is never made, the denial is thrown (not a failed result), and both bindings stay",
+                "result": "pass"
+              },
+              {
+                "title": "a denial at the sub-issue link stops the Story push; the created issue is not lost: the retry adopts it by its label, links it and creates no second issue",
+                "result": "pass"
+              },
+              {
+                "title": "an ordinary comment failure is still a failed extra reported on the result and the later extras still run",
+                "result": "pass"
+              },
+              {
+                "title": "a denial while the Epic is ensured stops the push (an issue created before the denial stays bound)",
+                "result": "pass"
+              },
+              {
+                "title": "tracker-denial.test.ts: a denial at a milestone extra, a comment extra and the link comment stops publication with later calls forbidden and keeps the bindings",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/tracker/__tests__/tracker-push-registry.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 924,
+            "titles": [
+              {
+                "title": "a push creates the issue typed, links it under its parent, comments and closes it, in that order, through the registry",
+                "result": "pass"
+              },
+              {
+                "title": "a second run finds the issue by its labels and creates nothing",
+                "result": "pass"
+              },
+              {
+                "title": "a declined approval throws a denial from the push and makes no later call",
+                "result": "pass"
+              },
+              {
+                "title": "a gh failure is a failed result of its own kind, not a throw",
+                "result": "pass"
+              },
+              {
+                "title": "setup ensures the fixed labels through the registry and skips the steps that need scopes it was not given; the same run again ensures the same labels",
+                "result": "pass"
+              },
+              {
+                "title": "sync reads the Epic issue state through the registry and records its status on the Define; it writes nothing to GitHub",
+                "result": "pass"
+              },
+              {
+                "title": "a question resolution and a comment resolution post their tracker comment through the registry as one issue comment each",
+                "result": "pass"
+              },
+              {
+                "title": "tracker-push-registry.test.ts: a push, sync, setup, question and comment resolution create the same objects and records as the recorded legacy sequence; a second run creates nothing",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/tracker/__tests__/unit-issue.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 767,
+            "titles": [
+              {
+                "title": "ensureUnitIssue takes a unit and a port and returns a PortResult without a phase",
+                "result": "pass"
+              },
+              {
+                "title": "resolveUnitIssueLocal resolves from the bindings and reads no older ref, reconciles nothing and runs no command",
+                "result": "pass"
+              },
+              {
+                "title": "a legacy LLD with only storyRef is no issue: the Story is looked up and bound afresh",
+                "result": "pass"
+              },
+              {
+                "title": "team mode creates only when everything misses and reports phase before-create or create on failure",
+                "result": "pass"
+              },
+              {
+                "title": "a create that times out after the remote committed is adopted by its label on the next call",
+                "result": "pass"
+              },
+              {
+                "title": "unitLabel gives the three forms, lower-cases ids, stays within 50 characters and rejects a malformed id",
+                "result": "pass"
+              },
+              {
+                "title": "a lower-numbered issue is adopted and the call's own is commented on and closed, even when the close fails",
+                "result": "pass"
+              },
+              {
+                "title": "two simulated daemons that both create converge on the lowest issue",
+                "result": "pass"
+              },
+              {
+                "title": "a failed findIssues listing keeps the recorded issue and a following call makes no tracker call",
+                "result": "pass"
+              },
+              {
+                "title": "a link under the parent that failed at creation is retried on the next ensure and then cleared",
+                "result": "pass"
+              },
+              {
+                "title": "a malformed plan is a before-create failure, not a throw",
+                "result": "pass"
+              },
+              {
+                "title": "a Story or Task issue adopted by its label after a timed-out create is resolved and linked under its parent, a failed resolve records pendingLink with child and a failed link records childId, the next ensure completes either, an Epic adoption makes no call, and an old pendingLink with childId still links without a resolve",
+                "result": "pass"
+              },
+              {
+                "title": "unit-issue.test.ts: the unit issue resolves from the binding with no Plan Task record",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "40bd5ea14",
+        "ranAt": "2026-11-20T18:52:14.957Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "repo-config.test.ts: moveLegacyRepoConfig renames github.json to repo-config.json when only the old file exists, leaving no github.json and the same content byte for byte, and returns nothing-to-move when there is no github.json",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/config/__tests__/repo-config.test.ts",
+                "title": "repo-config.test.ts: moveLegacyRepoConfig renames github.json to repo-config.json when only the old file exists, leaving no github.json and the same content byte for byte, and returns nothing-to-move when there is no github.json",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "repo-config.test.ts: moveLegacyRepoConfig leaves both files untouched and returns both-exist when both exist, never overwrites an existing repo-config.json, returns failed with a note and leaves github.json in place when the rename throws, and never throws",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/config/__tests__/repo-config.test.ts",
+                "title": "repo-config.test.ts: moveLegacyRepoConfig leaves both files untouched and returns both-exist when both exist, never overwrites an existing repo-config.json, returns failed with a note and leaves github.json in place when the rename throws, and never throws",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/config/__tests__/repo-config.test.ts",
+                "title": "repo-config.test.ts: a repo-config.json created between the presence check and the move is not replaced, and neither file changes",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/config/__tests__/repo-config.test.ts",
+                "title": "repo-config.test.ts: the old name is removed only if it is still the file that was moved, so a newer github.json that replaced it is kept",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/config/__tests__/repo-config.test.ts",
+                "title": "repo-config.test.ts: where hard links are not supported the move fails with a note to rename the file by hand, and changes nothing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "repo-config.test.ts: a second move after a successful one returns nothing-to-move, and a symbolic-link github.json is moved as a link",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/config/__tests__/repo-config.test.ts",
+                "title": "repo-config.test.ts: a second move after a successful one returns nothing-to-move, and a symbolic-link github.json is moved as a link",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "repo-config.test.ts: a source check that src/daemon/index.ts calls moveLegacyRepoConfig after the directories are ensured and before the database is opened, inside a try/catch and only when INSRC_REPO_CONFIG is unset",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/config/__tests__/repo-config.test.ts",
+                "title": "repo-config.test.ts: a source check that src/daemon/index.ts calls moveLegacyRepoConfig after the directories are ensured and before the database is opened, inside a try/catch and only when INSRC_REPO_CONFIG is unset",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/config/__tests__/repo-config.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 884,
+            "titles": [
+              {
+                "title": "repo-config.test.ts: moveLegacyRepoConfig renames github.json to repo-config.json when only the old file exists, leaving no github.json and the same content byte for byte, and returns nothing-to-move when there is no github.json",
+                "result": "pass"
+              },
+              {
+                "title": "repo-config.test.ts: moveLegacyRepoConfig leaves both files untouched and returns both-exist when both exist, never overwrites an existing repo-config.json, returns failed with a note and leaves github.json in place when the rename throws, and never throws",
+                "result": "pass"
+              },
+              {
+                "title": "repo-config.test.ts: a repo-config.json created between the presence check and the move is not replaced, and neither file changes",
+                "result": "pass"
+              },
+              {
+                "title": "repo-config.test.ts: the old name is removed only if it is still the file that was moved, so a newer github.json that replaced it is kept",
+                "result": "pass"
+              },
+              {
+                "title": "repo-config.test.ts: where hard links are not supported the move fails with a note to rename the file by hand, and changes nothing",
+                "result": "pass"
+              },
+              {
+                "title": "repo-config.test.ts: a second move after a successful one returns nothing-to-move, and a symbolic-link github.json is moved as a link",
+                "result": "pass"
+              },
+              {
+                "title": "repo-config.test.ts: a source check that src/daemon/index.ts calls moveLegacyRepoConfig after the directories are ensured and before the database is opened, inside a try/catch and only when INSRC_REPO_CONFIG is unset",
+                "result": "pass"
+              },
+              {
+                "title": "repo-config.test.ts: repoConfigPath returns the INSRC_REPO_CONFIG value when it is set and non-empty, PATHS.insrc/repo-config.json otherwise, and ignores INSRC_GITHUB_CONFIG",
+                "result": "pass"
+              },
+              {
+                "title": "repo-config.test.ts: after a boot move, repo.settings.get and repo.settings.set through the real handlers read and write repo-config.json and keep the repo's entry",
+                "result": "pass"
+              },
+              {
+                "title": "repo-config.test.ts: a source scan finds no file under src that names INSRC_GITHUB_CONFIG, githubConfigPath, github-store, GithubConfigFile, GithubEntry, loadGithubConfigFile or GithubConfigError",
+                "result": "pass"
+              },
+              {
+                "title": "repo-config.test.ts: a source scan finds the GitHub-tracker names (resolveGithubConfig, resolveGithubConfigFromFile, resolveBranchPattern, resolveStrictTrackerTarget, parseGithubRemoteUrl) still exported from github.ts and the file layer exported from repo-config.ts",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "c06134c36",
+        "ranAt": "2026-11-20T17:24:39.985Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "repo-config.test.ts: repoConfigPath returns the INSRC_REPO_CONFIG value when it is set and non-empty, PATHS.insrc/repo-config.json otherwise, and ignores INSRC_GITHUB_CONFIG",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/config/__tests__/repo-config.test.ts",
+                "title": "repo-config.test.ts: repoConfigPath returns the INSRC_REPO_CONFIG value when it is set and non-empty, PATHS.insrc/repo-config.json otherwise, and ignores INSRC_GITHUB_CONFIG",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "repo-config.test.ts: after a boot move, repo.settings.get and repo.settings.set through the real handlers read and write repo-config.json and keep the repo's entry",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/config/__tests__/repo-config.test.ts",
+                "title": "repo-config.test.ts: after a boot move, repo.settings.get and repo.settings.set through the real handlers read and write repo-config.json and keep the repo's entry",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "repo-config.test.ts: a source scan finds no file under src that names INSRC_GITHUB_CONFIG, githubConfigPath, github-store, GithubConfigFile, GithubEntry, loadGithubConfigFile or GithubConfigError",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/config/__tests__/repo-config.test.ts",
+                "title": "repo-config.test.ts: a source scan finds no file under src that names INSRC_GITHUB_CONFIG, githubConfigPath, github-store, GithubConfigFile, GithubEntry, loadGithubConfigFile or GithubConfigError",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "repo-config.test.ts: a source scan finds the GitHub-tracker names (resolveGithubConfig, resolveGithubConfigFromFile, resolveBranchPattern, resolveStrictTrackerTarget, parseGithubRemoteUrl) still exported from github.ts and the file layer exported from repo-config.ts",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/config/__tests__/repo-config.test.ts",
+                "title": "repo-config.test.ts: a source scan finds the GitHub-tracker names (resolveGithubConfig, resolveGithubConfigFromFile, resolveBranchPattern, resolveStrictTrackerTarget, parseGithubRemoteUrl) still exported from github.ts and the file layer exported from repo-config.ts",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/config/__tests__/repo-config.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 774,
+            "titles": [
+              {
+                "title": "repo-config.test.ts: moveLegacyRepoConfig renames github.json to repo-config.json when only the old file exists, leaving no github.json and the same content byte for byte, and returns nothing-to-move when there is no github.json",
+                "result": "pass"
+              },
+              {
+                "title": "repo-config.test.ts: moveLegacyRepoConfig leaves both files untouched and returns both-exist when both exist, never overwrites an existing repo-config.json, returns failed with a note and leaves github.json in place when the rename throws, and never throws",
+                "result": "pass"
+              },
+              {
+                "title": "repo-config.test.ts: a second move after a successful one returns nothing-to-move, and a symbolic-link github.json is moved as a link",
+                "result": "pass"
+              },
+              {
+                "title": "repo-config.test.ts: a source check that src/daemon/index.ts calls moveLegacyRepoConfig after the directories are ensured and before the database is opened, inside a try/catch and only when INSRC_REPO_CONFIG is unset",
+                "result": "pass"
+              },
+              {
+                "title": "repo-config.test.ts: repoConfigPath returns the INSRC_REPO_CONFIG value when it is set and non-empty, PATHS.insrc/repo-config.json otherwise, and ignores INSRC_GITHUB_CONFIG",
+                "result": "pass"
+              },
+              {
+                "title": "repo-config.test.ts: after a boot move, repo.settings.get and repo.settings.set through the real handlers read and write repo-config.json and keep the repo's entry",
+                "result": "pass"
+              },
+              {
+                "title": "repo-config.test.ts: a source scan finds no file under src that names INSRC_GITHUB_CONFIG, githubConfigPath, github-store, GithubConfigFile, GithubEntry, loadGithubConfigFile or GithubConfigError",
+                "result": "pass"
+              },
+              {
+                "title": "repo-config.test.ts: a source scan finds the GitHub-tracker names (resolveGithubConfig, resolveGithubConfigFromFile, resolveBranchPattern, resolveStrictTrackerTarget, parseGithubRemoteUrl) still exported from github.ts and the file layer exported from repo-config.ts",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "9152056f0",
+        "ranAt": "2026-11-20T17:26:34.202Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "the JetBrains settings tests (PerRepoSectionTest and InsrcSettingsTrackerTest) pass under JDK 21 with the new file name and error code in their sample data",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "jetbrains-plugin/build/test-results/test/TEST-ai.insors.insrc.jetbrains.settings.PerRepoSectionTest.xml (6 tests, 0 failures) and TEST-ai.insors.insrc.jetbrains.settings.InsrcSettingsTrackerTest.xml (7 tests, 0 failures), from JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 ./gradlew cleanTest test --tests '*PerRepoSectionTest' --tests '*InsrcSettingsTrackerTest' --no-configuration-cache, BUILD SUCCESSFUL"
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
+      },
+      {
+        "taskId": "t5",
+        "commit": "74629bfa2",
+        "ranAt": "2026-11-20T19:00:22.595Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "build-commands-doc.test.ts: docs/daemon.md and the other live docs name repo-config.json and INSRC_REPO_CONFIG in line with the code",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/build-commands-doc.test.ts",
+                "title": "build-commands-doc.test.ts: docs/daemon.md and the other live docs name repo-config.json and INSRC_REPO_CONFIG in line with the code",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/build-commands-doc.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 762,
+            "titles": [
+              {
+                "title": "docs/daemon.md: the Build commands section is read against the shipped behaviour and states the add-time defaults, buildSetup and the Build section",
+                "result": "pass"
+              },
+              {
+                "title": "src/daemon/__tests__/build-commands-doc.test.ts: the Build commands section of docs/daemon.md names repo.buildDefaults.migrate, its report fields and its outcome counts, and says a cleared command is applied again when it is run",
+                "result": "pass"
+              },
+              {
+                "title": "build-commands-doc.test.ts: docs/daemon.md and the other live docs name repo-config.json and INSRC_REPO_CONFIG in line with the code",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

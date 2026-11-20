@@ -1,0 +1,559 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1795177013079-fbe972",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-20T12:19:48.404Z",
+    "epicCreatedAt": "2026-11-20T12:14:08.881Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 170582,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d70697dff9f56b4a",
+    "epicSlug": "run-build-defaults-migration-once-per",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1795177013079-fbe972",
+    "hldEffectiveHash": "e19ca62c68575713f3003d8a4cf19b53ff4ae2a6e58da4926323f5b218c0a7ee",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "Run the build-defaults migration once per install, decided by a schemaVersion field at the root of ~/.insrc/github.json: at daemon boot, if schemaVersion is absent, null or below the daemon's current version, apply the pending migration(s) (build-defaults over every registered repo) and then stamp schemaVersion; never by commit ids; repo.buildDefaults.migrate stays for manual re-runs. Supersedes the separate migrations.json ledger design in LLD-d70697dff9f56b4a-s1.",
+    "standalone": true,
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "9d686628f5d2321a498610025cc5afbd37cc28170f83facb090090938acd5aed",
+        "at": "2026-11-20T12:19:50.150Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 2
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Adds a `schemaVersion` integer at the root of ~/.insrc/github.json and a boot pass that compares it with the version this daemon expects. When it is absent, null or lower, the daemon runs the pending migration steps in order (step 1 is the existing migrateBuildDefaults over the registered repos) and stamps the new version once they ran clean. Later boots find the version current and do nothing, and an install that skips any number of commits still applies every pending step once, because the stored version decides, not commit ids. The pass is best-effort and non-blocking; repo.buildDefaults.migrate stays as the manual re-run and does not touch the version."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Run the build-defaults migration once per install, decided by a schemaVersion field at the root of ~/.insrc/github.json: at daemon boot, if schemaVersion is absent, null or below the daemon's current version, apply the pending migration(s) (build-defaults over every registered repo) and then stamp schemaVersion; never by commit ids; repo.buildDefaults.migrate stays for manual re-runs. Supersedes the separate migrations.json ledger design in LLD-d70697dff9f56b4a-s1."
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "runSchemaMigrations",
+          "signature": "runSchemaMigrations(deps: SchemaMigrationDeps): Promise<SchemaMigrationResult>",
+          "parameters": [
+            {
+              "name": "deps",
+              "type": "SchemaMigrationDeps",
+              "purpose": "{ registeredRepos: () => Promise<readonly string[]>; configPath?: string; steps?: readonly SchemaMigrationStep[]; currentVersion?: number; writeKeys?: typeof writeRepoEntryKeys; writeVersion?: typeof writeSchemaVersion }: the registry listing (as the repo settings handlers take it) and test seams for the file path, the step list, the expected version and the two writers.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<SchemaMigrationResult>",
+            "meaning": "What the pass did: the stored version it found, the version it stamped (if any) and a status."
+          },
+          "errors": [
+            {
+              "type": "never throws",
+              "condition": "Every failure (unreadable github.json, invalid schemaVersion, unlistable registry, a step that throws, a stamp that cannot be written) is a status in the result and is logged; the promise always resolves."
+            }
+          ],
+          "preconditions": [
+            "The registry is loaded (called from the daemon's boot after it)."
+          ],
+          "postconditions": [
+            "A stored schemaVersion equal to or above the expected version runs nothing and writes nothing.",
+            "A stored schemaVersion that is absent, null or below the expected version runs, in ascending order, each step numbered above it, and stops at the first step that does not run clean.",
+            "The stamp written is the highest version whose steps (and all before it) ran clean, so a finished step is never run again and a failed one is retried at the next boot.",
+            "An invalid stored value (not an integer, or negative) or an unreadable github.json runs nothing and is neither overwritten nor treated as 0.",
+            "The stamp keeps default, repos and every other root key of github.json."
+          ]
+        },
+        {
+          "name": "readSchemaVersion",
+          "signature": "readSchemaVersion(configPath?: string): { readonly ok: true; readonly version: number | null } | { readonly ok: false; readonly reason: string }",
+          "parameters": [
+            {
+              "name": "configPath",
+              "type": "string",
+              "purpose": "The github.json path; the default is the daemon's own path (githubConfigPath).",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "{ ok: true; version: number | null } | { ok: false; reason: string }",
+            "meaning": "The root schemaVersion, null when the file or the key is absent or null, or not-ok with the reason when the file is unreadable (the strict reader's github-json-unreadable) or the value is present but not a non-negative integer."
+          },
+          "errors": [
+            {
+              "type": "schema-version-invalid",
+              "condition": "The root value is present and is neither null nor a non-negative integer; returned as data, never thrown."
+            }
+          ],
+          "preconditions": [
+            "None."
+          ],
+          "postconditions": [
+            "Reads only; the file is never created or changed by a read."
+          ]
+        },
+        {
+          "name": "writeSchemaVersion",
+          "signature": "writeSchemaVersion(version: number, configPath?: string, seams?: StoreSeams): Promise<WriteResult>",
+          "parameters": [
+            {
+              "name": "version",
+              "type": "number",
+              "purpose": "The schema version to store at the root.",
+              "optional": false
+            },
+            {
+              "name": "configPath",
+              "type": "string",
+              "purpose": "The github.json path.",
+              "optional": true
+            },
+            {
+              "name": "seams",
+              "type": "StoreSeams",
+              "purpose": "The writer's file-operation seams, as for writeRepoEntryKeys.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<WriteResult>",
+            "meaning": "ok with changed true when the value was written, ok with changed false when it already held that version, or the store's error (github-json-unreadable | file-changed | write-failed)."
+          },
+          "errors": [
+            {
+              "type": "github-json-unreadable | file-changed | write-failed",
+              "condition": "Returned as data like writeRepoEntryKeys; the promise never rejects."
+            }
+          ],
+          "preconditions": [
+            "None."
+          ],
+          "postconditions": [
+            "Runs on the same single queue and the same read-merge-write-verify loop (temp file, fingerprint check, atomic rename) as writeRepoEntryKeys.",
+            "Creates the file when it is absent; keeps default, repos and unknown root keys; never lowers a stored version."
+          ]
+        },
+        {
+          "name": "migrateBuildDefaults",
+          "signature": "migrateBuildDefaults(repos: readonly string[], deps?: { readonly configPath?: string; readonly writeKeys?: typeof writeRepoEntryKeys }): Promise<BuildMigrationReport>",
+          "parameters": [
+            {
+              "name": "repos",
+              "type": "readonly string[]",
+              "purpose": "The registered repo paths.",
+              "optional": false
+            },
+            {
+              "name": "deps",
+              "type": "{ configPath?: string; writeKeys?: typeof writeRepoEntryKeys }",
+              "purpose": "Test seams.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<BuildMigrationReport>",
+            "meaning": "One entry per repo and counts per outcome."
+          },
+          "errors": [
+            {
+              "type": "never throws",
+              "condition": "Failures are per-repo write-failed outcomes."
+            }
+          ],
+          "preconditions": [
+            "None beyond the repo paths."
+          ],
+          "postconditions": [
+            "Unchanged by this Story: it is step 1 of the schema migrations as is, and the on-demand method that wraps it neither reads nor writes the version."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "GithubConfigFile.schemaVersion",
+        "change": "field-add",
+        "details": "An optional integer at the root of ~/.insrc/github.json beside default and repos. Absent or null means 0 (no migration applied). Written only by the daemon, only through writeSchemaVersion, after the pending steps ran clean; never lowered. The strict reader already accepts extra root keys and every repo write keeps them, so existing readers and the settings clients are unaffected.",
+        "callSites": [
+          "src/workflow/config/github-store.ts:78-100",
+          "src/workflow/config/github-store.ts:134-152",
+          "src/workflow/config/github.ts"
+        ]
+      },
+      {
+        "entity": "GITHUB_SCHEMA_VERSION",
+        "change": "new",
+        "details": "The schema version this daemon expects, a constant of 1 (step 1: apply the build defaults). A later migration adds a numbered step and raises the constant.",
+        "callSites": [
+          "src/daemon/repo-settings.ts:241-261"
+        ]
+      },
+      {
+        "entity": "SchemaMigrationStep",
+        "change": "new",
+        "details": "{ readonly version: number; readonly run: (ctx: { readonly repos: readonly string[] }) => Promise<{ readonly clean: boolean; readonly counts?: BuildMigrationReport['counts'] }> }. One numbered step in a static ascending list; the only entry is version 1, whose run is migrateBuildDefaults over ctx.repos and whose clean is counts['write-failed'] === 0.",
+        "callSites": [
+          "src/daemon/repo-settings.ts:241-261"
+        ]
+      },
+      {
+        "entity": "SchemaMigrationResult",
+        "change": "new",
+        "details": "{ readonly status: 'applied' | 'up-to-date' | 'newer-schema' | 'not-clean' | 'registry-unreadable' | 'file-unreadable' | 'schema-version-invalid' | 'failed'; readonly from: number | null; readonly to?: number; readonly note?: string }. What the boot pass did; logged, not persisted.",
+        "callSites": [
+          "src/daemon/index.ts:387-407"
+        ]
+      },
+      {
+        "entity": "repo.buildDefaults.migrate",
+        "change": "invariant-change",
+        "details": "Behaviour unchanged. The same migration function now also runs once at boot as step 1 of the schema migrations, while this method stays the manual, repeatable run and never reads or writes schemaVersion.",
+        "callSites": [
+          "src/daemon/repo-settings.ts:339-356"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "github.json cannot be read or is malformed (invalid JSON, a non-object top level, a non-object default or repos).",
+          "detection": "readSchemaVersion goes through the strict reader (readRepoEntry), which returns github-json-unreadable naming the level.",
+          "response": "runSchemaMigrations runs nothing, writes nothing, logs a warning and returns file-unreadable; the file is not overwritten.",
+          "userImpact": "The defaults are not applied at this boot (and the build gate cannot read settings anyway); once the file is fixed the next boot applies them.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The root schemaVersion is present but is not a non-negative integer (a string, a fraction, a negative number, an object).",
+          "detection": "readSchemaVersion checks Number.isInteger(value) && value >= 0 for any value that is neither absent nor null.",
+          "response": "Nothing runs and nothing is written; the result is schema-version-invalid with the found value; it is not treated as 0, which would re-run the migration.",
+          "userImpact": "No automatic migration until the value is corrected or removed; repo.buildDefaults.migrate still works.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The registry cannot be listed when the pending steps need it.",
+          "detection": "deps.registeredRepos() rejects; the runner catches it.",
+          "response": "No step runs, nothing is stamped, the result is registry-unreadable and is logged; the next boot tries again.",
+          "userImpact": "None at this boot; the defaults arrive at a later boot.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A step throws, or at least one repo reports write-failed.",
+          "detection": "the runner's try/catch around step.run(); for a returned report, counts['write-failed'] > 0 makes clean false.",
+          "response": "The runner stops at that step, stamps only the highest earlier clean version (none when it was the first), logs the note and returns not-clean or failed; the step is retried at the next boot, and repos that already hold commands report already-set, so a repeat is harmless.",
+          "userImpact": "Repos that failed keep no defaults until a later boot or a manual run.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The steps ran clean but the stamp cannot be written (github.json changed under the writer on every attempt, disk full, permission).",
+          "detection": "writeSchemaVersion returns { ok: false, error } with file-changed or write-failed.",
+          "response": "Logged as a warning; the result is failed; the version stays unstamped so the steps run again at the next boot, which is safe because repos with commands report already-set.",
+          "userImpact": "The migration may re-run at each boot until the stamp can be written; a command the user cleared in between could be applied once more.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The boot pass itself fails unexpectedly (a bug).",
+          "detection": "the call site in src/daemon/index.ts uses void runSchemaMigrations(...).then(log).catch(log), like step 5b.",
+          "response": "Logged; boot continues; the server still listens and 'ready' is logged.",
+          "userImpact": "None on startup.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "An existing install whose github.json has no schemaVersion, updated after skipping many commits.",
+          "expected": "The version is absent, so step 1 runs once at that boot and 1 is stamped; no commit id is read."
+        },
+        {
+          "input": "schemaVersion is null.",
+          "expected": "Treated as 0 exactly like absent: step 1 runs and 1 is stamped."
+        },
+        {
+          "input": "schemaVersion is 0.",
+          "expected": "Below the expected 1, so step 1 runs."
+        },
+        {
+          "input": "schemaVersion equals the daemon's expected version.",
+          "expected": "up-to-date: nothing is run and nothing is written."
+        },
+        {
+          "input": "schemaVersion is higher than the daemon expects (written by a newer daemon, then rolled back).",
+          "expected": "newer-schema: nothing is run, nothing is written and the value is never lowered."
+        },
+        {
+          "input": "github.json does not exist (a fresh install).",
+          "expected": "Version null: step 1 runs over the registered repos (none or few), the file is created with schemaVersion 1; repos added later get their defaults at repo.add."
+        },
+        {
+          "input": "A user clears a command after the stamp was written.",
+          "expected": "No later boot re-applies it, because the version is current; only a manual repo.buildDefaults.migrate does."
+        },
+        {
+          "input": "The user calls repo.buildDefaults.migrate by hand.",
+          "expected": "It runs as before and neither reads nor writes schemaVersion, so it cannot cause or suppress the boot run."
+        },
+        {
+          "input": "A repo setting is written (repo.settings.set or repo.add) after the stamp.",
+          "expected": "The repo write keeps the root schemaVersion, because the merge rebuilds the file from the parsed root."
+        },
+        {
+          "input": "Two daemons boot at nearly the same time.",
+          "expected": "Both may run step 1; it is idempotent (never overwrites an entry that sets a key) and the stamp is a verified atomic write, so the result is the same. The window is documented, not locked."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The boot pass never delays or fails daemon startup: it is fire-and-forget after registry load and never rejects, like the steering refresh.",
+          "source": "c2"
+        },
+        {
+          "text": "migrateBuildDefaults and applyBuildDefaults are consumed unchanged: never overwrite an entry that sets any of the three keys, never throw, failures are per-repo outcomes.",
+          "source": "c1"
+        },
+        {
+          "text": "The strict reader accepts root keys beyond default and repos, and every repo write keeps them, so adding schemaVersion changes nothing for existing readers or for repo.settings.*.",
+          "source": "c3"
+        },
+        {
+          "text": "The daemon is the only writer of github.json, and every write goes through the one in-process queue with the read-merge-write-verify loop and atomic rename.",
+          "source": "c3"
+        },
+        {
+          "text": "No new RPC method is added, so the handler tables, routing table, audit and ADDED_RPC list are unchanged; repo.buildDefaults.migrate keeps its behaviour.",
+          "source": "c4"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove the version read, the stamp write and the runner's decisions over temporary files and fake steps.",
+          "subjects": [
+            "schema-migrations.test.ts: readSchemaVersion returns null for an absent file, an absent key and a null value, the integer for a valid one, and ok:false for an unreadable file or a value that is not a non-negative integer, without changing the file",
+            "schema-migrations.test.ts: writeSchemaVersion creates the file when absent, keeps default, repos and unknown root keys, reports changed false when the version is already stored, never lowers a stored version, and returns write-failed or file-changed as data",
+            "schema-migrations.test.ts: runSchemaMigrations runs the pending steps in ascending order and stamps the highest clean version for a version that is absent, null or below the expected one, runs nothing for an equal or higher one, stops at the first step that throws or reports write-failed and stamps only the earlier clean version, runs nothing on an unreadable file or an invalid version, reports registry-unreadable when the registry cannot be listed, and never rejects",
+            "schema-migrations.test.ts: the version-1 step runs migrateBuildDefaults over the listed repos and is clean only when no repo reports write-failed"
+          ],
+          "fixturesNeeded": [
+            "temporary directory for github.json",
+            "fake steps list and expected version",
+            "temporary registered repos with a Python marker (as in repo-settings.test.ts)"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove the real runner and the real migration together against a temporary github.json, that a repo write keeps the version, and that the docs match.",
+          "subjects": [
+            "schema-migrations.test.ts: two successive runs over a temporary Python repo with no commands and no schemaVersion (the first writes the three keys and stamps 1, the second runs nothing), with no commit id read anywhere",
+            "schema-migrations.test.ts: a command cleared after the stamp is not re-applied by the second run, while the manual repo.buildDefaults.migrate handler still re-applies it and leaves schemaVersion unchanged",
+            "schema-migrations.test.ts: a repo write through writeRepoEntryKeys after the stamp keeps the root schemaVersion",
+            "schema-migrations.test.ts: a source check that src/daemon/index.ts calls runSchemaMigrations as a fire-and-forget pass after the registry loads, with a catch, and not awaited",
+            "build-commands-doc.test.ts: docs/daemon.md describes the schemaVersion at the root of github.json and the boot migration in line with the code"
+          ],
+          "fixturesNeeded": [
+            "temporary github.json via INSRC_GITHUB_CONFIG"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "schema-migrations.test.ts: two successive runs over a temporary Python repo with no commands and no schemaVersion (the first writes the three keys and stamps 1, the second runs nothing), with no commit id read anywhere",
+            "schema-migrations.test.ts: runSchemaMigrations runs the pending steps in ascending order and stamps the highest clean version for a version that is absent, null or below the expected one, runs nothing for an equal or higher one, stops at the first step that throws or reports write-failed and stamps only the earlier clean version, runs nothing on an unreadable file or an invalid version, reports registry-unreadable when the registry cannot be listed, and never rejects"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "schema-migrations.test.ts: runSchemaMigrations runs the pending steps in ascending order and stamps the highest clean version for a version that is absent, null or below the expected one, runs nothing for an equal or higher one, stops at the first step that throws or reports write-failed and stamps only the earlier clean version, runs nothing on an unreadable file or an invalid version, reports registry-unreadable when the registry cannot be listed, and never rejects"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "schema-migrations.test.ts: a source check that src/daemon/index.ts calls runSchemaMigrations as a fire-and-forget pass after the registry loads, with a catch, and not awaited"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "schema-migrations.test.ts: writeSchemaVersion creates the file when absent, keeps default, repos and unknown root keys, reports changed false when the version is already stored, never lowers a stored version, and returns write-failed or file-changed as data",
+            "schema-migrations.test.ts: a repo write through writeRepoEntryKeys after the stamp keeps the root schemaVersion",
+            "schema-migrations.test.ts: a command cleared after the stamp is not re-applied by the second run, while the manual repo.buildDefaults.migrate handler still re-applies it and leaves schemaVersion unchanged"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "build-commands-doc.test.ts: docs/daemon.md describes the schemaVersion at the root of github.json and the boot migration in line with the code"
+          ]
+        }
+      ],
+      "testFramework": "node:test with node:assert/strict (the repo's runner, as in src/daemon/__tests__/repo-settings.test.ts)"
+    },
+    "migration": {
+      "stateBefore": "The build-defaults migration exists only as the on-demand repo.buildDefaults.migrate method (src/daemon/repo-settings.ts:241-261 and 339-356); nothing runs it by itself, so after a daemon update the user must call it. The daemon's boot has a non-blocking pass over registered repos (steering refresh, src/daemon/index.ts:387-407) that runs at every boot, and nothing records which one-time migrations have run. ~/.insrc/github.json is { default?, repos? }; its strict reader accepts other root keys and every repo write keeps them (src/workflow/config/github-store.ts:78-100, 134-152), but nothing stores a schema version.",
+      "stateAfter": "~/.insrc/github.json may carry an integer `schemaVersion` at its root. At boot, after the registry loads, a non-blocking pass compares it with the version this daemon expects (1); when it is absent, null or lower, it runs the pending steps in order (step 1: migrateBuildDefaults over the registered repos) and, when they ran clean, stamps the version. Later boots find it current and do nothing; an install that skips commits still applies every pending step once. repo.buildDefaults.migrate is unchanged and does not touch the version.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add a root-level store function that stamps schemaVersion through the existing serialised read-merge-write-verify loop, creating the file when absent, keeping default, repos and unknown root keys and never lowering a stored value; add a strict reader for the value that returns null for absent or null and reports an invalid value as data.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add the expected-version constant (1), the numbered step list holding the build-defaults step, and the runner that applies the pending steps in ascending order, stops at the first one that is not clean and stamps the highest clean version.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Call the runner from the daemon's boot after the registry loads, as a fire-and-forget pass with a catch, in the style of the steering refresh, logging the result.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Document the root schemaVersion, the boot migration and the comparison rule in docs/daemon.md, including that a manual repo.buildDefaults.migrate does not touch the version and a deliberate clear is not re-applied at boot once the version is stamped.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "At the first boot of the updated daemon the stored version is absent, step 1 runs once over every registered repo and 1 is stamped; removing or lowering schemaVersion by hand makes the pending steps run once more at the next boot.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No public API changes: no RPC method is added or changed, repo.buildDefaults.migrate keeps its behaviour and reply, and github.json keeps its shape apart from one optional extra root key that the strict reader already accepts and every repo write already preserves, so the terminal, the IDE plugins and the build gate are unaffected. An older daemon ignores the key and keeps it on its own repo writes; a daemon rolled back after the stamp simply no longer runs the pass. Repos that already hold commands report already-set, so the first boot after the update does not change them.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "schemaVersion at the root of github.json, stamped after a clean run",
+        "oneLineSummary": "One integer at the root of ~/.insrc/github.json; at boot, when it is absent, null or below the daemon's current version, run the pending migration and stamp the current version only if no repo reported write-failed.",
+        "approach": "Add a root key `schemaVersion` (an integer) to github.json, next to default and repos, and a constant for the version this daemon expects (1: the build-defaults migration). A small boot pass, run after the registry loads in the style of step 5b (fire-and-forget, never rejects), reads the root value through the strict reader: absent or null counts as 0; an integer below the current version means the migrations numbered above it are pending; equal or above means nothing to do. For the pending ones it runs migrateBuildDefaults over the registered repos and, when counts['write-failed'] is 0, stamps the current version at the root through a new store function that reuses the existing read-merge-write-verify loop (same queue, temp file, fingerprint check, atomic rename) and keeps default, repos and unknown keys. A run with a write-failed repo is not stamped and is tried again at the next boot. No new file and no new RPC method; repo.buildDefaults.migrate is unchanged and does not touch the version.",
+        "pros": [
+          "The smallest shape: no new file, no id list; the version number is the decision, exactly as asked.",
+          "Decided by the stored version, not by commits, so an install that skips any number of commits still applies every pending step once.",
+          "Later migrations are one more numbered step and a bump of the constant.",
+          "A transient failure is retried at the next boot instead of being lost.",
+          "The record sits with the settings it protects, so a restored github.json carries both.",
+          "Root keys other than default and repos are already accepted by the strict reader and kept by every repo write."
+        ],
+        "cons": [
+          "Needs a root-level writer beside the per-repo one, built on the same verified loop.",
+          "A malformed github.json cannot be stamped (and every repo write fails anyway), so the migration retries each boot until the file is fixed.",
+          "If one repo fails at every boot the pass re-runs each time, and a command the user cleared in between can be applied once more before the run finally stamps.",
+          "A newer daemon's higher version makes an older daemon do nothing, which is the intended result."
+        ],
+        "costEstimate": "S"
+      },
+      {
+        "id": "a2",
+        "name": "The same version rule, stamped after the first run whatever the outcome",
+        "oneLineSummary": "As a1, but the version is stamped after the first attempt, so each step runs strictly once and a failure is only logged.",
+        "approach": "Same root schemaVersion, constant and boot pass as a1, but the current version is stamped as soon as the migration has finished, with a failed repo only logged; the user re-runs repo.buildDefaults.migrate by hand for any repo that reported write-failed.",
+        "pros": [
+          "Strictly once: the automatic pass never touches a repo twice, so a cleared command cannot come back from it.",
+          "No retry loop to reason about."
+        ],
+        "cons": [
+          "A transient failure (an unreadable github.json at that one boot) leaves every repo unmigrated and the user has to notice from a log.",
+          "If the file is unreadable the stamp cannot be written either, so in that case it retries anyway, which makes the rule inconsistent."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Strictly once, but a transient failure silently defeats the point of running automatically (k4 partial)."
+      },
+      {
+        "id": "a3",
+        "name": "schemaVersion in a separate small file",
+        "oneLineSummary": "Keep the version in its own file under ~/.insrc instead of the root of github.json.",
+        "approach": "A new PATHS entry for a small JSON file holding { schemaVersion }, read and written with a plain atomic replace, with the same boot pass and the same compare-and-apply rule as a1.",
+        "pros": [
+          "No change to what is written into github.json.",
+          "A damaged github.json cannot stop the version being recorded."
+        ],
+        "cons": [
+          "A new file and PATHS entry to design, document and keep consistent with github.json, though the user asked for the field in the JSON root.",
+          "The record is separated from the settings it protects, so restoring github.json alone loses the link.",
+          "An unreadable version file has to be handled without treating it as 0 (that would re-run everything)."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Works, but is larger than needed and departs from the instruction to put the version in the JSON root (k2 and k6 partial)."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "Confirm the constraints k1-k6 this LLD authored from your statements (once only; decided by the root schemaVersion, with absent, null or below the current version applying the pending steps, never by commit ids; never blocks or fails startup; a failure is not silently lost; the daemon is the only writer and keeps the rest of github.json; stay small and keep the on-demand method). They are the scoring basis for the alternatives.",
+      "Confirm the acceptance criteria ac1-ac5 this LLD authored, since the Story carries none: ac1 a stored schemaVersion that is absent, null or below the daemon's version makes the boot apply the pending steps once and stamp the version, with no commit ids involved; ac2 a current or higher version runs nothing, and a failed step is not stamped and is retried at the next boot; ac3 the pass never delays or fails startup; ac4 the stamp keeps the rest of github.json, and a command cleared after the stamp is not re-applied at boot while the manual method still can; ac5 the behaviour is documented in docs/daemon.md.",
+      "Confirm the new symbol names and constant (runSchemaMigrations, readSchemaVersion, writeSchemaVersion, GITHUB_SCHEMA_VERSION = 1, SchemaMigrationStep, SchemaMigrationResult). They do not exist yet, so no analyzer bundle can cite them.",
+      "Confirm the citation mapping: c1 is the migrateBuildDefaults/handler bundle, c2 the startup-order bundle, c3 the github.json store bundle, c4 the method-registries bundle, c5 the tests bundle (invariant sources use these)."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/daemon/repo-settings.ts:241-261",
+      "quotedText": "s1 bundle 1: migrateBuildDefaults, the repo.buildDefaults.migrate handler (also lines 339-356) and the installed-commit readers"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/daemon/index.ts:387-407",
+      "quotedText": "s1 bundle 2: the daemon's boot order and the boot steering refresh"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/config/github-store.ts:78-100",
+      "quotedText": "s1 bundle 3: the shape, reader and writer of github.json (also lines 134-152 and 215-232)"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/daemon/threads/method-class.ts:274",
+      "quotedText": "s1 bundle 4: the registries a new RPC method must join (also src/daemon/repo-call-audit.ts line 129)"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/daemon/__tests__/repo-settings.test.ts",
+      "quotedText": "s1 bundle 5: the tests the new store function and boot pass would extend"
+    }
+  ]
+}

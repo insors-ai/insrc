@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-6b7bbf1a-1599-4759-880b-dcd420179e88",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-20T16:49:20.257Z",
+    "epicCreatedAt": "2026-11-20T12:31:06.431Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8ff6d364012cff02",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Update the JetBrains test fixtures and comments",
+      "parent": {
+        "entityId": "STORY-8ff6d364012cff02-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-8ff6d364012cff02-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-8ff6d364012cff02-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "c81933eded9ca623b67e95bf4e3ca4844651b8cf584bfd9b4bc872ff71be6644",
+        "at": "2026-11-20T16:49:20.261Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T16:49:20.262Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Update the JetBrains test fixtures and comments",
+    "summary": "Update the two JetBrains Kotlin tests (PerRepoSectionTest.kt, InsrcSettingsTrackerTest.kt) that use the old file name and error code in sample data, and the three comments in DaemonGateway.kt, to the new names, without changing how the plugin handles the daemon's replies.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "The JetBrains settings tests pass under JDK 21 with the new file name and error code in their sample data.",
+      "No source or test under jetbrains-plugin names github.json or github-json-unreadable."
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "the JetBrains settings tests (PerRepoSectionTest and InsrcSettingsTrackerTest) pass under JDK 21 with the new file name and error code in their sample data"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

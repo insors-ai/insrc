@@ -1,0 +1,434 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1795173501200-iln8uq",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-20T11:20:59.721Z",
+    "epicCreatedAt": "2026-11-20T04:36:30.764Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 158203,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "807fa9e8fb678f4b",
+    "epicSlug": "reconcile-daemon-rpc-registration-audit-coverage",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1795173501200-iln8uq",
+    "hldEffectiveHash": "bce6337fee05292a2212fb6d2e91ef7798f0de7667874bbfcfb22ef7305c64da",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "Reconcile daemon RPC registration and audit coverage",
+    "standalone": true,
+    "sizeClass": "bugfix",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "77a14de83819da655722e4754ba26dba942b1969ed7c7e60395034d7f204dae1",
+        "at": "2026-11-20T11:20:59.813Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T11:24:15.230Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "7078581a600a730d9b6237934076022b21cf42ea"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Reconcile daemon registrations, repository-scope audit rules and execution classifications against the handlers the runtime actually constructs. Add missing qualification and retired-review cancellation coverage, replace stale inventories and count assumptions with exact contract checks, and update the repository-gate documentation. Public payloads, storage formats and retired-review refusal behavior remain compatible."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Reconcile daemon RPC registration and audit coverage"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "buildHandlerRuntime",
+          "signature": "buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime",
+          "parameters": [
+            {
+              "name": "deps",
+              "type": "HandlerRuntimeDeps",
+              "purpose": "Existing runtime services; contract tests use inert stubs for construction and isolated daemon-owned stores for dispatch.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "HandlerRuntime",
+            "meaning": "Assembled rpcHandlers and streamHandlers, including spread registrations; these actual maps are the registration inventory."
+          },
+          "errors": [],
+          "preconditions": [
+            "Construction-only checks must not execute provider calls or open the installed daemon's stores."
+          ],
+          "postconditions": [
+            "RPC_AUDIT keys equal the union of constructed unary and stream registrations with no missing or stale entries. Each audit row has reviewed evidence and a valid kind; modifying rows alone carry their existing repository/path rules.",
+            "methodClasses entries uniquely cover every constructed method with the exact transport flag. Preserve an independently reviewed compatibility key inventory, updating only explained added methods.",
+            "Add daemon.qualificationState as read-only in the repo audit and unary session-class in methodClasses: it reads journal/release/graph metadata through the full handler runtime. It is not shared state, FIFO-exempt or an admin-board method. Session workers already load this runtime and enter daemon store and maintenance guards.",
+            "Retired review methods retain explicit main-daemon refusal ownership. Tests must verify membership in the named retired-review ownership sets and existing router precedence, rather than assume the entire codeReview family runs on shared-state workers.",
+            "Callable step phase contracts, including frozen inert review schemas, are the independent expected phase inventory. Include design-review-step.cancel as read-only with unavailability evidence and reconcile any additional missing/stale phases only against their actual callable dispatcher/schema. Never restore deleted review execution.",
+            "docs/daemon.md lists exactly FILE_MODIFYING_METHODS with the correct repo parameter and all six refusal codes. Remove retired-review modifying rows and document current modifying registrations."
+          ]
+        },
+        {
+          "name": "requireRepoForCall",
+          "signature": "requireRepoForCall(method: string, params: unknown, registered: ReadonlySet<string>, opts?: RepoCallOptions): RepoCallCheck",
+          "parameters": [
+            {
+              "name": "method",
+              "type": "string",
+              "purpose": "Explicit audited modifying method or step phase.",
+              "optional": false
+            },
+            {
+              "name": "params",
+              "type": "unknown",
+              "purpose": "Untrusted request parameters.",
+              "optional": false
+            },
+            {
+              "name": "registered",
+              "type": "ReadonlySet<string>",
+              "purpose": "Registered canonical repository paths.",
+              "optional": false
+            },
+            {
+              "name": "opts",
+              "type": "RepoCallOptions",
+              "purpose": "Existing continuation token repository context when explicitly allowed by the phase rule.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "RepoCallCheck",
+            "meaning": "Existing checked canonical repository and rewritten parameters, or refusal code/error."
+          },
+          "errors": [],
+          "preconditions": [
+            "No fallback to daemon cwd, INSRC_REPO or session workspace establishes mutation authority."
+          ],
+          "postconditions": [
+            "Preserve repo-missing, repo-not-absolute, repo-not-directory, repo-not-registered, path-outside-repo and repo-mismatch behavior.",
+            "Every modifying registered RPC/stream and supported modifying phase remains covered by its gate; exact exercised-name sets replace a fixed lower bound. Keep successful registered-repo writes and no-write refusal controls.",
+            "Unavailability remains the first boundary for retired review endpoints; classify them as read-only refusals without forcing a repo gate."
+          ]
+        },
+        {
+          "name": "inDaemonTarget",
+          "signature": "inDaemonTarget(method: string, view: InDaemonRouteView): { readonly cls: MethodClass; readonly shared?: true } | undefined",
+          "parameters": [
+            {
+              "name": "method",
+              "type": "string",
+              "purpose": "Existing method routing key.",
+              "optional": false
+            },
+            {
+              "name": "view",
+              "type": "InDaemonRouteView",
+              "purpose": "Current routed classes and shared-worker identity.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "{ readonly cls: MethodClass; readonly shared?: true } | undefined",
+            "meaning": "Existing routed worker target or inline execution on the current daemon thread."
+          },
+          "errors": [],
+          "preconditions": [
+            "Method-class data remains worker-safe and imports no handler runtime."
+          ],
+          "postconditions": [
+            "Keep existing admin/indexing and shared-state routing behavior. qualificationState is ordinary session work: nested calls stay inline on the current full-runtime daemon thread.",
+            "Explicitly test unknown, missing, stale, duplicate and wrong-transport inventory drift. Do not add family fallbacks or blanket reviewed exemptions.",
+            "Ownership relationships are metadata lookups: each registered key has one execution class and one audited repo-scope kind, while transport membership is checked independently. Existing main-thread overrides take priority over session class. No domain entity, module-dependency or public IPC shape changes require a new ERD or interaction diagram; these explicit ownership rules suffice."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A new or merged method lacks an audit/class entry, or an old row is no longer registered.",
+          "detection": "Bidirectional exact key comparison against constructed unary and stream maps, plus callable phase inventory.",
+          "response": "Fail the named contract test with missing/stale keys; do not synthesize a default classification.",
+          "userImpact": "Prevents silently ungated mutation or requests sent to unsupported owners.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Missing, relative, nonexistent, unregistered or mismatched repository, or path traversal outside it.",
+          "detection": "Existing requireRepoForCall and dispatch tests, including conflicting cwd/environment and continuation token cases.",
+          "response": "Retain the existing six refusal codes before repository mutation; stream refusal remains an error frame.",
+          "userImpact": "Caller gets the existing actionable refusal and repository files remain unchanged.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Unavailable review called through RPC or a frozen step phase, including cancel.",
+          "detection": "Existing Batch04 unavailable-boundary and router precedence controls.",
+          "response": "Preserve the current unavailable response before repo lookup, worker allocation or review work.",
+          "userImpact": "Retired reviews remain unavailable and cause no writes or provider calls.",
+          "recoverable": false
+        },
+        {
+          "scenario": "qualificationState has no completed rollback, release identity mismatch, or missing/wrong graph fixture.",
+          "detection": "Existing handler guards and an isolated negative dispatch control.",
+          "response": "Keep the existing no-completed-qualification or missing-fixture error; never return fabricated success or route to an admin worker lacking the handler.",
+          "userImpact": "Qualification reports failure accurately.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A method supplied by an object spread or auxiliary task-progress registration.",
+          "expected": "The constructed-map inventory includes it regardless of source formatting."
+        },
+        {
+          "input": "Unary/stream flag swapped, duplicate descriptor, missing method, stale method, or unknown method.",
+          "expected": "Independent negative controls detect each drift category; unknown methods receive no automatic audit exemption."
+        },
+        {
+          "input": "A retired codeReview method is still session-class but has an explicit main-daemon refusal override.",
+          "expected": "Ownership tests assert the exact explicit override and local refusal rather than shared-family membership."
+        },
+        {
+          "input": "A continuation supplies an opaque state token but no explicit repo.",
+          "expected": "Only phases already permitting repoFromRunToken consume their validated run repository; conflicting explicit repo is refused."
+        },
+        {
+          "input": "Changing numbers of modifying methods after retirement or legitimate additions.",
+          "expected": "Exact identity and exercised-method coverage governs dispatch validation; no arbitrary minimum count substitutes for coverage."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Repository authority derives from explicit registered canonical repo or an already-supported validated continuation token, never daemon environment/cwd.",
+          "source": "c1"
+        },
+        {
+          "text": "Daemon-owned storage, worker-safe classification imports and existing main-thread refusal ownership remain intact.",
+          "source": "c2"
+        },
+        {
+          "text": "Review implementation stays retired; frozen schemas remain inert compatibility data. Qualification evidence regeneration belongs to another batch.",
+          "source": "c3"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "contract",
+          "purpose": "Prove exact registration, classification, phase and documentation coverage independently of production metadata.",
+          "subjects": [
+            "src/daemon/__tests__/handler-runtime.test.ts: reviewed compatibility snapshots include explained cancellation and qualification additions; constructed maps include spread registrations.",
+            "src/daemon/__tests__/repo-call-audit.test.ts: exact RPC/stream union and callable phase coverage, valid kinds/evidence and repo rules; detect missing/stale rows.",
+            "src/daemon/__tests__/repo-call-table.test.ts: exact disjoint modifying/nonmodifying partition over actual registration and callable phases, with unknown-name negative control.",
+            "src/daemon/threads/__tests__/method-class.test.ts: unique complete method classes and stream flags; missing/stale/duplicate/wrong-transport controls; worker-safe imports and explicit retired-review ownership.",
+            "src/daemon/__tests__/daemon-doc-repo-table.test.ts: exact modifying-method names/repo params and six refusal codes."
+          ],
+          "fixturesNeeded": [
+            "Inert runtime construction dependencies; expected keys come from actual assembled runtime, never the audit under test.",
+            "Frozen callable phase schemas and current dispatch contracts, including unavailable review phases."
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove repository authority and real dispatch ownership rather than metadata equality alone.",
+          "subjects": [
+            "src/daemon/__tests__/repo-gate-dispatch.test.ts: exercise every modifying RPC/stream by exact identity without repo, assert unchanged filesystem, retain successful registered feedback append.",
+            "src/daemon/__tests__/repo-call-gate.test.ts: preserve refusal codes, canonical paths, cross-repo and validated continuation semantics.",
+            "qualificationState: isolated full-runtime unary dispatch rejects an unqualified fixture with its existing error rather than unknown-method; routing/class tests prove ordinary session ownership and no admin-board/shared-state dispatch.",
+            "Retired review router precedence and no-work refusal controls from Batch04 remain regression evidence; rerun directly affected router/unavailability files if routing assumptions change."
+          ],
+          "fixturesNeeded": [
+            "Managed temporary HOME and registered repositories, daemon store ownership, ordinary child cleanup; never installed live stores.",
+            "Use the existing coordinator for build/run ownership and serialized files. No live providers or qualification release regeneration."
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "Compile and run the complete affected files with accountable cleanup.",
+          "subjects": [
+            "Run all seven baseline files through Node22 scripts/test-harness/run.mjs --concurrency=1; broaden only to directly affected dispatch/phase regressions.",
+            "Retain TAP/results/cleanup evidence under docs/plans; report whole-file failures honestly, no skip/force-exit suppression."
+          ],
+          "fixturesNeeded": [
+            "Baseline run 8aecf395-5b83-4e46-8b56-cf5a90f04dc3: 24 tests, 17 pass, 7 fail, no incomplete coverage, confirmed child closure."
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "Exact assembled-handler audit and method-class coverage, reviewed snapshots, stream flags, phase coverage and drift controls establish complete explicit classifications. This is a local proving label for the issue's prose requirement; no upstream typed criterion was provided."
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "Full modifying dispatch identity coverage, refusal code/canonicalization controls and successful registered-repo feedback append preserve repository authority."
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "qualificationState owner/class and negative dispatch controls, retired-review main-thread refusal checks and worker-safe imports preserve execution ownership."
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "Exact daemon documentation parity plus complete seven-file coordinated run and cleanup evidence establish coherent maintained coverage."
+          ]
+        }
+      ],
+      "testFramework": "node:test and node:assert/strict under the repository Node22 test coordinator; build once, concurrency=1, no live-service flag. Preserve source/out consistency and retain results/cleanup artifacts."
+    },
+    "migration": {
+      "stateBefore": "Six of seven baseline files fail because qualificationState lacks audit and class entries, cancel additions are absent from compatibility snapshots, review ownership expectations and repo-gate docs are stale, and dispatch coverage relies on a fixed modifying-method count. The repository gate's own tests pass.",
+      "stateAfter": "Existing explicit audit/class/phase inventories agree with actual constructed registrations and callable contracts; authority and refusal behavior stay enforced, ownership is explicit, docs match modifying methods, and independent negative controls detect drift.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "After human LLD and PLAN approvals, repair only evidenced audit/class omissions and the related independent registration/phase and ownership expectations. Preserve public endpoint shapes and review unavailability.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Reconcile documentation with reviewed modifying rules; run the complete affected files serially through the coordinator, retain evidence and update the failure/batch record.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Present validated BUILD for human approval before completion. Deployment/restart uses the normal separate daemon lifecycle; no installed daemon change or release qualification is required to validate this batch.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No persisted schema, entity, RPC parameter or result shape changes. Existing refusal messages/codes and retired callable review schema compatibility stay intact. qualificationState gains explicit unary session classification matching an existing full-runtime owner. Reverting code/tests/docs restores previous metadata without data conversion.",
+      "zeroDowntime": false,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Reconcile explicit contracts",
+        "oneLineSummary": "Repair existing inventories and validate against assembled handler maps and callable phase contracts.",
+        "approach": "Keep RPC_AUDIT, STEP_PHASE_AUDIT, methodClasses and explicit ownership sets. Add evidence-based missing classifications and use independent exact comparisons against constructed RPC/stream maps and callable phase contracts. Retain reviewed endpoint snapshots as compatibility evidence, current refusal behavior and worker-safe routing imports; reconcile docs with the modifying table.",
+        "pros": [
+          "Smallest complete repair with unchanged public payloads and storage.",
+          "Independent inventories can catch registration drift and wrong ownership."
+        ],
+        "cons": [
+          "Explicit inventories still need deliberate maintenance, enforced by exact tests."
+        ],
+        "costEstimate": "S"
+      },
+      {
+        "id": "a2",
+        "name": "Unified endpoint descriptors",
+        "oneLineSummary": "Replace registration, audit and routing inventories with one descriptor per endpoint.",
+        "approach": "Create descriptors containing handlers, transport, repo rules, class and ownership, then derive runtime registrations and documentation from them. Preserve independent behavior tests because generated metadata agreement alone cannot prove correct classification.",
+        "pros": [
+          "Reduces repeated registration keys."
+        ],
+        "cons": [
+          "Broad runtime restructuring increases import and worker ownership risk for a scoped reconciliation.",
+          "Still requires independent behavioral evidence."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Can satisfy coverage but introduces unnecessary handler-registration and worker-safe import migration; a single generated metadata source does not prove its own correctness."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/daemon/repo-call-gate.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/daemon/threads/method-class.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/reconcile-daemon-rpc-registration-audit-coverage-E20261120807fa9e8/ISSUE.md"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/daemon/handler-runtime.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/daemon/threads/session-worker.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/daemon/threads/admin-worker.ts"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/daemon/repo-call-audit.ts"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "src/mcp/review-input-schemas.ts"
+    },
+    {
+      "id": "c9",
+      "kind": "doc",
+      "ref": "docs/testing.md"
+    }
+  ]
+}

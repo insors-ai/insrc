@@ -93,3 +93,19 @@ required before completion. No repository-wide green, deployment, push, live
 provider or release qualification success is claimed. Earlier failed verdicts
 and pending checkpoints above are historical evidence, superseded by this
 implementation checkpoint where explicitly stated.
+
+## BUILD presentation ordering
+
+The first task-three validation accepted the technical documentation and retained
+74-test evidence, but rejected its last check because the BUILD still recorded
+only earlier validated tasks and had not been presented. That verdict remains
+in the build history. The current BUILD was then declared through the registered
+`insrc_present` tool, which returned
+`presented: ["BUILD-807fa9e8fb678f4b-s1"]`, `notPending: []`.
+
+Task-three validation must write its own verdict before the BUILD can show all
+three passing tasks. After that write, the same BUILD document will be presented
+again and explicit human approval requested. The Story is not completed and
+BUILD approval is not inferred from the approved PLAN. This is the documented
+build workflow's validate → present → human approval → completion ordering; the
+pre-verdict task status is not a claim that task three has already passed.

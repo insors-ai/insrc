@@ -1,0 +1,4 @@
+
+> @insrc/project-memory@0.1.0 build
+> tsc -p tsconfig.json
+

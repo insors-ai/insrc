@@ -1,0 +1,5 @@
+[forbidden-spawn-scan] exempt cli/services/maintenance.ts (16): the daemon self-update pulls and builds its own install directory, outside any repository the registry serves
+[forbidden-spawn-scan] exempt daemon/installed-commit.ts (1): it reads the installed daemon's own commit at start-up, before the tool registry exists
+[forbidden-spawn-scan] exempt daemon/managed-release-staging.ts (1): the macOS updater clones its own qualified daemon release outside registered user repositories before the tool registry is available
+[forbidden-spawn-scan] exempt indexer/file-filter.ts (2): the FileFilter lists the tracked files of a repository with git ls-files and reads core.excludesFile for the indexer's own file walk, not on behalf of a caller; it is built synchronously, so it stays exempt until it is converted to the typed git tools (GitHub issue, see docs/plans/main-sync-conflicts.md)
+[forbidden-spawn-scan] 0 site(s) in failing mode, 4 exempt file(s), 0 unscanned

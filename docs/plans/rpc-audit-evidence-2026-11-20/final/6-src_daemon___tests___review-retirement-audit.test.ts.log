@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: production imports and assets retain only unavailable endpoints historical reads and human decisions
+ok 1 - production imports and assets retain only unavailable endpoints historical reads and human decisions
+  ---
+  duration_ms: 53.021667
+  type: 'test'
+  ...
+# Subtest: backend and current IDE guidance agree on review unavailability and human approval
+ok 2 - backend and current IDE guidance agree on review unavailability and human approval
+  ---
+  duration_ms: 0.990834
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 197.433584

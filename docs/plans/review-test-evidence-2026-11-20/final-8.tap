@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: Current isolation inventories execute real tests and detect deliberate default-store opening
+ok 1 - Current isolation inventories execute real tests and detect deliberate default-store opening
+  ---
+  duration_ms: 4694.753333
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4808.982125

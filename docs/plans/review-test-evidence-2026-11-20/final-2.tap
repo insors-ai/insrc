@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: all preserved review operations and MCP phases return exact rewrite errors without review state
+ok 1 - all preserved review operations and MCP phases return exact rewrite errors without review state
+  ---
+  duration_ms: 15.853125
+  type: 'test'
+  ...
+# Subtest: repeated unavailable MCP calls allocate no connections and preserve error envelopes
+ok 2 - repeated unavailable MCP calls allocate no connections and preserve error envelopes
+  ---
+  duration_ms: 10.626166
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1074.988125

@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: code-review client helpers reject with the code-family rewrite error before reading params or connecting
+ok 1 - code-review client helpers reject with the code-family rewrite error before reading params or connecting
+  ---
+  duration_ms: 1.162208
+  type: 'test'
+  ...
+# Subtest: legacy code-review adapters retain the code-family rewrite error
+ok 2 - legacy code-review adapters retain the code-family rewrite error
+  ---
+  duration_ms: 0.138542
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 202.501708

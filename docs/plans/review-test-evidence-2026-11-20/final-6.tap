@@ -1,0 +1,142 @@
+TAP version 13
+# Subtest: router: approval subscriptions leave Tracker reads unblocked and answers can finish a pending request
+ok 1 - router: approval subscriptions leave Tracker reads unblocked and answers can finish a pending request
+  ---
+  duration_ms: 12.835667
+  type: 'test'
+  ...
+# Subtest: router: one session's three requests reach its worker in arrival order; a stream ends at its done/error frame
+ok 2 - router: one session's three requests reach its worker in arrival order; a stream ends at its done/error frame
+  ---
+  duration_ms: 88.513208
+  type: 'test'
+  ...
+# Subtest: router: FIFO-exempt methods are forwarded during a long request; a cancelled queued request is removed
+ok 3 - router: FIFO-exempt methods are forwarded during a long request; a cancelled queued request is removed
+  ---
+  duration_ms: 45.694666
+  type: 'test'
+  ...
+# Subtest: router: connection-scoped requests stay local; unattributed requests interleave without a FIFO
+ok 4 - router: connection-scoped requests stay local; unattributed requests interleave without a FIFO
+  ---
+  duration_ms: 32.872041
+  type: 'test'
+  ...
+# Subtest: router: a queued stream cancelled by its socket keeps the next request queued and its worker busy until the worker acks it, with or without a lifetime (ISSUE-7c39e5cd)
+ok 5 - router: a queued stream cancelled by its socket keeps the next request queued and its worker busy until the worker acks it, with or without a lifetime (ISSUE-7c39e5cd)
+  ---
+  duration_ms: 74.543458
+  type: 'test'
+  ...
+# Subtest: router: workflow.run.abort reaches a worker-owned run's owner as a busy request, and a main-thread run here
+ok 6 - router: workflow.run.abort reaches a worker-owned run's owner as a busy request, and a main-thread run here
+  ---
+  duration_ms: 0.60225
+  type: 'test'
+  ...
+# Subtest: router-session.test.ts: workflow.run.abort with an unknown-to-the-board runId answers {ok:true} when a live session worker still holds that run, broadcasting to every live session thread rather than only the asking session's own worker
+ok 7 - router-session.test.ts: workflow.run.abort with an unknown-to-the-board runId answers {ok:true} when a live session worker still holds that run, broadcasting to every live session thread rather than only the asking session's own worker
+  ---
+  duration_ms: 0.589584
+  type: 'test'
+  ...
+# Subtest: router-session.test.ts: workflow.run.abort with a runId no live worker holds (board unknown AND every live worker answers {ok:false}) still answers {ok:false}, matching today's behavior for a genuinely unknown run
+ok 8 - router-session.test.ts: workflow.run.abort with a runId no live worker holds (board unknown AND every live worker answers {ok:false}) still answers {ok:false}, matching today's behavior for a genuinely unknown run
+  ---
+  duration_ms: 0.410542
+  type: 'test'
+  ...
+# Subtest: router-session.test.ts: an unrelated workflow.run.poll / analyze.run.status request is routed exactly as before (no new fan-out) — the broadcast is scoped to workflow.run.abort only
+ok 9 - router-session.test.ts: an unrelated workflow.run.poll / analyze.run.status request is routed exactly as before (no new fan-out) — the broadcast is scoped to workflow.run.abort only
+  ---
+  duration_ms: 0.367791
+  type: 'test'
+  ...
+# Subtest: router: a session worker's exit fails its queued requests but keeps one bound for the shared-state worker
+ok 10 - router: a session worker's exit fails its queued requests but keeps one bound for the shared-state worker
+  ---
+  duration_ms: 5.87575
+  type: 'test'
+  ...
+# Subtest: router: a request cancelled while its worker is still starting never leaves the worker busy
+ok 11 - router: a request cancelled while its worker is still starting never leaves the worker busy
+  ---
+  duration_ms: 41.157792
+  type: 'test'
+  ...
+# Subtest: router: a request awaiting its ack stays pending past its reply; a duplicate or unknown completion message is ignored and onAck runs once (ISSUE-7c39e5cd)
+ok 12 - router: a request awaiting its ack stays pending past its reply; a duplicate or unknown completion message is ignored and onAck runs once (ISSUE-7c39e5cd)
+  ---
+  duration_ms: 76.236583
+  type: 'test'
+  ...
+# Subtest: router: a postMessage failure answers 'request channel unavailable' and calls the ack once (ISSUE-7c39e5cd)
+ok 13 - router: a postMessage failure answers 'request channel unavailable' and calls the ack once (ISSUE-7c39e5cd)
+  ---
+  duration_ms: 32.616
+  type: 'test'
+  ...
+# Subtest: router: detach answers a request awaiting its ack through the caller and hands back its ack; failWorker calls it after answering (ISSUE-7c39e5cd)
+ok 14 - router: detach answers a request awaiting its ack through the caller and hands back its ack; failWorker calls it after answering (ISSUE-7c39e5cd)
+  ---
+  duration_ms: 12.109042
+  type: 'test'
+  ...
+# Subtest: router: a pool start failure, a missing worker port and a cancel before the worker resolved each call the ack once; the pool ends an acked request at its ack (ISSUE-7c39e5cd)
+ok 15 - router: a pool start failure, a missing worker port and a cancel before the worker resolved each call the ack once; the pool ends an acked request at its ack (ISSUE-7c39e5cd)
+  ---
+  duration_ms: 89.413333
+  type: 'test'
+  ...
+# Subtest: router: a shared-state request sent with an ack waits for the shared-state worker's ack, whether that worker is attached or reached through the pool (ISSUE-7c39e5cd)
+ok 16 - router: a shared-state request sent with an ack waits for the shared-state worker's ack, whether that worker is attached or reached through the pool (ISSUE-7c39e5cd)
+  ---
+  duration_ms: 89.699375
+  type: 'test'
+  ...
+# Subtest: router: a queued unary request whose socket closes while it runs keeps the next request queued until the worker acks the first, after its handler settled (ISSUE-7c39e5cd)
+ok 17 - router: a queued unary request whose socket closes while it runs keeps the next request queued until the worker acks the first, after its handler settled (ISSUE-7c39e5cd)
+  ---
+  duration_ms: 43.825792
+  type: 'test'
+  ...
+# Subtest: router: a queued unary reply is delivered at once, but the session's next request starts only after the worker's ack, after the work it registered with registerDrain is done (ISSUE-7c39e5cd)
+ok 18 - router: a queued unary reply is delivered at once, but the session's next request starts only after the worker's ack, after the work it registered with registerDrain is done (ISSUE-7c39e5cd)
+  ---
+  duration_ms: 39.303917
+  type: 'test'
+  ...
+# Subtest: router: a worker exit answers the session's running request with 'session worker failed' and the next queued request runs (ISSUE-7c39e5cd)
+ok 19 - router: a worker exit answers the session's running request with 'session worker failed' and the next queued request runs (ISSUE-7c39e5cd)
+  ---
+  duration_ms: 27.66925
+  type: 'test'
+  ...
+# Subtest: router: FIFO-exempt and unattributed requests keep today's ends: they never wait for an ack (ISSUE-7c39e5cd)
+ok 20 - router: FIFO-exempt and unattributed requests keep today's ends: they never wait for an ack (ISSUE-7c39e5cd)
+  ---
+  duration_ms: 0.588583
+  type: 'test'
+  ...
+# Subtest: router: two sessions share model checks, retired reviews reject locally and supported steps retain session workers
+ok 21 - router: two sessions share model checks, retired reviews reject locally and supported steps retain session workers
+  ---
+  duration_ms: 0.549041
+  type: 'test'
+  ...
+# Subtest: router: a queued request refused under the maintenance lock is still acked by its worker and the session's queue moves on (ISSUE-7c39e5cd)
+ok 22 - router: a queued request refused under the maintenance lock is still acked by its worker and the session's queue moves on (ISSUE-7c39e5cd)
+  ---
+  duration_ms: 8.430833
+  type: 'test'
+  ...
+1..22
+# tests 22
+# suites 0
+# pass 22
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 913.820375

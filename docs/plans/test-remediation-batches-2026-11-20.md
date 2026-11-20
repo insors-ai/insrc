@@ -59,3 +59,7 @@ Older records were checked before expanding the backlog. These references provid
 ## Batch 04 blocker discovered during fixture repair
 
 Batch04 ISSUE, LLD and PLAN are approved. Tasks t1/t2 passed validation; t3 is non-green and t4/t5 are not started. The current writer touches hostile temporary payloads before persistence refusal. This separately triaged production boundary defect is [ISSUE-81be53b2b0f003a7](../standalone/refuse-temporary-artifact-preparation-before-payload-E2026112081be53b2/ISSUE.md), pending approval, routed issue → build. It is a coherent artifact-write admission fix, not an issue per failed assertion. See [partial evidence](review-test-migration-2026-11-20.md); do not mark Batch04 complete or relax its canary checks.
+
+## Batch 04 implementation checkpoint after blocker repair
+
+ISSUE-81be53b2b0f003a7 is approved and its production guard correction passed build validation. Batch04 t1–t4 passed validation; t5 submits final integrated59/59 passing tests with confirmed cleanup. The previous blocked checkpoint is historical. The general graph audit remains non-green for Batch11 analyze fixtures; this is recorded rather than removed. Both BUILD-03bd849749a52b41-s1 and BUILD-81be53b2b0f003a7-s1 await final human approval; no story/epic completion is claimed. See [final evidence](review-test-migration-2026-11-20.md).

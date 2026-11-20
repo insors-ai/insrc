@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: human approval and completion work without CR while remaining guards still refuse invalid work
+ok 1 - human approval and completion work without CR while remaining guards still refuse invalid work
+  ---
+  duration_ms: 68.392333
+  type: 'test'
+  ...
+# [09:05:30] [32mINFO[39m: [36m[workflow:team-gate] team gate: action not allowed[39m
+#     [35mmodule[39m: "workflow:team-gate"
+#     [35munit[39m: "story:s1"
+#     [35maction[39m: "approve-local"
+#     [35moutcome[39m: "refused"
+#     [35mreason[39m: "the team policy cannot be read: undefined"
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 383.378833

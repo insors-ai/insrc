@@ -1,6 +1,6 @@
 # Batch 04 — retired-review test migration
 
-Approved ISSUE/LLD/PLAN: `03bd849749a52b41/s1`. This record grows per validated task; it does not claim the whole batch is complete.
+Approved ISSUE/LLD/PLAN: `03bd849749a52b41/s1`. This record preserves per-task history. Current checkpoint: t1–t4 passed daemon validation; final t5 evidence is submitted. All implementation work is done, with human BUILD approval still required for Batch04 and its separately tracked persistence blocker.
 
 ## t1: boundary, client and label controls
 
@@ -66,3 +66,22 @@ The seven distinct replacement suites run serially in fresh temporary HOMEs, wit
 The unrelated general graph inventory stays in its original file with its valid analyze assertions intact. Its remaining failure is the existing analyze-step-handler child (two schema/state assertions), retained for Batch11. Moving the coherent retired-review portion to a focused audit allows its result to be assessed separately; no unrelated failing check was skipped or declared fixed. The unchanged vector audit passed on its full budget, so the historical 60-second cancellation is retained as an audit limit, not called a repaired defect.
 
 Baseline `b96feb79-a04a-42ec-8496-a256dba356bf`: graph audit2pass/3fail and vector audit2pass, no skips/cancellations, confirmed cleanup. After `1d346e15-388e-46e1-8e77-a5e52f6caf0f`: general graph3pass/1fail plus replacement review audit1pass, no skips/cancellations, confirmed cleanup. The latter run remains non-green overall. Exact [before](review-test-evidence-2026-11-20/t4-before-results.json) and [after](review-test-evidence-2026-11-20/t4-after-results.json) evidence retains TAP/hash/fingerprint details.
+
+## t5: final integrated validation
+
+Final owned run `520589cc-0a25-4e32-afdb-9deda5d96fb8` passed **59/59 tests across 16 files**, zero failures/cancellations/skips, complete TAP coverage and confirmed actor closure. [Retained final evidence](review-test-evidence-2026-11-20/final-results.json) records selected files, runtime, source commit, build input/output fingerprints, per-file counts, TAP hashes and a quiescent process/lease snapshot. Files ran serially on Node v22.23.2 after one fresh complete build. The run includes all task-specific changed suites, the real-daemon worker session suite, current endpoint/MCP refusals, original persistence matrix, current normal-exit store-isolation audit, retained archive readers, human lifecycle/integrity/completion controls, and the independently fixed preparation guard with existing saved revision/lifecycle tests.
+
+| LLD subject / criterion | Evidence |
+| --- | --- |
+| ac1 retired boundary rejection and active role labels | Current client/MCP poison/dependency controls, endpoint/unavailable suites, role-router tiers and attribution. |
+| ac2 generic transport and supported worker/token behavior | Dispatcher progress/error/unknown/abort-drain controls, actual indexing worker, shared model routing, real daemon token idle-release/session payload controls. |
+| ac3 temporary/saved persistence and real isolation | Original complete persistence matrix, current artifact read-back, seven replacement child suites plus two actual-store positive controls. |
+| ac4 retained history and human gates | Archived design versions1/2 and code versions2/3 remain unchanged and readable through inert imports; lifecycle tests retain approval, integrity, task/latest-build and signoff refusal controls without fake reviews. |
+
+Top-level TAP counts are not combined with nested child counts or earlier repeated runs. The t2 gate's36 passes and t1's12 passes are earlier independent checks, not additional unique tests to add to59. The unchanged vector audit passed in t4 baseline; the final run does not claim a new general vector-audit execution. Ordinary worker latency assertions passing do not constitute release performance qualification.
+
+The general graph audit still has one failing parent case whose analyze-step child has two existing schema/state failures, retained for Batch11. That diagnostic remains non-green, outside the final selected59. No assertion was skipped or deadline enlarged to conceal it. No broad repository sweep or qualification digest refresh occurred.
+
+The only production change since the Batch04 checkpoint is the separately tracked one-line early persistence guard in `src/workflow/storage.ts`; all other src changes are tests/fixtures. Caller/store/request/session ownership and persistent entity shapes remain unchanged; assertion mappings and conditional refusal order are documented in prose, so no ERD/UX/sequence companion is needed. No visual rendering verification is claimed.
+
+All five tasks must pass daemon validation before asking for Batch04 BUILD approval. The independent blocker BUILD-81be53b2b0f003a7-s1 is validated but not yet human-approved; neither it nor Batch04 is marked complete by this evidence record.

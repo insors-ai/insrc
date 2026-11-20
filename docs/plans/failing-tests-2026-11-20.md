@@ -665,3 +665,7 @@ The approved shared-grep fix excludes live-store reads before backend admission,
 ## Batch 04 partial checkpoint
 
 Tasks t1/t2 passed daemon validation: current unavailable boundaries, generic transport/lifecycle and active role controls, plus supported worker/token behavior. t1 fresh focused run passed12/12; t2 focused run passed4/4 and its later gate passed all three full mapped files. t3 remains non-green: replacing the removed writer import exposed an actual artifact preparation guard-order defect, tracked as `ISSUE-81be53b2b0f003a7` pending approval. Expected temporary refusal, observed hostile-payload getter/private test canary before the write guard. No production fix applied; later persistence assertions and dependent isolation/final tasks remain unverified. [Mapping/evidence](review-test-migration-2026-11-20.md).
+
+## Batch 04 final implementation checkpoint
+
+After separately approved ISSUE-81be53b2b0f003a7 fixed early artifact-persistence admission, the unchanged privacy matrix passed. Tasks t1–t4 passed daemon validation; t5 submits final evidence of **59/59 passing tests across16 files**, no skips/cancellations, complete coverage and confirmed actor closure. The general graph audit still has one failing parent case from two analyze-step fixture assertions (Batch11); it is explicitly outside this green selection. No repository-wide green or qualification claim. Both Batch04 BUILD and blocker BUILD require human approval before completion. [Final mapping, logs and limits](review-test-migration-2026-11-20.md).

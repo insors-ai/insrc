@@ -88,13 +88,17 @@ test('repo-config.test.ts: a source check that src/daemon/index.ts calls moveLeg
 	const src = readFileSync(fileURLToPath(new URL('../../../daemon/index.ts', import.meta.url)), 'utf8');
 	const ensured = src.indexOf("mkdirSync(PATHS.insrc, { recursive: true });");
 	const call = src.indexOf('moveLegacyRepoConfig();');
-	const opened = src.indexOf('// 3. Open DB');
-	assert.ok(ensured > 0 && call > 0 && opened > 0, 'the three anchors exist in main');
+	// the statements that open the database, not the comment that labels the step
+	const getDb = src.indexOf('await getDb()');
+	const initDb = src.indexOf('await initDb(');
+	assert.ok(ensured > 0 && call > 0 && getDb > 0 && initDb > 0, 'the anchors exist in main');
 	assert.ok(ensured < call, 'the move is after the directories are ensured');
-	assert.ok(call < opened, 'the move is before the database is opened');
+	assert.ok(call < getDb && call < initDb, 'the move is before the database is opened');
 	assert.equal(src.split('moveLegacyRepoConfig();').length - 1, 1, 'it is called once');
-	const before = src.slice(ensured, call);
-	assert.match(before, /process\.env\['INSRC_REPO_CONFIG'\][^\n]*\.length === 0\) \{\s*try \{\s*$/, 'it runs only when the override is unset, directly inside a try');
-	const after = src.slice(call, call + 400);
-	assert.match(after, /^moveLegacyRepoConfig\(\);\s*\} catch \(err\) \{\s*log\.warn\(/, 'a failure is caught and logged');
+	// An empty INSRC_REPO_CONFIG counts as unset, as in repoConfigPath, so the move and the path agree on the location.
+	const guard = "if ((process.env['INSRC_REPO_CONFIG'] ?? '').length === 0) {";
+	const guardAt = src.indexOf(guard, ensured);
+	assert.ok(guardAt > 0 && guardAt < call, 'the move runs only when the override is unset');
+	assert.match(src.slice(guardAt, call), /^if \(\(process\.env\['INSRC_REPO_CONFIG'\] \?\? ''\)\.length === 0\) \{\s*try \{\s*$/, 'the call is directly inside the guard and a try');
+	assert.match(src.slice(call, call + 400), /^moveLegacyRepoConfig\(\);\s*\} catch \(err\) \{\s*log\.warn\(/, 'a failure is caught and logged');
 });

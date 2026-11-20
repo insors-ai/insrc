@@ -98,6 +98,12 @@ export interface GithubEntry {
 	readonly ghHost?:       string;
 	/** Branch naming pattern. Stored and shown only; consumed later by the handoff story (s6). */
 	readonly branchPattern?: string;
+	/** The build gate's typecheck command line for this project, split on spaces. Used with `testCommand`; absent means the project type's default. */
+	readonly typecheckCommand?: string;
+	/** The build gate's test command line for this project; each test file is appended. Used with `typecheckCommand`. */
+	readonly testCommand?: string;
+	/** How the gate reads a run of these commands: 'exit-code' (default) or 'tap'. Applies only when both commands are set. */
+	readonly resultFormat?: string;
 	/** Whether the daemon installed the git hooks that refresh the tracker status for git run outside it (default false). Set by repo.gitHooks.install and uninstall. */
 	readonly gitHooks?: boolean;
 }

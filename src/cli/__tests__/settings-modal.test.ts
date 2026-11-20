@@ -136,7 +136,7 @@ test('the modal lists payload rows, edits local rows only and shows an error mes
 	const rows = buildSettingsRows(REPO_TRACKER_FIELDS, PAYLOAD);
 	assert.deepEqual(rows.map(r => r.key), REPO_TRACKER_FIELDS.map(r => r.key));
 	assert.deepEqual(rows.map(r => r.label), REPO_TRACKER_FIELDS.map(r => r.label));
-	assert.deepEqual(rows.filter(r => r.editable).map(r => r.key), ['type', 'owner', 'repo', 'ghPath', 'ghHost', 'branchPattern', 'gitHooks']);
+	assert.deepEqual(rows.filter(r => r.editable).map(r => r.key), ['type', 'owner', 'repo', 'ghPath', 'ghHost', 'branchPattern', 'gitHooks', 'typecheckCommand', 'testCommand', 'resultFormat']);
 	const byKey = Object.fromEntries(rows.map(r => [r.key, r]));
 	assert.equal(byKey['ghHost']?.value, 'ghe.example.com');
 	assert.equal(byKey['ghPath']?.value, '(not set)');
@@ -167,13 +167,13 @@ test('the modal lists payload rows, edits local rows only and shows an error mes
 		frame = lastFrame() ?? '';
 		assert.match(frame, /Sign-in is read-only/);
 		assert.equal(f.sets.length, 0);
-		for (let i = 0; i < 3; i++) { stdin.write('\u001B[B'); await settle(); }   // on into the policy rows
+		for (let i = 0; i < 6; i++) { stdin.write('\u001B[B'); await settle(); }   // on into the policy rows (past git hooks, the Build rows and the target)
 		stdin.write('\r'); await settle();
 		assert.match(lastFrame() ?? '', /is read-only/);
 		assert.equal(f.sets.length, 0);
 
 		// Back up to ghHost (row 4), edit it.
-		for (let i = 0; i < 5; i++) { stdin.write('\u001B[A'); await settle(); }
+		for (let i = 0; i < 8; i++) { stdin.write('\u001B[A'); await settle(); }
 		stdin.write('\r'); await settle();
 		assert.match(lastFrame() ?? '', /GitHub host \(empty clears\):/);
 		stdin.write('.eu'); await settle();                   // the prompt starts from the stored value

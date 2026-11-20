@@ -26,7 +26,7 @@ import { storyChangeSet } from '../../../workflow/runners/build/story-commits.js
 import { runInProcessGroup, type ProcessGroupOpts, type ProcessGroupResult } from '../../../shared/process-group.js';
 import type { NamedTestSource, TestCaseResult, TestRecordNamedTest, TestRecordReported } from '../../../workflow/runners/build/test-record.js';
 
-import { readBuildCommandSetting, type BuildCommandSetting } from './command-setting.js';
+import { BuildSettingUnreadable, readBuildCommandSetting, type BuildCommandSetting } from './command-setting.js';
 import { parseTapRun, resultOfTitle, type TapTitle } from './tap-results.js';
 import type { NamedTest, TestCaseRef, TestMappingEntry } from './test-mapping.js';
 import type { BuildStepError } from './types.js';
@@ -330,17 +330,17 @@ export function profileFromSetting(projectType: ProjectType, setting: BuildComma
 	const hasType = setting.typecheckCommand !== undefined;
 	const hasTest = setting.testCommand !== undefined;
 	if (hasType !== hasTest) {
-		throw new InvalidCommandSetting(hasType ? 'build.testCommand' : 'build.typecheckCommand', 'must be set together with the other command');
+		throw new InvalidCommandSetting(hasType ? 'testCommand' : 'typecheckCommand', 'must be set together with the other command');
 	}
 	const format = setting.resultFormat === undefined ? 'exit-code' : setting.resultFormat;   // not `??`: a null is a bad value
 	if (format !== 'tap' && format !== 'exit-code') {
-		throw new InvalidCommandSetting('build.resultFormat', `must be 'tap' or 'exit-code', not ${JSON.stringify(format)}`);
+		throw new InvalidCommandSetting('resultFormat', `must be 'tap' or 'exit-code', not ${JSON.stringify(format)}`);
 	}
 	if (!hasType) return defaultCommandProfile(projectType);   // only a format: nothing to apply it to
 	return {
 		projectType,
-		typecheck: commandArgv('build.typecheckCommand', setting.typecheckCommand),
-		testCommand: commandArgv('build.testCommand', setting.testCommand),
+		typecheck: commandArgv('typecheckCommand', setting.typecheckCommand),
+		testCommand: commandArgv('testCommand', setting.testCommand),
 		resultFormat: format,
 		commandsSource: 'repo-setting',
 	};
@@ -352,7 +352,13 @@ export function profileFromSetting(projectType: ProjectType, setting: BuildComma
  */
 export function commandProfileOf(repoPath: string, configPath?: string): CommandProfile {
 	const projectType = detectProjectType(repoPath);
-	const setting = readBuildCommandSetting(repoPath, configPath);
+	let setting: BuildCommandSetting | undefined;
+	try {
+		setting = readBuildCommandSetting(repoPath, configPath);
+	} catch (err) {
+		if (!(err instanceof BuildSettingUnreadable)) throw err;
+		throw new InvalidCommandSetting('github.json', `cannot be read, so the build commands of this repository are not known: ${err.message}`);
+	}
 	return setting === undefined ? defaultCommandProfile(projectType) : profileFromSetting(projectType, setting);
 }
 
@@ -885,6 +891,6 @@ export function commandSettingError(phase: 'implement' | 'validate', repoPath: s
 		return undefined;
 	} catch (err) {
 		if (!(err instanceof InvalidCommandSetting)) throw err;
-		return { next: 'error', error: { code: 'invalid-command-setting', message: `insrc_build_step[${phase}]: ${err.message}. Fix it in ~/.insrc/config.json (see docs/daemon.md, "Build commands").`, retryable: false } };
+		return { next: 'error', error: { code: 'invalid-command-setting', message: `insrc_build_step[${phase}]: ${err.message}. Fix it with repo.settings.set or in ~/.insrc/github.json (see docs/daemon.md, "Build commands").`, retryable: false } };
 	}
 }

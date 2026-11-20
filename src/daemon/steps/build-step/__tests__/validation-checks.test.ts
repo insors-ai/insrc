@@ -986,10 +986,11 @@ test('withTypecheckProjects makes no tsconfig search for a non-Node plan', async
 
 // --- t5: the repo setting ---
 
-function configWith(build: unknown): string {
+/** A github.json holding `entry` as the settings of the registered repo at `repo`, and `extra` beside it. */
+function configWith(repo: string, entry: unknown, extra: Record<string, unknown> = {}): string {
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-build-config-'));
-	const path = join(dir, 'config.json');
-	writeFileSync(path, JSON.stringify({ build }));
+	const path = join(dir, 'github.json');
+	writeFileSync(path, JSON.stringify({ ...extra, repos: { [repo]: entry } }));
 	return path;
 }
 
@@ -997,10 +998,10 @@ test('a repo setting wins over the default; an empty command or an unknown resul
 	const node = markerRepo('package.json');
 	const py = markerRepo('pyproject.toml');
 	const cfg: string[] = [];
-	const profileConfig = (build: unknown): string => { const c = configWith(build); cfg.push(c); return c; };
-	const profile = (repo: string, build: unknown) => commandProfileOf(repo, profileConfig(build));
-	const refused = (repo: string, build: unknown, field: string) => {
-		const c = configWith(build); cfg.push(c);
+	const file = (repo: string, entry: unknown, extra?: Record<string, unknown>): string => { const c = configWith(repo, entry, extra); cfg.push(c); return c; };
+	const profile = (repo: string, entry: unknown) => commandProfileOf(repo, file(repo, entry));
+	const refused = (repo: string, entry: unknown, field: string) => {
+		const c = file(repo, entry);
 		assert.throws(() => commandProfileOf(repo, c), (e: unknown) => e instanceof InvalidCommandSetting && e.field === field, field);
 	};
 	try {
@@ -1010,32 +1011,38 @@ test('a repo setting wins over the default; an empty command or an unknown resul
 		assert.deepEqual([n.typecheck, n.testCommand, n.resultFormat, n.commandsSource], [['tsc', '-p', '.'], ['npm', 'test', '--'], 'exit-code', 'repo-setting']);
 		const p = profile(py, { typecheckCommand: 'mypy src', testCommand: 'pytest -q' });
 		assert.deepEqual([p.projectType, p.typecheck, p.testCommand, p.resultFormat, p.commandsSource], ['python', ['mypy', 'src'], ['pytest', '-q'], 'exit-code', 'repo-setting']);
-		// A repo's own block wins over the global one, key by key.
-		const own = profile(py, { typecheckCommand: 'global-check', testCommand: 'global-test', byRepo: { [py]: { testCommand: 'pytest -x' } } });
-		assert.deepEqual([own.typecheck, own.testCommand], [['global-check'], ['pytest', '-x']]);
-		// Nothing set: the default of the project type.
+		// Nothing set: the default of the project type, also with no entry for the repo and with no file at all.
 		assert.equal(profile(node, {}).commandsSource, 'node-default');
 		assert.equal(profile(py, {}).commandsSource, 'none');
+		assert.equal(profile(py, { owner: 'o', repo: 'r' }).commandsSource, 'none', 'tracker keys are not build keys');
+		assert.equal(commandProfileOf(py, join(tmpdir(), 'no-such-insrc-github.json')).commandsSource, 'none');
+		// The setting is per registered repository: another repo's entry and the file's `default` entry do not apply.
+		const other = file('/some/other/repo', { typecheckCommand: 'x', testCommand: 'y' }, { default: { typecheckCommand: 'global-check', testCommand: 'global-test' } });
+		assert.equal(commandProfileOf(py, other).commandsSource, 'none');
 		// A key that is present but empty is a value, not an absent one: refused, never read as the default.
-		refused(node, { typecheckCommand: '', testCommand: '' }, 'build.typecheckCommand');
-		refused(node, { typecheckCommand: 'tsc', testCommand: '' }, 'build.testCommand');
+		refused(node, { typecheckCommand: '', testCommand: '' }, 'typecheckCommand');
+		refused(node, { typecheckCommand: 'tsc', testCommand: '' }, 'testCommand');
 
-		refused(py, { typecheckCommand: '   ', testCommand: 'pytest' }, 'build.typecheckCommand');
-		refused(py, { typecheckCommand: 'mypy', testCommand: 'pytest', resultFormat: 'junit' }, 'build.resultFormat');
-		refused(py, { typecheckCommand: 'mypy', testCommand: 'pytest', resultFormat: null }, 'build.resultFormat');
-		refused(py, { typecheckCommand: 'mypy', testCommand: 'pytest', resultFormat: '' }, 'build.resultFormat');
-		refused(py, { typecheckCommand: null, testCommand: 'pytest' }, 'build.typecheckCommand');
-		refused(py, { typecheckCommand: 'mypy' }, 'build.testCommand');
-		refused(py, { testCommand: 'pytest' }, 'build.typecheckCommand');
-		refused(py, { typecheckCommand: 7, testCommand: 'pytest' }, 'build.typecheckCommand');
+		refused(py, { typecheckCommand: '   ', testCommand: 'pytest' }, 'typecheckCommand');
+		refused(py, { typecheckCommand: 'mypy', testCommand: 'pytest', resultFormat: 'junit' }, 'resultFormat');
+		refused(py, { typecheckCommand: 'mypy', testCommand: 'pytest', resultFormat: null }, 'resultFormat');
+		refused(py, { typecheckCommand: 'mypy', testCommand: 'pytest', resultFormat: '' }, 'resultFormat');
+		refused(py, { typecheckCommand: null, testCommand: 'pytest' }, 'typecheckCommand');
+		refused(py, { typecheckCommand: 'mypy' }, 'testCommand');
+		refused(py, { testCommand: 'pytest' }, 'typecheckCommand');
+		refused(py, { typecheckCommand: 7, testCommand: 'pytest' }, 'typecheckCommand');
+
+		// A settings file that cannot be read is not a reason to use a default: the build is refused.
+		const broken = join(dirname(file(py, {})), 'broken.json');
+		writeFileSync(broken, '{ not json');
+		assert.throws(() => commandProfileOf(py, broken), (e: unknown) => e instanceof InvalidCommandSetting && e.field === 'github.json');
 
 		// A phase refuses a bad setting before anything runs, with a message that names the field.
-		const bad = configWith({ typecheckCommand: ' ', testCommand: 'pytest' }); cfg.push(bad);
-		const refusal = commandSettingError('validate', py, bad);
+		const refusal = commandSettingError('validate', py, file(py, { typecheckCommand: ' ', testCommand: 'pytest' }));
 		assert.equal(refusal?.next, 'error');
 		assert.equal(refusal?.error.code, 'invalid-command-setting');
-		assert.match(refusal?.error.message ?? '', /build\.typecheckCommand/);
-		assert.equal(commandSettingError('validate', py, profileConfig({ typecheckCommand: 'mypy', testCommand: 'pytest' })), undefined);
+		assert.match(refusal?.error.message ?? '', /typecheckCommand/);
+		assert.equal(commandSettingError('validate', py, file(py, { typecheckCommand: 'mypy', testCommand: 'pytest' })), undefined);
 	} finally {
 		for (const r of [node, py]) rmSync(r, { recursive: true, force: true });
 		for (const c of cfg) rmSync(dirname(c), { recursive: true, force: true });

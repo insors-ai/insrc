@@ -100,6 +100,35 @@
       "kind": "local"
     },
     {
+      "key": "typecheckCommand",
+      "label": "Typecheck command",
+      "type": "string",
+      "description": "The typecheck command the build gate runs in the repository root, split on spaces (no shell quoting). Set it together with the test command.",
+      "group": "Build",
+      "kind": "local"
+    },
+    {
+      "key": "testCommand",
+      "label": "Test command",
+      "type": "string",
+      "description": "The test command the build gate runs; each test file is appended and run on its own, split on spaces (no shell quoting). Set it together with the typecheck command.",
+      "group": "Build",
+      "kind": "local"
+    },
+    {
+      "key": "resultFormat",
+      "label": "Test result format",
+      "type": "enum",
+      "enumValues": [
+        "tap",
+        "exit-code"
+      ],
+      "default": "exit-code",
+      "description": "How the gate reads a test run of these commands: 'exit-code' (a file passes when its command exits 0) or 'tap' (the command prints TAP, read case by case). Applies only when both commands are set.",
+      "group": "Build",
+      "kind": "local"
+    },
+    {
       "key": "target",
       "label": "Resolved target",
       "type": "string",

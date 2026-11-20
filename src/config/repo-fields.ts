@@ -46,7 +46,7 @@ export interface RepoFieldDef {
 	readonly enumValues?: readonly string[];
 	readonly default?: string | boolean;
 	readonly description: string;
-	readonly group: 'Tracker';
+	readonly group: 'Tracker' | 'Build';
 	readonly kind: RepoFieldKind;
 	readonly note?: string;
 	readonly grammar?: BranchPatternGrammar;
@@ -92,12 +92,18 @@ export const REPO_TRACKER_FIELDS: readonly RepoFieldDef[] = [
 		description: 'Whether git hooks in this repo ask the daemon to refresh the tracker status after git run outside the daemon. Set by installing or removing the hooks.',
 		group: 'Tracker', kind: 'local',
 	},
+	// The build gate's commands for this project (LLD-787434000fa22691-s1): stored in the repo's own entry, so they are per
+	// registered repository and there is no global default. An absent key is "not set"; an empty command is refused and
+	// `null` clears a key. The two commands are used together, and `resultFormat` only applies once they are set.
+	{ key: 'typecheckCommand', label: 'Typecheck command', type: 'string', description: 'The typecheck command the build gate runs in the repository root, split on spaces (no shell quoting). Set it together with the test command.', group: 'Build', kind: 'local' },
+	{ key: 'testCommand', label: 'Test command', type: 'string', description: 'The test command the build gate runs; each test file is appended and run on its own, split on spaces (no shell quoting). Set it together with the typecheck command.', group: 'Build', kind: 'local' },
+	{ key: 'resultFormat', label: 'Test result format', type: 'enum', enumValues: ['tap', 'exit-code'], default: 'exit-code', description: "How the gate reads a test run of these commands: 'exit-code' (a file passes when its command exits 0) or 'tap' (the command prints TAP, read case by case). Applies only when both commands are set.", group: 'Build', kind: 'local' },
 	{ key: 'target', label: 'Resolved target', type: 'string', description: 'The owner and repository the tracker calls go to, and where that came from.', group: 'Tracker', kind: 'status' },
 	...POLICY_ROWS,
 ];
 
 // Compile-time: every local key is a GithubEntry field.
-const _localKeys = ['type', 'owner', 'repo', 'ghPath', 'ghHost', 'branchPattern', 'gitHooks'] as const satisfies readonly (keyof GithubEntry)[];
+const _localKeys = ['type', 'owner', 'repo', 'ghPath', 'ghHost', 'branchPattern', 'gitHooks', 'typecheckCommand', 'testCommand', 'resultFormat'] as const satisfies readonly (keyof GithubEntry)[];
 void _localKeys;
 
 // ---------------------------------------------------------------------------

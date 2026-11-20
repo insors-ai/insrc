@@ -120,11 +120,12 @@ async function renderTrackerSection(deps: RepoConfigRendererDeps, repoPath: stri
   const unavailable = () => trackerSection('<p class="hint">Tracker settings are unavailable. Reopen Repo Configuration to retry.</p>');
   if (!deps.repoFields || !deps.repoSettings) return unavailable();
   try {
-    const fields = (await deps.repoFields()).filter(field => field.group === 'Tracker');
+    const fields = (await deps.repoFields()).filter(field => field.group === 'Tracker' || field.group === 'Build');
     if (fields.length === 0) return unavailable();
     const result = await deps.repoSettings(repoPath);
     if (!result.ok) return trackerSection(`<p class="error">${escapeHtml(result.error.message)} Reopen Repo Configuration to retry.</p>`);
     const config: string[] = [];
+    let openGroup = 'Tracker';
     const status: string[] = [];
     const policies: string[] = [];
     for (const [index, row] of buildSettingsRows(fields, result.payload).entries()) {
@@ -150,6 +151,8 @@ async function renderTrackerSection(deps: RepoConfigRendererDeps, repoPath: stri
         control = `<select data-tracker-key="${key}" data-tracker-type="${field.type}">${options}</select>`;
       }
       const source = row.current !== '' ? 'Repo override' : row.value;
+      // A group other than Tracker (the Build commands) gets a heading of its own in the grid.
+      if (field.group !== openGroup) { openGroup = field.group; config.push(`<h4 class="tracker-group">${escapeHtml(field.group)}</h4>`); }
       config.push(`<label class="tracker-field" data-kind="local"><span class="tracker-label">${label}</span>${control}<span class="tracker-source">${escapeHtml(source)}</span>${note}</label>`);
     }
     const policy = result.payload.policy;

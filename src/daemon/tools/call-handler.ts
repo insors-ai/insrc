@@ -14,6 +14,7 @@
 import type { IpcStreamMessage, ToolsCallDone, ToolsCallParams } from '../../shared/types.js';
 import type { TrustedRpcContext } from '../request-context.js';
 import { executeTool } from './executor.js';
+import { gateRepoCall } from '../repo-call-gate.js';
 import type { ToolDeps } from './types.js';
 
 const CALLERS: readonly string[] = ['agent', 'daemon', 'workflow'];
@@ -41,17 +42,25 @@ export async function toolsCall(
 	send: (msg: IpcStreamMessage) => void,
 	signal: AbortSignal,
 	context?: TrustedRpcContext | undefined,
+	registeredRepos?: (() => Promise<ReadonlySet<string>>) | undefined,
 ): Promise<void> {
 	const p = validate(params);
 	if (typeof p === 'string') {
 		send({ id: 0, stream: 'error', data: { code: 'invalid-params', message: `tools.call: ${p}`, recoverable: true } });
 		return;
 	}
+	let repoPath = p.repoPath;
+	// Keep structural invalid-params errors ahead of repository authority checks.
+	if (registeredRepos !== undefined) {
+		const checked = await gateRepoCall('tools.call', p, registeredRepos);
+		if (!checked.ok) throw new Error(`${checked.code}: ${checked.message}`);
+		repoPath = checked.repo;
+	}
 	const requestId = ++nextRequestId;
 	const deps: ToolDeps = {
 		connectionExecution: context?.connectionExecution,
 		sessionId: context === undefined ? 'tools-call' : `tools-call:${context.connectionIdentity}`,
-		repoPath: p.repoPath,
+		repoPath,
 		send,
 		requestId,
 		signal,

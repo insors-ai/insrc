@@ -288,3 +288,13 @@ test('src/daemon/__tests__/handler-runtime.test.ts: repo.add on a repo whose ent
 		assert.deepEqual(added.config()['repos'][go], mine, 'the commands the entry holds are kept');
 	} finally { rmSync(go, { recursive: true, force: true }); }
 });
+
+
+test('tools.call preserves malformed request errors before repository authority checks', async () => {
+ const none = {} as never;
+ const runtime = buildHandlerRuntime({ db: none, configStore: none, queue: none, indexer: none,
+  startedAt: 0, shutdown: () => {}, attachedClients: () => [], understandingService: () => undefined });
+ const frames: unknown[] = [];
+ await runtime.streamHandlers['tools.call']!({}, frame => frames.push(frame), new AbortController().signal);
+ assert.deepEqual(frames, [{ id: 0, stream: 'error', data: { code: 'invalid-params', message: 'tools.call: toolId must be a non-empty string', recoverable: true } }]);
+});

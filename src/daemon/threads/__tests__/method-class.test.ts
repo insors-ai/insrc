@@ -166,3 +166,32 @@ test('CM-S4-RPC/GATE: source and freshly compiled removal methods agree with han
  assert.deepEqual([...output.MAIN_DAEMON_CONNECTION_METHODS],[...MAIN_DAEMON_CONNECTION_METHODS]);
  assert.deepEqual(output.methodClasses.entries(),methodClasses.entries());
 });
+
+
+test('retired review router precedence rejects through actual local handlers before any worker lookup', async () => {
+ const { Router } = await import('../router.js');
+ const { TargetRegistry } = await import('../registry.js');
+ const { directDispatch } = await import('../../server.js');
+ const none = {} as never;
+ const runtime = buildHandlerRuntime({ db: none, configStore: none, queue: none, indexer: none,
+  startedAt: 0, shutdown: () => {}, attachedClients: () => [], understandingService: () => undefined });
+ const dispatch = directDispatch(runtime.rpcHandlers, runtime.streamHandlers);
+ const local: string[] = [];
+ const router = new Router({ classOf: methodClasses.classOf, registry: new TargetRegistry(),
+  routed: new Set(['admin', 'indexing', 'session']),
+  sessions: new Proxy({}, { get() { assert.fail('retired review touched the session pool'); } }) as never,
+  local: (request, deliver) => { local.push(request.method); return dispatch(request, deliver); } });
+ const methods = [...MAIN_DAEMON_TASK_REVIEW_METHODS, ...MAIN_DAEMON_DESIGN_REVIEW_METHODS,
+  'codeReview.run', 'codeReview.grounding', 'codeReview.freshness', 'workflow.review', 'workflow.reviewArtifact', 'workflow.resolveFinding'];
+ for (const method of methods) {
+  local.length = 0;
+  let delivered!: (reply: unknown) => void;
+  const reply = new Promise<unknown>(resolve => { delivered = resolve; });
+  const cancel = router.forward({ kind: 'request', requestId: method, method, params: {},
+   stream: runtime.streamHandlers[method] !== undefined, session: { label: 'codex', pid: 42 } }, delivered);
+  try {
+   assert.deepEqual(local, [method], 'explicit refusal takes precedence over a routed session class');
+   assert.match(JSON.stringify(await reply), /review functionality is being rewritten/);
+  } finally { cancel(); }
+ }
+});

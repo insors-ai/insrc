@@ -6,7 +6,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -14,6 +14,7 @@ import { fileURLToPath } from 'node:url';
 import { _setReconciliationDepsForTests, reconcileRound } from '../reconciliation.js';
 import type { ReconciliationVerdict } from '../reconciliation.js';
 import type { Finding } from '../finding.js';
+import { runInStepContext } from '../../../shared/step-context.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..');
 const TSC = resolve(ROOT, 'node_modules/typescript/bin/tsc');
@@ -204,7 +205,7 @@ describe('reconcileRound and ReconciliationResult', () => {
 		}
 	});
 
-	it('the audit trail and the classification provider are resolved against the reviewed repository (INSRC_REPO when set), not the daemon process\'s own cwd', async () => {
+	it('outside any bound request, the audit trail and the classification provider fall back to the process\'s own INSRC_REPO, not its cwd', async () => {
 		const reviewId = `review-repo-${process.pid}-${Date.now()}`;
 		const pinnedRepo = mkdtempSync(join(tmpdir(), 'insrc-reconciliation-repo-'));
 		const dir = join(pinnedRepo, '.insrc/tmp', reviewId);
@@ -225,6 +226,114 @@ describe('reconcileRound and ReconciliationResult', () => {
 		} finally {
 			if (previousRepo === undefined) delete process.env.INSRC_REPO; else process.env.INSRC_REPO = previousRepo;
 			rmSync(pinnedRepo, { recursive: true, force: true });
+			_setReconciliationDepsForTests({});
+		}
+	});
+
+	it('a bound request\'s own repository wins over a process-wide INSRC_REPO pin -- repo resolution is per-request, not process-global', async () => {
+		const reviewId = `review-perreq-${process.pid}-${Date.now()}`;
+		const globalPinRepo = mkdtempSync(join(tmpdir(), 'insrc-reconciliation-global-'));
+		const requestRepo = mkdtempSync(join(tmpdir(), 'insrc-reconciliation-request-'));
+		const requestDir = join(requestRepo, '.insrc/tmp', reviewId);
+		const requestAuditTrail = JSON.stringify({ note: 'request-repo audit trail, must win over the global pin' });
+		mkdirSync(requestDir, { recursive: true });
+		writeFileSync(join(requestDir, 'audit-trail.json'), requestAuditTrail, 'utf8');
+		// Deliberately do NOT create a matching .insrc/tmp/<reviewId>/ under globalPinRepo:
+		// if resolution fell through to the global pin, the read would simply find nothing.
+
+		const previousRepo = process.env.INSRC_REPO;
+		process.env.INSRC_REPO = globalPinRepo;
+		try {
+			const { classify, calls } = stubClassify(['still-open']);
+			_setReconciliationDepsForTests({ classify });
+
+			await runInStepContext({ cwd: requestRepo, envRepo: requestRepo }, () =>
+				reconcileRound(reviewId, [finding('f1', 'correctness', 'HIGH')], [finding('f2', 'security', 'MED')]));
+
+			assert.equal(calls.length, 1);
+			assert.equal(calls[0]!.auditTrail, requestAuditTrail, 'the bound request\'s own repo must be used, not the process-wide INSRC_REPO pin');
+		} finally {
+			if (previousRepo === undefined) delete process.env.INSRC_REPO; else process.env.INSRC_REPO = previousRepo;
+			rmSync(globalPinRepo, { recursive: true, force: true });
+			rmSync(requestRepo, { recursive: true, force: true });
+			_setReconciliationDepsForTests({});
+		}
+	});
+
+	it('a bound request\'s own cwd is used even with no envRepo and no global INSRC_REPO pin -- never the daemon process\'s own cwd', async () => {
+		const reviewId = `review-perreqcwd-${process.pid}-${Date.now()}`;
+		const requestRepo = mkdtempSync(join(tmpdir(), 'insrc-reconciliation-request-cwd-'));
+		const requestDir = join(requestRepo, '.insrc/tmp', reviewId);
+		const requestAuditTrail = JSON.stringify({ note: 'request-cwd audit trail' });
+		mkdirSync(requestDir, { recursive: true });
+		writeFileSync(join(requestDir, 'audit-trail.json'), requestAuditTrail, 'utf8');
+
+		const previousRepo = process.env.INSRC_REPO;
+		delete process.env.INSRC_REPO;
+		try {
+			const { classify, calls } = stubClassify(['still-open']);
+			_setReconciliationDepsForTests({ classify });
+
+			await runInStepContext({ cwd: requestRepo }, () =>
+				reconcileRound(reviewId, [finding('f1', 'correctness', 'HIGH')], [finding('f2', 'security', 'MED')]));
+
+			assert.equal(calls.length, 1);
+			assert.equal(calls[0]!.auditTrail, requestAuditTrail, 'the bound request\'s own cwd must be used, not the daemon process\'s own cwd');
+		} finally {
+			if (previousRepo === undefined) delete process.env.INSRC_REPO; else process.env.INSRC_REPO = previousRepo;
+			rmSync(requestRepo, { recursive: true, force: true });
+			_setReconciliationDepsForTests({});
+		}
+	});
+
+	it('a symlinked review directory pointing outside .insrc/tmp is not followed -- its audit trail is never read', async () => {
+		const reviewId = `review-symlinkdir-${process.pid}-${Date.now()}`;
+		const secretDir = mkdtempSync(join(tmpdir(), 'insrc-reconciliation-secret-'));
+		const secretContent = JSON.stringify({ note: 'secret outside .insrc/tmp' });
+		writeFileSync(join(secretDir, 'audit-trail.json'), secretContent, 'utf8');
+
+		const tmpRoot = join(ROOT, '.insrc/tmp');
+		mkdirSync(tmpRoot, { recursive: true });
+		const reviewDir = join(tmpRoot, reviewId);
+		symlinkSync(secretDir, reviewDir, 'dir');
+
+		try {
+			const { classify, calls } = stubClassify(['still-open']);
+			_setReconciliationDepsForTests({ classify });
+
+			await reconcileRound(reviewId, [finding('f1', 'correctness', 'HIGH')], [finding('f2', 'security', 'MED')]);
+
+			assert.equal(calls.length, 1);
+			assert.equal(calls[0]!.auditTrail, undefined, 'a symlinked review directory escaping .insrc/tmp must never have its content read');
+		} finally {
+			rmSync(reviewDir, { force: true });
+			rmSync(secretDir, { recursive: true, force: true });
+			_setReconciliationDepsForTests({});
+		}
+	});
+
+	it('a symlinked audit-trail.json pointing outside .insrc/tmp is not followed -- its target content is never read', async () => {
+		const reviewId = `review-symlinkfile-${process.pid}-${Date.now()}`;
+		const secretDir = mkdtempSync(join(tmpdir(), 'insrc-reconciliation-secretfile-'));
+		const secretContent = JSON.stringify({ note: 'secret file outside .insrc/tmp' });
+		const secretFile = join(secretDir, 'secret.json');
+		writeFileSync(secretFile, secretContent, 'utf8');
+
+		const reviewDir = join(ROOT, '.insrc/tmp', reviewId);
+		mkdirSync(reviewDir, { recursive: true });
+		symlinkSync(secretFile, join(reviewDir, 'audit-trail.json'), 'file');
+
+		try {
+			const { classify, calls } = stubClassify(['still-open']);
+			_setReconciliationDepsForTests({ classify });
+
+			await reconcileRound(reviewId, [finding('f1', 'correctness', 'HIGH')], [finding('f2', 'security', 'MED')]);
+
+			assert.equal(calls.length, 1);
+			assert.equal(calls[0]!.auditTrail, undefined, 'a symlinked audit-trail.json escaping .insrc/tmp must never have its target content read');
+		} finally {
+			rmSync(reviewDir, { recursive: true, force: true });
+			rmSync(secretDir, { recursive: true, force: true });
 			_setReconciliationDepsForTests({});
 		}
 	});

@@ -12,12 +12,13 @@
  * internal to this module (HLD boundary).
  */
 
-import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, readFileSync, realpathSync } from 'node:fs';
+import { isAbsolute, join, relative, sep } from 'node:path';
 
 import { createRoleRouter } from '../../analyze/context/role-router.js';
 import { loadAnalyzeConfig } from '../../config/analyze.js';
 import type { RoleId } from '../../config/role-taxonomy.js';
+import { stepCwd, stepEnvRepo } from '../../shared/step-context.js';
 import type { LLMMessage, StructuredSchema } from '../../shared/types.js';
 import type { Finding } from './finding.js';
 
@@ -79,27 +80,58 @@ function requireValidReviewId(reviewId: string): void {
 	}
 }
 
-/** The repository the review belongs to, not the daemon process's own cwd: the supervisor can
- *  launch the daemon from its installation directory, which differs from the reviewed repo.
- *  INSRC_REPO is the project's own established headless/fallback repo pin (see CLAUDE.md); this
- *  module stays synchronous, so it does not perform the full cwd-registry lookup the MCP/daemon
- *  boundary does (src/shared/resolve-repo-core.ts) -- it only refuses to default to cwd when a
- *  pinned repo is available. */
+/** The repository the ACTIVE REQUEST's review belongs to, not a process-wide pin: a
+ *  process-wide INSRC_REPO is only a headless-caller fallback, not the repository of
+ *  every daemon request, and the daemon's own cwd is never the reviewed repo's cwd
+ *  either when the supervisor launches it from its install directory. stepEnvRepo()/
+ *  stepCwd() (src/shared/step-context.ts) are the established per-request readers --
+ *  the caller's own values inside a step call (an AsyncLocalStorage-bound request),
+ *  falling back to the process's only when no request is bound (e.g. a direct,
+ *  unattached call outside any step context). */
 function reconciliationRepoRoot(): string {
-	const pinned = process.env.INSRC_REPO;
-	return pinned !== undefined && pinned.length > 0 ? pinned : process.cwd();
+	return stepEnvRepo() ?? stepCwd();
+}
+
+function auditTrailDir(reviewId: string): string {
+	return join(reconciliationRepoRoot(), '.insrc/tmp', reviewId);
 }
 
 function auditTrailPath(reviewId: string): string {
-	return join(reconciliationRepoRoot(), '.insrc/tmp', reviewId, 'audit-trail.json');
+	return join(auditTrailDir(reviewId), 'audit-trail.json');
+}
+
+/** True only when `path`, after resolving every symlink in it, is truly inside the
+ *  resolved `.insrc/tmp` directory for the repo -- rejects a symlinked review
+ *  directory (`.insrc/tmp/<reviewId>` itself pointing elsewhere) or a symlinked
+ *  `audit-trail.json` pointing outside it. requireValidReviewId already blocks a
+ *  LEXICAL escape (`../../../private`); existsSync/readFileSync still follow
+ *  symlinks regardless of the lexical path, so containment must be re-checked
+ *  against the REAL, resolved path, not the one requireValidReviewId validated. */
+function isContainedAuditPath(path: string): boolean {
+	const tmpRoot = join(reconciliationRepoRoot(), '.insrc/tmp');
+	let realTmpRoot: string;
+	let realTarget: string;
+	try {
+		realTmpRoot = realpathSync(tmpRoot);
+		realTarget = realpathSync(path);
+	} catch {
+		return false;
+	}
+	const rel = relative(realTmpRoot, realTarget);
+	return rel !== '' && rel !== '..' && !rel.startsWith(`..${sep}`) && !isAbsolute(rel);
 }
 
 function defaultAuditTrailExists(reviewId: string): boolean {
-	return existsSync(auditTrailPath(reviewId));
+	const path = auditTrailPath(reviewId);
+	return existsSync(path) && isContainedAuditPath(path);
 }
 
 function defaultReadAuditTrail(reviewId: string): string {
-	return readFileSync(auditTrailPath(reviewId), 'utf8');
+	const path = auditTrailPath(reviewId);
+	if (!isContainedAuditPath(path)) {
+		throw new Error(`reconcileRound: audit trail for reviewId ${JSON.stringify(reviewId)} resolves outside the review's own .insrc/tmp directory`);
+	}
+	return readFileSync(path, 'utf8');
 }
 
 /**

@@ -1363,23 +1363,22 @@ is not named after it. `INSRC_REPO_CONFIG` overrides the location (the tests use
 longer read.
 
 The file was `~/.insrc/github.json`. At the first boot of an updated daemon, straight after its directories are ensured and
-before anything reads the file, an existing `github.json` is moved to `repo-config.json`. The new name is published without
-replacing anything: as a hard link, which the file system refuses when the destination exists; on a volume without hard links
-(FAT, exFAT, some shares) as a copy that is written to a temporary file next to it, flushed, checked against the original and
-only then renamed into place, so `repo-config.json` never holds a partial copy, even if the daemon is killed during the move
-(a temporary file a killed run left is removed at the next boot). Then the old name is removed, but only if it is still the file
-that was moved: a `github.json` that an editor replaced in the meantime is kept. A `repo-config.json` that another process
-creates at any point before it is published is never replaced or removed. On a volume without hard links there is no
-portable way to refuse an existing destination, so the copy is published by a presence check immediately before the rename,
-which leaves a window of one call there. This is the same on Linux, macOS and Windows; on Windows a symbolic-link `github.json`
-needs the privilege to create links, and without it the move fails and is retried. If both files exist, whatever they hold,
-neither is touched, `repo-config.json` is the one the daemon reads, and the boot logs that both exist; this is also what an
-interrupted move leaves, or one where Windows refuses to delete a file another program has open, and the leftover
-`github.json` is harmless and can be deleted by hand. A move that fails is logged and tried again at the next boot, and never
-stops the daemon starting. The move is skipped when `INSRC_REPO_CONFIG` is set.
+before anything reads the file, an existing `github.json` is moved to `repo-config.json`. The new name is published
+atomically and without replacing anything, as a hard link (the file system refuses it when the destination exists; NTFS and
+ReFS support hard links, so this holds on Windows) or, for a symbolic-link `github.json`, a new symbolic link to the same target
+(on Windows that needs the privilege to create links, and without it the move fails and is retried). Nothing is copied. Then the
+old name is removed, but only if it is still the file that was published: a `github.json` that an editor replaced in the
+meantime is kept. The daemon never deletes `repo-config.json`, and a `repo-config.json` that another process creates at any point
+before it is published is never replaced. On a volume without hard links (FAT, exFAT, some shares) the move fails, is logged
+with a note to rename the file by hand, and is tried again at the next boot; a copy would be neither complete nor
+non-replacing with the calls the daemon has, so it is not attempted. This is the same on Linux, macOS and Windows. If both files
+exist, whatever they hold, neither is touched, `repo-config.json` is the one the daemon reads, and the boot logs that both
+exist; this is also what an interrupted move leaves, or one where Windows refuses to delete a file another program has open,
+and the leftover `github.json` is harmless and can be deleted by hand. A move that fails is logged and tried again at the next
+boot, and never stops the daemon starting. The move is skipped when `INSRC_REPO_CONFIG` is set.
 A `github.json` created by hand afterwards is ignored: the settings now live in `repo-config.json`, and the settings methods are
-the way to change them. To go back to an
-older daemon, rename the file back by hand, because the older daemon reads `github.json` and would see no settings.
+the way to change them. To go back to an older daemon, rename the file back by hand, because the older daemon reads
+`github.json` and would see no settings.
 
 ### Build commands
 

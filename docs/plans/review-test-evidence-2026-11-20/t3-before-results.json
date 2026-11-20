@@ -1,0 +1,53 @@
+{
+  "runId": "41db5e1d-3777-41d7-9971-b492067cd2b8",
+  "runtime": {
+    "executable": "/opt/homebrew/Cellar/node@22/22.23.2/bin/node",
+    "version": "v22.23.2"
+  },
+  "budgets": {
+    "buildMs": 600000,
+    "fileMs": 600000,
+    "runMs": 5400000,
+    "cleanupMs": 5000
+  },
+  "selectedFiles": [
+    "src/daemon/steps/__tests__/task-persistence.test.ts"
+  ],
+  "requestedConcurrency": 1,
+  "effectiveConcurrency": 1,
+  "diagnosticFlags": [
+    "DEBUG"
+  ],
+  "liveTests": "unset",
+  "results": [
+    {
+      "file": "src/daemon/steps/__tests__/task-persistence.test.ts",
+      "childId": "8beb331e-129c-4097-a990-1da94ba235f2",
+      "log": "docs/plans/review-test-evidence-2026-11-20/t3-before-0.tap",
+      "code": 1,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 1,
+          "pass": 0,
+          "fail": 1,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "sha256": "4fe1fbe32ff3ac1a03637f07a1a5d1f84c2fb6944f848cc6e2fbb7205c189d5e"
+    }
+  ],
+  "incomplete": false,
+  "cleanup": {
+    "confirmedClosed": true,
+    "interrupted": false,
+    "cancellationErrors": [],
+    "evidenceErrors": [],
+    "childCloseJournal": "child-results.jsonl"
+  }
+}

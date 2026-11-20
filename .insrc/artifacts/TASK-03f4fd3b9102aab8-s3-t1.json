@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-f439e8f4-fce3-46eb-9313-748ce55709be",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-19T19:24:10.781Z",
+    "epicCreatedAt": "2026-11-18T06:14:00.057Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "03f4fd3b9102aab8",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Add ReconciliationVerdict, ReconciliationResult and reconcileRound",
+      "parent": {
+        "entityId": "STORY-03f4fd3b9102aab8-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-03f4fd3b9102aab8-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#220",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "75b12c7ff41b64e67ac5eaf8539ee012cf343355130d8a0e9f669c56dca8dd8f",
+        "at": "2026-11-19T19:24:10.782Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-19T19:24:10.783Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add ReconciliationVerdict, ReconciliationResult and reconcileRound",
+    "summary": "Add src/workflow/review-round/reconciliation.ts exporting ReconciliationVerdict (fixed 4-member union), ReconciliationResult {priorFindingRef, verdict} (sc3's interfaceSketch), and reconcileRound(reviewId, priorFindings, currentFindings) which makes one dedicated classification call per prior finding set, reading .insrc/tmp/<reviewId>/ internally only when needed. Includes a module-level _setReconciliationDepsForTests seam (matching src/workflow/team/signoff.ts's convention) injecting the classification call and the audit-trail read, defaulting to the real CliProvider-backed implementation, plus a compile-time typecheck fixture.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "ReconciliationVerdict, ReconciliationResult and reconcileRound are exported exactly as dataModelChanges/contractDetails specify, with no extra or missing field or parameter",
+      "reconcileRound never performs its own re-grounding pass and never folds reconciliation into the same pass that produced currentFindings",
+      "the typecheck fixture rejects an invalid verdict literal and an added/removed ReconciliationResult key via @ts-expect-error / Equal<keyof ReconciliationResult,...>",
+      "a rejecting classification call propagates its rejection unchanged rather than returning partial or fabricated results"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "reconcileRound produces exactly one ReconciliationResult per entry in priorFindings, keyed by that finding's own id"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

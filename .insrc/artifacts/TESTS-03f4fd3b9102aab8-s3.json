@@ -1,0 +1,322 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 13,
+        "contentHash": "d5e849b5df20faf79fabe6055e429201b141fd8efc137d0a95211bdccac5fd57",
+        "at": "2026-11-20T06:01:04.452Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "03f4fd3b9102aab8",
+    "storyId": "s3",
+    "createdAt": "2026-11-19T19:32:33.166Z",
+    "updatedAt": "2026-11-20T06:01:04.310Z",
+    "epicCreatedAt": "2026-11-18T06:14:00.057Z",
+    "epicSlug": "review-rounds-reconciliation-recovery",
+    "revision": 13
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "68dfdbc3d",
+        "ranAt": "2026-11-20T05:59:31.967Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "reconcileRound produces exactly one ReconciliationResult per entry in priorFindings, keyed by that finding's own id",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/reconciliation.test.ts",
+                "title": "reconcileRound produces exactly one ReconciliationResult per entry in priorFindings, keyed by that finding's own id",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-round/__tests__/reconciliation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 7361,
+            "titles": [
+              {
+                "title": "reconcileRound produces exactly one ReconciliationResult per entry in priorFindings, keyed by that finding's own id",
+                "result": "pass"
+              },
+              {
+                "title": "reconcileRound's parameters are reviewId and the two finding sets only -- no ReviewTargets-shaped parameter exists anywhere in its signature, so no re-grounding input is even possible",
+                "result": "pass"
+              },
+              {
+                "title": "ReconciliationResult's exported shape contains exactly priorFindingRef and verdict, with no severity, blocking, or gate-facing field of any kind",
+                "result": "pass"
+              },
+              {
+                "title": "ReconciliationVerdict accepts exactly the four fixed verdicts (confirmed, still-open, contradicted, no-longer-surfaced) and rejects any other value at compile time",
+                "result": "pass"
+              },
+              {
+                "title": "a rejecting reconcileRound call propagates its rejection rather than returning partial or fabricated results",
+                "result": "pass"
+              },
+              {
+                "title": "priorFindings as an empty array returns an empty array, not an error",
+                "result": "pass"
+              },
+              {
+                "title": "two priorFindings entries with identical category and severity but different id values still produce two separate ReconciliationResult entries, keyed by their distinct ids",
+                "result": "pass"
+              },
+              {
+                "title": "when the two finding sets alone do not resolve a classification, reconcileRound reads the audit trail itself from .insrc/tmp/<reviewId>/, rather than requiring the caller to have pre-extracted and passed it in",
+                "result": "pass"
+              },
+              {
+                "title": "a reviewId containing a path-traversal segment is rejected before any filesystem access, rather than being joined into the audit-trail path unvalidated",
+                "result": "pass"
+              },
+              {
+                "title": "two findings sharing category and severity but with different ids are NOT treated as a recurrence -- only a matching id is unambiguous",
+                "result": "pass"
+              },
+              {
+                "title": "outside any bound request, with no registered repo for the process cwd, the audit trail and the classify provider fall back to the process's own INSRC_REPO",
+                "result": "pass"
+              },
+              {
+                "title": "the registered repo for the request's cwd wins over its own envRepo pin -- the canonical precedence, not envRepo-first",
+                "result": "pass"
+              },
+              {
+                "title": "when neither a registered repo for cwd nor an envRepo/INSRC_REPO pin resolves, reconcileRound rejects rather than silently defaulting to cwd",
+                "result": "pass"
+              },
+              {
+                "title": "a symlinked review directory pointing outside .insrc/tmp is not followed -- its audit trail is never read",
+                "result": "pass"
+              },
+              {
+                "title": "a symlinked audit-trail.json pointing outside .insrc/tmp is not followed -- its target content is never read",
+                "result": "pass"
+              },
+              {
+                "title": "review A's own directory aliased (via symlink) to sibling review B's genuine directory is rejected -- B's audit trail never reaches A's classification",
+                "result": "pass"
+              },
+              {
+                "title": "review A's own audit-trail.json aliased (via symlink) to sibling review B's genuine audit-trail.json is rejected",
+                "result": "pass"
+              },
+              {
+                "title": "reconcileRound and ReconciliationResult",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "68dfdbc3d",
+        "ranAt": "2026-11-20T06:01:04.310Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "reconcileRound's parameters are reviewId and the two finding sets only -- no ReviewTargets-shaped parameter exists anywhere in its signature, so no re-grounding input is even possible",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/reconciliation.test.ts",
+                "title": "reconcileRound's parameters are reviewId and the two finding sets only -- no ReviewTargets-shaped parameter exists anywhere in its signature, so no re-grounding input is even possible",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "ReconciliationResult's exported shape contains exactly priorFindingRef and verdict, with no severity, blocking, or gate-facing field of any kind",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/reconciliation.test.ts",
+                "title": "ReconciliationResult's exported shape contains exactly priorFindingRef and verdict, with no severity, blocking, or gate-facing field of any kind",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "ReconciliationVerdict accepts exactly the four fixed verdicts (confirmed, still-open, contradicted, no-longer-surfaced) and rejects any other value at compile time",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/reconciliation.test.ts",
+                "title": "ReconciliationVerdict accepts exactly the four fixed verdicts (confirmed, still-open, contradicted, no-longer-surfaced) and rejects any other value at compile time",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a rejecting reconcileRound call propagates its rejection rather than returning partial or fabricated results",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/reconciliation.test.ts",
+                "title": "a rejecting reconcileRound call propagates its rejection rather than returning partial or fabricated results",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "priorFindings as an empty array returns an empty array, not an error",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/reconciliation.test.ts",
+                "title": "priorFindings as an empty array returns an empty array, not an error",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "two priorFindings entries with identical category and severity but different id values still produce two separate ReconciliationResult entries, keyed by their distinct ids",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/reconciliation.test.ts",
+                "title": "two priorFindings entries with identical category and severity but different id values still produce two separate ReconciliationResult entries, keyed by their distinct ids",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "when the two finding sets alone do not resolve a classification, reconcileRound reads the audit trail itself from .insrc/tmp/<reviewId>/, rather than requiring the caller to have pre-extracted and passed it in",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/reconciliation.test.ts",
+                "title": "when the two finding sets alone do not resolve a classification, reconcileRound reads the audit trail itself from .insrc/tmp/<reviewId>/, rather than requiring the caller to have pre-extracted and passed it in",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-round/__tests__/reconciliation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 7652,
+            "titles": [
+              {
+                "title": "reconcileRound produces exactly one ReconciliationResult per entry in priorFindings, keyed by that finding's own id",
+                "result": "pass"
+              },
+              {
+                "title": "reconcileRound's parameters are reviewId and the two finding sets only -- no ReviewTargets-shaped parameter exists anywhere in its signature, so no re-grounding input is even possible",
+                "result": "pass"
+              },
+              {
+                "title": "ReconciliationResult's exported shape contains exactly priorFindingRef and verdict, with no severity, blocking, or gate-facing field of any kind",
+                "result": "pass"
+              },
+              {
+                "title": "ReconciliationVerdict accepts exactly the four fixed verdicts (confirmed, still-open, contradicted, no-longer-surfaced) and rejects any other value at compile time",
+                "result": "pass"
+              },
+              {
+                "title": "a rejecting reconcileRound call propagates its rejection rather than returning partial or fabricated results",
+                "result": "pass"
+              },
+              {
+                "title": "priorFindings as an empty array returns an empty array, not an error",
+                "result": "pass"
+              },
+              {
+                "title": "two priorFindings entries with identical category and severity but different id values still produce two separate ReconciliationResult entries, keyed by their distinct ids",
+                "result": "pass"
+              },
+              {
+                "title": "when the two finding sets alone do not resolve a classification, reconcileRound reads the audit trail itself from .insrc/tmp/<reviewId>/, rather than requiring the caller to have pre-extracted and passed it in",
+                "result": "pass"
+              },
+              {
+                "title": "a reviewId containing a path-traversal segment is rejected before any filesystem access, rather than being joined into the audit-trail path unvalidated",
+                "result": "pass"
+              },
+              {
+                "title": "two findings sharing category and severity but with different ids are NOT treated as a recurrence -- only a matching id is unambiguous",
+                "result": "pass"
+              },
+              {
+                "title": "outside any bound request, with no registered repo for the process cwd, the audit trail and the classify provider fall back to the process's own INSRC_REPO",
+                "result": "pass"
+              },
+              {
+                "title": "the registered repo for the request's cwd wins over its own envRepo pin -- the canonical precedence, not envRepo-first",
+                "result": "pass"
+              },
+              {
+                "title": "when neither a registered repo for cwd nor an envRepo/INSRC_REPO pin resolves, reconcileRound rejects rather than silently defaulting to cwd",
+                "result": "pass"
+              },
+              {
+                "title": "a symlinked review directory pointing outside .insrc/tmp is not followed -- its audit trail is never read",
+                "result": "pass"
+              },
+              {
+                "title": "a symlinked audit-trail.json pointing outside .insrc/tmp is not followed -- its target content is never read",
+                "result": "pass"
+              },
+              {
+                "title": "review A's own directory aliased (via symlink) to sibling review B's genuine directory is rejected -- B's audit trail never reaches A's classification",
+                "result": "pass"
+              },
+              {
+                "title": "review A's own audit-trail.json aliased (via symlink) to sibling review B's genuine audit-trail.json is rejected",
+                "result": "pass"
+              },
+              {
+                "title": "reconcileRound and ReconciliationResult",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

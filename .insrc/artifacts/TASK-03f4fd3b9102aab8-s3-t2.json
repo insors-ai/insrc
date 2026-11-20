@@ -1,0 +1,112 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-7fa4cccf-46fd-41fc-82e8-9d159ad1aa61",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-19T19:24:10.784Z",
+    "epicCreatedAt": "2026-11-18T06:14:00.057Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "03f4fd3b9102aab8",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Add the full named test suite for reconcileRound/ReconciliationResult",
+      "parent": {
+        "entityId": "STORY-03f4fd3b9102aab8-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-03f4fd3b9102aab8-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-03f4fd3b9102aab8-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#221",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "97373c80276cec2c01f538b9ff571791d44d2703e7e333a10f28910eb7138a62",
+        "at": "2026-11-19T19:24:10.784Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-19T19:24:10.785Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the full named test suite for reconcileRound/ReconciliationResult",
+    "summary": "One it() per testStrategy.testLevels subject (8 total) in __tests__/reconciliation.test.ts, matching ac1/ac2's acceptanceMapping.provingTests verbatim, using _setReconciliationDepsForTests to inject a spyable classification stub and a temp-directory fixture standing in for .insrc/tmp/<reviewId>/.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "All 8 named test subjects from testStrategy.testLevels[0].subjects exist as individual it() cases with matching titles",
+      "ac1 and ac2's acceptanceMapping.provingTests all pass",
+      "npx tsx --test for the new test file passes with zero failures"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "reconcileRound's parameters are reviewId and the two finding sets only -- no ReviewTargets-shaped parameter exists anywhere in its signature, so no re-grounding input is even possible"
+      },
+      {
+        "level": "unit",
+        "name": "ReconciliationResult's exported shape contains exactly priorFindingRef and verdict, with no severity, blocking, or gate-facing field of any kind"
+      },
+      {
+        "level": "unit",
+        "name": "ReconciliationVerdict accepts exactly the four fixed verdicts (confirmed, still-open, contradicted, no-longer-surfaced) and rejects any other value at compile time"
+      },
+      {
+        "level": "unit",
+        "name": "a rejecting reconcileRound call propagates its rejection rather than returning partial or fabricated results"
+      },
+      {
+        "level": "unit",
+        "name": "priorFindings as an empty array returns an empty array, not an error"
+      },
+      {
+        "level": "unit",
+        "name": "two priorFindings entries with identical category and severity but different id values still produce two separate ReconciliationResult entries, keyed by their distinct ids"
+      },
+      {
+        "level": "unit",
+        "name": "when the two finding sets alone do not resolve a classification, reconcileRound reads the audit trail itself from .insrc/tmp/<reviewId>/, rather than requiring the caller to have pre-extracted and passed it in"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

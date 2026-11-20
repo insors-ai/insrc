@@ -29,6 +29,17 @@
           "revision": 3,
           "at": "2026-11-19T14:44:13.668Z",
           "externalId": "7012438582"
+        },
+        {
+          "target": {
+            "entityId": "PLAN-03f4fd3b9102aab8-s3",
+            "type": "PLAN",
+            "relation": "documents",
+            "fragment": "docs/epics/review-rounds-reconciliation-recovery-E2026111803f4fd3b/S003/PLAN.md"
+          },
+          "revision": 1,
+          "at": "2026-11-19T19:25:33.206Z",
+          "externalId": "7019800754"
         }
       ],
       "binding": {

@@ -76,6 +76,8 @@ export function checkTestMapping(
 	mapping:      readonly TestMappingEntry[],
 	named:        readonly NamedTest[],
 	trackedFiles: readonly string[],
+	/** A plan whose commands a repo setting states (a project of any language): a case may name any tracked file. */
+	anyTestFile = false,
 ): readonly string[] {
 	const faults: string[] = [];
 	const levelOf = new Map<string, string | undefined>();
@@ -113,8 +115,10 @@ export function checkTestMapping(
 				faults.push(`${cat}: 'file' is empty`);
 			} else if (leavesRepo(c.file)) {
 				faults.push(`${cat}: '${c.file}' is not a path inside the repository`);
-			} else if (!c.file.endsWith('.test.ts') || !tracked.has(c.file)) {
-				faults.push(`${cat}: '${c.file}' is not a tracked '.test.ts' file of the repository`);
+			} else if (!(anyTestFile || c.file.endsWith('.test.ts')) || !tracked.has(c.file)) {
+				faults.push(anyTestFile
+					? `${cat}: '${c.file}' is not a tracked file of the repository`
+					: `${cat}: '${c.file}' is not a tracked '.test.ts' file of the repository`);
 			}
 		});
 
@@ -146,12 +150,13 @@ export function checkTestMapping(
  * record is a tracked file that a merge or a hand edit can change.
  *   - an entry for a name the Task no longer has is dropped;
  *   - a reported result is dropped unless the test's level is still 'live' or 'smoke';
- *   - a case whose file leaves the repository or is not a '.test.ts' file is dropped
+ *   - a case whose file leaves the repository or is not a '.test.ts' file (any file, for a plan whose
+ *     commands a repo setting states) is dropped
  *     (a file that is merely gone is kept: it is run as it is and comes back `not found`);
  *   - an entry left with neither is dropped, so its test has nothing to run.
  * Builder text is flattened to one line.
  */
-export function usableStoredMapping(stored: readonly TestMappingEntry[], named: readonly NamedTest[]): readonly TestMappingEntry[] {
+export function usableStoredMapping(stored: readonly TestMappingEntry[], named: readonly NamedTest[], anyTestFile = false): readonly TestMappingEntry[] {
 	const levelOf = new Map<string, string | undefined>();
 	for (const n of named) if (!levelOf.has(n.name)) levelOf.set(n.name, n.level);
 	const out: TestMappingEntry[] = [];
@@ -160,7 +165,7 @@ export function usableStoredMapping(stored: readonly TestMappingEntry[], named: 
 		if (typeof entry.name !== 'string' || !levelOf.has(entry.name) || seen.has(entry.name)) continue;
 		seen.add(entry.name);
 		const cases = (entry.cases ?? [])
-			.filter(c => typeof c.file === 'string' && typeof c.title === 'string' && c.title.length > 0 && c.file.endsWith('.test.ts') && !leavesRepo(c.file))
+			.filter(c => typeof c.file === 'string' && typeof c.title === 'string' && c.title.length > 0 && (anyTestFile || c.file.endsWith('.test.ts')) && !leavesRepo(c.file))
 			.map(c => ({ file: c.file, title: oneLine(c.title) }));
 		const level = levelOf.get(entry.name);
 		const reported = entry.reported !== undefined && level !== undefined && REPORTABLE_LEVELS.has(level)

@@ -1,0 +1,223 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1795115215141-evtijd",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-19T19:10:20.242Z",
+    "epicCreatedAt": "2026-11-18T06:14:00.057Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 199905,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "03f4fd3b9102aab8",
+    "epicSlug": "review-rounds-reconciliation-recovery",
+    "storyId": "s3",
+    "lldRunId": "wf-1795096193568-o7xxbs",
+    "lldEffectiveHash": "6d57abfa68accf993485dc920a80409335ebda32202c80baa14902fde616994d",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0f178dccabbadd5d6eaf27697c7c40c96f956fc4027c0f86122782d5e419dc3f",
+        "at": "2026-11-19T19:10:21.795Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-19T19:24:08.868Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "d3e78f03f2b748b29f745acd5e45aae7c400a8b2"
+  },
+  "body": {
+    "summary": {
+      "prose": "Building s3 means adding the reconciliation pass to src/workflow/review-round/: a fixed four-verdict taxonomy, the ReconciliationResult shape, and reconcileRound itself -- a dedicated classification call that compares a prior round's HIGH/MED findings against the current round's findings, reading the review's temp-folder audit trail internally only if the two finding sets alone don't resolve a verdict. The internal classification and audit-trail read are made testable through a module-level test-injection seam, matching the codebase's existing convention, so the full test suite runs without a live LLM call or real filesystem fixture.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add ReconciliationVerdict, ReconciliationResult and reconcileRound",
+        "summary": "Add src/workflow/review-round/reconciliation.ts exporting ReconciliationVerdict (fixed 4-member union), ReconciliationResult {priorFindingRef, verdict} (sc3's interfaceSketch), and reconcileRound(reviewId, priorFindings, currentFindings) which makes one dedicated classification call per prior finding set, reading .insrc/tmp/<reviewId>/ internally only when needed. Includes a module-level _setReconciliationDepsForTests seam (matching src/workflow/team/signoff.ts's convention) injecting the classification call and the audit-trail read, defaulting to the real CliProvider-backed implementation, plus a compile-time typecheck fixture.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "ReconciliationVerdict, ReconciliationResult and reconcileRound are exported exactly as dataModelChanges/contractDetails specify, with no extra or missing field or parameter",
+          "reconcileRound never performs its own re-grounding pass and never folds reconciliation into the same pass that produced currentFindings",
+          "the typecheck fixture rejects an invalid verdict literal and an added/removed ReconciliationResult key via @ts-expect-error / Equal<keyof ReconciliationResult,...>",
+          "a rejecting classification call propagates its rejection unchanged rather than returning partial or fabricated results"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "reconcileRound produces exactly one ReconciliationResult per entry in priorFindings, keyed by that finding's own id"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add the full named test suite for reconcileRound/ReconciliationResult",
+        "summary": "One it() per testStrategy.testLevels subject (8 total) in __tests__/reconciliation.test.ts, matching ac1/ac2's acceptanceMapping.provingTests verbatim, using _setReconciliationDepsForTests to inject a spyable classification stub and a temp-directory fixture standing in for .insrc/tmp/<reviewId>/.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "All 8 named test subjects from testStrategy.testLevels[0].subjects exist as individual it() cases with matching titles",
+          "ac1 and ac2's acceptanceMapping.provingTests all pass",
+          "npx tsx --test for the new test file passes with zero failures"
+        ],
+        "derivedFrom": [
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "reconcileRound's parameters are reviewId and the two finding sets only -- no ReviewTargets-shaped parameter exists anywhere in its signature, so no re-grounding input is even possible"
+          },
+          {
+            "level": "unit",
+            "name": "ReconciliationResult's exported shape contains exactly priorFindingRef and verdict, with no severity, blocking, or gate-facing field of any kind"
+          },
+          {
+            "level": "unit",
+            "name": "ReconciliationVerdict accepts exactly the four fixed verdicts (confirmed, still-open, contradicted, no-longer-surfaced) and rejects any other value at compile time"
+          },
+          {
+            "level": "unit",
+            "name": "a rejecting reconcileRound call propagates its rejection rather than returning partial or fabricated results"
+          },
+          {
+            "level": "unit",
+            "name": "priorFindings as an empty array returns an empty array, not an error"
+          },
+          {
+            "level": "unit",
+            "name": "two priorFindings entries with identical category and severity but different id values still produce two separate ReconciliationResult entries, keyed by their distinct ids"
+          },
+          {
+            "level": "unit",
+            "name": "when the two finding sets alone do not resolve a classification, reconcileRound reads the audit trail itself from .insrc/tmp/<reviewId>/, rather than requiring the caller to have pre-extracted and passed it in"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "reconcileRound produces exactly one ReconciliationResult per entry in priorFindings, keyed by that finding's own id",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "reconcileRound's parameters are reviewId and the two finding sets only -- no ReviewTargets-shaped parameter exists anywhere in its signature, so no re-grounding input is even possible",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "ReconciliationResult's exported shape contains exactly priorFindingRef and verdict, with no severity, blocking, or gate-facing field of any kind",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "ReconciliationVerdict accepts exactly the four fixed verdicts (confirmed, still-open, contradicted, no-longer-surfaced) and rejects any other value at compile time",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "a rejecting reconcileRound call propagates its rejection rather than returning partial or fabricated results",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "priorFindings as an empty array returns an empty array, not an error",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "two priorFindings entries with identical category and severity but different id values still produce two separate ReconciliationResult entries, keyed by their distinct ids",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "when the two finding sets alone do not resolve a classification, reconcileRound reads the audit trail itself from .insrc/tmp/<reviewId>/, rather than requiring the caller to have pre-extracted and passed it in",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 dataModelChanges: ReconciliationVerdict"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 dataModelChanges: ReconciliationResult"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 contractDetails.api: reconcileRound"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 errorPaths.errorCases: rejecting classification call"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 testStrategy acceptanceMapping ac1"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 testStrategy acceptanceMapping ac2"
+    }
+  ]
+}

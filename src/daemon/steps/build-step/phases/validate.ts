@@ -47,6 +47,7 @@ import type { BuildStandaloneContext, BuildStepDone, BuildStepError, BuildStepIn
 import {
 	commandProfileOf,
 	commandSettingError,
+	namesOwnTestFiles,
 	planTaskCheckPlan,
 	runValidationChecks,
 	smallStandaloneCheckPlan,
@@ -262,8 +263,10 @@ async function resolveMapping(
 	named:    readonly NamedTest[],
 	ident:    { readonly epicHash: string; readonly storyId: string; readonly taskId: string },
 ): Promise<{ readonly ok: true; readonly entries: readonly TestMappingEntry[] | undefined; readonly note?: string | undefined } | { readonly ok: false; readonly error: BuildStepError }> {
+	// A project that is not a Node one, with commands a repo setting states: its cases name its own test files.
+	const anyTestFile = namesOwnTestFiles(commandProfileOf(repoPath));
 	if (supplied !== undefined) {
-		const faults = checkTestMapping(supplied, named, await trackedFiles(repoPath));
+		const faults = checkTestMapping(supplied, named, await trackedFiles(repoPath), anyTestFile);
 		if (faults.length > 0) {
 			return { ok: false, error: err('invalid-test-mapping',
 				`insrc_build_step[validate]: the \`tests\` mapping is wrong, so nothing was run: ${faults.join('; ')}.`) };
@@ -277,7 +280,7 @@ async function resolveMapping(
 	if (state.kind === 'unreadable') {
 		return { ok: true, entries: undefined, note: `the stored test record could not be read (${oneLine(state.reason)}), so no stored mapping was used; this turn's record replaces it` };
 	}
-	const stored = usableStoredMapping(storedMappingFor(repoPath, ident.epicHash, ident.storyId, ident.taskId) ?? [], named);
+	const stored = usableStoredMapping(storedMappingFor(repoPath, ident.epicHash, ident.storyId, ident.taskId) ?? [], named, anyTestFile);
 	return { ok: true, entries: stored.length > 0 ? stored : undefined };
 }
 

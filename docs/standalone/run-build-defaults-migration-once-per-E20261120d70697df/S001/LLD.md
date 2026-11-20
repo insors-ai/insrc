@@ -294,6 +294,8 @@ A new PATHS entry for a small JSON file holding { schemaVersion }, read and writ
   - **resolved**: Accept ac1–ac5 as written — ac3 already says the pass never delays or fails startup; user approved the LLD in chat. _(2026-11-20T19:18:18.575Z)_
 - `qe89f12be` — Confirm the new symbol names and constant (runSchemaMigrations, readSchemaVersion, writeSchemaVersion, REPO_CONFIG_SCHEMA_VERSION = 1, SchemaMigrationStep, SchemaMigrationResult). They do not exist yet, so no analyzer bundle can cite them.
   - **resolved**: Adopt the proposed names — User approved the LLD in chat. _(2026-11-20T19:18:43.279Z)_
+- `q3cd27829` — Confirm the citation mapping: c1 is the migrateBuildDefaults/handler bundle, c2 the startup-order bundle, c3 the repo-config.json store bundle, c4 the method-registries bundle, c5 the tests bundle (invariant sources use these).
+  - **resolved**: Confirm the stated mapping — User approved the LLD in chat. _(2026-11-20T19:18:59.449Z)_
 
 ## Citations
 

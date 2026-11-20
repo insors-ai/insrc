@@ -81,6 +81,13 @@
         "choice": "Adopt the proposed names",
         "rationale": "User approved the LLD in chat.",
         "resolvedAt": "2026-11-20T19:18:43.279Z"
+      },
+      "q3cd27829": {
+        "question": "Confirm the citation mapping: c1 is the migrateBuildDefaults/handler bundle, c2 the startup-order bundle, c3 the repo-config.json store bundle, c4 the method-registries bundle, c5 the tests bundle (invariant sources use these).",
+        "status": "resolved",
+        "choice": "Confirm the stated mapping",
+        "rationale": "User approved the LLD in chat.",
+        "resolvedAt": "2026-11-20T19:18:59.449Z"
       }
     }
   },

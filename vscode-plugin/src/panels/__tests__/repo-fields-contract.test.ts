@@ -9,7 +9,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-import { createRepoTrackerWriteHandler, renderRepoConfig } from '../repo-config.js';
+import { createRepoBuildSuggestedHandler, createRepoTrackerWriteHandler, renderRepoConfig } from '../repo-config.js';
 import type { ConsentOutcome } from '../../surfaces/consent-gate.js';
 import type { RepoFieldDef } from '../../../../src/config/repo-fields.js';
 import type { RepoSettingsPayload } from '../../../../src/daemon/repo-settings.js';
@@ -33,8 +33,8 @@ async function render(fields: readonly RepoFieldDef[], settings = FIXTURE.settin
 }
 
 /** The Tracker section's rows as the user sees them, in display order. */
-function trackerRows(html: string): Array<{ key: string; label: string; kind: string; note: string | null }> {
-  const section = /<details id="insrc-tracker" class="section">([\s\S]*?)<\/details>/.exec(html)?.[1] ?? '';
+function trackerRows(html: string, id: 'insrc-tracker' | 'insrc-build' = 'insrc-tracker'): Array<{ key: string; label: string; kind: string; note: string | null }> {
+  const section = new RegExp(`<details id="${id}" class="section"[^>]*>([\\s\\S]*?)</details>`).exec(html)?.[1] ?? '';
   return [...section.matchAll(/<(div|label|tr) [^>]*data-kind="(status|local|policy)"[^>]*>[\s\S]*?<\/\1>/g)].map((m) => {
     const key = /data-(?:tracker|readonly)-key="([^"]*)"/.exec(m[0])![1]!;
     const label = /<(?:dt|th scope="row"|span class="tracker-label")>([^<]*)<\//.exec(m[0])![1]!;
@@ -55,7 +55,8 @@ test('VS Code rows equal the shared catalog fixture and a new row appears', asyn
   assert.ok(policyTable);
   assert.match(policyTable, /<th scope="col">Policy<\/th><th scope="col">Value<\/th>/);
   assert.doesNotMatch(policyTable, /data-tracker-key|<input|<select/);
-  assert.deepEqual(trackerRows(initial), contract(FIXTURE.repoFields), 'key, label, kind and note per row, in each group');
+  const tracker = FIXTURE.repoFields.filter(f => f.group === 'Tracker');
+  assert.deepEqual(trackerRows(initial), contract(tracker), 'key, label, kind and note per row, in each group; the Build rows are a section of their own');
 
   // A row added to a copy of the table appears with no renderer change, editable when it is local.
   const extra: RepoFieldDef = {
@@ -63,13 +64,13 @@ test('VS Code rows equal the shared catalog fixture and a new row appears', asyn
   };
   const copy = [...FIXTURE.repoFields, extra];
   const html = await render(copy);
-  assert.deepEqual(trackerRows(html), contract(copy));
+  assert.deepEqual(trackerRows(html), contract(copy.filter(f => f.group === 'Tracker')));
   assert.match(html, /data-tracker-key="reviewers"/, 'the new local row is an input');
 
   // A new read-only row (status or policy) appears read-only.
   const policy: RepoFieldDef = { key: 'newRule', label: 'New rule', type: 'string', description: 'd', group: 'Tracker', kind: 'policy', note: 'set by the team policy' };
   const html2 = await render([...FIXTURE.repoFields, policy]);
-  assert.deepEqual(trackerRows(html2), contract([...FIXTURE.repoFields, policy]));
+  assert.deepEqual(trackerRows(html2), contract([...FIXTURE.repoFields, policy].filter(f => f.group === 'Tracker')));
   assert.match(html2, /data-readonly-key="newRule"/);
   assert.doesNotMatch(html2, /data-tracker-key="newRule"/);
 });
@@ -195,4 +196,76 @@ test('Tracker escapes catalog and setting text and degrades without removing mod
   assert.match(degraded, /Core floor/);
   assert.match(degraded, /Tracker settings are unavailable/);
   assert.doesNotMatch(degraded, /data-tracker-key/);
+});
+
+test('the VS Code Repo Configuration page renders the Build rows in a section of their own with the keys, labels and kinds of the shared fixture, and shows the suggestion as the placeholder of an unset row', async () => {
+  const html = await render(FIXTURE.repoFields);
+  const build = FIXTURE.repoFields.filter(f => f.group === 'Build');
+  assert.ok(build.length > 0);
+  // a section of their own, beside Tracker and not inside it
+  assert.match(html, /<details id="insrc-build" class="section" open><summary class="section-head" style="[^"]*">Build<\/summary>/);
+  assert.doesNotMatch(/<details id="insrc-tracker" class="section">([\s\S]*?)<\/details>/.exec(html)?.[1] ?? '', /typecheckCommand|Build/);
+  assert.doesNotMatch(html, /<h4 class="tracker-group">/, 'not a sub-heading of the Tracker grid');
+  assert.deepEqual(trackerRows(html, 'insrc-build'), contract(build), 'the keys, labels, kinds and notes of the fixture, in order');
+  // an unset row shows the suggestion as its placeholder (a select row names it beside its value)
+  assert.match(html, /data-tracker-key="typecheckCommand" value="" placeholder="mypy \."/);
+  assert.match(html, /data-tracker-key="testCommand" value="" placeholder="pytest"/);
+  assert.match(html, /data-tracker-key="resultFormat"[\s\S]*?suggested: exit-code/);
+  // the action is offered because the repo has no commands and its type has a suggestion
+  assert.match(html, /<button id="insrc-use-suggested" type="button">Use suggested build commands<\/button>/);
+
+  // a repo that has commands, a type with no typical commands, or an older daemon: no placeholder and no action
+  const others: RepoSettingsPayload[] = [
+    { ...FIXTURE.settings, values: { ...FIXTURE.settings.values, typecheckCommand: 'make check', testCommand: 'make test' }, buildSetup: { projectType: 'go', commandsSource: 'repo-setting' } },
+    { ...FIXTURE.settings, buildSetup: { projectType: 'unknown', commandsSource: 'none' } },
+    (({ buildSetup: _omitted, ...legacy }) => legacy as RepoSettingsPayload)(FIXTURE.settings),
+  ];
+  for (const settings of others) {
+    const plain = await render(FIXTURE.repoFields, settings);
+    assert.doesNotMatch(plain, /insrc-use-suggested|suggested: /);
+    assert.match(plain, /<details id="insrc-build" class="section"><summary class="section-head" style=/, 'still its own section, closed');
+    assert.deepEqual(trackerRows(plain, 'insrc-build'), contract(build));
+  }
+});
+
+test('the suggested build commands are applied after one consent, only for a repo with none, and rolled back when a write is refused', async () => {
+  const tick = () => new Promise(resolve => setImmediate(resolve));
+  async function run(opts: { settings?: RepoSettingsPayload; consent?: ConsentOutcome; refuse?: string }) {
+    const writes: Array<[string, string | boolean | null]> = [];
+    const notices: string[] = [];
+    let asked = 0;
+    let refreshed = 0;
+    const handle = createRepoBuildSuggestedHandler({
+      registeredRepos: async () => [{ path: REPO, name: 'repo' }],
+      repoSettings: async () => ({ ok: true, payload: opts.settings ?? FIXTURE.settings }),
+      consent: { ask: async () => { asked++; return opts.consent ?? 'accepted'; } },
+      writeRepoSetting: async (_repo, key, value) => {
+        writes.push([key, value]);
+        return opts.refuse !== undefined && key === opts.refuse && value !== null ? { ok: false, reason: 'read only' } : { ok: true };
+      },
+      status: { current: () => ({ state: 'ready' }), set: ({ detail }) => { if (detail) notices.push(detail); } } as Parameters<typeof createRepoBuildSuggestedHandler>[0]['status'],
+      logger: { warn: message => assert.fail(message) },
+      refresh: () => { refreshed++; },
+    });
+    handle(REPO, () => true);
+    await tick(); await tick(); await tick();
+    return { writes, notices, asked, refreshed };
+  }
+
+  const ok = await run({});
+  assert.equal(ok.asked, 1, 'one consent for the three keys');
+  assert.deepEqual(ok.writes, [['typecheckCommand', 'mypy .'], ['testCommand', 'pytest'], ['resultFormat', 'exit-code']]);
+  assert.match(ok.notices.join(' '), /Applied the suggested build commands/);
+  assert.equal(ok.refreshed, 1);
+
+  const declined = await run({ consent: 'declined' });
+  assert.deepEqual(declined.writes, [], 'a declined consent writes nothing');
+
+  const has = await run({ settings: { ...FIXTURE.settings, buildSetup: { projectType: 'go', commandsSource: 'repo-setting' } } });
+  assert.deepEqual([has.asked, has.writes], [0, []], 'a repo that has commands is never offered or written');
+  assert.match(has.notices.join(' '), /no suggested build commands/);
+
+  const refused = await run({ refuse: 'testCommand' });
+  assert.deepEqual(refused.writes, [['typecheckCommand', 'mypy .'], ['testCommand', 'pytest'], ['typecheckCommand', null]], 'the first key is cleared when the second is refused');
+  assert.match(refused.notices.join(' '), /refused: read only .*not applied/);
 });

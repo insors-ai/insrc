@@ -134,6 +134,10 @@ for (const el of document.querySelectorAll('[data-tracker-key]')) {
     vscode.postMessage({ type: 'repoTrackerWrite', repoPath: repoPath, key: el.getAttribute('data-tracker-key'), value: value, renderId: trackerDocument?.getAttribute('data-render-id') });
   });
 }
+const suggestedBtn = document.getElementById('insrc-use-suggested');
+if (suggestedBtn) { suggestedBtn.addEventListener('click', function () {
+  vscode.postMessage({ type: 'repoBuildSuggested', repoPath: repoPath, renderId: trackerDocument?.getAttribute('data-render-id') });
+}); }
 const regBtn = document.getElementById('insrc-register-providers');
 if (regBtn) { regBtn.addEventListener('click', function () {
   var clients = [];
@@ -394,6 +398,19 @@ export function createWebviewPanelHost(deps: WebviewPanelHostDeps): WebviewPanel
           () => repoPanel === panel && generation === repoSelectionGeneration);
       } catch (err) {
         logger.warn(`insrc: the repo tracker write handler failed — ${errText(err)}`);
+      }
+      return;
+    }
+    if (
+      msg.type === 'repoBuildSuggested' &&
+      msg.renderId === String(repoRenderGeneration) &&
+      typeof msg.repoPath === 'string' && msg.repoPath === repoSelectedRepo
+    ) {
+      const generation = repoSelectionGeneration;
+      try {
+        deps.onRepoBuildSuggested?.(msg.repoPath, () => repoPanel === panel && generation === repoSelectionGeneration);
+      } catch (err) {
+        logger.warn(`insrc: the suggested build commands handler failed — ${errText(err)}`);
       }
       return;
     }

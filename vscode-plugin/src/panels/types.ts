@@ -310,6 +310,8 @@ export interface WebviewPanelHostDeps {
    */
   readonly onRepoConfigWrite?: ((write: RepoConfigWrite) => void) | undefined;
   readonly onRepoTrackerWrite?: ((write: RepoTrackerWrite, isCurrent: () => boolean) => void) | undefined;
+  /** OPTIONAL sink for the 'Use suggested build commands' action; the host forwards the repo and extension.ts owns the consent-gated writes. */
+  readonly onRepoBuildSuggested?: ((repoPath: string, isCurrent: () => boolean) => void) | undefined;
   /**
    * OPTIONAL sink for a provider registration (the repo form's Providers section).
    * The form posts {type:'repoRegisterProviders', repoPath, clients}; the host

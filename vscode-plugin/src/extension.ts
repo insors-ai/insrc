@@ -51,7 +51,7 @@ import { createWebviewPanelHost } from './panels/webview-host.js';
 import { defaultProcessScan } from './panels/process-scan.js';
 import { renderDaemonTab, renderWorkflowsTab } from './panels/detail-renderers.js';
 import { renderDebugTab, createDebugTabController, createDebugActionHandler } from './panels/debug-renderer.js';
-import { renderRepoConfig, createRepoConfigWriteHandler, createRepoRegisterProvidersHandler, createRepoTrackerWriteHandler } from './panels/repo-config.js';
+import { renderRepoConfig, createRepoConfigWriteHandler, createRepoRegisterProvidersHandler, createRepoTrackerWriteHandler, createRepoBuildSuggestedHandler } from './panels/repo-config.js';
 import { renderModelTiers, createModelTiersWriteHandler } from './panels/model-tiers.js';
 import { createLogTail } from './panels/log-tail.js';
 import { createOrphanKill, readManagedPid } from './panels/orphan-kill.js';
@@ -525,6 +525,15 @@ export function activate(context: vscode.ExtensionContext): void {
       consent,
       registeredRepos: () => daemonData.registeredRepos(),
       repoFields: async () => (await configGateway.catalog()).repoFields,
+      writeRepoSetting: (repoPath, key, value) => configGateway.writeRepoSetting(repoPath, key, value),
+      status,
+      logger: panelLog,
+      refresh: () => panelHost.openRepoConfiguration(),
+    }),
+    onRepoBuildSuggested: createRepoBuildSuggestedHandler({
+      consent,
+      registeredRepos: () => daemonData.registeredRepos(),
+      repoSettings: (repoPath) => client.rpc('repo.settings.get', { repo: repoPath }),
       writeRepoSetting: (repoPath, key, value) => configGateway.writeRepoSetting(repoPath, key, value),
       status,
       logger: panelLog,

@@ -87,6 +87,20 @@ const OLD_VAR = ['INSRC', 'GITHUB', 'CONFIG'].join('_');
 const DOCS_DIR = fileURLToPath(new URL('../../../docs/', import.meta.url));
 const LIVE_DOCS = ['daemon.md', 'workflow.md', 'installation.md', 'index.html', ...readdirSync(join(DOCS_DIR, 'plans')).filter(f => f.endsWith('.md')).map(f => `plans/${f}`)];
 
+// How many times each live doc names the settings file today. A doc that names a different file where it names this one has
+// fewer, so the count is what makes the test fail when a doc gives another name. Raise a count when a doc gains a mention.
+const FILE_MENTIONS: Readonly<Record<string, number>> = {
+	'daemon.md': 11,
+	'workflow.md': 5,
+	'installation.md': 1,
+	'index.html': 1,
+	'plans/meta-workflow-framework.md': 2,
+	'plans/repo-call-audit.md': 1,
+	'plans/team-workflow.md': 4,
+	'plans/workflow-define.md': 1,
+	'plans/workflow-implementation.md': 6,
+};
+
 test('build-commands-doc.test.ts: docs/daemon.md and the other live docs name repo-config.json and INSRC_REPO_CONFIG in line with the code', () => {
 	// the file name and the variable the docs give are the ones the code uses
 	const before = process.env['INSRC_REPO_CONFIG'];
@@ -129,6 +143,15 @@ test('build-commands-doc.test.ts: docs/daemon.md and the other live docs name re
 			assert.ok(!text.includes('github.json'), `${doc}: a plan never names github.json`);
 			assert.ok(!text.includes(OLD_VAR), `${doc}: a plan never names ${OLD_VAR}`);
 		}
+	}
+	// each doc names the file as often as it did when it was updated, so no mention was changed to another name
+	for (const [doc, count] of Object.entries(FILE_MENTIONS)) {
+		const text = readFileSync(join(DOCS_DIR, doc), 'utf8');
+		assert.ok(text.split(fileName).length - 1 >= count, `${doc} names ${fileName} at least ${count} times`);
+	}
+	// the tree listings in workflow.md and the plans keep the file's line
+	for (const doc of ['workflow.md', 'plans/workflow-implementation.md', 'plans/meta-workflow-framework.md']) {
+		assert.match(readFileSync(join(DOCS_DIR, doc), 'utf8'), new RegExp(`├── ${fileName.replace('.', '\\.')}`), `${doc}'s tree listing names ${fileName}`);
 	}
 	// the docs that document the override name the variable the code reads
 	for (const doc of ['daemon.md', 'installation.md', 'index.html']) {

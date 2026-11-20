@@ -1372,11 +1372,13 @@ Several types at the root, or none, is `unknown`; a file in a subdirectory is ne
 - **A Node project with no setting** is gated as it always was: `npx tsc --noEmit` (also in each other tsconfig project that
   owns a touched file) and `npx tsx --test-force-exit` per test file, read as TAP, with a result for every named case.
 - **A project of another type with no setting** gets no gate run: the typecheck and tests checks are reported as `ok: false`
-  with the note "the gate ran nothing", so the build does not read as passed. The builder's prompt names the commands typical
+  with the note "the gate ran nothing", so the build does not read as passed. A repository registered with `repo.add` does not
+  stay in this state for a type that has typical commands: see [Defaults at repo add](#defaults-at-repo-add). The builder's prompt names the commands typical
   for the type (for example `go vet ./...` and `go test ./...`) as guidance only, and the judge is told the daemon ran nothing.
 - **A project that states its commands** gets an independent run. The commands are settings of one registered
   repository, so there is no global default: each repository sets its own, in its entry of `~/.insrc/github.json`, through
-  `repo.settings.set` (the terminal settings screen lists them as the "Build" rows; the daemon is the only writer of the file):
+  `repo.settings.set` (the terminal settings screen, the VS Code Repo Configuration page and the JetBrains repo settings each list
+  them as a "Build" section of their own; the daemon is the only writer of the file):
 
 ```json
 { "repos": { "/home/me/work/svc": {
@@ -1399,6 +1401,52 @@ naming the key, before any prompt is built, check is run or record is written; a
 setting it could not read. The keys are rows of the repo settings table (`REPO_TRACKER_FIELDS`, group `Build`), not rows of the
 daemon's settings catalog, and only a registered repository can set them. The extra tsconfig projects are checked only for
 the Node default.
+
+#### Defaults at repo add
+
+`repo.add` stores the project type's typical commands for the new repository, with no client prompt (registration is mostly
+non-interactive, so the terminal, VS Code and JetBrains do nothing extra at add). After the repository is registered and
+indexing has started, the daemon reads the repository's own entry of `~/.insrc/github.json`; when the entry sets none of
+`typecheckCommand`, `testCommand` and `resultFormat`, and the type has typical commands, it writes all three in one write, so a
+lone command is never left:
+
+| Project type | `typecheckCommand` | `testCommand` | `resultFormat` |
+|---|---|---|---|
+| python | `mypy .` | `pytest` | `exit-code` |
+| go | `go vet ./...` | `go test ./...` | `exit-code` |
+| rust | `cargo check` | `cargo test` | `exit-code` |
+| jvm | `mvn -q compile` | `mvn -q test` | `exit-code` |
+
+A Node project is left alone (it already has the Node default), and so is an `unknown` type, which has no typical commands.
+Nothing is ever overwritten: an entry that sets any one of the three keys is kept as it is. The `repo.add` reply carries the
+outcome as `buildDefaults`: `{ applied: true, projectType }`, or `{ applied: false, reason }` with the reason `already-set`,
+`node-default`, `no-typical-commands` or `write-failed` (with a `note`). A failure, including an unreadable `github.json`,
+is logged and never fails the add; the repository is registered regardless and keeps today's behaviour of no gate run.
+
+A default is a typical command, not a verified one: the daemon does not check that `mypy`, `go`, `cargo` or `mvn` is
+installed or that it fits the project. If it does not, the gate fails with that command's output until the setting is edited,
+in the repository's "Build" section of the Repo Configuration page (or with `repo.settings.set`; `null` clears a key).
+
+#### buildSetup and the Build section
+
+`repo.settings.get` (and the reply of `repo.settings.set`) carries a read-only `buildSetup` beside the values:
+
+```json
+{ "projectType": "python", "commandsSource": "none",
+  "suggestion": { "typecheckCommand": "mypy .", "testCommand": "pytest", "resultFormat": "exit-code" } }
+```
+
+`commandsSource` is what the gate would use: `node-default`, `repo-setting`, `none` (no commands), or `invalid` (the stored
+commands are refused, with a `note`). `suggestion` is present only for a repository with `none` whose type has typical commands, for
+example one registered before the add-time defaults, or whose commands were cleared. A daemon that sends no `buildSetup` is
+shown as before.
+
+Each client shows the Build rows (`typecheckCommand`, `testCommand`, `resultFormat`) as a section of their own on its Repo
+Configuration page, beside the Tracker rows. For a repository with `none` the suggestion is the placeholder of each unset row
+and the page offers a "Use suggested build commands" action; it is never offered for a repository that has commands. The action
+writes the three keys through `repo.settings.set` only when it is used, one consent in VS Code, and clears the keys already
+written when one is refused, so no lone command is left. In the terminal, press `u` on the settings screen; in VS Code and
+JetBrains it is a button in the Build section.
 
 A build phase reads a repository's setting once, when it starts, and uses that one profile for its mapping check, its check
 plan and its prompts, so an edit made while a build runs takes effect from the next phase. The builder's instructions for the

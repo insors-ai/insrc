@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ed053d44-8c6d-4350-8031-eaf4945ccbc9",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-19T18:37:15.953Z",
+    "epicCreatedAt": "2026-11-19T18:15:53.783Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "787434000fa22691",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add CommandProfile and project-type detection",
+      "parent": {
+        "entityId": "STORY-787434000fa22691-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-787434000fa22691-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "e636d2458edee5c6f2edd6ad8af3bc70574f635bb294e344949fb0b9ba625a4d",
+        "at": "2026-11-19T18:37:15.957Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-19T18:37:15.959Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add CommandProfile and project-type detection",
+    "summary": "Add the CommandProfile type, InvalidCommandSetting error and a detector that reads root marker files (package.json, pyproject.toml/setup.py, go.mod, Cargo.toml, pom.xml/build.gradle/build.sbt) to give node, python, go, rust, jvm or unknown. Several markers of different types give unknown. Include the per-type guidance table used only for prompt text. The Node default reproduces today's TYPECHECK_ARGV, TEST_RUNNER_ARGV and TAP format. No behaviour change yet.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "A temp repo holding only package.json is detected as node, and likewise pyproject.toml python, go.mod go, Cargo.toml rust, pom.xml jvm",
+      "No marker or markers of different types give unknown",
+      "The Node default profile equals today's argv constants and tap format",
+      "The guidance table has an entry for every detected type including unknown, so the prompt can render all of them",
+      "Typecheck passes"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts: project type is detected from root marker files and mixed or no markers give unknown"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts: the Node default profile equals today's argv and tap format"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

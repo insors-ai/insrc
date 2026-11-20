@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-586c29ed-166b-47a4-9b1a-8c8c9f0e3e74",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-20T07:18:58.846Z",
+    "epicCreatedAt": "2026-11-20T06:25:36.857Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f8cbf44536347149",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add buildSetupFor and applyBuildDefaults in the repo settings module; return buildSetup from repo.settings.get",
+      "parent": {
+        "entityId": "STORY-f8cbf44536347149-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f8cbf44536347149-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "8cc41fbcf2f3da250ed6d8ddfa30ec0d5bc55a5154c1ec7c5622e2b29bdae862",
+        "at": "2026-11-20T07:18:58.850Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T07:18:58.851Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add buildSetupFor and applyBuildDefaults in the repo settings module; return buildSetup from repo.settings.get",
+    "summary": "In src/daemon/repo-settings.ts add the types BuildSetup and BuildDefaultsOutcome, buildSetupFor(repoPath, entry) (project type from detectProjectType, commands source from the entry and the gate's profile rules, suggestion from PROJECT_TYPE_GUIDANCE only for python, go, rust and jvm with no commands) and applyBuildDefaults(repoPath, deps?) (reads the repo's own entry, writes the three keys in one writeKeys call only when none is set and the type has typical commands, never throws). repo.settings.get and repo.settings.set return payload.buildSetup. Nothing calls applyBuildDefaults yet.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "applyBuildDefaults writes typecheckCommand, testCommand and resultFormat 'exit-code' together for a Python, Go, Rust and JVM repo with no build key",
+      "It writes nothing for a Node repo, an unknown repo, and an entry that sets any one of the three keys, and reports the reason",
+      "It never throws: an unreadable entry or a failed write is { applied: false, reason: 'write-failed', note } and leaves no lone command",
+      "repo.settings.get returns buildSetup (type, commands source, suggestion for a repo with none, 'invalid' with a note for a bad entry) and writes nothing",
+      "Typecheck passes"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/daemon/__tests__/repo-settings.test.ts: applyBuildDefaults writes the type's typecheck and test commands and resultFormat exit-code together for a Python, Go, Rust and JVM repo with no build key, and writes nothing for a Node repo, an unknown repo and an entry that already sets any of the three keys"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/__tests__/repo-settings.test.ts: applyBuildDefaults never throws and reports write-failed when the entry cannot be read or the write fails, leaving no lone command"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/__tests__/repo-settings.test.ts: repo.settings.get returns buildSetup with the type, the commands source and the suggestion for a repo with none, and writes nothing"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

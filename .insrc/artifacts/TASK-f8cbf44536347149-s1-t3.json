@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-98b904c4-9bcb-4f5f-8807-10edcaa41883",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-20T07:18:58.858Z",
+    "epicCreatedAt": "2026-11-20T06:25:36.857Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f8cbf44536347149",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Regenerate the shared fixture with buildSetup and show the suggestion in the terminal rows model",
+      "parent": {
+        "entityId": "STORY-f8cbf44536347149-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f8cbf44536347149-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-f8cbf44536347149-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "a8a2e8e793769fce7f36d8a39eefa82d73c832f2488bf73a86ce2d895bda840d",
+        "at": "2026-11-20T07:18:58.862Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T07:18:58.863Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Regenerate the shared fixture with buildSetup and show the suggestion in the terminal rows model",
+    "summary": "Add a buildSetup to the repo.settings.get payload of src/config/__tests__/fixtures/repo-fields-catalog.json, and make buildSettingsRows in src/cli/panes/repo-settings-model.ts show the suggestion as the placeholder of an unset Build row (a repo with commandsSource 'none' and a suggestion). Rows keep the daemon's order, labels and kinds; a payload without buildSetup behaves as before.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "The shared fixture's payload carries buildSetup and the terminal rows still equal the fixture's rows",
+      "An unset Build row of a repo with a suggestion shows the suggestion as its placeholder text",
+      "A payload with no buildSetup renders exactly as before",
+      "Typecheck passes"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/cli/__tests__/repo-fields-contract.test.ts: the shared fixture's repo.settings.get payload carries buildSetup and the terminal rows still equal the fixture's rows"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

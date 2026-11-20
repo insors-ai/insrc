@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3e120514-c495-47bb-8d06-af362696320b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-19T18:37:15.971Z",
+    "epicCreatedAt": "2026-11-19T18:15:53.783Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "787434000fa22691",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Render prompts and Definition of done from the profile",
+      "parent": {
+        "entityId": "STORY-787434000fa22691-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-787434000fa22691-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-787434000fa22691-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-787434000fa22691-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "259998d3f810290ec3ac29b0ae3345d9668ff4a31a3913e05b2441283ec5d650",
+        "at": "2026-11-19T18:37:15.975Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-19T18:37:15.976Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Render prompts and Definition of done from the profile",
+    "summary": "Replace the TYPECHECK_CMD and TEST_CMD literals in render.ts and the implement-task prompt slots with values from the profile and guidance table. A Node project keeps today's text; other types name their own commands; an unknown type is told to find and run the project's own typecheck and tests. The statement that the daemon already ran the checks is made only where the daemon ran them.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "A Node project's prompt still names npx tsc --noEmit and the Node test command",
+      "Prompts for python, go, rust and jvm name that type's commands and no npx tsc or npx tsx",
+      "The 'daemon already ran' text is absent when commandsSource is none",
+      "render.test.ts passes"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/daemon/steps/build-step/__tests__/render.test.ts: the prompt of a Node project still names npx tsc --noEmit and the Node test command"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/steps/build-step/__tests__/render.test.ts: the implement-task prompt and the Definition of done for a Python, Go, Rust and JVM project name that type's commands and no npx tsc or npx tsx"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

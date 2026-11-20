@@ -1,0 +1,81 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4932e2cc-d876-4249-b9b8-c5310e00748f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-20T07:18:58.864Z",
+    "epicCreatedAt": "2026-11-20T06:25:36.857Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f8cbf44536347149",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Terminal: a Build section and a 'use suggested' action on the Repo Configuration screen",
+      "parent": {
+        "entityId": "STORY-f8cbf44536347149-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f8cbf44536347149-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-f8cbf44536347149-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "a17130a098d07a9b201289cee14b7ee1eb80fab0046cbc505747baaee8fd12ca",
+        "at": "2026-11-20T07:18:58.868Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T07:18:58.869Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Terminal: a Build section and a 'use suggested' action on the Repo Configuration screen",
+    "summary": "In the terminal settings modal (src/cli/panes/RepoSettingsModal.tsx) show the Build rows as a section of their own and, for a repo with commands source 'none' and a suggestion, offer an action that writes the three suggested values with repo.settings.set, clearing the first key when the second cannot be written (the LLD's lone-command rule). Nothing else about the modal changes.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "The modal shows the Build rows as a section of their own with the suggestion as the placeholder of an unset row",
+      "The 'use suggested' action is offered only when commands source is 'none' and a suggestion exists, and never for a repo that has commands",
+      "It writes the three keys through repo.settings.set only when invoked, and writes nothing otherwise",
+      "When the second write fails the first key is cleared and the reason is shown, so no lone command is left",
+      "The existing modal tests pass with the section"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/cli/__tests__/settings-modal.test.ts: the terminal Repo Configuration screen shows the Build rows as a section of their own with the suggestion as the placeholder of an unset row"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

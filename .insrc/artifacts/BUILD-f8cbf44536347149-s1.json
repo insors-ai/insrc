@@ -1,0 +1,278 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 13,
+        "contentHash": "e76692f51515541c83eaa7bcfb132d42b75b7a6db850a34b3c1c34da1db6ae44",
+        "at": "2026-11-20T08:06:27.816Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 13,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T09:35:51.796Z",
+        "override": {
+          "reason": "User approved BUILD-f8cbf44536347149-s1 in chat (2026-11-20) after the self-review packet /tmp/.insrc/review-packet-f8cbf44536347149-s1.md; automated code review is unavailable. Evidence: all 7 tasks passed the build gate (t6 smoke reported from a JDK 21 Gradle run), full sweep compared with a clean baseline."
+        }
+      }
+    },
+    "workflow": "build",
+    "runId": "store-49a72007-95e7-40c9-8258-e03cd3a2a20f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-20T07:29:27.842Z",
+    "epicCreatedAt": "2026-11-20T06:25:36.857Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f8cbf44536347149",
+    "storyId": "s1",
+    "revision": 13,
+    "updatedAt": "2026-11-20T08:05:24.995Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicSlug": "set-build-commands-when-repo-added"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
+      }
+    ],
+    "testRecord": {
+      "md": "docs/standalone/set-build-commands-when-repo-added-E20261120f8cbf445/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/daemon/__tests__/repo-settings.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:05:24.995Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/repo-settings.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:05:24.995Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/handler-runtime.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:05:24.995Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/handler-runtime.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:05:24.995Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/__tests__/validate-task-round.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:05:24.995Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/__tests__/repo-fields-contract.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:05:24.995Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/panes/repo-settings-model.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:05:24.995Z"
+      },
+      {
+        "target": {
+          "file": "src/config/__tests__/fixtures/repo-fields-catalog.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:05:24.995Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/__tests__/settings-modal.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:05:24.995Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/panes/RepoSettingsModal.tsx"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:05:24.995Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/ui/widgets.tsx"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:05:24.995Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/extension.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:05:24.995Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/panels/__tests__/detail-renderers.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:05:24.995Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/panels/__tests__/repo-fields-contract.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:05:24.995Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/panels/repo-config.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:05:24.995Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/panels/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:05:24.995Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/panels/webview-host.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:05:24.995Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:05:24.995Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/InsrcSettingsConfigurable.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:05:24.995Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/PerRepoSection.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:05:24.995Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/RepoTrackerModel.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:05:24.995Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/RepoFieldsContractTest.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:05:24.995Z"
+      },
+      {
+        "target": {
+          "file": "docs/daemon.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:05:24.995Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/build-commands-doc.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:05:24.995Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/UnixSocketDaemonRpc.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:05:24.995Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/PlaceholderTextField.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:05:24.995Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/InsrcSettingsTrackerTest.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T08:05:24.995Z"
+      }
+    ],
+    "commit": "e9fd0c5b8"
+  },
+  "citations": []
+}

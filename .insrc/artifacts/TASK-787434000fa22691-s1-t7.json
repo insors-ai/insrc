@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e5c17469-a388-48a3-93a3-444ef5aa04ba",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-19T18:37:15.990Z",
+    "epicCreatedAt": "2026-11-19T18:15:53.783Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "787434000fa22691",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Test-file naming for a project with a repo setting (plan-level addition)",
+      "parent": {
+        "entityId": "STORY-787434000fa22691-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-787434000fa22691-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-787434000fa22691-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "d72fc981aa5e69e935d562e5943db1c4aaedde9a5bacd7905128a82d3407ff4b",
+        "at": "2026-11-19T18:37:15.993Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-19T18:37:15.994Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Test-file naming for a project with a repo setting (plan-level addition)",
+    "summary": "Plan-level addition for the user to confirm at approval, not in the LLD: test-mapping refuses a case file not ending in .test.ts and the trivial plan's isTest keeps only .test.ts files in __tests__. For a plan with commandsSource 'repo-setting' and a non-Node type, accept any repo-relative file for a case and treat the project's own test files as tests, leaving the Node rules unchanged.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "A Node plan still refuses a case file that is not .test.ts",
+      "A repo-setting python or go plan accepts its own test file path as a case",
+      "The trivial plan's isTest does not drop non-Node test files for such a plan",
+      "test-mapping.test.ts and validation-checks.test.ts pass"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/daemon/steps/build-step/__tests__/test-mapping.test.ts: a Node plan refuses a case file that is not .test.ts and a repo-setting plan accepts its own test file"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts: the trivial plan keeps a repo-setting project's own test files as tests"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

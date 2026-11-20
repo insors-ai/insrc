@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-854296be-6e21-447e-b3ec-1ce3f12bd988",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-19T18:37:15.983Z",
+    "epicCreatedAt": "2026-11-19T18:15:53.783Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "787434000fa22691",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Config catalog row, contract test and docs for the repo setting",
+      "parent": {
+        "entityId": "STORY-787434000fa22691-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-787434000fa22691-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-787434000fa22691-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "f9ee95d09c9fe88abd3f0738fa03324dc7001f62981e76b941cf3590f82cd432",
+        "at": "2026-11-19T18:37:15.987Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-19T18:37:15.988Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Config catalog row, contract test and docs for the repo setting",
+    "summary": "Add the config catalog row for the new setting, update the row count in config-catalog-contract.test.ts and document the key in docs/daemon.md.",
+    "size": "S",
+    "order": 6,
+    "acceptanceChecks": [
+      "config-catalog-contract test passes with the new row",
+      "docs/daemon.md documents the key, the two result formats and the no-setting behaviour"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/config/__tests__/config-catalog-contract.test.ts: the catalog contract holds with the new build-commands row"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

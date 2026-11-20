@@ -1,0 +1,52 @@
+{
+  "meta": {
+    "workflow": "design.epic",
+    "runId": "store-546c0994-0166-4fdb-b30f-f8e1804cb0f7",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-20T06:37:58.314Z",
+    "epicCreatedAt": "2026-11-18T06:14:00.057Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "03f4fd3b9102aab8",
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "06b4fafb9380285381ae0285af2cc731e76244c88f1b2e67b406df33a717f379",
+        "at": "2026-11-20T06:37:58.314Z",
+        "by": {
+          "id": "insrc:design.story",
+          "kind": "agent",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "id": "AMD-03f4fd3b9102aab8-1",
+    "epicSlug": "review-rounds-reconciliation-recovery",
+    "hldBaseRunId": "wf-1794986545330-2wntv5",
+    "amendment": {
+      "type": "storyBoundary.addConsumer",
+      "contractId": "sc3",
+      "storyId": "s4"
+    },
+    "rationale": "s4's own acceptance criteria (ac1's precondition 'for round > 1 its reconciliation, have finished', and ac2/lc3's inline resolved/still-open/contradicted annotation requirement) make consuming s3's ReconciliationResult a hard requirement for this Story, but the HLD's sc3.consumedByStories list and s4's own boundary.depends do not yet name this dependency. Declaring it explicitly keeps the dependency graph accurate without touching sc3's shape or s3's ownership -- a pure consumer-list addition, non-breaking.",
+    "proposedBy": {
+      "workflow": "design.story",
+      "runId": "wf-1795155781279-hewvfb",
+      "storyId": "s4",
+      "stepId": "s4"
+    },
+    "proposedAt": "2026-11-20T06:37:58.312Z"
+  },
+  "citations": []
+}

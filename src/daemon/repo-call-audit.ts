@@ -232,6 +232,7 @@ export const RPC_AUDIT: Readonly<Record<string, AuditEntry>> = {
 	'ollama.search': { kind: 'read-only', evidence: 'reads the graph, registry, config or model lists; writes nothing in a user repository (handler group ollama)' },
 	'providers.listModels': { kind: 'read-only', evidence: 'reads the graph, registry, config or model lists; writes nothing in a user repository (handler group providers)' },
 	'repo.add': { kind: 'daemon-store', evidence: 'changes the daemon\'s registry, graph and index queue for a repository; it writes no file in the repository (repo.add)' },
+	'repo.buildDefaults.migrate': { kind: 'daemon-store', evidence: 'repo-settings.ts migrateBuildDefaults writes only the daemon\'s own ~/.insrc/github.json, through its writer, for each registered repo; it writes no file in any repository' },
 	'repo.convert': { kind: 'modifying', repoParam: 'repo', pathParams: [], evidence: 'repo-convert.ts:36-53 converts a repository\'s artifacts to the current schema in apply mode; repo falls back to INSRC_REPO' },
 	'repo.gitHooks.install': { kind: 'modifying', repoParam: 'repo', pathParams: [], evidence: 'git-hooks-methods.ts apply writes the marked block into the post-merge and post-rewrite hook files of the registered repository; repo is required' },
 	'repo.gitHooks.status': { kind: 'read-only', evidence: 'git-hooks-methods.ts status reads the hook files of the registered repository and writes nothing' },

@@ -273,6 +273,7 @@ const TABLE: readonly (readonly [string, MethodClass, boolean])[] = [
 	['repo.gitHooks.install', 'session', false],
 	['repo.gitHooks.status', 'session', false],
 	['repo.gitHooks.uninstall', 'session', false],
+	['repo.buildDefaults.migrate', 'session', false],
 	['repo.settings.get', 'session', false],
 	['repo.settings.set', 'session', false],
 	['repo.trackerConfig.ensure', 'session', false],

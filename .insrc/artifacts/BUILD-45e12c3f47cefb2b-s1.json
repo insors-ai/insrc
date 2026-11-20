@@ -1,0 +1,115 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "e33a5f8a66cefa5e91903485674e58e144dd7255d3980e096d49a66414e543df",
+        "at": "2026-11-20T11:41:35.759Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T11:56:56.093Z",
+        "override": {
+          "reason": "User approved BUILD-45e12c3f47cefb2b-s1 in chat (2026-11-20) after the self-review packet /tmp/.insrc/review-packet-45e12c3f47cefb2b-s1.md; automated code review is unavailable. Evidence: the build gate passed 6 of 6 named tests with a clean typecheck, and the daemon test chunks were compared with a clean checkout of the build-start commit."
+        }
+      }
+    },
+    "workflow": "build",
+    "runId": "store-2923a493-eddc-4001-ad3e-eb60c90b6415",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-20T11:40:53.822Z",
+    "epicCreatedAt": "2026-11-20T09:50:08.502Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "45e12c3f47cefb2b",
+    "storyId": "s1",
+    "revision": 1,
+    "updatedAt": "2026-11-20T11:40:53.822Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "sizeClass": "small",
+    "epicSlug": "migrate-registered-repos-build-command-defaults"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "testRecord": {
+      "md": "docs/standalone/migrate-registered-repos-build-command-defaults-E2026112045e12c3f/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "docs/daemon.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T11:40:53.822Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/build-commands-doc.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T11:40:53.822Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/handler-runtime.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T11:40:53.822Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/repo-settings.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T11:40:53.822Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/repo-call-audit.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T11:40:53.822Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/repo-settings.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T11:40:53.822Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/method-class.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-20T11:40:53.822Z"
+      }
+    ],
+    "commit": "e3b6c2bdf"
+  },
+  "citations": []
+}

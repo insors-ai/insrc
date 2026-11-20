@@ -8,11 +8,12 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { createConnection, createServer } from 'node:net';
 import type { Socket } from 'node:net';
-import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { applyBuildDefaults, createRepoSettingsHandlers, mapSignin } from '../repo-settings.js';
+import { applyBuildDefaults, createRepoSettingsHandlers, mapSignin, migrateBuildDefaults } from '../repo-settings.js';
+import { writeRepoEntryKeys } from '../../workflow/config/github-store.js';
 import { REPO_TRACKER_FIELDS, validateRepoSetting } from '../../config/repo-fields.js';
 import type { RepoSettingsDeps, RepoSettingsPayload, SettingsResult } from '../repo-settings.js';
 import { IpcServer, directDispatch } from '../server.js';
@@ -535,4 +536,116 @@ test('repo.settings.get returns buildSetup with the type, the commands source an
 		assert.match(invalid.note ?? '', /testCommand/);
 		assert.equal(readFileSync(f.path, 'utf8'), before, 'get writes nothing');
 	} finally { f.cleanup(); for (const r of [py, node, unknown, own, bad]) rmSync(r, { recursive: true, force: true }); }
+});
+
+// ---- LLD-45e12c3f47cefb2b-s1: migrate the registered repos to the build-command defaults ----
+
+test('migrateBuildDefaults writes the typecheck and test commands and resultFormat exit-code together for each Python, Go, Rust and JVM repo with none of them, and writes nothing for a Node repo, an unknown repo, a repo whose directory is gone and an entry that sets any one of the three keys', async () => {
+	const dir = mkdtempSync(join(tmpdir(), 'insrc-migrate-'));
+	const path = join(dir, 'github.json');
+	const made: string[] = [];
+	const repo = (...markers: string[]): string => { const r = markerRepo(...markers); made.push(r); return r; };
+	try {
+		const py = repo('pyproject.toml'), go = repo('go.mod'), rust = repo('Cargo.toml'), jvm = repo('pom.xml');
+		const node = repo('package.json'), unknown = repo(), mixed = repo('package.json', 'go.mod');
+		const gone = join(dir, 'deleted-repo');
+		const oneKey = [repo('go.mod'), repo('go.mod'), repo('go.mod')];
+		const preset: Array<Record<string, string>> = [{ typecheckCommand: 'make check' }, { testCommand: 'make test' }, { resultFormat: 'tap' }];
+		writeFileSync(path, JSON.stringify({ repos: Object.fromEntries(oneKey.map((r, i) => [r, preset[i]])) }));
+
+		const report = await migrateBuildDefaults([py, go, rust, jvm, node, unknown, mixed, gone, ...oneKey], { configPath: path });
+		assert.equal(report.ok, true);
+		assert.deepEqual(report.repos.map(e => e.repo), [py, go, rust, jvm, node, unknown, mixed, gone, ...oneKey], 'one entry per repo, in the order given');
+		const expected: Array<[string, string, string]> = [[py, 'mypy .', 'pytest'], [go, 'go vet ./...', 'go test ./...'], [rust, 'cargo check', 'cargo test'], [jvm, 'mvn -q compile', 'mvn -q test']];
+		for (const [r, typecheck, test] of expected) {
+			assert.deepEqual(buildKeysOf(path, r), { typecheckCommand: typecheck, testCommand: test, resultFormat: 'exit-code' }, r);
+			assert.equal(report.repos.find(e => e.repo === r)?.outcome.applied, true);
+		}
+		for (const r of [node, unknown, mixed, gone]) assert.deepEqual(buildKeysOf(path, r), {}, `nothing written for ${r}`);
+		const reason = (r: string): unknown => { const o = report.repos.find(e => e.repo === r)!.outcome; return o.applied ? 'applied' : o.reason; };
+		assert.deepEqual([node, unknown, mixed, gone].map(reason), ['node-default', 'no-typical-commands', 'no-typical-commands', 'no-typical-commands']);
+		oneKey.forEach((r, i) => { assert.equal(reason(r), 'already-set'); assert.deepEqual(buildKeysOf(path, r), preset[i], 'the entry is kept as it was'); });
+		assert.deepEqual(report.counts, { 'applied': 4, 'already-set': 3, 'node-default': 1, 'no-typical-commands': 3, 'write-failed': 0 });
+	} finally { for (const r of made) rmSync(r, { recursive: true, force: true }); rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('migrateBuildDefaults run twice changes nothing the second time and reports already-set for the repos the first run set, and a user\'s own value set between the runs is kept', async () => {
+	const dir = mkdtempSync(join(tmpdir(), 'insrc-migrate-'));
+	const path = join(dir, 'github.json');
+	const py = markerRepo('pyproject.toml'), go = markerRepo('go.mod');
+	try {
+		const first = await migrateBuildDefaults([py, go], { configPath: path });
+		assert.deepEqual(first.counts, { 'applied': 2, 'already-set': 0, 'node-default': 0, 'no-typical-commands': 0, 'write-failed': 0 });
+		const afterFirst = readFileSync(path, 'utf8');
+
+		const second = await migrateBuildDefaults([py, go], { configPath: path });
+		assert.deepEqual(second.counts, { 'applied': 0, 'already-set': 2, 'node-default': 0, 'no-typical-commands': 0, 'write-failed': 0 });
+		assert.equal(readFileSync(path, 'utf8'), afterFirst, 'the second run changes nothing');
+
+		// the user edits one repo between the runs: a third run keeps it
+		assert.equal((await writeRepoEntryKeys(py, { testCommand: 'pytest -q' }, path)).ok, true);
+		const third = await migrateBuildDefaults([py, go], { configPath: path });
+		assert.equal(third.counts['already-set'], 2);
+		assert.equal(buildKeysOf(path, py)['testCommand'], 'pytest -q', "the user's own value is kept");
+	} finally { rmSync(py, { recursive: true, force: true }); rmSync(go, { recursive: true, force: true }); rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('migrateBuildDefaults keeps going when one repo\'s write is refused or throws, reports write-failed with its note for that repo only, and reports write-failed for every repo, leaving the file as it was, when github.json is malformed', async () => {
+	const dir = mkdtempSync(join(tmpdir(), 'insrc-migrate-'));
+	const path = join(dir, 'github.json');
+	const py = markerRepo('pyproject.toml'), go = markerRepo('go.mod'), rust = markerRepo('Cargo.toml'), jvm = markerRepo('pom.xml');
+	try {
+		const writeKeys: typeof writeRepoEntryKeys = async (repo, patch, configPath) => {
+			if (repo === go) return { ok: false, error: { code: 'write-failed', message: 'disk full' } };
+			if (repo === rust) throw new Error('boom');
+			return await writeRepoEntryKeys(repo, patch, configPath);
+		};
+		const report = await migrateBuildDefaults([py, go, rust, jvm], { configPath: path, writeKeys });
+		const outcome = (r: string) => report.repos.find(e => e.repo === r)!.outcome;
+		assert.equal(outcome(py).applied, true);
+		assert.equal(outcome(jvm).applied, true, 'the repos after a failure are still migrated');
+		assert.deepEqual(outcome(go), { applied: false, reason: 'write-failed', note: 'disk full' });
+		assert.deepEqual(outcome(rust), { applied: false, reason: 'write-failed', note: 'boom' });
+		assert.deepEqual(report.counts, { 'applied': 2, 'already-set': 0, 'node-default': 0, 'no-typical-commands': 0, 'write-failed': 2 });
+		assert.deepEqual(buildKeysOf(path, go), {}, 'no lone command is left');
+
+		// a malformed github.json: every repo reports write-failed and the file is left as it was
+		writeFileSync(path, '{ not json');
+		const bad = await migrateBuildDefaults([py, go, rust, jvm], { configPath: path });
+		assert.equal(bad.counts['write-failed'], 4);
+		assert.ok(bad.repos.every(e => !e.outcome.applied && e.outcome.reason === 'write-failed' && (e.outcome.note ?? '').length > 0));
+		assert.equal(readFileSync(path, 'utf8'), '{ not json');
+	} finally { for (const r of [py, go, rust, jvm]) rmSync(r, { recursive: true, force: true }); rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('the repo.buildDefaults.migrate handler returns ok, one entry per registered repo in registry order and counts with a key for every outcome that add up to the number of repos, returns zero counts for no repos, and returns registry-unreadable as data when the registry cannot be listed, writing nothing', async () => {
+	const py = markerRepo('pyproject.toml'), node = markerRepo('package.json'), unknown = markerRepo();
+	const f = fixture({ repos: [unknown, py, node] });
+	const KEYS = ['applied', 'already-set', 'node-default', 'no-typical-commands', 'write-failed'];
+	try {
+		const report = await f.call('repo.buildDefaults.migrate', undefined);
+		assert.equal(report.ok, true);
+		assert.deepEqual(report.repos.map((e: { repo: string }) => e.repo), [unknown, py, node], 'registry order');
+		assert.deepEqual(Object.keys(report.counts).sort(), [...KEYS].sort(), 'a key for every outcome');
+		assert.equal(Object.values(report.counts as Record<string, number>).reduce((a, b) => a + b, 0), 3);
+		assert.deepEqual(report.counts, { 'applied': 1, 'already-set': 0, 'node-default': 1, 'no-typical-commands': 1, 'write-failed': 0 });
+		assert.deepEqual(buildKeysOf(f.path, py), { typecheckCommand: 'mypy .', testCommand: 'pytest', resultFormat: 'exit-code' });
+	} finally { f.cleanup(); for (const r of [py, node, unknown]) rmSync(r, { recursive: true, force: true }); }
+
+	// no repos: ok with zero counts and no file
+	const empty = fixture({ repos: [] });
+	try {
+		const none = await empty.call('repo.buildDefaults.migrate', {});
+		assert.deepEqual(none, { ok: true, repos: [], counts: { 'applied': 0, 'already-set': 0, 'node-default': 0, 'no-typical-commands': 0, 'write-failed': 0 } });
+	} finally { empty.cleanup(); }
+
+	// the registry cannot be listed: an error as data, and nothing written
+	const dir = mkdtempSync(join(tmpdir(), 'insrc-migrate-'));
+	const path = join(dir, 'github.json');
+	try {
+		const handlers = createRepoSettingsHandlers({ registeredRepos: async () => { throw new Error('registry store unreadable'); }, configPath: () => path });
+		const failed = await handlers['repo.buildDefaults.migrate']!(undefined) as { ok: boolean; error: { code: string; message: string } };
+		assert.deepEqual(failed, { ok: false, error: { code: 'registry-unreadable', message: 'registry store unreadable' } });
+		assert.equal(existsSync(path), false, 'nothing is written');
+	} finally { rmSync(dir, { recursive: true, force: true }); }
 });

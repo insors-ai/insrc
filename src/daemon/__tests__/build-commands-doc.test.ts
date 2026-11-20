@@ -87,19 +87,10 @@ const OLD_VAR = ['INSRC', 'GITHUB', 'CONFIG'].join('_');
 const DOCS_DIR = fileURLToPath(new URL('../../../docs/', import.meta.url));
 const LIVE_DOCS = ['daemon.md', 'workflow.md', 'installation.md', 'index.html', ...readdirSync(join(DOCS_DIR, 'plans')).filter(f => f.endsWith('.md')).map(f => `plans/${f}`)];
 
-// How many times each live doc names the settings file today. A doc that names a different file where it names this one has
-// fewer, so the count is what makes the test fail when a doc gives another name. Raise a count when a doc gains a mention.
-const FILE_MENTIONS: Readonly<Record<string, number>> = {
-	'daemon.md': 11,
-	'workflow.md': 5,
-	'installation.md': 1,
-	'index.html': 1,
-	'plans/meta-workflow-framework.md': 2,
-	'plans/repo-call-audit.md': 1,
-	'plans/team-workflow.md': 4,
-	'plans/workflow-define.md': 1,
-	'plans/workflow-implementation.md': 6,
-};
+// The ~/.insrc/*.json files the live docs may name: the settings file the code reads, the daemon's own config and identity
+// files, and the old name (which the checks below allow only where a line says it was renamed). Any other name given with
+// the ~/.insrc path, such as another name for the settings file, fails the test.
+const KNOWN_INSRC_JSON = new Set(['repo-config.json', 'config.json', 'identity.json', 'github.json']);
 
 test('build-commands-doc.test.ts: docs/daemon.md and the other live docs name repo-config.json and INSRC_REPO_CONFIG in line with the code', () => {
 	// the file name and the variable the docs give are the ones the code uses
@@ -144,10 +135,12 @@ test('build-commands-doc.test.ts: docs/daemon.md and the other live docs name re
 			assert.ok(!text.includes(OLD_VAR), `${doc}: a plan never names ${OLD_VAR}`);
 		}
 	}
-	// each doc names the file as often as it did when it was updated, so no mention was changed to another name
-	for (const [doc, count] of Object.entries(FILE_MENTIONS)) {
-		const text = readFileSync(join(DOCS_DIR, doc), 'utf8');
-		assert.ok(text.split(fileName).length - 1 >= count, `${doc} names ${fileName} at least ${count} times`);
+	// every ~/.insrc/<name>.json a live doc names is the settings file the code reads or one of the daemon's other known files,
+	// so a doc that gives the settings file another name fails, wherever it does so
+	for (const doc of LIVE_DOCS) {
+		for (const m of readFileSync(join(DOCS_DIR, doc), 'utf8').matchAll(/~\/\.insrc\/([A-Za-z0-9._-]+\.json)/g)) {
+			assert.ok(KNOWN_INSRC_JSON.has(m[1]!), `${doc} names ~/.insrc/${m[1]}, which is neither the settings file ${fileName} nor a known daemon file`);
+		}
 	}
 	// the tree listings in workflow.md and the plans keep the file's line
 	for (const doc of ['workflow.md', 'plans/workflow-implementation.md', 'plans/meta-workflow-framework.md']) {

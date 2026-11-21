@@ -481,11 +481,15 @@ export async function writeCheckpoint(
  * made readCheckpoint reject instead of following its own documented policy
  * of treating a redirected or unreadable checkpoint as absent, aborting a
  * resume instead of letting it fall back to a fresh start. Fixed by catching
- * the chain-acquisition failure too, but narrowly: an UnsupportedPlatformError
- * (no confirmed child-relative fd alias on this platform) and the repository-
- * resolution failure above it still propagate unchanged -- both are genuine
- * environment problems the caller needs to know about, not a data-integrity
- * question about this one checkpoint.
+ * the chain-acquisition failure too. (Round 5: this was first fixed narrowly,
+ * rethrowing UnsupportedPlatformError as a genuine environment problem -- but
+ * that left a malformed-but-existing checkpoint behaving differently from a
+ * missing one on a non-Linux platform, breaking this function's own
+ * unconditional "undefined for missing OR malformed, never throw" contract,
+ * which carries no platform exception. Swallowed unconditionally instead: see
+ * the comment directly on the catch below for why a read, unlike a write, has
+ * no unsafe outcome from doing so. Only the repository-resolution failure
+ * above still propagates -- a distinct, genuine environment problem.)
  */
 export async function readCheckpoint(reviewId: string): Promise<ReviewCheckpoint | undefined> {
 	requireValidReviewId(reviewId);
@@ -503,12 +507,22 @@ export async function readCheckpoint(reviewId: string): Promise<ReviewCheckpoint
 	// before ever touching FD_ALIAS_ROOT's Linux-only mechanism.
 	if (anySegmentAbsent(repoRoot, '.insrc', 'tmp', reviewId, 'checkpoint.json')) return undefined;
 
+	// Externally reported P2 (round 5): a checkpoint that genuinely exists but
+	// is malformed is not distinguishable, before opening it, from one this
+	// platform simply cannot safely open at all -- yet readCheckpoint's own
+	// contract (ac2) commits unconditionally to "undefined for missing OR
+	// malformed, never throw", with no platform carve-out, unlike
+	// writeCheckpoint/finalizeAndCleanup (where silently proceeding on an
+	// unsupported platform would be the dangerous outcome, so refusing is
+	// correct there). A read has no such downside: discarding an unverifiable
+	// checkpoint as absent is always safe, never a silent unprotected write.
+	// So UnsupportedPlatformError, unlike every other failure this function
+	// propagates, is swallowed here rather than rethrown.
 	let chain: PinnedChain | undefined;
 	try {
 		chain = pinDirectoryChain(repoRoot, '.insrc', 'tmp', reviewId);
-	} catch (err) {
-		if (err instanceof UnsupportedPlatformError) throw err;
-		return undefined; // a symlinked ancestor (or other path-integrity issue) is treated the same as absent
+	} catch {
+		return undefined; // a symlinked ancestor, an unsupported platform, or any other path-integrity issue -- all treated the same as absent
 	}
 	if (chain === undefined) return undefined; // no review directory at all yet -- a fresh review
 

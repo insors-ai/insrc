@@ -135,6 +135,31 @@ test('Source lifecycle RPC authenticates the socket peer before sending request 
  await actor.close(); f.retain(undefined);
 }));
 
+test('Native source actor reconciles a lost status transport only with positive subtree closure', { timeout: 480_000 }, async t => sourceLinux(t, file, project, async () => {
+ const f = await fixture(t), actor = await SourceNativeActor.launch(f.options); f.retain(actor);
+ await actor.grant(); await ready(f.root);
+ for (const close of [false, true]) {
+  const client = join(f.root, `status-race-${close}.mjs`);
+  writeFileSync(client, `#!${process.execPath}\nimport {execFileSync} from 'node:child_process';
+if(process.argv[2]==='control'&&process.argv[6]==='STATUS'){
+ if(${close})execFileSync(${JSON.stringify(f.options.binary)},['control',...process.argv.slice(3,6),'KILL']);
+ process.exit(3);
+}
+execFileSync(${JSON.stringify(f.options.binary)},process.argv.slice(2),{stdio:'inherit'});
+`, { mode: 0o700 });
+  if (!close) {
+   await assert.rejects(SourceNativeActor.reopen(actor.directory, client));
+   assert.equal(await actor.target.handle.hasExited(), false, 'a failed status without closure proof must not be treated as exit');
+  } else {
+   const reopened = await SourceNativeActor.reopen(actor.directory, client);
+   assert.equal(await reopened.target.handle.hasExited(), true);
+   await reopened.childrenClosed(); await reopened.close();
+   await actor.childrenClosed();
+  }
+ }
+ await actor.close(); f.retain(undefined);
+}));
+
 test('Daemon store probe is gated, leaves empty state untouched and refuses incomplete stores', { timeout: 480_000 }, async t => sourceLinux(t, file, project, async () => {
  for (const scenario of ['empty', 'partial', 'wrong-state', 'changed-formats', 'dangling-link', 'compaction-leftover', 'orphan-lock']) {
   const f = await fixture(t), release = f.options.release.root, home = join(f.root, 'home'), stateRoot = join(home, '.insrc');

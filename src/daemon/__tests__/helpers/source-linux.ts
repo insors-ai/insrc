@@ -8,7 +8,8 @@ import type { TestContext } from 'node:test';
 import policy from '../../../assets/node-runtime-policy.json' with { type: 'json' };
 
 /** Retain TAP from real Linux descriptor/process operations on each qualified architecture. */
-export async function sourceLinux(t: TestContext, file: string, project: string, run: () => Promise<void>): Promise<void> {
+export async function sourceLinux(t: TestContext, file: string, project: string, run: () => Promise<void>,
+ options: { timeoutMs?: number | undefined } = {}): Promise<void> {
  if (process.platform === 'linux') { await run(); return; }
  assert.equal(process.platform, 'darwin', 'these tests require Linux or the known OrbStack fixtures');
  const inventory = JSON.parse(execFileSync('orb', ['list', '--format=json'], { encoding: 'utf8' })) as Array<{ name: string; state: string }>;
@@ -28,7 +29,7 @@ export async function sourceLinux(t: TestContext, file: string, project: string,
    let result: string;
    try { result = execFileSync('orb', ['-m', name, '/usr/bin/env', `INSRC_SOURCE_TEST_REPO=${guestRoot}`, node,
     '--test', '--test-reporter=tap', `--test-name-pattern=^${t.name}$`, `/mnt/mac${bundle}`], {
-    encoding: 'utf8', timeout: 240_000, maxBuffer: 256 * 1024 }); }
+    encoding: 'utf8', timeout: options.timeoutMs ?? 240_000, maxBuffer: 256 * 1024 }); }
    catch (error) {
     const failed = error as { stdout?: string; stderr?: string; message?: string };
     writeFileSync(join(stage, `${name}-failed.tap`), `${failed.stdout ?? ''}\n${failed.stderr ?? ''}`);

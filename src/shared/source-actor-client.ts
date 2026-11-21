@@ -151,7 +151,12 @@ export class SourceNativeActor {
  }
  async kill(): Promise<void> {
   if (SourceNativeActor.hasClosedReceipt(this.directory, this.ticket)) { await this.childrenClosed(); return; }
-  const reply = await SourceNativeActor.control(this.binary, this.ticket.token, this.ticket.monitor, 'KILL');
+  let reply: string;
+  try { reply = await SourceNativeActor.control(this.binary, this.ticket.token, this.ticket.monitor, 'KILL'); }
+  catch (error) {
+   if (!SourceNativeActor.hasClosedReceipt(this.directory, this.ticket)) throw error;
+   await this.childrenClosed(); return;
+  }
   if (reply !== `CLOSED ${this.target.pid}`) throw new Error('Source actor/descendant exit is unconfirmed');
   await this.childrenClosed();
  }
@@ -209,7 +214,14 @@ export class SourceNativeActor {
   const closed = () => SourceNativeActor.hasClosedReceipt(directory, ticket);
   const state = async () => {
    if (closed()) return true;
-   const reply = await SourceNativeActor.control(binary, ticket.token, ticket.monitor, 'STATUS');
+   let reply: string;
+   try { reply = await SourceNativeActor.control(binary, ticket.token, ticket.monitor, 'STATUS'); }
+   catch (error) {
+    // The native owner may publish closure and exit between the receipt read and connect.
+    // Only that positive, actor-bound proof reconciles a failed transport.
+    if (closed()) return true;
+    throw error;
+   }
    if (!new RegExp(`^(WAITING|STARTING|RUNNING|COMMITTED) ${ticket.root.pid}$`).test(reply)) throw new Error('Source supervisor changed its root');
    return false;
   };

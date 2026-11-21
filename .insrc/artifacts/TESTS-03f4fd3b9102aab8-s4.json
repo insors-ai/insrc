@@ -1,0 +1,324 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 12,
+        "contentHash": "c41eddee7a367e20d21a4f83c18ce502098337751a3de02c3e64232dbe5823bb",
+        "at": "2026-11-21T05:22:29.331Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "03f4fd3b9102aab8",
+    "storyId": "s4",
+    "createdAt": "2026-11-21T04:29:12.662Z",
+    "updatedAt": "2026-11-21T05:22:29.082Z",
+    "epicCreatedAt": "2026-11-18T06:14:00.057Z",
+    "epicSlug": "review-rounds-reconciliation-recovery",
+    "revision": 12
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "8801081b4",
+        "ranAt": "2026-11-21T05:22:29.082Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "renderReviewReport writes a persisted Markdown file under the review's own .insrc/tmp/<reviewId>/ directory and returns its path",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/review-report.test.ts",
+                "title": "renderReviewReport writes a persisted Markdown file under the review's own .insrc/tmp/<reviewId>/ directory and returns its path",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-round/__tests__/review-report.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3063,
+            "titles": [
+              {
+                "title": "renderReviewReport writes a persisted Markdown file under the review's own .insrc/tmp/<reviewId>/ directory and returns its path",
+                "result": "pass"
+              },
+              {
+                "title": "the written Markdown renders every finding in this round's own findings array, each annotated with its category and severity",
+                "result": "pass"
+              },
+              {
+                "title": "for round 1, the rendered Markdown carries no reconciliation annotation section at all, since no prior round exists to reconcile against",
+                "result": "pass"
+              },
+              {
+                "title": "for round greater than 1, the rendered Markdown inlines each reconciliation result's verdict next to the prior finding it refers to (via priorFindings), limited to only the findings this round's own reconciliation classified -- never a running audit of all history",
+                "result": "pass"
+              },
+              {
+                "title": "a reviewId containing a path-traversal segment is rejected before any filesystem access",
+                "result": "pass"
+              },
+              {
+                "title": "a non-positive-integer round is rejected with a RangeError before any write",
+                "result": "pass"
+              },
+              {
+                "title": "when the reviewed repository cannot be resolved, renderReviewReport rejects rather than silently defaulting to the daemon process's own cwd",
+                "result": "pass"
+              },
+              {
+                "title": "a rejecting filesystem write propagates its rejection rather than returning a path to a file that was never actually written",
+                "result": "pass"
+              },
+              {
+                "title": "an empty findings array still renders successfully with an explicit statement that no findings were produced this round",
+                "result": "pass"
+              },
+              {
+                "title": "the returned markdown is exactly the persisted file's own content, which the caller presents directly to satisfy ac3 -- insrc_present (confirmed against its real handler) never applies to a review-report",
+                "result": "pass"
+              },
+              {
+                "title": "a symlinked review directory is never written through, even outside .insrc/tmp",
+                "result": "pass"
+              },
+              {
+                "title": "a symlinked report file is never written through -- it must not truncate or overwrite an unrelated external file",
+                "result": "pass"
+              },
+              {
+                "title": "a DANGLING symlinked report file (target does not yet exist) is never written through -- existsSync alone cannot see it",
+                "result": "pass"
+              },
+              {
+                "title": "review A's own directory aliased (via symlink) to sibling review B's genuine directory is rejected, not written through",
+                "result": "pass"
+              },
+              {
+                "title": "renderReviewReport and ReviewReportDocgenCall",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "8801081b4",
+        "ranAt": "2026-11-21T05:21:15.176Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "the written Markdown renders every finding in this round's own findings array, each annotated with its category and severity",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/review-report.test.ts",
+                "title": "the written Markdown renders every finding in this round's own findings array, each annotated with its category and severity",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "for round 1, the rendered Markdown carries no reconciliation annotation section at all, since no prior round exists to reconcile against",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/review-report.test.ts",
+                "title": "for round 1, the rendered Markdown carries no reconciliation annotation section at all, since no prior round exists to reconcile against",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "for round greater than 1, the rendered Markdown inlines each reconciliation result's verdict next to the prior finding it refers to (via priorFindings), limited to only the findings this round's own reconciliation classified -- never a running audit of all history",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/review-report.test.ts",
+                "title": "for round greater than 1, the rendered Markdown inlines each reconciliation result's verdict next to the prior finding it refers to (via priorFindings), limited to only the findings this round's own reconciliation classified -- never a running audit of all history",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a reviewId containing a path-traversal segment is rejected before any filesystem access",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/review-report.test.ts",
+                "title": "a reviewId containing a path-traversal segment is rejected before any filesystem access",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a non-positive-integer round is rejected with a RangeError before any write",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/review-report.test.ts",
+                "title": "a non-positive-integer round is rejected with a RangeError before any write",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "when the reviewed repository cannot be resolved, renderReviewReport rejects rather than silently defaulting to the daemon process's own cwd",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/review-report.test.ts",
+                "title": "when the reviewed repository cannot be resolved, renderReviewReport rejects rather than silently defaulting to the daemon process's own cwd",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a rejecting filesystem write propagates its rejection rather than returning a path to a file that was never actually written",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/review-report.test.ts",
+                "title": "a rejecting filesystem write propagates its rejection rather than returning a path to a file that was never actually written",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "an empty findings array still renders successfully with an explicit statement that no findings were produced this round",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/review-report.test.ts",
+                "title": "an empty findings array still renders successfully with an explicit statement that no findings were produced this round",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the returned markdown is exactly the persisted file's own content, which the caller presents directly to satisfy ac3 -- insrc_present (confirmed against its real handler) never applies to a review-report",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/review-report.test.ts",
+                "title": "the returned markdown is exactly the persisted file's own content, which the caller presents directly to satisfy ac3 -- insrc_present (confirmed against its real handler) never applies to a review-report",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-round/__tests__/review-report.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3004,
+            "titles": [
+              {
+                "title": "renderReviewReport writes a persisted Markdown file under the review's own .insrc/tmp/<reviewId>/ directory and returns its path",
+                "result": "pass"
+              },
+              {
+                "title": "the written Markdown renders every finding in this round's own findings array, each annotated with its category and severity",
+                "result": "pass"
+              },
+              {
+                "title": "for round 1, the rendered Markdown carries no reconciliation annotation section at all, since no prior round exists to reconcile against",
+                "result": "pass"
+              },
+              {
+                "title": "for round greater than 1, the rendered Markdown inlines each reconciliation result's verdict next to the prior finding it refers to (via priorFindings), limited to only the findings this round's own reconciliation classified -- never a running audit of all history",
+                "result": "pass"
+              },
+              {
+                "title": "a reviewId containing a path-traversal segment is rejected before any filesystem access",
+                "result": "pass"
+              },
+              {
+                "title": "a non-positive-integer round is rejected with a RangeError before any write",
+                "result": "pass"
+              },
+              {
+                "title": "when the reviewed repository cannot be resolved, renderReviewReport rejects rather than silently defaulting to the daemon process's own cwd",
+                "result": "pass"
+              },
+              {
+                "title": "a rejecting filesystem write propagates its rejection rather than returning a path to a file that was never actually written",
+                "result": "pass"
+              },
+              {
+                "title": "an empty findings array still renders successfully with an explicit statement that no findings were produced this round",
+                "result": "pass"
+              },
+              {
+                "title": "the returned markdown is exactly the persisted file's own content, which the caller presents directly to satisfy ac3 -- insrc_present (confirmed against its real handler) never applies to a review-report",
+                "result": "pass"
+              },
+              {
+                "title": "a symlinked review directory is never written through, even outside .insrc/tmp",
+                "result": "pass"
+              },
+              {
+                "title": "a symlinked report file is never written through -- it must not truncate or overwrite an unrelated external file",
+                "result": "pass"
+              },
+              {
+                "title": "a DANGLING symlinked report file (target does not yet exist) is never written through -- existsSync alone cannot see it",
+                "result": "pass"
+              },
+              {
+                "title": "review A's own directory aliased (via symlink) to sibling review B's genuine directory is rejected, not written through",
+                "result": "pass"
+              },
+              {
+                "title": "renderReviewReport and ReviewReportDocgenCall",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

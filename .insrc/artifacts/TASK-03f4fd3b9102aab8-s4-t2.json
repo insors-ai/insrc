@@ -1,0 +1,120 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-7abc1d77-655b-4197-b4a5-4ad332afc08f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-21T04:24:20.348Z",
+    "epicCreatedAt": "2026-11-18T06:14:00.057Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "03f4fd3b9102aab8",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Add the full named test suite for renderReviewReport/ReviewReportDocgenCall",
+      "parent": {
+        "entityId": "STORY-03f4fd3b9102aab8-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-03f4fd3b9102aab8-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-03f4fd3b9102aab8-s4-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#223",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9dab37cc0076bfc4f19368d52a0d38ea5e4e31f881a2b6bb7ebc2ce9d931df54",
+        "at": "2026-11-21T04:24:20.348Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-21T04:24:20.349Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the full named test suite for renderReviewReport/ReviewReportDocgenCall",
+    "summary": "One it() per testStrategy.testLevels subject (10 total) in __tests__/review-report.test.ts, matching ac1-ac3's acceptanceMapping.provingTests verbatim, using _setReviewReportDepsForTests to inject a stub repo-resolution dependency and sample Finding/ReconciliationResult fixtures (including a reconciliation entry whose priorFindingRef has no matching priorFindings entry), plus a temp-directory fixture standing in for .insrc/tmp/<reviewId>/.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "All 10 named test subjects from testStrategy.testLevels[0].subjects exist as individual it() cases with matching titles",
+      "ac1, ac2 and ac3's acceptanceMapping.provingTests all pass",
+      "npx tsx --test for the new test file passes with zero failures"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "the written Markdown renders every finding in this round's own findings array, each annotated with its category and severity"
+      },
+      {
+        "level": "unit",
+        "name": "for round 1, the rendered Markdown carries no reconciliation annotation section at all, since no prior round exists to reconcile against"
+      },
+      {
+        "level": "unit",
+        "name": "for round greater than 1, the rendered Markdown inlines each reconciliation result's verdict next to the prior finding it refers to (via priorFindings), limited to only the findings this round's own reconciliation classified -- never a running audit of all history"
+      },
+      {
+        "level": "unit",
+        "name": "a reviewId containing a path-traversal segment is rejected before any filesystem access"
+      },
+      {
+        "level": "unit",
+        "name": "a non-positive-integer round is rejected with a RangeError before any write"
+      },
+      {
+        "level": "unit",
+        "name": "when the reviewed repository cannot be resolved, renderReviewReport rejects rather than silently defaulting to the daemon process's own cwd"
+      },
+      {
+        "level": "unit",
+        "name": "a rejecting filesystem write propagates its rejection rather than returning a path to a file that was never actually written"
+      },
+      {
+        "level": "unit",
+        "name": "an empty findings array still renders successfully with an explicit statement that no findings were produced this round"
+      },
+      {
+        "level": "unit",
+        "name": "the path renderReviewReport returns points to a file that exists and is readable immediately after the call resolves, so insrc_present can open it with no further round-driver action"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

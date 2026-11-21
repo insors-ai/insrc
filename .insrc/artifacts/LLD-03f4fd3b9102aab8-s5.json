@@ -1,20 +1,20 @@
 {
   "meta": {
     "workflow": "design.story",
-    "runId": "wf-1795096721605-xcmfqt",
+    "runId": "wf-1795246351382-jujbmw",
     "repoPath": "/home/subho/work/dev/insors/insrc",
-    "createdAt": "2026-11-19T14:03:09.274Z",
+    "createdAt": "2026-11-21T07:40:28.811Z",
     "attribution": {
       "outputs": [
         {
           "role": "(client)",
           "tier": "core",
           "runner": "cli-claude",
-          "model": "unknown"
+          "model": "claude-sonnet-5"
         }
       ]
     },
-    "elapsedMs": 264464,
+    "elapsedMs": 469218,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicCreatedAt": "2026-11-18T06:14:00.057Z",
@@ -29,9 +29,9 @@
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 1,
-        "contentHash": "abd5b4404366390305fc58c64220363fac41c9a5755d1a228b18b776eed7b5f7",
-        "at": "2026-11-19T14:03:10.436Z",
+        "number": 2,
+        "contentHash": "51c4cada5fafa8d59951e339de8fbddb3dc239b6ce5ccb85f8466eb94f700798",
+        "at": "2026-11-21T07:40:31.846Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
@@ -40,25 +40,41 @@
       },
       "signoffs": [],
       "approval": {
-        "revision": 1,
+        "revision": 2,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-11-19T14:47:20.747Z"
+        "at": "2026-11-21T08:01:15.984Z"
       }
     },
-    "revision": 1,
     "envelope": {
       "description": "",
       "references": [],
       "attachments": []
+    },
+    "revision": 2,
+    "questionResolutions": {
+      "qefc9984a": {
+        "question": "ep3 (partial): invariantsToPreserve cite Epic constraint source 'c1' rather than an s1 analyze-bundle entity, since this Story is entirely new capability with no current-code invariant to analyze -- the Epic's own k1/k6/k7/k8 constraints are the only available grounding. Flagged for completeness; not considered blocking since no current-behaviour invariant exists to cite instead.",
+        "status": "resolved",
+        "choice": "Retain Epic grounding",
+        "rationale": "Preserves the available evidence (Epic constraints k1/k6/k7/k8 via c1) and clarifies its provenance as upstream design grounding rather than existing-code analysis, since this Story is entirely new capability with no current-behaviour invariant to cite instead.",
+        "resolvedAt": "2026-11-21T08:03:50.464Z"
+      },
+      "qdc3aa50e": {
+        "question": "Integration gap (non-blocking, HLD-aligned): this LLD exposes writeCheckpoint/readCheckpoint/finalizeAndCleanup and proves them in isolation, but wiring them into s1's own round-driver cycle (calling writeCheckpoint after each completed unit, readCheckpoint before starting a resumed review, and finalizeAndCleanup at a terminal state) is s1's own adjacent-boundary responsibility, not built here.",
+        "status": "resolved",
+        "choice": "Add an explicit integration contract",
+        "rationale": "Preserves the HLD-aligned s5/s1 ownership boundary (s5 stays independently testable, consuming only sc1) while documenting the three required call sites (write after each completed unit, read before a resumed review, finalize at a terminal state) as an explicit, verifiable integration contract for s1's own plan to pick up -- rather than silently expanding s5's scope into s1's adjacent boundary.",
+        "resolvedAt": "2026-11-21T08:04:14.510Z"
+      }
     }
   },
   "body": {
     "summary": {
-      "prose": "This Story adds the generic review-checkpoint record and the .insrc/tmp/<reviewId>/ folder lifecycle that make a review resumable after a crash and its final result durable after cleanup. A checkpoint is written automatically after each completed unit of work -- a round for design review, a Task for code review -- and a resume reads it back to skip what already finished. Before the temp folder is ever deleted, the final round's output is copied into durable storage first.",
+      "prose": "This Story adds the review checkpoint record (sc5): a small, independent JSON side-record under each review's own .insrc/tmp/<reviewId>/ folder, written automatically once per completed round or Task so a crash costs at most one unit of rework, plus a final step that copies a completed review's last output into durable storage before its scratch folder is deleted. The round-driver (s1, owned elsewhere) calls these functions; this Story only exposes and proves them.",
       "audience": "technical"
     },
     "hldContextSlice": {
@@ -151,80 +167,121 @@
       }
     },
     "contractDetails": {
+      "summary": {
+        "prose": "This Story adds the review checkpoint record (sc5): a small, independent JSON side-record under each review's own .insrc/tmp/<reviewId>/ folder, written automatically once per completed round or Task so a crash costs at most one unit of rework, plus a final step that copies a completed review's last output into durable storage before its scratch folder is deleted. The round-driver (s1, owned elsewhere) calls these functions; this Story only exposes and proves them.",
+        "audience": "technical"
+      },
       "surfaceLevel": "internal-shared",
       "api": [
         {
           "name": "writeCheckpoint",
-          "signature": "function writeCheckpoint(checkpoint: ReviewCheckpoint): Promise<void>",
+          "signature": "function writeCheckpoint(reviewId: string, lastCompletedUnit: { readonly kind: 'round' | 'task'; readonly ref: number | string }): Promise<void>",
           "parameters": [
             {
-              "name": "checkpoint",
-              "type": "ReviewCheckpoint",
-              "purpose": "The reviewId and the unit (round or Task) that just finished -- written automatically by the round-driver's cycle, with no agent-driven step (ac1/k6).",
+              "name": "reviewId",
+              "type": "string",
+              "purpose": "The review's own identity -- the same literal string already used to name its .insrc/tmp/<reviewId>/ folder in reconciliation.ts and review-report.ts.",
+              "optional": false
+            },
+            {
+              "name": "lastCompletedUnit",
+              "type": "{ readonly kind: 'round' | 'task'; readonly ref: number | string }",
+              "purpose": "The unit of work (a round number, or a Task's own reference) that just finished -- supplied by the caller (s1's driver), never derived here, per ac1's per-review-type granularity rule.",
               "optional": false
             }
           ],
           "returns": {
             "type": "Promise<void>",
-            "meaning": "Resolves once the checkpoint JSON has been written to .insrc/tmp/<reviewId>/checkpoint.json."
+            "meaning": "Resolves once the checkpoint.json file has been durably written; rejects if the write fails."
           },
-          "errors": [],
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "reviewId is not a literal identifier (fails the same path-traversal check reconciliation.ts and review-report.ts already apply)."
+            },
+            {
+              "type": "Error",
+              "condition": "the reviewed repository cannot be resolved (no registered repo for the request's cwd, and no INSRC_REPO fallback)."
+            }
+          ],
           "preconditions": [
-            "Called only after a full unit of work (round, or Task) has actually completed -- never mid-cycle"
+            "reviewId names an existing (or about-to-exist) .insrc/tmp/<reviewId>/ review directory."
           ],
           "postconditions": [
-            "The written checkpoint.json reflects exactly this call's checkpoint argument, overwriting any prior checkpoint for the same reviewId"
+            "A ReviewCheckpoint JSON record exists at .insrc/tmp/<reviewId>/checkpoint.json containing exactly {reviewId, lastCompletedUnit}, overwriting any prior checkpoint for the same reviewId."
           ]
         },
         {
           "name": "readCheckpoint",
-          "signature": "function readCheckpoint(reviewId: string): Promise<ReviewCheckpoint | undefined>",
+          "signature": "function readCheckpoint(reviewId: string): Promise<{ readonly reviewId: string; readonly lastCompletedUnit: { readonly kind: 'round' | 'task'; readonly ref: number | string } } | undefined>",
           "parameters": [
             {
               "name": "reviewId",
               "type": "string",
-              "purpose": "Identifies which review's checkpoint to read back on resume (ac2).",
+              "purpose": "The review's own identity to look up a prior checkpoint for.",
               "optional": false
             }
           ],
           "returns": {
             "type": "Promise<ReviewCheckpoint | undefined>",
-            "meaning": "The last-written checkpoint for this reviewId, or undefined when no checkpoint exists yet (a review that never completed its first unit)."
+            "meaning": "The last-written ReviewCheckpoint for this reviewId, or undefined when no checkpoint file exists yet (a review that has never completed a unit of work)."
           },
-          "errors": [],
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "reviewId is not a literal identifier."
+            },
+            {
+              "type": "Error",
+              "condition": "the reviewed repository cannot be resolved."
+            }
+          ],
           "preconditions": [],
           "postconditions": [
-            "A resume that reads a defined checkpoint re-runs only the unit of work after lastCompletedUnit, never a unit already completed"
+            "Never throws merely because no checkpoint exists yet -- that is the defined undefined case (ac2: a fresh review resumes from the start, not an error)."
           ]
         },
         {
-          "name": "finalizeReview",
-          "signature": "function finalizeReview(reviewId: string, finalOutput: unknown): Promise<void>",
+          "name": "finalizeAndCleanup",
+          "signature": "function finalizeAndCleanup(reviewId: string, finalOutput: unknown): Promise<void>",
           "parameters": [
             {
               "name": "reviewId",
               "type": "string",
-              "purpose": "Identifies which review has reached a terminal state (ac3).",
+              "purpose": "The review's own identity, naming both the .insrc/tmp/<reviewId>/ folder to delete and the durable artifact location to copy into.",
               "optional": false
             },
             {
               "name": "finalOutput",
               "type": "unknown",
-              "purpose": "The final round's review-output JSON to copy into durable artifact storage before the temp folder is deleted.",
+              "purpose": "The final round's own review-output JSON (the caller's self-contained finding/reconciliation result for its last round) to persist durably before the scratch folder is gone.",
               "optional": false
             }
           ],
           "returns": {
             "type": "Promise<void>",
-            "meaning": "Resolves once finalOutput has been durably persisted and the .insrc/tmp/<reviewId>/ folder has been deleted."
+            "meaning": "Resolves once the durable copy has been written AND the .insrc/tmp/<reviewId>/ folder has been deleted, in that order."
           },
-          "errors": [],
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "reviewId is not a literal identifier."
+            },
+            {
+              "type": "Error",
+              "condition": "the reviewed repository cannot be resolved."
+            },
+            {
+              "type": "Error",
+              "condition": "the durable copy write fails -- the temp folder is NOT deleted in this case, preserving k7's ordering invariant."
+            }
+          ],
           "preconditions": [
-            "Called only once a review has reached a terminal state -- never mid-review"
+            "The review has reached a terminal state (the caller decides this; this function does not itself judge terminality)."
           ],
           "postconditions": [
-            "finalOutput is copied into durable artifact storage BEFORE the .insrc/tmp/<reviewId>/ folder is deleted -- this ordering is never reversed (ac3/k7)",
-            "After this call resolves, .insrc/tmp/<reviewId>/ (including its checkpoint.json) no longer exists"
+            "finalOutput is durably persisted before .insrc/tmp/<reviewId>/ is deleted, never the reverse order, matching k7 exactly.",
+            "A deletion failure (e.g. a concurrent process holding a file open) still leaves the durable copy intact, since the copy already completed first."
           ]
         }
       ],
@@ -232,20 +289,22 @@
         {
           "entity": "ReviewCheckpoint",
           "change": "new",
-          "details": "interface ReviewCheckpoint { readonly reviewId: string; readonly lastCompletedUnit: { readonly kind: 'round' | 'task'; readonly ref: number | string }; } -- exactly sc5's HLD interfaceSketch, unchanged. A generic JSON side-record stored at .insrc/tmp/<reviewId>/checkpoint.json, independent of ReviewContext's own fields (lc4) -- ReviewContext does not exist yet (confirmed in s1's decision-trace bundle), so this Story's reviewId identity guarantee (ac4) covers only its own half: checkpoint.reviewId equals the temp folder's name, by construction.",
-          "callSites": []
+          "details": "New interface {readonly reviewId: string; readonly lastCompletedUnit: {readonly kind: 'round' | 'task'; readonly ref: number | string}}, exactly sc5's HLD interfaceSketch. Serialized verbatim as .insrc/tmp/<reviewId>/checkpoint.json. No existing type is modified; this is new capability only.",
+          "callSites": [
+            "src/workflow/review-round/types.ts:19-24"
+          ]
         }
       ],
       "interactionWithShared": [
         {
           "contractId": "sc5",
           "role": "implements",
-          "howDetails": "ReviewCheckpoint and the three lifecycle functions are authored here as sc5's concrete shape, implementing the HLD interfaceSketch verbatim and generalizing the per-review-type checkpoint pattern s1's how-does-it-work bundle found in the retiring design-review/code-review checkpoint files."
+          "howDetails": "This Story's ReviewCheckpoint interface and writeCheckpoint/readCheckpoint/finalizeAndCleanup functions are the entire implementation of sc5 -- the generic review checkpoint JSON side-record and .insrc/tmp/<reviewId>/ folder lifecycle (k1/k7/k8/lc4)."
         },
         {
           "contractId": "sc1",
           "role": "consumes",
-          "howDetails": "writeCheckpoint's granularity (round vs Task) is determined by whatever sc1's RoundDriverHooks.checkpointGranularity names for that review type; this Story's contract does not redefine or re-derive that mapping, only reads it."
+          "howDetails": "lastCompletedUnit.kind is supplied by the caller from RoundDriverHooks.checkpointGranularity ('round' | 'task'); this Story never reads or re-derives checkpointGranularity itself, only accepts whatever kind the caller (s1's driver) passes in."
         }
       ]
     },
@@ -253,82 +312,139 @@
       {
         "entity": "ReviewCheckpoint",
         "change": "new",
-        "details": "interface ReviewCheckpoint { readonly reviewId: string; readonly lastCompletedUnit: { readonly kind: 'round' | 'task'; readonly ref: number | string }; } -- exactly sc5's HLD interfaceSketch, unchanged. A generic JSON side-record stored at .insrc/tmp/<reviewId>/checkpoint.json, independent of ReviewContext's own fields (lc4) -- ReviewContext does not exist yet (confirmed in s1's decision-trace bundle), so this Story's reviewId identity guarantee (ac4) covers only its own half: checkpoint.reviewId equals the temp folder's name, by construction.",
-        "callSites": []
+        "details": "New interface {readonly reviewId: string; readonly lastCompletedUnit: {readonly kind: 'round' | 'task'; readonly ref: number | string}}, exactly sc5's HLD interfaceSketch. Serialized verbatim as .insrc/tmp/<reviewId>/checkpoint.json. No existing type is modified; this is new capability only.",
+        "callSites": [
+          "src/workflow/review-round/types.ts:19-24"
+        ]
       }
     ],
     "interactionWithShared": [
       {
         "contractId": "sc5",
         "role": "implements",
-        "howDetails": "ReviewCheckpoint and the three lifecycle functions are authored here as sc5's concrete shape, implementing the HLD interfaceSketch verbatim and generalizing the per-review-type checkpoint pattern s1's how-does-it-work bundle found in the retiring design-review/code-review checkpoint files."
+        "howDetails": "This Story's ReviewCheckpoint interface and writeCheckpoint/readCheckpoint/finalizeAndCleanup functions are the entire implementation of sc5 -- the generic review checkpoint JSON side-record and .insrc/tmp/<reviewId>/ folder lifecycle (k1/k7/k8/lc4)."
       },
       {
         "contractId": "sc1",
         "role": "consumes",
-        "howDetails": "writeCheckpoint's granularity (round vs Task) is determined by whatever sc1's RoundDriverHooks.checkpointGranularity names for that review type; this Story's contract does not redefine or re-derive that mapping, only reads it."
+        "howDetails": "lastCompletedUnit.kind is supplied by the caller from RoundDriverHooks.checkpointGranularity ('round' | 'task'); this Story never reads or re-derives checkpointGranularity itself, only accepts whatever kind the caller (s1's driver) passes in."
       }
     ],
     "errorPaths": {
       "errorCases": [
         {
-          "scenario": "writeCheckpoint's file write to .insrc/tmp/<reviewId>/checkpoint.json fails (e.g. disk error, permissions)",
-          "detection": "the underlying filesystem write call rejects",
-          "response": "writeCheckpoint propagates the rejection to the caller rather than resolving as if the checkpoint had been saved",
-          "userImpact": "the caller knows the checkpoint did not persist, instead of believing a resume-safety guarantee exists that was never actually written",
+          "scenario": "reviewId contains a path-traversal segment (e.g. '../../../private')",
+          "detection": "A literal-identifier regex check (the same pattern reconciliation.ts's requireValidReviewId and review-report.ts's requireValidReviewId already apply) run first, before any path join or filesystem access.",
+          "response": "Throws a plain Error naming the invalid reviewId, before any directory is touched.",
+          "userImpact": "The call fails fast with a clear message instead of silently joining an unsafe path.",
           "recoverable": true
         },
         {
-          "scenario": "finalizeReview's copy of finalOutput into durable artifact storage fails",
-          "detection": "the durable-copy operation's Promise rejects",
-          "response": "finalizeReview propagates the rejection and does NOT proceed to delete the .insrc/tmp/<reviewId>/ folder -- the ordering in ac3/k7 is never reversed even on failure",
-          "userImpact": "a review's final result is never lost to a failed copy silently followed by deletion; the temp folder (and its data) stays intact as a fallback until the copy can be retried",
+          "scenario": "The reviewed repository cannot be resolved (no registered repo for the request's cwd, and no INSRC_REPO fallback)",
+          "detection": "resolveRepoPath(undefined) returns undefined, exactly as reconciliation.ts's and review-report.ts's own defaultResolveRepoRoot already detect.",
+          "response": "Throws a plain Error naming the resolution failure, before any filesystem access.",
+          "userImpact": "The call fails fast rather than silently defaulting to the daemon process's own cwd.",
           "recoverable": true
         },
         {
-          "scenario": "finalizeReview's deletion of the .insrc/tmp/<reviewId>/ folder fails after the durable copy has already succeeded",
-          "detection": "the folder-deletion operation rejects, observed strictly after the durable-copy step already resolved",
-          "response": "finalizeReview propagates the rejection, but by this point finalOutput is already safely durable -- only cleanup is incomplete, not the review's result",
-          "userImpact": "the review's final result is safe; a leftover temp folder is the user-visible residue of a failed cleanup, not data loss",
+          "scenario": "An existing path segment between the repo root and the checkpoint file (the reviewId directory, .insrc/tmp itself, or the checkpoint.json leaf) is a symlink -- whether planted maliciously or substituted by a race after an earlier check",
+          "detection": "A requireNoSymlinkInPath-style walk (reusing review-report.ts's own lstatSync-based, dangling-symlink-safe helper verbatim) runs immediately before every write.",
+          "response": "Throws an Error naming the symlinked segment; refuses to write through it.",
+          "userImpact": "A checkpoint write can never be redirected outside the repository or truncate an unrelated file via a symlinked review directory or checkpoint file.",
+          "recoverable": true
+        },
+        {
+          "scenario": "writeCheckpoint's own write is interrupted mid-write (process killed, disk full) between opening the file and completing the write",
+          "detection": "Not detected at write time -- prevented structurally: writeCheckpoint publishes through the same guarded temp-file-then-rename primitive review-report.ts's P2 fix established (publishGuarded), so an observer can only ever see the complete prior checkpoint or the complete new one, never a partially-written file.",
+          "response": "No special handling needed at the write site; the rename is atomic.",
+          "userImpact": "A crash during a checkpoint write can never leave behind a checkpoint that reads back as corrupted, preserving ac2's 'at most one unit of rework' guarantee.",
+          "recoverable": true
+        },
+        {
+          "scenario": "readCheckpoint finds a checkpoint.json file that is not valid JSON, or is valid JSON but does not match ReviewCheckpoint's shape (e.g. truncated by something outside this Story's own write path, or disk-level corruption)",
+          "detection": "JSON.parse throws, or the parsed value fails a minimal shape check (reviewId is a string, lastCompletedUnit.kind is 'round' or 'task').",
+          "response": "Treated identically to a missing checkpoint: readCheckpoint resolves to undefined rather than throwing or returning unvalidated data, so a review can always still resume (from the start, in the worst case) rather than being permanently stuck on an unreadable checkpoint.",
+          "userImpact": "A corrupted checkpoint costs at most a full restart of the review, never a hard failure that blocks resumption entirely -- consistent with ac2's crash-safety intent even in this worse-than-expected case.",
+          "recoverable": true
+        },
+        {
+          "scenario": "finalizeAndCleanup's durable copy write fails (disk full, permission denied, symlink refusal) partway through",
+          "detection": "The write call itself throws or rejects.",
+          "response": "Propagates the error unchanged; the .insrc/tmp/<reviewId>/ deletion step is never reached.",
+          "userImpact": "A review whose final output could not be durably copied keeps its scratch folder intact rather than losing the only copy of its result -- k7's ordering is preserved even on failure.",
+          "recoverable": true
+        },
+        {
+          "scenario": "finalizeAndCleanup's deletion step encounters a symlinked .insrc/tmp/<reviewId>/ directory (the exact leaf path itself redirected elsewhere)",
+          "detection": "The same requireNoSymlinkInPath-style walk (lstat-based, never following) runs immediately before the recursive delete, exactly as before the write.",
+          "response": "Throws an Error naming the symlink; refuses to delete through it (never follows a symlinked directory into a deletion that could remove unrelated real files elsewhere).",
+          "userImpact": "A symlinked scratch folder can never cause finalizeAndCleanup to delete something outside the review's own .insrc/tmp/<reviewId>/ location.",
           "recoverable": true
         }
       ],
       "edgeCases": [
         {
-          "input": "readCheckpoint is called for a reviewId whose first unit of work has not completed yet (no checkpoint.json exists)",
-          "expected": "readCheckpoint returns undefined, not an error -- a review that has not completed anything yet is a valid, expected state"
+          "input": "readCheckpoint called for a reviewId that has never had writeCheckpoint called (a brand-new review, or one whose .insrc/tmp/<reviewId>/ directory does not exist at all)",
+          "expected": "Resolves to undefined, not an error -- the caller (s1's driver) starts from round 1 / the first Task."
         },
         {
-          "input": "writeCheckpoint is called twice in a row for the same reviewId (e.g. a retried call after a transient failure)",
-          "expected": "the second call's checkpoint overwrites the first in checkpoint.json; no duplicate-write error or merge logic is needed"
+          "input": "finalizeAndCleanup called a second time for a reviewId whose .insrc/tmp/<reviewId>/ folder was already deleted by an earlier successful call (e.g. a retried completion after a crash between the durable copy and the deletion)",
+          "expected": "The durable copy write re-runs (idempotent overwrite of the same durable location with the same finalOutput) and the deletion step is a no-op when the folder no longer exists, rather than throwing -- mirrors the force:true convention this codebase's own tests already use for .insrc/tmp cleanup."
         },
         {
-          "input": "lastCompletedUnit.ref is a string (a code-review Task identifier) rather than a number (a design-review round)",
-          "expected": "ReviewCheckpoint accepts either, exactly as sc5's own interfaceSketch types ref: number | string -- no special-casing per review kind inside this Story's contract"
+          "input": "finalizeAndCleanup called when checkpoint.json was never written at all (e.g. a single-round design review that completed its only round without ever crashing, so no intermediate checkpoint was needed)",
+          "expected": "Succeeds regardless -- finalizeAndCleanup deletes whatever the .insrc/tmp/<reviewId>/ folder currently contains (checkpoint.json, round outputs, rendered reports) as a whole; it does not require a checkpoint to have existed."
+        },
+        {
+          "input": "writeCheckpoint called repeatedly for the same reviewId as successive rounds/Tasks complete",
+          "expected": "Each call overwrites the prior checkpoint.json with the new lastCompletedUnit -- only the single most recent checkpoint is ever kept, never a growing history."
         }
       ],
-      "invariantsToPreserve": []
+      "invariantsToPreserve": [
+        {
+          "text": "Checkpoint granularity is defined per review type (round-level for design review, per-Task for code review), never re-derived inside this Story's own functions -- the caller always supplies lastCompletedUnit.kind.",
+          "source": "c1"
+        },
+        {
+          "text": "Checkpoint write/read is automatic and internal to the review process, never an agent-driven step.",
+          "source": "c1"
+        },
+        {
+          "text": "The .insrc/tmp/<reviewId>/ temp folder is deleted only after the final round's review-output JSON is copied into durable artifact storage, never before.",
+          "source": "c1"
+        },
+        {
+          "text": "reviewId is one identity: the same string names both the .insrc/tmp/<reviewId>/ folder and the reviewId field inside the checkpoint record itself, so a resume can recover the id from the checkpoint artifact's own content.",
+          "source": "c1"
+        }
+      ]
     },
     "testStrategy": {
-      "testFramework": "node:test, run via npx tsx --test (matches this Epic's s1-s4 convention)",
+      "testFramework": "node:test (matching this module's existing *.test.ts convention: driver.test.ts, reconciliation.test.ts, review-report.test.ts)",
       "testLevels": [
         {
           "level": "unit",
-          "purpose": "Prove the checkpoint is written automatically and read correctly across a crash/resume cycle (ac1/ac2), that finalizeReview's copy-then-delete ordering is never reversed even on failure (ac3), and that this Story's own half of the reviewId identity holds by construction (ac4).",
+          "purpose": "Prove writeCheckpoint/readCheckpoint/finalizeAndCleanup each in isolation, with the repo-resolution and durable-copy steps injected via a test-deps seam matching reconciliation.ts's and review-report.ts's own _set*DepsForTests convention, over disposable .insrc/tmp/<reviewId>/ fixture directories.",
           "subjects": [
-            "writeCheckpoint persists a checkpoint automatically, with no agent-driven step, after a full unit of work completes",
-            "readCheckpoint after a simulated crash returns the last-completed unit, so a resume re-runs only the in-flight unit, not units already completed",
-            "finalizeReview copies the final round's output into durable artifact storage before deleting the temp folder, never in the reverse order",
-            "finalizeReview does not delete the temp folder when the durable-copy step fails",
-            "finalizeReview propagates a deletion failure but leaves the already-copied durable output intact and safe",
-            "ReviewCheckpoint.reviewId equals the .insrc/tmp/<reviewId>/ folder's own name, by construction, for every checkpoint this Story writes",
-            "readCheckpoint returns undefined for a reviewId with no checkpoint yet, not an error",
-            "writeCheckpoint's second call for the same reviewId overwrites the first in checkpoint.json",
-            "ReviewCheckpoint.lastCompletedUnit.ref accepts both a number (a design-review round) and a string (a code-review Task identifier) without special-casing"
+            "writeCheckpoint writes a ReviewCheckpoint JSON record to .insrc/tmp/<reviewId>/checkpoint.json containing exactly {reviewId, lastCompletedUnit}, overwriting any prior checkpoint for the same reviewId",
+            "readCheckpoint resolves to undefined when no checkpoint file exists yet for a reviewId, rather than throwing",
+            "readCheckpoint resolves to the last-written ReviewCheckpoint after writeCheckpoint has been called, so a resumed review can continue from lastCompletedUnit rather than re-running completed units",
+            "readCheckpoint's own reviewId field, read back from the checkpoint record, is exactly the identity k8 requires -- the same string as both the temp folder name and the record's own content",
+            "finalizeAndCleanup copies finalOutput into durable artifact storage before deleting the .insrc/tmp/<reviewId>/ folder, in that order",
+            "if finalizeAndCleanup's durable copy write fails, the .insrc/tmp/<reviewId>/ folder is not deleted",
+            "finalizeAndCleanup is idempotent: calling it a second time for a reviewId whose temp folder was already deleted by an earlier successful call succeeds without error",
+            "writeCheckpoint called repeatedly for the same reviewId overwrites the prior checkpoint rather than accumulating a history",
+            "a reviewId containing a path-traversal segment is rejected before any filesystem access, for writeCheckpoint, readCheckpoint, and finalizeAndCleanup alike",
+            "when the reviewed repository cannot be resolved, writeCheckpoint/readCheckpoint/finalizeAndCleanup reject rather than silently defaulting to the daemon process's own cwd",
+            "a symlinked review directory or checkpoint file is never written through by writeCheckpoint, even outside .insrc/tmp",
+            "a symlinked .insrc/tmp/<reviewId>/ directory is never deleted through by finalizeAndCleanup",
+            "a checkpoint.json file that is not valid JSON, or does not match ReviewCheckpoint's shape, is treated by readCheckpoint as though no checkpoint exists, rather than throwing or returning unvalidated data",
+            "finalizeAndCleanup succeeds even when checkpoint.json was never written at all, deleting whatever the .insrc/tmp/<reviewId>/ folder currently contains as a whole"
           ],
           "fixturesNeeded": [
-            "a temp-directory fixture standing in for .insrc/tmp/<reviewId>/, cleaned up after each test",
-            "a stub durable-artifact-storage sink and a stub folder-deletion function, each independently failable, to exercise finalizeReview's error paths"
+            "A disposable .insrc/tmp/<reviewId>/ directory per test, cleaned up in a finally block (mirroring reconciliation.test.ts/review-report.test.ts).",
+            "An injectable resolveRepoRoot test double returning a fixed ROOT.",
+            "An injectable durable-copy-destination test double so finalizeAndCleanup's durable write can be observed/forced-to-fail without touching real artifact storage."
           ]
         }
       ],
@@ -336,26 +452,28 @@
         {
           "criterionId": "ac1",
           "provingTests": [
-            "writeCheckpoint persists a checkpoint automatically, with no agent-driven step, after a full unit of work completes"
+            "writeCheckpoint writes a ReviewCheckpoint JSON record to .insrc/tmp/<reviewId>/checkpoint.json containing exactly {reviewId, lastCompletedUnit}, overwriting any prior checkpoint for the same reviewId"
           ]
         },
         {
           "criterionId": "ac2",
           "provingTests": [
-            "readCheckpoint after a simulated crash returns the last-completed unit, so a resume re-runs only the in-flight unit, not units already completed"
+            "readCheckpoint resolves to undefined when no checkpoint file exists yet for a reviewId, rather than throwing",
+            "readCheckpoint resolves to the last-written ReviewCheckpoint after writeCheckpoint has been called, so a resumed review can continue from lastCompletedUnit rather than re-running completed units"
           ]
         },
         {
           "criterionId": "ac3",
           "provingTests": [
-            "finalizeReview copies the final round's output into durable artifact storage before deleting the temp folder, never in the reverse order",
-            "finalizeReview does not delete the temp folder when the durable-copy step fails"
+            "finalizeAndCleanup copies finalOutput into durable artifact storage before deleting the .insrc/tmp/<reviewId>/ folder, in that order",
+            "if finalizeAndCleanup's durable copy write fails, the .insrc/tmp/<reviewId>/ folder is not deleted"
           ]
         },
         {
           "criterionId": "ac4",
           "provingTests": [
-            "ReviewCheckpoint.reviewId equals the .insrc/tmp/<reviewId>/ folder's own name, by construction, for every checkpoint this Story writes"
+            "readCheckpoint resolves to the last-written ReviewCheckpoint after writeCheckpoint has been called, so a resumed review can continue from lastCompletedUnit rather than re-running completed units",
+            "readCheckpoint's own reviewId field, read back from the checkpoint record, is exactly the identity k8 requires -- the same string as both the temp folder name and the record's own content"
           ]
         }
       ]
@@ -363,102 +481,85 @@
     "alternativesConsidered": [
       {
         "id": "a1",
-        "name": "Flat ReviewCheckpoint per sc5's sketch, plus three small side-record functions keyed by reviewId alone",
-        "oneLineSummary": "interface ReviewCheckpoint { reviewId, lastCompletedUnit } exactly as sc5 sketches it; writeCheckpoint/readCheckpoint/finalizeReview operate on '.insrc/tmp/<reviewId>/checkpoint.json', with granularity (round vs Task) read from sc1's RoundDriverHooks.checkpointGranularity, never redefined here.",
-        "approach": "interface ReviewCheckpoint { readonly reviewId: string; readonly lastCompletedUnit: { readonly kind: 'round' | 'task'; readonly ref: number | string }; } -- exactly sc5's HLD interfaceSketch. Three functions: writeCheckpoint(checkpoint: ReviewCheckpoint): Promise<void> (called automatically by the round-driver after a full round/Task cycle completes, per ac1 -- no agent-driven step); readCheckpoint(reviewId: string): Promise<ReviewCheckpoint | undefined> (used on resume to skip already-completed units, per ac2); finalizeReview(reviewId: string, finalOutput: unknown): Promise<void> (copies the final round's review-output JSON into durable artifact storage, then deletes the .insrc/tmp/<reviewId>/ folder, per ac3). All three key purely off reviewId as a plain string -- the folder name and checkpoint.reviewId are the same value by construction, satisfying this Story's own half of ac4/k8; ReviewContext's header-level reviewId is a separate, not-yet-existing field this Story cannot verify.",
+        "name": "Standalone checkpoint module: three exported functions over a flat JSON side-record",
+        "oneLineSummary": "writeCheckpoint / readCheckpoint / finalizeAndCleanup in a new checkpoint.ts, exactly matching sc5's interfaceSketch and lc4's 'independent JSON side-record' requirement.",
+        "approach": "Add src/workflow/review-round/checkpoint.ts exporting: `writeCheckpoint(reviewId, lastCompletedUnit)` -- writes `.insrc/tmp/<reviewId>/checkpoint.json` containing exactly `ReviewCheckpoint` (`{reviewId, lastCompletedUnit: {kind, ref}}`), overwriting any prior checkpoint for the same reviewId (ac1, no agent-driven step -- s1's driver calls this once per completed round/Task). `readCheckpoint(reviewId)` -- reads it back, returning `undefined` when no checkpoint file exists yet (a fresh review), so a caller (s1's driver, on resume) knows whether to start from round 1 or from `lastCompletedUnit`'s own next unit (ac2, ac4). `finalizeAndCleanup(reviewId, finalOutput)` -- copies the final round's review-output JSON into the review's durable artifact storage location, THEN deletes the `.insrc/tmp/<reviewId>/` folder (ac3), reusing review-report.ts's and reconciliation.ts's own established symlink-safety pattern (lstat-based containment checks before any write or recursive delete, since an attacker-substituted symlink at any of these three operations -- checkpoint write, durable copy, or folder deletion -- could redirect outside the repo or delete/overwrite an unrelated path). reviewId is the sole identity (ac4): every function takes it as a bare string, exactly as runReviewRound already does, with no ReviewContext struct involved (per s1's own analyzeBundles finding -- no such type exists).",
         "pros": [
-          "Matches sc5's HLD interfaceSketch exactly, field-for-field -- no invented structure.",
-          "Does not redefine checkpoint granularity (round vs Task) -- consumed from sc1's RoundDriverHooks exactly as the HLD frames it, avoiding scope overlap with s1.",
-          "Smallest shape that satisfies ac1 (automatic write), ac2 (resume skips completed units), and ac3 (durable copy before deletion) -- three small functions, each doing exactly one documented thing."
+          "Smallest module that fully satisfies all four acceptance criteria and lc4's explicit side-record independence requirement",
+          "Mirrors the established conventions in reconciliation.ts and review-report.ts verbatim (repo resolution, symlink-safety, injectable test-deps seam), so reviewers and future maintainers read one consistent idiom across the whole review-round/ module",
+          "Checkpoint granularity (round vs task) is read from the caller-supplied lastCompletedUnit.kind, not re-derived here -- this module stays a dumb, generic side-record, exactly as sc5's own boundary.internal note requires ('no other Story's type depends on ReviewCheckpoint's internals')"
         ],
         "cons": [
-          "This Story's contract alone cannot prove ac4's full claim (reviewId is the SAME identity as ReviewContext's header field) since ReviewContext doesn't exist yet -- only this Story's own half (checkpoint.reviewId === folder name) is provable here."
+          "s1's driver (private internals, adjacent boundary) must be the one to actually call writeCheckpoint/readCheckpoint/finalizeAndCleanup at the right points in its own cycle -- this Story can only expose the functions and prove them correct in isolation, not wire them into driver.ts itself, so an integration gap could remain until s1's own driver is updated (flagged as an openQuestion / HLD-aligned note, not built around here)",
+          "Three separate small functions rather than one object -- slightly more surface area than a single class, though each function is independently testable and each acceptance criterion maps to exactly one of them"
         ],
-        "costEstimate": "L"
+        "costEstimate": "S"
       },
       {
         "id": "a2",
-        "name": "Stateful ReviewSession class bundling checkpoint + folder lifecycle together",
-        "oneLineSummary": "A `ReviewSession` class wraps write/read/finalize into one object with internal mutable state, instead of three independent functions.",
-        "approach": "class ReviewSession { constructor(reviewId: string); writeCheckpoint(unit): Promise<void>; readCheckpoint(): Promise<ReviewCheckpoint | undefined>; finalize(finalOutput): Promise<void>; } -- the object tracks its own open/closed lifecycle state internally across calls.",
+        "name": "Fold checkpoint read/write into the round-driver's own call signature",
+        "oneLineSummary": "Instead of standalone functions, give runReviewRound itself new checkpoint-aware parameters/return fields, so the driver reads/writes checkpoints inline.",
+        "approach": "Extend runReviewRound's own signature (or an internal helper inside driver.ts) to read a prior checkpoint before the round loop starts and write one after each unit completes, folding sc5's logic directly into s1's driver rather than exposing it as a separate consumable module.",
         "pros": [
-          "One object per review could centralize folder-path computation instead of each function recomputing it from reviewId."
+          "No separate call site needed in the driver -- checkpointing happens 'for free' as part of calling runReviewRound",
+          "Avoids the a1 integration-gap con, since the write/read calls are already inside the one function that needs them"
         ],
         "cons": [
-          "Introduces unrequested statefulness (an open/closed lifecycle state machine) that none of ac1-ac4 ask for -- each acceptance criterion describes one call at one point in the cycle, not a session object's lifetime.",
-          "Harder to unit test each operation in isolation (must construct + drive the object through prior calls to reach a given state), where a1's plain functions take exactly what one operation needs.",
-          "No consuming Story (sc1's round-driver is the only consumer, per the HLD context) asked for session-object semantics; it just needs to call three operations at the right points in its own cycle."
+          "Violates the HLD's own adjacent-boundary rule: 'the round-driver function itself... stays private to s1; no other Story's type depends on the driver's internals' -- this alternative requires s5 to edit s1's owned driver.ts directly, stepping on an adjacent boundary rather than exposing a contract s1 can call",
+          "Blurs sc5's ownership: the HLD assigns the checkpoint record to s5 specifically so its internals (lc4: 'independent of ReviewContext's own fields') stay a separable, independently testable unit -- folding it into driver.ts makes the checkpoint logic untestable without also exercising the whole round cycle",
+          "Out of scope per the front-door rule: Story-scoped LLDs stay inside their own boundary and consume adjacent contracts, never re-implement or reach into them"
         ],
-        "costEstimate": "L",
-        "reasonRejected": "Functionally equivalent to a1 on every acceptance criterion, but introduces unrequested statefulness (an open/closed session lifecycle) with no acceptance criterion asking for it, at the same cost."
+        "costEstimate": "S",
+        "reasonRejected": "Violates sc1's HLD boundary by requiring edits to s1's privately-owned driver.ts internals, and blurs sc5's own separable, independently testable ownership (lc4)."
       },
       {
         "id": "a3",
-        "name": "Checkpoint stored as a field on ReviewContext itself, instead of a separate side-record",
-        "oneLineSummary": "Fold lastCompletedUnit directly into ReviewContext's own fields rather than keeping ReviewCheckpoint as an independent JSON side-record.",
-        "approach": "Add a `checkpoint: { kind, ref }` field directly onto the (not-yet-existing) ReviewContext type, read/written as part of the context object itself rather than a separate file.",
+        "name": "Generic reusable 'scratch side-record' abstraction",
+        "oneLineSummary": "A generalized, typed key-value side-record utility under .insrc/tmp/<id>/, with ReviewCheckpoint as its first consumer, anticipating future side-records other Stories might want.",
+        "approach": "Build a generic `SideRecord<T>` abstraction (read/write/finalize-and-cleanup parameterized over any JSON-serializable T and any id), then define ReviewCheckpoint as one instantiation of it, so any future Story needing a similar durable-scratch-record pattern reuses the same primitive.",
         "pros": [
-          "One fewer file to read/write per round, if ReviewContext is already being persisted anyway."
+          "Would make a hypothetical future second side-record cheaper to add"
         ],
         "cons": [
-          "Directly contradicts lc4: 'A review's checkpoint is a generic review checkpoint JSON side-record, independent of ReviewContext's own fields' -- this is an explicit HLD invariant violation, not a refinement.",
-          "Requires ReviewContext to exist and be mutated in-place on every unit completion; ReviewContext doesn't exist yet (confirmed in s1's decision-trace bundle), and even once it does, it belongs to the companion Epic (50cde239426d6e2a), not this Story -- folding checkpoint state into it would mean redesigning another Epic's type, far outside this Story's or even this Epic's boundary.",
-          "Loses the clean, independent deletion story ac3 relies on: a side-record inside .insrc/tmp/<reviewId>/ can be deleted wholesale with the temp folder; a field folded into ReviewContext would need to be explicitly cleared instead, since ReviewContext itself is not deleted."
+          "No other Story or contract in this Epic's HLD asks for a second side-record -- this generalizes for a need nobody has stated, directly against the instruction to add no option or flexibility nobody asked for",
+          "The extra type-parameterization and generic API surface make the one real consumer (ReviewCheckpoint) harder to read and test than a1's direct, concrete functions",
+          "Three concrete functions (a1) already fully satisfy every acceptance criterion; the generalization buys nothing measurable against this Story's own four ac's"
         ],
-        "costEstimate": "L",
-        "reasonRejected": "Violates sc5's own stated invariant (lc4) outright, breaks ac3's clean deletion ordering, and depends on redesigning a type owned by an entirely different Epic -- disqualifying regardless of cost."
+        "costEstimate": "M",
+        "reasonRejected": "Technically satisfies every constraint but adds a generic SideRecord<T> abstraction no other Story or contract in this Epic's HLD asks for -- unrequested generalization at higher cost than a1 for no measurable benefit."
       }
     ],
     "chosenAlternative": "a1",
     "openQuestions": [
-      "ac4 requires reviewId to be the same identity as both the .insrc/tmp/<reviewId>/ folder's name AND a header-level field on ReviewContext. This Story's design fully satisfies its own half (checkpoint.reviewId === folder name, by construction) but cannot verify the ReviewContext-side half, since ReviewContext does not exist yet anywhere in the codebase -- confirmed by direct grep and by the companion shared-reviewcontext-data-model Epic's (50cde239426d6e2a) own HLD, which explicitly defers assembling it as Non-Goal follow-on work. This Epic's own DEF already documents this as a HIGH-risk item (line 70): the companion Epic must incorporate a header-level reviewId field before this Story's full ac4 guarantee can be implemented and verified end-to-end. Not a new gap -- surfacing it for the cross-review pass and for a future Story in the companion Epic to track explicitly."
+      "ep3 (partial): invariantsToPreserve cite Epic constraint source 'c1' rather than an s1 analyze-bundle entity, since this Story is entirely new capability with no current-code invariant to analyze -- the Epic's own k1/k6/k7/k8 constraints are the only available grounding. Flagged for completeness; not considered blocking since no current-behaviour invariant exists to cite instead.",
+      "Integration gap (non-blocking, HLD-aligned): this LLD exposes writeCheckpoint/readCheckpoint/finalizeAndCleanup and proves them in isolation, but wiring them into s1's own round-driver cycle (calling writeCheckpoint after each completed unit, readCheckpoint before starting a resumed review, and finalizeAndCleanup at a terminal state) is s1's own adjacent-boundary responsibility, not built here."
     ]
   },
   "citations": [
     {
       "id": "c1",
-      "kind": "analyze-bundle",
-      "ref": "src/workflow/review-history/review/design-review/admission-checkpoint.ts"
+      "kind": "code",
+      "ref": "src/workflow/review-round/types.ts:19-24"
     },
     {
       "id": "c2",
-      "kind": "analyze-bundle",
-      "ref": "src/workflow/review-history/review/design-review/preparation-checkpoint.ts"
+      "kind": "code",
+      "ref": "src/workflow/review-round/driver.ts:24-36"
     },
     {
       "id": "c3",
-      "kind": "analyze-bundle",
-      "ref": "src/workflow/review-history/review/design-review/checkpoint.ts"
+      "kind": "code",
+      "ref": "src/workflow/review-round/reconciliation.ts:106"
     },
     {
       "id": "c4",
-      "kind": "analyze-bundle",
-      "ref": "src/workflow/review-history/code-review/task-review/admission-checkpoint.ts"
+      "kind": "code",
+      "ref": "src/workflow/review-round/review-report.ts:102"
     },
     {
       "id": "c5",
-      "kind": "analyze-bundle",
-      "ref": "src/mcp/docgen/handler.ts"
-    },
-    {
-      "id": "c6",
-      "kind": "analyze-bundle",
-      "ref": "docs/epics/shared-reviewcontext-data-model-E2026111850cde239/HLD.md"
-    },
-    {
-      "id": "c7",
-      "kind": "analyze-bundle",
-      "ref": "docs/epics/shared-reviewcontext-data-model-E2026111850cde239/DEF.md"
-    },
-    {
-      "id": "c8",
-      "kind": "analyze-bundle",
-      "ref": "docs/epics/review-rounds-reconciliation-recovery-E2026111803f4fd3b/DEF.md"
-    },
-    {
-      "id": "c9",
-      "kind": "prior-artifact",
-      "ref": "HLD-03f4fd3b9102aab8#sc5"
+      "kind": "code",
+      "ref": "src/workflow/artifact-core/types.ts:364"
     }
   ]
 }

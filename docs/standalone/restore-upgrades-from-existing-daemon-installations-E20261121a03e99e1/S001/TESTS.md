@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 10 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -55,3 +55,25 @@ Run at 2026-11-21T19:10:57.925Z on commit `50a172185`. Tests check: **passed**. 
 | :--- | :--- | :--- | :--- | :--- |
 | `scripts/__tests__/source-upgrade-qualification-native.test.ts` | 0 | 3 | 36.5 s |  |
 | `src/shared/__tests__/source-installation.test.ts` | 0 | 3 | 52.4 s |  |
+
+## t3
+
+Run at 2026-11-21T19:43:49.953Z on commit `6f078b30d`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: Source-ahead stale output and partial npm preserve incumbent and require qualified recovery**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | Source-ahead stale output and partial npm preserve incumbent and require qualified recovery | `scripts/__tests__/source-predecessor-native.test.ts` |
+
+**integration: Dirty lock/source preserved; independently staged rollback baseline admitted only by actual compatibility**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | Dirty lock/source preserved; independently staged rollback baseline admitted only by actual compatibility | `scripts/__tests__/source-predecessor-native.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `scripts/__tests__/source-predecessor-native.test.ts` | 0 | 2 | 22.9 s |  |

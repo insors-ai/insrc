@@ -6,11 +6,11 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "approved",
+      "status": "draft",
       "revision": {
-        "number": 3,
-        "contentHash": "7209d527548fa5456793ad5e86c9c60bb5d643f6786200f052e0257f1da83a1e",
-        "at": "2026-11-21T19:11:38.886Z",
+        "number": 4,
+        "contentHash": "7054000fce5a25ca44b536d071a21c4d3372f790e406be7a7bb1541af47ccf31",
+        "at": "2026-11-21T19:44:59.107Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -38,8 +38,8 @@
     "schemaVersion": 1,
     "epicHash": "a03e99e17a364550",
     "storyId": "s1",
-    "revision": 3,
-    "updatedAt": "2026-11-21T19:10:57.925Z",
+    "revision": 4,
+    "updatedAt": "2026-11-21T19:43:49.953Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicSlug": "restore-upgrades-from-existing-daemon-installations"
@@ -53,9 +53,13 @@
       {
         "id": "t2",
         "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
       }
     ],
-    "summary": "Tasks t1–t2 provide independently verified staging and Linux selector/journal persistence. Task t2 now retains complete displaced source selections, including initial/candidate snapshots and their receipt/binding metadata, enforces source floors for every referenced selection, and reconciles ambiguous publication through pinned descriptors; lifecycle activation and launcher integration remain in t3–t12.",
+    "summary": "Inventory now separates actual executable/dependency/runtime measurements from source HEAD and editable build metadata. Explicit signed predecessor recovery stages an independently pinned historical baseline using an external owned-runtime bootstrap, preserves dirty incumbent bytes, and returns actionable recovery guidance without selecting, stopping or starting a daemon.",
     "testRecord": {
       "md": "docs/standalone/restore-upgrades-from-existing-daemon-installations-E20261121a03e99e1/S001/TESTS.md"
     },
@@ -65,129 +69,164 @@
           "file": "docs/plans/node-runtime-evidence/source-upgrade-bootstrap.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T19:10:57.925Z"
+        "timestamp": "2026-11-21T19:43:49.953Z"
       },
       {
         "target": {
           "file": "scripts/__tests__/source-upgrade-qualification-native.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T19:10:57.925Z"
+        "timestamp": "2026-11-21T19:43:49.953Z"
       },
       {
         "target": {
           "file": "scripts/bundle-release-bootstrap.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T19:10:57.925Z"
+        "timestamp": "2026-11-21T19:43:49.953Z"
       },
       {
         "target": {
           "file": "scripts/prepare-source-release.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T19:10:57.925Z"
+        "timestamp": "2026-11-21T19:43:49.953Z"
       },
       {
         "target": {
           "file": "src/bin/insrc-release-bootstrap.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T19:10:57.925Z"
+        "timestamp": "2026-11-21T19:43:49.953Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/managed-release-bootstrap.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T19:10:57.925Z"
+        "timestamp": "2026-11-21T19:43:49.953Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/source-release-promotion.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T19:10:57.925Z"
+        "timestamp": "2026-11-21T19:43:49.953Z"
       },
       {
         "target": {
           "file": "src/daemon/managed-release-staging.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T19:10:57.925Z"
+        "timestamp": "2026-11-21T19:43:49.953Z"
       },
       {
         "target": {
           "file": "src/daemon/managed-update-preparation.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T19:10:57.925Z"
+        "timestamp": "2026-11-21T19:43:49.953Z"
       },
       {
         "target": {
           "file": "src/daemon/release-compatibility.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T19:10:57.925Z"
+        "timestamp": "2026-11-21T19:43:49.953Z"
       },
       {
         "target": {
           "file": "src/daemon/source-release-qualification.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T19:10:57.925Z"
+        "timestamp": "2026-11-21T19:43:49.953Z"
       },
       {
         "target": {
           "file": "src/shared/source-release-compatibility.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T19:10:57.925Z"
+        "timestamp": "2026-11-21T19:43:49.953Z"
       },
       {
         "target": {
           "file": "src/shared/source-release-target.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T19:10:57.925Z"
+        "timestamp": "2026-11-21T19:43:49.953Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASKS-a03e99e17a364550-s1.log.jsonl"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T19:10:57.925Z"
+        "timestamp": "2026-11-21T19:43:49.953Z"
       },
       {
         "target": {
           "file": "docs/plans/node-runtime-evidence/source-installation-state.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T19:10:57.925Z"
+        "timestamp": "2026-11-21T19:43:49.953Z"
       },
       {
         "target": {
           "file": "src/shared/__tests__/source-installation.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T19:10:57.925Z"
+        "timestamp": "2026-11-21T19:43:49.953Z"
       },
       {
         "target": {
           "file": "src/shared/managed-source-release.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T19:10:57.925Z"
+        "timestamp": "2026-11-21T19:43:49.953Z"
       },
       {
         "target": {
           "file": "src/shared/source-installation.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T19:10:57.925Z"
+        "timestamp": "2026-11-21T19:43:49.953Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/node-runtime-evidence/source-predecessor-recovery.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T19:43:49.953Z"
+      },
+      {
+        "target": {
+          "file": "scripts/__tests__/source-predecessor-native.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T19:43:49.953Z"
+      },
+      {
+        "target": {
+          "file": "src/bin/insrc-runtime-smoke.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T19:43:49.953Z"
+      },
+      {
+        "target": {
+          "file": "src/bin/insrc-source-recovery.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T19:43:49.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/source-predecessor.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T19:43:49.953Z"
       }
     ],
-    "commit": "50a172185"
+    "commit": "6f078b30d"
   },
   "citations": []
 }

@@ -404,12 +404,14 @@ describe('writeCheckpoint/readCheckpoint/finalizeAndCleanup and ReviewCheckpoint
 		// A background process races to replace reviewDirPath with a symlink to
 		// outsideDir as fast as it can, for a short bounded window -- a
 		// best-effort probe for the externally-reported ancestor-substitution
-		// race. True elimination needs OS directory-fd-relative syscalls
-		// (openat/mkdirat/unlinkat) Node's fs module does not expose publicly
-		// (see openDirNoFollow's own doc in checkpoint.ts); absence of a
-		// detected escape within this bounded window is not a formal proof,
-		// only that no violation was observed in however many attempts this
-		// window allowed.
+		// race. pinDirectoryChain (checkpoint.ts) closes this structurally on
+		// Linux by binding every operation to each ancestor's own pinned fd,
+		// never re-resolving a mutable name once pinned; on a platform with no
+		// /proc, the same best-effort, narrowed-not-eliminated gap as before
+		// remains, documented as a platform limitation. Absence of a detected
+		// escape within this bounded window is not a formal proof, only that
+		// no violation was observed in however many attempts this window
+		// allowed.
 		const racer = spawn(process.execPath, ['-e', `
 			const fs = require('node:fs');
 			const target = ${JSON.stringify(reviewDirPath)};

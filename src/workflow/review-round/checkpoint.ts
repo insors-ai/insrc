@@ -192,9 +192,54 @@ const CAN_PIN_DIRECTORY_VIA_PROC = process.platform === 'linux' && existsSync('/
  * documented, platform-specific limitation -- not a defect unique to this
  * function.
  */
-function pinDirectory(dir: string): { readonly fd: number; readonly path: string } {
+interface PinnedDir {
+	readonly fd:   number;
+	readonly path: string;
+}
+
+function pinDirectory(dir: string): PinnedDir {
 	const fd = openSync(dir, fsConstants.O_RDONLY | fsConstants.O_DIRECTORY | fsConstants.O_NOFOLLOW);
 	return { fd, path: CAN_PIN_DIRECTORY_VIA_PROC ? `/proc/self/fd/${fd}` : dir };
+}
+
+/**
+ * Pins repoRoot, then pins each of `segments` in turn, each one built on the
+ * PREVIOUS segment's own already-pinned alias rather than a freshly
+ * constructed path string -- so no ancestor anywhere in the chain, not just
+ * the final leaf, is ever resolved against its own mutable name after the
+ * very first step. Externally reported P2, round 3: pinning only the final
+ * directory (e.g. the review directory itself) left every ancestor ABOVE it
+ * (e.g. .insrc/tmp) still resolved fresh on that one open call, so replacing
+ * an ancestor between requireNoSymlinkInPath's check and this call could
+ * still redirect it. Chaining the pin one level at a time closes that gap at
+ * every level: once a directory is open, its fd (and /proc alias) remain
+ * valid regardless of what later happens to the path used to open it -- a
+ * fundamental POSIX guarantee, not something that needs re-checking.
+ *
+ * repoRoot itself is the one link this chain cannot pin ahead of time (it is
+ * the trusted root the daemon's own registry resolved, not attacker-
+ * influenced content under the repository); every segment after it is fully
+ * protected. Returns undefined (closing anything already opened) when any
+ * segment does not exist yet; rethrows any other failure (including a
+ * symlinked segment, caught via O_NOFOLLOW) after the same cleanup.
+ */
+function pinDirectoryChain(repoRoot: string, ...segments: readonly string[]): { readonly leaf: PinnedDir; readonly parent: PinnedDir; readonly close: () => void } | undefined {
+	const fds: number[] = [];
+	try {
+		let current = pinDirectory(repoRoot);
+		fds.push(current.fd);
+		let parent = current;
+		for (const segment of segments) {
+			parent = current;
+			current = pinDirectory(join(current.path, segment));
+			fds.push(current.fd);
+		}
+		return { leaf: current, parent, close: () => { for (const fd of fds) closeSync(fd); } };
+	} catch (err) {
+		for (const fd of fds) closeSync(fd);
+		if ((err as NodeJS.ErrnoException).code === 'ENOENT') return undefined;
+		throw err;
+	}
 }
 
 function isReviewCheckpointShape(v: unknown): v is ReviewCheckpoint {
@@ -227,15 +272,19 @@ export async function writeCheckpoint(
 	// Re-checked after mkdirSync, matching review-report.ts's own convention.
 	requireNoSymlinkInPath(repoRoot, path);
 
-	// Pinned immediately before use: every subsequent operation goes through
-	// this fd's own identity, never re-resolving the review directory's
-	// mutable name again (see pinDirectory's own doc).
-	const { fd, path: pinnedDir } = pinDirectory(dir);
+	// Pinned immediately before use, all the way from repoRoot: every
+	// subsequent operation goes through this chain's own identity, never
+	// re-resolving any ancestor's mutable name again (see pinDirectoryChain's
+	// own doc). mkdirSync just created `dir`, so ENOENT here would mean it
+	// disappeared again immediately -- a genuine race this call cannot
+	// safely proceed through.
+	const chain = pinDirectoryChain(repoRoot, '.insrc', 'tmp', reviewId);
+	if (chain === undefined) throw new Error(`checkpoint: ${dir} disappeared before it could be pinned`);
 	try {
 		const checkpoint: ReviewCheckpoint = { reviewId, lastCompletedUnit };
-		publishGuarded(pinnedDir, 'checkpoint.json', JSON.stringify(checkpoint));
+		publishGuarded(chain.leaf.path, 'checkpoint.json', JSON.stringify(checkpoint));
 	} finally {
-		closeSync(fd);
+		chain.close();
 	}
 }
 
@@ -296,11 +345,12 @@ function defaultWriteDurableCopy(repoRoot: string, reviewId: string, finalOutput
 	mkdirSync(dir, { recursive: true });
 	requireNoSymlinkInPath(repoRoot, path);
 
-	const { fd, path: pinnedDir } = pinDirectory(dir);
+	const chain = pinDirectoryChain(repoRoot, '.insrc', 'artifacts');
+	if (chain === undefined) throw new Error(`checkpoint: ${dir} disappeared before it could be pinned`);
 	try {
-		publishGuarded(pinnedDir, `REVIEW-${reviewId}.json`, JSON.stringify(finalOutput));
+		publishGuarded(chain.leaf.path, `REVIEW-${reviewId}.json`, JSON.stringify(finalOutput));
 	} finally {
-		closeSync(fd);
+		chain.close();
 	}
 }
 
@@ -322,35 +372,34 @@ export async function finalizeAndCleanup(reviewId: string, finalOutput: unknown)
 
 	const dir = reviewDir(repoRoot, reviewId);
 	requireNoSymlinkInPath(repoRoot, dir);
-	// Pinned immediately before the recursive delete: emptying the contents
-	// is bound to the exact inode this call opens, never re-resolving the
-	// review directory's mutable name again (see pinDirectory's own doc) --
-	// so even a `dir` name swapped mid-operation to something else entirely
-	// leaves whatever is now actually named `dir` untouched, with only the
-	// original directory this call validated ever emptied.
-	let pinned: { readonly fd: number; readonly path: string };
+	// Pinned immediately before the recursive delete, all the way from
+	// repoRoot: emptying the contents is bound to the exact inode this call
+	// opens, never re-resolving any ancestor's mutable name again (see
+	// pinDirectoryChain's own doc) -- so even a name swapped mid-operation
+	// anywhere in the chain, not just the review directory itself, leaves
+	// whatever is now actually named there untouched, with only the original
+	// directory this call validated ever emptied.
+	const chain = pinDirectoryChain(repoRoot, '.insrc', 'tmp', reviewId);
+	if (chain === undefined) return; // already cleaned up, or never started -- nothing to delete
 	try {
-		pinned = pinDirectory(dir);
-	} catch (err) {
-		if ((err as NodeJS.ErrnoException).code === 'ENOENT') return; // already cleaned up -- nothing to delete
-		throw err;
-	}
-	try {
-		emptyDirectoryContents(pinned.path);
+		emptyDirectoryContents(chain.leaf.path);
+		// rmdir(2) refuses a /proc/self/fd alias for removing the directory
+		// the fd itself refers to (only child lookups underneath it are
+		// supported), so the now-empty directory's own final removal still
+		// has to name it relative to a parent -- using the PINNED parent
+		// alias (not the raw mutable `dir` string) means even this last
+		// name-based lookup cannot be redirected by a swapped .insrc/tmp.
+		// Safe even so regardless, since rmdir only ever removes a name that
+		// is itself literally an empty directory: swapped to a symlink, a
+		// non-empty directory, or a plain file, it refuses rather than
+		// destroying whatever is actually there.
+		try {
+			rmdirSync(join(chain.parent.path, reviewId));
+		} catch (err) {
+			if ((err as NodeJS.ErrnoException).code !== 'ENOENT') throw err;
+		}
 	} finally {
-		closeSync(pinned.fd);
-	}
-	// rmdir(2) refuses a /proc/self/fd alias for removing the directory the
-	// fd itself refers to (only child lookups underneath it are supported),
-	// so the now-empty directory's own final removal still has to name `dir`
-	// relative to ITS OWN parent -- safe even so, since rmdir only ever
-	// removes a name that is itself literally an empty directory: swapped to
-	// a symlink, a non-empty directory, or a plain file, it refuses rather
-	// than destroying whatever is actually there.
-	try {
-		rmdirSync(dir);
-	} catch (err) {
-		if ((err as NodeJS.ErrnoException).code !== 'ENOENT') throw err;
+		chain.close();
 	}
 }
 

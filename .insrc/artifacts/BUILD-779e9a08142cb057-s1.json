@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 12,
-        "contentHash": "fb5d8dabb61716ee2805852e29f863a293ecb0064af1975349c45682754e3c28",
-        "at": "2026-11-21T19:17:34.875Z",
+        "number": 13,
+        "contentHash": "ef2266fca972047c8600c739ca3ab9079b6fc1a31b8b68da4dd64dd81f546d54",
+        "at": "2026-11-21T19:33:07.539Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -29,8 +29,8 @@
     "schemaVersion": 1,
     "epicHash": "779e9a08142cb057",
     "storyId": "s1",
-    "revision": 12,
-    "updatedAt": "2026-11-21T19:16:35.745Z",
+    "revision": 13,
+    "updatedAt": "2026-11-21T19:32:03.230Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicSlug": "add-securityfinding-capability-family-delegates-framing"
@@ -67,165 +67,165 @@
           "file": "src/workflow/review-round/__tests__/security-finding.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T19:16:35.745Z"
+        "timestamp": "2026-11-21T19:32:03.230Z"
       },
       {
         "target": {
           "file": "src/workflow/review-round/security-finding.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T19:16:35.745Z"
+        "timestamp": "2026-11-21T19:32:03.230Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASKS-779e9a08142cb057-s1.log.jsonl"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T19:16:35.745Z"
+        "timestamp": "2026-11-21T19:32:03.230Z"
       },
       {
         "target": {
           "file": "src/workflow/review-round/__tests__/security-locator.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T19:16:35.745Z"
+        "timestamp": "2026-11-21T19:32:03.230Z"
       },
       {
         "target": {
           "file": "src/workflow/review-round/security-locator.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T19:16:35.745Z"
+        "timestamp": "2026-11-21T19:32:03.230Z"
       },
       {
         "target": {
           "file": "src/workflow/review-round/__tests__/evidence-provider.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T19:16:35.745Z"
+        "timestamp": "2026-11-21T19:32:03.230Z"
       },
       {
         "target": {
           "file": "src/workflow/review-round/evidence-provider.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T19:16:35.745Z"
+        "timestamp": "2026-11-21T19:32:03.230Z"
       },
       {
         "target": {
           "file": "src/workflow/artifact-ids.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T19:16:35.745Z"
+        "timestamp": "2026-11-21T19:32:03.230Z"
       },
       {
         "target": {
           "file": "src/workflow/gates.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T19:16:35.745Z"
+        "timestamp": "2026-11-21T19:32:03.230Z"
       },
       {
         "target": {
           "file": "src/workflow/path-scheme.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T19:16:35.745Z"
+        "timestamp": "2026-11-21T19:32:03.230Z"
       },
       {
         "target": {
           "file": "src/workflow/review-round/__tests__/receipt-record.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T19:16:35.745Z"
+        "timestamp": "2026-11-21T19:32:03.230Z"
       },
       {
         "target": {
           "file": "src/workflow/review-round/receipt-record.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T19:16:35.745Z"
+        "timestamp": "2026-11-21T19:32:03.230Z"
       },
       {
         "target": {
           "file": "src/workflow/storage.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T19:16:35.745Z"
+        "timestamp": "2026-11-21T19:32:03.230Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/PLAN-779e9a08142cb057-s1.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T19:16:35.745Z"
+        "timestamp": "2026-11-21T19:32:03.230Z"
       },
       {
         "target": {
           "file": "docs/standalone/add-securityfinding-capability-family-delegates-framing-E20261118779e9a08/S001/PLAN.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T19:16:35.745Z"
+        "timestamp": "2026-11-21T19:32:03.230Z"
       },
       {
         "target": {
           "file": "src/workflow/review-round/__tests__/security-schema.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T19:16:35.745Z"
+        "timestamp": "2026-11-21T19:32:03.230Z"
       },
       {
         "target": {
           "file": "src/workflow/review-round/security-schema.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T19:16:35.745Z"
+        "timestamp": "2026-11-21T19:32:03.230Z"
       },
       {
         "target": {
           "file": "src/workflow/artifact-core/__tests__/codec-create.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T19:16:35.745Z"
+        "timestamp": "2026-11-21T19:32:03.230Z"
       },
       {
         "target": {
           "file": "src/workflow/artifact-core/__tests__/lifecycle-kit.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T19:16:35.745Z"
+        "timestamp": "2026-11-21T19:32:03.230Z"
       },
       {
         "target": {
           "file": "src/workflow/artifact-core/__tests__/lifecycle-members.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T19:16:35.745Z"
+        "timestamp": "2026-11-21T19:32:03.230Z"
       },
       {
         "target": {
           "file": "src/workflow/artifact-core/codecs.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T19:16:35.745Z"
+        "timestamp": "2026-11-21T19:32:03.230Z"
       },
       {
         "target": {
           "file": "src/workflow/artifact-core/lifecycle.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T19:16:35.745Z"
+        "timestamp": "2026-11-21T19:32:03.230Z"
       },
       {
         "target": {
           "file": "src/workflow/artifact-core/__tests__/pass-through-codecs.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T19:16:35.745Z"
+        "timestamp": "2026-11-21T19:32:03.230Z"
       }
     ],
-    "commit": "521962e00",
-    "summary": "A third review round against 38933ec4c found one more P2: the serialization lock key used repoPath verbatim, so two spellings of the same repository (e.g. a trailing slash) acquired different locks while updating the same receipt file, reopening the same race the prior serialization fix closed. Canonicalized repoPath with resolve+realpathSync before it enters the lock key, matching the canonicalization daemon/lifecycle-registry.ts already uses for the identical reason. Added a concurrent-append test using repo and `${repo}/`; confirmed it fails without the fix (the aliased receipt is dropped) before restoring it."
+    "commit": "16fb6291d",
+    "summary": "A fourth review round against 5243a4aea found one more P2: the wrapper computed canonicalRepo for the lock key but still passed the original (possibly relative) repoPath to persistVerificationReceiptUnlocked, so a relative repoPath wrote the json/change-log successfully via the lifecycle service's own path resolution but then failed refreshing RECEIPTS.md (\"writeAtomic: path must be absolute\"), leaving the document behind the json. Fixed by passing canonicalRepo through to the unlocked function instead of repoPath. Added a relative-repoPath test asserting json, history and the rendered RECEIPTS.md all reflect the write; confirmed it fails without the fix before restoring it."
   },
   "citations": []
 }

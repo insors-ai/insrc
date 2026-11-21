@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 12,
-        "contentHash": "cc0e5467f3c88447d746214cf9590a496656206da1330d532f0a86b98695a904",
-        "at": "2026-11-21T19:16:36.031Z",
+        "number": 13,
+        "contentHash": "cebd63fc47ba6c459a3e2be4db59aae27e475fd9ee06e89fee9f61684f3e74f8",
+        "at": "2026-11-21T19:32:03.526Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "779e9a08142cb057",
     "storyId": "s1",
     "createdAt": "2026-11-21T15:21:22.783Z",
-    "updatedAt": "2026-11-21T19:16:35.745Z",
+    "updatedAt": "2026-11-21T19:32:03.230Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-18T08:51:40.429Z",
     "epicSlug": "add-securityfinding-capability-family-delegates-framing",
-    "revision": 12
+    "revision": 13
   },
   "body": {
     "tasks": [
@@ -242,8 +242,8 @@
       },
       {
         "taskId": "t4",
-        "commit": "521962e00",
-        "ranAt": "2026-11-21T19:16:35.745Z",
+        "commit": "16fb6291d",
+        "ranAt": "2026-11-21T19:32:03.230Z",
         "testsPassed": true,
         "tests": [
           {
@@ -291,7 +291,7 @@
             "file": "src/workflow/review-round/__tests__/receipt-record.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 795,
+            "durationMs": 799,
             "titles": [
               {
                 "title": "VerificationReceipt record shape (pass/fail/evidence linkage by id)",
@@ -319,6 +319,10 @@
               },
               {
                 "title": "concurrent appends through equivalent repoPath spellings for the same repository still serialize, not race",
+                "result": "pass"
+              },
+              {
+                "title": "a relative repoPath still writes the json, history AND refreshes RECEIPTS.md -- the canonical path is used throughout, not only for the lock",
                 "result": "pass"
               },
               {

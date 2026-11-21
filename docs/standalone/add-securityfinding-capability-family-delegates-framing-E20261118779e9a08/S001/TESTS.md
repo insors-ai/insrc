@@ -86,7 +86,7 @@ Run at 2026-11-21T15:29:56.040Z on commit `1af308fcc`. Tests check: **passed**. 
 
 ## t4
 
-Run at 2026-11-21T19:16:35.745Z on commit `521962e00`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-21T19:32:03.230Z on commit `16fb6291d`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: VerificationReceipt record shape (pass/fail/evidence linkage by id)**
 
@@ -110,7 +110,7 @@ Run at 2026-11-21T19:16:35.745Z on commit `521962e00`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/workflow/review-round/__tests__/receipt-record.test.ts` | 0 | 9 | 0.8 s |  |
+| `src/workflow/review-round/__tests__/receipt-record.test.ts` | 0 | 10 | 0.8 s |  |
 
 ## t5
 

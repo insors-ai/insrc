@@ -5,6 +5,7 @@ import { cp, mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/p
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { copyNodeRuntimeAssets } from './node-runtime-assets.mjs';
 import { sha256 } from './daemon-bundle-metadata.mjs';
 
 const [production, qualification, archive] = process.argv.slice(2);
@@ -21,6 +22,7 @@ try {
 	for (const name of ['daemon-bundle-metadata.mjs', 'verify-daemon-bundle.mjs', 'stage-daemon-bundle.mjs', 'install-daemon-bundle.mjs']) {
 		await cp(fileURLToPath(new URL(name, import.meta.url)), join(stage, name));
 	}
+	copyNodeRuntimeAssets(fileURLToPath(new URL('../', import.meta.url)), stage);
 	await mkdir(join(stage, 'trust'));
 	const keys = [];
 	for (const [domain, source] of [['production', production], ['qualification', qualification]]) {
@@ -35,7 +37,7 @@ try {
 	await writeFile(archive, '', { flag: 'wx' });
 	try {
 		execFileSync('/usr/bin/tar', ['--no-mac-metadata', '--no-xattrs', '--format', 'ustar', '-czf', resolve(archive),
-			'-C', stage, 'node', 'LICENSE.node', 'daemon-bundle-metadata.mjs', 'verify-daemon-bundle.mjs', 'stage-daemon-bundle.mjs', 'install-daemon-bundle.mjs', 'trust']);
+			'-C', stage, 'node', 'LICENSE.node', 'daemon-bundle-metadata.mjs', 'verify-daemon-bundle.mjs', 'stage-daemon-bundle.mjs', 'install-daemon-bundle.mjs', 'trust', 'scripts', 'src']);
 		process.stdout.write(`${sha256(await readFile(archive))}  ${archive}\n`);
 	} catch (error) {
 		await rm(archive, { force: true });

@@ -10,7 +10,8 @@
  */
 
 import { spawn } from 'node:child_process';
-import { existsSync, openSync, mkdirSync } from 'node:fs';
+import { closeSync, existsSync, openSync, mkdirSync } from 'node:fs';
+import { once } from 'node:events';
 import { createConnection } from 'node:net';
 import type { Socket } from 'node:net';
 import { fileURLToPath } from 'node:url';
@@ -27,12 +28,13 @@ import type { StopTarget } from '../../shared/daemon-process-client.js';
 import { runFileGuardConflict } from '../../shared/daemon-run-files.js';
 import { readManagedInstallation } from '../../shared/managed-daemon-installation.js';
 import { ManagedDaemonControl } from './managed-daemon-control.js';
+import { ownedNodeEnvironment, resolveOwnedToolchain } from './owned-runtime.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 /** Daemon entry point relative to this compiled file (out/cli/services).
  *  Exported so the debug service (Story s3) matches orphan daemon processes
  *  against the SAME resolved absolute entry path rather than a second constant. */
-export const DAEMON_ENTRY = join(__dirname, '../../daemon/index.js');
+export const DAEMON_ENTRY = resolve(process.env['INSRC_DAEMON_ROOT'] ?? resolve(__dirname, '../../..'), 'out/daemon/index.js');
 
 export interface BackupResult {
 	readonly targetDir:  string;
@@ -77,16 +79,22 @@ export async function startDaemon(): Promise<StartResult> {
 	}
 	const conflict = runFileGuardConflict(PATHS.daemonRunGuard);
 	if (conflict) throw new Error(conflict);
+	const root = resolve(dirname(DAEMON_ENTRY), '../..');
+	const toolchain = await resolveOwnedToolchain(root);
+	if (!existsSync(DAEMON_ENTRY)) throw new Error(`Built daemon missing at ${DAEMON_ENTRY}; rebuild before starting.`);
 	const alreadyRunning = existsSync(PATHS.pidFile);
 	mkdirSync(PATHS.logDir, { recursive: true });
 	const logFd = openSync(PATHS.daemonLog, 'a');
 
-	const child = spawn(
-		process.execPath,
-		['--import', 'tsx/esm', DAEMON_ENTRY],
-		{ detached: true, stdio: ['ignore', logFd, logFd], env: { ...process.env } },
-	);
-	child.unref();
+	try {
+		const child = spawn(
+			toolchain.node,
+			['--import', 'tsx/esm', DAEMON_ENTRY],
+			{ cwd: root, detached: true, stdio: ['ignore', logFd, logFd], env: { ...ownedNodeEnvironment(toolchain), INSRC_MODE: 'daemon' } },
+		);
+		await once(child, 'spawn');
+		child.unref();
+	} finally { closeSync(logFd); }
 
 	const pid = await waitForReady();
 	return pid !== undefined

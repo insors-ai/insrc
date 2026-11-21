@@ -33,7 +33,8 @@ export const defaultSubprocessRunner: SubprocessRunner = {
         resolve({ code: SPAWN_FAILURE_CODE });
         return;
       }
-      const env = opts?.env !== undefined ? { ...process.env, ...opts.env } : process.env;
+      const env = { ...process.env, ...opts?.env };
+      delete env['NODE_OPTIONS']; delete env['NODE_PATH'];
       const child = spawn(cmd, args, {
         env,
         ...(opts?.cwd !== undefined ? { cwd: opts.cwd } : {}),

@@ -18,9 +18,9 @@ fun interface DaemonSetupPolicy {
 }
 
 /**
- * Ensures (provisions or reuses) a private Node >= NODE_MIN_MAJOR under the insrc
+ * Ensures (provisions or reuses) a verified pinned local Node under the insrc
  * home (Story S003 / t5). The injectable seam behind [NodeRuntimeResolver] so the
- * tiered policy is testable without a real download.
+ * owned-runtime policy is testable without a real download.
  *
  * @throws NodeProvisioningException when a private Node cannot be provided.
  */
@@ -30,11 +30,10 @@ fun interface PrivateNodeProvisioner {
 
 /**
  * Resolves the Node interpreter the installer runs under (Story S003 / t4):
- * reuse the system Node when it is adequate (ac4), else dispatch to a
+ * always dispatch to the shared verified
  * [PrivateNodeProvisioner] (ac3).
  *
- * @throws NodeProvisioningException when neither an adequate system Node nor a
- *   provisioned private Node is available.
+ * @throws NodeProvisioningException when the verified local runtime is unavailable.
  */
 fun interface NodeRuntimeResolver {
     fun resolve(): NodeRuntime

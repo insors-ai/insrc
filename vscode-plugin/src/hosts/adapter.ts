@@ -24,7 +24,7 @@ export interface HostAdapterDeps {
   env: HostEnv;
   /** The host-owned-file seam the writers use. */
   fs: HostFileSystem;
-  /** Resolver for the built insrc-mcp stdio entry (~/.insrc/daemon/out/bin/insrc-mcp.js), or undefined. */
+  /** Resolver for the built insrc-mcp stdio entry (~/.insrc/daemon/scripts/insrc-mcp), or undefined. */
   launchTarget: () => string | undefined;
   /** The tracked-workflow steering body; defaults to the extension-bundled canonical block (test seam). */
   steeringBody?: () => string;

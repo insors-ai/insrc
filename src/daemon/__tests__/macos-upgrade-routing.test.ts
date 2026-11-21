@@ -48,7 +48,9 @@ if [ "$1" = "-C" ] && [ "$3" = "remote" ]; then printf '/qualified/origin\\n'; e
 if [ "$1" = "-C" ] && [ "$3" = "symbolic-ref" ]; then printf 'v2\\n'; exit 0; fi
 printf 'unexpected git: %s\\n' "$*" >&2
 exit 44`);
+	await writeFile(join(root, 'node-runtime-env.sh'), `insrc_source_toolchain() { NODE_BIN='${join(tools, 'node')}'; NPM_CLI='${join(tools, 'npm')}'; TOOLCHAIN_ID=fixture; }\n`);
 	await shim(tools, 'node', `
+if [ "\${1##*/}" = npm ]; then shift; exec '${join(tools, 'npm')}' "$@"; fi
 if [ "$1" = "-v" ]; then printf 'v22.22.1\\n'; exit 0; fi
 if [ "$1" = "-p" ]; then printf '22\\n'; exit 0; fi
 if [ "$1" = "-e" ]; then exit 0; fi
@@ -109,7 +111,7 @@ exit 45`);
 	await mkdir(plainTools, { recursive: true });
 	const plainTrace = join(plainRoot, 'trace');
 	await shim(plainTools, 'uname', 'printf "Darwin\\n"');
-	await shim(plainTools, 'node', 'exit 0');
+	await shim(plainTools, 'node', `if [ "\${1##*/}" = npm ]; then shift; exec '${join(plainTools, 'npm')}' "$@"; fi\nexit 0`);
 	await shim(plainTools, 'npm', 'printf "npm:%s\\n" "$1" >> "$INSRC_TEST_TRACE"');
 	const plainEnv = (surfaceHome: string) => ({ ...process.env, HOME: surfaceHome, TMPDIR: plainRoot,
 		PATH: `${plainTools}:/usr/bin:/bin`, INSRC_CTL_LOG_DIR: plainRoot, INSRC_TEST_TRACE: plainTrace });
@@ -129,6 +131,7 @@ exit 45`);
 	await writeFile(join(seed, 'package-lock.json'), '{"lockfileVersion":3}\n');
 	await writeFile(join(seed, 'src/index.js'), 'v1\n');
 	await copyFile(control, join(seed, 'scripts/daemon-ctl.sh'));
+	await writeFile(join(seed, 'scripts/node-runtime-env.sh'), `insrc_source_toolchain() { NODE_BIN='${join(plainTools, 'node')}'; NPM_CLI='${join(plainTools, 'npm')}'; TOOLCHAIN_ID=fixture; }\n`);
 	await commit(seed, 'v1');
 
 	const freshCheckout = async (name: string) => {
@@ -157,7 +160,7 @@ exit 45`);
 	};
 
 	await writeFile(plainTrace, '');
-	await exec('/bin/bash', [control, 'update'], { env: plainEnv(ctlSurface.home), cwd: plainRoot, timeout: 30_000 });
+	await exec('/bin/bash', [join(ctlSurface.checkout, 'scripts/daemon-ctl.sh'), 'update'], { env: plainEnv(ctlSurface.home), cwd: plainRoot, timeout: 30_000 });
 	await requirePlainUpdate(ctlSurface.checkout);
 
 	const vscodeController = new URL('../../../vscode-plugin/src/daemon/controller.ts', import.meta.url).href;

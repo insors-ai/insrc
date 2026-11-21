@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "nodeVersion": "22.22.1",
+  "layout": {
+    "node": "bin/node",
+    "npm": "lib/node_modules/npm/bin/npm-cli.js",
+    "license": "LICENSE"
+  },
+  "checksums": {
+    "url": "https://nodejs.org/download/release/v22.22.1/SHASUMS256.txt",
+    "sha256": "b4e0a68b3fd205e27a000f5722d7932cf31c1e0b6b3d9101bcb153abfd5d8023",
+    "signerFingerprint": "CC68F5A3106FF448322E48ED27F5E38D5B0A215F"
+  },
+  "targets": {
+    "darwin-arm64": {
+      "url": "https://nodejs.org/download/release/v22.22.1/node-v22.22.1-darwin-arm64.tar.gz",
+      "sha256": "679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2",
+      "enabled": false,
+      "qualification": null
+    },
+    "darwin-x64": {
+      "url": "https://nodejs.org/download/release/v22.22.1/node-v22.22.1-darwin-x64.tar.gz",
+      "sha256": "07b13722d558790fca20bb1ecf61bde24b7a4863111f7be77fc57251a407359a",
+      "enabled": false,
+      "qualification": null
+    },
+    "linux-x64": {
+      "url": "https://nodejs.org/download/release/v22.22.1/node-v22.22.1-linux-x64.tar.gz",
+      "sha256": "07c8aafa60644fb81adefa1ee7da860eb1920851ffdc9a37020ab0be47fbc10e",
+      "enabled": false,
+      "qualification": null
+    },
+    "linux-arm64": {
+      "url": "https://nodejs.org/download/release/v22.22.1/node-v22.22.1-linux-arm64.tar.gz",
+      "sha256": "1d1690e9aba47e887a275abc6d8f7317e571a0700deaef493f768377e99155f5",
+      "enabled": false,
+      "qualification": null
+    }
+  }
+}

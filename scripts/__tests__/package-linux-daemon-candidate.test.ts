@@ -1,3 +1,5 @@
+import { copyNodeRuntimeAssets } from '../node-runtime-assets.mjs';
+import { fileURLToPath } from 'node:url';
 import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -57,7 +59,7 @@ test('Linux staging requires Linux entry points, retains matching native depende
 		for (const file of [
 			'out/daemon/index.js', 'out/cli/index.js', 'out/bin/insrc-shutdown-watchdog.js', 'out/bin/insrc-process-broker',
 			'package.json', 'package-lock.json', 'LICENSE', 'THIRD_PARTY_NOTICES.md',
-			'scripts/daemon-ctl.sh', 'scripts/insrc', 'scripts/stage-daemon-bundle.mjs',
+			'scripts/daemon-ctl.sh', 'scripts/insrc', 'scripts/insrc-mcp', 'scripts/verify-installed-runtime.mjs', 'scripts/stage-daemon-bundle.mjs',
 			'scripts/daemon-bundle-metadata.mjs', 'scripts/linux-daemon-metadata.mjs',
 			'packages/project-memory/package.json', 'packages/project-memory/dist/index.js', 'packages/project-memory/LICENSE',
 			'node_modules/parser/prebuilds/linux-x64/parser.node', 'node_modules/parser/prebuilds/darwin-arm64/parser.node',
@@ -70,6 +72,7 @@ test('Linux staging requires Linux entry points, retains matching native depende
 			'node_modules/oracledb/build/Release/oracledb-6.10.0-linux-arm64.node',
 			longDeclaration,
 		]) make(join(source, file));
+		copyNodeRuntimeAssets(fileURLToPath(new URL('../../', import.meta.url)), source);
 		make(runtime);
 		make(join(root, 'node', 'LICENSE'));
 		mkdirSync(join(source, 'node_modules', '@insrc'));

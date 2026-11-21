@@ -17,7 +17,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -27,6 +27,7 @@ const root = join(sandbox, 'daemon');
 const bin = join(sandbox, 'bin');
 const npmLog = join(sandbox, 'npm.log');
 const npmExit = join(sandbox, 'npm-exit');
+const distribution = join(sandbox, 'runtime-v1/distribution');
 
 process.env['HOME'] = join(sandbox, 'home');
 process.env['INSRC_DAEMON_ROOT'] = root;
@@ -45,6 +46,9 @@ writeFileSync(join(seed, 'package.json'), '{"name":"fixture","version":"1.0.0"}\
 writeFileSync(join(seed, '.gitignore'), 'node_modules/\n');                // as the real checkout ignores it
 writeFileSync(join(seed, 'package-lock.json'), '{"lockfileVersion":3}\n');
 writeFileSync(join(seed, 'src', 'index.ts'), 'export {};\n');
+mkdirSync(join(seed, 'scripts'));
+copyFileSync(new URL('../../../../scripts/node-runtime-env.sh', import.meta.url), join(seed, 'scripts/node-runtime-env.sh'));
+writeFileSync(join(seed, 'scripts/provision-node-runtime.sh'), `#!/bin/bash\nprintf '%s\\n' '${distribution}'\n`);
 git(seed, 'init', '-q', '-b', 'main');
 git(seed, 'add', '.');
 git(seed, 'commit', '-q', '-m', 'seed');
@@ -53,22 +57,19 @@ git(seed, 'push', '-q', 'origin', 'main');
 git(sandbox, 'clone', '-q', origin, root);
 const lockHash = git(root, 'hash-object', 'package-lock.json');
 
-// The fake npm: logs "<args>|<CXXFLAGS>", creates node_modules and rewrites
-// package-lock.json as a real install may, exits with the code in npm-exit (0 when absent). With
-// FAKE_NPM_MARKER_DIR set it occupies the marker path with a directory, so
-// the marker cannot be written.
-mkdirSync(bin);
-writeFileSync(join(bin, 'npm'), [
-	'#!/bin/sh',
-	`echo "$*|$CXXFLAGS" >> '${npmLog}'`,
-	'mkdir -p node_modules',
-	'if [ -f package-lock.json ]; then echo " " >> package-lock.json; fi',   // npm may rewrite the lockfile
-	'if [ -n "$FAKE_NPM_MARKER_DIR" ]; then mkdir -p node_modules/.insrc-install-ok; fi',
-	`if [ -f '${npmExit}' ]; then exit "$(cat '${npmExit}')"; fi`,
-	'exit 0',
-	'',
-].join('\n'));
-chmodSync(join(bin, 'npm'), 0o755);
+// Recording bootstrap/NPM seams for decision tests; native identity is proved separately.
+mkdirSync(join(distribution, 'bin'), { recursive: true });
+mkdirSync(join(distribution, 'lib/node_modules/npm/bin'), { recursive: true });
+writeFileSync(join(distribution, 'bin/node'), `#!/bin/sh\nexec '${process.execPath}' "$@"\n`); chmodSync(join(distribution, 'bin/node'), 0o700);
+writeFileSync(join(distribution, 'lib/node_modules/npm/bin/npm-cli.js'), `
+const fs=require('node:fs');
+fs.appendFileSync(${JSON.stringify(npmLog)},process.argv.slice(2).join(' ')+'|'+(process.env.CXXFLAGS??'')+'\\n');
+fs.mkdirSync('node_modules',{recursive:true});
+if(fs.existsSync('package-lock.json'))fs.appendFileSync('package-lock.json',' ');
+if(process.env.FAKE_NPM_MARKER_DIR)fs.mkdirSync('node_modules/.insrc-install-ok',{recursive:true});
+process.exit(fs.existsSync(${JSON.stringify(npmExit)})?Number(fs.readFileSync(${JSON.stringify(npmExit)},'utf8')):0);
+`);
+mkdirSync(bin);writeFileSync(join(bin, 'npm'), '#!/bin/sh\nexit 99\n');chmodSync(join(bin, 'npm'), 0o700);
 
 const { update, INSTALL_MARKER } = await import('../maintenance.js');
 const markerPath = join(root, INSTALL_MARKER);
@@ -108,7 +109,7 @@ test('S001 t1: an update after a failed install installs again, and the marker e
 	assert.equal(retried.ok, true, retried.error);
 	assert.deepEqual(retried.calls.map(c => c.split('|')[0]), ['install'], 'the next update installs again, though the lockfile did not change');
 	assert.ok(retried.steps.includes('install'));
-	assert.equal(readFileSync(markerPath, 'utf8').trim(), lockHash, 'the marker holds the lockfile blob hash');
+	assert.match(readFileSync(markerPath, 'utf8').trim(), new RegExp(`^v2:${lockHash}:`));
 });
 
 test('S001 t1: a matching marker skips the install; a stale or missing marker installs', async () => {
@@ -122,12 +123,12 @@ test('S001 t1: a matching marker skips the install; a stale or missing marker in
 	writeFileSync(markerPath, 'a-hash-of-another-lockfile\n');
 	const stale = await run();
 	assert.deepEqual(stale.calls.map(c => c.split('|')[0]), ['install'], 'a stale marker installs');
-	assert.equal(readFileSync(markerPath, 'utf8').trim(), lockHash);
+	assert.match(readFileSync(markerPath, 'utf8').trim(), new RegExp(`^v2:${lockHash}:`));
 
 	rmSync(join(root, 'node_modules'), { recursive: true });       // node_modules deleted by hand: the marker goes with it
 	const missing = await run();
 	assert.deepEqual(missing.calls.map(c => c.split('|')[0]), ['install'], 'a missing marker installs');
-	assert.equal(readFileSync(markerPath, 'utf8').trim(), lockHash);
+	assert.match(readFileSync(markerPath, 'utf8').trim(), new RegExp(`^v2:${lockHash}:`));
 });
 
 test('S001 t1: npm runs with -std=c++17 appended to the caller\'s CXXFLAGS', async () => {

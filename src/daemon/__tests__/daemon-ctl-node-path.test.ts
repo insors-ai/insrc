@@ -18,7 +18,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, renameSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, renameSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -26,12 +26,12 @@ const repo = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const SCRIPT = join(repo, 'scripts', 'daemon-ctl.sh');
 
 interface Fixture {
-	home: string; root: string; emptyBin: string; toolsDir: string;
+	home: string; root: string; emptyBin: string; toolsDir: string; node: string;
 	pid: string; sock: string; cleanup(): void;
 }
 
 function fixture(): Fixture {
-	const home = mkdtempSync('/tmp/insrc-ctl-nodepath-');
+	const home = realpathSync(mkdtempSync('/tmp/insrc-ctl-nodepath-'));
 	const root = join(home, 'root');
 	const emptyBin = join(home, 'empty-bin');
 	// A controlled tools directory holding the shell utilities the script
@@ -43,7 +43,7 @@ function fixture(): Fixture {
 	// spawn_daemon execs `env INSRC_MODE=daemon "$NODE_BIN" ...`, and env execs
 	// its child by PATH lookup, so env + the basics must all be in the
 	// node-free PATH too.
-	for (const util of ['bash', 'sh', 'git', 'date', 'mkdir', 'ps', 'uname', 'cat', 'tee', 'sleep', 'env', 'echo']) {
+	for (const util of ['bash', 'sh', 'git', 'date', 'mkdir', 'ps', 'uname', 'cat', 'tee', 'sleep', 'env', 'echo', 'basename', 'dirname']) {
 		const src = spawnSync('bash', ['-c', `command -v ${util}`], { encoding: 'utf8' }).stdout.trim();
 		if (src) symlinkSync(src, join(toolsDir, util));
 	}
@@ -62,8 +62,17 @@ function fixture(): Fixture {
 	symlinkSync(join(repo, 'node_modules'), join(root, 'node_modules'));
 	cpSync(join(repo, 'out'), join(home, 'out-copy'), { recursive: true });
 	renameSync(join(home, 'out-copy'), join(root, 'out'));
+	mkdirSync(join(root, 'scripts'), { recursive: true });
+	cpSync(SCRIPT, join(root, 'scripts/daemon-ctl.sh'));
+	cpSync(join(repo, 'scripts/node-runtime-env.sh'), join(root, 'scripts/node-runtime-env.sh'));
+	const distribution = join(home, 'Owned Node Tools');
+	mkdirSync(join(distribution, 'bin'), { recursive: true });
+	const node = join(distribution, 'bin/node');
+	// Recording bootstrap seam; portability is proved with the official native archive.
+	writeFileSync(node, `#!/bin/sh\nexec '${process.execPath}' "$@"\n`); chmodSync(node, 0o700);
+	writeFileSync(join(root, 'scripts/provision-node-runtime.sh'), `#!/bin/bash\nprintf '%s\\n' '${distribution}'\n`);
 	return {
-		home, root, emptyBin, toolsDir,
+		home, root, emptyBin, toolsDir, node,
 		pid: join(home, '.insrc/daemon.pid'),
 		sock: join(home, '.insrc/daemon.sock'),
 		cleanup: () => rmSync(home, { recursive: true, force: true }),
@@ -86,7 +95,7 @@ function guiEnv(f: Fixture, extraEnv: Record<string, string> = {}): Record<strin
 function ctl(f: Fixture, command: string, extraEnv: Record<string, string> = {}, path?: string) {
 	const env = guiEnv(f, extraEnv);
 	if (path) env['PATH'] = path;
-	const r = spawnSync('bash', [SCRIPT, command, '--skip-sync', '--skip-install', '--skip-build'], {
+	const r = spawnSync('bash', [join(f.root, 'scripts/daemon-ctl.sh'), command, '--skip-sync', '--skip-install', '--skip-build'], {
 		encoding: 'utf8', timeout: 20000, env,
 	});
 	return { status: r.status, output: `${r.stdout}${r.stderr}` };
@@ -109,10 +118,10 @@ function fakeDaemonEntry(f: Fixture): string {
 	].join(nl);
 }
 
-test('daemon-ctl.sh resolves node from INSRC_NODE_BIN when PATH has no node', () => {
+test('daemon-ctl.sh accepts matching owned INSRC_NODE_BIN with no PATH Node', () => {
 	const f = fixture();
 	try {
-		const r = ctl(f, 'status', { INSRC_NODE_BIN: process.execPath });
+		const r = ctl(f, 'status', { INSRC_NODE_BIN: f.node });
 		// The node client must have EXECUTED (not "command not found"); the
 		// fixture home has no daemon, so the socket probe fails cleanly.
 		assert.notEqual(r.status, 2, r.output);
@@ -131,9 +140,9 @@ test('daemon-ctl.sh absolutizes a relative INSRC_NODE_BIN against the caller cwd
 	const callerDir = join(f.home, 'caller');
 	const callerTools = join(callerDir, 'tools');
 	mkdirSync(callerTools, { recursive: true });
-	symlinkSync(process.execPath, join(callerTools, 'node'));
+	symlinkSync(f.node, join(callerTools, 'node'));
 	try {
-		const harness = join(f.home, 'prologue.sh');
+		const harness = join(f.root, 'scripts/prologue.sh');
 		const prologue = readFileSync(SCRIPT, 'utf8').split('# ---------------------------------------------------------------------------\n# Helpers')[0]!;
 		writeFileSync(harness, `${prologue}\nprintf '%s\\n' "$NODE_BIN"\n`);
 		const r = spawnSync('bash', [harness, 'status'], {
@@ -143,14 +152,14 @@ test('daemon-ctl.sh absolutizes a relative INSRC_NODE_BIN against the caller cwd
 		const pinned = r.stdout.trim().split('\n').at(-1)!;
 		assert.match(pinned, /^\//, `pinned NODE_BIN must be absolute, got ${pinned}`);
 		// /tmp is a symlink to /private/tmp on macOS; compare against the real path.
-		assert.equal(pinned, join(realpathSync(callerTools), 'node'));
+		assert.equal(pinned, f.node);
 	} finally { f.cleanup(); }
 });
 
-test('daemon-ctl.sh falls back to the recorded ~/.insrc/daemon-node when PATH and well-known locations have no node', () => {
+test('daemon-ctl.sh accepts a recorded runtime only when it matches the verified owned executable', () => {
 	const f = fixture();
 	try {
-		writeFileSync(join(f.home, '.insrc/daemon-node'), `${process.execPath}\n`);
+		writeFileSync(join(f.home, '.insrc/daemon-node'), `${f.node}\n`);
 		const r = ctl(f, 'status');
 		// Only the recorded runtime can have run: PATH is node-free and
 		// INSRC_NODE_LOCATIONS points at an empty dir.
@@ -163,11 +172,7 @@ test('daemon-ctl.sh falls back to the recorded ~/.insrc/daemon-node when PATH an
 test('daemon-ctl.sh preserves internal whitespace in the recorded runtime path', () => {
 	const f = fixture();
 	try {
-		// A recorded path containing a space must resolve verbatim.
-		const spacedDir = join(f.home, 'Node Tools', 'bin');
-		mkdirSync(spacedDir, { recursive: true });
-		symlinkSync(process.execPath, join(spacedDir, 'node'));
-		writeFileSync(join(f.home, '.insrc/daemon-node'), `  ${join(spacedDir, 'node')} \n`);
+		writeFileSync(join(f.home, '.insrc/daemon-node'), `${f.node}\n`);
 		const r = ctl(f, 'status');
 		assert.notEqual(r.status, 2, r.output);
 		assert.doesNotMatch(r.output, /node: command not found/);
@@ -175,7 +180,7 @@ test('daemon-ctl.sh preserves internal whitespace in the recorded runtime path',
 	} finally { f.cleanup(); }
 });
 
-test('daemon-ctl.sh prefers a node on PATH over the recorded runtime', () => {
+test('daemon-ctl.sh refuses an external recorded runtime even when PATH contains Node', () => {
 	const f = fixture();
 	try {
 		// A bogus recorded runtime must lose to a real node on PATH.
@@ -184,18 +189,19 @@ test('daemon-ctl.sh prefers a node on PATH over the recorded runtime', () => {
 		const r = ctl(f, 'status', {}, `${nodeDir}:${f.toolsDir}`);
 		assert.doesNotMatch(r.output, /node not found/);
 		assert.doesNotMatch(r.output, /node: command not found/);
-		assert.match(r.output, /daemon not reachable/);
+		assert.match(r.output, /legacy daemon-node/);
 	} finally { f.cleanup(); }
 });
 
 test('daemon-ctl.sh fails closed with exit 2 and a clear message when no node exists anywhere', () => {
 	const f = fixture();
 	try {
+		rmSync(join(f.root, 'scripts/provision-node-runtime.sh'));
 		// Genuinely node-free PATH (controlled tools dir), empty well-known
 		// locations, no recorded runtime, no INSRC_NODE_BIN.
 		const r = ctl(f, 'status');
 		assert.equal(r.status, 2, r.output);
-		assert.match(r.output, /node not found/);
+		assert.match(r.output, /bootstrap assets/);
 		assert.doesNotMatch(r.output, /node: command not found/);
 	} finally { f.cleanup(); }
 });
@@ -205,7 +211,7 @@ test('daemon-ctl.sh stop succeeds under a node-free PATH via the resolved node',
 	try {
 		// No daemon running in the fixture home: stop must reach the lifecycle
 		// helper (which reports no live process) instead of dying on a bare node.
-		const r = ctl(f, 'stop', { INSRC_NODE_BIN: process.execPath });
+		const r = ctl(f, 'stop', { INSRC_NODE_BIN: f.node });
 		assert.equal(r.status, 0, r.output);
 		assert.doesNotMatch(r.output, /node: command not found/);
 	} finally { f.cleanup(); }
@@ -218,7 +224,7 @@ test('daemon-ctl.sh honours a non-executable INSRC_NODE_BIN by failing closed, n
 		writeFileSync(bogus, '#!/bin/sh\n');
 		const r = ctl(f, 'status', { INSRC_NODE_BIN: bogus });
 		assert.equal(r.status, 2, r.output);
-		assert.match(r.output, /node not found/);
+		assert.match(r.output, /External INSRC_NODE_BIN/);
 	} finally { f.cleanup(); }
 });
 
@@ -235,7 +241,7 @@ test('daemon-ctl.sh start spawns the daemon and stop reaches the lifecycle helpe
 	symlinkSync(process.execPath, join(nodeBinDir, 'node'));
 	const env = guiEnv(f, { INSRC_NODE_LOCATIONS: nodeBinDir });
 	try {
-		const start = spawnSync('bash', [SCRIPT, 'start', '--skip-sync', '--skip-install', '--skip-build'], {
+		const start = spawnSync('bash', [join(f.root, 'scripts/daemon-ctl.sh'), 'start', '--skip-sync', '--skip-install', '--skip-build'], {
 			encoding: 'utf8', timeout: 30000, env,
 		});
 		const startOut = `${start.stdout}${start.stderr}`;
@@ -243,7 +249,7 @@ test('daemon-ctl.sh start spawns the daemon and stop reaches the lifecycle helpe
 		assert.doesNotMatch(startOut, /node: command not found/);
 		assert.match(startOut, /daemon running/);
 		assert.ok(existsSync(f.pid), 'pid file written by the spawned daemon');
-		const status = spawnSync('bash', [SCRIPT, 'status'], { encoding: 'utf8', timeout: 15000, env });
+		const status = spawnSync('bash', [join(f.root, 'scripts/daemon-ctl.sh'), 'status'], { encoding: 'utf8', timeout: 15000, env });
 		const statusOut = `${status.stdout}${status.stderr}`;
 		assert.equal(status.status, 0, statusOut);
 		assert.match(statusOut, /"uptime": 1/);
@@ -255,7 +261,7 @@ test('daemon-ctl.sh start spawns the daemon and stop reaches the lifecycle helpe
 		// broker denies it (this sandbox's hardened runtime denies
 		// task_for_pid, the same refusal the pre-existing forced-stop tests
 		// see on main). Either way the bare-node failure is gone.
-		const stop = spawnSync('bash', [SCRIPT, 'stop'], { encoding: 'utf8', timeout: 15000, env });
+		const stop = spawnSync('bash', [join(f.root, 'scripts/daemon-ctl.sh'), 'stop'], { encoding: 'utf8', timeout: 15000, env });
 		const stopOut = `${stop.stdout}${stop.stderr}`;
 		assert.notEqual(stop.status, 2, `node resolution must not fail closed: ${stopOut}`);
 		assert.doesNotMatch(stopOut, /node: command not found/);

@@ -119,3 +119,27 @@ test('commands.test.ts: restartDaemonAndReport resolves true only when the daemo
     }
   }
 });
+
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, join } from 'node:path';
+import { createDaemonLifecycleController } from '../controller.js';
+import type { IpcClient } from '../../../../src/shared/ipc-client.js';
+
+test('VS Code daemon commands delegate install and lifecycle through fixed shell and surface owned-runtime failures', async () => {
+ const root=mkdtempSync(join(tmpdir(),'insrc-command-runtime-'));
+ try {
+  const paths={daemonRoot:root,ctlScript:join(root,'scripts/daemon-ctl.sh'),daemonEntry:join(root,'out/daemon/index.js'),bundledInstaller:join(root,'assets/installer.sh')};
+  for(const file of [paths.ctlScript,paths.daemonEntry,paths.bundledInstaller]){mkdirSync(dirname(file),{recursive:true});writeFileSync(file,'fixture');}
+  const calls:readonly string[][]=[];const captured=calls as string[][];let code=0;
+  const controller=createDaemonLifecycleController({paths,runner:{async run(command){captured.push([...command]);return {code};}},client:{async reachability(){return 'running';}} as unknown as IpcClient});
+  const commands=new FakeCommands(),status=new FakeStatus(),consent=fakeConsent('accepted');
+  registerDaemonCommands({commands,status,consent,controller});
+  for(const action of ['install','start','stop','restart','update']) await commands.runs.get(`insrc.daemon.${action}` as InsrcCommandId)!();
+  assert.deepEqual(captured,[['/bin/bash',paths.bundledInstaller,'-y'],...['start','stop','restart','update'].map(action=>['/bin/bash',paths.ctlScript,action])]);
+  assert.equal(consent.asked.length,1);assert.doesNotMatch(consent.asked[0]!.detail??'',/Node\.js 20\+|global Node.*required|already installed Node/);
+  code=2;await commands.runs.get('insrc.daemon.install')!();
+  assert.equal(status.current().state,'errored');assert.match(status.current().detail??'',/verified local runtime/);
+  assert.ok(captured.every(argv=>argv[0]==='/bin/bash'),'commands never select IDE or host Node');
+ }finally{rmSync(root,{recursive:true,force:true});}
+});

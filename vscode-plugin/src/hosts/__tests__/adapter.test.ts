@@ -13,7 +13,7 @@ import { fakeFs, fakeEnv, type FakeFs } from './fakes.js';
 
 const MCP = '/home/u/host/mcp.json';
 const STEER = '/home/u/host/rules.md';
-const LAUNCH = '/home/u/.insrc/daemon/out/bin/insrc-mcp.js';
+const LAUNCH = '/home/u/.insrc/daemon/scripts/insrc-mcp';
 
 function byExtSpec(id = 'test.ext'): HostSpec {
   return {
@@ -64,7 +64,7 @@ test('wire writes BOTH the mcpServers.insrc entry + the steering block; skips th
   const fs = fakeFs();
   const a = createHostAdapter(byExtSpec(), deps(fs));
   await a.wire();
-  assert.deepEqual(JSON.parse(fs.files.get(MCP)!).mcpServers[SERVER_KEY], { command: 'node', args: [LAUNCH] });
+  assert.deepEqual(JSON.parse(fs.files.get(MCP)!).mcpServers[SERVER_KEY], { command: '/bin/bash', args: [LAUNCH] });
   assert.match(fs.files.get(STEER)!, new RegExp(STEERING_MARKER_START.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')));
 
   // launch target absent → steering written, NO mcp entry (no broken `node undefined`).
@@ -162,7 +162,7 @@ test('vibe adapter wire() writes the [[mcp_servers]] insrc TOML entry + the stee
   await a.wire();
 
   const toml = fs.files.get(VIBE_MCP)!;
-  assert.match(toml, /\[\[mcp_servers\]\]\nname = "insrc"\ntransport = "stdio"\ncommand = "node"\nargs = \[".*insrc-mcp\.js"\]\n/, 'insrc stdio entry written');
+  assert.match(toml, /\[\[mcp_servers\]\]\nname = "insrc"\ntransport = "stdio"\ncommand = "\/bin\/bash"\nargs = \[".*insrc-mcp"\]\n/, 'insrc stdio entry written');
   assert.match(toml, /name = "docs"/, 'existing vibe servers preserved');
   assert.match(toml, /active_model = "mistral-medium-3.5"/, 'unrelated keys preserved');
   assert.match(fs.files.get(VIBE_STEER)!, new RegExp(STEERING_MARKER_START.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')), 'steering block in ~/.vibe/AGENTS.md');

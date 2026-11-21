@@ -1,0 +1,481 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1795243384197-ng38pc",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-21T06:44:46.592Z",
+    "epicCreatedAt": "2026-11-20T17:07:21.721Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 102122,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "175ab0d1d56838a9",
+    "epicSlug": "use-daemon-owned-node-runtime-predictable",
+    "storyId": "s1",
+    "lldRunId": "wf-1795235086264-abn2jy",
+    "lldEffectiveHash": "89a91b114ba51f7ad5bb894902ea301a53ae83ef69f581fcd99b49356b8d0592",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 2,
+        "contentHash": "7fbace1064ddad3bda77fbcea209a59fb4c6ab51ebd554e9745f97b77eee7e9a",
+        "at": "2026-11-21T06:44:46.680Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-21T06:53:21.641Z"
+      }
+    },
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "revision": 2,
+    "rangeBase": "77c317a88d6c9c4e1c2bf4233d9e8ecc22e9cf72"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Implement the approved local Node/npm runtime design in seven ordered tasks, starting with trusted policy and bootstrap, then routing installed process boundaries through the owned toolchain. Preserve signed managed releases and stage migration before activation. Complete isolated native qualification and record evidence before the final build approval. Revision 2 clarifies that t5 proves the shared installer mechanism with an isolated enabled fixture policy while public targets stay disabled. Task t7 retains actual npm install/build/native qualification and must additionally prove a fresh install using the promoted canonical packaged policy before final BUILD approval; task identities, dependencies and existing test names are unchanged."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Define the pinned runtime policy and trusted distribution identities",
+        "summary": "Create canonical Node22.22.1 policy and generated/checked shell/client assets, with authenticated official archive provenance and fixed per-target digests. Align existing production/development/Linux release pin checks without changing signed release formats.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Policy includes schema, exact version, target, fixed HTTPS URL, digest and expected Node/npm layout; no latest lookup.",
+          "Generated adapter assets and qualified release pins cannot drift.",
+          "Record candidate digests but keep public target enablement disabled pending native proof in t7; fixture/qualification policy is isolated and cannot bypass production verification. Unsupported targets fail clearly.",
+          "Document exact provenance and digest acquisition evidence."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Policy/version/target/digest validation and generated asset/release-pin parity; unsupported target rejection"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Provision and verify the local toolchain without global Node",
+        "summary": "Implement shell bootstrap and private content-addressed distribution store with bounded download, trusted digest verification, safe extraction, private staging, publication locking, atomic rename, verified cache reuse and installation binding primitives.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Bootstrap succeeds in disposable HOME with no node/npm; verified distribution contains matching Node/npm and licenses.",
+          "Reject corrupt archives/cache, wrong target/version, traversal, outside links and partial artifacts before execution.",
+          "Offline valid cache reuse performs no download; interrupted/concurrent provisioning never publishes partial state.",
+          "Each source binding references exactly one verified canonical store object; no global runtime mutation or unsafe cleanup."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Archive digest/traversal/link/device/version rejection, cached inventory corruption, publication locking and owned cleanup"
+          },
+          {
+            "level": "integration",
+            "name": "Node-free bootstrap, offline verified reuse, concurrent/interrupted provisioning in disposable HOME"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Use the owned toolchain throughout shell installation and control",
+        "summary": "Wire installer, upgrade bridge and daemon control Node/npm invocations to verified ownership. Use absolute Node/npm-cli, controlled lifecycle PATH, sanitized Node injection variables and lock+toolchain native install marker; preflight before disruptive actions.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "Fresh installer and legacy update/restart ignore ambient Node20/26 and fake npm; child process identity proves22.22.1.",
+          "All shell installer/bridge/helper Node calls use selected absolute runtime; npm runs under its matching Node.",
+          "External INSRC_NODE_BIN/legacy global marker fail with migration guidance; a matching canonical owned path is accepted.",
+          "Old lock-only marker or changed runtime/target forces native dependency install; failure leaves no success marker.",
+          "Managed commands delegate existing controller with signed tools/node and do not mutate release bytes."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Shell installer/control/bridge actual child identity with absent/20/26/fake Node/npm, sanitized injection environment and quoted paths"
+          },
+          {
+            "level": "unit",
+            "name": "Extend src/daemon/__tests__/daemon-ctl-node-path.test.ts and src/cli/services/__tests__/daemon-ctl-install-marker.test.ts for owned selection and lock+toolchain marker failures"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Align TUI daemon maintenance and installed executable wrappers",
+        "summary": "Change installed startDaemon and TUI update boundaries to select verified installation-owned runtime/npm; preserve existing result/IPC contracts and nativeBuildEnv behavior. Make installed TUI/MCP wrappers use owned Node while retaining explicit developer entry points.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "Installed daemon start no longer inherits caller process.execPath; managed starts remain controller-owned.",
+          "TUI maintenance uses absolute matching npm-cli, lifecycle environment and same toolchain-aware install marker as shell.",
+          "Installed TUI/MCP wrapper smoke records owned runtime identity under minimal/hostile PATH.",
+          "Missing/corrupt runtime returns actionable failure and never silently selects system Node; developer sessions are not unexpectedly re-executed."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Installed TUI/MCP wrappers and daemon start record owned executable; TUI update uses absolute npm-cli and lifecycle child version"
+          },
+          {
+            "level": "unit",
+            "name": "Extend src/cli/services/__tests__/maintenance-install-marker.test.ts and managed start/error fixtures; preserve nativeBuildEnv flags"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Align current IDE clients and runtime packaging",
+        "summary": "Update current VS Code and JetBrains adapters to shared bootstrap/ownership policy. Retire JetBrains system-first and20.18.0 provisioning. Package matching bootstrap assets and preserve authenticated bundle tools/node, fingerprint and rollback contracts.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "IDE host/system Node is never chosen as daemon runtime; adapters invoke shared verified provisioner/selection contract.",
+          "No independent stale JetBrains pin/digest/download policy remains; injectable tests cover provisioning and failures.",
+          "Packaged installer/bootstrap/client policy assets agree. At t5, prove the no-global-Node fresh-install mechanism using the actual official distribution under an explicitly isolated enabled fixture policy; keep the public policy disabled pending t7 qualification. Public target enablement and actual packaged-policy installation are t7 requirements, not t5 admission prerequisites.",
+          "Existing signed bundles remain byte-immutable and retain existing verification/managed lifecycle; newly packaged bootstrap includes any expanded toolchain under new authentication.",
+          "Current IPC names/payloads remain unchanged; no deprecated insrc-ide release requirements."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Extend VS Code controller/commands and JetBrains NodeRuntimeResolverTest/PrivateNodeProvisionerTest for shared local policy and no host runtime selection"
+          },
+          {
+            "level": "integration",
+            "name": "Packaged installer/bootstrap policy consistency and existing signed staging/fingerprint verification regression"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Complete staged migration and recovery behavior",
+        "summary": "Integrate verified toolchain bindings with existing legacy upgrade staging and managed admission/activation/recovery. Keep previous candidate, binding and rollback runtime until readiness; record failure outcomes and migration instructions.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t3",
+          "t4",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "Existing selected installation remains intact through provisioning, npm install, build or native smoke failure.",
+          "Commit source binding/activation only after staged technical checks; recover interruption without trusting incomplete markers.",
+          "Managed journal, descriptor, release floor, trust domain and rollback verification are preserved.",
+          "No database rewrite, automatic runtime garbage collection or implicit source overwrite; old referenced toolchains retained.",
+          "Document retired external overrides, repair/offline flow and explicit runtime upgrade policy; keep LLD component ownership accurate."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c5",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Stage install/native/build failure before activation; binding/journal interruption retry and managed rollback retain previous selection"
+          },
+          {
+            "level": "unit",
+            "name": "Old marker migration, external override diagnostics, no database rewrite or deletion of referenced runtime"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Qualify runtime identity and native compatibility end to end",
+        "summary": "Run bounded regression suites and isolated actual distribution/native smoke on enabled targets. Record commands, executable identities, evidence, cleanup and unavailable target coverage; validate the final build artifact before separate human completion approval.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3",
+          "t4",
+          "t5",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "Record exact owned Node/npm and lifecycle child paths under no/global20/global26/hostile PATH; prove bootstrap, offline reuse and retry.",
+          "Run real npm install/build and representative native module load, not only mocked version tests.",
+          "Run source migration failure and signed managed recovery/rollback regressions plus current IDE client contract tests.",
+          "Promote public source-target enablement only after actual target/native smoke evidence; unverified targets remain disabled and are reported. No implicit dependency from t1 back to qualification.",
+          "Canonical test coordinator releases all owned children and records cleanup; final BUILD validation contains evidence/limitations before human approval, without demanding approval as a technical test.",
+          "After actual install/build/native qualification permits target promotion, regenerate canonical client/bootstrap assets and prove fresh install with the actual enabled packaged policy, no fixture-policy substitution, before final BUILD approval."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "Actual official Node22.22.1/npm, npm lifecycle child paths, npm install/build and native module load per enabled target"
+          },
+          {
+            "level": "integration",
+            "name": "Canonical bounded regression and IDE build suites; signed managed recovery/rollback; no active owned test children after cleanup"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "Pin/target/digest table and generated shell/Kotlin asset parity",
+        "coveredByTaskIds": [
+          "t1",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Version/architecture/path/inventory validation",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "Archive traversal, outside-link, partial-download and concurrent-stage rejection",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "Install-marker toolchain identity migration",
+        "coveredByTaskIds": [
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "Fresh shell install with node/npm absent",
+        "coveredByTaskIds": [
+          "t2",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "Legacy shell update/restart and TUI update with fake Node20/26/failing npm first on PATH",
+        "coveredByTaskIds": [
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "npm lifecycle child reports exact version and canonical executable",
+        "coveredByTaskIds": [
+          "t3",
+          "t4",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "Failed native rebuild leaves previous selected runtime/daemon intact",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "Offline reuse and interrupted provisioning retry",
+        "coveredByTaskIds": [
+          "t2",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/daemon/__tests__/daemon-ctl-node-path.test.ts",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/cli/services/__tests__/daemon-ctl-install-marker.test.ts",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/cli/services/__tests__/maintenance-install-marker.test.ts",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "scripts/__tests__/stage-daemon-bundle.test.ts",
+        "coveredByTaskIds": [
+          "t5",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "scripts/__tests__/daemon-bundle-metadata.test.ts",
+        "coveredByTaskIds": [
+          "t5",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "vscode-plugin/src/daemon/__tests__/controller.test.ts",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "vscode-plugin/src/daemon/__tests__/commands.test.ts",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/NodeRuntimeResolverTest.kt",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/PrivateNodeProvisionerTest.kt",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Node22.22.1 and bundled npm version/path evidence on each advertised source target",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "Real npm install/build and representative native module load under owned Node",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "Installed daemon/helper/TUI/MCP wrapper executable identity",
+        "coveredByTaskIds": [
+          "t4",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "Managed signed release/rollback checks unchanged",
+        "coveredByTaskIds": [
+          "t5",
+          "t6",
+          "t7"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/use-daemon-owned-node-runtime-predictable-E20261120175ab0d1/S001/LLD.md#summary"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/use-daemon-owned-node-runtime-predictable-E20261120175ab0d1/S001/LLD.md#3-data-model-changes"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/use-daemon-owned-node-runtime-predictable-E20261120175ab0d1/S001/LLD.md#3-data-model-changes"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/use-daemon-owned-node-runtime-predictable-E20261120175ab0d1/S001/LLD.md#2-contract-details"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/use-daemon-owned-node-runtime-predictable-E20261120175ab0d1/S001/LLD.md#3-data-model-changes"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/use-daemon-owned-node-runtime-predictable-E20261120175ab0d1/S001/LLD.md#3-data-model-changes"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/use-daemon-owned-node-runtime-predictable-E20261120175ab0d1/S001/LLD.md#7-migration"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/use-daemon-owned-node-runtime-predictable-E20261120175ab0d1/S001/LLD.md#6-test-strategy"
+    }
+  ]
+}

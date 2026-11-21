@@ -92,6 +92,13 @@
         "choice": "Extend Locator; reuse Pointer",
         "rationale": "Already resolved in LLD revision 3 (qc3a91f7e) against the real code: Pointer{path,section?:Locator,contentHash?} (src/workflow/artifact-core/types.ts:271-281) already composes a file path with an optional region, and TypeScript's structural typing already lets a SecurityLocator (a superset of Locator's fields) occupy Pointer.section wherever a Locator is expected. No new SecurityPointer type is needed -- a security-graph citation needing both a file path and a region is simply Pointer{path, section: SecurityLocator, contentHash?}.",
         "resolvedAt": "2026-11-21T15:05:24.391Z"
+      },
+      "qd4678ad5": {
+        "question": "Whether 'security' needs its own ReviewKind/ScopeType enum member, or the security pass reuses whichever value the primary round already has: the approved SPEC narrative frames security as 'ONE new review type' running as a 'security reviewer pass' within a round, but HLD-03f4fd3b9102aab8's sc1 RoundDriverHooks.reviewKind and HLD-50cde239426d6e2a's sc3 Scope.scopeType are both closed to 'design'|'code' with no third value anticipated. This LLD should state explicitly which reading is correct -- no enum change needed because the security pass runs nested inside the primary round's existing reviewKind/scopeType, or a third enum member is required on both sibling contracts -- since it changes real implementation structure on both sibling Epics.",
+        "status": "resolved",
+        "choice": "Nested security pass",
+        "rationale": "Already resolved in LLD revision 3 (qd814e2b0) against the real code: RoundDriverHooks (src/workflow/review-round/types.ts:15-24) already has an optional security?: hook, and its own doc comment states the security pass is \"never a separate channel, never a third reviewKind\" -- already built by this epic's own Story s1. No enum change needed on either sibling contract; the security pass nests inside the primary round via that hook.",
+        "resolvedAt": "2026-11-21T15:05:46.432Z"
       }
     },
     "envelope": {

@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 11,
-        "contentHash": "072846a445b56c4d2f8ba3ce4dd11aecb5126b8820d437cb0dc27adfc17b4ca8",
-        "at": "2026-11-21T18:29:07.006Z",
+        "number": 12,
+        "contentHash": "cc0e5467f3c88447d746214cf9590a496656206da1330d532f0a86b98695a904",
+        "at": "2026-11-21T19:16:36.031Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "779e9a08142cb057",
     "storyId": "s1",
     "createdAt": "2026-11-21T15:21:22.783Z",
-    "updatedAt": "2026-11-21T18:29:06.540Z",
+    "updatedAt": "2026-11-21T19:16:35.745Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-18T08:51:40.429Z",
     "epicSlug": "add-securityfinding-capability-family-delegates-framing",
-    "revision": 11
+    "revision": 12
   },
   "body": {
     "tasks": [
@@ -242,8 +242,8 @@
       },
       {
         "taskId": "t4",
-        "commit": "f879b410a",
-        "ranAt": "2026-11-21T18:29:06.540Z",
+        "commit": "521962e00",
+        "ranAt": "2026-11-21T19:16:35.745Z",
         "testsPassed": true,
         "tests": [
           {
@@ -291,7 +291,7 @@
             "file": "src/workflow/review-round/__tests__/receipt-record.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 805,
+            "durationMs": 795,
             "titles": [
               {
                 "title": "VerificationReceipt record shape (pass/fail/evidence linkage by id)",
@@ -315,6 +315,10 @@
               },
               {
                 "title": "concurrent appends through the real lifecycle service: both receipts survive, serialized rather than racing",
+                "result": "pass"
+              },
+              {
+                "title": "concurrent appends through equivalent repoPath spellings for the same repository still serialize, not race",
                 "result": "pass"
               },
               {

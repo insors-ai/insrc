@@ -117,9 +117,13 @@ test('packaged launchers verify retained signed runtime before executing tools N
   }
   // Executable malicious bytes must not run even once.
   writeFileSync(installation.runtime,`#!/bin/sh\nprintf executed > '${f.fakeTrace}'\n`);
-  for(const name of ['insrc','insrc-mcp']){
-   const r=spawnSync(join(f.scripts,name),[],{env:f.env,encoding:'utf8',timeout:30000});
-   assert.equal(r.status,2,r.stderr);assert.match(r.stderr,/integrity verification failed.*repair/);assert.ok(!existsSync(f.fakeTrace));
+  for(const damage of ['corrupt','missing','dangling']) {
+   if(damage!=='corrupt')rmSync(installation.runtime,{force:true});
+   if(damage==='dangling')symlinkSync(join(f.root,'absent-node'),installation.runtime);
+   for(const name of ['insrc','insrc-mcp']){
+    const r=spawnSync(join(f.scripts,name),[],{env:f.env,encoding:'utf8',timeout:30000});
+    assert.equal(r.status,2,r.stderr);assert.match(r.stderr,/integrity verification failed.*repair/);assert.equal(r.stdout,'');assert.ok(!existsSync(f.fakeTrace));
+   }
   }
  } finally {f.clean();}
 });

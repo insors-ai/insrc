@@ -15,7 +15,7 @@ USER_CWD="$PWD"
 [ -f "$ROOT/scripts/node-runtime-env.sh" ] || { echo 'Runtime bootstrap assets missing; reinstall using the matching packaged installer.' >&2; exit 2; }
 . "$ROOT/scripts/node-runtime-env.sh"
 insrc_source_toolchain "$ROOT/scripts" "$HOME/.insrc" || exit 2
-if [ ! -d "$ROOT/.git" ] && [ -e "$ROOT/tools/node" ]; then
+if [ ! -e "$ROOT/.git" ]; then
   [ -f "$ROOT/scripts/verify-installed-runtime.mjs" ] || { echo 'Packaged runtime verifier missing; repair using the authenticated installer.' >&2; exit 2; }
   # The bootstrap runtime verifies the retained signed fingerprint BEFORE the
   # packaged runtime is executed. It never substitutes for the managed runtime.

@@ -13,6 +13,7 @@ import type { VerifiedSourceRelease } from '../shared/managed-source-release.js'
 import { readSourceReleaseTarget, sourceReleaseCatalog } from '../shared/source-release-target.js';
 import type { SourceReleaseTarget } from '../shared/source-release-target.js';
 import { readTaggedReleaseCompatibility } from '../shared/source-release-compatibility.js';
+import { readSourceInstallationState } from '../shared/source-installation.js';
 
 declare const __INSRC_RELEASE_KEY__: string | undefined;
 declare const __INSRC_SOURCE_TARGET__: string | undefined;
@@ -30,26 +31,36 @@ interface BootstrapInput {
 }
 
 async function sourceFloors(stateRoot: string): Promise<VerifiedSourceRelease[]> {
-	const directory = join(stateRoot, 'managed-lifecycle');
-	const owner = await lstat(directory).catch((error: NodeJS.ErrnoException) => {
-		if (error.code !== 'ENOENT') throw error;
-	});
-	if (owner === undefined) return [];
-	if (!owner.isDirectory() || owner.uid !== process.getuid?.() || (owner.mode & 0o077) !== 0) {
-		throw new Error('installation journal directory is not private and owned');
-	}
-	const file = await open(join(directory, 'journal.json'), constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK)
-		.catch((error: NodeJS.ErrnoException) => { if (error.code !== 'ENOENT') throw error; });
-	if (file === undefined) return [];
-	try {
-		const info = await file.stat();
-		if (!info.isFile() || info.uid !== owner.uid || info.nlink !== 1 || (info.mode & 0o077) !== 0 || info.size > 128 * 1024) {
-			throw new Error('installation journal is not a bounded private file');
+	const floors: VerifiedSourceRelease[] = [];
+	for (const directory of [join(stateRoot, 'managed-lifecycle'), join(stateRoot, 'source-lifecycle')]) {
+		const owner = await lstat(directory).catch((error: NodeJS.ErrnoException) => {
+			if (error.code !== 'ENOENT') throw error;
+		});
+		if (owner === undefined) continue;
+		if (!owner.isDirectory() || owner.uid !== process.getuid?.() || (owner.mode & 0o077) !== 0) {
+			throw new Error('installation journal directory is not private and owned');
 		}
-		const state = JSON.parse(await file.readFile('utf8')) as { version?: number; root?: string; sourceReleases?: unknown[] };
-		if (state.version !== 1 || state.root !== stateRoot) throw new Error('invalid installation journal identity');
-		return state.sourceReleases?.map(readVerifiedSourceRelease) ?? [];
-	} finally { await file.close(); }
+		const file = await open(join(directory, 'journal.json'), constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK)
+			.catch((error: NodeJS.ErrnoException) => { if (error.code !== 'ENOENT') throw error; });
+		if (file === undefined) continue;
+		try {
+			const info = await file.stat();
+			if (!info.isFile() || info.uid !== owner.uid || info.nlink !== 1 || (info.mode & 0o077) !== 0 || info.size > 128 * 1024) {
+				throw new Error('installation journal is not a bounded private file');
+			}
+			const value: unknown = JSON.parse(await file.readFile('utf8'));
+			if (directory === join(stateRoot, 'source-lifecycle')) {
+				const logical = (value as { installationRoot?: unknown } | null)?.installationRoot;
+				if (typeof logical !== 'string') throw new Error('invalid source installation journal identity');
+				floors.push(...readSourceInstallationState(value, stateRoot, logical).sourceReleases);
+			} else {
+				const state = value as { version?: number; root?: string; sourceReleases?: unknown[] };
+				if (state.version !== 1 || state.root !== stateRoot) throw new Error('invalid installation journal identity');
+				floors.push(...(state.sourceReleases?.map(readVerifiedSourceRelease) ?? []));
+			}
+		} finally { await file.close(); }
+	}
+	return floors;
 }
 
 function bootstrapFloorDirectory(stateRoot: string, release: VerifiedSourceRelease): string {

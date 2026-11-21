@@ -70,6 +70,17 @@ test('Portable source qualification rejects wrong channel/profile/floor before n
 	assert.equal(valid.qualification.candidate.releaseId, git(origin, 'rev-parse', 'HEAD'));
 	assert.deepEqual(valid.launchProfiles, ['linux-source-running', 'linux-source-stopped']);
 	await qualifySourceRelease({ ...input, target: 'linux-x64' });
+	// A lower Mac observation must not hide a higher Linux source-journal floor.
+	for (const [directory, sequence] of [['managed-lifecycle', 1], ['source-lifecycle', 3]] as const) {
+		await mkdir(join(stateRoot, directory), { mode: 0o700 });
+		await writeFile(join(stateRoot, directory, 'journal.json'), JSON.stringify({ version: 1, root: stateRoot,
+			sourceReleases: [{ ...valid.receipt, sequence }], ...(directory === 'source-lifecycle'
+				? { installationRoot: origin, generation: 1, selected: null, active: null, retained: [], outcome: null } : {}) }), { mode: 0o600 });
+	}
+	await assert.rejects(qualifySourceRelease(input), /stale/);
+	await writeFile(join(stateRoot, 'source-lifecycle/journal.json'), JSON.stringify({ version: 1, root: stateRoot, installationRoot: origin }));
+	await assert.rejects(qualifySourceRelease(input), /invalid record shape/);
+	for (const directory of ['managed-lifecycle', 'source-lifecycle']) await rm(join(stateRoot, directory), { recursive: true });
 	sign(origin, key, 1);
 	await assert.rejects(qualifySourceRelease(input), /stale/);
 	git(origin, 'commit', '--allow-empty', '-qm', 'replacement'); sign(origin, key, 2);

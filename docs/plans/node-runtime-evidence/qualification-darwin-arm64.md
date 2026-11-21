@@ -89,3 +89,16 @@ not included in these bounded suites; see earlier task evidence. No full sweep,
 cloud service tests, IDE UI rendering or other architecture native execution is
 claimed. Automated design/code review remains unavailable; human BUILD approval
 is still required.
+
+
+The first t7 validator invocation ran coordinator controls under its ambient
+Node26 and correctly hit the development harness's unsupported-runtime guard.
+This was a validation-entry mismatch, not an owned-runtime install failure.
+A native qualification entry now provisions through the actual canonical
+packaged bootstrap and runs the unchanged eight coordinator controls under
+verified Node22.22.1. It uses the existing childEnvironment helper to avoid
+inheriting node:test's internal worker context; the first wrapper setup exposed
+that context leak, which was corrected. Canonical run
+`25e95018-1ac5-45ed-aba5-5adce6da14ab` passed with confirmed actor closure.
+The controls retain their unsupported-runtime guard and test all eight cases
+without skips in disposable fixture checkouts, with no nested canonical lease.

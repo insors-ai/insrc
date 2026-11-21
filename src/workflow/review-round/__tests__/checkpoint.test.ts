@@ -5,7 +5,7 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
@@ -339,6 +339,96 @@ describe('writeCheckpoint/readCheckpoint/finalizeAndCleanup and ReviewCheckpoint
 		} finally {
 			rmSync(tempDir, { recursive: true, force: true });
 			rmSync(durablePath, { force: true });
+			_setCheckpointDepsForTests({});
+		}
+	});
+
+	it("readCheckpoint rejects a mismatched identity: a checkpoint.json whose own reviewId field does not match the one requested is treated as though no checkpoint exists", async () => {
+		const reviewId = `review-mismatch-${process.pid}-${Date.now()}`;
+		const otherReviewId = `review-other-${process.pid}-${Date.now()}`;
+		const dir = join(ROOT, '.insrc/tmp', reviewId);
+		mkdirSync(dir, { recursive: true });
+		// A record that is well-formed and passes the shape check, but whose
+		// own reviewId field names a DIFFERENT review -- simulating a caller
+		// bug elsewhere, or content reached via a mechanism other than this
+		// review's own writeCheckpoint call.
+		writeFileSync(join(dir, 'checkpoint.json'), JSON.stringify({ reviewId: otherReviewId, lastCompletedUnit: { kind: 'task', ref: 't9' } }), 'utf8');
+		_setCheckpointDepsForTests({ resolveRepoRoot });
+
+		try {
+			const result = await readCheckpoint(reviewId);
+			assert.equal(result, undefined, "a mismatched reviewId must never be handed back as though it were this review's own progress");
+		} finally {
+			rmSync(dir, { recursive: true, force: true });
+			_setCheckpointDepsForTests({});
+		}
+	});
+
+	it('readCheckpoint never follows a symlinked checkpoint.json into another review\'s own record, even when the symlinked record is well-formed and would otherwise pass every other check', async () => {
+		const victimReviewId = `review-victim-${process.pid}-${Date.now()}`;
+		const realDir = join(ROOT, '.insrc/tmp', `review-real-${process.pid}-${Date.now()}`);
+		mkdirSync(realDir, { recursive: true });
+		const realPath = join(realDir, 'checkpoint.json');
+		// The symlinked-at record deliberately carries victimReviewId -- the
+		// READER's OWN requested id -- as its reviewId field, so the separate
+		// reviewId-match check alone (without a symlink check) would NOT catch
+		// this: isolating what the symlink defense specifically must catch.
+		writeFileSync(realPath, JSON.stringify({ reviewId: victimReviewId, lastCompletedUnit: { kind: 'round', ref: 7 } }), 'utf8');
+
+		const victimDir = join(ROOT, '.insrc/tmp', victimReviewId);
+		mkdirSync(victimDir, { recursive: true });
+		symlinkSync(realPath, join(victimDir, 'checkpoint.json'), 'file');
+
+		_setCheckpointDepsForTests({ resolveRepoRoot });
+		try {
+			const result = await readCheckpoint(victimReviewId);
+			assert.equal(result, undefined, "a symlinked checkpoint.json must never be followed into another review's own record, regardless of what that record itself claims");
+		} finally {
+			rmSync(realDir, { recursive: true, force: true });
+			rmSync(victimDir, { recursive: true, force: true });
+			_setCheckpointDepsForTests({});
+		}
+	});
+
+	it('a review directory replaced by a symlink during the narrow window between writeCheckpoint\'s/finalizeAndCleanup\'s own checks and their actual use is never written through or deleted through outside the repository (best-effort concurrent regression)', async () => {
+		const reviewId = `review-race-${process.pid}-${Date.now()}`;
+		const reviewDirPath = join(ROOT, '.insrc/tmp', reviewId);
+		const outsideDir = mkdtempSync(join(tmpdir(), 'insrc-checkpoint-race-'));
+		_setCheckpointDepsForTests({ resolveRepoRoot });
+
+		// A background process races to replace reviewDirPath with a symlink to
+		// outsideDir as fast as it can, for a short bounded window -- a
+		// best-effort probe for the externally-reported ancestor-substitution
+		// race. True elimination needs OS directory-fd-relative syscalls
+		// (openat/mkdirat/unlinkat) Node's fs module does not expose publicly
+		// (see openDirNoFollow's own doc in checkpoint.ts); absence of a
+		// detected escape within this bounded window is not a formal proof,
+		// only that no violation was observed in however many attempts this
+		// window allowed.
+		const racer = spawn(process.execPath, ['-e', `
+			const fs = require('node:fs');
+			const target = ${JSON.stringify(reviewDirPath)};
+			const outside = ${JSON.stringify(outsideDir)};
+			const end = Date.now() + 600;
+			while (Date.now() < end) {
+				try { fs.rmSync(target, { recursive: true, force: true }); } catch {}
+				try { fs.symlinkSync(outside, target, 'dir'); } catch {}
+			}
+		`], { stdio: 'ignore' });
+
+		try {
+			const deadline = Date.now() + 600;
+			while (Date.now() < deadline) {
+				try { await writeCheckpoint(reviewId, { kind: 'round', ref: 1 }); } catch { /* a refusal is a safe outcome too */ }
+				try { await finalizeAndCleanup(reviewId, { reviewId }); } catch { /* a refusal is a safe outcome too */ }
+			}
+			assert.equal(existsSync(join(outsideDir, 'checkpoint.json')), false, 'no checkpoint must ever land inside the symlink target outside the repository');
+			const durablePath = join(ROOT, '.insrc/artifacts', `REVIEW-${reviewId}.json`);
+			rmSync(durablePath, { force: true });
+		} finally {
+			racer.kill();
+			rmSync(reviewDirPath, { force: true });
+			rmSync(outsideDir, { recursive: true, force: true });
 			_setCheckpointDepsForTests({});
 		}
 	});

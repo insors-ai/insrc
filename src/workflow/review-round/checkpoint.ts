@@ -23,7 +23,8 @@
  */
 
 import {
-	closeSync, constants as fsConstants, lstatSync, mkdirSync, openSync, readFileSync, renameSync, rmSync, unlinkSync, writeFileSync,
+	closeSync, constants as fsConstants, existsSync, fsyncSync, lstatSync, mkdirSync, openSync, readdirSync, readFileSync, renameSync,
+	rmdirSync, unlinkSync, writeFileSync,
 } from 'node:fs';
 import { dirname, join, relative, sep } from 'node:path';
 import { randomBytes } from 'node:crypto';
@@ -109,29 +110,91 @@ function requireNoSymlinkInPath(repoRoot: string, target: string): void {
 }
 
 /**
- * Publishes `content` at `path` without ever reading through, following, or
- * truncating-in-place whatever currently occupies that name -- matches
- * review-report.ts's own publishGuarded verbatim (the primitive its P2 fix
- * established): a freshly created, uniquely named sibling file
- * (O_CREAT|O_EXCL|O_NOFOLLOW) is written first, then renamed onto `path`.
- * rename(2) never dereferences its destination and never writes through a
- * shared inode, so a crash mid-write can only ever leave the complete prior
- * checkpoint or the complete new one, never a partial file.
+ * Publishes `content` as `filename` inside `dir` without ever reading
+ * through, following, or truncating-in-place whatever currently occupies
+ * that name -- matches review-report.ts's own publishGuarded (the primitive
+ * its P2 fix established): a freshly created, uniquely named sibling file
+ * (O_CREAT|O_EXCL|O_NOFOLLOW) is written first, then renamed onto the final
+ * name. rename(2) never dereferences its destination and never writes
+ * through a shared inode, so a crash mid-write can only ever leave the
+ * complete prior checkpoint or the complete new one, never a partial file.
+ *
+ * `dir` is expected to be a pinDirectory-returned path (a /proc/self/fd/<fd>
+ * alias on Linux, binding every operation here to the exact directory that
+ * was already validated, never re-resolving its mutable name) -- see
+ * pinDirectory's own doc for why that matters.
+ *
+ * Externally reported P2: atomic *publication* (the rename) is not the same
+ * guarantee as *durability* across a host crash or power loss -- a rename
+ * only reorders which inode a name points at; whether that reordering, or the
+ * file's own data, has actually reached disk depends on the OS's own write
+ * caching, which fsync(2) is what forces. Without it, a crash immediately
+ * after this function returns could still lose the write entirely, or leave
+ * the directory entry pointing at the new inode while its data never made it
+ * to disk. Fixed by fsync-ing the temp file's own data before the rename
+ * (so the content is durable before it is ever linked under its final name),
+ * and fsync-ing the containing DIRECTORY after the rename (so the directory
+ * entry update itself -- a separate piece of metadata from the file's own
+ * data -- is durable too; fsync on a file descriptor never implies this).
  */
-function publishGuarded(path: string, content: string): void {
-	const tempPath = join(dirname(path), `.checkpoint-${randomBytes(8).toString('hex')}.tmp`);
+function publishGuarded(dir: string, filename: string, content: string): void {
+	const tempPath = join(dir, `.checkpoint-${randomBytes(8).toString('hex')}.tmp`);
+	const finalPath = join(dir, filename);
 	const fd = openSync(tempPath, fsConstants.O_WRONLY | fsConstants.O_CREAT | fsConstants.O_EXCL | fsConstants.O_NOFOLLOW);
 	try {
 		writeFileSync(fd, content, 'utf8');
+		fsyncSync(fd);
 	} finally {
 		closeSync(fd);
 	}
 	try {
-		renameSync(tempPath, path);
+		renameSync(tempPath, finalPath);
 	} catch (err) {
 		try { unlinkSync(tempPath); } catch { /* best effort cleanup; the rename's own error is what matters */ }
 		throw err;
 	}
+	const dirFd = openSync(dir, fsConstants.O_RDONLY);
+	try {
+		fsyncSync(dirFd);
+	} finally {
+		closeSync(dirFd);
+	}
+}
+
+/** Linux only: /proc/self/fd/<fd> is a magic symlink the kernel resolves
+ *  directly to the OPEN fd's own pinned inode, not by re-looking up whatever
+ *  name the fd was originally opened through -- the mechanism pinDirectory
+ *  relies on. Checked once, at module load. */
+const CAN_PIN_DIRECTORY_VIA_PROC = process.platform === 'linux' && existsSync('/proc/self/fd');
+
+/**
+ * Opens `dir` with O_DIRECTORY|O_NOFOLLOW (fails with ELOOP if `dir` is a
+ * symlink, ENOENT if it does not exist yet) and, on Linux, returns a
+ * `/proc/self/fd/<fd>` alias alongside the fd itself. CALLER MUST CLOSE THE
+ * FD. Every subsequent operation built on `.path` (never on the original
+ * `dir` string again) is resolved by the kernel directly against the
+ * pinned inode this call opened -- not by re-looking up `dir`'s own name --
+ * so nothing that happens to the name `dir` itself afterward (including
+ * being replaced with a symlink to somewhere else entirely) can redirect
+ * those operations. This is what "binding publication and cleanup to a
+ * validated directory's own identity throughout the operation" concretely
+ * means in Node: externally reported P2, reproduced against the original
+ * fix -- a bare lstat-based check immediately followed by a separate
+ * mkdir/open/rename/rmSync call still re-resolves the mutable path from
+ * scratch on every one of those later calls, leaving the exact same
+ * check-then-act gap open just as before, no matter how many times the
+ * check itself is repeated or how tightly it is sequenced.
+ *
+ * On any platform without /proc (everything but Linux), `.path` falls back
+ * to `dir` itself: Node's fs module exposes no portable openat/mkdirat/
+ * unlinkat-family alternative, so non-Linux platforms keep the prior
+ * best-effort, check-then-act behaviour (narrowed, not eliminated) as a
+ * documented, platform-specific limitation -- not a defect unique to this
+ * function.
+ */
+function pinDirectory(dir: string): { readonly fd: number; readonly path: string } {
+	const fd = openSync(dir, fsConstants.O_RDONLY | fsConstants.O_DIRECTORY | fsConstants.O_NOFOLLOW);
+	return { fd, path: CAN_PIN_DIRECTORY_VIA_PROC ? `/proc/self/fd/${fd}` : dir };
 }
 
 function isReviewCheckpointShape(v: unknown): v is ReviewCheckpoint {
@@ -156,17 +219,24 @@ export async function writeCheckpoint(
 	requireValidReviewId(reviewId);
 	const resolveRepoRoot = testDeps.resolveRepoRoot ?? defaultResolveRepoRoot;
 	const repoRoot = await resolveRepoRoot();
+	const dir = reviewDir(repoRoot, reviewId);
 	const path = checkpointPath(repoRoot, reviewId);
 
 	requireNoSymlinkInPath(repoRoot, path);
-	mkdirSync(dirname(path), { recursive: true });
-	// Re-checked after mkdirSync, matching review-report.ts's own convention;
-	// publishGuarded closes the remainder, since it never checks-then-writes
-	// `path` itself.
+	mkdirSync(dir, { recursive: true });
+	// Re-checked after mkdirSync, matching review-report.ts's own convention.
 	requireNoSymlinkInPath(repoRoot, path);
 
-	const checkpoint: ReviewCheckpoint = { reviewId, lastCompletedUnit };
-	publishGuarded(path, JSON.stringify(checkpoint));
+	// Pinned immediately before use: every subsequent operation goes through
+	// this fd's own identity, never re-resolving the review directory's
+	// mutable name again (see pinDirectory's own doc).
+	const { fd, path: pinnedDir } = pinDirectory(dir);
+	try {
+		const checkpoint: ReviewCheckpoint = { reviewId, lastCompletedUnit };
+		publishGuarded(pinnedDir, 'checkpoint.json', JSON.stringify(checkpoint));
+	} finally {
+		closeSync(fd);
+	}
 }
 
 /**
@@ -175,12 +245,32 @@ export async function writeCheckpoint(
  * disk-level corruption) is treated identically, never thrown: a review must
  * always still be able to resume, from the start in the worst case, rather
  * than being permanently stuck on an unreadable checkpoint.
+ *
+ * Externally reported P2, two parts: (1) readFileSync on its own follows a
+ * symlink at `path`, which could hand back a different file entirely (another
+ * review's own checkpoint, reached through a symlink planted at this
+ * reviewId's expected location) -- fixed by the same requireNoSymlinkInPath
+ * walk the write/delete paths already use, with a symlink treated the same
+ * as a missing/corrupted checkpoint (undefined), consistent with this
+ * function's own established "never throw on a data-integrity issue"
+ * contract. (2) even without any symlink involved, nothing previously checked
+ * that the record's OWN reviewId field actually matched the one requested --
+ * a mismatched record (e.g. a caller bug elsewhere writing under the wrong
+ * identity) would silently hand back another review's lastCompletedUnit,
+ * letting a resume skip work that was never actually done for THIS review.
+ * Fixed by requiring an exact match before trusting the parsed record.
  */
 export async function readCheckpoint(reviewId: string): Promise<ReviewCheckpoint | undefined> {
 	requireValidReviewId(reviewId);
 	const resolveRepoRoot = testDeps.resolveRepoRoot ?? defaultResolveRepoRoot;
 	const repoRoot = await resolveRepoRoot();
 	const path = checkpointPath(repoRoot, reviewId);
+
+	try {
+		requireNoSymlinkInPath(repoRoot, path);
+	} catch {
+		return undefined;
+	}
 
 	let raw: string;
 	try {
@@ -194,15 +284,24 @@ export async function readCheckpoint(reviewId: string): Promise<ReviewCheckpoint
 	} catch {
 		return undefined;
 	}
-	return isReviewCheckpointShape(parsed) ? parsed : undefined;
+	if (!isReviewCheckpointShape(parsed)) return undefined;
+	if (parsed.reviewId !== reviewId) return undefined;
+	return parsed;
 }
 
 function defaultWriteDurableCopy(repoRoot: string, reviewId: string, finalOutput: unknown): void {
 	const path = durablePath(repoRoot, reviewId);
+	const dir = dirname(path);
 	requireNoSymlinkInPath(repoRoot, path);
-	mkdirSync(dirname(path), { recursive: true });
+	mkdirSync(dir, { recursive: true });
 	requireNoSymlinkInPath(repoRoot, path);
-	publishGuarded(path, JSON.stringify(finalOutput));
+
+	const { fd, path: pinnedDir } = pinDirectory(dir);
+	try {
+		publishGuarded(pinnedDir, `REVIEW-${reviewId}.json`, JSON.stringify(finalOutput));
+	} finally {
+		closeSync(fd);
+	}
 }
 
 /**
@@ -223,5 +322,50 @@ export async function finalizeAndCleanup(reviewId: string, finalOutput: unknown)
 
 	const dir = reviewDir(repoRoot, reviewId);
 	requireNoSymlinkInPath(repoRoot, dir);
-	rmSync(dir, { recursive: true, force: true });
+	// Pinned immediately before the recursive delete: emptying the contents
+	// is bound to the exact inode this call opens, never re-resolving the
+	// review directory's mutable name again (see pinDirectory's own doc) --
+	// so even a `dir` name swapped mid-operation to something else entirely
+	// leaves whatever is now actually named `dir` untouched, with only the
+	// original directory this call validated ever emptied.
+	let pinned: { readonly fd: number; readonly path: string };
+	try {
+		pinned = pinDirectory(dir);
+	} catch (err) {
+		if ((err as NodeJS.ErrnoException).code === 'ENOENT') return; // already cleaned up -- nothing to delete
+		throw err;
+	}
+	try {
+		emptyDirectoryContents(pinned.path);
+	} finally {
+		closeSync(pinned.fd);
+	}
+	// rmdir(2) refuses a /proc/self/fd alias for removing the directory the
+	// fd itself refers to (only child lookups underneath it are supported),
+	// so the now-empty directory's own final removal still has to name `dir`
+	// relative to ITS OWN parent -- safe even so, since rmdir only ever
+	// removes a name that is itself literally an empty directory: swapped to
+	// a symlink, a non-empty directory, or a plain file, it refuses rather
+	// than destroying whatever is actually there.
+	try {
+		rmdirSync(dir);
+	} catch (err) {
+		if ((err as NodeJS.ErrnoException).code !== 'ENOENT') throw err;
+	}
+}
+
+/** Recursively empties `dirPath`'s own contents (files and subdirectories),
+ *  without ever removing `dirPath` itself. A symlinked entry (file or
+ *  directory) is unlinked as the link it is, never followed into whatever it
+ *  points at. */
+function emptyDirectoryContents(dirPath: string): void {
+	for (const entry of readdirSync(dirPath, { withFileTypes: true })) {
+		const childPath = join(dirPath, entry.name);
+		if (entry.isDirectory() && !entry.isSymbolicLink()) {
+			emptyDirectoryContents(childPath);
+			rmdirSync(childPath);
+		} else {
+			unlinkSync(childPath);
+		}
+	}
 }

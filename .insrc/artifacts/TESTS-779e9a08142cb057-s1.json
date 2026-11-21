@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 7,
-        "contentHash": "636bb639fed12a5eb1a5f30350b86ea16d4da9e9a4f80573d263acd2557ef320",
-        "at": "2026-11-21T15:44:29.004Z",
+        "number": 9,
+        "contentHash": "94077980d3c1cf81b40cfd59efca75965dd42cdf1befadf54929838ba2b12a4c",
+        "at": "2026-11-21T15:53:01.020Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "779e9a08142cb057",
     "storyId": "s1",
     "createdAt": "2026-11-21T15:21:22.783Z",
-    "updatedAt": "2026-11-21T15:44:28.735Z",
+    "updatedAt": "2026-11-21T15:53:00.638Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-18T08:51:40.429Z",
     "epicSlug": "add-securityfinding-capability-family-delegates-framing",
-    "revision": 7
+    "revision": 9
   },
   "body": {
     "tasks": [
@@ -307,6 +307,63 @@
               },
               {
                 "title": "VerificationReceipt and its RECEIPTS record",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "1d9cfcca4",
+        "ranAt": "2026-11-21T15:53:00.638Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "JSON Schema transformer output for SecurityFinding (kind discriminant + inherited Finding fields)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/security-schema.test.ts",
+                "title": "JSON Schema transformer output for SecurityFinding (kind discriminant + inherited Finding fields)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "JSON Schema transformer output for SecurityLocator (kind discriminant + inherited Locator/Pointer fields)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/security-schema.test.ts",
+                "title": "JSON Schema transformer output for SecurityLocator (kind discriminant + inherited Locator/Pointer fields)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-round/__tests__/security-schema.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 673,
+            "titles": [
+              {
+                "title": "JSON Schema transformer output for SecurityFinding (kind discriminant + inherited Finding fields)",
+                "result": "pass"
+              },
+              {
+                "title": "JSON Schema transformer output for SecurityLocator (kind discriminant + inherited Locator/Pointer fields)",
+                "result": "pass"
+              },
+              {
+                "title": "Per-(type,model) JSON Schema transformers for SecurityFinding and SecurityLocator",
                 "result": "pass"
               }
             ],

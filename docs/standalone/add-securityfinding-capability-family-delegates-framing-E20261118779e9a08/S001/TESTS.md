@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 11 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 13 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -111,3 +111,25 @@ Run at 2026-11-21T15:44:28.735Z on commit `8201efd7d`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/workflow/review-round/__tests__/receipt-record.test.ts` | 0 | 4 | 0.9 s |  |
+
+## t5
+
+Run at 2026-11-21T15:53:00.638Z on commit `1d9cfcca4`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: JSON Schema transformer output for SecurityFinding (kind discriminant + inherited Finding fields)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | JSON Schema transformer output for SecurityFinding (kind discriminant + inherited Finding fields) | `src/workflow/review-round/__tests__/security-schema.test.ts` |
+
+**unit: JSON Schema transformer output for SecurityLocator (kind discriminant + inherited Locator/Pointer fields)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | JSON Schema transformer output for SecurityLocator (kind discriminant + inherited Locator/Pointer fields) | `src/workflow/review-round/__tests__/security-schema.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/workflow/review-round/__tests__/security-schema.test.ts` | 0 | 3 | 0.7 s |  |

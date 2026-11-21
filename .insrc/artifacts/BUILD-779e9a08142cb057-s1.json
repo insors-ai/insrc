@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 7,
-        "contentHash": "e2d5b1e7dba08fec9ddae656abe9395698eb1b88406e875286b3acc1b166a998",
-        "at": "2026-11-21T15:45:19.442Z",
+        "number": 9,
+        "contentHash": "90b125362d86646f1a5507890a8746bfa5c6768bdb87acfa4104e1a35b45bbb6",
+        "at": "2026-11-21T15:53:50.742Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -29,8 +29,8 @@
     "schemaVersion": 1,
     "epicHash": "779e9a08142cb057",
     "storyId": "s1",
-    "revision": 7,
-    "updatedAt": "2026-11-21T15:44:28.735Z",
+    "revision": 9,
+    "updatedAt": "2026-11-21T15:53:00.638Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicSlug": "add-securityfinding-capability-family-delegates-framing"
@@ -52,6 +52,10 @@
       {
         "id": "t4",
         "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
       }
     ],
     "testRecord": {
@@ -63,108 +67,122 @@
           "file": "src/workflow/review-round/__tests__/security-finding.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T15:44:28.735Z"
+        "timestamp": "2026-11-21T15:53:00.638Z"
       },
       {
         "target": {
           "file": "src/workflow/review-round/security-finding.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T15:44:28.735Z"
+        "timestamp": "2026-11-21T15:53:00.638Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASKS-779e9a08142cb057-s1.log.jsonl"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T15:44:28.735Z"
+        "timestamp": "2026-11-21T15:53:00.638Z"
       },
       {
         "target": {
           "file": "src/workflow/review-round/__tests__/security-locator.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T15:44:28.735Z"
+        "timestamp": "2026-11-21T15:53:00.638Z"
       },
       {
         "target": {
           "file": "src/workflow/review-round/security-locator.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T15:44:28.735Z"
+        "timestamp": "2026-11-21T15:53:00.638Z"
       },
       {
         "target": {
           "file": "src/workflow/review-round/__tests__/evidence-provider.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T15:44:28.735Z"
+        "timestamp": "2026-11-21T15:53:00.638Z"
       },
       {
         "target": {
           "file": "src/workflow/review-round/evidence-provider.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T15:44:28.735Z"
+        "timestamp": "2026-11-21T15:53:00.638Z"
       },
       {
         "target": {
           "file": "src/workflow/artifact-ids.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T15:44:28.735Z"
+        "timestamp": "2026-11-21T15:53:00.638Z"
       },
       {
         "target": {
           "file": "src/workflow/gates.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T15:44:28.735Z"
+        "timestamp": "2026-11-21T15:53:00.638Z"
       },
       {
         "target": {
           "file": "src/workflow/path-scheme.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T15:44:28.735Z"
+        "timestamp": "2026-11-21T15:53:00.638Z"
       },
       {
         "target": {
           "file": "src/workflow/review-round/__tests__/receipt-record.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T15:44:28.735Z"
+        "timestamp": "2026-11-21T15:53:00.638Z"
       },
       {
         "target": {
           "file": "src/workflow/review-round/receipt-record.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T15:44:28.735Z"
+        "timestamp": "2026-11-21T15:53:00.638Z"
       },
       {
         "target": {
           "file": "src/workflow/storage.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T15:44:28.735Z"
+        "timestamp": "2026-11-21T15:53:00.638Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/PLAN-779e9a08142cb057-s1.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T15:44:28.735Z"
+        "timestamp": "2026-11-21T15:53:00.638Z"
       },
       {
         "target": {
           "file": "docs/standalone/add-securityfinding-capability-family-delegates-framing-E20261118779e9a08/S001/PLAN.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T15:44:28.735Z"
+        "timestamp": "2026-11-21T15:53:00.638Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-round/__tests__/security-schema.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T15:53:00.638Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-round/security-schema.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T15:53:00.638Z"
       }
     ],
-    "commit": "8201efd7d"
+    "commit": "1d9cfcca4"
   },
   "citations": []
 }

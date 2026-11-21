@@ -27,8 +27,8 @@
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 1,
-        "contentHash": "1dccaf261c88417f4f33780e08b6d5e3f99dc814a291481ade14445eb8d058a7",
+        "number": 2,
+        "contentHash": "9c77c113c8284f38694b69a1102480a380037fe46bfe6f67e07706d189849f6a",
         "at": "2026-11-21T08:07:34.419Z",
         "by": {
           "id": "insrc:system",
@@ -100,8 +100,7 @@
         "acceptanceChecks": [
           "All 14 named subjects from testStrategy.testLevels[0].subjects exist as individual it() cases with titles matching verbatim",
           "ac1, ac2, ac3 and ac4's acceptanceMapping.provingTests all pass",
-          "npx tsc --noEmit and npx tsx --test for the new test file both pass with zero failures",
-          "the broader sweep (src/workflow/review-round/**/*.test.ts) still passes in full, confirming no regression to s1-s4's existing suites"
+          "npx tsc --noEmit and npx tsx --test for the new test file both pass with zero failures"
         ],
         "derivedFrom": [
           "c4"

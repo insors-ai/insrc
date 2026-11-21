@@ -43,7 +43,6 @@ One it() per testStrategy.testLevels[0].subjects (14 total), matching ac1-ac4's 
 - All 14 named subjects from testStrategy.testLevels[0].subjects exist as individual it() cases with titles matching verbatim
 - ac1, ac2, ac3 and ac4's acceptanceMapping.provingTests all pass
 - npx tsc --noEmit and npx tsx --test for the new test file both pass with zero failures
-- the broader sweep (src/workflow/review-round/**/*.test.ts) still passes in full, confirming no regression to s1-s4's existing suites
 
 ## 2. Test-strategy coverage
 

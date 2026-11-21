@@ -1,0 +1,96 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-630d42a7-dac8-4ca7-8355-1ce8062ebe96",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-21T17:32:22.189Z",
+    "epicCreatedAt": "2026-11-21T15:31:04.425Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a03e99e17a364550",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Publish supported recovery guidance and release evidence",
+      "parent": {
+        "entityId": "STORY-a03e99e17a364550-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a03e99e17a364550-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-a03e99e17a364550-s1-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a03e99e17a364550-s1-t10",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a03e99e17a364550-s1-t11",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "6fac518966f90f57a71ace944ba19ae61081a61955f7d9fe693fd901c0ee74ad",
+        "at": "2026-11-21T17:32:22.189Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-21T17:32:22.192Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Publish supported recovery guidance and release evidence",
+    "summary": "Document the exact current-installer acquisition/package prerequisite, one-time historical client recovery, partial-update branches, subsequent update and rollback. Bind qualification receipts and client package checks to source release evidence; inspect/update design companions for final implementation relationships.",
+    "size": "M",
+    "order": 12,
+    "acceptanceChecks": [
+      "Document commands are exercised against existing installations and distinguish raw source template, authenticated source installer and signed managed bundle.",
+      "All ac1-ac5 evidence points to exact source/runtime/platform, commands, outcomes and cleanup; unavailable remote compiler logs remain an attribution limit.",
+      "Production signing key remains external; unqualified/missing promotion material cannot be represented as production release success.",
+      "Diagrams/relationships match final code; render verified where available and limits stated.",
+      "No Windows enablement, IPC-stop fallback implementation, runtime/store deletion or unrelated test fixes included.",
+      "Pin receipts and shared release/runtime object identities are distinguished; generated cardinalities, diagram source and HTML match the final ownership model."
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "Documented recovery commands match tested independent installer delivery"
+      },
+      {
+        "level": "smoke",
+        "name": "Qualification receipts, generated companions and canonical client package parity verified"
+      }
+    ],
+    "planTaskId": "t12"
+  },
+  "citations": []
+}

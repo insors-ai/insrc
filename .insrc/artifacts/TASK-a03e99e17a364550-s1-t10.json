@@ -1,0 +1,90 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-be53cbbf-cbc5-4383-9c53-0f9085f106dc",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-21T17:32:22.178Z",
+    "epicCreatedAt": "2026-11-21T15:31:04.425Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a03e99e17a364550",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Qualify OrbStack Linux arm64 historical and subsequent updates",
+      "parent": {
+        "entityId": "STORY-a03e99e17a364550-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a03e99e17a364550-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-a03e99e17a364550-s1-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a03e99e17a364550-s1-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3d5dda0e7ebedf5b7c7c77ee091f98f4f21ece26afbf6d568220d9af6a6bc611",
+        "at": "2026-11-21T17:32:22.178Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-21T17:32:22.180Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Qualify OrbStack Linux arm64 historical and subsequent updates",
+    "summary": "Repeat real historical-to-current-to-next upgrade on Ubuntu linux-arm64 OrbStack machines with persistent isolated homes, qualified source profiles and actual native dependencies. Exercise pre-cutover failure, interrupted cutover, failed readiness and explicit recovery cases.",
+    "size": "L",
+    "order": 10,
+    "acceptanceChecks": [
+      "linux-arm64 performs actual native npm builds, selected daemon readiness/start/restart/stop and subsequent update under verified runtime.",
+      "Legacy and bound source targets supported; stale out/partial dependencies/local changes follow qualified recovery without overwriting incumbent.",
+      "No/20/26/hostile ambient cases covered with executable/npm identity evidence and explicit ONNX override checks.",
+      "Seeded data/config retained; every test actor/coordinator closed and named VMs stopped afterward.",
+      "Receipts state arm64 virtualization, resources, source/OS/archive hashes and qualification limits; fresh installs or mock routing alone cannot satisfy completion."
+    ],
+    "tests": [
+      {
+        "level": "live",
+        "name": "OrbStack linux-arm64 actual historical and migrated-install update, native loads and failure recovery"
+      },
+      {
+        "level": "live",
+        "name": "arm64 retained data and owned-child/coordinator closure census"
+      }
+    ],
+    "planTaskId": "t10"
+  },
+  "citations": []
+}

@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d5f88c19-1139-4413-8015-c55a4dfbfecc",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-21T17:32:22.164Z",
+    "epicCreatedAt": "2026-11-21T15:31:04.425Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a03e99e17a364550",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Ship VS Code and JetBrains bootstrap and selection routing",
+      "parent": {
+        "entityId": "STORY-a03e99e17a364550-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a03e99e17a364550-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-a03e99e17a364550-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a03e99e17a364550-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a40de6b550adf14e627e07572b914017c655aae70c458c684f5593ea54cf2b8e",
+        "at": "2026-11-21T17:32:22.164Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-21T17:32:22.166Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Ship VS Code and JetBrains bootstrap and selection routing",
+    "summary": "Integrate both active IDE clients with current independently packaged bootstrap, native environment and Linux selection. Generate runtime/client assets from canonical sources and preserve managed signed bundle behavior.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "Both IDE update/restart paths stop selecting old ctl npm functions and consume selected release for startup/MCP.",
+      "Generated package payload contains required canonical runtime assets and authenticated source bootstrap for qualified upgrade channels.",
+      "Child Node/npm/native environment is verified independently of a child provisioner's nonpersistent environment exports.",
+      "Controller/provisioner tests cover legacy, bound source and existing managed Mac; deprecated fork untouched."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "VS Code controller reaches packaged current bootstrap and selected runtime"
+      },
+      {
+        "level": "integration",
+        "name": "JetBrains provisioner inherits owned native environment and packaged verifier"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

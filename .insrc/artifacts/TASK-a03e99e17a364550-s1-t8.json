@@ -1,0 +1,119 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4b9c5278-d3f8-445c-a988-1319f71381b2",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-21T17:32:22.168Z",
+    "epicCreatedAt": "2026-11-21T15:31:04.425Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a03e99e17a364550",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Verify interrupted upgrades and trust/ownership regressions",
+      "parent": {
+        "entityId": "STORY-a03e99e17a364550-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a03e99e17a364550-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-a03e99e17a364550-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a03e99e17a364550-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a03e99e17a364550-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a03e99e17a364550-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a03e99e17a364550-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a03e99e17a364550-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a03e99e17a364550-s1-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e552603397c266ae3901be91f805199c917e3434f8274db9f81b6eee6241fc04",
+        "at": "2026-11-21T17:32:22.168Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-21T17:32:22.170Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Verify interrupted upgrades and trust/ownership regressions",
+    "summary": "Extend real-process and contract suites with fault injection across source preparation, persistence and cutover. Integrate launcher contracts, runtime corruption, predecessor recovery and existing Mac managed/native tests.",
+    "size": "M",
+    "order": 8,
+    "acceptanceChecks": [
+      "Crash/failure injection at every journal/selector phase proves selection consistency and child closure.",
+      "Concurrent mutations, PID reuse, stop refusal and ambiguous actor identity cannot start a second DB actor.",
+      "Wrong signatures/profile/floors, source tampering, runtime cache corruption and candidate failure are refused safely.",
+      "Canonical Node22 coordinator build/tests pass for affected scope, cleanup confirmedClosed; unrelated upstream failures separately identified.",
+      "Release/package gate refuses qualified distribution until shell, CLI/daemon/MCP and both IDE consumers understand selection together (t5-t7)."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Every transaction phase crash/timeout and concurrent mutation preserves single daemon ownership"
+      },
+      {
+        "level": "integration",
+        "name": "Corrupt source/runtime and wrong compatibility denied; package integration gate enforced"
+      },
+      {
+        "level": "smoke",
+        "name": "Canonical coordinator cleanup confirms all owned test actors closed"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

@@ -221,24 +221,42 @@ describe('writeCheckpoint/readCheckpoint/finalizeAndCleanup and ReviewCheckpoint
 	});
 
 	it('a symlinked review directory or checkpoint file is never written through by writeCheckpoint, even outside .insrc/tmp', async () => {
-		const reviewId = `review-symlinkdir-${process.pid}-${Date.now()}`;
+		const reviewIdDir = `review-symlinkdir-${process.pid}-${Date.now()}`;
 		const outsideDir = mkdtempSync(join(tmpdir(), 'insrc-checkpoint-outside-'));
 		const tmpRoot = join(ROOT, '.insrc/tmp');
 		mkdirSync(tmpRoot, { recursive: true });
-		const linkPath = join(tmpRoot, reviewId);
-		symlinkSync(outsideDir, linkPath, 'dir');
+		const dirLinkPath = join(tmpRoot, reviewIdDir);
+		symlinkSync(outsideDir, dirLinkPath, 'dir');
+
+		const reviewIdFile = `review-symlinkfile-${process.pid}-${Date.now()}`;
+		const reviewDir = join(tmpRoot, reviewIdFile);
+		mkdirSync(reviewDir, { recursive: true });
+		const externalFile = join(mkdtempSync(join(tmpdir(), 'insrc-checkpoint-external-')), 'victim.txt');
+		const originalContent = 'do not overwrite me';
+		writeFileSync(externalFile, originalContent, 'utf8');
+		symlinkSync(externalFile, join(reviewDir, 'checkpoint.json'), 'file');
+
 		_setCheckpointDepsForTests({ resolveRepoRoot });
 
 		try {
 			await assert.rejects(
-				() => writeCheckpoint(reviewId, { kind: 'round', ref: 1 }),
+				() => writeCheckpoint(reviewIdDir, { kind: 'round', ref: 1 }),
 				/is a symlink/,
 				'a symlinked review directory must be rejected, never written through',
 			);
 			assert.equal(existsSync(join(outsideDir, 'checkpoint.json')), false, 'no file must ever land in the symlink target outside the repository');
+
+			await assert.rejects(
+				() => writeCheckpoint(reviewIdFile, { kind: 'round', ref: 1 }),
+				/is a symlink/,
+				'a symlinked checkpoint.json file must be rejected, never written through',
+			);
+			assert.equal(readFileSync(externalFile, 'utf8'), originalContent, 'the external file the symlink pointed to must be left untouched');
 		} finally {
-			rmSync(linkPath, { force: true });
+			rmSync(dirLinkPath, { force: true });
 			rmSync(outsideDir, { recursive: true, force: true });
+			rmSync(reviewDir, { recursive: true, force: true });
+			rmSync(dirname(externalFile), { recursive: true, force: true });
 			_setCheckpointDepsForTests({});
 		}
 	});

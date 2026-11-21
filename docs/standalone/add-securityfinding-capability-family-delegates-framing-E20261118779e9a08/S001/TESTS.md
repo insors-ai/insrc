@@ -1,0 +1,53 @@
+<!-- insrc:artifact TESTS-779e9a08142cb057-s1 -->
+
+# Tests: 779e9a08142cb057 s1
+
+What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
+
+**Totals:** 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+## t1
+
+Run at 2026-11-21T15:24:24.800Z on commit `61e9c86fb`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: isSecurityFinding type guard (true/false/malformed discriminant)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | isSecurityFinding returns true only for an object whose kind discriminant is exactly 'security' | `src/workflow/review-round/__tests__/security-finding.test.ts` |
+
+**unit: SecurityFinding structural extension of base Finding (all base fields present + security-only fields)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | SecurityFinding structurally extends base Finding -- every Finding field present plus the security-only fields | `src/workflow/review-round/__tests__/security-finding.test.ts` |
+
+**unit: overriddenAt vs current Scope revision comparison (stale override rejected)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | overriddenAt vs current Scope revision comparison (stale override rejected) | `src/workflow/review-round/__tests__/security-finding.test.ts` |
+
+**unit: risk-family verdict recorded as informational zero-severity SecurityFinding for not-applicable/uncertain families**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | risk-family verdict recorded as informational zero-severity SecurityFinding for not-applicable/uncertain families | `src/workflow/review-round/__tests__/security-finding.test.ts` |
+
+**integration: reconciliation pass consuming a mixed Finding/SecurityFinding list**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | reconciliation pass consuming a mixed Finding/SecurityFinding list | `src/workflow/review-round/__tests__/security-finding.test.ts` |
+
+**integration: docgen review-report render of a round containing SecurityFinding entries**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | docgen review-report render of a round containing SecurityFinding entries | `src/workflow/review-round/__tests__/security-finding.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/workflow/review-round/__tests__/security-finding.test.ts` | 0 | 7 | 0.7 s |  |

@@ -1,0 +1,67 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "71456d6af43997d6dc54708230919fc84bedb1a99aacba5a56e053ac56b66c68",
+        "at": "2026-11-21T15:25:07.790Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-56bb5fd7-2774-4425-b4e2-d1cb9216859c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-21T15:21:22.783Z",
+    "epicCreatedAt": "2026-11-18T08:51:40.429Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "779e9a08142cb057",
+    "storyId": "s1",
+    "revision": 2,
+    "updatedAt": "2026-11-21T15:24:24.800Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicSlug": "add-securityfinding-capability-family-delegates-framing"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      }
+    ],
+    "testRecord": {
+      "md": "docs/standalone/add-securityfinding-capability-family-delegates-framing-E20261118779e9a08/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/workflow/review-round/__tests__/security-finding.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T15:24:24.800Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-round/security-finding.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T15:24:24.800Z"
+      }
+    ],
+    "commit": "61e9c86fb"
+  },
+  "citations": []
+}

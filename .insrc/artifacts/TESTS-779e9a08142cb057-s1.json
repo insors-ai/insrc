@@ -1,0 +1,162 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "117dc0daf1d7698a6dc5d7cf68a68fc095e1423136cdd6c69e797303d76c77c1",
+        "at": "2026-11-21T15:24:25.740Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "779e9a08142cb057",
+    "storyId": "s1",
+    "createdAt": "2026-11-21T15:21:22.783Z",
+    "updatedAt": "2026-11-21T15:24:24.800Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-18T08:51:40.429Z",
+    "epicSlug": "add-securityfinding-capability-family-delegates-framing",
+    "revision": 2
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "61e9c86fb",
+        "ranAt": "2026-11-21T15:24:24.800Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "isSecurityFinding type guard (true/false/malformed discriminant)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/security-finding.test.ts",
+                "title": "isSecurityFinding returns true only for an object whose kind discriminant is exactly 'security'",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "SecurityFinding structural extension of base Finding (all base fields present + security-only fields)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/security-finding.test.ts",
+                "title": "SecurityFinding structurally extends base Finding -- every Finding field present plus the security-only fields",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "overriddenAt vs current Scope revision comparison (stale override rejected)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/security-finding.test.ts",
+                "title": "overriddenAt vs current Scope revision comparison (stale override rejected)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "risk-family verdict recorded as informational zero-severity SecurityFinding for not-applicable/uncertain families",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/security-finding.test.ts",
+                "title": "risk-family verdict recorded as informational zero-severity SecurityFinding for not-applicable/uncertain families",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "reconciliation pass consuming a mixed Finding/SecurityFinding list",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/security-finding.test.ts",
+                "title": "reconciliation pass consuming a mixed Finding/SecurityFinding list",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "docgen review-report render of a round containing SecurityFinding entries",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/security-finding.test.ts",
+                "title": "docgen review-report render of a round containing SecurityFinding entries",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-round/__tests__/security-finding.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 734,
+            "titles": [
+              {
+                "title": "isSecurityFinding returns true only for an object whose kind discriminant is exactly 'security'",
+                "result": "pass"
+              },
+              {
+                "title": "SecurityFinding structurally extends base Finding -- every Finding field present plus the security-only fields",
+                "result": "pass"
+              },
+              {
+                "title": "overriddenAt vs current Scope revision comparison (stale override rejected)",
+                "result": "pass"
+              },
+              {
+                "title": "risk-family verdict recorded as informational zero-severity SecurityFinding for not-applicable/uncertain families",
+                "result": "pass"
+              },
+              {
+                "title": "reconciliation pass consuming a mixed Finding/SecurityFinding list",
+                "result": "pass"
+              },
+              {
+                "title": "docgen review-report render of a round containing SecurityFinding entries",
+                "result": "pass"
+              },
+              {
+                "title": "SecurityFinding, isSecurityFinding, risk-family verdicts, and the policy-override staleness check",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

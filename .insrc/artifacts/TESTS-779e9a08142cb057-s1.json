@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 4,
-        "contentHash": "c88871d91e1321b78b031204b551c1bae727cf58ebff5358b7d08bdae1bec7fa",
-        "at": "2026-11-21T15:29:56.454Z",
+        "number": 7,
+        "contentHash": "636bb639fed12a5eb1a5f30350b86ea16d4da9e9a4f80573d263acd2557ef320",
+        "at": "2026-11-21T15:44:29.004Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "779e9a08142cb057",
     "storyId": "s1",
     "createdAt": "2026-11-21T15:21:22.783Z",
-    "updatedAt": "2026-11-21T15:29:56.040Z",
+    "updatedAt": "2026-11-21T15:44:28.735Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-18T08:51:40.429Z",
     "epicSlug": "add-securityfinding-capability-family-delegates-framing",
-    "revision": 4
+    "revision": 7
   },
   "body": {
     "tasks": [
@@ -233,6 +233,80 @@
               },
               {
                 "title": "EvidenceProvider and SecurityEvidence",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "8201efd7d",
+        "ranAt": "2026-11-21T15:44:28.735Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "VerificationReceipt record shape (pass/fail/evidence linkage by id)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/receipt-record.test.ts",
+                "title": "VerificationReceipt record shape (pass/fail/evidence linkage by id)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "RECEIPTS.md write for a security review round",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/receipt-record.test.ts",
+                "title": "RECEIPTS.md write for a security review round",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "approval attempt against a RECEIPTS.md/VerificationReceipt record is refused",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/receipt-record.test.ts",
+                "title": "approval attempt against a RECEIPTS.md/VerificationReceipt record is refused",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-round/__tests__/receipt-record.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 884,
+            "titles": [
+              {
+                "title": "VerificationReceipt record shape (pass/fail/evidence linkage by id)",
+                "result": "pass"
+              },
+              {
+                "title": "RECEIPTS.md write for a security review round",
+                "result": "pass"
+              },
+              {
+                "title": "approval attempt against a RECEIPTS.md/VerificationReceipt record is refused",
+                "result": "pass"
+              },
+              {
+                "title": "VerificationReceipt and its RECEIPTS record",
                 "result": "pass"
               }
             ],

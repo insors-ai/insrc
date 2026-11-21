@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 11 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -83,3 +83,31 @@ Run at 2026-11-21T15:29:56.040Z on commit `1af308fcc`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/workflow/review-round/__tests__/evidence-provider.test.ts` | 0 | 3 | 0.6 s |  |
+
+## t4
+
+Run at 2026-11-21T15:44:28.735Z on commit `8201efd7d`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: VerificationReceipt record shape (pass/fail/evidence linkage by id)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | VerificationReceipt record shape (pass/fail/evidence linkage by id) | `src/workflow/review-round/__tests__/receipt-record.test.ts` |
+
+**integration: RECEIPTS.md write for a security review round**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | RECEIPTS.md write for a security review round | `src/workflow/review-round/__tests__/receipt-record.test.ts` |
+
+**integration: approval attempt against a RECEIPTS.md/VerificationReceipt record is refused**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | approval attempt against a RECEIPTS.md/VerificationReceipt record is refused | `src/workflow/review-round/__tests__/receipt-record.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/workflow/review-round/__tests__/receipt-record.test.ts` | 0 | 4 | 0.9 s |  |

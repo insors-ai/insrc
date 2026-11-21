@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "plan",
-    "runId": "wf-1795235804253-5ybo2o",
+    "runId": "wf-1795243384197-ng38pc",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-11-21T04:37:07.994Z",
+    "createdAt": "2026-11-21T06:44:46.592Z",
     "epicCreatedAt": "2026-11-20T17:07:21.721Z",
     "standalone": true,
     "attribution": {
@@ -16,7 +16,7 @@
         }
       ]
     },
-    "elapsedMs": 23387,
+    "elapsedMs": 102122,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "175ab0d1d56838a9",
@@ -28,9 +28,9 @@
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 1,
-        "contentHash": "a4ceae4041162e5596270e4a9764fcc86c4fab98967b7ab57eb2f8ce881b6f81",
-        "at": "2026-11-21T04:37:08.086Z",
+        "number": 2,
+        "contentHash": "7fbace1064ddad3bda77fbcea209a59fb4c6ab51ebd554e9745f97b77eee7e9a",
+        "at": "2026-11-21T06:44:46.680Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
@@ -39,27 +39,27 @@
       },
       "signoffs": [],
       "approval": {
-        "revision": 1,
+        "revision": 2,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-11-21T04:40:28.260Z"
+        "at": "2026-11-21T06:53:21.641Z"
       }
     },
-    "revision": 1,
     "envelope": {
       "description": "",
       "references": [],
       "attachments": []
     },
-    "rangeBase": "8d36c1b992279e5f3ff5fdf2494a0b1581b4c62e"
+    "revision": 2,
+    "rangeBase": "77c317a88d6c9c4e1c2bf4233d9e8ecc22e9cf72"
   },
   "body": {
     "summary": {
       "audience": "technical",
-      "prose": "Implement the approved local Node/npm runtime design in seven ordered tasks, starting with trusted policy and bootstrap, then routing installed process boundaries through the owned toolchain. Preserve signed managed releases and stage migration before activation. Complete isolated native qualification and record evidence before the final build approval."
+      "prose": "Implement the approved local Node/npm runtime design in seven ordered tasks, starting with trusted policy and bootstrap, then routing installed process boundaries through the owned toolchain. Preserve signed managed releases and stage migration before activation. Complete isolated native qualification and record evidence before the final build approval. Revision 2 clarifies that t5 proves the shared installer mechanism with an isolated enabled fixture policy while public targets stay disabled. Task t7 retains actual npm install/build/native qualification and must additionally prove a fresh install using the promoted canonical packaged policy before final BUILD approval; task identities, dependencies and existing test names are unchanged."
     },
     "tasks": [
       {
@@ -195,7 +195,7 @@
         "acceptanceChecks": [
           "IDE host/system Node is never chosen as daemon runtime; adapters invoke shared verified provisioner/selection contract.",
           "No independent stale JetBrains pin/digest/download policy remains; injectable tests cover provisioning and failures.",
-          "Packaged installer/bootstrap/client policy assets agree; fresh install does not require global Node.",
+          "Packaged installer/bootstrap/client policy assets agree. At t5, prove the no-global-Node fresh-install mechanism using the actual official distribution under an explicitly isolated enabled fixture policy; keep the public policy disabled pending t7 qualification. Public target enablement and actual packaged-policy installation are t7 requirements, not t5 admission prerequisites.",
           "Existing signed bundles remain byte-immutable and retain existing verification/managed lifecycle; newly packaged bootstrap includes any expanded toolchain under new authentication.",
           "Current IPC names/payloads remain unchanged; no deprecated insrc-ide release requirements."
         ],
@@ -270,7 +270,8 @@
           "Run real npm install/build and representative native module load, not only mocked version tests.",
           "Run source migration failure and signed managed recovery/rollback regressions plus current IDE client contract tests.",
           "Promote public source-target enablement only after actual target/native smoke evidence; unverified targets remain disabled and are reported. No implicit dependency from t1 back to qualification.",
-          "Canonical test coordinator releases all owned children and records cleanup; final BUILD validation contains evidence/limitations before human approval, without demanding approval as a technical test."
+          "Canonical test coordinator releases all owned children and records cleanup; final BUILD validation contains evidence/limitations before human approval, without demanding approval as a technical test.",
+          "After actual install/build/native qualification permits target promotion, regenerate canonical client/bootstrap assets and prove fresh install with the actual enabled packaged policy, no fixture-policy substitution, before final BUILD approval."
         ],
         "derivedFrom": [
           "c1",

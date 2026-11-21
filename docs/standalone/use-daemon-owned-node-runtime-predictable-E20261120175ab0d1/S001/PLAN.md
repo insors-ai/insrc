@@ -8,7 +8,7 @@
 **LLD run:** `wf-1795235086264-abn2jy`
 **LLD effective hash:** `89a91b114ba5...`
 
-Implement the approved local Node/npm runtime design in seven ordered tasks, starting with trusted policy and bootstrap, then routing installed process boundaries through the owned toolchain. Preserve signed managed releases and stage migration before activation. Complete isolated native qualification and record evidence before the final build approval.
+Implement the approved local Node/npm runtime design in seven ordered tasks, starting with trusted policy and bootstrap, then routing installed process boundaries through the owned toolchain. Preserve signed managed releases and stage migration before activation. Complete isolated native qualification and record evidence before the final build approval. Revision 2 clarifies that t5 proves the shared installer mechanism with an isolated enabled fixture policy while public targets stay disabled. Task t7 retains actual npm install/build/native qualification and must additionally prove a fresh install using the promoted canonical packaged policy before final BUILD approval; task identities, dependencies and existing test names are unchanged.
 
 ## Contents
 
@@ -20,13 +20,13 @@ Implement the approved local Node/npm runtime design in seven ordered tasks, sta
 
 | # | Task | Size | Status | Depends on | Tests | Derived from |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| 1 | **`t1`** Define the pinned runtime policy and trusted distribution identities | M | — | — | unit: Policy/version/target/digest validation and generated asset/release-pin parity; unsupported target rejection | [[c1]] [[c2]] |
-| 2 | **`t2`** Provision and verify the local toolchain without global Node | M | — | `t1` | unit: Archive digest/traversal/link/device/version rejection, cached inventory corruption, publication locking and owned cleanup; integration: Node-free bootstrap, offline verified reuse, concurrent/interrupted provisioning in disposable HOME | [[c1]] [[c3]] |
-| 3 | **`t3`** Use the owned toolchain throughout shell installation and control | M | — | `t2` | integration: Shell installer/control/bridge actual child identity with absent/20/26/fake Node/npm, sanitized injection environment and quoted paths; unit: Extend src/daemon/__tests__/daemon-ctl-node-path.test.ts and src/cli/services/__tests__/daemon-ctl-install-marker.test.ts for owned selection and lock+toolchain marker failures | [[c1]] [[c4]] [[c5]] |
-| 4 | **`t4`** Align TUI daemon maintenance and installed executable wrappers | M | — | `t2`, `t3` | integration: Installed TUI/MCP wrappers and daemon start record owned executable; TUI update uses absolute npm-cli and lifecycle child version; unit: Extend src/cli/services/__tests__/maintenance-install-marker.test.ts and managed start/error fixtures; preserve nativeBuildEnv flags | [[c1]] [[c4]] [[c5]] |
-| 5 | **`t5`** Align current IDE clients and runtime packaging | M | — | `t1`, `t2`, `t3`, `t4` | unit: Extend VS Code controller/commands and JetBrains NodeRuntimeResolverTest/PrivateNodeProvisionerTest for shared local policy and no host runtime selection; integration: Packaged installer/bootstrap policy consistency and existing signed staging/fingerprint verification regression | [[c1]] [[c2]] [[c5]] [[c6]] |
-| 6 | **`t6`** Complete staged migration and recovery behavior | M | — | `t3`, `t4`, `t5` | integration: Stage install/native/build failure before activation; binding/journal interruption retry and managed rollback retain previous selection; unit: Old marker migration, external override diagnostics, no database rewrite or deletion of referenced runtime | [[c1]] [[c3]] [[c5]] [[c7]] |
-| 7 | **`t7`** Qualify runtime identity and native compatibility end to end | M | — | `t1`, `t2`, `t3`, `t4`, `t5`, `t6` | smoke: Actual official Node22.22.1/npm, npm lifecycle child paths, npm install/build and native module load per enabled target; integration: Canonical bounded regression and IDE build suites; signed managed recovery/rollback; no active owned test children after cleanup | [[c1]] [[c8]] |
+| 1 | **`t1`** Define the pinned runtime policy and trusted distribution identities | M | approved r1 | — | unit: Policy/version/target/digest validation and generated asset/release-pin parity; unsupported target rejection | [[c1]] [[c2]] |
+| 2 | **`t2`** Provision and verify the local toolchain without global Node | M | approved r1 | `t1` | unit: Archive digest/traversal/link/device/version rejection, cached inventory corruption, publication locking and owned cleanup; integration: Node-free bootstrap, offline verified reuse, concurrent/interrupted provisioning in disposable HOME | [[c1]] [[c3]] |
+| 3 | **`t3`** Use the owned toolchain throughout shell installation and control | M | approved r1 | `t2` | integration: Shell installer/control/bridge actual child identity with absent/20/26/fake Node/npm, sanitized injection environment and quoted paths; unit: Extend src/daemon/__tests__/daemon-ctl-node-path.test.ts and src/cli/services/__tests__/daemon-ctl-install-marker.test.ts for owned selection and lock+toolchain marker failures | [[c1]] [[c4]] [[c5]] |
+| 4 | **`t4`** Align TUI daemon maintenance and installed executable wrappers | M | approved r1 | `t2`, `t3` | integration: Installed TUI/MCP wrappers and daemon start record owned executable; TUI update uses absolute npm-cli and lifecycle child version; unit: Extend src/cli/services/__tests__/maintenance-install-marker.test.ts and managed start/error fixtures; preserve nativeBuildEnv flags | [[c1]] [[c4]] [[c5]] |
+| 5 | **`t5`** Align current IDE clients and runtime packaging | M | approved r1 | `t1`, `t2`, `t3`, `t4` | unit: Extend VS Code controller/commands and JetBrains NodeRuntimeResolverTest/PrivateNodeProvisionerTest for shared local policy and no host runtime selection; integration: Packaged installer/bootstrap policy consistency and existing signed staging/fingerprint verification regression | [[c1]] [[c2]] [[c5]] [[c6]] |
+| 6 | **`t6`** Complete staged migration and recovery behavior | M | approved r1 | `t3`, `t4`, `t5` | integration: Stage install/native/build failure before activation; binding/journal interruption retry and managed rollback retain previous selection; unit: Old marker migration, external override diagnostics, no database rewrite or deletion of referenced runtime | [[c1]] [[c3]] [[c5]] [[c7]] |
+| 7 | **`t7`** Qualify runtime identity and native compatibility end to end | M | approved r1 | `t1`, `t2`, `t3`, `t4`, `t5`, `t6` | smoke: Actual official Node22.22.1/npm, npm lifecycle child paths, npm install/build and native module load per enabled target; integration: Canonical bounded regression and IDE build suites; signed managed recovery/rollback; no active owned test children after cleanup | [[c1]] [[c8]] |
 
 ### 1.1 TASK-175ab0d1d56838a9-s1-t1 — Define the pinned runtime policy and trusted distribution identities
 
@@ -76,7 +76,7 @@ Update current VS Code and JetBrains adapters to shared bootstrap/ownership poli
 **Acceptance checks:**
 - IDE host/system Node is never chosen as daemon runtime; adapters invoke shared verified provisioner/selection contract.
 - No independent stale JetBrains pin/digest/download policy remains; injectable tests cover provisioning and failures.
-- Packaged installer/bootstrap/client policy assets agree; fresh install does not require global Node.
+- Packaged installer/bootstrap/client policy assets agree. At t5, prove the no-global-Node fresh-install mechanism using the actual official distribution under an explicitly isolated enabled fixture policy; keep the public policy disabled pending t7 qualification. Public target enablement and actual packaged-policy installation are t7 requirements, not t5 admission prerequisites.
 - Existing signed bundles remain byte-immutable and retain existing verification/managed lifecycle; newly packaged bootstrap includes any expanded toolchain under new authentication.
 - Current IPC names/payloads remain unchanged; no deprecated insrc-ide release requirements.
 
@@ -101,6 +101,7 @@ Run bounded regression suites and isolated actual distribution/native smoke on e
 - Run source migration failure and signed managed recovery/rollback regressions plus current IDE client contract tests.
 - Promote public source-target enablement only after actual target/native smoke evidence; unverified targets remain disabled and are reported. No implicit dependency from t1 back to qualification.
 - Canonical test coordinator releases all owned children and records cleanup; final BUILD validation contains evidence/limitations before human approval, without demanding approval as a technical test.
+- After actual install/build/native qualification permits target promotion, regenerate canonical client/bootstrap assets and prove fresh install with the actual enabled packaged policy, no fixture-policy substitution, before final BUILD approval.
 
 ## 2. Test-strategy coverage
 

@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 6,
-        "contentHash": "b0effaf27be1a9cf19a2d9db2c3b65476317c2ede7c7fe94824b4e3940bcc817",
-        "at": "2026-11-21T08:32:26.768Z",
+        "number": 12,
+        "contentHash": "dd4d812ea8946ab734ed10081d71d8c3f800defaa7b6bb012a224278f74f4f6b",
+        "at": "2026-11-21T09:17:20.327Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -29,8 +29,8 @@
     "schemaVersion": 1,
     "epicHash": "03f4fd3b9102aab8",
     "storyId": "s5",
-    "revision": 6,
-    "updatedAt": "2026-11-21T08:31:36.280Z",
+    "revision": 12,
+    "updatedAt": "2026-11-21T09:16:22.608Z",
     "authoredBy": "controller",
     "epicSlug": "review-rounds-reconciliation-recovery"
   },
@@ -54,38 +54,73 @@
           "file": "src/workflow/review-round/__tests__/checkpoint.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T08:31:36.280Z"
+        "timestamp": "2026-11-21T09:16:22.608Z"
       },
       {
         "target": {
           "file": "src/workflow/review-round/__type-tests__/checkpoint.typecheck.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T08:31:36.280Z"
+        "timestamp": "2026-11-21T09:16:22.608Z"
       },
       {
         "target": {
           "file": "src/workflow/review-round/checkpoint.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T08:31:36.280Z"
+        "timestamp": "2026-11-21T09:16:22.608Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/PLAN-03f4fd3b9102aab8-s5.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T08:31:36.280Z"
+        "timestamp": "2026-11-21T09:16:22.608Z"
       },
       {
         "target": {
           "file": "docs/epics/review-rounds-reconciliation-recovery-E2026111803f4fd3b/S005/PLAN.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T08:31:36.280Z"
+        "timestamp": "2026-11-21T09:16:22.608Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-03f4fd3b9102aab8-s5-t1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T09:16:22.608Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-03f4fd3b9102aab8-s5-t2.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T09:16:22.608Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASKS-03f4fd3b9102aab8-s5.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T09:16:22.608Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASKS-03f4fd3b9102aab8-s5.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T09:16:22.608Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/review-rounds-reconciliation-recovery-E2026111803f4fd3b/S005/SELF-REVIEW.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T09:16:22.608Z"
       }
     ],
-    "commit": "c2619097a"
+    "commit": "0dc1abe97"
   },
   "citations": []
 }

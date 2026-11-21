@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 6,
-        "contentHash": "5642f3516a56c26a5187022e6173fd82b03cffa5a71f431f58eed7ed75979d0f",
-        "at": "2026-11-21T08:31:36.522Z",
+        "number": 12,
+        "contentHash": "33cae8805d7f82b05ac62e32eeb2a7e24b4205ad5aa6fe2eea10eb50564b0fb4",
+        "at": "2026-11-21T09:16:22.856Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,17 +23,17 @@
     "epicHash": "03f4fd3b9102aab8",
     "storyId": "s5",
     "createdAt": "2026-11-21T08:19:58.921Z",
-    "updatedAt": "2026-11-21T08:31:36.280Z",
+    "updatedAt": "2026-11-21T09:16:22.608Z",
     "epicCreatedAt": "2026-11-18T06:14:00.057Z",
     "epicSlug": "review-rounds-reconciliation-recovery",
-    "revision": 6
+    "revision": 12
   },
   "body": {
     "tasks": [
       {
         "taskId": "t1",
-        "commit": "c2619097a",
-        "ranAt": "2026-11-21T08:31:36.280Z",
+        "commit": "0dc1abe97",
+        "ranAt": "2026-11-21T09:16:22.608Z",
         "testsPassed": true,
         "tests": [
           {
@@ -55,7 +55,7 @@
             "file": "src/workflow/review-round/__tests__/checkpoint.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 2945,
+            "durationMs": 3308,
             "titles": [
               {
                 "title": "writeCheckpoint writes a ReviewCheckpoint JSON record to .insrc/tmp/<reviewId>/checkpoint.json containing exactly {reviewId, lastCompletedUnit}, overwriting any prior checkpoint for the same reviewId",
@@ -114,6 +114,18 @@
                 "result": "pass"
               },
               {
+                "title": "readCheckpoint rejects a mismatched identity: a checkpoint.json whose own reviewId field does not match the one requested is treated as though no checkpoint exists",
+                "result": "pass"
+              },
+              {
+                "title": "readCheckpoint never follows a symlinked checkpoint.json into another review's own record, even when the symlinked record is well-formed and would otherwise pass every other check",
+                "result": "pass"
+              },
+              {
+                "title": "a review directory replaced by a symlink during the narrow window between writeCheckpoint's/finalizeAndCleanup's own checks and their actual use is never written through or deleted through outside the repository (best-effort concurrent regression)",
+                "result": "pass"
+              },
+              {
                 "title": "writeCheckpoint/readCheckpoint/finalizeAndCleanup and ReviewCheckpoint",
                 "result": "pass"
               }
@@ -124,8 +136,8 @@
       },
       {
         "taskId": "t2",
-        "commit": "c2619097a",
-        "ranAt": "2026-11-21T08:30:25.845Z",
+        "commit": "0dc1abe97",
+        "ranAt": "2026-11-21T09:15:02.556Z",
         "testsPassed": true,
         "tests": [
           {
@@ -303,7 +315,7 @@
             "file": "src/workflow/review-round/__tests__/checkpoint.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 2762,
+            "durationMs": 3359,
             "titles": [
               {
                 "title": "writeCheckpoint writes a ReviewCheckpoint JSON record to .insrc/tmp/<reviewId>/checkpoint.json containing exactly {reviewId, lastCompletedUnit}, overwriting any prior checkpoint for the same reviewId",
@@ -359,6 +371,18 @@
               },
               {
                 "title": "finalizeAndCleanup succeeds even when checkpoint.json was never written at all, deleting whatever the .insrc/tmp/<reviewId>/ folder currently contains as a whole",
+                "result": "pass"
+              },
+              {
+                "title": "readCheckpoint rejects a mismatched identity: a checkpoint.json whose own reviewId field does not match the one requested is treated as though no checkpoint exists",
+                "result": "pass"
+              },
+              {
+                "title": "readCheckpoint never follows a symlinked checkpoint.json into another review's own record, even when the symlinked record is well-formed and would otherwise pass every other check",
+                "result": "pass"
+              },
+              {
+                "title": "a review directory replaced by a symlink during the narrow window between writeCheckpoint's/finalizeAndCleanup's own checks and their actual use is never written through or deleted through outside the repository (best-effort concurrent regression)",
                 "result": "pass"
               },
               {

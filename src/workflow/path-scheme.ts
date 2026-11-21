@@ -43,8 +43,10 @@ import { ArtifactIds, InvalidArtifactKeyError } from './artifact-ids.js';
  *  `<KIND>.md` filename. `ISSUE` is the bugfix flow's first-stage record — an
  *  item-root singleton like SPEC/DEF/HLD (NOT story-scoped). `TESTS` is a
  *  Story's test record: story-scoped, written by the build validation gate
- *  beside BUILD, and never approved. */
-export type ArtifactKind = 'SPEC' | 'DEF' | 'HLD' | 'LLD' | 'PLAN' | 'BUILD' | 'CR' | 'EXT' | 'ISSUE' | 'TESTS';
+ *  beside BUILD, and never approved. `RECEIPTS` is the direct peer for a
+ *  security review round's VerificationReceipt entries: story-scoped, beside
+ *  the review artifact, and likewise never approved. */
+export type ArtifactKind = 'SPEC' | 'DEF' | 'HLD' | 'LLD' | 'PLAN' | 'BUILD' | 'CR' | 'EXT' | 'ISSUE' | 'TESTS' | 'RECEIPTS';
 
 /** Whether a work item is epic-parented or a triage-routed standalone feature —
  *  selects the `docs/epics` vs `docs/standalone` top-level split. */
@@ -75,7 +77,7 @@ export interface WorkItemLocation {
 
 /** The artifact kinds that live in a per-story `S<nnn>/` subfolder. The
  *  complement — `SPEC`/`DEF`/`HLD` — are work-item singletons at the item root. */
-const STORY_SCOPED: ReadonlySet<ArtifactKind> = new Set<ArtifactKind>(['LLD', 'PLAN', 'BUILD', 'CR', 'EXT', 'TESTS']);
+const STORY_SCOPED: ReadonlySet<ArtifactKind> = new Set<ArtifactKind>(['LLD', 'PLAN', 'BUILD', 'CR', 'EXT', 'TESTS', 'RECEIPTS']);
 
 /** Whether `kind` is placed under a story subfolder (vs the item root). */
 export function isStoryScopedKind(kind: ArtifactKind): boolean {

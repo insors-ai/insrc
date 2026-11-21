@@ -47,7 +47,7 @@ export type PathIntent =
 
 export type ArtifactIdKind =
 	| 'DEF' | 'HLD' | 'EPIC' | 'SPEC' | 'ISSUE'
-	| 'LLD' | 'PLAN' | 'BUILD' | 'CR' | 'TESTS' | 'EXT' | 'STORY' | 'TASKS'
+	| 'LLD' | 'PLAN' | 'BUILD' | 'CR' | 'TESTS' | 'RECEIPTS' | 'EXT' | 'STORY' | 'TASKS'
 	| 'TASK' | 'DIAG' | 'AMD';
 
 /** The parts of an artifact id. `epicHash` is the hash the id carries; for
@@ -78,6 +78,7 @@ const SHAPES: Readonly<Record<ArtifactIdKind, KindShape>> = {
 	BUILD: { story: true,  task: false, seq: false },
 	CR:    { story: true,  task: false, seq: false },
 	TESTS: { story: true,  task: false, seq: false },
+	RECEIPTS: { story: true, task: false, seq: false },
 	EXT:   { story: true,  task: false, seq: false },
 	STORY: { story: true,  task: false, seq: false },
 	TASKS: { story: true,  task: false, seq: false },

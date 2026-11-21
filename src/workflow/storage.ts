@@ -430,6 +430,17 @@ export function testsArtifactId(epicHash: string, storyId: string): string {
 	return ArtifactIds.make({ kind: 'TESTS', epicHash, story: storyId });
 }
 
+/** The id prefix of a Story's VerificationReceipt record, the direct peer of
+ *  `TESTS_ID_PREFIX` for a security review round. */
+export const RECEIPTS_ID_PREFIX = 'RECEIPTS-';
+
+/** A Story's receipts record: one VerificationReceipt per sandbox/mutation
+ *  checkpoint run, for a security review round. Its own namespace, like
+ *  `TESTS-`: it is a record, not an approvable artifact. */
+export function receiptsArtifactId(epicHash: string, storyId: string): string {
+	return ArtifactIds.make({ kind: 'RECEIPTS', epicHash, story: storyId });
+}
+
 /** The work item's stable anchor createdAt — the record's `meta.epicCreatedAt`
  *  stamp. This is the value the md-path resolver keys the `E<date>` folder
  *  segment on, so every artifact of one work item lands in one folder. Pure:
@@ -1043,6 +1054,25 @@ export function testsArtifactPaths(
 	return {
 		md:   resolveArtifactMdPath(repoPath, { epicHash: epicHash, epicCreatedAt: createdAtISO, story: storyId }, 'TESTS', workItemKind, epicSlug ?? epicHash),
 		json: join(repoPath, ARTIFACTS_DIR, `${testsArtifactId(epicHash, storyId)}.json`),
+	};
+}
+
+/** Paths for a Story's receipts record. The direct peer of `testsArtifactPaths`:
+ *  nested `S<nnn>/RECEIPTS.md`, canonical hash-named JSON in the `RECEIPTS-` namespace. */
+export function receiptsArtifactPaths(
+	repoPath:     string,
+	epicHash:     string,
+	storyId:      string,
+	createdAtISO: string,
+	workItemKind: WorkItemKind,
+	epicSlug?:    string,
+): {
+	readonly md:   string;
+	readonly json: string;
+} {
+	return {
+		md:   resolveArtifactMdPath(repoPath, { epicHash: epicHash, epicCreatedAt: createdAtISO, story: storyId }, 'RECEIPTS', workItemKind, epicSlug ?? epicHash),
+		json: join(repoPath, ARTIFACTS_DIR, `${receiptsArtifactId(epicHash, storyId)}.json`),
 	};
 }
 

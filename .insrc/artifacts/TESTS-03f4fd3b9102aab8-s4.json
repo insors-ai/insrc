@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 12,
-        "contentHash": "c41eddee7a367e20d21a4f83c18ce502098337751a3de02c3e64232dbe5823bb",
-        "at": "2026-11-21T05:22:29.331Z",
+        "number": 14,
+        "contentHash": "b8a154cbf3837a9e74eaca188649d227cf7ea2f4076c979782a278e1ef0fb44f",
+        "at": "2026-11-21T05:49:17.867Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,17 +23,17 @@
     "epicHash": "03f4fd3b9102aab8",
     "storyId": "s4",
     "createdAt": "2026-11-21T04:29:12.662Z",
-    "updatedAt": "2026-11-21T05:22:29.082Z",
+    "updatedAt": "2026-11-21T05:49:17.406Z",
     "epicCreatedAt": "2026-11-18T06:14:00.057Z",
     "epicSlug": "review-rounds-reconciliation-recovery",
-    "revision": 12
+    "revision": 14
   },
   "body": {
     "tasks": [
       {
         "taskId": "t1",
-        "commit": "8801081b4",
-        "ranAt": "2026-11-21T05:22:29.082Z",
+        "commit": "7dc847b01",
+        "ranAt": "2026-11-21T05:47:51.052Z",
         "testsPassed": true,
         "tests": [
           {
@@ -55,7 +55,7 @@
             "file": "src/workflow/review-round/__tests__/review-report.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 3063,
+            "durationMs": 3057,
             "titles": [
               {
                 "title": "renderReviewReport writes a persisted Markdown file under the review's own .insrc/tmp/<reviewId>/ directory and returns its path",
@@ -114,6 +114,14 @@
                 "result": "pass"
               },
               {
+                "title": "a report file sharing an inode via a hard link to an outside file is never written through -- the outside file keeps its own content",
+                "result": "pass"
+              },
+              {
+                "title": "publishGuarded never follows a symlink already occupying the destination, proven directly -- renderReviewReport's own upfront check would otherwise refuse before ever reaching this, the exact state a symlink substituted after that last check would leave behind",
+                "result": "pass"
+              },
+              {
                 "title": "renderReviewReport and ReviewReportDocgenCall",
                 "result": "pass"
               }
@@ -124,8 +132,8 @@
       },
       {
         "taskId": "t2",
-        "commit": "8801081b4",
-        "ranAt": "2026-11-21T05:21:15.176Z",
+        "commit": "7dc847b01",
+        "ranAt": "2026-11-21T05:49:17.406Z",
         "testsPassed": true,
         "tests": [
           {
@@ -251,7 +259,7 @@
             "file": "src/workflow/review-round/__tests__/review-report.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 3004,
+            "durationMs": 3133,
             "titles": [
               {
                 "title": "renderReviewReport writes a persisted Markdown file under the review's own .insrc/tmp/<reviewId>/ directory and returns its path",
@@ -307,6 +315,14 @@
               },
               {
                 "title": "review A's own directory aliased (via symlink) to sibling review B's genuine directory is rejected, not written through",
+                "result": "pass"
+              },
+              {
+                "title": "a report file sharing an inode via a hard link to an outside file is never written through -- the outside file keeps its own content",
+                "result": "pass"
+              },
+              {
+                "title": "publishGuarded never follows a symlink already occupying the destination, proven directly -- renderReviewReport's own upfront check would otherwise refuse before ever reaching this, the exact state a symlink substituted after that last check would leave behind",
                 "result": "pass"
               },
               {

@@ -51,6 +51,7 @@ describe('SecurityFinding, isSecurityFinding, risk-family verdicts, and the poli
 			overrideReason: 'accepted risk',
 			overriddenAt: 'rev-1',
 			receiptId: 'receipt-1',
+			riskFamilyVerdict: 'uncertain',
 		});
 		assert.equal(sf.id, 'f1');
 		assert.equal(sf.category, 'security');
@@ -66,6 +67,7 @@ describe('SecurityFinding, isSecurityFinding, risk-family verdicts, and the poli
 		assert.equal(sf.overrideReason, 'accepted risk');
 		assert.equal(sf.overriddenAt, 'rev-1');
 		assert.equal(sf.receiptId, 'receipt-1');
+		assert.equal(sf.riskFamilyVerdict, 'uncertain');
 	});
 
 	it('overriddenAt vs current Scope revision comparison (stale override rejected)', () => {
@@ -79,11 +81,17 @@ describe('SecurityFinding, isSecurityFinding, risk-family verdicts, and the poli
 		assert.equal(notApplicable.severity, 'INFO', 'a risk-family verdict must carry informational, zero severity');
 		assert.equal(notApplicable.checkId, 'sast');
 		assert.equal(notApplicable.fixability, 'no server-side code in this scope');
+		assert.equal(notApplicable.riskFamilyVerdict, 'not-applicable', 'the verdict itself must be retrievable from the finding');
 		assert.equal(notApplicable.confidence, undefined, 'a definite (not-applicable) verdict carries no confidence qualifier');
 		assert.equal(isSecurityFinding(notApplicable), true);
 
-		const uncertain = makeRiskFamilyVerdictFinding('verdict-2', 'iac', 'uncertain', 'ambiguous infra manifest coverage');
+		const applicable = makeRiskFamilyVerdictFinding('verdict-2', 'sast', 'applicable', 'no server-side code in this scope');
+		assert.equal(applicable.riskFamilyVerdict, 'applicable', 'an applicable verdict with the same family/reason as a not-applicable one must still be distinguishable');
+		assert.notDeepEqual(applicable, notApplicable, 'applicable and not-applicable verdicts for the same family and reason must never collapse to identical findings');
+
+		const uncertain = makeRiskFamilyVerdictFinding('verdict-3', 'iac', 'uncertain', 'ambiguous infra manifest coverage');
 		assert.equal(uncertain.severity, 'INFO');
+		assert.equal(uncertain.riskFamilyVerdict, 'uncertain');
 		assert.equal(uncertain.confidence, 'low', 'an uncertain verdict must flag low confidence');
 	});
 

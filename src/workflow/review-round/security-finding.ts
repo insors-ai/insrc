@@ -53,6 +53,9 @@ export interface SecurityFinding extends Finding {
 	readonly overrideReason?:   string | undefined;
 	readonly overriddenAt?:     string | undefined;
 	readonly receiptId?:        string | undefined;
+	/** Set only on a risk-family-verdict finding (makeRiskFamilyVerdictFinding);
+	 *  absent on an ordinary SecurityFinding produced by a capability delegate. */
+	readonly riskFamilyVerdict?: RiskFamilyVerdict | undefined;
 }
 
 /** True only for an object whose `kind` discriminant is exactly 'security'.
@@ -70,12 +73,10 @@ export type RiskFamilyVerdict = 'applicable' | 'not-applicable' | 'uncertain';
  * A risk-family verdict (applicable/not-applicable/uncertain + reason), for
  * every family including not-applicable ones, represented as an
  * informational, zero-severity SecurityFinding for durable audit visibility
- * -- not a separate type, per the LLD's own decision. `reason` is folded
- * into the finding's `violatedPolicyRef`-shaped evidence text would be the
- * wrong fit (that field names a violated policy, not an applicability
- * rationale), so it is carried in `fixability`'s free-text slot instead,
- * which the base Finding/SecurityFinding shape already provides for
- * free-text commentary not covered by a more specific field.
+ * -- not a separate type, per the LLD's own decision. The verdict itself is
+ * carried in `riskFamilyVerdict`, distinct from `fixability`'s free-text
+ * `reason` slot (the two otherwise-identical not-applicable and uncertain
+ * findings below would be indistinguishable without it).
  */
 export function makeRiskFamilyVerdictFinding(
 	id: string, familyId: string, verdict: RiskFamilyVerdict, reason: string,
@@ -90,6 +91,7 @@ export function makeRiskFamilyVerdictFinding(
 		fixability: reason,
 		enforcementMode: 'advisory',
 		confidence: verdict === 'uncertain' ? 'low' : undefined,
+		riskFamilyVerdict: verdict,
 	};
 }
 

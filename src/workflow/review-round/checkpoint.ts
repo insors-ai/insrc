@@ -512,7 +512,22 @@ export async function readCheckpoint(reviewId: string): Promise<ReviewCheckpoint
 	// "nothing to resume" case. Checked here too, over the full path
 	// including the leaf filename, so this universal absence is resolved
 	// before ever touching FD_ALIAS_ROOT's Linux-only mechanism.
-	if (anySegmentAbsent(repoRoot, '.insrc', 'tmp', reviewId, 'checkpoint.json')) return undefined;
+	//
+	// Externally reported P2 (round 4, follow-up): anySegmentAbsent now
+	// rethrows any non-ENOENT lstat failure (round 4's fix for the
+	// permission-reported-as-absence defect above) -- an ancestor replaced
+	// by a plain file (ENOTDIR) or a looping symlink (ELOOP) would otherwise
+	// escape THIS call uncaught, before ever reaching the catch around
+	// pinDirectoryChain below. Caught here too: anySegmentAbsent only ever
+	// calls lstatSync, never pinDirectory, so it cannot throw
+	// UnsupportedPlatformError -- every failure reaching this catch is a
+	// path-integrity issue, treated the same as absent, consistent with the
+	// identical catch below.
+	try {
+		if (anySegmentAbsent(repoRoot, '.insrc', 'tmp', reviewId, 'checkpoint.json')) return undefined;
+	} catch {
+		return undefined;
+	}
 
 	// Externally reported P2 (round 5): a checkpoint that genuinely exists but
 	// is malformed is not distinguishable, before opening it, from one this

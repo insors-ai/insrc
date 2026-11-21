@@ -33,7 +33,7 @@ export type SourceTransactionPhase = 'reserved' | 'staged' | 'predecessor-exited
 	| 'candidate-ready' | 'committed' | 'rollback-required' | 'rolled-back' | 'recovery-required';
 /** Lifecycle evidence is additive: old preparation-only records remain readable, never actionable. */
 export interface SourceExecution {
-	readonly operation: 'update' | 'start' | 'restart' | 'stop';
+	readonly operation: 'update' | 'start' | 'restart' | 'stop' | 'legacy-start' | 'legacy-restart' | 'legacy-stop';
 	readonly desiredRunning: boolean;
 	readonly compatibility: QualifiedReleasePair;
 	readonly step: 'prepared' | 'stop-original' | 'select-candidate' | 'spawn-candidate' | 'candidate-ready'
@@ -67,7 +67,12 @@ export interface SourceInstallationState {
 	readonly sourceReleases: readonly VerifiedSourceRelease[];
 	readonly retained: readonly StagedReleasePin[];
 	readonly retainedSelections: readonly SourceSelection[];
-	readonly outcome: { readonly id: string; readonly decision: 'committed' | 'rolled-back' | 'recovery-required'; readonly detail: string } | null;
+	readonly outcome: { readonly id: string; readonly decision: 'committed' | 'rolled-back' | 'recovery-required'; readonly detail: string;
+		/** Retain the last qualified route after clearing an active transaction, including an absent legacy selector. */
+		readonly transaction?: SourceTransaction | undefined;
+		/** Last qualified legacy launch route survives later preparation-only failures. */
+		readonly legacyRoute?: SourceTransaction | undefined;
+	} | null;
 }
 
 export interface SourcePublication {
@@ -139,9 +144,21 @@ export function readSourceInstallationState(value: unknown, root: string, instal
 	if (!Array.isArray(value.retainedSelections) || value.retainedSelections.length > 128) fail('invalid retained selections');
 	for (const item of value.retainedSelections) selection(item, root);
 	if (value.outcome !== null) {
-		shape(value.outcome, ['id', 'decision', 'detail']);
+		shape(value.outcome, ['id', 'decision', 'detail',
+			...(object(value.outcome) && Object.hasOwn(value.outcome, 'transaction') ? ['transaction'] : []),
+			...(object(value.outcome) && Object.hasOwn(value.outcome, 'legacyRoute') ? ['legacyRoute'] : [])]);
 		if (typeof value.outcome.id !== 'string' || !UUID.test(value.outcome.id) || !['committed', 'rolled-back', 'recovery-required'].includes(value.outcome.decision as string)
 			|| typeof value.outcome.detail !== 'string' || value.outcome.detail.length > 4096) fail('invalid outcome');
+		if (Object.hasOwn(value.outcome, 'transaction')) {
+			// Validate the saved route with the same bounded transaction/reference contract, with no recursive outcome.
+			const saved = readSourceInstallationState({ ...value, active: value.outcome.transaction, outcome: null }, root, installationRoot).active;
+			if (saved === null || saved.id !== value.outcome.id || saved.phase !== value.outcome.decision) fail('outcome transaction does not match its decision');
+		}
+		if (Object.hasOwn(value.outcome, 'legacyRoute')) {
+			const saved = readSourceInstallationState({ ...value, active: value.outcome.legacyRoute, outcome: null }, root, installationRoot).active;
+			if (!saved?.prior || !saved.candidate || !saved.execution || saved.initialSelector !== null
+				|| (saved.phase !== 'rolled-back' && !(saved.phase === 'committed' && saved.execution.operation.startsWith('legacy-')))) fail('invalid retained legacy launch route');
+		}
 	}
 	if (!Array.isArray(value.sourceReleases) || value.sourceReleases.length > 128) fail('invalid source floors');
 	const channels = new Set<string>();
@@ -166,21 +183,23 @@ export function readSourceInstallationState(value: unknown, root: string, instal
 			shape(execution, ['operation', 'desiredRunning', 'compatibility', 'step', 'original', 'candidate', 'restored', 'originalClosed', 'candidateClosed']);
 			shape(execution.compatibility, ['prior', 'candidate']);
 			const priorProfile = readReleaseCompatibility(execution.compatibility.prior), candidateProfile = readReleaseCompatibility(execution.compatibility.candidate);
-			const pair = execution.operation === 'update'
+			const legacy = typeof execution.operation === 'string' && execution.operation.startsWith('legacy-');
+			const pair = execution.operation === 'update' || legacy
 				? requireQualifiedReleasePair(priorProfile, candidateProfile, [execution.compatibility as unknown as QualifiedReleasePair])
 				: { prior: priorProfile, candidate: candidateProfile };
-			if (execution.operation !== 'update' && !isDeepStrictEqual(priorProfile, candidateProfile)) fail('ordinary lifecycle changed writable formats');
+			if (execution.operation !== 'update' && !legacy && !isDeepStrictEqual(priorProfile, candidateProfile)) fail('ordinary lifecycle changed writable formats');
 			if (active.prior === null || active.candidate === null
 				|| pair.prior.releaseId !== (active.prior as StagedReleasePin).commit
 				|| !isDeepStrictEqual(pair.candidate, (active.candidate as SourceSelection).compatibility)) fail('execution release pair differs from pins');
 			if (!['prepared', 'stop-original', 'select-candidate', 'spawn-candidate', 'candidate-ready', 'stop-candidate',
 				'restore-selector', 'spawn-prior', 'prior-ready'].includes(execution.step as string)
 				|| typeof execution.originalClosed !== 'boolean' || typeof execution.candidateClosed !== 'boolean') fail('invalid execution evidence');
-			if (!['update', 'start', 'restart', 'stop'].includes(execution.operation as string)
+			if (!['update', 'start', 'restart', 'stop', 'legacy-start', 'legacy-restart', 'legacy-stop'].includes(execution.operation as string)
 				|| typeof execution.desiredRunning !== 'boolean') fail('invalid lifecycle intent');
-			if (execution.desiredRunning !== (execution.operation === 'update' ? active.wasRunning : execution.operation !== 'stop')
+			if (execution.desiredRunning !== (execution.operation === 'update' ? active.wasRunning : !String(execution.operation).endsWith('stop'))
 				|| (execution.original !== null) !== active.wasRunning) fail('lifecycle intent differs from captured running state');
-			if (execution.operation !== 'update' && (active.initialSelector === null
+			if (legacy && active.initialSelector !== null) fail('legacy lifecycle has a selected source release');
+			if (execution.operation !== 'update' && !legacy && (active.initialSelector === null
 				|| !isDeepStrictEqual(active.initialSelector, active.candidate)
 				|| !isDeepStrictEqual((active.initialSelector as SourceSelection).pin, active.prior))) fail('ordinary lifecycle changed its source release');
 			for (const actor of [execution.original, execution.candidate, execution.restored]) {
@@ -206,10 +225,15 @@ function digest(bytes: string): string { return createHash('sha256').update(byte
 function pinKey(value: StagedReleasePin): string { return JSON.stringify([value.root, value.runtime, value.commit, value.fingerprint]); }
 function selectionReferences(state: SourceInstallationState): SourceSelection[] {
 	return [...state.retainedSelections, ...(state.selected ? [state.selected] : []),
-		...(state.active?.initialSelector ? [state.active.initialSelector] : []), ...(state.active?.candidate ? [state.active.candidate] : [])];
+		...(state.active?.initialSelector ? [state.active.initialSelector] : []), ...(state.active?.candidate ? [state.active.candidate] : []),
+		...(state.outcome?.transaction?.initialSelector ? [state.outcome.transaction.initialSelector] : []),
+		...(state.outcome?.transaction?.candidate ? [state.outcome.transaction.candidate] : []),
+		...(state.outcome?.legacyRoute?.candidate ? [state.outcome.legacyRoute.candidate] : [])];
 }
 function pinReferences(state: SourceInstallationState): StagedReleasePin[] {
-	return [...state.retained, ...selectionReferences(state).map(item => item.pin), ...(state.active?.prior ? [state.active.prior] : [])];
+	return [...state.retained, ...selectionReferences(state).map(item => item.pin), ...(state.active?.prior ? [state.active.prior] : []),
+		...(state.outcome?.transaction?.prior ? [state.outcome.transaction.prior] : []),
+		...(state.outcome?.legacyRoute?.prior ? [state.outcome.legacyRoute.prior] : [])];
 }
 function same(a: Stats, b: Stats): boolean { return a.dev === b.dev && a.ino === b.ino; }
 function owned(stat: Stats, uid: number, directory: boolean): void {

@@ -123,7 +123,7 @@ async function waitExit(handle: { hasExited(): Promise<boolean> }) {
 function upgrade(f: Fixture): SourceUpgrade {
  return { prior: f.prior, candidate: f.candidate, compatibility: { prior: { ...declaration, releaseId: f.prior.commit }, candidate: f.candidate.compatibility } };
 }
-function host(f: Fixture, options: { failReady?: boolean; unknownChildren?: boolean } = {}) {
+function host(f: Fixture, options: { failReady?: boolean; unknownChildren?: boolean; handoff?: boolean } = {}) {
  const events: string[] = [];
  const receipts = join(f.root, 'actors'); mkdirSync(receipts, { recursive: true, mode: 0o700 });
  const actor = async (pid: number): Promise<SourceActor | null> => {
@@ -177,7 +177,7 @@ function host(f: Fixture, options: { failReady?: boolean; unknownChildren?: bool
   },
   async verifyStores(_pair, guard) { guard.assertOwned(); assert.equal(existsSync(join(f.root, 'store-owner')), false); events.push('stores-qualified'); },
   async verifyRuntime(selection) { assert.equal(selection.pin.runtime, f.runtime); events.push('runtime-verified'); },
-  async start(pin, guard, record) {
+  async start(pin, guard, record, grantEntry) {
    guard.assertOwned();
    assert.throws(() => acquireRunFileGuard(join(f.root, 'daemon.run-files.guard')), /guard/);
    assert.equal(existsSync(join(f.root, 'store-owner')), false);
@@ -187,6 +187,13 @@ function host(f: Fixture, options: { failReady?: boolean; unknownChildren?: bool
    const receipt = join(receipts, hash(JSON.stringify([a.target.pid, a.target.startedAt])));
    writeFileSync(receipt, '[]', { mode: 0o600, flush: true }); // No child/store access before the grant.
    record(a); // The child cannot touch even the fixture store before the durable callback.
+   if (options.handoff) {
+    grantEntry();
+    const startup = acquireRunFileGuard(join(f.root, 'daemon.run-files.guard'));
+    try { startup.assertOwned(); assert.ok(new SourceInstallationStore(f.root, f.logical).read().active?.execution?.candidate); }
+    finally { startup.release(); }
+    events.push('entry-guard-acquired');
+   }
    writeFileSync(receipt, '{"pendingGrant":true}', { mode: 0o600, flush: true });
    child.send({ grant: true }); await once(child, 'message'); await rememberChildren(a);
    events.push(pin.commit === f.prior.commit ? 'start-prior' : 'start-candidate'); return a;
@@ -244,6 +251,43 @@ if (process.env.INSRC_SOURCE_TRANSACTION_WORKER) {
   assert.ok(h.events.indexOf('stores-qualified') < h.events.indexOf('start-candidate'));
   assert.notEqual((await request(f.root, 'status')).pid, original.pid);
   assert.equal(existsSync(join(f.root, 'daemon.run-files.guard')), false);
+ }));
+
+ test('Legacy restoration route survives later failures and settles under mutation exclusion', { timeout: 480_000 }, async t => sourceLinux(t, file, project, async () => {
+  const f = await fixture(t), store = new SourceInstallationStore(f.root, f.logical);
+  await startOriginal(f);
+  const failed = await new LinuxSourceTransaction(store, host(f, { failReady: true }).effects).update(async () => upgrade(f));
+  assert.equal(failed.decision, 'rolled-back', failed.detail);
+  const route = store.read().outcome?.legacyRoute; assert.ok(route);
+  assert.deepEqual(route.prior, f.prior); assert.equal(store.read().selected, null);
+  const preparation = await new LinuxSourceTransaction(store, host(f).effects).update(async () => { throw new Error('later download failed'); });
+  assert.equal(preparation.decision, 'rolled-back');
+  assert.deepEqual(store.read().outcome?.legacyRoute, route, 'preparation-only failures must preserve the qualified legacy route');
+  for (const operation of ['start', 'stop', 'start', 'restart', 'stop'] as const) {
+   const h = host(f, { handoff: true });
+   let settled = false;
+   h.effects.settled = async transaction => {
+    assert.equal(transaction.phase, 'committed');
+    assert.equal(store.read().active?.id, transaction.id, 'terminal ownership must remain recoverable until native commit');
+    assert.equal(store.read().outcome?.transaction?.id, transaction.id);
+    await delay(20);
+    await assert.rejects(new LinuxSourceTransaction(store, host(f).effects).exclusive(async () => {}), /guard/,
+     'async native ownership commit must retain the mutation lease');
+    settled = true;
+   };
+   const previous = existsSync(join(f.root, 'daemon.pid')) ? Number(readFileSync(join(f.root, 'daemon.pid'), 'utf8')) : undefined;
+   const result = await new LinuxSourceTransaction(store, h.effects).lifecycle(operation);
+   assert.equal(result.decision, 'committed', result.detail); assert.equal(settled, true);
+   assert.equal(store.read().selected, null, 'legacy routing must not fabricate source authorization for the recovered prior');
+   assert.equal(store.read().active, null);
+   assert.deepEqual(store.read().outcome?.legacyRoute?.prior, f.prior);
+   if (operation === 'stop') assert.equal(existsSync(join(f.root, 'daemon.pid')), false);
+   else {
+    const pid = (await request(f.root, 'status')).pid;
+    if (operation === 'start' && previous) assert.equal(pid, previous);
+    else { assert.notEqual(pid, previous); assert.ok(h.events.includes('entry-guard-acquired')); }
+   }
+  }
  }));
 
  test('Interrupted cutover and failed readiness recover exact prior selection and running state', { timeout: 600_000 }, async t => sourceLinux(t, file, project, async () => {

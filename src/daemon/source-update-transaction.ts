@@ -27,7 +27,7 @@ export interface SourceUpgrade {
  readonly compatibility: QualifiedReleasePair;
 }
 
-/** Platform effects must preserve the supplied run-file lease through the startup grant. */
+/** Platform effects record actors under exclusion, then hand the startup lease to their granted entry. */
 export interface SourceTransactionHost {
  capture(initial: SourceSelection | null, prior: StagedReleasePin): Promise<SourceActor | null>;
  /** Reacquire only the recorded incarnation; a replacement is a conflict, never a signal target. */
@@ -39,10 +39,14 @@ export interface SourceTransactionHost {
  /** Verify qualified writable formats without opening a live store from a client. */
  verifyStores(pair: QualifiedReleasePair, guard: RunFileGuard): Promise<void>;
  /** Persist the returned actor BEFORE granting it permission to open stores or publish run files. */
- start(pin: StagedReleasePin, guard: RunFileGuard, record: (actor: SourceActor) => void): Promise<SourceActor>;
+ start(pin: StagedReleasePin, guard: RunFileGuard, record: (actor: SourceActor) => void,
+  /** Release only after actor capture, immediately before the granted entry acquires its own startup guard. */
+  grantEntry: () => void): Promise<SourceActor>;
  ready(actor: SourceActor, pin: StagedReleasePin): Promise<void>;
  /** Independently verified owned runtime/binding; editable journal metadata is not authority. */
  verifyRuntime(selection: SourceSelection): Promise<void>;
+ /** Called only after the terminal outcome is durable; attach committed actor ownership to its native supervisor. */
+ settled?(transaction: SourceTransaction): Promise<void>;
 }
 
 type Outcome = NonNullable<SourceInstallationState['outcome']>;
@@ -140,20 +144,31 @@ export class LinuxSourceTransaction {
   await this.host.verifyRuntime(active.candidate);
   this.current(active.id);
  }
- private finish(id: string, decision: Outcome['decision'], detail: string): Outcome {
-  const outcome = { id, decision, detail: detail.slice(0, 4096) };
+ private async finish(id: string, decision: Outcome['decision'], detail: string): Promise<Outcome> {
   const phase = decision === 'committed' ? 'committed' : decision === 'rolled-back' ? 'rolled-back' : 'recovery-required';
-  this.current(id);
-  this.publish(state => ({ ...state, active: { ...state.active!, phase }, outcome }));
+  const transaction: SourceTransaction = { ...this.current(id), phase };
+  const previous = this.store.read().outcome?.legacyRoute;
+  const legacyRoute = transaction.initialSelector === null && transaction.prior && transaction.candidate && transaction.execution
+   && (decision === 'rolled-back' || (decision === 'committed' && transaction.execution.operation.startsWith('legacy-'))) ? transaction : previous;
+  const outcome = { id, decision, detail: detail.slice(0, 4096), transaction, ...(legacyRoute ? { legacyRoute } : {}) };
+  this.publish(state => ({ ...state, active: transaction, outcome }));
   if (decision === 'recovery-required') this.fenced = true;
-  else this.publish(state => ({ ...state, active: null }));
+  else {
+   await this.host.settled?.(transaction);
+   this.publish(state => ({ ...state, active: null }));
+  }
   return outcome;
  }
 
  /** Qualified selected installations use the same durable actor protocol for ordinary lifecycle actions. */
  async lifecycle(operation: 'start' | 'restart' | 'stop'): Promise<Outcome> {
   return this.update(async selected => {
-   if (!selected) throw new Error('Legacy lifecycle requires its independently qualified installation owner');
+   if (!selected) {
+    const previous = this.store.read().outcome?.legacyRoute;
+    if (!previous?.prior || !previous.candidate || !previous.execution || previous.initialSelector !== null
+     || !['rolled-back', 'committed'].includes(previous.phase)) throw new Error('Legacy lifecycle requires a retained qualified restoration route; use the current authenticated installer');
+    return { prior: previous.prior, candidate: previous.candidate, compatibility: previous.execution.compatibility };
+   }
    return { prior: selected.pin, candidate: selected, compatibility: { prior: selected.compatibility, candidate: selected.compatibility } };
   }, operation);
  }
@@ -164,14 +179,16 @@ export class LinuxSourceTransaction {
   try {
    const initial = this.store.read();
    if (initial.active !== null) throw new Error('Pending source transaction requires recovery before update/start/restart');
+   if (operation !== 'update' && !operation.startsWith('legacy-') && initial.selected === null) operation = `legacy-${operation}` as SourceExecution['operation'];
    id = randomUUID();
    this.publish(state => ({ ...state, active: { id: id!, phase: 'reserved', owner: this.owner,
     baselineGeneration: state.generation, initialSelector: state.selected, prior: null, candidate: null, wasRunning: false } }));
    let prepared: SourceUpgrade;
    try { prepared = await prepare(initial.selected); }
-   catch (error) { return this.finish(id, 'rolled-back', `Preparation failed before incumbent mutation: ${message(error)}`); }
+   catch (error) { return await this.finish(id, 'rolled-back', `Preparation failed before incumbent mutation: ${message(error)}`); }
    const { prior, candidate } = prepared;
-   if (operation === 'update') requireQualifiedReleasePair(prepared.compatibility.prior, candidate.compatibility, [prepared.compatibility]);
+   const legacy = operation.startsWith('legacy-');
+   if (operation === 'update' || legacy) requireQualifiedReleasePair(prepared.compatibility.prior, candidate.compatibility, [prepared.compatibility]);
    else if (!initial.selected || !isDeepStrictEqual(initial.selected, candidate)
     || !isDeepStrictEqual(prepared.compatibility.prior, candidate.compatibility)) throw new Error('Ordinary lifecycle requires the unchanged selected release');
    if (prepared.compatibility.prior.releaseId !== prior.commit || candidate.pin.commit !== candidate.compatibility.releaseId
@@ -186,14 +203,14 @@ export class LinuxSourceTransaction {
     return { ...state, sourceReleases: floors, retained: unique([...state.retained, prior]),
      retainedSelections: unique([...state.retainedSelections, ...(initial.selected ? [initial.selected] : []), candidate]),
      active: { ...state.active!, phase: 'staged', prior, candidate, wasRunning: this.original !== null,
-      execution: { operation, desiredRunning: operation === 'stop' ? false : operation === 'update' ? this.original !== null : true,
+      execution: { operation, desiredRunning: operation.endsWith('stop') ? false : operation === 'update' ? this.original !== null : true,
        compatibility: prepared.compatibility, step: 'prepared', original: this.original ? identity(this.original.target) : null, candidate: null, restored: null,
        originalClosed: this.original === null, candidateClosed: true } } };
    });
    await this.verify(this.current(id));
-   if (operation === 'start' && this.original) {
+   if ((operation === 'start' || operation === 'legacy-start') && this.original) {
     await this.host.ready(this.original, prior);
-    return this.finish(id, 'committed', 'Qualified selected daemon already running; no process or selector changed');
+    return await this.finish(id, 'committed', 'Qualified selected daemon already running; no process or selector changed');
    }
    this.step(id, 'stop-original');
    if (this.original) await this.closeActor(this.original);
@@ -204,17 +221,17 @@ export class LinuxSourceTransaction {
    await this.host.verifyStores(prepared.compatibility, guard);
    await this.verify(this.current(id));
    this.step(id, 'select-candidate');
-   this.publish(state => ({ ...state, selected: candidate, active: { ...state.active!, phase: 'candidate-selected' } }));
-   if (this.current(id).execution!.desiredRunning) await this.start(id, candidate.pin, false);
+   this.publish(state => ({ ...state, selected: legacy ? state.active!.initialSelector : candidate, active: { ...state.active!, phase: 'candidate-selected' } }));
+   if (this.current(id).execution!.desiredRunning) await this.start(id, legacy ? prior : candidate.pin, false);
    this.step(id, 'candidate-ready');
    this.change(id, active => ({ ...active, phase: 'candidate-ready' }));
    await this.verify(this.current(id));
-   return this.finish(id, 'committed', 'Qualified candidate selected; original closure and requested readiness verified');
+   return await this.finish(id, 'committed', 'Qualified candidate selected; original closure and requested readiness verified');
   } catch (error) {
    if (id === undefined || this.fenced) throw error;
    const active = this.current(id);
    if (terminal(active.phase)) { this.fenced = true; throw error; }
-   if (!active.execution || !active.prior || !active.candidate) return this.finish(id, 'recovery-required', message(error));
+   if (!active.execution || !active.prior || !active.candidate) return await this.finish(id, 'recovery-required', message(error));
    return await this.rollback(id, message(error));
   } finally { await this.release(); }
  }
@@ -230,19 +247,23 @@ export class LinuxSourceTransaction {
    if (prior) this.restored = incoming; else this.candidate = incoming;
    this.step(id, prior ? 'spawn-prior' : 'spawn-candidate', prior
     ? { restored: identity(incoming.target) } : { candidate: identity(incoming.target) });
+  }, () => {
+   if (!recorded || this.runFiles !== guard) throw new Error('Source entry grant lacks its durable actor/run-file authority');
+   this.current(id); guard.assertOwned(); guard.release(); this.runFiles = undefined;
   });
   if (!recorded || !sameProcess(actor.target, recorded.target)) throw new Error('Source launch did not record its actor before granting startup');
   await this.host.ready(actor, pin);
   if (await actor.target.handle.hasExited()) throw new Error('Source actor exited after readiness');
+  this.holdRunFiles();
   this.step(id, prior ? 'prior-ready' : 'candidate-ready');
  }
 
  private async rollback(id: string, detail: string): Promise<Outcome> {
   try {
    const active = this.current(id), execution = active.execution!;
-   if (execution.operation === 'start' && execution.step === 'prepared' && this.original) {
+   if ((execution.operation === 'start' || execution.operation === 'legacy-start') && execution.step === 'prepared' && this.original) {
     await this.host.ready(this.original, active.prior!);
-    return this.finish(id, 'rolled-back', `${detail}; original already-running daemon preserved`);
+    return await this.finish(id, 'rolled-back', `${detail}; original already-running daemon preserved`);
    }
    if (execution.restored) {
     // Restoration may have completed before the controller could record its final outcome.
@@ -259,7 +280,7 @@ export class LinuxSourceTransaction {
     if (ready) {
      this.holdRunFiles();
      this.step(id, 'prior-ready');
-     return this.finish(id, 'rolled-back', detail);
+     return await this.finish(id, 'rolled-back', detail);
     }
     await this.closeActor(this.restored);
     this.step(id, 'restore-selector', { restored: null });
@@ -288,8 +309,11 @@ export class LinuxSourceTransaction {
    this.step(id, 'restore-selector');
    this.publish(state => ({ ...state, selected: state.active!.initialSelector }));
    if (active.wasRunning) await this.start(id, active.prior!, true);
-   return this.finish(id, 'rolled-back', detail);
-  } catch (error) { return this.finish(id, 'recovery-required', `${detail}. Restoration withheld: ${message(error)}`); }
+   return await this.finish(id, 'rolled-back', detail);
+  } catch (error) {
+   if (terminal(this.current(id).phase)) { this.fenced = true; throw error; }
+   return await this.finish(id, 'recovery-required', `${detail}. Restoration withheld: ${message(error)}`);
+  }
  }
 
  /** Committed outcomes are final; all uncommitted cutovers reconcile toward their exact predecessor. */
@@ -303,16 +327,16 @@ export class LinuxSourceTransaction {
    this.publish(s => ({ ...s, active: { ...s.active!, owner: this.owner } }));
    const current = this.current(active.id);
    if (terminal(current.phase)) {
-    const expected = current.phase === 'committed' ? current.candidate : current.initialSelector;
+    const expected = current.phase === 'committed' && !current.execution?.operation.startsWith('legacy-') ? current.candidate : current.initialSelector;
     if (!isDeepStrictEqual(state.selected, expected)) throw new Error('Terminal source selector differs from its decision');
     if (current.prior && current.candidate) await this.verify(current);
     this.holdRunFiles(); // Retire only this dead controller's stale publication guard, never its running daemon.
     if (state.outcome?.id === current.id && state.outcome.decision !== current.phase) throw new Error('Terminal source outcome conflicts with its decision');
-    return this.finish(current.id, current.phase as 'committed' | 'rolled-back',
+    return await this.finish(current.id, current.phase as 'committed' | 'rolled-back',
      state.outcome?.id === current.id ? state.outcome.detail : 'Reconciled terminal source decision after controller exit');
    }
-   if (current.phase === 'reserved' && !current.execution) return this.finish(current.id, 'rolled-back', 'Preparation owner exited before cutover');
-   if (!current.execution || !current.prior || !current.candidate) return this.finish(current.id, 'recovery-required', 'Historical transaction has no actionable execution evidence');
+   if (current.phase === 'reserved' && !current.execution) return await this.finish(current.id, 'rolled-back', 'Preparation owner exited before cutover');
+   if (!current.execution || !current.prior || !current.candidate) return await this.finish(current.id, 'recovery-required', 'Historical transaction has no actionable execution evidence');
    try {
     const e = current.execution;
     if (e.original && !e.originalClosed) {
@@ -331,7 +355,10 @@ export class LinuxSourceTransaction {
      }
     }
     return await this.rollback(current.id, 'Recovered interrupted source cutover');
-   } catch (error) { return this.finish(current.id, 'recovery-required', message(error)); }
+   } catch (error) {
+    if (terminal(this.current(current.id).phase)) { this.fenced = true; throw error; }
+    return await this.finish(current.id, 'recovery-required', message(error));
+   }
   } finally { await this.release(); }
  }
 }

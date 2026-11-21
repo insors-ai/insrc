@@ -62,6 +62,21 @@ function ownedText(path: string, max = 64 * 1024): string {
  } finally { closeSync(fd); }
 }
 
+/** Authenticate the Unix peer against the caller's retained actor before sending lifecycle RPC. */
+export async function sourceActorRpc(binary: string, socket: string, target: StopTarget,
+ method: 'daemon.status' | 'daemon.shutdown'): Promise<unknown> {
+ if (process.platform !== 'linux') throw new Error('Source actor RPC requires Linux');
+ canonical(binary);
+ if (await target.handle.hasExited()) throw new Error('Source actor exited before public RPC');
+ const { stdout } = await exec(binary, ['rpc', socket, String(target.pid), target.startedAt, method], {
+  env: cleanNodeEnvironment(process.env), timeout: 20_000, maxBuffer: 256 * 1024 });
+ const reply: unknown = JSON.parse(stdout);
+ if (!reply || typeof reply !== 'object' || Array.isArray(reply) || !('id' in reply) || reply.id !== 1
+  || !('result' in reply) || 'error' in reply) throw new Error('Source daemon returned an invalid or failed lifecycle response');
+ if (method === 'daemon.status' && await target.handle.hasExited()) throw new Error('Source actor exited during status RPC');
+ return reply.result;
+}
+
 /** Native subreaper lifetime is independent of a committed controller; a pidfd still binds the daemon itself. */
 export class SourceNativeActor {
  private constructor(readonly directory: string, readonly ticket: SourceActorTicket, readonly target: StopTarget,

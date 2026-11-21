@@ -53,15 +53,49 @@ static int marker(pid_t pid, char *out, size_t size) {
  return n < 0 || (size_t)n >= size ? -1 : 0;
 }
 static int line(int fd, char *buffer, size_t size, int timeout) {
- size_t used = 0;
+ size_t used = 0; long long deadline = now_ms() + timeout;
  while (used + 1 < size) {
+  long long remaining = deadline - now_ms(); if (remaining <= 0) return -1;
   struct pollfd p = { .fd = fd, .events = POLLIN };
-  int r; do { r = poll(&p, 1, timeout); } while (r < 0 && errno == EINTR);
+  int r = poll(&p, 1, (int)remaining); if (r < 0 && errno == EINTR) continue;
   if (r <= 0 || (p.revents & (POLLERR | POLLNVAL))) return -1;
   ssize_t n = read(fd, buffer + used, 1); if (n != 1) return -1;
   if (buffer[used++] == '\n') { buffer[used - 1] = 0; return 0; }
  }
  return -1;
+}
+/* The connected peer and the retained capability must name the same Linux incarnation
+ * before any request bytes are sent. A replaced socket is never a shutdown target. */
+static int peer_capability(int socketfd, long owner, const char *expected) {
+ struct ucred peer; socklen_t size = sizeof(peer);
+ if (getsockopt(socketfd, SOL_SOCKET, SO_PEERCRED, &peer, &size) < 0 || peer.uid != getuid() || peer.pid != owner) return -1;
+ int capability = pidfd(peer.pid); char actual[256];
+ if (capability < 0 || marker(peer.pid, actual, sizeof(actual)) < 0 || strcmp(actual, expected) || dead(capability) != 0) {
+  if (capability >= 0) close(capability);
+  return -1;
+ }
+ return capability;
+}
+/* Only the two public lifecycle RPCs are supported; no workflow or arbitrary RPC transport. */
+static int public_rpc(int argc, char **argv) {
+ if (argc != 5) return 2;
+ const char *path = argv[1], *expected = argv[3], *method = argv[4];
+ if (strcmp(method, "daemon.status") && strcmp(method, "daemon.shutdown")) return 2;
+ char *end; long owner = strtol(argv[2], &end, 10); if (*end || owner <= 0) return 2;
+ struct sockaddr_un address; memset(&address, 0, sizeof(address)); address.sun_family = AF_UNIX;
+ if (path[0] != '/' || strlen(path) >= sizeof(address.sun_path)) return 2;
+ memcpy(address.sun_path, path, strlen(path) + 1);
+ int fd = socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0); if (fd < 0) return 3;
+ if (connect(fd, (struct sockaddr *)&address, sizeof(address)) < 0) { close(fd); return 3; }
+ int capability = peer_capability(fd, owner, expected);
+ if (capability < 0) { close(fd); return 4; }
+ int sent = dprintf(fd, "{\"id\":1,\"method\":\"%s\",\"params\":{}}\n", method);
+ char reply[256 * 1024]; int ok = sent > 0 && line(fd, reply, sizeof(reply), 15000) == 0;
+ /* A shutdown reply may race the authenticated actor's exit; status must describe a live actor. */
+ if (!strcmp(method, "daemon.status") && dead(capability) != 0) ok = 0;
+ close(capability); close(fd);
+ if (!ok) return 5;
+ puts(reply); return 0;
 }
 /* Once the direct child exits, every surviving descendant is adopted by this subreaper.
  * Keep reaping/killing only our current direct children until the kernel reports ECHILD. */
@@ -102,13 +136,8 @@ static int client(int argc, char **argv) {
  struct sockaddr_un address; int length = socket_address(&address, token); if (length < 0) return 2;
  int fd = socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0); if (fd < 0) return 3;
  if (connect(fd, (struct sockaddr *)&address, (socklen_t)length) < 0) { close(fd); return 3; }
- struct ucred peer; socklen_t size = sizeof(peer);
- if (getsockopt(fd, SOL_SOCKET, SO_PEERCRED, &peer, &size) < 0 || peer.uid != getuid() || peer.pid != owner) { close(fd); return 4; }
- int capability = pidfd(peer.pid); char actual[256];
- if (capability < 0 || marker(peer.pid, actual, sizeof(actual)) < 0 || strcmp(actual, expected) || dead(capability) != 0) {
-  if (capability >= 0) close(capability);
-  close(fd); return 4;
- }
+ int capability = peer_capability(fd, owner, expected);
+ if (capability < 0) { close(fd); return 4; }
  int sent = dprintf(fd, "%s %s\n", command, token);
  char reply[1024]; int ok = sent > 0 && line(fd, reply, sizeof(reply), 15000) == 0;
  close(capability); close(fd);
@@ -125,6 +154,7 @@ int main(int argc, char **argv) {
   close(fd); puts("SUPPORTED"); return 0;
  }
  if (argc > 1 && !strcmp(argv[1], "control")) return client(argc - 1, argv + 1);
+ if (argc > 1 && !strcmp(argv[1], "rpc")) return public_rpc(argc - 1, argv + 1);
  if (argc != 7) return 2;
  const char *directoryPath = argv[1], *runtime = argv[2], *entry = argv[3], *barrier = argv[4], *token = argv[5];
  if (strlen(token) != 64 || strspn(token, "0123456789abcdef") != 64 || runtime[0] != '/' || entry[0] != '/' || barrier[0] != '/') return 2;

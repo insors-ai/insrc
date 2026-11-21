@@ -4,12 +4,13 @@ import { execFileSync, spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { createServer } from 'node:net';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { setTimeout as delay } from 'node:timers/promises';
 import test from 'node:test';
 import type { TestContext } from 'node:test';
-import { SourceNativeActor } from '../source-actor-client.js';
+import { SourceNativeActor, sourceActorRpc } from '../source-actor-client.js';
 import { requireProcessIdentity, processIdentityState } from '../daemon-process.js';
 import { sourceLinux } from '../../daemon/__tests__/helpers/source-linux.js';
 
@@ -22,7 +23,7 @@ async function fixture(t: TestContext) {
  execFileSync('cc', ['-std=c11', '-O2', '-Wall', '-Wextra', '-Werror', join(native, 'source-actor/main.c'), '-o', binary]);
  execFileSync('cc', ['-std=c11', '-O2', '-Wall', '-Wextra', '-Werror', join(native, 'process-broker/main.c'), join(native, 'process-broker/linux.c'), '-o', broker]);
  writeFileSync(join(release, 'package.json'), '{"type":"module"}');
- writeFileSync(join(release, 'out/daemon/index.js'), `import fs from 'node:fs';import {spawn,fork} from 'node:child_process';import {Worker} from 'node:worker_threads';
+ writeFileSync(join(release, 'out/daemon/index.js'), `import fs from 'node:fs';import net from 'node:net';import {spawn,fork} from 'node:child_process';import {Worker} from 'node:worker_threads';
 const root=process.env.ACTOR_TEST_ROOT;
 fs.writeFileSync(root+'/entered',String(process.pid));
 const child=spawn(process.execPath,['-e','setInterval(()=>{},1000)'],{stdio:'ignore',detached:true});
@@ -32,6 +33,11 @@ const worker=new Worker('setInterval(()=>{},1000)',{eval:true});
 fs.writeFileSync(root+'/fork.mjs','setInterval(()=>{},1000)');
 const forked=fork(root+'/fork.mjs',[],{env:{},stdio:['ignore','ignore','ignore','ipc']});
 forked.once('spawn',()=>fs.writeFileSync(root+'/fork-pid',String(forked.pid)));
+net.createServer(socket=>socket.once('data',data=>{
+ const request=JSON.parse(data.toString());
+ fs.appendFileSync(root+'/requests',request.method+'\\n');
+ socket.end(JSON.stringify({id:request.id,result:{pid:process.pid,method:request.method}})+'\\n');
+})).listen(root+'/public.sock');
 setInterval(()=>{},1000);
 `);
  // Bundle the real barrier for the standalone fixture without depending on source node_modules.
@@ -47,7 +53,7 @@ setInterval(()=>{},1000);
 }
 async function ready(root: string) {
  for (let i = 0; i < 400; i++) {
-  if (existsSync(join(root, 'descendant')) && existsSync(join(root, 'fork-pid'))) return;
+  if (existsSync(join(root, 'descendant')) && existsSync(join(root, 'fork-pid')) && existsSync(join(root, 'public.sock'))) return;
   await delay(10);
  }
  throw new Error('fixture daemon did not enter after grant');
@@ -104,5 +110,28 @@ test('Native source actor survives committed controller exit and closes uncommit
   for (const child of children) assert.notEqual(processIdentityState(child), 'same');
   await actor.close(); f.retain(undefined);
  }
+}));
+
+test('Source lifecycle RPC authenticates the socket peer before sending request bytes', { timeout: 480_000 }, async t => sourceLinux(t, file, project, async () => {
+ const f = await fixture(t), actor = await SourceNativeActor.launch(f.options); f.retain(actor);
+ await actor.grant(); await ready(f.root);
+ const socket = join(f.root, 'public.sock');
+ assert.deepEqual(await sourceActorRpc(f.options.binary, socket, actor.target, 'daemon.status'), { pid: actor.target.pid, method: 'daemon.status' });
+ const before = readFileSync(join(f.root, 'requests'), 'utf8');
+ assert.throws(() => execFileSync(f.options.binary, ['rpc', socket, String(actor.target.pid), 'wrong-incarnation', 'daemon.shutdown']));
+ assert.throws(() => execFileSync(f.options.binary, ['rpc', socket, String(actor.target.pid), actor.target.startedAt, 'workflow.approve']));
+ assert.equal(readFileSync(join(f.root, 'requests'), 'utf8'), before, 'wrong incarnation and unsupported methods must not be sent');
+ // Replace the public pathname with an unrelated live listener. Its UID and pathname match,
+ // but its socket credentials cannot authorize a request to the recorded daemon.
+ rmSync(socket);
+ let bytes = 0;
+ const replacement = createServer(connection => connection.on('data', data => { bytes += data.length; }));
+ await new Promise<void>((resolve, reject) => { replacement.once('error', reject); replacement.listen(socket, resolve); });
+ try { await assert.rejects(sourceActorRpc(f.options.binary, socket, actor.target, 'daemon.shutdown')); }
+ finally { await new Promise<void>((resolve, reject) => replacement.close(error => error ? reject(error) : resolve())); }
+ assert.equal(bytes, 0, 'a replacement must receive no shutdown bytes');
+ assert.equal(await actor.target.handle.hasExited(), false);
+ await actor.kill(); await actor.childrenClosed();
+ await actor.close(); f.retain(undefined);
 }));
 }

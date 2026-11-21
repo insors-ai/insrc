@@ -2,7 +2,7 @@
 
 Reviewed 2026-11-21 by the implementation author (controller). Automated design/code review is retired and unavailable (CLAUDE.md); this is the substitute self-check evidence, with the explicit limitation that author and reviewer are the same party.
 
-**Result: both Tasks (t1, t2) pass the daemon's build-validation gate, and all three externally-reported P2 defects against the pinned self-review packet revision have since been fixed and re-validated.** This report does not constitute an independent daemon review.
+**Result: both Tasks (t1, t2) pass the daemon's build-validation gate, and all six externally-reported P2 defects (across two review rounds) have since been fixed and re-validated.** This report does not constitute an independent daemon review.
 
 ## Scope
 
@@ -47,24 +47,34 @@ An external reviewer reported three P2 defects against the pinned self-review pa
 
 All fixes were verified by reverting each individually and confirming its own regression test (and no unrelated others) then fails.
 
+### Externally reported, after pinning `18b4ea9d1`: three further P2s
+
+A second review round found three more defects, all fixed within this Story:
+
+1. **Checkpoint reads still had a symlink race (`checkpoint.ts:326` at the time of the report).** `readCheckpoint` validated the path via `requireNoSymlinkInPath`, then separately called `readFileSync(path)` -- two syscalls re-resolving the same mutable path, so a substitution between them could still redirect the read even when the substituted record carried the requested identity (a `reviewId` match alone cannot detect a substitution that happens to name the id it was swapped onto). Reproduced directly: a checkpoint initially holding round 1, replaced after the check, handed back round 77. Fixed the same way `writeCheckpoint`/`finalizeAndCleanup` already are: pin the ancestor chain, then open the leaf file itself with `O_NOFOLLOW` and read through that descriptor -- a single atomic check-and-use, never a second, separately resolved lookup (`readThroughPinnedLeaf`). Verified three ways: a deterministic substitution test matching the report's own scenario, a direct unit test of the new primitive (exported test-only as `_readThroughPinnedLeafForTests`, mirroring review-report.ts's `_publishGuardedForTests` convention) against a pre-existing symlink, and folding `readCheckpoint` into the existing concurrent race test.
+2. **The non-Linux fallback retained the original vulnerability (`checkpoint.ts:202` at the time of the report).** Without `/proc/self/fd`, `pinDirectory` opened a real descriptor but returned the original *mutable* pathname as `.path` -- every caller believed its operations were bound to a validated identity when they were bound to nothing at all, reproduced directly by exercising that branch. Fixed two ways: `/dev/fd` (present on macOS/BSD as well as Linux) is now tried as a second alias root, so both real-world platforms this daemon targets get full protection; a platform with neither alias root now **throws** rather than silently degrading, since a quiet fallback is strictly worse than an honest refusal. (macOS's own `/dev/fd` branch could not be exercised directly in this Linux session; the fix was verified by code inspection and by confirming `/dev/fd` exists and behaves identically to `/proc/self/fd` for this purpose on Linux.)
+3. **Newly created ancestor directories were not durably linked (`checkpoint.ts:345` at the time of the report).** `publishGuarded`'s fsync covered the output file and its immediate containing directory, but `mkdirSync`'s `recursive: true` can silently create new ancestor directories first (e.g. `.insrc/artifacts`, the first time a review ever finalizes) -- each one is new metadata in *its own* parent that still needed its own fsync. Fixed by fsyncing every directory in the pinned chain, not just the leaf, after every publish (`fsyncDirectoryChain`). Verified by code inspection only, per the reviewer's own evidentiary standard for this class of fix -- machine-crash recovery is not practically testable in this suite.
+
+All three were verified the same way as the first round: reverting each fix individually and confirming its own regression test (and no unrelated others) then fails.
+
 ## Source review
 
 | Area inspected | Invariant and assessment |
 | --- | --- |
 | `checkpoint.ts` | `ReviewCheckpoint{reviewId, lastCompletedUnit}` is exactly sc5's interfaceSketch. All three functions validate `reviewId` first (before any filesystem/IPC access, proven by a dedicated test), then resolve the repo via the canonical chain. `writeCheckpoint` publishes through `publishGuarded` (temp-file + atomic rename), never a direct `writeFileSync`. `readCheckpoint` treats a missing file, invalid JSON, and a malformed shape identically (`undefined`), never throwing. `finalizeAndCleanup` writes the durable copy before the recursive delete, propagates a copy failure without deleting, and is idempotent (a second call after cleanup re-runs the copy and finds nothing left to delete). Every write and the delete are preceded by the lstat-based symlink walk. |
 | `__type-tests__/checkpoint.typecheck.ts` | Exact-keys, exact-parameter-tuple, and exact-return-type proofs for `ReviewCheckpoint` and all three functions, plus per-field required/readonly/no-extra-field and union-narrowing `@ts-expect-error` cases -- the same pattern `review-report.typecheck.ts` established. |
-| `__tests__/checkpoint.test.ts` | All 14 LLD-named subjects exist as individual `it()` cases with titles matching the LLD verbatim, plus 3 regression tests added for the externally-reported P2s (17 total); `ac1`-`ac4`'s `provingTests` pass. |
+| `__tests__/checkpoint.test.ts` | All 14 LLD-named subjects exist as individual `it()` cases with titles matching the LLD verbatim, plus 5 regression tests added for the externally-reported P2s across both rounds (19 total); `ac1`-`ac4`'s `provingTests` pass. |
 
 ## Verification
 
 - `npx tsc --noEmit`: clean, 0 errors.
-- `npx tsx --test src/workflow/review-round/__tests__/checkpoint.test.ts`: **17 passed, 0 failed** (14 LLD-named + 3 externally-reported-P2 regression tests).
-- `npx tsx --test 'src/workflow/review-round/**/*.test.ts'` (broader sweep): **71 passed, 0 failed.**
+- `npx tsx --test src/workflow/review-round/__tests__/checkpoint.test.ts`: **19 passed, 0 failed** (14 LLD-named + 5 externally-reported-P2 regression tests).
+- `npx tsx --test 'src/workflow/review-round/**/*.test.ts'` (broader sweep): **73 passed, 0 failed.**
 - `insrc_build_step` (phase=validate): t1 and t2 both passed cleanly on final resubmission after all fixes — final verdict `passed: true` for both Tasks, with `typecheckClean: true` and `testsPassed: true`.
 
 ## Limits and continuation
 
-This is a manual self-review substituting for the retired automated design/code review; author and reviewer are the same party. No independent party inspected this diff ahead of time, though three P2 defects were caught by an external reviewer after this packet first pinned `6c654af9e` -- all three fixed within this Story, all recorded here, not omitted. The build-validation gate's own rejections, plus these external catches, are the closest available substitute for adversarial review in this session.
+This is a manual self-review substituting for the retired automated design/code review; author and reviewer are the same party. No independent party inspected this diff ahead of time, though six P2 defects were caught by an external reviewer across two review rounds after this packet first pinned `6c654af9e` -- all six fixed within this Story, all recorded here, not omitted. The build-validation gate's own rejections, plus these external catches, are the closest available substitute for adversarial review in this session.
 
 An integration gap is recorded as an explicit, non-blocking open item (per the LLD's own resolved question): wiring `writeCheckpoint`/`readCheckpoint`/`finalizeAndCleanup` into s1's own round-driver cycle is s1's adjacent-boundary responsibility, not built here.
 

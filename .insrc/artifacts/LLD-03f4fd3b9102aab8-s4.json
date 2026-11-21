@@ -69,6 +69,13 @@
         "choice": "Specify RangeError consistently",
         "rationale": "Matches error-paths' own detail and the established runReviewRound precedent (src/workflow/review-round/driver.ts), which already throws a RangeError for an invalid round -- removes ambiguity rather than leaving a broad Error type that undersells the actual, more specific contract.",
         "resolvedAt": "2026-11-20T06:38:52.987Z"
+      },
+      "49e11a57": {
+        "question": "The contract section's api[0].returns is documented as Promise<string>, but insrc_present (confirmed directly against its real handler, src/mcp/server.ts's handleInsrcPresent) can never present a plain file like a review-report: its matching is scoped entirely to the daemon's pending-workflow-artifact list, and a review-report is never pending approval (k3; ac3 itself says 'no response required from the user'). This fails ac3's presentation requirement and should have been caught during design -- ac3 named the wrong mechanism.",
+        "status": "resolved",
+        "choice": "Return { path, markdown } instead of a bare path",
+        "rationale": "insrc_present's matching is scoped entirely to the daemon's pending-workflow-artifact list (confirmed directly against the real handler); a review-report structurally can never appear there. Returning the rendered markdown alongside the path lets the caller present it directly in its own response -- the same convention this codebase's own agents already use for review packets and self-reviews -- with no tool call needed at all, which is the only way to actually satisfy ac3.",
+        "resolvedAt": "2026-11-21T05:07:55.000Z"
       }
     }
   },
@@ -174,7 +181,7 @@
           "internal": "The exact per-review-type granularity mapping (round-level for design review, per-Task for code review) and the durable-copy-before-deletion mechanics stay internal to s5; no other Story's type depends on ReviewCheckpoint's internals beyond what sc1's round-driver needs to call it."
         }
       ],
-      "rolloutPhase": "Phase B — taxonomy, reconciliation, rendering, checkpointing",
+      "rolloutPhase": "Phase B \u2014 taxonomy, reconciliation, rendering, checkpointing",
       "nonFunctional": {
         "performance": "Checkpoint write/read (sc5) is a single small JSON file write/read per completed unit of work (a round, or a Task), adding no I/O beyond what the round cycle already performs.",
         "durability": "The final round's review-output JSON is copied into durable artifact storage before the .insrc/tmp/<reviewId>/ folder is deleted at a terminal state (k7), so a completed review's result survives after the ephemeral working folder is gone."
@@ -185,7 +192,7 @@
       "api": [
         {
           "name": "renderReviewReport",
-          "signature": "function renderReviewReport(call: ReviewReportDocgenCall, findings: readonly Finding[], reconciliation: readonly ReconciliationResult[] | undefined): Promise<string>",
+          "signature": "function renderReviewReport(call: ReviewReportDocgenCall, findings: readonly Finding[], reconciliation: readonly ReconciliationResult[] | undefined, priorFindings: readonly Finding[] | undefined): Promise<{ readonly path: string; readonly markdown: string }>",
           "parameters": [
             {
               "name": "call",
@@ -207,8 +214,8 @@
             }
           ],
           "returns": {
-            "type": "Promise<string>",
-            "meaning": "The absolute path of the persisted Markdown file written for this round, ready for the caller to pass directly to insrc_present (ac3) with no further path computation."
+            "type": "Promise<{ readonly path: string; readonly markdown: string }>",
+            "meaning": "The persisted file's path AND the exact markdown written to it. The caller presents `markdown` directly in its own response to satisfy ac3 -- insrc_present never applies to a review-report (see resolved question 49e11a57)."
           },
           "errors": [
             {
@@ -428,7 +435,8 @@
     "chosenAlternative": "a1",
     "openQuestions": [
       "The contract section's renderReviewReport signature currently lists three parameters (call, findings, reconciliation); error-paths/test-strategy identified that a fourth parameter, priorFindings: readonly Finding[] | undefined, is required so each ReconciliationResult.priorFindingRef can be resolved back to the prior finding's own category/severity for a meaningful inline annotation. The Task implementing this Story must carry the corrected four-parameter signature.",
-      "The contract section's api.errors lists type 'Error' for an invalid round; error-paths names this specifically as a RangeError (mirroring runReviewRound's own RangeError for an invalid round). The Task implementing this Story must align to RangeError."
+      "The contract section's api.errors lists type 'Error' for an invalid round; error-paths names this specifically as a RangeError (mirroring runReviewRound's own RangeError for an invalid round). The Task implementing this Story must align to RangeError.",
+      "The contract section's api[0].returns is documented as Promise<string>, but insrc_present (confirmed directly against its real handler, src/mcp/server.ts's handleInsrcPresent) can never present a plain file like a review-report: its matching is scoped entirely to the daemon's pending-workflow-artifact list, and a review-report is never pending approval (k3; ac3 itself says 'no response required from the user'). This fails ac3's presentation requirement and should have been caught during design -- ac3 named the wrong mechanism."
     ]
   },
   "citations": [

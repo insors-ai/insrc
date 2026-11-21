@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # Copyright (c) Procix Software India. Licensed under the MIT License.
 set -euo pipefail
 unset NODE_OPTIONS NODE_PATH
@@ -12,12 +12,14 @@ while [ -L "$SELF" ]; do
 done
 ROOT="$(cd "$(/usr/bin/dirname "$SELF")/.." && pwd -P)"
 USER_CWD="$PWD"
-if [ ! -d "$ROOT/.git" ] && [ ! -L "$ROOT/tools/node" ] && [ -x "$ROOT/tools/node" ]; then
-  NODE_BIN="$ROOT/tools/node"
-else
-  [ -f "$ROOT/scripts/node-runtime-env.sh" ] || { echo 'Runtime bootstrap assets missing; reinstall using the matching packaged installer.' >&2; exit 2; }
-  . "$ROOT/scripts/node-runtime-env.sh"
-  insrc_source_toolchain "$ROOT/scripts" "$HOME/.insrc" || exit 2
+[ -f "$ROOT/scripts/node-runtime-env.sh" ] || { echo 'Runtime bootstrap assets missing; reinstall using the matching packaged installer.' >&2; exit 2; }
+. "$ROOT/scripts/node-runtime-env.sh"
+insrc_source_toolchain "$ROOT/scripts" "$HOME/.insrc" || exit 2
+if [ ! -d "$ROOT/.git" ] && [ -e "$ROOT/tools/node" ]; then
+  [ -f "$ROOT/scripts/verify-installed-runtime.mjs" ] || { echo 'Packaged runtime verifier missing; repair using the authenticated installer.' >&2; exit 2; }
+  # The bootstrap runtime verifies the retained signed fingerprint BEFORE the
+  # packaged runtime is executed. It never substitutes for the managed runtime.
+  NODE_BIN=$("$NODE_BIN" "$ROOT/scripts/verify-installed-runtime.mjs" "$ROOT" "$HOME/.insrc") || exit 2
 fi
 [ -f "$ROOT/out/bin/insrc-mcp.js" ] || { echo 'Built MCP entry missing; rebuild before launching.' >&2; exit 2; }
 exec "$NODE_BIN" "$ROOT/out/bin/insrc-mcp.js" "$@"

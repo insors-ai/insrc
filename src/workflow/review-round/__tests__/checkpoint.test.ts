@@ -114,11 +114,25 @@ describe('writeCheckpoint/readCheckpoint/finalizeAndCleanup and ReviewCheckpoint
 		const durablePath = join(ROOT, '.insrc/artifacts', `REVIEW-${reviewId}.json`);
 		mkdirSync(tempDir, { recursive: true });
 		writeFileSync(join(tempDir, 'checkpoint.json'), JSON.stringify({ reviewId, lastCompletedUnit: { kind: 'round', ref: 1 } }));
-		_setCheckpointDepsForTests({ resolveRepoRoot });
 		const finalOutput = { reviewId, findings: ['f1'] };
+		let tempDirExistedWhenCopyRan: boolean | undefined;
+		// A spy, not a stand-in: it observes whether tempDir still exists at the
+		// instant it's called (proving copy genuinely precedes delete, not just
+		// that both end states happen to hold), then performs the real durable
+		// write itself, so the deletion that follows is for real too.
+		_setCheckpointDepsForTests({
+			resolveRepoRoot,
+			writeDurableCopy: (repoRoot, id, output) => {
+				tempDirExistedWhenCopyRan = existsSync(tempDir);
+				mkdirSync(dirname(durablePath), { recursive: true });
+				writeFileSync(durablePath, JSON.stringify(output), 'utf8');
+				void repoRoot; void id;
+			},
+		});
 
 		try {
 			await finalizeAndCleanup(reviewId, finalOutput);
+			assert.equal(tempDirExistedWhenCopyRan, true, 'the temp folder must still exist at the moment the durable copy runs -- proving copy genuinely precedes delete, not merely that both end states hold');
 			assert.deepEqual(JSON.parse(readFileSync(durablePath, 'utf8')), finalOutput, 'the durable copy must contain exactly finalOutput');
 			assert.equal(existsSync(tempDir), false, 'the temp folder must be deleted once the durable copy has been written');
 		} finally {

@@ -85,6 +85,13 @@
         "choice": "No enum change on either sibling contract; the security pass nests inside the primary round via RoundDriverHooks.security()",
         "rationale": "src/workflow/review-round/types.ts:15-24 already defines RoundDriverHooks with an optional security?: hook, and its own doc comment states the grounding call, checkpoint granularity, and an optional nested security pass are the only things that legitimately differ per review type, and explicitly 'never a separate channel, never a third reviewKind'. This was already built by this epic's own Story s1 (HLD sc1). ReviewKind and Scope.scopeType stay closed to 'design'|'code'; the security pass runs nested inside whichever reviewKind the primary round already has, exactly as the SPEC frames it ('security reviewer pass' within a round). This does not change this Story's own build scope (data-model extension points only) -- it resolves how the eventual security review type (tracked separately, routed to `define`) will wire in.",
         "resolvedAt": "2026-11-21T15:30:00.000Z"
+      },
+      "qb3f8b34a": {
+        "question": "SecurityLocator's extension target is ambiguous: HLD-50cde239426d6e2a's sc1 defines two distinct, structurally unrelated types -- Locator{kind,value} (a region pin within a file) and Pointer{path,section?:Locator,contentHash?} (a file-level reference, optionally carrying a Locator region) -- and SecurityLocator cannot structurally extend both at once. Needs resolving before build: does SecurityLocator extend Locator (adding trustBoundaryId/taintPathStepIndex to the region-pin, used inside a Pointer.section), or does it need a separate SecurityPointer wrapping a Locator-compatible region alongside a file path? A security-graph citation plausibly needs both a file path and a region.",
+        "status": "resolved",
+        "choice": "Extend Locator; reuse Pointer",
+        "rationale": "Already resolved in LLD revision 3 (qc3a91f7e) against the real code: Pointer{path,section?:Locator,contentHash?} (src/workflow/artifact-core/types.ts:271-281) already composes a file path with an optional region, and TypeScript's structural typing already lets a SecurityLocator (a superset of Locator's fields) occupy Pointer.section wherever a Locator is expected. No new SecurityPointer type is needed -- a security-graph citation needing both a file path and a region is simply Pointer{path, section: SecurityLocator, contentHash?}.",
+        "resolvedAt": "2026-11-21T15:05:24.391Z"
       }
     },
     "envelope": {

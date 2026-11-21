@@ -25,10 +25,10 @@
     "lldEffectiveHash": "6d57abfa68accf993485dc920a80409335ebda32202c80baa14902fde616994d",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "approved",
+      "status": "completed",
       "revision": {
-        "number": 1,
-        "contentHash": "a00dab5530cae339adf5fc8f1b2adddf627777d8c99a6060dab8519b51d549dc",
+        "number": 2,
+        "contentHash": "a8e8a81234f3dfc869da7ac865378e721448d3175e8843e1176f0720023ed0e7",
         "at": "2026-11-21T04:22:45.093Z",
         "by": {
           "id": "insrc:system",

@@ -31,3 +31,29 @@ Local detailed logs: `.insrc/tmp/node-bootstrap-smoke-csmnD2/bootstrap.log` and
 No global Node installation, real daemon binding, managed release, or production
 daemon process was changed. Native module installation, full source build and
 other platforms remain t7 qualification work.
+
+## Validator corrections and final task-2 evidence
+
+The first task-2 validator run rejected the binding's reliance on the current
+cache inventory and insufficient process-interruption/native evidence. Those
+findings were addressed before advancing:
+
+- Binding publication now uses the same shared archive extraction primitive as
+  bootstrap to verify the archive digest, paths, entry types and actual runtime
+  identity, then compares the selected object against that fresh reference.
+  A modified payload is refused even if its local inventory was also rewritten.
+- An actual retained bootstrap child is interrupted with SIGTERM at its staged
+  version probe. The test awaits child closure, verifies no published object or
+  retained lock, and successfully retries. A separate truncated-archive case
+  still verifies preservation of another owner's stage.
+- `scripts/__tests__/node-runtime-bootstrap-native.test.ts` runs the official
+  archive in an initially empty temporary HOME after asserting neither `node`
+  nor `npm` is reachable on its PATH. It asserts the exact 22.22.1 executable,
+  darwin-arm64 identity, npm 10.9.4 and successful offline reuse. Its official
+  archive is an explicitly supplied local qualification fixture; ordinary runs
+  without that fixture skip and cannot be counted as native qualification.
+
+Canonical coordinator run `4da042d3-1867-4cdb-9de5-75208df31764` passed all three
+files (policy, store, and native bootstrap); the native case ran and did not
+skip. This establishes bootstrap behavior on this macOS arm64 host, not the
+later native module/source build or other-platform qualification.

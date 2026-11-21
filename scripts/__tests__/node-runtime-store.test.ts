@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -33,10 +33,10 @@ function archive(entries: Entry[]): Buffer {
 function fixture(extra: Entry[] = [], version = '22.22.1', arch = target) {
 	const root = realpathSync(mkdtempSync(join(tmpdir(), 'insrc-runtime-test-')));
 	const scripts = join(root, 'scripts'); mkdirSync(scripts); mkdirSync(join(root, 'src/assets'), { recursive: true });
-	for (const file of ['provision-node-runtime.sh', 'node-runtime-policy.mjs', 'node-runtime-store.mjs']) {
+	for (const file of ['provision-node-runtime.sh', 'node-runtime-archive.sh', 'node-runtime-policy.mjs', 'node-runtime-store.mjs']) {
 		copyFileSync(new URL(`../${file}`, import.meta.url), join(scripts, file));
 	}
-	const shim = `#!/bin/sh\nif [ "$1" = '-p' ]; then\n case "$2" in process.versions.node) printf '%s\\n' '${version}' ;; *) printf '%s\\n' '${arch}' ;; esac\nelse\n exec '${process.execPath.replaceAll("'", "'\\''")}' "$@"\nfi\n`;
+	const shim = `#!/bin/sh\nif [ -n "\${INSRC_RUNTIME_TEST_MARKER:-}" ] && [ ! -f "$INSRC_RUNTIME_TEST_MARKER" ]; then\n printf ready > "$INSRC_RUNTIME_TEST_MARKER"\n /bin/sleep 2\nfi\nif [ "$1" = '-p' ]; then\n case "$2" in process.versions.node) printf '%s\\n' '${version}' ;; *) printf '%s\\n' '${arch}' ;; esac\nelse\n exec '${process.execPath.replaceAll("'", "'\\''")}' "$@"\nfi\n`;
 	const bytes = archive([{ path: `${prefix}/bin/node`, mode: 0o700, content: shim },
 		{ path: `${prefix}/lib/node_modules/npm/bin/npm-cli.js`, content: "process.stdout.write('10.9.4\\n');" },
 		{ path: `${prefix}/LICENSE`, content: 'fixture license' }, ...extra]);
@@ -122,7 +122,33 @@ test('publishes one canonical binding and refuses escaping or unqualified roots'
 		assert.equal(readdirSync(join(f.state, 'source-runtimes')).length, 1);
 		writeSourceRuntimeBinding(f.state, installation, f.distribution, f.policy);
 		assert.equal(readdirSync(join(f.state, 'source-runtimes')).length, 1);
+		writeFileSync(join(f.distribution, 'LICENSE'), 'changed');
+		writeFileSync(join(f.object, 'inventory.json'), runtimeInventory(f.distribution));
+		assert.throws(() => writeSourceRuntimeBinding(f.state, installation, f.distribution, f.policy), /inventory mismatch/);
+		assert.equal(readdirSync(join(f.state, 'source-runtimes')).length, 1, 'a rejected binding leaves the old selection');
 	} finally { f.clean(); }
+});
+
+test('cleans an actually interrupted bootstrap and retries without publishing partial state', async () => {
+	const f = fixture(), marker = join(f.root, 'paused');
+	const child = spawn('/bin/bash', [f.script, f.state, f.input], {
+		env: { ...f.env, INSRC_RUNTIME_TEST_MARKER: marker }, stdio: 'ignore',
+	});
+	const closed = new Promise<number | null>((resolve, reject) => {
+		child.once('error', reject); child.once('close', code => resolve(code));
+	});
+	try {
+		for (let i = 0; i < 250 && !existsSync(marker); i++) await new Promise(resolve => setTimeout(resolve, 20));
+		assert.ok(existsSync(marker), 'retained child reached the staged version probe');
+		assert.equal(child.kill('SIGTERM'), true, 'signal only this retained child, never search by PID');
+		assert.equal(await closed, 143);
+		assert.ok(!existsSync(f.object)); assert.ok(!existsSync(`${f.object}.lock`));
+		assert.deepEqual(readdirSync(resolve(f.object, '..')), []);
+		assert.equal(f.run().status, 0);
+	} finally {
+		if (child.exitCode === null && child.signalCode === null) child.kill('SIGTERM');
+		await closed; f.clean();
+	}
 });
 
 test('retries incomplete provisioning without selecting or deleting an unrelated stage', () => {

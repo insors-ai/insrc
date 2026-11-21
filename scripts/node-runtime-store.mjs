@@ -1,7 +1,8 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { createHash } from 'node:crypto';
-import { constants, lstatSync, mkdirSync, openSync, closeSync, readFileSync, readdirSync, readlinkSync,
-	realpathSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { constants, lstatSync, mkdirSync, mkdtempSync, openSync, closeSync, readFileSync, readdirSync, readlinkSync,
+	realpathSync, renameSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { NODE_RUNTIME_POLICY, readNodeRuntimePolicy } from './node-runtime-policy.mjs';
@@ -64,6 +65,20 @@ export function writeSourceRuntimeBinding(stateRoot, installationRoot, distribut
 	if (!entry?.enabled) throw new Error('cannot bind an unqualified runtime target');
 	const expected = join(state, 'runtimes', `node-v${policy.nodeVersion}-${target}`, entry.sha256, 'distribution');
 	if (distribution !== expected || realpathSync(distribution) !== distribution) throw new Error('runtime binding escapes its owned store');
+	// A pathname and a locally editable inventory do not establish archive identity.
+	// Reuse the same extraction/identity checks as bootstrap before publishing a binding.
+	const archive = join(dirname(distribution), 'archive.tar.gz');
+	regular(archive);
+	const verification = mkdtempSync(join(state, '.runtime-binding-'));
+	try {
+		const reference = join(verification, 'distribution');
+		execFileSync('/bin/bash', ['-c', '. "$1"; insrc_extract_node_archive "$2" "$3" "$4" "$5" "$6"',
+			'verify-runtime-binding', fileURLToPath(new URL('./node-runtime-archive.sh', import.meta.url)),
+			archive, reference, policy.nodeVersion, target, entry.sha256], {
+			timeout: 120000, env: { PATH: '/usr/bin:/bin:/usr/sbin:/sbin' }, stdio: 'pipe',
+		});
+		verifyRuntimeObject(reference, dirname(distribution));
+	} finally { rmSync(verification, { recursive: true, force: true }); }
 	const inventorySha256 = createHash('sha256').update(runtimeInventory(distribution)).digest('hex');
 	const record = { schemaVersion: 1, installationRoot: installation, target, nodeVersion: policy.nodeVersion,
 		archiveSha256: entry.sha256, distribution, inventorySha256 };

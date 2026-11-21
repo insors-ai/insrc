@@ -61,45 +61,12 @@ else
     --connect-timeout 15 --max-time 120 --max-filesize 167772160 --retry 2 \
     --output "$snapshot" "$INSRC_RUNTIME_URL"
 fi
-[ "$(wc -c < "$snapshot" | tr -d ' ')" -le 167772160 ] || fail 'archive exceeds size limit'
-if command -v shasum >/dev/null 2>&1; then
-  actual=$(shasum -a 256 < "$snapshot")
-else
-  actual=$(sha256sum < "$snapshot")
-fi
-[ "${actual%% *}" = "$INSRC_RUNTIME_SHA256" ] || fail 'archive SHA-256 mismatch'
-prefix="node-v$INSRC_RUNTIME_VERSION-$target"
-# Before any executable is extracted or run, validate the entire pinned archive.
-# Node distributions have only regular files/directories and these three bin links.
-tar -tzf "$snapshot" > "$stage/paths"
-while IFS= read -r path; do
-  case "$path" in "$prefix/"*) ;; *) fail 'archive has an unexpected root' ;; esac
-  case "/${path%/}/" in *'/../'*|*'/./'*|*'//'*) fail 'archive has an unsafe path' ;; esac
-  case "$path" in *'\'*|*$'\r'*|*$'\t'*) fail 'archive has an escaped or control path' ;; esac
-done < "$stage/paths"
-tar -tvzf "$snapshot" > "$stage/types"
-while IFS= read -r entry; do
-  case "$entry" in
-    -*|d*) ;;
-    l*" $prefix/bin/npm -> ../lib/node_modules/npm/bin/npm-cli.js") ;;
-    l*" $prefix/bin/npx -> ../lib/node_modules/npm/bin/npx-cli.js") ;;
-    l*" $prefix/bin/corepack -> ../lib/node_modules/corepack/dist/corepack.js") ;;
-    *) fail 'archive has an unsupported entry or outside link' ;;
-  esac
-done < "$stage/types"
-mkdir "$stage/distribution"
-tar -xzf "$snapshot" --no-same-owner --no-same-permissions --strip-components=1 -C "$stage/distribution"
+. "$HERE/node-runtime-archive.sh"
+insrc_extract_node_archive "$snapshot" "$stage/distribution" "$INSRC_RUNTIME_VERSION" "$target" "$INSRC_RUNTIME_SHA256"
 runtime="$stage/distribution/$INSRC_RUNTIME_NODE"
-npm="$stage/distribution/$INSRC_RUNTIME_NPM"
-[ ! -L "$runtime" ] && [ -f "$runtime" ] && [ -x "$runtime" ] || fail 'Node executable is unavailable'
-[ ! -L "$npm" ] && [ -f "$npm" ] && [ -f "$stage/distribution/LICENSE" ] || fail 'npm or license is unavailable'
-[ "$("$runtime" -p 'process.versions.node')" = "$INSRC_RUNTIME_VERSION" ] || fail 'Node version mismatch'
-[ "$("$runtime" -p 'process.platform + "-" + process.arch')" = "$target" ] || fail 'Node architecture mismatch'
-PATH="$stage/distribution/bin:$PATH" "$runtime" "$npm" --version >/dev/null
 if [ -e "$final" ]; then
   "$runtime" "$HERE/node-runtime-store.mjs" verify "$stage/distribution" "$final"
 else
-  rm "$stage/paths" "$stage/types"
   "$runtime" "$HERE/node-runtime-store.mjs" publish "$stage" "$final"
   stage=
 fi

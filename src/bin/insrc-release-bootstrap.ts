@@ -14,6 +14,7 @@ import { readSourceReleaseTarget, sourceReleaseCatalog } from '../shared/source-
 import type { SourceReleaseTarget } from '../shared/source-release-target.js';
 import { readTaggedReleaseCompatibility } from '../shared/source-release-compatibility.js';
 import { readSourceInstallationState } from '../shared/source-installation.js';
+import { inspectSourcePredecessor } from '../daemon/source-predecessor.js';
 
 declare const __INSRC_RELEASE_KEY__: string | undefined;
 declare const __INSRC_SOURCE_TARGET__: string | undefined;
@@ -222,6 +223,12 @@ export async function readAuthorizedReleaseCatalog(
 if (process.argv[1] !== undefined && fileURLToPath(import.meta.url) === await realpath(resolve(process.argv[1])).catch(() => '')) {
 	const [mode, workspace, stateRoot, repoUrl, branch, ...rest] = process.argv.slice(2);
 	try {
+		if (mode === 'inventory') {
+			const [root, runtime, ...extra] = process.argv.slice(3);
+			if (!root || extra.length) throw new Error('usage: inventory INSTALLATION_ROOT [INCUMBENT_RUNTIME]');
+			const inventory = await inspectSourcePredecessor({ root, runtime });
+			process.stdout.write(JSON.stringify({ inventory, authority: 'diagnostic-only', activationPermitted: false }) + '\n');
+		} else {
 		const targets = rest.filter(arg => arg.startsWith('--target='));
 		const priors = rest.filter(arg => arg.startsWith('--prior='));
 		const profiles = rest.filter(arg => arg.startsWith('--profile='));
@@ -257,6 +264,7 @@ if (process.argv[1] !== undefined && fileURLToPath(import.meta.url) === await re
 			} else if (checkout !== undefined) await checkoutAuthorizedRelease(authorization, checkout);
 			process.stdout.write(JSON.stringify({ receipt: authorization.receipt, catalog, compatibility,
 				...(target === 'darwin' ? {} : { target }) }));
+		}
 		}
 	} catch (error) {
 		process.stderr.write(`release bootstrap: ${error instanceof Error ? error.message : String(error)}\n`);

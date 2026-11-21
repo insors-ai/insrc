@@ -62,6 +62,10 @@ function ownedText(path: string, max = 64 * 1024): string {
  } finally { closeSync(fd); }
 }
 
+function entry(root: string, role: SourceActorTicket['role']): string {
+ return join(root, role === 'probe' ? 'out/daemon/source-store-probe.js' : 'out/daemon/index.js');
+}
+
 /** Authenticate the Unix peer against the caller's retained actor before sending lifecycle RPC. */
 export async function sourceActorRpc(binary: string, socket: string, target: StopTarget,
  method: 'daemon.status' | 'daemon.shutdown'): Promise<unknown> {
@@ -91,7 +95,9 @@ export class SourceNativeActor {
   // This is written before any monitor/root can be forked, including an unobserved spawn.
   publish(directory, { version: 1, token, creator: requireProcessIdentity(process.pid), release: options.release,
    transactionId: options.transactionId, role: options.role }, 'intent');
-  const child = spawn(options.binary, [directory, options.release.runtime, join(options.release.root, 'out/daemon/index.js'),
+  const executableEntry = entry(options.release.root, options.role);
+  canonical(executableEntry);
+  const child = spawn(options.binary, [directory, options.release.runtime, executableEntry,
    options.barrier, token, String(process.pid)], { cwd: options.release.root,
     env: cleanNodeEnvironment(options.env ?? process.env), stdio: ['ignore', log, log], detached: true });
   closeSync(log);
@@ -109,12 +115,17 @@ export class SourceNativeActor {
     await delay(50);
    }
    if (!root) throw new Error('Source startup barrier was not observed');
-   target = await captureStopTarget(root, { executable: options.broker });
-   if (!target || !target.commandLine.endsWith(join(options.release.root, 'out/daemon/index.js'))
+   // Probe ownership stays with the resident native supervisor. The daemon-only broker
+   // intentionally refuses arbitrary probe executables and is not widened here.
+   const observed = requireProcessIdentity(root);
+   if (!observed.commandLine.endsWith(executableEntry)
     || realpathSync(`/proc/${root}/exe`) !== options.release.runtime) throw new Error('Source actor does not match the pinned executable/entry');
-   const ticket: SourceActorTicket = { version: 1, token, monitor, root: {
-    pid: target.pid, startedAt: target.startedAt, commandLine: target.commandLine }, release: options.release,
+   const ticket: SourceActorTicket = { version: 1, token, monitor, root: observed, release: options.release,
     transactionId: options.transactionId, role: options.role };
+   target = options.role === 'probe' ? SourceNativeActor.residentTarget(directory, ticket, options.binary)
+    : await captureStopTarget(root, { executable: options.broker }) ?? undefined;
+   if (!target || target.startedAt !== observed.startedAt || target.commandLine !== observed.commandLine
+    || await target.handle.hasExited()) throw new Error('Source actor changed during capability capture');
    publish(directory, ticket);
    return new SourceNativeActor(directory, ticket, target, options.binary, child);
   } catch (error) {
@@ -154,6 +165,15 @@ export class SourceNativeActor {
   }
   throw new Error('Source actor subtree closure has not been proved');
  }
+ /** Consume a private, actor-bound probe result only after the native owner proves full closure. */
+ async probeResult(): Promise<unknown> {
+  if (this.ticket.role !== 'probe') throw new Error('Source actor is not a store probe');
+  await this.childrenClosed();
+  const result: unknown = JSON.parse(ownedText(join(this.directory, 'probe-result.json'), 16 * 1024));
+  if (!result || typeof result !== 'object' || Array.isArray(result) || !('version' in result) || result.version !== 1
+   || !('token' in result) || result.token !== this.ticket.token || !('pid' in result) || result.pid !== this.target.pid) throw new Error('Source probe result belongs to another actor');
+  return result;
+ }
  private static hasClosedReceipt(directory: string, ticket: SourceActorTicket): boolean {
   privateDirectory(directory);
   try {
@@ -180,6 +200,12 @@ export class SourceNativeActor {
   if (!ticket.release || typeof ticket.release.root !== 'string' || typeof ticket.release.runtime !== 'string'
    || !/^[a-f0-9]{40}(?:[a-f0-9]{24})?$/.test(ticket.release.commit) || !/^[a-f0-9]{64}$/.test(ticket.release.fingerprint)) throw new Error('Invalid source actor pin');
   canonical(ticket.release.root); canonical(ticket.release.runtime);
+  if (!ticket.root.commandLine.endsWith(entry(ticket.release.root, ticket.role))) throw new Error('Source actor ticket entry differs from its role');
+  const target = SourceNativeActor.residentTarget(directory, ticket, binary);
+  await target.handle.hasExited();
+  return new SourceNativeActor(directory, ticket, target, binary);
+ }
+ private static residentTarget(directory: string, ticket: SourceActorTicket, binary: string): StopTarget {
   const closed = () => SourceNativeActor.hasClosedReceipt(directory, ticket);
   const state = async () => {
    if (closed()) return true;
@@ -187,7 +213,6 @@ export class SourceNativeActor {
    if (!new RegExp(`^(WAITING|STARTING|RUNNING|COMMITTED) ${ticket.root.pid}$`).test(reply)) throw new Error('Source supervisor changed its root');
    return false;
   };
-  await state();
   const target: StopTarget = { ...ticket.root, handle: { hasExited: state,
    async terminate() {
     if (await state()) return 'exited';
@@ -195,7 +220,7 @@ export class SourceNativeActor {
     if (reply !== `CLOSED ${ticket.root.pid}`) throw new Error('Source subtree termination is unconfirmed');
     return 'sent';
    }, async close() {} } };
-  return new SourceNativeActor(directory, ticket, target, binary);
+  return target;
  }
  async close(): Promise<void> { await this.target.handle.close(); this.monitor?.unref(); }
 }

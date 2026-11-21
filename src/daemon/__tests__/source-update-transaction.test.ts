@@ -253,6 +253,24 @@ if (process.env.INSRC_SOURCE_TRANSACTION_WORKER) {
   assert.equal(existsSync(join(f.root, 'daemon.run-files.guard')), false);
  }));
 
+ test('Pre-cutover admission failures preserve the running incumbent', { timeout: 480_000 }, async t => sourceLinux(t, file, project, async () => {
+  for (const failure of ['capture', 'runtime', 'candidate-pin']) {
+   const f = await fixture(t), store = new SourceInstallationStore(f.root, f.logical), h = host(f);
+   const original = await startOriginal(f);
+   if (failure === 'capture') h.effects.capture = async () => { throw new Error('unverified incumbent ownership'); };
+   if (failure === 'runtime') h.effects.verifyRuntime = async () => { throw new Error('runtime archive verification failed'); };
+   if (failure === 'candidate-pin') writeFileSync(join(f.candidate.pin.root, 'out/daemon/index.js'), daemon + '\n// changed after staging\n');
+   const result = await new LinuxSourceTransaction(store, h.effects).update(async () => upgrade(f));
+   assert.equal(result.decision, 'rolled-back', result.detail);
+   assert.equal(store.read().selected, null); assert.equal(store.read().active, null);
+   assert.equal(store.read().outcome?.legacyRoute, undefined, 'unverified preparation must not become a retained legacy launch route');
+   assert.equal((await request(f.root, 'status')).pid, original.pid, `${failure} must preserve the original running process`);
+   assert.equal(h.events.includes('shutdown'), false, 'no shutdown is permitted before cutover intent');
+   assert.equal(existsSync(join(f.root, 'store-owner')), true);
+   await stopFixture(f);
+  }
+ }));
+
  test('Legacy restoration route survives later failures and settles under mutation exclusion', { timeout: 480_000 }, async t => sourceLinux(t, file, project, async () => {
   const f = await fixture(t), store = new SourceInstallationStore(f.root, f.logical);
   await startOriginal(f);

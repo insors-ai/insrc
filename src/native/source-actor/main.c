@@ -175,6 +175,7 @@ int main(int argc, char **argv) {
   snprintf(rootPid, sizeof(rootPid), "%ld", (long)getpid()); snprintf(ownerPid, sizeof(ownerPid), "%ld", (long)getppid());
   if (setenv("INSRC_SOURCE_ACTOR_TOKEN", token, 1) < 0
    || setenv("INSRC_SOURCE_ACTOR_ROOT_PID", rootPid, 1) < 0 || setenv("INSRC_SOURCE_ACTOR_MONITOR_PID", ownerPid, 1) < 0
+   || setenv("INSRC_SOURCE_ACTOR_DIRECTORY", directoryPath, 1) < 0
    || unsetenv("NODE_CHANNEL_FD") < 0 || unsetenv("NODE_CHANNEL_SERIALIZATION_MODE") < 0 || unsetenv("NODE_UNIQUE_ID") < 0) _exit(126);
   execl(runtime, runtime, "--import", barrier, entry, (char *)NULL); _exit(127);
  }

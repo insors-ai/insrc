@@ -29,6 +29,7 @@ export interface SourceUpgrade {
 
 /** Platform effects record actors under exclusion, then hand the startup lease to their granted entry. */
 export interface SourceTransactionHost {
+ /** Observation only: failure here must not stop or mutate the incumbent. */
  capture(initial: SourceSelection | null, prior: StagedReleasePin): Promise<SourceActor | null>;
  /** Reacquire only the recorded incarnation; a replacement is a conflict, never a signal target. */
  recover(identity: ProcessIdentity): Promise<SourceActor | null>;
@@ -146,10 +147,12 @@ export class LinuxSourceTransaction {
  }
  private async finish(id: string, decision: Outcome['decision'], detail: string): Promise<Outcome> {
   const phase = decision === 'committed' ? 'committed' : decision === 'rolled-back' ? 'rolled-back' : 'recovery-required';
-  const transaction: SourceTransaction = { ...this.current(id), phase };
+  const active = this.current(id);
+  const transaction: SourceTransaction = { ...active, phase };
   const previous = this.store.read().outcome?.legacyRoute;
   const legacyRoute = transaction.initialSelector === null && transaction.prior && transaction.candidate && transaction.execution
-   && (decision === 'rolled-back' || (decision === 'committed' && transaction.execution.operation.startsWith('legacy-'))) ? transaction : previous;
+   && ((decision === 'rolled-back' && ['rollback-required', 'rolled-back'].includes(active.phase))
+    || (decision === 'committed' && transaction.execution.operation.startsWith('legacy-'))) ? transaction : previous;
   const outcome = { id, decision, detail: detail.slice(0, 4096), transaction, ...(legacyRoute ? { legacyRoute } : {}) };
   this.publish(state => ({ ...state, active: transaction, outcome }));
   if (decision === 'recovery-required') this.fenced = true;
@@ -231,6 +234,12 @@ export class LinuxSourceTransaction {
    if (id === undefined || this.fenced) throw error;
    const active = this.current(id);
    if (terminal(active.phase)) { this.fenced = true; throw error; }
+   if (active.phase === 'reserved' && !active.execution) {
+    return await this.finish(id, 'rolled-back', `Admission failed before incumbent mutation: ${message(error)}`);
+   }
+   if (active.phase === 'staged' && active.execution?.step === 'prepared') {
+    return await this.finish(id, 'rolled-back', `Verification failed before incumbent mutation: ${message(error)}`);
+   }
    if (!active.execution || !active.prior || !active.candidate) return await this.finish(id, 'recovery-required', message(error));
    return await this.rollback(id, message(error));
   } finally { await this.release(); }

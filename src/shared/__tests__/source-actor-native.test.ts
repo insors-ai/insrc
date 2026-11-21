@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
 import { once } from 'node:events';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { createServer } from 'node:net';
 import { join } from 'node:path';
@@ -133,5 +133,47 @@ test('Source lifecycle RPC authenticates the socket peer before sending request 
  assert.equal(await actor.target.handle.hasExited(), false);
  await actor.kill(); await actor.childrenClosed();
  await actor.close(); f.retain(undefined);
+}));
+
+test('Daemon store probe is gated, leaves empty state untouched and refuses incomplete stores', { timeout: 480_000 }, async t => sourceLinux(t, file, project, async () => {
+ for (const scenario of ['empty', 'partial', 'wrong-state', 'changed-formats', 'dangling-link', 'compaction-leftover', 'orphan-lock']) {
+  const f = await fixture(t), release = f.options.release.root, home = join(f.root, 'home'), stateRoot = join(home, '.insrc');
+  mkdirSync(stateRoot, { recursive: true, mode: 0o700 });
+  mkdirSync(join(release, 'out/shared'), { recursive: true });
+  for (const name of ['daemon/source-store-probe', 'shared/paths', 'shared/source-release-compatibility', 'shared/source-release-target']) {
+   writeFileSync(join(release, `out/${name}.js`), readFileSync(join(project, `out/${name}.js`)));
+  }
+  if (scenario === 'partial') mkdirSync(join(stateRoot, 'graph.lmdb'));
+  if (scenario === 'dangling-link') symlinkSync(join(f.root, 'missing-store'), join(stateRoot, 'graph.lmdb'));
+  if (scenario === 'compaction-leftover') writeFileSync(join(stateRoot, 'graph.lmdb.bak'), 'retained-backup');
+  if (scenario === 'orphan-lock') writeFileSync(join(stateRoot, 'graph.lmdb-lock'), 'retained-lock');
+  const prior = { version: 1, releaseId: 'prior', graphSchema: 10, startup: 'rollback-compatible',
+   formats: { lance: '1', config: '1', repoAndIndexQueue: '1', workflowAndSession: '1' } };
+  const candidate = { ...prior, releaseId: 'candidate', ...(scenario === 'changed-formats' ? { graphSchema: 11 } : {}) };
+  const actor = await SourceNativeActor.launch({ ...f.options, role: 'probe', env: { ...f.options.env, HOME: home,
+   INSRC_SOURCE_STORE_PROBE: JSON.stringify({ stateRoot: scenario === 'wrong-state' ? f.root : stateRoot, prior, candidate }) } });
+  f.retain(actor);
+  const resultFile = join(actor.directory, 'probe-result.json');
+  assert.equal(existsSync(resultFile), false, 'probe cannot inspect stores before its recorded grant');
+  assert.equal(existsSync(join(f.root, 'entered')), false, 'probe role must not run the public daemon entry');
+  await actor.grant(); await actor.childrenClosed();
+  const result = await actor.probeResult() as { token: string; pid: number; ok: boolean; empty?: boolean; error?: string; pair?: unknown };
+  assert.equal(result.token, actor.ticket.token); assert.equal(result.pid, actor.target.pid);
+  assert.equal(result.ok, scenario === 'empty');
+  if (scenario === 'empty') { assert.equal(result.empty, true); assert.deepEqual(result.pair, { prior, candidate }); }
+  else assert.match(result.error!, /incomplete|does not name|changes writable formats|compaction recovery/);
+  assert.equal(existsSync(join(stateRoot, 'daemon.pid')), false);
+  assert.equal(existsSync(join(stateRoot, 'daemon.sock')), false);
+  assert.equal(existsSync(join(stateRoot, 'lance')), false);
+  assert.equal(existsSync(join(stateRoot, 'graph.lmdb')), scenario === 'partial', 'probe must not initialize empty stores');
+  if (scenario === 'dangling-link') assert.equal(lstatSync(join(stateRoot, 'graph.lmdb')).isSymbolicLink(), true);
+  if (scenario === 'compaction-leftover') assert.equal(readFileSync(join(stateRoot, 'graph.lmdb.bak'), 'utf8'), 'retained-backup');
+  if (scenario === 'orphan-lock') assert.equal(readFileSync(join(stateRoot, 'graph.lmdb-lock'), 'utf8'), 'retained-lock');
+  const reopened = await SourceNativeActor.reopen(actor.directory, f.options.binary);
+  await reopened.childrenClosed(); await reopened.close();
+  writeFileSync(resultFile, JSON.stringify({ ...result, version: 1, token: '0'.repeat(64) }));
+  await assert.rejects(actor.probeResult(), /another actor/, 'a result from another actor must never be accepted');
+  await actor.close(); f.retain(undefined);
+ }
 }));
 }

@@ -13,8 +13,8 @@ import { checkUpdateSource } from '../shared/update-source.js';
 import type { UpdateSource } from '../shared/update-source.js';
 import { readSourceReleaseTarget } from '../shared/source-release-target.js';
 import type { SourceReleaseTarget } from '../shared/source-release-target.js';
-import { readReleaseCompatibility, requireQualifiedReleasePair } from './release-compatibility.js';
-import type { QualifiedReleasePair, ReleaseCompatibility } from './release-compatibility.js';
+import { readReleaseCompatibility, requireQualifiedReleasePair } from '../shared/source-release-compatibility.js';
+import type { QualifiedReleasePair, ReleaseCompatibility } from '../shared/source-release-compatibility.js';
 
 const exec = promisify(execFile);
 const COMMIT = /^(?:[a-f0-9]{40}|[a-f0-9]{64})$/;

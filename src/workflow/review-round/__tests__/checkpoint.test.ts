@@ -276,14 +276,17 @@ describe('writeCheckpoint/readCheckpoint/finalizeAndCleanup and ReviewCheckpoint
 	});
 
 	it('writeCheckpoint never creates a new directory through a symlinked ancestor (.insrc/tmp itself, not just the review directory) -- recursive directory creation must not silently follow a swapped ancestor out of the repository', async () => {
-		const tmpRoot = join(ROOT, '.insrc/tmp');
-		rmSync(tmpRoot, { recursive: true, force: true });
-		mkdirSync(join(ROOT, '.insrc'), { recursive: true });
+		// A disposable fake repo root, not ROOT's own shared .insrc/tmp --
+		// manipulating the ancestor under test must never risk unrelated
+		// concurrent reviews' real data.
+		const fakeRepoRoot = mkdtempSync(join(tmpdir(), 'insrc-checkpoint-fakerepo-'));
+		const tmpRoot = join(fakeRepoRoot, '.insrc/tmp');
+		mkdirSync(join(fakeRepoRoot, '.insrc'), { recursive: true });
 		const outsideDir = mkdtempSync(join(tmpdir(), 'insrc-checkpoint-outside-ancestor-'));
 		symlinkSync(outsideDir, tmpRoot, 'dir');
 
 		const reviewId = `review-ancestorcreate-${process.pid}-${Date.now()}`;
-		_setCheckpointDepsForTests({ resolveRepoRoot });
+		_setCheckpointDepsForTests({ resolveRepoRoot: async () => fakeRepoRoot });
 		try {
 			await assert.rejects(
 				() => writeCheckpoint(reviewId, { kind: 'round', ref: 1 }),
@@ -296,7 +299,7 @@ describe('writeCheckpoint/readCheckpoint/finalizeAndCleanup and ReviewCheckpoint
 				'no directory must ever be created inside the symlink target outside the repository -- recursive directory creation must stop at the symlinked ancestor, never follow it',
 			);
 		} finally {
-			rmSync(tmpRoot, { force: true });
+			rmSync(fakeRepoRoot, { recursive: true, force: true });
 			rmSync(outsideDir, { recursive: true, force: true });
 			_setCheckpointDepsForTests({});
 		}
@@ -541,10 +544,14 @@ describe('writeCheckpoint/readCheckpoint/finalizeAndCleanup and ReviewCheckpoint
 	});
 
 	it('an ancestor (.insrc/tmp itself) replaced by a symlink during the narrow window around writeCheckpoint\'s own directory creation never has a new directory created through it outside the repository (best-effort concurrent regression)', async () => {
-		const tmpRoot = join(ROOT, '.insrc/tmp');
+		// A disposable fake repo root, not ROOT's own shared .insrc/tmp --
+		// racing the ancestor under test must never risk unrelated concurrent
+		// reviews' real data.
+		const fakeRepoRoot = mkdtempSync(join(tmpdir(), 'insrc-checkpoint-fakerepo-race-'));
+		const tmpRoot = join(fakeRepoRoot, '.insrc/tmp');
 		const outsideDir = mkdtempSync(join(tmpdir(), 'insrc-checkpoint-race-ancestor-'));
-		mkdirSync(join(ROOT, '.insrc'), { recursive: true });
-		_setCheckpointDepsForTests({ resolveRepoRoot });
+		mkdirSync(join(fakeRepoRoot, '.insrc'), { recursive: true });
+		_setCheckpointDepsForTests({ resolveRepoRoot: async () => fakeRepoRoot });
 
 		// Races .insrc/tmp itself between a real directory and a symlink to
 		// outsideDir -- the ancestor-substitution window pinDirectoryChainCreating
@@ -583,7 +590,7 @@ describe('writeCheckpoint/readCheckpoint/finalizeAndCleanup and ReviewCheckpoint
 			);
 		} finally {
 			racer.kill();
-			rmSync(tmpRoot, { recursive: true, force: true });
+			rmSync(fakeRepoRoot, { recursive: true, force: true });
 			rmSync(outsideDir, { recursive: true, force: true });
 			_setCheckpointDepsForTests({});
 		}

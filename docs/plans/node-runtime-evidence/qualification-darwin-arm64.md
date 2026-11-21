@@ -1,8 +1,9 @@
 # Node 22.22.1 source-runtime qualification: macOS arm64
 
 Story 175ab0d1d56838a9/s1, task t7, 2026-11-21. Only `darwin-arm64` is
-native-qualified. macOS x64 and both Linux architectures remain disabled;
-Windows is unsupported. This proof concerns runtime predictability, not the
+native-qualified in this initial record. Subsequent Linux arm64/x64 qualification
+is recorded in [the OrbStack follow-up](qualification-linux-orbstack.md).
+Intel macOS remains disabled and Windows is unsupported. This proof concerns runtime predictability, not the
 separately observed daemon heap-corruption crash or deferred IPC-stop fallback.
 
 ## Qualification before promotion

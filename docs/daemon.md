@@ -2279,7 +2279,9 @@ delete checkpoints or clear another session's resources to force a restart.
 Linux arm64 and x64 source runtimes are qualified on Ubuntu24.04 OrbStack
 machines. Install the native build prerequisites (Git, curl, CA certificates,
 a C/C++ toolchain, Python3, pkg-config, libsecret development headers and Perl).
-No global Node/npm is required. For a CPU-only installation, run the canonical
+No global Node/npm is required. Full OrbStack native builds were tested with
+8 GB per machine; 4 GB runs hit the memory limit. For a CPU-only installation,
+run the canonical
 packaged installer with the ONNX dependency's supported CPU option:
 
 ```sh

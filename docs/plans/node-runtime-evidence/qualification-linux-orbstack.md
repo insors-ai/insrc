@@ -47,10 +47,40 @@ owned Node/npm paths. Only successful runs qualify target enablement.
 
 ## Activation proof
 
-Fresh installation using the promoted canonical packaged policy, daemon
-start/status/restart/stop, exact kernel executable identities, bounded runtime
-regressions and final cleanup are recorded below as they complete. No fixture
-policy will substitute for this post-promotion installation proof.
+Both public source targets are enabled only after their actual distribution,
+install/build and native smoke passed. Fresh canonical packaged installers then
+installed source commit `6a9ba7d4c` on both Linux machines, using empty private
+homes and PATH `/usr/bin:/bin` without Node/npm. Invocations used `--repo` pointing
+to the real repository's shared read-only Git source, `--branch v2`,
+`--runtime-archive` pointing to the pinned official archive, `--embedder onnx`,
+`--no-start -y`, and ONNXRUNTIME_NODE_INSTALL_CUDA=skip. There was no fixture-policy
+substitution or copied macOS node_modules. The installer supplied the new Python
+bytecode protection itself; the caller did not supply it.
+
+Each real install completed npm install, the full canonical build, all five
+native loads and one strict source binding. Public build receipts:
+
+- arm64: `87b622c4-b181-4d34-beaf-771c901f369f`.
+- x64: `9c3d07f2-926f-44de-88b1-d42a7e7d9a62`.
+
+Both receipts report confirmedClosed:true. Full public installs needed 8 GB
+memory limits on these 2-CPU test machines; earlier 4 GB runs hit the cgroup
+memory limit. Failed candidate/cache evidence was retained without activation.
+
+The real daemon CLI passed start/status/restart/stop on both machines. Direct
+IPC status confirmed readiness and `/proc/<pid>/exe` matched the exact owned
+Node distribution before and after restart. Arm64 PIDs changed 2353 to 2663;
+x64 PIDs changed 6773 to 7437. Stop confirmed process exit and socket removal.
+The actual CPU onnxruntime-node binding also loaded version1.21.0 on both.
+Detailed actions, statuses, selected bindings and identities are in
+`arm64-lifecycle-proof.json` and `x64-lifecycle-proof.json` in the retained Linux
+evidence directory. These tests used empty test daemon state and no live LLM
+requests; they do not claim model inference, CUDA or production database migration.
+
+The existing source-runtime safety rule remains: installed updates without a
+qualified staged migration refuse in-place mutation. This work enables and tests
+fresh Linux source installation and its lifecycle; signed Linux release-bundle
+trust/qualification is unchanged.
 
 
 ## Immutable toolchain correction
@@ -72,3 +102,52 @@ under the corrected environment. Only unselected qualification caches were
 quarantined, after all their processes closed; no production runtime was deleted.
 The existing LLD ownership model and strict immutable-inventory contract remain
 unchanged. Fresh canonical installer retries below carry this correction.
+
+
+## Portable archive correction and bounded regression
+
+The first x64 regression found that a macOS-produced installer carried hidden
+AppleDouble files: BSD tar hid them from its own listing, while GNU tar exposed
+extra members. The archive producer now disables copyfile metadata and xattrs.
+A raw payload-header regression checks the exact regular-file set and rejects
+xattr PAX records, and GNU tar independently verifies the final client asset
+closure without warnings. No extra archive members were whitelisted.
+
+Host run `b5926af9-6ecc-4fee-8b35-df092c073232` passed 30/30 tests without skips:
+current IDE contracts, signed staging, policy, bootstrap, Python cache protection,
+owned-runtime environments and coordinator controls. Final packaging run
+`3a09431c-e0f8-4906-bccf-2d6600bd3066` passed all three packaging cases.
+
+Linux arm64 run `40b8b70c-69d9-46fb-ada8-cf8843a5255b` passed all 19 applicable
+cases, with two explicit Darwin-only skips. Linux x64 run
+`12672471-6e20-4437-9757-80aa66303a81` passed 16, failed the archive-metadata
+case described above and skipped the Darwin-only upgrade bridge. All its shell,
+Python, bootstrap and store cases passed. Follow-up portable-packaging/Python
+runs use the final producer and client assets and are recorded below.
+
+Full source installs preceded the packaging-only metadata correction; the
+canonical enabled policy, helper contents and native/runtime code were unchanged
+by that correction. The final metadata-free packaged installer also verified
+fresh bootstrap and offline reuse on both targets, including the already-bound
+public installation caches after daemon shutdown. Native dependency installation
+was not mocked or bypassed. This qualification does not claim a full repository
+sweep, physical x86 hardware, IDE UI rendering, GPU execution or signed Linux
+release qualification. Final human BUILD approval remains required.
+
+Final Linux portable-packaging/Python regression runs each passed 4/4 with no
+skips and confirmed actor closure:
+
+- arm64: `c6529a9a-af6e-482f-8fb6-2b66a16589c2`.
+- x64: `178de561-a8ad-4182-8281-e02784fb305f`.
+
+These runs resolve the earlier x64 metadata failure using the final archive
+producer and canonical client asset. `gnu-tar-portability.log` separately records
+exact asset closure without metadata warnings. Final post-lifecycle reuse logs
+verify both already-bound Node stores through the metadata-free installer.
+`arm64-final-census.json` and `x64-final-census.json` record zero qualification
+actors and zero active coordinator leases. Both qualification machines were then
+stopped by explicit name; they remain available for inspection. OrbStack/Docker
+and the user's installed macOS daemon were not restarted by this qualification.
+All logs, source/public build receipts, test results, machine configuration and
+process/binding proofs are retained in
+`.insrc/tmp/node-runtime-qualification/linux/`.

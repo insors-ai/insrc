@@ -324,18 +324,23 @@ describe('writeCheckpoint/readCheckpoint/finalizeAndCleanup and ReviewCheckpoint
 		}
 	});
 
-	it('finalizeAndCleanup succeeds even when checkpoint.json was never written at all, deleting whatever the .insrc/tmp/<reviewId>/ folder currently contains as a whole', async () => {
+	it('finalizeAndCleanup succeeds even when checkpoint.json was never written at all, deleting whatever the .insrc/tmp/<reviewId>/ folder currently contains as a whole, including nested subdirectories', async () => {
 		const reviewId = `review-nocheckpointfinalize-${process.pid}-${Date.now()}`;
 		const tempDir = join(ROOT, '.insrc/tmp', reviewId);
 		const durablePath = join(ROOT, '.insrc/artifacts', `REVIEW-${reviewId}.json`);
-		mkdirSync(tempDir, { recursive: true });
+		const nestedDir = join(tempDir, 'rounds', 'round-1');
+		mkdirSync(nestedDir, { recursive: true });
 		writeFileSync(join(tempDir, 'round-1-output.json'), JSON.stringify({ findings: [] }), 'utf8');
+		// A nested subdirectory, several levels deep -- the gate caught that the
+		// first emptyDirectoryContents implementation only pinned the TOP-level
+		// directory, leaving every NESTED directory it recursed into unpinned.
+		writeFileSync(join(nestedDir, 'findings.json'), JSON.stringify({ findings: ['f1'] }), 'utf8');
 		_setCheckpointDepsForTests({ resolveRepoRoot });
 
 		try {
 			await finalizeAndCleanup(reviewId, { reviewId, final: true });
 			assert.equal(existsSync(durablePath), true, 'the durable copy must still be written');
-			assert.equal(existsSync(tempDir), false, 'the whole temp folder must be deleted, with no checkpoint.json ever required to exist');
+			assert.equal(existsSync(tempDir), false, 'the whole temp folder, including every nested subdirectory, must be deleted, with no checkpoint.json ever required to exist');
 		} finally {
 			rmSync(tempDir, { recursive: true, force: true });
 			rmSync(durablePath, { force: true });

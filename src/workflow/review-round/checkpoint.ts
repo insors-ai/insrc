@@ -354,18 +354,49 @@ export async function finalizeAndCleanup(reviewId: string, finalOutput: unknown)
 	}
 }
 
-/** Recursively empties `dirPath`'s own contents (files and subdirectories),
- *  without ever removing `dirPath` itself. A symlinked entry (file or
- *  directory) is unlinked as the link it is, never followed into whatever it
- *  points at. */
+/**
+ * Recursively empties `dirPath`'s own contents (files and subdirectories),
+ * without ever removing `dirPath` itself. A symlinked entry (file or
+ * directory) is unlinked as the link it is, never followed into whatever it
+ * points at -- unlink(2) never follows a symlink regardless, so a plain file
+ * entry needs no further pinning before removal.
+ *
+ * A subdirectory entry, however, is pinned via pinDirectory before recursing
+ * into it, exactly as the top-level directory is in finalizeAndCleanup --
+ * externally reported P2, round 2: emptying contents by re-deriving each
+ * child's path from readdirSync's own Dirent list and recursing into that
+ * path directly (without re-pinning) left the identical check-then-act gap
+ * open one level down, for every nested directory a review's own scratch
+ * folder might contain, not just the top-level one. Pinning recursively at
+ * every level closes it the same way at every depth.
+ */
 function emptyDirectoryContents(dirPath: string): void {
 	for (const entry of readdirSync(dirPath, { withFileTypes: true })) {
 		const childPath = join(dirPath, entry.name);
-		if (entry.isDirectory() && !entry.isSymbolicLink()) {
-			emptyDirectoryContents(childPath);
-			rmdirSync(childPath);
-		} else {
+		if (entry.isSymbolicLink()) {
 			unlinkSync(childPath);
+			continue;
+		}
+		if (!entry.isDirectory()) {
+			unlinkSync(childPath);
+			continue;
+		}
+		let child: { readonly fd: number; readonly path: string };
+		try {
+			child = pinDirectory(childPath);
+		} catch (err) {
+			if ((err as NodeJS.ErrnoException).code === 'ENOENT') continue; // raced away already -- nothing left to empty
+			throw err;
+		}
+		try {
+			emptyDirectoryContents(child.path);
+		} finally {
+			closeSync(child.fd);
+		}
+		try {
+			rmdirSync(childPath);
+		} catch (err) {
+			if ((err as NodeJS.ErrnoException).code !== 'ENOENT') throw err;
 		}
 	}
 }

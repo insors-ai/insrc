@@ -6,7 +6,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -235,6 +235,80 @@ describe('renderReviewReport and ReviewReportDocgenCall', () => {
 			assert.doesNotThrow(() => readFileSync(path, 'utf8'), 'the returned path must be readable with no further action');
 		} finally {
 			rmSync(join(ROOT, '.insrc/tmp', call.reviewId), { recursive: true, force: true });
+			_setReviewReportDepsForTests({});
+		}
+	});
+
+	it('a symlinked review directory is never written through, even outside .insrc/tmp', async () => {
+		const reviewId = `review-symlinkdir-${process.pid}-${Date.now()}`;
+		const outsideDir = mkdtempSync(join(tmpdir(), 'insrc-review-report-outside-'));
+		const tmpRoot = join(ROOT, '.insrc/tmp');
+		mkdirSync(tmpRoot, { recursive: true });
+		const reviewDir = join(tmpRoot, reviewId);
+		symlinkSync(outsideDir, reviewDir, 'dir');
+		_setReviewReportDepsForTests({ resolveRepoRoot });
+
+		try {
+			await assert.rejects(
+				() => renderReviewReport({ reviewId, round: 1 }, [finding('f1')], undefined, undefined),
+				/is a symlink/,
+				'a symlinked review directory must be rejected, never written through',
+			);
+			assert.equal(existsSync(join(outsideDir, `review-report-round-1.md`)), false, 'no file must ever land in the symlink target outside the repository');
+		} finally {
+			rmSync(reviewDir, { force: true });
+			rmSync(outsideDir, { recursive: true, force: true });
+			_setReviewReportDepsForTests({});
+		}
+	});
+
+	it('a symlinked report file is never written through -- it must not truncate or overwrite an unrelated external file', async () => {
+		const reviewId = `review-symlinkfile-${process.pid}-${Date.now()}`;
+		const reviewDir = join(ROOT, '.insrc/tmp', reviewId);
+		mkdirSync(reviewDir, { recursive: true });
+		const externalFile = join(mkdtempSync(join(tmpdir(), 'insrc-review-report-external-')), 'victim.txt');
+		const originalContent = 'do not overwrite me';
+		writeFileSync(externalFile, originalContent, 'utf8');
+		symlinkSync(externalFile, join(reviewDir, 'review-report-round-1.md'), 'file');
+		_setReviewReportDepsForTests({ resolveRepoRoot });
+
+		try {
+			await assert.rejects(
+				() => renderReviewReport({ reviewId, round: 1 }, [finding('f1')], undefined, undefined),
+				/is a symlink/,
+				'a symlinked report file must be rejected, never written through',
+			);
+			assert.equal(readFileSync(externalFile, 'utf8'), originalContent, 'the external file the symlink pointed to must be left untouched');
+		} finally {
+			rmSync(reviewDir, { recursive: true, force: true });
+			rmSync(dirname(externalFile), { recursive: true, force: true });
+			_setReviewReportDepsForTests({});
+		}
+	});
+
+	it("review A's own directory aliased (via symlink) to sibling review B's genuine directory is rejected, not written through", async () => {
+		const reviewIdB = `review-siblingdir-b-${process.pid}-${Date.now()}`;
+		const reviewIdA = `review-siblingdir-a-${process.pid}-${Date.now()}`;
+		const tmpRoot = join(ROOT, '.insrc/tmp');
+		mkdirSync(tmpRoot, { recursive: true });
+		const dirB = join(tmpRoot, reviewIdB);
+		const dirA = join(tmpRoot, reviewIdA);
+		mkdirSync(dirB, { recursive: true });
+		// review A's own directory IS a symlink, but to a SIBLING's genuine directory --
+		// still legitimately inside .insrc/tmp, so a root-containment check alone would pass it.
+		symlinkSync(dirB, dirA, 'dir');
+		_setReviewReportDepsForTests({ resolveRepoRoot });
+
+		try {
+			await assert.rejects(
+				() => renderReviewReport({ reviewId: reviewIdA, round: 1 }, [finding('f1')], undefined, undefined),
+				/is a symlink/,
+				'review A must never write through a directory alias to review B, even though B is a genuine sibling directory',
+			);
+			assert.equal(existsSync(join(dirB, 'review-report-round-1.md')), false, 'review B\'s own directory must never receive a write made in review A\'s name');
+		} finally {
+			rmSync(dirA, { force: true });
+			rmSync(dirB, { recursive: true, force: true });
 			_setReviewReportDepsForTests({});
 		}
 	});

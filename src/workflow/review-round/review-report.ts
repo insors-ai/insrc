@@ -16,8 +16,8 @@
  * disk -- a mismatch with ac1's literal "persisted MD artifact" requirement.
  */
 
-import { mkdirSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { existsSync, lstatSync, mkdirSync, writeFileSync } from 'node:fs';
+import { dirname, join, relative, sep } from 'node:path';
 
 import { resolveRepoPath } from '../../daemon/steps/resolve-repo.js';
 import type { Finding } from './finding.js';
@@ -36,7 +36,7 @@ export interface ReviewReportDocgenCall {
  *  daemon client or the real filesystem outside a throwaway fixture. */
 export interface ReviewReportDeps {
 	readonly resolveRepoRoot?: (() => Promise<string>) | undefined;
-	readonly writeReport?:     ((path: string, content: string) => void) | undefined;
+	readonly writeReport?:     ((repoRoot: string, path: string, content: string) => void) | undefined;
 }
 
 let testDeps: ReviewReportDeps = {};
@@ -76,8 +76,35 @@ function reportPath(repoRoot: string, reviewId: string, round: number): string {
 	return join(repoRoot, '.insrc/tmp', reviewId, `review-report-round-${round}.md`);
 }
 
-function defaultWriteReport(path: string, content: string): void {
+/**
+ * Rejects if ANY existing path segment between repoRoot and the target is itself
+ * a symlink -- reviewId already passed requireValidReviewId's LEXICAL check, but
+ * mkdirSync/writeFileSync still FOLLOW an existing symlink regardless of the
+ * lexical path given to them: a symlinked review directory, a symlinked report
+ * file, or a symlinked ancestor (even .insrc/tmp itself) could otherwise redirect
+ * the write outside the repository, into a sibling review's own genuine directory,
+ * or onto an unrelated file, truncating it. lstat (unlike stat) reports the link
+ * itself, so a symlinked segment reports isSymbolicLink() true regardless of what
+ * it points at -- walking every segment, rather than just the leaf, is what also
+ * catches a symlinked ancestor.
+ */
+function requireNoSymlinkInPath(repoRoot: string, target: string): void {
+	const rel = relative(repoRoot, target);
+	let current = repoRoot;
+	for (const segment of rel.split(sep)) {
+		current = join(current, segment);
+		if (existsSync(current) && lstatSync(current).isSymbolicLink()) {
+			throw new Error(`renderReviewReport: ${current} is a symlink -- refusing to write through it`);
+		}
+	}
+}
+
+function defaultWriteReport(repoRoot: string, path: string, content: string): void {
+	requireNoSymlinkInPath(repoRoot, path);
 	mkdirSync(dirname(path), { recursive: true });
+	// Re-checked after mkdirSync: closes the narrow window where a segment could be
+	// swapped for a symlink between validation and the write that follows it.
+	requireNoSymlinkInPath(repoRoot, path);
 	writeFileSync(path, content, 'utf8');
 }
 
@@ -140,6 +167,6 @@ export async function renderReviewReport(
 	}
 	const content = `${sections.join('\n')}\n`;
 
-	writeReport(path, content);
+	writeReport(repoRoot, path, content);
 	return path;
 }

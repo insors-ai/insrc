@@ -32,8 +32,9 @@
  * since the caller already has everything it needs to present the report.
  */
 
-import { lstatSync, mkdirSync, writeFileSync } from 'node:fs';
+import { closeSync, constants as fsConstants, lstatSync, mkdirSync, openSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, sep } from 'node:path';
+import { randomBytes } from 'node:crypto';
 
 import { resolveRepoPath } from '../../daemon/steps/resolve-repo.js';
 import type { Finding } from './finding.js';
@@ -137,10 +138,82 @@ function requireNoSymlinkInPath(repoRoot: string, target: string): void {
 function defaultWriteReport(repoRoot: string, path: string, content: string): void {
 	requireNoSymlinkInPath(repoRoot, path);
 	mkdirSync(dirname(path), { recursive: true });
-	// Re-checked after mkdirSync: closes the narrow window where a segment could be
-	// swapped for a symlink between validation and the write that follows it.
+	// Re-checked after mkdirSync: narrows the window where a segment could be
+	// swapped for a symlink between validation and the publish that follows it.
+	// publishGuarded below closes the remainder: it never checks-then-writes
+	// `path` itself at all, so nothing that happens to `path` after this point
+	// -- however it happens, and regardless of timing -- can matter.
 	requireNoSymlinkInPath(repoRoot, path);
-	writeFileSync(path, content, 'utf8');
+	publishGuarded(path, content);
+}
+
+/**
+ * Publishes `content` at `path` without ever reading through, following, or
+ * truncating-in-place whatever currently occupies that name -- externally
+ * reported as a second P2 against `3d7937145` (reproduced, against this
+ * exact function, two ways): (1) a plain `writeFileSync(path, ...)` follows
+ * an existing symlink at `path`, including one substituted there in the
+ * instant after requireNoSymlinkInPath's own last check above -- the check
+ * and a separate write are still two syscalls, so the gap between them,
+ * however narrow, is a real window a concurrent writer can win; (2) even
+ * with no symlink involved at all, `writeFileSync(path, ...)` truncates
+ * whatever INODE `path` currently names, and a hard link lstat reports as an
+ * ordinary regular file -- indistinguishable from a genuine report -- shares
+ * that inode with an unrelated file elsewhere, so the "safe" case the
+ * symlink check was never meant to flag turns out to corrupt a file outside
+ * the review directory just the same.
+ *
+ * Writing the content to a freshly created, uniquely and unpredictably
+ * named sibling file first (`O_CREAT|O_EXCL|O_NOFOLLOW`: the open can
+ * neither target nor follow any existing name, since the name has never
+ * existed until this call creates it) and then renaming that sibling over
+ * `path` sidesteps both failure modes at once, independent of timing:
+ * `rename(2)` replaces `path`'s own directory entry atomically, pointing it
+ * at the new inode, without ever dereferencing whatever name or inode was
+ * there before -- a symlink is replaced as a link, never followed into its
+ * target, and a hard-linked file is merely unlinked from this one name,
+ * leaving its other link, and that inode's content, completely untouched.
+ * Because the rename is the only operation this function ever applies to
+ * `path` itself, there is no check-on-`path`-then-separately-write-to-`path`
+ * pairing left to race at all -- the remaining ancestor-directory check
+ * above (requireNoSymlinkInPath on `path`'s own containing directories) is
+ * the one piece a bare rename cannot cover, since rename still resolves
+ * -- and can still be misdirected by -- a symlinked ancestor in `path`'s own
+ * dirname.
+ */
+function publishGuarded(path: string, content: string): void {
+	const tempPath = join(dirname(path), `.review-report-${randomBytes(8).toString('hex')}.tmp`);
+	// openSync (not writeFileSync's string-only `flag`) so O_NOFOLLOW's numeric
+	// constant can be combined in: the name has never existed until this call
+	// creates it, so O_CREAT|O_EXCL alone already cannot target or follow any
+	// existing name, but O_NOFOLLOW documents that guarantee explicitly rather
+	// than relying on O_EXCL's side effect alone.
+	const fd = openSync(tempPath, fsConstants.O_WRONLY | fsConstants.O_CREAT | fsConstants.O_EXCL | fsConstants.O_NOFOLLOW);
+	try {
+		writeFileSync(fd, content, 'utf8');
+	} finally {
+		closeSync(fd);
+	}
+	try {
+		renameSync(tempPath, path);
+	} catch (err) {
+		try { unlinkSync(tempPath); } catch { /* best effort cleanup; the rename's own error is what matters */ }
+		throw err;
+	}
+}
+
+/**
+ * Test-only direct access to publishGuarded's own guarantee. renderReviewReport's
+ * upfront requireNoSymlinkInPath refuses a pre-existing symlink at `path` before
+ * ever reaching publishGuarded, so that path alone cannot exercise publishGuarded's
+ * independent safety -- which holds regardless of WHY or WHEN something already
+ * occupies `path` (a hard link lstat cannot tell apart from a plain file, or a
+ * symlink substituted after the last check). Exported solely so the regression
+ * tests for both externally reported repro cases can exercise this guarantee
+ * directly and deterministically, without needing a real concurrent race.
+ */
+export function _publishGuardedForTests(path: string, content: string): void {
+	publishGuarded(path, content);
 }
 
 function renderFinding(finding: Finding): string {

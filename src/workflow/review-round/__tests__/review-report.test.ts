@@ -6,13 +6,13 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, linkSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { createConnection, createServer, type Server, type Socket } from 'node:net';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { _setReviewReportDepsForTests, renderReviewReport } from '../review-report.js';
+import { _publishGuardedForTests, _setReviewReportDepsForTests, renderReviewReport } from '../review-report.js';
 import type { ReviewReportDocgenCall } from '../review-report.js';
 import type { Finding } from '../finding.js';
 import type { ReconciliationResult } from '../reconciliation.js';
@@ -386,6 +386,58 @@ describe('renderReviewReport and ReviewReportDocgenCall', () => {
 			rmSync(dirA, { force: true });
 			rmSync(dirB, { recursive: true, force: true });
 			_setReviewReportDepsForTests({});
+		}
+	});
+
+	it('a report file sharing an inode via a hard link to an outside file is never written through -- the outside file keeps its own content', async () => {
+		const reviewId = `review-hardlink-${process.pid}-${Date.now()}`;
+		const reviewDir = join(ROOT, '.insrc/tmp', reviewId);
+		mkdirSync(reviewDir, { recursive: true });
+		const targetPath = join(reviewDir, 'review-report-round-1.md');
+		// A hard link requires both names on the SAME filesystem -- /tmp is
+		// typically a separate mount from the repo, so the sentinel lives
+		// inside the repo's own .insrc/tmp, just outside the review directory.
+		const outsideDir = join(ROOT, '.insrc/tmp', `review-hardlink-outside-${process.pid}-${Date.now()}`);
+		mkdirSync(outsideDir, { recursive: true });
+		const sentinelPath = join(outsideDir, 'sentinel.md');
+		const originalContent = 'ORIGINAL SENTINEL CONTENT -- do not overwrite';
+		writeFileSync(sentinelPath, originalContent, 'utf8');
+		// A hard link, not a symlink: lstat reports targetPath as an ordinary regular
+		// file, indistinguishable from a genuine report -- requireNoSymlinkInPath
+		// cannot and does not flag this, by design (it is not a symlink).
+		linkSync(sentinelPath, targetPath);
+		_setReviewReportDepsForTests({ resolveRepoRoot });
+
+		try {
+			const { path, markdown } = await renderReviewReport({ reviewId, round: 1 }, [finding('f1')], undefined, undefined);
+			assert.equal(path, targetPath);
+			assert.equal(readFileSync(targetPath, 'utf8'), markdown, 'the report\'s own name must now hold the newly rendered markdown');
+			assert.equal(readFileSync(sentinelPath, 'utf8'), originalContent, 'the outside file sharing the old inode must be untouched -- publishGuarded renames a new inode over the report\'s name; it never writes through the inode the name used to share');
+		} finally {
+			rmSync(reviewDir, { recursive: true, force: true });
+			rmSync(outsideDir, { recursive: true, force: true });
+			_setReviewReportDepsForTests({});
+		}
+	});
+
+	it('publishGuarded never follows a symlink already occupying the destination, proven directly -- renderReviewReport\'s own upfront check would otherwise refuse before ever reaching this, the exact state a symlink substituted after that last check would leave behind', () => {
+		const dir = mkdtempSync(join(tmpdir(), 'insrc-review-report-race-'));
+		const targetPath = join(dir, 'review-report-round-1.md');
+		const sentinelPath = join(dir, 'outside-sentinel.md');
+		const originalContent = 'ORIGINAL SENTINEL CONTENT -- do not overwrite';
+		writeFileSync(sentinelPath, originalContent, 'utf8');
+		// Simulates the exact state a symlink substituted in the instant after
+		// requireNoSymlinkInPath's last check would leave: targetPath is a live
+		// symlink pointing at an unrelated file, at the moment publishGuarded runs.
+		symlinkSync(sentinelPath, targetPath);
+
+		try {
+			_publishGuardedForTests(targetPath, '# New report\n');
+			assert.equal(lstatSync(targetPath).isSymbolicLink(), false, 'the destination name must now be a plain file -- rename replaces the link itself rather than writing through it');
+			assert.equal(readFileSync(targetPath, 'utf8'), '# New report\n');
+			assert.equal(readFileSync(sentinelPath, 'utf8'), originalContent, 'the symlink\'s own former target must be untouched -- the write never followed it');
+		} finally {
+			rmSync(dir, { recursive: true, force: true });
 		}
 	});
 });

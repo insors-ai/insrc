@@ -6,7 +6,7 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "draft",
+      "status": "completed",
       "revision": {
         "number": 25,
         "contentHash": "001611376105c817a902848c23a29df5c076d2e8039b0b8d3bc5824db967b06b",
@@ -17,7 +17,19 @@
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 25,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-21T14:49:24.389Z",
+        "override": {
+          "reason": "Automated code review is unavailable while being rewritten (CLAUDE.md); review conducted instead via externally-reported review packets against /tmp/.insrc/review-packet-03f4fd3b9102aab8-s5.md across 4 rounds (9 P2s fixed) plus 6 gate-caught gaps, all fixed and verified by revert-and-confirm-failure. Both Tasks pass the build gate cleanly. User explicitly approved with override in chat."
+        }
+      }
     },
     "workflow": "build",
     "runId": "store-ae64bbd4-4d3a-400b-b01f-e6338ea4303f",

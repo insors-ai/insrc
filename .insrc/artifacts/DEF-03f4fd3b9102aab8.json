@@ -23,7 +23,7 @@
     "seededFromSpec": "e8632c1ae22c3bf8",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "approved",
+      "status": "completed",
       "revision": {
         "number": 1,
         "contentHash": "db0cbca8784052e8ea16d2f00e522647c1cefbfbdedb3f68401c41467a6d1bb6",
@@ -64,7 +64,7 @@
         "s4": "open",
         "s5": "open"
       },
-      "lastSyncedAt": "2026-11-21T06:53:33.756Z"
+      "lastSyncedAt": "2026-11-21T08:16:16.559Z"
     }
   },
   "body": {

@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c91da4c4-8fad-4358-857c-4727d35f361d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-21T15:13:21.952Z",
+    "epicCreatedAt": "2026-11-18T08:51:40.429Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "779e9a08142cb057",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add SecurityLocator interface extending Locator",
+      "parent": {
+        "entityId": "STORY-779e9a08142cb057-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-779e9a08142cb057-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3271b9532889e5198e2378e495950451c5b09277cb82e61dcaad10899937a6d5",
+        "at": "2026-11-21T15:13:21.956Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-21T15:13:21.957Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add SecurityLocator interface extending Locator",
+    "summary": "Add `SecurityLocator` as a plain TS interface extending the framework's `Locator` (src/workflow/artifact-core/types.ts:271-274) with trustBoundaryId and taintPathStepIndex as first-class optional fields, following the open-Locator-kind extensibility pattern. No change to Locator or Pointer themselves -- a security-graph citation is represented as Pointer{path, section: SecurityLocator, contentHash?}, reusing Pointer unchanged.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "SecurityLocator structurally extends Locator -- kind and value fields present plus trustBoundaryId and taintPathStepIndex",
+      "A SecurityLocator instance is assignable to Pointer.section with no change to Pointer's own type"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "SecurityLocator structural extension of Locator/Pointer (trust-boundary id + taint-path step index fields)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

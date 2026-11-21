@@ -226,6 +226,11 @@ Build a generic `SideRecord<T>` abstraction (read/write/finalize-and-cleanup par
 - ep3 (partial): invariantsToPreserve cite Epic constraint source 'c1' rather than an s1 analyze-bundle entity, since this Story is entirely new capability with no current-code invariant to analyze -- the Epic's own k1/k6/k7/k8 constraints are the only available grounding. Flagged for completeness; not considered blocking since no current-behaviour invariant exists to cite instead.
 - Integration gap (non-blocking, HLD-aligned): this LLD exposes writeCheckpoint/readCheckpoint/finalizeAndCleanup and proves them in isolation, but wiring them into s1's own round-driver cycle (calling writeCheckpoint after each completed unit, readCheckpoint before starting a resumed review, and finalizeAndCleanup at a terminal state) is s1's own adjacent-boundary responsibility, not built here.
 
+## Resolved questions
+
+- `qefc9984a` — ep3 (partial): invariantsToPreserve cite Epic constraint source 'c1' rather than an s1 analyze-bundle entity, since this Story is entirely new capability with no current-code invariant to analyze -- the Epic's own k1/k6/k7/k8 constraints are the only available grounding. Flagged for completeness; not considered blocking since no current-behaviour invariant exists to cite instead.
+  - **resolved**: Retain Epic grounding — Preserves the available evidence (Epic constraints k1/k6/k7/k8 via c1) and clarifies its provenance as upstream design grounding rather than existing-code analysis, since this Story is entirely new capability with no current-behaviour invariant to cite instead. _(2026-11-21T08:03:50.464Z)_
+
 ## Citations
 
 - **[[c1]]** `code` `src/workflow/review-round/types.ts:19-24`

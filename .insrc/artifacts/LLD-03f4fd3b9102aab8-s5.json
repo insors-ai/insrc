@@ -54,7 +54,16 @@
       "references": [],
       "attachments": []
     },
-    "revision": 2
+    "revision": 2,
+    "questionResolutions": {
+      "qefc9984a": {
+        "question": "ep3 (partial): invariantsToPreserve cite Epic constraint source 'c1' rather than an s1 analyze-bundle entity, since this Story is entirely new capability with no current-code invariant to analyze -- the Epic's own k1/k6/k7/k8 constraints are the only available grounding. Flagged for completeness; not considered blocking since no current-behaviour invariant exists to cite instead.",
+        "status": "resolved",
+        "choice": "Retain Epic grounding",
+        "rationale": "Preserves the available evidence (Epic constraints k1/k6/k7/k8 via c1) and clarifies its provenance as upstream design grounding rather than existing-code analysis, since this Story is entirely new capability with no current-behaviour invariant to cite instead.",
+        "resolvedAt": "2026-11-21T08:03:50.464Z"
+      }
+    }
   },
   "body": {
     "summary": {

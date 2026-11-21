@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4da42b31-4541-4f06-a7f1-e56afce4be40",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-21T08:14:24.439Z",
+    "epicCreatedAt": "2026-11-18T06:14:00.057Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "03f4fd3b9102aab8",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Add ReviewCheckpoint and writeCheckpoint/readCheckpoint/finalizeAndCleanup to a new checkpoint.ts",
+      "parent": {
+        "entityId": "STORY-03f4fd3b9102aab8-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-03f4fd3b9102aab8-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#224",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "329af62e65d28c2e5ddbcef9d29e80aaeb10a41a3032068cc0694e0bc02de0d3",
+        "at": "2026-11-21T08:14:24.440Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-21T08:14:24.441Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add ReviewCheckpoint and writeCheckpoint/readCheckpoint/finalizeAndCleanup to a new checkpoint.ts",
+    "summary": "New src/workflow/review-round/checkpoint.ts exporting the ReviewCheckpoint interface and the three functions exactly per the LLD's contract: reviewId literal-identifier validation, canonical repo resolution, lstat-based symlink safety before every write/delete, and a guarded temp-file+rename publish for writeCheckpoint (reusing review-report.ts's publishGuarded pattern) so a crash mid-write never leaves a corrupted checkpoint. finalizeAndCleanup copies finalOutput into durable storage before deleting .insrc/tmp/<reviewId>/, never the reverse, and is idempotent when called twice. readCheckpoint treats a missing or malformed checkpoint file identically (undefined), never throwing. Plus a compile-time typecheck fixture proving the exact three-function/ReviewCheckpoint shape (matching review-report.ts's own __type-tests__ convention). Sized M: this bundles three functions plus the full symlink-safety and guarded-publish scope from the start, comparable to review-report.ts's final state rather than its initial draft.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "writeCheckpoint, readCheckpoint and finalizeAndCleanup exist with exactly the signatures in contractDetails.api, and ReviewCheckpoint exists with exactly dataModelChanges' shape",
+      "writeCheckpoint publishes via a guarded temp-file+rename primitive (never a direct writeFileSync), satisfying the atomic-write error case",
+      "finalizeAndCleanup's durable copy always precedes its .insrc/tmp/<reviewId>/ deletion, and a copy failure leaves the temp folder intact",
+      "readCheckpoint resolves to undefined for a missing OR malformed checkpoint file, never throwing on corruption",
+      "every write and the recursive delete are preceded by an lstat-based symlink-safety check reusing review-report.ts's established helper",
+      "the typecheck fixture compiles and fails to compile under every @ts-expect-error negative case"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "writeCheckpoint writes a ReviewCheckpoint JSON record to .insrc/tmp/<reviewId>/checkpoint.json containing exactly {reviewId, lastCompletedUnit}, overwriting any prior checkpoint for the same reviewId"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

@@ -1,0 +1,126 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 25,
+        "contentHash": "001611376105c817a902848c23a29df5c076d2e8039b0b8d3bc5824db967b06b",
+        "at": "2026-11-21T14:42:10.004Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-ae64bbd4-4d3a-400b-b01f-e6338ea4303f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-21T08:19:58.921Z",
+    "epicCreatedAt": "2026-11-18T06:14:00.057Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "03f4fd3b9102aab8",
+    "storyId": "s5",
+    "revision": 25,
+    "updatedAt": "2026-11-21T14:40:59.630Z",
+    "authoredBy": "controller",
+    "epicSlug": "review-rounds-reconciliation-recovery"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      }
+    ],
+    "testRecord": {
+      "md": "docs/epics/review-rounds-reconciliation-recovery-E2026111803f4fd3b/S005/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/workflow/review-round/__tests__/checkpoint.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T14:40:59.630Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-round/__type-tests__/checkpoint.typecheck.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T14:40:59.630Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-round/checkpoint.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T14:40:59.630Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-03f4fd3b9102aab8-s5.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T14:40:59.630Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/review-rounds-reconciliation-recovery-E2026111803f4fd3b/S005/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T14:40:59.630Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-03f4fd3b9102aab8-s5-t1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T14:40:59.630Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-03f4fd3b9102aab8-s5-t2.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T14:40:59.630Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASKS-03f4fd3b9102aab8-s5.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T14:40:59.630Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASKS-03f4fd3b9102aab8-s5.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T14:40:59.630Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/review-rounds-reconciliation-recovery-E2026111803f4fd3b/S005/SELF-REVIEW.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T14:40:59.630Z"
+      }
+    ],
+    "commit": "fe7b99bd4"
+  },
+  "citations": []
+}

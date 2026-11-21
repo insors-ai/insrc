@@ -1,0 +1,456 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 25,
+        "contentHash": "234e61fcd30774ba80c784694a32c3dc2415acbfedbdc164f804028d24fa64bc",
+        "at": "2026-11-21T14:41:00.170Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "03f4fd3b9102aab8",
+    "storyId": "s5",
+    "createdAt": "2026-11-21T08:19:58.921Z",
+    "updatedAt": "2026-11-21T14:40:59.630Z",
+    "epicCreatedAt": "2026-11-18T06:14:00.057Z",
+    "epicSlug": "review-rounds-reconciliation-recovery",
+    "revision": 25
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "fe7b99bd4",
+        "ranAt": "2026-11-21T14:39:11.960Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "writeCheckpoint writes a ReviewCheckpoint JSON record to .insrc/tmp/<reviewId>/checkpoint.json containing exactly {reviewId, lastCompletedUnit}, overwriting any prior checkpoint for the same reviewId",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/checkpoint.test.ts",
+                "title": "writeCheckpoint writes a ReviewCheckpoint JSON record to .insrc/tmp/<reviewId>/checkpoint.json containing exactly {reviewId, lastCompletedUnit}, overwriting any prior checkpoint for the same reviewId",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-round/__tests__/checkpoint.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4086,
+            "titles": [
+              {
+                "title": "writeCheckpoint writes a ReviewCheckpoint JSON record to .insrc/tmp/<reviewId>/checkpoint.json containing exactly {reviewId, lastCompletedUnit}, overwriting any prior checkpoint for the same reviewId",
+                "result": "pass"
+              },
+              {
+                "title": "readCheckpoint resolves to undefined when no checkpoint file exists yet for a reviewId, rather than throwing",
+                "result": "pass"
+              },
+              {
+                "title": "readCheckpoint resolves to the last-written ReviewCheckpoint after writeCheckpoint has been called, so a resumed review can continue from lastCompletedUnit rather than re-running completed units",
+                "result": "pass"
+              },
+              {
+                "title": "readCheckpoint's own reviewId field, read back from the checkpoint record, is exactly the identity k8 requires -- the same string as both the temp folder name and the record's own content",
+                "result": "pass"
+              },
+              {
+                "title": "finalizeAndCleanup copies finalOutput into durable artifact storage before deleting the .insrc/tmp/<reviewId>/ folder, in that order",
+                "result": "pass"
+              },
+              {
+                "title": "if finalizeAndCleanup's durable copy write fails, the .insrc/tmp/<reviewId>/ folder is not deleted",
+                "result": "pass"
+              },
+              {
+                "title": "finalizeAndCleanup is idempotent: calling it a second time for a reviewId whose temp folder was already deleted by an earlier successful call succeeds without error",
+                "result": "pass"
+              },
+              {
+                "title": "writeCheckpoint called repeatedly for the same reviewId overwrites the prior checkpoint rather than accumulating a history",
+                "result": "pass"
+              },
+              {
+                "title": "a reviewId containing a path-traversal segment is rejected before any filesystem access, for writeCheckpoint, readCheckpoint, and finalizeAndCleanup alike",
+                "result": "pass"
+              },
+              {
+                "title": "when the reviewed repository cannot be resolved, writeCheckpoint/readCheckpoint/finalizeAndCleanup reject rather than silently defaulting to the daemon process's own cwd",
+                "result": "pass"
+              },
+              {
+                "title": "a symlinked review directory or checkpoint file is never written through by writeCheckpoint, even outside .insrc/tmp",
+                "result": "pass"
+              },
+              {
+                "title": "writeCheckpoint never creates a new directory through a symlinked ancestor (.insrc/tmp itself, not just the review directory) -- recursive directory creation must not silently follow a swapped ancestor out of the repository",
+                "result": "pass"
+              },
+              {
+                "title": "a symlinked .insrc/tmp/<reviewId>/ directory is never deleted through by finalizeAndCleanup",
+                "result": "pass"
+              },
+              {
+                "title": "a checkpoint.json file that is not valid JSON, or does not match ReviewCheckpoint's shape, is treated by readCheckpoint as though no checkpoint exists, rather than throwing or returning unvalidated data",
+                "result": "pass"
+              },
+              {
+                "title": "finalizeAndCleanup succeeds even when checkpoint.json was never written at all, deleting whatever the .insrc/tmp/<reviewId>/ folder currently contains as a whole",
+                "result": "pass"
+              },
+              {
+                "title": "finalizeAndCleanup propagates a permission failure during cleanup rather than reporting success (externally reported P2)",
+                "result": "pass"
+              },
+              {
+                "title": "readCheckpoint rejects a mismatched identity: a checkpoint.json whose own reviewId field does not match the one requested is treated as though no checkpoint exists",
+                "result": "pass"
+              },
+              {
+                "title": "readCheckpoint never follows a symlinked checkpoint.json into another review's own record, even when the symlinked record is well-formed and would otherwise pass every other check",
+                "result": "pass"
+              },
+              {
+                "title": "readCheckpoint never returns a substituted record even when the original checkpoint already existed and the substitution carries the same identity as both the requested reviewId and the checkpoint it replaced",
+                "result": "pass"
+              },
+              {
+                "title": "readThroughPinnedLeaf refuses a symlink already occupying the destination, proven directly -- readCheckpoint's own pinDirectoryChain call would otherwise refuse before ever reaching this, the exact state a symlink substituted after that last check would leave behind",
+                "result": "pass"
+              },
+              {
+                "title": "readCheckpoint resolves to undefined, rather than rejecting, when the review directory itself is a symlink -- an ancestor-symlink failure is treated the same as an absent checkpoint, allowing a fresh start instead of aborting recovery",
+                "result": "pass"
+              },
+              {
+                "title": "readCheckpoint resolves to undefined, rather than rejecting, when an ancestor is replaced by a plain file (ENOTDIR), not just a symlink",
+                "result": "pass"
+              },
+              {
+                "title": "a review directory replaced by a symlink during the narrow window between writeCheckpoint's/finalizeAndCleanup's own checks and their actual use is never written through or deleted through outside the repository (best-effort concurrent regression)",
+                "result": "pass"
+              },
+              {
+                "title": "an ancestor (.insrc/tmp itself) replaced by a symlink during the narrow window around writeCheckpoint's own directory creation never has a new directory created through it outside the repository (best-effort concurrent regression)",
+                "result": "pass"
+              },
+              {
+                "title": "writeCheckpoint/readCheckpoint/finalizeAndCleanup and ReviewCheckpoint",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "fe7b99bd4",
+        "ranAt": "2026-11-21T14:40:59.630Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "readCheckpoint resolves to undefined when no checkpoint file exists yet for a reviewId, rather than throwing",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/checkpoint.test.ts",
+                "title": "readCheckpoint resolves to undefined when no checkpoint file exists yet for a reviewId, rather than throwing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "readCheckpoint resolves to the last-written ReviewCheckpoint after writeCheckpoint has been called, so a resumed review can continue from lastCompletedUnit rather than re-running completed units",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/checkpoint.test.ts",
+                "title": "readCheckpoint resolves to the last-written ReviewCheckpoint after writeCheckpoint has been called, so a resumed review can continue from lastCompletedUnit rather than re-running completed units",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "readCheckpoint's own reviewId field, read back from the checkpoint record, is exactly the identity k8 requires -- the same string as both the temp folder name and the record's own content",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/checkpoint.test.ts",
+                "title": "readCheckpoint's own reviewId field, read back from the checkpoint record, is exactly the identity k8 requires -- the same string as both the temp folder name and the record's own content",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "finalizeAndCleanup copies finalOutput into durable artifact storage before deleting the .insrc/tmp/<reviewId>/ folder, in that order",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/checkpoint.test.ts",
+                "title": "finalizeAndCleanup copies finalOutput into durable artifact storage before deleting the .insrc/tmp/<reviewId>/ folder, in that order",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "if finalizeAndCleanup's durable copy write fails, the .insrc/tmp/<reviewId>/ folder is not deleted",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/checkpoint.test.ts",
+                "title": "if finalizeAndCleanup's durable copy write fails, the .insrc/tmp/<reviewId>/ folder is not deleted",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "finalizeAndCleanup is idempotent: calling it a second time for a reviewId whose temp folder was already deleted by an earlier successful call succeeds without error",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/checkpoint.test.ts",
+                "title": "finalizeAndCleanup is idempotent: calling it a second time for a reviewId whose temp folder was already deleted by an earlier successful call succeeds without error",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "writeCheckpoint called repeatedly for the same reviewId overwrites the prior checkpoint rather than accumulating a history",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/checkpoint.test.ts",
+                "title": "writeCheckpoint called repeatedly for the same reviewId overwrites the prior checkpoint rather than accumulating a history",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a reviewId containing a path-traversal segment is rejected before any filesystem access, for writeCheckpoint, readCheckpoint, and finalizeAndCleanup alike",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/checkpoint.test.ts",
+                "title": "a reviewId containing a path-traversal segment is rejected before any filesystem access, for writeCheckpoint, readCheckpoint, and finalizeAndCleanup alike",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "when the reviewed repository cannot be resolved, writeCheckpoint/readCheckpoint/finalizeAndCleanup reject rather than silently defaulting to the daemon process's own cwd",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/checkpoint.test.ts",
+                "title": "when the reviewed repository cannot be resolved, writeCheckpoint/readCheckpoint/finalizeAndCleanup reject rather than silently defaulting to the daemon process's own cwd",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a symlinked review directory or checkpoint file is never written through by writeCheckpoint, even outside .insrc/tmp",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/checkpoint.test.ts",
+                "title": "a symlinked review directory or checkpoint file is never written through by writeCheckpoint, even outside .insrc/tmp",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a symlinked .insrc/tmp/<reviewId>/ directory is never deleted through by finalizeAndCleanup",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/checkpoint.test.ts",
+                "title": "a symlinked .insrc/tmp/<reviewId>/ directory is never deleted through by finalizeAndCleanup",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a checkpoint.json file that is not valid JSON, or does not match ReviewCheckpoint's shape, is treated by readCheckpoint as though no checkpoint exists, rather than throwing or returning unvalidated data",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/checkpoint.test.ts",
+                "title": "a checkpoint.json file that is not valid JSON, or does not match ReviewCheckpoint's shape, is treated by readCheckpoint as though no checkpoint exists, rather than throwing or returning unvalidated data",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "finalizeAndCleanup succeeds even when checkpoint.json was never written at all, deleting whatever the .insrc/tmp/<reviewId>/ folder currently contains as a whole",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/checkpoint.test.ts",
+                "title": "finalizeAndCleanup succeeds even when checkpoint.json was never written at all, deleting whatever the .insrc/tmp/<reviewId>/ folder currently contains as a whole",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-round/__tests__/checkpoint.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4109,
+            "titles": [
+              {
+                "title": "writeCheckpoint writes a ReviewCheckpoint JSON record to .insrc/tmp/<reviewId>/checkpoint.json containing exactly {reviewId, lastCompletedUnit}, overwriting any prior checkpoint for the same reviewId",
+                "result": "pass"
+              },
+              {
+                "title": "readCheckpoint resolves to undefined when no checkpoint file exists yet for a reviewId, rather than throwing",
+                "result": "pass"
+              },
+              {
+                "title": "readCheckpoint resolves to the last-written ReviewCheckpoint after writeCheckpoint has been called, so a resumed review can continue from lastCompletedUnit rather than re-running completed units",
+                "result": "pass"
+              },
+              {
+                "title": "readCheckpoint's own reviewId field, read back from the checkpoint record, is exactly the identity k8 requires -- the same string as both the temp folder name and the record's own content",
+                "result": "pass"
+              },
+              {
+                "title": "finalizeAndCleanup copies finalOutput into durable artifact storage before deleting the .insrc/tmp/<reviewId>/ folder, in that order",
+                "result": "pass"
+              },
+              {
+                "title": "if finalizeAndCleanup's durable copy write fails, the .insrc/tmp/<reviewId>/ folder is not deleted",
+                "result": "pass"
+              },
+              {
+                "title": "finalizeAndCleanup is idempotent: calling it a second time for a reviewId whose temp folder was already deleted by an earlier successful call succeeds without error",
+                "result": "pass"
+              },
+              {
+                "title": "writeCheckpoint called repeatedly for the same reviewId overwrites the prior checkpoint rather than accumulating a history",
+                "result": "pass"
+              },
+              {
+                "title": "a reviewId containing a path-traversal segment is rejected before any filesystem access, for writeCheckpoint, readCheckpoint, and finalizeAndCleanup alike",
+                "result": "pass"
+              },
+              {
+                "title": "when the reviewed repository cannot be resolved, writeCheckpoint/readCheckpoint/finalizeAndCleanup reject rather than silently defaulting to the daemon process's own cwd",
+                "result": "pass"
+              },
+              {
+                "title": "a symlinked review directory or checkpoint file is never written through by writeCheckpoint, even outside .insrc/tmp",
+                "result": "pass"
+              },
+              {
+                "title": "writeCheckpoint never creates a new directory through a symlinked ancestor (.insrc/tmp itself, not just the review directory) -- recursive directory creation must not silently follow a swapped ancestor out of the repository",
+                "result": "pass"
+              },
+              {
+                "title": "a symlinked .insrc/tmp/<reviewId>/ directory is never deleted through by finalizeAndCleanup",
+                "result": "pass"
+              },
+              {
+                "title": "a checkpoint.json file that is not valid JSON, or does not match ReviewCheckpoint's shape, is treated by readCheckpoint as though no checkpoint exists, rather than throwing or returning unvalidated data",
+                "result": "pass"
+              },
+              {
+                "title": "finalizeAndCleanup succeeds even when checkpoint.json was never written at all, deleting whatever the .insrc/tmp/<reviewId>/ folder currently contains as a whole",
+                "result": "pass"
+              },
+              {
+                "title": "finalizeAndCleanup propagates a permission failure during cleanup rather than reporting success (externally reported P2)",
+                "result": "pass"
+              },
+              {
+                "title": "readCheckpoint rejects a mismatched identity: a checkpoint.json whose own reviewId field does not match the one requested is treated as though no checkpoint exists",
+                "result": "pass"
+              },
+              {
+                "title": "readCheckpoint never follows a symlinked checkpoint.json into another review's own record, even when the symlinked record is well-formed and would otherwise pass every other check",
+                "result": "pass"
+              },
+              {
+                "title": "readCheckpoint never returns a substituted record even when the original checkpoint already existed and the substitution carries the same identity as both the requested reviewId and the checkpoint it replaced",
+                "result": "pass"
+              },
+              {
+                "title": "readThroughPinnedLeaf refuses a symlink already occupying the destination, proven directly -- readCheckpoint's own pinDirectoryChain call would otherwise refuse before ever reaching this, the exact state a symlink substituted after that last check would leave behind",
+                "result": "pass"
+              },
+              {
+                "title": "readCheckpoint resolves to undefined, rather than rejecting, when the review directory itself is a symlink -- an ancestor-symlink failure is treated the same as an absent checkpoint, allowing a fresh start instead of aborting recovery",
+                "result": "pass"
+              },
+              {
+                "title": "readCheckpoint resolves to undefined, rather than rejecting, when an ancestor is replaced by a plain file (ENOTDIR), not just a symlink",
+                "result": "pass"
+              },
+              {
+                "title": "a review directory replaced by a symlink during the narrow window between writeCheckpoint's/finalizeAndCleanup's own checks and their actual use is never written through or deleted through outside the repository (best-effort concurrent regression)",
+                "result": "pass"
+              },
+              {
+                "title": "an ancestor (.insrc/tmp itself) replaced by a symlink during the narrow window around writeCheckpoint's own directory creation never has a new directory created through it outside the repository (best-effort concurrent regression)",
+                "result": "pass"
+              },
+              {
+                "title": "writeCheckpoint/readCheckpoint/finalizeAndCleanup and ReviewCheckpoint",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

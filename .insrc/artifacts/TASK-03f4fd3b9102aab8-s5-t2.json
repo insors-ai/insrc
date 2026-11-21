@@ -1,0 +1,137 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4bdd403d-178c-4e8d-b4b2-49913faaad2d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-21T08:14:24.442Z",
+    "epicCreatedAt": "2026-11-18T06:14:00.057Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "03f4fd3b9102aab8",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Add the full named test suite for checkpoint.ts covering ac1-ac4 and all error/edge cases",
+      "parent": {
+        "entityId": "STORY-03f4fd3b9102aab8-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-03f4fd3b9102aab8-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-03f4fd3b9102aab8-s5-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#225",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "84c66ccecb428d6097e5ac3b48631d87f08344d2dfbe5e77c0e4c2307e5c16c8",
+        "at": "2026-11-21T08:14:24.442Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-21T08:14:24.443Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the full named test suite for checkpoint.ts covering ac1-ac4 and all error/edge cases",
+    "summary": "One it() per testStrategy.testLevels[0].subjects (14 total), matching ac1-ac4's acceptanceMapping.provingTests verbatim (6 subjects), plus the 8 remaining error-case/edge-case subjects (idempotent finalize, repeated-write overwrite, path-traversal, repo-resolution, symlinked write, symlinked delete, corrupted-checkpoint, finalize-with-no-checkpoint). Mirrors reconciliation.test.ts's/review-report.test.ts's own fixture conventions: disposable .insrc/tmp/<reviewId>/ directories cleaned up per test, an injectable resolveRepoRoot test double, and an injectable durable-copy-destination double so finalizeAndCleanup's write can be forced to fail without touching real artifact storage.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "All 14 named subjects from testStrategy.testLevels[0].subjects exist as individual it() cases with titles matching verbatim",
+      "ac1, ac2, ac3 and ac4's acceptanceMapping.provingTests all pass",
+      "npx tsc --noEmit and npx tsx --test for the new test file both pass with zero failures",
+      "the broader sweep (src/workflow/review-round/**/*.test.ts) still passes in full, confirming no regression to s1-s4's existing suites"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "readCheckpoint resolves to undefined when no checkpoint file exists yet for a reviewId, rather than throwing"
+      },
+      {
+        "level": "unit",
+        "name": "readCheckpoint resolves to the last-written ReviewCheckpoint after writeCheckpoint has been called, so a resumed review can continue from lastCompletedUnit rather than re-running completed units"
+      },
+      {
+        "level": "unit",
+        "name": "readCheckpoint's own reviewId field, read back from the checkpoint record, is exactly the identity k8 requires -- the same string as both the temp folder name and the record's own content"
+      },
+      {
+        "level": "unit",
+        "name": "finalizeAndCleanup copies finalOutput into durable artifact storage before deleting the .insrc/tmp/<reviewId>/ folder, in that order"
+      },
+      {
+        "level": "unit",
+        "name": "if finalizeAndCleanup's durable copy write fails, the .insrc/tmp/<reviewId>/ folder is not deleted"
+      },
+      {
+        "level": "unit",
+        "name": "finalizeAndCleanup is idempotent: calling it a second time for a reviewId whose temp folder was already deleted by an earlier successful call succeeds without error"
+      },
+      {
+        "level": "unit",
+        "name": "writeCheckpoint called repeatedly for the same reviewId overwrites the prior checkpoint rather than accumulating a history"
+      },
+      {
+        "level": "unit",
+        "name": "a reviewId containing a path-traversal segment is rejected before any filesystem access, for writeCheckpoint, readCheckpoint, and finalizeAndCleanup alike"
+      },
+      {
+        "level": "unit",
+        "name": "when the reviewed repository cannot be resolved, writeCheckpoint/readCheckpoint/finalizeAndCleanup reject rather than silently defaulting to the daemon process's own cwd"
+      },
+      {
+        "level": "unit",
+        "name": "a symlinked review directory or checkpoint file is never written through by writeCheckpoint, even outside .insrc/tmp"
+      },
+      {
+        "level": "unit",
+        "name": "a symlinked .insrc/tmp/<reviewId>/ directory is never deleted through by finalizeAndCleanup"
+      },
+      {
+        "level": "unit",
+        "name": "a checkpoint.json file that is not valid JSON, or does not match ReviewCheckpoint's shape, is treated by readCheckpoint as though no checkpoint exists, rather than throwing or returning unvalidated data"
+      },
+      {
+        "level": "unit",
+        "name": "finalizeAndCleanup succeeds even when checkpoint.json was never written at all, deleting whatever the .insrc/tmp/<reviewId>/ folder currently contains as a whole"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

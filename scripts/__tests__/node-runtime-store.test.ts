@@ -115,7 +115,8 @@ test('publishes one canonical binding and refuses escaping or unqualified roots'
 	try {
 		assert.equal(f.run().status, 0);
 		const installation = join(f.root, 'installation'); mkdirSync(installation);
-		assert.throws(() => writeSourceRuntimeBinding(f.state, installation, f.distribution), /unqualified/);
+		const disabled = structuredClone(f.policy); disabled.targets[target].enabled = false; disabled.targets[target].qualification = null;
+		assert.throws(() => writeSourceRuntimeBinding(f.state, installation, f.distribution, disabled), /unqualified/);
 		assert.throws(() => writeSourceRuntimeBinding(f.state, installation, f.root, f.policy), /escapes/);
 		const record = writeSourceRuntimeBinding(f.state, installation, f.distribution, f.policy);
 		assert.equal(record.distribution, f.distribution); assert.equal(record.archiveSha256, f.policy.targets[target].sha256);

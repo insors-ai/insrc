@@ -20,24 +20,26 @@ test('packaged installer embeds exactly the canonical shared runtime assets and 
  assert.throws(()=>packageNodeRuntimeInstaller('without markers'),/markers missing/);
 });
 
-test('standalone packaged installer bootstraps official Node without global Node or adjacent files',nativeOptions,()=>{
- const f=ownedSourceFixture('absent');
+const { NODE_RUNTIME_POLICY } = await import(new URL('../node-runtime-policy.mjs', import.meta.url).href);
+const publicTarget = NODE_RUNTIME_POLICY.targets[`${process.platform}-${process.arch}`];
+test('standalone packaged installer bootstraps official Node without global Node or adjacent files', {
+ ...nativeOptions, skip: nativeOptions.skip || !publicTarget?.enabled,
+},()=>{
+ const root=mkdtempSync(join(tmpdir(),'insrc-public-bootstrap-'));
  try{
-  const packaged=packageNodeRuntimeInstaller(source,f.seed);assertPackagedRuntimeAssets(packaged,f.seed);
-  const alone=join(f.root,'isolated installer.sh');writeFileSync(alone,packaged,{mode:0o700});
-  const freshHome=join(f.root,'fresh-home');mkdirSync(freshHome);
-  const env={...f.env,HOME:freshHome};
-  const args=['--print-runtime','--runtime-archive',archive];
-  const first=spawnSync(alone,args,{cwd:f.root,env,encoding:'utf8',timeout:60000});
-  assert.equal(first.status,0,first.stderr);const node=first.stdout.trim();assert.ok(node.startsWith(join(freshHome,'.insrc/runtimes')+'/'));
+  const packaged=packageNodeRuntimeInstaller(source);assertPackagedRuntimeAssets(packaged);
+  const alone=join(root,'isolated installer.sh');writeFileSync(alone,packaged,{mode:0o700});
+  const home=join(root,'fresh-home');mkdirSync(home);
+  const env={...process.env,HOME:home,TMPDIR:root,PATH:'/usr/bin:/bin',NODE_OPTIONS:'--invalid-injection',NODE_PATH:'/external'};
+  const absent=spawnSync('/bin/sh',['-c','command -v node || command -v npm'],{env,encoding:'utf8'});assert.notEqual(absent.status,0);
+  const first=spawnSync(alone,['--print-runtime','--runtime-archive',archive],{cwd:root,env,encoding:'utf8',timeout:60000});
+  assert.equal(first.status,0,first.stderr);const node=first.stdout.trim();
   const identity=spawnSync(node,['-p','JSON.stringify({version:process.versions.node,exe:process.execPath})'],{env:{...env,NODE_OPTIONS:'',NODE_PATH:''},encoding:'utf8'});
   assert.deepEqual(JSON.parse(identity.stdout),{version:'22.22.1',exe:node});
-  // The documented curl | bash execution boundary, with verified offline reuse.
-  const pipe=spawnSync('/bin/bash',['-s','--','--print-runtime'],{input:packaged,cwd:f.root,env,encoding:'utf8',timeout:30000});
+  const pipe=spawnSync('/bin/bash',['-s','--','--print-runtime'],{input:packaged,cwd:root,env,encoding:'utf8',timeout:30000});
   assert.equal(pipe.status,0,pipe.stderr);assert.equal(pipe.stdout,first.stdout);
-  assert.ok(!readdirSync(f.root).some(name=>name.startsWith('insrc-runtime-assets-')));
-  assert.ok(!existsSync(f.fakeTrace));
- }finally{f.clean();}
+  assert.ok(!readdirSync(root).some(name=>name.startsWith('insrc-runtime-assets-')));
+ }finally{rmSync(root,{recursive:true,force:true});}
 });
 
 

@@ -15,8 +15,8 @@
     "darwin-arm64": {
       "url": "https://nodejs.org/download/release/v22.22.1/node-v22.22.1-darwin-arm64.tar.gz",
       "sha256": "679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2",
-      "enabled": false,
-      "qualification": null
+      "enabled": true,
+      "qualification": "docs/plans/node-runtime-evidence/qualification-darwin-arm64.md"
     },
     "darwin-x64": {
       "url": "https://nodejs.org/download/release/v22.22.1/node-v22.22.1-darwin-x64.tar.gz",

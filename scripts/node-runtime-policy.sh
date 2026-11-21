@@ -7,8 +7,9 @@ insrc_node_runtime_policy() {
   INSRC_RUNTIME_URL= INSRC_RUNTIME_SHA256=
   case "$1" in
     darwin-arm64)
-      printf '%s\n' 'Node runtime target is not qualified: darwin-arm64' >&2
-      return 3 ;;
+      INSRC_RUNTIME_URL='https://nodejs.org/download/release/v22.22.1/node-v22.22.1-darwin-arm64.tar.gz'
+      INSRC_RUNTIME_SHA256='679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2'
+      ;;
     darwin-x64)
       printf '%s\n' 'Node runtime target is not qualified: darwin-x64' >&2
       return 3 ;;

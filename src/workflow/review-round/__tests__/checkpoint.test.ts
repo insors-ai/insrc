@@ -6,7 +6,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -275,6 +275,33 @@ describe('writeCheckpoint/readCheckpoint/finalizeAndCleanup and ReviewCheckpoint
 		}
 	});
 
+	it('writeCheckpoint never creates a new directory through a symlinked ancestor (.insrc/tmp itself, not just the review directory) -- recursive directory creation must not silently follow a swapped ancestor out of the repository', async () => {
+		const tmpRoot = join(ROOT, '.insrc/tmp');
+		rmSync(tmpRoot, { recursive: true, force: true });
+		mkdirSync(join(ROOT, '.insrc'), { recursive: true });
+		const outsideDir = mkdtempSync(join(tmpdir(), 'insrc-checkpoint-outside-ancestor-'));
+		symlinkSync(outsideDir, tmpRoot, 'dir');
+
+		const reviewId = `review-ancestorcreate-${process.pid}-${Date.now()}`;
+		_setCheckpointDepsForTests({ resolveRepoRoot });
+		try {
+			await assert.rejects(
+				() => writeCheckpoint(reviewId, { kind: 'round', ref: 1 }),
+				/is a symlink/,
+				'writeCheckpoint must refuse when .insrc/tmp itself is a symlinked ancestor',
+			);
+			assert.equal(
+				existsSync(join(outsideDir, reviewId)),
+				false,
+				'no directory must ever be created inside the symlink target outside the repository -- recursive directory creation must stop at the symlinked ancestor, never follow it',
+			);
+		} finally {
+			rmSync(tmpRoot, { force: true });
+			rmSync(outsideDir, { recursive: true, force: true });
+			_setCheckpointDepsForTests({});
+		}
+	});
+
 	it('a symlinked .insrc/tmp/<reviewId>/ directory is never deleted through by finalizeAndCleanup', async () => {
 		const reviewId = `review-symlinkdelete-${process.pid}-${Date.now()}`;
 		const outsideDir = mkdtempSync(join(tmpdir(), 'insrc-checkpoint-outside-delete-'));
@@ -508,6 +535,55 @@ describe('writeCheckpoint/readCheckpoint/finalizeAndCleanup and ReviewCheckpoint
 		} finally {
 			racer.kill();
 			rmSync(reviewDirPath, { force: true });
+			rmSync(outsideDir, { recursive: true, force: true });
+			_setCheckpointDepsForTests({});
+		}
+	});
+
+	it('an ancestor (.insrc/tmp itself) replaced by a symlink during the narrow window around writeCheckpoint\'s own directory creation never has a new directory created through it outside the repository (best-effort concurrent regression)', async () => {
+		const tmpRoot = join(ROOT, '.insrc/tmp');
+		const outsideDir = mkdtempSync(join(tmpdir(), 'insrc-checkpoint-race-ancestor-'));
+		mkdirSync(join(ROOT, '.insrc'), { recursive: true });
+		_setCheckpointDepsForTests({ resolveRepoRoot });
+
+		// Races .insrc/tmp itself between a real directory and a symlink to
+		// outsideDir -- the ancestor-substitution window pinDirectoryChainCreating
+		// (checkpoint.ts) closes by pinning each level as it goes and creating a
+		// missing child only via the previous level's own already-pinned alias,
+		// never a mutable path re-resolved fresh. The prior requireNoSymlinkInPath
+		// + mkdirSync(..., { recursive: true }) shape re-resolved the mutable
+		// path on the mkdirSync call itself, so a substitution landing in that
+		// gap could make mkdirSync's own recursive traversal (which follows an
+		// intermediate symlink like any other existing directory) create the
+		// review's directory inside outsideDir instead of inside the repo.
+		const racer = spawn(process.execPath, ['-e', `
+			const fs = require('node:fs');
+			const target = ${JSON.stringify(tmpRoot)};
+			const outside = ${JSON.stringify(outsideDir)};
+			const end = Date.now() + 600;
+			while (Date.now() < end) {
+				try { fs.rmSync(target, { recursive: true, force: true }); } catch {}
+				try { fs.symlinkSync(outside, target, 'dir'); } catch {}
+				try { fs.rmSync(target, { force: true }); } catch {}
+				try { fs.mkdirSync(target); } catch {}
+			}
+		`], { stdio: 'ignore' });
+
+		try {
+			const deadline = Date.now() + 600;
+			let i = 0;
+			while (Date.now() < deadline) {
+				const reviewId = `review-raceancestor-${process.pid}-${i++}`;
+				try { await writeCheckpoint(reviewId, { kind: 'round', ref: 1 }); } catch { /* a refusal is a safe outcome too */ }
+			}
+			assert.deepEqual(
+				readdirSync(outsideDir),
+				[],
+				'no directory must ever be created inside the symlink target outside the repository -- recursive directory creation must never follow a substituted ancestor',
+			);
+		} finally {
+			racer.kill();
+			rmSync(tmpRoot, { recursive: true, force: true });
 			rmSync(outsideDir, { recursive: true, force: true });
 			_setCheckpointDepsForTests({});
 		}

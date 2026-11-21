@@ -26,7 +26,7 @@ import {
 	closeSync, constants as fsConstants, existsSync, fsyncSync, lstatSync, mkdirSync, openSync, readdirSync, readFileSync, renameSync,
 	rmdirSync, unlinkSync, writeFileSync,
 } from 'node:fs';
-import { dirname, join, relative, sep } from 'node:path';
+import { join, relative, sep } from 'node:path';
 import { randomBytes } from 'node:crypto';
 
 import { resolveRepoPath } from '../../daemon/steps/resolve-repo.js';
@@ -73,16 +73,6 @@ async function defaultResolveRepoRoot(): Promise<string> {
 
 function reviewDir(repoRoot: string, reviewId: string): string {
 	return join(repoRoot, '.insrc/tmp', reviewId);
-}
-
-function checkpointPath(repoRoot: string, reviewId: string): string {
-	return join(reviewDir(repoRoot, reviewId), 'checkpoint.json');
-}
-
-/** The review's durable artifact storage location for its final output --
- *  survives after .insrc/tmp/<reviewId>/ is deleted (ac3, k7). */
-function durablePath(repoRoot: string, reviewId: string): string {
-	return join(repoRoot, '.insrc/artifacts', `REVIEW-${reviewId}.json`);
 }
 
 /**
@@ -220,7 +210,23 @@ interface PinnedDir {
 }
 
 function pinDirectory(dir: string): PinnedDir {
-	const fd = openSync(dir, fsConstants.O_RDONLY | fsConstants.O_DIRECTORY | fsConstants.O_NOFOLLOW);
+	let fd: number;
+	try {
+		fd = openSync(dir, fsConstants.O_RDONLY | fsConstants.O_DIRECTORY | fsConstants.O_NOFOLLOW);
+	} catch (err) {
+		// O_NOFOLLOW's refusal of a symlinked `dir` surfaces as ELOOP when
+		// opened by its own mutable name, but as ENOTDIR when opened through
+		// a /proc/self/fd/<fd>/childname alias (confirmed directly) -- in
+		// either case, re-raised with a clear, consistent message once lstat
+		// confirms the cause really is a symlink, rather than some other
+		// reason a directory open can fail with the same errno (e.g. a plain
+		// file occupying that name, which is left as the original error).
+		const code = (err as NodeJS.ErrnoException).code;
+		if ((code === 'ELOOP' || code === 'ENOTDIR') && lstatSync(dir).isSymbolicLink()) {
+			throw new Error(`checkpoint: ${dir} is a symlink -- refusing to write through it`);
+		}
+		throw err;
+	}
 	if (FD_ALIAS_ROOT === undefined) {
 		closeSync(fd);
 		throw new UnsupportedPlatformError('checkpoint: this platform has no confirmed child-relative directory-fd alias (only Linux\'s /proc/self/fd is trusted), so operations cannot be safely bound to a validated directory\'s own identity -- refusing rather than silently falling back to an unprotected or unverified path');
@@ -257,7 +263,41 @@ interface PinnedChain {
 	readonly close:  () => void;
 }
 
+/**
+ * True when `segments`, joined onto `base` one at a time, hits a missing
+ * entry before reaching the end -- a cheap, platform-independent lstat walk
+ * (no fd, no alias, nothing opened) that only ever answers "is there
+ * genuinely nothing here", never "is what's here safe to use". An absent
+ * target needs no TOCTOU protection to report its own absence: there is
+ * nothing for a race to redirect a caller away from. This keeps every
+ * missing-target contract (readCheckpoint's "undefined, never throw" for a
+ * checkpoint that was never written; finalizeAndCleanup's own idempotency
+ * once its temp folder is already gone) honoured on every platform, never
+ * gated behind FD_ALIAS_ROOT's Linux-only mechanism -- that mechanism is
+ * only needed once there is something real to protect.
+ */
+function anySegmentAbsent(base: string, ...segments: readonly string[]): boolean {
+	let current = base;
+	for (const segment of segments) {
+		current = join(current, segment);
+		try {
+			lstatSync(current);
+		} catch {
+			return true;
+		}
+	}
+	return false;
+}
+
 function pinDirectoryChain(repoRoot: string, ...segments: readonly string[]): PinnedChain | undefined {
+	// Externally reported P2 (round 4): without this, pinning repoRoot (which
+	// trivially always exists) unconditionally reaches pinDirectory's
+	// platform check before anything downstream is even examined, so a
+	// genuinely absent target (e.g. a review never started) threw
+	// UnsupportedPlatformError on a non-Linux platform instead of resolving
+	// as absent -- see anySegmentAbsent's own doc.
+	if (anySegmentAbsent(repoRoot, ...segments)) return undefined;
+
 	const links: PinnedDir[] = [];
 	try {
 		let current = pinDirectory(repoRoot);
@@ -272,6 +312,56 @@ function pinDirectoryChain(repoRoot: string, ...segments: readonly string[]): Pi
 	} catch (err) {
 		for (const link of links) closeSync(link.fd);
 		if ((err as NodeJS.ErrnoException).code === 'ENOENT') return undefined;
+		throw err;
+	}
+}
+
+/**
+ * Like pinDirectoryChain, but creates any segment that does not exist yet
+ * instead of returning undefined -- for writeCheckpoint's and
+ * defaultWriteDurableCopy's own directory-creation path.
+ *
+ * Externally reported P2 (round 4): the prior shape -- requireNoSymlinkInPath,
+ * then a plain mkdirSync(dir, { recursive: true }) against the mutable path
+ * string, re-checked, then only THEN pinned -- left the exact same
+ * check-then-act gap the rest of this module exists to close: swapping an
+ * ancestor (.insrc or tmp) to a symlink pointing outside the repository,
+ * between either check and the mkdirSync call, made mkdirSync's own
+ * recursive traversal (which follows symlinks like any normal path lookup;
+ * it has no O_NOFOLLOW equivalent) create new directories at that outside
+ * location -- a filesystem write pinning afterward cannot undo, since the
+ * damage is done before pinning ever gets a chance to refuse.
+ *
+ * Fixed by never creating anything through a freshly re-resolved mutable
+ * path again: each segment is first pinned (O_NOFOLLOW) against the
+ * PREVIOUS segment's own already-pinned alias; only on ENOENT is it created,
+ * and that mkdirSync call is itself given a path built on the pinned
+ * parent's alias (never the original mutable name), so the creation target
+ * is bound to the exact, already-validated parent inode regardless of what
+ * happens to that parent's own name afterward -- then it is immediately
+ * pinned too, closing the loop the same way for the next level.
+ */
+function pinDirectoryChainCreating(repoRoot: string, ...segments: readonly string[]): PinnedChain {
+	const links: PinnedDir[] = [];
+	try {
+		let current = pinDirectory(repoRoot);
+		links.push(current);
+		let parent = current;
+		for (const segment of segments) {
+			parent = current;
+			const childPath = join(current.path, segment);
+			try {
+				current = pinDirectory(childPath);
+			} catch (err) {
+				if ((err as NodeJS.ErrnoException).code !== 'ENOENT') throw err;
+				mkdirSync(childPath);
+				current = pinDirectory(childPath);
+			}
+			links.push(current);
+		}
+		return { links, leaf: current, parent, close: () => { for (const link of links) closeSync(link.fd); } };
+	} catch (err) {
+		for (const link of links) closeSync(link.fd);
 		throw err;
 	}
 }
@@ -316,23 +406,28 @@ export async function writeCheckpoint(
 	requireValidReviewId(reviewId);
 	const resolveRepoRoot = testDeps.resolveRepoRoot ?? defaultResolveRepoRoot;
 	const repoRoot = await resolveRepoRoot();
-	const dir = reviewDir(repoRoot, reviewId);
-	const path = checkpointPath(repoRoot, reviewId);
 
-	requireNoSymlinkInPath(repoRoot, path);
-	mkdirSync(dir, { recursive: true });
-	// Re-checked after mkdirSync, matching review-report.ts's own convention.
-	requireNoSymlinkInPath(repoRoot, path);
-
-	// Pinned immediately before use, all the way from repoRoot: every
-	// subsequent operation goes through this chain's own identity, never
-	// re-resolving any ancestor's mutable name again (see pinDirectoryChain's
-	// own doc). mkdirSync just created `dir`, so ENOENT here would mean it
-	// disappeared again immediately -- a genuine race this call cannot
-	// safely proceed through.
-	const chain = pinDirectoryChain(repoRoot, '.insrc', 'tmp', reviewId);
-	if (chain === undefined) throw new Error(`checkpoint: ${dir} disappeared before it could be pinned`);
+	// Creates any missing ancestor directory itself through an already-pinned
+	// parent alias, never a mutable path re-resolved fresh -- see
+	// pinDirectoryChainCreating's own doc for the P2 this closes.
+	const chain = pinDirectoryChainCreating(repoRoot, '.insrc', 'tmp', reviewId);
 	try {
+		// publishGuarded's own rename never follows a symlink occupying
+		// 'checkpoint.json', so this check is not load-bearing for safety --
+		// it exists so a symlinked destination is refused outright (never
+		// silently replaced), matching this function's documented contract.
+		// Checked against the already-pinned leaf alias, so it adds no fresh
+		// check-then-act gap of its own.
+		let leafStat;
+		try {
+			leafStat = lstatSync(join(chain.leaf.path, 'checkpoint.json'));
+		} catch {
+			leafStat = undefined; // does not exist yet -- nothing to refuse
+		}
+		if (leafStat?.isSymbolicLink() === true) {
+			throw new Error('checkpoint: checkpoint.json is a symlink -- refusing to write through it');
+		}
+
 		const checkpoint: ReviewCheckpoint = { reviewId, lastCompletedUnit };
 		publishGuarded(chain.leaf.path, 'checkpoint.json', JSON.stringify(checkpoint));
 		fsyncDirectoryChain(chain);
@@ -388,6 +483,17 @@ export async function readCheckpoint(reviewId: string): Promise<ReviewCheckpoint
 	requireValidReviewId(reviewId);
 	const resolveRepoRoot = testDeps.resolveRepoRoot ?? defaultResolveRepoRoot;
 	const repoRoot = await resolveRepoRoot();
+
+	// Externally reported P2 (round 4): pinDirectoryChain's own pre-check
+	// only covers its directory segments, not the checkpoint.json leaf
+	// itself -- so a review directory that genuinely exists (from an earlier
+	// round) but simply has no checkpoint written yet still reached the
+	// platform-gated pinning path below, throwing UnsupportedPlatformError
+	// on a non-Linux platform for what is, per ac2, an entirely ordinary
+	// "nothing to resume" case. Checked here too, over the full path
+	// including the leaf filename, so this universal absence is resolved
+	// before ever touching FD_ALIAS_ROOT's Linux-only mechanism.
+	if (anySegmentAbsent(repoRoot, '.insrc', 'tmp', reviewId, 'checkpoint.json')) return undefined;
 
 	let chain: PinnedChain | undefined;
 	try {
@@ -447,14 +553,10 @@ export function _readThroughPinnedLeafForTests(dir: string, filename: string): s
 }
 
 function defaultWriteDurableCopy(repoRoot: string, reviewId: string, finalOutput: unknown): void {
-	const path = durablePath(repoRoot, reviewId);
-	const dir = dirname(path);
-	requireNoSymlinkInPath(repoRoot, path);
-	mkdirSync(dir, { recursive: true });
-	requireNoSymlinkInPath(repoRoot, path);
-
-	const chain = pinDirectoryChain(repoRoot, '.insrc', 'artifacts');
-	if (chain === undefined) throw new Error(`checkpoint: ${dir} disappeared before it could be pinned`);
+	// Creates .insrc/artifacts itself through an already-pinned parent alias
+	// if missing, never a mutable path re-resolved fresh -- see
+	// pinDirectoryChainCreating's own doc for the P2 this closes.
+	const chain = pinDirectoryChainCreating(repoRoot, '.insrc', 'artifacts');
 	try {
 		publishGuarded(chain.leaf.path, `REVIEW-${reviewId}.json`, JSON.stringify(finalOutput));
 		fsyncDirectoryChain(chain);

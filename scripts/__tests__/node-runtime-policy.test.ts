@@ -15,7 +15,8 @@ test('pins candidate Node distributions to the authenticated checksum inventory'
 	for (const [target, entry] of Object.entries(policy.targets) as Array<[string, any]>) {
 		assert.equal(entries.get(entry.sha256), `node-v${policy.nodeVersion}-${target}.tar.gz`);
 		if (entry.enabled) {
-			assert.equal(target, 'darwin-arm64');
+			assert.ok(['darwin-arm64', 'linux-arm64', 'linux-x64'].includes(target));
+			assert.equal(sourceRuntimeFor(...target.split('-')), entry);
 			assert.match(readFileSync(new URL('../../' + entry.qualification, import.meta.url), 'utf8'), /npm ci[\s\S]*tree-sitter[\s\S]*confirmedClosed/);
 		} else assert.equal(entry.qualification, null);
 	}
@@ -42,9 +43,9 @@ test('rejects malformed version target URL digest layout and qualification polic
 
 test('rejects unsupported and unqualified public targets without an environment bypass', () => {
 	assert.throws(() => sourceRuntimeFor('win32', 'x64'), /unsupported/);
-	assert.throws(() => sourceRuntimeFor('linux', 'x64'), /not qualified/);
+	assert.throws(() => sourceRuntimeFor('darwin', 'x64'), /not qualified/);
 	const script = new URL('../node-runtime-policy.sh', import.meta.url).pathname;
-	for (const [target, status, diagnostic] of [['linux-x64', 3, 'not qualified'], ['win32-x64', 2, 'unsupported']] as const) {
+	for (const [target, status, diagnostic] of [['darwin-x64', 3, 'not qualified'], ['win32-x64', 2, 'unsupported']] as const) {
 		const child = spawnSync('/bin/sh', ['-c', '. "$1"; insrc_node_runtime_policy "$2"', 'policy-test', script, target], {
 			env: { PATH: '/usr/bin:/bin', INSRC_NODE_BIN: '/external/node', INSRC_RUNTIME_QUALIFY: '1' }, encoding: 'utf8', timeout: 5000,
 		});

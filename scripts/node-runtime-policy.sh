@@ -17,8 +17,9 @@ insrc_node_runtime_policy() {
       printf '%s\n' 'Node runtime target is not qualified: linux-x64' >&2
       return 3 ;;
     linux-arm64)
-      printf '%s\n' 'Node runtime target is not qualified: linux-arm64' >&2
-      return 3 ;;
+      INSRC_RUNTIME_URL='https://nodejs.org/download/release/v22.22.1/node-v22.22.1-linux-arm64.tar.gz'
+      INSRC_RUNTIME_SHA256='1d1690e9aba47e887a275abc6d8f7317e571a0700deaef493f768377e99155f5'
+      ;;
     *) printf '%s\n' "unsupported Node runtime target: $1" >&2; return 2 ;;
   esac
 }

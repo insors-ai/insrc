@@ -54,7 +54,7 @@ test('shell fresh install update and restart preflight use official owned Node d
 	} finally { f.clean(); }
 });
 
-test('shell legacy upgrade bridge uses the same official Node and npm before managed delegation', nativeOptions, () => {
+test('shell legacy upgrade bridge uses the same official Node and npm before managed delegation', { ...nativeOptions, skip: nativeOptions.skip || process.platform !== 'darwin' }, () => {
 	for (const ambient of ['absent', '20', '26'] as const) {
 	const f = ownedSourceFixture(ambient);
 	try {

@@ -2,13 +2,13 @@
 
 # Build (standalone) — Story s1
 
-**Standalone:** yes  ·  **Created:** 2026-11-21T15:21:22.783Z  ·  **Updated:** 2026-11-21T17:57:24.724Z
+**Standalone:** yes  ·  **Created:** 2026-11-21T15:21:22.783Z  ·  **Updated:** 2026-11-21T18:29:06.540Z
 
-**Commit:** 766da7c5a
+**Commit:** f879b410a
 
 ## Summary
 
-Post-build review found three P2s against t4's RECEIPTS machinery when exercised through a real RoundWriter/LifecycleService rather than the raw writer: no codec registered for RECEIPTS (UnknownArtifactKindError), persistVerificationReceipt collapsing an unreadable prior record into absent (destructive replacement), and RECEIPTS missing from STORY_RECORD_KINDS (never frozen on Story completion). Registered the codec, added a receiptRecordState-based refusal (ReceiptRecordUnreadableError) instead of the collapse, and added RECEIPTS to the completion/reopen membership list, with tests for all three through a real createRepoLifecycle-backed LifecycleService.
+A further review of ab51d6839 found three more P2s: the raw (no-RoundWriter) persistence path wrote fresh meta with no lifecycle key at all, so a completed record's stamp was silently dropped and the storage layer's terminal-content check never even saw it; the read-merge-write was not serialized across overlapping calls, so two concurrent appends could drop one addition even though each write was individually serialized; and pass-through-codecs.test.ts's registered-kinds count was stale. Fixed: withStoredModel is now applied unconditionally so both paths carry the stored lifecycle forward (enforcing TerminalArtifactError on a completed record on both paths); the whole read-merge-write is now serialized in-process per (repoPath, epicHash, storyId); the stale test count was corrected to 17. Added tests for both: a real-lifecycle-service completion test and a concurrent-append test.
 
 ## Tasks validated
 
@@ -22,25 +22,26 @@ Post-build review found three P2s against t4's RECEIPTS machinery when exercised
 
 ## Changes
 
-- `src/workflow/review-round/__tests__/security-finding.test.ts` — **insrc-build** (2026-11-21T17:57:24.724Z)
-- `src/workflow/review-round/security-finding.ts` — **insrc-build** (2026-11-21T17:57:24.724Z)
-- `.insrc/artifacts/TASKS-779e9a08142cb057-s1.log.jsonl` — **insrc-build** (2026-11-21T17:57:24.724Z)
-- `src/workflow/review-round/__tests__/security-locator.test.ts` — **insrc-build** (2026-11-21T17:57:24.724Z)
-- `src/workflow/review-round/security-locator.ts` — **insrc-build** (2026-11-21T17:57:24.724Z)
-- `src/workflow/review-round/__tests__/evidence-provider.test.ts` — **insrc-build** (2026-11-21T17:57:24.724Z)
-- `src/workflow/review-round/evidence-provider.ts` — **insrc-build** (2026-11-21T17:57:24.724Z)
-- `src/workflow/artifact-ids.ts` — **insrc-build** (2026-11-21T17:57:24.724Z)
-- `src/workflow/gates.ts` — **insrc-build** (2026-11-21T17:57:24.724Z)
-- `src/workflow/path-scheme.ts` — **insrc-build** (2026-11-21T17:57:24.724Z)
-- `src/workflow/review-round/__tests__/receipt-record.test.ts` — **insrc-build** (2026-11-21T17:57:24.724Z)
-- `src/workflow/review-round/receipt-record.ts` — **insrc-build** (2026-11-21T17:57:24.724Z)
-- `src/workflow/storage.ts` — **insrc-build** (2026-11-21T17:57:24.724Z)
-- `.insrc/artifacts/PLAN-779e9a08142cb057-s1.json` — **insrc-build** (2026-11-21T17:57:24.724Z)
-- `docs/standalone/add-securityfinding-capability-family-delegates-framing-E20261118779e9a08/S001/PLAN.md` — **insrc-build** (2026-11-21T17:57:24.724Z)
-- `src/workflow/review-round/__tests__/security-schema.test.ts` — **insrc-build** (2026-11-21T17:57:24.724Z)
-- `src/workflow/review-round/security-schema.ts` — **insrc-build** (2026-11-21T17:57:24.724Z)
-- `src/workflow/artifact-core/__tests__/codec-create.test.ts` — **insrc-build** (2026-11-21T17:57:24.724Z)
-- `src/workflow/artifact-core/__tests__/lifecycle-kit.ts` — **insrc-build** (2026-11-21T17:57:24.724Z)
-- `src/workflow/artifact-core/__tests__/lifecycle-members.test.ts` — **insrc-build** (2026-11-21T17:57:24.724Z)
-- `src/workflow/artifact-core/codecs.ts` — **insrc-build** (2026-11-21T17:57:24.724Z)
-- `src/workflow/artifact-core/lifecycle.ts` — **insrc-build** (2026-11-21T17:57:24.724Z)
+- `src/workflow/review-round/__tests__/security-finding.test.ts` — **insrc-build** (2026-11-21T18:29:06.540Z)
+- `src/workflow/review-round/security-finding.ts` — **insrc-build** (2026-11-21T18:29:06.540Z)
+- `.insrc/artifacts/TASKS-779e9a08142cb057-s1.log.jsonl` — **insrc-build** (2026-11-21T18:29:06.540Z)
+- `src/workflow/review-round/__tests__/security-locator.test.ts` — **insrc-build** (2026-11-21T18:29:06.540Z)
+- `src/workflow/review-round/security-locator.ts` — **insrc-build** (2026-11-21T18:29:06.540Z)
+- `src/workflow/review-round/__tests__/evidence-provider.test.ts` — **insrc-build** (2026-11-21T18:29:06.540Z)
+- `src/workflow/review-round/evidence-provider.ts` — **insrc-build** (2026-11-21T18:29:06.540Z)
+- `src/workflow/artifact-ids.ts` — **insrc-build** (2026-11-21T18:29:06.540Z)
+- `src/workflow/gates.ts` — **insrc-build** (2026-11-21T18:29:06.540Z)
+- `src/workflow/path-scheme.ts` — **insrc-build** (2026-11-21T18:29:06.540Z)
+- `src/workflow/review-round/__tests__/receipt-record.test.ts` — **insrc-build** (2026-11-21T18:29:06.540Z)
+- `src/workflow/review-round/receipt-record.ts` — **insrc-build** (2026-11-21T18:29:06.540Z)
+- `src/workflow/storage.ts` — **insrc-build** (2026-11-21T18:29:06.540Z)
+- `.insrc/artifacts/PLAN-779e9a08142cb057-s1.json` — **insrc-build** (2026-11-21T18:29:06.540Z)
+- `docs/standalone/add-securityfinding-capability-family-delegates-framing-E20261118779e9a08/S001/PLAN.md` — **insrc-build** (2026-11-21T18:29:06.540Z)
+- `src/workflow/review-round/__tests__/security-schema.test.ts` — **insrc-build** (2026-11-21T18:29:06.540Z)
+- `src/workflow/review-round/security-schema.ts` — **insrc-build** (2026-11-21T18:29:06.540Z)
+- `src/workflow/artifact-core/__tests__/codec-create.test.ts` — **insrc-build** (2026-11-21T18:29:06.540Z)
+- `src/workflow/artifact-core/__tests__/lifecycle-kit.ts` — **insrc-build** (2026-11-21T18:29:06.540Z)
+- `src/workflow/artifact-core/__tests__/lifecycle-members.test.ts` — **insrc-build** (2026-11-21T18:29:06.540Z)
+- `src/workflow/artifact-core/codecs.ts` — **insrc-build** (2026-11-21T18:29:06.540Z)
+- `src/workflow/artifact-core/lifecycle.ts` — **insrc-build** (2026-11-21T18:29:06.540Z)
+- `src/workflow/artifact-core/__tests__/pass-through-codecs.test.ts` — **insrc-build** (2026-11-21T18:29:06.540Z)

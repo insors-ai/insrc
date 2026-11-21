@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 10,
-        "contentHash": "f9b7b4ad7d0b7b07f02d06594c6696a7c421f5a639b1511eda1c378b00f16594",
-        "at": "2026-11-21T17:57:25.126Z",
+        "number": 11,
+        "contentHash": "072846a445b56c4d2f8ba3ce4dd11aecb5126b8820d437cb0dc27adfc17b4ca8",
+        "at": "2026-11-21T18:29:07.006Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "779e9a08142cb057",
     "storyId": "s1",
     "createdAt": "2026-11-21T15:21:22.783Z",
-    "updatedAt": "2026-11-21T17:57:24.724Z",
+    "updatedAt": "2026-11-21T18:29:06.540Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-18T08:51:40.429Z",
     "epicSlug": "add-securityfinding-capability-family-delegates-framing",
-    "revision": 10
+    "revision": 11
   },
   "body": {
     "tasks": [
@@ -242,8 +242,8 @@
       },
       {
         "taskId": "t4",
-        "commit": "766da7c5a",
-        "ranAt": "2026-11-21T17:57:24.724Z",
+        "commit": "f879b410a",
+        "ranAt": "2026-11-21T18:29:06.540Z",
         "testsPassed": true,
         "tests": [
           {
@@ -291,7 +291,7 @@
             "file": "src/workflow/review-round/__tests__/receipt-record.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 881,
+            "durationMs": 805,
             "titles": [
               {
                 "title": "VerificationReceipt record shape (pass/fail/evidence linkage by id)",
@@ -307,6 +307,14 @@
               },
               {
                 "title": "registered codec: first creation, a later update, decoding and history through the real lifecycle service",
+                "result": "pass"
+              },
+              {
+                "title": "Story completion freezes RECEIPTS, and persisting after that is refused on both paths -- never silently stripping the stamp",
+                "result": "pass"
+              },
+              {
+                "title": "concurrent appends through the real lifecycle service: both receipts survive, serialized rather than racing",
                 "result": "pass"
               },
               {

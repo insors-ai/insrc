@@ -5,16 +5,18 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
 
-import { persistVerificationReceipt, readReceiptRecord, renderReceiptRecordMd } from '../receipt-record.js';
+import { persistVerificationReceipt, readReceiptRecord, ReceiptRecordUnreadableError, renderReceiptRecordMd } from '../receipt-record.js';
 import type { VerificationReceipt } from '../receipt-record.js';
 import { isTestRecordJsonPath, NotApprovableError, approveArtifactByJsonPath } from '../../gates.js';
 import type { LifecycleService } from '../../artifact-core/lifecycle-service.js';
-import { receiptsArtifactId } from '../../storage.js';
+import { artifactJsonPath, receiptsArtifactId } from '../../storage.js';
 import { makeRiskFamilyVerdictFinding } from '../security-finding.js';
+import { createRepoLifecycle } from '../../artifact-core/repo-lifecycle.js';
+import type { RoundWriter } from '../../runners/build/round-writer.js';
 
 const HASH = 'abc123def4567890';
 const T0 = '2026-03-01T10:00:00.000Z';
@@ -83,6 +85,52 @@ describe('VerificationReceipt and its RECEIPTS record', () => {
 			assert.match(md, /review-sec1-round-1-sandbox/);
 			assert.match(md, /review-sec1-round-2-sandbox/);
 			assert.match(renderReceiptRecordMd(rec), /fail/);
+		});
+	});
+
+	it('an unreadable existing record is refused, not silently replaced', async () => {
+		await withRepo(async (repo) => {
+			await persistVerificationReceipt(repo, { epicHash: HASH, storyId: 's1', now: T0 }, receipt('r1', { result: 'fail' }));
+			const jsonPath = artifactJsonPath(repo, receiptsArtifactId(HASH, 's1'));
+			const stored = JSON.parse(readFileSync(jsonPath, 'utf8')) as { meta: { createdAt: unknown } };
+			stored.meta.createdAt = 12345; // damaged: createdAt is no longer a string, so the record cannot be read as one
+			writeFileSync(jsonPath, JSON.stringify(stored));
+
+			await assert.rejects(
+				persistVerificationReceipt(repo, { epicHash: HASH, storyId: 's1', now: '2026-03-01T11:00:00.000Z' }, receipt('r2')),
+				(err: unknown) => err instanceof ReceiptRecordUnreadableError,
+				'persisting over a record that cannot be read must be refused, never treated as absent',
+			);
+			// the earlier receipt's data is untouched: the refusal happened before any replacement was written
+			const onDisk = JSON.parse(readFileSync(jsonPath, 'utf8')) as { body: { receipts: VerificationReceipt[] } };
+			assert.deepEqual(onDisk.body.receipts.map(r => r.id), ['r1'], 'the damaged-but-intact record is left exactly as it was, not replaced');
+		});
+	});
+
+	it('registered codec: first creation, a later update, decoding and history through the real lifecycle service', async () => {
+		await withRepo(async (repo) => {
+			// A standalone LLD head stamps the anchor RECEIPTS reads, exactly as a real Story's does.
+			writeFileSync(
+				join(repo, '.insrc', 'artifacts', `LLD-${HASH}-s1.json`),
+				`${JSON.stringify({ meta: { workflow: 'design.story', epicHash: HASH, storyId: 's1', createdAt: T0, epicCreatedAt: T0, standalone: true }, body: {} }, null, 2)}\n`,
+			);
+			const { store, service } = createRepoLifecycle(repo);
+			const through: RoundWriter = { writer: service, actor: { id: 'insrc:build', kind: 'system', properties: {} } };
+			const id = receiptsArtifactId(HASH, 's1');
+
+			// First creation: the codec must be registered for the lifecycle-backed write to succeed at all.
+			await persistVerificationReceipt(repo, { epicHash: HASH, storyId: 's1', now: T0 }, receipt('r1'), through);
+			const first = await store.read(id);
+			assert.deepEqual((first.payload.body as { receipts: readonly VerificationReceipt[] }).receipts.map(r => r.id), ['r1']);
+
+			// A subsequent update, through the same lifecycle service, appends rather than replacing.
+			await persistVerificationReceipt(repo, { epicHash: HASH, storyId: 's1', now: '2026-03-01T11:00:00.000Z' }, receipt('r2', { result: 'fail' }), through);
+			const second = await store.read(id);
+			assert.deepEqual((second.payload.body as { receipts: readonly VerificationReceipt[] }).receipts.map(r => r.id), ['r1', 'r2'], 'the second round appends; the first round is not lost');
+
+			// History: both rounds are in the change log, so the earlier receipt is still readable there too.
+			const { changeLog } = await store.readWithHistory(id);
+			assert.equal(changeLog.length, 2, 'both lifecycle-backed writes are recorded in the change log');
 		});
 	});
 

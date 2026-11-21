@@ -8,7 +8,7 @@ export const EPIC = `EPIC-${H}`;
 export const STORY = `STORY-${H}-s1`;
 export const T1 = `TASK-${H}-s1-t1`;
 export const T2 = `TASK-${H}-s1-t2`;
-export const RECORDS = ['LLD', 'PLAN', 'BUILD', 'CR', 'TESTS', 'EXT'].map(kind => `${kind}-${H}-s1`);
+export const RECORDS = ['LLD', 'PLAN', 'BUILD', 'CR', 'TESTS', 'RECEIPTS', 'EXT'].map(kind => `${kind}-${H}-s1`);
 export const TASKS = `TASKS-${H}-s1`;
 export const DIAGS = [`DIAG-${H}-s1-1`, `DIAG-${H}-s1-2`];
 

@@ -398,7 +398,7 @@ export async function rollUp(id: string, reader: ChildStatusReader, evidence: Co
 	return undefined;
 }
 
-const STORY_RECORD_KINDS = ['LLD', 'PLAN', 'BUILD', 'CR', 'TESTS', 'EXT'] as const;
+const STORY_RECORD_KINDS = ['LLD', 'PLAN', 'BUILD', 'CR', 'TESTS', 'RECEIPTS', 'EXT'] as const;
 
 /**
  * The artifacts a unit's completion freezes with it. A Story's: its LLD, PLAN, BUILD, CR, TESTS and EXT heads, its STORY head,

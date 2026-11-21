@@ -123,6 +123,10 @@ function pathsFor(repoPath: string, rec: ReceiptRecord, intent: PathIntent): { m
  * later corroborates it -- the opposite dependency (a corroborated
  * SecurityFinding references a receipt by id, via SecurityFinding.receiptId)
  * is the only link between the two, and it is optional on the finding's side.
+ *
+ * Refuses, rather than silently discarding, an existing record this write
+ * cannot read: an unreadable record is NOT the same as no record, and treating
+ * it as absent would replace it, losing every receipt already in it.
  */
 export async function persistVerificationReceipt(
 	repoPath: string,
@@ -130,7 +134,11 @@ export async function persistVerificationReceipt(
 	receipt:  VerificationReceipt,
 	through?: RoundWriter,
 ): Promise<{ md: string; json: string }> {
-	const prior = readReceiptRecord(repoPath, ident.epicHash, ident.storyId);
+	const state = receiptRecordState(repoPath, ident.epicHash, ident.storyId);
+	if (state.kind === 'unreadable') {
+		throw new ReceiptRecordUnreadableError(ident.epicHash, ident.storyId, state.reason);
+	}
+	const prior = state.kind === 'record' ? state.record : null;
 	const standalone = prior !== null ? prior.meta.standalone === true : ident.standalone === true;
 	const kept = (prior?.body.receipts ?? []).filter(r => r.id !== receipt.id);
 	const unstamped: ReceiptRecord = {
@@ -168,6 +176,15 @@ export async function persistVerificationReceipt(
 
 function receiptsRoundOutcome(receipt: VerificationReceipt): { readonly result: string; readonly summary: string } {
 	return { result: receipt.result, summary: `RECEIPTS round for ${receipt.id}: sandbox/mutation checkpoint ${receipt.result}` };
+}
+
+/** The Story's receipt record exists but could not be read, so persisting a new
+ *  receipt was refused rather than risk discarding every receipt already in it. */
+export class ReceiptRecordUnreadableError extends Error {
+	constructor(readonly epicHash: string, readonly storyId: string, readonly reason: string) {
+		super(`the receipt record for ${epicHash}/${storyId} exists but is unreadable (${reason}); refusing to write a new receipt over it`);
+		this.name = 'ReceiptRecordUnreadableError';
+	}
 }
 
 /** The document write failed and the json could not be put back either, so the

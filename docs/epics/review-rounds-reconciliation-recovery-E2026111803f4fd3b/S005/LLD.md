@@ -230,6 +230,8 @@ Build a generic `SideRecord<T>` abstraction (read/write/finalize-and-cleanup par
 
 - `qefc9984a` — ep3 (partial): invariantsToPreserve cite Epic constraint source 'c1' rather than an s1 analyze-bundle entity, since this Story is entirely new capability with no current-code invariant to analyze -- the Epic's own k1/k6/k7/k8 constraints are the only available grounding. Flagged for completeness; not considered blocking since no current-behaviour invariant exists to cite instead.
   - **resolved**: Retain Epic grounding — Preserves the available evidence (Epic constraints k1/k6/k7/k8 via c1) and clarifies its provenance as upstream design grounding rather than existing-code analysis, since this Story is entirely new capability with no current-behaviour invariant to cite instead. _(2026-11-21T08:03:50.464Z)_
+- `qdc3aa50e` — Integration gap (non-blocking, HLD-aligned): this LLD exposes writeCheckpoint/readCheckpoint/finalizeAndCleanup and proves them in isolation, but wiring them into s1's own round-driver cycle (calling writeCheckpoint after each completed unit, readCheckpoint before starting a resumed review, and finalizeAndCleanup at a terminal state) is s1's own adjacent-boundary responsibility, not built here.
+  - **resolved**: Add an explicit integration contract — Preserves the HLD-aligned s5/s1 ownership boundary (s5 stays independently testable, consuming only sc1) while documenting the three required call sites (write after each completed unit, read before a resumed review, finalize at a terminal state) as an explicit, verifiable integration contract for s1's own plan to pick up -- rather than silently expanding s5's scope into s1's adjacent boundary. _(2026-11-21T08:04:14.510Z)_
 
 ## Citations
 

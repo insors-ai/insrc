@@ -1,0 +1,152 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 14,
+        "contentHash": "86efa2c198bbeda8dc99b093a9d0d34ef7ebc01069d5e31535821ebdb6d302a5",
+        "at": "2026-11-21T05:50:12.997Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 14,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-21T06:50:58.588Z",
+        "override": {
+          "reason": "Automated code review is retired/unavailable (CLAUDE.md); self-review (docs/epics/.../S004/SELF-REVIEW.md) and the review packet substitute. User explicitly approved in chat after reviewing the summary, including all three externally-reported P2 fixes."
+        }
+      }
+    },
+    "workflow": "build",
+    "runId": "store-a01d114c-a208-454a-9ae0-fbdc7458b854",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-21T04:29:12.662Z",
+    "epicCreatedAt": "2026-11-18T06:14:00.057Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "03f4fd3b9102aab8",
+    "storyId": "s4",
+    "revision": 14,
+    "updatedAt": "2026-11-21T05:49:17.406Z",
+    "authoredBy": "controller",
+    "epicSlug": "review-rounds-reconciliation-recovery"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      }
+    ],
+    "testRecord": {
+      "md": "docs/epics/review-rounds-reconciliation-recovery-E2026111803f4fd3b/S004/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/workflow/review-round/__tests__/review-report.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T05:49:17.406Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-round/__type-tests__/review-report.typecheck.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T05:49:17.406Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-round/review-report.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T05:49:17.406Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/review-rounds-reconciliation-recovery-E2026111803f4fd3b/S004/SELF-REVIEW.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T05:49:17.406Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/LLD-03f4fd3b9102aab8-s4.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T05:49:17.406Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/review-rounds-reconciliation-recovery-E2026111803f4fd3b/S004/LLD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T05:49:17.406Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-03f4fd3b9102aab8-s4.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T05:49:17.406Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/review-rounds-reconciliation-recovery-E2026111803f4fd3b/S004/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T05:49:17.406Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-03f4fd3b9102aab8-s4-t1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T05:49:17.406Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-03f4fd3b9102aab8-s4-t2.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T05:49:17.406Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASKS-03f4fd3b9102aab8-s4.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T05:49:17.406Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASKS-03f4fd3b9102aab8-s4.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T05:49:17.406Z"
+      }
+    ],
+    "commit": "7dc847b01"
+  },
+  "citations": []
+}

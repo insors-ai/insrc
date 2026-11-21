@@ -44,19 +44,22 @@ Story s4 adds renderReviewReport (sc4): a function the round-driver calls once p
 ### 2.1 `renderReviewReport`
 
 ```typescript
-function renderReviewReport(call: ReviewReportDocgenCall, findings: readonly Finding[], reconciliation: readonly ReconciliationResult[] | undefined): Promise<string>
+function renderReviewReport(call: ReviewReportDocgenCall, findings: readonly Finding[], reconciliation: readonly ReconciliationResult[] | undefined, priorFindings: readonly Finding[] | undefined): Promise<{ readonly path: string; readonly markdown: string }>
 ```
+
+_(Corrected per resolved questions `q62f7c578` and `49e11a57`, section 9: the signature below reflects the as-built four-parameter, object-returning contract, not the draft two corrections below superseded.)_
 
 **Parameters:**
 - `call: ReviewReportDocgenCall` — Identifies which round of which review this call renders -- exactly sc4's interfaceSketch, the HLD's own named call shape.
 - `findings: readonly Finding[]` — This round's own finalized, self-contained finding set (produced by s1's round-driver per k4) -- rendered as this round's own report section; never re-derived or re-grounded by this call.
 - `reconciliation: readonly ReconciliationResult[] | undefined` _(optional)_ — For round>1, s3's reconcileRound output classifying the prior round's HIGH/MED findings against this round's findings -- rendered as inline resolved/still-open/contradicted/no-longer-surfaced annotations (ac2/lc3). Undefined for round 1, where no prior round exists to reconcile against.
+- `priorFindings: readonly Finding[] | undefined` _(optional)_ — The exact prior-round finding set s3's reconcileRound was called with, so each `reconciliation[].priorFindingRef` can be resolved back to that finding's own category/severity for a meaningful inline annotation (`ReconciliationResult` alone carries only the ref and the verdict). Undefined for round 1.
 
-**Returns:** `Promise<string>` — The absolute path of the persisted Markdown file written for this round, ready for the caller to pass directly to insrc_present (ac3) with no further path computation.
+**Returns:** `Promise<{ path: string; markdown: string }>` — `path` is the persisted Markdown file's location; `markdown` is the exact content written to it. `insrc_present` never applies to a review-report (its matching is scoped to the daemon's pending-workflow-artifact list, confirmed directly against `handleInsrcPresent`, and a review-report is never pending approval). ac3 is satisfied by the caller presenting `markdown` directly in its own response, not by any tool call.
 
 **Errors:**
 - `Error` when call.reviewId fails the same literal-identifier validation s3's reconcileRound already enforces (requireValidReviewId) -- rejected before any path is joined or any file is written.
-- `Error` when call.round is not a positive integer.
+- `RangeError` when call.round is not a positive integer.
 
 **Preconditions:**
 - findings is this round's own finalized, self-contained finding set -- never re-derived or re-grounded by this call
@@ -125,7 +128,7 @@ interface ReviewReportDocgenCall { readonly reviewId: string; readonly round: nu
 **Test levels**
 
 - **unit** — Prove renderReviewReport writes exactly one persisted Markdown file under the review's own temp directory and returns its path (ac1), that round-1 vs round>1 rendering differs exactly as lc3/ac2 require, and the error/edge behaviors error-paths names.
-  - Subjects: `renderReviewReport writes a persisted Markdown file under the review's own .insrc/tmp/<reviewId>/ directory and returns its path`, `the written Markdown renders every finding in this round's own findings array, each annotated with its category and severity`, `for round 1, the rendered Markdown carries no reconciliation annotation section at all, since no prior round exists to reconcile against`, `for round greater than 1, the rendered Markdown inlines each reconciliation result's verdict next to the prior finding it refers to (via priorFindings), limited to only the findings this round's own reconciliation classified -- never a running audit of all history`, `a reviewId containing a path-traversal segment is rejected before any filesystem access`, `a non-positive-integer round is rejected with a RangeError before any write`, `when the reviewed repository cannot be resolved, renderReviewReport rejects rather than silently defaulting to the daemon process's own cwd`, `a rejecting filesystem write propagates its rejection rather than returning a path to a file that was never actually written`, `an empty findings array still renders successfully with an explicit statement that no findings were produced this round`, `the path renderReviewReport returns points to a file that exists and is readable immediately after the call resolves, so insrc_present can open it with no further round-driver action`
+  - Subjects: `renderReviewReport writes a persisted Markdown file under the review's own .insrc/tmp/<reviewId>/ directory and returns its path`, `the written Markdown renders every finding in this round's own findings array, each annotated with its category and severity`, `for round 1, the rendered Markdown carries no reconciliation annotation section at all, since no prior round exists to reconcile against`, `for round greater than 1, the rendered Markdown inlines each reconciliation result's verdict next to the prior finding it refers to (via priorFindings), limited to only the findings this round's own reconciliation classified -- never a running audit of all history`, `a reviewId containing a path-traversal segment is rejected before any filesystem access`, `a non-positive-integer round is rejected with a RangeError before any write`, `when the reviewed repository cannot be resolved, renderReviewReport rejects rather than silently defaulting to the daemon process's own cwd`, `a rejecting filesystem write propagates its rejection rather than returning a path to a file that was never actually written`, `an empty findings array still renders successfully with an explicit statement that no findings were produced this round`, `the returned markdown is exactly the persisted file's own content, which the caller presents directly to satisfy ac3 -- insrc_present (confirmed against its real handler) never applies to a review-report`
   - Fixtures: `a temp-directory fixture standing in for .insrc/tmp/<reviewId>/`, `a compile-time typecheck fixture (__type-tests__/review-report.typecheck.ts) with an exact-keys Equal<keyof ReviewReportDocgenCall, 'reviewId'|'round'> assertion`, `a stub repo-resolution dependency (resolveRepoRoot override) to avoid the real daemon client in unit tests, matching s3's own test seam convention`, `sample Finding and ReconciliationResult fixtures, including a reconciliation entry whose priorFindingRef has no matching priorFindings entry`
 
 **Acceptance mapping**
@@ -134,7 +137,7 @@ interface ReviewReportDocgenCall { readonly reviewId: string; readonly round: nu
 | :--- | :--- |
 | `ac1` | `renderReviewReport writes a persisted Markdown file under the review's own .insrc/tmp/<reviewId>/ directory and returns its path`, `the written Markdown renders every finding in this round's own findings array, each annotated with its category and severity` |
 | `ac2` | `for round greater than 1, the rendered Markdown inlines each reconciliation result's verdict next to the prior finding it refers to (via priorFindings), limited to only the findings this round's own reconciliation classified -- never a running audit of all history` |
-| `ac3` | `the path renderReviewReport returns points to a file that exists and is readable immediately after the call resolves, so insrc_present can open it with no further round-driver action` |
+| `ac3` | `the returned markdown is exactly the persisted file's own content, which the caller presents directly to satisfy ac3 -- insrc_present (confirmed against its real handler) never applies to a review-report` |
 
 ## 7. Alternatives considered
 
@@ -176,6 +179,7 @@ Register 'review-report' into src/docgen/registry.ts (as in a2) purely so it is 
 
 - The contract section's renderReviewReport signature currently lists three parameters (call, findings, reconciliation); error-paths/test-strategy identified that a fourth parameter, priorFindings: readonly Finding[] | undefined, is required so each ReconciliationResult.priorFindingRef can be resolved back to the prior finding's own category/severity for a meaningful inline annotation. The Task implementing this Story must carry the corrected four-parameter signature.
 - The contract section's api.errors lists type 'Error' for an invalid round; error-paths names this specifically as a RangeError (mirroring runReviewRound's own RangeError for an invalid round). The Task implementing this Story must align to RangeError.
+- The contract section's api[0].returns is documented as Promise<string>, but insrc_present (confirmed directly against its real handler, src/mcp/server.ts's handleInsrcPresent) can never present a plain file like a review-report: its matching is scoped entirely to the daemon's pending-workflow-artifact list, and a review-report is never pending approval (k3; ac3 itself says 'no response required from the user'). This fails ac3's presentation requirement and should have been caught during design -- ac3 named the wrong mechanism.
 
 ## Resolved questions
 
@@ -183,6 +187,8 @@ Register 'review-report' into src/docgen/registry.ts (as in a2) purely so it is 
   - **resolved**: Add priorFindings as a fourth parameter — ReconciliationResult only carries priorFindingRef + verdict (sc3's own interfaceSketch), not the prior finding's own category/severity -- renderReviewReport needs priorFindings: readonly Finding[] | undefined (the exact set s3's reconcileRound was called with) to render a meaningful annotation. The implementing Task carries this corrected four-parameter signature: (call, findings, reconciliation, priorFindings). _(2026-11-20T06:38:26.237Z)_
 - `q8c471cdf` — The contract section's api.errors lists type 'Error' for an invalid round; error-paths names this specifically as a RangeError (mirroring runReviewRound's own RangeError for an invalid round). The Task implementing this Story must align to RangeError.
   - **resolved**: Specify RangeError consistently — Matches error-paths' own detail and the established runReviewRound precedent (src/workflow/review-round/driver.ts), which already throws a RangeError for an invalid round -- removes ambiguity rather than leaving a broad Error type that undersells the actual, more specific contract. _(2026-11-20T06:38:52.987Z)_
+- `49e11a57` — The contract section's api[0].returns is documented as Promise<string>, but insrc_present (confirmed directly against its real handler, src/mcp/server.ts's handleInsrcPresent) can never present a plain file like a review-report: its matching is scoped entirely to the daemon's pending-workflow-artifact list, and a review-report is never pending approval (k3; ac3 itself says 'no response required from the user'). This fails ac3's presentation requirement and should have been caught during design -- ac3 named the wrong mechanism.
+  - **resolved**: Return { path, markdown } instead of a bare path — insrc_present's matching is scoped entirely to the daemon's pending-workflow-artifact list (confirmed directly against the real handler); a review-report structurally can never appear there. Returning the rendered markdown alongside the path lets the caller present it directly in its own response -- the same convention this codebase's own agents already use for review packets and self-reviews -- with no tool call needed at all, which is the only way to actually satisfy ac3. Externally reported as a P2 against the pinned `5b475b286` revision; this correction is recorded here, with the external P2 wording relayed verbatim as the question. The testStrategy subject/ac3 proving-test name is corrected the same way, from the old "...so insrc_present can open it..." wording to one that states what the test actually proves. _(2026-11-21T05:07:55.000Z)_
 
 ## Citations
 

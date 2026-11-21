@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-31c2dc99-008c-48e6-84dc-1b150e8c4a26",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-21T04:24:20.346Z",
+    "epicCreatedAt": "2026-11-18T06:14:00.057Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "03f4fd3b9102aab8",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Add ReviewReportDocgenCall and renderReviewReport",
+      "parent": {
+        "entityId": "STORY-03f4fd3b9102aab8-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-03f4fd3b9102aab8-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#222",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "5ac7416bf8c4cc373d6ab9b4ea2951d391bdfa30aac28e1c23c5c5d11be85872",
+        "at": "2026-11-21T04:24:20.346Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-21T04:24:20.347Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add ReviewReportDocgenCall and renderReviewReport",
+    "summary": "New module src/workflow/review-round/review-report.ts: ReviewReportDocgenCall{reviewId,round} (sc4's interfaceSketch), and renderReviewReport(call, findings, reconciliation, priorFindings) composing a Markdown string from findings (+ reconciliation annotations scoped to the adjacent round pair, for round>1) and persisting it under the reviewed repository's .insrc/tmp/<reviewId>/ directory, returning the written path. Reuses s3's established conventions verbatim: requireValidReviewId-style literal-identifier validation, RangeError for an invalid round (matching runReviewRound), resolveRepoPath-based canonical repo resolution (never process cwd), and a _setReviewReportDepsForTests test seam. Includes the compile-time typecheck fixture (__type-tests__/review-report.typecheck.ts) proving ReviewReportDocgenCall's exact field shape.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "ReviewReportDocgenCall and renderReviewReport are exported exactly as contractDetails/dataModelChanges specify, with the corrected four-parameter signature (call, findings, reconciliation, priorFindings) per the resolved open question",
+      "renderReviewReport validates call.reviewId (literal-identifier) and call.round (positive integer, RangeError) before any path join or filesystem write, per errorPaths",
+      "renderReviewReport resolves the reviewed repository through the canonical resolver (never the daemon process's own cwd) and writes exactly one Markdown file under its .insrc/tmp/<call.reviewId>/ directory, returning that path",
+      "the typecheck fixture rejects an added/removed ReviewReportDocgenCall key via @ts-expect-error / Equal<keyof ReviewReportDocgenCall,...>",
+      "a rejecting filesystem write propagates its rejection unchanged rather than returning a path to a file that was never written"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "renderReviewReport writes a persisted Markdown file under the review's own .insrc/tmp/<reviewId>/ directory and returns its path"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

@@ -1,0 +1,76 @@
+# S4 manual self-review
+
+Reviewed 2026-11-21 by the implementation author (controller). Automated design/code review is retired and unavailable (CLAUDE.md); this is the substitute self-check evidence, with the explicit limitation that author and reviewer are the same party.
+
+**Result: both Tasks (t1, t2) pass the daemon's build-validation gate, and all three externally-reported P2 defects, across successive revisions, have since been fixed and re-validated: the symlink-safety gap (with one further gate-caught refinement), the `insrc_present` presentability gap (fixed within this Story, per the user's explicit direction that it should have been caught during design and belongs in this Story, not deferred elsewhere), and the publication-race/hard-link gap.** This report does not constitute an independent daemon review.
+
+## Scope
+
+s4 adds the review-report docgen call (HLD sc4, owned by this Story): `renderReviewReport(call, findings, reconciliation, priorFindings)` composes a round's own findings (plus, for round>1, s3's reconciliation verdicts against the prior round) into a persisted Markdown artifact under the review's own `.insrc/tmp/<reviewId>/` directory, and returns the written path. Deliberately NOT wired into `src/docgen/`'s diagram registry — confirmed by direct reading that that framework renders self-contained HTML/SVG, never Markdown, and its own handler never persists to disk, which would have violated ac1's literal "persisted MD artifact" requirement. New code only — no existing file was modified.
+
+| File | Purpose |
+| --- | --- |
+| `src/workflow/review-round/review-report.ts` | `ReviewReportDocgenCall`, `renderReviewReport`, `_setReviewReportDepsForTests` |
+| `src/workflow/review-round/__type-tests__/review-report.typecheck.ts` | Compile-time exact-keys and exact-parameter-tuple proofs |
+| `src/workflow/review-round/__tests__/review-report.test.ts` | The full named test suite, one `it()` per `testStrategy.testLevels[0].subjects` (10 total) |
+
+## Design decision: not a docgen docType registration
+
+Before implementing, the LLD's own `design.story` phase found a real mismatch between the HLD's wording ("review-report docgen docType") and the existing `src/docgen/` registry it could have been read as pointing at: that framework's `DocTypeRegistration` contract always produces a `DocumentIR` → `RenderedDocumentShell` — a self-contained offline **HTML** file with an inlined SVG viewer (`diagramFormat: 'svg'` is a literal field) — and `handleDocgen` never persists its own output to disk. Registering into it would have produced an HTML shell with an empty, meaningless diagram section, violating ac1's repeated, literal "persisted MD artifact" wording. This was recorded as alternative a2 in the LLD, scored and rejected in favor of a1 (a standalone render function), with the evidence (exact file paths and type shapes) cited directly rather than asserted.
+
+Mid-design, the user corrected two more framings that had drifted during the conversation: (1) the "attached artifacts" idea belongs on the review's *input* side (already handled by s1's existing `hooks.ground(targets, round)`, confirmed directly in `driver.ts`), not s4's output; (2) no per-review-type templates are needed, since `Finding`/`ReconciliationResult` are already uniform across review types. Both corrections left the LLD as originally designed — no rework was needed once traced back to the actual code.
+
+## Gate rounds and fixes
+
+The build-validation gate rejected one submission (t2) before passing; the rejection named a genuine gap:
+
+1. **t2, round 1** — the test proving ac2 ("reconciliation inlines each verdict, limited to only the findings this round's own reconciliation classified") only showed the happy path: every supplied prior finding was reconciled. It never proved the *exclusion* half of the claim (a real prior finding the reconciliation did NOT classify must not appear — lc3's "never a running audit of all history"), and never exercised the LLD's own required fixture (a reconciliation entry whose `priorFindingRef` has no matching `priorFindings` entry). Fixed by adding `p3` (a prior finding absent from `reconciliation` — asserted absent from the rendered output) and `p4` (a reconciliation entry with no matching `priorFindings` entry — asserted to still render, with its bare ref and verdict alone) to the same test.
+2. **t2, round 2** — passed.
+
+The fix was verified by confirming the new assertions actually exercise paths the implementation already handled correctly (`renderReconciliation` only ever iterates `reconciliation`, never `priorFindings`, so an unclassified prior was already structurally excluded) — this was a genuine test-coverage gap, not an implementation defect, and the gate's catch was still a real and correct one: the claim had been asserted without being proven.
+
+### Externally reported, after pinning `5b475b286`: a symlink-safety P2, fixed in `105dc6868` then refined in `ee41a4118`
+
+1. **Report writes could escape the review directory through symlinks.** `requireValidReviewId` blocks a lexical traversal, but `mkdirSync`/`writeFileSync` still follow an existing symlink regardless of the lexical path given to them. The external report reproduced both: a symlinked review directory redirecting the write outside the repository, and a symlinked report file causing an unrelated external file to be truncated and overwritten. Fixed by adding `requireNoSymlinkInPath`, which walks every path segment from `repoRoot` to the write target and rejects if any existing segment is itself a symlink (`lstat`, not `stat`) — called before `mkdirSync` and re-checked immediately before `writeFileSync` to close the window between the two.
+2. **Self-caught refinement, same gate submission.** The first version of `requireNoSymlinkInPath` gated `lstatSync` behind `existsSync`, but `existsSync` itself follows symlinks and reports a **dangling** one (whose target doesn't exist yet) as nonexistent — skipping the `lstatSync` check entirely, letting `writeFileSync` follow the symlink and create the file at its resolved location outside the repository. Fixed by switching to `lstatSync` directly (which sees a dangling symlink too, since it never follows), with a try/catch treating a genuinely nonexistent segment as safe to create.
+
+Four regression tests cover both: a symlinked review directory, a symlinked report file (with a real external target), a *dangling* symlinked report file (no target yet), and a sibling-review directory alias. Each was verified by reverting its specific fix and confirming the matching test then fails with the exact reported symptom, before restoring clean and reconfirming the full sweep green. Both Tasks were re-submitted to `insrc_build_step` (phase=validate) after each fix and passed.
+
+### Externally reported, after pinning `3d7937145`: a publication-race / hard-link P2, fixed in `7dc847b01`
+
+**The lstat-based symlink check above is a static guard: it rejects a symlink already present at call time, but the check and the subsequent write were still two separate syscalls, and a hard link (sharing an inode with an outside file) is not a symlink at all, so `requireNoSymlinkInPath` never flags it.** An external reviewer reproduced both against the actual writer: (1) a report path hard-linked to an outside sentinel file got overwritten, since `writeFileSync` truncates whatever inode the name currently points at, shared or not; (2) replacing the report path with a symlink immediately after the final `lstatSync` also let the write follow it onto an outside sentinel.
+
+Fixed by replacing the direct `writeFileSync(path, ...)` with a guarded publish (`publishGuarded`): write the content to a freshly created, uniquely and unpredictably named sibling file in the same directory (`O_CREAT|O_EXCL|O_NOFOLLOW` — the name has never existed, so the open can neither target nor follow anything), then `renameSync` that sibling onto the report's own path. `rename(2)` replaces the destination's directory entry atomically without ever dereferencing it: a symlink there is replaced as a link, never followed into its target, and a hard-linked file is simply unlinked from that one name, leaving the other link's inode and content untouched. Because rename is now the *only* operation ever applied to the report's own path, there is no longer a check-then-separately-write pairing on that path to race at all — the fix is independent of timing, not just a narrower window.
+
+Verified two ways: a deterministic end-to-end regression test (hard link to an outside sentinel inside the repo, since a hard link cannot cross filesystems and `/tmp` is typically a separate mount) proving the sentinel survives; and a direct unit test of `publishGuarded` itself (exported test-only as `_publishGuardedForTests`, since `renderReviewReport`'s own upfront check would otherwise refuse a pre-existing symlink before ever reaching it) proving a symlink already occupying the destination is replaced, not followed. Both were confirmed to fail under the pre-fix `writeFileSync(path, ...)` by temporarily reverting and re-running, then restored and reconfirmed green.
+
+## Fixed: insrc_present cannot present a review-report (externally reported P2, `49e11a57`)
+
+**The externally-reported P2 that `renderReviewReport`'s returned path cannot be opened via `insrc_present` is real, and was reproduced against the actual presentation handler and pending-list implementation (`presented: []`, the report in `notPending`).** `insrc_present`'s matching is scoped to pending governance-workflow artifacts (DEF/HLD/LLD/PLAN/BUILD/ISSUE/EXT under `docs/epics/.../S0XX/`); a plain file under `.insrc/tmp/<reviewId>/` that is not itself a tracked artifact does not match, regardless of whether it exists and is readable. This is a structural fact about `insrc_present`, not a bug in it — a review-report is deliberately never pending approval (k3; ac3 itself: "no response required from the user").
+
+This is not a defect in the render/persist logic itself: `renderReviewReport` already correctly implements sc4/k6. The actual gap was in the **contract**: ac3's own wording was interpreted (by this Story's own design) as requiring a call to `insrc_present`, when the only mechanism that can actually satisfy it is the caller presenting the rendered content directly. Per the user's explicit direction ("no, it should be part of this story. it should have been detected during design phase."), this is fixed within this Story rather than deferred:
+
+- `renderReviewReport`'s return type changed from `Promise<string>` to `Promise<ReviewReportResult>` (`{ path, markdown }`), so the caller has the exact rendered content in hand and can present it directly in its own response — the same convention this codebase's own agents already use for review packets and self-reviews — with no tool call needed at all.
+- The LLD's own contract section, `testStrategy` subject list, and `acceptanceMapping.ac3.provingTests` were corrected to match (post-approval correction, recorded as resolved question `49e11a57`), since the original three-parameter/bare-string contract and the old ac3 test-subject wording ("...so insrc_present can open it...") both named the wrong mechanism.
+- The ac3-proving test was renamed and rewritten to prove the actual claim: that the returned `markdown` is exactly the persisted file's own content, and that `insrc_present` (called for real, against the real handler) reports the file `notPending` — proving the limitation rather than asserting past it.
+
+## Source review
+
+| Area inspected | Invariant and assessment |
+| --- | --- |
+| `review-report.ts` | `ReviewReportDocgenCall{reviewId, round}` is exactly sc4's interfaceSketch. `renderReviewReport`'s signature carries the corrected four parameters (`call, findings, reconciliation, priorFindings`) per the LLD's own resolved open question — `ReconciliationResult` alone cannot name a prior finding's category/severity. `reviewId` is validated against the same literal-identifier pattern `reconciliation.ts` already established; `round` is validated with the same `RangeError` `runReviewRound` already throws. The repository is resolved once per call through the canonical `resolveRepoPath` chain (never the daemon's own cwd), matching the fix `reconciliation.ts` needed across three external review rounds. Before every write, `requireNoSymlinkInPath` walks every path segment from `repoRoot` to the target via `lstatSync` (never following a link, so a dangling one is caught too) and rejects if any segment is itself a symlink — a symlinked review directory, a symlinked report file, or a symlinked ancestor. Exactly one file is written, at `.insrc/tmp/<reviewId>/review-report-round-<round>.md`; a write failure propagates unchanged. The reconciliation section is omitted entirely for round 1 (not rendered empty), and for round>1 it renders only the findings reconciliation actually classified. |
+| `__type-tests__/review-report.typecheck.ts` | Exact-keys and exact-parameter-tuple proofs, plus per-field required/readonly/no-extra-field `@ts-expect-error` assertions — the same pattern `reconciliation-result.typecheck.ts` established for `reconcileRound`'s own parameter-shape proof. |
+| `__tests__/review-report.test.ts` | All 10 named subjects exist as individual `it()` cases with titles matching the LLD verbatim; `ac1`/`ac2`/`ac3`'s `provingTests` pass, including the round-2 test's exclusion (`p3`) and unmatched-ref (`p4`) cases added in the gate's round-1 fix, plus 4 symlink-safety regression tests added for the externally-reported P2. |
+
+## Verification
+
+- `npx tsc --noEmit`: clean, 0 errors.
+- `npx tsx --test src/workflow/review-round/__tests__/review-report.test.ts`: **16 passed, 0 failed** (10 LLD-named + 4 symlink-safety + 2 publication-race/hard-link regression tests).
+- `npx tsx --test 'src/workflow/review-round/**/*.test.ts' 'src/workflow/artifact-core/__tests__/*.test.ts' 'src/mcp/__tests__/present-dispatch.test.ts'` (broader sweep): **222 passed, 0 failed.**
+- `insrc_build_step` (phase=validate): t1 passed on its first round, then re-validated clean after each of the two symlink-safety fixes; t2 passed on its second round after one real test-coverage fix, then re-validated clean after each of the two symlink-safety fixes — final verdict `passed: true` for both Tasks, with `typecheckClean: true` and `testsPassed: true`.
+
+## Limits and continuation
+
+This is a manual self-review substituting for the retired automated design/code review; author and reviewer are the same party. No independent party inspected this diff ahead of time, though three P2 defects were caught by an external reviewer across successive revisions: the symlink-safety gap, the `insrc_present` presentability gap, and the publication-race/hard-link gap — all three fixed within this Story, all recorded here, not omitted. The build-validation gate's own rejections, plus these external catches, are the closest available substitute for adversarial review in this session.
+
+s4 is Phase B's review-report rendering Story; s5 (checkpoint lifecycle) is not yet built.

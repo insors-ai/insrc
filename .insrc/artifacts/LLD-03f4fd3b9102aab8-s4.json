@@ -27,10 +27,10 @@
     "storyTitle": "Each round's findings are rendered and presented through a new review-report docgen document",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "approved",
+      "status": "completed",
       "revision": {
-        "number": 2,
-        "contentHash": "b62327ff09e35046fecbd8f68bcd34448707c0f08bbb840f764c2cb8d2a887d5",
+        "number": 3,
+        "contentHash": "3e3d26c31290f09b036a8c05415d400761e4085820c5a1180860c128e57f9ae6",
         "at": "2026-11-20T06:38:00.189Z",
         "by": {
           "id": "insrc:system",
@@ -40,7 +40,7 @@
       },
       "signoffs": [],
       "approval": {
-        "revision": 2,
+        "revision": 3,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
@@ -69,6 +69,13 @@
         "choice": "Specify RangeError consistently",
         "rationale": "Matches error-paths' own detail and the established runReviewRound precedent (src/workflow/review-round/driver.ts), which already throws a RangeError for an invalid round -- removes ambiguity rather than leaving a broad Error type that undersells the actual, more specific contract.",
         "resolvedAt": "2026-11-20T06:38:52.987Z"
+      },
+      "49e11a57": {
+        "question": "The contract section's api[0].returns is documented as Promise<string>, but insrc_present (confirmed directly against its real handler, src/mcp/server.ts's handleInsrcPresent) can never present a plain file like a review-report: its matching is scoped entirely to the daemon's pending-workflow-artifact list, and a review-report is never pending approval (k3; ac3 itself says 'no response required from the user'). This fails ac3's presentation requirement and should have been caught during design -- ac3 named the wrong mechanism.",
+        "status": "resolved",
+        "choice": "Return { path, markdown } instead of a bare path",
+        "rationale": "insrc_present's matching is scoped entirely to the daemon's pending-workflow-artifact list (confirmed directly against the real handler); a review-report structurally can never appear there. Returning the rendered markdown alongside the path lets the caller present it directly in its own response -- the same convention this codebase's own agents already use for review packets and self-reviews -- with no tool call needed at all, which is the only way to actually satisfy ac3. The testStrategy subject/ac3 proving-test name is corrected the same way, from the old \"...so insrc_present can open it...\" wording to one that states what the test actually proves.",
+        "resolvedAt": "2026-11-21T05:07:55.000Z"
       }
     }
   },
@@ -185,7 +192,7 @@
       "api": [
         {
           "name": "renderReviewReport",
-          "signature": "function renderReviewReport(call: ReviewReportDocgenCall, findings: readonly Finding[], reconciliation: readonly ReconciliationResult[] | undefined): Promise<string>",
+          "signature": "function renderReviewReport(call: ReviewReportDocgenCall, findings: readonly Finding[], reconciliation: readonly ReconciliationResult[] | undefined, priorFindings: readonly Finding[] | undefined): Promise<{ readonly path: string; readonly markdown: string }>",
           "parameters": [
             {
               "name": "call",
@@ -207,8 +214,8 @@
             }
           ],
           "returns": {
-            "type": "Promise<string>",
-            "meaning": "The absolute path of the persisted Markdown file written for this round, ready for the caller to pass directly to insrc_present (ac3) with no further path computation."
+            "type": "Promise<{ readonly path: string; readonly markdown: string }>",
+            "meaning": "The persisted file's path AND the exact markdown written to it. The caller presents `markdown` directly in its own response to satisfy ac3 -- insrc_present never applies to a review-report (see resolved question 49e11a57)."
           },
           "errors": [
             {
@@ -341,7 +348,7 @@
             "when the reviewed repository cannot be resolved, renderReviewReport rejects rather than silently defaulting to the daemon process's own cwd",
             "a rejecting filesystem write propagates its rejection rather than returning a path to a file that was never actually written",
             "an empty findings array still renders successfully with an explicit statement that no findings were produced this round",
-            "the path renderReviewReport returns points to a file that exists and is readable immediately after the call resolves, so insrc_present can open it with no further round-driver action"
+            "the returned markdown is exactly the persisted file's own content, which the caller presents directly to satisfy ac3 -- insrc_present (confirmed against its real handler) never applies to a review-report"
           ],
           "fixturesNeeded": [
             "a temp-directory fixture standing in for .insrc/tmp/<reviewId>/",
@@ -368,7 +375,7 @@
         {
           "criterionId": "ac3",
           "provingTests": [
-            "the path renderReviewReport returns points to a file that exists and is readable immediately after the call resolves, so insrc_present can open it with no further round-driver action"
+            "the returned markdown is exactly the persisted file's own content, which the caller presents directly to satisfy ac3 -- insrc_present (confirmed against its real handler) never applies to a review-report"
           ]
         }
       ]
@@ -428,7 +435,8 @@
     "chosenAlternative": "a1",
     "openQuestions": [
       "The contract section's renderReviewReport signature currently lists three parameters (call, findings, reconciliation); error-paths/test-strategy identified that a fourth parameter, priorFindings: readonly Finding[] | undefined, is required so each ReconciliationResult.priorFindingRef can be resolved back to the prior finding's own category/severity for a meaningful inline annotation. The Task implementing this Story must carry the corrected four-parameter signature.",
-      "The contract section's api.errors lists type 'Error' for an invalid round; error-paths names this specifically as a RangeError (mirroring runReviewRound's own RangeError for an invalid round). The Task implementing this Story must align to RangeError."
+      "The contract section's api.errors lists type 'Error' for an invalid round; error-paths names this specifically as a RangeError (mirroring runReviewRound's own RangeError for an invalid round). The Task implementing this Story must align to RangeError.",
+      "The contract section's api[0].returns is documented as Promise<string>, but insrc_present (confirmed directly against its real handler, src/mcp/server.ts's handleInsrcPresent) can never present a plain file like a review-report: its matching is scoped entirely to the daemon's pending-workflow-artifact list, and a review-report is never pending approval (k3; ac3 itself says 'no response required from the user'). This fails ac3's presentation requirement and should have been caught during design -- ac3 named the wrong mechanism."
     ]
   },
   "citations": [

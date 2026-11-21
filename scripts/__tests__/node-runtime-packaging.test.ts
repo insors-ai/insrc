@@ -4,7 +4,8 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, 
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import test from 'node:test';
-import { assertPackagedRuntimeAssets, packageNodeRuntimeInstaller } from '../node-runtime-assets.mjs';
+import { gunzipSync } from 'node:zlib';
+import { NODE_RUNTIME_ASSETS, assertPackagedRuntimeAssets, packageNodeRuntimeInstaller } from '../node-runtime-assets.mjs';
 import { composeMcpEntry } from '../../vscode-plugin/src/hosts/mcp-writer.js';
 import { archive, nativeOptions, ownedSourceFixture } from './helpers/owned-source-fixture.js';
 
@@ -12,6 +13,19 @@ const source=readFileSync(resolve('scripts/insrc-daemon-install.sh'),'utf8');
 test('packaged installer embeds exactly the canonical shared runtime assets and detects drift',()=>{
  const packaged=packageNodeRuntimeInstaller(source);
  assertPackagedRuntimeAssets(packaged);
+ // BSD tar hides AppleDouble metadata from its own listing; inspect the real
+ // member headers too so a macOS-produced client is portable to GNU tar.
+ const encoded=packaged.match(/^INSRC_NODE_BOOTSTRAP_B64='([^']+)'$/m)![1]!;
+ const tar=gunzipSync(Buffer.from(encoded,'base64')), members:string[]=[];
+ for(let offset=0;offset+512<=tar.length;){
+  const header=tar.subarray(offset,offset+512);if(header.every(byte=>byte===0))break;
+  const name=header.toString('utf8',0,100).split('\0')[0]!;
+  const size=parseInt(header.toString('ascii',124,136).replace(/\0.*$/s,'').trim(),8);
+  assert.ok(Number.isSafeInteger(size)&&size>=0);
+  if(header[156]===0||header[156]===48)members.push(name);
+  offset+=512+Math.ceil(size/512)*512;
+ }
+ assert.deepEqual(members.sort(),[...NODE_RUNTIME_ASSETS].sort());
  assertPackagedRuntimeAssets(readFileSync(resolve('vscode-plugin/assets/insrc-daemon-install.sh'),'utf8'));
  assert.match(packaged,/^INSRC_NODE_BOOTSTRAP_SHA256='[a-f0-9]{64}'$/m);
  assert.throws(()=>assertPackagedRuntimeAssets(packaged.replace(/(INSRC_NODE_BOOTSTRAP_B64=')./,'$1!')),/lacks verified/);

@@ -1,0 +1,134 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 11,
+        "contentHash": "e053722595bfe25c4927139138cb799985e274f459ebbc9fe7cce76caaa5615b",
+        "at": "2026-11-21T04:07:13.651Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 11,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-21T04:08:12.258Z",
+        "override": {
+          "reason": "Automated code review is unavailable. t1 fails only on the inventory check the gate cannot prove (the two inventory suites already fail on a clean checkout, identically before and after); the full per-file sweep's 74 failing files all fail on the commit before this Story with the same or more cases; review finding on event-loop blocking fixed with a behavioural test. User approved in chat."
+        }
+      }
+    },
+    "workflow": "build",
+    "runId": "store-d902caeb-6947-468e-a4b3-d6c5780c79d1",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-20T19:25:08.691Z",
+    "epicCreatedAt": "2026-11-20T12:14:08.881Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d70697dff9f56b4a",
+    "storyId": "s1",
+    "revision": 11,
+    "updatedAt": "2026-11-21T04:06:27.634Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicSlug": "run-build-defaults-migration-once-per"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": false
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      }
+    ],
+    "testRecord": {
+      "md": "docs/standalone/run-build-defaults-migration-once-per-E20261120d70697df/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/daemon/__tests__/schema-migrations.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T04:06:27.634Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/config/repo-config-store.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T04:06:27.634Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/config/repo-config.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T04:06:27.634Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T04:06:27.634Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/repo-settings.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T04:06:27.634Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T04:06:27.634Z"
+      },
+      {
+        "target": {
+          "file": "docs/daemon.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T04:06:27.634Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/build-commands-doc.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T04:06:27.634Z"
+      }
+    ],
+    "commit": "f214b64f8",
+    "summary": "Adds a root-level integer schemaVersion to ~/.insrc/repo-config.json and a boot pass that decides, by the stored value alone (never a commit id), whether the build-defaults migration runs. Store (t1): RepoConfigFile.schemaVersion; readSchemaVersion (null for an absent file, key or null; an invalid value or an unreadable file is returned as data, never taken as 0); writeSchemaVersion on the same queue and verified read-merge-write loop as writeRepoEntryKeys (writeOnce now takes its merge step as a parameter), keeping default, repos and unknown keys and never lowering. Runner (t2): REPO_CONFIG_SCHEMA_VERSION = 1, a static step list whose step 1 runs migrateBuildDefaults one repository at a time, handing the event loop back (setImmediate) before each so a large registry or slow file system does not hold the boot thread (a review finding: the per-repository work is synchronous file I/O, so awaiting alone did not yield; a test with 100 repositories now checks that a timer and an immediate scheduled beforehand run before the pass finishes and that the loop turns at least once per repository, and was seen to fail without the yield), clean when no repo reports write-failed; and runSchemaMigrations, which runs the steps above the stored version in order, stops at the first that is not clean or throws, stamps the highest clean version, returns one of eight statuses and never rejects; repo.buildDefaults.migrate is unchanged and neither reads nor writes the version. Boot (t3): a fire-and-forget pass next to the steering refresh, after the registry loads, never awaited, with a logging catch. Docs (t4): a subsection of docs/daemon.md (including that step 1 yields between repositories) and a doc test that reads the version, every status and each row of the comparison table against a run. Deviations and limits, all disclosed: (1) the step context carries optional configPath and writeKeys beside repos (the LLD's context was repos only) so the pass's own file and writer reach step 1. (2) The gate marks t1 unsatisfied on one check only: it cannot prove 'no inventory test case fails beyond the four that already fail on a clean checkout', because it runs only the mapped files and the two inventory suites already fail on a clean checkout (module-state-inventory 2 cases, session-source-inventory 2 cases, identical before and after); no code of this Story adds module-scope state, and the session-source fixture entries for repo-config-store.ts, repo-config.ts, repo-settings.ts and index.ts were refreshed (sites, counts, digests) after inspecting the sites, which also brings the repo-config-store.ts and index.ts entries up to date with the previous Story's additions. (3) The live daemon was not booted: the pass is proven by a source check of index.ts and by runSchemaMigrations against temporary files and repos, not by a real first boot on an existing ~/.insrc. (4) The yield is between repositories; one repository's own marker check, read and write remain synchronous. Full sweep of every test file (1415, per file) after the last task, before the yield change: 74 files fail, all of them also fail on the commit before this Story (6b1c64504) with the same or more failing cases, so none is caused by this Story; after the yield change the three files it touches (schema-migrations, repo-settings, build-commands-doc) were re-run and pass."
+  },
+  "citations": []
+}

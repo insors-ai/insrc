@@ -28,7 +28,7 @@
     "standalone": true,
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "approved",
+      "status": "completed",
       "revision": {
         "number": 3,
         "contentHash": "efc6a89e2e33080c4f8a2ef2b36884b90621105031bcdbc636a1bcd7d02c0a2a",

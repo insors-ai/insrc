@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-889b7984-090f-4f21-bbab-33879e0e7f70",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-20T19:22:32.129Z",
+    "epicCreatedAt": "2026-11-20T12:14:08.881Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d70697dff9f56b4a",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Boot hook after the registry loads",
+      "parent": {
+        "entityId": "STORY-d70697dff9f56b4a-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-d70697dff9f56b4a-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-d70697dff9f56b4a-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "0cf92c0afb4b9a6d07db3072eb3490518d222f0f0cc9966f376553e9e01f8981",
+        "at": "2026-11-20T19:22:32.133Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T19:22:32.134Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Boot hook after the registry loads",
+    "summary": "In src/daemon/index.ts add the fire-and-forget pass next to the steering refresh (step 5b), far from the earlier guarded legacy-file move and leaving its anchors untouched: void runSchemaMigrations({ registeredRepos: async () => (await listRepos(db)).map(r => r.path) }).then(log the result).catch(log), never awaited, after the registry is loaded. A source-check test in schema-migrations.test.ts anchored the way the existing boot checks in repo-config.test.ts are.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "a source check shows src/daemon/index.ts calls runSchemaMigrations as a fire-and-forget pass after the registry loads, with a catch, and not awaited",
+      "the existing boot source checks in repo-config.test.ts still pass and daemon startup still logs ready"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "schema-migrations.test.ts: a source check that src/daemon/index.ts calls runSchemaMigrations as a fire-and-forget pass after the registry loads, with a catch, and not awaited"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

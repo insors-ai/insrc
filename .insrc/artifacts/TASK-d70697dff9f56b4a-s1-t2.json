@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-11d22dc5-0d24-4484-837c-2357af984839",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-20T19:22:32.121Z",
+    "epicCreatedAt": "2026-11-20T12:14:08.881Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d70697dff9f56b4a",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Runner, step list and expected version",
+      "parent": {
+        "entityId": "STORY-d70697dff9f56b4a-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-d70697dff9f56b4a-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-d70697dff9f56b4a-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "c7ca33d3e43b4c29931c7849fb69f3c84c1d7d25f9259721f89a4642817ba9fc",
+        "at": "2026-11-20T19:22:32.125Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T19:22:32.127Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Runner, step list and expected version",
+    "summary": "In src/daemon/repo-settings.ts add REPO_CONFIG_SCHEMA_VERSION (1), the SchemaMigrationStep and SchemaMigrationResult types, the static step list whose version-1 step runs migrateBuildDefaults over the listed repos and is clean only when counts['write-failed'] is 0, and runSchemaMigrations(deps): read the version, run each pending step in ascending order, stop at the first that is not clean or throws, stamp the highest clean version through writeSchemaVersion, return a status (applied, up-to-date, newer-schema, not-clean, registry-unreadable, file-unreadable, schema-version-invalid, failed) and never reject. migrateBuildDefaults and the repo.buildDefaults.migrate handler are consumed unchanged. Update inventory fixtures only for what this task adds. Tests in schema-migrations.test.ts.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "runSchemaMigrations runs the pending steps in ascending order and stamps the highest clean version for a version that is absent, null or below the expected one, runs nothing for an equal or higher one, stops at the first step that throws or reports write-failed and stamps only the earlier clean version, runs nothing on an unreadable file or an invalid version, reports registry-unreadable when the registry cannot be listed, and never rejects",
+      "the version-1 step runs migrateBuildDefaults over the listed repos and is clean only when no repo reports write-failed",
+      "two successive runs over a temporary Python repo with no commands and no schemaVersion write the three keys and stamp 1 the first time and run nothing the second time, with no commit id read anywhere",
+      "a command cleared after the stamp is not re-applied by the second run while the manual repo.buildDefaults.migrate handler still re-applies it and leaves schemaVersion unchanged"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "schema-migrations.test.ts: runSchemaMigrations runs the pending steps in ascending order and stamps the highest clean version for a version that is absent, null or below the expected one, runs nothing for an equal or higher one, stops at the first step that throws or reports write-failed and stamps only the earlier clean version, runs nothing on an unreadable file or an invalid version, reports registry-unreadable when the registry cannot be listed, and never rejects"
+      },
+      {
+        "level": "unit",
+        "name": "schema-migrations.test.ts: the version-1 step runs migrateBuildDefaults over the listed repos and is clean only when no repo reports write-failed"
+      },
+      {
+        "level": "integration",
+        "name": "schema-migrations.test.ts: two successive runs over a temporary Python repo with no commands and no schemaVersion (the first writes the three keys and stamps 1, the second runs nothing), with no commit id read anywhere"
+      },
+      {
+        "level": "integration",
+        "name": "schema-migrations.test.ts: a command cleared after the stamp is not re-applied by the second run, while the manual repo.buildDefaults.migrate handler still re-applies it and leaves schemaVersion unchanged"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

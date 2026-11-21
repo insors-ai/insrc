@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -30,3 +30,28 @@ Run at 2026-11-21T17:48:45.684Z on commit `80ace719b`. Tests check: **passed**. 
 | :--- | :--- | :--- | :--- | :--- |
 | `scripts/__tests__/source-upgrade-qualification-native.test.ts` | 0 | 3 | 37.8 s |  |
 | `src/daemon/__tests__/managed-release-staging.test.ts` | 0 | 7 | 18.3 s |  |
+
+## t2
+
+Run at 2026-11-21T19:10:57.925Z on commit `50a172185`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: Linux selector/journal reject malformed, linked and nonprivate files**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | Linux selector/journal reject malformed, linked and nonprivate files | `src/shared/__tests__/source-installation.test.ts` |
+| pass | Portable source qualification rejects wrong channel/profile/floor before npm | `scripts/__tests__/source-upgrade-qualification-native.test.ts` |
+
+**integration: Atomic publication with unknown fsync/rename outcome reconciles safely**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | Atomic publication with unknown fsync/rename outcome reconciles safely | `src/shared/__tests__/source-installation.test.ts` |
+| pass | Linux source journal serializes competing writers | `src/shared/__tests__/source-installation.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `scripts/__tests__/source-upgrade-qualification-native.test.ts` | 0 | 3 | 36.5 s |  |
+| `src/shared/__tests__/source-installation.test.ts` | 0 | 3 | 52.4 s |  |

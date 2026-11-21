@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 1,
-        "contentHash": "c3bb73fbbb24ecd089e8c49634111f103c3a35f47766b0314b713f23e94fa48d",
-        "at": "2026-11-21T17:48:45.746Z",
+        "number": 3,
+        "contentHash": "3e539ca06b3f4e4f8424c6dcb6bdb5af90253840c1becc57741ecb5b66c539ec",
+        "at": "2026-11-21T19:10:57.936Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "a03e99e17a364550",
     "storyId": "s1",
     "createdAt": "2026-11-21T17:48:45.684Z",
-    "updatedAt": "2026-11-21T17:48:45.684Z",
+    "updatedAt": "2026-11-21T19:10:57.925Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-21T15:31:04.425Z",
     "epicSlug": "restore-upgrades-from-existing-daemon-installations",
-    "revision": 1
+    "revision": 3
   },
   "body": {
     "tasks": [
@@ -128,6 +128,94 @@
               },
               {
                 "title": "Owned toolchain staging failures preserve prior selection binding and executable bytes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "50a172185",
+        "ranAt": "2026-11-21T19:10:57.925Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Linux selector/journal reject malformed, linked and nonprivate files",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/source-installation.test.ts",
+                "title": "Linux selector/journal reject malformed, linked and nonprivate files",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/source-upgrade-qualification-native.test.ts",
+                "title": "Portable source qualification rejects wrong channel/profile/floor before npm",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Atomic publication with unknown fsync/rename outcome reconciles safely",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/source-installation.test.ts",
+                "title": "Atomic publication with unknown fsync/rename outcome reconciles safely",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/source-installation.test.ts",
+                "title": "Linux source journal serializes competing writers",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "scripts/__tests__/source-upgrade-qualification-native.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 36515,
+            "titles": [
+              {
+                "title": "Portable source qualification rejects wrong channel/profile/floor before npm",
+                "result": "pass"
+              },
+              {
+                "title": "Linux source promotion requires target-specific historical upgrade evidence",
+                "result": "pass"
+              },
+              {
+                "title": "Independent staging uses absolute owned npm and preserves Mac signed behavior",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/shared/__tests__/source-installation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 52432,
+            "titles": [
+              {
+                "title": "Linux selector/journal reject malformed, linked and nonprivate files",
+                "result": "pass"
+              },
+              {
+                "title": "Atomic publication with unknown fsync/rename outcome reconciles safely",
+                "result": "pass"
+              },
+              {
+                "title": "Linux source journal serializes competing writers",
                 "result": "pass"
               }
             ],

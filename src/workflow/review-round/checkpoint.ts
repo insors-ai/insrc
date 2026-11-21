@@ -161,36 +161,49 @@ function publishGuarded(dir: string, filename: string, content: string): void {
 	}
 }
 
-/** Linux only: /proc/self/fd/<fd> is a magic symlink the kernel resolves
- *  directly to the OPEN fd's own pinned inode, not by re-looking up whatever
- *  name the fd was originally opened through -- the mechanism pinDirectory
- *  relies on. Checked once, at module load. */
-const CAN_PIN_DIRECTORY_VIA_PROC = process.platform === 'linux' && existsSync('/proc/self/fd');
+/**
+ * `/proc/self/fd/<fd>` (Linux) and `/dev/fd/<fd>` (also present on Linux, and
+ * the only form macOS/BSD expose) are magic symlinks the kernel resolves
+ * directly to the OPEN fd's own pinned inode, not by re-looking up whatever
+ * name the fd was originally opened through -- the mechanism pinDirectory
+ * relies on. Resolved once, at module load, preferring /proc when both
+ * exist (Linux) since it is the more specifically documented of the two.
+ * Externally reported P2: an earlier version pinned Linux only and silently
+ * fell back to the bare mutable path everywhere else, including macOS --
+ * reproduced directly: that fallback gave zero protection (every operation
+ * still re-resolved the swappable name), while LOOKING identical to the
+ * protected path from the caller's side. /dev/fd closes this for macOS too;
+ * a platform with neither (e.g. Windows) now REFUSES rather than silently
+ * degrading -- see pinDirectory's own doc.
+ */
+const FD_ALIAS_ROOT = existsSync('/proc/self/fd') ? '/proc/self/fd' : existsSync('/dev/fd') ? '/dev/fd' : undefined;
 
 /**
  * Opens `dir` with O_DIRECTORY|O_NOFOLLOW (fails with ELOOP if `dir` is a
- * symlink, ENOENT if it does not exist yet) and, on Linux, returns a
- * `/proc/self/fd/<fd>` alias alongside the fd itself. CALLER MUST CLOSE THE
- * FD. Every subsequent operation built on `.path` (never on the original
- * `dir` string again) is resolved by the kernel directly against the
- * pinned inode this call opened -- not by re-looking up `dir`'s own name --
- * so nothing that happens to the name `dir` itself afterward (including
- * being replaced with a symlink to somewhere else entirely) can redirect
- * those operations. This is what "binding publication and cleanup to a
- * validated directory's own identity throughout the operation" concretely
- * means in Node: externally reported P2, reproduced against the original
- * fix -- a bare lstat-based check immediately followed by a separate
- * mkdir/open/rename/rmSync call still re-resolves the mutable path from
- * scratch on every one of those later calls, leaving the exact same
- * check-then-act gap open just as before, no matter how many times the
- * check itself is repeated or how tightly it is sequenced.
+ * symlink, ENOENT if it does not exist yet) and returns a `<FD_ALIAS_ROOT>/
+ * <fd>` alias alongside the fd itself. CALLER MUST CLOSE THE FD. Every
+ * subsequent operation built on `.path` (never on the original `dir` string
+ * again) is resolved by the kernel directly against the pinned inode this
+ * call opened -- not by re-looking up `dir`'s own name -- so nothing that
+ * happens to the name `dir` itself afterward (including being replaced with
+ * a symlink to somewhere else entirely) can redirect those operations. This
+ * is what "binding publication and cleanup to a validated directory's own
+ * identity throughout the operation" concretely means in Node: externally
+ * reported P2, reproduced against the original fix -- a bare lstat-based
+ * check immediately followed by a separate mkdir/open/rename/rmSync call
+ * still re-resolves the mutable path from scratch on every one of those
+ * later calls, leaving the exact same check-then-act gap open just as
+ * before, no matter how many times the check itself is repeated or how
+ * tightly it is sequenced.
  *
- * On any platform without /proc (everything but Linux), `.path` falls back
- * to `dir` itself: Node's fs module exposes no portable openat/mkdirat/
- * unlinkat-family alternative, so non-Linux platforms keep the prior
- * best-effort, check-then-act behaviour (narrowed, not eliminated) as a
- * documented, platform-specific limitation -- not a defect unique to this
- * function.
+ * On a platform with neither alias root available, this THROWS rather than
+ * falling back to the unprotected `dir` string -- a second externally
+ * reported P2: a silent fallback gives every caller the false impression
+ * that its operations are bound to a validated identity when they are not
+ * bound to anything at all. Node's fs module exposes no portable openat/
+ * mkdirat/unlinkat-family alternative, so a platform lacking both alias
+ * roots genuinely cannot make this guarantee; refusing honestly is the only
+ * correct behaviour left, not a quieter version of the same gap.
  */
 interface PinnedDir {
 	readonly fd:   number;
@@ -199,7 +212,11 @@ interface PinnedDir {
 
 function pinDirectory(dir: string): PinnedDir {
 	const fd = openSync(dir, fsConstants.O_RDONLY | fsConstants.O_DIRECTORY | fsConstants.O_NOFOLLOW);
-	return { fd, path: CAN_PIN_DIRECTORY_VIA_PROC ? `/proc/self/fd/${fd}` : dir };
+	if (FD_ALIAS_ROOT === undefined) {
+		closeSync(fd);
+		throw new Error('checkpoint: this platform exposes neither /proc/self/fd nor /dev/fd, so operations cannot be safely bound to a validated directory\'s own identity -- refusing rather than silently falling back to an unprotected path');
+	}
+	return { fd, path: `${FD_ALIAS_ROOT}/${fd}` };
 }
 
 /**
@@ -223,23 +240,49 @@ function pinDirectory(dir: string): PinnedDir {
  * segment does not exist yet; rethrows any other failure (including a
  * symlinked segment, caught via O_NOFOLLOW) after the same cleanup.
  */
-function pinDirectoryChain(repoRoot: string, ...segments: readonly string[]): { readonly leaf: PinnedDir; readonly parent: PinnedDir; readonly close: () => void } | undefined {
-	const fds: number[] = [];
+interface PinnedChain {
+	/** Every link, in order from repoRoot to the leaf. */
+	readonly links:  readonly PinnedDir[];
+	readonly leaf:   PinnedDir;
+	readonly parent: PinnedDir;
+	readonly close:  () => void;
+}
+
+function pinDirectoryChain(repoRoot: string, ...segments: readonly string[]): PinnedChain | undefined {
+	const links: PinnedDir[] = [];
 	try {
 		let current = pinDirectory(repoRoot);
-		fds.push(current.fd);
+		links.push(current);
 		let parent = current;
 		for (const segment of segments) {
 			parent = current;
 			current = pinDirectory(join(current.path, segment));
-			fds.push(current.fd);
+			links.push(current);
 		}
-		return { leaf: current, parent, close: () => { for (const fd of fds) closeSync(fd); } };
+		return { links, leaf: current, parent, close: () => { for (const link of links) closeSync(link.fd); } };
 	} catch (err) {
-		for (const fd of fds) closeSync(fd);
+		for (const link of links) closeSync(link.fd);
 		if ((err as NodeJS.ErrnoException).code === 'ENOENT') return undefined;
 		throw err;
 	}
+}
+
+/**
+ * fsyncs every directory in `chain`, not just the leaf. Externally reported
+ * P2: publishGuarded's own fsync (the output file, then its immediate
+ * containing directory) only makes that one directory's own entries
+ * durable -- it says nothing about whether that directory's OWN existence,
+ * as an entry inside ITS parent, is durable. mkdirSync's recursive:true can
+ * silently create any number of new ancestor directories (e.g. .insrc/
+ * artifacts, the first time a review finalizes); each one is new metadata
+ * in its own parent that needs its own fsync to survive a crash, not just
+ * the leaf's content. fsync-ing a directory that was already durable is a
+ * harmless no-op, so syncing the whole chain unconditionally (rather than
+ * tracking which segments mkdirSync actually just created) is the simplest
+ * correct behaviour.
+ */
+function fsyncDirectoryChain(chain: PinnedChain): void {
+	for (const link of chain.links) fsyncSync(link.fd);
 }
 
 function isReviewCheckpointShape(v: unknown): v is ReviewCheckpoint {
@@ -283,6 +326,7 @@ export async function writeCheckpoint(
 	try {
 		const checkpoint: ReviewCheckpoint = { reviewId, lastCompletedUnit };
 		publishGuarded(chain.leaf.path, 'checkpoint.json', JSON.stringify(checkpoint));
+		fsyncDirectoryChain(chain);
 	} finally {
 		chain.close();
 	}
@@ -295,14 +339,24 @@ export async function writeCheckpoint(
  * always still be able to resume, from the start in the worst case, rather
  * than being permanently stuck on an unreadable checkpoint.
  *
- * Externally reported P2, two parts: (1) readFileSync on its own follows a
+ * Externally reported P2, three rounds: (1) readFileSync on its own follows a
  * symlink at `path`, which could hand back a different file entirely (another
  * review's own checkpoint, reached through a symlink planted at this
- * reviewId's expected location) -- fixed by the same requireNoSymlinkInPath
- * walk the write/delete paths already use, with a symlink treated the same
- * as a missing/corrupted checkpoint (undefined), consistent with this
- * function's own established "never throw on a data-integrity issue"
- * contract. (2) even without any symlink involved, nothing previously checked
+ * reviewId's expected location) -- the first fix added a requireNoSymlinkInPath
+ * walk, treating a symlink the same as a missing/corrupted checkpoint
+ * (undefined), consistent with this function's own established "never throw
+ * on a data-integrity issue" contract. (2) that check and the separate
+ * readFileSync call were still two syscalls re-resolving the same mutable
+ * path, so substituting the checkpoint after the check but before the read
+ * could still redirect it -- reproduced directly: a checkpoint initially
+ * naming this reviewId, swapped to an outside record that (by construction)
+ * also happened to carry this reviewId, still got read, since the identity
+ * check alone cannot detect a substitution that correctly names the id it
+ * was swapped onto. Fixed the same way writeCheckpoint/finalizeAndCleanup
+ * already are: pin the ancestor chain, then open the leaf file itself with
+ * O_NOFOLLOW (failing on a symlink rather than following it) and read
+ * through that descriptor, never through a second, separately-resolved path
+ * lookup. (3) even without any symlink involved, nothing previously checked
  * that the record's OWN reviewId field actually matched the one requested --
  * a mismatched record (e.g. a caller bug elsewhere writing under the wrong
  * identity) would silently hand back another review's lastCompletedUnit,
@@ -313,20 +367,19 @@ export async function readCheckpoint(reviewId: string): Promise<ReviewCheckpoint
 	requireValidReviewId(reviewId);
 	const resolveRepoRoot = testDeps.resolveRepoRoot ?? defaultResolveRepoRoot;
 	const repoRoot = await resolveRepoRoot();
-	const path = checkpointPath(repoRoot, reviewId);
 
-	try {
-		requireNoSymlinkInPath(repoRoot, path);
-	} catch {
-		return undefined;
-	}
+	const chain = pinDirectoryChain(repoRoot, '.insrc', 'tmp', reviewId);
+	if (chain === undefined) return undefined; // no review directory at all yet -- a fresh review
 
 	let raw: string;
 	try {
-		raw = readFileSync(path, 'utf8');
+		raw = readThroughPinnedLeaf(chain.leaf.path, 'checkpoint.json');
 	} catch {
-		return undefined;
+		return undefined; // missing, or a symlink -- both treated as absent, never followed
+	} finally {
+		chain.close();
 	}
+
 	let parsed: unknown;
 	try {
 		parsed = JSON.parse(raw);
@@ -336,6 +389,34 @@ export async function readCheckpoint(reviewId: string): Promise<ReviewCheckpoint
 	if (!isReviewCheckpointShape(parsed)) return undefined;
 	if (parsed.reviewId !== reviewId) return undefined;
 	return parsed;
+}
+
+/** Opens `filename` inside the already-pinned `dir` with O_NOFOLLOW (so a
+ *  symlink at that exact name fails rather than being followed) and reads
+ *  it through the resulting descriptor -- never a second, separately
+ *  resolved path lookup the way a plain readFileSync(path) would be. */
+function readThroughPinnedLeaf(dir: string, filename: string): string {
+	const fd = openSync(join(dir, filename), fsConstants.O_RDONLY | fsConstants.O_NOFOLLOW);
+	try {
+		return readFileSync(fd, 'utf8');
+	} finally {
+		closeSync(fd);
+	}
+}
+
+/**
+ * Test-only direct access to readThroughPinnedLeaf's own guarantee, mirroring
+ * review-report.ts's own `_publishGuardedForTests` convention. readCheckpoint's
+ * own pinDirectoryChain call would refuse a pre-existing symlinked review
+ * directory before ever reaching this, so that path alone cannot exercise
+ * this function's independent guarantee at the FILE level -- which holds
+ * regardless of WHEN a symlink came to occupy `filename`'s name, not just
+ * whether one existed before the call started. Exported solely so a test can
+ * exercise this guarantee directly and deterministically, without needing a
+ * real concurrent race.
+ */
+export function _readThroughPinnedLeafForTests(dir: string, filename: string): string {
+	return readThroughPinnedLeaf(dir, filename);
 }
 
 function defaultWriteDurableCopy(repoRoot: string, reviewId: string, finalOutput: unknown): void {
@@ -349,6 +430,7 @@ function defaultWriteDurableCopy(repoRoot: string, reviewId: string, finalOutput
 	if (chain === undefined) throw new Error(`checkpoint: ${dir} disappeared before it could be pinned`);
 	try {
 		publishGuarded(chain.leaf.path, `REVIEW-${reviewId}.json`, JSON.stringify(finalOutput));
+		fsyncDirectoryChain(chain);
 	} finally {
 		chain.close();
 	}

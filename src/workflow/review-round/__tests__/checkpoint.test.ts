@@ -11,7 +11,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { _setCheckpointDepsForTests, finalizeAndCleanup, readCheckpoint, writeCheckpoint } from '../checkpoint.js';
+import { _readThroughPinnedLeafForTests, _setCheckpointDepsForTests, finalizeAndCleanup, readCheckpoint, writeCheckpoint } from '../checkpoint.js';
 import type { ReviewCheckpoint } from '../checkpoint.js';
 import { _setResolveForCwdForTests } from '../../../daemon/steps/resolve-repo.js';
 
@@ -395,6 +395,55 @@ describe('writeCheckpoint/readCheckpoint/finalizeAndCleanup and ReviewCheckpoint
 		}
 	});
 
+	it('readCheckpoint never returns a substituted record even when the original checkpoint already existed and the substitution carries the same identity as both the requested reviewId and the checkpoint it replaced', async () => {
+		const reviewId = `review-substituted-${process.pid}-${Date.now()}`;
+		const dir = join(ROOT, '.insrc/tmp', reviewId);
+		const path = join(dir, 'checkpoint.json');
+		mkdirSync(dir, { recursive: true });
+		// A genuine prior checkpoint exists first, exactly as a real resumed
+		// review would leave one -- round 1.
+		writeFileSync(path, JSON.stringify({ reviewId, lastCompletedUnit: { kind: 'round', ref: 1 } }), 'utf8');
+
+		const outsideDir = mkdtempSync(join(tmpdir(), 'insrc-checkpoint-substituted-'));
+		const outsidePath = join(outsideDir, 'checkpoint.json');
+		// The substituted record carries the SAME reviewId as the one being
+		// requested (and as the checkpoint it replaced) -- a record that would
+		// pass the identity check on its own content alone, isolating what
+		// only reading through an O_NOFOLLOW-opened, pinned descriptor (never
+		// a second, separately resolved readFileSync(path)) can actually catch.
+		writeFileSync(outsidePath, JSON.stringify({ reviewId, lastCompletedUnit: { kind: 'round', ref: 77 } }), 'utf8');
+		rmSync(path, { force: true });
+		symlinkSync(outsidePath, path, 'file');
+
+		_setCheckpointDepsForTests({ resolveRepoRoot });
+		try {
+			const result = await readCheckpoint(reviewId);
+			assert.equal(result, undefined, 'a checkpoint substituted after it already existed must never be read, even with a matching identity -- round 77 must never surface in place of the refused read');
+		} finally {
+			rmSync(dir, { recursive: true, force: true });
+			rmSync(outsideDir, { recursive: true, force: true });
+			_setCheckpointDepsForTests({});
+		}
+	});
+
+	it('readThroughPinnedLeaf refuses a symlink already occupying the destination, proven directly -- readCheckpoint\'s own pinDirectoryChain call would otherwise refuse before ever reaching this, the exact state a symlink substituted after that last check would leave behind', () => {
+		const dir = mkdtempSync(join(tmpdir(), 'insrc-checkpoint-leafread-'));
+		const outsidePath = join(dir, 'outside.json');
+		const content = JSON.stringify({ reviewId: 'review-outside', lastCompletedUnit: { kind: 'round', ref: 77 } });
+		writeFileSync(outsidePath, content, 'utf8');
+		symlinkSync(outsidePath, join(dir, 'checkpoint.json'), 'file');
+
+		try {
+			assert.throws(
+				() => _readThroughPinnedLeafForTests(dir, 'checkpoint.json'),
+				/ELOOP|EMLINK/,
+				'a symlink occupying the exact file name must be refused by the open itself, never followed and read',
+			);
+		} finally {
+			rmSync(dir, { recursive: true, force: true });
+		}
+	});
+
 	it('a review directory replaced by a symlink during the narrow window between writeCheckpoint\'s/finalizeAndCleanup\'s own checks and their actual use is never written through or deleted through outside the repository (best-effort concurrent regression)', async () => {
 		const reviewId = `review-race-${process.pid}-${Date.now()}`;
 		const reviewDirPath = join(ROOT, '.insrc/tmp', reviewId);
@@ -427,6 +476,10 @@ describe('writeCheckpoint/readCheckpoint/finalizeAndCleanup and ReviewCheckpoint
 			const deadline = Date.now() + 600;
 			while (Date.now() < deadline) {
 				try { await writeCheckpoint(reviewId, { kind: 'round', ref: 1 }); } catch { /* a refusal is a safe outcome too */ }
+				try {
+					const read = await readCheckpoint(reviewId);
+					if (read !== undefined) assert.equal(read.reviewId, reviewId, 'a read that returns a record at all must never return one naming a different reviewId -- a sign it was read through a redirected location');
+				} catch { /* a refusal is a safe outcome too */ }
 				try { await finalizeAndCleanup(reviewId, { reviewId }); } catch { /* a refusal is a safe outcome too */ }
 			}
 			assert.equal(existsSync(join(outsideDir, 'checkpoint.json')), false, 'no checkpoint must ever land inside the symlink target outside the repository');

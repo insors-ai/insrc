@@ -51,7 +51,7 @@ export function cleanNodeEnvironment(parent: NodeJS.ProcessEnv): NodeJS.ProcessE
 
 export function ownedNodeEnvironment(toolchain: OwnedToolchain, parent: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
 	return { ...cleanNodeEnvironment(parent), PATH: `${dirname(toolchain.node)}${delimiter}${parent['PATH'] || '/usr/bin:/bin'}`,
-		npm_config_target: toolchain.identity.split(':')[0], npm_config_runtime: 'node' };
+		PYTHONDONTWRITEBYTECODE: '1', npm_config_target: toolchain.identity.split(':')[0], npm_config_runtime: 'node' };
 }
 
 export function toolchainInstallMarker(lockHash: string, toolchain: OwnedToolchain): string {

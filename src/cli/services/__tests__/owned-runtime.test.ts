@@ -21,9 +21,10 @@ test('owned runtime adapter consumes shell authority and rejects invalid metadat
 
 test('owned runtime and native build environments preserve caller flags while removing Node injection', () => {
 	const runtime = { node: '/owned/bin/node', npm: '/owned/lib/npm-cli.js', identity: '22.22.1:darwin-arm64:archive' };
-	const parent = { PATH: '/hostile:/usr/bin', NODE_OPTIONS: '--injected', NODE_PATH: '/external', CXXFLAGS: '-O2', USER_FLAG: 'kept', npm_config_target: '26.0.0' };
+	const parent = { PATH: '/hostile:/usr/bin', NODE_OPTIONS: '--injected', NODE_PATH: '/external', CXXFLAGS: '-O2', USER_FLAG: 'kept', PYTHONDONTWRITEBYTECODE: '', npm_config_target: '26.0.0' };
 	const env = nativeBuildEnv(ownedNodeEnvironment(runtime, parent));
 	assert.equal(env['PATH'], '/owned/bin:/hostile:/usr/bin'); assert.equal(env['NODE_OPTIONS'], undefined); assert.equal(env['NODE_PATH'], undefined);
+	assert.equal(env['PYTHONDONTWRITEBYTECODE'], '1'); assert.equal(parent.PYTHONDONTWRITEBYTECODE, '');
 	assert.equal(env['CXXFLAGS'], '-O2 -std=c++17'); assert.equal(env['USER_FLAG'], 'kept'); assert.equal(env['npm_config_target'], '22.22.1');
 	assert.equal(parent.NODE_OPTIONS, '--injected'); assert.equal(parent.CXXFLAGS, '-O2');
 	assert.equal(cleanNodeEnvironment(parent)['NODE_OPTIONS'], undefined);

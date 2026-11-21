@@ -39,8 +39,11 @@ parser-generator memory limit; the retry has 8 GB and 2 CPUs.
 The initial real npm install also exposed the locked ONNX dependency's optional
 CUDA download returning HTTP404. CPU qualification uses its supported
 `ONNXRUNTIME_NODE_INSTALL_CUDA=skip` option, which retains CPU ONNX Runtime and
-all normal lifecycle scripts. GPU/CUDA execution is not claimed. x64 remains
-publicly disabled until its clean install, full build and native loads pass.
+all normal lifecycle scripts. GPU/CUDA execution is not claimed. The retry passed a clean npm ci, full canonical build and all five native loads
+under actual Node22.22.1/npm10.9.4. The archive SHA256 is
+`07c8aafa60644fb81adefa1ee7da860eb1920851ffdc9a37020ab0be47fbc10e`.
+The observer recorded 58 lifecycle invocations across retries; all used the exact
+owned Node/npm paths. Only successful runs qualify target enablement.
 
 ## Activation proof
 
@@ -48,3 +51,24 @@ Fresh installation using the promoted canonical packaged policy, daemon
 start/status/restart/stop, exact kernel executable identities, bounded runtime
 regressions and final cleanup are recorded below as they complete. No fixture
 policy will substitute for this post-promotion installation proof.
+
+
+## Immutable toolchain correction
+
+The first public arm64 install completed install/build/native loading, but
+binding correctly failed: node-gyp's Python imports wrote 13 new __pycache__
+entries into the verified npm distribution. Activation was withheld. The changed
+cache and inventory diff are retained; no inventory entries were ignored and no
+cached inventory was rewritten to accept those bytes.
+
+The existing shell owner and shared ownedNodeEnvironment now set
+PYTHONDONTWRITEBYTECODE=1. A regression imports actual gyp Python modules from the
+official npm distribution through both shell and TUI environments, then proves
+archive-derived cache verification still succeeds. Run
+`b5a91797-613d-4894-ad1d-f7dc5d7d9a3a` passed this test, runtime adapter, policy and
+public packaging tests with confirmed closure. Both Linux machines separately
+passed actual Python-import plus fresh cache verification and five native loads
+under the corrected environment. Only unselected qualification caches were
+quarantined, after all their processes closed; no production runtime was deleted.
+The existing LLD ownership model and strict immutable-inventory contract remain
+unchanged. Fresh canonical installer retries below carry this correction.

@@ -14,8 +14,9 @@ insrc_node_runtime_policy() {
       printf '%s\n' 'Node runtime target is not qualified: darwin-x64' >&2
       return 3 ;;
     linux-x64)
-      printf '%s\n' 'Node runtime target is not qualified: linux-x64' >&2
-      return 3 ;;
+      INSRC_RUNTIME_URL='https://nodejs.org/download/release/v22.22.1/node-v22.22.1-linux-x64.tar.gz'
+      INSRC_RUNTIME_SHA256='07c8aafa60644fb81adefa1ee7da860eb1920851ffdc9a37020ab0be47fbc10e'
+      ;;
     linux-arm64)
       INSRC_RUNTIME_URL='https://nodejs.org/download/release/v22.22.1/node-v22.22.1-linux-arm64.tar.gz'
       INSRC_RUNTIME_SHA256='1d1690e9aba47e887a275abc6d8f7317e571a0700deaef493f768377e99155f5'

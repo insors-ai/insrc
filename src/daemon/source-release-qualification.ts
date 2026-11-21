@@ -31,7 +31,7 @@ export interface SourceQualificationInput {
 }
 
 /** Portable source authority. It does not reserve, select, stop or start an installation. */
-export async function qualifySourceRelease(input: SourceQualificationInput, checkout?: string) {
+export async function qualifySourceRelease(input: SourceQualificationInput, checkout?: string, rebuildPredecessor = false) {
 	const target = readSourceReleaseTarget(input.target ?? (process.platform === 'darwin' ? 'darwin' : `${process.platform}-${process.arch}`));
 	checkUpdateSource(input.source);
 	if (!/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/.test(input.priorCommit)) throw new Error('source qualification requires an exact predecessor commit');
@@ -41,9 +41,9 @@ export async function qualifySourceRelease(input: SourceQualificationInput, chec
 		|| info.size > 1024 * 1024) throw new Error('installed release verifier is not a bounded private file');
 	const staging = await realpath(await mkdtemp(join(tmpdir(), 'insrc-release-qualification-')));
 	try {
-		const result = await exec(input.runtime, [input.verifier, 'qualification', staging, input.stateRoot,
+		const result = await exec(input.runtime, [input.verifier, rebuildPredecessor ? 'recovery' : 'qualification', staging, input.stateRoot,
 			input.source.repoUrl, input.source.branch, ...(checkout === undefined ? [] : [checkout]),
-			...(target === 'darwin' ? [] : [`--target=${target}`, `--prior=${input.priorCommit}`, `--profile=${input.launchProfile}`])], {
+			...(target === 'darwin' && !rebuildPredecessor ? [] : [`--target=${target}`, `--prior=${input.priorCommit}`, `--profile=${input.launchProfile}`])], {
 			env: cleanNodeEnvironment(process.env), timeout: 180_000, maxBuffer: 128 * 1024,
 		});
 		const output = JSON.parse(result.stdout) as { receipt: unknown; catalog: string; compatibility: string; target?: string };
@@ -58,7 +58,9 @@ export async function qualifySourceRelease(input: SourceQualificationInput, chec
 			throw new Error('signed source does not support the requested launch profile');
 		}
 		return { receipt, catalog: output.catalog, launchProfiles: pair.launchProfiles,
-			qualification: { source: input.source, candidate: pair.candidate, pairs: [{ prior: pair.prior, candidate: pair.candidate }] } };
+			...(pair.recovery === undefined ? {} : { recovery: pair.recovery }),
+			qualification: { source: input.source, candidate: pair.candidate, pairs: [{ prior: pair.prior, candidate: pair.candidate,
+				...(pair.priorFingerprint === undefined ? {} : { priorFingerprint: pair.priorFingerprint }) }] } };
 	} finally { await rm(staging, { recursive: true, force: true }); }
 }
 

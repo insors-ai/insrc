@@ -7,7 +7,7 @@ import { access, lstat, mkdir, mkdtemp, open, readFile, readdir, readlink, realp
 import { delimiter, dirname, isAbsolute, join, relative, sep } from 'node:path';
 import { promisify } from 'node:util';
 import { isDeepStrictEqual } from 'node:util';
-import { ownedNodeEnvironment, resolveOwnedToolchain } from '../shared/owned-node-runtime.js';
+import { ownedNodeEnvironment, resolveOwnedToolchain, toolchainInstallMarker } from '../shared/owned-node-runtime.js';
 import { installationPaths } from '../shared/managed-daemon-installation.js';
 import { checkUpdateSource } from '../shared/update-source.js';
 import type { UpdateSource } from '../shared/update-source.js';
@@ -35,6 +35,8 @@ export interface StagedReleasePin {
 }
 
 interface StageOptions {
+	/** Only independently authenticated predecessor rebuilds use the current external build owner. */
+	readonly recoveryAuthority?: { readonly root: string } | undefined;
 	readonly sourceTarget?: SourceReleaseTarget | undefined;
 	readonly stateRoot: string;
 	readonly runtime: string;
@@ -68,7 +70,7 @@ function commandEnvironment(): NodeJS.ProcessEnv {
 }
 
 export async function managedReleaseGit(root: string, args: readonly string[]): Promise<string> {
-	const result = await exec('git', ['-C', root, ...args], {
+	const result = await exec('git', ['-C', root, '-c', 'core.fsmonitor=false', '-c', 'core.hooksPath=/dev/null', ...args], {
 		env: commandEnvironment(), timeout: 120_000, maxBuffer: 1024 * 1024,
 	});
 	return result.stdout.trim();
@@ -146,6 +148,12 @@ async function fingerprint(root: string, runtime: string): Promise<string> {
 	}
 	if ([...linkedTargets].some(target => !measured.has(target))) throw new Error('release link target is outside the measured runtime');
 	return hash.digest('hex');
+}
+
+/** Measurement only. It deliberately makes no claim that source HEAD produced these bytes. */
+export async function measureManagedReleaseFingerprint(root: string, runtime: string): Promise<string> {
+	if (await realpath(root) !== root || await realpath(runtime) !== runtime) throw new Error('release measurement requires canonical paths');
+	return fingerprint(root, runtime);
 }
 
 async function pin(root: string, runtime: string, commit: string): Promise<StagedReleasePin> {
@@ -230,7 +238,9 @@ export async function stageManagedRelease(options: StageOptions): Promise<{
 		destination = release;
 		const root = join(release, 'checkout');
 		await rename(checkout, root);
-		const toolchain = await resolveOwnedToolchain(root, stateRoot, true);
+		const authority = options.recoveryAuthority?.root;
+		if (authority !== undefined && (await realpath(authority) !== authority || inside(root, authority))) throw new Error('recovery authority must be external and canonical');
+		const toolchain = await resolveOwnedToolchain(authority ?? root, stateRoot, true);
 		runtime = toolchain.node;
 		const env = ownedNodeEnvironment(toolchain, commandEnvironment());
 		env.PATH = `${dirname(runtime)}${delimiter}${env.PATH ?? '/usr/bin:/bin'}`;
@@ -245,13 +255,15 @@ export async function stageManagedRelease(options: StageOptions): Promise<{
 			throw new Error('built declaration differs from trusted qualification');
 		}
 		if (await cleanCheckoutCommit(root) !== candidateProfile.releaseId) throw new Error('candidate commit changed during build');
-		await access(join(root, 'out/bin/insrc-daemon-supervisor.js'), constants.R_OK);
+		if (authority === undefined) await access(join(root, 'out/bin/insrc-daemon-supervisor.js'), constants.R_OK);
 		// Native compatibility and binding publication precede activation. The
 		// caller's existing journal/descriptor remains the sole cutover authority.
-		await exec(runtime, [join(root, 'out/bin/insrc-runtime-smoke.js')], { cwd: root, env, timeout: 60_000, maxBuffer: 1024 * 1024 });
+		await exec(runtime, [join(authority ?? root, 'out/bin/insrc-runtime-smoke.js'), ...(authority === undefined ? [] : [root])], { cwd: root, env, timeout: 60_000, maxBuffer: 1024 * 1024 });
+		await mkdir(join(root, 'node_modules'), { recursive: true });
+		await writeFile(join(root, 'node_modules/.insrc-install-ok'), toolchainInstallMarker(await managedReleaseGit(root, ['hash-object', 'package-lock.json']), toolchain) + '\n', { mode: 0o600 });
 		const candidate = await pin(root, runtime, candidateProfile.releaseId);
 		if (prior !== undefined) await verifyStagedReleasePin(prior);
-		await exec(runtime, [join(root, 'scripts/node-runtime-store.mjs'), 'bind', stateRoot, root, dirname(dirname(runtime))], { cwd: root, env, timeout: 180_000 });
+		await exec(runtime, [join(authority ?? root, 'scripts/node-runtime-store.mjs'), 'bind', stateRoot, root, dirname(dirname(runtime))], { cwd: root, env, timeout: 180_000 });
 		destination = undefined;
 		return { candidate, ...(prior !== undefined ? { prior } : {}), ...(compatibility !== undefined ? { compatibility } : {}) };
 	} finally {

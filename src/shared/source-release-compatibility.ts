@@ -68,8 +68,19 @@ export function readTaggedReleaseCompatibility(value: unknown, priorCommit: stri
 	}
 	const prior = readReleaseCompatibility({ ...predecessor.declaration, releaseId: priorCommit });
 	const candidate = readReleaseCompatibility({ ...value.candidate, releaseId: candidateCommit });
+	const priorFingerprint = predecessor.fingerprint;
+	if (priorFingerprint !== undefined && (typeof priorFingerprint !== 'string' || !/^[a-f0-9]{64}$/.test(priorFingerprint))) {
+		throw new Error('invalid authenticated predecessor fingerprint');
+	}
+	const recovery = predecessor.recovery;
+	if (recovery !== undefined && (!object(recovery) || Object.keys(recovery).length !== 1
+		|| typeof recovery.tree !== 'string' || !/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/.test(recovery.tree))) {
+		throw new Error('invalid authenticated predecessor recovery tree');
+	}
 	return { ...requireQualifiedReleasePair(prior, candidate, [{ prior, candidate }]),
-		launchProfiles: predecessor.launchProfiles as readonly string[] };
+		launchProfiles: predecessor.launchProfiles as readonly string[],
+		...(priorFingerprint === undefined ? {} : { priorFingerprint }),
+		...(recovery === undefined ? {} : { recovery: { tree: (recovery as { tree: string }).tree } }) };
 }
 
 /** The caller supplies qualifications from trusted release metadata, never from the candidate. */

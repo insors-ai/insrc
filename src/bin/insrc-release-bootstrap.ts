@@ -187,6 +187,25 @@ export async function checkoutAuthorizedRelease(
 	await git(checkout, ['config', 'insrc.releaseBranch', receipt.channel.branch]);
 }
 
+/** Rebuild authority is explicit in the signed catalog; a compatibility-only entry is insufficient. */
+async function checkoutAuthorizedPredecessor(
+	authorization: Awaited<ReturnType<typeof fetchReleaseAuthorization>>, checkout: string, commit: string, tree: string,
+): Promise<void> {
+	const { git, repository, ownedWorkspace, receipt, stateRoot } = authorization;
+	assertSourceReleaseFloor(receipt, await sourceFloors(stateRoot));
+	await persistBootstrapFloor(stateRoot, receipt);
+	const ref = 'refs/insrc/recovery';
+	await git(repository, ['fetch', '--quiet', '--no-tags', '--depth=1', '--', receipt.channel.repoUrl, `${commit}:${ref}`]);
+	if (await git(repository, ['rev-parse', '--verify', `${ref}^{commit}`]) !== commit
+		|| await git(repository, ['rev-parse', '--verify', `${ref}^{tree}`]) !== tree) throw new Error('authenticated predecessor tree differs');
+	await git(ownedWorkspace, ['clone', '--quiet', '--no-checkout', '--no-local', '--template=', '--', repository, checkout]);
+	await git(checkout, ['fetch', '--quiet', '--no-tags', '--', repository, ref]);
+	await git(checkout, ['checkout', '--quiet', '--detach', commit, '--']);
+	if (await git(checkout, ['rev-parse', '--verify', 'HEAD^{tree}']) !== tree) throw new Error('recovery checkout tree changed');
+	await git(checkout, ['remote', 'set-url', 'origin', receipt.channel.repoUrl]);
+	await git(checkout, ['config', 'insrc.releaseBranch', receipt.channel.branch]);
+}
+
 /** Read only a catalog from the independently authenticated tree, never a working checkout. */
 export async function readAuthorizedReleaseCatalog(
 	authorization: Awaited<ReturnType<typeof fetchReleaseAuthorization>>, target: SourceReleaseTarget = 'darwin',
@@ -212,11 +231,12 @@ if (process.argv[1] !== undefined && fileURLToPath(import.meta.url) === await re
 			?? (typeof __INSRC_SOURCE_TARGET__ === 'string' ? __INSRC_SOURCE_TARGET__ : 'darwin'));
 		const checkout = paths[0];
 		if (workspace === undefined || stateRoot === undefined || repoUrl === undefined || branch === undefined
-			|| (mode !== 'authorize' && mode !== 'qualification')) throw new Error('invalid release bootstrap invocation');
+			|| (mode !== 'authorize' && mode !== 'qualification' && mode !== 'recovery')) throw new Error('invalid release bootstrap invocation');
 		const publicKey = typeof __INSRC_RELEASE_KEY__ === 'string' ? __INSRC_RELEASE_KEY__ : '';
 		const authorization = await fetchReleaseAuthorization({ workspace, stateRoot, repoUrl, branch, publicKey });
 		const { catalog, compatibility } = await readAuthorizedReleaseCatalog(authorization, target);
-		if (target !== 'darwin' || priors.length || profiles.length) {
+		let predecessor: ReturnType<typeof readTaggedReleaseCompatibility> | undefined;
+		if (target !== 'darwin' || priors.length || profiles.length || mode === 'recovery') {
 			const prior = priors[0]?.slice('--prior='.length);
 			const profile = profiles[0]?.slice('--profile='.length);
 			if (!prior || !/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/.test(prior) || !profile) {
@@ -224,13 +244,17 @@ if (process.argv[1] !== undefined && fileURLToPath(import.meta.url) === await re
 			}
 			const pair = readTaggedReleaseCompatibility(JSON.parse(compatibility), prior, authorization.receipt.commit, target);
 			if (!pair.launchProfiles.includes(profile)) throw new Error('signed source does not support the requested launch profile');
+			predecessor = pair;
 		}
 		if (mode === 'authorize') {
 			await checkoutAuthorizedRelease(authorization, join(authorization.ownedWorkspace, 'checkout'));
 			await writeFile(join(authorization.ownedWorkspace, 'source-release.json'),
 				JSON.stringify(authorization.receipt), { flag: 'wx', mode: 0o600 });
 		} else {
-			if (checkout !== undefined) await checkoutAuthorizedRelease(authorization, checkout);
+			if (mode === 'recovery') {
+				if (!predecessor?.recovery || checkout === undefined) throw new Error('signed source does not authorize a predecessor rebuild with this checkout');
+				await checkoutAuthorizedPredecessor(authorization, checkout, predecessor.prior.releaseId, predecessor.recovery.tree);
+			} else if (checkout !== undefined) await checkoutAuthorizedRelease(authorization, checkout);
 			process.stdout.write(JSON.stringify({ receipt: authorization.receipt, catalog, compatibility,
 				...(target === 'darwin' ? {} : { target }) }));
 		}

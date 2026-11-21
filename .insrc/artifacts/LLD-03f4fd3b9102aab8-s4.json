@@ -30,7 +30,7 @@
       "status": "approved",
       "revision": {
         "number": 2,
-        "contentHash": "b62327ff09e35046fecbd8f68bcd34448707c0f08bbb840f764c2cb8d2a887d5",
+        "contentHash": "3e3d26c31290f09b036a8c05415d400761e4085820c5a1180860c128e57f9ae6",
         "at": "2026-11-20T06:38:00.189Z",
         "by": {
           "id": "insrc:system",
@@ -181,7 +181,7 @@
           "internal": "The exact per-review-type granularity mapping (round-level for design review, per-Task for code review) and the durable-copy-before-deletion mechanics stay internal to s5; no other Story's type depends on ReviewCheckpoint's internals beyond what sc1's round-driver needs to call it."
         }
       ],
-      "rolloutPhase": "Phase B \u2014 taxonomy, reconciliation, rendering, checkpointing",
+      "rolloutPhase": "Phase B — taxonomy, reconciliation, rendering, checkpointing",
       "nonFunctional": {
         "performance": "Checkpoint write/read (sc5) is a single small JSON file write/read per completed unit of work (a round, or a Task), adding no I/O beyond what the round cycle already performs.",
         "durability": "The final round's review-output JSON is copied into durable artifact storage before the .insrc/tmp/<reviewId>/ folder is deleted at a terminal state (k7), so a completed review's result survives after the ephemeral working folder is gone."

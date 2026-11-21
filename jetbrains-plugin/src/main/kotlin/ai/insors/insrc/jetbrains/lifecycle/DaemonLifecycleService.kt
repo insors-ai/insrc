@@ -131,7 +131,7 @@ class DaemonLifecycleService(
         fun production(): DaemonLifecycleService {
             val gateway = com.intellij.openapi.components.service<ai.insors.insrc.jetbrains.daemon.DaemonGatewayService>()
             val consent = com.intellij.openapi.components.service<SetupConsentStoreService>()
-            val resolver = DefaultNodeRuntimeResolver(RealSystemNodeProbe, DefaultPrivateNodeProvisioner())
+            val resolver = DefaultNodeRuntimeResolver(SystemNodeProbe { null }, DefaultPrivateNodeProvisioner())
             val provisioner = ScriptDaemonProvisioner(
                 ScriptDaemonProvisioner.ProcessBuilderRunner(),
                 DefaultDaemonScriptLocator(),
@@ -168,18 +168,6 @@ class DaemonLifecycleService(
                 .notify(null)
         }
     }
-}
-
-/** Real system-Node probe (Story S003) — runs `node -v`, returning null when node is absent/erroring. */
-object RealSystemNodeProbe : SystemNodeProbe {
-    override fun detect(): SystemNode? =
-        try {
-            val process = ProcessBuilder("node", "-v").redirectErrorStream(true).start()
-            val output = process.inputStream.bufferedReader().readText().trim()
-            if (process.waitFor() == 0 && output.isNotEmpty()) SystemNode(executablePath = "node", versionOutput = output) else null
-        } catch (e: Exception) {
-            null
-        }
 }
 
 /**

@@ -30,7 +30,7 @@ enum class NodeSource {
 }
 
 /**
- * A resolved Node interpreter (>= NODE_MIN_MAJOR) the daemon installer runs
+ * A resolved Node interpreter (verified by the shared runtime bootstrap) the daemon installer runs
  * under (Story S003). Immutable; produced only by [NodeRuntimeResolver].
  *
  * @property executablePath absolute path to the `node` executable

@@ -2,6 +2,7 @@
 
 import { spawnSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
+import { packageNodeRuntimeInstaller } from './node-runtime-assets.mjs';
 import { fileURLToPath } from 'node:url';
 
 const [keyFile, output] = process.argv.slice(2);
@@ -24,5 +25,5 @@ const block = /^INSRC_RELEASE_BOOTSTRAP_B64='[^']*'$/m;
 const installer = new URL('./insrc-daemon-install.sh', import.meta.url);
 const source = readFileSync(installer, 'utf8');
 if (!block.test(source)) throw new Error('installer verifier marker is missing');
-const packaged = source.replace(block, `INSRC_RELEASE_BOOTSTRAP_B64='${Buffer.from(bundled.stdout).toString('base64')}'`);
+const packaged = packageNodeRuntimeInstaller(source.replace(block, `INSRC_RELEASE_BOOTSTRAP_B64='${Buffer.from(bundled.stdout).toString('base64')}'`));
 writeFileSync(output, packaged, { mode: 0o755 });

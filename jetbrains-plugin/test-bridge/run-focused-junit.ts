@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 
 export const jetbrainsPluginRoot = fileURLToPath(new URL('../', import.meta.url));
 
-export function runFocusedJUnit(classes: readonly string[], env = process.env): void {
+export function runFocusedJUnit(classes: readonly string[], env = process.env, readReports?: (directory: string) => void): void {
 	const scratch = mkdtempSync(join(tmpdir(), 'insrc-focused-junit-'));
 	try {
 		// Gradle's --tests selects execution only. Compile the same focused sources.
@@ -27,5 +27,6 @@ gradle.beforeProject { project ->
 			...classes.flatMap(name => ['--tests', name]), '--console=plain',
 		], { cwd: jetbrainsPluginRoot, env, encoding: 'utf8', timeout: 290_000 });
 		assert.equal(result.status, 0, `Gradle focused tests failed:\n${result.error ?? ''}\n${result.stdout}\n${result.stderr}`);
+		readReports?.(join(scratch, 'reports'));
 	} finally { rmSync(scratch, { recursive: true, force: true }); }
 }

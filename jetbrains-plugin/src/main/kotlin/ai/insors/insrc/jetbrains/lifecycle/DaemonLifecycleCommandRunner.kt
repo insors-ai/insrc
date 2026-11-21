@@ -46,7 +46,7 @@ class DaemonLifecycleCommandRunner(
             return DaemonActionResult.Failed("insrc daemon tooling is unavailable (daemon not installed)")
         }
 
-        val commandLine = listOf("bash", script.toString(), subcommand(command))
+        val commandLine = listOf("/bin/bash", script.toString(), subcommand(command))
         val env = envWithNodeOnPath(nodeResolver()) + ("INSRC_DAEMON_UPDATE_WAIT" to "1")
 
         return try {
@@ -87,10 +87,10 @@ class DaemonLifecycleCommandRunner(
 
     /** Prepend the resolved Node's bin dir to PATH so daemon-ctl.sh's `node` resolves to our runtime. */
     private fun envWithNodeOnPath(node: NodeRuntime?): Map<String, String> {
-        val nodeBinDir = node?.let { File(it.executablePath).parentFile?.path } ?: return baseEnv
+        val nodeBinDir = node?.let { File(it.executablePath).parentFile?.path } ?: return baseEnv.filterKeys { it != "NODE_OPTIONS" && it != "NODE_PATH" }
         val existingPath = baseEnv["PATH"].orEmpty()
         val newPath = if (existingPath.isEmpty()) nodeBinDir else nodeBinDir + File.pathSeparator + existingPath
-        return baseEnv + ("PATH" to newPath)
+        return baseEnv.filterKeys { it != "NODE_OPTIONS" && it != "NODE_PATH" } + ("PATH" to newPath)
     }
 
     companion object {
@@ -98,11 +98,11 @@ class DaemonLifecycleCommandRunner(
          *  daemon-ctl.sh locator + the default Node resolver — the exact trio
          *  [DaemonLifecycleService.production] wires. */
         fun production(): DaemonLifecycleCommandRunner {
-            val nodeResolver = DefaultNodeRuntimeResolver(RealSystemNodeProbe, DefaultPrivateNodeProvisioner())
+            // The shell resolves source versus managed ownership itself.
             return DaemonLifecycleCommandRunner(
                 runner = ScriptDaemonProvisioner.ProcessBuilderRunner(),
                 scriptLocator = DefaultDaemonScriptLocator(),
-                nodeResolver = { runCatching { nodeResolver.resolve() }.getOrNull() },
+                nodeResolver = { null },
             )
         }
     }

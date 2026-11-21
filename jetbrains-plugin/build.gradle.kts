@@ -138,13 +138,14 @@ sourceSets.named("test") {
 // (no overlapping-task-output warning). Copies individual files from the sibling backend
 // repo; it does NOT wire the two build systems or toolchains together (k6). Both ship
 // under classpath /insrc/ (/insrc/insrc-daemon-install.sh, /insrc/steering-block.md).
-val bundleBackendAssets by tasks.registering(Copy::class) {
-    from(providers.environmentVariable("INSRC_PACKAGED_INSTALLER")
-        .map { rootProject.file(it) }.orElse(rootProject.file("../scripts/insrc-daemon-install.sh"))) {
-        rename { "insrc-daemon-install.sh" }
-    }
-    from(rootProject.file("../src/prompts/steering-block.md"))
-    into(layout.buildDirectory.dir("generated-resources/insrc"))
+val bundleBackendAssets by tasks.registering(Exec::class) {
+    workingDir(rootProject.projectDir)
+    commandLine("node", "../scripts/sync-client-runtime-assets.mjs", "jetbrains")
+    inputs.files(fileTree("../scripts") { include("*node-runtime*", "provision-node-runtime.sh", "insrc-daemon-install.sh", "sync-client-runtime-assets.mjs") })
+    inputs.file("../src/assets/node-runtime-policy.json")
+    inputs.file("../src/prompts/steering-block.md")
+    providers.environmentVariable("INSRC_PACKAGED_INSTALLER").orNull?.let { inputs.file(it) }
+    outputs.dir(layout.buildDirectory.dir("generated-resources/insrc"))
 }
 
 sourceSets.named("main") {

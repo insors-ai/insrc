@@ -58,7 +58,7 @@ function ctlReason(code: number): string {
 function installerReason(code: number): string {
   switch (code) {
     case 1: return 'insrc daemon install: usage error or aborted';
-    case 2: return 'prerequisites missing: Node.js >= 20 and git are required';
+    case 2: return 'verified local runtime or shell/git prerequisites are unavailable';
     default: return `the insrc daemon installer failed (exit ${code})`;
   }
 }
@@ -81,7 +81,7 @@ export function createDaemonLifecycleController(deps: ControllerDeps): DaemonLif
     if (!existsSync(paths.bundledInstaller)) {
       return { ok: false, state: 'errored', message: 'the bundled insrc installer is missing — reinstall the extension' };
     }
-    const { code } = await runner.run(['bash', paths.bundledInstaller, '-y',
+    const { code } = await runner.run(['/bin/bash', paths.bundledInstaller, '-y',
       ...(paths.managedStateRoot !== undefined ? ['--target', paths.daemonRoot] : [])]);
     return code === 0 ? { ok: true, state: await reachability() }
       : { ok: false, state: 'errored', message: installerReason(code) };
@@ -109,7 +109,7 @@ export function createDaemonLifecycleController(deps: ControllerDeps): DaemonLif
       if (!existsSync(script)) {
         return { ok: false, state: 'errored', message: 'insrc daemon is not installed — run Install first' };
       }
-      const { code } = await runner.run(['bash', script, action, ...(options?.plain === true ? PLAIN_FLAGS : [])],
+      const { code } = await runner.run(['/bin/bash', script, action, ...(options?.plain === true ? PLAIN_FLAGS : [])],
         managed === undefined ? undefined : { env: { INSRC_DAEMON_ROOT: managed, INSRC_DAEMON_UPDATE_WAIT: '1' } });
       if (code === 0) {
         return { ok: true, state: await reachability() };

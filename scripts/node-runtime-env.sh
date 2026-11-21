@@ -6,7 +6,9 @@ insrc_source_toolchain() {
   local tools="$1" state="$2" distribution canonical recorded
   unset NODE_OPTIONS NODE_PATH
   [ -f "$tools/provision-node-runtime.sh" ] || { printf '%s\n' 'Runtime bootstrap assets are missing; reinstall using the matching packaged installer.' >&2; return 2; }
-  distribution=$(/bin/bash "$tools/provision-node-runtime.sh" "$state") || return 2
+  local args=("$state")
+  [ -z "${3:-}" ] || args+=("$3")
+  distribution=$(/bin/bash "$tools/provision-node-runtime.sh" "${args[@]}") || return 2
   NODE_BIN="$distribution/bin/node"
   NPM_CLI="$distribution/lib/node_modules/npm/bin/npm-cli.js"
   if [ -n "${INSRC_NODE_BIN:-}" ]; then

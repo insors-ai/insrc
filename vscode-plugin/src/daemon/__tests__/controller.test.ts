@@ -57,7 +57,7 @@ test('run(action) spawns bash <ctlScript> <action> for each lifecycle action and
     const ctl = createDaemonLifecycleController({ runner, paths: fixturePaths({ ctl: true }), client: fakeClient(reach) });
     const result = await ctl.run(action);
     assert.equal(runner.calls.length, 1);
-    assert.equal(runner.calls[0]![0], 'bash');
+    assert.equal(runner.calls[0]![0], '/bin/bash');
     assert.equal(runner.calls[0]![2], action);
     assert.equal(result.ok, true);
     assert.equal(result.state, reach, `${action} reflects the real reachability`);
@@ -77,7 +77,7 @@ test('run(\'update\') always spawns daemon-ctl.sh update — for an unmanaged-bu
   // itself now routes managed vs. unmanaged safely, so run('update') never pre-empts
   // into the bundled signed installer — it always spawns the resolved ctl script.
   assert.deepEqual(await ctl.run('update'), { ok: true, state: 'stopped' });
-  assert.deepEqual(runner.calls[0], ['bash', paths.ctlScript, 'update']);
+  assert.deepEqual(runner.calls[0], ['/bin/bash', paths.ctlScript, 'update']);
   const candidate = join(root, 'selected');
   const ctlScript = join(candidate, 'scripts', 'daemon-ctl.sh');
   mkdirSync(dirname(ctlScript), { recursive: true });
@@ -91,7 +91,7 @@ test('run(\'update\') always spawns daemon-ctl.sh update — for an unmanaged-bu
   rmSync(paths.daemonEntry);
   assert.equal(await ctl.isInstalled(), true);
   assert.deepEqual(await ctl.run('update'), { ok: true, state: 'stopped' });
-  assert.deepEqual(runner.calls[1], ['bash', ctlScript, 'update']);
+  assert.deepEqual(runner.calls[1], ['/bin/bash', ctlScript, 'update']);
 });
 
 test('run(action) maps EACH ctl exit code 1/2/3/4 to its documented reason and never throws', async () => {
@@ -124,7 +124,7 @@ test('install() spawns bash <bundledInstaller> -y; exit 0 → reachability; code
   const ok = new FakeRunner(0);
   const ctlOk = createDaemonLifecycleController({ runner: ok, paths: fixturePaths({ installer: true }), client: fakeClient('running') });
   const okRes = await ctlOk.install();
-  assert.deepEqual(ok.calls[0]!.slice(0, 1), ['bash']);
+  assert.deepEqual(ok.calls[0]!.slice(0, 1), ['/bin/bash']);
   assert.equal(ok.calls[0]!.at(-1), '-y');
   assert.equal(okRes.ok, true);
   assert.equal(okRes.state, 'running');
@@ -133,7 +133,7 @@ test('install() spawns bash <bundledInstaller> -y; exit 0 → reachability; code
   const badRes = await bad.install();
   assert.equal(badRes.ok, false);
   assert.equal(badRes.state, 'errored');
-  assert.match(badRes.message ?? '', /prerequisites missing/);
+  assert.match(badRes.message ?? '', /verified local runtime/);
 });
 
 test('install() with a missing bundled installer returns errored/reinstall WITHOUT spawning', async () => {
@@ -182,12 +182,12 @@ test('a plain start runs daemon-ctl.sh start with --skip-sync, --skip-install an
   const plain = await ctl.run('start', { plain: true });
   assert.equal(plain.ok, true);
   const ctlScript = runner.calls[0]![1]!;
-  assert.deepEqual(runner.calls[0], ['bash', ctlScript, 'start', '--skip-sync', '--skip-install', '--skip-build']);
+  assert.deepEqual(runner.calls[0], ['/bin/bash', ctlScript, 'start', '--skip-sync', '--skip-install', '--skip-build']);
   // Without options, or with plain off, the command is what it always was.
   await ctl.run('start');
   await ctl.run('start', {});
   await ctl.run('restart', { plain: false });
-  assert.deepEqual(runner.calls[1], ['bash', ctlScript, 'start']);
-  assert.deepEqual(runner.calls[2], ['bash', ctlScript, 'start']);
-  assert.deepEqual(runner.calls[3], ['bash', ctlScript, 'restart']);
+  assert.deepEqual(runner.calls[1], ['/bin/bash', ctlScript, 'start']);
+  assert.deepEqual(runner.calls[2], ['/bin/bash', ctlScript, 'start']);
+  assert.deepEqual(runner.calls[3], ['/bin/bash', ctlScript, 'restart']);
 });

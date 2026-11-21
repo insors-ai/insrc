@@ -5,6 +5,7 @@ import { createReadStream } from 'node:fs';
 import { cp, lstat, mkdir, mkdtemp, readdir, readlink, realpath, rm, stat, writeFile, appendFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { copyNodeRuntimeAssets } from './node-runtime-assets.mjs';
 import { fileURLToPath } from 'node:url';
 
 const NODE_VERSION = '22.22.1';
@@ -61,12 +62,13 @@ export async function stageRuntime(source, stage, runtime, target) {
 	}
 	await mkdir(join(stage, 'scripts'));
 	const scripts = target === 'linux-x64'
-		? ['daemon-ctl.sh', 'insrc', 'stage-daemon-bundle.mjs', 'daemon-bundle-metadata.mjs', 'linux-daemon-metadata.mjs']
-		: ['daemon-ctl.sh', 'insrc', 'insrc-daemon-install.sh', 'stage-daemon-bundle.mjs',
+		? ['daemon-ctl.sh', 'insrc', 'insrc-mcp', 'verify-installed-runtime.mjs', 'stage-daemon-bundle.mjs', 'daemon-bundle-metadata.mjs', 'linux-daemon-metadata.mjs']
+		: ['daemon-ctl.sh', 'insrc', 'insrc-mcp', 'verify-installed-runtime.mjs', 'insrc-daemon-install.sh', 'stage-daemon-bundle.mjs',
 			'daemon-bundle-metadata.mjs', 'verify-daemon-bundle.mjs'];
 	for (const name of scripts) {
 		await copy(join(source, 'scripts', name), join(stage, 'scripts', name));
 	}
+	copyNodeRuntimeAssets(source, stage);
 	await mkdir(join(stage, 'tools'));
 	await copy(runtime, join(stage, 'tools', 'node'));
 	await copy(resolve(dirname(runtime), '..', 'LICENSE'), join(stage, 'tools', 'LICENSE.node'));

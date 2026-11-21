@@ -1,3 +1,5 @@
+import { copyNodeRuntimeAssets } from '../node-runtime-assets.mjs';
+import { fileURLToPath } from 'node:url';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
@@ -43,13 +45,14 @@ test('candidate layout survives moving the runtime and rejects external links', 
 			'packages/project-memory/dist/index.js', 'packages/project-memory/package.json', 'packages/project-memory/LICENSE',
 			'package.json', 'package-lock.json', 'LICENSE', 'THIRD_PARTY_NOTICES.md',
 			'node_modules/.bin/fixture', 'node_modules/example/index.js',
-			'scripts/daemon-ctl.sh', 'scripts/insrc', 'scripts/insrc-daemon-install.sh',
+			'scripts/daemon-ctl.sh', 'scripts/insrc', 'scripts/insrc-mcp', 'scripts/verify-installed-runtime.mjs', 'scripts/insrc-daemon-install.sh',
 			'scripts/stage-daemon-bundle.mjs', 'scripts/daemon-bundle-metadata.mjs', 'scripts/verify-daemon-bundle.mjs',
 		];
 		for (const path of [...paths.map(name => join(source, name)), runtime, join(fixture, 'node-dist/LICENSE')]) {
 			await mkdir(dirname(path), { recursive: true });
 			await writeFile(path, path.endsWith('index.js') ? 'runtime marker' : 'fixture');
 		}
+		copyNodeRuntimeAssets(fileURLToPath(new URL('../../', import.meta.url)), source);
 		await mkdir(join(source, 'node_modules/@insrc'));
 		await symlink('../../packages/project-memory', join(source, 'node_modules/@insrc/project-memory'));
 		await symlink('../node_modules', join(source, 'out/node_modules'));

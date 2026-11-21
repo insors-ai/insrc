@@ -65,8 +65,8 @@ class ScriptDaemonProvisioner(
         // INSTALL runs the install script; UPDATE runs `daemon-ctl.sh update`, which
         // routes a managed vs. unmanaged install safely on its own.
         val command = when (kind) {
-            ProvisionKind.INSTALL -> listOf("bash", script.toString())
-            ProvisionKind.UPDATE -> listOf("bash", script.toString(), "update")
+            ProvisionKind.INSTALL -> listOf("/bin/bash", script.toString())
+            ProvisionKind.UPDATE -> listOf("/bin/bash", script.toString(), "update")
         }
         val env = envWithNodeOnPath(node) + ("INSRC_DAEMON_UPDATE_WAIT" to "1")
 
@@ -82,10 +82,10 @@ class ScriptDaemonProvisioner(
 
     /** Prepend the resolved Node's bin dir to PATH so the installer's `node` resolves to our runtime. */
     private fun envWithNodeOnPath(node: NodeRuntime): Map<String, String> {
-        val nodeBinDir = File(node.executablePath).parentFile?.path ?: return baseEnv
+        val nodeBinDir = File(node.executablePath).parentFile?.path ?: return baseEnv.filterKeys { it != "NODE_OPTIONS" && it != "NODE_PATH" }
         val existingPath = baseEnv["PATH"].orEmpty()
         val newPath = if (existingPath.isEmpty()) nodeBinDir else nodeBinDir + File.pathSeparator + existingPath
-        return baseEnv + ("PATH" to newPath)
+        return baseEnv.filterKeys { it != "NODE_OPTIONS" && it != "NODE_PATH" } + ("PATH" to newPath)
     }
 
     /**
@@ -98,7 +98,7 @@ class ScriptDaemonProvisioner(
     private fun mapReason(kind: ProvisionKind, exitCode: Int): String =
         when (kind) {
             ProvisionKind.INSTALL -> when (exitCode) {
-                2 -> "a prerequisite is missing (node / git / npm)"
+                2 -> "verified local runtime or shell/git prerequisites are unavailable"
                 3 -> "the daemon source could not be found"
                 4 -> "the git / npm / build step failed"
                 else -> "install failed (exit $exitCode)"

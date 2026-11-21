@@ -52,12 +52,12 @@ class DaemonProvisionerTest {
 
         provisioner.run(ProvisionKind.INSTALL, node)
         val installSpec = runner.last!!
-        assertEquals(listOf("bash", install.toString()), installSpec.command) // install script, no extra arg
+        assertEquals(listOf("/bin/bash", install.toString()), installSpec.command) // install script, no extra arg
         assertTrue(installSpec.env["PATH"]!!.startsWith(File(node.executablePath).parent + File.pathSeparator))
 
         provisioner.run(ProvisionKind.UPDATE, node)
         val updateSpec = runner.last!!
-        assertEquals(listOf("bash", update.toString(), "update"), updateSpec.command) // daemon-ctl.sh update
+        assertEquals(listOf("/bin/bash", update.toString(), "update"), updateSpec.command) // daemon-ctl.sh update
         assertTrue(updateSpec.env["PATH"]!!.startsWith(File(node.executablePath).parent + File.pathSeparator))
     }
 

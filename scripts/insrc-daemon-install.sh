@@ -1,9 +1,9 @@
-#!/usr/bin/env bash
+#!/bin/bash
 #
 # insrc daemon bootstrap installer.
 #
 # What this script does:
-#   1. Verify prerequisites (Node.js >= 20, git).
+#   1. Provision verified local Node/npm and check git.
 #   2. Clone insors-ai/insrc.git into ~/.insrc/daemon (configurable).
 #      (The daemon lives in its own repo; repo root carries package.json
 #       + src/ + out/ directly.)
@@ -62,6 +62,17 @@ ASSUME_YES=0
 FRESH_MAC_INSTALL=0
 # Filled by release packaging with the verifier and independently provisioned public key.
 INSRC_RELEASE_BOOTSTRAP_B64=''
+INSRC_NODE_BOOTSTRAP_B64=''
+INSRC_NODE_BOOTSTRAP_SHA256=''
+PRINT_RUNTIME=0
+RUNTIME_ARCHIVE=''
+RUNTIME_ASSET_STAGE=''
+BRIDGE=''
+cleanup_install() {
+  [ -z "$BRIDGE" ] || /bin/rm -rf "$BRIDGE"
+  [ -z "$RUNTIME_ASSET_STAGE" ] || /bin/rm -rf "$RUNTIME_ASSET_STAGE"
+}
+trap cleanup_install EXIT
 
 write_release_verifier() {
 	(
@@ -115,6 +126,8 @@ while [ $# -gt 0 ]; do
 		--branch)    shift; BRANCH="${1:-}"; EXPLICIT_BRANCH=1; [ -n "$BRANCH" ] || die "--branch requires a value" ;;
 		--repo)      shift; REPO_URL="${1:-}"; EXPLICIT_REPO=1; [ -n "$REPO_URL" ] || die "--repo requires a value" ;;
 		--no-start)  START_AFTER_INSTALL=0 ;;
+		--print-runtime) PRINT_RUNTIME=1 ;;
+		--runtime-archive) shift; RUNTIME_ARCHIVE="${1:-}"; [ -n "$RUNTIME_ARCHIVE" ] || die "--runtime-archive requires a file" ;;
 		--embedder)
 			shift
 			EMBEDDER_CHOICE="${1:-}"
@@ -129,6 +142,21 @@ while [ $# -gt 0 ]; do
 	esac
 	shift
 done
+
+RUNTIME_TOOLS="$(cd "$(dirname "${BASH_SOURCE[0]:-}")" && pwd -P)"
+if [ -n "$INSRC_NODE_BOOTSTRAP_B64" ]; then
+  RUNTIME_ASSET_STAGE=$(mktemp -d "${TMPDIR:-/tmp}/insrc-runtime-assets-XXXXXXXX")
+  chmod 700 "$RUNTIME_ASSET_STAGE"
+  printf '%s' "$INSRC_NODE_BOOTSTRAP_B64" | /usr/bin/base64 -d > "$RUNTIME_ASSET_STAGE/assets.tar.gz" || die 'invalid embedded runtime assets' 2
+  asset_hash=$(/usr/bin/shasum -a 256 < "$RUNTIME_ASSET_STAGE/assets.tar.gz")
+  [ "${asset_hash%% *}" = "$INSRC_NODE_BOOTSTRAP_SHA256" ] || die 'embedded runtime asset digest mismatch' 2
+  /usr/bin/tar -xzf "$RUNTIME_ASSET_STAGE/assets.tar.gz" -C "$RUNTIME_ASSET_STAGE" || die 'embedded runtime extraction failed' 2
+  RUNTIME_TOOLS="$RUNTIME_ASSET_STAGE/scripts"
+fi
+[ -f "$RUNTIME_TOOLS/node-runtime-env.sh" ] || die "runtime bootstrap assets missing; use the matching packaged installer" 2
+. "$RUNTIME_TOOLS/node-runtime-env.sh"
+insrc_source_toolchain "$RUNTIME_TOOLS" "$HOME/.insrc" "$RUNTIME_ARCHIVE" || die "verified local Node toolchain is unavailable" 2
+if [ "$PRINT_RUNTIME" -eq 1 ]; then printf '%s\n' "$NODE_BIN"; exit 0; fi
 
 DAEMON_SRC="$INSTALL_ROOT"
 LOG_DIR="/tmp/insrc"
@@ -159,10 +187,7 @@ printf '\n'
 
 log "checking prerequisites..."
 command -v git >/dev/null 2>&1 || die "git not found on PATH" 2
-RUNTIME_TOOLS="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
-[ -f "$RUNTIME_TOOLS/node-runtime-env.sh" ] || die "runtime bootstrap assets missing; use the matching packaged installer" 2
-. "$RUNTIME_TOOLS/node-runtime-env.sh"
-insrc_source_toolchain "$RUNTIME_TOOLS" "$HOME/.insrc" || die "verified local Node toolchain is unavailable" 2
+
 ok "local Node $("$NODE_BIN" -v) + git $(git --version | awk '{print $3}')"
 
 # ---------------------------------------------------------------------------
@@ -199,6 +224,7 @@ if [ "$(uname -s)" = Darwin ] && [ "$FRESH_MAC_INSTALL" -eq 0 ] && [ -e "$INSTAL
 			if [ "$EXPLICIT_REPO" -eq 1 ]; then UPDATE_ARGS+=(--repo-url "$REPO_URL"); fi
 			if [ "$EXPLICIT_BRANCH" -eq 1 ]; then UPDATE_ARGS+=(--branch "$BRANCH"); fi
 			cd /
+			cleanup_install
 			INSRC_DAEMON_UPDATE_WAIT=1 INSRC_DAEMON_ROOT="$INSTALL_ROOT" exec "$INSTALL_ROOT/scripts/daemon-ctl.sh" "${UPDATE_ARGS[@]}"
 		fi
 	fi
@@ -217,7 +243,7 @@ if [ "$(uname -s)" = Darwin ] && [ "$FRESH_MAC_INSTALL" -eq 0 ] && [ -e "$INSTAL
 	case "$REPO_URL" in https://*|http://*|ssh://*|git://*|file://*|/*|*@*:*) ;; *) die "unsupported daemon origin" 3 ;; esac
 	git check-ref-format --branch "$BRANCH" >/dev/null || die "invalid daemon branch" 3
 	BRIDGE=$(mktemp -d "${TMPDIR:-/tmp}/insrc-upgrade-XXXXXXXX")
-	trap 'rm -rf "$BRIDGE"' EXIT
+	trap cleanup_install EXIT
 	log "preparing the macOS upgrade bridge beside the installed release"
 	[ -n "$INSRC_RELEASE_BOOTSTRAP_B64" ] || die "production source release signing key is not provisioned" 4
 	write_release_verifier "$BRIDGE/verifier.mjs"
@@ -475,7 +501,7 @@ if [ "$FRESH_MAC_INSTALL" -eq 1 ]; then
 	[ -f "$HELPER" ] || die "this daemon release does not include the macOS supervisor controller" 4
 	if [ -n "$INSRC_RELEASE_BOOTSTRAP_B64" ]; then
 		BRIDGE=$(mktemp -d "${TMPDIR:-/tmp}/insrc-verifier-XXXXXXXX")
-		trap 'rm -rf "$BRIDGE"' EXIT
+		trap cleanup_install EXIT
 		write_release_verifier "$BRIDGE/verifier.mjs"
 		"$NODE_BIN" "$HELPER" activate-fresh "$INSTALL_ROOT" "$ACTIVATION_INTENT" "$BRIDGE/verifier.mjs"
 	else

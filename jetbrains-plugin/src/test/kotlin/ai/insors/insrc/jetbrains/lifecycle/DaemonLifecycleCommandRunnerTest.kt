@@ -40,7 +40,7 @@ class DaemonLifecycleCommandRunnerTest {
         val runner = RecordingRunner(exit = 0)
         val result = DaemonLifecycleCommandRunner(runner, locator(script), noNode, emptyMap()).run(LifecycleCommand.START)
 
-        assertEquals(listOf("bash", script.toString(), "start"), runner.lastSpec?.command)
+        assertEquals(listOf("/bin/bash", script.toString(), "start"), runner.lastSpec?.command)
         assertTrue(result is DaemonActionResult.Ok)
     }
 
@@ -90,7 +90,7 @@ class DaemonLifecycleCommandRunnerTest {
             // itself routes managed vs. unmanaged safely, so UPDATE never pre-empts into the
             // bundled installer — it spawns the legacy checkout's OWN daemon-ctl.sh directly.
             assertTrue(controller.run(LifecycleCommand.UPDATE) is DaemonActionResult.Ok)
-            assertEquals(listOf("bash", oldCtl.toString(), "update"), runner.lastSpec?.command)
+            assertEquals(listOf("/bin/bash", oldCtl.toString(), "update"), runner.lastSpec?.command)
 
             val state = home.resolve(".insrc")
             val selector = state.resolve("managed-lifecycle/installation.json")
@@ -102,7 +102,7 @@ class DaemonLifecycleCommandRunnerTest {
             Files.writeString(script, "selected controller")
             Files.writeString(selector, """{"version":1,"stateRoot":"$state","enabled":true,"releaseRoot":"$release"}""")
             assertTrue(controller.run(LifecycleCommand.UPDATE) is DaemonActionResult.Ok)
-            assertEquals(listOf("bash", script.toString(), "update"), runner.lastSpec?.command)
+            assertEquals(listOf("/bin/bash", script.toString(), "update"), runner.lastSpec?.command)
             assertEquals("1", runner.lastSpec?.env?.get("INSRC_DAEMON_UPDATE_WAIT"))
         } finally { home.toFile().deleteRecursively() }
     }

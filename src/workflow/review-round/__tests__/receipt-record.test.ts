@@ -52,20 +52,37 @@ describe('VerificationReceipt and its RECEIPTS record', () => {
 
 	it('RECEIPTS.md write for a security review round', async () => {
 		await withRepo(async (repo) => {
-			const paths = await persistVerificationReceipt(repo, { epicHash: HASH, storyId: 's1', now: T0 }, receipt('receipt-1'));
-			assert.equal(basename(paths.json), `RECEIPTS-${HASH}-s1.json`);
-			assert.equal(basename(paths.md), 'RECEIPTS.md');
-			const md = readFileSync(paths.md, 'utf8');
-			assert.match(md, /receipt-1/);
+			// Simulates the sandbox/mutation checkpoint of a security review's round 1
+			// and round 2, each writing its own receipt as soon as it completes -- no
+			// SecurityFinding object exists anywhere in this test, proving the write
+			// is unconditional (pass or fail) and never gated on corroboration.
+			const round1 = await persistVerificationReceipt(
+				repo, { epicHash: HASH, storyId: 's1', now: T0 },
+				receipt('review-sec1-round-1-sandbox', { result: 'pass', environment: 'docker:node22' }),
+			);
+			assert.equal(basename(round1.json), `RECEIPTS-${HASH}-s1.json`);
+			assert.equal(basename(round1.md), 'RECEIPTS.md');
+			let md = readFileSync(round1.md, 'utf8');
+			assert.match(md, /review-sec1-round-1-sandbox/);
+			assert.match(md, /pass/);
 			assert.match(md, new RegExp(`insrc:artifact ${receiptsArtifactId(HASH, 's1')}`));
-			const rendered = renderReceiptRecordMd(readReceiptRecord(repo, HASH, 's1')!);
-			assert.match(rendered, /pass/);
 
-			// A second receipt for a failed run is recorded independent of whether any
-			// SecurityFinding corroborates it -- both entries persist.
-			await persistVerificationReceipt(repo, { epicHash: HASH, storyId: 's1', now: T0 }, receipt('receipt-2', { result: 'fail' }));
+			// Round 2's checkpoint fails -- still recorded, unconditionally, in the same
+			// Story's receipt record, independent of whether anything corroborates it.
+			await persistVerificationReceipt(
+				repo, { epicHash: HASH, storyId: 's1', now: T0 },
+				receipt('review-sec1-round-2-sandbox', { result: 'fail', environment: 'docker:node22' }),
+			);
 			const rec = readReceiptRecord(repo, HASH, 's1')!;
-			assert.deepEqual(rec.body.receipts.map(r => [r.id, r.result]), [['receipt-1', 'pass'], ['receipt-2', 'fail']]);
+			assert.deepEqual(
+				rec.body.receipts.map(r => [r.id, r.result]),
+				[['review-sec1-round-1-sandbox', 'pass'], ['review-sec1-round-2-sandbox', 'fail']],
+				'both rounds\' receipts persist, pass and fail alike, with no SecurityFinding involved at any point',
+			);
+			md = readFileSync(round1.md, 'utf8');
+			assert.match(md, /review-sec1-round-1-sandbox/);
+			assert.match(md, /review-sec1-round-2-sandbox/);
+			assert.match(renderReceiptRecordMd(rec), /fail/);
 		});
 	});
 

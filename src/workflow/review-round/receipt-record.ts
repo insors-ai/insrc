@@ -117,6 +117,12 @@ function pathsFor(repoPath: string, rec: ReceiptRecord, intent: PathIntent): { m
  * Story's receipt record: created on the first write, every other entry kept.
  * `createdAt` and the route flag are kept from the first write. Throws on a
  * write failure; the caller decides what that means.
+ *
+ * Takes no SecurityFinding parameter anywhere: the write is unconditional,
+ * for every checkpoint run (pass or fail) regardless of whether anything
+ * later corroborates it -- the opposite dependency (a corroborated
+ * SecurityFinding references a receipt by id, via SecurityFinding.receiptId)
+ * is the only link between the two, and it is optional on the finding's side.
  */
 export async function persistVerificationReceipt(
 	repoPath: string,

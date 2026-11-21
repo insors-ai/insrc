@@ -136,7 +136,12 @@ function pathsFor(repoPath: string, rec: ReceiptRecord, intent: PathIntent): { m
  * (or lifecycle-service) level. `repoPath` is canonicalized (the same
  * resolve+realpath lifecycleFor uses for its own per-repository registry key)
  * before it enters the lock key, so a trailing slash, a relative path or a
- * symlink naming the SAME repository does not escape into a second queue.
+ * symlink naming the SAME repository does not escape into a second queue --
+ * and the SAME canonical (always-absolute) path is what the actual read,
+ * merge and write run against, not the original one: `writeAtomic` requires
+ * an absolute path, so a relative `repoPath` would otherwise record the json
+ * and its change-log entry and then fail refreshing RECEIPTS.md, leaving the
+ * document behind the json it is supposed to render.
  */
 export function persistVerificationReceipt(
 	repoPath: string,
@@ -145,7 +150,7 @@ export function persistVerificationReceipt(
 	through?: RoundWriter,
 ): Promise<{ md: string; json: string }> {
 	const canonicalRepo = realpathSync(resolve(repoPath));
-	return serialized(`${canonicalRepo}\0${ident.epicHash}\0${ident.storyId}`, () => persistVerificationReceiptUnlocked(repoPath, ident, receipt, through));
+	return serialized(`${canonicalRepo}\0${ident.epicHash}\0${ident.storyId}`, () => persistVerificationReceiptUnlocked(canonicalRepo, ident, receipt, through));
 }
 
 /** One write at a time per (repoPath, epicHash, storyId): the read, merge and write of

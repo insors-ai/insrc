@@ -7,7 +7,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { basename, join } from 'node:path';
+import { basename, join, relative } from 'node:path';
 
 import { persistVerificationReceipt, readReceiptRecord, ReceiptRecordUnreadableError, renderReceiptRecordMd } from '../receipt-record.js';
 import type { VerificationReceipt } from '../receipt-record.js';
@@ -237,6 +237,34 @@ describe('VerificationReceipt and its RECEIPTS record', () => {
 			);
 			const { changeLog } = await store.readWithHistory(id);
 			assert.equal(changeLog.length, 3, 'all three writes are in the change log');
+		});
+	});
+
+	it('a relative repoPath still writes the json, history AND refreshes RECEIPTS.md -- the canonical path is used throughout, not only for the lock', async () => {
+		await withRepo(async (repo) => {
+			writeFileSync(
+				join(repo, '.insrc', 'artifacts', `LLD-${HASH}-s1.json`),
+				`${JSON.stringify({ meta: { workflow: 'design.story', epicHash: HASH, storyId: 's1', createdAt: T0, epicCreatedAt: T0, standalone: true }, body: {} }, null, 2)}\n`,
+			);
+			// createRepoLifecycle itself still gets the real (absolute) repo: only the repoPath PASSED TO
+			// persistVerificationReceipt is relative, to isolate the code path the fix touches.
+			const { store, service: svc } = createRepoLifecycle(repo);
+			const through: RoundWriter = { writer: svc, actor: { id: 'insrc:build', kind: 'system', properties: {} } };
+			const id = receiptsArtifactId(HASH, 's1');
+			const relativeRepo = relative(process.cwd(), repo);
+			assert.ok(!relativeRepo.startsWith('/'), 'the path handed to persistVerificationReceipt below must actually be relative');
+
+			const paths = await persistVerificationReceipt(relativeRepo, { epicHash: HASH, storyId: 's1', now: T0 }, receipt('rel-1'), through);
+
+			// The json and its change-log entry: written through the real lifecycle service.
+			const stored = await store.read(id);
+			assert.deepEqual((stored.payload.body as { receipts: readonly VerificationReceipt[] }).receipts.map(r => r.id), ['rel-1']);
+			const { changeLog } = await store.readWithHistory(id);
+			assert.equal(changeLog.length, 1);
+
+			// RECEIPTS.md: without the fix, writeAtomic throws ("path must be absolute") AFTER the
+			// json/history write above already succeeded, leaving the document behind the json it renders.
+			assert.match(readFileSync(paths.md, 'utf8'), /rel-1/, 'RECEIPTS.md was actually refreshed to match the json, not left at its prior (absent) content');
 		});
 	});
 

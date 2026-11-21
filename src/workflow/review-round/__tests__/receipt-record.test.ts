@@ -13,10 +13,14 @@ import { persistVerificationReceipt, readReceiptRecord, ReceiptRecordUnreadableE
 import type { VerificationReceipt } from '../receipt-record.js';
 import { isTestRecordJsonPath, NotApprovableError, approveArtifactByJsonPath } from '../../gates.js';
 import type { LifecycleService } from '../../artifact-core/lifecycle-service.js';
+import { TerminalArtifactError } from '../../artifact-core/types.js';
+import type { Reference } from '../../artifact-core/types.js';
 import { artifactJsonPath, receiptsArtifactId } from '../../storage.js';
 import { makeRiskFamilyVerdictFinding } from '../security-finding.js';
 import { createRepoLifecycle } from '../../artifact-core/repo-lifecycle.js';
 import type { RoundWriter } from '../../runners/build/round-writer.js';
+import { EPIC, STORY, T1, T2, TASKS, service, stubEvidence } from '../../artifact-core/__tests__/lifecycle-kit.js';
+import { H, alice, bob, artifact, kit } from '../../artifact-core/__tests__/store-kit.js';
 
 const HASH = 'abc123def4567890';
 const T0 = '2026-03-01T10:00:00.000Z';
@@ -131,6 +135,76 @@ describe('VerificationReceipt and its RECEIPTS record', () => {
 			// History: both rounds are in the change log, so the earlier receipt is still readable there too.
 			const { changeLog } = await store.readWithHistory(id);
 			assert.equal(changeLog.length, 2, 'both lifecycle-backed writes are recorded in the change log');
+		});
+	});
+
+	it("Story completion freezes RECEIPTS, and persisting after that is refused on both paths -- never silently stripping the stamp", async () => {
+		const k = kit();
+		try {
+			const ref = (entityId: string, type: string): Reference => ({ entityId, type, relation: 'derived-from' });
+			await k.store.write(artifact(`DEF-${H}`), alice);
+			await k.store.write(artifact(EPIC), alice);
+			await k.store.write(artifact(STORY, { parent: ref(EPIC, 'EPIC') }), alice);
+			for (const t of [T1, T2]) await k.store.write(artifact(t, { parent: ref(STORY, 'STORY') }), alice);
+			await k.store.write(artifact(TASKS, { parent: ref(STORY, 'STORY') }), alice);
+
+			const svc = service(k, stubEvidence([T1, T2]));
+			const through: RoundWriter = { writer: svc, actor: bob };
+			const id = receiptsArtifactId(H, 's1');
+
+			await persistVerificationReceipt(k.repo, { epicHash: H, storyId: 's1', now: T0 }, receipt('seed'), through);
+			await svc.apply(STORY, 'complete', bob);
+			assert.equal((await k.store.read(id)).lifecycle.status, 'completed', "the Story's completion cascade freezes RECEIPTS too, exactly like TESTS/BUILD");
+
+			// Through the lifecycle service: the store's own terminal-content check refuses the content change.
+			await assert.rejects(
+				persistVerificationReceipt(k.repo, { epicHash: H, storyId: 's1', now: '2026-10-21T00:00:00.000Z' }, receipt('after-1'), through),
+				TerminalArtifactError,
+				'a lifecycle-backed append after completion must be refused, not silently accepted',
+			);
+
+			// The raw path (no RoundWriter) must enforce the SAME freeze -- not bypass it by never looking at the stored lifecycle.
+			await assert.rejects(
+				persistVerificationReceipt(k.repo, { epicHash: H, storyId: 's1', now: '2026-10-21T00:00:01.000Z' }, receipt('after-2')),
+				TerminalArtifactError,
+				'the raw persistence path must enforce the completed-record freeze too, not drop the stamp and succeed',
+			);
+
+			// Either way: nothing was lost, changed or silently stripped.
+			const after = await k.store.read(id);
+			assert.equal(after.lifecycle.status, 'completed');
+			assert.deepEqual((after.payload.body as { receipts: readonly VerificationReceipt[] }).receipts.map(r => r.id), ['seed']);
+		} finally { k.done(); }
+	});
+
+	it('concurrent appends through the real lifecycle service: both receipts survive, serialized rather than racing', async () => {
+		await withRepo(async (repo) => {
+			writeFileSync(
+				join(repo, '.insrc', 'artifacts', `LLD-${HASH}-s1.json`),
+				`${JSON.stringify({ meta: { workflow: 'design.story', epicHash: HASH, storyId: 's1', createdAt: T0, epicCreatedAt: T0, standalone: true }, body: {} }, null, 2)}\n`,
+			);
+			const { store, service: svc } = createRepoLifecycle(repo);
+			const through: RoundWriter = { writer: svc, actor: { id: 'insrc:build', kind: 'system', properties: {} } };
+			const id = receiptsArtifactId(HASH, 's1');
+
+			await persistVerificationReceipt(repo, { epicHash: HASH, storyId: 's1', now: T0 }, receipt('seed'), through);
+
+			// Two overlapping appends for the same Story's receipts: each one's own lifecycle write is serialized by
+			// the store's per-id queue, but the business-level read-merge-write around it was not -- without the fix,
+			// both read the same snapshot and the second write's full receipt list silently drops the first's addition.
+			await Promise.all([
+				persistVerificationReceipt(repo, { epicHash: HASH, storyId: 's1', now: '2026-03-01T11:00:00.000Z' }, receipt('concurrent-a'), through),
+				persistVerificationReceipt(repo, { epicHash: HASH, storyId: 's1', now: '2026-03-01T11:00:01.000Z' }, receipt('concurrent-b'), through),
+			]);
+
+			const after = await store.read(id);
+			assert.deepEqual(
+				(after.payload.body as { receipts: readonly VerificationReceipt[] }).receipts.map(r => r.id).sort(),
+				['concurrent-a', 'concurrent-b', 'seed'],
+				'both overlapping appends must survive; neither may silently overwrite the other',
+			);
+			const { changeLog } = await store.readWithHistory(id);
+			assert.equal(changeLog.length, 3, 'all three writes -- the seed and both concurrent appends -- are in the change log');
 		});
 	});
 

@@ -127,8 +127,34 @@ function pathsFor(repoPath: string, rec: ReceiptRecord, intent: PathIntent): { m
  * Refuses, rather than silently discarding, an existing record this write
  * cannot read: an unreadable record is NOT the same as no record, and treating
  * it as absent would replace it, losing every receipt already in it.
+ *
+ * The whole read-merge-write is serialized per (repoPath, epicHash, storyId):
+ * two overlapping calls would otherwise both merge their receipt into the same
+ * snapshot of the prior record, and the second write would overwrite the
+ * first's addition even though both are individually serialized at the file
+ * (or lifecycle-service) level.
  */
-export async function persistVerificationReceipt(
+export function persistVerificationReceipt(
+	repoPath: string,
+	ident:    { readonly epicHash: string; readonly storyId: string; readonly now: string; readonly standalone?: boolean | undefined },
+	receipt:  VerificationReceipt,
+	through?: RoundWriter,
+): Promise<{ md: string; json: string }> {
+	return serialized(`${repoPath}\0${ident.epicHash}\0${ident.storyId}`, () => persistVerificationReceiptUnlocked(repoPath, ident, receipt, through));
+}
+
+/** One write at a time per (repoPath, epicHash, storyId): the read, merge and write of
+ *  {@link persistVerificationReceipt} must not interleave with another call for the same record. */
+const WRITE_QUEUES = new Map<string, Promise<unknown>>();
+function serialized<T>(lockKey: string, run: () => Promise<T>): Promise<T> {
+	const previous = WRITE_QUEUES.get(lockKey) ?? Promise.resolve();
+	const next = previous.then(run, run);
+	const tail = next.catch(() => undefined);
+	WRITE_QUEUES.set(lockKey, tail);
+	return next.finally(() => { if (WRITE_QUEUES.get(lockKey) === tail) WRITE_QUEUES.delete(lockKey); });
+}
+
+async function persistVerificationReceiptUnlocked(
 	repoPath: string,
 	ident:    { readonly epicHash: string; readonly storyId: string; readonly now: string; readonly standalone?: boolean | undefined },
 	receipt:  VerificationReceipt,
@@ -157,7 +183,11 @@ export async function persistVerificationReceipt(
 	const paths = pathsFor(repoPath, rec, intent);
 	if (through !== undefined) await storeRound(through, receiptsArtifactId(ident.epicHash, ident.storyId), paths.json, rec.body, receiptsRoundOutcome(receipt));
 	const priorJson = existsSync(paths.json) ? readFileSync(paths.json, 'utf8') : undefined;
-	writeArtifact(paths.json, through !== undefined ? withStoredModel(paths.json, rec) : rec, 'content', { replaceUnreadable: true });
+	// A head the store holds carries its envelope and lifecycle; the refresh keeps them on BOTH persistence
+	// paths, not only the lifecycle-backed one -- otherwise a raw write drops the stored lifecycle entirely
+	// (including a 'completed' stamp), and the store's own terminal-content check (TerminalArtifactError) never
+	// sees it either. withStoredModel is a no-op the first time there is nothing stored yet.
+	writeArtifact(paths.json, withStoredModel(paths.json, rec), 'content', { replaceUnreadable: true });
 	try {
 		writeAtomic(paths.md, `${artifactIdMarker(receiptsArtifactId(ident.epicHash, ident.storyId))}\n\n${renderReceiptRecordMd(rec)}`);
 	} catch (err) {

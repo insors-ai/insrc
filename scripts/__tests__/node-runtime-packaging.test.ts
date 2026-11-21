@@ -23,6 +23,7 @@ test('packaged installer embeds exactly the canonical shared runtime assets and 
   const size=parseInt(header.toString('ascii',124,136).replace(/\0.*$/s,'').trim(),8);
   assert.ok(Number.isSafeInteger(size)&&size>=0);
   if(header[156]===0||header[156]===48)members.push(name);
+  if(header[156]===120)assert.doesNotMatch(tar.subarray(offset+512,offset+512+size).toString('utf8'),/LIBARCHIVE\.xattr\.|SCHILY\.xattr\./);
   offset+=512+Math.ceil(size/512)*512;
  }
  assert.deepEqual(members.sort(),[...NODE_RUNTIME_ASSETS].sort());

@@ -10,13 +10,16 @@ import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { assertSourceReleaseFloor, readVerifiedSourceRelease } from '../shared/managed-source-release.js';
 import type { VerifiedSourceRelease } from '../shared/managed-source-release.js';
+import { readSourceReleaseTarget, sourceReleaseCatalog } from '../shared/source-release-target.js';
+import type { SourceReleaseTarget } from '../shared/source-release-target.js';
+import { readTaggedReleaseCompatibility } from '../shared/source-release-compatibility.js';
 
 declare const __INSRC_RELEASE_KEY__: string | undefined;
+declare const __INSRC_SOURCE_TARGET__: string | undefined;
 const exec = promisify(execFile);
 const HEAD_REF = 'refs/insrc/candidate';
 const TAG_REF = 'refs/insrc/release-tag';
 const PRINCIPAL = 'insrc-release';
-const CATALOG = 'release/macos-compatibility.json';
 
 interface BootstrapInput {
 	readonly workspace: string;
@@ -49,36 +52,43 @@ async function sourceFloors(stateRoot: string): Promise<VerifiedSourceRelease[]>
 	} finally { await file.close(); }
 }
 
-/** The installer runs before the lifecycle helper exists. Publish immutable observations
- * by sequence so concurrent installers cannot replace an already accepted tag. */
-async function persistBootstrapFloor(stateRoot: string, release: VerifiedSourceRelease): Promise<void> {
+function bootstrapFloorDirectory(stateRoot: string, release: VerifiedSourceRelease): string {
 	const channel = createHash('sha256').update(JSON.stringify(release.channel)).digest('hex');
-	const directory = join(stateRoot, 'source-release-' + channel);
-	await mkdir(directory, { mode: 0o700 }).catch((error: NodeJS.ErrnoException) => {
-		if (error.code !== 'EEXIST') throw error;
+	return join(stateRoot, 'source-release-' + channel);
+}
+
+async function verifyBootstrapFloor(stateRoot: string, release: VerifiedSourceRelease): Promise<void> {
+	const directory = bootstrapFloorDirectory(stateRoot, release);
+	const owner = await lstat(directory).catch((error: NodeJS.ErrnoException) => {
+		if (error.code !== 'ENOENT') throw error;
 	});
-	const owner = await lstat(directory);
+	if (owner === undefined) return;
 	if (!owner.isDirectory() || owner.uid !== process.getuid?.() || (owner.mode & 0o077) !== 0) {
 		throw new Error('source release journal is not a private owned directory');
 	}
-	const name = String(release.sequence).padStart(16, '0');
-	const path = join(directory, name);
-	const verify = async () => {
-		const newest = (await readdir(directory)).filter(item => /^\d{16}$/.test(item)).sort().at(-1);
-		if (newest === undefined) return;
-		const file = await open(join(directory, newest), constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
-		try {
-			const info = await file.stat();
-			if (!info.isFile() || info.uid !== owner.uid || (info.mode & 0o077) !== 0 || info.size > 4096) {
-				throw new Error('invalid source release journal record');
-			}
-			const existing = readVerifiedSourceRelease(JSON.parse(await file.readFile('utf8')));
-			if (JSON.stringify(existing.channel) !== JSON.stringify(release.channel)
-				|| String(existing.sequence).padStart(16, '0') !== newest) throw new Error('invalid source release journal channel');
-			assertSourceReleaseFloor(release, [existing]);
-		} finally { await file.close(); }
-	};
-	await verify();
+	const newest = (await readdir(directory)).filter(item => /^\d{16}$/.test(item)).sort().at(-1);
+	if (newest === undefined) return;
+	const file = await open(join(directory, newest), constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
+	try {
+		const info = await file.stat();
+		if (!info.isFile() || info.uid !== owner.uid || (info.mode & 0o077) !== 0 || info.size > 4096) {
+			throw new Error('invalid source release journal record');
+		}
+		const existing = readVerifiedSourceRelease(JSON.parse(await file.readFile('utf8')));
+		if (JSON.stringify(existing.channel) !== JSON.stringify(release.channel)
+			|| String(existing.sequence).padStart(16, '0') !== newest) throw new Error('invalid source release journal channel');
+		assertSourceReleaseFloor(release, [existing]);
+	} finally { await file.close(); }
+}
+
+/** Publish immutable observations so concurrent installers cannot replace an accepted tag. */
+async function persistBootstrapFloor(stateRoot: string, release: VerifiedSourceRelease): Promise<void> {
+	const directory = bootstrapFloorDirectory(stateRoot, release);
+	await mkdir(directory, { mode: 0o700 }).catch((error: NodeJS.ErrnoException) => {
+		if (error.code !== 'EEXIST') throw error;
+	});
+	await verifyBootstrapFloor(stateRoot, release);
+	const path = join(directory, String(release.sequence).padStart(16, '0'));
 	const temporary = join(directory, '.' + randomUUID());
 	const file = await open(temporary, 'wx', 0o600);
 	try {
@@ -87,7 +97,7 @@ async function persistBootstrapFloor(stateRoot: string, release: VerifiedSourceR
 		await link(temporary, path).catch((error: NodeJS.ErrnoException) => {
 			if (error.code !== 'EEXIST') throw error;
 		});
-		await verify();
+		await verifyBootstrapFloor(stateRoot, release);
 		for (const parent of [directory, stateRoot]) {
 			const dir = await open(parent, constants.O_RDONLY | constants.O_DIRECTORY | constants.O_NOFOLLOW);
 			try { await dir.sync(); } finally { await dir.close(); }
@@ -148,6 +158,7 @@ export async function fetchReleaseAuthorization({ workspace, stateRoot, repoUrl,
 	}
 	const receipt = readVerifiedSourceRelease({ channel, sequence, tagObject, commit, tree });
 	assertSourceReleaseFloor(receipt, await sourceFloors(canonicalState));
+	await verifyBootstrapFloor(canonicalState, receipt);
 	return { receipt, git, ownedWorkspace, repository, stateRoot: canonicalState };
 }
 
@@ -165,25 +176,52 @@ export async function checkoutAuthorizedRelease(
 	await git(checkout, ['config', 'insrc.releaseBranch', receipt.channel.branch]);
 }
 
+/** Read only a catalog from the independently authenticated tree, never a working checkout. */
+export async function readAuthorizedReleaseCatalog(
+	authorization: Awaited<ReturnType<typeof fetchReleaseAuthorization>>, target: SourceReleaseTarget = 'darwin',
+) {
+	const path = sourceReleaseCatalog(readSourceReleaseTarget(target));
+	const catalog = await authorization.git(authorization.repository, ['rev-parse', '--verify',
+		`${authorization.receipt.tree}:${path}`]);
+	const size = Number(await authorization.git(authorization.repository, ['cat-file', '-s', catalog]));
+	if (!Number.isSafeInteger(size) || size < 1 || size > 64 * 1024) throw new Error('invalid release compatibility catalog size');
+	const compatibility = await authorization.git(authorization.repository, ['cat-file', 'blob', catalog]);
+	return { catalog, compatibility };
+}
+
 if (process.argv[1] !== undefined && fileURLToPath(import.meta.url) === await realpath(resolve(process.argv[1])).catch(() => '')) {
-	const [mode, workspace, stateRoot, repoUrl, branch, checkout] = process.argv.slice(2);
+	const [mode, workspace, stateRoot, repoUrl, branch, ...rest] = process.argv.slice(2);
 	try {
+		const targets = rest.filter(arg => arg.startsWith('--target='));
+		const priors = rest.filter(arg => arg.startsWith('--prior='));
+		const profiles = rest.filter(arg => arg.startsWith('--profile='));
+		const paths = rest.filter(arg => !arg.startsWith('--target=') && !arg.startsWith('--prior=') && !arg.startsWith('--profile='));
+		if (targets.length > 1 || priors.length > 1 || profiles.length > 1 || paths.length > 1) throw new Error('invalid release bootstrap arguments');
+		const target = readSourceReleaseTarget(targets[0]?.slice('--target='.length)
+			?? (typeof __INSRC_SOURCE_TARGET__ === 'string' ? __INSRC_SOURCE_TARGET__ : 'darwin'));
+		const checkout = paths[0];
 		if (workspace === undefined || stateRoot === undefined || repoUrl === undefined || branch === undefined
 			|| (mode !== 'authorize' && mode !== 'qualification')) throw new Error('invalid release bootstrap invocation');
 		const publicKey = typeof __INSRC_RELEASE_KEY__ === 'string' ? __INSRC_RELEASE_KEY__ : '';
 		const authorization = await fetchReleaseAuthorization({ workspace, stateRoot, repoUrl, branch, publicKey });
-		const catalog = await authorization.git(authorization.repository, ['rev-parse', '--verify',
-			`${authorization.receipt.tree}:${CATALOG}`]);
-		const size = Number(await authorization.git(authorization.repository, ['cat-file', '-s', catalog]));
-		if (!Number.isSafeInteger(size) || size < 1 || size > 64 * 1024) throw new Error('invalid release compatibility catalog size');
-		const compatibility = await authorization.git(authorization.repository, ['cat-file', 'blob', catalog]);
+		const { catalog, compatibility } = await readAuthorizedReleaseCatalog(authorization, target);
+		if (target !== 'darwin' || priors.length || profiles.length) {
+			const prior = priors[0]?.slice('--prior='.length);
+			const profile = profiles[0]?.slice('--profile='.length);
+			if (!prior || !/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/.test(prior) || !profile) {
+				throw new Error('source qualification requires an exact predecessor and launch profile');
+			}
+			const pair = readTaggedReleaseCompatibility(JSON.parse(compatibility), prior, authorization.receipt.commit, target);
+			if (!pair.launchProfiles.includes(profile)) throw new Error('signed source does not support the requested launch profile');
+		}
 		if (mode === 'authorize') {
 			await checkoutAuthorizedRelease(authorization, join(authorization.ownedWorkspace, 'checkout'));
 			await writeFile(join(authorization.ownedWorkspace, 'source-release.json'),
 				JSON.stringify(authorization.receipt), { flag: 'wx', mode: 0o600 });
 		} else {
 			if (checkout !== undefined) await checkoutAuthorizedRelease(authorization, checkout);
-			process.stdout.write(JSON.stringify({ receipt: authorization.receipt, catalog, compatibility }));
+			process.stdout.write(JSON.stringify({ receipt: authorization.receipt, catalog, compatibility,
+				...(target === 'darwin' ? {} : { target }) }));
 		}
 	} catch (error) {
 		process.stderr.write(`release bootstrap: ${error instanceof Error ? error.message : String(error)}\n`);

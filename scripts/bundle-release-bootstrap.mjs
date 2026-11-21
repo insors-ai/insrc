@@ -5,7 +5,8 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { packageNodeRuntimeInstaller } from './node-runtime-assets.mjs';
 import { fileURLToPath } from 'node:url';
 
-const [keyFile, output] = process.argv.slice(2);
+const [keyFile, output, target = 'darwin'] = process.argv.slice(2);
+if (!['darwin', 'linux-arm64', 'linux-x64'].includes(target)) throw new Error('unsupported source release qualification target');
 if (keyFile === undefined || output === undefined) {
 	throw new Error('usage: node scripts/bundle-release-bootstrap.mjs SSH_SIGNING_PUBLIC_KEY OUTPUT_INSTALLER');
 }
@@ -19,6 +20,7 @@ const bundled = spawnSync(new URL('../node_modules/.bin/esbuild', import.meta.ur
 	'src/bin/insrc-release-bootstrap.ts', '--bundle',
 	'--platform=node', '--format=esm', '--target=node20',
 	`--define:__INSRC_RELEASE_KEY__=${JSON.stringify(keyValue)}`,
+	`--define:__INSRC_SOURCE_TARGET__=${JSON.stringify(target)}`,
 ], { cwd: root, encoding: 'utf8', maxBuffer: 1024 * 1024 });
 if (bundled.status !== 0) throw new Error(bundled.error?.message || bundled.stderr || 'release bootstrap bundling failed');
 const block = /^INSRC_RELEASE_BOOTSTRAP_B64='[^']*'$/m;

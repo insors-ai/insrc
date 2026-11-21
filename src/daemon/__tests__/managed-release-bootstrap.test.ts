@@ -61,6 +61,12 @@ test('Only an authorized channel tag can reach checkout and npm', async t => {
 	assert.ok(bundled);
 	const verifier = join(root, 'verifier.mjs');
 	await writeFile(verifier, Buffer.from(bundled, 'base64'));
+	// This test owns authorization/routing, not the public runtime qualification.
+	// Delegate explicitly at the runtime-owner seam instead of expecting ambient npm.
+	await writeFile(packaged, installer.replace(/^INSRC_NODE_BOOTSTRAP_B64='[^']*'$/m, "INSRC_NODE_BOOTSTRAP_B64=''"));
+	const npmRecorder = join(root, 'npm-recorder.mjs');
+	await writeFile(npmRecorder, 'import fs from "node:fs"; fs.writeFileSync(process.env.INSRC_TEST_NPM_TRACE,"invoked"); process.exit(1);');
+	await writeFile(join(root, 'node-runtime-env.sh'), `insrc_source_toolchain() { mkdir -p "$2"; NODE_BIN='${process.execPath}'; NPM_CLI='${npmRecorder}'; TOOLCHAIN_ID=fixture; }\n`);
 	const tools = join(root, 'tools');
 	const trace = join(root, 'npm-invoked');
 	await mkdir(tools);
@@ -141,12 +147,22 @@ if [ "\${2:-}" = "activate-fresh" ]; then
 fi
 exec "$INSRC_TEST_NODE" "$@"`);
 	const installer = new URL('scripts/insrc-daemon-install.sh', project).pathname;
+	const fixtureInstaller = join(root, 'installer.sh');
+	await writeFile(fixtureInstaller, await readFile(installer));
+	const npmRecorder = join(root, 'npm-recorder.mjs');
+	await writeFile(npmRecorder, `import fs from 'node:fs';
+fs.appendFileSync(process.env.INSRC_TEST_TRACE, 'npm:'+process.argv[2]+'\\n');
+if(process.argv[2]==='run')fs.writeFileSync('out/bin/insrc-runtime-smoke.js','process.exit(0);');
+`);
+	// Explicit protocol fixture authority; real archive/npm coverage lives in the native suites.
+	await writeFile(join(root, 'node-runtime-env.sh'), `insrc_source_toolchain() { mkdir -p "$2"; NODE_BIN='${join(tools, 'node')}'; NPM_CLI='${npmRecorder}'; TOOLCHAIN_ID=fixture; }\n`);
+	await writeFile(join(root, 'node-runtime-store.mjs'), 'process.exit(0);');
 	for (const platform of ['Darwin', 'Linux']) {
 		const home = join(root, platform);
 		await mkdir(home);
 		const trace = join(home, 'trace');
 		const target = join(home, 'daemon');
-		await exec('/bin/bash', [installer, '-y', '--target', target, '--embedder', 'onnx',
+		await exec('/bin/bash', [fixtureInstaller, '-y', '--target', target, '--embedder', 'onnx',
 			...(platform === 'Darwin' ? ['--no-start'] : [])], {
 			env: { ...process.env, HOME: home, PATH: `${tools}:/usr/bin:/bin`, INSRC_TEST_PLATFORM: platform,
 				INSRC_TEST_TRACE: trace, INSRC_TEST_NODE: process.execPath,

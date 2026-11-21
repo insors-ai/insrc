@@ -11,6 +11,8 @@ import { ownedNodeEnvironment, resolveOwnedToolchain } from '../shared/owned-nod
 import { installationPaths } from '../shared/managed-daemon-installation.js';
 import { checkUpdateSource } from '../shared/update-source.js';
 import type { UpdateSource } from '../shared/update-source.js';
+import { readSourceReleaseTarget } from '../shared/source-release-target.js';
+import type { SourceReleaseTarget } from '../shared/source-release-target.js';
 import { readReleaseCompatibility, requireQualifiedReleasePair } from './release-compatibility.js';
 import type { QualifiedReleasePair, ReleaseCompatibility } from './release-compatibility.js';
 
@@ -33,6 +35,7 @@ export interface StagedReleasePin {
 }
 
 interface StageOptions {
+	readonly sourceTarget?: SourceReleaseTarget | undefined;
 	readonly stateRoot: string;
 	readonly runtime: string;
 	readonly source: { readonly repoUrl: string; readonly branch: string };
@@ -184,7 +187,9 @@ export async function stageManagedRelease(options: StageOptions): Promise<{
 	// The predecessor runtime remains pinned separately; candidate build/runtime
 	// are selected by its verified source bootstrap, never an ambient npm.
 	let runtime: string;
-	const directory = installationPaths(stateRoot).directory;
+	const target = readSourceReleaseTarget(options.sourceTarget);
+	if (target !== 'darwin' && target !== `${process.platform}-${process.arch}`) throw new Error('source staging target does not match this host');
+	const directory = target === 'darwin' ? installationPaths(stateRoot).directory : join(stateRoot, 'source-lifecycle');
 	const releases = join(directory, 'releases');
 	if (priorRoot !== undefined && (inside(priorRoot, releases) || priorRoot === releases)) {
 		throw new Error('staging would mutate the installed release');

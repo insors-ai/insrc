@@ -54,3 +54,25 @@ No weakening of target capture, PID identity, forced termination or run-file
 ownership checks was made. The separately logged IPC shutdown fallback remains
 outside this runtime Story. This environment's failing native forced-stop
 checks are a validation limitation, not successful lifecycle qualification.
+
+## Expanded runtime matrix
+
+The first t3 validator accepted implementation and unit checks but requested
+additional actual-child identity coverage. The native tests now exercise fresh
+installation and the legacy bridge in every environment: absent Node/npm,
+ambient Node20, and ambient Node26 (both installed versions are hostile shims
+that record any accidental invocation). Updates also exercise all three.
+
+Successful restart runs the actual compiled lifecycle helper with the official
+Node in an empty HOME, then starts a minimal fixture daemon through the
+unmodified shell spawn command. The helper and daemon record the exact 22.22.1
+version and owned executable. An inherited descriptor stays open until daemon
+exit; the test requests self-shutdown over its private fixture socket and awaits
+descriptor/child closure. No PID search or capture bypass is used for disposal.
+The fixture is not a full indexed database/LLM daemon qualification.
+
+Run `2338576e-efba-4bc7-940a-fd1fccdafecd` passed the first three matrix cases;
+the restart case exposed an overlong macOS temporary Unix-socket path. The path
+was shortened, and targeted run `98db66e1-518d-4e0c-b2b3-82d75bf825dc` passed the
+successful restart matrix across all three environments. The final validator
+reruns the complete mapped file without a name filter.

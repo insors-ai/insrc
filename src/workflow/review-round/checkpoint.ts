@@ -578,13 +578,28 @@ function defaultWriteDurableCopy(repoRoot: string, reviewId: string, finalOutput
 	// Upfront, best-effort check reusing review-report.ts's own established
 	// helper, ahead of every write per this Story's LLD -- see writeCheckpoint's
 	// own comment on this same pattern for why it is not load-bearing alone.
-	requireNoSymlinkInPath(repoRoot, join(repoRoot, '.insrc/artifacts'));
+	// Includes the leaf filename, matching writeCheckpoint's own leaf check.
+	requireNoSymlinkInPath(repoRoot, join(repoRoot, '.insrc/artifacts', `REVIEW-${reviewId}.json`));
 
 	// Creates .insrc/artifacts itself through an already-pinned parent alias
 	// if missing, never a mutable path re-resolved fresh -- see
 	// pinDirectoryChainCreating's own doc for the P2 this closes.
 	const chain = pinDirectoryChainCreating(repoRoot, '.insrc', 'artifacts');
 	try {
+		// publishGuarded's own rename never follows a symlink occupying the
+		// leaf name (not load-bearing for safety alone, see writeCheckpoint's
+		// own identical check); refuses outright rather than silently
+		// replacing it, matching this function's documented contract.
+		let leafStat;
+		try {
+			leafStat = lstatSync(join(chain.leaf.path, `REVIEW-${reviewId}.json`));
+		} catch {
+			leafStat = undefined; // does not exist yet -- nothing to refuse
+		}
+		if (leafStat?.isSymbolicLink() === true) {
+			throw new Error(`checkpoint: REVIEW-${reviewId}.json is a symlink -- refusing to write through it`);
+		}
+
 		publishGuarded(chain.leaf.path, `REVIEW-${reviewId}.json`, JSON.stringify(finalOutput));
 		fsyncDirectoryChain(chain);
 	} finally {

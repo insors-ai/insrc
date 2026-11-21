@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 2,
-        "contentHash": "117dc0daf1d7698a6dc5d7cf68a68fc095e1423136cdd6c69e797303d76c77c1",
-        "at": "2026-11-21T15:24:25.740Z",
+        "number": 3,
+        "contentHash": "a83423c7ac4b63127434a12d8bb13fded54ee462b6def71c6ba5091733c3cbb8",
+        "at": "2026-11-21T15:26:54.007Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "779e9a08142cb057",
     "storyId": "s1",
     "createdAt": "2026-11-21T15:21:22.783Z",
-    "updatedAt": "2026-11-21T15:24:24.800Z",
+    "updatedAt": "2026-11-21T15:26:53.723Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-18T08:51:40.429Z",
     "epicSlug": "add-securityfinding-capability-family-delegates-framing",
-    "revision": 2
+    "revision": 3
   },
   "body": {
     "tasks": [
@@ -149,6 +149,46 @@
               },
               {
                 "title": "SecurityFinding, isSecurityFinding, risk-family verdicts, and the policy-override staleness check",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "8355c1b51",
+        "ranAt": "2026-11-21T15:26:53.723Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "SecurityLocator structural extension of Locator/Pointer (trust-boundary id + taint-path step index fields)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/security-locator.test.ts",
+                "title": "SecurityLocator structural extension of Locator/Pointer (trust-boundary id + taint-path step index fields)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-round/__tests__/security-locator.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 546,
+            "titles": [
+              {
+                "title": "SecurityLocator structural extension of Locator/Pointer (trust-boundary id + taint-path step index fields)",
+                "result": "pass"
+              },
+              {
+                "title": "SecurityLocator",
                 "result": "pass"
               }
             ],

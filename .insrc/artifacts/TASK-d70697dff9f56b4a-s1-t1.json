@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e7892a5d-c57a-42a8-9605-8d0eaa6a3451",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-20T19:22:32.114Z",
+    "epicCreatedAt": "2026-11-20T12:14:08.881Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d70697dff9f56b4a",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Root schemaVersion in the settings store: field, strict reader and verified writer",
+      "parent": {
+        "entityId": "STORY-d70697dff9f56b4a-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-d70697dff9f56b4a-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "2f1b2a6f5831a2cc4d01070e3d2e0b3dac32f8c5d896fb867cad47d7a038d4bb",
+        "at": "2026-11-20T19:22:32.119Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T19:22:32.120Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Root schemaVersion in the settings store: field, strict reader and verified writer",
+    "summary": "Add the optional schemaVersion (number | null) to RepoConfigFile in src/workflow/config/repo-config.ts. In src/workflow/config/repo-config-store.ts add readSchemaVersion (strict reader, null for an absent file/key/null, ok:false with schema-version-invalid for a value that is not a non-negative integer, never changing the file) and writeSchemaVersion, by making writeOnce take its merge step as a parameter so the queue, fingerprint check, temp file and rename loop are shared with writeRepoEntryKeys unchanged; the root merge keeps default, repos and unknown keys, reports changed:false when the version is already stored and never lowers a stored version. Update the module-state and session-source inventory fixtures only for what this task adds. Tests for both in src/daemon/__tests__/schema-migrations.test.ts (new file, unit part).",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "readSchemaVersion returns null for an absent file, an absent key and a null value, the integer for a valid one, and ok:false for an unreadable file or a value that is not a non-negative integer, without changing the file",
+      "writeSchemaVersion creates the file when absent, keeps default, repos and unknown root keys, reports changed:false when the version is already stored, never lowers a stored version, and returns write-failed or file-changed as data",
+      "writeRepoEntryKeys behaves exactly as before: the existing repo-config and repo-settings tests still pass",
+      "a repo write through writeRepoEntryKeys after the stamp keeps the root schemaVersion",
+      "no inventory test case fails beyond the four that already fail on a clean checkout"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "schema-migrations.test.ts: readSchemaVersion returns null for an absent file, an absent key and a null value, the integer for a valid one, and ok:false for an unreadable file or a value that is not a non-negative integer, without changing the file"
+      },
+      {
+        "level": "unit",
+        "name": "schema-migrations.test.ts: writeSchemaVersion creates the file when absent, keeps default, repos and unknown root keys, reports changed false when the version is already stored, never lowers a stored version, and returns write-failed or file-changed as data"
+      },
+      {
+        "level": "integration",
+        "name": "schema-migrations.test.ts: a repo write through writeRepoEntryKeys after the stamp keeps the root schemaVersion"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

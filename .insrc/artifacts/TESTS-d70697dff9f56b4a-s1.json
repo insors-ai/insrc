@@ -1,0 +1,559 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 11,
+        "contentHash": "d7d2fd00c67319da41a699beff9dda71d015ea1c379c61191b3a8cec9fa309bf",
+        "at": "2026-11-21T04:06:28.114Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "d70697dff9f56b4a",
+    "storyId": "s1",
+    "createdAt": "2026-11-20T19:25:08.691Z",
+    "updatedAt": "2026-11-21T04:06:27.634Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-20T12:14:08.881Z",
+    "epicSlug": "run-build-defaults-migration-once-per",
+    "revision": 11
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "ae70fb14a",
+        "ranAt": "2026-11-20T19:29:25.795Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "schema-migrations.test.ts: readSchemaVersion returns null for an absent file, an absent key and a null value, the integer for a valid one, and ok:false for an unreadable file or a value that is not a non-negative integer, without changing the file",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/schema-migrations.test.ts",
+                "title": "schema-migrations.test.ts: readSchemaVersion returns null for an absent file, an absent key and a null value, the integer for a valid one, and ok:false for an unreadable file or a value that is not a non-negative integer, without changing the file",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "schema-migrations.test.ts: writeSchemaVersion creates the file when absent, keeps default, repos and unknown root keys, reports changed false when the version is already stored, never lowers a stored version, and returns write-failed or file-changed as data",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/schema-migrations.test.ts",
+                "title": "schema-migrations.test.ts: writeSchemaVersion creates the file when absent, keeps default, repos and unknown root keys, reports changed false when the version is already stored, never lowers a stored version, and returns write-failed or file-changed as data",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "schema-migrations.test.ts: a repo write through writeRepoEntryKeys after the stamp keeps the root schemaVersion",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/schema-migrations.test.ts",
+                "title": "schema-migrations.test.ts: a repo write through writeRepoEntryKeys after the stamp keeps the root schemaVersion",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/config/__tests__/repo-config-store.test.ts",
+                "title": "readRepoEntry rejects each malformed level and accepts missing parts",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/config/__tests__/repo-config-store.test.ts",
+                "title": "mergeRepoEntryKeys changes only the named keys",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/config/__tests__/repo-config-store.test.ts",
+                "title": "concurrent writes all land one at a time and a failure does not stall the queue",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/config/__tests__/repo-config-store.test.ts",
+                "title": "write-failed leaves the file and temp file as they were",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/config/__tests__/repo-config-store.test.ts",
+                "title": "verify step re-merges after an outside change and returns file-changed after the bounded attempts",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/config/__tests__/repo-config-store.test.ts",
+                "title": "an unwritable directory returns write-failed with the operating-system message",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/repo-settings.test.ts",
+                "title": "get returns what set wrote and shows an outside write",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/repo-settings.test.ts",
+                "title": "malformed files return repo-config-unreadable and keep their bytes",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/repo-settings.test.ts",
+                "title": "ensure writes the five keys once and concurrent sets both land",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/repo-settings.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 839,
+            "titles": [
+              {
+                "title": "buildRepoSettings values, resolved target and policy rows",
+                "result": "pass"
+              },
+              {
+                "title": "sign-in mapping for every whoAmI outcome",
+                "result": "pass"
+              },
+              {
+                "title": "repo identity uses the exact registered path",
+                "result": "pass"
+              },
+              {
+                "title": "get returns what set wrote and shows an outside write",
+                "result": "pass"
+              },
+              {
+                "title": "set refuses read-only, unknown, invalid and unregistered inputs and writes nothing",
+                "result": "pass"
+              },
+              {
+                "title": "only the signed-in-user read runs through s1's adapter",
+                "result": "pass"
+              },
+              {
+                "title": "malformed files return repo-config-unreadable and keep their bytes",
+                "result": "pass"
+              },
+              {
+                "title": "get reads once, never writes, and resolves from the git remote when there is no own target",
+                "result": "pass"
+              },
+              {
+                "title": "ensure writes the five keys once and concurrent sets both land",
+                "result": "pass"
+              },
+              {
+                "title": "the gitHooks setting reads false when absent, is validated as a boolean and round-trips through repo-config.json",
+                "result": "pass"
+              },
+              {
+                "title": "applyBuildDefaults writes the type's typecheck and test commands and resultFormat exit-code together for a Python, Go, Rust and JVM repo with no build key, and writes nothing for a Node repo, an unknown repo and an entry that already sets any of the three keys",
+                "result": "pass"
+              },
+              {
+                "title": "applyBuildDefaults never throws and reports write-failed when the entry cannot be read or the write fails, leaving no lone command",
+                "result": "pass"
+              },
+              {
+                "title": "repo.settings.get returns buildSetup with the type, the commands source and the suggestion for a repo with none, and writes nothing",
+                "result": "pass"
+              },
+              {
+                "title": "migrateBuildDefaults writes the typecheck and test commands and resultFormat exit-code together for each Python, Go, Rust and JVM repo with none of them, and writes nothing for a Node repo, an unknown repo, a repo whose directory is gone and an entry that sets any one of the three keys",
+                "result": "pass"
+              },
+              {
+                "title": "migrateBuildDefaults run twice changes nothing the second time and reports already-set for the repos the first run set, and a user's own value set between the runs is kept",
+                "result": "pass"
+              },
+              {
+                "title": "migrateBuildDefaults keeps going when one repo's write is refused or throws, reports write-failed with its note for that repo only, and reports write-failed for every repo, leaving the file as it was, when repo-config.json is malformed",
+                "result": "pass"
+              },
+              {
+                "title": "the repo.buildDefaults.migrate handler returns ok, one entry per registered repo in registry order and counts with a key for every outcome that add up to the number of repos, returns zero counts for no repos, and returns registry-unreadable as data when the registry cannot be listed, writing nothing",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/schema-migrations.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 676,
+            "titles": [
+              {
+                "title": "schema-migrations.test.ts: readSchemaVersion returns null for an absent file, an absent key and a null value, the integer for a valid one, and ok:false for an unreadable file or a value that is not a non-negative integer, without changing the file",
+                "result": "pass"
+              },
+              {
+                "title": "schema-migrations.test.ts: writeSchemaVersion creates the file when absent, keeps default, repos and unknown root keys, reports changed false when the version is already stored, never lowers a stored version, and returns write-failed or file-changed as data",
+                "result": "pass"
+              },
+              {
+                "title": "schema-migrations.test.ts: a repo write through writeRepoEntryKeys after the stamp keeps the root schemaVersion",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/config/__tests__/repo-config-store.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 616,
+            "titles": [
+              {
+                "title": "readRepoEntry rejects each malformed level and accepts missing parts",
+                "result": "pass"
+              },
+              {
+                "title": "mergeRepoEntryKeys changes only the named keys",
+                "result": "pass"
+              },
+              {
+                "title": "concurrent writes all land one at a time and a failure does not stall the queue",
+                "result": "pass"
+              },
+              {
+                "title": "write-failed leaves the file and temp file as they were",
+                "result": "pass"
+              },
+              {
+                "title": "verify step re-merges after an outside change and returns file-changed after the bounded attempts",
+                "result": "pass"
+              },
+              {
+                "title": "an unwritable directory returns write-failed with the operating-system message",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "f214b64f8",
+        "ranAt": "2026-11-21T04:04:58.695Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "schema-migrations.test.ts: runSchemaMigrations runs the pending steps in ascending order and stamps the highest clean version for a version that is absent, null or below the expected one, runs nothing for an equal or higher one, stops at the first step that throws or reports write-failed and stamps only the earlier clean version, runs nothing on an unreadable file or an invalid version, reports registry-unreadable when the registry cannot be listed, and never rejects",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/schema-migrations.test.ts",
+                "title": "schema-migrations.test.ts: runSchemaMigrations runs the pending steps in ascending order and stamps the highest clean version for a version that is absent, null or below the expected one, runs nothing for an equal or higher one, stops at the first step that throws or reports write-failed and stamps only the earlier clean version, runs nothing on an unreadable file or an invalid version, reports registry-unreadable when the registry cannot be listed, and never rejects",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "schema-migrations.test.ts: the version-1 step runs migrateBuildDefaults over the listed repos and is clean only when no repo reports write-failed",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/schema-migrations.test.ts",
+                "title": "schema-migrations.test.ts: the version-1 step runs migrateBuildDefaults over the listed repos and is clean only when no repo reports write-failed",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "schema-migrations.test.ts: two successive runs over a temporary Python repo with no commands and no schemaVersion (the first writes the three keys and stamps 1, the second runs nothing), with no commit id read anywhere",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/schema-migrations.test.ts",
+                "title": "schema-migrations.test.ts: two successive runs over a temporary Python repo with no commands and no schemaVersion (the first writes the three keys and stamps 1, the second runs nothing), with no commit id read anywhere",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/schema-migrations.test.ts",
+                "title": "schema-migrations.test.ts: the boot pass over 100 repositories lets timers and I/O callbacks run before it finishes, and still migrates every repository and stamps the version",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "schema-migrations.test.ts: a command cleared after the stamp is not re-applied by the second run, while the manual repo.buildDefaults.migrate handler still re-applies it and leaves schemaVersion unchanged",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/schema-migrations.test.ts",
+                "title": "schema-migrations.test.ts: a command cleared after the stamp is not re-applied by the second run, while the manual repo.buildDefaults.migrate handler still re-applies it and leaves schemaVersion unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/schema-migrations.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 837,
+            "titles": [
+              {
+                "title": "schema-migrations.test.ts: readSchemaVersion returns null for an absent file, an absent key and a null value, the integer for a valid one, and ok:false for an unreadable file or a value that is not a non-negative integer, without changing the file",
+                "result": "pass"
+              },
+              {
+                "title": "schema-migrations.test.ts: writeSchemaVersion creates the file when absent, keeps default, repos and unknown root keys, reports changed false when the version is already stored, never lowers a stored version, and returns write-failed or file-changed as data",
+                "result": "pass"
+              },
+              {
+                "title": "schema-migrations.test.ts: a repo write through writeRepoEntryKeys after the stamp keeps the root schemaVersion",
+                "result": "pass"
+              },
+              {
+                "title": "schema-migrations.test.ts: runSchemaMigrations runs the pending steps in ascending order and stamps the highest clean version for a version that is absent, null or below the expected one, runs nothing for an equal or higher one, stops at the first step that throws or reports write-failed and stamps only the earlier clean version, runs nothing on an unreadable file or an invalid version, reports registry-unreadable when the registry cannot be listed, and never rejects",
+                "result": "pass"
+              },
+              {
+                "title": "schema-migrations.test.ts: the version-1 step runs migrateBuildDefaults over the listed repos and is clean only when no repo reports write-failed",
+                "result": "pass"
+              },
+              {
+                "title": "schema-migrations.test.ts: two successive runs over a temporary Python repo with no commands and no schemaVersion (the first writes the three keys and stamps 1, the second runs nothing), with no commit id read anywhere",
+                "result": "pass"
+              },
+              {
+                "title": "schema-migrations.test.ts: a command cleared after the stamp is not re-applied by the second run, while the manual repo.buildDefaults.migrate handler still re-applies it and leaves schemaVersion unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "schema-migrations.test.ts: a source check that src/daemon/index.ts calls runSchemaMigrations as a fire-and-forget pass after the registry loads, with a catch, and not awaited",
+                "result": "pass"
+              },
+              {
+                "title": "schema-migrations.test.ts: the boot pass over 100 repositories lets timers and I/O callbacks run before it finishes, and still migrates every repository and stamps the version",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "1c9cf6f45",
+        "ranAt": "2026-11-20T19:37:16.176Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "schema-migrations.test.ts: a source check that src/daemon/index.ts calls runSchemaMigrations as a fire-and-forget pass after the registry loads, with a catch, and not awaited",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/schema-migrations.test.ts",
+                "title": "schema-migrations.test.ts: a source check that src/daemon/index.ts calls runSchemaMigrations as a fire-and-forget pass after the registry loads, with a catch, and not awaited",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/config/__tests__/repo-config.test.ts",
+                "title": "repo-config.test.ts: a source check that src/daemon/index.ts calls moveLegacyRepoConfig after the directories are ensured and before the database is opened, inside a try/catch and only when INSRC_REPO_CONFIG is unset",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/schema-migrations.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 804,
+            "titles": [
+              {
+                "title": "schema-migrations.test.ts: readSchemaVersion returns null for an absent file, an absent key and a null value, the integer for a valid one, and ok:false for an unreadable file or a value that is not a non-negative integer, without changing the file",
+                "result": "pass"
+              },
+              {
+                "title": "schema-migrations.test.ts: writeSchemaVersion creates the file when absent, keeps default, repos and unknown root keys, reports changed false when the version is already stored, never lowers a stored version, and returns write-failed or file-changed as data",
+                "result": "pass"
+              },
+              {
+                "title": "schema-migrations.test.ts: a repo write through writeRepoEntryKeys after the stamp keeps the root schemaVersion",
+                "result": "pass"
+              },
+              {
+                "title": "schema-migrations.test.ts: runSchemaMigrations runs the pending steps in ascending order and stamps the highest clean version for a version that is absent, null or below the expected one, runs nothing for an equal or higher one, stops at the first step that throws or reports write-failed and stamps only the earlier clean version, runs nothing on an unreadable file or an invalid version, reports registry-unreadable when the registry cannot be listed, and never rejects",
+                "result": "pass"
+              },
+              {
+                "title": "schema-migrations.test.ts: the version-1 step runs migrateBuildDefaults over the listed repos and is clean only when no repo reports write-failed",
+                "result": "pass"
+              },
+              {
+                "title": "schema-migrations.test.ts: two successive runs over a temporary Python repo with no commands and no schemaVersion (the first writes the three keys and stamps 1, the second runs nothing), with no commit id read anywhere",
+                "result": "pass"
+              },
+              {
+                "title": "schema-migrations.test.ts: a command cleared after the stamp is not re-applied by the second run, while the manual repo.buildDefaults.migrate handler still re-applies it and leaves schemaVersion unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "schema-migrations.test.ts: a source check that src/daemon/index.ts calls runSchemaMigrations as a fire-and-forget pass after the registry loads, with a catch, and not awaited",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/config/__tests__/repo-config.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 783,
+            "titles": [
+              {
+                "title": "repo-config.test.ts: moveLegacyRepoConfig renames github.json to repo-config.json when only the old file exists, leaving no github.json and the same content byte for byte, and returns nothing-to-move when there is no github.json",
+                "result": "pass"
+              },
+              {
+                "title": "repo-config.test.ts: moveLegacyRepoConfig leaves both files untouched and returns both-exist when both exist, never overwrites an existing repo-config.json, returns failed with a note and leaves github.json in place when the rename throws, and never throws",
+                "result": "pass"
+              },
+              {
+                "title": "repo-config.test.ts: a repo-config.json created between the presence check and the move is not replaced, and neither file changes",
+                "result": "pass"
+              },
+              {
+                "title": "repo-config.test.ts: the old name is removed only if it is still the file that was moved, so a newer github.json that replaced it is kept",
+                "result": "pass"
+              },
+              {
+                "title": "repo-config.test.ts: where hard links are not supported the move fails with a note to rename the file by hand, and changes nothing",
+                "result": "pass"
+              },
+              {
+                "title": "repo-config.test.ts: a second move after a successful one returns nothing-to-move, and a symbolic-link github.json is moved as a link",
+                "result": "pass"
+              },
+              {
+                "title": "repo-config.test.ts: a source check that src/daemon/index.ts calls moveLegacyRepoConfig after the directories are ensured and before the database is opened, inside a try/catch and only when INSRC_REPO_CONFIG is unset",
+                "result": "pass"
+              },
+              {
+                "title": "repo-config.test.ts: repoConfigPath returns the INSRC_REPO_CONFIG value when it is set and non-empty, PATHS.insrc/repo-config.json otherwise, and ignores INSRC_GITHUB_CONFIG",
+                "result": "pass"
+              },
+              {
+                "title": "repo-config.test.ts: after a boot move, repo.settings.get and repo.settings.set through the real handlers read and write repo-config.json and keep the repo's entry",
+                "result": "pass"
+              },
+              {
+                "title": "repo-config.test.ts: a source scan finds no file under src that names INSRC_GITHUB_CONFIG, githubConfigPath, github-store, GithubConfigFile, GithubEntry, loadGithubConfigFile or GithubConfigError",
+                "result": "pass"
+              },
+              {
+                "title": "repo-config.test.ts: a source scan finds the GitHub-tracker names (resolveGithubConfig, resolveGithubConfigFromFile, resolveBranchPattern, resolveStrictTrackerTarget, parseGithubRemoteUrl) still exported from github.ts and the file layer exported from repo-config.ts",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "f214b64f8",
+        "ranAt": "2026-11-21T04:06:27.634Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "build-commands-doc.test.ts: docs/daemon.md describes the schemaVersion at the root of repo-config.json and the boot migration in line with the code",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/build-commands-doc.test.ts",
+                "title": "build-commands-doc.test.ts: docs/daemon.md describes the schemaVersion at the root of repo-config.json and the boot migration in line with the code",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/build-commands-doc.test.ts",
+                "title": "docs/daemon.md: the Build commands section is read against the shipped behaviour and states the add-time defaults, buildSetup and the Build section",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/build-commands-doc.test.ts",
+                "title": "src/daemon/__tests__/build-commands-doc.test.ts: the Build commands section of docs/daemon.md names repo.buildDefaults.migrate, its report fields and its outcome counts, and says a cleared command is applied again when it is run",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/build-commands-doc.test.ts",
+                "title": "build-commands-doc.test.ts: docs/daemon.md and the other live docs name repo-config.json and INSRC_REPO_CONFIG in line with the code",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/build-commands-doc.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 840,
+            "titles": [
+              {
+                "title": "docs/daemon.md: the Build commands section is read against the shipped behaviour and states the add-time defaults, buildSetup and the Build section",
+                "result": "pass"
+              },
+              {
+                "title": "src/daemon/__tests__/build-commands-doc.test.ts: the Build commands section of docs/daemon.md names repo.buildDefaults.migrate, its report fields and its outcome counts, and says a cleared command is applied again when it is run",
+                "result": "pass"
+              },
+              {
+                "title": "build-commands-doc.test.ts: docs/daemon.md and the other live docs name repo-config.json and INSRC_REPO_CONFIG in line with the code",
+                "result": "pass"
+              },
+              {
+                "title": "build-commands-doc.test.ts: docs/daemon.md describes the schemaVersion at the root of repo-config.json and the boot migration in line with the code",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

@@ -15156,6 +15156,10 @@
           "listRepos"
         ],
         [
+          "storage-call",
+          "listRepos"
+        ],
+        [
           "diagnostic",
           "log.error"
         ],
@@ -15210,6 +15214,18 @@
         [
           "diagnostic",
           "log.info"
+        ],
+        [
+          "diagnostic",
+          "log.info"
+        ],
+        [
+          "diagnostic",
+          "log.warn"
+        ],
+        [
+          "diagnostic",
+          "log.warn"
         ],
         [
           "diagnostic",
@@ -15300,9 +15316,9 @@
           "writePid"
         ]
       ],
-      "siteCount": 67,
-      "sitesDigest": "c47ce5f473873416f61d250f588392fff495e593ce6ec4c7f69618e5eca682d6",
-      "sourceDigest": "4fa6d10e35390de5a767d8baff2e97e45d05b4c13e8286ab3e81bc4170b6b174"
+      "siteCount": 71,
+      "sitesDigest": "974e81c620f34713fb093bfb99671bc98d3e2cc2930e2036ec1c24a9c38a5e49",
+      "sourceDigest": "cf4e0fc7d45abaa5f576e67376bf3f1021f9d5c234f2dde3b3ff623c2c77da51"
     },
     "src/daemon/legacy-daemon-cutover.ts": {
       "classification": "daemon-admission-boundary",
@@ -16187,8 +16203,56 @@
       "rationale": "Process/service infrastructure or non-session RPC. No implicit session admission: unsupported stateful methods refuse at dispatch; coarse lifecycle/background diagnostics must not receive temporary payloads.",
       "sites": [
         [
+          "serialization",
+          "(deps.writeKeys ?? writeRepoEntryKeys)"
+        ],
+        [
+          "serialization",
+          "(deps.writeVersion ?? writeSchemaVersion)"
+        ],
+        [
           "diagnostic",
           "getLogger"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "diagnostic",
+          "log.info"
+        ],
+        [
+          "diagnostic",
+          "log.info"
+        ],
+        [
+          "diagnostic",
+          "log.warn"
+        ],
+        [
+          "diagnostic",
+          "log.warn"
+        ],
+        [
+          "diagnostic",
+          "log.warn"
+        ],
+        [
+          "diagnostic",
+          "log.warn"
+        ],
+        [
+          "diagnostic",
+          "log.warn"
+        ],
+        [
+          "diagnostic",
+          "log.warn"
+        ],
+        [
+          "diagnostic",
+          "log.warn"
         ],
         [
           "diagnostic",
@@ -16207,9 +16271,9 @@
           "writeKeys"
         ]
       ],
-      "siteCount": 5,
-      "sitesDigest": "ce89731b9cafa8b87d25788c92885c68dcc01f593a54bede16bf1d14baaf5e87",
-      "sourceDigest": "019117d1a318e8f2c63b7674dee5ca1a3242638edf613ad5946524646f7438c7"
+      "siteCount": 17,
+      "sitesDigest": "0ae79719ea25d04d569ed6b2db31f0eb02d64e7d0cb51fed205c0c78d9977e69",
+      "sourceDigest": "55b7ddb368906d49c05fbeca77f79ea8aafc70c4c5fad483734681ce9b3a39a6"
     },
     "src/daemon/repo-stats.ts": {
       "classification": "daemon-admission-boundary",
@@ -40776,8 +40840,60 @@
           "JSON.stringify"
         ],
         [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "diagnostic",
+          "log.info"
+        ],
+        [
+          "diagnostic",
+          "log.info"
+        ],
+        [
           "diagnostic",
           "log.warn"
+        ],
+        [
+          "diagnostic",
+          "log.warn"
+        ],
+        [
+          "diagnostic",
+          "log.warn"
+        ],
+        [
+          "diagnostic",
+          "log.warn"
+        ],
+        [
+          "diagnostic",
+          "log.warn"
+        ],
+        [
+          "diagnostic",
+          "log.warn"
+        ],
+        [
+          "diagnostic",
+          "log.warn"
+        ],
+        [
+          "filesystem-read",
+          "lstatSync"
+        ],
+        [
+          "filesystem-read",
+          "lstatSync"
+        ],
+        [
+          "filesystem-read",
+          "lstatSync"
+        ],
+        [
+          "serialization",
+          "Math.random().toString"
         ],
         [
           "filesystem-read",
@@ -40817,6 +40933,10 @@
         ],
         [
           "filesystem-write",
+          "unlinkSync"
+        ],
+        [
+          "filesystem-write",
           "writeFileSync"
         ],
         [
@@ -40828,9 +40948,9 @@
           "writeOnce"
         ]
       ],
-      "siteCount": 16,
-      "sitesDigest": "007d2f4521b3c0cb1c4c1aa62745b74a3112e5701a5b8d20cc49cb8710416c3c",
-      "sourceDigest": "8b42ba4cb04665b65f177997d5535dd32c2e858863ca4165b2bfa013ba802e2f"
+      "siteCount": 30,
+      "sitesDigest": "c72357c0429459c3ca2e5cb40907dbdeb9297990d750adb3aa485b6f921ffa2a",
+      "sourceDigest": "bf66ba674db92920618f41c5c1012902e7fe716c398c6826991f606ee08edded"
     },
     "src/workflow/config/repo-config.ts": {
       "classification": "forbidden-session-service",
@@ -40847,7 +40967,7 @@
       ],
       "siteCount": 2,
       "sitesDigest": "5f307ea2832a68c19573c0f0c964da9ffefb7b1e68d217ee7ec89893549b2eba",
-      "sourceDigest": "93d11c0f7d49cbdb3f09ece674099a31d3510df840ef8a9f1415bd37109af46b"
+      "sourceDigest": "7d09979e3413c871d4c9f4fbe11de5e8fa6146df96c5f9f60a1a096d1c92b596"
     },
     "src/workflow/convert/amendments.ts": {
       "classification": "forbidden-session-service",

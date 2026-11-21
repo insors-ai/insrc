@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-42db511c-12b7-41d3-a520-5fa25d61179e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-20T19:22:32.135Z",
+    "epicCreatedAt": "2026-11-20T12:14:08.881Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d70697dff9f56b4a",
+    "storyId": "s1",
+    "envelope": {
+      "description": "docs/daemon.md and the documentation test",
+      "parent": {
+        "entityId": "STORY-d70697dff9f56b4a-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-d70697dff9f56b4a-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-d70697dff9f56b4a-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "bee75a783613dc6b93bc4802498332445aa4d86e50fd819596878586162dc38e",
+        "at": "2026-11-20T19:22:32.139Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-20T19:22:32.140Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "docs/daemon.md and the documentation test",
+    "summary": "Document the root schemaVersion, the boot migration and the comparison rule (absent, null or below applies, equal or above does nothing, an invalid value runs nothing, a failed step is retried next boot, a manual repo.buildDefaults.migrate does not touch the version and a deliberate clear is not re-applied at boot once stamped, lowering or removing the value re-runs the pending steps) in docs/daemon.md, and extend build-commands-doc.test.ts with a test that reads the constant and statuses from the code and fails when the doc names a different file or rule. The paragraph must keep the existing DOC_JSON_NAMES and FILE_MENTION_CONTEXT pins passing.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "docs/daemon.md describes the schemaVersion at the root of repo-config.json and the boot migration in line with the code",
+      "build-commands-doc.test.ts passes, including the three existing tests, and fails when the doc names a different file or an invalid rule"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "build-commands-doc.test.ts: docs/daemon.md describes the schemaVersion at the root of repo-config.json and the boot migration in line with the code"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

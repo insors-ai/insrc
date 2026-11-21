@@ -444,6 +444,26 @@ describe('writeCheckpoint/readCheckpoint/finalizeAndCleanup and ReviewCheckpoint
 		}
 	});
 
+	it('readCheckpoint resolves to undefined, rather than rejecting, when the review directory itself is a symlink -- an ancestor-symlink failure is treated the same as an absent checkpoint, allowing a fresh start instead of aborting recovery', async () => {
+		const reviewId = `review-ancestorsymlink-${process.pid}-${Date.now()}`;
+		const tmpRoot = join(ROOT, '.insrc/tmp');
+		mkdirSync(tmpRoot, { recursive: true });
+		const outsideDir = mkdtempSync(join(tmpdir(), 'insrc-checkpoint-ancestorsymlink-'));
+		writeFileSync(join(outsideDir, 'checkpoint.json'), JSON.stringify({ reviewId, lastCompletedUnit: { kind: 'round', ref: 77 } }), 'utf8');
+		const linkPath = join(tmpRoot, reviewId);
+		symlinkSync(outsideDir, linkPath, 'dir');
+
+		_setCheckpointDepsForTests({ resolveRepoRoot });
+		try {
+			const result = await readCheckpoint(reviewId);
+			assert.equal(result, undefined, 'a symlinked ancestor (the review directory itself) must resolve to undefined -- never a rejection that aborts recovery, and never the outside content either');
+		} finally {
+			rmSync(linkPath, { force: true });
+			rmSync(outsideDir, { recursive: true, force: true });
+			_setCheckpointDepsForTests({});
+		}
+	});
+
 	it('a review directory replaced by a symlink during the narrow window between writeCheckpoint\'s/finalizeAndCleanup\'s own checks and their actual use is never written through or deleted through outside the repository (best-effort concurrent regression)', async () => {
 		const reviewId = `review-race-${process.pid}-${Date.now()}`;
 		const reviewDirPath = join(ROOT, '.insrc/tmp', reviewId);

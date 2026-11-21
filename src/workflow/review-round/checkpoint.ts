@@ -162,21 +162,27 @@ function publishGuarded(dir: string, filename: string, content: string): void {
 }
 
 /**
- * `/proc/self/fd/<fd>` (Linux) and `/dev/fd/<fd>` (also present on Linux, and
- * the only form macOS/BSD expose) are magic symlinks the kernel resolves
- * directly to the OPEN fd's own pinned inode, not by re-looking up whatever
- * name the fd was originally opened through -- the mechanism pinDirectory
- * relies on. Resolved once, at module load, preferring /proc when both
- * exist (Linux) since it is the more specifically documented of the two.
- * Externally reported P2: an earlier version pinned Linux only and silently
- * fell back to the bare mutable path everywhere else, including macOS --
- * reproduced directly: that fallback gave zero protection (every operation
- * still re-resolved the swappable name), while LOOKING identical to the
- * protected path from the caller's side. /dev/fd closes this for macOS too;
- * a platform with neither (e.g. Windows) now REFUSES rather than silently
- * degrading -- see pinDirectory's own doc.
+ * `/proc/self/fd/<fd>` is a magic symlink the Linux kernel resolves directly
+ * to the OPEN fd's own pinned inode, not by re-looking up whatever name the
+ * fd was originally opened through -- the mechanism pinDirectory relies on,
+ * and `/proc/self/fd/<fd>/childname` genuinely performs an openat-equivalent
+ * child lookup against that pinned inode. Resolved once, at module load.
+ *
+ * Externally reported P2, two rounds: an earlier version first fell back
+ * silently to the bare mutable path on every non-Linux platform, then tried
+ * `/dev/fd/<fd>` as a second alias root on the theory that it behaves the
+ * same way on macOS/BSD. Both were wrong in the same direction: Apple's XNU
+ * exposes `/dev/fd/<fd>` as an `fdesc` vnode whose own lookup operation does
+ * NOT perform child-relative traversal the way Linux's `/proc/self/fd` does
+ * -- `/dev/fd/<fd>/childname` fails outright on macOS rather than resolving
+ * against the pinned directory, so using it would silently break every
+ * write, read and cleanup on that platform while looking identical to the
+ * working Linux path from the caller's side. Verifying this would require
+ * running on real macOS, which this session does not have; rather than
+ * guess a second time, only the one mechanism actually confirmed to perform
+ * child-relative lookups (Linux's `/proc/self/fd`) is trusted at all.
  */
-const FD_ALIAS_ROOT = existsSync('/proc/self/fd') ? '/proc/self/fd' : existsSync('/dev/fd') ? '/dev/fd' : undefined;
+const FD_ALIAS_ROOT = process.platform === 'linux' && existsSync('/proc/self/fd') ? '/proc/self/fd' : undefined;
 
 /**
  * Opens `dir` with O_DIRECTORY|O_NOFOLLOW (fails with ELOOP if `dir` is a
@@ -196,15 +202,18 @@ const FD_ALIAS_ROOT = existsSync('/proc/self/fd') ? '/proc/self/fd' : existsSync
  * before, no matter how many times the check itself is repeated or how
  * tightly it is sequenced.
  *
- * On a platform with neither alias root available, this THROWS rather than
- * falling back to the unprotected `dir` string -- a second externally
- * reported P2: a silent fallback gives every caller the false impression
- * that its operations are bound to a validated identity when they are not
- * bound to anything at all. Node's fs module exposes no portable openat/
- * mkdirat/unlinkat-family alternative, so a platform lacking both alias
- * roots genuinely cannot make this guarantee; refusing honestly is the only
- * correct behaviour left, not a quieter version of the same gap.
+ * On any platform other than Linux (FD_ALIAS_ROOT undefined), this THROWS
+ * an UnsupportedPlatformError rather than falling back to the unprotected
+ * `dir` string, or to an unverified alias mechanism -- a silent fallback
+ * gives every caller the false impression that its operations are bound to
+ * a validated identity when they are not bound to anything at all. Node's
+ * fs module exposes no portable openat/mkdirat/unlinkat-family alternative,
+ * so a platform without a confirmed child-relative fd alias genuinely
+ * cannot make this guarantee; refusing honestly is the only correct
+ * behaviour left, not a quieter version of the same gap.
  */
+class UnsupportedPlatformError extends Error {}
+
 interface PinnedDir {
 	readonly fd:   number;
 	readonly path: string;
@@ -214,7 +223,7 @@ function pinDirectory(dir: string): PinnedDir {
 	const fd = openSync(dir, fsConstants.O_RDONLY | fsConstants.O_DIRECTORY | fsConstants.O_NOFOLLOW);
 	if (FD_ALIAS_ROOT === undefined) {
 		closeSync(fd);
-		throw new Error('checkpoint: this platform exposes neither /proc/self/fd nor /dev/fd, so operations cannot be safely bound to a validated directory\'s own identity -- refusing rather than silently falling back to an unprotected path');
+		throw new UnsupportedPlatformError('checkpoint: this platform has no confirmed child-relative directory-fd alias (only Linux\'s /proc/self/fd is trusted), so operations cannot be safely bound to a validated directory\'s own identity -- refusing rather than silently falling back to an unprotected or unverified path');
 	}
 	return { fd, path: `${FD_ALIAS_ROOT}/${fd}` };
 }
@@ -362,13 +371,31 @@ export async function writeCheckpoint(
  * identity) would silently hand back another review's lastCompletedUnit,
  * letting a resume skip work that was never actually done for THIS review.
  * Fixed by requiring an exact match before trusting the parsed record.
+ *
+ * Externally reported P2 (round 3): pinDirectoryChain's own symlinked-
+ * ancestor refusal (ELOOP, via O_NOFOLLOW) ran OUTSIDE this function's error
+ * handling, so a symlinked review directory -- or any ancestor above it --
+ * made readCheckpoint reject instead of following its own documented policy
+ * of treating a redirected or unreadable checkpoint as absent, aborting a
+ * resume instead of letting it fall back to a fresh start. Fixed by catching
+ * the chain-acquisition failure too, but narrowly: an UnsupportedPlatformError
+ * (no confirmed child-relative fd alias on this platform) and the repository-
+ * resolution failure above it still propagate unchanged -- both are genuine
+ * environment problems the caller needs to know about, not a data-integrity
+ * question about this one checkpoint.
  */
 export async function readCheckpoint(reviewId: string): Promise<ReviewCheckpoint | undefined> {
 	requireValidReviewId(reviewId);
 	const resolveRepoRoot = testDeps.resolveRepoRoot ?? defaultResolveRepoRoot;
 	const repoRoot = await resolveRepoRoot();
 
-	const chain = pinDirectoryChain(repoRoot, '.insrc', 'tmp', reviewId);
+	let chain: PinnedChain | undefined;
+	try {
+		chain = pinDirectoryChain(repoRoot, '.insrc', 'tmp', reviewId);
+	} catch (err) {
+		if (err instanceof UnsupportedPlatformError) throw err;
+		return undefined; // a symlinked ancestor (or other path-integrity issue) is treated the same as absent
+	}
 	if (chain === undefined) return undefined; // no review directory at all yet -- a fresh review
 
 	let raw: string;

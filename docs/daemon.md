@@ -1391,7 +1391,9 @@ setting, keeps `default`, `repos` and any other root key, and never lowers the v
 `repo.settings.set` or at `repo.add`) keeps it.
 
 At every boot, after the registry is loaded, the daemon starts a pass in the background and does not wait for it, so it never
-delays startup and a failure never stops the daemon (the boot log carries its result). The pass compares the stored value with the
+delays startup and a failure never stops the daemon (the boot log carries its result). The work of one repository is synchronous file
+I/O, so step 1 hands the event loop back before each repository, and a large registry or a slow file system leaves timers and the rest
+of boot running. The pass compares the stored value with the
 one this daemon expects, which is currently 1 (step 1: apply the build defaults to every registered repository, the same function
 `repo.buildDefaults.migrate` runs):
 

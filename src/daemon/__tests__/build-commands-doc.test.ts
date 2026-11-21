@@ -325,6 +325,7 @@ test('build-commands-doc.test.ts: docs/daemon.md describes the schemaVersion at 
 	assert.match(section, /never a\s+commit id|never a commit id/, 'the decision is not by commit id');
 	assert.match(section, /never lowers the value/);
 	assert.match(section, /does not wait for it, so it never\s+delays startup and a failure never stops the daemon/, 'the pass does not delay or stop startup');
+	assert.match(section, /hands the event loop back before each repository/, 'the pass yields between repositories');
 	assert.match(section, /runs again at the next boot/, 'a step that did not run clean is retried');
 	assert.match(section, /neither reads nor writes `schemaVersion`/, 'the manual method does not touch the version');
 	assert.match(section, /not applied again at boot[\s\S]*only a manual\s+`repo\.buildDefaults\.migrate`/, 'a deliberate clear is not re-applied at boot');

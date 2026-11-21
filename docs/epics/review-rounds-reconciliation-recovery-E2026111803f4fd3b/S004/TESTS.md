@@ -8,7 +8,7 @@ What the build validation gate ran for each Task of this Story, and what each te
 
 ## t1
 
-Run at 2026-11-21T05:22:29.082Z on commit `8801081b4`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-21T05:47:51.052Z on commit `7dc847b01`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: renderReviewReport writes a persisted Markdown file under the review's own .insrc/tmp/<reviewId>/ directory and returns its path**
 
@@ -20,11 +20,11 @@ Run at 2026-11-21T05:22:29.082Z on commit `8801081b4`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/workflow/review-round/__tests__/review-report.test.ts` | 0 | 15 | 3.1 s |  |
+| `src/workflow/review-round/__tests__/review-report.test.ts` | 0 | 17 | 3.1 s |  |
 
 ## t2
 
-Run at 2026-11-21T05:21:15.176Z on commit `8801081b4`. Tests check: **passed**. 9 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-21T05:49:17.406Z on commit `7dc847b01`. Tests check: **passed**. 9 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: the written Markdown renders every finding in this round's own findings array, each annotated with its category and severity**
 
@@ -84,4 +84,4 @@ Run at 2026-11-21T05:21:15.176Z on commit `8801081b4`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/workflow/review-round/__tests__/review-report.test.ts` | 0 | 15 | 3 s |  |
+| `src/workflow/review-round/__tests__/review-report.test.ts` | 0 | 17 | 3.1 s |  |

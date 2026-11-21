@@ -7,7 +7,7 @@ import { closeSync, constants, fstatSync, fsyncSync, lstatSync, openSync, readFi
 import { mkdir, mkdtemp } from 'node:fs/promises';
 import { isAbsolute, join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
-import { promisify } from 'node:util';
+import { isDeepStrictEqual, promisify } from 'node:util';
 import { captureStopTarget } from './daemon-process-client.js';
 import type { StopTarget } from './daemon-process-client.js';
 import { requireProcessIdentity } from './daemon-process.js';
@@ -17,6 +17,8 @@ import { cleanNodeEnvironment } from './owned-node-runtime.js';
 import type { StagedReleasePin } from '../daemon/managed-release-staging.js';
 
 const exec = promisify(execFile);
+const UUID = /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/;
+const LINUX_BIRTH = /^linux:([0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}):[0-9]+$/;
 export interface SourceActorTicket {
  readonly version: 1;
  readonly token: string;
@@ -60,6 +62,18 @@ function ownedText(path: string, max = 64 * 1024): string {
   if (count !== stat.size || after.mtimeMs !== stat.mtimeMs || after.ctimeMs !== stat.ctimeMs || current.ino !== stat.ino || current.dev !== stat.dev) throw new Error('Source actor metadata changed while reading');
   return bytes.subarray(0, count).toString('utf8');
  } finally { closeSync(fd); }
+}
+function validateIntent(directory: string, ticket: SourceActorTicket): string {
+ const value: unknown = JSON.parse(ownedText(join(directory, 'intent.json')));
+ if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Invalid source actor intent');
+ const intent = value as { version: number; token: string; creator: ProcessIdentity; release: StagedReleasePin; transactionId: string; role: string };
+ const creator = intent.creator, rootBoot = LINUX_BIRTH.exec(ticket.root.startedAt)?.[1], monitorBoot = LINUX_BIRTH.exec(ticket.monitor.startedAt)?.[1];
+ if (Object.keys(intent).length !== 6 || intent.version !== 1 || intent.token !== ticket.token || intent.transactionId !== ticket.transactionId
+  || intent.role !== ticket.role || !isDeepStrictEqual(intent.release, ticket.release) || !creator || Object.keys(creator).length !== 3
+  || !Number.isSafeInteger(creator.pid) || creator.pid <= 0 || typeof creator.startedAt !== 'string'
+  || typeof creator.commandLine !== 'string' || !creator.commandLine || !rootBoot || monitorBoot !== rootBoot
+  || LINUX_BIRTH.exec(creator.startedAt)?.[1] !== rootBoot) throw new Error('Source actor ticket differs from its pre-fork intent/kernel incarnation');
+ return rootBoot;
 }
 
 function entry(root: string, role: SourceActorTicket['role']): string {
@@ -186,7 +200,12 @@ export class SourceNativeActor {
    if (ownedText(join(directory, 'closed'), 1024) !== expected) throw new Error('Source closure receipt belongs to another actor');
    if (processIdentityState(ticket.root) === 'same') throw new Error('Source closure contradicts the kernel actor identity');
    return true;
-  } catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return false; throw error; }
+  } catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
+  // A new kernel conclusively ended every member of the old local process tree,
+  // even when power loss prevented the original supervisor from publishing a receipt.
+  const recordedBoot = validateIntent(directory, ticket), currentBoot = readFileSync('/proc/sys/kernel/random/boot_id', 'utf8').trim();
+  if (!UUID.test(currentBoot)) throw new Error('Current Linux kernel incarnation is unreadable');
+  return recordedBoot !== currentBoot;
  }
  /** Reopening authenticates the resident supervisor, which still owns the original pidfd/subtree. */
  static async reopen(directory: string, binary: string): Promise<SourceNativeActor> {
@@ -200,11 +219,12 @@ export class SourceNativeActor {
    || !['candidate', 'prior', 'probe'].includes(ticket.role)) throw new Error('Invalid source actor ticket fields');
   for (const id of [ticket.root, ticket.monitor]) {
    if (!id || Object.keys(id).length !== 3 || !Number.isSafeInteger(id.pid) || id.pid <= 0
-    || typeof id.startedAt !== 'string' || !id.startedAt.startsWith('linux:') || typeof id.commandLine !== 'string' || !id.commandLine) throw new Error('Invalid source actor incarnation');
+    || typeof id.startedAt !== 'string' || !LINUX_BIRTH.test(id.startedAt) || typeof id.commandLine !== 'string' || !id.commandLine) throw new Error('Invalid source actor incarnation');
   }
   if (!ticket.release || typeof ticket.release.root !== 'string' || typeof ticket.release.runtime !== 'string'
    || !/^[a-f0-9]{40}(?:[a-f0-9]{24})?$/.test(ticket.release.commit) || !/^[a-f0-9]{64}$/.test(ticket.release.fingerprint)) throw new Error('Invalid source actor pin');
   canonical(ticket.release.root); canonical(ticket.release.runtime);
+  validateIntent(directory, ticket);
   if (!ticket.root.commandLine.endsWith(entry(ticket.release.root, ticket.role))) throw new Error('Source actor ticket entry differs from its role');
   const target = SourceNativeActor.residentTarget(directory, ticket, binary);
   await target.handle.hasExited();

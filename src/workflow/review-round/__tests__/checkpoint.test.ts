@@ -324,7 +324,7 @@ describe('writeCheckpoint/readCheckpoint/finalizeAndCleanup and ReviewCheckpoint
 		}
 	});
 
-	it('finalizeAndCleanup succeeds even when checkpoint.json was never written at all, deleting whatever the .insrc/tmp/<reviewId>/ folder currently contains as a whole, including nested subdirectories', async () => {
+	it('finalizeAndCleanup succeeds even when checkpoint.json was never written at all, deleting whatever the .insrc/tmp/<reviewId>/ folder currently contains as a whole', async () => {
 		const reviewId = `review-nocheckpointfinalize-${process.pid}-${Date.now()}`;
 		const tempDir = join(ROOT, '.insrc/tmp', reviewId);
 		const durablePath = join(ROOT, '.insrc/artifacts', `REVIEW-${reviewId}.json`);

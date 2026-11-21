@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { spawn, spawnSync } from 'node:child_process';
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, renameSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import test from 'node:test';
@@ -115,7 +115,8 @@ test('publishes one canonical binding and refuses escaping or unqualified roots'
 	try {
 		assert.equal(f.run().status, 0);
 		const installation = join(f.root, 'installation'); mkdirSync(installation);
-		assert.throws(() => writeSourceRuntimeBinding(f.state, installation, f.distribution), /unqualified/);
+		const disabled = structuredClone(f.policy); disabled.targets[target].enabled = false; disabled.targets[target].qualification = null;
+		assert.throws(() => writeSourceRuntimeBinding(f.state, installation, f.distribution, disabled), /unqualified/);
 		assert.throws(() => writeSourceRuntimeBinding(f.state, installation, f.root, f.policy), /escapes/);
 		const record = writeSourceRuntimeBinding(f.state, installation, f.distribution, f.policy);
 		assert.equal(record.distribution, f.distribution); assert.equal(record.archiveSha256, f.policy.targets[target].sha256);
@@ -164,4 +165,36 @@ test('retries incomplete provisioning without selecting or deleting an unrelated
 		const result = f.run(); assert.equal(result.status, 0, result.stderr);
 		assert.equal(readFileSync(join(retained, 'partial'), 'utf8'), 'retained owner');
 	} finally { f.clean(); }
+});
+
+test('binding interruption preserves the old record and selected runtime without deleting referenced objects', async () => {
+ const f=fixture();
+ const fs=(await import('node:fs')).default;
+ const {syncBuiltinESMExports}=await import('node:module');
+ const rename=fs.renameSync;
+ try {
+  assert.equal(f.run().status,0);const installation=join(f.root,'installation');mkdirSync(installation);
+  writeSourceRuntimeBinding(f.state,installation,f.distribution,f.policy);
+  const directory=join(f.state,'source-runtimes'),file=join(directory,readdirSync(directory)[0]!);
+  const before=readFileSync(file);
+  fs.renameSync=(from,to)=>{if(to===file)throw Error('interrupted before binding publication');return rename(from,to);};syncBuiltinESMExports();
+  assert.throws(()=>writeSourceRuntimeBinding(f.state,installation,f.distribution,f.policy),/interrupted before binding/);
+  assert.deepEqual(readFileSync(file),before);assert.deepEqual(readdirSync(directory),[file.split('/').at(-1)]);
+  assert.ok(existsSync(join(f.distribution,'bin/node')));assert.ok(existsSync(join(f.object,'archive.tar.gz')));
+ } finally {fs.renameSync=rename;syncBuiltinESMExports();f.clean();}
+});
+
+test('source binding consumption rejects changed metadata and escaping directories',()=>{
+ const f=fixture();
+ try{
+  assert.equal(f.run().status,0);const installation=join(f.root,'installation');mkdirSync(installation);
+  const store=join(f.root,'scripts/node-runtime-store.mjs');
+  const command=(mode:string)=>spawnSync(process.execPath,[store,mode,f.state,installation,f.distribution],{env:{...f.env,NODE_OPTIONS:'',NODE_PATH:''},encoding:'utf8'});
+  assert.equal(command('bind').status,0);assert.equal(command('binding').status,0);
+  const directory=join(f.state,'source-runtimes'),file=join(directory,readdirSync(directory)[0]!);
+  const record=JSON.parse(readFileSync(file,'utf8'));record.archiveSha256='0'.repeat(64);writeFileSync(file,JSON.stringify(record));
+  const bad=command('binding');assert.notEqual(bad.status,0);assert.match(bad.stderr,/does not match/);
+  const retained=join(f.root,'retained-bindings');renameSync(directory,retained);symlinkSync(retained,directory);
+  const escaped=command('binding');assert.notEqual(escaped.status,0);assert.match(escaped.stderr,/unsafe binding directory/);
+ }finally{f.clean();}
 });

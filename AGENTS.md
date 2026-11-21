@@ -33,7 +33,7 @@ requirements or release gates for the deprecated insrc-ide fork.
 ## Tech stack
 
 - **Language**: TypeScript (strict mode, ESM-only via `"type": "module"`)
-- **Runtime**: Node.js 20+, executed with `tsx` during development. Native modules are built against Node 22.22.1 headers (see `.npmrc`), and the daemon spawns under Node 22 at install time.
+- **Runtime**: Installed source daemons use the verified release-owned Node 22.22.1 distribution and matching npm; signed managed releases retain their authenticated `tools/node`. Explicit development/test sessions use Node 22.22.1 or newer within Node 22 with `tsx`. Native headers stay pinned in `.npmrc`; target enablement requires recorded native qualification.
 - **Module system**: NodeNext (`"module": "nodenext"` in tsconfig)
 - **Databases**: LMDB via `lmdb-js` (embedded KV; substrate for the custom graph layer in `db/graph/`), LanceDB (embedded vector DB; entity embeddings + ANN search), DuckDB via `@duckdb/node-api` (in-memory query engine *only* — backs the data-driver `db_file_*` tools; **not** used for persistent storage)
 - **Parsing**: tree-sitter (TypeScript, Python, Go, Java, Scala)

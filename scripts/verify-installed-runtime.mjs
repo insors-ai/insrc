@@ -17,6 +17,7 @@ try {
  if (journal.active !== null) throw new Error('a lifecycle transaction requires recovery before launching installed tools');
  if (journal.installedBundle?.releaseRoot !== root) throw new Error('packaged runtime has no retained authenticated bundle proof');
  await verifyManagedBundleProof(installation, journal.installedBundle.proof);
+ if(process.env.INSRC_NODE_BIN && await realpath(process.env.INSRC_NODE_BIN)!==installation.runtime)throw new Error('External INSRC_NODE_BIN cannot replace the managed release runtime');
  process.stdout.write(installation.runtime);
 } catch (error) {
  process.stderr.write(`Packaged runtime integrity verification failed: ${error.message}; repair using the authenticated installer.\n`);

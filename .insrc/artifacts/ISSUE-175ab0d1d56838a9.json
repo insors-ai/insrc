@@ -25,7 +25,7 @@
     "kind": "defect",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 1,
         "contentHash": "4bbcf751434de7c82a53a6d1a127f45d84d5702faa08a614eb826dd7386b0b3d",
@@ -36,9 +36,27 @@
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-21T04:24:13.905Z"
+      }
     },
-    "revision": 1
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "parentRef": {
+      "epicHash": "175ab0d1d56838a9",
+      "slug": "EPIC-175ab0d1d56838a9"
+    }
   },
   "body": {
     "title": "Use a daemon-owned Node runtime for predictable installation build and launch",

@@ -14,7 +14,11 @@ test('pins candidate Node distributions to the authenticated checksum inventory'
 	const entries = new Map(sums.toString().trim().split('\n').map(line => line.trim().split(/\s+/)));
 	for (const [target, entry] of Object.entries(policy.targets) as Array<[string, any]>) {
 		assert.equal(entries.get(entry.sha256), `node-v${policy.nodeVersion}-${target}.tar.gz`);
-		assert.equal(entry.enabled, false, 't7 must qualify a target before public enablement');
+		if (entry.enabled) {
+			assert.ok(['darwin-arm64', 'linux-arm64', 'linux-x64'].includes(target));
+			assert.equal(sourceRuntimeFor(...target.split('-')), entry);
+			assert.match(readFileSync(new URL('../../' + entry.qualification, import.meta.url), 'utf8'), /npm ci[\s\S]*tree-sitter[\s\S]*confirmedClosed/);
+		} else assert.equal(entry.qualification, null);
 	}
 	const proof = readFileSync(new URL('../../docs/plans/node-runtime-evidence/verification.txt', import.meta.url), 'utf8');
 	assert.match(proof, new RegExp(`\\[GNUPG:\\] VALIDSIG ${policy.checksums.signerFingerprint} `));
@@ -28,7 +32,7 @@ test('rejects malformed version target URL digest layout and qualification polic
 		(p: any) => { p.targets['linux-x64'].url = 'https://example.com/node.tar.gz'; },
 		(p: any) => { p.targets['linux-x64'].sha256 = '0'; },
 		(p: any) => { p.layout.npm = '../global/npm'; },
-		(p: any) => { p.targets['darwin-arm64'].enabled = true; },
+		(p: any) => { p.targets['darwin-arm64'].enabled = true; p.targets['darwin-arm64'].qualification = null; },
 		(p: any) => { p.checksums.signerFingerprint = 'unknown'; },
 	];
 	for (const mutate of invalid) {
@@ -39,9 +43,9 @@ test('rejects malformed version target URL digest layout and qualification polic
 
 test('rejects unsupported and unqualified public targets without an environment bypass', () => {
 	assert.throws(() => sourceRuntimeFor('win32', 'x64'), /unsupported/);
-	assert.throws(() => sourceRuntimeFor('darwin', 'arm64'), /not qualified/);
+	assert.throws(() => sourceRuntimeFor('darwin', 'x64'), /not qualified/);
 	const script = new URL('../node-runtime-policy.sh', import.meta.url).pathname;
-	for (const [target, status, diagnostic] of [['darwin-arm64', 3, 'not qualified'], ['win32-x64', 2, 'unsupported']] as const) {
+	for (const [target, status, diagnostic] of [['darwin-x64', 3, 'not qualified'], ['win32-x64', 2, 'unsupported']] as const) {
 		const child = spawnSync('/bin/sh', ['-c', '. "$1"; insrc_node_runtime_policy "$2"', 'policy-test', script, target], {
 			env: { PATH: '/usr/bin:/bin', INSRC_NODE_BIN: '/external/node', INSRC_RUNTIME_QUALIFY: '1' }, encoding: 'utf8', timeout: 5000,
 		});

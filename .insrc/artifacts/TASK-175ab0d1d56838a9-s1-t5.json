@@ -1,0 +1,100 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-65bfaf8d-ee5c-4645-9499-bb1d9e2893f8",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-21T04:40:30.245Z",
+    "epicCreatedAt": "2026-11-20T17:07:21.721Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "175ab0d1d56838a9",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Align current IDE clients and runtime packaging",
+      "parent": {
+        "entityId": "STORY-175ab0d1d56838a9-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-175ab0d1d56838a9-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-175ab0d1d56838a9-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-175ab0d1d56838a9-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-175ab0d1d56838a9-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-175ab0d1d56838a9-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 2,
+        "contentHash": "596c8a2ddd51d24e2e88ed4b1641d677b35d6c5da4f4b7aa91a1d4b06500282e",
+        "at": "2026-11-21T06:53:23.370Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-21T04:40:30.247Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Align current IDE clients and runtime packaging",
+    "summary": "Update current VS Code and JetBrains adapters to shared bootstrap/ownership policy. Retire JetBrains system-first and20.18.0 provisioning. Package matching bootstrap assets and preserve authenticated bundle tools/node, fingerprint and rollback contracts.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "IDE host/system Node is never chosen as daemon runtime; adapters invoke shared verified provisioner/selection contract.",
+      "No independent stale JetBrains pin/digest/download policy remains; injectable tests cover provisioning and failures.",
+      "Packaged installer/bootstrap/client policy assets agree. At t5, prove the no-global-Node fresh-install mechanism using the actual official distribution under an explicitly isolated enabled fixture policy; keep the public policy disabled pending t7 qualification. Public target enablement and actual packaged-policy installation are t7 requirements, not t5 admission prerequisites.",
+      "Existing signed bundles remain byte-immutable and retain existing verification/managed lifecycle; newly packaged bootstrap includes any expanded toolchain under new authentication.",
+      "Current IPC names/payloads remain unchanged; no deprecated insrc-ide release requirements."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Extend VS Code controller/commands and JetBrains NodeRuntimeResolverTest/PrivateNodeProvisionerTest for shared local policy and no host runtime selection"
+      },
+      {
+        "level": "integration",
+        "name": "Packaged installer/bootstrap policy consistency and existing signed staging/fingerprint verification regression"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

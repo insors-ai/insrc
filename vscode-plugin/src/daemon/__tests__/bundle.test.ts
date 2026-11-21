@@ -7,21 +7,25 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
+const { assertPackagedRuntimeAssets } = await import(new URL('../../../../scripts/node-runtime-assets.mjs', import.meta.url).href);
+
 const HERE = dirname(fileURLToPath(import.meta.url));
 const PKG = join(HERE, '..', '..', '..'); // vscode-plugin/
 const REPO = join(PKG, '..'); // repo root
 
 // ---- t3: bundle fidelity + repeatable copy step ---------------------------
 
-test('the bundled installer asset byte-matches scripts/insrc-daemon-install.sh (no drift)', () => {
+test('the bundled installer embeds canonical runtime assets without template drift', () => {
   const source = readFileSync(join(REPO, 'scripts', 'insrc-daemon-install.sh'));
   const bundled = readFileSync(join(PKG, 'assets', 'insrc-daemon-install.sh'));
-  assert.ok(source.equals(bundled), 'assets/insrc-daemon-install.sh must byte-match scripts/insrc-daemon-install.sh (run `npm run sync-assets`)');
+  assertPackagedRuntimeAssets(bundled.toString());
+  const template = (s: string) => s.replace(/^INSRC_NODE_BOOTSTRAP_(?:B64|SHA256)='[^']*'$/gm, '');
+  assert.equal(template(bundled.toString()), template(source.toString()));
 });
 
 test('the asset is produced by a repeatable copy step, not a one-off manual copy', () => {
   const pkg = JSON.parse(readFileSync(join(PKG, 'package.json'), 'utf8'));
-  assert.match(pkg.scripts?.['sync-assets'] ?? '', /insrc-daemon-install\.sh/, 'a sync-assets script regenerates the bundled installer');
+  assert.match(pkg.scripts?.['sync-assets'] ?? '', /sync-client-runtime-assets\.mjs vscode/, 'a sync-assets script regenerates the bundled installer');
   assert.match(pkg.scripts?.build ?? '', /sync-assets/, 'build runs sync-assets so the asset stays in sync');
 });
 

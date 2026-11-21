@@ -277,3 +277,13 @@ test('daemon-ctl.sh start spawns the daemon and stop reaches the lifecycle helpe
 		f.cleanup();
 	}
 });
+
+test('external INSRC_NODE_BIN is rejected with migration guidance',()=>{
+ const f=fixture();
+ try{
+  const external=join(f.home,'external-node'),marker=join(f.home,'external-executed');
+  writeFileSync(external,`#!/bin/sh\nprintf used > '${marker}'\n`);chmodSync(external,0o700);
+  const result=ctl(f,'status',{INSRC_NODE_BIN:external});
+  assert.equal(result.status,2);assert.match(result.output,/External INSRC_NODE_BIN/);assert.match(result.output,/remove it.*verified installation-owned runtime/i);assert.ok(!existsSync(marker));
+ }finally{f.cleanup();}
+});

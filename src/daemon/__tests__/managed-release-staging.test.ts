@@ -57,6 +57,7 @@ async function fixture(t: TestContext, supervisor?: string, programs?: { daemon:
 		'build.mjs': [
 			"import { mkdir, writeFile } from 'node:fs/promises';",
 			"for (const dir of ['out/daemon', 'out/bin', 'node_modules', 'packages/project-memory/dist']) await mkdir(dir, { recursive: true });",
+			`await writeFile('out/bin/insrc-runtime-smoke.js', 'process.exit(0);');`,
 			`await writeFile('out/daemon/index.js', ${JSON.stringify(programs?.daemon ?? 'process.stdout.write("candidate daemon");')});`,
 			`await writeFile('out/bin/insrc-daemon-supervisor.js', ${JSON.stringify(supervisor ?? 'process.stdout.write("candidate supervisor");')});`,
 			...(programs === undefined ? [] : [
@@ -67,6 +68,8 @@ async function fixture(t: TestContext, supervisor?: string, programs?: { daemon:
 		'version.txt': 'prior',
 		'.npmrc': '',
 		'scripts/fixture': 'fixture',
+        'scripts/node-runtime-env.sh': `insrc_source_toolchain() { NODE_BIN='${process.execPath}'; NPM_CLI='${execFileSync('/bin/sh', ['-c', 'command -v npm'], { encoding: 'utf8' }).trim()}'; TOOLCHAIN_ID='${process.versions.node}:fixture:digest'; }\n`,
+        'scripts/node-runtime-store.mjs': `import fs from 'node:fs';fs.mkdirSync(process.argv[3]+'/fixture-bindings',{recursive:true});fs.writeFileSync(process.argv[3]+'/fixture-bindings/last',process.argv[4]);`,
 	};
 	await mkdir(join(repoUrl, 'scripts'));
 	for (const [name, value] of Object.entries(files)) await writeFile(join(repoUrl, name), value);
@@ -110,6 +113,10 @@ async function makeTestReleaseAuthority(f: Awaited<ReturnType<typeof fixture>>) 
 	await promisify(execFile)(runtime, [bundle, key + '.pub', installer]);
 	const verifier = join(f.scratch, 'verifier.mjs');
 	const packaged = await readFile(installer, 'utf8');
+	// Protocol/recovery fixture: use the explicit recording authority, not the
+	// public policy whose native target promotion belongs to t7.
+	await writeFile(installer, packaged.replace(/^INSRC_NODE_BOOTSTRAP_B64='[^']*'$/m, "INSRC_NODE_BOOTSTRAP_B64=''"));
+	await writeFile(join(f.scratch, 'node-runtime-env.sh'), await readFile(join(source.repoUrl, 'scripts/node-runtime-env.sh')));
 	const base64 = packaged.match(/^INSRC_RELEASE_BOOTSTRAP_B64='([^']+)'$/m)?.[1];
 	assert.ok(base64);
 	await writeFile(verifier, Buffer.from(base64, 'base64'), { mode: 0o600 });
@@ -313,15 +320,13 @@ test('First supported update of a qualified prior build with broker denial', {
 	skip: process.platform !== 'darwin' || (process.getuid?.() ?? 0) === 0, timeout: 210_000,
 }, async t => {
 	const loader = JSON.stringify(import.meta.resolve('tsx/esm/api'));
-	const url = (path: string) => JSON.stringify(new URL(path, import.meta.url).href);
-	const program = (path: string) => `import { register } from ${loader};\nregister();\nawait import(${url(path)});\n`;
+	const url = (path: string) => JSON.stringify(new URL(path, import.meta.url).href.replace('/src/', '/out/').replace(/\.ts$/, '.js'));
+	const program = (path: string) => `await import(${url(path)});\n`;
 	const supervisor = program('../../bin/insrc-daemon-supervisor.ts');
 	const controller = program('../../bin/insrc-daemon-control.ts');
 	const updater = program('../../bin/insrc-daemon-update.ts');
 	const candidateDaemon = `
-import { register } from ${loader};
 import { fileURLToPath } from 'node:url';
-register();
 const { ManagedDaemonLifecycle } = await import(${url('../managed-daemon-lifecycle.ts')});
 const { daemonRunFiles } = await import(${url('../run-file-ownership.ts')});
 const { PATHS } = await import(${url('../../shared/paths.ts')});
@@ -347,10 +352,8 @@ await managed.ready();
 	const watchdog = join(f.scratch, 'watchdog.mjs');
 	await writeFile(watchdog, program('../../bin/insrc-shutdown-watchdog.ts'));
 	const predecessor = `
-import { register } from ${loader};
 import { createServer } from 'node:net';
 import { writeFileSync } from 'node:fs';
-register();
 const { armShutdownWatchdog } = await import(${url('../shutdown-watchdog.ts')});
 const { PATHS } = await import(${url('../../shared/paths.ts')});
 writeFileSync(PATHS.pidFile, String(process.pid));
@@ -458,7 +461,7 @@ test('Staging leaves the installed release executable and unchanged', async t =>
 	assert.equal(execFileSync(staged.candidate.runtime, [join(staged.candidate.root, 'out/daemon/index.js')], { encoding: 'utf8' }), 'candidate daemon');
 	assert.equal(git(staged.candidate.root, 'rev-parse', 'HEAD'), f.options.qualification.candidate.releaseId);
 	assert.equal(JSON.parse(await readFile(join(staged.candidate.root, 'out/release-compatibility.json'), 'utf8')).releaseId, staged.candidate.commit);
-	assert.deepEqual((await readdir(f.options.stateRoot)).sort(), ['daemon', 'managed-lifecycle', 'origin', 'qualified']);
+	assert.deepEqual((await readdir(f.options.stateRoot)).sort(), ['daemon', 'fixture-bindings', 'managed-lifecycle', 'origin', 'qualified']);
 	await verifyStagedReleasePin(staged.prior);
 	await verifyStagedReleasePin(staged.candidate);
 
@@ -475,4 +478,32 @@ test('Staging leaves the installed release executable and unchanged', async t =>
 	}), /fetched branch does not match/);
 	assert.deepEqual(await readdir(releases), beforeMismatch);
 	assert.deepEqual(await readFile(f.entry), before);
+});
+
+// These protocol fixtures prove staging/activation ordering. Native compatibility
+// itself is qualified with the official full distribution and real modules in t7.
+test('Owned toolchain staging failures preserve prior selection binding and executable bytes', async t => {
+ for (const failure of ['provision','install','build','native','binding']) {
+  const f=await fixture(t), origin=f.options.source.repoUrl;
+  const directory=join(f.options.stateRoot,'managed-lifecycle');await mkdir(directory,{recursive:true,mode:0o700});
+  const selector=join(directory,'installation.json');await writeFile(selector,'prior selected descriptor',{mode:0o600});
+  const priorBinding=join(f.options.stateRoot,'source-runtimes');await mkdir(priorBinding,{mode:0o700});await writeFile(join(priorBinding,'prior.json'),'retained prior binding');
+  const entryBefore=await readFile(f.entry),dependencyBefore=await readFile(f.dependency);
+  if(failure==='provision')await writeFile(join(origin,'scripts/node-runtime-env.sh'),'insrc_source_toolchain() { echo "fixture provisioning failure" >&2; return 2; }\n');
+  if(failure==='install'){
+   const manifest=JSON.parse(await readFile(join(origin,'package.json'),'utf8'));manifest.scripts.preinstall='node -e "process.exit(7)"';await writeFile(join(origin,'package.json'),JSON.stringify(manifest));
+  }
+  if(failure==='build')await writeFile(join(origin,'build.mjs'),'process.exit(8);');
+  if(failure==='native')await writeFile(join(origin,'build.mjs'),(await readFile(join(origin,'build.mjs'),'utf8')).replace('process.exit(0);','process.exit(9);'));
+  if(failure==='binding')await writeFile(join(origin,'scripts/node-runtime-store.mjs'),'throw Error("fixture interrupted binding publication");');
+  git(origin,'add','.');git(origin,'commit','-qm',failure);
+  const candidate=profile(git(origin,'rev-parse','HEAD'));
+  const qualification={...f.options.qualification,candidate,pairs:f.options.qualification.pairs.map(pair=>({...pair,candidate}))};
+  await assert.rejects(stageManagedRelease({...f.options,qualification}),undefined,failure);
+  assert.deepEqual(await readFile(f.entry),entryBefore,failure);assert.deepEqual(await readFile(f.dependency),dependencyBefore,failure);
+  assert.equal(await readFile(selector,'utf8'),'prior selected descriptor',failure);
+  assert.equal(await readFile(join(priorBinding,'prior.json'),'utf8'),'retained prior binding',failure);
+  assert.deepEqual(await readdir(join(directory,'releases')),[],failure);
+  assert.equal((await captureManagedReleasePin(f.old,f.options.runtime)).fingerprint,f.priorFingerprint,failure);
+ }
 });

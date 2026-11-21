@@ -7,17 +7,20 @@ insrc_node_runtime_policy() {
   INSRC_RUNTIME_URL= INSRC_RUNTIME_SHA256=
   case "$1" in
     darwin-arm64)
-      printf '%s\n' 'Node runtime target is not qualified: darwin-arm64' >&2
-      return 3 ;;
+      INSRC_RUNTIME_URL='https://nodejs.org/download/release/v22.22.1/node-v22.22.1-darwin-arm64.tar.gz'
+      INSRC_RUNTIME_SHA256='679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2'
+      ;;
     darwin-x64)
       printf '%s\n' 'Node runtime target is not qualified: darwin-x64' >&2
       return 3 ;;
     linux-x64)
-      printf '%s\n' 'Node runtime target is not qualified: linux-x64' >&2
-      return 3 ;;
+      INSRC_RUNTIME_URL='https://nodejs.org/download/release/v22.22.1/node-v22.22.1-linux-x64.tar.gz'
+      INSRC_RUNTIME_SHA256='07c8aafa60644fb81adefa1ee7da860eb1920851ffdc9a37020ab0be47fbc10e'
+      ;;
     linux-arm64)
-      printf '%s\n' 'Node runtime target is not qualified: linux-arm64' >&2
-      return 3 ;;
+      INSRC_RUNTIME_URL='https://nodejs.org/download/release/v22.22.1/node-v22.22.1-linux-arm64.tar.gz'
+      INSRC_RUNTIME_SHA256='1d1690e9aba47e887a275abc6d8f7317e571a0700deaef493f768377e99155f5'
+      ;;
     *) printf '%s\n' "unsupported Node runtime target: $1" >&2; return 2 ;;
   esac
 }

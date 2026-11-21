@@ -54,7 +54,7 @@ The daemon does **not**:
 
 ## Prerequisites
 
-- **Node.js 20 or newer** on `PATH`. Verify with `node -v`.
+- **Shell bootstrap tools** (`bash`, `curl`, `tar`, `shasum`). Installed source daemons provision verified local Node/npm; no global Node or npm is required. Only release-qualified targets are enabled.
 - **Git** on `PATH` (used at install time + by the indexer's
   `.gitignore` awareness).
 - **~500 MB free disk** for `~/.insrc/` (grows with indexed repo
@@ -141,18 +141,20 @@ the incumbent in its current state and reports the preparation failure.
 
 ### First-time install
 
+Use the installer shipped with the current VS Code/JetBrains client or the
+project's authenticated packaged installer:
+
 ```bash
-# Clone into the canonical install location:
-git clone https://github.com/insors-ai/insrc-ide.git ~/.insrc/daemon
-cd ~/.insrc/daemon/src/insrc
-CXXFLAGS=-std=c++17 npm install
-npm run build
+/bin/bash /path/to/insrc-daemon-install.sh -y
+# Offline archive input is checked against the release's fixed digest:
+/bin/bash /path/to/insrc-daemon-install.sh --runtime-archive /path/to/node-archive.tar.gz -y
 ```
 
-That produces `~/.insrc/daemon/out/insrc/` — the compiled
-JavaScript the daemon executes at runtime. Prompt files + assets
-are copied into `out/insrc/prompts` and `out/insrc/assets`
-automatically.
+The default source root is `~/.insrc/daemon`, and the daemon entry is
+`out/daemon/index.js`. Explicit development remains separate: clone
+`https://github.com/insors-ai/insrc.git`, use a supported Node 22, then run
+`npm install`, `npm run build` and `npm run insrc`. Development sessions are not
+silently re-executed under another interpreter.
 
 ### Updating an existing install
 
@@ -164,17 +166,63 @@ cd ~/.insrc/daemon/scripts
 ./daemon-ctl.sh restart     # graceful stop (waits for full drain), then start
 ```
 
-`npm install` runs whenever the last install of the current lockfile did not
-finish: `node_modules/.insrc-install-ok` records the lockfile of the last
-successful install, so a failed or interrupted install is retried on the next
-update. Every install builds native modules with `-std=c++17`. The update that
-first brings this rule in still runs the old one, so a daemon left broken by a
-failed install is repaired by the update after it.
+The install marker `node_modules/.insrc-install-ok` includes the lockfile
+hash and exact toolchain identity. Old lock-only markers force installation;
+a failed install cannot mark the candidate successful. Native dependencies use
+`-std=c++17`, the matching absolute npm CLI, and the owned Node at the front of
+lifecycle PATH. Candidate build/native checks precede source-binding publication
+and the existing managed activation/recovery transaction.
 
 The ctl script pins the target to `~/.insrc/daemon` regardless of
 where you invoke it from (override with `INSRC_DAEMON_ROOT=/path`).
 It handles the daemon's ~20 s queue-drain window on shutdown so
 `restart` doesn't race the old process.
+
+### Runtime ownership, migration and repair
+
+The release policy is `src/assets/node-runtime-policy.json`. Its exact version,
+official archive digest and qualification record govern each enabled target.
+A private content-addressed object under
+`~/.insrc/runtimes/node-v22.22.1-<target>/<archive-digest>/` owns the full Node/npm
+distribution and retained archive. Reuse verifies its complete contents against a
+fresh extraction of that trusted archive. An executable or success marker alone
+is insufficient. Unsupported/unqualified targets fail without a system fallback.
+
+Each source installation has one binding in `~/.insrc/source-runtimes/`, keyed
+by its canonical root; several roots can reference the same runtime object.
+Bound source installations are never rebuilt in place: an unmanaged source
+control request that would modify one is refused with staged-migration guidance.
+Managed installations continue through their existing controller.
+Bindings contain the target, version, archive identity, distribution path and
+inventory digest. They are published atomically after technical checks.
+Existing managed descriptors, journals and signed bundle fingerprints remain the
+activation and rollback authority; the source cache never replaces a signed
+release's `tools/node`. Previous toolchains are retained; there is no automatic
+runtime garbage collection or database migration.
+
+Arbitrary `INSRC_NODE_BIN` overrides are retired. Remove an external override
+before installation. For an old external `daemon-node` record, explicitly run
+the authenticated packaged installer with `--migrate-runtime`; it retains that
+record for rollback while staging with the verified toolchain. A valid modern
+source binding takes precedence over the old global record. Bootstrap-only
+resolution (`--print-runtime`, used by the IDE) does not select or activate a
+daemon. `NODE_OPTIONS` and `NODE_PATH` are removed at owned execution boundaries.
+
+For offline installation, provide the exact official archive using
+`--runtime-archive`. A valid cache needs no network. An invalid cache is rejected;
+the offline input does not silently overwrite an existing object. To repair it,
+first settle any active recovery transaction and stop every installation that
+references it through its lifecycle controller. Retain the invalid object by
+moving it aside, then rerun the packaged installer with the trusted archive to
+recreate and verify the canonical object. Never replace an active runtime, edit
+a binding to point at a global binary, or delete rollback references. If a
+publication lock remains after interruption, preserve it until its owner is
+safely established as gone; PID absence alone does not authorize lock removal.
+
+Runtime upgrades require an explicit policy and authenticated digest update,
+regenerated client/bootstrap assets, native install/build qualification per
+enabled target, and the existing source/release approval process. There is no
+latest-version resolution or implicit Homebrew/system upgrade.
 
 ---
 
@@ -2224,3 +2272,29 @@ Changing JSON capacity does not change this projection limit.
 Once version-2 admission records exist, retain compatible checkpoint readers.
 An operational rollback must preserve readable history; do not blind-downgrade,
 delete checkpoints or clear another session's resources to force a restart.
+
+
+### Linux CPU source installation (OrbStack-qualified)
+
+Linux arm64 and x64 source runtimes are qualified on Ubuntu24.04 OrbStack
+machines. Install the native build prerequisites (Git, curl, CA certificates,
+a C/C++ toolchain, Python3, pkg-config, libsecret development headers and Perl).
+No global Node/npm is required. Full OrbStack native builds were tested with
+8 GB per machine; 4 GB runs hit the memory limit. For a CPU-only installation,
+run the canonical packaged installer:
+
+```sh
+bash insrc-daemon-install.sh --embedder onnx -y
+```
+
+Owned shell and TUI/build environments default ONNXRUNTIME_NODE_INSTALL_CUDA to
+`skip` only when it is absent. Explicit values, including an empty value, are
+preserved. This skips only the optional CUDA provider download by default; CPU
+ONNX Runtime and normal native package lifecycle scripts remain installed. The
+locked ONNX package's optional Linux x64 CUDA URL currently returns HTTP404. CUDA/GPU installation is not qualified
+by these tests. The x64 proof uses OrbStack emulation on Apple Silicon; it does
+not claim physical x86 or signed release-bundle qualification. See
+[the Linux qualification record](plans/node-runtime-evidence/qualification-linux-orbstack.md).
+Owned build boundaries disable Python bytecode cache writes so node-gyp cannot
+modify the archive-verified Node/npm distribution. Existing source updates that
+lack a qualified staged migration still refuse in-place mutation.

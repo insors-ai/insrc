@@ -37,6 +37,7 @@ fs.appendFileSync(process.env.INSRC_TEST_IDENTITY, JSON.stringify({phase,version
 if(phase==='build'){
  if(process.env.INSRC_TEST_BUILD_FAIL)process.exit(7);
  fs.mkdirSync('out/bin',{recursive:true});
+ fs.writeFileSync('out/bin/insrc-runtime-smoke.js', 'process.exit(0);');
  fs.writeFileSync('out/bin/insrc-daemon-control.js', ${JSON.stringify("import fs from 'node:fs';fs.appendFileSync(process.env.INSRC_TEST_IDENTITY,JSON.stringify({phase:process.argv[2],version:process.versions.node,exe:process.execPath})+'\\n');")});
 }
 `;

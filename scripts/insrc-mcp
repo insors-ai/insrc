@@ -14,7 +14,9 @@ ROOT="$(cd "$(/usr/bin/dirname "$SELF")/.." && pwd -P)"
 USER_CWD="$PWD"
 [ -f "$ROOT/scripts/node-runtime-env.sh" ] || { echo 'Runtime bootstrap assets missing; reinstall using the matching packaged installer.' >&2; exit 2; }
 . "$ROOT/scripts/node-runtime-env.sh"
-insrc_source_toolchain "$ROOT/scripts" "$HOME/.insrc" || exit 2
+MODE=
+[ -e "$ROOT/.git" ] || MODE=bootstrap
+insrc_source_toolchain "$ROOT/scripts" "$HOME/.insrc" "" "$MODE" || exit 2
 if [ ! -e "$ROOT/.git" ]; then
   [ -f "$ROOT/scripts/verify-installed-runtime.mjs" ] || { echo 'Packaged runtime verifier missing; repair using the authenticated installer.' >&2; exit 2; }
   # The bootstrap runtime verifies the retained signed fingerprint BEFORE the

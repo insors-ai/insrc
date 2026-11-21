@@ -1,0 +1,111 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-f3326b63-e31c-4f94-bbc5-357bca188d0b",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-21T04:40:30.254Z",
+    "epicCreatedAt": "2026-11-20T17:07:21.721Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "175ab0d1d56838a9",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Qualify runtime identity and native compatibility end to end",
+      "parent": {
+        "entityId": "STORY-175ab0d1d56838a9-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-175ab0d1d56838a9-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-175ab0d1d56838a9-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-175ab0d1d56838a9-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-175ab0d1d56838a9-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-175ab0d1d56838a9-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-175ab0d1d56838a9-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-175ab0d1d56838a9-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 2,
+        "contentHash": "9d4578e8453c8d6d69c1755001558eb55481a745135e572b699f9da6ade0a777",
+        "at": "2026-11-21T06:53:23.387Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-21T04:40:30.257Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Qualify runtime identity and native compatibility end to end",
+    "summary": "Run bounded regression suites and isolated actual distribution/native smoke on enabled targets. Record commands, executable identities, evidence, cleanup and unavailable target coverage; validate the final build artifact before separate human completion approval.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "Record exact owned Node/npm and lifecycle child paths under no/global20/global26/hostile PATH; prove bootstrap, offline reuse and retry.",
+      "Run real npm install/build and representative native module load, not only mocked version tests.",
+      "Run source migration failure and signed managed recovery/rollback regressions plus current IDE client contract tests.",
+      "Promote public source-target enablement only after actual target/native smoke evidence; unverified targets remain disabled and are reported. No implicit dependency from t1 back to qualification.",
+      "Canonical test coordinator releases all owned children and records cleanup; final BUILD validation contains evidence/limitations before human approval, without demanding approval as a technical test.",
+      "After actual install/build/native qualification permits target promotion, regenerate canonical client/bootstrap assets and prove fresh install with the actual enabled packaged policy, no fixture-policy substitution, before final BUILD approval."
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "Actual official Node22.22.1/npm, npm lifecycle child paths, npm install/build and native module load per enabled target"
+      },
+      {
+        "level": "integration",
+        "name": "Canonical bounded regression and IDE build suites; signed managed recovery/rollback; no active owned test children after cleanup"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

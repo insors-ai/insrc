@@ -29,7 +29,7 @@ export function packageNodeRuntimeInstaller(source, assetRoot = root) {
  const stage=mkdtempSync(join(tmpdir(),'insrc-bootstrap-assets-'));
  try {
   copyNodeRuntimeAssets(assetRoot,stage);
-  const archive=execFileSync('/usr/bin/tar',['-czf','-','-C',stage,...NODE_RUNTIME_ASSETS],{maxBuffer:1024*1024});
+  const archive=execFileSync('/usr/bin/tar',['--no-xattrs','-czf','-','-C',stage,...NODE_RUNTIME_ASSETS],{maxBuffer:1024*1024,env:{...process.env,COPYFILE_DISABLE:'1'}});
   const marker=/^INSRC_NODE_BOOTSTRAP_B64='[^']*'$/m, digest=/^INSRC_NODE_BOOTSTRAP_SHA256='[^']*'$/m;
   if(!marker.test(source)||!digest.test(source))throw new Error('installer runtime bootstrap markers missing');
   return source.replace(marker,`INSRC_NODE_BOOTSTRAP_B64='${archive.toString('base64')}'`)

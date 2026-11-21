@@ -51,6 +51,7 @@ DAEMON_ROOT="${INSRC_DAEMON_ROOT:-$HOME/.insrc/daemon}"
 RUNTIME_TOOLS="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 NPM_CLI=
 TOOLCHAIN_ID=
+SOURCE_RUNTIME_BOUND=0
 unset NODE_OPTIONS NODE_PATH
 if [ ! -d "$DAEMON_ROOT/.git" ] && [ ! -L "$DAEMON_ROOT/tools/node" ] && [ -x "$DAEMON_ROOT/tools/node" ]; then
 	# A signed bundle owns this immutable executable. Existing managed controller
@@ -294,7 +295,14 @@ supervised_lifecycle() {
 	fi
 }
 
+require_unselected_source_build() {
+ if [ "$SOURCE_RUNTIME_BOUND" -eq 1 ] && { [ "$SKIP_SYNC" -eq 0 ] || [ "$SKIP_INSTALL" -eq 0 ] || [ "$SKIP_BUILD" -eq 0 ]; }; then
+  die 'selected source installation requires staged migration; use the authenticated packaged installer --migrate-runtime (managed installations use their controller)' 4
+ fi
+}
+
 prepare_daemon() {
+	require_unselected_source_build
 	require_daemon_dir
 	local branch="${BRANCH:-$(git -C "$DAEMON_ROOT" rev-parse --abbrev-ref HEAD)}"
 
@@ -352,6 +360,7 @@ cmd_update() {
 	# platform: a managed install is handled above by supervised_lifecycle;
 	# this fallback never needs the signed macOS upgrade bridge, which exists
 	# only to migrate a legacy install into the managed lifecycle.
+	require_unselected_source_build
 	require_daemon_dir
 	local branch="${BRANCH:-$(git -C "$DAEMON_ROOT" rev-parse --abbrev-ref HEAD)}"
 

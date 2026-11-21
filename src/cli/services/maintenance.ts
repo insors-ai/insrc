@@ -33,7 +33,7 @@ import type { RegisteredRepo } from '../../shared/types.js';
 import { describeStop, startDaemon, stopDaemon } from './daemon.js';
 import { readManagedInstallation } from '../../shared/managed-daemon-installation.js';
 import { ManagedDaemonControl } from './managed-daemon-control.js';
-import { cleanNodeEnvironment, ownedNodeEnvironment, resolveOwnedToolchain, toolchainInstallMarker } from './owned-runtime.js';
+import { cleanNodeEnvironment, hasSourceRuntimeBinding, ownedNodeEnvironment, resolveOwnedToolchain, toolchainInstallMarker } from './owned-runtime.js';
 import type { StartResult, StopOutcome } from './daemon.js';
 import { loadBuiltCatalog } from '../../config/config-catalog-loader.js';
 import { reconcileConfigFile, type ConfigIoOutcome } from '../../config/reconcile-io.js';
@@ -131,6 +131,7 @@ export async function update(opts: UpdateOptions, onLog: LogFn): Promise<Mainten
 
 	try {
 		await resolveOwnedToolchain(root);
+		if (hasSourceRuntimeBinding(root)) return { ok: false, steps, error: 'Selected source installation requires staged migration; use the authenticated packaged installer --migrate-runtime.' };
 		let source: UpdateSource;
 		try { source = opts.source ?? readUpdateSource(); }
 		catch (err) { return { ok: false, steps, error: `invalid daemonUpdate config: ${(err as Error).message}` }; }

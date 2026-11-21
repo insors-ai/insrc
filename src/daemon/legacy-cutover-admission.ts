@@ -332,7 +332,7 @@ export async function fenceLegacyLauncher(gate: Gate, update: Extract<MutationRe
 		const displaced = await mkdtemp(join(dirname(canonical), '.insrc-launcher-'));
 		try {
 			await mkdir(join(displaced, 'scripts'));
-			for (const name of ['daemon-ctl.sh', 'insrc', 'insrc-daemon-install.sh']) {
+			for (const name of ['daemon-ctl.sh', 'insrc', 'insrc-mcp', 'insrc-daemon-install.sh']) {
 				await writeFile(join(displaced, 'scripts', name), launcher(update, name), { mode: 0o700, flag: 'wx' });
 			}
 			const mcp = dispatchCommand(update, 'insrc-mcp.js');

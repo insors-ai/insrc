@@ -20,7 +20,7 @@ test('extension.ts constructs the AiHostRegistry (HostSpecs + real HostEnv/HostF
   assert.match(entry, /defaultHostFileSystem/, 'uses the real node:fs HostFileSystem');
   assert.match(entry, /registerHostCommands\(\{\s*commands,\s*consent,\s*status,\s*registry\s*\}\)/, 'wires the durable command with the s1 surfaces');
   // launch target resolved from the SAME daemon home S002 installs (reuse, not a new path).
-  assert.match(entry, /paths\.daemonRoot[\s\S]*insrc-mcp\.js/, 'resolves the launch target from the S002 daemon home');
+  assert.match(entry, /join\(paths\.daemonRoot, 'scripts', 'insrc-mcp'\)/, 'resolves the launch target from the S002 daemon home');
 });
 
 test('the activation-time host-wire step runs through the guarded runOnboarding sequence (S005 coalescing) and only fires when present hosts exist', () => {
@@ -45,7 +45,7 @@ test('contributes.commands includes insrc.hosts.wire alongside the S002 daemon e
 
 test('sync-assets bundles the canonical steering block so the steering body ships with the extension', () => {
   const pkg = JSON.parse(readFileSync(join(PKG, 'package.json'), 'utf8'));
-  assert.match(pkg.scripts?.['sync-assets'] ?? '', /steering-block\.md/, 'sync-assets copies the canonical steering block');
+  assert.match(pkg.scripts?.['sync-assets'] ?? '', /sync-client-runtime-assets\.mjs vscode/, 'sync-assets copies the canonical steering block');
   const source = readFileSync(join(PKG, '..', 'src', 'prompts', 'steering-block.md'));
   const bundled = readFileSync(join(PKG, 'assets', 'steering-block.md'));
   assert.ok(source.equals(bundled), 'assets/steering-block.md byte-matches src/prompts/steering-block.md (run `npm run sync-assets`)');

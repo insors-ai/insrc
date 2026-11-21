@@ -23,6 +23,8 @@
 #   ./insrc-daemon-install.sh                       # install to ~/.insrc/daemon on default branch
 #   ./insrc-daemon-install.sh --target /custom/path # override install location
 #   ./insrc-daemon-install.sh --branch main         # track a different branch
+#   ./insrc-daemon-install.sh --migrate-runtime    # explicitly stage migration from an old global runtime record
+#   ./insrc-daemon-install.sh --runtime-archive <file> # supply the pinned official archive offline
 #   ./insrc-daemon-install.sh --no-start            # install + build but don't start
 #   ./insrc-daemon-install.sh --repo <url>          # install from a fork
 #   ./insrc-daemon-install.sh --embedder onnx       # force embedded ONNX (skip Ollama probe)
@@ -66,9 +68,13 @@ INSRC_NODE_BOOTSTRAP_B64=''
 INSRC_NODE_BOOTSTRAP_SHA256=''
 PRINT_RUNTIME=0
 RUNTIME_ARCHIVE=''
+MIGRATE_RUNTIME=0
 RUNTIME_ASSET_STAGE=''
 BRIDGE=''
+CANDIDATE_MARKER=''
+TECHNICAL_READY=0
 cleanup_install() {
+  if [ "$TECHNICAL_READY" -eq 0 ] && [ -n "$CANDIDATE_MARKER" ]; then /bin/rm -f "$CANDIDATE_MARKER"; fi
   [ -z "$BRIDGE" ] || /bin/rm -rf "$BRIDGE"
   [ -z "$RUNTIME_ASSET_STAGE" ] || /bin/rm -rf "$RUNTIME_ASSET_STAGE"
 }
@@ -127,6 +133,7 @@ while [ $# -gt 0 ]; do
 		--repo)      shift; REPO_URL="${1:-}"; EXPLICIT_REPO=1; [ -n "$REPO_URL" ] || die "--repo requires a value" ;;
 		--no-start)  START_AFTER_INSTALL=0 ;;
 		--print-runtime) PRINT_RUNTIME=1 ;;
+		--migrate-runtime) MIGRATE_RUNTIME=1 ;;
 		--runtime-archive) shift; RUNTIME_ARCHIVE="${1:-}"; [ -n "$RUNTIME_ARCHIVE" ] || die "--runtime-archive requires a file" ;;
 		--embedder)
 			shift
@@ -155,7 +162,10 @@ if [ -n "$INSRC_NODE_BOOTSTRAP_B64" ]; then
 fi
 [ -f "$RUNTIME_TOOLS/node-runtime-env.sh" ] || die "runtime bootstrap assets missing; use the matching packaged installer" 2
 . "$RUNTIME_TOOLS/node-runtime-env.sh"
-insrc_source_toolchain "$RUNTIME_TOOLS" "$HOME/.insrc" "$RUNTIME_ARCHIVE" || die "verified local Node toolchain is unavailable" 2
+RUNTIME_MODE=
+[ "$MIGRATE_RUNTIME" -eq 0 ] || RUNTIME_MODE=migration
+[ "$PRINT_RUNTIME" -eq 0 ] || RUNTIME_MODE=bootstrap
+insrc_source_toolchain "$RUNTIME_TOOLS" "$HOME/.insrc" "$RUNTIME_ARCHIVE" "$RUNTIME_MODE" || die "verified local Node toolchain is unavailable" 2
 if [ "$PRINT_RUNTIME" -eq 1 ]; then printf '%s\n' "$NODE_BIN"; exit 0; fi
 
 DAEMON_SRC="$INSTALL_ROOT"
@@ -255,9 +265,16 @@ if [ "$(uname -s)" = Darwin ] && [ "$FRESH_MAC_INSTALL" -eq 0 ] && [ -e "$INSTAL
 	[ -f "$BRIDGE/checkout/out/bin/insrc-daemon-control.js" ] || die "selected branch has no macOS upgrade bridge" 4
 	INSTALL_ROOT=$(cd "$INSTALL_ROOT" && pwd -P)
 	cd /
-	# The controller owns cleanup after exec, so no old checkout shell remains during the fence census.
+	# The controller owns bridge cleanup after exec; bootstrap assets are no longer needed.
+	[ -z "$RUNTIME_ASSET_STAGE" ] || /bin/rm -rf "$RUNTIME_ASSET_STAGE"
+	RUNTIME_ASSET_STAGE=''
+	# No old checkout shell remains during the fence census.
 	unset NODE_OPTIONS NODE_PATH
 	exec "$NODE_BIN" "$BRIDGE/checkout/out/bin/insrc-daemon-control.js" prepare-legacy-upgrade "$INSTALL_ROOT" "$REPO_URL" "$BRANCH" "$BRIDGE"
+fi
+
+if [ -e "$INSTALL_ROOT" ] && [ "$FRESH_MAC_INSTALL" -eq 0 ]; then
+ die 'existing source installation requires a staged update; in-place replacement is unavailable on this target. Retain the current installation and use a qualified staged migration.' 4
 fi
 
 if [ -e "$INSTALL_ROOT" ]; then
@@ -309,6 +326,7 @@ fi
 # install installs again. CXXFLAGS asks for C++17 (NATIVE_CXX_STD there): fs-ext
 # sets no standard and does not build on the Node 22.22.1 headers without it.
 INSTALL_MARKER="$DAEMON_SRC/node_modules/.insrc-install-ok"
+CANDIDATE_MARKER="$INSTALL_MARKER"
 rm -f "$INSTALL_MARKER"
 # The lockfile's hash before npm can rewrite it: the one the update paths compare.
 LOCK_HASH=$(git -C "$DAEMON_SRC" hash-object package-lock.json 2>/dev/null || echo "")
@@ -333,6 +351,11 @@ ok "build done"
 # ---------------------------------------------------------------------------
 # Step 4: symlink out/node_modules -> ../node_modules
 # ---------------------------------------------------------------------------
+
+# Technical readiness precedes binding and the existing lifecycle activation.
+( cd "$DAEMON_SRC" && "$NODE_BIN" out/bin/insrc-runtime-smoke.js ) || die 'candidate native module smoke failed; activation withheld' 4
+"$NODE_BIN" "$RUNTIME_TOOLS/node-runtime-store.mjs" bind "$HOME/.insrc" "$DAEMON_SRC" "${NODE_BIN%/bin/node}" || die 'runtime binding failed; activation withheld' 4
+TECHNICAL_READY=1
 
 # The compiled binary at out/bin/insrc-mcp.js needs node_modules resolvable
 # from out/. tsc doesn't copy them, and a symlink is the least-fragile fix.

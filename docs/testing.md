@@ -4,7 +4,12 @@ Use **Node 22.22.1 or newer 22.x** with dependencies and the host C compiler
 installed. Put that Node installation's `bin` directory first on `PATH` before
 running npm. The harness refuses other Node majors before changing output;
 it does not install or silently select another runtime.
-Native helpers currently build on macOS and Linux.
+Native helpers currently build on macOS and Linux. This explicit development
+coordinator remains separate from the daemon installer: tests do not silently
+provision or re-execute themselves under an installed runtime. Installed-runtime
+qualification records the actual owned Node/npm, a fresh npm install/build, native
+module loads and public packaged-policy installation; fixture-policy tests alone
+do not enable a platform.
 
 ```sh
 npm run build

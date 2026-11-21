@@ -1,0 +1,274 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1795248266992-6ij31p",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-21T08:07:31.761Z",
+    "epicCreatedAt": "2026-11-18T06:14:00.057Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "claude-sonnet-5"
+        }
+      ]
+    },
+    "elapsedMs": 176476,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "03f4fd3b9102aab8",
+    "epicSlug": "review-rounds-reconciliation-recovery",
+    "storyId": "s5",
+    "lldRunId": "wf-1795246351382-jujbmw",
+    "lldEffectiveHash": "6d57abfa68accf993485dc920a80409335ebda32202c80baa14902fde616994d",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1dccaf261c88417f4f33780e08b6d5e3f99dc814a291481ade14445eb8d058a7",
+        "at": "2026-11-21T08:07:34.419Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-21T08:14:22.767Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "84665a6eb08ef497c928cd1148850c370063cb7e"
+  },
+  "body": {
+    "summary": {
+      "prose": "Building this Story means adding one new module, checkpoint.ts, with three small functions and the same symlink-safety and atomic-publish machinery s4 already proved out in review-report.ts, plus a full named test suite covering all four acceptance criteria and every error/edge case the LLD names. Two Tasks: the module itself (t1), then its complete test suite (t2).",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add ReviewCheckpoint and writeCheckpoint/readCheckpoint/finalizeAndCleanup to a new checkpoint.ts",
+        "summary": "New src/workflow/review-round/checkpoint.ts exporting the ReviewCheckpoint interface and the three functions exactly per the LLD's contract: reviewId literal-identifier validation, canonical repo resolution, lstat-based symlink safety before every write/delete, and a guarded temp-file+rename publish for writeCheckpoint (reusing review-report.ts's publishGuarded pattern) so a crash mid-write never leaves a corrupted checkpoint. finalizeAndCleanup copies finalOutput into durable storage before deleting .insrc/tmp/<reviewId>/, never the reverse, and is idempotent when called twice. readCheckpoint treats a missing or malformed checkpoint file identically (undefined), never throwing. Plus a compile-time typecheck fixture proving the exact three-function/ReviewCheckpoint shape (matching review-report.ts's own __type-tests__ convention). Sized M: this bundles three functions plus the full symlink-safety and guarded-publish scope from the start, comparable to review-report.ts's final state rather than its initial draft.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "writeCheckpoint, readCheckpoint and finalizeAndCleanup exist with exactly the signatures in contractDetails.api, and ReviewCheckpoint exists with exactly dataModelChanges' shape",
+          "writeCheckpoint publishes via a guarded temp-file+rename primitive (never a direct writeFileSync), satisfying the atomic-write error case",
+          "finalizeAndCleanup's durable copy always precedes its .insrc/tmp/<reviewId>/ deletion, and a copy failure leaves the temp folder intact",
+          "readCheckpoint resolves to undefined for a missing OR malformed checkpoint file, never throwing on corruption",
+          "every write and the recursive delete are preceded by an lstat-based symlink-safety check reusing review-report.ts's established helper",
+          "the typecheck fixture compiles and fails to compile under every @ts-expect-error negative case"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "writeCheckpoint writes a ReviewCheckpoint JSON record to .insrc/tmp/<reviewId>/checkpoint.json containing exactly {reviewId, lastCompletedUnit}, overwriting any prior checkpoint for the same reviewId"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add the full named test suite for checkpoint.ts covering ac1-ac4 and all error/edge cases",
+        "summary": "One it() per testStrategy.testLevels[0].subjects (14 total), matching ac1-ac4's acceptanceMapping.provingTests verbatim (6 subjects), plus the 8 remaining error-case/edge-case subjects (idempotent finalize, repeated-write overwrite, path-traversal, repo-resolution, symlinked write, symlinked delete, corrupted-checkpoint, finalize-with-no-checkpoint). Mirrors reconciliation.test.ts's/review-report.test.ts's own fixture conventions: disposable .insrc/tmp/<reviewId>/ directories cleaned up per test, an injectable resolveRepoRoot test double, and an injectable durable-copy-destination double so finalizeAndCleanup's write can be forced to fail without touching real artifact storage.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "All 14 named subjects from testStrategy.testLevels[0].subjects exist as individual it() cases with titles matching verbatim",
+          "ac1, ac2, ac3 and ac4's acceptanceMapping.provingTests all pass",
+          "npx tsc --noEmit and npx tsx --test for the new test file both pass with zero failures",
+          "the broader sweep (src/workflow/review-round/**/*.test.ts) still passes in full, confirming no regression to s1-s4's existing suites"
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "readCheckpoint resolves to undefined when no checkpoint file exists yet for a reviewId, rather than throwing"
+          },
+          {
+            "level": "unit",
+            "name": "readCheckpoint resolves to the last-written ReviewCheckpoint after writeCheckpoint has been called, so a resumed review can continue from lastCompletedUnit rather than re-running completed units"
+          },
+          {
+            "level": "unit",
+            "name": "readCheckpoint's own reviewId field, read back from the checkpoint record, is exactly the identity k8 requires -- the same string as both the temp folder name and the record's own content"
+          },
+          {
+            "level": "unit",
+            "name": "finalizeAndCleanup copies finalOutput into durable artifact storage before deleting the .insrc/tmp/<reviewId>/ folder, in that order"
+          },
+          {
+            "level": "unit",
+            "name": "if finalizeAndCleanup's durable copy write fails, the .insrc/tmp/<reviewId>/ folder is not deleted"
+          },
+          {
+            "level": "unit",
+            "name": "finalizeAndCleanup is idempotent: calling it a second time for a reviewId whose temp folder was already deleted by an earlier successful call succeeds without error"
+          },
+          {
+            "level": "unit",
+            "name": "writeCheckpoint called repeatedly for the same reviewId overwrites the prior checkpoint rather than accumulating a history"
+          },
+          {
+            "level": "unit",
+            "name": "a reviewId containing a path-traversal segment is rejected before any filesystem access, for writeCheckpoint, readCheckpoint, and finalizeAndCleanup alike"
+          },
+          {
+            "level": "unit",
+            "name": "when the reviewed repository cannot be resolved, writeCheckpoint/readCheckpoint/finalizeAndCleanup reject rather than silently defaulting to the daemon process's own cwd"
+          },
+          {
+            "level": "unit",
+            "name": "a symlinked review directory or checkpoint file is never written through by writeCheckpoint, even outside .insrc/tmp"
+          },
+          {
+            "level": "unit",
+            "name": "a symlinked .insrc/tmp/<reviewId>/ directory is never deleted through by finalizeAndCleanup"
+          },
+          {
+            "level": "unit",
+            "name": "a checkpoint.json file that is not valid JSON, or does not match ReviewCheckpoint's shape, is treated by readCheckpoint as though no checkpoint exists, rather than throwing or returning unvalidated data"
+          },
+          {
+            "level": "unit",
+            "name": "finalizeAndCleanup succeeds even when checkpoint.json was never written at all, deleting whatever the .insrc/tmp/<reviewId>/ folder currently contains as a whole"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "writeCheckpoint writes a ReviewCheckpoint JSON record to .insrc/tmp/<reviewId>/checkpoint.json containing exactly {reviewId, lastCompletedUnit}, overwriting any prior checkpoint for the same reviewId",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "readCheckpoint resolves to undefined when no checkpoint file exists yet for a reviewId, rather than throwing",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "readCheckpoint resolves to the last-written ReviewCheckpoint after writeCheckpoint has been called, so a resumed review can continue from lastCompletedUnit rather than re-running completed units",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "readCheckpoint's own reviewId field, read back from the checkpoint record, is exactly the identity k8 requires -- the same string as both the temp folder name and the record's own content",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "finalizeAndCleanup copies finalOutput into durable artifact storage before deleting the .insrc/tmp/<reviewId>/ folder, in that order",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "if finalizeAndCleanup's durable copy write fails, the .insrc/tmp/<reviewId>/ folder is not deleted",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "finalizeAndCleanup is idempotent: calling it a second time for a reviewId whose temp folder was already deleted by an earlier successful call succeeds without error",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "writeCheckpoint called repeatedly for the same reviewId overwrites the prior checkpoint rather than accumulating a history",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "a reviewId containing a path-traversal segment is rejected before any filesystem access, for writeCheckpoint, readCheckpoint, and finalizeAndCleanup alike",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "when the reviewed repository cannot be resolved, writeCheckpoint/readCheckpoint/finalizeAndCleanup reject rather than silently defaulting to the daemon process's own cwd",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "a symlinked review directory or checkpoint file is never written through by writeCheckpoint, even outside .insrc/tmp",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "a symlinked .insrc/tmp/<reviewId>/ directory is never deleted through by finalizeAndCleanup",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "a checkpoint.json file that is not valid JSON, or does not match ReviewCheckpoint's shape, is treated by readCheckpoint as though no checkpoint exists, rather than throwing or returning unvalidated data",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "finalizeAndCleanup succeeds even when checkpoint.json was never written at all, deleting whatever the .insrc/tmp/<reviewId>/ folder currently contains as a whole",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 contractDetails"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 dataModelChanges"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 errorPaths"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 testStrategy"
+    }
+  ]
+}

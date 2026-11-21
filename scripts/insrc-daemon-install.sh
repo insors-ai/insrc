@@ -273,6 +273,10 @@ if [ "$(uname -s)" = Darwin ] && [ "$FRESH_MAC_INSTALL" -eq 0 ] && [ -e "$INSTAL
 	exec "$NODE_BIN" "$BRIDGE/checkout/out/bin/insrc-daemon-control.js" prepare-legacy-upgrade "$INSTALL_ROOT" "$REPO_URL" "$BRANCH" "$BRIDGE"
 fi
 
+if [ -e "$INSTALL_ROOT" ] && [ "$FRESH_MAC_INSTALL" -eq 0 ]; then
+ die 'existing source installation requires a staged update; in-place replacement is unavailable on this target. Retain the current installation and use a qualified staged migration.' 4
+fi
+
 if [ -e "$INSTALL_ROOT" ]; then
 	if [ ! -d "$INSTALL_ROOT/.git" ]; then
 		die "$INSTALL_ROOT exists but is not a git checkout -- move it aside or use --target <other>" 3

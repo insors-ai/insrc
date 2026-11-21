@@ -320,15 +320,13 @@ test('First supported update of a qualified prior build with broker denial', {
 	skip: process.platform !== 'darwin' || (process.getuid?.() ?? 0) === 0, timeout: 210_000,
 }, async t => {
 	const loader = JSON.stringify(import.meta.resolve('tsx/esm/api'));
-	const url = (path: string) => JSON.stringify(new URL(path, import.meta.url).href);
-	const program = (path: string) => `import { register } from ${loader};\nregister();\nawait import(${url(path)});\n`;
+	const url = (path: string) => JSON.stringify(new URL(path, import.meta.url).href.replace('/src/', '/out/').replace(/\.ts$/, '.js'));
+	const program = (path: string) => `await import(${url(path)});\n`;
 	const supervisor = program('../../bin/insrc-daemon-supervisor.ts');
 	const controller = program('../../bin/insrc-daemon-control.ts');
 	const updater = program('../../bin/insrc-daemon-update.ts');
 	const candidateDaemon = `
-import { register } from ${loader};
 import { fileURLToPath } from 'node:url';
-register();
 const { ManagedDaemonLifecycle } = await import(${url('../managed-daemon-lifecycle.ts')});
 const { daemonRunFiles } = await import(${url('../run-file-ownership.ts')});
 const { PATHS } = await import(${url('../../shared/paths.ts')});
@@ -354,10 +352,8 @@ await managed.ready();
 	const watchdog = join(f.scratch, 'watchdog.mjs');
 	await writeFile(watchdog, program('../../bin/insrc-shutdown-watchdog.ts'));
 	const predecessor = `
-import { register } from ${loader};
 import { createServer } from 'node:net';
 import { writeFileSync } from 'node:fs';
-register();
 const { armShutdownWatchdog } = await import(${url('../shutdown-watchdog.ts')});
 const { PATHS } = await import(${url('../../shared/paths.ts')});
 writeFileSync(PATHS.pidFile, String(process.pid));

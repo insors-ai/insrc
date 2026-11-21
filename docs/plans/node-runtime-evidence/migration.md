@@ -58,3 +58,11 @@ Each completed canonical run records actor closure in its cleanup.json. Native
 migration tests use the official distribution and actual npm/Node identities;
 minimal candidate build fixtures prove transaction ordering. Full fresh dependency
 installation/build and public target promotion remain t7 qualification work.
+
+Follow-up validation found and closed the existing non-Darwin installer mutation
+path: existing roots now refuse before source, dependencies or database bytes
+can change. This does not qualify Linux installation. Run
+`cedf26d6-9401-4820-b1e0-923f8b2daae0` passed the migration/native, Node-path and
+signed staging suites, with confirmed actor closure. The cutover fixture now
+imports coordinator-built JavaScript rather than starting a tsx/esbuild child
+inside its predecessor checkout; the production process census remains strict.

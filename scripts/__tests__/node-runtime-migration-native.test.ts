@@ -77,3 +77,18 @@ test('selected source shell and TUI updates refuse in-place mutation and retain 
   assert.deepEqual(readFileSync(join(f.seed,'package-lock.json')),lock);assert.equal(readdirSync(join(state,'source-runtimes')).length,1);assert.ok(!existsSync(f.trace));assert.ok(!existsSync(f.fakeTrace));
  }finally{f.clean();}
 });
+
+test('installer refuses an existing non-Darwin source tree before lockfile dependencies or database bytes can change',nativeOptions,()=>{
+ const f=ownedSourceFixture();
+ try{
+  // Platform routing fixture; this is not Linux native qualification.
+  const platform=join(f.root,'platform');mkdirSync(platform);writeFileSync(join(platform,'uname'),"#!/bin/sh\nprintf '%s\\n' Linux\n",{mode:0o700});
+  const selected=join(f.root,'selected');const clone=spawnSync('/usr/bin/git',['clone','-q','--',f.seed,selected],{encoding:'utf8'});assert.equal(clone.status,0,clone.stderr);
+  mkdirSync(join(selected,'node_modules'));writeFileSync(join(selected,'node_modules/retained-native'),'native bytes');
+  const state=join(f.home,'.insrc');mkdirSync(join(state,'lance'));writeFileSync(join(state,'lance/retained-data'),'vector data');writeFileSync(join(state,'graph.lmdb'),'graph bytes');
+  const lock=join(selected,'package-lock.json');writeFileSync(lock,'retained local lockfile');
+  const run=spawnSync('/bin/bash',[join(f.scripts,'insrc-daemon-install.sh'),'--target',selected,'--no-start','-y'],{env:{...f.env,PATH:platform+':/usr/bin:/bin'},encoding:'utf8',timeout:30000});
+  assert.equal(run.status,4,run.stdout+run.stderr);assert.match(run.stderr,/requires a staged update/);
+  assert.equal(readFileSync(lock,'utf8'),'retained local lockfile');assert.equal(readFileSync(join(selected,'node_modules/retained-native'),'utf8'),'native bytes');assert.equal(readFileSync(join(state,'graph.lmdb'),'utf8'),'graph bytes');assert.equal(readFileSync(join(state,'lance/retained-data'),'utf8'),'vector data');assert.ok(!existsSync(f.trace));
+ }finally{f.clean();}
+});

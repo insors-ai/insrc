@@ -74,7 +74,7 @@
         "question": "The contract section's api[0].returns is documented as Promise<string>, but insrc_present (confirmed directly against its real handler, src/mcp/server.ts's handleInsrcPresent) can never present a plain file like a review-report: its matching is scoped entirely to the daemon's pending-workflow-artifact list, and a review-report is never pending approval (k3; ac3 itself says 'no response required from the user'). This fails ac3's presentation requirement and should have been caught during design -- ac3 named the wrong mechanism.",
         "status": "resolved",
         "choice": "Return { path, markdown } instead of a bare path",
-        "rationale": "insrc_present's matching is scoped entirely to the daemon's pending-workflow-artifact list (confirmed directly against the real handler); a review-report structurally can never appear there. Returning the rendered markdown alongside the path lets the caller present it directly in its own response -- the same convention this codebase's own agents already use for review packets and self-reviews -- with no tool call needed at all, which is the only way to actually satisfy ac3.",
+        "rationale": "insrc_present's matching is scoped entirely to the daemon's pending-workflow-artifact list (confirmed directly against the real handler); a review-report structurally can never appear there. Returning the rendered markdown alongside the path lets the caller present it directly in its own response -- the same convention this codebase's own agents already use for review packets and self-reviews -- with no tool call needed at all, which is the only way to actually satisfy ac3. The testStrategy subject/ac3 proving-test name is corrected the same way, from the old \"...so insrc_present can open it...\" wording to one that states what the test actually proves.",
         "resolvedAt": "2026-11-21T05:07:55.000Z"
       }
     }
@@ -348,7 +348,7 @@
             "when the reviewed repository cannot be resolved, renderReviewReport rejects rather than silently defaulting to the daemon process's own cwd",
             "a rejecting filesystem write propagates its rejection rather than returning a path to a file that was never actually written",
             "an empty findings array still renders successfully with an explicit statement that no findings were produced this round",
-            "the path renderReviewReport returns points to a file that exists and is readable immediately after the call resolves, so insrc_present can open it with no further round-driver action"
+            "the returned markdown is exactly the persisted file's own content, which the caller presents directly to satisfy ac3 -- insrc_present (confirmed against its real handler) never applies to a review-report"
           ],
           "fixturesNeeded": [
             "a temp-directory fixture standing in for .insrc/tmp/<reviewId>/",
@@ -375,7 +375,7 @@
         {
           "criterionId": "ac3",
           "provingTests": [
-            "the path renderReviewReport returns points to a file that exists and is readable immediately after the call resolves, so insrc_present can open it with no further round-driver action"
+            "the returned markdown is exactly the persisted file's own content, which the caller presents directly to satisfy ac3 -- insrc_present (confirmed against its real handler) never applies to a review-report"
           ]
         }
       ]

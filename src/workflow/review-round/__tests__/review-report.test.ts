@@ -249,7 +249,7 @@ describe('renderReviewReport and ReviewReportDocgenCall', () => {
 		}
 	});
 
-	it('the path renderReviewReport returns points to a file that exists and is readable immediately after the call resolves, so insrc_present can open it with no further round-driver action', async () => {
+	it('the returned markdown is exactly the persisted file\'s own content, which the caller presents directly to satisfy ac3 -- insrc_present (confirmed against its real handler) never applies to a review-report', async () => {
 		// insrc_present's own matching (handleInsrcPresent, src/mcp/server.ts) is scoped
 		// entirely to the daemon's pending-workflow-artifact list -- confirmed here against
 		// the REAL handler, not assumed. A review-report is never pending approval (ac3

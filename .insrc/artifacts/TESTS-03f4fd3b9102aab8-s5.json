@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 22,
-        "contentHash": "2ee57a8091ce259c70bcb090fa32ff2e708b33d393b09e3e2c96e6de5b78bd53",
-        "at": "2026-11-21T13:55:57.530Z",
+        "number": 25,
+        "contentHash": "234e61fcd30774ba80c784694a32c3dc2415acbfedbdc164f804028d24fa64bc",
+        "at": "2026-11-21T14:41:00.170Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,17 +23,17 @@
     "epicHash": "03f4fd3b9102aab8",
     "storyId": "s5",
     "createdAt": "2026-11-21T08:19:58.921Z",
-    "updatedAt": "2026-11-21T13:55:57.289Z",
+    "updatedAt": "2026-11-21T14:40:59.630Z",
     "epicCreatedAt": "2026-11-18T06:14:00.057Z",
     "epicSlug": "review-rounds-reconciliation-recovery",
-    "revision": 22
+    "revision": 25
   },
   "body": {
     "tasks": [
       {
         "taskId": "t1",
-        "commit": "0958afbc3",
-        "ranAt": "2026-11-21T13:51:26.157Z",
+        "commit": "fe7b99bd4",
+        "ranAt": "2026-11-21T14:39:11.960Z",
         "testsPassed": true,
         "tests": [
           {
@@ -55,7 +55,7 @@
             "file": "src/workflow/review-round/__tests__/checkpoint.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 4174,
+            "durationMs": 4086,
             "titles": [
               {
                 "title": "writeCheckpoint writes a ReviewCheckpoint JSON record to .insrc/tmp/<reviewId>/checkpoint.json containing exactly {reviewId, lastCompletedUnit}, overwriting any prior checkpoint for the same reviewId",
@@ -118,6 +118,10 @@
                 "result": "pass"
               },
               {
+                "title": "finalizeAndCleanup propagates a permission failure during cleanup rather than reporting success (externally reported P2)",
+                "result": "pass"
+              },
+              {
                 "title": "readCheckpoint rejects a mismatched identity: a checkpoint.json whose own reviewId field does not match the one requested is treated as though no checkpoint exists",
                 "result": "pass"
               },
@@ -135,6 +139,10 @@
               },
               {
                 "title": "readCheckpoint resolves to undefined, rather than rejecting, when the review directory itself is a symlink -- an ancestor-symlink failure is treated the same as an absent checkpoint, allowing a fresh start instead of aborting recovery",
+                "result": "pass"
+              },
+              {
+                "title": "readCheckpoint resolves to undefined, rather than rejecting, when an ancestor is replaced by a plain file (ENOTDIR), not just a symlink",
                 "result": "pass"
               },
               {
@@ -156,8 +164,8 @@
       },
       {
         "taskId": "t2",
-        "commit": "a74e141ab",
-        "ranAt": "2026-11-21T13:55:57.289Z",
+        "commit": "fe7b99bd4",
+        "ranAt": "2026-11-21T14:40:59.630Z",
         "testsPassed": true,
         "tests": [
           {
@@ -335,7 +343,7 @@
             "file": "src/workflow/review-round/__tests__/checkpoint.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 4090,
+            "durationMs": 4109,
             "titles": [
               {
                 "title": "writeCheckpoint writes a ReviewCheckpoint JSON record to .insrc/tmp/<reviewId>/checkpoint.json containing exactly {reviewId, lastCompletedUnit}, overwriting any prior checkpoint for the same reviewId",
@@ -398,6 +406,10 @@
                 "result": "pass"
               },
               {
+                "title": "finalizeAndCleanup propagates a permission failure during cleanup rather than reporting success (externally reported P2)",
+                "result": "pass"
+              },
+              {
                 "title": "readCheckpoint rejects a mismatched identity: a checkpoint.json whose own reviewId field does not match the one requested is treated as though no checkpoint exists",
                 "result": "pass"
               },
@@ -415,6 +427,10 @@
               },
               {
                 "title": "readCheckpoint resolves to undefined, rather than rejecting, when the review directory itself is a symlink -- an ancestor-symlink failure is treated the same as an absent checkpoint, allowing a fresh start instead of aborting recovery",
+                "result": "pass"
+              },
+              {
+                "title": "readCheckpoint resolves to undefined, rather than rejecting, when an ancestor is replaced by a plain file (ENOTDIR), not just a symlink",
                 "result": "pass"
               },
               {

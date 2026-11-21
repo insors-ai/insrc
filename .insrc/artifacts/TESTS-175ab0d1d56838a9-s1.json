@@ -1,0 +1,1647 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 18,
+        "contentHash": "702183f71b647036f6564674992ea9ab83fd62c5958595e3aad8399d9462c82a",
+        "at": "2026-11-21T13:30:19.741Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "175ab0d1d56838a9",
+    "storyId": "s1",
+    "createdAt": "2026-11-21T04:49:50.725Z",
+    "updatedAt": "2026-11-21T13:30:19.697Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-20T17:07:21.721Z",
+    "epicSlug": "use-daemon-owned-node-runtime-predictable",
+    "revision": 18
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "f1f37d6e1",
+        "ranAt": "2026-11-21T04:49:50.725Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Policy/version/target/digest validation and generated asset/release-pin parity; unsupported target rejection",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/node-runtime-policy.test.ts",
+                "title": "pins candidate Node distributions to the authenticated checksum inventory",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/node-runtime-policy.test.ts",
+                "title": "rejects malformed version target URL digest layout and qualification policy",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/node-runtime-policy.test.ts",
+                "title": "rejects unsupported and unqualified public targets without an environment bypass",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/node-runtime-policy.test.ts",
+                "title": "keeps generated client assets signed release pins and native headers aligned",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "scripts/__tests__/node-runtime-policy.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 680,
+            "titles": [
+              {
+                "title": "pins candidate Node distributions to the authenticated checksum inventory",
+                "result": "pass"
+              },
+              {
+                "title": "rejects malformed version target URL digest layout and qualification policy",
+                "result": "pass"
+              },
+              {
+                "title": "rejects unsupported and unqualified public targets without an environment bypass",
+                "result": "pass"
+              },
+              {
+                "title": "keeps generated client assets signed release pins and native headers aligned",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "cc4cf5245",
+        "ranAt": "2026-11-21T05:05:56.061Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Archive digest/traversal/link/device/version rejection, cached inventory corruption, publication locking and owned cleanup",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/node-runtime-store.test.ts",
+                "title": "rejects digest traversal links devices and runtime identity before publication",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/node-runtime-store.test.ts",
+                "title": "rejects cache corruption even when its cached inventory is rewritten",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/node-runtime-store.test.ts",
+                "title": "serializes concurrent publication and removes only owned failed stages",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/node-runtime-store.test.ts",
+                "title": "publishes one canonical binding and refuses escaping or unqualified roots",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Node-free bootstrap, offline verified reuse, concurrent/interrupted provisioning in disposable HOME",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/node-runtime-store.test.ts",
+                "title": "bootstraps without PATH Node and reuses a verified cache offline",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/node-runtime-store.test.ts",
+                "title": "serializes concurrent publication and removes only owned failed stages",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/node-runtime-store.test.ts",
+                "title": "retries incomplete provisioning without selecting or deleting an unrelated stage",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/node-runtime-store.test.ts",
+                "title": "cleans an actually interrupted bootstrap and retries without publishing partial state",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/node-runtime-bootstrap-native.test.ts",
+                "title": "bootstraps the official archive in an empty HOME without PATH Node or npm",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "scripts/__tests__/node-runtime-bootstrap-native.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 9145,
+            "titles": [
+              {
+                "title": "bootstraps the official archive in an empty HOME without PATH Node or npm",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "scripts/__tests__/node-runtime-store.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 7218,
+            "titles": [
+              {
+                "title": "bootstraps without PATH Node and reuses a verified cache offline",
+                "result": "pass"
+              },
+              {
+                "title": "rejects digest traversal links devices and runtime identity before publication",
+                "result": "pass"
+              },
+              {
+                "title": "rejects cache corruption even when its cached inventory is rewritten",
+                "result": "pass"
+              },
+              {
+                "title": "serializes concurrent publication and removes only owned failed stages",
+                "result": "pass"
+              },
+              {
+                "title": "publishes one canonical binding and refuses escaping or unqualified roots",
+                "result": "pass"
+              },
+              {
+                "title": "cleans an actually interrupted bootstrap and retries without publishing partial state",
+                "result": "pass"
+              },
+              {
+                "title": "retries incomplete provisioning without selecting or deleting an unrelated stage",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "8a5b05dbd",
+        "ranAt": "2026-11-21T05:44:00.856Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Shell installer/control/bridge actual child identity with absent/20/26/fake Node/npm, sanitized injection environment and quoted paths",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/node-runtime-shell-native.test.ts",
+                "title": "shell fresh install update and restart preflight use official owned Node despite ambient Node and npm",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/node-runtime-shell-native.test.ts",
+                "title": "shell legacy upgrade bridge uses the same official Node and npm before managed delegation",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/node-runtime-shell-native.test.ts",
+                "title": "fresh installer uses official Node with absent Node and ambient Node20 or Node26",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/node-runtime-shell-native.test.ts",
+                "title": "successful restart retains actual official helper and daemon child identity across the runtime matrix",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Extend src/daemon/__tests__/daemon-ctl-node-path.test.ts and src/cli/services/__tests__/daemon-ctl-install-marker.test.ts for owned selection and lock+toolchain marker failures",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/daemon-ctl-node-path.test.ts",
+                "title": "daemon-ctl.sh accepts matching owned INSRC_NODE_BIN with no PATH Node",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/daemon-ctl-node-path.test.ts",
+                "title": "daemon-ctl.sh refuses an external recorded runtime even when PATH contains Node",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/daemon-ctl-node-path.test.ts",
+                "title": "daemon-ctl.sh honours a non-executable INSRC_NODE_BIN by failing closed, not by echoing it",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/services/__tests__/daemon-ctl-install-marker.test.ts",
+                "title": "S001 t2: daemon-ctl.sh update retries after a failed install (exit 4), then skips on a matching marker",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/services/__tests__/daemon-ctl-install-marker.test.ts",
+                "title": "owned marker includes lock and toolchain and rejects the old lock-only format",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/services/__tests__/daemon-ctl-install-marker.test.ts",
+                "title": "S001 t2: daemon-ctl.sh installs on a stale or missing marker, with -std=c++17 appended to CXXFLAGS",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "scripts/__tests__/node-runtime-shell-native.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 115599,
+            "titles": [
+              {
+                "title": "shell fresh install update and restart preflight use official owned Node despite ambient Node and npm",
+                "result": "pass"
+              },
+              {
+                "title": "shell legacy upgrade bridge uses the same official Node and npm before managed delegation",
+                "result": "pass"
+              },
+              {
+                "title": "fresh installer uses official Node with absent Node and ambient Node20 or Node26",
+                "result": "pass"
+              },
+              {
+                "title": "successful restart retains actual official helper and daemon child identity across the runtime matrix",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/cli/services/__tests__/daemon-ctl-install-marker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3345,
+            "titles": [
+              {
+                "title": "S001 t2: daemon-ctl.sh update retries after a failed install (exit 4), then skips on a matching marker",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t2: daemon-ctl.sh installs on a stale or missing marker, with -std=c++17 appended to CXXFLAGS",
+                "result": "pass"
+              },
+              {
+                "title": "owned marker includes lock and toolchain and rejects the old lock-only format",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t2: --skip-install leaves npm uncalled; an empty lockfile hash installs and writes no marker",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/daemon-ctl-node-path.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 12199,
+            "titles": [
+              {
+                "title": "daemon-ctl.sh accepts matching owned INSRC_NODE_BIN with no PATH Node",
+                "result": "pass"
+              },
+              {
+                "title": "daemon-ctl.sh absolutizes a relative INSRC_NODE_BIN against the caller cwd so spawn_daemon can execute it",
+                "result": "pass"
+              },
+              {
+                "title": "daemon-ctl.sh accepts a recorded runtime only when it matches the verified owned executable",
+                "result": "pass"
+              },
+              {
+                "title": "daemon-ctl.sh preserves internal whitespace in the recorded runtime path",
+                "result": "pass"
+              },
+              {
+                "title": "daemon-ctl.sh refuses an external recorded runtime even when PATH contains Node",
+                "result": "pass"
+              },
+              {
+                "title": "daemon-ctl.sh fails closed with exit 2 and a clear message when no node exists anywhere",
+                "result": "pass"
+              },
+              {
+                "title": "daemon-ctl.sh stop succeeds under a node-free PATH via the resolved node",
+                "result": "pass"
+              },
+              {
+                "title": "daemon-ctl.sh honours a non-executable INSRC_NODE_BIN by failing closed, not by echoing it",
+                "result": "pass"
+              },
+              {
+                "title": "daemon-ctl.sh start spawns the daemon and stop reaches the lifecycle helper under a node-free GUI PATH (the original startup failure)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "30204dfba",
+        "ranAt": "2026-11-21T06:19:50.238Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Installed TUI/MCP wrappers and daemon start record owned executable; TUI update uses absolute npm-cli and lifecycle child version",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/node-runtime-cli-native.test.ts",
+                "title": "installed TUI and MCP symlink wrappers use official owned Node under absent and hostile PATH",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/node-runtime-cli-native.test.ts",
+                "title": "TUI update runs absolute official npm and lifecycle Node with the shared shell marker",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/node-runtime-cli-native.test.ts",
+                "title": "TUI daemon start retains actual owned child identity and fails closed on corrupt runtime",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/node-runtime-cli-native.test.ts",
+                "title": "packaged launchers verify retained signed runtime before executing tools Node",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Extend src/cli/services/__tests__/maintenance-install-marker.test.ts and managed start/error fixtures; preserve nativeBuildEnv flags",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/owned-runtime.test.ts",
+                "title": "owned runtime adapter consumes shell authority and rejects invalid metadata without global fallback",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/services/__tests__/owned-runtime.test.ts",
+                "title": "owned runtime and native build environments preserve caller flags while removing Node injection",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/services/__tests__/maintenance-install-marker.test.ts",
+                "title": "S001 t1: an update after a failed install installs again, and the marker exists only after a successful install",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/services/__tests__/maintenance-install-marker.test.ts",
+                "title": "S001 t1: a matching marker skips the install; a stale or missing marker installs",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/services/__tests__/maintenance-install-marker.test.ts",
+                "title": "S001 t1: npm runs with -std=c++17 appended to the caller's CXXFLAGS",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/services/__tests__/managed-daemon-control.test.ts",
+                "title": "Normal CLI and shell restart",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/services/__tests__/managed-daemon-control.test.ts",
+                "title": "Installed shell restart sends one stop and one start bound to the same predecessor",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "scripts/__tests__/node-runtime-cli-native.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 83580,
+            "titles": [
+              {
+                "title": "installed TUI and MCP symlink wrappers use official owned Node under absent and hostile PATH",
+                "result": "pass"
+              },
+              {
+                "title": "TUI update runs absolute official npm and lifecycle Node with the shared shell marker",
+                "result": "pass"
+              },
+              {
+                "title": "TUI daemon start retains actual owned child identity and fails closed on corrupt runtime",
+                "result": "pass"
+              },
+              {
+                "title": "packaged launchers verify retained signed runtime before executing tools Node",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/cli/services/__tests__/maintenance-install-marker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3623,
+            "titles": [
+              {
+                "title": "S001 t1: an update after a failed install installs again, and the marker exists only after a successful install",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t1: a matching marker skips the install; a stale or missing marker installs",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t1: npm runs with -std=c++17 appended to the caller's CXXFLAGS",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t1: skipInstall leaves npm uncalled and the marker unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t1: an empty lockfile hash installs and writes no marker; a marker write failure fails the update",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/cli/services/__tests__/managed-daemon-control.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5481,
+            "titles": [
+              {
+                "title": "Normal CLI and shell restart",
+                "result": "pass"
+              },
+              {
+                "title": "Supervisor loss, concurrent restart and stale files",
+                "result": "pass"
+              },
+              {
+                "title": "Managed Darwin never invokes the Mach broker from either the controller or shutdown watchdog",
+                "result": "pass"
+              },
+              {
+                "title": "Installed controller refuses a verified job belonging to another test root",
+                "result": "pass"
+              },
+              {
+                "title": "Kill the supervisor while it owns the guard and verify fail-closed operator recovery",
+                "result": "pass"
+              },
+              {
+                "title": "Installed shell restart sends one stop and one start bound to the same predecessor",
+                "result": "pass"
+              },
+              {
+                "title": "Race competing start, stop, raw shutdown and update against both supervisor versions",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/cli/services/__tests__/owned-runtime.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 484,
+            "titles": [
+              {
+                "title": "owned runtime adapter consumes shell authority and rejects invalid metadata without global fallback",
+                "result": "pass"
+              },
+              {
+                "title": "owned runtime and native build environments preserve caller flags while removing Node injection",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "39095297c",
+        "ranAt": "2026-11-21T06:54:45.253Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Extend VS Code controller/commands and JetBrains NodeRuntimeResolverTest/PrivateNodeProvisionerTest for shared local policy and no host runtime selection",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "jetbrains-plugin/__tests__/node-runtime-gradle.test.ts",
+                "title": "JetBrains never probes host Node and delegates verified provisioning including cache reuse and failures",
+                "result": "pass"
+              },
+              {
+                "file": "jetbrains-plugin/__tests__/node-runtime-gradle.test.ts",
+                "title": "JetBrains script provisioner and managed command runner contracts remain passing",
+                "result": "pass"
+              },
+              {
+                "file": "jetbrains-plugin/__tests__/node-runtime-gradle.test.ts",
+                "title": "JetBrains MCP registration selects the owned-runtime shell wrapper and preserves project scope",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/daemon/__tests__/runtime-boundary.test.ts",
+                "title": "VS Code lifecycle subprocesses strip Node injection and preserve other environment flags",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/daemon/__tests__/commands.test.ts",
+                "title": "VS Code daemon commands delegate install and lifecycle through fixed shell and surface owned-runtime failures",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/daemon/__tests__/controller.test.ts",
+                "title": "run(action) spawns bash <ctlScript> <action> for each lifecycle action and derives state from reachability on exit 0",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/hosts/__tests__/writers.test.ts",
+                "title": "composeMcpEntry(path) = { command:/bin/bash, args:[path] } and returns undefined for an undefined/empty target (no cloud/env/argv)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Packaged installer/bootstrap policy consistency and existing signed staging/fingerprint verification regression",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/node-runtime-packaging.test.ts",
+                "title": "packaged installer embeds exactly the canonical shared runtime assets and detects drift",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/node-runtime-packaging.test.ts",
+                "title": "standalone packaged installer bootstraps official Node without global Node or adjacent files",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/node-runtime-packaging.test.ts",
+                "title": "IDE-composed MCP registration executes the official owned runtime wrapper and preserves caller cwd",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/package-daemon-candidate.test.ts",
+                "title": "candidate layout survives moving the runtime and rejects external links",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/stage-daemon-bundle.test.ts",
+                "title": "staging authenticates archive bytes and rejects links leaving the runtime",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/daemon-bundle-metadata.test.ts",
+                "title": "installed trust rejects a self-signed proof and recovery selects only the pinned runtime",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/daemon-bundle-metadata.test.ts",
+                "title": "bundle signatures bind raw bytes, signer, trust domain and supported target",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "jetbrains-plugin/__tests__/node-runtime-gradle.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5514,
+            "titles": [
+              {
+                "title": "JetBrains never probes host Node and delegates verified provisioning including cache reuse and failures",
+                "result": "pass"
+              },
+              {
+                "title": "JetBrains script provisioner and managed command runner contracts remain passing",
+                "result": "pass"
+              },
+              {
+                "title": "JetBrains MCP registration selects the owned-runtime shell wrapper and preserves project scope",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "scripts/__tests__/daemon-bundle-metadata.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 493,
+            "titles": [
+              {
+                "title": "an interrupted anchor publication can be retried without replacing an existing key",
+                "result": "pass"
+              },
+              {
+                "title": "installed trust rejects a self-signed proof and recovery selects only the pinned runtime",
+                "result": "pass"
+              },
+              {
+                "title": "bootstrap rejects invalid manifest and target before opening any archive",
+                "result": "pass"
+              },
+              {
+                "title": "bundle signatures bind raw bytes, signer, trust domain and supported target",
+                "result": "pass"
+              },
+              {
+                "title": "qualification requires one passing record per required local test",
+                "result": "pass"
+              },
+              {
+                "title": "bootstrap checksum rejects changed bytes before bootstrap execution",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "scripts/__tests__/node-runtime-packaging.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 20711,
+            "titles": [
+              {
+                "title": "packaged installer embeds exactly the canonical shared runtime assets and detects drift",
+                "result": "pass"
+              },
+              {
+                "title": "standalone packaged installer bootstraps official Node without global Node or adjacent files",
+                "result": "pass"
+              },
+              {
+                "title": "IDE-composed MCP registration executes the official owned runtime wrapper and preserves caller cwd",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "scripts/__tests__/package-daemon-candidate.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 563,
+            "titles": [
+              {
+                "title": "packager emits candidate metadata and the upload name for each lane",
+                "result": "pass"
+              },
+              {
+                "title": "candidate layout survives moving the runtime and rejects external links",
+                "result": "pass"
+              },
+              {
+                "title": "candidate workflow accepts only the protected dispatch revision and has no test or publish jobs",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "scripts/__tests__/stage-daemon-bundle.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 473,
+            "titles": [
+              {
+                "title": "staging authenticates archive bytes and rejects links leaving the runtime",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/daemon/__tests__/commands.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 329,
+            "titles": [
+              {
+                "title": "registers exactly the five insrc.daemon.* commands",
+                "result": "pass"
+              },
+              {
+                "title": "the install command asks sc4 and calls install() ONLY on accepted",
+                "result": "pass"
+              },
+              {
+                "title": "each lifecycle command runs the action (no gate) and pushes the resulting state into sc2",
+                "result": "pass"
+              },
+              {
+                "title": "a failing action pushes errored + the mapped message into the status surface",
+                "result": "pass"
+              },
+              {
+                "title": "commands.test.ts: restartDaemonAndReport resolves true only when the daemon is running again and reflects the result like the restart command",
+                "result": "pass"
+              },
+              {
+                "title": "VS Code daemon commands delegate install and lifecycle through fixed shell and surface owned-runtime failures",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/daemon/__tests__/controller.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 326,
+            "titles": [
+              {
+                "title": "run(action) spawns bash <ctlScript> <action> for each lifecycle action and derives state from reachability on exit 0",
+                "result": "pass"
+              },
+              {
+                "title": "run('update') always spawns daemon-ctl.sh update — for an unmanaged-but-present install and for a managed one after migration",
+                "result": "pass"
+              },
+              {
+                "title": "run(action) maps EACH ctl exit code 1/2/3/4 to its documented reason and never throws",
+                "result": "pass"
+              },
+              {
+                "title": "run(action) with a missing ctl script returns errored/not-installed WITHOUT spawning",
+                "result": "pass"
+              },
+              {
+                "title": "install() spawns bash <bundledInstaller> -y; exit 0 → reachability; codes 1/2 → mapped reason",
+                "result": "pass"
+              },
+              {
+                "title": "install() with a missing bundled installer returns errored/reinstall WITHOUT spawning",
+                "result": "pass"
+              },
+              {
+                "title": "isInstalled() is true iff the compiled daemon entry exists, false for a clone-without-build, never throws",
+                "result": "pass"
+              },
+              {
+                "title": "source-scan: vscode-plugin/src/daemon/ imports only node builtins + the shared ipc-client + the s1 surfaces (k5)",
+                "result": "pass"
+              },
+              {
+                "title": "a plain start runs daemon-ctl.sh start with --skip-sync, --skip-install and --skip-build, and a run without options builds the same command line as before",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/daemon/__tests__/runtime-boundary.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 311,
+            "titles": [
+              {
+                "title": "VS Code lifecycle subprocesses strip Node injection and preserve other environment flags",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/hosts/__tests__/writers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 308,
+            "titles": [
+              {
+                "title": "writeInsrcServer sets mcpServers.insrc preserving every other key/server; idempotent; creates {} when absent",
+                "result": "pass"
+              },
+              {
+                "title": "writeInsrcServer throws HostFileAccessError (no write) when mcpServers is present-but-non-object (never clobber)",
+                "result": "pass"
+              },
+              {
+                "title": "removeInsrcServer deletes only the insrc key (other servers intact) and is a no-op when absent",
+                "result": "pass"
+              },
+              {
+                "title": "SteeringWriter.upsert: no-markers→append; markers→replace; malformed/duplicate→untouched; idempotent; remove deletes/absent no-op",
+                "result": "pass"
+              },
+              {
+                "title": "SteeringWriter.remove deletes the marker block (restoring prior content) and is a no-op when no markers exist",
+                "result": "pass"
+              },
+              {
+                "title": "both writers leave the file byte-unchanged when HostFileSystem.write throws (no partial write)",
+                "result": "pass"
+              },
+              {
+                "title": "composeMcpEntry(path) = { command:/bin/bash, args:[path] } and returns undefined for an undefined/empty target (no cloud/env/argv)",
+                "result": "pass"
+              },
+              {
+                "title": "toml writeInsrcServer creates the [[mcp_servers]] insrc section in an absent file",
+                "result": "pass"
+              },
+              {
+                "title": "toml writeInsrcServer appends to an existing config preserving every other table/key/comment",
+                "result": "pass"
+              },
+              {
+                "title": "toml writeInsrcServer replaces an existing insrc section (new args), keeping the header line, and is idempotent",
+                "result": "pass"
+              },
+              {
+                "title": "toml writer refuses duplicate insrc sections (never guesses) and leaves the file unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "toml removeInsrcServer drops the insrc section and its [mcp_servers.auth] sub-table, preserving everything else; no-op when absent",
+                "result": "pass"
+              },
+              {
+                "title": "toml writeInsrcServer removes an empty inline mcp_servers list so the file stays valid; idempotent",
+                "result": "pass"
+              },
+              {
+                "title": "toml writeInsrcServer moves inline servers to tables and keeps them",
+                "result": "pass"
+              },
+              {
+                "title": "toml writeInsrcServer repairs a file holding both forms without adding a second insrc section",
+                "result": "pass"
+              },
+              {
+                "title": "toml writeInsrcServer recognises an inline insrc entry with a quoted name key and adds no second one",
+                "result": "pass"
+              },
+              {
+                "title": "toml writeInsrcServer refuses a config it cannot fix and leaves it unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "toml writer escapes quotes/backslashes in the launch path (TOML basic string)",
+                "result": "pass"
+              },
+              {
+                "title": "toml writer surfaces fs failures as HostFileAccessError with no partial write",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "b6aabd15a",
+        "ranAt": "2026-11-21T07:45:34.424Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Stage install/native/build failure before activation; binding/journal interruption retry and managed rollback retain previous selection",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/node-runtime-migration-native.test.ts",
+                "title": "actual owned source staging retains legacy selection on native failure and binds only the ready candidate",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/node-runtime-migration-native.test.ts",
+                "title": "selected source shell and TUI updates refuse in-place mutation and retain the ready binding",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/node-runtime-migration-native.test.ts",
+                "title": "installer refuses an existing non-Darwin source tree before lockfile dependencies or database bytes can change",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/managed-release-staging.test.ts",
+                "title": "Owned toolchain staging failures preserve prior selection binding and executable bytes",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/managed-release-staging.test.ts",
+                "title": "Staging leaves the installed release executable and unchanged",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/managed-release-staging.test.ts",
+                "title": "First supported update of a qualified prior build with broker denial",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/node-runtime-store.test.ts",
+                "title": "binding interruption preserves the old record and selected runtime without deleting referenced objects",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/managed-update-transaction.test.ts",
+                "title": "Relaunch supervisor after provisional release selection and verify recovery restores the old selector before uncommitted rollback, or preserves the candidate after success",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/managed-update-transaction.test.ts",
+                "title": "Bundle rollback leaves the selector untouched when the predecessor cannot be verified",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Old marker migration, external override diagnostics, no database rewrite or deletion of referenced runtime",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/daemon-ctl-install-marker.test.ts",
+                "title": "owned marker includes lock and toolchain and rejects the old lock-only format",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/daemon-ctl-node-path.test.ts",
+                "title": "external INSRC_NODE_BIN is rejected with migration guidance",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/node-runtime-store.test.ts",
+                "title": "source binding consumption rejects changed metadata and escaping directories",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/legacy-runtime-record.test.ts",
+                "title": "stopped legacy migration retains the recorded prior runtime rather than inheriting the new bootstrap runtime",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/legacy-runtime-record.test.ts",
+                "title": "unknown malformed or mutable legacy runtime records withhold migration without guessing a global Node",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/managed-release-staging.test.ts",
+                "title": "First supported update of a qualified prior build with broker denial",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/node-runtime-migration-native.test.ts",
+                "title": "installer refuses an existing non-Darwin source tree before lockfile dependencies or database bytes can change",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "scripts/__tests__/node-runtime-migration-native.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 41337,
+            "titles": [
+              {
+                "title": "actual owned source staging retains legacy selection on native failure and binds only the ready candidate",
+                "result": "pass"
+              },
+              {
+                "title": "selected source shell and TUI updates refuse in-place mutation and retain the ready binding",
+                "result": "pass"
+              },
+              {
+                "title": "installer refuses an existing non-Darwin source tree before lockfile dependencies or database bytes can change",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "scripts/__tests__/node-runtime-store.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 7681,
+            "titles": [
+              {
+                "title": "bootstraps without PATH Node and reuses a verified cache offline",
+                "result": "pass"
+              },
+              {
+                "title": "rejects digest traversal links devices and runtime identity before publication",
+                "result": "pass"
+              },
+              {
+                "title": "rejects cache corruption even when its cached inventory is rewritten",
+                "result": "pass"
+              },
+              {
+                "title": "serializes concurrent publication and removes only owned failed stages",
+                "result": "pass"
+              },
+              {
+                "title": "publishes one canonical binding and refuses escaping or unqualified roots",
+                "result": "pass"
+              },
+              {
+                "title": "cleans an actually interrupted bootstrap and retries without publishing partial state",
+                "result": "pass"
+              },
+              {
+                "title": "retries incomplete provisioning without selecting or deleting an unrelated stage",
+                "result": "pass"
+              },
+              {
+                "title": "binding interruption preserves the old record and selected runtime without deleting referenced objects",
+                "result": "pass"
+              },
+              {
+                "title": "source binding consumption rejects changed metadata and escaping directories",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/cli/services/__tests__/daemon-ctl-install-marker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4178,
+            "titles": [
+              {
+                "title": "S001 t2: daemon-ctl.sh update retries after a failed install (exit 4), then skips on a matching marker",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t2: daemon-ctl.sh installs on a stale or missing marker, with -std=c++17 appended to CXXFLAGS",
+                "result": "pass"
+              },
+              {
+                "title": "owned marker includes lock and toolchain and rejects the old lock-only format",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t2: --skip-install leaves npm uncalled; an empty lockfile hash installs and writes no marker",
+                "result": "pass"
+              },
+              {
+                "title": "shell and TUI updates share the same owned toolchain install marker",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/daemon-ctl-node-path.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 12826,
+            "titles": [
+              {
+                "title": "daemon-ctl.sh accepts matching owned INSRC_NODE_BIN with no PATH Node",
+                "result": "pass"
+              },
+              {
+                "title": "daemon-ctl.sh absolutizes a relative INSRC_NODE_BIN against the caller cwd so spawn_daemon can execute it",
+                "result": "pass"
+              },
+              {
+                "title": "daemon-ctl.sh accepts a recorded runtime only when it matches the verified owned executable",
+                "result": "pass"
+              },
+              {
+                "title": "daemon-ctl.sh preserves internal whitespace in the recorded runtime path",
+                "result": "pass"
+              },
+              {
+                "title": "daemon-ctl.sh refuses an external recorded runtime even when PATH contains Node",
+                "result": "pass"
+              },
+              {
+                "title": "daemon-ctl.sh fails closed with exit 2 and a clear message when no node exists anywhere",
+                "result": "pass"
+              },
+              {
+                "title": "daemon-ctl.sh stop succeeds under a node-free PATH via the resolved node",
+                "result": "pass"
+              },
+              {
+                "title": "daemon-ctl.sh honours a non-executable INSRC_NODE_BIN by failing closed, not by echoing it",
+                "result": "pass"
+              },
+              {
+                "title": "daemon-ctl.sh start spawns the daemon and stop reaches the lifecycle helper under a node-free GUI PATH (the original startup failure)",
+                "result": "pass"
+              },
+              {
+                "title": "external INSRC_NODE_BIN is rejected with migration guidance",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/legacy-runtime-record.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 499,
+            "titles": [
+              {
+                "title": "stopped legacy migration retains the recorded prior runtime rather than inheriting the new bootstrap runtime",
+                "result": "pass"
+              },
+              {
+                "title": "unknown malformed or mutable legacy runtime records withhold migration without guessing a global Node",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/managed-release-staging.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 17305,
+            "titles": [
+              {
+                "title": "Release provenance, changed bytes and absent legacy declaration",
+                "result": "pass"
+              },
+              {
+                "title": "Tagged compatibility rejects a conflicting declaration and admits a known historical predecessor",
+                "result": "pass"
+              },
+              {
+                "title": "Changed local runtime bytes block cutover or offline rollback",
+                "result": "pass"
+              },
+              {
+                "title": "The stopped installed controller fetches and commits a qualified update without daemon IPC",
+                "result": "pass"
+              },
+              {
+                "title": "First supported update of a qualified prior build with broker denial",
+                "result": "pass"
+              },
+              {
+                "title": "Staging leaves the installed release executable and unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "Owned toolchain staging failures preserve prior selection binding and executable bytes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/managed-update-transaction.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 9295,
+            "titles": [
+              {
+                "title": "Incompatible supervisor version produces one terminal failure after reconciliation",
+                "result": "pass"
+              },
+              {
+                "title": "Terminal outcome and marker ordering, including persistence failure",
+                "result": "pass"
+              },
+              {
+                "title": "Uncertain publication with durable success versus no outcome",
+                "result": "pass"
+              },
+              {
+                "title": "Fail hello after candidate job registration before child start, remove the candidate job and restore the prior release",
+                "result": "pass"
+              },
+              {
+                "title": "Observe in-flight status throughout injected rollback, then exactly one terminal outcome after restored readiness or a durable operator-recovery decision",
+                "result": "pass"
+              },
+              {
+                "title": "Bundle rollback leaves the selector untouched when the predecessor cannot be verified",
+                "result": "pass"
+              },
+              {
+                "title": "Kill the controller at reservation, job registration, probation, and after outcome publication",
+                "result": "pass"
+              },
+              {
+                "title": "Relaunch supervisor after provisional release selection and verify recovery restores the old selector before uncommitted rollback, or preserves the candidate after success",
+                "result": "pass"
+              },
+              {
+                "title": "Recovery job and legacy migration",
+                "result": "pass"
+              },
+              {
+                "title": "Rollback after legacy stop but before managed readiness restores the saved service",
+                "result": "pass"
+              },
+              {
+                "title": "Startup guard transfer, candidate bootstrap failure, rollback and repeated recovery",
+                "result": "pass"
+              },
+              {
+                "title": "Rollback restores an idle job without launching and refuses unqualified RunAtLoad",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "71446ab78",
+        "ranAt": "2026-11-21T13:30:19.697Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Actual official Node22.22.1/npm, npm lifecycle child paths, npm install/build and native module load per enabled target",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/plans/node-runtime-evidence/qualification-darwin-arm64.md and docs/plans/node-runtime-evidence/qualification-linux-orbstack.md; retained .insrc/tmp/node-runtime-qualification/{prequalification,public-policy,linux}/. Enabled darwin-arm64 plus linux-arm64/linux-x64. Both OrbStack Ubuntu24.04 Linux targets passed real clean npm installs/full builds, five native loads, actual canonical enabled-policy source installation, CPU ONNX binding load, real daemon start/status/restart/stop with kernel executable verification and final zero-actor/zero-lease census. Linux x64 is emulated; CPU installs use documented ONNXRUNTIME_NODE_INSTALL_CUDA=skip. Final portable-packaging/Python tests passed 4/4 on both machines; machines are stopped. No signed Linux bundle, physical x86, CUDA, inference, full sweep or production DB migration claim. Automatic default follow-up: docs/plans/node-runtime-evidence/qualification-linux-orbstack.md, canonical run 0d6c3891-65fc-4986-9783-068375d88642 and .insrc/tmp/node-runtime-qualification/linux/x64-cuda-default-proof.log. No caller CUDA setting; the shell supplied skip, both real ONNX 1.21.0/1.19.2 postinstall scripts succeeded, CPU binding loaded and archive verification passed. Explicit existing environment values remain preserved."
+            }
+          },
+          {
+            "name": "Canonical bounded regression and IDE build suites; signed managed recovery/rollback; no active owned test children after cleanup",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/node-runtime-policy.test.ts",
+                "title": "keeps generated client assets signed release pins and native headers aligned",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/node-runtime-packaging.test.ts",
+                "title": "standalone packaged installer bootstraps official Node without global Node or adjacent files",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/node-runtime-packaging.test.ts",
+                "title": "packaged installer embeds exactly the canonical shared runtime assets and detects drift",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/node-runtime-python-native.test.ts",
+                "title": "native Python imports leave the owned npm distribution byte-for-byte reusable through shell and TUI environments",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/services/__tests__/owned-runtime.test.ts",
+                "title": "owned runtime and native build environments preserve caller flags while removing Node injection",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/node-runtime-coordinator-native.test.ts",
+                "title": "verified owned Node runs coordinator ownership interruption and actor-closure controls regardless of the parent runtime",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/daemon/__tests__/bundle.test.ts",
+                "title": "the bundled installer embeds canonical runtime assets without template drift",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/hosts/__tests__/activation.test.ts",
+                "title": "extension.ts constructs the AiHostRegistry (HostSpecs + real HostEnv/HostFileSystem) and calls registerHostCommands with the s1 surfaces",
+                "result": "pass"
+              },
+              {
+                "file": "jetbrains-plugin/__tests__/node-runtime-gradle.test.ts",
+                "title": "JetBrains script provisioner and managed command runner contracts remain passing",
+                "result": "pass"
+              },
+              {
+                "file": "jetbrains-plugin/__tests__/node-runtime-gradle.test.ts",
+                "title": "JetBrains MCP registration selects the owned-runtime shell wrapper and preserves project scope",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/managed-update-transaction.test.ts",
+                "title": "Relaunch supervisor after provisional release selection and verify recovery restores the old selector before uncommitted rollback, or preserves the candidate after success",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/managed-update-transaction.test.ts",
+                "title": "Bundle rollback leaves the selector untouched when the predecessor cannot be verified",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/services/__tests__/owned-runtime.test.ts",
+                "title": "owned builds default optional ONNX CUDA installation to skip only when absent",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/node-runtime-python-native.test.ts",
+                "title": "shell and TUI npm lifecycle children default ONNX CUDA to skip while retaining explicit environment values",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "jetbrains-plugin/__tests__/node-runtime-gradle.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 9795,
+            "titles": [
+              {
+                "title": "JetBrains never probes host Node and delegates verified provisioning including cache reuse and failures",
+                "result": "pass"
+              },
+              {
+                "title": "JetBrains script provisioner and managed command runner contracts remain passing",
+                "result": "pass"
+              },
+              {
+                "title": "JetBrains MCP registration selects the owned-runtime shell wrapper and preserves project scope",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "scripts/__tests__/node-runtime-coordinator-native.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 11868,
+            "titles": [
+              {
+                "title": "verified owned Node runs coordinator ownership interruption and actor-closure controls regardless of the parent runtime",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "scripts/__tests__/node-runtime-packaging.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 17447,
+            "titles": [
+              {
+                "title": "packaged installer embeds exactly the canonical shared runtime assets and detects drift",
+                "result": "pass"
+              },
+              {
+                "title": "standalone packaged installer bootstraps official Node without global Node or adjacent files",
+                "result": "pass"
+              },
+              {
+                "title": "IDE-composed MCP registration executes the official owned runtime wrapper and preserves caller cwd",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "scripts/__tests__/node-runtime-policy.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 508,
+            "titles": [
+              {
+                "title": "pins candidate Node distributions to the authenticated checksum inventory",
+                "result": "pass"
+              },
+              {
+                "title": "rejects malformed version target URL digest layout and qualification policy",
+                "result": "pass"
+              },
+              {
+                "title": "rejects unsupported and unqualified public targets without an environment bypass",
+                "result": "pass"
+              },
+              {
+                "title": "keeps generated client assets signed release pins and native headers aligned",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "scripts/__tests__/node-runtime-python-native.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 39069,
+            "titles": [
+              {
+                "title": "native Python imports leave the owned npm distribution byte-for-byte reusable through shell and TUI environments",
+                "result": "pass"
+              },
+              {
+                "title": "shell and TUI npm lifecycle children default ONNX CUDA to skip while retaining explicit environment values",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/cli/services/__tests__/owned-runtime.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 805,
+            "titles": [
+              {
+                "title": "owned runtime adapter consumes shell authority and rejects invalid metadata without global fallback",
+                "result": "pass"
+              },
+              {
+                "title": "owned runtime and native build environments preserve caller flags while removing Node injection",
+                "result": "pass"
+              },
+              {
+                "title": "owned builds default optional ONNX CUDA installation to skip only when absent",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/managed-update-transaction.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 10101,
+            "titles": [
+              {
+                "title": "Incompatible supervisor version produces one terminal failure after reconciliation",
+                "result": "pass"
+              },
+              {
+                "title": "Terminal outcome and marker ordering, including persistence failure",
+                "result": "pass"
+              },
+              {
+                "title": "Uncertain publication with durable success versus no outcome",
+                "result": "pass"
+              },
+              {
+                "title": "Fail hello after candidate job registration before child start, remove the candidate job and restore the prior release",
+                "result": "pass"
+              },
+              {
+                "title": "Observe in-flight status throughout injected rollback, then exactly one terminal outcome after restored readiness or a durable operator-recovery decision",
+                "result": "pass"
+              },
+              {
+                "title": "Bundle rollback leaves the selector untouched when the predecessor cannot be verified",
+                "result": "pass"
+              },
+              {
+                "title": "Kill the controller at reservation, job registration, probation, and after outcome publication",
+                "result": "pass"
+              },
+              {
+                "title": "Relaunch supervisor after provisional release selection and verify recovery restores the old selector before uncommitted rollback, or preserves the candidate after success",
+                "result": "pass"
+              },
+              {
+                "title": "Recovery job and legacy migration",
+                "result": "pass"
+              },
+              {
+                "title": "Rollback after legacy stop but before managed readiness restores the saved service",
+                "result": "pass"
+              },
+              {
+                "title": "Startup guard transfer, candidate bootstrap failure, rollback and repeated recovery",
+                "result": "pass"
+              },
+              {
+                "title": "Rollback restores an idle job without launching and refuses unqualified RunAtLoad",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/daemon/__tests__/bundle.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 414,
+            "titles": [
+              {
+                "title": "the bundled installer embeds canonical runtime assets without template drift",
+                "result": "pass"
+              },
+              {
+                "title": "the asset is produced by a repeatable copy step, not a one-off manual copy",
+                "result": "pass"
+              },
+              {
+                "title": "the five daemon commands are declared in contributes.commands so they are Command-Palette reachable (k6)",
+                "result": "pass"
+              },
+              {
+                "title": "extension.ts wires the daemon controller (real runner + DaemonPaths from extensionPath) + the Install offer",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/hosts/__tests__/activation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 302,
+            "titles": [
+              {
+                "title": "extension.ts constructs the AiHostRegistry (HostSpecs + real HostEnv/HostFileSystem) and calls registerHostCommands with the s1 surfaces",
+                "result": "pass"
+              },
+              {
+                "title": "the activation-time host-wire step runs through the guarded runOnboarding sequence (S005 coalescing) and only fires when present hosts exist",
+                "result": "pass"
+              },
+              {
+                "title": "contributes.commands includes insrc.hosts.wire alongside the S002 daemon entries (palette reachability, k6)",
+                "result": "pass"
+              },
+              {
+                "title": "sync-assets bundles the canonical steering block so the steering body ships with the extension",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b3a64f50-2b10-4975-b798-8ba00c7cb152",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-21T04:40:30.238Z",
+    "epicCreatedAt": "2026-11-20T17:07:21.721Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "175ab0d1d56838a9",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Use the owned toolchain throughout shell installation and control",
+      "parent": {
+        "entityId": "STORY-175ab0d1d56838a9-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-175ab0d1d56838a9-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-175ab0d1d56838a9-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "d000be35790c31f7427600c322aed1c7b4c53767646d940a6d5c8147d28d6b56",
+        "at": "2026-11-21T04:40:30.238Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-21T04:40:30.239Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Use the owned toolchain throughout shell installation and control",
+    "summary": "Wire installer, upgrade bridge and daemon control Node/npm invocations to verified ownership. Use absolute Node/npm-cli, controlled lifecycle PATH, sanitized Node injection variables and lock+toolchain native install marker; preflight before disruptive actions.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "Fresh installer and legacy update/restart ignore ambient Node20/26 and fake npm; child process identity proves22.22.1.",
+      "All shell installer/bridge/helper Node calls use selected absolute runtime; npm runs under its matching Node.",
+      "External INSRC_NODE_BIN/legacy global marker fail with migration guidance; a matching canonical owned path is accepted.",
+      "Old lock-only marker or changed runtime/target forces native dependency install; failure leaves no success marker.",
+      "Managed commands delegate existing controller with signed tools/node and do not mutate release bytes."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Shell installer/control/bridge actual child identity with absent/20/26/fake Node/npm, sanitized injection environment and quoted paths"
+      },
+      {
+        "level": "unit",
+        "name": "Extend src/daemon/__tests__/daemon-ctl-node-path.test.ts and src/cli/services/__tests__/daemon-ctl-install-marker.test.ts for owned selection and lock+toolchain marker failures"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

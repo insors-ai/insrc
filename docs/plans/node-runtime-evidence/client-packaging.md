@@ -39,3 +39,14 @@ upgrade routing matrix passed in run `3a66a7cb-539f-44e2-a779-e325f41505cc`.
 
 All public target enablement remains gated by task t7's actual install/build and
 native compatibility qualification. No Windows source runtime is advertised.
+
+The build validator requested explicit VS Code command coverage. The extended
+command test now drives the real command/controller composition through all five
+commands, checks fixed-shell delegation and surfaces owned-runtime failures.
+Both clients' MCP registrations were also moved from global `node` plus a JS
+path to `/bin/bash` plus the owned-runtime wrapper; project scoping is retained.
+Run `52a0c6b2-b68c-4ee2-8837-28a9bcc2a1e9` passed JetBrains registration/JUnit,
+actual IDE-composed MCP execution, packaging, VS Code controller, subprocess and
+JSON/TOML adapter/writer tests. Its new command test initially used an overly
+broad wording assertion; after correction the command file passed in run
+`8b92bd7f-46a9-48be-a4eb-745a6bd3e118`.

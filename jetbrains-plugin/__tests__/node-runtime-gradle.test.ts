@@ -7,7 +7,8 @@ const localJdk='/Library/Java/JavaVirtualMachines/amazon-corretto-21.jdk/Content
 const prefix='ai.insors.insrc.jetbrains.lifecycle.';
 const reports=new Map<string,string>();
 const classes=['NodeRuntimeResolverTest','PrivateNodeProvisionerTest','DaemonProvisionerTest','DaemonLifecycleCommandRunnerTest'];
-before(()=>runFocusedJUnit(classes.map(c=>prefix+c),{...process.env,...(existsSync(localJdk)?{JAVA_HOME:localJdk}:{})},directory=>{for(const cls of classes)reports.set(cls,readFileSync(join(directory,`TEST-${prefix+cls}.xml`),'utf8'));}),{timeout:300000});
+const hostClass='ai.insors.insrc.jetbrains.host.RegistrationCompositionTest';
+before(()=>runFocusedJUnit([...classes.map(c=>prefix+c),hostClass],{...process.env,...(existsSync(localJdk)?{JAVA_HOME:localJdk}:{})},directory=>{for(const cls of classes)reports.set(cls,readFileSync(join(directory,`TEST-${prefix+cls}.xml`),'utf8'));reports.set(hostClass,readFileSync(join(directory,`TEST-${hostClass}.xml`),'utf8'));}),{timeout:300000});
 function passed(cls:string,name:string){
  const xml=reports.get(cls)!;
  const start=xml.indexOf(`<testcase name="${name}()"`);assert.ok(start>=0,`${name} did not run`);
@@ -22,4 +23,10 @@ test('JetBrains script provisioner and managed command runner contracts remain p
   const xml=reports.get(cls)!;
   assert.match(xml,/<testcase/);assert.doesNotMatch(xml,/<failure|<error|<skipped/);
  }
+});
+
+test('JetBrains MCP registration selects the owned-runtime shell wrapper and preserves project scope',()=>{
+ const xml=reports.get(hostClass)!;
+ for(const name of ['composedEntryIsValidJson_launchesOnlyStdioInsrcMcp_noCloudEndpoint','scopesToActiveProjectViaCwd_twoRootsScopeIndependently_notInsrcRepoEnv_notRepoArgv','missingLaunchTarget_skipsComposition_logged'])assert.ok(xml.includes(`<testcase name="${name}()"`));
+ assert.doesNotMatch(xml,/<failure|<error|<skipped/);
 });

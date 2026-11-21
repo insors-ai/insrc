@@ -13,7 +13,7 @@ import java.nio.file.Path
  * installs under the `mcpServers.insrc` key of each host's mcp config.
  *
  * The registration launches ONLY the existing stdio insrc-mcp server
- * (`node <out/bin/insrc-mcp.js>`), never a cloud/REST endpoint (k1, ac4). It
+ * (`/bin/bash <scripts/insrc-mcp>`), never a cloud/REST endpoint (k1, ac4). It
  * scopes to the active project by setting the server's working directory
  * (`cwd`) to the project root: resolve-repo (src/mcp/resolve-repo.ts) resolves
  * the session repo by matching the process CWD against the daemon's live repo
@@ -42,7 +42,7 @@ object InsrcMcpRegistration {
      * @param projectRootPath the active project's absolute root (sc1) — set as
      *   the server `cwd` so resolve-repo scopes to this project (k3, ac2)
      * @param launchTargetPath absolute path to the built insrc-mcp stdio entry
-     *   (`out/bin/insrc-mcp.js`), or `null` when it cannot be resolved
+     *   (`scripts/insrc-mcp`), or `null` when it cannot be resolved
      * @return the pretty-printed JSON object for the `insrc` server entry
      */
     fun composeServerEntry(projectRootPath: String, launchTargetPath: String?): String? {
@@ -52,9 +52,9 @@ object InsrcMcpRegistration {
         }
         val args = com.google.gson.JsonArray().apply { add(launchTargetPath) }
         val entry = JsonObject().apply {
-            // Local stdio server only — node spawning the built insrc-mcp entry.
+            // Local stdio server only — shell launching the verified owned-runtime wrapper.
             // No "url"/http(s) endpoint: reasoning stays on the host's CLI-OAuth path (k1).
-            add("command", JsonPrimitive("node"))
+            add("command", JsonPrimitive("/bin/bash"))
             add("args", args)
             // Per-project scoping via CWD (resolve-repo session-cwd match), NOT a
             // baked INSRC_REPO env default and NOT an inert --repo argv (k3, ac2).
@@ -67,7 +67,7 @@ object InsrcMcpRegistration {
 /**
  * Resolves the built insrc-mcp stdio entry (Story S002 / t4). The IDE fork
  * clones this backend into `~/.insrc/daemon/` and spawns the compiled entry
- * (`out/bin/insrc-mcp.js`), so that is the launch target the registration points
+ * (`scripts/insrc-mcp`), so that is the launch target the registration points
  * at. Returns `null` when it is not present yet — the daemon-lifecycle policy
  * (S003) provisions the backend, and a later project-open re-composes.
  */
@@ -75,9 +75,9 @@ object InsrcMcpLaunchTarget {
     private fun daemonHome(): Path =
         Path.of(System.getProperty("user.home")).resolve(".insrc").resolve("daemon")
 
-    /** Absolute path to `out/bin/insrc-mcp.js`, or `null` when absent. */
+    /** Absolute path to `scripts/insrc-mcp`, or `null` when absent. */
     fun resolve(): String? {
-        val target = daemonHome().resolve("out").resolve("bin").resolve("insrc-mcp.js")
+        val target = daemonHome().resolve("scripts").resolve("insrc-mcp")
         return if (Files.exists(target)) target.toAbsolutePath().toString() else null
     }
 }

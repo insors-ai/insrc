@@ -18,7 +18,7 @@ import org.junit.jupiter.api.Test
  */
 class RegistrationCompositionTest {
 
-    private val LAUNCH = "/home/dev/.insrc/daemon/out/bin/insrc-mcp.js"
+    private val LAUNCH = "/home/dev/.insrc/daemon/scripts/insrc-mcp"
 
     private fun entryObject(projectRoot: String) =
         JsonParser.parseString(InsrcMcpRegistration.composeServerEntry(projectRoot, LAUNCH)!!).asJsonObject
@@ -29,7 +29,7 @@ class RegistrationCompositionTest {
         assertNotNull(json)
         // must be VALID JSON (this is what the host actually parses) — parse, don't substring
         val entry = JsonParser.parseString(json).asJsonObject
-        assertEquals("node", entry.get("command").asString)
+        assertEquals("/bin/bash", entry.get("command").asString)
         val args = entry.getAsJsonArray("args")
         assertEquals(1, args.size())
         assertEquals(LAUNCH, args.get(0).asString)

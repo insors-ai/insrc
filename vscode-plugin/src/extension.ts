@@ -157,7 +157,7 @@ export function activate(context: vscode.ExtensionContext): void {
     env,
     fs: defaultHostFileSystem,
     launchTarget: () => {
-      const target = join(paths.daemonRoot, 'out', 'bin', 'insrc-mcp.js');
+      const target = join(paths.daemonRoot, 'scripts', 'insrc-mcp');
       return existsSync(target) ? target : undefined;
     },
   });

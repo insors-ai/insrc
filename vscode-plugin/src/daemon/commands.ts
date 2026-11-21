@@ -43,7 +43,7 @@ export async function offerDaemonInstall(
 ): Promise<void> {
   const outcome = await deps.consent.ask({
     title: 'Install the insrc daemon?',
-    detail: 'insrc runs a local background daemon. This provisions it from an installer bundled with the extension (Node.js 20+ and git required). Nothing is installed until you accept.',
+    detail: 'insrc runs a local background daemon. This provisions it from an installer bundled with the extension, which provisions its verified local Node/npm runtime (git required). Nothing is installed until you accept.',
     acceptLabel: 'Install',
   });
   if (outcome !== 'accepted') return;

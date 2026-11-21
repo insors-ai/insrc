@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import test from 'node:test';
 import { assertPackagedRuntimeAssets, packageNodeRuntimeInstaller } from '../node-runtime-assets.mjs';
+import { composeMcpEntry } from '../../vscode-plugin/src/hosts/mcp-writer.js';
 import { archive, nativeOptions, ownedSourceFixture } from './helpers/owned-source-fixture.js';
 
 const source=readFileSync(resolve('scripts/insrc-daemon-install.sh'),'utf8');
@@ -35,6 +36,20 @@ test('standalone packaged installer bootstraps official Node without global Node
   const pipe=spawnSync('/bin/bash',['-s','--','--print-runtime'],{input:packaged,cwd:f.root,env,encoding:'utf8',timeout:30000});
   assert.equal(pipe.status,0,pipe.stderr);assert.equal(pipe.stdout,first.stdout);
   assert.ok(!readdirSync(f.root).some(name=>name.startsWith('insrc-runtime-assets-')));
+  assert.ok(!existsSync(f.fakeTrace));
+ }finally{f.clean();}
+});
+
+
+test('IDE-composed MCP registration executes the official owned runtime wrapper and preserves caller cwd',nativeOptions,()=>{
+ const f=ownedSourceFixture();
+ try{
+  mkdirSync(join(f.seed,'out/bin'),{recursive:true});const caller=join(f.root,'project');mkdirSync(caller);
+  writeFileSync(join(f.seed,'out/bin/insrc-mcp.js'),`process.stdout.write(JSON.stringify({version:process.versions.node,exe:process.execPath,cwd:process.cwd()}));`);
+  const entry=composeMcpEntry(join(f.scripts,'insrc-mcp'))!;
+  assert.equal(entry.command,'/bin/bash');
+  const result=spawnSync(entry.command,entry.args,{cwd:caller,env:f.env,encoding:'utf8',timeout:30000});
+  assert.equal(result.status,0,result.stderr);assert.deepEqual(JSON.parse(result.stdout),{version:'22.22.1',exe:join(f.distribution,'bin/node'),cwd:caller});
   assert.ok(!existsSync(f.fakeTrace));
  }finally{f.clean();}
 });

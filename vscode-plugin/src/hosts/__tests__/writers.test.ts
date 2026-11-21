@@ -139,12 +139,12 @@ test('both writers leave the file byte-unchanged when HostFileSystem.write throw
 
 // ---- composeMcpEntry -------------------------------------------------------
 
-test('composeMcpEntry(path) = { command:node, args:[path] } and returns undefined for an undefined/empty target (no cloud/env/argv)', () => {
-  assert.deepEqual(composeMcpEntry('/x/insrc-mcp.js'), { command: 'node', args: ['/x/insrc-mcp.js'] });
+test('composeMcpEntry(path) = { command:/bin/bash, args:[path] } and returns undefined for an undefined/empty target (no cloud/env/argv)', () => {
+  assert.deepEqual(composeMcpEntry('/x/scripts/insrc-mcp'), { command: '/bin/bash', args: ['/x/scripts/insrc-mcp'] });
   assert.equal(composeMcpEntry(undefined), undefined);
   assert.equal(composeMcpEntry(''), undefined);
   // no cloud/env/argv beyond the local stdio launch.
-  const entry = composeMcpEntry('/x/insrc-mcp.js')!;
+  const entry = composeMcpEntry('/x/scripts/insrc-mcp')!;
   assert.deepEqual(Object.keys(entry).sort(), ['args', 'command']);
 });
 

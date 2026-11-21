@@ -571,9 +571,9 @@ cat <<EOF
    serves every repo and every concurrent session — no INSRC_REPO pin, no
    per-repo config:
 
-claude mcp add insrc --scope user -- "$NODE_BIN" "$INSTALL_ROOT/out/bin/insrc-mcp.js"
+claude mcp add insrc --scope user -- /bin/bash "$INSTALL_ROOT/scripts/insrc-mcp"
 
-codex mcp add insrc -- "$NODE_BIN" "$INSTALL_ROOT/out/bin/insrc-mcp.js"
+codex mcp add insrc -- /bin/bash "$INSTALL_ROOT/scripts/insrc-mcp"
 
 2. Add repos + manage the daemon in the interactive TUI:
 

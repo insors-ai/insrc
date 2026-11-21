@@ -21,7 +21,7 @@ export const SERVER_KEY = 'insrc';
  * Compose the value written under `mcpServers.insrc`, or `undefined` (fail-safe
  * skip, logged by the caller) when the insrc-mcp launch target is absent.
  *
- * LOCAL stdio server only — `node <~/.insrc/daemon/out/bin/insrc-mcp.js>`, with
+ * LOCAL stdio server only — `/bin/bash <~/.insrc/daemon/scripts/insrc-mcp>`, with
  * NO cloud/REST url, NO baked INSRC_REPO env, and NO --repo argv: the extension
  * opens no cloud path (k2). Mirrors InsrcMcpRegistration.composeServerEntry
  * (minus the JetBrains per-project `cwd`, which the VS Code host supplies per
@@ -29,9 +29,9 @@ export const SERVER_KEY = 'insrc';
  */
 export function composeMcpEntry(
   launchTargetPath: string | undefined,
-): { command: 'node'; args: string[] } | undefined {
+): { command: '/bin/bash'; args: string[] } | undefined {
   if (launchTargetPath === undefined || launchTargetPath === '') return undefined;
-  return { command: 'node', args: [launchTargetPath] };
+  return { command: '/bin/bash', args: [launchTargetPath] };
 }
 
 export interface McpConfigWriter {

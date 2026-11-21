@@ -18,6 +18,24 @@
         "relation": "derived-from"
       },
       "references": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#215",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": [
+          {
+            "kind": "task-list",
+            "at": "2026-11-19T14:47:26.989Z"
+          },
+          {
+            "kind": "design",
+            "at": "2026-11-19T14:47:29.500Z"
+          }
+        ]
+      },
       "attachments": [
         {
           "target": {
@@ -51,29 +69,33 @@
           "revision": 1,
           "at": "2026-11-21T08:15:58.754Z",
           "externalId": "7059791033"
-        }
-      ],
-      "binding": {
-        "reference": {
-          "entityId": "insors-ai/insrc#215",
-          "type": "github:issue",
-          "relation": "tracked-by"
         },
-        "createdAtRevision": 1,
-        "posted": [
-          {
-            "kind": "task-list",
-            "at": "2026-11-19T14:47:26.989Z"
+        {
+          "target": {
+            "entityId": "BUILD-03f4fd3b9102aab8-s5",
+            "type": "BUILD",
+            "relation": "documents",
+            "fragment": "docs/epics/review-rounds-reconciliation-recovery-E2026111803f4fd3b/S005/BUILD.md"
           },
-          {
-            "kind": "design",
-            "at": "2026-11-19T14:47:29.500Z"
-          }
-        ]
-      }
+          "revision": 25,
+          "at": "2026-11-21T14:49:38.351Z",
+          "externalId": "7064403526"
+        },
+        {
+          "target": {
+            "entityId": "TESTS-03f4fd3b9102aab8-s5",
+            "type": "TESTS",
+            "relation": "documents",
+            "fragment": "docs/epics/review-rounds-reconciliation-recovery-E2026111803f4fd3b/S005/TESTS.md"
+          },
+          "revision": 25,
+          "at": "2026-11-21T14:49:40.575Z",
+          "externalId": "7064403941"
+        }
+      ]
     },
     "lifecycle": {
-      "status": "draft",
+      "status": "completed",
       "revision": {
         "number": 1,
         "contentHash": "7f67311f00c6101c952763f219208b46e606b381c765f6354708dffd623980a3",

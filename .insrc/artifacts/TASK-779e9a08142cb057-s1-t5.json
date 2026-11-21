@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b6d4cf98-f5b2-4f64-ad5f-6ec498b8506d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-21T15:13:21.970Z",
+    "epicCreatedAt": "2026-11-18T08:51:40.429Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "779e9a08142cb057",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add per-(type,model) JSON Schema transformers for SecurityFinding and SecurityLocator",
+      "parent": {
+        "entityId": "STORY-779e9a08142cb057-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-779e9a08142cb057-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-779e9a08142cb057-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-779e9a08142cb057-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "935d3600a201ec1ef98cb6861e28c1462e132c557fe4c45452ef3645ad5391d9",
+        "at": "2026-11-21T15:13:21.974Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-21T15:13:21.975Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add per-(type,model) JSON Schema transformers for SecurityFinding and SecurityLocator",
+    "summary": "Add bidirectional JSON Schema transformers (canonical model -> a shape a given (type, target model) pair reliably emits against, and back) for SecurityFinding and SecurityLocator, extending the pattern already used for the codex provider, so the union/inheritance-heavy shapes added by t1/t2 are safely presentable to structured-output LLM calls.",
+    "size": "S",
+    "order": 5,
+    "acceptanceChecks": [
+      "A per-(type,model) JSON Schema transformer exists for SecurityFinding, covering its kind discriminant and inherited Finding fields",
+      "A per-(type,model) JSON Schema transformer exists for SecurityLocator, covering its kind discriminant and inherited Locator fields"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "JSON Schema transformer output for SecurityFinding (kind discriminant + inherited Finding fields)"
+      },
+      {
+        "level": "unit",
+        "name": "JSON Schema transformer output for SecurityLocator (kind discriminant + inherited Locator/Pointer fields)"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

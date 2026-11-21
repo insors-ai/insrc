@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-35332dc4-83ca-44fc-8a82-3bcf1ad23bc2",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-21T15:13:21.958Z",
+    "epicCreatedAt": "2026-11-18T08:51:40.429Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "779e9a08142cb057",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add EvidenceProvider interface/registry and SecurityEvidence shape",
+      "parent": {
+        "entityId": "STORY-779e9a08142cb057-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-779e9a08142cb057-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-779e9a08142cb057-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d0dcc7ec2ba7fda645fb73b4c3683c4dd7ac80fbdb1acd2747a3c60496ab6a01",
+        "at": "2026-11-21T15:13:21.962Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-21T15:13:21.963Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add EvidenceProvider interface/registry and SecurityEvidence shape",
+    "summary": "Add the `EvidenceProvider` interface/registry stub for the five deterministic evidence-provider categories (secret scanning, SAST, dependency/SBOM, IaC/container, language-native checks), distinct from the general tool registry, with a common input/output contract. Add `SecurityEvidence` (providerCategory + an optional SecurityLocator) feeding SecurityFinding.evidence uniformly. Extension-point only: no real daemon-IPC wiring or provider implementations in this Story.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "EvidenceProvider interface defines a common input/output contract shared by all five provider categories",
+      "SecurityEvidence carries providerCategory and an optional SecurityLocator-typed locator field"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "SecurityEvidence shape (providerCategory + optional SecurityLocator)"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

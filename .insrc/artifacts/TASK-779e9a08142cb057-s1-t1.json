@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-0b619fb6-1e63-48ef-a1f8-e8d2d704aff2",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-21T15:13:21.945Z",
+    "epicCreatedAt": "2026-11-18T08:51:40.429Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "779e9a08142cb057",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add SecurityFinding interface, isSecurityFinding type guard, risk-family verdict representation, and policy-override staleness check",
+      "parent": {
+        "entityId": "STORY-779e9a08142cb057-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-779e9a08142cb057-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1c7a759dbe33904e0eb22aa9041fe73d689f191ff5413927c2753c1e83a616e0",
+        "at": "2026-11-21T15:13:21.949Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-21T15:13:21.951Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add SecurityFinding interface, isSecurityFinding type guard, risk-family verdict representation, and policy-override staleness check",
+    "summary": "Add `SecurityFinding` as a plain TS interface extending the base `Finding` (src/workflow/review-round/finding.ts) with kind:'security', checkId, violatedPolicyRef, evidence, fixability, confidence, enforcementMode, the revision-anchored override fields overriddenBy/overrideReason/overriddenAt, and receiptId (an optional string id of a corroborating VerificationReceipt -- never the receipt object itself). Add an `isSecurityFinding` type guard checking the `kind` discriminant. Add a risk-family verdict representation modeled as an informational, zero-severity SecurityFinding for applicable/not-applicable/uncertain families. Add the policy-override staleness check comparing overriddenAt against the Scope's current revision.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "SecurityFinding structurally extends base Finding -- every Finding field present plus the security-only fields including receiptId",
+      "isSecurityFinding returns true only for an object whose kind discriminant is exactly 'security'",
+      "A risk-family verdict (applicable/not-applicable/uncertain + reason), including not-applicable ones, is representable as an informational, zero-severity SecurityFinding",
+      "A stale override (overriddenAt diverges from the Scope's current revision) is rejected by the staleness check",
+      "The framework's shared reconciliation pass accepts a mixed Finding/SecurityFinding list with zero change to its own logic",
+      "The docgen 'review-report' renderer renders a round containing SecurityFinding entries with zero change to its own type signature"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "isSecurityFinding type guard (true/false/malformed discriminant)"
+      },
+      {
+        "level": "unit",
+        "name": "SecurityFinding structural extension of base Finding (all base fields present + security-only fields)"
+      },
+      {
+        "level": "unit",
+        "name": "overriddenAt vs current Scope revision comparison (stale override rejected)"
+      },
+      {
+        "level": "unit",
+        "name": "risk-family verdict recorded as informational zero-severity SecurityFinding for not-applicable/uncertain families"
+      },
+      {
+        "level": "integration",
+        "name": "reconciliation pass consuming a mixed Finding/SecurityFinding list"
+      },
+      {
+        "level": "integration",
+        "name": "docgen review-report render of a round containing SecurityFinding entries"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

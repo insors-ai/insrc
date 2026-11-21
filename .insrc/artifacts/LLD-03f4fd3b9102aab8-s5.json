@@ -27,7 +27,7 @@
     "storyTitle": "Per-review-type checkpointing and temp-folder lifecycle make a review resumable and its final result durable",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "approved",
+      "status": "completed",
       "revision": {
         "number": 2,
         "contentHash": "51c4cada5fafa8d59951e339de8fbddb3dc239b6ce5ccb85f8466eb94f700798",

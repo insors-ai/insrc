@@ -151,3 +151,28 @@ and the user's installed macOS daemon were not restarted by this qualification.
 All logs, source/public build receipts, test results, machine configuration and
 process/binding proofs are retained in
 `.insrc/tmp/node-runtime-qualification/linux/`.
+
+### Automatic CUDA-install default follow-up
+
+At the user's request, the existing shell owner and shared owned build environment
+now default ONNXRUNTIME_NODE_INSTALL_CUDA to `skip` only when the variable is
+absent. Explicit values, including empty strings and CUDA version selections,
+are preserved without changing the parent environment. The packaged IDE installer
+assets were regenerated with this same default.
+
+Canonical run `0d6c3891-65fc-4986-9783-068375d88642` passed packaging, actual
+shell/TUI npm lifecycle inheritance and environment-unit tests, with confirmed
+actor closure. The lifecycle case verifies absent, `v12` and empty settings
+through both production environment paths; unit coverage also checks v11/true.
+
+On the OrbStack x64 machine, both CUDA-related environment variables were removed
+from the caller. The updated shell owner supplied `skip`; real `npm rebuild
+onnxruntime-node --foreground-scripts` successfully ran the installed 1.21.0 and
+1.19.2 postinstall scripts without the failed optional CUDA download. CPU ONNX
+1.21.0 loaded afterward under owned Node22.22.1, and fresh archive-derived cache
+verification passed. This used the unbound development/qualification checkout,
+not an in-place mutation of the selected installed source. The log is retained
+as `linux/x64-cuda-default-proof.log`. A final census found no qualification
+actors or active leases; the x64 machine was stopped again. The earlier manual
+CPU-setting commands remain historical qualification evidence; new owned
+installer/build invocations supply the default themselves.

@@ -30,3 +30,13 @@ test('owned runtime and native build environments preserve caller flags while re
 	assert.equal(cleanNodeEnvironment(parent)['NODE_OPTIONS'], undefined);
 	assert.equal(toolchainInstallMarker('lock', runtime), 'v2:lock:22.22.1:darwin-arm64:archive');
 });
+
+
+test('owned builds default optional ONNX CUDA installation to skip only when absent', () => {
+ const runtime = { node: '/owned/bin/node', npm: '/owned/lib/npm-cli.js', identity: '22.22.1:linux-x64:archive' };
+ for (const value of [undefined, '', 'skip', 'v11', 'v12', 'true']) {
+  const parent: NodeJS.ProcessEnv = value === undefined ? {} : { ONNXRUNTIME_NODE_INSTALL_CUDA: value };
+  assert.equal(ownedNodeEnvironment(runtime,parent)['ONNXRUNTIME_NODE_INSTALL_CUDA'],value ?? 'skip');
+  assert.equal(parent['ONNXRUNTIME_NODE_INSTALL_CUDA'],value);
+ }
+});

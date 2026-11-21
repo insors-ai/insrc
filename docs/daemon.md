@@ -2281,17 +2281,17 @@ machines. Install the native build prerequisites (Git, curl, CA certificates,
 a C/C++ toolchain, Python3, pkg-config, libsecret development headers and Perl).
 No global Node/npm is required. Full OrbStack native builds were tested with
 8 GB per machine; 4 GB runs hit the memory limit. For a CPU-only installation,
-run the canonical
-packaged installer with the ONNX dependency's supported CPU option:
+run the canonical packaged installer:
 
 ```sh
-ONNXRUNTIME_NODE_INSTALL_CUDA=skip bash insrc-daemon-install.sh --embedder onnx -y
+bash insrc-daemon-install.sh --embedder onnx -y
 ```
 
-This skips only the optional CUDA provider download; CPU ONNX Runtime and normal
-native package lifecycle scripts remain installed. The locked ONNX package's
-optional Linux x64 CUDA URL currently returns HTTP404, so omitting this option
-on a CPU machine can fail installation. CUDA/GPU installation is not qualified
+Owned shell and TUI/build environments default ONNXRUNTIME_NODE_INSTALL_CUDA to
+`skip` only when it is absent. Explicit values, including an empty value, are
+preserved. This skips only the optional CUDA provider download by default; CPU
+ONNX Runtime and normal native package lifecycle scripts remain installed. The
+locked ONNX package's optional Linux x64 CUDA URL currently returns HTTP404. CUDA/GPU installation is not qualified
 by these tests. The x64 proof uses OrbStack emulation on Apple Silicon; it does
 not claim physical x86 or signed release-bundle qualification. See
 [the Linux qualification record](plans/node-runtime-evidence/qualification-linux-orbstack.md).

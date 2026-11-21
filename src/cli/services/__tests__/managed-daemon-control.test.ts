@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import { execFile, execFileSync, spawn } from 'node:child_process';
 import { once } from 'node:events';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
@@ -118,6 +118,11 @@ await managed.ready();
 
 async function shellRestart(installation: ManagedInstallation): Promise<string> {
 	const release = installation.releaseRoot;
+	mkdirSync(join(release, 'tools'), { recursive: true });
+	// Explicit managed fixture runtime/loader; production clears inherited
+	// NODE_OPTIONS and must not depend on it to execute its compiled helper.
+	writeFileSync(join(release, 'tools/node'), `#!/bin/sh\nexec '${process.execPath}' --import '${loader}' "$@"\n`);
+	chmodSync(join(release, 'tools/node'), 0o700);
 	const bridge = join(release, 'out/bin/insrc-daemon-control.js');
 	mkdirSync(join(release, 'out/bin'), { recursive: true });
 	writeFileSync(join(release, 'package.json'), '{"type":"module"}');

@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Copyright (c) Procix Software India. Licensed under the MIT License.
+set -euo pipefail
+unset NODE_OPTIONS NODE_PATH
+SELF="${BASH_SOURCE[0]}"
+links=0
+while [ -L "$SELF" ]; do
+  links=$((links + 1)); [ "$links" -le 32 ] || { echo 'insrc launcher link cycle' >&2; exit 2; }
+  HERE="$(cd "$(/usr/bin/dirname "$SELF")" && pwd -P)"
+  link=$(/usr/bin/readlink "$SELF")
+  case "$link" in /*) SELF="$link" ;; *) SELF="$HERE/$link" ;; esac
+done
+ROOT="$(cd "$(/usr/bin/dirname "$SELF")/.." && pwd -P)"
+USER_CWD="$PWD"
+if [ ! -d "$ROOT/.git" ] && [ ! -L "$ROOT/tools/node" ] && [ -x "$ROOT/tools/node" ]; then
+  NODE_BIN="$ROOT/tools/node"
+else
+  [ -f "$ROOT/scripts/node-runtime-env.sh" ] || { echo 'Runtime bootstrap assets missing; reinstall using the matching packaged installer.' >&2; exit 2; }
+  . "$ROOT/scripts/node-runtime-env.sh"
+  insrc_source_toolchain "$ROOT/scripts" "$HOME/.insrc" || exit 2
+fi
+[ -f "$ROOT/out/bin/insrc-mcp.js" ] || { echo 'Built MCP entry missing; rebuild before launching.' >&2; exit 2; }
+exec "$NODE_BIN" "$ROOT/out/bin/insrc-mcp.js" "$@"

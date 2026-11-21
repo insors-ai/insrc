@@ -18,6 +18,8 @@ insrc_source_toolchain() {
     canonical=$("$NODE_BIN" -e 'process.stdout.write(require("fs").realpathSync(process.argv[1]))' "$recorded" 2>/dev/null) || { printf '%s\n' 'The legacy daemon-node file is unavailable; migrate using the packaged installer.' >&2; return 2; }
     [ "$canonical" = "$NODE_BIN" ] || { printf '%s\n' 'The legacy daemon-node file selects an external runtime; migrate with the packaged installer.' >&2; return 2; }
   fi
-  TOOLCHAIN_ID="$("$NODE_BIN" -p 'process.versions.node + ":" + process.platform + "-" + process.arch'):$(basename "$(dirname "$distribution")")"
-  export PATH="$distribution/bin:$PATH"
+  local object="${distribution%/*}"
+  TOOLCHAIN_ID="$("$NODE_BIN" -p 'process.versions.node + ":" + process.platform + "-" + process.arch'):${object##*/}"
+  export npm_config_target="${TOOLCHAIN_ID%%:*}" npm_config_runtime=node
+  export PATH="$distribution/bin:${PATH:-/usr/bin:/bin}"
 }

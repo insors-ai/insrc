@@ -8,9 +8,9 @@
     "node": ">=22.13.0"
   },
   "bin": {
-    "insrc-mcp": "./out/bin/insrc-mcp.js",
+    "insrc-mcp": "./scripts/insrc-mcp",
     "insrc-git-hook": "./out/bin/insrc-git-hook.js",
-    "insrc": "./out/cli/index.js"
+    "insrc": "./scripts/insrc"
   },
   "scripts": {
     "typecheck:tools": "tsc -p tsconfig.typecheck.json",

@@ -52,6 +52,9 @@ writeFileSync(join(seed, 'package.json'), '{"name":"fixture","version":"1.0.0"}\
 writeFileSync(join(seed, '.gitignore'), 'node_modules/\n');                // as the real checkout ignores it
 writeFileSync(join(seed, 'package-lock.json'), '{"lockfileVersion":3}\n');
 writeFileSync(join(seed, 'src', 'index.ts'), 'export {};\n');
+mkdirSync(join(seed, 'scripts'));
+cpSync(resolve(dirname(SOURCE_SCRIPT), 'node-runtime-env.sh'), join(seed, 'scripts/node-runtime-env.sh'));
+writeFileSync(join(seed, 'scripts/provision-node-runtime.sh'), `#!/bin/bash\nprintf '%s\\n' '${join(sandbox, 'runtime-v1/distribution')}'\n`);
 git(seed, 'init', '-q', '-b', 'main');
 git(seed, 'add', '.');
 git(seed, 'commit', '-q', '-m', 'seed');
@@ -160,4 +163,13 @@ test('S001 t2: --skip-install leaves npm uncalled; an empty lockfile hash instal
 	} finally {
 		git(root, 'checkout', '--', 'package-lock.json');
 	}
+});
+
+
+test('shell and TUI updates share the same owned toolchain install marker', async () => {
+ reset(); ctl(); rmSync(npmLog,{force:true});
+ const {update}=await import('../maintenance.js');
+ const first=await update({skipBuild:true},()=>{});assert.equal(first.ok,true,first.error);assert.ok(!first.steps.includes('install'));assert.deepEqual(npmCalls(),[]);
+ reset();const second=await update({skipBuild:true},()=>{});assert.equal(second.ok,true,second.error);assert.ok(second.steps.includes('install'));
+ assert.deepEqual(ctl().calls,[]);
 });

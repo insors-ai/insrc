@@ -24,7 +24,7 @@
 import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 
 import { rpc } from '../client.js';
 import { checkUpdateSource, readUpdateSource, updateSourceArgs } from '../../shared/update-source.js';
@@ -33,6 +33,7 @@ import type { RegisteredRepo } from '../../shared/types.js';
 import { describeStop, startDaemon, stopDaemon } from './daemon.js';
 import { readManagedInstallation } from '../../shared/managed-daemon-installation.js';
 import { ManagedDaemonControl } from './managed-daemon-control.js';
+import { cleanNodeEnvironment, ownedNodeEnvironment, resolveOwnedToolchain, toolchainInstallMarker } from './owned-runtime.js';
 import type { StartResult, StopOutcome } from './daemon.js';
 import { loadBuiltCatalog } from '../../config/config-catalog-loader.js';
 import { reconcileConfigFile, type ConfigIoOutcome } from '../../config/reconcile-io.js';
@@ -62,7 +63,7 @@ export const NATIVE_CXX_STD = '-std=c++17';
 /** The environment for a daemon npm install: the caller's, with {@link NATIVE_CXX_STD} appended to CXXFLAGS. */
 export function nativeBuildEnv(env: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
 	const prior = env['CXXFLAGS']?.trim() ?? '';
-	return { ...env, CXXFLAGS: prior === '' ? NATIVE_CXX_STD : `${prior} ${NATIVE_CXX_STD}` };
+	return { ...cleanNodeEnvironment(env), CXXFLAGS: prior === '' ? NATIVE_CXX_STD : `${prior} ${NATIVE_CXX_STD}` };
 }
 
 export interface UpdateOptions {
@@ -129,6 +130,7 @@ export async function update(opts: UpdateOptions, onLog: LogFn): Promise<Mainten
 	}
 
 	try {
+		await resolveOwnedToolchain(root);
 		let source: UpdateSource;
 		try { source = opts.source ?? readUpdateSource(); }
 		catch (err) { return { ok: false, steps, error: `invalid daemonUpdate config: ${(err as Error).message}` }; }
@@ -203,24 +205,26 @@ export async function update(opts: UpdateOptions, onLog: LogFn): Promise<Mainten
 			steps.push('sync');
 		}
 
+		const toolchain = await resolveOwnedToolchain(root);
+		const runtimeEnv = ownedNodeEnvironment(toolchain);
 		if (opts.skipInstall !== true) {
 			// The synced lockfile's blob hash, taken before npm rewrites it; empty
 			// when there is none, which never matches and writes no marker.
 			const lockHash = (await capture('git', ['-C', root, 'hash-object', 'package-lock.json'])).stdout.trim();
 			const markerPath = join(root, INSTALL_MARKER);
 			const marker = existsSync(markerPath) ? readFileSync(markerPath, 'utf8').trim() : undefined;
-			if (lockHash !== '' && marker === lockHash) {
+			if (lockHash !== '' && marker === toolchainInstallMarker(lockHash, toolchain)) {
 				onLog('npm install: the install marker matches package-lock.json; skipping');
 			} else {
 				onLog(`npm install (${lockHash === '' ? 'package-lock.json not found' : marker === undefined ? 'no install marker' : 'the install marker is for another package-lock.json'})`);
 				rmSync(markerPath, { force: true });
-				if (await stream('npm', ['install'], onLog, root, nativeBuildEnv()) !== 0) {
+				if (await stream(toolchain.node, [toolchain.npm, 'install'], onLog, root, nativeBuildEnv(runtimeEnv)) !== 0) {
 					return { ok: false, steps, error: 'npm install failed' };
 				}
 				if (lockHash !== '') {
 					try {
 						mkdirSync(dirname(markerPath), { recursive: true });
-						writeFileSync(markerPath, `${lockHash}\n`);
+						writeFileSync(markerPath, `${toolchainInstallMarker(lockHash, toolchain)}\n`);
 					} catch (err) {
 						return { ok: false, steps, error: `npm install succeeded but the install marker could not be written: ${err instanceof Error ? err.message : String(err)}` };
 					}
@@ -231,7 +235,7 @@ export async function update(opts: UpdateOptions, onLog: LogFn): Promise<Mainten
 
 		if (opts.skipBuild !== true) {
 			onLog('npm run build');
-			if (await stream('npm', ['run', 'build'], onLog, root) !== 0) {
+			if (await stream(toolchain.node, [toolchain.npm, 'run', 'build'], onLog, root, runtimeEnv) !== 0) {
 				return { ok: false, steps, error: 'npm run build failed' };
 			}
 			steps.push('build');
@@ -397,6 +401,10 @@ export async function restart(onLog: LogFn, deps?: RestartDeps): Promise<Mainten
 		} catch (error) {
 			return { ok: false, steps: [], error: error instanceof Error ? error.message : String(error) };
 		}
+	}
+	if (deps === undefined) {
+		try { await resolveOwnedToolchain(resolve(DAEMON_ROOT)); }
+		catch (error) { return { ok: false, steps: [], error: error instanceof Error ? error.message : String(error) }; }
 	}
 	deps ??= { stopDaemon, startDaemon };
 	onLog('stopping daemon');

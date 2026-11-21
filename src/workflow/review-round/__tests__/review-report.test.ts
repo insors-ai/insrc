@@ -172,7 +172,11 @@ describe('renderReviewReport and ReviewReportDocgenCall', () => {
 
 	it('a reviewId containing a path-traversal segment is rejected before any filesystem access', async () => {
 		let writeAttempted = false;
-		_setReviewReportDepsForTests({ resolveRepoRoot, writeReport: () => { writeAttempted = true; } });
+		let repoRootResolved = false;
+		_setReviewReportDepsForTests({
+			resolveRepoRoot: async () => { repoRootResolved = true; return ROOT; },
+			writeReport: () => { writeAttempted = true; },
+		});
 
 		try {
 			await assert.rejects(
@@ -180,6 +184,7 @@ describe('renderReviewReport and ReviewReportDocgenCall', () => {
 				/invalid reviewId/,
 				'a reviewId with a traversal segment must be rejected, not joined into a filesystem path',
 			);
+			assert.equal(repoRootResolved, false, 'reviewId validation must run before the repository is even resolved, so no filesystem/IPC access of any kind is attempted');
 			assert.equal(writeAttempted, false, 'no write must ever be attempted once reviewId validation has failed');
 		} finally {
 			_setReviewReportDepsForTests({});

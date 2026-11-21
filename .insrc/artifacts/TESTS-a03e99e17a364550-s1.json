@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 4,
-        "contentHash": "af54b2ae73d15e940c62c8f1284dede745d0e8db953a5b40169bc050a8cfda3a",
-        "at": "2026-11-21T19:43:49.989Z",
+        "number": 5,
+        "contentHash": "b64d5275ea57b09d1000f2232721ee12b0017ab46f5b3729069e3fb589351bb6",
+        "at": "2026-11-21T20:26:56.360Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "a03e99e17a364550",
     "storyId": "s1",
     "createdAt": "2026-11-21T17:48:45.684Z",
-    "updatedAt": "2026-11-21T19:43:49.953Z",
+    "updatedAt": "2026-11-21T20:26:56.344Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-21T15:31:04.425Z",
     "epicSlug": "restore-upgrades-from-existing-daemon-installations",
-    "revision": 4
+    "revision": 5
   },
   "body": {
     "tasks": [
@@ -269,6 +269,59 @@
               },
               {
                 "title": "Dirty lock/source preserved; independently staged rollback baseline admitted only by actual compatibility",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "46cd4ac7e",
+        "ranAt": "2026-11-21T20:26:56.344Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Linux original-process closure precedes selection and candidate start",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/source-update-transaction.test.ts",
+                "title": "Linux original-process closure precedes selection and candidate start",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Interrupted cutover and failed readiness recover exact prior selection and running state",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/source-update-transaction.test.ts",
+                "title": "Interrupted cutover and failed readiness recover exact prior selection and running state",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/source-update-transaction.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 175178,
+            "titles": [
+              {
+                "title": "Linux original-process closure precedes selection and candidate start",
+                "result": "pass"
+              },
+              {
+                "title": "Interrupted cutover and failed readiness recover exact prior selection and running state",
                 "result": "pass"
               }
             ],

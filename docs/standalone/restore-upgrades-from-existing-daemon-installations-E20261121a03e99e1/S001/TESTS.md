@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 10 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 12 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -77,3 +77,25 @@ Run at 2026-11-21T19:43:49.953Z on commit `6f078b30d`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `scripts/__tests__/source-predecessor-native.test.ts` | 0 | 2 | 22.9 s |  |
+
+## t4
+
+Run at 2026-11-21T20:26:56.344Z on commit `46cd4ac7e`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: Linux original-process closure precedes selection and candidate start**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | Linux original-process closure precedes selection and candidate start | `src/daemon/__tests__/source-update-transaction.test.ts` |
+
+**integration: Interrupted cutover and failed readiness recover exact prior selection and running state**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | Interrupted cutover and failed readiness recover exact prior selection and running state | `src/daemon/__tests__/source-update-transaction.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/__tests__/source-update-transaction.test.ts` | 0 | 2 | 175.2 s |  |

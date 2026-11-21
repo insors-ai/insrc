@@ -157,7 +157,13 @@ function host(f: Fixture, options: { failReady?: boolean; unknownChildren?: bool
   async recover(expected) {
    const a = await actor(expected.pid); if (!a) return null;
    if (!sameProcess(a.target, expected)) { await a.target.handle.close(); throw new Error('replacement actor preserved'); }
-   await rememberChildren(a); return a;
+   if (!existsSync(join(f.root, 'daemon.pid'))) {
+    try { await waitExit(a.target.handle); }
+    finally { await a.target.handle.close(); }
+    return null; // Ungranted fixture child exits when its controller channel closes.
+   }
+   try { await rememberChildren(a); return a; }
+   catch (error) { await a.target.handle.close(); throw error; }
   },
   async proveClosed(expected) {
    assert.notEqual(processIdentityState(expected), 'same');
@@ -178,11 +184,15 @@ function host(f: Fixture, options: { failReady?: boolean; unknownChildren?: bool
    const child = launch(pin.runtime, [join(pin.root, 'out/daemon/index.js')], { ...process.env, FIXTURE_STATE: f.root });
    await once(child, 'message');
    const a = await actor(child.pid!); assert.ok(a);
+   const receipt = join(receipts, hash(JSON.stringify([a.target.pid, a.target.startedAt])));
+   writeFileSync(receipt, '[]', { mode: 0o600, flush: true }); // No child/store access before the grant.
    record(a); // The child cannot touch even the fixture store before the durable callback.
+   writeFileSync(receipt, '{"pendingGrant":true}', { mode: 0o600, flush: true });
    child.send({ grant: true }); await once(child, 'message'); await rememberChildren(a);
    events.push(pin.commit === f.prior.commit ? 'start-prior' : 'start-candidate'); return a;
   },
   async ready(a, pin) {
+   assert.ok(a.target.commandLine.endsWith(join(pin.root, 'out/daemon/index.js')));
    const status = await request(f.root, 'status'); assert.equal(status.pid, a.target.pid);
    assert.equal(await a.target.handle.hasExited(), false);
    if (options.failReady && pin.commit === f.candidate.pin.commit) throw new Error('fixture candidate readiness failed');
@@ -206,9 +216,14 @@ async function stopFixture(f: Fixture) {
 if (process.env.INSRC_SOURCE_TRANSACTION_WORKER) {
  const { fixture: f, phase } = JSON.parse(process.env.INSRC_SOURCE_TRANSACTION_WORKER) as { fixture: Fixture; phase: string };
  const store = new SourceInstallationStore(f.root, f.logical), h = host(f,
-  { failReady: ['rollback-required', 'rolled-back'].includes(phase), unknownChildren: phase === 'recovery-required' });
+  { failReady: ['rollback-required', 'rolled-back'].includes(phase) || phase.includes('prior'), unknownChildren: phase === 'recovery-required' });
  _setSourcePublicationFaultForTests(point => {
-  if (point === 'after-rename' && store.read().active?.phase === phase) process.exit(81);
+  const active = store.read().active;
+  const checkpoint = phase === 'spawn-prior-recorded'
+   ? active?.execution?.step === 'spawn-prior' && active.execution.restored !== null
+   : phase === 'spawn-prior-unrecorded' ? active?.execution?.step === 'spawn-prior' && active.execution.restored === null
+   : phase.startsWith('prior-ready') ? active?.execution?.step === 'prior-ready' : active?.phase === phase;
+  if (point === 'after-rename' && checkpoint) process.exit(81);
  });
  await new LinuxSourceTransaction(store, h.effects).update(async () => upgrade(f));
  process.exit(82);
@@ -259,18 +274,33 @@ if (process.env.INSRC_SOURCE_TRANSACTION_WORKER) {
    await stopFixture(f);
   }
   for (const phase of ['reserved', 'staged', 'predecessor-exited', 'candidate-selected', 'candidate-ready', 'committed',
-   'rollback-required', 'rolled-back', 'recovery-required']) {
+   'rollback-required', 'rolled-back', 'recovery-required', 'spawn-prior-unrecorded', 'spawn-prior-recorded', 'prior-ready', 'prior-ready-exited']) {
    const f = await fixture(t, phase === 'candidate-ready'), store = new SourceInstallationStore(f.root, f.logical);
    await startOriginal(f);
    const args = file.endsWith('.ts') ? ['--import', fileURLToPath(import.meta.resolve('tsx/esm')), file] : [file];
    const worker = spawn(process.execPath, args, { env: { ...process.env, INSRC_SOURCE_TRANSACTION_WORKER: JSON.stringify({ fixture: f, phase }) }, stdio: ['ignore', 'pipe', 'pipe'] });
    let stderr = ''; worker.stderr.on('data', chunk => { stderr += chunk.toString(); });
    const [code] = await once(worker, 'close'); assert.equal(code, 81, stderr);
-   const h = host(f), result = await new LinuxSourceTransaction(store, h.effects).recover();
+   const h = host(f), restored = store.read().active?.execution?.restored;
+   if (phase === 'prior-ready-exited') {
+    assert.ok(restored);
+    const actor = await h.effects.recover(restored); assert.ok(actor);
+    try { await actor.shutdown(); await actor.childrenClosed(); }
+    finally { await actor.target.handle.close(); }
+   }
+   const result = await new LinuxSourceTransaction(store, h.effects).recover();
+   if (phase === 'spawn-prior-unrecorded') {
+    assert.equal(result?.decision, 'recovery-required', result?.detail);
+    assert.equal(h.events.includes('start-prior'), false, 'unrecorded spawn must not be repeated');
+    assert.equal(store.read().active?.execution?.restored, null);
+    continue;
+   }
    assert.equal(result?.decision, phase === 'committed' ? 'committed' : 'rolled-back', result?.detail);
    assert.deepEqual(store.read().selected, phase === 'committed' ? f.candidate : f.initial);
    assert.equal(store.read().active, null);
-   assert.ok(await request(f.root, 'status'));
+   const status = await request(f.root, 'status'); assert.ok(status);
+   if (phase === 'prior-ready') assert.equal(status.pid, restored?.pid, 'already-restored running prior must be preserved');
+   if (phase === 'prior-ready-exited') assert.notEqual(status.pid, restored?.pid, 'closed restored prior must be restarted');
    await stopFixture(f);
   }
   const idle = await fixture(t), idleStore = new SourceInstallationStore(idle.root, idle.logical), idleHost = host(idle);

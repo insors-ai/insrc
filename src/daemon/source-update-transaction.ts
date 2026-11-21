@@ -244,6 +244,29 @@ export class LinuxSourceTransaction {
     await this.host.ready(this.original, active.prior!);
     return this.finish(id, 'rolled-back', `${detail}; original already-running daemon preserved`);
    }
+   if (execution.restored) {
+    // Restoration may have completed before the controller could record its final outcome.
+    // A verified running prior is the desired result, not a reason to demand empty stores.
+    if (!execution.originalClosed || !execution.candidateClosed || !active.wasRunning
+     || !isDeepStrictEqual(this.store.read().selected, active.initialSelector)
+     || !this.restored || !sameProcess(this.restored.target, execution.restored)) throw new Error('Restored prior ownership is unresolved');
+    await this.verify(active);
+    let ready = false;
+    if (!await this.restored.target.handle.hasExited()) {
+     try { await this.host.ready(this.restored, active.prior!); ready = !await this.restored.target.handle.hasExited(); }
+     catch { /* Retry only after proving closure of this exact failed restoration. */ }
+    }
+    if (ready) {
+     this.holdRunFiles();
+     this.step(id, 'prior-ready');
+     return this.finish(id, 'rolled-back', detail);
+    }
+    await this.closeActor(this.restored);
+    this.step(id, 'restore-selector', { restored: null });
+    this.restored = null;
+   } else if (execution.step === 'spawn-prior') {
+    throw new Error('Prior spawn intent has no captured actor; closure must be proved before another start');
+   }
    this.change(id, transaction => ({ ...transaction, phase: 'rollback-required' }));
    if (!execution.originalClosed) {
     // A failed stop never grants permission to replace/restart the original daemon.
@@ -264,12 +287,7 @@ export class LinuxSourceTransaction {
    await this.host.verifyStores(execution.compatibility, guard);
    this.step(id, 'restore-selector');
    this.publish(state => ({ ...state, selected: state.active!.initialSelector }));
-   if (active.wasRunning) {
-    if (this.current(id).execution!.restored) {
-     if (!this.restored) throw new Error('Restored prior actor is unavailable');
-     await this.host.ready(this.restored, active.prior!);
-    } else await this.start(id, active.prior!, true);
-   }
+   if (active.wasRunning) await this.start(id, active.prior!, true);
    return this.finish(id, 'rolled-back', detail);
   } catch (error) { return this.finish(id, 'recovery-required', `${detail}. Restoration withheld: ${message(error)}`); }
  }
@@ -305,7 +323,13 @@ export class LinuxSourceTransaction {
      this.candidate = this.retain(await this.host.recover(e.candidate));
      if (!this.candidate) { await this.host.proveClosed(e.candidate); this.step(current.id, e.step, { candidateClosed: true }); }
     }
-    if (e.restored) this.restored = this.retain(await this.host.recover(e.restored));
+    if (e.restored) {
+     this.restored = this.retain(await this.host.recover(e.restored));
+     if (!this.restored) {
+      await this.host.proveClosed(e.restored);
+      this.step(current.id, 'restore-selector', { restored: null });
+     }
+    }
     return await this.rollback(current.id, 'Recovered interrupted source cutover');
    } catch (error) { return this.finish(current.id, 'recovery-required', message(error)); }
   } finally { await this.release(); }

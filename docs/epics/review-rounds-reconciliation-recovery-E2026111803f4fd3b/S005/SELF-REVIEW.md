@@ -2,7 +2,7 @@
 
 Reviewed 2026-11-21 by the implementation author (controller). Automated design/code review is retired and unavailable (CLAUDE.md); this is the substitute self-check evidence, with the explicit limitation that author and reviewer are the same party.
 
-**Result: both Tasks (t1, t2) pass the daemon's build-validation gate.** This report does not constitute an independent daemon review.
+**Result: both Tasks (t1, t2) pass the daemon's build-validation gate, and all three externally-reported P2 defects against the pinned self-review packet revision have since been fixed and re-validated.** This report does not constitute an independent daemon review.
 
 ## Scope
 
@@ -32,24 +32,39 @@ The build-validation gate rejected t2 three times before passing, each catching 
 
 All three were genuine catches, not false positives — each is a real test-coverage or process-scope gap this self-review would not have caught without the gate.
 
+### Externally reported, after pinning `6c654af9e`: three P2s, fixed across five rounds
+
+An external reviewer reported three P2 defects against the pinned self-review packet revision. All three were fixed within this Story, per the Epic's own established direction that a defect belongs in the Story it was found against, not deferred elsewhere:
+
+1. **Ancestor replacement could redirect writes and recursive deletion (`checkpoint.ts:166,225` at the time of the report).** `requireNoSymlinkInPath`'s lstat-based check and the mkdir/open/rename/rmSync that followed it were still separate syscalls re-resolving the same mutable path string, so replacing the review directory (or `.insrc/tmp` itself) in the instant after the check could redirect `writeCheckpoint`'s publish or `finalizeAndCleanup`'s delete outside the repository. Reproduced directly, both ways, against the actual writer.
+   - **Round 1 fix** pinned only the leaf directory via an atomic `O_DIRECTORY|O_NOFOLLOW` open immediately before use -- insufficient, since the *subsequent* `publishGuarded`/`rmSync` calls still re-resolved the same mutable path from scratch, discarding the proof the instant it was made. A concurrent regression test (a background process racing to swap the review directory for a symlink while `writeCheckpoint`/`finalizeAndCleanup` ran in a tight loop) caught this reliably.
+   - **Round 2 fix** introduced `pinDirectory`'s `/proc/self/fd/<fd>` alias (Linux) so every subsequent operation resolves against the pinned inode directly, never re-looking up the mutable name -- but `rmdir(2)` refuses that alias for removing the directory the fd itself refers to (EPERM), so cleanup's own self-removal step needed reworking into "empty contents through the alias, then remove the now-empty directory by its real name" (safe regardless, since `rmdir` refuses anything that isn't literally an empty directory).
+   - **Round 3 fix**, caught by the gate: only the *top-level* directory was pinned; every *nested* subdirectory `emptyDirectoryContents` recursed into was still resolved by re-deriving its path from `readdirSync`'s own listing. Fixed by pinning recursively at every level.
+   - **Round 4 fix**, also caught by the gate: only the *leaf* was pinned, not the ancestors above it (e.g. `.insrc/tmp` itself) -- the exact second repro case. Fixed by `pinDirectoryChain`: pin `repoRoot` first, then pin each subsequent path segment built on the *previous* segment's own already-pinned alias, so no ancestor at any level is ever resolved against a mutable name after the first step; closed via 6 consecutive clean runs of the same concurrent regression test (reliable escape before the fix, zero escapes across 6+13 runs after).
+   - On any non-Linux platform (no `/proc`), this falls back to the prior best-effort, narrowed-not-eliminated behaviour -- a documented platform limitation of Node's public `fs` module, which exposes no portable `openat`/`mkdirat`/`unlinkat`-family alternative.
+2. **Reads could return another review's checkpoint (`checkpoint.ts:187,197` at the time of the report).** `readCheckpoint` followed any symlink at the checkpoint path and never compared the stored record's own `reviewId` against the one requested. Reproduced both ways: a mismatched record, and a well-formed record reached through a symlink. Fixed by adding the same `requireNoSymlinkInPath` check the write/delete paths already use (treated as absent, matching `readCheckpoint`'s own never-throw contract) and an explicit `reviewId` equality check before trusting a parsed record. The symlink-read test was deliberately constructed so the symlinked record's own `reviewId` field matches the *reader's* request (not the real file's own identity), isolating the symlink defense from the separate identity check -- an early draft of this test was flawed (the mismatch check alone already caught it) and was corrected before being trusted.
+3. **Cleanup could start before the final output was durably committed (`checkpoint.ts:125,222` at the time of the report).** `publishGuarded`'s rename was atomic but never fsynced, so a crash could lose the write entirely or leave a directory entry pointing at data never flushed to disk. Fixed by fsyncing the file before the rename and the containing directory after it. This fix is verified by code inspection only, per the reviewer's own note -- machine-crash recovery is not practically testable in this suite.
+
+All fixes were verified by reverting each individually and confirming its own regression test (and no unrelated others) then fails.
+
 ## Source review
 
 | Area inspected | Invariant and assessment |
 | --- | --- |
 | `checkpoint.ts` | `ReviewCheckpoint{reviewId, lastCompletedUnit}` is exactly sc5's interfaceSketch. All three functions validate `reviewId` first (before any filesystem/IPC access, proven by a dedicated test), then resolve the repo via the canonical chain. `writeCheckpoint` publishes through `publishGuarded` (temp-file + atomic rename), never a direct `writeFileSync`. `readCheckpoint` treats a missing file, invalid JSON, and a malformed shape identically (`undefined`), never throwing. `finalizeAndCleanup` writes the durable copy before the recursive delete, propagates a copy failure without deleting, and is idempotent (a second call after cleanup re-runs the copy and finds nothing left to delete). Every write and the delete are preceded by the lstat-based symlink walk. |
 | `__type-tests__/checkpoint.typecheck.ts` | Exact-keys, exact-parameter-tuple, and exact-return-type proofs for `ReviewCheckpoint` and all three functions, plus per-field required/readonly/no-extra-field and union-narrowing `@ts-expect-error` cases -- the same pattern `review-report.typecheck.ts` established. |
-| `__tests__/checkpoint.test.ts` | All 14 named subjects exist as individual `it()` cases with titles matching the LLD verbatim; `ac1`-`ac4`'s `provingTests` pass, including the gate-caught symlink-file and ordering-causality fixes. |
+| `__tests__/checkpoint.test.ts` | All 14 LLD-named subjects exist as individual `it()` cases with titles matching the LLD verbatim, plus 3 regression tests added for the externally-reported P2s (17 total); `ac1`-`ac4`'s `provingTests` pass. |
 
 ## Verification
 
 - `npx tsc --noEmit`: clean, 0 errors.
-- `npx tsx --test src/workflow/review-round/__tests__/checkpoint.test.ts`: **14 passed, 0 failed.**
-- `npx tsx --test 'src/workflow/review-round/**/*.test.ts'` (broader sweep): **68 passed, 0 failed.**
-- `insrc_build_step` (phase=validate): t1 passed on its first round; t2 passed on its third round after two real test-coverage fixes and one process-scope correction — final verdict `passed: true` for both Tasks, with `typecheckClean: true` and `testsPassed: true`.
+- `npx tsx --test src/workflow/review-round/__tests__/checkpoint.test.ts`: **17 passed, 0 failed** (14 LLD-named + 3 externally-reported-P2 regression tests).
+- `npx tsx --test 'src/workflow/review-round/**/*.test.ts'` (broader sweep): **71 passed, 0 failed.**
+- `insrc_build_step` (phase=validate): t1 and t2 both passed cleanly on final resubmission after all fixes — final verdict `passed: true` for both Tasks, with `typecheckClean: true` and `testsPassed: true`.
 
 ## Limits and continuation
 
-This is a manual self-review substituting for the retired automated design/code review; author and reviewer are the same party. No independent party inspected this diff ahead of time. The build-validation gate's own three rejections (two real content gaps, one process-scope correction) are the closest available substitute for adversarial review in this session.
+This is a manual self-review substituting for the retired automated design/code review; author and reviewer are the same party. No independent party inspected this diff ahead of time, though three P2 defects were caught by an external reviewer after this packet first pinned `6c654af9e` -- all three fixed within this Story, all recorded here, not omitted. The build-validation gate's own rejections, plus these external catches, are the closest available substitute for adversarial review in this session.
 
 An integration gap is recorded as an explicit, non-blocking open item (per the LLD's own resolved question): wiring `writeCheckpoint`/`readCheckpoint`/`finalizeAndCleanup` into s1's own round-driver cycle is s1's adjacent-boundary responsibility, not built here.
 

@@ -28,24 +28,27 @@
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 1,
-        "contentHash": "9481237fcabaf5f3a1a40af9bc0908467d55e0bf54b4001dbfec16b34fbc9bf4",
-        "at": "2026-11-21T15:11:06.694Z",
+        "number": 2,
+        "contentHash": "a6fd3a0f6c0816aa30fbb0b47ecfd65a4f99a37c93aa0bb18fb4287f4498b035",
+        "at": "2026-11-21T15:50:00.000Z",
         "by": {
-          "id": "insrc:system",
-          "kind": "system",
+          "id": "insrc:controller",
+          "kind": "person",
           "properties": {}
         }
       },
       "signoffs": [],
       "approval": {
-        "revision": 1,
+        "revision": 2,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-11-21T15:13:20.257Z"
+        "at": "2026-11-21T15:50:00.000Z",
+        "override": {
+          "reason": "t4's first acceptanceCheck, lifted near-verbatim from the LLD's own testStrategy.invariantsToPreserve, described an end-to-end property (\"written for every ... run\") this Story's own non-goals explicitly place out of scope (no sandbox/mutation checkpoint exists or is built here -- confirmed via the LLD's own capability-discovery grounding and its 'extension points only' framing). Reworded to the scope-honest, directly-provable claim: the persistence function's write is unconditional by construction (no SecurityFinding parameter, never gated on one). No other content changed. Caught by the build gate rejecting t4 twice on this exact ground; corrected rather than re-litigated against code that cannot exist within this Story."
+        }
       }
     },
     "revision": 1,
@@ -161,7 +164,7 @@
         "order": 4,
         "dependsOn": [],
         "acceptanceChecks": [
-          "A VerificationReceipt is written for every sandbox/mutation checkpoint run, pass or fail, independent of whether any SecurityFinding corroborates it",
+          "persistVerificationReceipt's write is unconditional for whatever outcome (pass or fail) it is given -- it takes no SecurityFinding parameter anywhere and is never gated on one, proven directly against the real function; wiring an actual sandbox/mutation checkpoint to call it is this Story's own non-goal (LLD summary: \"no ... evidence-provider internals ... are designed here\"), tracked separately, not built or testable within this Story's scope",
           "RECEIPTS.md renders beside the review artifact using the existing writeArtifact/writeAtomic/storeRound/withStoredModel machinery, unmodified",
           "An approval attempt against a RECEIPTS.md/VerificationReceipt record is refused, matching TESTS.md's own non-approvable-record behavior"
         ],

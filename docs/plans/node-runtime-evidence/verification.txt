@@ -1,0 +1,12 @@
+[GNUPG:] NEWSIG
+[GNUPG:] KEY_CONSIDERED CC68F5A3106FF448322E48ED27F5E38D5B0A215F 0
+[GNUPG:] SIG_ID Wj21gL/z0/AAJN091w5c7nxeQFY 2026-03-05 1772721120
+[GNUPG:] GOODSIG 27F5E38D5B0A215F marco-ippolito <marcoippolito54@gmail.com>
+[GNUPG:] VALIDSIG CC68F5A3106FF448322E48ED27F5E38D5B0A215F 2026-03-05 1772721120 0 4 0 1 8 00 CC68F5A3106FF448322E48ED27F5E38D5B0A215F
+[GNUPG:] TRUST_UNDEFINED 0 pgp
+gpg: Signature made Thu Mar  5 20:02:00 2026 IST
+gpg:                using RSA key CC68F5A3106FF448322E48ED27F5E38D5B0A215F
+gpg: Good signature from "marco-ippolito <marcoippolito54@gmail.com>" [unknown]
+gpg: WARNING: This key is not certified with a trusted signature!
+gpg:          There is no indication that the signature belongs to the owner.
+      CC68F5A3106FF448322E48ED27F5E38D5B0A215F

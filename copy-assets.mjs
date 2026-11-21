@@ -22,6 +22,10 @@ import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync
 import { createHash } from 'node:crypto';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { syncNodeRuntimeAssets } from './scripts/sync-node-runtime-policy.mjs';
+
+// Refuse stale shell/client policies or release/native pins before publishing assets.
+syncNodeRuntimeAssets(true);
 
 const here    = dirname(fileURLToPath(import.meta.url));
 const srcRoot = resolve(here, 'src');

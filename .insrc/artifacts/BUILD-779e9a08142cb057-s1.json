@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 3,
-        "contentHash": "1584373cb657168b7e3c3b1c2ed66d1d661da530cdece385a69cf1e25de51ee3",
-        "at": "2026-11-21T15:27:26.917Z",
+        "number": 4,
+        "contentHash": "859c0016df5ef7818aedc671bec41a204f782c41efa993a051cafd015046c581",
+        "at": "2026-11-21T15:30:27.953Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -29,8 +29,8 @@
     "schemaVersion": 1,
     "epicHash": "779e9a08142cb057",
     "storyId": "s1",
-    "revision": 3,
-    "updatedAt": "2026-11-21T15:26:53.723Z",
+    "revision": 4,
+    "updatedAt": "2026-11-21T15:29:56.040Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicSlug": "add-securityfinding-capability-family-delegates-framing"
@@ -44,6 +44,10 @@
       {
         "id": "t2",
         "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
       }
     ],
     "testRecord": {
@@ -55,38 +59,52 @@
           "file": "src/workflow/review-round/__tests__/security-finding.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T15:26:53.723Z"
+        "timestamp": "2026-11-21T15:29:56.040Z"
       },
       {
         "target": {
           "file": "src/workflow/review-round/security-finding.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T15:26:53.723Z"
+        "timestamp": "2026-11-21T15:29:56.040Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASKS-779e9a08142cb057-s1.log.jsonl"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T15:26:53.723Z"
+        "timestamp": "2026-11-21T15:29:56.040Z"
       },
       {
         "target": {
           "file": "src/workflow/review-round/__tests__/security-locator.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T15:26:53.723Z"
+        "timestamp": "2026-11-21T15:29:56.040Z"
       },
       {
         "target": {
           "file": "src/workflow/review-round/security-locator.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T15:26:53.723Z"
+        "timestamp": "2026-11-21T15:29:56.040Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-round/__tests__/evidence-provider.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T15:29:56.040Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-round/evidence-provider.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T15:29:56.040Z"
       }
     ],
-    "commit": "8355c1b51"
+    "commit": "1af308fcc"
   },
   "citations": []
 }

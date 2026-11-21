@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 3,
-        "contentHash": "a83423c7ac4b63127434a12d8bb13fded54ee462b6def71c6ba5091733c3cbb8",
-        "at": "2026-11-21T15:26:54.007Z",
+        "number": 4,
+        "contentHash": "c88871d91e1321b78b031204b551c1bae727cf58ebff5358b7d08bdae1bec7fa",
+        "at": "2026-11-21T15:29:56.454Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "779e9a08142cb057",
     "storyId": "s1",
     "createdAt": "2026-11-21T15:21:22.783Z",
-    "updatedAt": "2026-11-21T15:26:53.723Z",
+    "updatedAt": "2026-11-21T15:29:56.040Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-18T08:51:40.429Z",
     "epicSlug": "add-securityfinding-capability-family-delegates-framing",
-    "revision": 3
+    "revision": 4
   },
   "body": {
     "tasks": [
@@ -189,6 +189,50 @@
               },
               {
                 "title": "SecurityLocator",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "1af308fcc",
+        "ranAt": "2026-11-21T15:29:56.040Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "SecurityEvidence shape (providerCategory + optional SecurityLocator)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/evidence-provider.test.ts",
+                "title": "SecurityEvidence shape (providerCategory + optional SecurityLocator)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-round/__tests__/evidence-provider.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 595,
+            "titles": [
+              {
+                "title": "SecurityEvidence shape (providerCategory + optional SecurityLocator)",
+                "result": "pass"
+              },
+              {
+                "title": "EvidenceProvider interface defines a common input/output contract shared by all five provider categories",
+                "result": "pass"
+              },
+              {
+                "title": "EvidenceProvider and SecurityEvidence",
                 "result": "pass"
               }
             ],

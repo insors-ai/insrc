@@ -208,6 +208,38 @@ describe('VerificationReceipt and its RECEIPTS record', () => {
 		});
 	});
 
+	it('concurrent appends through equivalent repoPath spellings for the same repository still serialize, not race', async () => {
+		await withRepo(async (repo) => {
+			writeFileSync(
+				join(repo, '.insrc', 'artifacts', `LLD-${HASH}-s1.json`),
+				`${JSON.stringify({ meta: { workflow: 'design.story', epicHash: HASH, storyId: 's1', createdAt: T0, epicCreatedAt: T0, standalone: true }, body: {} }, null, 2)}\n`,
+			);
+			const { store, service: svc } = createRepoLifecycle(repo);
+			const through: RoundWriter = { writer: svc, actor: { id: 'insrc:build', kind: 'system', properties: {} } };
+			const id = receiptsArtifactId(HASH, 's1');
+
+			await persistVerificationReceipt(repo, { epicHash: HASH, storyId: 's1', now: T0 }, receipt('seed'), through);
+
+			// The two calls below name the SAME repository under two different spellings
+			// (a bare path and one with a trailing slash). The lock key has to canonicalize
+			// `repoPath` -- a verbatim string key would put these on two different queues,
+			// letting them race exactly like the unserialized case the prior fix addressed.
+			await Promise.all([
+				persistVerificationReceipt(repo, { epicHash: HASH, storyId: 's1', now: '2026-03-01T11:00:00.000Z' }, receipt('alias-a'), through),
+				persistVerificationReceipt(`${repo}/`, { epicHash: HASH, storyId: 's1', now: '2026-03-01T11:00:01.000Z' }, receipt('alias-b'), through),
+			]);
+
+			const after = await store.read(id);
+			assert.deepEqual(
+				(after.payload.body as { receipts: readonly VerificationReceipt[] }).receipts.map(r => r.id).sort(),
+				['alias-a', 'alias-b', 'seed'],
+				'both overlapping appends must survive even when one call spells the repo path with a trailing slash',
+			);
+			const { changeLog } = await store.readWithHistory(id);
+			assert.equal(changeLog.length, 3, 'all three writes are in the change log');
+		});
+	});
+
 	it('approval attempt against a RECEIPTS.md/VerificationReceipt record is refused', async () => {
 		const jsonPath = join('/does/not/matter', `${receiptsArtifactId(HASH, 's1')}.json`);
 		assert.equal(isTestRecordJsonPath(jsonPath), true, 'a RECEIPTS json path must be recognized as a non-approvable record, matching TESTS.md\'s own prefix check');

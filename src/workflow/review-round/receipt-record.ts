@@ -21,7 +21,8 @@
  * matches the `RECEIPTS-` id prefix, the direct peer of `TESTS-`).
  */
 
-import { existsSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, readFileSync, realpathSync, rmSync } from 'node:fs';
+import { resolve } from 'node:path';
 
 import { getLogger } from '../../shared/logger.js';
 import { artifactIdMarker, artifactJsonPath, folderIdentityMeta, receiptsArtifactId, receiptsArtifactPaths, storyRecordFolderArgs, writeArtifact, writeAtomic } from '../storage.js';
@@ -132,7 +133,10 @@ function pathsFor(repoPath: string, rec: ReceiptRecord, intent: PathIntent): { m
  * two overlapping calls would otherwise both merge their receipt into the same
  * snapshot of the prior record, and the second write would overwrite the
  * first's addition even though both are individually serialized at the file
- * (or lifecycle-service) level.
+ * (or lifecycle-service) level. `repoPath` is canonicalized (the same
+ * resolve+realpath lifecycleFor uses for its own per-repository registry key)
+ * before it enters the lock key, so a trailing slash, a relative path or a
+ * symlink naming the SAME repository does not escape into a second queue.
  */
 export function persistVerificationReceipt(
 	repoPath: string,
@@ -140,7 +144,8 @@ export function persistVerificationReceipt(
 	receipt:  VerificationReceipt,
 	through?: RoundWriter,
 ): Promise<{ md: string; json: string }> {
-	return serialized(`${repoPath}\0${ident.epicHash}\0${ident.storyId}`, () => persistVerificationReceiptUnlocked(repoPath, ident, receipt, through));
+	const canonicalRepo = realpathSync(resolve(repoPath));
+	return serialized(`${canonicalRepo}\0${ident.epicHash}\0${ident.storyId}`, () => persistVerificationReceiptUnlocked(repoPath, ident, receipt, through));
 }
 
 /** One write at a time per (repoPath, epicHash, storyId): the read, merge and write of

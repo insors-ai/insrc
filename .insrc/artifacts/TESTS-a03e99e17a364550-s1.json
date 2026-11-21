@@ -1,0 +1,141 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "c3bb73fbbb24ecd089e8c49634111f103c3a35f47766b0314b713f23e94fa48d",
+        "at": "2026-11-21T17:48:45.746Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "a03e99e17a364550",
+    "storyId": "s1",
+    "createdAt": "2026-11-21T17:48:45.684Z",
+    "updatedAt": "2026-11-21T17:48:45.684Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-21T15:31:04.425Z",
+    "epicSlug": "restore-upgrades-from-existing-daemon-installations",
+    "revision": 1
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "80ace719b",
+        "ranAt": "2026-11-21T17:48:45.684Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Portable source qualification rejects wrong channel/profile/floor before npm",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/source-upgrade-qualification-native.test.ts",
+                "title": "Portable source qualification rejects wrong channel/profile/floor before npm",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/source-upgrade-qualification-native.test.ts",
+                "title": "Linux source promotion requires target-specific historical upgrade evidence",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Independent staging uses absolute owned npm and preserves Mac signed behavior",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/source-upgrade-qualification-native.test.ts",
+                "title": "Independent staging uses absolute owned npm and preserves Mac signed behavior",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/managed-release-staging.test.ts",
+                "title": "Release provenance, changed bytes and absent legacy declaration",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "scripts/__tests__/source-upgrade-qualification-native.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 37846,
+            "titles": [
+              {
+                "title": "Portable source qualification rejects wrong channel/profile/floor before npm",
+                "result": "pass"
+              },
+              {
+                "title": "Linux source promotion requires target-specific historical upgrade evidence",
+                "result": "pass"
+              },
+              {
+                "title": "Independent staging uses absolute owned npm and preserves Mac signed behavior",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/managed-release-staging.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 18343,
+            "titles": [
+              {
+                "title": "Release provenance, changed bytes and absent legacy declaration",
+                "result": "pass"
+              },
+              {
+                "title": "Tagged compatibility rejects a conflicting declaration and admits a known historical predecessor",
+                "result": "pass"
+              },
+              {
+                "title": "Changed local runtime bytes block cutover or offline rollback",
+                "result": "pass"
+              },
+              {
+                "title": "The stopped installed controller fetches and commits a qualified update without daemon IPC",
+                "result": "pass"
+              },
+              {
+                "title": "First supported update of a qualified prior build with broker denial",
+                "result": "pass"
+              },
+              {
+                "title": "Staging leaves the installed release executable and unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "Owned toolchain staging failures preserve prior selection binding and executable bytes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

@@ -1,0 +1,145 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "efa4f9906ad2c723f11200374124a6cc5be85ded0dd101a30f4193a24ffac3a9",
+        "at": "2026-11-21T17:49:34.023Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-2a7466d2-6373-4ab2-a499-8a2964b7489f",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-21T17:48:45.684Z",
+    "epicCreatedAt": "2026-11-21T15:31:04.425Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a03e99e17a364550",
+    "storyId": "s1",
+    "revision": 1,
+    "updatedAt": "2026-11-21T17:48:45.684Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicSlug": "restore-upgrades-from-existing-daemon-installations"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      }
+    ],
+    "summary": "Task t1 implements portable independently authenticated source qualification and staging, explicit Linux target catalogs/promotion evidence, and persisted bootstrap-floor checks. It reuses owned Node/npm and existing macOS lifecycle behavior; the remaining eleven tasks still own activation, recovery integration and full historical/native upgrade qualification.",
+    "testRecord": {
+      "md": "docs/standalone/restore-upgrades-from-existing-daemon-installations-E20261121a03e99e1/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "docs/plans/node-runtime-evidence/source-upgrade-bootstrap.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T17:48:45.684Z"
+      },
+      {
+        "target": {
+          "file": "scripts/__tests__/source-upgrade-qualification-native.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T17:48:45.684Z"
+      },
+      {
+        "target": {
+          "file": "scripts/bundle-release-bootstrap.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T17:48:45.684Z"
+      },
+      {
+        "target": {
+          "file": "scripts/prepare-source-release.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T17:48:45.684Z"
+      },
+      {
+        "target": {
+          "file": "src/bin/insrc-release-bootstrap.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T17:48:45.684Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/managed-release-bootstrap.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T17:48:45.684Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/source-release-promotion.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T17:48:45.684Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/managed-release-staging.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T17:48:45.684Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/managed-update-preparation.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T17:48:45.684Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/release-compatibility.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T17:48:45.684Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/source-release-qualification.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T17:48:45.684Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/source-release-compatibility.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T17:48:45.684Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/source-release-target.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T17:48:45.684Z"
+      }
+    ],
+    "commit": "80ace719b"
+  },
+  "citations": []
+}

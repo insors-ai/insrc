@@ -7,6 +7,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { createConnection, createServer, type Server, type Socket } from 'node:net';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -16,6 +17,7 @@ import type { ReviewReportDocgenCall } from '../review-report.js';
 import type { Finding } from '../finding.js';
 import type { ReconciliationResult } from '../reconciliation.js';
 import { _setResolveForCwdForTests } from '../../../daemon/steps/resolve-repo.js';
+import { handleInsrcPresent } from '../../../mcp/server.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..');
 const TSC = resolve(ROOT, 'node_modules/typescript/bin/tsc');
@@ -45,6 +47,32 @@ function typecheckFixture(): void {
 
 const finding = (id: string, category: Finding['category'] = 'correctness', severity = 'HIGH'): Finding => ({ id, category, severity });
 
+/** A daemon stand-in answering `workflow.pending` -- matches src/mcp/__tests__/present-dispatch.test.ts's
+ *  own fakeDaemon convention, so handleInsrcPresent is exercised against its real matching logic. */
+async function fakePendingDaemon(result: unknown): Promise<{ connect: () => Socket; close: () => Promise<void> }> {
+	const path = join(tmpdir(), `insrc-review-report-present-${process.pid}-${Math.random().toString(36).slice(2, 8)}.sock`);
+	try { rmSync(path); } catch { /* ignore */ }
+	const server: Server = createServer((socket) => {
+		let buffer = '';
+		socket.on('data', (chunk: Buffer) => {
+			buffer += chunk.toString();
+			const lines = buffer.split('\n');
+			buffer = lines.pop() ?? '';
+			for (const line of lines) {
+				if (!line.trim()) continue;
+				const req = JSON.parse(line) as { id: number };
+				socket.write(JSON.stringify({ id: req.id, result }) + '\n');
+			}
+		});
+		socket.on('error', () => { /* client vanished */ });
+	});
+	await new Promise<void>((res) => server.listen(path, () => res()));
+	return {
+		connect: () => createConnection(path),
+		close: () => new Promise<void>((res) => { server.close(() => { try { rmSync(path); } catch { /* ignore */ } res(); }); }),
+	};
+}
+
 /** The resolveRepoRoot dep every test not specifically exercising repo resolution itself injects. */
 const resolveRepoRoot = async (): Promise<string> => ROOT;
 
@@ -61,11 +89,12 @@ describe('renderReviewReport and ReviewReportDocgenCall', () => {
 
 		const expectedPath = join(ROOT, '.insrc/tmp', call.reviewId, `review-report-round-${call.round}.md`);
 		try {
-			const path = await renderReviewReport(call, findings, reconciliation, priorFindings);
+			const { path, markdown } = await renderReviewReport(call, findings, reconciliation, priorFindings);
 
 			assert.equal(path, expectedPath, 'the returned path must be exactly the persisted file under .insrc/tmp/<reviewId>/');
 			assert.equal(existsSync(path), true, 'the file must actually exist on disk after the call resolves');
 			const content = readFileSync(path, 'utf8');
+			assert.equal(markdown, content, 'the returned markdown must be exactly what was written to disk');
 			assert.match(content, /# Review report — round 1/, 'the rendered Markdown must carry the round heading');
 			assert.match(content, /f1/, "the rendered Markdown must mention this round's finding");
 		} finally {
@@ -83,8 +112,7 @@ describe('renderReviewReport and ReviewReportDocgenCall', () => {
 		_setReviewReportDepsForTests({ resolveRepoRoot });
 
 		try {
-			const path = await renderReviewReport(call, findings, undefined, undefined);
-			const content = readFileSync(path, 'utf8');
+			const { markdown: content } = await renderReviewReport(call, findings, undefined, undefined);
 
 			assert.match(content, /f1[\s\S]*correctness[\s\S]*HIGH/, 'f1 must be rendered with its own category and severity');
 			assert.match(content, /f2[\s\S]*security[\s\S]*MED/, 'f2 must be rendered with its own category and severity');
@@ -99,8 +127,7 @@ describe('renderReviewReport and ReviewReportDocgenCall', () => {
 		_setReviewReportDepsForTests({ resolveRepoRoot });
 
 		try {
-			const path = await renderReviewReport(call, [finding('f1')], undefined, undefined);
-			const content = readFileSync(path, 'utf8');
+			const { markdown: content } = await renderReviewReport(call, [finding('f1')], undefined, undefined);
 
 			assert.doesNotMatch(content, /## Reconciliation/, 'round 1 must never render a reconciliation section, not even an empty one');
 		} finally {
@@ -130,8 +157,7 @@ describe('renderReviewReport and ReviewReportDocgenCall', () => {
 		_setReviewReportDepsForTests({ resolveRepoRoot });
 
 		try {
-			const path = await renderReviewReport(call, [finding('f1')], reconciliation, priorFindings);
-			const content = readFileSync(path, 'utf8');
+			const { markdown: content } = await renderReviewReport(call, [finding('f1')], reconciliation, priorFindings);
 
 			assert.match(content, /## Reconciliation/, 'round>1 must render the reconciliation section');
 			assert.match(content, /p1[\s\S]*correctness[\s\S]*HIGH[\s\S]*still-open/, "p1's own category/severity must appear next to its verdict");
@@ -214,8 +240,7 @@ describe('renderReviewReport and ReviewReportDocgenCall', () => {
 		_setReviewReportDepsForTests({ resolveRepoRoot });
 
 		try {
-			const path = await renderReviewReport(call, [], undefined, undefined);
-			const content = readFileSync(path, 'utf8');
+			const { markdown: content } = await renderReviewReport(call, [], undefined, undefined);
 
 			assert.match(content, /No findings were produced this round\./, 'an empty findings array must render an explicit statement, not an empty or malformed section');
 		} finally {
@@ -225,14 +250,34 @@ describe('renderReviewReport and ReviewReportDocgenCall', () => {
 	});
 
 	it('the path renderReviewReport returns points to a file that exists and is readable immediately after the call resolves, so insrc_present can open it with no further round-driver action', async () => {
+		// insrc_present's own matching (handleInsrcPresent, src/mcp/server.ts) is scoped
+		// entirely to the daemon's pending-workflow-artifact list -- confirmed here against
+		// the REAL handler, not assumed. A review-report is never pending approval (ac3
+		// itself: "no response required from the user"), so it can never appear there, and
+		// this is the deliberate, documented design (see review-report.ts's module doc),
+		// not an oversight. What actually satisfies ac3 is the returned `markdown`: the
+		// caller presents that directly in its own response, which this proves is exactly
+		// what was written to the (also still readable) persisted file -- no tool call needed.
 		const call: ReviewReportDocgenCall = { reviewId: `review-readable-${process.pid}-${Date.now()}`, round: 1 };
 		_setReviewReportDepsForTests({ resolveRepoRoot });
 
 		try {
-			const path = await renderReviewReport(call, [finding('f1')], undefined, undefined);
+			const { path, markdown } = await renderReviewReport(call, [finding('f1')], undefined, undefined);
 
 			assert.equal(existsSync(path), true, 'the returned path must exist on disk immediately after the call resolves');
-			assert.doesNotThrow(() => readFileSync(path, 'utf8'), 'the returned path must be readable with no further action');
+			assert.equal(readFileSync(path, 'utf8'), markdown, 'the returned markdown must be exactly the persisted file\'s own content');
+
+			const daemon = await fakePendingDaemon({ artifacts: [] });
+			try {
+				const relativePath = `.insrc/tmp/${call.reviewId}/review-report-round-1.md`;
+				const out = await handleInsrcPresent(
+					{ documents: [relativePath] },
+					{ connect: daemon.connect, resolveRepo: async () => ROOT },
+				);
+				assert.deepEqual(JSON.parse((out.content[0] as { text: string }).text), { presented: [], notPending: [relativePath] });
+			} finally {
+				await daemon.close();
+			}
 		} finally {
 			rmSync(join(ROOT, '.insrc/tmp', call.reviewId), { recursive: true, force: true });
 			_setReviewReportDepsForTests({});

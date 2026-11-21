@@ -7,13 +7,29 @@
  * The review-report docgen call (HLD sc4, owned by this Story). renderReviewReport
  * composes a round's own findings (plus, for round>1, s3's reconciliation verdicts
  * against the prior round) into a persisted Markdown artifact under the review's
- * own .insrc/tmp/<reviewId>/ directory, and returns the written path -- the
- * explicit, agent-invoked call k6 requires, never auto-triggered internally.
+ * own .insrc/tmp/<reviewId>/ directory, and returns both the written path AND the
+ * rendered markdown -- the explicit, agent-invoked call k6 requires, never
+ * auto-triggered internally.
  *
  * Deliberately NOT wired into src/docgen/'s diagram registry: that framework's
  * own contract (DocumentIR -> RenderedDocumentShell) renders a self-contained
  * offline HTML/SVG file, never Markdown, and its own handler never persists to
  * disk -- a mismatch with ac1's literal "persisted MD artifact" requirement.
+ *
+ * ac3 ("presented to the user via insrc_present every round") does NOT mean the
+ * caller hands this call's return value to the insrc_present MCP tool: that
+ * tool's own matching (src/mcp/server.ts's handleInsrcPresent) is scoped
+ * entirely to the daemon's pending-workflow-artifact list (workflow.pending) --
+ * a DEF/HLD/LLD/PLAN/BUILD/ISSUE/EXT record awaiting approval. A review-report
+ * is never pending approval (k3: reconciliation/findings never feed the
+ * approval gate; ac3 itself: "no response required from the user"), so it can
+ * never appear in that list, and a caller that passes this call's path to
+ * insrc_present will always see it reported notPending -- confirmed directly
+ * against the real handler, not assumed. The correct, and only necessary, way
+ * to satisfy ac3 is for the caller to surface the returned `markdown` directly
+ * in its own response (the same convention this codebase's own agents already
+ * use for review packets and self-reviews) -- which needs no tool call at all,
+ * since the caller already has everything it needs to present the report.
  */
 
 import { lstatSync, mkdirSync, writeFileSync } from 'node:fs';
@@ -28,6 +44,15 @@ import type { ReconciliationResult } from './reconciliation.js';
 export interface ReviewReportDocgenCall {
 	readonly reviewId: string;
 	readonly round:    number;
+}
+
+/** renderReviewReport's own result: the persisted file's path, AND the exact
+ *  markdown written to it. `markdown` is what actually satisfies ac3 -- the
+ *  caller presents this content directly in its own response; insrc_present
+ *  never applies to a review-report (see the module doc above). */
+export interface ReviewReportResult {
+	readonly path:     string;
+	readonly markdown: string;
 }
 
 /** Injectable for tests (matching reconciliation.ts's own _setReconciliationDepsForTests
@@ -143,18 +168,19 @@ function renderReconciliation(reconciliation: readonly ReconciliationResult[], p
 
 /**
  * Composes this round's outcome into a persisted Markdown artifact and returns
- * its path. findings is this round's own finalized, self-contained finding set
- * (k4) -- never re-derived here. reconciliation/priorFindings are s3's own
- * reconcileRound output for the (round-1, round) adjacent pair only (k5); when
- * round is 1, both are undefined and no reconciliation section is rendered at
- * all (lc3) -- not an empty one.
+ * both its path and the exact markdown written -- the latter is what the caller
+ * presents directly to satisfy ac3 (see the module doc). findings is this
+ * round's own finalized, self-contained finding set (k4) -- never re-derived
+ * here. reconciliation/priorFindings are s3's own reconcileRound output for the
+ * (round-1, round) adjacent pair only (k5); when round is 1, both are undefined
+ * and no reconciliation section is rendered at all (lc3) -- not an empty one.
  */
 export async function renderReviewReport(
 	call: ReviewReportDocgenCall,
 	findings: readonly Finding[],
 	reconciliation: readonly ReconciliationResult[] | undefined,
 	priorFindings: readonly Finding[] | undefined,
-): Promise<string> {
+): Promise<ReviewReportResult> {
 	requireValidReviewId(call.reviewId);
 	requireValidRound(call.round);
 	const resolveRepoRoot = testDeps.resolveRepoRoot ?? defaultResolveRepoRoot;
@@ -178,5 +204,5 @@ export async function renderReviewReport(
 	const content = `${sections.join('\n')}\n`;
 
 	writeReport(repoRoot, path, content);
-	return path;
+	return { path, markdown: content };
 }

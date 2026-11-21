@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 14,
-        "contentHash": "2a5db3200d8ba4248a934a4ed091796e362d7c4c097f90cbb7e60745b248468c",
-        "at": "2026-11-21T12:27:18.118Z",
+        "number": 22,
+        "contentHash": "2ee57a8091ce259c70bcb090fa32ff2e708b33d393b09e3e2c96e6de5b78bd53",
+        "at": "2026-11-21T13:55:57.530Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,17 +23,17 @@
     "epicHash": "03f4fd3b9102aab8",
     "storyId": "s5",
     "createdAt": "2026-11-21T08:19:58.921Z",
-    "updatedAt": "2026-11-21T12:27:17.868Z",
+    "updatedAt": "2026-11-21T13:55:57.289Z",
     "epicCreatedAt": "2026-11-18T06:14:00.057Z",
     "epicSlug": "review-rounds-reconciliation-recovery",
-    "revision": 14
+    "revision": 22
   },
   "body": {
     "tasks": [
       {
         "taskId": "t1",
-        "commit": "16e0a4060",
-        "ranAt": "2026-11-21T12:25:47.265Z",
+        "commit": "0958afbc3",
+        "ranAt": "2026-11-21T13:51:26.157Z",
         "testsPassed": true,
         "tests": [
           {
@@ -55,7 +55,7 @@
             "file": "src/workflow/review-round/__tests__/checkpoint.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 3571,
+            "durationMs": 4174,
             "titles": [
               {
                 "title": "writeCheckpoint writes a ReviewCheckpoint JSON record to .insrc/tmp/<reviewId>/checkpoint.json containing exactly {reviewId, lastCompletedUnit}, overwriting any prior checkpoint for the same reviewId",
@@ -102,6 +102,10 @@
                 "result": "pass"
               },
               {
+                "title": "writeCheckpoint never creates a new directory through a symlinked ancestor (.insrc/tmp itself, not just the review directory) -- recursive directory creation must not silently follow a swapped ancestor out of the repository",
+                "result": "pass"
+              },
+              {
                 "title": "a symlinked .insrc/tmp/<reviewId>/ directory is never deleted through by finalizeAndCleanup",
                 "result": "pass"
               },
@@ -130,7 +134,15 @@
                 "result": "pass"
               },
               {
+                "title": "readCheckpoint resolves to undefined, rather than rejecting, when the review directory itself is a symlink -- an ancestor-symlink failure is treated the same as an absent checkpoint, allowing a fresh start instead of aborting recovery",
+                "result": "pass"
+              },
+              {
                 "title": "a review directory replaced by a symlink during the narrow window between writeCheckpoint's/finalizeAndCleanup's own checks and their actual use is never written through or deleted through outside the repository (best-effort concurrent regression)",
+                "result": "pass"
+              },
+              {
+                "title": "an ancestor (.insrc/tmp itself) replaced by a symlink during the narrow window around writeCheckpoint's own directory creation never has a new directory created through it outside the repository (best-effort concurrent regression)",
                 "result": "pass"
               },
               {
@@ -144,8 +156,8 @@
       },
       {
         "taskId": "t2",
-        "commit": "16e0a4060",
-        "ranAt": "2026-11-21T12:27:17.868Z",
+        "commit": "a74e141ab",
+        "ranAt": "2026-11-21T13:55:57.289Z",
         "testsPassed": true,
         "tests": [
           {
@@ -323,7 +335,7 @@
             "file": "src/workflow/review-round/__tests__/checkpoint.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 3411,
+            "durationMs": 4090,
             "titles": [
               {
                 "title": "writeCheckpoint writes a ReviewCheckpoint JSON record to .insrc/tmp/<reviewId>/checkpoint.json containing exactly {reviewId, lastCompletedUnit}, overwriting any prior checkpoint for the same reviewId",
@@ -370,6 +382,10 @@
                 "result": "pass"
               },
               {
+                "title": "writeCheckpoint never creates a new directory through a symlinked ancestor (.insrc/tmp itself, not just the review directory) -- recursive directory creation must not silently follow a swapped ancestor out of the repository",
+                "result": "pass"
+              },
+              {
                 "title": "a symlinked .insrc/tmp/<reviewId>/ directory is never deleted through by finalizeAndCleanup",
                 "result": "pass"
               },
@@ -398,7 +414,15 @@
                 "result": "pass"
               },
               {
+                "title": "readCheckpoint resolves to undefined, rather than rejecting, when the review directory itself is a symlink -- an ancestor-symlink failure is treated the same as an absent checkpoint, allowing a fresh start instead of aborting recovery",
+                "result": "pass"
+              },
+              {
                 "title": "a review directory replaced by a symlink during the narrow window between writeCheckpoint's/finalizeAndCleanup's own checks and their actual use is never written through or deleted through outside the repository (best-effort concurrent regression)",
+                "result": "pass"
+              },
+              {
+                "title": "an ancestor (.insrc/tmp itself) replaced by a symlink during the narrow window around writeCheckpoint's own directory creation never has a new directory created through it outside the repository (best-effort concurrent regression)",
                 "result": "pass"
               },
               {

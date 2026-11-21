@@ -111,10 +111,21 @@ describe('renderReviewReport and ReviewReportDocgenCall', () => {
 
 	it("for round greater than 1, the rendered Markdown inlines each reconciliation result's verdict next to the prior finding it refers to (via priorFindings), limited to only the findings this round's own reconciliation classified -- never a running audit of all history", async () => {
 		const call: ReviewReportDocgenCall = { reviewId: `review-round2-${process.pid}-${Date.now()}`, round: 2 };
-		const priorFindings: readonly Finding[] = [finding('p1', 'correctness', 'HIGH'), finding('p2', 'security', 'MED')];
+		// p3 is a real prior finding that this round's reconciliation did NOT classify --
+		// it must never appear in the reconciliation section (lc3: limited to only what
+		// reconciliation actually classified, never a running audit of all prior history).
+		const priorFindings: readonly Finding[] = [
+			finding('p1', 'correctness', 'HIGH'),
+			finding('p2', 'security', 'MED'),
+			finding('p3', 'quality', 'HIGH'),
+		];
 		const reconciliation: readonly ReconciliationResult[] = [
 			{ priorFindingRef: 'p1', verdict: 'still-open' },
 			{ priorFindingRef: 'p2', verdict: 'no-longer-surfaced' },
+			// p4 has no matching priorFindings entry -- s3's own reconciliation contract
+			// guarantees the id itself is correct, so this must still render, with its
+			// verdict alone and the bare ref named, never a thrown error.
+			{ priorFindingRef: 'p4', verdict: 'contradicted' },
 		];
 		_setReviewReportDepsForTests({ resolveRepoRoot });
 
@@ -125,6 +136,8 @@ describe('renderReviewReport and ReviewReportDocgenCall', () => {
 			assert.match(content, /## Reconciliation/, 'round>1 must render the reconciliation section');
 			assert.match(content, /p1[\s\S]*correctness[\s\S]*HIGH[\s\S]*still-open/, "p1's own category/severity must appear next to its verdict");
 			assert.match(content, /p2[\s\S]*security[\s\S]*MED[\s\S]*no-longer-surfaced/, "p2's own category/severity must appear next to its verdict");
+			assert.doesNotMatch(content, /p3/, 'p3 was never classified by this round\'s reconciliation and must not appear -- never a running audit of all history');
+			assert.match(content, /p4[\s\S]*contradicted/, 'an unmatched priorFindingRef must still render, with its verdict alone and the bare ref named');
 		} finally {
 			rmSync(join(ROOT, '.insrc/tmp', call.reviewId), { recursive: true, force: true });
 			_setReviewReportDepsForTests({});

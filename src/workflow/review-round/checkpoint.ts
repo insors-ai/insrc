@@ -407,6 +407,14 @@ export async function writeCheckpoint(
 	const resolveRepoRoot = testDeps.resolveRepoRoot ?? defaultResolveRepoRoot;
 	const repoRoot = await resolveRepoRoot();
 
+	// Upfront, best-effort check reusing review-report.ts's own established
+	// helper, ahead of every write per this Story's LLD -- not load-bearing
+	// for safety on its own (pinDirectoryChainCreating's O_NOFOLLOW chain is
+	// what actually closes the TOCTOU gap below), but gives an early, clear
+	// refusal for the common, non-racing case of an already-symlinked
+	// ancestor.
+	requireNoSymlinkInPath(repoRoot, reviewDir(repoRoot, reviewId));
+
 	// Creates any missing ancestor directory itself through an already-pinned
 	// parent alias, never a mutable path re-resolved fresh -- see
 	// pinDirectoryChainCreating's own doc for the P2 this closes.
@@ -553,6 +561,11 @@ export function _readThroughPinnedLeafForTests(dir: string, filename: string): s
 }
 
 function defaultWriteDurableCopy(repoRoot: string, reviewId: string, finalOutput: unknown): void {
+	// Upfront, best-effort check reusing review-report.ts's own established
+	// helper, ahead of every write per this Story's LLD -- see writeCheckpoint's
+	// own comment on this same pattern for why it is not load-bearing alone.
+	requireNoSymlinkInPath(repoRoot, join(repoRoot, '.insrc/artifacts'));
+
 	// Creates .insrc/artifacts itself through an already-pinned parent alias
 	// if missing, never a mutable path re-resolved fresh -- see
 	// pinDirectoryChainCreating's own doc for the P2 this closes.

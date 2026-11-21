@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 9,
-        "contentHash": "94077980d3c1cf81b40cfd59efca75965dd42cdf1befadf54929838ba2b12a4c",
-        "at": "2026-11-21T15:53:01.020Z",
+        "number": 10,
+        "contentHash": "f9b7b4ad7d0b7b07f02d06594c6696a7c421f5a639b1511eda1c378b00f16594",
+        "at": "2026-11-21T17:57:25.126Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "779e9a08142cb057",
     "storyId": "s1",
     "createdAt": "2026-11-21T15:21:22.783Z",
-    "updatedAt": "2026-11-21T15:53:00.638Z",
+    "updatedAt": "2026-11-21T17:57:24.724Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-18T08:51:40.429Z",
     "epicSlug": "add-securityfinding-capability-family-delegates-framing",
-    "revision": 9
+    "revision": 10
   },
   "body": {
     "tasks": [
@@ -242,8 +242,8 @@
       },
       {
         "taskId": "t4",
-        "commit": "8201efd7d",
-        "ranAt": "2026-11-21T15:44:28.735Z",
+        "commit": "766da7c5a",
+        "ranAt": "2026-11-21T17:57:24.724Z",
         "testsPassed": true,
         "tests": [
           {
@@ -291,7 +291,7 @@
             "file": "src/workflow/review-round/__tests__/receipt-record.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 884,
+            "durationMs": 881,
             "titles": [
               {
                 "title": "VerificationReceipt record shape (pass/fail/evidence linkage by id)",
@@ -299,6 +299,14 @@
               },
               {
                 "title": "RECEIPTS.md write for a security review round",
+                "result": "pass"
+              },
+              {
+                "title": "an unreadable existing record is refused, not silently replaced",
+                "result": "pass"
+              },
+              {
+                "title": "registered codec: first creation, a later update, decoding and history through the real lifecycle service",
                 "result": "pass"
               },
               {

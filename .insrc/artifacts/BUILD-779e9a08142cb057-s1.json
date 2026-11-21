@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 9,
-        "contentHash": "90b125362d86646f1a5507890a8746bfa5c6768bdb87acfa4104e1a35b45bbb6",
-        "at": "2026-11-21T15:53:50.742Z",
+        "number": 10,
+        "contentHash": "42da69eac4e17628ed99a18957491ade8b2778e8e76d0a7ed50b8772821d465d",
+        "at": "2026-11-21T17:58:27.473Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -29,8 +29,8 @@
     "schemaVersion": 1,
     "epicHash": "779e9a08142cb057",
     "storyId": "s1",
-    "revision": 9,
-    "updatedAt": "2026-11-21T15:53:00.638Z",
+    "revision": 10,
+    "updatedAt": "2026-11-21T17:57:24.724Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicSlug": "add-securityfinding-capability-family-delegates-framing"
@@ -67,122 +67,158 @@
           "file": "src/workflow/review-round/__tests__/security-finding.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T15:53:00.638Z"
+        "timestamp": "2026-11-21T17:57:24.724Z"
       },
       {
         "target": {
           "file": "src/workflow/review-round/security-finding.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T15:53:00.638Z"
+        "timestamp": "2026-11-21T17:57:24.724Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASKS-779e9a08142cb057-s1.log.jsonl"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T15:53:00.638Z"
+        "timestamp": "2026-11-21T17:57:24.724Z"
       },
       {
         "target": {
           "file": "src/workflow/review-round/__tests__/security-locator.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T15:53:00.638Z"
+        "timestamp": "2026-11-21T17:57:24.724Z"
       },
       {
         "target": {
           "file": "src/workflow/review-round/security-locator.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T15:53:00.638Z"
+        "timestamp": "2026-11-21T17:57:24.724Z"
       },
       {
         "target": {
           "file": "src/workflow/review-round/__tests__/evidence-provider.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T15:53:00.638Z"
+        "timestamp": "2026-11-21T17:57:24.724Z"
       },
       {
         "target": {
           "file": "src/workflow/review-round/evidence-provider.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T15:53:00.638Z"
+        "timestamp": "2026-11-21T17:57:24.724Z"
       },
       {
         "target": {
           "file": "src/workflow/artifact-ids.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T15:53:00.638Z"
+        "timestamp": "2026-11-21T17:57:24.724Z"
       },
       {
         "target": {
           "file": "src/workflow/gates.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T15:53:00.638Z"
+        "timestamp": "2026-11-21T17:57:24.724Z"
       },
       {
         "target": {
           "file": "src/workflow/path-scheme.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T15:53:00.638Z"
+        "timestamp": "2026-11-21T17:57:24.724Z"
       },
       {
         "target": {
           "file": "src/workflow/review-round/__tests__/receipt-record.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T15:53:00.638Z"
+        "timestamp": "2026-11-21T17:57:24.724Z"
       },
       {
         "target": {
           "file": "src/workflow/review-round/receipt-record.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T15:53:00.638Z"
+        "timestamp": "2026-11-21T17:57:24.724Z"
       },
       {
         "target": {
           "file": "src/workflow/storage.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T15:53:00.638Z"
+        "timestamp": "2026-11-21T17:57:24.724Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/PLAN-779e9a08142cb057-s1.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T15:53:00.638Z"
+        "timestamp": "2026-11-21T17:57:24.724Z"
       },
       {
         "target": {
           "file": "docs/standalone/add-securityfinding-capability-family-delegates-framing-E20261118779e9a08/S001/PLAN.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T15:53:00.638Z"
+        "timestamp": "2026-11-21T17:57:24.724Z"
       },
       {
         "target": {
           "file": "src/workflow/review-round/__tests__/security-schema.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T15:53:00.638Z"
+        "timestamp": "2026-11-21T17:57:24.724Z"
       },
       {
         "target": {
           "file": "src/workflow/review-round/security-schema.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-21T15:53:00.638Z"
+        "timestamp": "2026-11-21T17:57:24.724Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/__tests__/codec-create.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T17:57:24.724Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/__tests__/lifecycle-kit.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T17:57:24.724Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/__tests__/lifecycle-members.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T17:57:24.724Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/codecs.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T17:57:24.724Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/lifecycle.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-21T17:57:24.724Z"
       }
     ],
-    "commit": "1d9cfcca4"
+    "commit": "766da7c5a",
+    "summary": "Post-build review found three P2s against t4's RECEIPTS machinery when exercised through a real RoundWriter/LifecycleService rather than the raw writer: no codec registered for RECEIPTS (UnknownArtifactKindError), persistVerificationReceipt collapsing an unreadable prior record into absent (destructive replacement), and RECEIPTS missing from STORY_RECORD_KINDS (never frozen on Story completion). Registered the codec, added a receiptRecordState-based refusal (ReceiptRecordUnreadableError) instead of the collapse, and added RECEIPTS to the completion/reopen membership list, with tests for all three through a real createRepoLifecycle-backed LifecycleService."
   },
   "citations": []
 }

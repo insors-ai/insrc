@@ -6,11 +6,15 @@ import { basename, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import type { Stats } from 'node:fs';
 import { isDeepStrictEqual } from 'node:util';
 import { acquireRunFileGuard, readRunFileGuardPin } from './daemon-run-files.js';
+import type { RunFileGuard } from './daemon-run-files.js';
 import type { ProcessIdentity } from './daemon-process.js';
+import { requireProcessIdentity } from './daemon-process.js';
 import { assertSourceReleaseFloor, readVerifiedSourceRelease } from './managed-source-release.js';
 import type { VerifiedSourceRelease } from './managed-source-release.js';
 import { readReleaseCompatibility } from './source-release-compatibility.js';
 import type { ReleaseCompatibility } from './source-release-compatibility.js';
+import { requireQualifiedReleasePair } from './source-release-compatibility.js';
+import type { QualifiedReleasePair } from './source-release-compatibility.js';
 import type { StagedReleasePin } from '../daemon/managed-release-staging.js';
 
 type LinuxTarget = 'linux-arm64' | 'linux-x64';
@@ -27,6 +31,19 @@ export interface SourceSelection {
 
 export type SourceTransactionPhase = 'reserved' | 'staged' | 'predecessor-exited' | 'candidate-selected'
 	| 'candidate-ready' | 'committed' | 'rollback-required' | 'rolled-back' | 'recovery-required';
+/** Lifecycle evidence is additive: old preparation-only records remain readable, never actionable. */
+export interface SourceExecution {
+	readonly operation: 'update' | 'start' | 'restart' | 'stop';
+	readonly desiredRunning: boolean;
+	readonly compatibility: QualifiedReleasePair;
+	readonly step: 'prepared' | 'stop-original' | 'select-candidate' | 'spawn-candidate' | 'candidate-ready'
+		| 'stop-candidate' | 'restore-selector' | 'spawn-prior' | 'prior-ready';
+	readonly original: ProcessIdentity | null;
+	readonly candidate: ProcessIdentity | null;
+	readonly restored: ProcessIdentity | null;
+	readonly originalClosed: boolean;
+	readonly candidateClosed: boolean;
+}
 export interface SourceTransaction {
 	readonly id: string;
 	readonly phase: SourceTransactionPhase;
@@ -36,6 +53,7 @@ export interface SourceTransaction {
 	readonly prior: StagedReleasePin | null;
 	readonly candidate: SourceSelection | null;
 	readonly wasRunning: boolean;
+	readonly execution?: SourceExecution | undefined;
 }
 
 /** A single atomic document is both the selector and journal: no two-file cutover. */
@@ -133,7 +151,8 @@ export function readSourceInstallationState(value: unknown, root: string, instal
 	}
 	if (value.active !== null) {
 		const active = value.active;
-		shape(active, ['id', 'phase', 'owner', 'baselineGeneration', 'initialSelector', 'prior', 'candidate', 'wasRunning']);
+		shape(active, ['id', 'phase', 'owner', 'baselineGeneration', 'initialSelector', 'prior', 'candidate', 'wasRunning',
+			...(object(active) && Object.hasOwn(active, 'execution') ? ['execution'] : [])]);
 		shape(active.owner, ['pid', 'startedAt', 'commandLine']); integer(active.baselineGeneration);
 		if (typeof active.id !== 'string' || !UUID.test(active.id) || !PHASES.has(active.phase as SourceTransactionPhase)
 			|| !Number.isSafeInteger(active.owner.pid) || (active.owner.pid as number) <= 0
@@ -142,6 +161,35 @@ export function readSourceInstallationState(value: unknown, root: string, instal
 		if (active.initialSelector !== null) selection(active.initialSelector, root);
 		if (active.prior !== null) pin(active.prior);
 		if (active.candidate !== null) selection(active.candidate, root);
+		if (Object.hasOwn(active, 'execution')) {
+			const execution = active.execution;
+			shape(execution, ['operation', 'desiredRunning', 'compatibility', 'step', 'original', 'candidate', 'restored', 'originalClosed', 'candidateClosed']);
+			shape(execution.compatibility, ['prior', 'candidate']);
+			const priorProfile = readReleaseCompatibility(execution.compatibility.prior), candidateProfile = readReleaseCompatibility(execution.compatibility.candidate);
+			const pair = execution.operation === 'update'
+				? requireQualifiedReleasePair(priorProfile, candidateProfile, [execution.compatibility as unknown as QualifiedReleasePair])
+				: { prior: priorProfile, candidate: candidateProfile };
+			if (execution.operation !== 'update' && !isDeepStrictEqual(priorProfile, candidateProfile)) fail('ordinary lifecycle changed writable formats');
+			if (active.prior === null || active.candidate === null
+				|| pair.prior.releaseId !== (active.prior as StagedReleasePin).commit
+				|| !isDeepStrictEqual(pair.candidate, (active.candidate as SourceSelection).compatibility)) fail('execution release pair differs from pins');
+			if (!['prepared', 'stop-original', 'select-candidate', 'spawn-candidate', 'candidate-ready', 'stop-candidate',
+				'restore-selector', 'spawn-prior', 'prior-ready'].includes(execution.step as string)
+				|| typeof execution.originalClosed !== 'boolean' || typeof execution.candidateClosed !== 'boolean') fail('invalid execution evidence');
+			if (!['update', 'start', 'restart', 'stop'].includes(execution.operation as string)
+				|| typeof execution.desiredRunning !== 'boolean') fail('invalid lifecycle intent');
+			if (execution.desiredRunning !== (execution.operation === 'update' ? active.wasRunning : execution.operation !== 'stop')
+				|| (execution.original !== null) !== active.wasRunning) fail('lifecycle intent differs from captured running state');
+			if (execution.operation !== 'update' && (active.initialSelector === null
+				|| !isDeepStrictEqual(active.initialSelector, active.candidate)
+				|| !isDeepStrictEqual((active.initialSelector as SourceSelection).pin, active.prior))) fail('ordinary lifecycle changed its source release');
+			for (const actor of [execution.original, execution.candidate, execution.restored]) {
+				if (actor === null) continue;
+				shape(actor, ['pid', 'startedAt', 'commandLine']);
+				if (!Number.isSafeInteger(actor.pid) || (actor.pid as number) <= 0 || typeof actor.startedAt !== 'string'
+					|| !actor.startedAt.startsWith('linux:') || typeof actor.commandLine !== 'string' || !actor.commandLine) fail('invalid Linux actor identity');
+			}
+		}
 		if (['staged', 'predecessor-exited', 'candidate-selected', 'candidate-ready', 'committed'].includes(active.phase as string)
 			&& (active.prior === null || active.candidate === null)) fail('qualified phase has no release pair');
 	}
@@ -173,7 +221,8 @@ function owned(stat: Stats, uid: number, directory: boolean): void {
 export class SourceInstallationStore {
 	constructor(readonly root: string, readonly installationRoot: string) { path(root); path(installationRoot); }
 
-	private withDirectory<T>(create: boolean, run: (directory: string, assertPinned: () => void, sync: () => void) => T): T | undefined {
+	private withDirectory<T>(create: boolean, run: (directory: string, assertPinned: () => void, sync: () => void, rootDirectory: string) => T,
+		retained?: { close?: () => void } | undefined): T | undefined {
 		const uid = process.getuid?.();
 		if (process.platform !== 'linux' || uid === undefined) fail('pinned source persistence requires a Linux user');
 		if (realpathSync(this.root) !== this.root || realpathSync(this.installationRoot) !== this.installationRoot
@@ -196,8 +245,30 @@ export class SourceInstallationStore {
 				if (latestRoot.uid !== uid || (latestRoot.mode & 0o022) !== 0) fail('state root permissions changed');
 			};
 			const sync = () => { fsyncSync(directoryFd!); fsyncSync(rootFd); assertPinned(); };
-			assertPinned(); const result = run(`/proc/self/fd/${directoryFd}`, assertPinned, sync); assertPinned(); return result;
-		} finally { if (directoryFd !== undefined) closeSync(directoryFd); closeSync(rootFd); }
+			assertPinned(); const result = run(`/proc/self/fd/${directoryFd}`, assertPinned, sync, `/proc/self/fd/${rootFd}`); assertPinned();
+			if (retained) retained.close = () => { closeSync(directoryFd!); closeSync(rootFd); };
+			return result;
+		} finally { if (!retained?.close) { if (directoryFd !== undefined) closeSync(directoryFd); closeSync(rootFd); } }
+	}
+
+	/** Keep directory descriptors pinned for the complete asynchronous lifecycle lease. */
+	acquireLifecycleGuard(kind: 'mutation' | 'run-files', owner: ProcessIdentity = requireProcessIdentity(process.pid)): RunFileGuard {
+		const retained: { close?: () => void } = {};
+		return this.withDirectory(true, (directory, assertPinned, sync, rootDirectory) => {
+			const physical = kind === 'mutation' ? join(directory, 'mutation.guard') : join(rootDirectory, 'daemon.run-files.guard');
+			const logical = kind === 'mutation' ? join(this.root, 'source-lifecycle/mutation.guard') : join(this.root, 'daemon.run-files.guard');
+			const guard = acquireRunFileGuard(physical, owner);
+			const assertOwned = () => { assertPinned(); guard.assertOwned(); assertPinned(); };
+			assertOwned();
+			for (const path of [join(physical, 'owner.json'), physical]) {
+				const fd = openSync(path, constants.O_RDONLY | constants.O_NOFOLLOW);
+				try { fsyncSync(fd); } finally { closeSync(fd); }
+			}
+			sync();
+			return { ...guard, path: logical, assertOwned, release() {
+				assertOwned(); guard.release(); sync(); retained.close!(); delete retained.close;
+			} };
+		}, retained)!;
 	}
 
 	private empty(): SourceInstallationState {

@@ -2,7 +2,7 @@
 
 Reviewed 2026-11-21 by the implementation author (controller). Automated design/code review is retired and unavailable (CLAUDE.md); this is the substitute self-check evidence, with the explicit limitation that author and reviewer are the same party.
 
-**Result: both Tasks (t1, t2) pass the daemon's build-validation gate, and all eight externally-reported P2 defects (across three review rounds), plus five further gaps the gate itself caught on resubmission, have since been fixed and re-validated.** This report does not constitute an independent daemon review.
+**Result: both Tasks (t1, t2) pass the daemon's build-validation gate, and all nine externally-reported P2 defects (across four review rounds), plus six further gaps the gate itself caught on resubmission, have since been fixed and re-validated.** This report does not constitute an independent daemon review.
 
 ## Scope
 
@@ -74,24 +74,36 @@ Resubmitting t1 to the build gate after these two fixes caught three further gap
 
 All of 1-6 were verified the same way as the prior rounds: reverting each fix individually and confirming its own regression test (and no unrelated others) then fails. Item 7 is a test-only correction, verified by rerunning the full suite clean afterward.
 
+### Externally reported, after pinning `a754b8ae8`: one further P2, plus a gate-caught follow-up
+
+A fourth review round, reviewing the fully gate-clean state above, found one more defect:
+
+1. **Cleanup reports success when permissions prevent it (`checkpoint.ts:285,636` at the time of the report).** `anySegmentAbsent`'s lstat loop caught every error, not just `ENOENT`, and treated all of them as absence -- so a permission failure on an ancestor (reproduced directly: write a checkpoint, `chmod 000` on `.insrc/tmp`, call `finalizeAndCleanup`) surfaced as `EACCES`, which `pinDirectoryChain`'s pre-check silently reinterpreted as "already cleaned up", resolving successfully while the durable copy existed but the scratch checkpoint was never touched -- violating the completion contract with no way for a caller to detect the failed cleanup. Fixed by narrowing `anySegmentAbsent`'s catch to `ENOENT` only, consistent with `pinDirectoryChain`'s own existing `ENOENT`-only handling further down; every other failure (`EACCES`, `EIO`, ...) now propagates.
+
+Resubmitting t1 to the build gate after this fix caught one further gap, not previously reported:
+
+2. **`readCheckpoint`'s own pre-check call to `anySegmentAbsent` was unguarded.** Narrowing `anySegmentAbsent`'s catch (item 1's fix) meant it could now throw a non-`ENOENT` failure (an ancestor replaced by a plain file, `ENOTDIR`; a looping symlink, `ELOOP`) from `readCheckpoint`'s own leaf-inclusive pre-check -- which was never wrapped in a try/catch, so these escaped `readCheckpoint` uncaught, before ever reaching the existing catch around `pinDirectoryChain` further down, breaking the same "never throw on a path-integrity issue" contract that later catch already protects. Fixed by wrapping the pre-check in the identical catch-all: `anySegmentAbsent` only ever calls `lstatSync`, never `pinDirectory`, so it cannot throw `UnsupportedPlatformError` -- every failure reaching this catch is a path-integrity issue, treated as absent.
+
+Both were verified by reverting each fix individually and confirming its own regression test then fails exactly as reported (a silent success instead of a rejection; an uncaught `ENOTDIR` instead of `undefined`).
+
 ## Source review
 
 | Area inspected | Invariant and assessment |
 | --- | --- |
 | `checkpoint.ts` | `ReviewCheckpoint{reviewId, lastCompletedUnit}` is exactly sc5's interfaceSketch. All three functions validate `reviewId` first (before any filesystem/IPC access, proven by a dedicated test), then resolve the repo via the canonical chain. `writeCheckpoint` publishes through `publishGuarded` (temp-file + atomic rename), never a direct `writeFileSync`. `readCheckpoint` treats a missing file, invalid JSON, and a malformed shape identically (`undefined`), never throwing. `finalizeAndCleanup` writes the durable copy before the recursive delete, propagates a copy failure without deleting, and is idempotent (a second call after cleanup re-runs the copy and finds nothing left to delete). Every write and the delete are preceded by the lstat-based symlink walk. |
 | `__type-tests__/checkpoint.typecheck.ts` | Exact-keys, exact-parameter-tuple, and exact-return-type proofs for `ReviewCheckpoint` and all three functions, plus per-field required/readonly/no-extra-field and union-narrowing `@ts-expect-error` cases -- the same pattern `review-report.typecheck.ts` established. |
-| `__tests__/checkpoint.test.ts` | All 14 LLD-named subjects exist as individual `it()` cases with titles matching the LLD verbatim, plus 8 regression tests added for the externally-reported P2s and gate-caught gaps across three review rounds (22 total); `ac1`-`ac4`'s `provingTests` pass. |
+| `__tests__/checkpoint.test.ts` | All 14 LLD-named subjects exist as individual `it()` cases with titles matching the LLD verbatim, plus 10 regression tests added for the externally-reported P2s and gate-caught gaps across four review rounds (24 total); `ac1`-`ac4`'s `provingTests` pass. |
 
 ## Verification
 
 - `npx tsc --noEmit`: clean, 0 errors.
-- `npx tsx --test src/workflow/review-round/__tests__/checkpoint.test.ts`: **22 passed, 0 failed** (14 LLD-named + 8 externally-reported-P2/gate-caught regression tests).
-- `npx tsx --test 'src/workflow/review-round/**/*.test.ts'` (broader sweep): **76 passed, 0 failed.**
+- `npx tsx --test src/workflow/review-round/__tests__/checkpoint.test.ts`: **24 passed, 0 failed** (14 LLD-named + 10 externally-reported-P2/gate-caught regression tests).
+- `npx tsx --test 'src/workflow/review-round/**/*.test.ts'` (broader sweep): **78 passed, 0 failed.**
 - `insrc_build_step` (phase=validate): t1 and t2 both passed cleanly on final resubmission after all fixes — final verdict `passed: true` for both Tasks, with `typecheckClean: true` and `testsPassed: true`.
 
 ## Limits and continuation
 
-This is a manual self-review substituting for the retired automated design/code review; author and reviewer are the same party. No independent party inspected this diff ahead of time, though eight P2 defects were caught by an external reviewer across three review rounds after this packet first pinned `6c654af9e` -- all eight fixed within this Story, all recorded here, not omitted. Resubmitting to the build gate after the third round's fix also caught five further genuine gaps the review itself had not flagged (see the third round's own section above), likewise fixed and recorded. The build-validation gate's own rejections, plus these external catches, are the closest available substitute for adversarial review in this session.
+This is a manual self-review substituting for the retired automated design/code review; author and reviewer are the same party. No independent party inspected this diff ahead of time, though nine P2 defects were caught by an external reviewer across four review rounds after this packet first pinned `6c654af9e` -- all nine fixed within this Story, all recorded here, not omitted. Resubmitting to the build gate after the third and fourth rounds' fixes also caught six further genuine gaps the review itself had not flagged (see those rounds' own sections above), likewise fixed and recorded. The build-validation gate's own rejections, plus these external catches, are the closest available substitute for adversarial review in this session.
 
 The platform-capability branches (`UnsupportedPlatformError`, and `readCheckpoint`'s swallowing of it) cannot be exercised directly in this Linux-only session, since `FD_ALIAS_ROOT` is resolved once from `process.platform` at module load with no test seam to override it; this is a documented, honest limitation rather than an unverified claim of coverage.
 

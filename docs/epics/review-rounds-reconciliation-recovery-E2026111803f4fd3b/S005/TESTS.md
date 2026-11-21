@@ -8,7 +8,7 @@ What the build validation gate ran for each Task of this Story, and what each te
 
 ## t1
 
-Run at 2026-11-21T09:16:22.608Z on commit `0dc1abe97`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-21T12:25:47.265Z on commit `16e0a4060`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: writeCheckpoint writes a ReviewCheckpoint JSON record to .insrc/tmp/<reviewId>/checkpoint.json containing exactly {reviewId, lastCompletedUnit}, overwriting any prior checkpoint for the same reviewId**
 
@@ -20,11 +20,11 @@ Run at 2026-11-21T09:16:22.608Z on commit `0dc1abe97`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/workflow/review-round/__tests__/checkpoint.test.ts` | 0 | 18 | 3.3 s |  |
+| `src/workflow/review-round/__tests__/checkpoint.test.ts` | 0 | 20 | 3.6 s |  |
 
 ## t2
 
-Run at 2026-11-21T09:15:02.556Z on commit `0dc1abe97`. Tests check: **passed**. 13 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-21T12:27:17.868Z on commit `16e0a4060`. Tests check: **passed**. 13 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: readCheckpoint resolves to undefined when no checkpoint file exists yet for a reviewId, rather than throwing**
 
@@ -108,4 +108,4 @@ Run at 2026-11-21T09:15:02.556Z on commit `0dc1abe97`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/workflow/review-round/__tests__/checkpoint.test.ts` | 0 | 18 | 3.4 s |  |
+| `src/workflow/review-round/__tests__/checkpoint.test.ts` | 0 | 20 | 3.4 s |  |

@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 12,
-        "contentHash": "33cae8805d7f82b05ac62e32eeb2a7e24b4205ad5aa6fe2eea10eb50564b0fb4",
-        "at": "2026-11-21T09:16:22.856Z",
+        "number": 14,
+        "contentHash": "2a5db3200d8ba4248a934a4ed091796e362d7c4c097f90cbb7e60745b248468c",
+        "at": "2026-11-21T12:27:18.118Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,17 +23,17 @@
     "epicHash": "03f4fd3b9102aab8",
     "storyId": "s5",
     "createdAt": "2026-11-21T08:19:58.921Z",
-    "updatedAt": "2026-11-21T09:16:22.608Z",
+    "updatedAt": "2026-11-21T12:27:17.868Z",
     "epicCreatedAt": "2026-11-18T06:14:00.057Z",
     "epicSlug": "review-rounds-reconciliation-recovery",
-    "revision": 12
+    "revision": 14
   },
   "body": {
     "tasks": [
       {
         "taskId": "t1",
-        "commit": "0dc1abe97",
-        "ranAt": "2026-11-21T09:16:22.608Z",
+        "commit": "16e0a4060",
+        "ranAt": "2026-11-21T12:25:47.265Z",
         "testsPassed": true,
         "tests": [
           {
@@ -55,7 +55,7 @@
             "file": "src/workflow/review-round/__tests__/checkpoint.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 3308,
+            "durationMs": 3571,
             "titles": [
               {
                 "title": "writeCheckpoint writes a ReviewCheckpoint JSON record to .insrc/tmp/<reviewId>/checkpoint.json containing exactly {reviewId, lastCompletedUnit}, overwriting any prior checkpoint for the same reviewId",
@@ -122,6 +122,14 @@
                 "result": "pass"
               },
               {
+                "title": "readCheckpoint never returns a substituted record even when the original checkpoint already existed and the substitution carries the same identity as both the requested reviewId and the checkpoint it replaced",
+                "result": "pass"
+              },
+              {
+                "title": "readThroughPinnedLeaf refuses a symlink already occupying the destination, proven directly -- readCheckpoint's own pinDirectoryChain call would otherwise refuse before ever reaching this, the exact state a symlink substituted after that last check would leave behind",
+                "result": "pass"
+              },
+              {
                 "title": "a review directory replaced by a symlink during the narrow window between writeCheckpoint's/finalizeAndCleanup's own checks and their actual use is never written through or deleted through outside the repository (best-effort concurrent regression)",
                 "result": "pass"
               },
@@ -136,8 +144,8 @@
       },
       {
         "taskId": "t2",
-        "commit": "0dc1abe97",
-        "ranAt": "2026-11-21T09:15:02.556Z",
+        "commit": "16e0a4060",
+        "ranAt": "2026-11-21T12:27:17.868Z",
         "testsPassed": true,
         "tests": [
           {
@@ -315,7 +323,7 @@
             "file": "src/workflow/review-round/__tests__/checkpoint.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 3359,
+            "durationMs": 3411,
             "titles": [
               {
                 "title": "writeCheckpoint writes a ReviewCheckpoint JSON record to .insrc/tmp/<reviewId>/checkpoint.json containing exactly {reviewId, lastCompletedUnit}, overwriting any prior checkpoint for the same reviewId",
@@ -379,6 +387,14 @@
               },
               {
                 "title": "readCheckpoint never follows a symlinked checkpoint.json into another review's own record, even when the symlinked record is well-formed and would otherwise pass every other check",
+                "result": "pass"
+              },
+              {
+                "title": "readCheckpoint never returns a substituted record even when the original checkpoint already existed and the substitution carries the same identity as both the requested reviewId and the checkpoint it replaced",
+                "result": "pass"
+              },
+              {
+                "title": "readThroughPinnedLeaf refuses a symlink already occupying the destination, proven directly -- readCheckpoint's own pinDirectoryChain call would otherwise refuse before ever reaching this, the exact state a symlink substituted after that last check would leave behind",
                 "result": "pass"
               },
               {

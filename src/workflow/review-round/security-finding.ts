@@ -14,23 +14,22 @@
  * reconciliation.ts's and review-report.ts's existing Finding-typed logic
  * accepts it unchanged -- ordinary structural polymorphism, no unwrap step.
  *
- * SecurityEvidence's locator field is typed as the base Locator (not
- * SecurityLocator, built by a later Task in this same Story): a SecurityLocator
- * is a structural superset of Locator, so it is already assignable here once
- * it exists -- no change to this file will be needed when it lands.
+ * SecurityEvidence's locator field is typed as SecurityLocator (security-
+ * locator.ts), the code-location citation an EvidenceProvider's output
+ * attaches to a SecurityFinding.
  */
 
 import type { Finding } from './finding.js';
-import type { Locator } from '../artifact-core/types.js';
+import type { SecurityLocator } from './security-locator.js';
 
 export type SecurityEnforcementMode = 'advisory' | 'warning' | 'blocking';
 export type SecurityConfidence = 'high' | 'medium' | 'low';
 
-/** One evidence item produced by an EvidenceProvider (a later Task in this
- *  Story) and attached to a SecurityFinding. */
+/** One evidence item produced by an EvidenceProvider and attached to a
+ *  SecurityFinding. */
 export interface SecurityEvidence {
 	readonly providerCategory: string;
-	readonly locator?:         Locator | undefined;
+	readonly locator?:         SecurityLocator | undefined;
 }
 
 /**

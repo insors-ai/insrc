@@ -37,7 +37,7 @@
 # Exit codes:
 #   0 success
 #   1 usage error / user abort
-#   2 prerequisites missing (node / git / node version too old)
+#   2 prerequisites or verified local runtime unavailable
 #   3 install target not usable (exists but not a git checkout, or unwritable)
 #   4 git / npm / build step failed
 
@@ -50,7 +50,7 @@ set -euo pipefail
 DEFAULT_REPO_URL='https://github.com/insors-ai/insrc.git'
 DEFAULT_BRANCH='main'
 DEFAULT_TARGET="$HOME/.insrc/daemon"
-NODE_MIN_MAJOR=20
+
 
 INSTALL_ROOT="$DEFAULT_TARGET"
 REPO_URL="$DEFAULT_REPO_URL"
@@ -66,7 +66,7 @@ INSRC_RELEASE_BOOTSTRAP_B64=''
 write_release_verifier() {
 	(
 		unset NODE_OPTIONS NODE_PATH
-		node --input-type=commonjs -e 'const fs=require("node:fs"); fs.writeFileSync(process.argv[1], Buffer.from(process.argv[2],"base64"), {flag:"wx",mode:0o600});' "$1" "$INSRC_RELEASE_BOOTSTRAP_B64"
+		"$NODE_BIN" --input-type=commonjs -e 'const fs=require("node:fs"); fs.writeFileSync(process.argv[1], Buffer.from(process.argv[2],"base64"), {flag:"wx",mode:0o600});' "$1" "$INSRC_RELEASE_BOOTSTRAP_B64"
 	)
 }
 EMBEDDER_CHOICE="auto"     # auto | ollama | onnx
@@ -159,15 +159,11 @@ printf '\n'
 
 log "checking prerequisites..."
 command -v git >/dev/null 2>&1 || die "git not found on PATH" 2
-if ! command -v node >/dev/null 2>&1; then
-	die "node not found on PATH -- install Node.js >= $NODE_MIN_MAJOR first (https://nodejs.org/)" 2
-fi
-NODE_MAJOR=$(node -p 'process.versions.node.split(".")[0]' 2>/dev/null || echo 0)
-if [ "$NODE_MAJOR" -lt "$NODE_MIN_MAJOR" ]; then
-	die "node $NODE_MAJOR is too old -- need Node.js >= $NODE_MIN_MAJOR" 2
-fi
-ok "node $(node -v) + git $(git --version | awk '{print $3}')"
-command -v npm >/dev/null 2>&1 || die "npm not found on PATH (comes with Node.js)" 2
+RUNTIME_TOOLS="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+[ -f "$RUNTIME_TOOLS/node-runtime-env.sh" ] || die "runtime bootstrap assets missing; use the matching packaged installer" 2
+. "$RUNTIME_TOOLS/node-runtime-env.sh"
+insrc_source_toolchain "$RUNTIME_TOOLS" "$HOME/.insrc" || die "verified local Node toolchain is unavailable" 2
+ok "local Node $("$NODE_BIN" -v) + git $(git --version | awk '{print $3}')"
 
 # ---------------------------------------------------------------------------
 # Step 2: clone or update the checkout
@@ -181,7 +177,7 @@ fi
 if [ "$(uname -s)" = Darwin ] && [ -f "$INSTALL_ROOT/out/bin/insrc-daemon-control.js" ] && [ -f "$HOME/.insrc/managed-lifecycle/journal.json" ]; then
 	RESUME_ARGS=(resume-fresh)
 	if [ "$FRESH_MAC_INSTALL" -eq 1 ]; then RESUME_ARGS+=("$INSTALL_ROOT"); fi
-	if node "$INSTALL_ROOT/out/bin/insrc-daemon-control.js" "${RESUME_ARGS[@]}"; then
+	if "$NODE_BIN" "$INSTALL_ROOT/out/bin/insrc-daemon-control.js" "${RESUME_ARGS[@]}"; then
 		if [ "$FRESH_MAC_INSTALL" -eq 1 ]; then rm -f "$FRESH_MARKER"; fi
 		ok "recovered managed daemon installation"
 		exit 0
@@ -198,7 +194,7 @@ if [ "$(uname -s)" = Darwin ] && [ "$FRESH_MAC_INSTALL" -eq 0 ] && [ -e "$INSTAL
 		"$INSTALL_ROOT/scripts/daemon-ctl.sh" recover || die "interrupted macOS upgrade could not be recovered" 4
 	fi
 	if [ -f "$HOME/.insrc/managed-lifecycle/installation.json" ] && [ -x "$INSTALL_ROOT/scripts/daemon-ctl.sh" ]; then
-		if node -e 'const fs=require("fs"); process.exit(JSON.parse(fs.readFileSync(process.argv[1],"utf8")).enabled === true ? 0 : 1)' "$HOME/.insrc/managed-lifecycle/installation.json"; then
+		if "$NODE_BIN" -e 'const fs=require("fs"); process.exit(JSON.parse(fs.readFileSync(process.argv[1],"utf8")).enabled === true ? 0 : 1)' "$HOME/.insrc/managed-lifecycle/installation.json"; then
 			UPDATE_ARGS=(update)
 			if [ "$EXPLICIT_REPO" -eq 1 ]; then UPDATE_ARGS+=(--repo-url "$REPO_URL"); fi
 			if [ "$EXPLICIT_BRANCH" -eq 1 ]; then UPDATE_ARGS+=(--branch "$BRANCH"); fi
@@ -210,12 +206,12 @@ if [ "$(uname -s)" = Darwin ] && [ "$FRESH_MAC_INSTALL" -eq 0 ] && [ -e "$INSTAL
 	confirm "stage a verified macOS daemon upgrade" || die "user declined" 1
 	if [ "$EXPLICIT_REPO" -eq 0 ]; then
 		REPO_URL=$(git -C "$INSTALL_ROOT" remote get-url origin)
-		CONFIG_REPO=$(node -e 'try {const c=JSON.parse(require("fs").readFileSync(process.argv[1],"utf8")); console.log(c.daemonUpdate?.repoUrl ?? "");}catch(e){if(e.code!=="ENOENT")throw e;}' "$HOME/.insrc/config.json")
+		CONFIG_REPO=$("$NODE_BIN" -e 'try {const c=JSON.parse(require("fs").readFileSync(process.argv[1],"utf8")); console.log(c.daemonUpdate?.repoUrl ?? "");}catch(e){if(e.code!=="ENOENT")throw e;}' "$HOME/.insrc/config.json")
 		if [ -n "$CONFIG_REPO" ]; then REPO_URL="$CONFIG_REPO"; fi
 	fi
 	if [ "$EXPLICIT_BRANCH" -eq 0 ]; then
 		BRANCH=$(git -C "$INSTALL_ROOT" symbolic-ref --short HEAD)
-		CONFIG_BRANCH=$(node -e 'try {const c=JSON.parse(require("fs").readFileSync(process.argv[1],"utf8")); console.log(c.daemonUpdate?.branch ?? "");}catch(e){if(e.code!=="ENOENT")throw e;}' "$HOME/.insrc/config.json")
+		CONFIG_BRANCH=$("$NODE_BIN" -e 'try {const c=JSON.parse(require("fs").readFileSync(process.argv[1],"utf8")); console.log(c.daemonUpdate?.branch ?? "");}catch(e){if(e.code!=="ENOENT")throw e;}' "$HOME/.insrc/config.json")
 		if [ -n "$CONFIG_BRANCH" ]; then BRANCH="$CONFIG_BRANCH"; fi
 	fi
 	case "$REPO_URL" in https://*|http://*|ssh://*|git://*|file://*|/*|*@*:*) ;; *) die "unsupported daemon origin" 3 ;; esac
@@ -227,15 +223,15 @@ if [ "$(uname -s)" = Darwin ] && [ "$FRESH_MAC_INSTALL" -eq 0 ] && [ -e "$INSTAL
 	write_release_verifier "$BRIDGE/verifier.mjs"
 	(
 		unset NODE_OPTIONS NODE_PATH
-		node "$BRIDGE/verifier.mjs" authorize "$BRIDGE" "$HOME/.insrc" "$REPO_URL" "$BRANCH"
+		"$NODE_BIN" "$BRIDGE/verifier.mjs" authorize "$BRIDGE" "$HOME/.insrc" "$REPO_URL" "$BRANCH"
 	) || die "macOS upgrade bridge authorization failed" 4
-	( cd "$BRIDGE/checkout" && CXXFLAGS="${CXXFLAGS:+$CXXFLAGS }-std=c++17" npm ci --no-fund --no-audit && npm run --silent build )
+	( cd "$BRIDGE/checkout" && CXXFLAGS="${CXXFLAGS:+$CXXFLAGS }-std=c++17" "$NODE_BIN" "$NPM_CLI" ci --no-fund --no-audit && "$NODE_BIN" "$NPM_CLI" run --silent build )
 	[ -f "$BRIDGE/checkout/out/bin/insrc-daemon-control.js" ] || die "selected branch has no macOS upgrade bridge" 4
 	INSTALL_ROOT=$(cd "$INSTALL_ROOT" && pwd -P)
 	cd /
 	# The controller owns cleanup after exec, so no old checkout shell remains during the fence census.
 	unset NODE_OPTIONS NODE_PATH
-	exec node "$BRIDGE/checkout/out/bin/insrc-daemon-control.js" prepare-legacy-upgrade "$INSTALL_ROOT" "$REPO_URL" "$BRANCH" "$BRIDGE"
+	exec "$NODE_BIN" "$BRIDGE/checkout/out/bin/insrc-daemon-control.js" prepare-legacy-upgrade "$INSTALL_ROOT" "$REPO_URL" "$BRANCH" "$BRIDGE"
 fi
 
 if [ -e "$INSTALL_ROOT" ]; then
@@ -293,17 +289,17 @@ LOCK_HASH=$(git -C "$DAEMON_SRC" hash-object package-lock.json 2>/dev/null || ec
 log "installing daemon dependencies (may take a few minutes on first install) ..."
 INSTALL_COMMAND=install
 if [ "$FRESH_MAC_INSTALL" -eq 1 ]; then INSTALL_COMMAND=ci; fi
-( cd "$DAEMON_SRC" && CXXFLAGS="${CXXFLAGS:+$CXXFLAGS }-std=c++17" npm "$INSTALL_COMMAND" --no-fund --no-audit ) 2>&1 | tail -3 | while IFS= read -r line; do
+( cd "$DAEMON_SRC" && CXXFLAGS="${CXXFLAGS:+$CXXFLAGS }-std=c++17" "$NODE_BIN" "$NPM_CLI" "$INSTALL_COMMAND" --no-fund --no-audit ) 2>&1 | tail -3 | while IFS= read -r line; do
 	printf '   %s\n' "$line"
 done
 if [ -n "$LOCK_HASH" ]; then
 	mkdir -p "$(dirname "$INSTALL_MARKER")"
-	printf '%s\n' "$LOCK_HASH" > "$INSTALL_MARKER"
+	printf '%s\n' "v2:$LOCK_HASH:$TOOLCHAIN_ID" > "$INSTALL_MARKER"
 fi
 ok "npm install done"
 
 log "building daemon (tsc) ..."
-( cd "$DAEMON_SRC" && npm run --silent build ) 2>&1 | tail -5 | while IFS= read -r line; do
+( cd "$DAEMON_SRC" && "$NODE_BIN" "$NPM_CLI" run --silent build ) 2>&1 | tail -5 | while IFS= read -r line; do
 	printf '   %s\n' "$line"
 done
 ok "build done"
@@ -382,7 +378,7 @@ MODEL_DEFS="$DAEMON_SRC/src/assets/models/cloud-model-catalog.json"
 [ -f "$MODEL_DEFS" ] || die "model definitions not found at $MODEL_DEFS -- was the build incomplete?" 3
 # model_defs <cli kind> <tiers|summary|toolloop>: read the definitions file.
 model_defs() {
-	node -e '
+	"$NODE_BIN" -e '
 const [file, kind, what] = process.argv.slice(1);
 const defs = JSON.parse(require("fs").readFileSync(file, "utf8"));
 if (what === "toolloop") { process.stdout.write(defs.families.find(f => f.cliKind === undefined).toolLoopModel); process.exit(0); }
@@ -481,9 +477,9 @@ if [ "$FRESH_MAC_INSTALL" -eq 1 ]; then
 		BRIDGE=$(mktemp -d "${TMPDIR:-/tmp}/insrc-verifier-XXXXXXXX")
 		trap 'rm -rf "$BRIDGE"' EXIT
 		write_release_verifier "$BRIDGE/verifier.mjs"
-		node "$HELPER" activate-fresh "$INSTALL_ROOT" "$ACTIVATION_INTENT" "$BRIDGE/verifier.mjs"
+		"$NODE_BIN" "$HELPER" activate-fresh "$INSTALL_ROOT" "$ACTIVATION_INTENT" "$BRIDGE/verifier.mjs"
 	else
-		node "$HELPER" activate-fresh "$INSTALL_ROOT" "$ACTIVATION_INTENT"
+		"$NODE_BIN" "$HELPER" activate-fresh "$INSTALL_ROOT" "$ACTIVATION_INTENT"
 	fi
 	rm -f "$FRESH_MARKER"
 elif [ "$START_AFTER_INSTALL" -eq 1 ] && [ -x "$CTL" ]; then
@@ -549,9 +545,9 @@ cat <<EOF
    serves every repo and every concurrent session — no INSRC_REPO pin, no
    per-repo config:
 
-claude mcp add insrc --scope user -- node $INSTALL_ROOT/out/bin/insrc-mcp.js
+claude mcp add insrc --scope user -- "$NODE_BIN" "$INSTALL_ROOT/out/bin/insrc-mcp.js"
 
-codex mcp add insrc -- node $INSTALL_ROOT/out/bin/insrc-mcp.js
+codex mcp add insrc -- "$NODE_BIN" "$INSTALL_ROOT/out/bin/insrc-mcp.js"
 
 2. Add repos + manage the daemon in the interactive TUI:
 

@@ -9,6 +9,7 @@ import { once } from 'node:events';
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { controlRuntimeFixture } from '../../../shared/__tests__/fixtures/control-runtime.js';
 import { captureStopTarget } from '../../../shared/daemon-process-client.js';
 import type { StopTarget } from '../../../shared/daemon-process-client.js';
 const repo = fileURLToPath(new URL('../../../../', import.meta.url)), script = join(repo, 'scripts/daemon-ctl.sh');
@@ -26,7 +27,7 @@ function fixture() {
  writeFileSync(join(root, 'package.json'), '{}'); symlinkSync(join(repo, 'node_modules'), join(root, 'node_modules'));
  symlinkSync(join(repo, 'out/bin'), join(root, 'out/bin'));
  assert.ok(pid.startsWith('/tmp/insrc-ctl-')); assert.ok(sock.startsWith('/tmp/insrc-ctl-'));
- return { home, root, pid, sock, guard: join(home, '.insrc/daemon.run-files.guard') };
+ return { home, root, pid, sock, script: controlRuntimeFixture(script, home), guard: join(home, '.insrc/daemon.run-files.guard') };
 }
 type Fixture = ReturnType<typeof fixture>;
 function source(f: Fixture, mode: string): string {
@@ -50,7 +51,7 @@ async function standIn(f: Fixture, mode: string, valid = true) {
  const child = spawnFixture(process.execPath, [entry], { stdio: ['ignore', 'pipe', 'inherit'] }); children.push(child); ownChild(child); await childLine(child); return child;
 }
 function ctl(f: Fixture, command: string, extraEnv: Record<string, string> = {}) {
- const r = spawnSync('bash', [script, command, '--skip-sync', '--skip-install', '--skip-build', '--branch', 'main'], { env: { ...process.env, HOME: f.home, INSRC_DAEMON_ROOT: f.root, INSRC_CTL_LOG_DIR: join(f.home, 'logs'), INSRC_CTL_STOP_WAIT_SECS: '0.1', ...extraEnv }, encoding: 'utf8', timeout: 15000 });
+ const r = spawnSync('bash', [f.script, command, '--skip-sync', '--skip-install', '--skip-build', '--branch', 'main'], { env: { ...process.env, HOME: f.home, INSRC_DAEMON_ROOT: f.root, INSRC_CTL_LOG_DIR: join(f.home, 'logs'), INSRC_CTL_STOP_WAIT_SECS: '0.1', ...extraEnv }, encoding: 'utf8', timeout: 15000 });
  return { status: r.status, output: r.stdout + r.stderr };
 }
 async function ended(child: ChildProcess) { if (child.exitCode !== null || child.signalCode !== null) return [child.exitCode, child.signalCode]; return once(child, 'exit'); }
@@ -88,7 +89,7 @@ test('Disposable clean and forced script restart paths preserve commands', { tim
 });
 test('Shell start and restart refuse spawn after lifecycle failures even in conditional contexts', { timeout: 5000 }, () => {
  const f = fixture(), marker = join(f.home, 'spawned');
- const definitions = readFileSync(script, 'utf8').split('# Arg parsing')[0]!;
+ const definitions = readFileSync(f.script, 'utf8').split('# Arg parsing')[0]!;
  const harness = join(f.home, 'conditional.sh');
  writeFileSync(harness, definitions + `\nSKIP_SYNC=1; SKIP_INSTALL=1; SKIP_BUILD=1; BRANCH=main\nrequire_daemon_dir() { return 0; }\nstop_managed_daemon() { return 4; }\nspawn_daemon() { touch ${JSON.stringify(marker)}; }\nif cmd_start; then exit 91; fi\nif cmd_restart; then exit 92; fi\nexit 0\n`);
  const r = spawnSync('bash', [harness], { env: { ...process.env, HOME: f.home, INSRC_DAEMON_ROOT: f.root, INSRC_CTL_LOG_DIR: join(f.home, 'logs') }, encoding: 'utf8' });

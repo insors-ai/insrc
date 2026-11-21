@@ -39,13 +39,7 @@
 #
 # Log path: /tmp/insrc/daemon-ctl-YYYYMMDD-HHMMSS-<pid>.log
 #
-# Node resolution: GUI-launched callers (the VS Code extension host, JetBrains)
-# run with a PATH that may not contain node, so the script never relies on a
-# bare `node` lookup. INSRC_NODE_BIN wins; otherwise a node on PATH; otherwise
-# the well-known install locations (overridable for tests via
-# INSRC_NODE_LOCATIONS, a colon-separated list that replaces them); otherwise
-# the runtime recorded at install time (~/.insrc/daemon-node). Failing all of
-# those is a usage-class error.
+# Installed commands use the verified local toolchain; signed bundles retain tools/node.
 
 set -euo pipefail
 
@@ -54,68 +48,23 @@ set -euo pipefail
 # ---------------------------------------------------------------------------
 
 DAEMON_ROOT="${INSRC_DAEMON_ROOT:-$HOME/.insrc/daemon}"
-NODE_BIN_FILE="$HOME/.insrc/daemon-node"
-
-# Absolutize with shell builtins only (the GUI PATH may lack coreutils):
-# spawn_daemon cds to DAEMON_ROOT before executing, so a relative NODE_BIN
-# would resolve against the wrong directory there.
-abspath() {
-	local p="$1"
-	case "$p" in
-		/*) printf '%s\n' "$p" ;;
-		*)  printf '%s/%s\n' "$PWD" "$p" ;;
-	esac
-}
-
-resolve_node() {
+RUNTIME_TOOLS="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+NPM_CLI=
+TOOLCHAIN_ID=
+unset NODE_OPTIONS NODE_PATH
+if [ ! -d "$DAEMON_ROOT/.git" ] && [ ! -L "$DAEMON_ROOT/tools/node" ] && [ -x "$DAEMON_ROOT/tools/node" ]; then
+	# A signed bundle owns this immutable executable. Existing managed controller
+	# and release verification still own all launch/admission/recovery decisions.
+	NODE_BIN="$(cd "$DAEMON_ROOT/tools" && pwd -P)/node"
 	if [ -n "${INSRC_NODE_BIN:-}" ]; then
-		if [ -x "$INSRC_NODE_BIN" ]; then abspath "$INSRC_NODE_BIN"; return 0; fi
-		return 1
+		canonical=$("$NODE_BIN" -e 'process.stdout.write(require("fs").realpathSync(process.argv[1]))' "$INSRC_NODE_BIN")
+		[ "$canonical" = "$NODE_BIN" ] || { echo 'External INSRC_NODE_BIN cannot replace the managed release runtime.' >&2; exit 2; }
 	fi
-	if [ -x "$DAEMON_ROOT/tools/node" ]; then abspath "$DAEMON_ROOT/tools/node"; return 0; fi
-	if command -v node >/dev/null 2>&1; then abspath "$(command -v node)"; return 0; fi
-	local dir
-	if [ -n "${INSRC_NODE_LOCATIONS+x}" ]; then
-		# Test seam: an explicit (possibly empty) colon-separated list REPLACES
-		# the built-in well-known locations, so tests run hermetically.
-		local IFS=:
-		for dir in $INSRC_NODE_LOCATIONS; do
-			[ -n "$dir" ] || continue
-			if [ -x "$dir/node" ]; then abspath "$dir/node"; return 0; fi
-		done
-	else
-		for dir in /opt/homebrew/bin /usr/local/bin "$HOME/.nvm/versions/node"/*/bin "$DAEMON_ROOT/node_modules/.bin"; do
-			if [ -x "$dir/node" ]; then abspath "$dir/node"; return 0; fi
-		done
-	fi
-	if [ -f "$NODE_BIN_FILE" ]; then
-		# Trim leading/trailing whitespace only (shell builtins, no coreutils):
-		# internal spaces are significant in paths like "/Applications/Node Tools/bin/node".
-		local recorded line
-		recorded=""
-		while IFS= read -r line || [ -n "$line" ]; do
-			recorded="$recorded$line"
-		done < "$NODE_BIN_FILE"
-		# trim leading whitespace
-		while [ -n "$recorded" ]; do
-			case "$recorded" in
-				[[:space:]]*) recorded="${recorded#?}" ;;
-				*) break ;;
-			esac
-		done
-		# trim trailing whitespace
-		while [ -n "$recorded" ]; do
-			case "$recorded" in
-				*[[:space:]]) recorded="${recorded%?}" ;;
-				*) break ;;
-			esac
-		done
-		if [ -n "$recorded" ] && [ -x "$recorded" ]; then abspath "$recorded"; return 0; fi
-	fi
-	return 1
-}
-
-NODE_BIN="$(resolve_node)" || { echo "node not found: set INSRC_NODE_BIN or install Node.js >= 20 (https://nodejs.org/)" >&2; exit 2; }
+else
+	[ -f "$RUNTIME_TOOLS/node-runtime-env.sh" ] || { echo 'Runtime bootstrap assets missing; reinstall the daemon.' >&2; exit 2; }
+	. "$RUNTIME_TOOLS/node-runtime-env.sh"
+	insrc_source_toolchain "$RUNTIME_TOOLS" "$HOME/.insrc" || exit 2
+fi
 DAEMON_SRC="$DAEMON_ROOT"                         # npm install / build run at the repo root
 DAEMON_ENTRY="$DAEMON_ROOT/out/daemon/index.js"   # compiled daemon entry
 PID_FILE="$HOME/.insrc/daemon.pid"
@@ -232,22 +181,22 @@ npm_install_if_needed() {
 	# Empty when there is no lockfile: never matches, and writes no marker.
 	lock_hash=$(git -C "$DAEMON_ROOT" hash-object package-lock.json 2>/dev/null || echo "")
 	[ -f "$INSTALL_MARKER" ] && marker=$(tr -d '[:space:]' < "$INSTALL_MARKER")
-	if [ -n "$lock_hash" ] && [ "$marker" = "$lock_hash" ]; then
+	if [ -n "$lock_hash" ] && [ "$marker" = "v2:$lock_hash:$TOOLCHAIN_ID" ]; then
 		log "npm install: the install marker matches package-lock.json; skipping"
 		return 0
 	fi
 	log "npm install ($DAEMON_SRC)"
 	rm -f "$INSTALL_MARKER"
-	( cd "$DAEMON_SRC" && CXXFLAGS="${CXXFLAGS:+$CXXFLAGS }$NATIVE_CXX_STD" npm install ) >>"$LOG_FILE" 2>&1 || die "npm install failed (see $LOG_FILE)" 4
+	( cd "$DAEMON_SRC" && CXXFLAGS="${CXXFLAGS:+$CXXFLAGS }$NATIVE_CXX_STD" "$NODE_BIN" "$NPM_CLI" install ) >>"$LOG_FILE" 2>&1 || die "npm install failed (see $LOG_FILE)" 4
 	if [ -n "$lock_hash" ]; then
-		{ mkdir -p "$(dirname "$INSTALL_MARKER")" && printf '%s\n' "$lock_hash" > "$INSTALL_MARKER"; } 2>>"$LOG_FILE" \
+		{ mkdir -p "$(dirname "$INSTALL_MARKER")" && printf '%s\n' "v2:$lock_hash:$TOOLCHAIN_ID" > "$INSTALL_MARKER"; } 2>>"$LOG_FILE" \
 			|| die "npm install succeeded but the install marker could not be written: $INSTALL_MARKER" 4
 	fi
 }
 
 npm_build() {
 	log "npm run build ($DAEMON_SRC)"
-	( cd "$DAEMON_SRC" && npm run build ) >>"$LOG_FILE" 2>&1 || die "npm run build failed (see $LOG_FILE)" 4
+	( cd "$DAEMON_SRC" && "$NODE_BIN" "$NPM_CLI" run build ) >>"$LOG_FILE" 2>&1 || die "npm run build failed (see $LOG_FILE)" 4
 }
 
 # Spawn the compiled daemon detached, the same way the TUI's start
@@ -387,9 +336,9 @@ cmd_restart() {
 	local rc
 	if supervised_lifecycle restart; then return 0; else rc=$?; fi
 	[ "$rc" -eq 10 ] || return "$rc"
+	prepare_daemon || return $?
 	log "stopping daemon"
 	stop_managed_daemon || return $?
-	prepare_daemon || return $?
 	start_prepared_daemon
 }
 

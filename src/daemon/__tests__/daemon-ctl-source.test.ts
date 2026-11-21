@@ -16,12 +16,14 @@ import { writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { controlRuntimeFixture } from '../../shared/__tests__/fixtures/control-runtime.js';
+
 import { git, updateFixture } from './helpers-update-fixture.js';
 
 const SCRIPT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', 'scripts', 'daemon-ctl.sh');
 
 function ctl(install: string, root: string, ...flags: string[]): { code: number | null; out: string } {
-	const r = spawnSync('bash', [SCRIPT, 'update', '--skip-install', '--skip-build', ...flags], {
+	const r = spawnSync('bash', [controlRuntimeFixture(SCRIPT, join(root, 'ctl-runtime-fixture')), 'update', '--skip-install', '--skip-build', ...flags], {
 		encoding: 'utf8', env: { ...process.env, INSRC_DAEMON_ROOT: install, INSRC_CTL_LOG_DIR: join(root, 'ctl-logs'), HOME: root },
 	});
 	return { code: r.status, out: `${r.stdout}${r.stderr}` };

@@ -6,7 +6,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -374,6 +374,40 @@ describe('writeCheckpoint/readCheckpoint/finalizeAndCleanup and ReviewCheckpoint
 		} finally {
 			rmSync(tempDir, { recursive: true, force: true });
 			rmSync(durablePath, { force: true });
+			_setCheckpointDepsForTests({});
+		}
+	});
+
+	it('finalizeAndCleanup propagates a permission failure during cleanup rather than reporting success (externally reported P2)', async () => {
+		// A disposable fake repo root -- chmod 000 must never be applied to
+		// anything under ROOT's own shared .insrc/tmp.
+		const fakeRepoRoot = mkdtempSync(join(tmpdir(), 'insrc-checkpoint-fakerepo-perm-'));
+		const reviewId = `review-permfail-${process.pid}-${Date.now()}`;
+		const tmpRoot = join(fakeRepoRoot, '.insrc/tmp');
+		const tempDir = join(tmpRoot, reviewId);
+		const durablePath = join(fakeRepoRoot, '.insrc/artifacts', `REVIEW-${reviewId}.json`);
+		_setCheckpointDepsForTests({ resolveRepoRoot: async () => fakeRepoRoot });
+
+		try {
+			await writeCheckpoint(reviewId, { kind: 'round', ref: 1 });
+			// Denying search permission on .insrc/tmp itself means every lstat
+			// past this point (including anySegmentAbsent's own pre-check) hits
+			// EACCES, not ENOENT -- a real I/O failure, never "nothing here".
+			chmodSync(tmpRoot, 0o000);
+			try {
+				await assert.rejects(
+					() => finalizeAndCleanup(reviewId, { reviewId, final: true }),
+					/EACCES/,
+					'finalizeAndCleanup must propagate a permission failure during cleanup, never silently report success',
+				);
+			} finally {
+				chmodSync(tmpRoot, 0o755);
+			}
+			assert.equal(existsSync(durablePath), true, 'the durable copy must still have been written before the cleanup failure');
+			assert.equal(existsSync(tempDir), true, 'the scratch checkpoint must remain when cleanup genuinely could not complete, never be treated as already removed');
+		} finally {
+			chmodSync(tmpRoot, 0o755);
+			rmSync(fakeRepoRoot, { recursive: true, force: true });
 			_setCheckpointDepsForTests({});
 		}
 	});

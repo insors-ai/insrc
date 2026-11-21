@@ -282,8 +282,15 @@ function anySegmentAbsent(base: string, ...segments: readonly string[]): boolean
 		current = join(current, segment);
 		try {
 			lstatSync(current);
-		} catch {
-			return true;
+		} catch (err) {
+			// Externally reported P2 (round 4): only ENOENT genuinely means
+			// "nothing here" -- any other failure (EACCES from a permission
+			// change, EIO, ...) is a real condition the caller must see, not
+			// silently reinterpreted as absence. finalizeAndCleanup in
+			// particular must not report success when a permission failure
+			// actually prevented it from ever reaching the checkpoint at all.
+			if ((err as NodeJS.ErrnoException).code === 'ENOENT') return true;
+			throw err;
 		}
 	}
 	return false;

@@ -286,6 +286,32 @@ describe('renderReviewReport and ReviewReportDocgenCall', () => {
 		}
 	});
 
+	it('a DANGLING symlinked report file (target does not yet exist) is never written through -- existsSync alone cannot see it', async () => {
+		const reviewId = `review-symlinkdangling-${process.pid}-${Date.now()}`;
+		const reviewDir = join(ROOT, '.insrc/tmp', reviewId);
+		mkdirSync(reviewDir, { recursive: true });
+		const outsideDir = mkdtempSync(join(tmpdir(), 'insrc-review-report-dangling-'));
+		// The symlink's target (victim.md) is deliberately never created -- existsSync
+		// on the symlink itself follows it and reports false for a dangling link,
+		// which would skip an existsSync-guarded lstatSync check entirely.
+		const danglingTarget = join(outsideDir, 'victim.md');
+		symlinkSync(danglingTarget, join(reviewDir, 'review-report-round-1.md'), 'file');
+		_setReviewReportDepsForTests({ resolveRepoRoot });
+
+		try {
+			await assert.rejects(
+				() => renderReviewReport({ reviewId, round: 1 }, [finding('f1')], undefined, undefined),
+				/is a symlink/,
+				'a dangling symlinked report file must be rejected, never written through',
+			);
+			assert.equal(existsSync(danglingTarget), false, 'the dangling symlink\'s target must never be created by the write');
+		} finally {
+			rmSync(reviewDir, { recursive: true, force: true });
+			rmSync(outsideDir, { recursive: true, force: true });
+			_setReviewReportDepsForTests({});
+		}
+	});
+
 	it("review A's own directory aliased (via symlink) to sibling review B's genuine directory is rejected, not written through", async () => {
 		const reviewIdB = `review-siblingdir-b-${process.pid}-${Date.now()}`;
 		const reviewIdA = `review-siblingdir-a-${process.pid}-${Date.now()}`;

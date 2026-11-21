@@ -16,7 +16,7 @@
  * disk -- a mismatch with ac1's literal "persisted MD artifact" requirement.
  */
 
-import { existsSync, lstatSync, mkdirSync, writeFileSync } from 'node:fs';
+import { lstatSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, sep } from 'node:path';
 
 import { resolveRepoPath } from '../../daemon/steps/resolve-repo.js';
@@ -77,23 +77,33 @@ function reportPath(repoRoot: string, reviewId: string, round: number): string {
 }
 
 /**
- * Rejects if ANY existing path segment between repoRoot and the target is itself
- * a symlink -- reviewId already passed requireValidReviewId's LEXICAL check, but
+ * Rejects if ANY path segment between repoRoot and the target is itself a
+ * symlink -- reviewId already passed requireValidReviewId's LEXICAL check, but
  * mkdirSync/writeFileSync still FOLLOW an existing symlink regardless of the
  * lexical path given to them: a symlinked review directory, a symlinked report
  * file, or a symlinked ancestor (even .insrc/tmp itself) could otherwise redirect
  * the write outside the repository, into a sibling review's own genuine directory,
- * or onto an unrelated file, truncating it. lstat (unlike stat) reports the link
- * itself, so a symlinked segment reports isSymbolicLink() true regardless of what
- * it points at -- walking every segment, rather than just the leaf, is what also
- * catches a symlinked ancestor.
+ * or onto an unrelated file, truncating it. lstatSync (unlike existsSync, which
+ * itself follows symlinks and reports a DANGLING one as nonexistent) reports the
+ * link itself without following it, so a symlinked segment is caught via
+ * isSymbolicLink() whether or not its target exists -- the gap a prior existsSync
+ * guard around lstatSync left open: a dangling symlink would still have let
+ * writeFileSync create the file at the link's own resolved location. Walking
+ * every segment, rather than just the leaf, is what also catches a symlinked
+ * ancestor.
  */
 function requireNoSymlinkInPath(repoRoot: string, target: string): void {
 	const rel = relative(repoRoot, target);
 	let current = repoRoot;
 	for (const segment of rel.split(sep)) {
 		current = join(current, segment);
-		if (existsSync(current) && lstatSync(current).isSymbolicLink()) {
+		let stat;
+		try {
+			stat = lstatSync(current);
+		} catch {
+			continue; // does not exist at all -- nothing to follow, safe to create
+		}
+		if (stat.isSymbolicLink()) {
 			throw new Error(`renderReviewReport: ${current} is a symlink -- refusing to write through it`);
 		}
 	}

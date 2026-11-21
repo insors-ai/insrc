@@ -7,6 +7,7 @@ import { access, lstat, mkdir, mkdtemp, open, readFile, readdir, readlink, realp
 import { delimiter, dirname, isAbsolute, join, relative, sep } from 'node:path';
 import { promisify } from 'node:util';
 import { isDeepStrictEqual } from 'node:util';
+import { ownedNodeEnvironment, resolveOwnedToolchain } from '../shared/owned-node-runtime.js';
 import { installationPaths } from '../shared/managed-daemon-installation.js';
 import { checkUpdateSource } from '../shared/update-source.js';
 import type { UpdateSource } from '../shared/update-source.js';
@@ -180,7 +181,9 @@ export async function stageManagedRelease(options: StageOptions): Promise<{
 	const candidateProfile = readReleaseCompatibility(qualification.candidate);
 	if (!COMMIT.test(candidateProfile.releaseId)) throw new Error('candidate qualification must pin a full Git commit');
 	if (await realpath(stateRoot) !== stateRoot) throw new Error('installation root is not canonical');
-	const runtime = await realpath(options.runtime);
+	// The predecessor runtime remains pinned separately; candidate build/runtime
+	// are selected by its verified source bootstrap, never an ambient npm.
+	let runtime: string;
 	const directory = installationPaths(stateRoot).directory;
 	const releases = join(directory, 'releases');
 	if (priorRoot !== undefined && (inside(priorRoot, releases) || priorRoot === releases)) {
@@ -222,11 +225,13 @@ export async function stageManagedRelease(options: StageOptions): Promise<{
 		destination = release;
 		const root = join(release, 'checkout');
 		await rename(checkout, root);
-		const env = commandEnvironment();
+		const toolchain = await resolveOwnedToolchain(root, stateRoot, true);
+		runtime = toolchain.node;
+		const env = ownedNodeEnvironment(toolchain, commandEnvironment());
 		env.PATH = `${dirname(runtime)}${delimiter}${env.PATH ?? '/usr/bin:/bin'}`;
 		env.CXXFLAGS = `${env.CXXFLAGS ?? ''} -std=c++17`.trim();
 		for (const args of [['ci', '--no-fund', '--no-audit'], ['run', 'build']]) {
-			await exec('npm', args, { cwd: root, env, timeout: 600_000, maxBuffer: 4 * 1024 * 1024 });
+			await exec(toolchain.node, [toolchain.npm, ...args], { cwd: root, env, timeout: 600_000, maxBuffer: 4 * 1024 * 1024 });
 		}
 		const declared = await declaration(root);
 		if (declared === undefined) {
@@ -236,8 +241,12 @@ export async function stageManagedRelease(options: StageOptions): Promise<{
 		}
 		if (await cleanCheckoutCommit(root) !== candidateProfile.releaseId) throw new Error('candidate commit changed during build');
 		await access(join(root, 'out/bin/insrc-daemon-supervisor.js'), constants.R_OK);
+		// Native compatibility and binding publication precede activation. The
+		// caller's existing journal/descriptor remains the sole cutover authority.
+		await exec(runtime, [join(root, 'out/bin/insrc-runtime-smoke.js')], { cwd: root, env, timeout: 60_000, maxBuffer: 1024 * 1024 });
 		const candidate = await pin(root, runtime, candidateProfile.releaseId);
 		if (prior !== undefined) await verifyStagedReleasePin(prior);
+		await exec(runtime, [join(root, 'scripts/node-runtime-store.mjs'), 'bind', stateRoot, root, dirname(dirname(runtime))], { cwd: root, env, timeout: 180_000 });
 		destination = undefined;
 		return { candidate, ...(prior !== undefined ? { prior } : {}), ...(compatibility !== undefined ? { compatibility } : {}) };
 	} finally {

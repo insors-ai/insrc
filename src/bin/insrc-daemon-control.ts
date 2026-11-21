@@ -200,7 +200,7 @@ async function main(command: string): Promise<void> {
 	}
 	if (command === 'dispatch') {
 		const [root, name, ...args] = process.argv.slice(3);
-		if (root === undefined || await realpath(PATHS.insrc) !== root || !['daemon-ctl.sh', 'insrc', 'insrc-mcp.js', 'insrc-daemon-install.sh'].includes(name ?? '')) {
+		if (root === undefined || await realpath(PATHS.insrc) !== root || !['daemon-ctl.sh', 'insrc', 'insrc-mcp', 'insrc-mcp.js', 'insrc-daemon-install.sh'].includes(name ?? '')) {
 			throw new Error('invalid managed launcher dispatch');
 		}
 		const state = await new InstallationMutationGate(root).read();

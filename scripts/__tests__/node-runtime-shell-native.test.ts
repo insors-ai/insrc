@@ -12,12 +12,20 @@ import { nativeOptions, ownedSourceFixture } from './helpers/owned-source-fixtur
 test('shell fresh install update and restart preflight use official owned Node despite ambient Node and npm', nativeOptions, () => {
 	const f = ownedSourceFixture();
 	try {
-		const installation = join(f.root, 'installed with spaces');
-		const install = spawnSync('/bin/bash', [join(f.scripts, 'insrc-daemon-install.sh'), '--target', installation, '--repo', f.seed, '--branch', 'main', '--no-start', '--embedder', 'onnx', '-y'], { env: f.env, encoding: 'utf8', timeout: 60000 });
+		const installed = join(f.root, 'installed with spaces');
+		const installation = join(f.root, 'developer checkout');
+		const install = spawnSync('/bin/bash', [join(f.scripts, 'insrc-daemon-install.sh'), '--target', installed, '--repo', f.seed, '--branch', 'main', '--no-start', '--embedder', 'onnx', '-y'], { env: f.env, encoding: 'utf8', timeout: 60000 });
 		assert.equal(install.status, 0, install.stdout + install.stderr);
+        const oldMarker=join(installed,'node_modules/.insrc-install-ok');const markerBefore=readFileSync(oldMarker,'utf8');
+        const refused=spawnSync('/bin/bash',[join(installed,'scripts/daemon-ctl.sh'),'update','--skip-sync'],{env:{...f.env,INSRC_DAEMON_ROOT:installed},encoding:'utf8',timeout:30000});
+        assert.equal(refused.status,4,refused.stdout+refused.stderr);assert.match(refused.stdout,/staged migration/);assert.equal(readFileSync(oldMarker,'utf8'),markerBefore);
+        const clone=spawnSync('/usr/bin/git',['clone','-q','--',f.seed,installation],{encoding:'utf8'});assert.equal(clone.status,0,clone.stderr);
+        const build=spawnSync(join(f.distribution,'bin/node'),[join(f.distribution,'lib/node_modules/npm/bin/npm-cli.js'),'run','build'],{cwd:installation,env:Object.fromEntries(Object.entries({...f.env,PATH:join(f.distribution,'bin')+':/usr/bin:/bin'}).filter(([key])=>key!=='NODE_OPTIONS'&&key!=='NODE_PATH')),encoding:'utf8'});assert.equal(build.status,0,build.stderr);
+
 		const run = (command: string, extraEnv: Record<string, string> = {}, ...flags: string[]) => spawnSync('/bin/bash', [join(installation, 'scripts/daemon-ctl.sh'), command, '--skip-sync', ...flags], {
 			env: { ...f.env, INSRC_DAEMON_ROOT: installation, ...extraEnv }, encoding: 'utf8', timeout: 30000,
 		});
+		mkdirSync(join(installation,'node_modules'),{recursive:true});
 		const marker = join(installation, 'node_modules/.insrc-install-ok');
 		writeFileSync(marker, 'old-lock-only-marker\n');
 		const update = run('update'); assert.equal(update.status, 0, update.stdout + update.stderr);

@@ -2,7 +2,7 @@
 
 import { lstat, mkdir, mkdtemp, open, readFile, realpath, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { isAbsolute, join } from 'node:path';
 import { execFile } from 'node:child_process';
 import { isDeepStrictEqual, promisify } from 'node:util';
 import { accepted, openManagedSupervisorLink } from '../cli/services/managed-daemon-control.js';
@@ -173,13 +173,26 @@ export async function runManagedPreparation(gate: InstallationMutationGate, upda
 		sourceRelease: { ...prepared.sourceRelease, launchProfile: 'managed' } });
 }
 
+/** Prior-only legacy authority; never used to choose a candidate runtime. */
+export async function legacyRuntimeForUpgrade(root: string, pid?: number): Promise<string> {
+ if(pid!==undefined)return (await readDarwinIncarnation(pid)).executable;
+ const record=join(root,'daemon-node');
+ const info=await lstat(record).catch((error:NodeJS.ErrnoException)=>{if(error.code==='ENOENT')throw new Error('Stopped legacy runtime is unknown; start it with its original lifecycle owner before staged migration.');throw error;});
+ if(!info.isFile()||info.uid!==process.getuid?.()||info.nlink!==1||(info.mode&0o022)!==0||info.size<1||info.size>4096)throw new Error('Unsafe legacy runtime record; migration withheld.');
+ const value=(await readFile(record,'utf8')).trim();
+ if(!isAbsolute(value)||/[\r\n\0]/.test(value))throw new Error('Invalid legacy runtime record; migration withheld.');
+ const runtime=await realpath(value),binary=await lstat(runtime);
+ if(!binary.isFile()||(binary.mode&0o111)===0)throw new Error('Recorded prior runtime is unavailable; migration withheld.');
+ return runtime;
+}
+
 /** A current installer runs this bridge from outside the incumbent checkout. */
 export async function prepareLegacyUpgrade(root: string, checkout: string, override: UpdateSource, bootstrap: string) {
 	const baseline = await readInstallationSelector(root);
 	if (baseline?.enabled) throw new Error('legacy upgrade requires an unmanaged installation');
 	const pidFile = installationPaths(root).daemonPid;
 	const pid = runFileIdentity(pidFile) === undefined ? undefined : Number((await readFile(pidFile, 'utf8')).trim());
-	const runtime = pid === undefined ? await realpath(process.execPath) : (await readDarwinIncarnation(pid)).executable;
+	const runtime = await legacyRuntimeForUpgrade(root, pid);
 	const priorRoot = await realpath(checkout);
 	const priorCommit = await git(priorRoot, ['rev-parse', '--verify', 'HEAD^{commit}']);
 	const prior: ManagedInstallation = { version: 1, stateRoot: root, releaseRoot: priorRoot, releaseId: priorCommit,

@@ -1,7 +1,7 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
-import { constants, lstatSync, mkdirSync, mkdtempSync, openSync, closeSync, readFileSync, readdirSync, readlinkSync,
+import { constants, lstatSync, mkdirSync, mkdtempSync, openSync, closeSync, fsyncSync, readFileSync, readdirSync, readlinkSync,
 	realpathSync, renameSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -86,18 +86,40 @@ export function writeSourceRuntimeBinding(stateRoot, installationRoot, distribut
 	try { if (lstatSync(directory).isSymbolicLink()) throw new Error('binding directory is a symbolic link'); }
 	catch (error) { if (error.code !== 'ENOENT') throw error; }
 	mkdirSync(directory, { recursive: true, mode: 0o700 });
+	const ownership=lstatSync(directory);
+	if(!ownership.isDirectory()||ownership.uid!==process.getuid?.()||(ownership.mode&0o077)!==0)throw new Error('unsafe binding directory');
 	const path = join(directory, `${createHash('sha256').update(installation).digest('hex')}.json`);
 	const temporary = `${path}.${process.pid}.${Date.now()}`;
 	const fd = openSync(temporary, constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL, 0o600);
-	try { writeFileSync(fd, `${JSON.stringify(record)}\n`); closeSync(fd); renameSync(temporary, path); }
+	try { writeFileSync(fd, `${JSON.stringify(record)}\n`); fsyncSync(fd); closeSync(fd); renameSync(temporary, path);
+		const parent = openSync(directory, constants.O_RDONLY); try { fsyncSync(parent); } finally { closeSync(parent); } }
 	catch (error) { try { closeSync(fd); } catch {} try { unlinkSync(temporary); } catch {} throw error; }
 	return record;
 }
 
+/** A binding is selection metadata, never an alternative source of archive trust. */
+export function verifySourceRuntimeBinding(stateRoot, installationRoot, distribution) {
+ const state=realpathSync(stateRoot), installation=realpathSync(installationRoot);
+ const directory=join(state,'source-runtimes');
+ const owner=lstatSync(directory);if(!owner.isDirectory()||owner.uid!==process.getuid?.()||(owner.mode&0o077)!==0||realpathSync(directory)!==directory)throw new Error('unsafe binding directory');
+ const path=join(directory,`${createHash('sha256').update(installation).digest('hex')}.json`);
+ const info=regular(path);
+ if(info.uid!==process.getuid?.()||info.nlink!==1||(info.mode&0o077)!==0||info.size>8192)throw new Error('unsafe source runtime binding');
+ const record=JSON.parse(readFileSync(path,'utf8'));
+ const target=`${process.platform}-${process.arch}`, entry=NODE_RUNTIME_POLICY.targets[target];
+ const expected=entry&&join(state,'runtimes',`node-v${NODE_RUNTIME_POLICY.nodeVersion}-${target}`,entry.sha256,'distribution');
+ if(distribution!==expected||!entry?.enabled||Object.keys(record).length!==7||record.schemaVersion!==1||record.installationRoot!==installation||record.target!==target||record.nodeVersion!==NODE_RUNTIME_POLICY.nodeVersion||record.archiveSha256!==entry.sha256||record.distribution!==distribution||realpathSync(distribution)!==distribution||record.inventorySha256!==createHash('sha256').update(runtimeInventory(distribution)).digest('hex'))throw new Error('source runtime binding does not match the verified selected toolchain');
+ return record;
+}
+
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
-	const [command, source, destination] = process.argv.slice(2);
+	const [command, source, destination, distribution] = process.argv.slice(2);
+	if ((command === 'bind' || command === 'binding') && source && destination && distribution && process.argv.length === 6) {
+		if(command==='bind')writeSourceRuntimeBinding(source,destination,distribution);else verifySourceRuntimeBinding(source,destination,distribution);
+	} else {
 	if (!source || !destination || process.argv.length !== 5) throw new Error('expected verify|publish SOURCE DESTINATION');
 	if (command === 'verify') verifyRuntimeObject(source, destination);
 	else if (command === 'publish') publishRuntimeObject(source, destination);
-	else throw new Error('expected verify|publish');
+	else throw new Error('expected verify|publish|bind|binding');
+	}
 }

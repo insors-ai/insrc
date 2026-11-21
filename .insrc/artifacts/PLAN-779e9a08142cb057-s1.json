@@ -1,0 +1,323 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1795273557575-g6h0fr",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-21T15:11:03.722Z",
+    "epicCreatedAt": "2026-11-18T08:51:40.429Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "claude-sonnet-5"
+        }
+      ]
+    },
+    "elapsedMs": 296900,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "779e9a08142cb057",
+    "epicSlug": "add-securityfinding-capability-family-delegates-framing",
+    "storyId": "s1",
+    "lldRunId": "wf-1794991305269-uesxrz",
+    "lldEffectiveHash": "779e9a08142cb057cca637abe8b4455a3ed7f93145399f263770e14a4884cb28",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9481237fcabaf5f3a1a40af9bc0908467d55e0bf54b4001dbfec16b34fbc9bf4",
+        "at": "2026-11-21T15:11:06.694Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-21T15:13:20.257Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "8b286eceabfa83bdb6f991326bc4c909e9648350"
+  },
+  "body": {
+    "summary": {
+      "prose": "Building this Story means adding four small, independent extension-point types to the review framework -- SecurityFinding, SecurityLocator, an EvidenceProvider registry stub, and a VerificationReceipt record -- plus the per-(type,model) JSON Schema transformers the inheritance-heavy shapes need for structured-output safety. Every piece is additive: SecurityFinding and SecurityLocator are plain interfaces extending the now-built sibling Finding/Locator types, VerificationReceipt is a new sibling module mirroring the existing TEST RECORD's TESTS.md-beside-BUILD.md pattern for its own RECEIPTS.md, and EvidenceProvider is a standalone registry shape with no real provider wiring yet. Five small-to-medium Tasks, no changes to any existing exported type, field, or function signature.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add SecurityFinding interface, isSecurityFinding type guard, risk-family verdict representation, and policy-override staleness check",
+        "summary": "Add `SecurityFinding` as a plain TS interface extending the base `Finding` (src/workflow/review-round/finding.ts) with kind:'security', checkId, violatedPolicyRef, evidence, fixability, confidence, enforcementMode, the revision-anchored override fields overriddenBy/overrideReason/overriddenAt, and receiptId (an optional string id of a corroborating VerificationReceipt -- never the receipt object itself). Add an `isSecurityFinding` type guard checking the `kind` discriminant. Add a risk-family verdict representation modeled as an informational, zero-severity SecurityFinding for applicable/not-applicable/uncertain families. Add the policy-override staleness check comparing overriddenAt against the Scope's current revision.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "SecurityFinding structurally extends base Finding -- every Finding field present plus the security-only fields including receiptId",
+          "isSecurityFinding returns true only for an object whose kind discriminant is exactly 'security'",
+          "A risk-family verdict (applicable/not-applicable/uncertain + reason), including not-applicable ones, is representable as an informational, zero-severity SecurityFinding",
+          "A stale override (overriddenAt diverges from the Scope's current revision) is rejected by the staleness check",
+          "The framework's shared reconciliation pass accepts a mixed Finding/SecurityFinding list with zero change to its own logic",
+          "The docgen 'review-report' renderer renders a round containing SecurityFinding entries with zero change to its own type signature"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "isSecurityFinding type guard (true/false/malformed discriminant)"
+          },
+          {
+            "level": "unit",
+            "name": "SecurityFinding structural extension of base Finding (all base fields present + security-only fields)"
+          },
+          {
+            "level": "unit",
+            "name": "overriddenAt vs current Scope revision comparison (stale override rejected)"
+          },
+          {
+            "level": "unit",
+            "name": "risk-family verdict recorded as informational zero-severity SecurityFinding for not-applicable/uncertain families"
+          },
+          {
+            "level": "integration",
+            "name": "reconciliation pass consuming a mixed Finding/SecurityFinding list"
+          },
+          {
+            "level": "integration",
+            "name": "docgen review-report render of a round containing SecurityFinding entries"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add SecurityLocator interface extending Locator",
+        "summary": "Add `SecurityLocator` as a plain TS interface extending the framework's `Locator` (src/workflow/artifact-core/types.ts:271-274) with trustBoundaryId and taintPathStepIndex as first-class optional fields, following the open-Locator-kind extensibility pattern. No change to Locator or Pointer themselves -- a security-graph citation is represented as Pointer{path, section: SecurityLocator, contentHash?}, reusing Pointer unchanged.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "SecurityLocator structurally extends Locator -- kind and value fields present plus trustBoundaryId and taintPathStepIndex",
+          "A SecurityLocator instance is assignable to Pointer.section with no change to Pointer's own type"
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "SecurityLocator structural extension of Locator/Pointer (trust-boundary id + taint-path step index fields)"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Add EvidenceProvider interface/registry and SecurityEvidence shape",
+        "summary": "Add the `EvidenceProvider` interface/registry stub for the five deterministic evidence-provider categories (secret scanning, SAST, dependency/SBOM, IaC/container, language-native checks), distinct from the general tool registry, with a common input/output contract. Add `SecurityEvidence` (providerCategory + an optional SecurityLocator) feeding SecurityFinding.evidence uniformly. Extension-point only: no real daemon-IPC wiring or provider implementations in this Story.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "EvidenceProvider interface defines a common input/output contract shared by all five provider categories",
+          "SecurityEvidence carries providerCategory and an optional SecurityLocator-typed locator field"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "SecurityEvidence shape (providerCategory + optional SecurityLocator)"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Add VerificationReceipt type and a parallel RECEIPTS.md record module",
+        "summary": "Add `VerificationReceipt` (result, environment, pass/fail outcome) and a new sibling module to src/workflow/runners/build/test-record.ts (e.g. receipt-record.ts) mirroring TestRecordCase/TestRecordReported/persistTestRecordTask/readTestRecord/renderTestRecordMd, reusing the existing writeArtifact/writeAtomic (src/workflow/storage.ts) and storeRound/withStoredModel (src/workflow/runners/build/round-writer.ts) primitives unchanged. Renders RECEIPTS.md beside the review artifact exactly as TESTS.md sits beside BUILD.md: a non-approvable RECORD, written for every sandbox/mutation checkpoint run (pass or fail), referenced by id from a corroborating SecurityFinding.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "A VerificationReceipt is written for every sandbox/mutation checkpoint run, pass or fail, independent of whether any SecurityFinding corroborates it",
+          "RECEIPTS.md renders beside the review artifact using the existing writeArtifact/writeAtomic/storeRound/withStoredModel machinery, unmodified",
+          "An approval attempt against a RECEIPTS.md/VerificationReceipt record is refused, matching TESTS.md's own non-approvable-record behavior"
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "VerificationReceipt record shape (pass/fail/evidence linkage by id)"
+          },
+          {
+            "level": "integration",
+            "name": "RECEIPTS.md write for a security review round"
+          },
+          {
+            "level": "integration",
+            "name": "approval attempt against a RECEIPTS.md/VerificationReceipt record is refused"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Add per-(type,model) JSON Schema transformers for SecurityFinding and SecurityLocator",
+        "summary": "Add bidirectional JSON Schema transformers (canonical model -> a shape a given (type, target model) pair reliably emits against, and back) for SecurityFinding and SecurityLocator, extending the pattern already used for the codex provider, so the union/inheritance-heavy shapes added by t1/t2 are safely presentable to structured-output LLM calls.",
+        "size": "S",
+        "order": 5,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "A per-(type,model) JSON Schema transformer exists for SecurityFinding, covering its kind discriminant and inherited Finding fields",
+          "A per-(type,model) JSON Schema transformer exists for SecurityLocator, covering its kind discriminant and inherited Locator fields"
+        ],
+        "derivedFrom": [
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "JSON Schema transformer output for SecurityFinding (kind discriminant + inherited Finding fields)"
+          },
+          {
+            "level": "unit",
+            "name": "JSON Schema transformer output for SecurityLocator (kind discriminant + inherited Locator/Pointer fields)"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "isSecurityFinding type guard (true/false/malformed discriminant)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "SecurityFinding structural extension of base Finding (all base fields present + security-only fields)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "SecurityLocator structural extension of Locator/Pointer (trust-boundary id + taint-path step index fields)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "VerificationReceipt record shape (pass/fail/evidence linkage by id)",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "overriddenAt vs current Scope revision comparison (stale override rejected)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "risk-family verdict recorded as informational zero-severity SecurityFinding for not-applicable/uncertain families",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "reconciliation pass consuming a mixed Finding/SecurityFinding list",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "docgen review-report render of a round containing SecurityFinding entries",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "RECEIPTS.md write for a security review round",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "approval attempt against a RECEIPTS.md/VerificationReceipt record is refused",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "JSON Schema transformer output for SecurityFinding (kind discriminant + inherited Finding fields)",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "JSON Schema transformer output for SecurityLocator (kind discriminant + inherited Locator/Pointer fields)",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 dataModelChanges.SecurityFinding"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 dataModelChanges.SecurityLocator"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 dataModelChanges.EvidenceProvider"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 dataModelChanges.VerificationReceipt"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 errorPaths.invariantsToPreserve"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 testStrategy.acceptanceMapping"
+    }
+  ]
+}

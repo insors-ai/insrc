@@ -80,7 +80,7 @@ Run at 2026-11-21T19:43:49.953Z on commit `6f078b30d`. Tests check: **passed**. 
 
 ## t4
 
-Run at 2026-11-21T20:26:56.344Z on commit `46cd4ac7e`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-21T20:39:00.530Z on commit `f906e433f`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: Linux original-process closure precedes selection and candidate start**
 
@@ -98,4 +98,4 @@ Run at 2026-11-21T20:26:56.344Z on commit `46cd4ac7e`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/daemon/__tests__/source-update-transaction.test.ts` | 0 | 2 | 175.2 s |  |
+| `src/daemon/__tests__/source-update-transaction.test.ts` | 0 | 2 | 208 s |  |

@@ -26,4 +26,6 @@ The first registered validation passed typechecking and both named tests but rej
 
 Canonical run `878e5d84-791d-4c8f-9718-23343e669452` rebuilt and passed both tests on arm64/x64 after that correction, with cleanup confirmed closed. In addition to all nine phase checkpoints, the real-controller cases now interrupt prior startup before and after actor capture, interrupt after `prior-ready`, and close a recorded restored actor before recovery. They assert preservation of the already-restored PID, restart of the positively closed restored actor, and no duplicate prior spawn for unresolved intent. Guest TAP remains in `.insrc/tmp/source-transaction-linux-2hKQGP` and `.insrc/tmp/source-transaction-linux-D6OoX0`.
 
+Registered validation of `f906e433f` passed all five acceptance checks, clean typechecking, and both required cases (208,001 ms; zero skipped/failed). It explicitly confirms the restored-actor correction and that public entrypoint binding belongs to the subsequent tasks. BUILD now records t1–t4 validated; story-level human approval is pending completion of the remaining tasks.
+
 BUILD approval is a story-level human gate, per the user's clarification: validate tasks individually and present the final BUILD after all story tasks are built and tested.

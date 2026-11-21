@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 5,
-        "contentHash": "b64d5275ea57b09d1000f2232721ee12b0017ab46f5b3729069e3fb589351bb6",
-        "at": "2026-11-21T20:26:56.360Z",
+        "number": 6,
+        "contentHash": "ee3d47947abb4d852bf79bd47ef6004a7cb53190f9d31dccab250c5faf1ddae4",
+        "at": "2026-11-21T20:39:00.553Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "a03e99e17a364550",
     "storyId": "s1",
     "createdAt": "2026-11-21T17:48:45.684Z",
-    "updatedAt": "2026-11-21T20:26:56.344Z",
+    "updatedAt": "2026-11-21T20:39:00.530Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-21T15:31:04.425Z",
     "epicSlug": "restore-upgrades-from-existing-daemon-installations",
-    "revision": 5
+    "revision": 6
   },
   "body": {
     "tasks": [
@@ -278,8 +278,8 @@
       },
       {
         "taskId": "t4",
-        "commit": "46cd4ac7e",
-        "ranAt": "2026-11-21T20:26:56.344Z",
+        "commit": "f906e433f",
+        "ranAt": "2026-11-21T20:39:00.530Z",
         "testsPassed": true,
         "tests": [
           {
@@ -314,7 +314,7 @@
             "file": "src/daemon/__tests__/source-update-transaction.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 175178,
+            "durationMs": 208001,
             "titles": [
               {
                 "title": "Linux original-process closure precedes selection and candidate start",

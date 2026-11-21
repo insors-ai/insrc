@@ -278,16 +278,27 @@ export interface SchemaMigrationStep {
 	readonly run: (ctx: SchemaMigrationContext) => Promise<{ readonly clean: boolean; readonly counts?: BuildMigrationReport['counts'] }>;
 }
 
-/** The static, ascending list. Step 1 is migrateBuildDefaults, clean when no repo reported write-failed. */
+/** Lets timers, I/O and the rest of boot run: the work of one repository is synchronous file I/O, so awaiting alone never yields. */
+const yieldToEventLoop = (): Promise<void> => new Promise(resolve => setImmediate(resolve));
+
+/**
+ * The static, ascending list. Step 1 is migrateBuildDefaults, one repository at a time with the event loop yielded
+ * before each, so a large registry or a slow file system never holds the boot thread; clean when no repo reports write-failed.
+ */
 export const SCHEMA_MIGRATION_STEPS: readonly SchemaMigrationStep[] = [
 	{
 		version: 1,
 		run: async (ctx) => {
-			const report = await migrateBuildDefaults(ctx.repos, {
-				...(ctx.configPath !== undefined ? { configPath: ctx.configPath } : {}),
-				...(ctx.writeKeys !== undefined ? { writeKeys: ctx.writeKeys } : {}),
-			});
-			return { clean: report.counts['write-failed'] === 0, counts: report.counts };
+			const counts: Record<BuildMigrationOutcomeKey, number> = { 'applied': 0, 'already-set': 0, 'node-default': 0, 'no-typical-commands': 0, 'write-failed': 0 };
+			for (const repo of ctx.repos) {
+				await yieldToEventLoop();
+				const report = await migrateBuildDefaults([repo], {
+					...(ctx.configPath !== undefined ? { configPath: ctx.configPath } : {}),
+					...(ctx.writeKeys !== undefined ? { writeKeys: ctx.writeKeys } : {}),
+				});
+				for (const key of Object.keys(counts) as BuildMigrationOutcomeKey[]) counts[key] += report.counts[key];
+			}
+			return { clean: counts['write-failed'] === 0, counts };
 		},
 	},
 ];

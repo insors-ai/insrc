@@ -286,3 +286,31 @@ test('schema-migrations.test.ts: a source check that src/daemon/index.ts calls r
 	// and the earlier legacy-file move keeps its place before the pass
 	assert.ok(src.indexOf('moveLegacyRepoConfig();') < call);
 });
+
+// ---- t3: the pass yields to the event loop while it works ----
+
+test('schema-migrations.test.ts: the boot pass over 100 repositories lets timers and I/O callbacks run before it finishes, and still migrates every repository and stamps the version', async () => {
+	await inTempDir(async (dir, file) => {
+		const repos: string[] = [];
+		for (let i = 0; i < 100; i++) {
+			const r = join(dir, `py${i}`); mkdirSync(r); writeFileSync(join(r, 'pyproject.toml'), ''); repos.push(r);
+		}
+		// callbacks scheduled BEFORE the pass starts, as the rest of boot would have
+		let timerFiredAt = -1, immediateFiredAt = -1, turns = 0, finished = false, order = 0;
+		setTimeout(() => { timerFiredAt = ++order; }, 0);
+		setImmediate(() => { immediateFiredAt = ++order; });
+		// a callback that keeps asking for the next loop turn: how many turns the pass leaves
+		const tick = (): void => { if (!finished) { turns++; setImmediate(tick); } };
+		setImmediate(tick);
+		const pass = runSchemaMigrations({ registeredRepos: async () => repos, configPath: file });
+		const result = await pass;
+		finished = true; order++;
+		assert.deepEqual(result, { status: 'applied', from: null, to: 1 });
+		assert.ok(immediateFiredAt > 0 && immediateFiredAt < order, 'a callback scheduled beforehand ran before the pass finished');
+		assert.ok(timerFiredAt > 0 && timerFiredAt < order, 'a timer scheduled beforehand ran before the pass finished');
+		assert.ok(turns >= 100, `the event loop turned at least once per repository (${turns} turns for 100 repositories)`);
+		const repoEntries = parse(file)['repos'] as Record<string, unknown>;
+		assert.equal(Object.keys(repoEntries).length, 100, 'every repository was migrated');
+		assert.equal(parse(file)['schemaVersion'], 1, 'the version was stamped');
+	});
+});

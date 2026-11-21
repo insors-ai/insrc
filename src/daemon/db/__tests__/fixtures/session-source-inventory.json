@@ -16273,7 +16273,7 @@
       ],
       "siteCount": 17,
       "sitesDigest": "0ae79719ea25d04d569ed6b2db31f0eb02d64e7d0cb51fed205c0c78d9977e69",
-      "sourceDigest": "cd7760e55568504b9271aec422b48e1cc9b9b9f6619e9cab2429152406f74c45"
+      "sourceDigest": "55b7ddb368906d49c05fbeca77f79ea8aafc70c4c5fad483734681ce9b3a39a6"
     },
     "src/daemon/repo-stats.ts": {
       "classification": "daemon-admission-boundary",

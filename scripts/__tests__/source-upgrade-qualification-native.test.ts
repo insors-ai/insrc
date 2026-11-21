@@ -75,7 +75,7 @@ test('Portable source qualification rejects wrong channel/profile/floor before n
 		await mkdir(join(stateRoot, directory), { mode: 0o700 });
 		await writeFile(join(stateRoot, directory, 'journal.json'), JSON.stringify({ version: 1, root: stateRoot,
 			sourceReleases: [{ ...valid.receipt, sequence }], ...(directory === 'source-lifecycle'
-				? { installationRoot: origin, generation: 1, selected: null, active: null, retained: [], outcome: null } : {}) }), { mode: 0o600 });
+				? { installationRoot: origin, generation: 1, selected: null, active: null, retained: [], retainedSelections: [], outcome: null } : {}) }), { mode: 0o600 });
 	}
 	await assert.rejects(qualifySourceRelease(input), /stale/);
 	await writeFile(join(stateRoot, 'source-lifecycle/journal.json'), JSON.stringify({ version: 1, root: stateRoot, installationRoot: origin }));
@@ -165,7 +165,10 @@ test('Independent staging uses absolute owned npm and preserves Mac signed behav
 			if (override === undefined) delete process.env.ONNXRUNTIME_NODE_INSTALL_CUDA;
 			else process.env.ONNXRUNTIME_NODE_INSTALL_CUDA = override;
 			const staged = await stageQualifiedSourceRelease({ stateRoot, runtime: toolchain.node, verifier, source,
-				priorCommit, target: 'darwin', launchProfile: 'legacy-stopped' }, prior, toolchain.node);
+				priorCommit, target: 'darwin', launchProfile: 'legacy-stopped' }, prior, toolchain.node).catch((error: unknown) => {
+				const detail = error as { message?: string; stdout?: string; stderr?: string };
+				throw new Error(`${detail.message ?? String(error)}\nstdout:\n${detail.stdout ?? ''}\nstderr:\n${detail.stderr ?? ''}`, { cause: error });
+			});
 			assert.equal(staged.candidate.runtime, toolchain.node);
 			assert.equal(staged.prior?.runtime, toolchain.node);
 			assert.notEqual(staged.candidate.root, prior);

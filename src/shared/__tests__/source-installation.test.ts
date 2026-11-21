@@ -106,8 +106,8 @@ if (process.env.INSRC_SOURCE_STATE_WORKER) {
 		const selection = selected(f.root);
 		const state = f.store.update(1, s => ({ ...s, selected: selection, retained: [selection.pin], sourceReleases: [selection.source] }));
 		assert.deepEqual(readSourceInstallationSelector(f.root, f.logical), selection);
-		assert.throws(() => f.store.update(state.generation, s => ({ ...s, retained: [] })), /cannot be dropped/);
-		assert.throws(() => f.store.update(state.generation, s => ({ ...s, sourceReleases: [] })), /floor cannot be removed/);
+		assert.throws(() => f.store.update(state.generation, s => ({ ...s, selected: null, retained: [], retainedSelections: [] })), /receipt cannot be dropped/);
+		assert.throws(() => f.store.update(state.generation, s => ({ ...s, sourceReleases: [] })), /floor/);
 		assert.throws(() => f.store.update(state.generation, s => ({ ...s, selected: { ...selection,
 			pin: { ...selection.pin, runtime: '/usr/bin/node' } } })), /runtime or binding/);
 		const binding = readFileSync(selection.binding);
@@ -117,11 +117,27 @@ if (process.env.INSRC_SOURCE_STATE_WORKER) {
 		assert.throws(() => f.store.update(1, s => s), /stale/);
 		assert.deepEqual(readFileSync(selection.pin.runtime), retainedRuntime);
 		assert.deepEqual(readFileSync(outside), valid, 'unsafe links never redirect a write');
+		const noFloor = fixture(t), unfloored = selected(noFloor.root);
+		assert.throws(() => noFloor.store.update(0, s => ({ ...s, selected: unfloored })), /no retained floor/);
+		assert.throws(() => noFloor.store.update(0, s => ({ ...s, active: { ...transaction(s), candidate: unfloored } })), /no retained floor/);
 		const historical = selected(f.root, '22.21.0', 'e'.repeat(64));
 		const historicalBinding = readFileSync(historical.binding);
-		f.store.update(state.generation, s => ({ ...s, selected: historical, retained: [selection.pin, historical.pin] }));
+		assert.throws(() => f.store.update(state.generation, s => ({ ...s, selected: historical,
+			retained: [selection.pin, historical.pin] })), /receipt cannot be dropped/, 'pin-only retention is insufficient');
+		f.store.update(state.generation, s => ({ ...s, selected: historical, retained: [selection.pin, historical.pin], retainedSelections: [selection] }));
 		assert.equal(f.store.read().selected?.toolchain.nodeVersion, '22.21.0', 'references retain their own release metadata');
 		assert.deepEqual(readFileSync(historical.binding), historicalBinding, 'persistence never rewrites a runtime binding');
+		const current = f.store.read();
+		assert.throws(() => f.store.update(current.generation, s => ({ ...s, selected: null })), /receipt cannot be dropped/);
+		const cleared = f.store.update(current.generation, s => ({ ...s, selected: null, retainedSelections: [...s.retainedSelections, historical] }));
+		assert.deepEqual(cleared.retainedSelections.at(-1), historical);
+		const prior = fixture(t), snapshot = selected(prior.root);
+		const reserved = prior.store.update(0, s => ({ ...s, sourceReleases: [snapshot.source],
+			active: { ...transaction(s), initialSelector: snapshot } }));
+		const rolledBack = prior.store.update(reserved.generation, s => ({ ...s, active: { ...s.active!, phase: 'rolled-back' } }));
+		assert.throws(() => prior.store.update(rolledBack.generation, s => ({ ...s, active: null, retained: [snapshot.pin] })), /receipt cannot be dropped/);
+		const kept = prior.store.update(rolledBack.generation, s => ({ ...s, active: null, retainedSelections: [snapshot] }));
+		assert.deepEqual(kept.retainedSelections[0]?.source, snapshot.source);
 	}));
 
 	test('Atomic publication with unknown fsync/rename outcome reconciles safely', { timeout: 240_000 }, async t => linux(t, () => {

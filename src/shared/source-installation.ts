@@ -4,6 +4,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { closeSync, constants, fstatSync, fsyncSync, lstatSync, mkdirSync, openSync, readSync, realpathSync, renameSync, writeFileSync } from 'node:fs';
 import { basename, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import type { Stats } from 'node:fs';
+import { isDeepStrictEqual } from 'node:util';
 import { acquireRunFileGuard, readRunFileGuardPin } from './daemon-run-files.js';
 import type { ProcessIdentity } from './daemon-process.js';
 import { assertSourceReleaseFloor, readVerifiedSourceRelease } from './managed-source-release.js';
@@ -47,6 +48,7 @@ export interface SourceInstallationState {
 	readonly active: SourceTransaction | null;
 	readonly sourceReleases: readonly VerifiedSourceRelease[];
 	readonly retained: readonly StagedReleasePin[];
+	readonly retainedSelections: readonly SourceSelection[];
 	readonly outcome: { readonly id: string; readonly decision: 'committed' | 'rolled-back' | 'recovery-required'; readonly detail: string } | null;
 }
 
@@ -110,12 +112,14 @@ function selection(value: unknown, root: string): asserts value is SourceSelecti
 }
 
 export function readSourceInstallationState(value: unknown, root: string, installationRoot: string): SourceInstallationState {
-	shape(value, ['version', 'root', 'installationRoot', 'generation', 'selected', 'active', 'sourceReleases', 'retained', 'outcome']);
+	shape(value, ['version', 'root', 'installationRoot', 'generation', 'selected', 'active', 'sourceReleases', 'retained', 'retainedSelections', 'outcome']);
 	path(root); path(installationRoot); integer(value.generation);
 	if (value.version !== 1 || value.root !== root || value.installationRoot !== installationRoot) fail('installation identity differs');
 	if (value.selected !== null) selection(value.selected, root);
 	if (!Array.isArray(value.retained) || value.retained.length > 128) fail('invalid retained pins');
 	for (const item of value.retained) pin(item);
+	if (!Array.isArray(value.retainedSelections) || value.retainedSelections.length > 128) fail('invalid retained selections');
+	for (const item of value.retainedSelections) selection(item, root);
 	if (value.outcome !== null) {
 		shape(value.outcome, ['id', 'decision', 'detail']);
 		if (typeof value.outcome.id !== 'string' || !UUID.test(value.outcome.id) || !['committed', 'rolled-back', 'recovery-required'].includes(value.outcome.decision as string)
@@ -141,11 +145,24 @@ export function readSourceInstallationState(value: unknown, root: string, instal
 		if (['staged', 'predecessor-exited', 'candidate-selected', 'candidate-ready', 'committed'].includes(active.phase as string)
 			&& (active.prior === null || active.candidate === null)) fail('qualified phase has no release pair');
 	}
-	return value as unknown as SourceInstallationState;
+	const state = value as unknown as SourceInstallationState;
+	for (const selected of selectionReferences(state)) {
+		const floor = state.sourceReleases.find(item => item.channel.repoUrl === selected.source.channel.repoUrl && item.channel.branch === selected.source.channel.branch);
+		if (floor === undefined) fail('referenced source receipt has no retained floor');
+		assertSourceReleaseFloor(floor, [selected.source]);
+	}
+	return state;
 }
 
 function digest(bytes: string): string { return createHash('sha256').update(bytes).digest('hex'); }
 function pinKey(value: StagedReleasePin): string { return JSON.stringify([value.root, value.runtime, value.commit, value.fingerprint]); }
+function selectionReferences(state: SourceInstallationState): SourceSelection[] {
+	return [...state.retainedSelections, ...(state.selected ? [state.selected] : []),
+		...(state.active?.initialSelector ? [state.active.initialSelector] : []), ...(state.active?.candidate ? [state.active.candidate] : [])];
+}
+function pinReferences(state: SourceInstallationState): StagedReleasePin[] {
+	return [...state.retained, ...selectionReferences(state).map(item => item.pin), ...(state.active?.prior ? [state.active.prior] : [])];
+}
 function same(a: Stats, b: Stats): boolean { return a.dev === b.dev && a.ino === b.ino; }
 function owned(stat: Stats, uid: number, directory: boolean): void {
 	if ((directory ? !stat.isDirectory() : !stat.isFile()) || stat.uid !== uid || (stat.mode & 0o077) !== 0
@@ -184,7 +201,7 @@ export class SourceInstallationStore {
 	}
 
 	private empty(): SourceInstallationState {
-		return { version: 1, root: this.root, installationRoot: this.installationRoot, generation: 0, selected: null, active: null, sourceReleases: [], retained: [], outcome: null };
+		return { version: 1, root: this.root, installationRoot: this.installationRoot, generation: 0, selected: null, active: null, sourceReleases: [], retained: [], retainedSelections: [], outcome: null };
 	}
 
 	private load(directory: string): { state: SourceInstallationState; bytes: string | null } {
@@ -230,11 +247,8 @@ export class SourceInstallationStore {
 					|| binding.distribution !== resolve(value.pin.runtime, '../..') || typeof binding.inventorySha256 !== 'string' || !HASH.test(binding.inventorySha256)) fail('runtime binding reference differs');
 			} finally { closeSync(fd); }
 		};
-		if (state.selected) check(state.selected);
-		if (state.active?.initialSelector) check(state.active.initialSelector);
-		if (state.active?.candidate) check(state.active.candidate);
-		if (state.active?.prior) checkPin(state.active.prior);
-		for (const item of state.retained) checkPin(item);
+		for (const item of selectionReferences(state)) check(item);
+		for (const item of pinReferences(state)) checkPin(item);
 	}
 
 	read(): SourceInstallationState {
@@ -263,9 +277,12 @@ export class SourceInstallationStore {
 				if (current === undefined) fail('source floor cannot be removed');
 				assertSourceReleaseFloor(current, [previous]);
 			}
-			const retained = new Set(next.retained.map(pinKey));
-			for (const previous of [...before.state.retained, ...(before.state.selected ? [before.state.selected.pin] : []),
-				...(before.state.active?.prior ? [before.state.active.prior] : []), ...(before.state.active?.candidate ? [before.state.active.candidate.pin] : [])]) {
+			const nextSelections = selectionReferences(next);
+			for (const previous of selectionReferences(before.state)) {
+				if (!nextSelections.some(item => isDeepStrictEqual(item, previous))) fail('referenced source selection receipt cannot be dropped');
+			}
+			const retained = new Set(pinReferences(next).map(pinKey));
+			for (const previous of pinReferences(before.state)) {
 				if (!retained.has(pinKey(previous))) fail('referenced release pin cannot be dropped');
 			}
 			this.references(next);

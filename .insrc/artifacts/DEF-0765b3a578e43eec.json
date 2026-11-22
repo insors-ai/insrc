@@ -24,9 +24,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 1,
-        "contentHash": "9bd4a1820c485b37443bea0112e97977bf751ce3db5ac0042ab7ddd39a546087",
-        "at": "2026-11-10T05:58:05.316Z",
+        "number": 2,
+        "contentHash": "dbbe4486c70a4131f00f0535e5f0340cd79754828859989a9c9c7153abff48ab",
+        "at": "2026-11-22T06:00:00.000Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
@@ -59,7 +59,7 @@
         }
       }
     },
-    "revision": 1,
+    "revision": 2,
     "envelope": {
       "description": "",
       "references": [],
@@ -77,13 +77,17 @@
     "flavor": "new-capability",
     "problem": "Insrc's general review flow does not give developers a dedicated assessment of vulnerabilities or a separately chosen security reviewer model. It also lacks a defined way to check resolved dependencies against current advisories while keeping repository and credential access bounded, making it hard to distinguish verified findings from gaps in coverage.",
     "summary": {
-      "prose": "Developers can request a dedicated assessment of code and dependency vulnerabilities. Each report identifies the security model, evidence, and limits of the assessment.",
+      "prose": "Developers can request a dedicated assessment of code and dependency vulnerabilities. Each report identifies the security model, evidence, and limits of the assessment. The data-model extension points this review needs -- SecurityFinding, SecurityLocator, the EvidenceProvider registry, VerificationReceipt, and their JSON Schema transformers -- are already built (standalone Story add-securityfinding-capability-family-delegates-framing, epicHash 779e9a08142cb057, s1, BUILD approved); this Epic's Stories add the model selection, isolated execution, advisory fetching, and reporting logic that populate those types, not a redesign of the types themselves.",
       "audience": "product"
     },
     "nonGoals": [
       {
         "text": "General code quality review and automatic remediation",
         "rationale": "This workflow is scoped to security assessment."
+      },
+      {
+        "text": "Redesigning the SecurityFinding / SecurityLocator / EvidenceProvider / VerificationReceipt data model",
+        "rationale": "Already built as extension-point types by the standalone Story add-securityfinding-capability-family-delegates-framing (epicHash 779e9a08142cb057, s1, BUILD approved: src/workflow/review-round/security-finding.ts, security-locator.ts, evidence-provider.ts, receipt-record.ts, security-schema.ts). This Epic's Stories build on those types; an insrc_analyze_step capability-discovery run against src/workflow/review-round found zero clear-match and only data-shape partial-matches for a real security-review execution pass, confirming no execution logic exists yet to duplicate."
       }
     ],
     "assumptions": [],
@@ -123,7 +127,7 @@
       {
         "id": "s2",
         "title": "Isolate reviewer access and fetch dependency advisories",
-        "userValue": "Check current dependency advisories while protecting repository data and local credentials.",
+        "userValue": "Check current dependency advisories while protecting repository data and local credentials, implementing the EvidenceProvider registry's dependency-sbom category (already typed in evidence-provider.ts) by wiring the existing pkg_audit tool rather than building a new advisory fetcher.",
         "dependsOn": [],
         "sizeEstimate": "M",
         "acceptanceCriteria": [
@@ -131,7 +135,7 @@
             "id": "ac2",
             "given": "a read-only review scope and resolved dependencies",
             "when": "the reviewer checks public advisories",
-            "then": "lookups send only approved package coordinates through controlled egress, and unavailable sources or unresolved dependencies remain explicit gaps.",
+            "then": "lookups send only approved package coordinates through controlled egress, and unavailable sources or unresolved dependencies remain explicit gaps, implemented as the EvidenceProvider registry's dependency-sbom category wired to the existing pkg_audit tool (src/daemon/tools/builtins/pkg/index.ts), not a new fetcher.",
             "operationalizes": [
               "k2"
             ]
@@ -141,7 +145,7 @@
       {
         "id": "s3",
         "title": "Run and report a security-only review",
-        "userValue": "Request a review of vulnerabilities with actionable evidence.",
+        "userValue": "Request a review of vulnerabilities with actionable evidence, populating the already-typed SecurityFinding/SecurityEvidence/VerificationReceipt shapes rather than redefining them.",
         "dependsOn": [
           "s1",
           "s2"
@@ -152,7 +156,7 @@
             "id": "ac3",
             "given": "a selected repository scope and revision",
             "when": "a user requests a security review",
-            "then": "the report separates code findings, confirmed affected dependencies, and unverified coverage, with severity, evidence, prerequisites, and remediation.",
+            "then": "the report separates code findings, confirmed affected dependencies, and unverified coverage, with severity, evidence, prerequisites, and remediation, populating the existing SecurityFinding (security-finding.ts) and VerificationReceipt (receipt-record.ts) shapes rather than defining new ones.",
             "operationalizes": [
               "k2"
             ]
@@ -191,6 +195,16 @@
       "id": "c2",
       "kind": "convention",
       "ref": "AGENTS.md"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "BUILD-779e9a08142cb057-s1"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/daemon/tools/builtins/pkg/index.ts"
     }
   ]
 }

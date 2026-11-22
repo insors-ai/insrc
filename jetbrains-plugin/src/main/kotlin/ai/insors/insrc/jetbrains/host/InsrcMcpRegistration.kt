@@ -77,7 +77,8 @@ object InsrcMcpLaunchTarget {
 
     /** Absolute path to `scripts/insrc-mcp`, or `null` when absent. */
     fun resolve(): String? {
-        val target = daemonHome().resolve("scripts").resolve("insrc-mcp")
+        val locator = ai.insors.insrc.jetbrains.lifecycle.DefaultDaemonScriptLocator()
+        val target = (locator.mcpReleaseRoot() ?: locator.daemonRoot()).resolve("scripts/insrc-mcp")
         return if (Files.exists(target)) target.toAbsolutePath().toString() else null
     }
 }

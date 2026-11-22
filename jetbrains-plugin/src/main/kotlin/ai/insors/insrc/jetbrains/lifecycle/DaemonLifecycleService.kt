@@ -126,7 +126,7 @@ class DaemonLifecycleService(
          *
          * First-install works off a fresh machine: [DefaultDaemonScriptLocator]
          * extracts the plugin-bundled `insrc-daemon-install.sh` for INSTALL, and
-         * resolves `daemon-ctl.sh` under `~/.insrc/daemon/scripts` for UPDATE.
+         * extracts the same current packaged installer for UPDATE.
          */
         fun production(): DaemonLifecycleService {
             val gateway = com.intellij.openapi.components.service<ai.insors.insrc.jetbrains.daemon.DaemonGatewayService>()
@@ -178,8 +178,8 @@ class DaemonLifecycleService(
  *    daemon is not yet cloned — so it is extracted from the plugin resources to a
  *    temp file and run from there. This is what makes first-install work off a
  *    fresh machine.
- *  - UPDATE: `daemon-ctl.sh` lives under `~/.insrc/daemon/scripts` once the daemon
- *    is installed; resolved there, or `null` (fail-safe) if absent.
+ *  - UPDATE: the same current packaged installer owns upgrades.
+ *    Pure lifecycle resolves a separate qualified controller.
  *
  * The bundled-resource stream is injectable so the extraction is unit-testable.
  */
@@ -194,8 +194,31 @@ class DefaultDaemonScriptLocator(
     override fun scriptFor(kind: ProvisionKind): java.nio.file.Path? =
         when (kind) {
             ProvisionKind.INSTALL -> extractBundledInstaller()
-            ProvisionKind.UPDATE -> daemonHomeScript("daemon-ctl.sh")
+            ProvisionKind.UPDATE -> extractBundledInstaller()
         }
+
+    override fun controlScript(): java.nio.file.Path? = daemonHomeScript("daemon-ctl.sh")
+    override fun targetRoot(): java.nio.file.Path = daemonRoot()
+
+    /** Resolve launch and controller roots through the packaged issuer adapter. */
+    fun sourceRoute(): Pair<java.nio.file.Path, java.nio.file.Path>? {
+        if (macOS) return null
+        val state = homeDir.resolve(".insrc")
+        if (java.nio.file.Files.notExists(state.resolve("source-lifecycle/journal.json"), java.nio.file.LinkOption.NOFOLLOW_LINKS)) return null
+        val script = extractBundledInstaller() ?: error("Current packaged installer missing; reinstall the plugin")
+        val env = System.getenv().filterKeys { it != "NODE_OPTIONS" && it != "NODE_PATH" } + ("HOME" to homeDir.toString())
+        val result = SharedNodeBootstrapRunner().run(listOf("/bin/bash", script.toString(), "--print-source-route", "--target", daemonRoot().toString()), env)
+        require(result.exitCode == 0) { result.output.takeLast(8192) }
+        val value = com.google.gson.JsonParser.parseString(result.output)
+        if (value.isJsonNull) return null
+        val launch = java.nio.file.Path.of(value.asJsonObject.get("launchRoot").asString)
+        val control = java.nio.file.Path.of(value.asJsonObject.get("controlRoot").asString)
+        require(launch.isAbsolute && control.isAbsolute) { "Invalid authenticated source route" }
+        return launch to control
+    }
+
+    fun selectedReleaseRoot(): java.nio.file.Path? = sourceRoute()?.first ?: managedReleaseRoot()
+    fun mcpReleaseRoot(): java.nio.file.Path? = sourceRoute()?.second ?: managedReleaseRoot()
 
     /** Extract the bundled bootstrap installer to a temp file to run, or `null` when it is not bundled. */
     private fun extractBundledInstaller(): java.nio.file.Path? {
@@ -209,7 +232,7 @@ class DefaultDaemonScriptLocator(
     }
 
     private fun daemonHomeScript(name: String): java.nio.file.Path? {
-        val path = (managedReleaseRoot() ?: daemonRoot()).resolve("scripts").resolve(name)
+        val path = (sourceRoute()?.second ?: managedReleaseRoot() ?: daemonRoot()).resolve("scripts").resolve(name)
         return if (java.nio.file.Files.exists(path)) path else null
     }
 

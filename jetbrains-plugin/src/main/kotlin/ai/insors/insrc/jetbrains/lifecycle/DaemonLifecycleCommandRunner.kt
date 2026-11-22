@@ -7,23 +7,7 @@ import java.io.File
 import java.io.IOException
 import java.nio.file.Files
 
-/**
- * The S002-internal lifecycle-command seam (Story E2026092157298940:S002): runs the
- * on-demand `daemon-ctl.sh <subcommand>` for START/RESTART/UPDATE from the Daemon
- * settings page. It REUSES the existing S003 process seams — [SubprocessRunner] /
- * [Subprocess] / [ScriptDaemonProvisioner.ProcessBuilderRunner], the
- * [DaemonScriptLocator] that resolves `~/.insrc/daemon/scripts/daemon-ctl.sh`, and the
- * [NodeRuntimeResolver] node-on-PATH idiom — and NEVER reproduces daemon-ctl.sh's logic
- * nor extends the S003-owned [ProvisionKind] (it only reads it as the selector for the
- * daemon-ctl.sh path, via [DaemonScriptLocator.scriptFor]).
- *
- * Mirrors [ScriptDaemonProvisioner]'s never-throw contract: a non-zero exit, a missing
- * script, or a spawn [IOException] all become [DaemonActionResult.Failed]; exit 0 is
- * [DaemonActionResult.Ok].
- *
- * The seams are injected so exit-code mapping + target selection are unit-testable with
- * no real process. Use [production] for the wired-up instance.
- */
+/** Current packaged bootstrap for UPDATE, retained qualified controller for START/RESTART. */
 class DaemonLifecycleCommandRunner(
     private val runner: SubprocessRunner,
     private val scriptLocator: DaemonScriptLocator,
@@ -35,23 +19,23 @@ class DaemonLifecycleCommandRunner(
 
     /** Run the daemon-ctl.sh subcommand for [command]; never throws. */
     fun run(command: LifecycleCommand): DaemonActionResult {
-        // daemon-ctl.sh is the UPDATE-kind script the existing locator already resolves;
-        // we run it with a DIFFERENT subcommand. A null path (daemon not installed) is a
-        // fail-safe skip, never a reproduction. daemon-ctl.sh itself routes a managed vs.
-        // unmanaged UPDATE safely, so no legacy-target detection is needed here.
-        val script = runCatching { scriptLocator.scriptFor(ProvisionKind.UPDATE) }
+        val script = runCatching { if (command == LifecycleCommand.UPDATE) scriptLocator.scriptFor(ProvisionKind.UPDATE) else scriptLocator.controlScript() }
             .getOrElse { return DaemonActionResult.Failed(it.message ?: "Invalid daemon installation") }
         if (script == null || !Files.exists(script)) {
             log.warn("insrc: daemon-ctl.sh not found for $command — skipping")
             return DaemonActionResult.Failed("insrc daemon tooling is unavailable (daemon not installed)")
         }
 
-        val commandLine = listOf("/bin/bash", script.toString(), subcommand(command))
-        val env = envWithNodeOnPath(nodeResolver()) + ("INSRC_DAEMON_UPDATE_WAIT" to "1")
+        val commandLine = if (command == LifecycleCommand.UPDATE)
+            installerCommand(script, ProvisionKind.UPDATE, scriptLocator.targetRoot())
+        else listOf("/bin/bash", script.toString(), subcommand(command), "--skip-sync", "--skip-install", "--skip-build")
+        val env = nativeChildEnvironment(nodeResolver(), baseEnv) + ("INSRC_DAEMON_UPDATE_WAIT" to "1") +
+            (if (command != LifecycleCommand.UPDATE) mapOf("INSRC_DAEMON_ROOT" to script.parent.parent.toString()) else emptyMap())
 
         return try {
-            val exit = runner.run(Subprocess(command = commandLine, env = env))
-            if (exit == 0) DaemonActionResult.Ok(okMessage(command)) else DaemonActionResult.Failed(mapExit(exit))
+            val result = runner.runCaptured(Subprocess(command = commandLine, env = env))
+            if (result.exitCode == 0) DaemonActionResult.Ok(okMessage(command))
+            else DaemonActionResult.Failed(result.output.trim().takeLast(8192).ifEmpty { mapExit(result.exitCode) })
         } catch (e: IOException) {
             log.warn("insrc: failed to spawn daemon-ctl.sh for $command", e)
             DaemonActionResult.Failed("insrc could not run daemon-ctl.sh: ${e.message}")
@@ -84,14 +68,6 @@ class DaemonLifecycleCommandRunner(
             4 -> "the git / npm / build / start step failed"
             else -> "daemon-ctl.sh failed (exit $exitCode)"
         }
-
-    /** Prepend the resolved Node's bin dir to PATH so daemon-ctl.sh's `node` resolves to our runtime. */
-    private fun envWithNodeOnPath(node: NodeRuntime?): Map<String, String> {
-        val nodeBinDir = node?.let { File(it.executablePath).parentFile?.path } ?: return baseEnv.filterKeys { it != "NODE_OPTIONS" && it != "NODE_PATH" }
-        val existingPath = baseEnv["PATH"].orEmpty()
-        val newPath = if (existingPath.isEmpty()) nodeBinDir else nodeBinDir + File.pathSeparator + existingPath
-        return baseEnv.filterKeys { it != "NODE_OPTIONS" && it != "NODE_PATH" } + ("PATH" to newPath)
-    }
 
     companion object {
         /** The production runner: the real ProcessBuilder subprocess seam + the default

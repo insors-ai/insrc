@@ -53,9 +53,11 @@ class InstalledCommitFreshnessConsumerTest {
     }
 
     @Test
-    fun `freshness no longer special-cases a legacy install and always keeps managed IPC`() {
+    fun `freshness uses the current installer bridge while retaining IPC status and outcomes`() {
         val src = codeLines(readConsumerSource())
-        assertFalse(src.contains("upgradeLegacy"), "daemon-ctl.sh update now routes managed vs. unmanaged safely on its own; no separate legacy-bridge pre-step is wired")
+        assertTrue(src.contains("upgradeLegacy = {"), "the production flow must bridge every historical daemon through the current installer")
+        assertTrue(src.contains("DaemonLifecycleCommandRunner.production().run("))
+        assertTrue(src.contains("LifecycleCommand.UPDATE"))
         assertFalse(src.contains("existingUpgradeTarget"), "the legacy-target detection this consumer used to drive is gone")
         assertTrue(src.contains("gateway.update()"), "consumes the daemon-owned update() IPC (k2)")
         assertTrue(src.contains("gateway.updateOutcome()"), "consumes the daemon-owned updateOutcome() IPC")

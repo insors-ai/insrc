@@ -1,19 +1,11 @@
-/**
- * Story E20260921ad0d45c9:S002 / t1 — sc6 DaemonLifecycleController.
- *
- * Carries out start/stop/restart/update through the daemon's OWN scripts/daemon-ctl.sh
- * and provisions the daemon (on consent, gated by the caller) from the bundled
- * installer — reproducing none of the scripts' logic (lc2/k5). The resulting
- * LifecycleResult.state is the TRUE post-action reachability, re-probed via the
- * shared sc1 client (correct even for `update`, which does not start the daemon).
- */
+/** IDE adapter: current packaged installer for updates; qualified owner for pure lifecycle. */
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
 import type { IpcClient, DaemonReachability } from '../../../src/shared/ipc-client.js';
 import type { SubprocessRunner } from './subprocess.js';
 import type { DaemonPaths } from './paths.js';
-import { selectedDaemonRoot } from './paths.js';
+import { selectedDaemonRoot, selectedControlRoot } from './paths.js';
 
 export type LifecycleAction = 'start' | 'stop' | 'restart' | 'update';
 
@@ -35,11 +27,7 @@ export interface DaemonLifecycleController {
   isInstalled(): Promise<boolean>;
   /** Provision the daemon from the bundled installer (caller must have consent). */
   install(): Promise<LifecycleResult>;
-  /**
-   * Run a lifecycle action through daemon-ctl.sh. `plain` adds --skip-sync, --skip-install and
-   * --skip-build, so a start only spawns the daemon that is already built (no pull, install or
-   * build); without it the command is exactly what it always was.
-   */
+  /** Start/restart always skip legacy sync/npm/build. `plain` is retained for callers. */
   run(action: LifecycleAction, options?: LifecycleRunOptions | undefined): Promise<LifecycleResult>;
 }
 
@@ -77,14 +65,14 @@ export function createDaemonLifecycleController(deps: ControllerDeps): DaemonLif
   const { runner, paths, client } = deps;
 
   const reachability = async (): Promise<DaemonReachability> => client.reachability();
-  const install = async (): Promise<LifecycleResult> => {
+  const install = async (migrate = false): Promise<LifecycleResult> => {
     if (!existsSync(paths.bundledInstaller)) {
       return { ok: false, state: 'errored', message: 'the bundled insrc installer is missing — reinstall the extension' };
     }
-    const { code } = await runner.run(['/bin/bash', paths.bundledInstaller, '-y',
-      ...(paths.managedStateRoot !== undefined ? ['--target', paths.daemonRoot] : [])]);
+    const { code, output } = await runner.run(['/bin/bash', paths.bundledInstaller, '-y', '--target', paths.daemonRoot,
+      ...(migrate ? ['--migrate-runtime', '--no-start'] : [])]);
     return code === 0 ? { ok: true, state: await reachability() }
-      : { ok: false, state: 'errored', message: installerReason(code) };
+      : { ok: false, state: 'errored', message: output?.trim().slice(-8192) || installerReason(code) };
   };
 
   return {
@@ -100,21 +88,21 @@ export function createDaemonLifecycleController(deps: ControllerDeps): DaemonLif
     install,
 
     async run(action: LifecycleAction, options?: LifecycleRunOptions | undefined): Promise<LifecycleResult> {
+      if (action === 'update') return install(true);
       let managed: string | undefined;
-      try { managed = await selectedDaemonRoot(paths); }
+      try { managed = await selectedControlRoot(paths); }
       catch (error) { return { ok: false, state: 'errored', message: String(error) }; }
       const script = managed === undefined ? paths.ctlScript : join(managed, 'scripts/daemon-ctl.sh');
-      // Every action — including an unmanaged install's update — always delegates to
-      // daemon-ctl.sh: it is the single place that routes managed vs. unmanaged safely.
+      // Pure lifecycle retains the qualified owner and never runs legacy npm functions.
       if (!existsSync(script)) {
         return { ok: false, state: 'errored', message: 'insrc daemon is not installed — run Install first' };
       }
-      const { code } = await runner.run(['/bin/bash', script, action, ...(options?.plain === true ? PLAIN_FLAGS : [])],
+      const { code, output } = await runner.run(['/bin/bash', script, action, ...(action === 'start' || action === 'restart' ? PLAIN_FLAGS : [])],
         managed === undefined ? undefined : { env: { INSRC_DAEMON_ROOT: managed, INSRC_DAEMON_UPDATE_WAIT: '1' } });
       if (code === 0) {
         return { ok: true, state: await reachability() };
       }
-      return { ok: false, state: 'errored', message: ctlReason(code) };
+      return { ok: false, state: 'errored', message: output?.trim().slice(-8192) || ctlReason(code) };
     },
   };
 }

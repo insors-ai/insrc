@@ -23,29 +23,17 @@ data class Subprocess(
  */
 fun interface SubprocessRunner {
     fun run(spec: Subprocess): Int
+    fun runCaptured(spec: Subprocess): NodeBootstrapResult = NodeBootstrapResult(run(spec), "")
 }
 
-/**
- * Locates the existing backend scripts to delegate to (Story S003 / t6): the
- * install script for INSTALL, the daemon-ctl script for UPDATE. Returns `null`
- * when the script cannot be found on disk (a fail-safe skip, not a reproduction).
- * daemon-ctl.sh itself routes a managed vs. unmanaged UPDATE safely, so no
- * caller needs its own legacy-target detection.
- */
+/** Current packaged installer for setup/update; a separate qualified controller for lifecycle. */
 fun interface DaemonScriptLocator {
     fun scriptFor(kind: ProvisionKind): Path?
+    fun controlScript(): Path? = scriptFor(ProvisionKind.UPDATE)
+    fun targetRoot(): Path? = null
 }
 
-/**
- * Delegates daemon install/update to the EXISTING backend tooling (Story S003 /
- * t6, lc1/k5): INSTALL -> insrc-daemon-install.sh, UPDATE -> daemon-ctl.sh update,
- * spawned with the resolved Node on PATH. It captures the outcome — a non-zero
- * exit, a missing script, or a spawn failure all become ProvisionOutcome(ok=false)
- * (never thrown) — and NEVER reproduces the installer's clone/npm/build logic.
- *
- * The process seam ([SubprocessRunner]) and script lookup ([DaemonScriptLocator])
- * are injected so exit-code mapping and target selection are unit-testable.
- */
+/** Delegates to the current installer, reconstructing each child's native build environment. */
 class ScriptDaemonProvisioner(
     private val runner: SubprocessRunner,
     private val locator: DaemonScriptLocator,
@@ -62,30 +50,20 @@ class ScriptDaemonProvisioner(
             return ProvisionOutcome(ok = false, reason = "insrc setup tooling is unavailable")
         }
 
-        // INSTALL runs the install script; UPDATE runs `daemon-ctl.sh update`, which
-        // routes a managed vs. unmanaged install safely on its own.
-        val command = when (kind) {
-            ProvisionKind.INSTALL -> listOf("/bin/bash", script.toString())
-            ProvisionKind.UPDATE -> listOf("/bin/bash", script.toString(), "update")
-        }
-        val env = envWithNodeOnPath(node) + ("INSRC_DAEMON_UPDATE_WAIT" to "1")
+        val command = installerCommand(script, kind, locator.targetRoot())
+        // A child provisioner's exports never reach this JVM. Reconstruct native
+        // build policy in every child; the shell independently verifies Node/npm.
+        val env = nativeChildEnvironment(node, baseEnv) + ("INSRC_DAEMON_UPDATE_WAIT" to "1")
 
         return try {
-            val exit = runner.run(Subprocess(command = command, env = env))
+            val result = runner.runCaptured(Subprocess(command = command, env = env))
+            val exit = result.exitCode
             if (exit == 0) ProvisionOutcome(ok = true, exitCode = 0)
-            else ProvisionOutcome(ok = false, exitCode = exit, reason = mapReason(kind, exit))
+            else ProvisionOutcome(ok = false, exitCode = exit, reason = result.output.trim().takeLast(8192).ifEmpty { mapReason(kind, exit) })
         } catch (e: IOException) {
             log.warn("insrc: failed to spawn daemon setup for $kind", e)
             ProvisionOutcome(ok = false, reason = "insrc setup could not start: ${e.message}")
         }
-    }
-
-    /** Prepend the resolved Node's bin dir to PATH so the installer's `node` resolves to our runtime. */
-    private fun envWithNodeOnPath(node: NodeRuntime): Map<String, String> {
-        val nodeBinDir = File(node.executablePath).parentFile?.path ?: return baseEnv.filterKeys { it != "NODE_OPTIONS" && it != "NODE_PATH" }
-        val existingPath = baseEnv["PATH"].orEmpty()
-        val newPath = if (existingPath.isEmpty()) nodeBinDir else nodeBinDir + File.pathSeparator + existingPath
-        return baseEnv.filterKeys { it != "NODE_OPTIONS" && it != "NODE_PATH" } + ("PATH" to newPath)
     }
 
     /**
@@ -113,11 +91,22 @@ class ScriptDaemonProvisioner(
 
     /** The real runner: spawn via [ProcessBuilder], inheriting IO, returning the exit code. */
     class ProcessBuilderRunner : SubprocessRunner {
-        override fun run(spec: Subprocess): Int {
-            val pb = ProcessBuilder(spec.command).redirectErrorStream(true).redirectOutput(ProcessBuilder.Redirect.DISCARD)
+        override fun run(spec: Subprocess): Int = runCaptured(spec).exitCode
+        override fun runCaptured(spec: Subprocess): NodeBootstrapResult {
+            val pb = ProcessBuilder(spec.command).redirectErrorStream(true)
             pb.environment().clear()
             pb.environment().putAll(spec.env)
-            return pb.start().waitFor()
+            val process = pb.start()
+            var tail = byteArrayOf()
+            process.inputStream.use { stream ->
+                val buffer = ByteArray(4096)
+                while (true) {
+                    val count = stream.read(buffer)
+                    if (count < 0) break
+                    tail = (tail + buffer.copyOf(count)).takeLast(8192).toByteArray()
+                }
+            }
+            return NodeBootstrapResult(process.waitFor(), tail.toString(Charsets.UTF_8))
         }
     }
 }

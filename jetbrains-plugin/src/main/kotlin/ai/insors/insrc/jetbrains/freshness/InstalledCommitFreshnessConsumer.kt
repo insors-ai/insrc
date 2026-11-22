@@ -85,7 +85,7 @@ class InstalledCommitFreshnessConsumer(
             val scripts = DefaultDaemonScriptLocator()
             val deps = FreshnessDeps(
                 gateway = GatewayFreshnessView(gateway),
-                gitLsRemote = { root, branch -> gitLsRemote((scripts.managedReleaseRoot() ?: Path.of(root)).toString(), branch) },
+                gitLsRemote = { root, branch -> gitLsRemote((scripts.selectedReleaseRoot() ?: Path.of(root)).toString(), branch) },
                 notify = ::showBalloon,
                 versionState = object : PluginVersionState {
                     override val current: String = runningPluginVersion()
@@ -93,6 +93,8 @@ class InstalledCommitFreshnessConsumer(
                     override fun setLastSeen(version: String) = store.setLastSeen(version)
                 },
                 daemonRoot = scripts.daemonRoot().toString(),
+                upgradeLegacy = { ai.insors.insrc.jetbrains.lifecycle.DaemonLifecycleCommandRunner.production().run(
+                    ai.insors.insrc.jetbrains.daemon.LifecycleCommand.UPDATE) },
                 beginUpdate = { inFlight.compareAndSet(false, true) },
                 endUpdate = { inFlight.set(false) },
             )

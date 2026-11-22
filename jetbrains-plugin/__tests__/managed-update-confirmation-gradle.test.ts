@@ -4,7 +4,7 @@ import { strict as assert } from 'node:assert';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { before, test } from 'node:test';
-import { jetbrainsPluginRoot, runFocusedJUnit } from '../test-bridge/run-focused-junit.js';
+import { runFocusedJUnit } from '../test-bridge/run-focused-junit.js';
 
 const freshness = 'ai.insors.insrc.jetbrains.freshness.DaemonFreshnessFlowTest';
 const transport = 'ai.insors.insrc.jetbrains.daemon.UnixSocketDaemonRpcParseTest';
@@ -12,10 +12,13 @@ const lifecycle = 'ai.insors.insrc.jetbrains.lifecycle.DaemonLifecycleCommandRun
 const wiring = 'ai.insors.insrc.jetbrains.freshness.InstalledCommitFreshnessConsumerTest';
 const classes = [freshness, transport, lifecycle, wiring];
 
-before(() => runFocusedJUnit(classes), { timeout: 300_000 });
+const reports = new Map<string, string>();
+before(() => runFocusedJUnit(classes, process.env, directory => {
+ for (const cls of classes) reports.set(cls, readFileSync(join(directory, `TEST-${cls}.xml`), 'utf8'));
+}), { timeout: 300_000 });
 
 function requirePassingKotlinCase(className: string, name: string): void {
-	const xml = readFileSync(join(jetbrainsPluginRoot, 'build', 'test-results', 'test', `TEST-${className}.xml`), 'utf8');
+	const xml = reports.get(className)!;
 	const marker = `<testcase name="${name}()"`;
 	const start = xml.indexOf(marker);
 	assert.ok(start >= 0, `Kotlin case did not run: ${name}`);
@@ -23,10 +26,11 @@ function requirePassingKotlinCase(className: string, name: string): void {
 	assert.doesNotMatch(xml.slice(start, next < 0 ? undefined : next), /<failure|<error|<skipped/);
 }
 
-test('JetBrains selects the installer on legacy macOS and verifies the migrated commit', () => {
-	requirePassingKotlinCase(lifecycle, 'legacy macOS update selects the bundled installer for the configured checkout');
+test('JetBrains selects the current installer and verifies the resulting commit', () => {
+	for (const xml of reports.values()) assert.doesNotMatch(xml, /<failure|<error|<skipped/);
+	requirePassingKotlinCase(lifecycle, 'updates require the current bundled installer even with an old controller present');
 	requirePassingKotlinCase(freshness, 'legacy macOS freshness verifies the bridged update without invoking old IPC');
-	requirePassingKotlinCase(wiring, 'freshness routes legacy macOS through the installer and keeps managed IPC');
+	requirePassingKotlinCase(wiring, 'freshness uses the current installer bridge while retaining IPC status and outcomes');
 });
 
 for (const name of [

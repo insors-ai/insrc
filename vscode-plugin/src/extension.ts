@@ -25,7 +25,7 @@ import { createCommandRegistry } from './surfaces/command-registry.js';
 import { createConsentGate } from './surfaces/consent-gate.js';
 import { activateExtension } from './activation.js';
 import { defaultSubprocessRunner } from './daemon/subprocess.js';
-import { defaultDaemonPaths, selectedDaemonRoot } from './daemon/paths.js';
+import { defaultDaemonPaths, selectedDaemonRoot, selectedMcpRoot } from './daemon/paths.js';
 import { readUpdateSource } from '../../src/shared/update-source.js';
 import { createDaemonLifecycleController } from './daemon/controller.js';
 import { registerDaemonCommands, restartDaemonAndReport } from './daemon/commands.js';
@@ -156,8 +156,8 @@ export function activate(context: vscode.ExtensionContext): void {
   const registry = createHostRegistry(HOST_SPECS, {
     env,
     fs: defaultHostFileSystem,
-    launchTarget: () => {
-      const target = join(paths.daemonRoot, 'scripts', 'insrc-mcp');
+    launchTarget: async () => {
+      const target = join(await selectedMcpRoot(paths) ?? paths.daemonRoot, 'scripts', 'insrc-mcp');
       return existsSync(target) ? target : undefined;
     },
   });
@@ -222,7 +222,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
   // S003 daemon-auto-update: keep the locally-installed daemon current. This is the
   // SOLE vscode importer, so it binds the real seams — the daemon-owned update+restart
-  // IPC (client.update/updateOutcome, sc1; NEVER a daemon-ctl.sh shell-out, k2), the
+  // Current packaged installer bridge plus IPC status/outcomes, the
   // installed-commit read (client.status, sc2), a plugin-side git ls-remote (no pull,
   // k1), a native Update/Dismiss notification (k7), and the per-plugin last-seen
   // version over globalState + packageJSON.version (self-update trigger, k4). Fired
@@ -231,8 +231,7 @@ export function activate(context: vscode.ExtensionContext): void {
   void activationSettled.then(() => runDaemonFreshnessCheck({
     client,
     daemonRoot: paths.daemonRoot,
-    upgradeLegacy: async () => paths.managedStateRoot !== undefined && await selectedDaemonRoot(paths) === undefined
-      ? controller.run('update') : undefined,
+    upgradeLegacy: async () => controller.run('update'),
     gitLsRemote: async (root, branch) => {
       const checkout = await selectedDaemonRoot(paths) ?? root;
       const configured = readUpdateSource();

@@ -11,6 +11,7 @@ export const NODE_RUNTIME_ASSETS = Object.freeze([
  'scripts/provision-node-runtime.sh', 'scripts/node-runtime-archive.sh',
  'scripts/node-runtime-env.sh', 'scripts/node-runtime-policy.sh',
  'scripts/node-runtime-policy.mjs', 'scripts/node-runtime-store.mjs',
+ 'scripts/source-selection-env.sh',
  'src/assets/node-runtime-policy.json',
 ]);
 const root = fileURLToPath(new URL('../', import.meta.url));
@@ -50,6 +51,16 @@ export function assertPackagedRuntimeAssets(source, assetRoot = root) {
   const content=execFileSync('/usr/bin/tar',['-xzOf','-',file],{input:archive,maxBuffer:1024*1024});
   if(!content.equals(readFileSync(join(assetRoot,file))))throw new Error(`embedded runtime asset drift: ${file}`);
  }
+}
+
+/** Qualified client channels must receive the externally authenticated installer,
+ * never silently substitute the development template's empty release authority. */
+export function assertPackagedSourceBootstrap(source) {
+ assertPackagedRuntimeAssets(source);
+ const encoded=source.match(/^INSRC_RELEASE_BOOTSTRAP_B64='([A-Za-z0-9+/=]+)'$/m)?.[1];
+ if(!encoded)throw new Error('qualified IDE upgrades require the authenticated release bootstrap');
+ const verifier=Buffer.from(encoded,'base64');
+ if(verifier.length>1024*1024||!verifier.toString('utf8').match(/ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI[A-Za-z0-9+/]{43}/))throw new Error('release bootstrap lacks its provisioned public authority');
 }
 
 if(process.argv[1]===fileURLToPath(import.meta.url)){

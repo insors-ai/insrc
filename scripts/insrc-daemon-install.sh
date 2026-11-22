@@ -69,6 +69,7 @@ INSRC_RELEASE_BOOTSTRAP_B64=''
 INSRC_NODE_BOOTSTRAP_B64=''
 INSRC_NODE_BOOTSTRAP_SHA256=''
 PRINT_RUNTIME=0
+PRINT_SOURCE_ROUTE=0
 RUNTIME_ARCHIVE=''
 MIGRATE_RUNTIME=0
 PREDECESSOR_COMMIT=''
@@ -137,6 +138,7 @@ while [ $# -gt 0 ]; do
 		--repo)      shift; REPO_URL="${1:-}"; EXPLICIT_REPO=1; [ -n "$REPO_URL" ] || die "--repo requires a value" ;;
 		--no-start)  START_AFTER_INSTALL=0 ;;
 		--print-runtime) PRINT_RUNTIME=1 ;;
+		--print-source-route) PRINT_SOURCE_ROUTE=1 ;;
 		--migrate-runtime) MIGRATE_RUNTIME=1 ;;
 		--predecessor) shift; PREDECESSOR_COMMIT="${1:-}"; [ -n "$PREDECESSOR_COMMIT" ] || die '--predecessor requires the exact last-known-good commit' ;;
 		--rebuild-predecessor) REBUILD_PREDECESSOR=1 ;;
@@ -171,8 +173,14 @@ fi
 RUNTIME_MODE=
 [ "$MIGRATE_RUNTIME" -eq 0 ] || RUNTIME_MODE=migration
 [ "$PRINT_RUNTIME" -eq 0 ] || RUNTIME_MODE=bootstrap
+[ "$PRINT_SOURCE_ROUTE" -eq 0 ] || RUNTIME_MODE=bootstrap
 insrc_source_toolchain "$RUNTIME_TOOLS" "$HOME/.insrc" "$RUNTIME_ARCHIVE" "$RUNTIME_MODE" || die "verified local Node toolchain is unavailable" 2
 if [ "$PRINT_RUNTIME" -eq 1 ]; then printf '%s\n' "$NODE_BIN"; exit 0; fi
+if [ "$PRINT_SOURCE_ROUTE" -eq 1 ]; then
+  . "$RUNTIME_TOOLS/source-selection-env.sh"
+  insrc_print_source_route "$HOME/.insrc" "$INSTALL_ROOT"
+  exit $?
+fi
 
 DAEMON_SRC="$INSTALL_ROOT"
 LOG_DIR="/tmp/insrc"

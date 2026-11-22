@@ -22,32 +22,20 @@
     "epicSlug": "add-dedicated-security-reviews",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "approved",
+      "status": "draft",
       "revision": {
-        "number": 4,
-        "contentHash": "02147f49e274f0fbbaffaf94bce723c04c0d2038ee844cbe6830ff08d5af0f3c",
-        "at": "2026-11-22T09:00:00.000Z",
+        "number": 5,
+        "contentHash": "c3ddf54acc761bdaddd0edd8ef73037fce41c8477de5f6fa143845929f85ba7b",
+        "at": "2026-11-22T11:44:53.512Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
           "properties": {}
         }
       },
-      "signoffs": [],
-      "approval": {
-        "revision": 4,
-        "by": {
-          "id": "insrc:approval",
-          "kind": "system",
-          "properties": {}
-        },
-        "at": "2026-11-22T06:21:13.081Z",
-        "override": {
-          "reason": "Automated design review is retired (endpoint fails immediately per project policy). Self-reviewed by the controller against the real code across 3 external review rounds (2 HIGH + 3 MED, then 2 HIGH + 2 MED, then 2 HIGH + 2 MED, all verified and corrected); approved by explicit user instruction at revision 4."
-        }
-      }
+      "signoffs": []
     },
-    "revision": 4,
+    "revision": 5,
     "envelope": {
       "description": "",
       "references": [],
@@ -68,15 +56,15 @@
       },
       "q662db3c3": {
         "question": "(s3 LLD) The exact per-provider mechanism satisfying the three fixed denials (credential-location reads, out-of-scope reads, unauthorized MCP operations) must be specified and verified by a negative-access test per provider (claude, codex, vibe).",
-        "status": "deferred",
-        "rationale": "Tagged (s3 LLD) in the HLD; out of s1's scope. Will resurface via review_deferred when authoring s3's LLD.",
+        "status": "retired",
+        "rationale": "Tagged (s3 LLD) in the HLD; out of s1's scope. Will resurface via review_deferred when authoring s3's LLD. SUPERSEDED at HLD revision 5: per explicit user direction, s3 dispatches through CliProvider.runReadOnlySession with the same access level every other CLI-backed session has; no additional denial/negative-access-test gate is specified. The underlying invariant this question answered no longer exists in the HLD.",
         "resolvedAt": "2026-11-22T06:28:19.541Z"
       },
       "q999e6e29": {
         "question": "(s2 LLD) The exact per-manager network-enforcement mechanism (process-level network confinement, an allowlisting proxy, or equivalent) satisfying the fixed pre-transmission-enforcement invariant must be chosen and tested.",
-        "status": "resolved",
+        "status": "retired",
         "choice": "Mandatory allowlisting proxy",
-        "rationale": "Confirmed via code search: this codebase has ZERO existing network-namespace/firewall/sandbox infrastructure (no netns, iptables, or process-confinement capability anywhere), so true OS-level process-level confinement is infeasible to build within this Story -- it would require root privileges and platform-specific code far beyond scope. A locally-run allowlisting proxy is buildable in pure Node, and every targeted package manager (npm/pnpm/yarn, pip/pipenv/poetry, go, cargo) already supports standard HTTP_PROXY/HTTPS_PROXY-style proxy configuration as a FIRST-CLASS, documented feature of that manager -- not a repurposed mechanism. s2 will additionally require a per-manager verification step (a decoy-destination connectivity probe against the local proxy with default-deny) before trusting that manager's traffic is actually confined; a manager whose proxy-respecting behavior cannot be verified is an explicit coverage gap (refused, never run unconfined), extending the per-manager mapping pattern the HLD already establishes.",
+        "rationale": "Confirmed via code search: this codebase has ZERO existing network-namespace/firewall/sandbox infrastructure (no netns, iptables, or process-confinement capability anywhere), so true OS-level process-level confinement is infeasible to build within this Story -- it would require root privileges and platform-specific code far beyond scope. A locally-run allowlisting proxy is buildable in pure Node, and every targeted package manager (npm/pnpm/yarn, pip/pipenv/poetry, go, cargo) already supports standard HTTP_PROXY/HTTPS_PROXY-style proxy configuration as a FIRST-CLASS, documented feature of that manager -- not a repurposed mechanism. s2 will additionally require a per-manager verification step (a decoy-destination connectivity probe against the local proxy with default-deny) before trusting that manager's traffic is actually confined; a manager whose proxy-respecting behavior cannot be verified is an explicit coverage gap (refused, never run unconfined), extending the per-manager mapping pattern the HLD already establishes. SUPERSEDED at HLD revision 5: per explicit user direction, the reviewer runs with the same host access as the controller across the whole Epic design; no network enforcement mechanism (proxy or otherwise) is built. The underlying invariant this question answered no longer exists in the HLD.",
         "resolvedAt": "2026-11-22T09:44:04.364Z"
       },
       "q7798674d": {
@@ -90,11 +78,11 @@
   },
   "body": {
     "summary": {
-      "prose": "A new, standalone security-review orchestration module pins one content identity for the whole review, resolves the configured security model, and enforces -- not merely records -- a per-manager network boundary while collecting dependency advisories in controller-side code against that pinned identity. The code-vulnerability pass runs as a CLI read-only session required to deny credential-location reads, out-of-scope reads, and unauthorized MCP operations (refusing a backend that cannot), against the SAME pinned identity. Both passes assemble into the already-typed SecurityFinding/VerificationReceipt shapes plus a supplemental report structure -- plugging into the shared review-round driver through its reserved security hook rather than redesigning any of that.",
+      "prose": "A new, standalone security-review orchestration module pins one content identity for the whole review, resolves the configured security model, and runs the dependency-advisory collection and the code-vulnerability pass with the SAME host access the controller itself already has -- no sandboxing or network/filesystem confinement is attempted, since constraining the reviewer's access would itself degrade the accuracy of the review (explicit user direction, applied across the Epic's design). Both passes run against that one pinned content identity and record, for audit, which destinations were reached and what was disclosed -- observability, not an enforced boundary. Both passes assemble into the already-typed SecurityFinding/VerificationReceipt shapes plus a supplemental report structure -- plugging into the shared review-round driver through its reserved security hook rather than redesigning any of that.",
       "audience": "technical"
     },
     "frameworkSummary": "The Epic adds a standalone orchestration module (outside src/workflow/review-round/) that owns model selection, dependency-advisory collection, code-assessment execution, and reporting, and supplies review-round's existing RoundDriverHooks.security hook as a thin adapter. review-round itself stays unchanged except for the one call site invoking that hook; the data shapes it already exports (SecurityFinding, SecurityLocator, EvidenceProvider, VerificationReceipt) are populated, never redefined.",
-    "architectureShape": "Before any Story runs, the caller pins a SecurityReviewSnapshot identified by a `contentIdentity`: EITHER an immutable materialized copy (a git worktree checked out once and left untouched for the whole review) OR a content hash covering the pinned commit plus every permitted dirty/untracked input -- a repository path, commit SHA and a boolean dirty flag do NOT uniquely identify the reviewed files (two different dirty trees can share a commit and dirty status), so `contentIdentity` is the one value both s2 and s3 execute against and the one value s3 recomputes/verifies before trusting s2's evidence, refusing on a mismatch rather than silently combining evidence from two different trees.\n\nThree Stories then map to three responsibilities, split along a model/no-model line the existing providers actually support (confirmed by reading src/agent/providers/cli-provider.ts and src/agent/read-only-tool-loop.ts): s1 resolves and records the configured security model, dispatched LATER through CliProvider.runReadOnlySession.\n\ns2 is entirely controller-side, deterministic code with NO model involvement, and OWNS two fixed invariants (mechanism deferred to the s2 LLD, but the invariant and the ownership are fixed here): (1) ENFORCEMENT, not mere recording, of each manager's approved destination -- the boundary must block any request to an unapproved destination BEFORE it leaves the process, covering redirects and secondary requests a native tool itself makes (e.g. a registry's own metadata-then-tarball fetch, or govulncheck's own vulnerability-database fetch); if that boundary cannot be established for a given manager/environment, s2 refuses to run that manager's audit rather than running it unconfined and only logging the destination afterward. (2) a documented per-manager INPUT/MODE mapping, because \"scope the filesystem to the manifest/lockfile\" does not fit every supported manager: npm/pnpm/yarn/cargo read only their own manifest+lockfile and fit that scope directly; pip-audit audits the ACTIVE Python environment by default and does NOT select the repository's requirements file merely because cwd points there, so s2 must build and point it at an isolated environment resolved from the pinned manifest, not rely on cwd; govulncheck performs source-level analysis across the module (`./...`), not a manifest read, so a go audit runs against a confined COPY of the pinned snapshot's module source, never a manifest-only view. A manager s2 cannot correctly scope or confine under this mapping produces an explicit coverage gap, never an unconfined or mis-targeted run.\n\ns3 (depending on s1 and s2) owns the end-to-end sequence, and fixes a MINIMUM read-boundary requirement every CLI backend it dispatches through must meet (the exact per-provider flags are an s3 LLD decision, but the three denials and the refuse-if-unverifiable rule are fixed here): deny reads of credential locations, deny reads outside the pinned snapshot's own scope, and deny any MCP operation not explicitly authorized for this review -- verified by an actual NEGATIVE-access test per backend (attempting each denied action and confirming refusal), never by only checking that a restricting flag was supplied. s3 refuses to dispatch the code pass through a backend for which these three denials cannot be verified. s3 also invokes runReviewRound (review-round/driver.ts, which only calls ground + the optional security hook and merges their findings -- it does not itself execute a sandbox/mutation checkpoint, reconcile rounds, or persist anything), executes and owns that checkpoint, calls reconciliation, maps the review's pinned contentIdentity onto an epicHash/storyId identity (persistVerificationReceipt, receipt-record.ts, hard-requires both), persists VerificationReceipt entries through it, and owns checkpoint cleanup. s3 assembles SecurityFinding/SecurityEvidence from the code pass and a supplemental report structure from s2's SecurityAdvisoryEvidence, because SecurityFinding's own schema is additionalProperties:false and has no dedicated exploit-prerequisite/remediation/advisory-provenance fields.\n\nThe module imports review-round's types; review-round never imports the new module, keeping the dependency direction one-way and the shared driver generic across every review type.",
+    "architectureShape": "Before any Story runs, the caller pins a SecurityReviewSnapshot identified by a `contentIdentity`: a content hash covering the pinned commit plus every permitted dirty/untracked input, computed by hashing the complete, required input set's actual bytes directly -- never inferred from git status alone, since a tracked file marked assume-unchanged can diverge from HEAD while git status stays empty. A repository path, commit SHA and a boolean dirty flag do NOT uniquely identify the reviewed files, so `contentIdentity` is the one value both s2 and s3 execute against and the one value s3 recomputes/verifies before trusting s2's evidence, refusing on a mismatch rather than silently combining evidence from two different trees. This is a CORRECTNESS invariant, independent of the access-level decision below.\n\nThree Stories then map to three responsibilities, split along a model/no-model line the existing providers actually support (confirmed by reading src/agent/providers/cli-provider.ts and src/agent/read-only-tool-loop.ts): s1 resolves and records the configured security model, dispatched LATER through CliProvider.runReadOnlySession.\n\ns2 is entirely controller-side, deterministic code with NO model involvement, and runs with the SAME host access as the controller itself -- no sandboxing, no network or filesystem confinement is attempted anywhere in this Epic. This is a deliberate, explicit choice: constraining what the reviewer's audit tools can reach would risk degrading the review's own correctness (a confined pip-audit/govulncheck run can miss what a real resolution against the actual environment would catch), and this codebase has no existing sandbox/network-namespace infrastructure to build that confinement on in any case. s2 instead OWNS two fixed responsibilities, reframed accordingly: (1) OBSERVABILITY -- s2 records which destination each manager's audit actually reached and what it disclosed, attaching that to SecurityAdvisoryEvidence for the final report; this is audit-trail information, not a basis for refusing to run a manager. (2) a documented per-manager INPUT/MODE mapping, retained because it is a CORRECTNESS requirement independent of isolation: npm/pnpm/yarn/cargo read their own manifest+lockfile directly; pip-audit audits the ACTIVE Python environment by default and does NOT select the repository's requirements file merely because cwd points there, so s2 must point it at the repository's own resolved environment/requirements explicitly; govulncheck performs source-level analysis across the module (`./...`), not a manifest read, so a go audit runs directly against the repository's own module source. A manager s2 cannot correctly TARGET under this mapping (not: cannot confine) produces an explicit coverage gap, never a mis-targeted run.\n\ns3 (depending on s1 and s2) owns the end-to-end sequence. The code-vulnerability pass is dispatched through CliProvider.runReadOnlySession with the SAME host access every other CLI-backed session in this codebase already has -- no additional credential-denial, out-of-scope-read-denial, or MCP-authorization gate is layered on top of what runReadOnlySession's own existing mechanism provides, for the same reason as s2: a model reviewing code for vulnerabilities needs the same real access to the repository the controller's own sessions already have, and sandboxing it would risk the review missing real findings. s3 also invokes runReviewRound (review-round/driver.ts, which only calls ground + the optional security hook and merges their findings -- it does not itself execute a sandbox/mutation checkpoint, reconcile rounds, or persist anything), executes and owns that checkpoint, calls reconciliation, maps the review's pinned contentIdentity onto an epicHash/storyId identity (persistVerificationReceipt, receipt-record.ts, hard-requires both), persists VerificationReceipt entries through it, and owns checkpoint cleanup. s3 assembles SecurityFinding/SecurityEvidence from the code pass and a supplemental report structure from s2's SecurityAdvisoryEvidence, because SecurityFinding's own schema is additionalProperties:false and has no dedicated exploit-prerequisite/remediation/advisory-provenance fields.\n\nThe module imports review-round's types; review-round never imports the new module, keeping the dependency direction one-way and the shared driver generic across every review type.",
     "sharedContracts": [
       {
         "id": "sc1",
@@ -112,7 +100,7 @@
       {
         "id": "sc2",
         "name": "SecurityAdvisoryEvidence",
-        "purpose": "Carries s2's dependency-advisory collection outcome (controller-side, no model) across the boundary: the pinned contentIdentity it was collected against (so s3 can verify it recomputes/matches the same identity before trusting this evidence), the queried coordinates, the actual advisory matches with affected versions and provenance, the per-match advisory destination enforced (not merely observed), the per-manager input mode used (manifest-scoped | isolated-environment | confined-source-copy | unsupported), and the dependencies/sources that stayed unresolved, unavailable or unsupported -- so s3 can report confirmed affected dependencies and unverified coverage as DISTINCT values bound to the SAME content identity as its own code findings.",
+        "purpose": "Carries s2's dependency-advisory collection outcome (controller-side, no model) across the boundary: the pinned contentIdentity it was collected against (so s3 can verify it recomputes/matches the same identity before trusting this evidence), the queried coordinates, the actual advisory matches with affected versions and provenance, the per-match advisory destination actually reached (recorded for audit, not enforced -- s2 runs with controller-equivalent access, no sandboxing), the per-manager input mode used (manifest-scoped | isolated-environment | confined-source-copy | unsupported, retained as a correctness/targeting concern, not an isolation one), and the dependencies/sources that stayed unresolved, unavailable or unsupported -- so s3 can report confirmed affected dependencies and unverified coverage as DISTINCT values bound to the SAME content identity as its own code findings.",
         "interfaceSketch": "interface SecurityAdvisoryMatch {\n\treadonly coordinate: string;\n\treadonly advisoryId: string;\n\treadonly affectedVersions: string;\n\treadonly severity: string;\n\treadonly provenance: string;\n\treadonly advisoryDestination: string;\n}\n\ninterface SecurityAdvisoryEvidence {\n\treadonly contentIdentity: string;\n\treadonly readOnly: true;\n\treadonly queriedCoordinates: readonly string[];\n\treadonly matches: readonly SecurityAdvisoryMatch[];\n\treadonly perManagerMode: readonly { readonly manager: string; readonly mode: 'manifest-scoped' | 'isolated-environment' | 'confined-source-copy' | 'unsupported'; }[];\n\treadonly unresolvedDependencies: readonly string[];\n\treadonly unavailableSources: readonly string[];\n}",
         "ownedByStory": "s2",
         "consumedByStories": [
@@ -138,7 +126,7 @@
           "sc2"
         ],
         "depends": [],
-        "internal": "pkg_audit's package-manager resolution; the ENFORCED (not merely recorded) per-manager network boundary -- blocking any request to an unapproved destination before it leaves the process, including redirects and a tool's own secondary requests, and refusing to run a manager's audit at all when that enforcement cannot be established; the documented per-manager input/mode mapping (npm/pnpm/yarn/cargo: manifest+lockfile scope; pip/pipenv/poetry: an isolated environment resolved from the pinned manifest, never the ambient active environment pip-audit defaults to; go: a confined copy of the pinned snapshot's module source, since govulncheck performs source-level analysis, not a manifest read) with an explicit coverage gap for any manager s2 cannot correctly scope under that mapping; and the advisory-match collection that populates SecurityAdvisoryEvidence (stamped with the pinned contentIdentity) stay private to s2. No model, tool-loop, or CLI session is involved in s2 at all. ac2's gap-reporting distinguishes a SUCCESSFUL audit that found vulnerabilities (a valid, parseable result regardless of exit code -- pkg_audit's own auditArgv already marks every supported manager nonZeroOk:true) from an EXECUTION GAP (spawn failure, unparseable output, an unsupported manager, or a manager s2's input/mode mapping cannot correctly scope) -- these are never conflated."
+        "internal": "pkg_audit's package-manager resolution; s2 runs with the SAME host access as the controller itself -- no network or filesystem sandboxing is attempted (explicit user direction: constraining the reviewer degrades review accuracy). s2 instead RECORDS, per manager, which destination was actually reached and what was disclosed (observability for the final report, not a basis for refusal); the documented per-manager input/mode mapping (npm/pnpm/yarn/cargo: manifest+lockfile scope; pip/pipenv/poetry: the repository's own resolved environment, never the ambient active environment pip-audit defaults to; go: the repository's own module source directly, since govulncheck performs source-level analysis, not a manifest read) is retained as a CORRECTNESS/targeting requirement, with an explicit coverage gap for any manager s2 cannot correctly target under that mapping; and the advisory-match collection that populates SecurityAdvisoryEvidence (stamped with the pinned contentIdentity, computed by hashing the complete required input set's actual bytes directly) stay private to s2. No model, tool-loop, or CLI session is involved in s2 at all. ac2's gap-reporting distinguishes a SUCCESSFUL audit that found vulnerabilities (a valid, parseable result regardless of exit code -- pkg_audit's own auditArgv already marks every supported manager nonZeroOk:true) from an EXECUTION GAP (spawn failure, unparseable output, an unsupported manager, or a manager s2's input/mode mapping cannot correctly target) -- these are never conflated."
       },
       {
         "storyId": "s3",
@@ -147,25 +135,25 @@
           "sc1",
           "sc2"
         ],
-        "internal": "The RoundDriverHooks.security adapter function; the CliProvider.runReadOnlySession dispatch of the code-vulnerability pass against the SAME pinned contentIdentity s2 collected against (recomputed/verified by s3, refusing on a mismatch), using s1's resolved model, under a backend REQUIRED to deny credential-location reads, out-of-scope reads and unauthorized MCP operations -- verified per backend by an actual negative-access test (not merely confirming a restricting flag was passed), with s3 refusing to dispatch through a backend that cannot be so verified; the exact per-provider mechanism is an s3 LLD decision, the three denials and the refuse-if-unverifiable rule are fixed here. The call into runReviewRound and the separate ownership of everything runReviewRound itself does NOT do (sandbox/mutation checkpoint execution, round reconciliation, VerificationReceipt persistence, and checkpoint cleanup); the mapping from the review's pinned contentIdentity onto the epicHash/storyId identity persistVerificationReceipt requires; and the assembly of SecurityFinding/SecurityEvidence plus a supplemental report structure stay private to s3. It consumes s1's SecurityModelSelection and s2's SecurityAdvisoryEvidence to produce that report."
+        "internal": "The RoundDriverHooks.security adapter function; the CliProvider.runReadOnlySession dispatch of the code-vulnerability pass against the SAME pinned contentIdentity s2 collected against (recomputed/verified by s3, refusing on a content MISMATCH only -- never on an access/enforcement question), using s1's resolved model, with the SAME host access every other CLI-backed session in this codebase already has (no additional credential/out-of-scope/MCP denial gate; explicit user direction, applied across the Epic's design). The call into runReviewRound and the separate ownership of everything runReviewRound itself does NOT do (sandbox/mutation checkpoint execution, round reconciliation, VerificationReceipt persistence, and checkpoint cleanup); the mapping from the review's pinned contentIdentity onto the epicHash/storyId identity persistVerificationReceipt requires; and the assembly of SecurityFinding/SecurityEvidence plus a supplemental report structure stay private to s3. It consumes s1's SecurityModelSelection and s2's SecurityAdvisoryEvidence to produce that report."
       }
     ],
     "nonFunctional": {
-      "security": "The per-manager network boundary in s2 is ENFORCED before any request leaves the process (blocking unapproved destinations, redirects and a tool's own secondary requests), not merely observed and recorded afterward; a manager for which that boundary cannot be established is refused, not run unconfined. s2's filesystem/environment scope follows a documented per-manager mode (manifest-scoped for npm/pnpm/yarn/cargo; an isolated resolved environment for pip/pipenv/poetry, since pip-audit otherwise audits the ambient active environment; a confined source copy for go, since govulncheck performs source-level analysis) -- a manager outside that mapping is an explicit coverage gap, never a best-effort run against the wrong target. This is SEPARATE from the configured CLI model's own inference traffic (k1: routes through the installed CLI provider), which is expected and unrelated to dependency-advisory egress. s3's code-vulnerability pass is dispatched only through a CLI backend REQUIRED to deny credential-location reads, out-of-scope reads (outside the pinned contentIdentity), and unauthorized MCP operations -- each denial verified by a real negative-access test, not by checking that a flag exists; a backend that cannot be so verified is refused. The exact per-provider enforcement mechanism for both s2's and s3's boundaries is an s2/s3 LLD decision; the invariants, the owners, and the refuse-if-unenforceable rule are fixed by this HLD.",
-      "observability": "Every checkpoint run -- pass or fail, whether or not a SecurityFinding corroborates it -- is recorded as a VerificationReceipt (already built, src/workflow/review-round/receipt-record.ts), so a security review's execution is auditable independent of its findings. s3 owns stamping that record with the epicHash/storyId persistVerificationReceipt requires, mapped from the review's own pinned contentIdentity.",
+      "security": "s2 and s3 run with the SAME host access as the controller itself (explicit user direction: sandboxing or constraining the reviewer degrades the review's own accuracy, applied across this Epic's design) -- neither attempts network or filesystem confinement, and this codebase has no sandbox/network-namespace infrastructure to build such confinement on in any case. s2 records, per manager, which destination was actually reached and what was disclosed, attaching that to SecurityAdvisoryEvidence for audit; this is observability, not an enforced boundary, and is NOT a basis for refusing to run a manager. s2's per-manager input/mode mapping (manifest-scoped for npm/pnpm/yarn/cargo; the repository's own resolved environment for pip/pipenv/poetry, since pip-audit otherwise audits the ambient active environment; the repository's own module source for go, since govulncheck performs source-level analysis) is retained as a CORRECTNESS requirement -- pointing each tool at the right target -- not an isolation one; a manager outside that mapping is still an explicit coverage gap, because s2 cannot correctly target it, not because it cannot be confined. s3's code-vulnerability pass is dispatched through CliProvider.runReadOnlySession with the same access level every other CLI-backed session in this codebase already has; no additional credential/out-of-scope/MCP denial or negative-access test gates dispatch. contentIdentity remains a hard, non-negotiable CORRECTNESS invariant, unrelated to the access-level decision: s2 and s3 must operate against the exact same pinned content, computed by hashing the complete, required input set's actual bytes directly (never inferred from git status alone, which can miss a tracked file marked assume-unchanged) -- s3 recomputes and verifies this identity before trusting s2's evidence, refusing ONLY on an actual content mismatch.",
+      "observability": "Every checkpoint run -- pass or fail, whether or not a SecurityFinding corroborates it -- is recorded as a VerificationReceipt (already built, src/workflow/review-round/receipt-record.ts), so a security review's execution is auditable independent of its findings. s3 owns stamping that record with the epicHash/storyId persistVerificationReceipt requires, mapped from the review's own pinned contentIdentity. s2's per-manager recorded destinations/disclosures (see nonFunctional.security) are the equivalent audit trail for the dependency-advisory pass.",
       "durability": "No new persistent storage is introduced for s1/s2's own outputs (SecurityModelSelection, SecurityAdvisoryEvidence are transient per-review values); the durable records are the already-typed SecurityFinding/VerificationReceipt heads the shared round-driver machinery (Epic 03f4fd3b9102aab8) persists, plus s3's new supplemental report structure (not yet a stored artifact type; its persistence mechanism is an open question for the s3 LLD).",
-      "performance": "Not a stated constraint for this Epic; the new module's cost is bounded by one pkg_audit invocation (per confined manager) and one CLI read-only session per request, not a new background job."
+      "performance": "Not a stated constraint for this Epic; the new module's cost is bounded by one pkg_audit invocation (per targeted manager) and one CLI read-only session per request, not a new background job."
     },
     "rolloutOverview": {
       "phases": [
         {
-          "name": "Phase A -- foundational contracts (model selection and enforced advisory collection)",
+          "name": "Phase A -- foundational contracts (model selection and dependency-advisory collection)",
           "includesStories": [
             "s1",
             "s2"
           ],
           "rationale": "s1 (SecurityModelSelection) and s2 (SecurityAdvisoryEvidence) are the two shared contracts s3 depends on; neither depends on the other, so they can land in either order or in parallel, but both must exist before s3 is buildable.",
-          "backwardCompat": "No existing behavior changes: s1 adds a new, independently-selectable model binding beside core/mid/cheap; s2 runs entirely controller-side with an enforced, per-manager-scoped pkg_audit invocation against the pinned content identity and touches no existing caller.",
+          "backwardCompat": "No existing behavior changes: s1 adds a new, independently-selectable model binding beside core/mid/cheap; s2 runs entirely controller-side with a correctly-targeted, per-manager-scoped pkg_audit invocation against the pinned content identity and touches no existing caller.",
           "featureFlag": null
         },
         {
@@ -186,24 +174,19 @@
           "mitigation": "s1's LLD must specify the actual configuration contract for the independent binding before any build task starts."
         },
         {
-          "area": "Enforced (not observed) network boundary for pkg_audit (s2)",
-          "why": "Recording a destination after a request is sent is not a boundary; without a real enforcement mechanism (process-level network confinement, an allowlisting proxy, or equivalent), the design would only document what happened, not prevent an unapproved disclosure, including redirects and a tool's own secondary requests.",
-          "mitigation": "s2's build must implement and test an ACTUAL pre-transmission enforcement mechanism per manager, and refuse (not run unconfined) any manager for which that mechanism cannot be established."
-        },
-        {
           "area": "Per-manager input/mode correctness (s2)",
           "why": "govulncheck needs the module's source tree (not a manifest) and pip-audit defaults to the ambient active environment (not the repo's own requirements) -- a manifest-only scope would make these audits fail or assess the wrong target entirely.",
           "mitigation": "s2's build must implement and test the documented per-manager mode (manifest-scoped / isolated-environment / confined-source-copy) for every supported manager, with an explicit coverage gap for any manager outside that mapping."
         },
         {
-          "area": "Minimum CLI read boundary verified by negative test (s3)",
-          "why": "Confirming a restricting flag was passed to a CLI backend does not prove it refuses a credential-location read, an out-of-scope read, or an unauthorized MCP call -- only an actual attempt-and-confirm-refusal test does.",
-          "mitigation": "Gate s3's build behind negative-access tests (per supported provider) that attempt each of the three denied actions and assert refusal, not merely that an allowlist flag was supplied; refuse to ship dispatch through a provider that fails any of the three."
+          "area": "Content-identity consistency between advisory and code evidence (s2/s3)",
+          "why": "A commit SHA plus a dirty boolean does not uniquely identify the reviewed files -- two different dirty trees can share both -- and hashing only git-status-reported dirty/untracked files misses a tracked file marked assume-unchanged whose content has actually diverged from HEAD.",
+          "mitigation": "contentIdentity is computed by hashing the complete required input set's actual bytes directly (never inferred from git status alone) before either Story runs; s3 recomputes/verifies the SAME contentIdentity against SecurityAdvisoryEvidence before trusting it, refusing on a mismatch."
         },
         {
-          "area": "Content-identity consistency between advisory and code evidence (s2/s3)",
-          "why": "A commit SHA plus a dirty boolean does not uniquely identify the reviewed files -- two different dirty trees can share both -- so comparing only those would not reliably catch evidence collected against two different trees.",
-          "mitigation": "The caller pins a contentIdentity (an immutable materialized snapshot, or a content hash covering the commit plus every permitted dirty/untracked input) before either Story runs; s3 recomputes/verifies the SAME contentIdentity against SecurityAdvisoryEvidence before trusting it, refusing on a mismatch."
+          "area": "Controller-equivalent access tradeoff (s2/s3)",
+          "why": "Running the reviewer with the same unconfined host access as the controller (explicit user direction, chosen over sandboxing to preserve review accuracy) means the review's own reports of which destinations were reached and what was disclosed are self-reported by the native tools, not independently verified by an enforced boundary -- a malicious or misbehaving dependency's tooling could, in principle, do more than reported.",
+          "mitigation": "s2/s3 record and surface the actual destinations/disclosures per manager/backend in the final report so a human reader can assess trust explicitly; this tradeoff is documented here rather than silently assumed, and is not presented as an enforcement guarantee the design does not provide."
         }
       ]
     },
@@ -223,16 +206,16 @@
           "Model-selection, network-enforcement and filesystem-isolation concerns are themselves cross-cutting and arguably belong nearer src/config/role-taxonomy.ts and the controller-side orchestration code than inside review-round."
         ],
         "costEstimate": "M",
-        "reasonRejected": "Reuses the reserved hook with the least new surface, but concentrates cross-cutting model-selection/isolation concerns in a directory that should stay generic, per the structural-map bundle (review-round currently has 0 indexed importers and a uniform convention this would blur with orchestration logic)."
+        "reasonRejected": "Reuses the reserved hook with the least new surface, but concentrates cross-cutting model-selection/orchestration concerns in a directory that should stay generic, per the structural-map bundle (review-round currently has 0 indexed importers and a uniform convention this would blur with orchestration logic)."
       },
       {
         "id": "a2",
         "name": "Standalone security-review orchestration module, adapting into the hook",
-        "oneLineSummary": "A new sibling module owns model selection, enforced controller-side advisory collection against a pinned content identity, code-pass execution under a verified minimum read boundary, and reporting, and supplies review-round's RoundDriverHooks.security as a thin adapter.",
-        "approach": "FR001-FR003's actual logic lives in a new module outside review-round, which imports review-round's existing types and populates them, then exposes a thin function matching RoundDriverHooks.security's signature that driver.ts's runReviewRound calls. Model selection (FR001) is an independently-bindable configuration; dependency-advisory collection (FR002) is controller-side code with an enforced, per-manager-scoped pkg_audit invocation against the pinned content identity, with no model involvement at all; reporting (FR003) assembles the existing SecurityFinding/VerificationReceipt shapes plus a supplemental structure.\n\nThis keeps review-round itself unchanged except for the one call site that invokes the hook, preserving its role as generic round-driver machinery shared across review types (per Epic review-rounds-reconciliation-recovery, epicHash 03f4fd3b9102aab8).",
+        "oneLineSummary": "A new sibling module owns model selection, controller-side advisory collection against a pinned content identity, code-pass execution, and reporting, and supplies review-round's RoundDriverHooks.security as a thin adapter.",
+        "approach": "FR001-FR003's actual logic lives in a new module outside review-round, which imports review-round's existing types and populates them, then exposes a thin function matching RoundDriverHooks.security's signature that driver.ts's runReviewRound calls. Model selection (FR001) is an independently-bindable configuration; dependency-advisory collection (FR002) is controller-side code with a correctly-targeted, per-manager-scoped pkg_audit invocation against the pinned content identity, with no model involvement at all; reporting (FR003) assembles the existing SecurityFinding/VerificationReceipt shapes plus a supplemental structure.\n\nThis keeps review-round itself unchanged except for the one call site that invokes the hook, preserving its role as generic round-driver machinery shared across review types (per Epic review-rounds-reconciliation-recovery, epicHash 03f4fd3b9102aab8).",
         "pros": [
           "review-round stays purely generic (data shapes + shared round driver); security-specific orchestration is isolated in its own module, easier to review and test without touching the shared driver's test suite.",
-          "Model selection and network/filesystem-isolation logic sits nearer the config machinery and the controller-side process boundary they actually extend, rather than being colocated with the generic driver."
+          "Model selection and per-manager targeting logic sits nearer the config machinery and the controller-side process boundary they actually extend, rather than being colocated with the generic driver."
         ],
         "cons": [
           "Adds a new top-level module boundary and import-graph edge class (review-round currently has 0 indexed importers; this reverses that by making review-round importED-from this new module).",
@@ -260,14 +243,11 @@
     "chosenAlternative": "a2",
     "openQuestions": [
       "(s3 LLD) The epicHash/storyId mapping persistVerificationReceipt requires has no documented derivation from the Epic's pinned content identity; the s3 LLD must specify it explicitly before the persistence call can be implemented.",
-      "(s3 LLD) The supplemental report structure carrying FR003's exploit-prerequisite/remediation/advisory-provenance content has no persistence mechanism specified yet -- the s3 LLD must decide whether it is a new stored artifact type or an in-memory assembly over the existing SecurityFinding/VerificationReceipt records.",
-      "(s3 LLD) The exact per-provider mechanism satisfying the three fixed denials (credential-location reads, out-of-scope reads, unauthorized MCP operations) must be specified and verified by a negative-access test per provider (claude, codex, vibe).",
-      "(s2 LLD) The exact per-manager network-enforcement mechanism (process-level network confinement, an allowlisting proxy, or equivalent) satisfying the fixed pre-transmission-enforcement invariant must be chosen and tested.",
-      "(s2 LLD) Whether contentIdentity is implemented as an immutable materialized snapshot or a content hash over the pinned commit plus permitted dirty/untracked inputs is not decided here; either satisfies this HLD's invariant, but the choice and its change-detection behavior must be made explicit."
+      "(s3 LLD) The supplemental report structure carrying FR003's exploit-prerequisite/remediation/advisory-provenance content has no persistence mechanism specified yet -- the s3 LLD must decide whether it is a new stored artifact type or an in-memory assembly over the existing SecurityFinding/VerificationReceipt records."
     ],
     "sequenceDefinition": {
       "id": "security-review-sequence",
-      "narrative": "The end-to-end security-only review: a content identity is pinned first, so s2's enforced advisory collection and s3's code-vulnerability pass both run against the SAME reviewed files. s2's network boundary is enforced before transmission, not merely recorded after; s3's read boundary is verified by negative-access tests, not by flag presence alone.",
+      "narrative": "The end-to-end security-only review: a content identity is pinned first, so s2's advisory collection and s3's code-vulnerability pass both run against the SAME reviewed files. Both s2 and s3 run with the same host access the controller itself has -- no sandboxing is attempted; each records what it actually reached/disclosed for the final report's audit trail.",
       "participants": [
         {
           "id": "caller",
@@ -276,7 +256,7 @@
         {
           "id": "snapshot",
           "label": "SecurityReviewSnapshot",
-          "description": "An immutable materialized copy, or a content hash over the pinned commit plus permitted dirty/untracked inputs; pinned before s1/s2/s3 run."
+          "description": "A content hash over the pinned commit plus every permitted dirty/untracked input's actual bytes; pinned before s1/s2/s3 run."
         },
         {
           "id": "s1",
@@ -286,17 +266,17 @@
         {
           "id": "s2",
           "label": "s2: SecurityAdvisoryEvidence collector",
-          "description": "Controller-side code; no model. Enforces a per-manager network/filesystem boundary before running pkg_audit against the pinned content identity."
+          "description": "Controller-side code; no model. Runs with controller-equivalent host access; targets each manager's input correctly and records the destinations reached against the pinned content identity."
         },
         {
           "id": "pkg_audit",
           "label": "pkg_audit tool",
-          "description": "src/daemon/tools/builtins/pkg/index.ts, run under s2's enforced boundary and per-manager input mode."
+          "description": "src/daemon/tools/builtins/pkg/index.ts, run under s2's per-manager input mode."
         },
         {
           "id": "s3",
           "label": "s3: review + report",
-          "description": "Runs the code pass via CliProvider.runReadOnlySession against the SAME content identity, under a backend verified to deny credential/out-of-scope/MCP access; drives runReviewRound; owns checkpoint/reconciliation/receipt persistence."
+          "description": "Runs the code pass via CliProvider.runReadOnlySession against the SAME content identity, with controller-equivalent access; drives runReviewRound; owns checkpoint/reconciliation/receipt persistence."
         },
         {
           "id": "driver",
@@ -313,7 +293,7 @@
         {
           "from": "caller",
           "to": "snapshot",
-          "label": "pin contentIdentity (materialized copy or content hash)",
+          "label": "pin contentIdentity (hash of the complete required input set's actual bytes)",
           "kind": "call"
         },
         {
@@ -343,13 +323,13 @@
         {
           "from": "s2",
           "to": "s2",
-          "label": "resolve per-manager input mode; establish pre-transmission network enforcement, or refuse the manager",
+          "label": "resolve per-manager input mode for correct targeting; record destinations reached for audit",
           "kind": "recurse"
         },
         {
           "from": "s2",
           "to": "pkg_audit",
-          "label": "run audit (enforced boundary, resolved mode)",
+          "label": "run audit (controller-equivalent access, resolved mode)",
           "kind": "call"
         },
         {
@@ -373,13 +353,7 @@
         {
           "from": "s3",
           "to": "s3",
-          "label": "recompute/verify contentIdentity against SecurityAdvisoryEvidence.contentIdentity; refuse on mismatch",
-          "kind": "recurse"
-        },
-        {
-          "from": "s3",
-          "to": "s3",
-          "label": "verify the CLI backend denies credential/out-of-scope/MCP access (negative-access test); refuse if unverifiable",
+          "label": "recompute/verify contentIdentity against SecurityAdvisoryEvidence.contentIdentity; refuse on a content mismatch",
           "kind": "recurse"
         },
         {
@@ -397,7 +371,7 @@
         {
           "from": "s3",
           "to": "s3",
-          "label": "CliProvider.runReadOnlySession(pinned contentIdentity, s1's model)",
+          "label": "CliProvider.runReadOnlySession(pinned contentIdentity, s1's model, controller-equivalent access)",
           "kind": "recurse"
         },
         {
@@ -522,6 +496,11 @@
       "kind": "stakeholder",
       "ref": "Reviewer finding (HLD revision-3 review): govulncheck's and pip-audit's documented behavior",
       "quotedText": "govulncheck normally queries vuln.go.dev [and requires source analysis], rather than a package registry. pip-audit audits the active Python environment by default; it does not select the repository's requirements file merely because cwd points there."
+    },
+    {
+      "id": "c17",
+      "kind": "stakeholder",
+      "ref": "User direction (this session, after 3 external review rounds on s2 LLD all finding the enforced-boundary/negative-access-test invariants unachievable without new sandbox infrastructure): the reviewer must have the same access privileges as the controller; sandboxing or constraining it would degrade review accuracy. Applied across the Epic design (s2 and s3)."
     }
   ]
 }

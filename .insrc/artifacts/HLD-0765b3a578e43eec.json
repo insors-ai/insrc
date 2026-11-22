@@ -59,6 +59,12 @@
         "status": "deferred",
         "rationale": "Tagged (s3 LLD) in the HLD; out of s1's scope (security model selection). Will resurface via review_deferred when authoring s3's LLD.",
         "resolvedAt": "2026-11-22T06:26:50.179Z"
+      },
+      "qfab24fea": {
+        "question": "(s3 LLD) The supplemental report structure carrying FR003's exploit-prerequisite/remediation/advisory-provenance content has no persistence mechanism specified yet -- the s3 LLD must decide whether it is a new stored artifact type or an in-memory assembly over the existing SecurityFinding/VerificationReceipt records.",
+        "status": "deferred",
+        "rationale": "Tagged (s3 LLD) in the HLD; out of s1's scope. Will resurface via review_deferred when authoring s3's LLD.",
+        "resolvedAt": "2026-11-22T06:27:38.493Z"
       }
     }
   },

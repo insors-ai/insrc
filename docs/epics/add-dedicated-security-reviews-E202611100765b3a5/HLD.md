@@ -245,6 +245,8 @@ This avoids any coupling to the shared round-driver Epic (03f4fd3b9102aab8) at t
 
 - `q860d1b4e` — (s3 LLD) The epicHash/storyId mapping persistVerificationReceipt requires has no documented derivation from the Epic's pinned content identity; the s3 LLD must specify it explicitly before the persistence call can be implemented.
   - **deferred**: deferred for review — Tagged (s3 LLD) in the HLD; out of s1's scope (security model selection). Will resurface via review_deferred when authoring s3's LLD. _(2026-11-22T06:26:50.179Z)_
+- `qfab24fea` — (s3 LLD) The supplemental report structure carrying FR003's exploit-prerequisite/remediation/advisory-provenance content has no persistence mechanism specified yet -- the s3 LLD must decide whether it is a new stored artifact type or an in-memory assembly over the existing SecurityFinding/VerificationReceipt records.
+  - **deferred**: deferred for review — Tagged (s3 LLD) in the HLD; out of s1's scope. Will resurface via review_deferred when authoring s3's LLD. _(2026-11-22T06:27:38.493Z)_
 
 ## Citations
 

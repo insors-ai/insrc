@@ -81,9 +81,10 @@
       },
       "q7798674d": {
         "question": "(s2 LLD) Whether contentIdentity is implemented as an immutable materialized snapshot or a content hash over the pinned commit plus permitted dirty/untracked inputs is not decided here; either satisfies this HLD's invariant, but the choice and its change-detection behavior must be made explicit.",
-        "status": "deferred",
-        "rationale": "Tagged (s2 LLD) in the HLD; out of s1's scope. Will resurface via review_deferred when authoring s2's LLD.",
-        "resolvedAt": "2026-11-22T06:29:10.042Z"
+        "status": "resolved",
+        "choice": "Deterministic content hash",
+        "rationale": "A content hash over the pinned commit SHA plus a canonical (sorted, explicitly-scoped) representation of permitted dirty/untracked inputs is simpler and more directly testable than a materialized snapshot (no second on-disk copy of the repo to create/clean up), and change detection is just recomputation + comparison -- directly satisfying the HLD's fixed contentIdentity invariant without new storage.",
+        "resolvedAt": "2026-11-22T09:44:19.592Z"
       }
     }
   },

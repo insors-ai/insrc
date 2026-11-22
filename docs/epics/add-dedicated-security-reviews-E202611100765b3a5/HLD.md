@@ -251,6 +251,8 @@ This avoids any coupling to the shared round-driver Epic (03f4fd3b9102aab8) at t
   - **deferred**: deferred for review — Tagged (s3 LLD) in the HLD; out of s1's scope. Will resurface via review_deferred when authoring s3's LLD. _(2026-11-22T06:28:19.541Z)_
 - `q999e6e29` — (s2 LLD) The exact per-manager network-enforcement mechanism (process-level network confinement, an allowlisting proxy, or equivalent) satisfying the fixed pre-transmission-enforcement invariant must be chosen and tested.
   - **deferred**: deferred for review — Tagged (s2 LLD) in the HLD; out of s1's scope. Will resurface via review_deferred when authoring s2's LLD. _(2026-11-22T06:28:49.522Z)_
+- `q7798674d` — (s2 LLD) Whether contentIdentity is implemented as an immutable materialized snapshot or a content hash over the pinned commit plus permitted dirty/untracked inputs is not decided here; either satisfies this HLD's invariant, but the choice and its change-detection behavior must be made explicit.
+  - **deferred**: deferred for review — Tagged (s2 LLD) in the HLD; out of s1's scope. Will resurface via review_deferred when authoring s2's LLD. _(2026-11-22T06:29:10.042Z)_
 
 ## Citations
 

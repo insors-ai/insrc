@@ -7,6 +7,7 @@
 **Epic:** `add-dedicated-security-reviews`
 **HLD base run:** `wf-1795324517306-yi2irl`
 **HLD effective hash:** `60b05edbecc2...`
+**Tracker:** [insors-ai/insrc#227](https://github.com/insors-ai/insrc/issues/227)
 
 This Story checks a repository's dependencies against public advisories. The reviewer runs with the SAME host access as the controller itself -- no sandboxing is attempted. contentIdentity is ONE shared, simple digest over exactly the caller-scoped review content, computed and verified at the START and END of collection; it is marked unstable (contentStable:false) if that digest changes, if a previously-present target becomes unreadable or missing on the second read, OR if any audited manager's own required-input closure (verified BOTH before and after that manager's audit) grew to include content outside the pinned scope -- a new file appearing mid-audit is caught even though it never changes the targets.entries hash itself. When s2 generates a manager's requirements input itself from a lockfile (pipenv/poetry), that audit runs with dependency resolution DISABLED (--no-deps), so a package excluded from the export (a non-PyPI/private source) can never be silently reintroduced through another package's transitive dependency. Exact-locked versions are preferred over fresh resolution wherever a lockfile exists; a dependency whose source cannot be faithfully exported, or whose version is a range rather than an exact pin, is reported as an explicit, labeled gap. Every manager's CONFIGURED destination is recorded per manager, including for a clean or failed run.
 
@@ -91,7 +92,7 @@ function collectDependencyAdvisories(repoPath: string, targets: ReviewTargets): 
 **Returns:** `Promise<SecurityAdvisoryEvidence>` — sc2's full result, including contentStable -- now true only when ALL of: (a) the pre- and post-collection computeContentIdentity calls over targets.entries match, (b) the post-collection call did not fail to read any target, and (c) every audited manager's post-audit verifyManagerClosureCoverage call still returns covered:true when its pre-audit call did.
 
 **Errors:**
-- `Error` propagated from computeContentIdentity's FIRST (pre-collection) call failing its repoPath-level precondition (not a git repository, or repoPath itself not registered) -- there is no sensible per-manager recovery for a broken precondition before any work has started
+- `Error` when propagated from computeContentIdentity's FIRST (pre-collection) call failing its repoPath-level precondition (not a git repository, or repoPath itself not registered) -- there is no sensible per-manager recovery for a broken precondition before any work has started
 
 **Preconditions:**
 - enumerateManagers(repoPath, targets) has found at least an attempt-worthy manifest, or the result is an all-gaps SecurityAdvisoryEvidence
@@ -147,6 +148,7 @@ CURRENT INVARIANT BEING REPLACED (revision 5): verifyManagerClosureCoverage was 
 
 CURRENT INVARIANT BEING REPLACED (revision 5): computeContentIdentity's documented Errors (unreadable repo state, out-of-scope path) were implicitly assumed to apply only to the FIRST, pre-collection call; the SECOND, post-collection call's behavior when a previously-readable target becomes missing or unreadable (e.g. deleted mid-audit) was undefined, risking an uncaught exception that would contradict collectDependencyAdvisories's own 'never throws due to a manager-level...failure' postcondition. NEW behavior: collectDependencyAdvisories wraps the SECOND computeContentIdentity call in a try/catch; any failure there (including a now-unreadable target) is treated as contentStable:false, exactly like a content mismatch -- never propagated as an exception. Only the FIRST call's failure still propagates, since at that point no manager has run and there is nothing to report gaps against.
 
+
 ### 3.5 `configuredDestination recording` — new
 
 Unchanged from revision 4/5.
@@ -177,7 +179,8 @@ Unchanged.
 
 ### 3.9 `SecurityAdvisoryEvidence (sc2)` — new
 
-Unchanged shape from HLD revision 6: { contentIdentity, contentStable, readOnly: true, queriedCoordinates, matches, perManagerMode (each entry carrying configuredDestination), unresolvedDependencies, unavailableSources }. contentStable's MEANING is widened at this revision (see §3.3 and §3.4) but its TYPE and the HLD contract are unchanged -- no further HLD amendment needed.
+Unchanged shape from HLD revision 6: { contentIdentity, contentStable, readOnly: true, queriedCoordinates, matches, perManagerMode (each entry carrying configuredDestination), unresolvedDependencies, unavailableSources }. contentStable's MEANING is widened at this revision (see the two field-modify entities above) but its TYPE and the HLD contract are unchanged -- no further HLD amendment needed.
+
 
 ## 4. Interaction with shared contracts
 
@@ -272,37 +275,56 @@ Unchanged shape from HLD revision 6: { contentIdentity, contentStable, readOnly:
 
 ## 7. Alternatives considered
 
-### 7.1 a1: Minimal additive pkg_audit targeting fix, controller-equivalent access, shared non-manager-aware identity — **CHOSEN**
+### 7.1 a1: Minimal additive pkg_audit env override + per-call ephemeral allowlisting proxy — **CHOSEN**
 
-Point pip-family managers at the repository's own LOCKED requirements via pip-audit's own `-r` argument, disabling resolution (`--no-deps`) for anything s2 itself generated; compute ONE shared, simple contentIdentity over exactly the caller-scoped review content; verify per-manager closure coverage both before and after each audit, independently of the hash.
+Add one optional `env` field to pkgAuditTool's existing inputSchema (cwd is already there), forwarded to runShell's own per-call env option; s2's orchestration module starts a short-lived allowlisting proxy and per-manager scoped cwd/env for exactly the duration of one audit call.
 
-Add two optional fields to pkgAuditTool's inputSchema (`requirementsPath?: string`, `noDeps?: boolean`), both purely additive. s2's own module: (1) computes contentIdentity over exactly targets.entries; (2) for each manager enumerateManagers finds, checks verifyManagerClosureCoverage before auditing it, refusing (as a coverage gap) any manager whose required inputs reach outside targets.entries; (3) regenerates a fresh requirementsPath from Pipfile.lock/poetry.lock for pipenv/poetry (excluding non-PyPI-sourced or unfaithfully-representable entries) WITH noDeps:true, or uses plain pip's own requirements.txt directly (flagging unpinned entries as version-uncertain, never setting noDeps); (4) runs pkg_audit with the same host access the controller has; (5) records each manager's configuredDestination; (6) recomputes contentIdentity after the last manager completes, catching (not propagating) a read failure as contentStable:false, and re-checks verifyManagerClosureCoverage per audited manager, folding any regression into contentStable too; (7) maps pkg_audit's raw output into SecurityAdvisoryMatch[]; and (8) wraps the result into both the thin EvidenceProviderOutput and the richer SecurityAdvisoryEvidence (sc2, HLD revision 6). Revision 6 further corrects: pip-audit always runs with --no-deps against a requirementsPath s2 generated itself, so an excluded (non-PyPI-sourced) lockfile entry can never be silently reintroduced via another exported package's transitive dependency; verifyManagerClosureCoverage is now called BOTH before and after each manager's audit (re-resolving the closure fresh each time), folding a post-audit regression into contentStable so a closure that grows during the audit -- without ever touching the targets.entries hash -- is still caught; and a post-collection read failure (a target deleted or made unreadable during collection) is caught and mapped to contentStable:false rather than risking an uncaught exception.
-
-**Pros:**
-- Reuses pkg_audit directly, satisfying ac2's 'not a new fetcher' requirement
-- No proxy, isolation, or verification machinery to build or maintain -- the reviewer runs with the same host access as the controller
-- A genuinely SHARED, simple contentIdentity is what makes 'the same identity s2 and s3 both execute against' actually true, now backed by closure-coverage checks that run both before and after an audit
-
-**Cons:**
-- s2's own reports of which destination each manager reached are self-reported/configured, not independently verified -- an accepted, documented tradeoff
-- The post-audit re-verification narrows but does not eliminate every mutation race -- documented, not silently assumed fixed
-- noDeps:true means s2's generated export must itself be complete and correct for the audit to find everything a full resolution might have -- an entry s2's own export logic misses (not merely excludes deliberately) would now never be resolved in by pip-audit either; this is an accepted tradeoff since the alternative (leaving resolution on) is precisely what lets an excluded entry sneak back in
-
-**Cost estimate:** S
+Add one optional `requirementsPath?: string` field to pkgAuditTool's inputSchema (purely additive -- omitted, every manager behaves exactly as today); auditArgv's pip/pipenv/poetry cases append `-r <requirementsPath>` only when it is provided. s2's own module: (1) computes contentIdentity over the COMPLETE TRANSITIVE required-input closure (following nested -r/-c references; a go module's full source tree) before running any manager; (2) enumerates every manager in scope, regenerating a fresh requirementsPath from Pipfile.lock/poetry.lock for pipenv/poetry (never a stray requirements.txt) or using plain pip's own requirements.txt directly, written to a per-call-unique temp file cleaned up in a finally block; (3) runs pkg_audit with the same host access the controller has; (4) records each manager's configuredDestination (honestly labeled as configured, never observed), persisted per manager even for a clean or failed run; (5) recomputes contentIdentity once more after the last manager completes and stamps contentStable; (6) maps pkg_audit's raw output into SecurityAdvisoryMatch[], and (7) wraps the result into both the thin EvidenceProviderOutput and the richer SecurityAdvisoryEvidence (sc2, now additionally carrying contentStable and perManagerMode[].configuredDestination per HLD revision 6). Revision 4 closes the TOCTOU/incomplete-closure/unobservable-destination/unspecified-wiring gaps the revision-3 reviewer found, without reintroducing any sandboxing; the choice of a1 over a2/a3 stands unchanged. Revision 5 further corrects: computeContentIdentity is a simple, shared, non-manager-aware hash over exactly targets.entries (restoring the HLD's 'one shared identity' invariant -- a manager-aware expansion inside it at revision 4 would have made s2's own identity diverge from whatever s3 computes over the same targets); manager closure coverage is checked SEPARATELY via verifyManagerClosureCoverage without touching the hash; lockfile export now excludes non-PyPI-sourced or unfaithfully-representable entries as explicit gaps rather than mis-exporting them; plain pip's unpinned entries are flagged version-uncertain; and the queriedCoordinates/matches/unresolvedDependencies accounting is corrected to allow a clean, successfully-checked coordinate to appear in queriedCoordinates alone. Revision 6 further corrects: pip-audit always runs with --no-deps (noDeps:true) against a requirementsPath s2 generated itself, so an excluded (non-PyPI-sourced) lockfile entry can never be silently reintroduced via another exported package's transitive dependency; verifyManagerClosureCoverage is now called BOTH before and after each manager's audit (re-resolving the closure fresh each time), folding a post-audit regression into contentStable so a closure that grows during the audit -- without ever touching the targets.entries hash -- is still caught; and a post-collection read failure (a target deleted or made unreadable during collection) is caught and mapped to contentStable:false rather than risking an uncaught exception.
 
 ### 7.2 a2: A wholly separate scoped-audit fetcher bypassing pkg_audit
 
 Build a new, standalone dependency-advisory fetcher that duplicates argv-building and subprocess invocation for each manager itself, instead of calling pkgAuditTool at all.
 
+Write a new module that re-implements per-manager argv construction (duplicating auditArgv's logic, which is module-private and not exported from pkg/index.ts) and calls runShell directly with full control over cwd/env/proxy from the start, never touching pkgAuditTool's existing execute() path.
+
 **Rejected because:** Violates ac2's explicit text outright by being exactly the 'new fetcher' the Story forbids, and duplicates auditArgv's already-correct per-manager logic -- rejected regardless of its other merits.
 
 ### 7.3 a3: Mutate the daemon's own process.env around the pkg_audit call
 
-Avoid changing pkg_audit's code at all by temporarily overwriting process.env around the call.
+Avoid changing pkg_audit's code at all by temporarily overwriting process.env.HTTP_PROXY/HTTPS_PROXY (and restoring it afterward) for the duration of the call, since pkgAuditTool.execute defaults to process.env when no env override is passed.
 
-**Rejected because:** Was rejected at revision 2 for being unsafe under the daemon's concurrent session model; moot since no env-based network enforcement of any kind is attempted anymore, but a1's per-call scoping remains the better code-change pattern regardless.
+Before calling pkgAuditTool.execute, set process.env.HTTP_PROXY/HTTPS_PROXY/NO_PROXY to the ephemeral proxy's address and the manager's scoped settings; restore the prior values in a finally block after the call returns.
+
+**Rejected because:** Nominally keeps ac2's wiring intact (same pkgAuditTool.execute call site, no schema change) but the enforcement mechanism itself is unsafe under the daemon's own concurrent, threaded session model -- a global process.env mutation is not a boundary sc2's 'enforced, not merely observed' advisoryDestination can rely on. Moot at revision 3 since no env-based network enforcement of any kind is attempted anymore, but a1's per-call scoping remains the better code-change pattern regardless.
 
 ## 8. References
+
+- **[[c1]]** `code` `src/daemon/tools/builtins/pkg/index.ts:164-175`
+- **[[c2]]** `code` `src/daemon/tools/builtins/pkg/index.ts:468-507`
+- **[[c3]]** `code` `src/workflow/review-round/evidence-provider.ts:26-40`
+- **[[c4]]** `code` `src/workflow/review-round/security-finding.ts:28-32`
+- **[[c5]]** `code` `src/workflow/review-round/security-locator.ts:23-26`
+- **[[c6]]** `code` `src/workflow/artifact-core/types.ts:276-281`
+- **[[c7]]** `code` `src/workflow/artifact-core/types.ts:283-287`
+- **[[c8]]** `code` `src/workflow/artifact-core/types.ts:345-347`
+- **[[c9]]** `code` `src/daemon/tools/shell-helper.ts:40`
+- **[[c10]]** `code` `src/daemon/tools/shell-helper.ts:103`
+- **[[c11]]** `code` `src/daemon/tools/shell-helper.ts:181`
+- **[[c12]]** `code` `src/daemon/tools/builtins/git/rev-parse.ts:17`
+- **[[c13]]** `code` `src/daemon/tools/builtins/git/status.ts:30`
+- **[[c14]]** `code` `src/daemon/tools/builtins/git/hash-object.ts:14`
+- **[[c15]]** `artifact` `HLD-0765b3a578e43eec`
+- **[[c16]]** `web` `https://docs.npmjs.com/cli/v12/commands/npm-audit/`
+- **[[c17]]** `web` `https://pypi.org/project/pip-audit/`
+- **[[c18]]** `web` `https://docs.rs/crate/rustsec`
+- **[[c19]]** `stakeholder` `reviewer finding: 5 HIGH + 3 MED on LLD revision 1 (process.env probes against temporary fixtures; git hash-object filter collision; npm quick-audit payload; pip-audit code-execution risk)`
+- **[[c20]]** `stakeholder` `HLD-0765b3a578e43eec revision 5 (controller-equivalent access policy, applied across s2 and s3 by explicit user direction)`
+- **[[c21]]** `stakeholder` `reviewer finding: 2 HIGH + 3 MED on LLD revision 3 (TOCTOU between hash and audit, incomplete transitive required-input closure, unobservable destination claim, requirements resolution precedence, unspecified requirementsPath wiring contract)`
+- **[[c22]]** `artifact` `HLD-0765b3a578e43eec (revision 6: additive sc2 fields contentStable, perManagerMode[].configuredDestination)`
+- **[[c23]]** `stakeholder` `reviewer finding: 1 HIGH + 4 MED on LLD revision 4 (shared contentIdentity cannot exclude app source; plain-pip resolution vs locked evidence; name/version-only lockfile export loses semantics; clean-coordinate accounting gap; inconsistent throw/no-throw contract for an unreadable closure)`
+- **[[c24]]** `stakeholder` `reviewer finding: 2 HIGH + 1 MED on LLD revision 5 (dependency resolution can reintroduce excluded lockfile entries; closure membership can change without changing the digest; deleting a target during collection has no defined outcome)`
+
+## Citations
 
 - **[[c1]]** `code` `src/daemon/tools/builtins/pkg/index.ts:164-175`
 - **[[c2]]** `code` `src/daemon/tools/builtins/pkg/index.ts:468-507`

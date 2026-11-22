@@ -27,7 +27,7 @@
     "storyTitle": "Isolate reviewer access and fetch dependency advisories",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 6,
         "contentHash": "c88435614393e02a1ff92a16e2a9f180078328ad4510e33386199017dc97f86f",
@@ -38,9 +38,26 @@
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 6,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-22T15:53:22.468Z",
+        "override": {
+          "reason": "Automated design review is retired. Revision 6 is self-reviewed across 6 external review rounds (5 HIGH+3 MED, then 2 HIGH+3 MED, then 1 HIGH+4 MED, then 2 HIGH+1 MED, all verified against real code/docs and corrected). Approved by explicit user instruction."
+        }
+      }
     },
-    "revision": 6
+    "revision": 6,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    }
   },
   "body": {
     "summary": {

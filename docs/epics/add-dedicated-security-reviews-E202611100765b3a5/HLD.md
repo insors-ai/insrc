@@ -241,6 +241,11 @@ This avoids any coupling to the shared round-driver Epic (03f4fd3b9102aab8) at t
 - (s2 LLD) The exact per-manager network-enforcement mechanism (process-level network confinement, an allowlisting proxy, or equivalent) satisfying the fixed pre-transmission-enforcement invariant must be chosen and tested.
 - (s2 LLD) Whether contentIdentity is implemented as an immutable materialized snapshot or a content hash over the pinned commit plus permitted dirty/untracked inputs is not decided here; either satisfies this HLD's invariant, but the choice and its change-detection behavior must be made explicit.
 
+## Resolved questions
+
+- `q860d1b4e` — (s3 LLD) The epicHash/storyId mapping persistVerificationReceipt requires has no documented derivation from the Epic's pinned content identity; the s3 LLD must specify it explicitly before the persistence call can be implemented.
+  - **deferred**: deferred for review — Tagged (s3 LLD) in the HLD; out of s1's scope (security model selection). Will resurface via review_deferred when authoring s3's LLD. _(2026-11-22T06:26:50.179Z)_
+
 ## Citations
 
 - **[[c1]]** `analyze-bundle` `insrc_analyze_step structural-map run (answerType structural-map) over src/workflow/review-round -- this HLD's own s1 context.assemble step` — "review-round is a 65-entity, 106,386-byte directory ... Import-graph: totalInDegree 0 ... totalOutDegree 15, heaviest on src/daemon/steps/resolve-repo.ts (6 edges) and src/workflow/artifact-core/types"

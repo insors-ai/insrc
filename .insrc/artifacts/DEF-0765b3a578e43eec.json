@@ -22,7 +22,7 @@
     "epicSlug": "add-dedicated-security-reviews",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 2,
         "contentHash": "dbbe4486c70a4131f00f0535e5f0340cd79754828859989a9c9c7153abff48ab",
@@ -56,6 +56,18 @@
           "type": "change-log-entry",
           "relation": "reviews",
           "fragment": "ed208b2f288e729231d0649896e5be099b2d4816707565e67e6075392b89ab68"
+        }
+      },
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-22T05:11:14.615Z",
+        "override": {
+          "reason": "Automated design review is retired (endpoint fails immediately per project policy). The stored review verdict (block, 2026-11-10, daemon) is stamped against revision 1; this DEF is now revision 2 after correcting it to reflect the already-built SecurityFinding/SecurityLocator/EvidenceProvider/VerificationReceipt extension points (standalone Story 779e9a08142cb057/s1, BUILD approved) and the existing pkg_audit tool. Self-reviewed by the controller against the real code via insrc_analyze_step; approved by explicit user instruction."
         }
       }
     },

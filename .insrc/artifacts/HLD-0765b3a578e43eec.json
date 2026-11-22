@@ -22,7 +22,7 @@
     "epicSlug": "add-dedicated-security-reviews",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 4,
         "contentHash": "02147f49e274f0fbbaffaf94bce723c04c0d2038ee844cbe6830ff08d5af0f3c",
@@ -33,9 +33,26 @@
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 4,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-22T06:21:13.081Z",
+        "override": {
+          "reason": "Automated design review is retired (endpoint fails immediately per project policy). Self-reviewed by the controller against the real code across 3 external review rounds (2 HIGH + 3 MED, then 2 HIGH + 2 MED, then 2 HIGH + 2 MED, all verified and corrected); approved by explicit user instruction at revision 4."
+        }
+      }
     },
-    "revision": 4
+    "revision": 4,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    }
   },
   "body": {
     "summary": {

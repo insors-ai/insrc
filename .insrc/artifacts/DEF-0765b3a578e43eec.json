@@ -22,11 +22,11 @@
     "epicSlug": "add-dedicated-security-reviews",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "approved",
+      "status": "draft",
       "revision": {
-        "number": 2,
-        "contentHash": "dbbe4486c70a4131f00f0535e5f0340cd79754828859989a9c9c7153abff48ab",
-        "at": "2026-11-22T06:00:00.000Z",
+        "number": 3,
+        "contentHash": "ffa9dddd5bdc62a8d6939ebb2ad110c162838baa82ad16201f86dd6a9cb325b1",
+        "at": "2026-11-22T12:49:19.628Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
@@ -57,21 +57,9 @@
           "relation": "reviews",
           "fragment": "ed208b2f288e729231d0649896e5be099b2d4816707565e67e6075392b89ab68"
         }
-      },
-      "approval": {
-        "revision": 2,
-        "by": {
-          "id": "insrc:approval",
-          "kind": "system",
-          "properties": {}
-        },
-        "at": "2026-11-22T05:11:14.615Z",
-        "override": {
-          "reason": "Automated design review is retired (endpoint fails immediately per project policy). The stored review verdict (block, 2026-11-10, daemon) is stamped against revision 1; this DEF is now revision 2 after correcting it to reflect the already-built SecurityFinding/SecurityLocator/EvidenceProvider/VerificationReceipt extension points (standalone Story 779e9a08142cb057/s1, BUILD approved) and the existing pkg_audit tool. Self-reviewed by the controller against the real code via insrc_analyze_step; approved by explicit user instruction."
-        }
       }
     },
-    "revision": 2,
+    "revision": 3,
     "envelope": {
       "description": "",
       "references": [],
@@ -112,7 +100,7 @@
       },
       {
         "id": "k2",
-        "text": "Use an explicitly selected security model alongside existing model selections. Keep repository access read-only and constrain advisory egress to the information required for lookup.",
+        "text": "Use an explicitly selected security model alongside existing model selections. The reviewer runs with the SAME host access as the controller itself -- no sandboxing or egress/filesystem restriction is imposed, since constraining the reviewer would degrade review accuracy (explicit user direction). Lookups are correctly targeted at the repository's own resolved dependencies (never an ambient/mismatched environment), and the destination and disclosure of each lookup are recorded for the final report, not restricted.",
         "type": "stakeholder",
         "source": "c1"
       }
@@ -147,7 +135,7 @@
             "id": "ac2",
             "given": "a read-only review scope and resolved dependencies",
             "when": "the reviewer checks public advisories",
-            "then": "lookups send only approved package coordinates through controlled egress, and unavailable sources or unresolved dependencies remain explicit gaps, implemented as the EvidenceProvider registry's dependency-sbom category wired to the existing pkg_audit tool (src/daemon/tools/builtins/pkg/index.ts), not a new fetcher.",
+            "then": "the reviewer runs with the same host access as the controller (no sandboxing); lookups are correctly targeted at the repository's own resolved dependencies, never an ambient or mismatched environment; the destination and disclosure of each lookup are recorded for the final report; and unavailable sources or unresolved dependencies remain explicit gaps, implemented as the EvidenceProvider registry's dependency-sbom category wired to the existing pkg_audit tool (src/daemon/tools/builtins/pkg/index.ts), not a new fetcher.",
             "operationalizes": [
               "k2"
             ]
@@ -217,6 +205,11 @@
       "id": "c4",
       "kind": "code",
       "ref": "src/daemon/tools/builtins/pkg/index.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "stakeholder",
+      "ref": "User direction (security-review Epic design session): the reviewer must have the same access privileges as the controller; sandboxing or constraining it would degrade review accuracy. Applied across the Epic design."
     }
   ]
 }

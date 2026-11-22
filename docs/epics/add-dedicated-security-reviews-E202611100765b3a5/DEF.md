@@ -37,7 +37,7 @@ Insrc's general review flow does not give developers a dedicated assessment of v
 | ID | Type | Text | Source |
 | :--- | :--- | :--- | :--- |
 | `k1` | invariant | Cloud inference uses the installed CLI provider. Embeddings and repository stores follow the existing local-first rules. | [[c2]] |
-| `k2` | stakeholder | Use an explicitly selected security model alongside existing model selections. Keep repository access read-only and constrain advisory egress to the information required for lookup. | [[c1]] |
+| `k2` | stakeholder | Use an explicitly selected security model alongside existing model selections. The reviewer runs with the SAME host access as the controller itself -- no sandboxing or egress/filesystem restriction is imposed, since constraining the reviewer would degrade review accuracy (explicit user direction). Lookups are correctly targeted at the repository's own resolved dependencies (never an ambient/mismatched environment), and the destination and disclosure of each lookup are recorded for the final report, not restricted. | [[c1]], [[c5]] |
 
 ## 5. Stories
 
@@ -59,7 +59,7 @@ Check current dependency advisories while protecting repository data and local c
 
 **Acceptance criteria:**
 
-- **ac2:** Given a read-only review scope and resolved dependencies, when the reviewer checks public advisories, then lookups send only approved package coordinates through controlled egress, and unavailable sources or unresolved dependencies remain explicit gaps, implemented as the EvidenceProvider registry's dependency-sbom category wired to the existing pkg_audit tool (src/daemon/tools/builtins/pkg/index.ts), not a new fetcher.. _(operationalizes `k2`)_
+- **ac2:** Given a read-only review scope and resolved dependencies, when the reviewer checks public advisories, then the reviewer runs with the same host access as the controller (no sandboxing); lookups are correctly targeted at the repository's own resolved dependencies, never an ambient or mismatched environment; the destination and disclosure of each lookup are recorded for the final report; and unavailable sources or unresolved dependencies remain explicit gaps, implemented as the EvidenceProvider registry's dependency-sbom category wired to the existing pkg_audit tool (src/daemon/tools/builtins/pkg/index.ts), not a new fetcher.. _(operationalizes `k2`)_
 
 ### 5.3 STORY-0765b3a578e43eec-s3 — Run and report a security-only review
 
@@ -79,6 +79,7 @@ Request a review of vulnerabilities with actionable evidence, populating the alr
 - **[[c2]]** `convention` `AGENTS.md`
 - **[[c3]]** `prior-artifact` `BUILD-779e9a08142cb057-s1`
 - **[[c4]]** `code` `src/daemon/tools/builtins/pkg/index.ts`
+- **[[c5]]** `stakeholder` `User direction (security-review Epic design session): the reviewer must have the same access privileges as the controller; sandboxing or constraining it would degrade review accuracy. Applied across the Epic design.`
 
 ## Citations
 
@@ -86,3 +87,4 @@ Request a review of vulnerabilities with actionable evidence, populating the alr
 - **[[c2]]** `convention` `AGENTS.md`
 - **[[c3]]** `prior-artifact` `BUILD-779e9a08142cb057-s1`
 - **[[c4]]** `code` `src/daemon/tools/builtins/pkg/index.ts`
+- **[[c5]]** `stakeholder` `User direction (security-review Epic design session): the reviewer must have the same access privileges as the controller; sandboxing or constraining it would degrade review accuracy. Applied across the Epic design.`

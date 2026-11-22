@@ -22,7 +22,7 @@
     "epicSlug": "add-dedicated-security-reviews",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 3,
         "contentHash": "ffa9dddd5bdc62a8d6939ebb2ad110c162838baa82ad16201f86dd6a9cb325b1",
@@ -56,6 +56,18 @@
           "type": "change-log-entry",
           "relation": "reviews",
           "fragment": "ed208b2f288e729231d0649896e5be099b2d4816707565e67e6075392b89ab68"
+        }
+      },
+      "approval": {
+        "revision": 3,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-22T12:57:24.996Z",
+        "override": {
+          "reason": "Automated design review is retired. Revision 3 is a direct, surgical amendment aligning k2/ac2's wording with the already-approved HLD revision 5 policy (controller-equivalent access, no sandboxing). Approved by explicit user instruction."
         }
       }
     },

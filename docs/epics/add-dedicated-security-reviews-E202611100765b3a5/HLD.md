@@ -247,6 +247,8 @@ This avoids any coupling to the shared round-driver Epic (03f4fd3b9102aab8) at t
   - **deferred**: deferred for review — Tagged (s3 LLD) in the HLD; out of s1's scope (security model selection). Will resurface via review_deferred when authoring s3's LLD. _(2026-11-22T06:26:50.179Z)_
 - `qfab24fea` — (s3 LLD) The supplemental report structure carrying FR003's exploit-prerequisite/remediation/advisory-provenance content has no persistence mechanism specified yet -- the s3 LLD must decide whether it is a new stored artifact type or an in-memory assembly over the existing SecurityFinding/VerificationReceipt records.
   - **deferred**: deferred for review — Tagged (s3 LLD) in the HLD; out of s1's scope. Will resurface via review_deferred when authoring s3's LLD. _(2026-11-22T06:27:38.493Z)_
+- `q662db3c3` — (s3 LLD) The exact per-provider mechanism satisfying the three fixed denials (credential-location reads, out-of-scope reads, unauthorized MCP operations) must be specified and verified by a negative-access test per provider (claude, codex, vibe).
+  - **deferred**: deferred for review — Tagged (s3 LLD) in the HLD; out of s1's scope. Will resurface via review_deferred when authoring s3's LLD. _(2026-11-22T06:28:19.541Z)_
 
 ## Citations
 

@@ -60,6 +60,7 @@ import {
 	specArtifactId,
 	specArtifactPaths,
 	TESTS_ID_PREFIX,
+	RECEIPTS_ID_PREFIX,
 	workItemAnchorCreatedAt,
 	workItemKindOf,
 	writeArtifact,
@@ -100,8 +101,8 @@ export class ReviewBlockedError extends Error {
 }
 
 /** Thrown when approval or rejection is asked for something that is a record
- *  and not an approvable artifact: a Story's test record. The message begins
- *  'not-approvable:'. */
+ *  and not an approvable artifact: a Story's test record, or its RECEIPTS
+ *  peer. The message begins 'not-approvable:'. */
 export class NotApprovableError extends Error {
 	constructor(readonly jsonPath: string) {
 		super(`${NOT_APPROVABLE_REASON} (${jsonPath})`);
@@ -109,12 +110,14 @@ export class NotApprovableError extends Error {
 	}
 }
 
-/** The reason a test record's approval is refused, on every route. */
-export const NOT_APPROVABLE_REASON = 'not-approvable: a test record is not approved or rejected';
+/** The reason a test or receipts record's approval is refused, on every route. */
+export const NOT_APPROVABLE_REASON = 'not-approvable: a test or receipts record is not approved or rejected';
 
-/** Whether the json at `jsonPath` is a Story's test record, by its id prefix. */
+/** Whether the json at `jsonPath` is a Story's test record or its RECEIPTS
+ *  peer (a security review round's VerificationReceipt record), by id prefix. */
 export function isTestRecordJsonPath(jsonPath: string): boolean {
-	return basename(jsonPath).startsWith(TESTS_ID_PREFIX);
+	const name = basename(jsonPath);
+	return name.startsWith(TESTS_ID_PREFIX) || name.startsWith(RECEIPTS_ID_PREFIX);
 }
 
 /** Thrown when a brainstorm SpecArtifact JSON does not exist at the

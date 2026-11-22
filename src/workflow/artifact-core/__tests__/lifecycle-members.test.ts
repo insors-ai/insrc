@@ -14,7 +14,7 @@ describe('unitMembers', () => {
 	it("a Story's members keep each DIAG sequence and never include the unit itself", async () => {
 		const STORY = `STORY-${H}-s1`;
 		const kids = [`TASK-${H}-s1-t1`, `TASKS-${H}-s1`, `DIAG-${H}-s1-1`, `DIAG-${H}-s1-12`, `DIAG-${H}-s1-3`];
-		const fixed = ['LLD', 'PLAN', 'BUILD', 'CR', 'TESTS', 'EXT'].map(kind => `${kind}-${H}-s1`);
+		const fixed = ['LLD', 'PLAN', 'BUILD', 'CR', 'TESTS', 'RECEIPTS', 'EXT'].map(kind => `${kind}-${H}-s1`);
 
 		// the unit is the STORY head: its fixed-id records, its Tasks, its TASKS and its DIAG heads, but not itself
 		const members = await unitMembers(STORY, reader(kids));

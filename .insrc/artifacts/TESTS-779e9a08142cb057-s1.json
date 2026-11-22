@@ -1,0 +1,401 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 13,
+        "contentHash": "cebd63fc47ba6c459a3e2be4db59aae27e475fd9ee06e89fee9f61684f3e74f8",
+        "at": "2026-11-21T19:32:03.526Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "779e9a08142cb057",
+    "storyId": "s1",
+    "createdAt": "2026-11-21T15:21:22.783Z",
+    "updatedAt": "2026-11-21T19:32:03.230Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-18T08:51:40.429Z",
+    "epicSlug": "add-securityfinding-capability-family-delegates-framing",
+    "revision": 13
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "61e9c86fb",
+        "ranAt": "2026-11-21T15:24:24.800Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "isSecurityFinding type guard (true/false/malformed discriminant)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/security-finding.test.ts",
+                "title": "isSecurityFinding returns true only for an object whose kind discriminant is exactly 'security'",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "SecurityFinding structural extension of base Finding (all base fields present + security-only fields)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/security-finding.test.ts",
+                "title": "SecurityFinding structurally extends base Finding -- every Finding field present plus the security-only fields",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "overriddenAt vs current Scope revision comparison (stale override rejected)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/security-finding.test.ts",
+                "title": "overriddenAt vs current Scope revision comparison (stale override rejected)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "risk-family verdict recorded as informational zero-severity SecurityFinding for not-applicable/uncertain families",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/security-finding.test.ts",
+                "title": "risk-family verdict recorded as informational zero-severity SecurityFinding for not-applicable/uncertain families",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "reconciliation pass consuming a mixed Finding/SecurityFinding list",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/security-finding.test.ts",
+                "title": "reconciliation pass consuming a mixed Finding/SecurityFinding list",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "docgen review-report render of a round containing SecurityFinding entries",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/security-finding.test.ts",
+                "title": "docgen review-report render of a round containing SecurityFinding entries",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-round/__tests__/security-finding.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 734,
+            "titles": [
+              {
+                "title": "isSecurityFinding returns true only for an object whose kind discriminant is exactly 'security'",
+                "result": "pass"
+              },
+              {
+                "title": "SecurityFinding structurally extends base Finding -- every Finding field present plus the security-only fields",
+                "result": "pass"
+              },
+              {
+                "title": "overriddenAt vs current Scope revision comparison (stale override rejected)",
+                "result": "pass"
+              },
+              {
+                "title": "risk-family verdict recorded as informational zero-severity SecurityFinding for not-applicable/uncertain families",
+                "result": "pass"
+              },
+              {
+                "title": "reconciliation pass consuming a mixed Finding/SecurityFinding list",
+                "result": "pass"
+              },
+              {
+                "title": "docgen review-report render of a round containing SecurityFinding entries",
+                "result": "pass"
+              },
+              {
+                "title": "SecurityFinding, isSecurityFinding, risk-family verdicts, and the policy-override staleness check",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "8355c1b51",
+        "ranAt": "2026-11-21T15:26:53.723Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "SecurityLocator structural extension of Locator/Pointer (trust-boundary id + taint-path step index fields)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/security-locator.test.ts",
+                "title": "SecurityLocator structural extension of Locator/Pointer (trust-boundary id + taint-path step index fields)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-round/__tests__/security-locator.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 546,
+            "titles": [
+              {
+                "title": "SecurityLocator structural extension of Locator/Pointer (trust-boundary id + taint-path step index fields)",
+                "result": "pass"
+              },
+              {
+                "title": "SecurityLocator",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "1af308fcc",
+        "ranAt": "2026-11-21T15:29:56.040Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "SecurityEvidence shape (providerCategory + optional SecurityLocator)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/evidence-provider.test.ts",
+                "title": "SecurityEvidence shape (providerCategory + optional SecurityLocator)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-round/__tests__/evidence-provider.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 595,
+            "titles": [
+              {
+                "title": "SecurityEvidence shape (providerCategory + optional SecurityLocator)",
+                "result": "pass"
+              },
+              {
+                "title": "EvidenceProvider interface defines a common input/output contract shared by all five provider categories",
+                "result": "pass"
+              },
+              {
+                "title": "EvidenceProvider and SecurityEvidence",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "16fb6291d",
+        "ranAt": "2026-11-21T19:32:03.230Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "VerificationReceipt record shape (pass/fail/evidence linkage by id)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/receipt-record.test.ts",
+                "title": "VerificationReceipt record shape (pass/fail/evidence linkage by id)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "RECEIPTS.md write for a security review round",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/receipt-record.test.ts",
+                "title": "RECEIPTS.md write for a security review round",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "approval attempt against a RECEIPTS.md/VerificationReceipt record is refused",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/receipt-record.test.ts",
+                "title": "approval attempt against a RECEIPTS.md/VerificationReceipt record is refused",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-round/__tests__/receipt-record.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 799,
+            "titles": [
+              {
+                "title": "VerificationReceipt record shape (pass/fail/evidence linkage by id)",
+                "result": "pass"
+              },
+              {
+                "title": "RECEIPTS.md write for a security review round",
+                "result": "pass"
+              },
+              {
+                "title": "an unreadable existing record is refused, not silently replaced",
+                "result": "pass"
+              },
+              {
+                "title": "registered codec: first creation, a later update, decoding and history through the real lifecycle service",
+                "result": "pass"
+              },
+              {
+                "title": "Story completion freezes RECEIPTS, and persisting after that is refused on both paths -- never silently stripping the stamp",
+                "result": "pass"
+              },
+              {
+                "title": "concurrent appends through the real lifecycle service: both receipts survive, serialized rather than racing",
+                "result": "pass"
+              },
+              {
+                "title": "concurrent appends through equivalent repoPath spellings for the same repository still serialize, not race",
+                "result": "pass"
+              },
+              {
+                "title": "a relative repoPath still writes the json, history AND refreshes RECEIPTS.md -- the canonical path is used throughout, not only for the lock",
+                "result": "pass"
+              },
+              {
+                "title": "approval attempt against a RECEIPTS.md/VerificationReceipt record is refused",
+                "result": "pass"
+              },
+              {
+                "title": "VerificationReceipt and its RECEIPTS record",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "1d9cfcca4",
+        "ranAt": "2026-11-21T15:53:00.638Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "JSON Schema transformer output for SecurityFinding (kind discriminant + inherited Finding fields)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/security-schema.test.ts",
+                "title": "JSON Schema transformer output for SecurityFinding (kind discriminant + inherited Finding fields)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "JSON Schema transformer output for SecurityLocator (kind discriminant + inherited Locator/Pointer fields)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-round/__tests__/security-schema.test.ts",
+                "title": "JSON Schema transformer output for SecurityLocator (kind discriminant + inherited Locator/Pointer fields)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-round/__tests__/security-schema.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 673,
+            "titles": [
+              {
+                "title": "JSON Schema transformer output for SecurityFinding (kind discriminant + inherited Finding fields)",
+                "result": "pass"
+              },
+              {
+                "title": "JSON Schema transformer output for SecurityLocator (kind discriminant + inherited Locator/Pointer fields)",
+                "result": "pass"
+              },
+              {
+                "title": "Per-(type,model) JSON Schema transformers for SecurityFinding and SecurityLocator",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

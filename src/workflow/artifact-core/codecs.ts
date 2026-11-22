@@ -120,7 +120,7 @@ function codec(kind: ArtifactIdKind, workflow: string): KindCodec {
 const CODECS: ReadonlyMap<ArtifactIdKind, KindCodec> = new Map(([
 	['DEF', 'define'], ['HLD', 'design.epic'], ['LLD', 'design.story'], ['PLAN', 'plan'],
 	['SPEC', 'brainstorm'], ['ISSUE', 'issue'], ['BUILD', 'build'], ['CR', 'code-review'],
-	['TESTS', 'tests'], ['EXT', 'define'], ['AMD', 'design.epic'],
+	['TESTS', 'tests'], ['RECEIPTS', 'receipts'], ['EXT', 'define'], ['AMD', 'design.epic'],
 	['EPIC', 'define'], ['STORY', 'define'], ['TASKS', 'plan'], ['TASK', 'plan'], ['DIAG', 'docgen'],
 ] as const).map(([kind, workflow]) => [kind, codec(kind, workflow)]));
 

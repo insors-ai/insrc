@@ -11,8 +11,8 @@ import { H, alice, artifact, kit } from './store-kit.js';
 const ref = (entityId: string, type: string): Reference => ({ entityId, type, relation: 'derived-from' });
 
 describe('pass-through codecs (EPIC, STORY, DIAG; TASK and TASKS keep a typed body)', () => {
-	it('a TASK, STORY, EPIC, TASKS and DIAG head is written, read, listed and given a status through the store, and registeredKinds lists sixteen kinds', async () => {
-		assert.equal(registeredKinds().length, 16);
+	it('a TASK, STORY, EPIC, TASKS and DIAG head is written, read, listed and given a status through the store, and registeredKinds lists every supported artifact kind', async () => {
+		assert.equal(registeredKinds().length, 17);
 		for (const kind of registeredKinds()) assert.doesNotThrow(() => codecFor(kind), kind);
 
 		const k = kit();

@@ -59,7 +59,7 @@ Add the `EvidenceProvider` interface/registry stub for the five deterministic ev
 Add `VerificationReceipt` (result, environment, pass/fail outcome) and a new sibling module to src/workflow/runners/build/test-record.ts (e.g. receipt-record.ts) mirroring TestRecordCase/TestRecordReported/persistTestRecordTask/readTestRecord/renderTestRecordMd, reusing the existing writeArtifact/writeAtomic (src/workflow/storage.ts) and storeRound/withStoredModel (src/workflow/runners/build/round-writer.ts) primitives unchanged. Renders RECEIPTS.md beside the review artifact exactly as TESTS.md sits beside BUILD.md: a non-approvable RECORD, written for every sandbox/mutation checkpoint run (pass or fail), referenced by id from a corroborating SecurityFinding.
 
 **Acceptance checks:**
-- A VerificationReceipt is written for every sandbox/mutation checkpoint run, pass or fail, independent of whether any SecurityFinding corroborates it
+- persistVerificationReceipt's write is unconditional for whatever outcome (pass or fail) it is given -- it takes no SecurityFinding parameter anywhere and is never gated on one, proven directly against the real function; wiring an actual sandbox/mutation checkpoint to call it is this Story's own non-goal (LLD summary: "no ... evidence-provider internals ... are designed here"), tracked separately, not built or testable within this Story's scope
 - RECEIPTS.md renders beside the review artifact using the existing writeArtifact/writeAtomic/storeRound/withStoredModel machinery, unmodified
 - An approval attempt against a RECEIPTS.md/VerificationReceipt record is refused, matching TESTS.md's own non-approvable-record behavior
 

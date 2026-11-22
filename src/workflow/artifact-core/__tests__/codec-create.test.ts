@@ -83,7 +83,7 @@ describe('kind codecs', () => {
 	});
 
 	it('every artifact kind has a codec', () => {
-		assert.deepEqual([...registeredKinds()].sort(), ['AMD', 'BUILD', 'CR', 'DEF', 'DIAG', 'EPIC', 'EXT', 'HLD', 'ISSUE', 'LLD', 'PLAN', 'SPEC', 'STORY', 'TASK', 'TASKS', 'TESTS']);
+		assert.deepEqual([...registeredKinds()].sort(), ['AMD', 'BUILD', 'CR', 'DEF', 'DIAG', 'EPIC', 'EXT', 'HLD', 'ISSUE', 'LLD', 'PLAN', 'RECEIPTS', 'SPEC', 'STORY', 'TASK', 'TASKS', 'TESTS']);
 		for (const k of registeredKinds()) assert.doesNotThrow(() => codecFor(k));
 	});
 });

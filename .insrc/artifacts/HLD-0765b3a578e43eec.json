@@ -57,8 +57,8 @@
       "q860d1b4e": {
         "question": "(s3 LLD) The epicHash/storyId mapping persistVerificationReceipt requires has no documented derivation from the Epic's pinned content identity; the s3 LLD must specify it explicitly before the persistence call can be implemented.",
         "status": "deferred",
-        "rationale": "Tagged (s3 LLD) in the HLD; out of s1's scope (security model selection). Will resurface via review_deferred when authoring s3's LLD.",
-        "resolvedAt": "2026-11-22T06:26:50.179Z"
+        "rationale": "Tagged s3 LLD; persistVerificationReceipt mapping is s3's own receipt-persistence boundary, out of s2's scope (s2 produces SecurityAdvisoryEvidence only, no receipt persistence).",
+        "resolvedAt": "2026-11-22T09:43:13.533Z"
       },
       "qfab24fea": {
         "question": "(s3 LLD) The supplemental report structure carrying FR003's exploit-prerequisite/remediation/advisory-provenance content has no persistence mechanism specified yet -- the s3 LLD must decide whether it is a new stored artifact type or an in-memory assembly over the existing SecurityFinding/VerificationReceipt records.",
@@ -74,15 +74,17 @@
       },
       "q999e6e29": {
         "question": "(s2 LLD) The exact per-manager network-enforcement mechanism (process-level network confinement, an allowlisting proxy, or equivalent) satisfying the fixed pre-transmission-enforcement invariant must be chosen and tested.",
-        "status": "deferred",
-        "rationale": "Tagged (s2 LLD) in the HLD; out of s1's scope. Will resurface via review_deferred when authoring s2's LLD.",
-        "resolvedAt": "2026-11-22T06:28:49.522Z"
+        "status": "resolved",
+        "choice": "Mandatory allowlisting proxy",
+        "rationale": "Confirmed via code search: this codebase has ZERO existing network-namespace/firewall/sandbox infrastructure (no netns, iptables, or process-confinement capability anywhere), so true OS-level process-level confinement is infeasible to build within this Story -- it would require root privileges and platform-specific code far beyond scope. A locally-run allowlisting proxy is buildable in pure Node, and every targeted package manager (npm/pnpm/yarn, pip/pipenv/poetry, go, cargo) already supports standard HTTP_PROXY/HTTPS_PROXY-style proxy configuration as a FIRST-CLASS, documented feature of that manager -- not a repurposed mechanism. s2 will additionally require a per-manager verification step (a decoy-destination connectivity probe against the local proxy with default-deny) before trusting that manager's traffic is actually confined; a manager whose proxy-respecting behavior cannot be verified is an explicit coverage gap (refused, never run unconfined), extending the per-manager mapping pattern the HLD already establishes.",
+        "resolvedAt": "2026-11-22T09:44:04.364Z"
       },
       "q7798674d": {
         "question": "(s2 LLD) Whether contentIdentity is implemented as an immutable materialized snapshot or a content hash over the pinned commit plus permitted dirty/untracked inputs is not decided here; either satisfies this HLD's invariant, but the choice and its change-detection behavior must be made explicit.",
-        "status": "deferred",
-        "rationale": "Tagged (s2 LLD) in the HLD; out of s1's scope. Will resurface via review_deferred when authoring s2's LLD.",
-        "resolvedAt": "2026-11-22T06:29:10.042Z"
+        "status": "resolved",
+        "choice": "Deterministic content hash",
+        "rationale": "A content hash over the pinned commit SHA plus a canonical (sorted, explicitly-scoped) representation of permitted dirty/untracked inputs is simpler and more directly testable than a materialized snapshot (no second on-disk copy of the repo to create/clean up), and change detection is just recomputation + comparison -- directly satisfying the HLD's fixed contentIdentity invariant without new storage.",
+        "resolvedAt": "2026-11-22T09:44:19.592Z"
       }
     }
   },

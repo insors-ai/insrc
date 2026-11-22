@@ -8,7 +8,7 @@
 **HLD base run:** `wf-1795324517306-yi2irl`
 **HLD effective hash:** `60b05edbecc2...`
 
-This Story checks a repository's dependencies against public advisories. The reviewer runs with the SAME host access as the controller itself -- no sandboxing is attempted. contentIdentity is ONE shared, simple digest over exactly the caller-scoped review content (targets.entries' own files, read directly, plus the repo's HEAD sha) -- the SAME function s3 calls over the SAME scope, so an application-source edit with unchanged manifests still changes the identity whenever that source is part of the reviewed scope (ensuring it is, is the orchestrator's job). Before trusting any manager's audit against that pinned identity, s2 verifies that manager's own required-input closure (a requirements file's nested -r/-c references; a go module's full source tree) is actually covered by targets.entries; a manager whose closure reaches outside the pinned scope is an explicit coverage gap, never silently audited anyway. s2 re-verifies the identity immediately after collection completes and stamps contentStable. Each package manager is pointed at the repository's own actual dependencies, with exact-locked versions preferred over a fresh, possibly-different resolution wherever a lockfile exists, and any dependency whose source cannot be faithfully exported (a non-PyPI source, or a version range rather than an exact pin) is reported as an explicit, labeled gap rather than silently audited as if it were an exact match. Every manager's CONFIGURED destination is recorded per manager, including for a clean or failed run.
+This Story checks a repository's dependencies against public advisories. The reviewer runs with the SAME host access as the controller itself -- no sandboxing is attempted. contentIdentity is ONE shared, simple digest over exactly the caller-scoped review content, computed and verified at the START and END of collection; it is marked unstable (contentStable:false) if that digest changes, if a previously-present target becomes unreadable or missing on the second read, OR if any audited manager's own required-input closure (verified BOTH before and after that manager's audit) grew to include content outside the pinned scope -- a new file appearing mid-audit is caught even though it never changes the targets.entries hash itself. When s2 generates a manager's requirements input itself from a lockfile (pipenv/poetry), that audit runs with dependency resolution DISABLED (--no-deps), so a package excluded from the export (a non-PyPI/private source) can never be silently reintroduced through another package's transitive dependency. Exact-locked versions are preferred over fresh resolution wherever a lockfile exists; a dependency whose source cannot be faithfully exported, or whose version is a range rather than an exact pin, is reported as an explicit, labeled gap. Every manager's CONFIGURED destination is recorded per manager, including for a clean or failed run.
 
 ## Contents
 
@@ -44,21 +44,22 @@ function computeContentIdentity(repoPath: string, targets: ReviewTargets): Promi
 
 **Parameters:**
 - `repoPath: string` — The registered repo root git_rev_parse runs against, and the base every targets.entries path is resolved and validated against.
-- `targets: ReviewTargets` — The round's submitter-owned content list; computeContentIdentity hashes EXACTLY these files -- it is NOT manager-aware and does not expand into a per-manager closure. This is the single, shared function s3 also calls over the SAME targets, so the identity covers whatever scope the caller (the orchestrator) assembled for the whole review, application source included.
+- `targets: ReviewTargets` — The round's submitter-owned content list; computeContentIdentity hashes EXACTLY these files -- it is NOT manager-aware. The same shared function s3 also calls over the SAME targets.
 
-**Returns:** `Promise<string>` — A deterministic digest over the repo's HEAD commit sha plus a sha256 of every file named in targets.entries' actual, current raw bytes -- read and hashed unconditionally, never gated on git status. Called by s2 twice (before and immediately after collection) and independently by s3 before trusting s2's evidence; all three calls use the identical function and the identical targets, so they can only diverge if the repository's content itself diverged between calls.
+**Returns:** `Promise<string>` — A deterministic digest over the repo's HEAD commit sha plus a sha256 of every file named in targets.entries' actual, current raw bytes. Unchanged from revision 5.
 
 **Errors:**
 - `Error` when the target repository's git state cannot be read (not a git repository, repoPath not registered, or the underlying git_rev_parse call fails)
 - `Error` when a targets.entries path resolves outside repoPath
+- `Error` when a targets.entries file cannot be read (missing, deleted, or permission-denied) at the time of the call -- this now includes the SECOND (post-collection) call, where collectDependencyAdvisories catches it specifically (see collectDependencyAdvisories's postconditions) rather than letting it propagate
 
 **Preconditions:**
 - repoPath is a registered repo root with a resolvable HEAD
 
 **Postconditions:**
 - pure function of the repo's current file bytes, repoPath and targets.entries -- calling it twice with no intervening change to targets.entries' files yields the identical string
-- hashes ONLY the files named in targets.entries -- no manager-specific expansion, no narrowing to a 'dependency-only' subset
-- hashes raw file bytes directly -- never delegates to git_hash_object or relies on git status to decide which files to include
+- hashes ONLY the files named in targets.entries
+- hashes raw file bytes directly -- never delegates to git_hash_object or relies on git status
 
 ### 2.2 `verifyManagerClosureCoverage`
 
@@ -69,13 +70,13 @@ function verifyManagerClosureCoverage(repoPath: string, targets: ReviewTargets, 
 **Parameters:**
 - `repoPath: string` — Same registered repo root used throughout.
 - `targets: ReviewTargets` — The pinned review scope contentIdentity was computed over.
-- `manager: Manager` — Which package manager's required-input closure to resolve (determines whether nested -r/-c resolution or a go module source walk applies).
+- `manager: Manager` — Which package manager's required-input closure to resolve.
 - `manifestDir: string` — The directory enumerateManagers found this manager's manifest in.
 
-**Returns:** `Promise<{ covered: true } | { covered: false; missing: readonly string[] }>` — Resolves this manager's own required-input closure (a requirements file's nested -r/-c references; a go module's full source tree) and checks whether every file in it is ALREADY present in targets.entries -- the same scope contentIdentity was pinned over. covered:false lists the files the closure needs that targets.entries does not cover; collectDependencyAdvisories treats this as an explicit coverage gap for that manager (never a silent audit against an unverified scope).
+**Returns:** `Promise<{ covered: true } | { covered: false; missing: readonly string[] }>` — Re-resolves this manager's required-input closure AT THE TIME OF THE CALL (not a cached result) and checks whether every file currently in it is present in targets.entries. Called TWICE by collectDependencyAdvisories for every manager it actually audits: once BEFORE the audit (a covered:false result here means the manager is never audited at all), and once AFTER the audit completes (a covered:false result here -- even though the pre-audit call returned covered:true -- means the closure GREW during the audit to include content outside the pinned scope, e.g. a new source file created mid-audit; this is folded into contentStable, not into perManagerMode, since it reflects the pinned identity's own trustworthiness, not that one manager's targeting).
 
 **Postconditions:**
-- never mutates or expands targets.entries or contentIdentity -- purely a read-only coverage check
+- never mutates or expands targets.entries or contentIdentity -- purely a read-only coverage check, re-evaluated fresh on every call
 
 ### 2.3 `collectDependencyAdvisories`
 
@@ -87,22 +88,22 @@ function collectDependencyAdvisories(repoPath: string, targets: ReviewTargets): 
 - `repoPath: string` — Same registered repo root as computeContentIdentity; also the root enumerateManagers walks to find every manifest in scope.
 - `targets: ReviewTargets` — Bounds which manifests/managers are in scope for this collection, same as computeContentIdentity's targets.
 
-**Returns:** `Promise<SecurityAdvisoryEvidence>` — sc2's full result: contentIdentity (computed BEFORE running any manager's audit, over targets.entries exactly), contentStable, queriedCoordinates, matches, perManagerMode (each entry carrying configuredDestination), unresolvedDependencies, and unavailableSources.
+**Returns:** `Promise<SecurityAdvisoryEvidence>` — sc2's full result, including contentStable -- now true only when ALL of: (a) the pre- and post-collection computeContentIdentity calls over targets.entries match, (b) the post-collection call did not fail to read any target, and (c) every audited manager's post-audit verifyManagerClosureCoverage call still returns covered:true when its pre-audit call did.
 
 **Errors:**
-- `Error` propagated from computeContentIdentity's own repoPath-level precondition failure (not a git repository, or repoPath itself not registered) -- there is no sensible per-manager recovery for a broken precondition affecting the whole call
+- `Error` propagated from computeContentIdentity's FIRST (pre-collection) call failing its repoPath-level precondition (not a git repository, or repoPath itself not registered) -- there is no sensible per-manager recovery for a broken precondition before any work has started
 
 **Preconditions:**
 - enumerateManagers(repoPath, targets) has found at least an attempt-worthy manifest, or the result is an all-gaps SecurityAdvisoryEvidence
 
 **Postconditions:**
-- computes contentIdentity once before any manager runs, then again immediately after the last manager's audit completes; contentStable is false whenever these two values differ
-- for each manager enumerateManagers finds, calls verifyManagerClosureCoverage BEFORE auditing it; a manager whose closure is not covered(:false) is recorded perManagerMode 'unsupported' with the missing files noted, and pkg_audit is never invoked for it
-- every manager it actually audits runs with the SAME host access as the controller itself, directly against repoPath
-- prefers each manager's EXACT locked version wherever a lockfile exists (pipenv/poetry regenerate from Pipfile.lock/poetry.lock; a lockfile entry with a non-PyPI source or a marker that cannot be faithfully exported is excluded from the generated file and added to unresolvedDependencies, never silently mis-exported); for plain pip, any requirements.txt entry that is not an exact `==` pin is added to unresolvedDependencies (version-uncertain) even though pip-audit still runs best-effort against the file
-- records, per manager, the configuredDestination it was set up to reach -- persisted on EVERY perManagerMode entry, including a manager that found nothing or failed
-- every coordinate in queriedCoordinates was actually attempted; exactly the ones with a confirmed advisory finding also appear in matches; exactly the ones that could not be resolved or checked at all also appear in unresolvedDependencies; a coordinate successfully checked and found clean appears in queriedCoordinates ONLY -- this is not an omission
-- never throws due to a manager-level audit or closure-coverage failure -- each becomes an explicit perManagerMode/unavailableSources/unresolvedDependencies entry; MAY propagate a repoPath-level precondition failure from computeContentIdentity, since that affects the whole call, not one manager
+- computes contentIdentity once before any manager runs (propagating a failure here, since nothing has run yet), then again immediately after the last manager's audit completes; a FAILURE on this SECOND call (e.g. a target was deleted or became unreadable during collection) is CAUGHT, not propagated, and is itself treated as contentStable:false -- a target that can no longer be read the way it was read before is, by definition, not stable
+- for each manager it actually audits, calls verifyManagerClosureCoverage both before (gating whether it is audited at all) and after (gating contentStable) that manager's audit
+- when s2 itself generates a manager's requirementsPath from a lockfile (pipenv/poetry), the pkg_audit call for that manager ALWAYS sets noDeps:true -- so pip-audit's own dependency resolution can never reintroduce a package this Story deliberately excluded from the export (a non-PyPI/private source) via another exported package's transitive dependency; plain pip (the user's own requirements.txt, not a lockfile export) never sets noDeps
+- prefers each manager's EXACT locked version wherever a lockfile exists; a lockfile entry with a non-PyPI source or an unfaithfully-exportable marker is excluded from the generated file and added to unresolvedDependencies; a plain pip requirements.txt entry that is not an exact pin is also added to unresolvedDependencies as version-uncertain
+- records, per manager, the configuredDestination it was set up to reach, persisted on EVERY perManagerMode entry
+- every coordinate in queriedCoordinates was actually attempted; exactly the ones with a confirmed finding also appear in matches; exactly the ones that could not be resolved/checked also appear in unresolvedDependencies; a cleanly-checked coordinate appears in queriedCoordinates only
+- never throws due to a manager-level audit, closure-coverage, or post-collection re-read failure -- each becomes an explicit perManagerMode entry or a contentStable:false, never an exception; MAY propagate only the FIRST computeContentIdentity call's repoPath-level precondition failure
 
 ### 2.4 `createDependencySbomEvidenceProvider`
 
@@ -120,9 +121,9 @@ function createDependencySbomEvidenceProvider(repoPath: string): EvidenceProvide
 
 ## 3. Data model changes
 
-### 3.1 `pkgAuditTool inputSchema + execute -- new optional requirementsPath field` — field-add
+### 3.1 `pkgAuditTool inputSchema + execute -- new optional noDeps field` — field-add
 
-Unchanged from revision 4: one optional `requirementsPath?: string` property, appended as `-r <requirementsPath>` only when provided; omitted, every manager's behavior is byte-for-byte identical to today.
+Add a second optional `noDeps?: boolean` property to pkgAuditTool's inputSchema (alongside revision 4's requirementsPath), appended as `--no-deps` to the pip-audit invocation when true. Omitted (false/absent), behavior is identical to today for every caller. s2 sets it true ONLY for a requirementsPath it generated itself from a lockfile (pipenv/poetry) -- preventing pip-audit's own dependency resolution from silently reintroducing a package this Story deliberately excluded from the export via another exported package's transitive dependency (Poetry's and pip-audit's own documented recommendation for consuming an already-resolved export). Plain pip's own requirements.txt never sets it.
 
 **Call sites:**
 - `src/daemon/tools/builtins/pkg/index.ts:164-175`
@@ -130,108 +131,115 @@ Unchanged from revision 4: one optional `requirementsPath?: string` property, ap
 
 ### 3.2 `requirementsPath generation + lifecycle, with faithful-export gaps` — new
 
-CURRENT INVARIANT BEING REPLACED (revision 4): pipenv/poetry regenerated a requirements file from EVERY {name, version} pair in Pipfile.lock/poetry.lock, discarding environment markers, extras, and non-PyPI sources (git/path/url). NEW behavior: only lockfile entries that are plain-PyPI-sourced, with a marker/extras shape pip's own requirements-file format can represent without loss, are exported as `name==version[; marker]` lines; an entry with a git/path/url source, or a marker too complex to export faithfully, is EXCLUDED from the generated file and added to unresolvedDependencies with a note identifying it as a non-standard-source gap, never silently mis-exported as an ordinary public-index package. For plain pip: use the repository's own requirements.txt directly via requirementsPath; any line that is not an exact `==` pin is separately recorded in unresolvedDependencies as version-uncertain (pip-audit still runs against the file best-effort, but that entry's result is not treated as exact-locked evidence). Any generated file is written to a per-call-unique temp path and removed in a finally block.
+Unchanged from revision 5: only plain-PyPI-sourced, faithfully-representable lockfile entries are exported; a git/path/url-sourced or unfaithfully-representable entry is excluded and recorded as a non-standard-source gap. Plain pip uses its own requirements.txt directly; an unpinned entry is additionally recorded as version-uncertain. NOW ALSO paired with noDeps:true whenever the file was generated by s2 itself (see the field-add entity above), so an excluded entry cannot be reintroduced via transitive resolution.
 
 **Call sites:**
 - `src/daemon/tools/builtins/pkg/index.ts:164-175`
 
-### 3.3 `verifyManagerClosureCoverage (replaces revision-4's hash-expanding transitive closure)` — field-modify
+### 3.3 `Post-audit per-manager closure re-verification (expands revision-5's single pre-audit verifyManagerClosureCoverage call)` — field-modify
 
-CURRENT INVARIANT BEING REPLACED (revision 4): the required-input resolver's transitive closure (nested -r/-c; go's full module source) was folded DIRECTLY into computeContentIdentity's own hash, making computeContentIdentity manager-aware and giving it a DIFFERENT scope than whatever s3 might hash over the same targets -- defeating the HLD's 'one shared contentIdentity both s2 and s3 execute against' invariant, since s3 has no reason to run s2's manager-specific expansion. NEW behavior: computeContentIdentity goes back to being a simple, shared, non-manager-aware function (hash of targets.entries only). The transitive closure resolution becomes a SEPARATE verification (verifyManagerClosureCoverage) that checks whether a manager's required inputs are already covered by targets.entries, WITHOUT changing what gets hashed. A manager whose closure is not covered is a coverage gap, never silently audited.
+CURRENT INVARIANT BEING REPLACED (revision 5): verifyManagerClosureCoverage was called ONCE, before auditing a manager; a file added to that manager's closure (e.g. a new .go source file, created after the check but before or during the actual govulncheck run) would never be caught, since neither the pre-audit check nor the targets.entries-only contentIdentity hash would see it -- contentStable could remain true while the manager's actual audit scope had silently grown beyond the pinned, verified scope. NEW behavior: verifyManagerClosureCoverage is called a SECOND time, immediately after that manager's audit completes, re-resolving the closure fresh (not reusing the pre-audit result). If the post-audit call returns covered:false where the pre-audit call returned covered:true, the manager's own results are still reported (it WAS actually audited, under a scope that turned out to have grown), but contentStable for the WHOLE collection is set to false -- reusing the existing contentStable field rather than adding a new one, since both failure modes mean the same thing: the pinned scope did not hold stable across collection.
 
 **Call sites:**
 - `src/daemon/tools/builtins/pkg/index.ts:164-175`
 
-### 3.4 `Post-audit contentIdentity re-verification -> SecurityAdvisoryEvidence.contentStable` — new
+### 3.4 `Post-collection hash-read failure -> contentStable:false (not a thrown exception)` — field-modify
 
-Unchanged from revision 4: collectDependencyAdvisories calls the (now simplified) computeContentIdentity once before and once after collection; contentStable is true only when both calls return the identical string. Establishes equality at the two sampling points, not proof that no mutation occurred strictly between them -- documented, not overclaimed.
+CURRENT INVARIANT BEING REPLACED (revision 5): computeContentIdentity's documented Errors (unreadable repo state, out-of-scope path) were implicitly assumed to apply only to the FIRST, pre-collection call; the SECOND, post-collection call's behavior when a previously-readable target becomes missing or unreadable (e.g. deleted mid-audit) was undefined, risking an uncaught exception that would contradict collectDependencyAdvisories's own 'never throws due to a manager-level...failure' postcondition. NEW behavior: collectDependencyAdvisories wraps the SECOND computeContentIdentity call in a try/catch; any failure there (including a now-unreadable target) is treated as contentStable:false, exactly like a content mismatch -- never propagated as an exception. Only the FIRST call's failure still propagates, since at that point no manager has run and there is nothing to report gaps against.
 
 ### 3.5 `configuredDestination recording` — new
 
-Unchanged from revision 4: pkg_audit's own output carries no network trace, so s2 records each manager's CONFIGURED destination (never claimed as observed), attached to EVERY perManagerMode entry including a clean or failed run.
+Unchanged from revision 4/5.
 
 **Call sites:**
 - `src/daemon/tools/builtins/pkg/index.ts:164-175`
 
 ### 3.6 `Repository-root threading (repoPath)` — field-add
 
-Unchanged from revision 3/4: every s2-owned function takes an explicit repoPath; every targets.entries path is validated as resolving inside it.
+Unchanged from revision 3/4/5.
 
 **Call sites:**
 - `src/workflow/artifact-core/types.ts:345-347`
 
 ### 3.7 `enumerateManagers` — new
 
-Unchanged from revision 3: walks every manifest/lockfile signal within repoPath bounded by targets.entries' own directories, flagging same-directory ambiguity rather than guessing.
+Unchanged from revision 3.
 
 **Call sites:**
 - `src/daemon/tools/builtins/pkg/index.ts:47-79`
 
 ### 3.8 `Per-manager raw-audit-output -> SecurityAdvisoryMatch[] mapper` — new
 
-Unchanged: translates each manager's own result shape into the common SecurityAdvisoryMatch[] shape; an unparseable result is an explicit gap.
+Unchanged.
 
 **Call sites:**
 - `src/daemon/tools/builtins/pkg/index.ts:164-175`
 
 ### 3.9 `SecurityAdvisoryEvidence (sc2)` — new
 
-The HLD-defined output record this Story owns (HLD revision 6): { contentIdentity, contentStable, readOnly: true, queriedCoordinates, matches, perManagerMode (each entry carrying configuredDestination), unresolvedDependencies, unavailableSources }.
+Unchanged shape from HLD revision 6: { contentIdentity, contentStable, readOnly: true, queriedCoordinates, matches, perManagerMode (each entry carrying configuredDestination), unresolvedDependencies, unavailableSources }. contentStable's MEANING is widened at this revision (see §3.3 and §3.4) but its TYPE and the HLD contract are unchanged -- no further HLD amendment needed.
 
 ## 4. Interaction with shared contracts
 
 | Contract | Role | How |
 | :--- | :--- | :--- |
-| `sc2` | implements | collectDependencyAdvisories computes contentIdentity over exactly targets.entries (the same shared function s3 calls, so the identity genuinely covers whatever scope the orchestrator assembled, application source included), verifies each manager's required-input closure is covered by that scope before auditing it, prefers exact-locked versions wherever available, records each manager's configuredDestination, recomputes contentIdentity after collection to stamp contentStable, and maps each manager's output into SecurityAdvisoryMatch[]. s3 consumes the returned value directly to recompute and verify contentIdentity before trusting the evidence, refusing on a mismatch or on contentStable=false. |
+| `sc2` | implements | collectDependencyAdvisories computes contentIdentity over exactly targets.entries before and after collection, catches (rather than propagates) a post-collection read failure as contentStable:false, double-checks each audited manager's closure coverage before AND after its audit (a post-audit regression also sets contentStable:false), disables pip-audit's dependency resolution for any requirements file it generated itself (preventing excluded entries from reappearing via transitive resolution), prefers exact-locked versions, records each manager's configuredDestination, and maps each manager's output into SecurityAdvisoryMatch[]. s3 consumes the returned value directly to recompute and verify contentIdentity, refusing on a mismatch or on contentStable=false. |
 
 ## 5. Error paths
 
 **Error cases**
 
-- **A manager's required-input closure (a nested -r/-c reference; a go module's source file) reaches a file outside targets.entries -- the pinned scope contentIdentity was computed over.** (recoverable)
+- **A package this Story deliberately excluded from a generated requirements file (a private/git/path-sourced lockfile entry) is a transitive dependency of a package that WAS exported; without disabling resolution, pip-audit could re-resolve and report on it from a different (public) source than the one actually pinned.** (recoverable)
+  - Detection: N/A at runtime -- prevented structurally: noDeps:true is always set for a requirementsPath s2 generated itself.
+  - Response: pip-audit never resolves beyond the exact set s2 exported; an excluded package is never silently reintroduced under a different identity.
+  - User impact: A private/git dependency's exclusion is actually honored, not defeated by the audit tool's own normal resolution behavior.
+- **A new file is added to a manager's required-input closure (e.g. a new .go source file in the module) AFTER the pre-audit verifyManagerClosureCoverage check passed, but before or during that manager's actual audit.** (recoverable)
+  - Detection: The SECOND (post-audit) verifyManagerClosureCoverage call for that manager, re-resolving the closure fresh, now returns covered:false where the pre-audit call returned covered:true.
+  - Response: That manager's results are still reported (the audit did run), but contentStable is set to false for the whole collection -- the pinned scope did not hold stable.
+  - User impact: A silent scope-growth during audit is caught even though it would never have shown up in the targets.entries-only hash.
+- **A targets.entries file that was readable during the pre-collection contentIdentity computation is deleted or becomes unreadable by the time of the post-collection re-computation.** (recoverable)
+  - Detection: The second computeContentIdentity call throws; collectDependencyAdvisories catches it specifically rather than letting it propagate.
+  - Response: contentStable is set to false; the evidence is still returned, never discarded, but never claimed stable either.
+  - User impact: A disappeared or corrupted target is treated exactly like any other mutation during collection -- caught, not silently ignored and not an unexplained crash.
+- **A manager's required-input closure (a nested -r/-c reference; a go module's source file) reaches a file outside targets.entries, caught on the PRE-audit check.** (recoverable)
   - Detection: verifyManagerClosureCoverage returns covered:false with the missing files listed.
-  - Response: That manager's perManagerMode is recorded 'unsupported' with the missing files noted; pkg_audit is never invoked for it, and contentIdentity's own hash is never touched by this check.
+  - Response: That manager's perManagerMode is recorded 'unsupported'; pkg_audit is never invoked for it.
   - User impact: A manager is never audited against content that was not actually part of the pinned, verified review scope.
-- **The repository's content (anything in targets.entries) changes between s2's pre-collection and post-collection contentIdentity computations.** (recoverable)
-  - Detection: The second computeContentIdentity call returns a different string than the first.
-  - Response: contentStable is set to false; the evidence is still returned, but s3 must treat contentStable=false as untrustworthy.
-  - User impact: A mutation during collection is caught and surfaced rather than silently trusted.
-- **A Pipfile.lock/poetry.lock entry has a non-PyPI source (git/path/url) or a marker shape the requirements-file format cannot represent faithfully.** (recoverable)
-  - Detection: The lockfile-export step classifies the entry as non-exportable before generating the requirements file.
-  - Response: That entry is excluded from the generated file and added to unresolvedDependencies with a non-standard-source note; it is never mis-exported as an ordinary public-index name==version line.
-  - User impact: A private/git/path dependency is never silently queried against the wrong (public) index under the wrong identity.
-- **repoPath itself fails computeContentIdentity's own precondition (not a git repository, or not registered).** (recoverable)
+- **A Pipfile.lock/poetry.lock entry has a non-PyPI source or an unfaithfully-exportable marker.** (recoverable)
+  - Detection: The lockfile-export step classifies the entry as non-exportable.
+  - Response: Excluded from the generated file, added to unresolvedDependencies with a non-standard-source note.
+  - User impact: A private/git/path dependency is never mis-exported under the wrong identity.
+- **repoPath itself fails computeContentIdentity's own precondition on the FIRST call (not a git repository, or not registered).** (recoverable)
   - Detection: computeContentIdentity throws before any manager-level work begins.
-  - Response: collectDependencyAdvisories propagates the error -- there is no per-manager recovery for a broken precondition affecting the whole review.
-  - User impact: A fundamentally broken call fails loudly and immediately rather than reporting confusing per-manager gaps.
-- **pkg_audit's underlying CLI binary is not installed for a manager enumerateManagers found.** (recoverable)
+  - Response: collectDependencyAdvisories propagates the error.
+  - User impact: A fundamentally broken call fails loudly and immediately.
+- **pkg_audit's underlying CLI binary is not installed for a manager.** (recoverable)
   - Detection: runShell's existing r.spawnError flag surfaces back to collectDependencyAdvisories.
-  - Response: That manager is recorded in unavailableSources as an execution gap, never conflated with 'no findings reported'.
-  - User impact: Distinguishes 'the audit tool is genuinely absent' from 'the audit ran and found nothing.'
-- **A manager's audit output is unparseable or malformed.** (recoverable)
-  - Detection: The per-manager raw-output-to-SecurityAdvisoryMatch mapper fails to extract any usable fields.
   - Response: Recorded in unavailableSources as an execution gap.
-  - User impact: A parse failure never masquerades as a successful security check.
+  - User impact: Distinguishes 'absent' from 'ran and found nothing.'
+- **A manager's audit output is unparseable or malformed.** (recoverable)
+  - Detection: The mapper fails to extract usable fields.
+  - Response: Recorded in unavailableSources.
+  - User impact: A parse failure never masquerades as a clean result.
 - **A plain pip project has no requirements.txt at all.** (recoverable)
-  - Detection: There is no requirements-shaped file for the detected pip project.
-  - Response: Recorded as perManagerMode 'unsupported' -- never falls back to the ambient active environment.
-  - User impact: Never silently reverts to the wrong target just because the expected file is missing.
-- **Two different package-manager manifests for the SAME manager family are found in the same directory under repoPath.** (recoverable)
-  - Detection: enumerateManagers detects more than one candidate manifest for the same manager family in one directory.
-  - Response: That directory's manager is recorded as an unresolved ambiguity.
-  - User impact: Never silently audits the wrong lockfile when two plausible ones exist.
+  - Detection: No requirements-shaped file found.
+  - Response: Recorded as perManagerMode 'unsupported'.
+  - User impact: Never falls back to the ambient environment.
+- **Two manifests for the same manager family in one directory.** (recoverable)
+  - Detection: enumerateManagers detects the conflict.
+  - Response: Recorded as an unresolved ambiguity.
+  - User impact: Never silently picks one.
 
 **Edge cases**
 
 | Input | Expected |
 | :--- | :--- |
+| A requirementsPath generated by s2 for a poetry project includes a package that ALSO happens to be a transitive dependency of another exported package. | Because noDeps:true is set, pip-audit treats the generated file as the complete, closed set to audit -- it never re-resolves that package's own dependencies, so the exclusion of any non-exportable sibling package is never defeated. |
+| A new .go file is added to the module's source tree after verifyManagerClosureCoverage's pre-audit check, and remains present afterward (no restore). | The post-audit verifyManagerClosureCoverage call for go detects the now-uncovered file; contentStable is false even though the file is still present and nothing was 'restored'. |
+| A targets.entries file is deleted during collection and never restored. | contentStable is false, set via the caught post-collection read failure, not an uncaught exception. |
 | An application-source file (not a manifest) listed in targets.entries is edited, with every manifest/lockfile unchanged. | contentIdentity changes, because computeContentIdentity hashes every file in targets.entries, not only dependency manifests. |
-| A requirements.txt entry is pinned with an exact `==` version. | Treated as exact-locked evidence, consistent with a lockfile-backed manager. |
-| A requirements.txt entry uses a version range (e.g. `>=1.0`) rather than an exact pin. | pip-audit still runs against the file, but that coordinate is also recorded in unresolvedDependencies as version-uncertain -- its resolved version is not guaranteed to match the project's actual installed version. |
-| A dependency is successfully audited and found to have no matching advisory. | Its coordinate appears in queriedCoordinates only -- not in matches (no finding) and not in unresolvedDependencies (it WAS successfully checked). This is the expected, documented 'clean' outcome, not an omission. |
-| A manager's audit legitimately exits non-zero with a fully parseable 'findings reported' result. | Treated as a SUCCESSFUL audit -- matches populated, NOT an execution gap. |
-| A .go source file (not go.mod/go.sum) is listed in targets.entries and edited. | contentIdentity changes directly (it hashes every targets.entries file); verifyManagerClosureCoverage for go also confirms the module's full source tree is within targets.entries before trusting go's audit. |
-| A tracked requirements/lockfile is marked assume-unchanged and its real on-disk content has diverged from HEAD; git status reports nothing. | computeContentIdentity still reflects the change -- it reads every targets.entries file's actual current bytes directly, never consulting git status. |
+| A dependency is successfully audited and found to have no matching advisory. | Its coordinate appears in queriedCoordinates only -- the documented, normal 'clean' outcome. |
+| A requirements.txt entry uses a version range rather than an exact pin. | pip-audit still runs against the file, but the coordinate is also recorded in unresolvedDependencies as version-uncertain. |
 
 ## 6. Test strategy
 
@@ -239,46 +247,46 @@ The HLD-defined output record this Story owns (HLD revision 6): { contentIdentit
 
 **Test levels**
 
-- **unit** — Prove computeContentIdentity is a simple, shared, non-manager-aware hash over exactly targets.entries.
-  - Subjects: `computeContentIdentity: an application-source file in targets.entries is edited, manifests/lockfiles unchanged -> digest changes`, `computeContentIdentity: a file NOT in targets.entries is edited -> no change to the digest`, `computeContentIdentity: identical targets.entries bytes -> identical string on repeated calls, independent of any manager context`, `computeContentIdentity: a targets.entries path resolving outside repoPath -> throws`, `computeContentIdentity: git state unreadable -> throws the documented Error`
-- **unit** — Prove verifyManagerClosureCoverage correctly detects when a manager's required inputs are, and are not, covered by the pinned scope.
-  - Subjects: `verifyManagerClosureCoverage: a requirements.txt with nested -r/-c references, both referenced files ALSO in targets.entries -> covered:true`, `verifyManagerClosureCoverage: a nested -r/-c reference NOT in targets.entries -> covered:false, missing lists it`, `verifyManagerClosureCoverage: a go module whose full source tree is NOT entirely within targets.entries -> covered:false`, `collectDependencyAdvisories: a manager with covered:false -> perManagerMode 'unsupported' with the missing files noted, pkg_audit never invoked for it`
-- **unit** — Prove collectDependencyAdvisories' post-collection re-verification and the queriedCoordinates/matches/unresolvedDependencies accounting.
-  - Subjects: `collectDependencyAdvisories: a targets.entries file changes between the pre- and post-collection computeContentIdentity calls -> contentStable:false, evidence still returned`, `collectDependencyAdvisories: a cleanly-audited coordinate with no advisory match -> appears in queriedCoordinates only, absent from BOTH matches and unresolvedDependencies`, `collectDependencyAdvisories: a coordinate with a confirmed advisory -> appears in both queriedCoordinates and matches`, `collectDependencyAdvisories: a coordinate that could not be resolved/checked at all -> appears in both queriedCoordinates and unresolvedDependencies`
-- **unit** — Prove lockfile export fidelity: exact-locked versions are preferred, and non-exportable entries are gapped rather than mis-exported.
-  - Subjects: `a poetry.lock entry with a git/path/url source -> excluded from the generated requirements file, added to unresolvedDependencies with a non-standard-source note`, `a poetry.lock entry with a plain PyPI source and a simple marker -> exported as `name==version; marker``, `a plain pip requirements.txt entry with an exact `==` pin -> treated as exact-locked evidence`, `a plain pip requirements.txt entry with a version range -> pip-audit still runs against it, but the coordinate is also recorded in unresolvedDependencies as version-uncertain`, `a plain pip project with no requirements.txt at all -> perManagerMode 'unsupported', no fallback to the ambient environment`
+- **unit** — Prove noDeps:true structurally prevents an excluded lockfile entry from being reintroduced via transitive resolution.
+  - Subjects: `pkgAuditTool.execute: noDeps:true -> argv includes --no-deps`, `pkgAuditTool.execute: noDeps omitted/false -> argv is identical to today`, `collectDependencyAdvisories: a generated requirementsPath (pipenv/poetry) is ALWAYS invoked with noDeps:true`, `collectDependencyAdvisories: plain pip's own requirements.txt is NEVER invoked with noDeps:true`
+- **unit** — Prove the post-audit closure re-verification catches a closure that grew during the audit, independent of the already-covered change-and-restore race.
+  - Subjects: `collectDependencyAdvisories: a manager's closure is covered:true pre-audit and covered:true post-audit -> no effect on contentStable`, `collectDependencyAdvisories: a manager's closure is covered:true pre-audit but covered:false post-audit (a new file appeared during the audit and was never removed) -> contentStable:false, the manager's own results are still returned`, `verifyManagerClosureCoverage: re-resolves the closure fresh on each call -- two calls in a row after a file is added return different results`
+- **unit** — Prove a post-collection read failure (deleted or unreadable target) is caught and mapped to contentStable:false, never propagated.
+  - Subjects: `collectDependencyAdvisories: a targets.entries file is deleted between the pre- and post-collection computeContentIdentity calls -> contentStable:false, no exception escapes collectDependencyAdvisories`, `collectDependencyAdvisories: the FIRST computeContentIdentity call fails its own repoPath-level precondition -> the error DOES propagate (distinct from the second-call case)`
+- **unit** — Prove computeContentIdentity is a simple, shared, non-manager-aware hash over exactly targets.entries (unchanged from revision 5).
+  - Subjects: `computeContentIdentity: an application-source file in targets.entries is edited, manifests/lockfiles unchanged -> digest changes`, `computeContentIdentity: a file NOT in targets.entries is edited -> no change`, `computeContentIdentity: identical targets.entries bytes -> identical string on repeated calls`
+- **unit** — Prove lockfile export fidelity and the queriedCoordinates/matches/unresolvedDependencies accounting (unchanged from revision 5).
+  - Subjects: `a poetry.lock entry with a git/path/url source -> excluded, added to unresolvedDependencies`, `a plain pip requirements.txt entry with a version range -> recorded in unresolvedDependencies as version-uncertain`, `a cleanly-audited coordinate with no advisory match -> appears in queriedCoordinates only`
 - **unit** — Prove collectDependencyAdvisories' per-manager gap-reporting and configuredDestination recording, with a fake pkg_audit invocation.
-  - Subjects: `collectDependencyAdvisories: pkg_audit spawnError for a manager -> recorded in unavailableSources`, `collectDependencyAdvisories: unparseable/malformed output -> recorded in unavailableSources`, `collectDependencyAdvisories: every attempted manager's perManagerMode entry carries a configuredDestination, including a manager with zero matches or a failed run`, `collectDependencyAdvisories: repoPath itself fails computeContentIdentity's precondition -> the error propagates rather than being swallowed into a per-manager gap`
-  - Fixtures: `a fake pkg_audit invocation standing in for the real pkgAuditTool.execute call`, `repoPath fixtures with varying manifest combinations, nested requirements references, and lockfile entries with non-PyPI sources`
-- **unit** — Prove pkgAuditTool's new, additive requirementsPath input and the generated file's concurrency-safe lifecycle.
-  - Subjects: `pkgAuditTool.execute: no requirementsPath provided -> argv is identical to today for every manager`, `pkgAuditTool.execute: requirementsPath provided -> argv includes `-r <requirementsPath>``, `two concurrent collectDependencyAdvisories calls each get a distinct, non-colliding generated temp file`, `the generated file is removed after both a successful and a failed pkg_audit call`
-- **live** — Prove exact-locked targeting actually audits the repository's own locked dependencies rather than a stray or ambient alternative, against a real subprocess -- gated behind INSRC_LIVE_TESTS=1.
-  - Subjects: `collectDependencyAdvisories against a real poetry project: a deliberately vulnerable version pinned in poetry.lock is found, while a different, non-vulnerable version named in a stray requirements.txt beside it is NOT what gets reported`
-  - Fixtures: `a real poetry project fixture with a known-vulnerable locked version and a conflicting stray requirements.txt, run only under INSRC_LIVE_TESTS=1`
+  - Subjects: `collectDependencyAdvisories: pkg_audit spawnError for a manager -> recorded in unavailableSources`, `collectDependencyAdvisories: every attempted manager's perManagerMode entry carries a configuredDestination`
+  - Fixtures: `a fake pkg_audit invocation standing in for the real pkgAuditTool.execute call`, `a controllable closure-resolver fixture that can return a different closure on successive calls to simulate mid-audit growth`
+- **live** — Prove noDeps:true and exact-locked targeting actually audit the repository's own locked, closed dependency set against a real subprocess -- gated behind INSRC_LIVE_TESTS=1.
+  - Subjects: `collectDependencyAdvisories against a real poetry project with an excluded private dependency that is also a transitive dependency of an exported package: the excluded package is NOT resolved or reported on`
+  - Fixtures: `a real poetry project fixture with a git/path-sourced dependency that is also a transitive dependency of a published package, run only under INSRC_LIVE_TESTS=1`
 
 **Acceptance mapping**
 
 | Criterion | Proving tests |
 | :--- | :--- |
-| `ac2` | `computeContentIdentity: an application-source file in targets.entries is edited, manifests/lockfiles unchanged -> digest changes`, `collectDependencyAdvisories: a manager with covered:false -> perManagerMode 'unsupported' with the missing files noted, pkg_audit never invoked for it`, `collectDependencyAdvisories: a cleanly-audited coordinate with no advisory match -> appears in queriedCoordinates only, absent from BOTH matches and unresolvedDependencies`, `a poetry.lock entry with a git/path/url source -> excluded from the generated requirements file, added to unresolvedDependencies with a non-standard-source note`, `a plain pip requirements.txt entry with a version range -> pip-audit still runs against it, but the coordinate is also recorded in unresolvedDependencies as version-uncertain`, `a plain pip project with no requirements.txt at all -> perManagerMode 'unsupported', no fallback to the ambient environment`, `collectDependencyAdvisories: every attempted manager's perManagerMode entry carries a configuredDestination, including a manager with zero matches or a failed run`, `collectDependencyAdvisories against a real poetry project: a deliberately vulnerable version pinned in poetry.lock is found, while a different, non-vulnerable version named in a stray requirements.txt beside it is NOT what gets reported` |
+| `ac2` | `collectDependencyAdvisories: a generated requirementsPath (pipenv/poetry) is ALWAYS invoked with noDeps:true`, `collectDependencyAdvisories: a manager's closure is covered:true pre-audit but covered:false post-audit -> contentStable:false, the manager's own results are still returned`, `collectDependencyAdvisories: a targets.entries file is deleted between the pre- and post-collection computeContentIdentity calls -> contentStable:false, no exception escapes collectDependencyAdvisories`, `a poetry.lock entry with a git/path/url source -> excluded, added to unresolvedDependencies`, `a cleanly-audited coordinate with no advisory match -> appears in queriedCoordinates only`, `collectDependencyAdvisories against a real poetry project with an excluded private dependency that is also a transitive dependency of an exported package: the excluded package is NOT resolved or reported on` |
 
 ## 7. Alternatives considered
 
 ### 7.1 a1: Minimal additive pkg_audit targeting fix, controller-equivalent access, shared non-manager-aware identity — **CHOSEN**
 
-Point pip-family managers at the repository's own LOCKED requirements via pip-audit's own `-r` argument; compute ONE shared, simple contentIdentity over exactly the caller-scoped review content; verify per-manager closure coverage separately rather than folding it into the hash.
+Point pip-family managers at the repository's own LOCKED requirements via pip-audit's own `-r` argument, disabling resolution (`--no-deps`) for anything s2 itself generated; compute ONE shared, simple contentIdentity over exactly the caller-scoped review content; verify per-manager closure coverage both before and after each audit, independently of the hash.
 
-Add one optional `requirementsPath?: string` field to pkgAuditTool's inputSchema (purely additive); auditArgv's pip/pipenv/poetry cases append `-r <requirementsPath>` only when provided. s2's own module: (1) computes contentIdentity over exactly targets.entries (no manager-specific expansion, so it is genuinely the SAME identity s3 computes over the same scope); (2) for each manager enumerateManagers finds, checks verifyManagerClosureCoverage before auditing it, refusing (as a coverage gap) any manager whose required inputs reach outside targets.entries; (3) regenerates a fresh requirementsPath from Pipfile.lock/poetry.lock for pipenv/poetry (excluding non-PyPI-sourced or unfaithfully-representable entries as explicit gaps) or uses plain pip's own requirements.txt directly (flagging unpinned entries as version-uncertain), written to a per-call-unique temp file cleaned up in a finally block; (4) runs pkg_audit with the same host access the controller has; (5) records each manager's configuredDestination, persisted per manager even for a clean or failed run; (6) recomputes contentIdentity once more after the last manager completes and stamps contentStable; (7) maps pkg_audit's raw output into SecurityAdvisoryMatch[], with queriedCoordinates/matches/unresolvedDependencies accounting that allows a cleanly-checked coordinate to appear in queriedCoordinates alone; and (8) wraps the result into both the thin EvidenceProviderOutput and the richer SecurityAdvisoryEvidence (sc2, HLD revision 6). Revision 5 further corrects: computeContentIdentity is a simple, shared, non-manager-aware hash over exactly targets.entries (restoring the HLD's 'one shared identity' invariant -- a manager-aware expansion inside it at revision 4 would have made s2's own identity diverge from whatever s3 computes over the same targets); manager closure coverage is checked SEPARATELY via verifyManagerClosureCoverage without touching the hash; lockfile export now excludes non-PyPI-sourced or unfaithfully-representable entries as explicit gaps rather than mis-exporting them; plain pip's unpinned entries are flagged version-uncertain; and the queriedCoordinates/matches/unresolvedDependencies accounting is corrected to allow a clean, successfully-checked coordinate to appear in queriedCoordinates alone.
+Add two optional fields to pkgAuditTool's inputSchema (`requirementsPath?: string`, `noDeps?: boolean`), both purely additive. s2's own module: (1) computes contentIdentity over exactly targets.entries; (2) for each manager enumerateManagers finds, checks verifyManagerClosureCoverage before auditing it, refusing (as a coverage gap) any manager whose required inputs reach outside targets.entries; (3) regenerates a fresh requirementsPath from Pipfile.lock/poetry.lock for pipenv/poetry (excluding non-PyPI-sourced or unfaithfully-representable entries) WITH noDeps:true, or uses plain pip's own requirements.txt directly (flagging unpinned entries as version-uncertain, never setting noDeps); (4) runs pkg_audit with the same host access the controller has; (5) records each manager's configuredDestination; (6) recomputes contentIdentity after the last manager completes, catching (not propagating) a read failure as contentStable:false, and re-checks verifyManagerClosureCoverage per audited manager, folding any regression into contentStable too; (7) maps pkg_audit's raw output into SecurityAdvisoryMatch[]; and (8) wraps the result into both the thin EvidenceProviderOutput and the richer SecurityAdvisoryEvidence (sc2, HLD revision 6). Revision 6 further corrects: pip-audit always runs with --no-deps against a requirementsPath s2 generated itself, so an excluded (non-PyPI-sourced) lockfile entry can never be silently reintroduced via another exported package's transitive dependency; verifyManagerClosureCoverage is now called BOTH before and after each manager's audit (re-resolving the closure fresh each time), folding a post-audit regression into contentStable so a closure that grows during the audit -- without ever touching the targets.entries hash -- is still caught; and a post-collection read failure (a target deleted or made unreadable during collection) is caught and mapped to contentStable:false rather than risking an uncaught exception.
 
 **Pros:**
 - Reuses pkg_audit directly, satisfying ac2's 'not a new fetcher' requirement
 - No proxy, isolation, or verification machinery to build or maintain -- the reviewer runs with the same host access as the controller
-- A genuinely SHARED, simple contentIdentity (no manager-aware logic inside it) is what makes 'the same identity s2 and s3 both execute against' actually true
+- A genuinely SHARED, simple contentIdentity is what makes 'the same identity s2 and s3 both execute against' actually true, now backed by closure-coverage checks that run both before and after an audit
 
 **Cons:**
 - s2's own reports of which destination each manager reached are self-reported/configured, not independently verified -- an accepted, documented tradeoff
-- The post-audit re-verification narrows but does not eliminate the mutation-during-audit window -- documented, not silently assumed fixed
-- verifyManagerClosureCoverage adds one more per-manager check before any audit runs; a manager whose closure reaches outside targets.entries is refused even though a willing orchestrator could simply have included those files -- the burden is explicitly on the caller to scope targets.entries correctly, not on s2 to guess or expand it
+- The post-audit re-verification narrows but does not eliminate every mutation race -- documented, not silently assumed fixed
+- noDeps:true means s2's generated export must itself be complete and correct for the audit to find everything a full resolution might have -- an entry s2's own export logic misses (not merely excludes deliberately) would now never be resolved in by pip-audit either; this is an accepted tradeoff since the alternative (leaving resolution on) is precisely what lets an excluded entry sneak back in
 
 **Cost estimate:** S
 
@@ -319,3 +327,4 @@ Avoid changing pkg_audit's code at all by temporarily overwriting process.env ar
 - **[[c21]]** `stakeholder` `reviewer finding: 2 HIGH + 3 MED on LLD revision 3 (TOCTOU between hash and audit, incomplete transitive required-input closure, unobservable destination claim, requirements resolution precedence, unspecified requirementsPath wiring contract)`
 - **[[c22]]** `artifact` `HLD-0765b3a578e43eec (revision 6: additive sc2 fields contentStable, perManagerMode[].configuredDestination)`
 - **[[c23]]** `stakeholder` `reviewer finding: 1 HIGH + 4 MED on LLD revision 4 (shared contentIdentity cannot exclude app source; plain-pip resolution vs locked evidence; name/version-only lockfile export loses semantics; clean-coordinate accounting gap; inconsistent throw/no-throw contract for an unreadable closure)`
+- **[[c24]]** `stakeholder` `reviewer finding: 2 HIGH + 1 MED on LLD revision 5 (dependency resolution can reintroduce excluded lockfile entries; closure membership can change without changing the digest; deleting a target during collection has no defined outcome)`

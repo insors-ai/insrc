@@ -1,6 +1,6 @@
 # Source interruption and consumer promotion gates
 
-Story `a03e99e17a364550/s1`, approved task t8. Controller checks passed; registered validation is pending. BUILD approval remains deferred until the entire story is built and tested.
+Story `a03e99e17a364550/s1`, approved task t8. Controller checks and registered validation passed. BUILD approval remains deferred until the entire story is built and tested.
 
 ## Existing mechanisms reused
 
@@ -50,4 +50,4 @@ The smoke result is observed **after** the coordinator completes. The older inst
 
 Core fault fixtures use controlled daemon processes and a store-owner marker; runtime-store archive shims test trust boundaries, not native qualification. Existing native host, actor and Mach-O regressions passed, but actual historical application/native-library/data qualification remains tasks t9–t11. The installed watcher/V8 crash recorded in `ide-consumers.md` is not fixed by fixture isolation. No Mac PID/IPC shutdown fallback, unsupported-platform enablement or unrelated workflow changes were implemented.
 
-Registered task validation is pending on the implementation commit.
+Registered validation passed on implementation commit `e75223d04` at `2026-11-22T10:59:50.064Z`. The daemon recorded five mapped cases passing, no failures, skips or missing cases, clean typechecking, and the separately reported coordinator-closure smoke pass. Its final read-only verdict accepted all task checks. The registered interruption matrix took 374 seconds. The MCP request timed out at 300 seconds while the daemon continued; the persisted TESTS and TASKS records establish completion.

@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 12,
-        "contentHash": "6afdbcc63d95ede4d26a39449614b5908c3e975d641e0e8b60908bf97a843268",
-        "at": "2026-11-22T09:52:24.032Z",
+        "number": 13,
+        "contentHash": "fb9700503764ac440fd54d7e51dd111654c8b502db737ca7f3f15448fc1b9ffc",
+        "at": "2026-11-22T10:58:52.355Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "a03e99e17a364550",
     "storyId": "s1",
     "createdAt": "2026-11-21T17:48:45.684Z",
-    "updatedAt": "2026-11-22T09:52:23.988Z",
+    "updatedAt": "2026-11-22T10:58:52.304Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-21T15:31:04.425Z",
     "epicSlug": "restore-upgrades-from-existing-daemon-installations",
-    "revision": 12
+    "revision": 13
   },
   "body": {
     "tasks": [
@@ -538,6 +538,164 @@
             "titles": [
               {
                 "title": "VS Code controller reaches packaged current bootstrap and selected runtime",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "e75223d04",
+        "ranAt": "2026-11-22T10:58:52.304Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Every transaction phase crash/timeout and concurrent mutation preserves single daemon ownership",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/source-interruption.test.ts",
+                "title": "Every transaction phase crash/timeout and concurrent mutation preserves single daemon ownership",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Corrupt source/runtime and wrong compatibility denied; package integration gate enforced",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/source-upgrade-qualification-native.test.ts",
+                "title": "Portable source qualification rejects wrong channel/profile/floor before npm",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/node-runtime-store.test.ts",
+                "title": "rejects cache corruption even when its cached inventory is rewritten",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/source-release-promotion.test.ts",
+                "title": "Promotion requires passing source-built evidence for the exact signed head",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/source-release-promotion.test.ts",
+                "title": "Published installer and both IDEs embed the same trusted verifier",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Canonical coordinator cleanup confirms all owned test actors closed",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/plans/node-runtime-evidence/source-fault-gates.md#coordinator-closure — completed canonical runs 704dbbba-0e3e-42f9-b132-88fc87f29d8e, e21002de-60f9-4b41-bbf5-cab620972420 and bd6c6446-5956-4211-9788-c66bac3f0cf5 each recorded confirmedClosed:true, interrupted:false, empty cancellation/evidence errors in .insrc/tmp/test-harness/runs/<id>/cleanup.json. Both OrbStack fixtures stopped; native actor/process assertions passed. This final coordinator property is observed after each run, not run by the legacy build gate."
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "scripts/__tests__/node-runtime-store.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 8683,
+            "titles": [
+              {
+                "title": "bootstraps without PATH Node and reuses a verified cache offline",
+                "result": "pass"
+              },
+              {
+                "title": "rejects digest traversal links devices and runtime identity before publication",
+                "result": "pass"
+              },
+              {
+                "title": "rejects cache corruption even when its cached inventory is rewritten",
+                "result": "pass"
+              },
+              {
+                "title": "serializes concurrent publication and removes only owned failed stages",
+                "result": "pass"
+              },
+              {
+                "title": "publishes one canonical binding and refuses escaping or unqualified roots",
+                "result": "pass"
+              },
+              {
+                "title": "cleans an actually interrupted bootstrap and retries without publishing partial state",
+                "result": "pass"
+              },
+              {
+                "title": "retries incomplete provisioning without selecting or deleting an unrelated stage",
+                "result": "pass"
+              },
+              {
+                "title": "binding interruption preserves the old record and selected runtime without deleting referenced objects",
+                "result": "pass"
+              },
+              {
+                "title": "source binding consumption rejects changed metadata and escaping directories",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "scripts/__tests__/source-upgrade-qualification-native.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 35954,
+            "titles": [
+              {
+                "title": "Portable source qualification rejects wrong channel/profile/floor before npm",
+                "result": "pass"
+              },
+              {
+                "title": "Linux source promotion requires target-specific historical upgrade evidence",
+                "result": "pass"
+              },
+              {
+                "title": "Independent staging uses absolute owned npm and preserves Mac signed behavior",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/source-interruption.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 373879,
+            "titles": [
+              {
+                "title": "Every transaction phase crash/timeout and concurrent mutation preserves single daemon ownership",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/source-release-promotion.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 8855,
+            "titles": [
+              {
+                "title": "Promotion requires passing source-built evidence for the exact signed head",
+                "result": "pass"
+              },
+              {
+                "title": "Published installer and both IDEs embed the same trusted verifier",
                 "result": "pass"
               }
             ],

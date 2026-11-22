@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 20 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 25 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -170,3 +170,35 @@ Run at 2026-11-22T09:52:23.988Z on commit `dcb92e3ff`. Tests check: **passed**. 
 | :--- | :--- | :--- | :--- | :--- |
 | `jetbrains-plugin/__tests__/source-bootstrap-gradle.test.ts` | 0 | 1 | 14.1 s |  |
 | `scripts/__tests__/ide-source-entrypoints-native.test.ts` | 0 | 1 | 525.3 s |  |
+
+## t8
+
+Run at 2026-11-22T10:58:52.304Z on commit `e75223d04`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+
+**integration: Every transaction phase crash/timeout and concurrent mutation preserves single daemon ownership**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | Every transaction phase crash/timeout and concurrent mutation preserves single daemon ownership | `src/daemon/__tests__/source-interruption.test.ts` |
+
+**integration: Corrupt source/runtime and wrong compatibility denied; package integration gate enforced**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | Portable source qualification rejects wrong channel/profile/floor before npm | `scripts/__tests__/source-upgrade-qualification-native.test.ts` |
+| pass | rejects cache corruption even when its cached inventory is rewritten | `scripts/__tests__/node-runtime-store.test.ts` |
+| pass | Promotion requires passing source-built evidence for the exact signed head | `src/daemon/__tests__/source-release-promotion.test.ts` |
+| pass | Published installer and both IDEs embed the same trusted verifier | `src/daemon/__tests__/source-release-promotion.test.ts` |
+
+**smoke: Canonical coordinator cleanup confirms all owned test actors closed**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/plans/node-runtime-evidence/source-fault-gates.md#coordinator-closure — completed canonical runs 704dbbba-0e3e-42f9-b132-88fc87f29d8e, e21002de-60f9-4b41-bbf5-cab620972420 and bd6c6446-5956-4211-9788-c66bac3f0cf5 each recorded confirmedClosed:true, interrupted:false, empty cancellation/evidence errors in .insrc/tmp/test-harness/runs/<id>/cleanup.json. Both OrbStack fixtures stopped; native actor/process assertions passed. This final coordinator property is observed after each run, not run by the legacy build gate.
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `scripts/__tests__/node-runtime-store.test.ts` | 0 | 9 | 8.7 s |  |
+| `scripts/__tests__/source-upgrade-qualification-native.test.ts` | 0 | 3 | 36 s |  |
+| `src/daemon/__tests__/source-interruption.test.ts` | 0 | 1 | 373.9 s |  |
+| `src/daemon/__tests__/source-release-promotion.test.ts` | 0 | 2 | 8.9 s |  |

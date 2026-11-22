@@ -39,11 +39,11 @@ function dispatchCommand(update: Extract<MutationReservation, { kind: 'update' }
 		'dispatch', candidate.stateRoot, name];
 }
 
-function launcher(update: Extract<MutationReservation, { kind: 'update' }>, name: string): string {
+function launcher(update: Extract<MutationReservation, { kind: 'update' }>, name: string, sanitize = true): string {
 	const command = dispatchCommand(update, name);
 	if (command === undefined) return BLOCKED;
 	const shell = command.map(arg => "'" + arg.replaceAll("'", "'\\''") + "'").join(' ');
-	return `#!/bin/sh\n# macOS daemon migration is in progress until the selector is committed.\nexec ${shell} "$@"\n`;
+	return `#!/bin/sh\n# macOS daemon migration is in progress until the selector is committed.\n${sanitize ? 'unset NODE_OPTIONS NODE_PATH\n' : ''}exec ${shell} "$@"\n`;
 }
 
 async function registeredLegacyJobs(prior: ManagedInstallation, baseline: ManagedInstallation, labels: readonly string[], pid?: number) {
@@ -362,7 +362,9 @@ export async function fenceLegacyLauncher(gate: Gate, update: Extract<MutationRe
 	if (await layout(fence) !== 'fenced') fail('launcher exchange did not publish its fence');
 	const dispatcher = await readFile(join(canonical, 'scripts/daemon-ctl.sh'), 'utf8');
 	if (runFileIdentity(join(canonical, MANAGED_ENTRY)) !== undefined || runFileIdentity(join(canonical, '.git')) !== undefined
-		|| (dispatcher !== launcher(update, 'daemon-ctl.sh') && dispatcher !== BLOCKED)) {
+		// Recognize the previous exact producer while recovering an already published
+		// fence. New fences always sanitize before their first Node invocation.
+		|| (dispatcher !== launcher(update, 'daemon-ctl.sh') && dispatcher !== launcher(update, 'daemon-ctl.sh', false) && dispatcher !== BLOCKED)) {
 		fail('canonical dispatcher permits a legacy launch or update');
 	}
 	if (runFileIdentity(marker) !== undefined) fail('an older updater started before the launcher fence');

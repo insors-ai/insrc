@@ -48,6 +48,17 @@ export function qualificationRpc(home, method, params = {}) {
  });
 }
 
+export async function historicalSnapshot(home, repo) {
+ const rpc = (method, params) => qualificationRpc(home, method, params);
+ return {
+  entities: await rpc('search.by_file', { filePath: join(repo, 'seed.ts') }),
+  turns: await rpc('session.history', { sessionId: 'historical-runtime-qualification' }),
+  vectors: await rpc('session.search_turns', { repo, queryVector: Array.from({length:1024}, (_,i) => i === 0 ? 1 : 0), limit: 5 }),
+  sessions: await rpc('session.list', { repo }),
+  settings: await rpc('repo.settings.get', { repo }),
+ };
+}
+
 /** Same local Ollama protocol fixture as seeded-daemon.ts, with all stores seeded over IPC. */
 export async function qualificationEmbedder() {
  const vector = Array.from({ length: 1024 }, (_, i) => i === 0 ? 1 : 0);

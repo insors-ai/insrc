@@ -1,0 +1,677 @@
+{
+  "before": {
+    "fileCandidates": 280,
+    "memberEntries": 171,
+    "memberFiles": 69,
+    "testEntries": 54
+  },
+  "after": {
+    "fileCandidates": 278,
+    "fileClassifications": 449,
+    "scopeCounts": {
+      "retain-outside-exclusive-scope": 120,
+      "candidate-implementation": 143,
+      "mixed-extract-lifecycle": 19,
+      "preserve-reference": 32,
+      "candidate-test-support": 20,
+      "candidate-test": 115
+    },
+    "memberEntries": 176,
+    "memberFiles": 70,
+    "testEntries": 54
+  },
+  "fileChanges": [
+    {
+      "path": "src/shared/daemon-process.ts",
+      "from": "candidate-implementation",
+      "to": "retain-outside-exclusive-scope",
+      "reason": "Generic process observation/identity is required by retained daemon-run-files guard acquisition/conflict/reclaim, which protects keystore writes. Preserve this dependency closure."
+    },
+    {
+      "path": "src/daemon/__tests__/boot-cold-import.test.ts",
+      "from": "candidate-test",
+      "to": "retain-outside-exclusive-scope",
+      "reason": "Model catalog import/validation/default reconciliation assertions must survive. Only old launch/stop fixture wiring is a member-level integration candidate."
+    },
+    {
+      "path": "src/daemon/__tests__/config-boot-reconcile.test.ts",
+      "from": "candidate-test",
+      "to": "retain-outside-exclusive-scope",
+      "reason": "Tests canonical configuration/default evolution, reconciliation and architecture boundaries. Startup context does not make these exclusively process lifecycle tests."
+    },
+    {
+      "path": "src/daemon/__tests__/shutdown-store-failure.test.ts",
+      "from": "candidate-test",
+      "to": "mixed-extract-lifecycle",
+      "reason": "Contains general storeFailure status coverage plus shutdown/fatal/drain tests. Keep file/status assertions; replace only lifecycle mechanism assertions and retain teardown guarantees."
+    },
+    {
+      "path": "src/shared/__tests__/daemon-process.test.ts",
+      "from": "candidate-test",
+      "to": "retain-outside-exclusive-scope",
+      "reason": "Generic process identity/parser/reincarnation coverage backs retained keystore guards, not solely daemon termination."
+    },
+    {
+      "path": "src/config/__tests__/installer-defs.test.ts",
+      "from": "member-only / absent from original file catalog",
+      "to": "candidate-test",
+      "reason": "Dedicated installer or update/freshness suite; all methods inspected."
+    },
+    {
+      "path": "src/daemon/__tests__/daemon-status-field.test.ts",
+      "from": "member-only / absent from original file catalog",
+      "to": "candidate-test",
+      "reason": "Dedicated installer or update/freshness suite; all methods inspected."
+    },
+    {
+      "path": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/daemon/Sc4GatewayBindingsTest.kt",
+      "from": "member-only / absent from original file catalog",
+      "to": "candidate-test",
+      "reason": "Dedicated installer or update/freshness suite; all methods inspected."
+    }
+  ],
+  "removedMemberEntries": [
+    {
+      "id": "M133",
+      "path": "src/daemon/__tests__/daemon-status-field.test.ts",
+      "selector": "t2: the status object includes installedCommit populated from the reader",
+      "anchorLine": 30,
+      "endLine": 37,
+      "kind": "test-block",
+      "group": "Tests in retained files",
+      "reason": "Dedicated lifecycle assertions to remove/rewrite with corresponding candidate implementation.",
+      "preserve": "Keep other tests and shared test harness/fixtures."
+    },
+    {
+      "id": "M134",
+      "path": "src/daemon/__tests__/daemon-status-field.test.ts",
+      "selector": "t2: a reader returning '' yields installedCommit:'' with the rest of the status intact (never throws)",
+      "anchorLine": 39,
+      "endLine": 47,
+      "kind": "test-block",
+      "group": "Tests in retained files",
+      "reason": "Dedicated lifecycle assertions to remove/rewrite with corresponding candidate implementation.",
+      "preserve": "Keep other tests and shared test harness/fixtures."
+    },
+    {
+      "id": "M135",
+      "path": "src/daemon/__tests__/daemon-status-field.test.ts",
+      "selector": "t2: sc1 (daemon.update/updateOutcome) surface is untouched by the status change",
+      "anchorLine": 49,
+      "endLine": 55,
+      "kind": "test-block",
+      "group": "Tests in retained files",
+      "reason": "Dedicated lifecycle assertions to remove/rewrite with corresponding candidate implementation.",
+      "preserve": "Keep other tests and shared test harness/fixtures."
+    },
+    {
+      "id": "M136",
+      "path": "src/daemon/__tests__/daemon-status-field.test.ts",
+      "selector": "t2: end-to-end \u2014 readInstalledCommit() with the default git exec returns this repo's real HEAD sha",
+      "anchorLine": 57,
+      "endLine": 62,
+      "kind": "test-block",
+      "group": "Tests in retained files",
+      "reason": "Dedicated lifecycle assertions to remove/rewrite with corresponding candidate implementation.",
+      "preserve": "Keep other tests and shared test harness/fixtures."
+    },
+    {
+      "id": "M137",
+      "path": "src/config/__tests__/installer-defs.test.ts",
+      "selector": "installer-defs.test.ts: both installer copies are identical with no tier-model or tool-loop literal; a step-4b dry run writes the file's defaults",
+      "anchorLine": 78,
+      "endLine": 125,
+      "kind": "test-block",
+      "group": "Tests in retained files",
+      "reason": "Dedicated lifecycle assertions to remove/rewrite with corresponding candidate implementation.",
+      "preserve": "Keep other tests and shared test harness/fixtures."
+    },
+    {
+      "id": "M138",
+      "path": "src/config/__tests__/installer-defs.test.ts",
+      "selector": "S001 t3: the installer builds with -std=c++17 and writes the install marker after npm install, in both identical copies",
+      "anchorLine": 127,
+      "endLine": 184,
+      "kind": "test-block",
+      "group": "Tests in retained files",
+      "reason": "Dedicated lifecycle assertions to remove/rewrite with corresponding candidate implementation.",
+      "preserve": "Keep other tests and shared test harness/fixtures."
+    },
+    {
+      "id": "M162",
+      "path": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/daemon/Sc4GatewayBindingsTest.kt",
+      "selector": "update sends daemon-update and maps an ok reply to Ok (never a shell-out)",
+      "anchorLine": 31,
+      "endLine": null,
+      "kind": "test-method",
+      "group": "Tests in retained files",
+      "reason": "Corresponding daemon lifecycle test assertion/method.",
+      "preserve": "Keep any unrelated gateway tests and reusable fakes."
+    },
+    {
+      "id": "M163",
+      "path": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/daemon/Sc4GatewayBindingsTest.kt",
+      "selector": "update maps a framed error to Failed with the reason",
+      "anchorLine": 39,
+      "endLine": null,
+      "kind": "test-method",
+      "group": "Tests in retained files",
+      "reason": "Corresponding daemon lifecycle test assertion/method.",
+      "preserve": "Keep any unrelated gateway tests and reusable fakes."
+    },
+    {
+      "id": "M164",
+      "path": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/daemon/Sc4GatewayBindingsTest.kt",
+      "selector": "update maps an unreachable daemon to Failed, never throwing",
+      "anchorLine": 46,
+      "endLine": null,
+      "kind": "test-method",
+      "group": "Tests in retained files",
+      "reason": "Corresponding daemon lifecycle test assertion/method.",
+      "preserve": "Keep any unrelated gateway tests and reusable fakes."
+    },
+    {
+      "id": "M165",
+      "path": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/daemon/Sc4GatewayBindingsTest.kt",
+      "selector": "updateOutcome maps a record to Loaded with state, error and finishedAt",
+      "anchorLine": 55,
+      "endLine": null,
+      "kind": "test-method",
+      "group": "Tests in retained files",
+      "reason": "Corresponding daemon lifecycle test assertion/method.",
+      "preserve": "Keep any unrelated gateway tests and reusable fakes."
+    },
+    {
+      "id": "M166",
+      "path": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/daemon/Sc4GatewayBindingsTest.kt",
+      "selector": "updateOutcome maps an empty (no-state) reply to None",
+      "anchorLine": 68,
+      "endLine": null,
+      "kind": "test-method",
+      "group": "Tests in retained files",
+      "reason": "Corresponding daemon lifecycle test assertion/method.",
+      "preserve": "Keep any unrelated gateway tests and reusable fakes."
+    },
+    {
+      "id": "M167",
+      "path": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/daemon/Sc4GatewayBindingsTest.kt",
+      "selector": "updateOutcome maps an unreachable daemon to Unavailable, never throwing",
+      "anchorLine": 74,
+      "endLine": null,
+      "kind": "test-method",
+      "group": "Tests in retained files",
+      "reason": "Corresponding daemon lifecycle test assertion/method.",
+      "preserve": "Keep any unrelated gateway tests and reusable fakes."
+    }
+  ],
+  "addedMemberEntries": [
+    {
+      "id": "M172",
+      "path": "src/shared/daemon-run-files.ts",
+      "selector": "RunFileGuardPin",
+      "anchorLine": 42,
+      "endLine": 47,
+      "kind": "InterfaceDeclaration",
+      "group": "Implementation members",
+      "reason": "Exclusive support for lifecycle guard transfer/pinning; remaining shared acquire/conflict/reclaim code does not call these members.",
+      "preserve": "Keep ProcessIdentity/Reader and identity/owner/reclaim helpers used by keystore. Preserve runFileIdentity/sameRunFile: acquireRunFileGuard still calls them.",
+      "addedByRevalidation": true,
+      "requiresExtraction": false,
+      "revalidatedSourceSha256": "1cca74b969b29260d6cf8cf09c95e2a3d57dfdb0e2121cd42726f43bea185041"
+    },
+    {
+      "id": "M173",
+      "path": "src/shared/daemon-run-files.ts",
+      "selector": "readRunFileGuardPin",
+      "anchorLine": 64,
+      "endLine": 82,
+      "kind": "FunctionDeclaration",
+      "group": "Implementation members",
+      "reason": "Exclusive support for lifecycle guard transfer/pinning; remaining shared acquire/conflict/reclaim code does not call these members.",
+      "preserve": "Keep ProcessIdentity/Reader and identity/owner/reclaim helpers used by keystore. Preserve runFileIdentity/sameRunFile: acquireRunFileGuard still calls them.",
+      "addedByRevalidation": true,
+      "requiresExtraction": false,
+      "revalidatedSourceSha256": "1cca74b969b29260d6cf8cf09c95e2a3d57dfdb0e2121cd42726f43bea185041"
+    },
+    {
+      "id": "M174",
+      "path": "src/shared/daemon-run-files.ts",
+      "selector": "sameOwner",
+      "anchorLine": 84,
+      "endLine": 86,
+      "kind": "FunctionDeclaration",
+      "group": "Implementation members",
+      "reason": "Exclusive support for lifecycle guard transfer/pinning; remaining shared acquire/conflict/reclaim code does not call these members.",
+      "preserve": "Keep ProcessIdentity/Reader and identity/owner/reclaim helpers used by keystore. Preserve runFileIdentity/sameRunFile: acquireRunFileGuard still calls them.",
+      "addedByRevalidation": true,
+      "requiresExtraction": false,
+      "revalidatedSourceSha256": "1cca74b969b29260d6cf8cf09c95e2a3d57dfdb0e2121cd42726f43bea185041"
+    },
+    {
+      "id": "M175",
+      "path": "src/daemon/__tests__/shutdown-store-failure.test.ts",
+      "selector": "store failure to stop: exit within 5 seconds, pid file and socket gone, second start succeeds, last log line names the skipped close",
+      "anchorLine": 120,
+      "endLine": 144,
+      "kind": "assertion-slice",
+      "group": "Tests in retained files",
+      "reason": "Replace old watchdog/run-file/signal/exit lifecycle mechanism with the new lifecycle implementation.",
+      "preserve": "Keep status-after-failure test and store health handling, bounded teardown, worker/connection drain ordering and final resource closure expectations.",
+      "addedByRevalidation": true,
+      "requiresExtraction": true,
+      "revalidatedSourceSha256": "8df2269bad8f7b8c4f14db2c9a8877b838bed29812f000ce5de66e2d4a94f715"
+    },
+    {
+      "id": "M176",
+      "path": "src/daemon/__tests__/shutdown-store-failure.test.ts",
+      "selector": "fatal after failure: an unhandled rejection with the store failed ends the process within 5 seconds",
+      "anchorLine": 146,
+      "endLine": 157,
+      "kind": "assertion-slice",
+      "group": "Tests in retained files",
+      "reason": "Replace old watchdog/run-file/signal/exit lifecycle mechanism with the new lifecycle implementation.",
+      "preserve": "Keep status-after-failure test and store health handling, bounded teardown, worker/connection drain ordering and final resource closure expectations.",
+      "addedByRevalidation": true,
+      "requiresExtraction": true,
+      "revalidatedSourceSha256": "8df2269bad8f7b8c4f14db2c9a8877b838bed29812f000ce5de66e2d4a94f715"
+    },
+    {
+      "id": "M177",
+      "path": "src/daemon/__tests__/shutdown-store-failure.test.ts",
+      "selector": "healthy shutdown is unchanged: queue drained, connections closed in order, normal exit",
+      "anchorLine": 159,
+      "endLine": 206,
+      "kind": "assertion-slice",
+      "group": "Tests in retained files",
+      "reason": "Replace old watchdog/run-file/signal/exit lifecycle mechanism with the new lifecycle implementation.",
+      "preserve": "Keep status-after-failure test and store health handling, bounded teardown, worker/connection drain ordering and final resource closure expectations.",
+      "addedByRevalidation": true,
+      "requiresExtraction": true,
+      "revalidatedSourceSha256": "8df2269bad8f7b8c4f14db2c9a8877b838bed29812f000ce5de66e2d4a94f715"
+    },
+    {
+      "id": "M178",
+      "path": "src/daemon/__tests__/shutdown-store-failure.test.ts",
+      "selector": "with the store failed no path calls exit: the shutdown, its backstop, a failure found during the drain, and any other exit",
+      "anchorLine": 208,
+      "endLine": 282,
+      "kind": "assertion-slice",
+      "group": "Tests in retained files",
+      "reason": "Replace old watchdog/run-file/signal/exit lifecycle mechanism with the new lifecycle implementation.",
+      "preserve": "Keep status-after-failure test and store health handling, bounded teardown, worker/connection drain ordering and final resource closure expectations.",
+      "addedByRevalidation": true,
+      "requiresExtraction": true,
+      "revalidatedSourceSha256": "8df2269bad8f7b8c4f14db2c9a8877b838bed29812f000ce5de66e2d4a94f715"
+    },
+    {
+      "id": "M179",
+      "path": "src/daemon/__tests__/shutdown-store-failure.test.ts",
+      "selector": "Store-child fixture exercises owned publication watchdog readiness and guarded close",
+      "anchorLine": 284,
+      "endLine": 296,
+      "kind": "assertion-slice",
+      "group": "Tests in retained files",
+      "reason": "Replace old watchdog/run-file/signal/exit lifecycle mechanism with the new lifecycle implementation.",
+      "preserve": "Keep status-after-failure test and store health handling, bounded teardown, worker/connection drain ordering and final resource closure expectations.",
+      "addedByRevalidation": true,
+      "requiresExtraction": true,
+      "revalidatedSourceSha256": "8df2269bad8f7b8c4f14db2c9a8877b838bed29812f000ce5de66e2d4a94f715"
+    },
+    {
+      "id": "M180",
+      "path": "src/daemon/__tests__/boot-cold-import.test.ts",
+      "selector": "runDaemon fixture: child spawn, readiness, daemon.shutdown and kill fallback slice",
+      "anchorLine": 89,
+      "endLine": null,
+      "kind": "test-fixture-slice",
+      "group": "Tests in retained files",
+      "reason": "Old daemon launch/stop fixture wiring changes with the lifecycle engine.",
+      "preserve": "Keep CASES/CHAINS, validation errors, import side-effect assertions, defaults/config expectations and the two test bodies.",
+      "addedByRevalidation": true,
+      "requiresExtraction": true,
+      "revalidatedSourceSha256": "c74d6f2be72832f7ec5485b71b90edfb5cb35e871dc9965c4130dcb2c8bfc85c"
+    },
+    {
+      "id": "M181",
+      "path": "vscode-plugin/src/onboarding/onboarding.ts",
+      "selector": "OnboardingDeps.controller and lifecycle imports",
+      "anchorLine": 24,
+      "endLine": null,
+      "kind": "branch/field/registration",
+      "group": "Implementation members",
+      "reason": "Omitted installer-specific onboarding integration found during retained-to-candidate import audit.",
+      "preserve": "Keep onboarding registrar, AI host registry, consent/status/folder/prompt/store contracts.",
+      "requiresExtraction": true,
+      "revalidatedSourceSha256": "f0f766308b53d2bf67291cc99864d15277cf161c712b7824a586d0badce1f972",
+      "addedByRevalidation": true
+    },
+    {
+      "id": "M182",
+      "path": "vscode-plugin/src/onboarding/onboarding.ts",
+      "selector": "runOnboarding install step and controller destructuring",
+      "anchorLine": 63,
+      "endLine": null,
+      "kind": "branch/field/registration",
+      "group": "Implementation members",
+      "reason": "Omitted installer-specific onboarding integration found during retained-to-candidate import audit.",
+      "preserve": "Keep workspace registration, host wiring, per-action consent, serial sequencing and retryable registration semantics.",
+      "requiresExtraction": true,
+      "revalidatedSourceSha256": "f0f766308b53d2bf67291cc99864d15277cf161c712b7824a586d0badce1f972",
+      "addedByRevalidation": true
+    },
+    {
+      "id": "M183",
+      "path": "vscode-plugin/src/onboarding/__tests__/onboarding.test.ts",
+      "selector": "runOnboarding awaits the three offers IN ORDER install->register->wire, then markOnboarded(root)",
+      "anchorLine": 83,
+      "endLine": 92,
+      "kind": "assertion-slice",
+      "group": "Tests in retained files",
+      "reason": "Omitted installer-specific onboarding integration found during retained-to-candidate import audit.",
+      "preserve": "Replace only install ordering/call/fake assertions; keep registrar/host/consent, generic failure isolation, workspace state and retryable onboarding coverage.",
+      "requiresExtraction": true,
+      "revalidatedSourceSha256": "6ecf635c20c18ad5fc90a813fce063263055870688c20b92964f39d5bf923439",
+      "addedByRevalidation": true
+    },
+    {
+      "id": "M184",
+      "path": "vscode-plugin/src/onboarding/__tests__/onboarding.test.ts",
+      "selector": "a step that internally no-ops is silently skipped while the needed steps still run",
+      "anchorLine": 103,
+      "endLine": 108,
+      "kind": "assertion-slice",
+      "group": "Tests in retained files",
+      "reason": "Omitted installer-specific onboarding integration found during retained-to-candidate import audit.",
+      "preserve": "Replace only install ordering/call/fake assertions; keep registrar/host/consent, generic failure isolation, workspace state and retryable onboarding coverage.",
+      "requiresExtraction": true,
+      "revalidatedSourceSha256": "6ecf635c20c18ad5fc90a813fce063263055870688c20b92964f39d5bf923439",
+      "addedByRevalidation": true
+    },
+    {
+      "id": "M185",
+      "path": "vscode-plugin/src/onboarding/__tests__/onboarding.test.ts",
+      "selector": "one step throwing does NOT abort the sequence; the later steps still run; runOnboarding never throws",
+      "anchorLine": 110,
+      "endLine": 119,
+      "kind": "assertion-slice",
+      "group": "Tests in retained files",
+      "reason": "Omitted installer-specific onboarding integration found during retained-to-candidate import audit.",
+      "preserve": "Replace only install ordering/call/fake assertions; keep registrar/host/consent, generic failure isolation, workspace state and retryable onboarding coverage.",
+      "requiresExtraction": true,
+      "revalidatedSourceSha256": "6ecf635c20c18ad5fc90a813fce063263055870688c20b92964f39d5bf923439",
+      "addedByRevalidation": true
+    },
+    {
+      "id": "M186",
+      "path": "vscode-plugin/src/onboarding/__tests__/onboarding.test.ts",
+      "selector": "no workspace folder open -> register is skipped and markOnboarded is NOT set, while global install/wire still run",
+      "anchorLine": 121,
+      "endLine": 132,
+      "kind": "assertion-slice",
+      "group": "Tests in retained files",
+      "reason": "Omitted installer-specific onboarding integration found during retained-to-candidate import audit.",
+      "preserve": "Replace only install ordering/call/fake assertions; keep registrar/host/consent, generic failure isolation, workspace state and retryable onboarding coverage.",
+      "requiresExtraction": true,
+      "revalidatedSourceSha256": "6ecf635c20c18ad5fc90a813fce063263055870688c20b92964f39d5bf923439",
+      "addedByRevalidation": true
+    },
+    {
+      "id": "M187",
+      "path": "vscode-plugin/src/onboarding/__tests__/onboarding.test.ts",
+      "selector": "each step keeps its OWN sc4 consent (no mega-consent): declining install still offers register + wire (k4)",
+      "anchorLine": 151,
+      "endLine": 159,
+      "kind": "assertion-slice",
+      "group": "Tests in retained files",
+      "reason": "Omitted installer-specific onboarding integration found during retained-to-candidate import audit.",
+      "preserve": "Replace only install ordering/call/fake assertions; keep registrar/host/consent, generic failure isolation, workspace state and retryable onboarding coverage.",
+      "requiresExtraction": true,
+      "revalidatedSourceSha256": "6ecf635c20c18ad5fc90a813fce063263055870688c20b92964f39d5bf923439",
+      "addedByRevalidation": true
+    },
+    {
+      "id": "M188",
+      "path": "vscode-plugin/src/onboarding/__tests__/onboarding.test.ts",
+      "selector": "fakeController and shared deps controller/installed fixture fields",
+      "anchorLine": 28,
+      "endLine": null,
+      "kind": "test-fixture-slice",
+      "group": "Tests in retained files",
+      "reason": "Omitted installer-specific onboarding integration found during retained-to-candidate import audit.",
+      "preserve": "Remove installer fake dependencies when installation slice is replaced; keep shared registrar/registry/status/prompt/onboarded fixtures.",
+      "requiresExtraction": true,
+      "revalidatedSourceSha256": "6ecf635c20c18ad5fc90a813fce063263055870688c20b92964f39d5bf923439",
+      "addedByRevalidation": true
+    }
+  ],
+  "importBoundaryAudit": {
+    "method": "Lexical relative import/import-expression scan; .js to .ts/.tsx resolution; retained production JS/TS files in src/scripts/vscode-plugin. Not semantic call graph, not Kotlin/shell/package dispatch.",
+    "edges": [
+      {
+        "consumer": "scripts/sync-client-runtime-assets.mjs",
+        "candidate": "scripts/node-runtime-assets.mjs",
+        "specifier": "./node-runtime-assets.mjs"
+      },
+      {
+        "consumer": "scripts/sync-client-runtime-assets.mjs",
+        "candidate": "scripts/sync-node-runtime-policy.mjs",
+        "specifier": "./sync-node-runtime-policy.mjs"
+      },
+      {
+        "consumer": "src/cli/services/daemon.ts",
+        "candidate": "src/cli/services/lifecycle.ts",
+        "specifier": "./lifecycle.js"
+      },
+      {
+        "consumer": "src/cli/services/daemon.ts",
+        "candidate": "src/cli/services/managed-daemon-control.ts",
+        "specifier": "./managed-daemon-control.js"
+      },
+      {
+        "consumer": "src/cli/services/daemon.ts",
+        "candidate": "src/cli/services/owned-runtime.ts",
+        "specifier": "./owned-runtime.js"
+      },
+      {
+        "consumer": "src/cli/services/daemon.ts",
+        "candidate": "src/shared/daemon-process-client.ts",
+        "specifier": "../../shared/daemon-process-client.js"
+      },
+      {
+        "consumer": "src/cli/services/daemon.ts",
+        "candidate": "src/shared/managed-daemon-installation.ts",
+        "specifier": "../../shared/managed-daemon-installation.js"
+      },
+      {
+        "consumer": "src/cli/services/daemon.ts",
+        "candidate": "src/shared/source-routing.ts",
+        "specifier": "../../shared/source-routing.js"
+      },
+      {
+        "consumer": "src/cli/services/debug.ts",
+        "candidate": "src/cli/services/lifecycle.ts",
+        "specifier": "./lifecycle.js"
+      },
+      {
+        "consumer": "src/cli/services/debug.ts",
+        "candidate": "src/cli/services/maintenance.ts",
+        "specifier": "./maintenance.js"
+      },
+      {
+        "consumer": "src/cli/services/index.ts",
+        "candidate": "src/cli/services/lifecycle.ts",
+        "specifier": "./lifecycle.js"
+      },
+      {
+        "consumer": "src/cli/services/index.ts",
+        "candidate": "src/cli/services/maintenance.ts",
+        "specifier": "./maintenance.js"
+      },
+      {
+        "consumer": "src/daemon/admin-handlers.ts",
+        "candidate": "src/daemon/managed-update-ipc.ts",
+        "specifier": "./managed-update-ipc.js"
+      },
+      {
+        "consumer": "src/daemon/handler-runtime.ts",
+        "candidate": "src/daemon/managed-update-ipc.ts",
+        "specifier": "./managed-update-ipc.js"
+      },
+      {
+        "consumer": "src/daemon/handler-runtime.ts",
+        "candidate": "src/shared/installation-mutation-gate.ts",
+        "specifier": "../shared/installation-mutation-gate.js"
+      },
+      {
+        "consumer": "src/daemon/handler-runtime.ts",
+        "candidate": "src/shared/managed-daemon-installation.ts",
+        "specifier": "../shared/managed-daemon-installation.js"
+      },
+      {
+        "consumer": "src/daemon/index.ts",
+        "candidate": "src/daemon/fatal.ts",
+        "specifier": "./fatal.js"
+      },
+      {
+        "consumer": "src/daemon/index.ts",
+        "candidate": "src/daemon/managed-daemon-lifecycle.ts",
+        "specifier": "./managed-daemon-lifecycle.js"
+      },
+      {
+        "consumer": "src/daemon/index.ts",
+        "candidate": "src/daemon/managed-daemon-probation.ts",
+        "specifier": "./managed-daemon-probation.js"
+      },
+      {
+        "consumer": "src/daemon/index.ts",
+        "candidate": "src/daemon/managed-update-ipc.ts",
+        "specifier": "./managed-update-ipc.js"
+      },
+      {
+        "consumer": "src/daemon/index.ts",
+        "candidate": "src/daemon/managed-update-launch.ts",
+        "specifier": "./managed-update-launch.js"
+      },
+      {
+        "consumer": "src/daemon/index.ts",
+        "candidate": "src/daemon/run-file-ownership.ts",
+        "specifier": "./run-file-ownership.js"
+      },
+      {
+        "consumer": "src/daemon/index.ts",
+        "candidate": "src/daemon/shutdown.ts",
+        "specifier": "./shutdown.js"
+      },
+      {
+        "consumer": "src/daemon/index.ts",
+        "candidate": "src/daemon/source-update-launch.ts",
+        "specifier": "./source-update-launch.js"
+      },
+      {
+        "consumer": "src/daemon/lifecycle.ts",
+        "candidate": "src/daemon/run-file-ownership.ts",
+        "specifier": "./run-file-ownership.js"
+      },
+      {
+        "consumer": "src/daemon/server.ts",
+        "candidate": "src/daemon/run-file-ownership.ts",
+        "specifier": "./run-file-ownership.js"
+      },
+      {
+        "consumer": "vscode-plugin/src/activation.ts",
+        "candidate": "vscode-plugin/src/daemon/controller.ts",
+        "specifier": "./daemon/controller.js"
+      },
+      {
+        "consumer": "vscode-plugin/src/extension.ts",
+        "candidate": "src/shared/update-source.ts",
+        "specifier": "../../src/shared/update-source.js"
+      },
+      {
+        "consumer": "vscode-plugin/src/extension.ts",
+        "candidate": "vscode-plugin/src/daemon/commands.ts",
+        "specifier": "./daemon/commands.js"
+      },
+      {
+        "consumer": "vscode-plugin/src/extension.ts",
+        "candidate": "vscode-plugin/src/daemon/controller.ts",
+        "specifier": "./daemon/controller.js"
+      },
+      {
+        "consumer": "vscode-plugin/src/extension.ts",
+        "candidate": "vscode-plugin/src/daemon/paths.ts",
+        "specifier": "./daemon/paths.js"
+      },
+      {
+        "consumer": "vscode-plugin/src/extension.ts",
+        "candidate": "vscode-plugin/src/daemon/subprocess.ts",
+        "specifier": "./daemon/subprocess.js"
+      },
+      {
+        "consumer": "vscode-plugin/src/extension.ts",
+        "candidate": "vscode-plugin/src/freshness/daemon-freshness.ts",
+        "specifier": "./freshness/daemon-freshness.js"
+      },
+      {
+        "consumer": "vscode-plugin/src/extension.ts",
+        "candidate": "vscode-plugin/src/panels/orphan-kill.ts",
+        "specifier": "./panels/orphan-kill.js"
+      },
+      {
+        "consumer": "vscode-plugin/src/onboarding/onboarding.ts",
+        "candidate": "vscode-plugin/src/daemon/commands.ts",
+        "specifier": "../daemon/commands.js"
+      },
+      {
+        "consumer": "vscode-plugin/src/onboarding/onboarding.ts",
+        "candidate": "vscode-plugin/src/daemon/controller.ts",
+        "specifier": "../daemon/controller.js"
+      },
+      {
+        "consumer": "vscode-plugin/src/panels/debug-renderer.ts",
+        "candidate": "vscode-plugin/src/panels/orphan-kill.ts",
+        "specifier": "./orphan-kill.js"
+      }
+    ]
+  },
+  "checks": {
+    "uniqueFileClassifications": 449,
+    "wholeFileCandidates": 278,
+    "memberEntries": 176,
+    "memberSourceFiles": 70,
+    "memberTestFixtureEntries": 54,
+    "noWholeFileMemberOverlap": true,
+    "sourceHashesMatch": true,
+    "pathsAndAnchorsValid": true,
+    "analyzerSession": "done",
+    "analyzerProbes": 6,
+    "runtimeValidation": "not performed",
+    "implementationChanges": "none"
+  },
+  "subsequentChecks": [
+    {
+      "checkedAtUtc": "2026-11-22T15:55:07.359805+00:00",
+      "head": "69b8145359d4f201d9e80da1baa4e9fed9067271",
+      "wholeFileCandidates": 278,
+      "memberEntries": 176,
+      "memberFiles": 70,
+      "changedWholeFiles": [],
+      "changedMemberFiles": [],
+      "missingFiles": [],
+      "relativeImportBoundaries": 37,
+      "addedRelativeImportBoundaries": [],
+      "removedRelativeImportBoundaries": [],
+      "analyzerProbes": 6,
+      "analyzerIndexTimestamp": 1795339735794,
+      "previousAnalyzerIndexTimestamp": 1795339735794,
+      "indexTimestampAdvanced": false,
+      "indexFreshness": "Changed corpus not confirmed by the served index timestamp.",
+      "graphCoverageComplete": false,
+      "classificationChanges": [],
+      "result": "Current checkout checks pass; candidate counts unchanged. Revalidation against user-referenced changed corpus remains unconfirmed.",
+      "evidence": "install-upgrade-corpus-revalidation-evidence.json",
+      "implementationChanges": "none",
+      "runtimeValidation": "not performed"
+    }
+  ]
+}

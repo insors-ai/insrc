@@ -5,22 +5,11 @@ import { mkdir, open, readFile, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { setTimeout as delay } from 'node:timers/promises';
-import { historicalCommit, nativeOnnxProbe, qualificationEmbedder, qualificationRpc, recordedCommand } from './historical-daemon-qualification.mjs';
+import { historicalCommit, historicalSnapshot, nativeOnnxProbe, qualificationEmbedder, qualificationRpc, recordedCommand } from './historical-daemon-qualification.mjs';
 
 const project = resolve('.');
 const declaration = { version: 1, graphSchema: 10, startup: 'rollback-compatible', formats: { lance: '1', config: '1', repoAndIndexQueue: '1', workflowAndSession: '1' } };
 const git = (cwd, ...args) => execFileSync('/usr/bin/git', ['-C', cwd, '-c', 'user.name=Historical qualification fixture', '-c', 'user.email=fixture@example.invalid', '-c', 'commit.gpgsign=false', ...args], { encoding: 'utf8' }).trim();
-
-async function historicalSnapshot(home, repo) {
- const rpc = (method, params) => qualificationRpc(home, method, params);
- return {
-  entities: await rpc('search.by_file', { filePath: join(repo, 'seed.ts') }),
-  turns: await rpc('session.history', { sessionId: 'historical-runtime-qualification' }),
-  vectors: await rpc('session.search_turns', { repo, queryVector: Array.from({length:1024}, (_,i) => i === 0 ? 1 : 0), limit: 5 }),
-  sessions: await rpc('session.list', { repo }),
-  settings: await rpc('repo.settings.get', { repo }),
- };
-}
 
 async function until(action, description, timeout = 60_000) {
  const deadline = Date.now() + timeout;

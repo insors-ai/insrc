@@ -36,4 +36,6 @@ Registered validation passed on implementation commit `ee97116b4` at `2026-11-22
 
 ## Limits
 
+After registered PASS and confirmed process closure, rebuildable `node_modules`, `out`, npm caches and bulky cloned documentation/assets in the three test-owned Mac fixtures were retired to free space for Linux qualification. Each fixture records these exact paths in `retired-build-payloads.json`. Application sources/VCS metadata, verified Node distributions, seeded stores, IPC/command logs and digest receipts remain. These retired fixture installations must be restored/rebuilt before further execution; their completed qualification evidence is preserved. The original repository documentation was not removed.
+
 The user daemon/store is outside every fixture HOME and is not upgraded or stopped by qualification. Fixture trees and heavy native builds are outside the indexed repository. The installed watcher/V8 crash described in `ide-consumers.md` remains a separate unresolved finding. This work adds no Mac PID/IPC shutdown fallback, unsupported platform or production signing key. Linux historical qualification remains tasks t10–t11; final backend regression and release documentation remain task t12. Production promotion still requires the operator's signed exact-head artifacts and valid qualification/consumer evidence.

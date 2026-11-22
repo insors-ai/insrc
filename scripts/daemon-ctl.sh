@@ -14,11 +14,11 @@
 # Daemon pane (start / stop / restart / update).
 #
 # Usage:
-#   scripts/daemon-ctl.sh start      # sync origin, install unless already installed, build, start
+#   scripts/daemon-ctl.sh start      # selected source: start if stopped; legacy: prepare + start
 #   scripts/daemon-ctl.sh stop       # graceful stop (IPC + retained process wait); a daemon
 #                                    # that outlives the wait is killed
-#   scripts/daemon-ctl.sh restart    # stop then start
-#   scripts/daemon-ctl.sh update     # sync + install + build (no start)
+#   scripts/daemon-ctl.sh restart    # replace running daemon; start if stopped
+#   scripts/daemon-ctl.sh update     # selected source: stage update, preserve running/stopped state
 #   scripts/daemon-ctl.sh status     # daemon status over the socket
 #   scripts/daemon-ctl.sh recover    # reconcile a verified stopped managed reservation
 #   scripts/daemon-ctl.sh --help
@@ -384,10 +384,11 @@ cmd_update() {
 	if [ "${INSRC_DAEMON_UPDATE_WAIT:-0}" -eq 1 ] || [ -n "$BRANCH" ] || [ -n "$REPO_URL" ]; then operation=update-local; fi
 	if INSRC_DAEMON_UPDATE_REPO_URL="$REPO_URL" INSRC_DAEMON_UPDATE_BRANCH="$BRANCH" supervised_lifecycle "$operation"; then return 0; else rc=$?; fi
 	[ "$rc" -eq 10 ] || return "$rc"
-	# An unmanaged (plain git-clone) install updates the same way on every
-	# platform: a managed install is handled above by supervised_lifecycle;
-	# this fallback never needs the signed macOS upgrade bridge, which exists
-	# only to migrate a legacy install into the managed lifecycle.
+	if [ "$(uname -s)" = Linux ]; then
+		die 'unselected Linux source update requires the current authenticated release installer: run it with --migrate-runtime --target <existing-root> --predecessor <known-good-full-commit> --rebuild-predecessor; the raw source template has no release signing authority' 4
+	fi
+	# Remaining legacy targets retain their existing maintenance route.
+	# Linux source updates require authenticated staging and never reach this fallback.
 	require_unselected_source_build
 	require_daemon_dir
 	local branch="${BRANCH:-$(git -C "$DAEMON_ROOT" rev-parse --abbrev-ref HEAD)}"

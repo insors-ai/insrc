@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 6,
-        "contentHash": "ee3d47947abb4d852bf79bd47ef6004a7cb53190f9d31dccab250c5faf1ddae4",
-        "at": "2026-11-21T20:39:00.553Z",
+        "number": 7,
+        "contentHash": "dac40d1700792177c1d5e28803e8990ccb38af6a2a8435fb12a5970f18f161a5",
+        "at": "2026-11-22T04:50:07.077Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "a03e99e17a364550",
     "storyId": "s1",
     "createdAt": "2026-11-21T17:48:45.684Z",
-    "updatedAt": "2026-11-21T20:39:00.530Z",
+    "updatedAt": "2026-11-22T04:50:07.058Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-21T15:31:04.425Z",
     "epicSlug": "restore-upgrades-from-existing-daemon-installations",
-    "revision": 6
+    "revision": 7
   },
   "body": {
     "tasks": [
@@ -328,6 +328,90 @@
             "otherFailures": []
           }
         ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "33c8cda4f",
+        "ranAt": "2026-11-22T04:50:07.058Z",
+        "testsPassed": false,
+        "tests": [
+          {
+            "name": "Current packaged installer upgrades existing legacy/bound target without old npm",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/source-entrypoints-native.test.ts",
+                "title": "Current packaged installer upgrades existing legacy/bound target without old npm",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/managed-release-bootstrap.test.ts",
+                "title": "Current macOS installer authenticates managed source before candidate npm and bypasses old updater",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Shell selected-root routing and update/restart semantics under hostile PATH",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/source-entrypoints-native.test.ts",
+                "title": "Shell selected-root routing and update/restart semantics under hostile PATH",
+                "result": "fail"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "scripts/__tests__/source-entrypoints-native.test.ts",
+            "exitCode": 1,
+            "timedOut": false,
+            "durationMs": 195724,
+            "titles": [
+              {
+                "title": "Current packaged installer upgrades existing legacy/bound target without old npm",
+                "result": "pass"
+              },
+              {
+                "title": "Shell selected-root routing and update/restart semantics under hostile PATH",
+                "result": "fail"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/managed-release-bootstrap.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 13762,
+            "titles": [
+              {
+                "title": "The installation journal persists signed source floors independently per channel",
+                "result": "pass"
+              },
+              {
+                "title": "Only an authorized channel tag can reach checkout and npm",
+                "result": "pass"
+              },
+              {
+                "title": "Fresh macOS install and Linux install preserve their existing build and launch routes",
+                "result": "pass"
+              },
+              {
+                "title": "Current macOS installer authenticates managed source before candidate npm and bypasses old updater",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ],
+        "note": "named test cases that did not pass: fail: 'Shell selected-root routing and update/restart semantics under hostile PATH' in scripts/__tests__/source-entrypoints-native.test.ts"
       }
     ]
   },

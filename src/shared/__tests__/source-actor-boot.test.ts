@@ -55,9 +55,8 @@ fs.writeFileSync('child.pid',String(child.pid));setInterval(()=>{},1000);`);
   rmSync(root, { recursive: true, force: true });
  } else throw new Error('Invalid actor boot fixture phase');
 } else {
-test('Native source actor proves old subtree closure after an actual Linux fixture restart', {
- timeout: 300_000, skip: process.platform !== 'darwin' ? 'actual restart qualification runs on the dedicated OrbStack host' : false,
-}, async t => {
+test('Native source actor proves old subtree closure after an actual Linux fixture restart', { timeout: 300_000 }, async t => {
+ assert.equal(process.platform, 'darwin', 'fixture restart qualification requires the dedicated OrbStack host');
  const inventory = JSON.parse((await exec('orb', ['list', '--format=json'])).stdout) as Array<{ name: string; state: string }>;
  const stage = mkdtempSync(join(project, '.insrc/tmp/source-actor-boot-')), bundle = join(stage, 'test.mjs');
  const { buildSync } = await import('esbuild');

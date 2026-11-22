@@ -22,7 +22,7 @@ if (worker) {
  const node = process.execPath, target = `linux-${process.arch}` as 'linux-arm64' | 'linux-x64';
  const env: NodeJS.ProcessEnv = { ...process.env, HOME: home, PATH: `${hostile}:/usr/bin:/bin`,
   NODE_OPTIONS: '--invalid-injection', NODE_PATH: '/invalid/injection', INCUMBENT_ROOT: old, INCUMBENT_TRACE: oldTrace,
-  BUILD_TRACE: trace, AMBIENT_TRACE: ambient, INSRC_CTL_LOG_DIR: join(c.root, 'ctl-logs') };
+  BUILD_TRACE: trace, AMBIENT_TRACE: ambient, INSRC_CTL_LOG_DIR: join(c.root, 'ctl-logs'), BASH_ENV: join(c.root, 'bash-env') };
  if (c.variant === 'bound') env.ONNXRUNTIME_NODE_INSTALL_CUDA = 'v12'; else delete env.ONNXRUNTIME_NODE_INSTALL_CUDA;
  const snapshotPath = join(c.root, 'snapshot.json');
  const readState = () => JSON.parse(readFileSync(join(state, 'source-lifecycle/journal.json'), 'utf8')) as {
@@ -33,6 +33,8 @@ if (worker) {
  };
  if (c.phase === 'migrate') {
   mkdirSync(old, { recursive: true, mode: 0o700 }); mkdirSync(hostile, { mode: 0o700 });
+  // Observe entry without modifying the byte-exact historical updater script.
+  writeFileSync(env.BASH_ENV!, 'if [ "$0" = "$INCUMBENT_ROOT/scripts/daemon-ctl.sh" ]; then printf invoked > "$INCUMBENT_TRACE"; exit 91; fi\n', { mode: 0o600 });
   for (const name of ['node', 'npm']) writeFileSync(join(hostile, name), '#!/bin/sh\nprintf invoked >> "$AMBIENT_TRACE"\nexit 97\n', { mode: 0o700 });
   git(state, 'clone', '-q', '--', c.origin, old); git(old, 'checkout', '-q', '--detach', c.prior);
   git(old, 'branch', '-f', 'main', c.prior); git(old, 'checkout', '-q', 'main');
@@ -49,8 +51,13 @@ if (worker) {
    const distribution = execFileSync('/bin/bash', [join(c.project, 'scripts/provision-node-runtime.sh'), state, archive], { env: cleanEnv, encoding: 'utf8', timeout: 120_000 }).trim();
    execFileSync(node, [join(c.project, 'scripts/node-runtime-store.mjs'), 'bind', state, old, distribution], { env: cleanEnv, encoding: 'utf8' });
   } else writeFileSync(join(state, 'daemon-node'), join(hostile, 'node'), { mode: 0o600 });
-  const before = { lock, output: readFileSync(join(old, 'out/daemon/index.js'), 'utf8'), head: git(old, 'rev-parse', 'HEAD') };
+  const before = { lock, output: readFileSync(join(old, 'out/daemon/index.js'), 'utf8'), head: git(old, 'rev-parse', 'HEAD'), ctl: readFileSync(join(old, 'scripts/daemon-ctl.sh'), 'utf8') };
   writeFileSync(snapshotPath, JSON.stringify(before), { mode: 0o600 });
+  assert.throws(() => execFileSync('/bin/bash', [join(c.project, 'scripts/insrc-daemon-install.sh'), '-y', '--migrate-runtime',
+   '--target', old, '--runtime-archive', archive, '--no-start'], { env, encoding: 'utf8', timeout: 120_000 }), error => {
+    const result = error as { status?: number; stdout?: string; stderr?: string };
+    assert.equal(result.status, 4); assert.match(`${result.stdout ?? ''}${result.stderr ?? ''}`, /current authenticated release installer/); return true;
+   });
   const output = execFileSync('/bin/bash', [c.installer, '-y', '--migrate-runtime', '--target', old, '--repo', c.origin, '--branch', 'main',
    '--runtime-archive', archive, '--predecessor', c.prior, '--rebuild-predecessor', '--no-start'], { env, encoding: 'utf8', timeout: 480_000, maxBuffer: 1024 * 1024 });
   writeFileSync(join(c.root, 'installer.log'), output);
@@ -63,7 +70,10 @@ if (worker) {
   assert.match(ctl('status'), /daemon running/);
  } else if (c.phase === 'profile-change') {
   const before = readState().selected.pin;
-  assert.throws(() => ctl('update', { SOURCE_FIXTURE_STOP_DURING_BUILD: '1' }), /launch profile changed during preparation/);
+  assert.throws(() => ctl('update', { SOURCE_FIXTURE_STOP_DURING_BUILD: '1' }), error => {
+   const result = error as { status?: number; stdout?: string };
+   assert.equal(result.status, 4); assert.match(result.stdout ?? '', /launch profile changed during preparation/); return true;
+  });
   assert.deepEqual(readState().selected.pin, before);
   assert.equal(readState().active, null); assert.equal(existsSync(join(state, 'daemon.pid')), false);
   ctl('start');
@@ -83,9 +93,10 @@ if (worker) {
   try { writeFileSync(journal, '{malformed'); assert.throws(() => ctl('start')); }
   finally { writeFileSync(journal, original); }
  } else if (c.phase === 'check') {
-  const before = JSON.parse(readFileSync(snapshotPath, 'utf8')) as { lock: string; output: string; head: string };
+  const before = JSON.parse(readFileSync(snapshotPath, 'utf8')) as { lock: string; output: string; head: string; ctl: string };
   assert.equal(readFileSync(join(old, 'package-lock.json'), 'utf8'), before.lock);
   assert.equal(readFileSync(join(old, 'out/daemon/index.js'), 'utf8'), before.output); assert.equal(git(old, 'rev-parse', 'HEAD'), before.head);
+  assert.equal(readFileSync(join(old, 'scripts/daemon-ctl.sh'), 'utf8'), before.ctl);
   assert.equal(existsSync(ambient), false); assert.equal(existsSync(oldTrace), false);
   const rows = readFileSync(trace, 'utf8').trim().split('\n').map(line => JSON.parse(line) as Record<string, unknown>);
   assert.ok(rows.length >= 4);
@@ -95,8 +106,7 @@ if (worker) {
   }
   assert.equal(readState().active, null);
  } else if (c.phase === 'cleanup') {
-  if (existsSync(join(state, 'source-lifecycle/journal.json'))
-   && (existsSync(join(state, 'daemon.pid')) || readState().active !== null)) ctl('stop');
+  if (existsSync(join(state, 'source-lifecycle/journal.json'))) ctl('stop');
   rmSync(c.root, { recursive: true, force: true });
  } else throw new Error('Unknown entrypoint fixture phase');
  process.stdout.write(JSON.stringify({ phase: c.phase, ok: true }) + '\n');
@@ -124,7 +134,10 @@ server.listen(PATHS.sockFile,()=>{f.claimSocket();f.writePid();startup.release()
  writeFileSync(join(origin, '.npmrc'), 'offline=true\naudit=false\nfund=false\n');
  writeFileSync(join(origin, 'record.mjs'), `import fs from'node:fs';import{dirname,resolve}from'node:path';if(process.cwd()===process.env.INCUMBENT_ROOT){fs.writeFileSync(process.env.INCUMBENT_TRACE,'old npm');process.exit(91);}const npmVersion=JSON.parse(fs.readFileSync(resolve(dirname(process.env.npm_execpath),'../package.json'))).version;fs.appendFileSync(process.env.BUILD_TRACE,JSON.stringify({phase:process.argv[2],cwd:process.cwd(),exe:process.execPath,version:process.versions.node,npm:process.env.npm_execpath,npmVersion,options:process.env.NODE_OPTIONS??null,nodePath:process.env.NODE_PATH??null,cuda:process.env.ONNXRUNTIME_NODE_INSTALL_CUDA})+'\\n');`);
  writeFileSync(join(origin, 'build.mjs'), `import fs from'node:fs';import'./record.mjs';for(const d of['out/daemon','out/bin','node_modules','packages/project-memory'])fs.mkdirSync(d,{recursive:true});fs.writeFileSync('out/daemon/index.js',Buffer.from(fs.readFileSync('raw/daemon.b64','utf8'),'base64'));`);
- mkdirSync(join(origin, 'scripts')); writeFileSync(join(origin, 'scripts/daemon-ctl.sh'), '#!/bin/sh\nprintf old >> "$INCUMBENT_TRACE"\nexit 91\n', { mode: 0o700 });
+ mkdirSync(join(origin, 'scripts'));
+ const historicalCtl = execFileSync('/usr/bin/git', ['show', 'a30aa7f91a50409e129b0af25ff3d897be1b45b6:scripts/daemon-ctl.sh'], { cwd: project, encoding: 'utf8' });
+ writeFileSync(join(origin, 'scripts/daemon-ctl.sh'), historicalCtl, { mode: 0o700 });
+ assert.equal(readFileSync(join(origin, 'scripts/daemon-ctl.sh'), 'utf8'), historicalCtl);
  git(origin, 'init', '-qb', 'main'); git(origin, 'add', '.'); git(origin, 'commit', '-qm', 'historical fixture');
  const prior = git(origin, 'rev-parse', 'HEAD'), priorTree = git(origin, 'rev-parse', 'HEAD^{tree}');
  for (const path of ['scripts/provision-node-runtime.sh', 'scripts/node-runtime-archive.sh', 'scripts/node-runtime-env.sh', 'scripts/node-runtime-policy.sh', 'scripts/node-runtime-policy.mjs', 'scripts/node-runtime-store.mjs', 'scripts/daemon-ctl.sh', 'src/assets/node-runtime-policy.json']) {

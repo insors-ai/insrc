@@ -249,6 +249,8 @@ This avoids any coupling to the shared round-driver Epic (03f4fd3b9102aab8) at t
   - **deferred**: deferred for review — Tagged (s3 LLD) in the HLD; out of s1's scope. Will resurface via review_deferred when authoring s3's LLD. _(2026-11-22T06:27:38.493Z)_
 - `q662db3c3` — (s3 LLD) The exact per-provider mechanism satisfying the three fixed denials (credential-location reads, out-of-scope reads, unauthorized MCP operations) must be specified and verified by a negative-access test per provider (claude, codex, vibe).
   - **deferred**: deferred for review — Tagged (s3 LLD) in the HLD; out of s1's scope. Will resurface via review_deferred when authoring s3's LLD. _(2026-11-22T06:28:19.541Z)_
+- `q999e6e29` — (s2 LLD) The exact per-manager network-enforcement mechanism (process-level network confinement, an allowlisting proxy, or equivalent) satisfying the fixed pre-transmission-enforcement invariant must be chosen and tested.
+  - **deferred**: deferred for review — Tagged (s2 LLD) in the HLD; out of s1's scope. Will resurface via review_deferred when authoring s2's LLD. _(2026-11-22T06:28:49.522Z)_
 
 ## Citations
 

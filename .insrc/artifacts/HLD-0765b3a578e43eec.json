@@ -71,6 +71,12 @@
         "status": "deferred",
         "rationale": "Tagged (s3 LLD) in the HLD; out of s1's scope. Will resurface via review_deferred when authoring s3's LLD.",
         "resolvedAt": "2026-11-22T06:28:19.541Z"
+      },
+      "q999e6e29": {
+        "question": "(s2 LLD) The exact per-manager network-enforcement mechanism (process-level network confinement, an allowlisting proxy, or equivalent) satisfying the fixed pre-transmission-enforcement invariant must be chosen and tested.",
+        "status": "deferred",
+        "rationale": "Tagged (s2 LLD) in the HLD; out of s1's scope. Will resurface via review_deferred when authoring s2's LLD.",
+        "resolvedAt": "2026-11-22T06:28:49.522Z"
       }
     }
   },

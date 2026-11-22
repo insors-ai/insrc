@@ -40,7 +40,15 @@ VS Code `tsc -p vscode-plugin/tsconfig.json --noEmit` and `git diff --check` pas
 
 ## Registered validation
 
-Pending on the implementation commit. Required mappings:
+The first request on `a004a8ac1` lost its MCP transport after 300 seconds. The installed daemon subsequently crashed at 2026-11-22 09:23:41 UTC before persisting a verdict. Its Mac diagnostic report (`~/Library/Logs/DiagnosticReports/node-2026-11-22-145342.ips`) identifies PID 46663, SIGTRAP and a V8 garbage-collection abort reached through `@parcel/watcher`'s native ignore callback. Earlier log lines report FSEvents stream errors during fixture creation; this is correlation, not an established root cause. All four guest fixtures still completed cleanup and the Kotlin TAP passed, but no registered task pass is claimed for that interrupted request.
+
+Positive process absence and socket `ECONNREFUSED` were established before restoring the same installed `a30aa7f91` build through its normal startup guard (new PID 46743). No run files were manually removed and no installed source/dependencies were rebuilt. Owned fixture origins/workers now use the canonical OS temp directory outside the watched repository; an actual OrbStack read verified its `/mnt/mac` projection. This isolates test churn and does not claim to fix the installed watcher defect.
+
+Canonical run `88c0ee02-375c-4201-90bd-ab403b377724` passed the unchanged four-variant native matrix after fixture relocation (525 seconds, no skips, coordinator closure confirmed). Receipts are `/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-source-entrypoints-SGPDNV`. The restored daemon remained alive throughout. Explicit test prerequisites now skip OrbStack-only cases on non-Mac hosts and the pinned native bootstrap case when its public target/archive is unavailable; all required prerequisites are available on this qualification host. Registered validation retry remains pending.
+
+Canonical run `999f026a-2802-46f8-98e6-2e784e927f70` passed the Kotlin integration and VS Code controller after those explicit prerequisites were added; neither skipped on this host. The application implementation is unchanged from the four-variant native pass.
+
+Required mappings:
 
 - `VS Code controller reaches packaged current bootstrap and selected runtime` → `scripts/__tests__/ide-source-entrypoints-native.test.ts`, same title.
 - `JetBrains provisioner inherits owned native environment and packaged verifier` → `jetbrains-plugin/__tests__/source-bootstrap-gradle.test.ts`, same title.

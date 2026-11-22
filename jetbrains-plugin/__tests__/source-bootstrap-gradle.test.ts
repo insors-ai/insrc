@@ -4,10 +4,12 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import test from 'node:test';
 import { runFocusedJUnit } from '../test-bridge/run-focused-junit.js';
-import { ownedSourceFixture } from '../../scripts/__tests__/helpers/owned-source-fixture.js';
+import { nativeOptions, ownedSourceFixture } from '../../scripts/__tests__/helpers/owned-source-fixture.js';
 const { assertPackagedSourceBootstrap } = await import(new URL('../../scripts/node-runtime-assets.mjs', import.meta.url).href);
+const { NODE_RUNTIME_POLICY } = await import(new URL('../../scripts/node-runtime-policy.mjs', import.meta.url).href);
+const target = NODE_RUNTIME_POLICY.targets[`${process.platform}-${process.arch}`];
 
-test('JetBrains provisioner inherits owned native environment and packaged verifier', { timeout: 300_000 }, () => {
+test('JetBrains provisioner inherits owned native environment and packaged verifier', { timeout: 300_000, skip: nativeOptions.skip || !target?.enabled }, () => {
  const f = ownedSourceFixture();
  try {
   // Ephemeral fixture authority, never a production signing key.

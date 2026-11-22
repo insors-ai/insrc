@@ -1,7 +1,8 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import assert from 'node:assert/strict';
 import { execFile, execFileSync } from 'node:child_process';
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
@@ -145,7 +146,10 @@ if (worker) {
  process.stdout.write(JSON.stringify({ phase: c.phase, ok: true }) + '\n');
 }
 export async function matrix(shell: boolean, ide = false) {
- const root = mkdtempSync(join(project, '.insrc/tmp/source-entrypoints-')), bundle = join(root, 'worker.mjs');
+ // Origin repositories and generated workers produce substantial filesystem
+ // churn. Keep owned fixtures outside the live indexed repo; OrbStack exposes
+ // the canonical Mac temp path through the same /mnt/mac mount as the project.
+ const root = realpathSync(mkdtempSync(join(tmpdir(), 'insrc-source-entrypoints-'))), bundle = join(root, 'worker.mjs');
  const { buildSync } = await import('esbuild');
  buildSync({ entryPoints: [fileURLToPath(import.meta.url)], outfile: bundle, bundle: true, platform: 'node', format: 'esm', packages: 'external', logLevel: 'silent' });
  const machines = JSON.parse((await exec('orb', ['list', '--format=json'])).stdout) as Array<{ name: string; state: string }>;

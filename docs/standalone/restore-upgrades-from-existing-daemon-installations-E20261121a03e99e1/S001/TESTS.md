@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 15 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 16 pass, 2 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -123,3 +123,29 @@ Run at 2026-11-22T05:02:13.772Z on commit `3b4af8ead`. Tests check: **passed**. 
 | :--- | :--- | :--- | :--- | :--- |
 | `scripts/__tests__/source-entrypoints-native.test.ts` | 0 | 2 | 519 s |  |
 | `src/daemon/__tests__/managed-release-bootstrap.test.ts` | 0 | 4 | 12.5 s |  |
+
+## t6
+
+Run at 2026-11-22T07:34:23.781Z on commit `e44452302`. Tests check: **failed**. 1 pass, 2 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+named test cases that did not pass: fail: 'TUI and detached daemon update survive handoff and expose final outcome' in scripts/__tests__/source-consumers-native.test.ts; fail: 'MCP/start resolve source selection and reject malformed state' in scripts/__tests__/source-consumers-native.test.ts
+
+**integration: TUI and detached daemon update survive handoff and expose final outcome**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| fail | TUI and detached daemon update survive handoff and expose final outcome | `scripts/__tests__/source-consumers-native.test.ts` |
+| pass | Source update receipts retain update results and expose recovery-required under exclusion | `src/daemon/__tests__/source-update-transaction.test.ts` |
+
+**integration: MCP/start resolve source selection and reject malformed state**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| fail | MCP/start resolve source selection and reject malformed state | `scripts/__tests__/source-consumers-native.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `scripts/__tests__/source-consumers-native.test.ts` | 1 | 2 | 44.9 s |  |
+| `src/daemon/__tests__/source-update-transaction.test.ts` | 0 | 6 | 322.9 s |  |

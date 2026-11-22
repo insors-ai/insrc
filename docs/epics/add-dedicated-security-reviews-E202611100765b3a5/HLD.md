@@ -68,7 +68,7 @@ interface SecurityModelSelection {
 **Owner Story:** `s2`
 **Consumed by:** `s3`
 
-**Purpose:** Carries s2's dependency-advisory collection outcome (controller-side, no model) across the boundary: the pinned contentIdentity it was collected against (so s3 can verify it recomputes/matches the same identity before trusting this evidence), the queried coordinates, the actual advisory matches with affected versions and provenance, the per-match advisory destination actually reached (recorded for audit, not enforced -- s2 runs with controller-equivalent access, no sandboxing), the per-manager input mode used (manifest-scoped | isolated-environment | confined-source-copy | unsupported, retained as a correctness/targeting concern, not an isolation one), and the dependencies/sources that stayed unresolved, unavailable or unsupported -- so s3 can report confirmed affected dependencies and unverified coverage as DISTINCT values bound to the SAME content identity as its own code findings.
+**Purpose:** Carries s2's dependency-advisory collection outcome (controller-side, no model) across the boundary: the pinned contentIdentity it was collected against (so s3 can verify it recomputes/matches the same identity before trusting this evidence), the queried coordinates, the actual advisory matches with affected versions and provenance, the per-match advisory destination actually reached (recorded for audit, not enforced -- s2 runs with controller-equivalent access, no sandboxing), the per-manager input mode used (manifest-scoped | isolated-environment | confined-source-copy | unsupported, retained as a correctness/targeting concern, not an isolation one), and the dependencies/sources that stayed unresolved, unavailable or unsupported -- so s3 can report confirmed affected dependencies and unverified coverage as DISTINCT values bound to the SAME content identity as its own code findings. Additive at revision 6: contentStable (top-level) records whether s2's own post-audit re-verification of contentIdentity matched its pre-audit value -- a concurrent mutation-and-restore during collection is caught within s2's own run, narrowing (not eliminating) the window a live, unconfined audit leaves open. Each perManagerMode[] entry additionally carries configuredDestination (the manager's own CONFIGURED target, e.g. its default registry/service) -- explicitly a configured value, never claimed as independently observed, since pkg_audit's own output (manager, exitCode, parsed, stdout, stderr) carries no network trace to observe from.
 
 **Interface sketch (type-level):**
 
@@ -84,10 +84,11 @@ interface SecurityAdvisoryMatch {
 
 interface SecurityAdvisoryEvidence {
 	readonly contentIdentity: string;
+	readonly contentStable: boolean;
 	readonly readOnly: true;
 	readonly queriedCoordinates: readonly string[];
 	readonly matches: readonly SecurityAdvisoryMatch[];
-	readonly perManagerMode: readonly { readonly manager: string; readonly mode: 'manifest-scoped' | 'isolated-environment' | 'confined-source-copy' | 'unsupported'; }[];
+	readonly perManagerMode: readonly { readonly manager: string; readonly mode: 'manifest-scoped' | 'isolated-environment' | 'confined-source-copy' | 'unsupported'; readonly configuredDestination?: string; }[];
 	readonly unresolvedDependencies: readonly string[];
 	readonly unavailableSources: readonly string[];
 }

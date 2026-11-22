@@ -22,32 +22,20 @@
     "epicSlug": "add-dedicated-security-reviews",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "approved",
+      "status": "draft",
       "revision": {
-        "number": 5,
-        "contentHash": "c3ddf54acc761bdaddd0edd8ef73037fce41c8477de5f6fa143845929f85ba7b",
-        "at": "2026-11-22T11:44:53.512Z",
+        "number": 6,
+        "contentHash": "05ef148b959e9d65ccca6596cdbd701461110d0a692c303e752a8223d7d3421f",
+        "at": "2026-11-22T13:19:39.722Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
           "properties": {}
         }
       },
-      "signoffs": [],
-      "approval": {
-        "revision": 5,
-        "by": {
-          "id": "insrc:approval",
-          "kind": "system",
-          "properties": {}
-        },
-        "at": "2026-11-22T12:46:50.597Z",
-        "override": {
-          "reason": "Automated design review is retired. Revision 5 is a direct user-directed amendment (same access privileges for the reviewer as the controller, applied across s2 and s3) made after 3 external review rounds on the s2 LLD established the prior enforced-boundary/negative-access-test invariants were unachievable without new sandbox infrastructure. Approved by explicit user instruction."
-        }
-      }
+      "signoffs": []
     },
-    "revision": 5,
+    "revision": 6,
     "envelope": {
       "description": "",
       "references": [],
@@ -112,8 +100,8 @@
       {
         "id": "sc2",
         "name": "SecurityAdvisoryEvidence",
-        "purpose": "Carries s2's dependency-advisory collection outcome (controller-side, no model) across the boundary: the pinned contentIdentity it was collected against (so s3 can verify it recomputes/matches the same identity before trusting this evidence), the queried coordinates, the actual advisory matches with affected versions and provenance, the per-match advisory destination actually reached (recorded for audit, not enforced -- s2 runs with controller-equivalent access, no sandboxing), the per-manager input mode used (manifest-scoped | isolated-environment | confined-source-copy | unsupported, retained as a correctness/targeting concern, not an isolation one), and the dependencies/sources that stayed unresolved, unavailable or unsupported -- so s3 can report confirmed affected dependencies and unverified coverage as DISTINCT values bound to the SAME content identity as its own code findings.",
-        "interfaceSketch": "interface SecurityAdvisoryMatch {\n\treadonly coordinate: string;\n\treadonly advisoryId: string;\n\treadonly affectedVersions: string;\n\treadonly severity: string;\n\treadonly provenance: string;\n\treadonly advisoryDestination: string;\n}\n\ninterface SecurityAdvisoryEvidence {\n\treadonly contentIdentity: string;\n\treadonly readOnly: true;\n\treadonly queriedCoordinates: readonly string[];\n\treadonly matches: readonly SecurityAdvisoryMatch[];\n\treadonly perManagerMode: readonly { readonly manager: string; readonly mode: 'manifest-scoped' | 'isolated-environment' | 'confined-source-copy' | 'unsupported'; }[];\n\treadonly unresolvedDependencies: readonly string[];\n\treadonly unavailableSources: readonly string[];\n}",
+        "purpose": "Carries s2's dependency-advisory collection outcome (controller-side, no model) across the boundary: the pinned contentIdentity it was collected against (so s3 can verify it recomputes/matches the same identity before trusting this evidence), the queried coordinates, the actual advisory matches with affected versions and provenance, the per-match advisory destination actually reached (recorded for audit, not enforced -- s2 runs with controller-equivalent access, no sandboxing), the per-manager input mode used (manifest-scoped | isolated-environment | confined-source-copy | unsupported, retained as a correctness/targeting concern, not an isolation one), and the dependencies/sources that stayed unresolved, unavailable or unsupported -- so s3 can report confirmed affected dependencies and unverified coverage as DISTINCT values bound to the SAME content identity as its own code findings. Additive at revision 6: contentStable (top-level) records whether s2's own post-audit re-verification of contentIdentity matched its pre-audit value -- a concurrent mutation-and-restore during collection is caught within s2's own run, narrowing (not eliminating) the window a live, unconfined audit leaves open. Each perManagerMode[] entry additionally carries configuredDestination (the manager's own CONFIGURED target, e.g. its default registry/service) -- explicitly a configured value, never claimed as independently observed, since pkg_audit's own output (manager, exitCode, parsed, stdout, stderr) carries no network trace to observe from.",
+        "interfaceSketch": "interface SecurityAdvisoryMatch {\n\treadonly coordinate: string;\n\treadonly advisoryId: string;\n\treadonly affectedVersions: string;\n\treadonly severity: string;\n\treadonly provenance: string;\n\treadonly advisoryDestination: string;\n}\n\ninterface SecurityAdvisoryEvidence {\n\treadonly contentIdentity: string;\n\treadonly contentStable: boolean;\n\treadonly readOnly: true;\n\treadonly queriedCoordinates: readonly string[];\n\treadonly matches: readonly SecurityAdvisoryMatch[];\n\treadonly perManagerMode: readonly { readonly manager: string; readonly mode: 'manifest-scoped' | 'isolated-environment' | 'confined-source-copy' | 'unsupported'; readonly configuredDestination?: string; }[];\n\treadonly unresolvedDependencies: readonly string[];\n\treadonly unavailableSources: readonly string[];\n}",
         "ownedByStory": "s2",
         "consumedByStories": [
           "s3"

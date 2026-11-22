@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 14 pass, 1 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 15 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -102,9 +102,7 @@ Run at 2026-11-21T20:39:00.530Z on commit `f906e433f`. Tests check: **passed**. 
 
 ## t5
 
-Run at 2026-11-22T04:50:07.058Z on commit `33c8cda4f`. Tests check: **failed**. 2 pass, 1 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
-
-named test cases that did not pass: fail: 'Shell selected-root routing and update/restart semantics under hostile PATH' in scripts/__tests__/source-entrypoints-native.test.ts
+Run at 2026-11-22T05:02:13.772Z on commit `3b4af8ead`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: Current packaged installer upgrades existing legacy/bound target without old npm**
 
@@ -117,11 +115,11 @@ named test cases that did not pass: fail: 'Shell selected-root routing and updat
 
 | Result | Test | File |
 | :--- | :--- | :--- |
-| fail | Shell selected-root routing and update/restart semantics under hostile PATH | `scripts/__tests__/source-entrypoints-native.test.ts` |
+| pass | Shell selected-root routing and update/restart semantics under hostile PATH | `scripts/__tests__/source-entrypoints-native.test.ts` |
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `scripts/__tests__/source-entrypoints-native.test.ts` | 1 | 2 | 195.7 s |  |
-| `src/daemon/__tests__/managed-release-bootstrap.test.ts` | 0 | 4 | 13.8 s |  |
+| `scripts/__tests__/source-entrypoints-native.test.ts` | 0 | 2 | 519 s |  |
+| `src/daemon/__tests__/managed-release-bootstrap.test.ts` | 0 | 4 | 12.5 s |  |

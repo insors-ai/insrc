@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 7,
-        "contentHash": "dac40d1700792177c1d5e28803e8990ccb38af6a2a8435fb12a5970f18f161a5",
-        "at": "2026-11-22T04:50:07.077Z",
+        "number": 8,
+        "contentHash": "09a150687252f5262195dbc80c596c8861585c74c6f3bcaa7aa0cda1679fc984",
+        "at": "2026-11-22T05:02:13.804Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "a03e99e17a364550",
     "storyId": "s1",
     "createdAt": "2026-11-21T17:48:45.684Z",
-    "updatedAt": "2026-11-22T04:50:07.058Z",
+    "updatedAt": "2026-11-22T05:02:13.772Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-21T15:31:04.425Z",
     "epicSlug": "restore-upgrades-from-existing-daemon-installations",
-    "revision": 7
+    "revision": 8
   },
   "body": {
     "tasks": [
@@ -331,9 +331,9 @@
       },
       {
         "taskId": "t5",
-        "commit": "33c8cda4f",
-        "ranAt": "2026-11-22T04:50:07.058Z",
-        "testsPassed": false,
+        "commit": "3b4af8ead",
+        "ranAt": "2026-11-22T05:02:13.772Z",
+        "testsPassed": true,
         "tests": [
           {
             "name": "Current packaged installer upgrades existing legacy/bound target without old npm",
@@ -361,7 +361,7 @@
               {
                 "file": "scripts/__tests__/source-entrypoints-native.test.ts",
                 "title": "Shell selected-root routing and update/restart semantics under hostile PATH",
-                "result": "fail"
+                "result": "pass"
               }
             ],
             "files": []
@@ -370,9 +370,9 @@
         "files": [
           {
             "file": "scripts/__tests__/source-entrypoints-native.test.ts",
-            "exitCode": 1,
+            "exitCode": 0,
             "timedOut": false,
-            "durationMs": 195724,
+            "durationMs": 519038,
             "titles": [
               {
                 "title": "Current packaged installer upgrades existing legacy/bound target without old npm",
@@ -380,7 +380,7 @@
               },
               {
                 "title": "Shell selected-root routing and update/restart semantics under hostile PATH",
-                "result": "fail"
+                "result": "pass"
               }
             ],
             "otherFailures": []
@@ -389,7 +389,7 @@
             "file": "src/daemon/__tests__/managed-release-bootstrap.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 13762,
+            "durationMs": 12491,
             "titles": [
               {
                 "title": "The installation journal persists signed source floors independently per channel",
@@ -410,8 +410,7 @@
             ],
             "otherFailures": []
           }
-        ],
-        "note": "named test cases that did not pass: fail: 'Shell selected-root routing and update/restart semantics under hostile PATH' in scripts/__tests__/source-entrypoints-native.test.ts"
+        ]
       }
     ]
   },

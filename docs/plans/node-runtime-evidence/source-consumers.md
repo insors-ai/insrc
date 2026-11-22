@@ -72,3 +72,16 @@ A final interface correction reports `started: false, alreadyRunning: true` for 
 The registered gate on `e44452302` continued after its 300-second MCP transport timeout. It recorded clean typechecking and all six transaction tests passing, including the mapped recovery-required receipt case. Both consumer cases failed at the new `started: false` assertion because their real compiled service import still read `out/` from before that final source correction. The gate typechecks without rebuilding those compiled services; this was a missed build prerequisite, not a passing validation. No task/BUILD approval was requested or performed.
 
 Canonical run `a78df1c3-b03c-4716-9a76-3d85c88a8493` rebuilt the committed checkpoint and passed both consumer cases on arm64/x64, no skips (338.4 seconds, coordinator cleanup confirmed). This also exercised the final plain `update` success step and consistent already-running start result. Source stayed fixed at `e44452302` throughout. The failed gate event is retained in the ledger. A fetch then found 35 upstream commits, so the merged tree must be built and validated before the next task starts.
+
+## Merged checkpoint and focused gate mapping
+
+Upstream's 35 commits merged cleanly as `ca736d71b` and were pushed. Canonical run `de30806c-84d6-41e9-82d5-549704852c62` rebuilt that merged tree and passed six upstream codec/security/evidence test files, with cleanup confirmed.
+
+The second registered t6 gate on `ca736d71b` passed both required consumer integrations (339.2 seconds, no skipped cases). Its additional full transaction file exhausted the gate's shared 600-second test budget with only 260.8 seconds remaining, before its mapped receipt case ran. This was recorded as a failed gate, not as a receipt pass. The timed-out orchestrator left the owned x64 fixture VM running; it was explicitly stopped successfully. Interrupted guest fixture state was retained; no per-actor closure proof is claimed for that interrupted run.
+
+The existing receipt case was moved unchanged into `src/daemon/__tests__/source-update-outcomes.test.ts`, sharing the original process/store fixture via `helpers/source-transaction-fixture.ts`. This lets the gate run both required public cases plus the real recovery-required receipt case within its combined budget. The complete transaction suite remains available separately; no assertion was removed to shorten the gate.
+
+- Canonical run `2d047728-dce7-40b1-9af7-fd8c25be92e2`: the extracted receipt case passed on arm64/x64 (25.9 seconds). Four of the remaining five transaction cases passed. The admission-failure case exposed a missed import of the moved daemon fixture string; that test-only extraction mistake was corrected by exporting/importing the same string. Coordinator cleanup was confirmed.
+- Canonical run `43a6d84e-42a9-4e58-9fea-3173f0aebdba`: the corrected admission-failure case passed on arm64/x64. The name selector intentionally excluded the other already-passing transaction cases; it is not reported as a new full-suite pass.
+
+Registered validation with the focused receipt file is next. Production behavior is unchanged by this test-fixture extraction.

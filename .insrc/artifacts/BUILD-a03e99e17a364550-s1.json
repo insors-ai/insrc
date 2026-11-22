@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 9,
-        "contentHash": "c85c917e3e242ae45cddffefd6415aafe9f46551730706e47fc725116bd1b62b",
-        "at": "2026-11-22T07:35:24.784Z",
+        "number": 10,
+        "contentHash": "d5a5943de923479745686ed73cd0bd5ef657f43c55026cb5a873a50f18946301",
+        "at": "2026-11-22T07:55:45.646Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -38,8 +38,8 @@
     "schemaVersion": 1,
     "epicHash": "a03e99e17a364550",
     "storyId": "s1",
-    "revision": 9,
-    "updatedAt": "2026-11-22T07:34:23.781Z",
+    "revision": 10,
+    "updatedAt": "2026-11-22T07:54:52.210Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicSlug": "restore-upgrades-from-existing-daemon-installations"
@@ -71,7 +71,7 @@
         "passed": false
       }
     ],
-    "summary": "Tasks t1–t5 supply authenticated staging, qualified predecessor recovery, durable Linux selection and native ownership, and independent installer/shell delivery. Task t6 routes TUI and startup/MCP through selected source owners, acknowledges detached updates before preparation, preserves independent updater/replacement lifetimes and durable committed/rolled-back/recovery-required results, and refuses historical incumbent build delegation. Controlled official-runtime fixtures and regression evidence are recorded; actual historical application/native/data qualification remains t9–t11.",
+    "summary": "Tasks t1–t5 provide authenticated staging, qualified recovery, Linux selection/native ownership, and independent installer/shell delivery. Task t6 adds selected TUI/start/MCP routing, acknowledgment before detached preparation, independent updater/replacement lifetimes and durable terminal update results without incumbent build delegation. The first gate consumed stale out/ after a final interface correction; canonical run a78df1c3 rebuilt and passed both consumers. Upstream was then merged cleanly and canonical run de30806c rebuilt the merged ca736d71b tree and passed six upstream test files. Actual historical application/native/data qualification remains t9–t11; BUILD approval is deferred until all story tasks complete.",
     "testRecord": {
       "md": "docs/standalone/restore-upgrades-from-existing-daemon-installations-E20261121a03e99e1/S001/TESTS.md"
     },
@@ -81,472 +81,472 @@
           "file": "docs/plans/node-runtime-evidence/source-upgrade-bootstrap.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "scripts/__tests__/source-upgrade-qualification-native.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "scripts/bundle-release-bootstrap.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "scripts/prepare-source-release.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "src/bin/insrc-release-bootstrap.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/managed-release-bootstrap.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/source-release-promotion.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "src/daemon/managed-release-staging.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "src/daemon/managed-update-preparation.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "src/daemon/release-compatibility.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "src/daemon/source-release-qualification.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "src/shared/source-release-compatibility.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "src/shared/source-release-target.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASKS-a03e99e17a364550-s1.log.jsonl"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "docs/plans/node-runtime-evidence/source-installation-state.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "src/shared/__tests__/source-installation.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "src/shared/managed-source-release.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "src/shared/source-installation.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "docs/plans/node-runtime-evidence/source-predecessor-recovery.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "scripts/__tests__/source-predecessor-native.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "src/bin/insrc-runtime-smoke.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "src/bin/insrc-source-recovery.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "src/daemon/source-predecessor.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "docs/plans/node-runtime-evidence/source-update-transaction.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/helpers/source-linux.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/source-update-transaction.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "src/daemon/source-update-transaction.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "build-process-broker.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "docs/plans/node-runtime-evidence/source-entrypoints.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "src/bin/insrc-source-startup-barrier.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "src/native/source-actor/main.c"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "src/shared/__tests__/source-actor-native.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "src/shared/source-actor-client.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "scripts/__tests__/source-bootstrap-inventory.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "src/daemon/source-store-inspection.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "src/daemon/source-store-probe.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/source-transaction-host.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "src/daemon/source-transaction-host.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "src/shared/__tests__/source-actor-boot.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "scripts/__tests__/source-entrypoints-native.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "scripts/daemon-ctl.sh"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "scripts/insrc-daemon-install.sh"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "src/bin/insrc-source-control.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "docs/plans/node-runtime-evidence/source-consumers.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "src/shared/source-routing.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "scripts/__tests__/helpers/owned-source-fixture.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "scripts/__tests__/helpers/source-entrypoint-authority.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "scripts/__tests__/node-runtime-cli-native.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "scripts/__tests__/package-daemon-candidate.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "scripts/__tests__/package-linux-daemon-candidate.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "scripts/__tests__/source-consumers-native.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "scripts/insrc"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "scripts/insrc-mcp"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "scripts/package-daemon-candidate.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "scripts/source-selection-env.sh"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "src/cli/__tests__/maintenance-source.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "src/cli/services/__tests__/maintenance-install-marker.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "src/cli/services/__tests__/maintenance-reconcile.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "src/cli/services/__tests__/maintenance-steering-refresh.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "src/cli/services/daemon.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "src/cli/services/maintenance.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "src/daemon/admin-handlers.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "src/daemon/index.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "src/daemon/managed-update-ipc.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "src/daemon/source-update-launch.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "src/shared/source-update-outcomes.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       },
       {
         "target": {
           "file": "src/shared/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-22T07:34:23.781Z"
+        "timestamp": "2026-11-22T07:54:52.210Z"
       }
     ],
-    "commit": "e44452302"
+    "commit": "df2897dc1"
   },
   "citations": []
 }

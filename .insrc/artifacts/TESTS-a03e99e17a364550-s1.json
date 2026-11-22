@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 9,
-        "contentHash": "cbab5b3a337d74bbd2fd1e1e8f3ec0cf2b2b7134867545f4f90066fd957cd2d8",
-        "at": "2026-11-22T07:34:23.797Z",
+        "number": 10,
+        "contentHash": "ea835607ea04b6960678576af06ee639852461c256008e4f6d7063a722f33c37",
+        "at": "2026-11-22T07:54:52.224Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "a03e99e17a364550",
     "storyId": "s1",
     "createdAt": "2026-11-21T17:48:45.684Z",
-    "updatedAt": "2026-11-22T07:34:23.781Z",
+    "updatedAt": "2026-11-22T07:54:52.210Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-21T15:31:04.425Z",
     "epicSlug": "restore-upgrades-from-existing-daemon-installations",
-    "revision": 9
+    "revision": 10
   },
   "body": {
     "tasks": [
@@ -414,8 +414,8 @@
       },
       {
         "taskId": "t6",
-        "commit": "e44452302",
-        "ranAt": "2026-11-22T07:34:23.781Z",
+        "commit": "ca736d71b",
+        "ranAt": "2026-11-22T07:54:52.210Z",
         "testsPassed": false,
         "tests": [
           {
@@ -426,12 +426,12 @@
               {
                 "file": "scripts/__tests__/source-consumers-native.test.ts",
                 "title": "TUI and detached daemon update survive handoff and expose final outcome",
-                "result": "fail"
+                "result": "pass"
               },
               {
                 "file": "src/daemon/__tests__/source-update-transaction.test.ts",
                 "title": "Source update receipts retain update results and expose recovery-required under exclusion",
-                "result": "pass"
+                "result": "not found"
               }
             ],
             "files": []
@@ -444,7 +444,7 @@
               {
                 "file": "scripts/__tests__/source-consumers-native.test.ts",
                 "title": "MCP/start resolve source selection and reject malformed state",
-                "result": "fail"
+                "result": "pass"
               }
             ],
             "files": []
@@ -453,56 +453,32 @@
         "files": [
           {
             "file": "scripts/__tests__/source-consumers-native.test.ts",
-            "exitCode": 1,
+            "exitCode": 0,
             "timedOut": false,
-            "durationMs": 44891,
+            "durationMs": 339192,
             "titles": [
               {
                 "title": "TUI and detached daemon update survive handoff and expose final outcome",
-                "result": "fail"
+                "result": "pass"
               },
               {
                 "title": "MCP/start resolve source selection and reject malformed state",
-                "result": "fail"
+                "result": "pass"
               }
             ],
             "otherFailures": []
           },
           {
             "file": "src/daemon/__tests__/source-update-transaction.test.ts",
-            "exitCode": 0,
-            "timedOut": false,
-            "durationMs": 322852,
-            "titles": [
-              {
-                "title": "Linux original-process closure precedes selection and candidate start",
-                "result": "pass"
-              },
-              {
-                "title": "Pre-cutover admission failures preserve the running incumbent",
-                "result": "pass"
-              },
-              {
-                "title": "Legacy restoration route survives later failures and settles under mutation exclusion",
-                "result": "pass"
-              },
-              {
-                "title": "Interrupted cutover and failed readiness recover exact prior selection and running state",
-                "result": "pass"
-              },
-              {
-                "title": "Source update admission precedes preparation and unchanged observation preserves running selection",
-                "result": "pass"
-              },
-              {
-                "title": "Source update receipts retain update results and expose recovery-required under exclusion",
-                "result": "pass"
-              }
-            ],
-            "otherFailures": []
+            "exitCode": null,
+            "timedOut": true,
+            "durationMs": 260808,
+            "titles": [],
+            "otherFailures": [],
+            "note": "timed out after 261 s; the output of the run was not understood as TAP"
           }
         ],
-        "note": "named test cases that did not pass: fail: 'TUI and detached daemon update survive handoff and expose final outcome' in scripts/__tests__/source-consumers-native.test.ts; fail: 'MCP/start resolve source selection and reject malformed state' in scripts/__tests__/source-consumers-native.test.ts"
+        "note": "src/daemon/__tests__/source-update-transaction.test.ts: timed out after 261 s; the output of the run was not understood as TAP; named test cases that did not pass: not found: 'Source update receipts retain update results and expose recovery-required under exclusion' in src/daemon/__tests__/source-update-transaction.test.ts"
       }
     ]
   },

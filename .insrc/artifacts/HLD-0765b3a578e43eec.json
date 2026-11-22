@@ -24,9 +24,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 2,
-        "contentHash": "ec180a37cd8992d823284332857200a6ea5d50e1be2b1451093d8641cd41ae93",
-        "at": "2026-11-22T07:00:00.000Z",
+        "number": 3,
+        "contentHash": "c79b87c1f4bf1888856ee311cf9f8e3841a334592ae48cb999945a9ea891a314",
+        "at": "2026-11-22T08:00:00.000Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
@@ -35,15 +35,15 @@
       },
       "signoffs": []
     },
-    "revision": 2
+    "revision": 3
   },
   "body": {
     "summary": {
-      "prose": "A new, standalone security-review orchestration module resolves the configured security model, collects dependency advisories entirely in controller-side code (sanitized subprocess, no model involved) through the existing pkg_audit tool, runs the code-vulnerability pass as a CLI read-only session scoped to the repository, and assembles both into the already-typed SecurityFinding/VerificationReceipt shapes plus a supplemental report structure -- plugging into the shared review-round driver through its reserved security hook rather than redesigning any of that.",
+      "prose": "A new, standalone security-review orchestration module pins one snapshot identity for the whole review, resolves the configured security model, collects dependency advisories entirely in controller-side code (an isolated subprocess with no ambient credentials or config files, against each manager's own documented advisory destination) against that snapshot, runs the code-vulnerability pass as a CLI read-only session against the SAME snapshot, and assembles both into the already-typed SecurityFinding/VerificationReceipt shapes plus a supplemental report structure -- plugging into the shared review-round driver through its reserved security hook rather than redesigning any of that.",
       "audience": "technical"
     },
     "frameworkSummary": "The Epic adds a standalone orchestration module (outside src/workflow/review-round/) that owns model selection, dependency-advisory collection, code-assessment execution, and reporting, and supplies review-round's existing RoundDriverHooks.security hook as a thin adapter. review-round itself stays unchanged except for the one call site invoking that hook; the data shapes it already exports (SecurityFinding, SecurityLocator, EvidenceProvider, VerificationReceipt) are populated, never redefined.",
-    "architectureShape": "Three Stories map to three responsibilities, split along a model/no-model line the existing providers actually support (confirmed by reading src/agent/providers/cli-provider.ts and src/agent/read-only-tool-loop.ts): s1 resolves and records the configured security model, dispatched LATER through CliProvider.runReadOnlySession -- the CLI's own internal, cwd-scoped read-only session -- never through the generic read-only-tool-loop, which requires provider.toolCalling=true and CliProvider advertises toolCalling:false (its complete() returns text/end_turn, not tool calls). s2 is entirely controller-side, deterministic code with NO model involvement: it resolves the project's package manager, sanitizes the subprocess environment pkg_audit launches under (stripping ambient credentials, keeping only what the resolved manager's own CLI needs), and treats that manager's own already-configured default registry as the one documented permitted egress destination; src/daemon/tools/builtins/shell/access-policies.ts governs human-approval gating of shell_* tool calls, not subprocess network/credential isolation, and does not constrain pkg_audit's effects once approved -- it is not reused here for isolation. s3 (depending on s1 and s2) owns the end-to-end sequence: it runs the code-vulnerability pass via CliProvider.runReadOnlySession scoped to the review's cwd with the s1-selected model, invokes runReviewRound (review-round/driver.ts, which only calls ground + the optional security hook and merges their findings -- it does not itself execute a sandbox/mutation checkpoint, reconcile rounds, or persist anything), executes and owns that checkpoint, calls reconciliation, maps the review's repository-scope-and-revision request onto an epicHash/storyId identity (persistVerificationReceipt, receipt-record.ts, hard-requires both), persists VerificationReceipt entries through it, and owns checkpoint cleanup. s3 assembles SecurityFinding/SecurityEvidence from the code pass and a supplemental report structure from s2's SecurityAdvisoryEvidence, because SecurityFinding's own schema is additionalProperties:false and has no dedicated exploit-prerequisite/remediation/advisory-provenance fields -- FR003's richer report content lives in that supplemental structure, not inside SecurityFinding itself. The module imports review-round's types; review-round never imports the new module, keeping the dependency direction one-way and the shared driver generic across every review type.",
+    "architectureShape": "Before any Story runs, the caller pins a SecurityReviewSnapshot (repository path, resolved revision/commit identity, and a dirty-working-tree policy: refuse, or proceed and record the tree as dirty) -- both s2's advisory collection and s3's code pass execute against that SAME identity, never against whatever the working tree happens to be when each runs independently.\n\nThree Stories then map to three responsibilities, split along a model/no-model line the existing providers actually support (confirmed by reading src/agent/providers/cli-provider.ts and src/agent/read-only-tool-loop.ts): s1 resolves and records the configured security model, dispatched LATER through CliProvider.runReadOnlySession -- the CLI's own internal session, started in a given cwd -- never through the generic read-only-tool-loop, which requires provider.toolCalling=true and CliProvider advertises toolCalling:false (its complete() returns text/end_turn, not tool calls).\n\ns2 is entirely controller-side, deterministic code with NO model involvement: it resolves the project's package manager, runs pkg_audit under an ISOLATED execution context -- not just a sanitized environment, but also config-file isolation (overriding HOME/XDG_CONFIG_HOME/manager-specific config-file variables, e.g. NPM_CONFIG_USERCONFIG, to an empty/controlled location, since npm/pip/etc. read project- and user-level config files for registry and auth settings regardless of process-env credentials) and a filesystem scope limited to the manifest/lockfile the manager needs -- and records the per-manager advisory destination it actually reached: most managers query their configured package registry, but go's govulncheck queries vuln.go.dev, a named exception to \"the package registry\" documented per manager, not assumed uniform. src/daemon/tools/builtins/shell/access-policies.ts governs human-approval gating of shell_* tool calls, not subprocess network/credential isolation, and does not constrain pkg_audit's effects once approved -- it is not reused here for isolation; the boundary is the isolated execution context itself.\n\ns3 (depending on s1 and s2) owns the end-to-end sequence: it runs the code-vulnerability pass via CliProvider.runReadOnlySession against the SAME pinned snapshot, with the s1-selected model, under whatever read boundary that SPECIFIC CLI backend actually enforces (claude: --tools Read,Grep,Glob plus --allowedTools; codex: --sandbox read-only, whose own insrc MCP server remains callable even in that mode) -- verified per provider, not assumed uniform from a cwd argument alone, since cwd only tells the session where to start, not what it is forbidden to read (credential locations, files outside the repo). s3 invokes runReviewRound (review-round/driver.ts, which only calls ground + the optional security hook and merges their findings -- it does not itself execute a sandbox/mutation checkpoint, reconcile rounds, or persist anything), executes and owns that checkpoint, calls reconciliation, maps the review's snapshot identity onto an epicHash/storyId identity (persistVerificationReceipt, receipt-record.ts, hard-requires both), persists VerificationReceipt entries through it, and owns checkpoint cleanup. s3 assembles SecurityFinding/SecurityEvidence from the code pass and a supplemental report structure from s2's SecurityAdvisoryEvidence, because SecurityFinding's own schema is additionalProperties:false and has no dedicated exploit-prerequisite/remediation/advisory-provenance fields -- FR003's richer report content lives in that supplemental structure, not inside SecurityFinding itself.\n\nThe module imports review-round's types; review-round never imports the new module, keeping the dependency direction one-way and the shared driver generic across every review type.",
     "sharedContracts": [
       {
         "id": "sc1",
@@ -61,8 +61,8 @@
       {
         "id": "sc2",
         "name": "SecurityAdvisoryEvidence",
-        "purpose": "Carries s2's dependency-advisory collection outcome (controller-side, no model) across the boundary: the queried coordinates, the actual advisory matches with affected versions and provenance, and the dependencies/sources that stayed unresolved or unavailable -- so s3 can report confirmed affected dependencies and unverified coverage as DISTINCT values, not merge two differently-vulnerable sessions into an indistinguishable contract.",
-        "interfaceSketch": "interface SecurityAdvisoryMatch {\n\treadonly coordinate: string;\n\treadonly advisoryId: string;\n\treadonly affectedVersions: string;\n\treadonly severity: string;\n\treadonly provenance: string;\n}\n\ninterface SecurityAdvisoryEvidence {\n\treadonly readOnly: true;\n\treadonly queriedCoordinates: readonly string[];\n\treadonly matches: readonly SecurityAdvisoryMatch[];\n\treadonly unresolvedDependencies: readonly string[];\n\treadonly unavailableSources: readonly string[];\n}",
+        "purpose": "Carries s2's dependency-advisory collection outcome (controller-side, no model) across the boundary: the pinned snapshot it was collected against, the queried coordinates, the actual advisory matches with affected versions and provenance, the per-match advisory destination actually reached, and the dependencies/sources that stayed unresolved or unavailable -- so s3 can report confirmed affected dependencies and unverified coverage as DISTINCT values bound to the SAME revision as its own code findings, not merge evidence from two different snapshots into an indistinguishable contract.",
+        "interfaceSketch": "interface SecurityAdvisoryMatch {\n\treadonly coordinate: string;\n\treadonly advisoryId: string;\n\treadonly affectedVersions: string;\n\treadonly severity: string;\n\treadonly provenance: string;\n\treadonly advisoryDestination: string;\n}\n\ninterface SecurityAdvisoryEvidence {\n\treadonly snapshotRevision: string;\n\treadonly readOnly: true;\n\treadonly queriedCoordinates: readonly string[];\n\treadonly matches: readonly SecurityAdvisoryMatch[];\n\treadonly unresolvedDependencies: readonly string[];\n\treadonly unavailableSources: readonly string[];\n}",
         "ownedByStory": "s2",
         "consumedByStories": [
           "s3"
@@ -87,7 +87,7 @@
           "sc2"
         ],
         "depends": [],
-        "internal": "pkg_audit's package-manager resolution, the sanitized subprocess environment it launches under (ambient credentials stripped before the runShell call; only what the resolved manager's CLI itself needs is kept), the single permitted-egress destination (the resolved manager's own already-configured default registry -- no new destination is introduced), and the advisory-match collection that populates SecurityAdvisoryEvidence stay private to s2. No model, tool-loop, or CLI session is involved in s2 at all; isolation here is a property of the sanitized subprocess, not of any access-policy or tool-allowlist mechanism (none of the existing ones constrain pkg_audit's own network/credential effects once it runs). ac2's gap-reporting explicitly covers an unavailable manager, a non-zero pkg_audit exit, and a denied/unreachable registry as EXPLICIT gaps, never a silent clean result."
+        "internal": "pkg_audit's package-manager resolution; the ISOLATED execution context it launches under -- a sanitized process environment AND config-file isolation (HOME/XDG_CONFIG_HOME/manager-specific config overrides, since credential/registry settings in project- and user-level config files, e.g. .npmrc, survive environment-variable sanitization alone) AND a filesystem scope limited to the manifest/lockfile; the per-manager advisory destination actually reached (most managers: their configured package registry; go: vuln.go.dev, a documented exception); the approved-coordinate restriction (only the pinned snapshot's own declared dependencies are ever queried); and the advisory-match collection that populates SecurityAdvisoryEvidence stay private to s2. No model, tool-loop, or CLI session is involved in s2 at all; isolation here is a property of the execution context itself, not of any access-policy or tool-allowlist mechanism (none of the existing ones constrain pkg_audit's own network/credential/filesystem effects once it runs). ac2's gap-reporting distinguishes a SUCCESSFUL audit that found vulnerabilities (a valid, parseable result regardless of exit code -- pkg_audit's own auditArgv already marks every supported manager nonZeroOk:true, since e.g. npm audit exits non-zero exactly when it finds something) from an EXECUTION GAP (the manager binary is missing/spawn fails, the expected JSON cannot be parsed, or the manager is unsupported) -- these are never conflated."
       },
       {
         "storyId": "s3",
@@ -96,12 +96,12 @@
           "sc1",
           "sc2"
         ],
-        "internal": "The RoundDriverHooks.security adapter function; the CliProvider.runReadOnlySession dispatch of the code-vulnerability pass (cwd-scoped to the review target, using s1's resolved model); the call into runReviewRound and the separate ownership of everything runReviewRound itself does NOT do (sandbox/mutation checkpoint execution, round reconciliation, VerificationReceipt persistence, and checkpoint cleanup); the mapping from the review's repository-scope-and-revision request onto the epicHash/storyId identity persistVerificationReceipt requires; and the assembly of SecurityFinding/SecurityEvidence plus a supplemental report structure (for FR003's exploit-prerequisite, remediation and advisory-provenance content SecurityFinding's own closed schema has no field for) stay private to s3. It consumes s1's SecurityModelSelection and s2's SecurityAdvisoryEvidence to produce that report."
+        "internal": "The RoundDriverHooks.security adapter function; the CliProvider.runReadOnlySession dispatch of the code-vulnerability pass against the SAME pinned snapshot s2 collected against, using s1's resolved model, under whatever read boundary the specific CLI backend (claude/codex/vibe) actually enforces -- specified per provider in the s3 LLD, including its credential-location exclusions and (for codex) its own MCP-server access scope, never assumed uniform from a cwd argument alone; the call into runReviewRound and the separate ownership of everything runReviewRound itself does NOT do (sandbox/mutation checkpoint execution, round reconciliation, VerificationReceipt persistence, and checkpoint cleanup); the mapping from the review's pinned snapshot identity onto the epicHash/storyId identity persistVerificationReceipt requires; and the assembly of SecurityFinding/SecurityEvidence plus a supplemental report structure (for FR003's exploit-prerequisite, remediation and advisory-provenance content SecurityFinding's own closed schema has no field for) stay private to s3. It consumes s1's SecurityModelSelection and s2's SecurityAdvisoryEvidence to produce that report, and refuses (or explicitly flags, per the snapshot's dirty-working-tree policy) a mismatch between its own working tree and SecurityAdvisoryEvidence.snapshotRevision."
       }
     ],
     "nonFunctional": {
-      "security": "The ONLY network-reaching step in the whole Epic is pkg_audit's subprocess, invoked by s2 with a sanitized environment (ambient credentials stripped) against the resolved package manager's own already-configured default registry -- the sole permitted destination; a manager/registry pkg_audit cannot reach is an explicit gap (ac2), never silently skipped. The security model (s1) never touches pkg_audit or s2 at all: its own repository access during s3's code-vulnerability pass is bounded by CliProvider.runReadOnlySession's cwd scope (the CLI's own internal read-only mode) -- NOT by the generic read-only-tool-loop/access-policy allowlist, which CliProvider cannot run (toolCalling:false) and which (src/daemon/tools/builtins/shell/access-policies.ts) governs human-approval gating of shell_* calls, not subprocess network/credential isolation, in any case. Cloud model calls still route through the installed CLI provider (k1), never a direct REST path.",
-      "observability": "Every checkpoint run -- pass or fail, whether or not a SecurityFinding corroborates it -- is recorded as a VerificationReceipt (already built, src/workflow/review-round/receipt-record.ts), so a security review's execution is auditable independent of its findings. s3 owns stamping that record with the epicHash/storyId persistVerificationReceipt requires, mapped from the review's own repository-scope-and-revision request.",
+      "security": "The only process that reaches a DEPENDENCY-ADVISORY network destination anywhere in this Epic is pkg_audit's subprocess (s2), run under an isolated execution context (sanitized environment AND config-file isolation, since credential/registry settings in project-/user-level config files survive env-var sanitization alone) against each manager's own documented destination -- most managers' configured package registry, but go's govulncheck against vuln.go.dev as a named exception; a manager/destination pkg_audit cannot reach is an explicit gap (ac2), never silently skipped, and is distinct from a successful audit that simply found vulnerabilities (non-zero exit is NOT itself a gap -- pkg_audit's own auditArgv already treats it as a valid outcome for every supported manager). This is SEPARATE from the configured CLI model's own inference traffic (k1: routes through the installed CLI provider, never a direct REST path), which is expected and unrelated to dependency-advisory egress. The security model's OWN repository access during s3's code-vulnerability pass is bounded by whatever read restriction the specific CLI backend enforces for its read-only session (claude: --tools Read,Grep,Glob plus --allowedTools; codex: --sandbox read-only) -- NOT by the cwd argument alone (which only sets where the session starts, not what it is forbidden to read) and NOT by the generic read-only-tool-loop/access-policy allowlist, which CliProvider cannot run (toolCalling:false) and which (src/daemon/tools/builtins/shell/access-policies.ts) governs human-approval gating of shell_* calls in any case, not subprocess network/credential isolation. The exact per-provider read boundary (credential-location exclusions, codex's own callable MCP server) is an open question for the s3 LLD, not settled by this HLD.",
+      "observability": "Every checkpoint run -- pass or fail, whether or not a SecurityFinding corroborates it -- is recorded as a VerificationReceipt (already built, src/workflow/review-round/receipt-record.ts), so a security review's execution is auditable independent of its findings. s3 owns stamping that record with the epicHash/storyId persistVerificationReceipt requires, mapped from the review's own pinned snapshot identity.",
       "durability": "No new persistent storage is introduced for s1/s2's own outputs (SecurityModelSelection, SecurityAdvisoryEvidence are transient per-review values); the durable records are the already-typed SecurityFinding/VerificationReceipt heads the shared round-driver machinery (Epic 03f4fd3b9102aab8) persists, plus s3's new supplemental report structure (not yet a stored artifact type; its persistence mechanism is an open question for the s3 LLD) carrying the exploit-prerequisite/remediation/advisory-provenance content SecurityFinding's own schema has no field for.",
       "performance": "Not a stated constraint for this Epic; the new module's cost is bounded by one pkg_audit invocation and one CLI read-only session per request, not a new background job."
     },
@@ -114,7 +114,7 @@
             "s2"
           ],
           "rationale": "s1 (SecurityModelSelection) and s2 (SecurityAdvisoryEvidence) are the two shared contracts s3 depends on; neither depends on the other, so they can land in either order or in parallel, but both must exist before s3 is buildable.",
-          "backwardCompat": "No existing behavior changes: s1 adds a new, independently-selectable model binding beside core/mid/cheap (not merely a role-taxonomy entry that resolves to one of those three); s2 runs entirely controller-side with a sanitized pkg_audit invocation and touches no existing caller.",
+          "backwardCompat": "No existing behavior changes: s1 adds a new, independently-selectable model binding beside core/mid/cheap (not merely a role-taxonomy entry that resolves to one of those three); s2 runs entirely controller-side with an isolated pkg_audit invocation against the pinned snapshot and touches no existing caller.",
           "featureFlag": null
         },
         {
@@ -135,19 +135,24 @@
           "mitigation": "s1's LLD must specify the actual configuration contract for the independent binding (a distinct config key/provider identity, not a role-taxonomy RoleId alone) before any build task starts."
         },
         {
-          "area": "pkg_audit isolation (s2)",
-          "why": "pkg_audit launches runShell with an inherited host environment and no access-policy/network constraint of its own; without sanitizing that environment, s2 would not actually enforce k2's credential-isolation and controlled-egress requirements, only appear to via the (irrelevant) shell access-policy gate.",
-          "mitigation": "s2's build must sanitize the subprocess environment before invoking pkg_audit and test that credentials are absent from it, not just that the tool call itself is approved."
+          "area": "pkg_audit isolation beyond environment sanitization (s2)",
+          "why": "Stripping process-env credentials does not stop npm/pip/etc. from reading project- or user-level config files (e.g. .npmrc) that carry their own registry/auth settings, and does not fit every manager uniformly -- go's govulncheck queries vuln.go.dev, not a package registry at all.",
+          "mitigation": "s2's build must isolate config-file locations (HOME/XDG/manager-specific overrides) in addition to the environment, document each supported manager's actual advisory destination, and test that neither ambient credentials nor ambient config files leak into the subprocess."
         },
         {
           "area": "CLI model dispatch for the code pass (s3)",
-          "why": "CliProvider advertises toolCalling:false and its complete() never returns tool calls, so the generic read-only-tool-loop cannot run against it; ReadOnlySessionOpts (its own alternate path) carries no tool-allowlist or access-policy field at all, only cwd/deadline/retry knobs.",
-          "mitigation": "Gate s3's build behind an integration test that actually dispatches the configured CLI model through runReadOnlySession end-to-end, not a stub, before the feature flag is enabled."
+          "why": "CliProvider advertises toolCalling:false and its complete() never returns tool calls, so the generic read-only-tool-loop cannot run against it; ReadOnlySessionOpts (its own alternate path) carries no tool-allowlist or access-policy field at all, only cwd/deadline/retry knobs -- cwd tells the session where to start, not what it is forbidden to read.",
+          "mitigation": "Gate s3's build behind an integration test that actually dispatches the configured CLI model through runReadOnlySession end-to-end for EACH supported provider, verifying its own real read-boundary flags (not assuming they exist from cwd alone), before the feature flag is enabled."
         },
         {
           "area": "epicHash/storyId mapping for receipt persistence (s3)",
           "why": "persistVerificationReceipt hard-requires an epicHash and storyId; the Epic's own acceptance criteria describe a repository-scope-and-revision request with no documented mapping to that identity.",
           "mitigation": "s3's LLD must specify that mapping explicitly (e.g. a standalone epicHash/storyId minted per security review) before the persistence call can be implemented."
+        },
+        {
+          "area": "Snapshot consistency between advisory and code evidence (s2/s3)",
+          "why": "Without a single pinned revision both Stories execute against, a working tree that changes between s2's collection and s3's assessment would let the report combine dependency evidence from one revision with code findings from another.",
+          "mitigation": "The caller pins a SecurityReviewSnapshot before either Story runs; s3 refuses or explicitly flags (per the snapshot's own dirty-working-tree policy) a mismatch against SecurityAdvisoryEvidence.snapshotRevision rather than silently combining mismatched evidence."
         }
       ]
     },
@@ -164,7 +169,7 @@
         ],
         "cons": [
           "Grows review-round's own entity count (currently 65 entities / 106,386 bytes) with security-specific orchestration logic that the OTHER review types (code, design) never touch, diluting the directory's generic-round-driver identity.",
-          "Model-selection (FR001) and advisory-isolation (FR002) concerns are themselves cross-cutting (model tiering, subprocess sanitization) and arguably belong nearer src/config/role-taxonomy.ts and the controller-side orchestration code than inside review-round."
+          "Model-selection (FR001) and advisory-isolation (FR002) concerns are themselves cross-cutting (model tiering, subprocess/config-file isolation) and arguably belong nearer src/config/role-taxonomy.ts and the controller-side orchestration code than inside review-round."
         ],
         "costEstimate": "M",
         "reasonRejected": "Reuses the reserved hook with the least new surface, but concentrates cross-cutting model-selection/isolation concerns in a directory that should stay generic, per the structural-map bundle (review-round currently has 0 indexed importers and a uniform camelCase/PascalCase convention this would blur with orchestration logic)."
@@ -172,8 +177,8 @@
       {
         "id": "a2",
         "name": "Standalone security-review orchestration module, adapting into the hook",
-        "oneLineSummary": "A new sibling module (e.g. src/workflow/security-review/) owns model selection, controller-side advisory collection, code-pass execution and reporting, and supplies review-round's RoundDriverHooks.security as a thin adapter.",
-        "approach": "FR001-FR003's actual logic lives in a new module outside review-round, which imports review-round's existing types (SecurityFinding, SecurityLocator, EvidenceProvider, VerificationReceipt) and populates them, then exposes a thin function matching RoundDriverHooks.security's signature that driver.ts's runReviewRound calls. Model selection (FR001) is an independently-bindable configuration, distinct from role-taxonomy's core/mid/cheap tiers, dispatched through CliProvider.runReadOnlySession for the code-vulnerability pass; dependency-advisory collection (FR002) is controller-side code with a sanitized pkg_audit invocation and no model involvement at all; reporting (FR003) assembles the existing SecurityFinding/VerificationReceipt shapes plus a supplemental structure for the fields they do not carry.\n\nThis keeps review-round itself unchanged except for the one call site that invokes the hook, preserving its role as generic round-driver machinery shared across review types (per Epic review-rounds-reconciliation-recovery, epicHash 03f4fd3b9102aab8).",
+        "oneLineSummary": "A new sibling module (e.g. src/workflow/security-review/) owns model selection, controller-side advisory collection against a pinned snapshot, code-pass execution, and reporting, and supplies review-round's RoundDriverHooks.security as a thin adapter.",
+        "approach": "FR001-FR003's actual logic lives in a new module outside review-round, which imports review-round's existing types (SecurityFinding, SecurityLocator, EvidenceProvider, VerificationReceipt) and populates them, then exposes a thin function matching RoundDriverHooks.security's signature that driver.ts's runReviewRound calls. Model selection (FR001) is an independently-bindable configuration, distinct from role-taxonomy's core/mid/cheap tiers, dispatched through CliProvider.runReadOnlySession for the code-vulnerability pass; dependency-advisory collection (FR002) is controller-side code with an isolated pkg_audit invocation (sanitized environment, isolated config-file locations, a per-manager documented destination) against the same pinned snapshot, with no model involvement at all; reporting (FR003) assembles the existing SecurityFinding/VerificationReceipt shapes plus a supplemental structure for the fields they do not carry.\n\nThis keeps review-round itself unchanged except for the one call site that invokes the hook, preserving its role as generic round-driver machinery shared across review types (per Epic review-rounds-reconciliation-recovery, epicHash 03f4fd3b9102aab8).",
         "pros": [
           "review-round stays purely generic (data shapes + shared round driver); security-specific orchestration is isolated in its own module, easier to review and test without touching the shared driver's test suite.",
           "Model selection and advisory-isolation logic sits nearer the config machinery and the controller-side process boundary they actually extend, rather than being colocated with the generic driver."
@@ -203,16 +208,23 @@
     ],
     "chosenAlternative": "a2",
     "openQuestions": [
-      "(s3 LLD) The epicHash/storyId mapping persistVerificationReceipt requires has no documented derivation from the Epic's repository-scope-and-revision request; the s3 LLD must specify it explicitly before the persistence call can be implemented.",
-      "(s3 LLD) The supplemental report structure carrying FR003's exploit-prerequisite/remediation/advisory-provenance content (not fields on SecurityFinding's own closed schema) has no persistence mechanism specified yet -- the s3 LLD must decide whether it is a new stored artifact type or an in-memory assembly over the existing SecurityFinding/VerificationReceipt records."
+      "(s3 LLD) The epicHash/storyId mapping persistVerificationReceipt requires has no documented derivation from the Epic's pinned snapshot identity; the s3 LLD must specify it explicitly before the persistence call can be implemented.",
+      "(s3 LLD) The supplemental report structure carrying FR003's exploit-prerequisite/remediation/advisory-provenance content (not fields on SecurityFinding's own closed schema) has no persistence mechanism specified yet -- the s3 LLD must decide whether it is a new stored artifact type or an in-memory assembly over the existing SecurityFinding/VerificationReceipt records.",
+      "(s3 LLD) The exact per-provider read boundary for CliProvider.runReadOnlySession (claude's --tools/--allowedTools flags, codex's --sandbox read-only and its own callable MCP server, vibe's own session shape) must be verified and specified individually -- this HLD establishes that cwd alone is not sufficient, not what each provider's real boundary is.",
+      "(s2 LLD) The dirty-working-tree policy for the pinned SecurityReviewSnapshot (refuse vs. proceed-and-flag) is named here as a required decision but not made; the s2/s3 LLDs must settle it."
     ],
     "sequenceDefinition": {
       "id": "security-review-sequence",
-      "narrative": "The end-to-end security-only review: s1's model resolution and s2's controller-side advisory collection both complete before s3 runs the code-vulnerability pass and assembles the final report. Only pkg_audit (inside s2) reaches the network; the model (inside s3) never touches it.",
+      "narrative": "The end-to-end security-only review: a snapshot is pinned first, so s2's controller-side advisory collection and s3's code-vulnerability pass both run against the SAME revision. Only pkg_audit (inside s2) reaches a dependency-advisory network destination; the model's own inference traffic (inside s3) is separate and expected.",
       "participants": [
         {
           "id": "caller",
           "label": "Review requester (daemon RPC/MCP entry point)"
+        },
+        {
+          "id": "snapshot",
+          "label": "SecurityReviewSnapshot",
+          "description": "Repository path + resolved revision + dirty-working-tree policy, pinned before s1/s2/s3 run."
         },
         {
           "id": "s1",
@@ -222,17 +234,17 @@
         {
           "id": "s2",
           "label": "s2: SecurityAdvisoryEvidence collector",
-          "description": "Controller-side code; no model. Runs pkg_audit under a sanitized subprocess environment."
+          "description": "Controller-side code; no model. Runs pkg_audit under an isolated execution context, against the pinned snapshot."
         },
         {
           "id": "pkg_audit",
           "label": "pkg_audit tool",
-          "description": "src/daemon/tools/builtins/pkg/index.ts; the only process that reaches a network destination (the resolved package manager's own registry)."
+          "description": "src/daemon/tools/builtins/pkg/index.ts; the only process that reaches a dependency-advisory network destination -- each manager's own documented destination (most: their registry; go: vuln.go.dev)."
         },
         {
           "id": "s3",
           "label": "s3: review + report",
-          "description": "Runs the code pass via CliProvider.runReadOnlySession with s1's model, drives runReviewRound, owns checkpoint/reconciliation/receipt persistence."
+          "description": "Runs the code pass via CliProvider.runReadOnlySession against the SAME snapshot, with s1's model; drives runReviewRound; owns checkpoint/reconciliation/receipt persistence."
         },
         {
           "id": "driver",
@@ -242,10 +254,22 @@
         {
           "id": "receipts",
           "label": "persistVerificationReceipt (receipt-record.ts)",
-          "description": "Requires an epicHash + storyId identity, mapped by s3 from the review's repository-scope-and-revision request."
+          "description": "Requires an epicHash + storyId identity, mapped by s3 from the pinned snapshot."
         }
       ],
       "messages": [
+        {
+          "from": "caller",
+          "to": "snapshot",
+          "label": "pin repository path + revision + dirty-tree policy",
+          "kind": "call"
+        },
+        {
+          "from": "snapshot",
+          "to": "caller",
+          "label": "SecurityReviewSnapshot",
+          "kind": "return"
+        },
         {
           "from": "caller",
           "to": "s1",
@@ -261,32 +285,39 @@
         {
           "from": "caller",
           "to": "s2",
-          "label": "collect dependency advisories (repo scope)",
+          "label": "collect dependency advisories against the pinned snapshot",
           "kind": "call"
         },
         {
           "from": "s2",
           "to": "pkg_audit",
-          "label": "run audit (sanitized env, resolved manager)",
+          "label": "run audit (isolated env + config, resolved manager)",
           "kind": "call"
         },
         {
           "from": "pkg_audit",
           "to": "s2",
-          "label": "advisory matches | gap (manager/registry unavailable)",
+          "label": "advisory matches (any exit code) | execution gap (spawn/parse/unsupported-manager failure)",
           "kind": "return"
         },
         {
           "from": "s2",
           "to": "caller",
-          "label": "SecurityAdvisoryEvidence",
+          "label": "SecurityAdvisoryEvidence (stamped with the snapshot revision)",
           "kind": "return"
         },
         {
           "from": "caller",
           "to": "s3",
-          "label": "run security review (SecurityModelSelection, SecurityAdvisoryEvidence, repo scope + revision)",
+          "label": "run security review (SecurityModelSelection, SecurityAdvisoryEvidence, pinned snapshot)",
           "kind": "call"
+        },
+        {
+          "from": "s3",
+          "to": "s3",
+          "label": "check SecurityAdvisoryEvidence.snapshotRevision against the pinned snapshot",
+          "kind": "recurse",
+          "note": "Refuse or flag per the snapshot's dirty-working-tree policy on a mismatch."
         },
         {
           "from": "s3",
@@ -303,9 +334,9 @@
         {
           "from": "s3",
           "to": "s3",
-          "label": "CliProvider.runReadOnlySession(cwd-scoped, s1's model)",
+          "label": "CliProvider.runReadOnlySession(pinned snapshot, s1's model)",
           "kind": "recurse",
-          "note": "The CLI's own internal read-only mode; not the generic tool-loop (toolCalling:false)."
+          "note": "The CLI's own internal session; the real read boundary is provider-specific (claude --tools/--allowedTools, codex --sandbox read-only), not the generic tool-loop (toolCalling:false) and not cwd alone."
         },
         {
           "from": "driver",
@@ -323,7 +354,7 @@
         {
           "from": "s3",
           "to": "receipts",
-          "label": "persistVerificationReceipt(epicHash, storyId mapped from repo scope, receipt)",
+          "label": "persistVerificationReceipt(epicHash, storyId mapped from the pinned snapshot, receipt)",
           "kind": "call"
         },
         {
@@ -406,6 +437,18 @@
       "kind": "code",
       "ref": "src/agent/read-only-tool-loop.ts",
       "quotedText": "The generic read-only tool loop: a model reads the repository through tools, turn by turn, until it stops asking for tools -- this requires a provider whose complete() returns tool calls."
+    },
+    {
+      "id": "c13",
+      "kind": "code",
+      "ref": "src/daemon/tools/builtins/pkg/index.ts",
+      "quotedText": "auditArgv: every supported manager (npm, pnpm, yarn, pip, pipenv, poetry, go, cargo) is marked nonZeroOk: true; the go case runs ['govulncheck', './...'], not a package-registry query."
+    },
+    {
+      "id": "c14",
+      "kind": "code",
+      "ref": "src/agent/providers/cli-provider.ts",
+      "quotedText": "runReadOnlySession's own doc comment: claude uses --tools Read,Grep,Glob plus --allowedTools for the two insrc analyze tools; codex uses --sandbox read-only with its registered insrc MCP server still callable. cwd alone establishes neither restriction."
     }
   ]
 }

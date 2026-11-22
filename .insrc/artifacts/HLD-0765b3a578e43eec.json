@@ -22,7 +22,7 @@
     "epicSlug": "add-dedicated-security-reviews",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 5,
         "contentHash": "c3ddf54acc761bdaddd0edd8ef73037fce41c8477de5f6fa143845929f85ba7b",
@@ -33,7 +33,19 @@
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 5,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-22T12:46:50.597Z",
+        "override": {
+          "reason": "Automated design review is retired. Revision 5 is a direct user-directed amendment (same access privileges for the reviewer as the controller, applied across s2 and s3) made after 3 external review rounds on the s2 LLD established the prior enforced-boundary/negative-access-test invariants were unachievable without new sandbox infrastructure. Approved by explicit user instruction."
+        }
+      }
     },
     "revision": 5,
     "envelope": {

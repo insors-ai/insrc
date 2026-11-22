@@ -34,6 +34,10 @@ const required = target === 'darwin'
 	? ['fresh-start', 'fresh-idle', 'legacy-broker-denied', 'managed-running', 'managed-stopped',
 		'guarded-rollback', 'restored-retry', 'linux-regression', 'full-regression']
 	: ['historical-upgrade', 'migrated-update', 'guarded-rollback', 'restored-retry', 'full-regression'];
+// Qualified releases require the complete selection contract, not an update
+// installer that silently leaves a shell, daemon/MCP or IDE consumer on old roots.
+required.push('source-selection-shell', 'source-selection-cli-daemon-mcp',
+ 'source-selection-vscode', 'source-selection-jetbrains');
 const evidence = JSON.parse(readFileSync(evidenceFile, 'utf8'));
 if (evidence.version !== 1 || evidence.commit !== commit || evidence.tree !== tree || !Array.isArray(evidence.checks)) {
 	throw new Error('qualification evidence does not match the proposed source head');

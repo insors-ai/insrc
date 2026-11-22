@@ -31,7 +31,8 @@ test('Promotion requires passing source-built evidence for the exact signed head
 	const stage = () => execFileSync(process.execPath, [script.pathname, qualification, repo, 'v2', '7',
 		signingKey, signingKey + '.pub', installer], { cwd: repo, encoding: 'utf8', stdio: 'pipe' });
 	const names = ['fresh-start', 'fresh-idle', 'legacy-broker-denied', 'managed-running', 'managed-stopped',
-		'guarded-rollback', 'restored-retry', 'linux-regression', 'full-regression'];
+		'guarded-rollback', 'restored-retry', 'linux-regression', 'full-regression',
+  'source-selection-shell', 'source-selection-cli-daemon-mcp', 'source-selection-vscode', 'source-selection-jetbrains'];
 	const results = new Map(names.map(name => [name, JSON.stringify({
 		version: 1, name, commit, tree, execution: 'source-build', exitCode: 0, passed: 1, failed: 0, skipped: 0,
 	})]));
@@ -43,6 +44,12 @@ test('Promotion requires passing source-built evidence for the exact signed head
 	assert.throws(stage, /does not match/);
 	await writeFile(qualification, JSON.stringify({ ...evidence, checks: evidence.checks.slice(1) }));
 	assert.throws(stage, /missing passing qualification/);
+	for (const consumer of ['source-selection-shell', 'source-selection-cli-daemon-mcp', 'source-selection-vscode', 'source-selection-jetbrains']) {
+  await writeFile(qualification, JSON.stringify({ ...evidence, checks: evidence.checks.filter(check => check.name !== consumer) }));
+  assert.throws(stage, new RegExp('missing passing qualification evidence for ' + consumer));
+  await assert.rejects(readFile(installer), { code: 'ENOENT' });
+  assert.equal(git('for-each-ref', '--format=%(refname)', 'refs/insrc/promote'), '');
+ }
 	await writeFile(qualification, JSON.stringify(evidence));
 	const failedName = 'fresh-start';
 	const failedFile = join(root, failedName + '.json');
@@ -82,7 +89,7 @@ test('Published installer and both IDEs embed the same trusted verifier', { time
 	const installer = join(root, 'published.sh');
 	execFileSync('/usr/bin/ssh-keygen', ['-q', '-t', 'ed25519', '-N', '', '-f', key]);
 	execFileSync(process.execPath, [fileURLToPath(new URL('../../../scripts/bundle-release-bootstrap.mjs', import.meta.url)), key + '.pub', installer]);
-	const env = { ...process.env, INSRC_PACKAGED_INSTALLER: installer };
+	const env = { ...process.env, INSRC_PACKAGED_INSTALLER: installer, INSRC_QUALIFIED_UPGRADE_CHANNEL: '1' };
 	const project = fileURLToPath(new URL('../../../', import.meta.url));
 	const plugin = join(root, 'vscode-plugin');
 	await mkdir(join(plugin, 'assets'), { recursive: true });
@@ -98,6 +105,10 @@ test('Published installer and both IDEs embed the same trusted verifier', { time
 		await copyFile(join(project, path), join(root, path));
 	}
 	await copyFile(join(project, '.npmrc'), join(root, '.npmrc'));
+ const missing = { ...env }; delete (missing as NodeJS.ProcessEnv)['INSRC_PACKAGED_INSTALLER'];
+ assert.throws(() => execFileSync(process.execPath, [join(root, 'scripts/sync-client-runtime-assets.mjs'), 'vscode'],
+  { cwd: root, env: missing, stdio: 'pipe' }), /qualified IDE channel requires/);
+ await assert.rejects(readFile(join(plugin, 'assets/insrc-daemon-install.sh')), { code: 'ENOENT' });
 	execFileSync('npm', ['run', 'sync-assets', '--silent'], { cwd: plugin, env, stdio: 'pipe' });
 	const jetbrains = join(project, 'jetbrains-plugin');
 	try {

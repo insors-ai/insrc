@@ -1,0 +1,68 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1795323155136-8vwta7",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-22T04:54:18.721Z",
+    "epicCreatedAt": "2026-11-22T04:54:18.721Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 103584,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "99b5807b8d089ff0",
+    "epicSlug": "cap-capability-reuse-check-s-judging",
+    "standalone": true,
+    "magnitude": "small",
+    "kind": "defect",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "0c8c9cdc4c802c8770daeb7eb932df6a4ede0a89eaf9bc10455e4f60a3fbfacc",
+        "at": "2026-11-22T04:54:18.727Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Cap capability.reuse-check's judging prompt so it never exceeds the CLI's input-size limit",
+    "reproduction": "Run insrc_analyze (or insrc_analyze_step) with a capability-discovery question scoped broadly (workspace scope, sizeHint L), where concept.resolve legitimately returns a large hit set (reproduced: 1506 lookup-result items / 757 files). capability.reuse-check module-profiles every one of those candidates and renders all of them into the codex judging subprocess's prompt. Observed: the subprocess exits with code 1, stderr 'Input exceeds the maximum length of 1048576 characters' (actual_chars=2612130, code -32602, input_too_large). The daemon records this as report.completeness.failed[0] with sourceId \"capability.reuse-check [e1]\" in the analyze bundle it writes to disk. Because module.profile/convention.detect/symbol.locate all depend on e1's candidate output via placeholders, they then skip too with reason 'prerequisite-empty', so the whole analyze call returns no usable capability-reuse verdict for the question.",
+    "rootCause": "src/analyze/explore/capability-reuse-check.ts:390-430 defines buildMessages(promptContent, capability, profiles), the function that assembles the codex judging subprocess's prompt. Its `profiles` parameter is typed as a plain, unbounded ReadonlyArray (confirmed via symbol.locate against entityId 5b3d2db6591a9fde1130959d33a3733e): nothing in the type or in the surrounding runCapabilityReuseCheck flow caps how many candidates are module.profile'd and rendered into the prompt, nor caps the size of any per-candidate field (profile.exports, profile.filesInDir, etc., themselves unbounded arrays via ModuleProfile). The code's own comment on the candidate-collection loop ('Every distinct candidate the inner search found is checked. Its own limits, if it reached any, bound what they were drawn from.') shows the author relied entirely on the upstream concept.resolve step to keep the candidate count small -- but concept.resolve can legitimately return hundreds to low-thousands of hits for a broad query, and nothing downstream re-bounds that before it reaches buildMessages. The file already has an established pattern for reporting a bounded/dropped set (the `limited` ReachedLimit array built from concept.completeness.limited, and the per-candidate `skipped`/SkippedItem entries used when a candidate's own module.profile call fails) -- that pattern was simply never extended to cover the prompt-assembly step itself.",
+    "fixIntent": "Bound the candidate list (and/or the assembled prompt) that buildMessages renders for the codex judging subprocess so it never exceeds the CLI's 1,048,576-character input limit, for any capability.reuse-check call regardless of how many candidates concept.resolve returns. Record any candidates dropped to stay within the bound using the file's own existing completeness/ReachedLimit and skipped/SkippedItem reporting shapes (not a new reporting contract), so the synthesizer can still render an honest, partial verdict instead of the whole exploration failing outright."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/analyze/explore/capability-reuse-check.ts:390-430"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "~/.insrc/analyze/mcp-1795291492339-97nc8f/context/run-bundle.json",
+      "quotedText": "the candidate-judging codex subprocess exited with code 1. stderr=Reading prompt from stdin...\nError: turn/start: turn/start failed: Input exceeds the maximum length of 1048576 characters. (code -32602), data: {\"input_error_code\":\"input_too_large\",\"max_chars\":1048576,\"actual_chars\":2612130}"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/analyze/explore/capability-reuse-check.ts:282-283",
+      "quotedText": "Every distinct candidate the inner search found is checked. Its own limits, if it reached any, bound what they were drawn from."
+    }
+  ]
+}

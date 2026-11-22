@@ -1,6 +1,6 @@
 # Source release consumers — t6 implementation evidence
 
-Story `a03e99e17a364550/s1`, approved task t6. The public TUI/daemon/MCP integration cases and regression suites have passed; registered t6 validation is pending. BUILD approval remains deferred until the whole story is built and tested.
+Story `a03e99e17a364550/s1`, approved task t6. Registered t6 validation passed on commit `67a432d7f`; the public TUI/daemon/MCP integration cases and regression evidence are recorded below. BUILD approval remains deferred until the whole story is built and tested.
 
 ## Reuse and current wiring
 
@@ -85,3 +85,9 @@ The existing receipt case was moved unchanged into `src/daemon/__tests__/source-
 - Canonical run `43a6d84e-42a9-4e58-9fea-3173f0aebdba`: the corrected admission-failure case passed on arm64/x64. The name selector intentionally excluded the other already-passing transaction cases; it is not reported as a new full-suite pass.
 
 Registered validation with the focused receipt file is next. Production behavior is unchanged by this test-fixture extraction.
+
+## Registered t6 PASS
+
+The gate on `67a432d7f` persisted PASS at `2026-11-22T08:17:02.895Z`: clean typecheck; all three mapped cases passed, no skips/not-found cases. The required consumer file took 347.2 seconds and the focused receipt file 29 seconds, within the shared 600-second budget. The read-only verdict confirmed the routing, handoff and outcome-preservation acceptance checks. Both OrbStack fixture VMs were stopped after normal fixture cleanup. Tasks t1–t6 are validated; no partial human BUILD approval was requested.
+
+The MCP transport timed out after 300 seconds while the existing daemon request continued. Its eventual result was observed through the framework TESTS/BUILD/TASKS records; no duplicate request was submitted while that run remained active. The live installed daemon remained at `a30aa7f91` and was not rebuilt/upgraded by these development checks.

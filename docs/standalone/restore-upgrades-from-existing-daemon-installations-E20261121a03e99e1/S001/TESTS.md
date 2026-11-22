@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 17 pass, 0 fail, 0 skipped, 1 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 18 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -126,16 +126,14 @@ Run at 2026-11-22T05:02:13.772Z on commit `3b4af8ead`. Tests check: **passed**. 
 
 ## t6
 
-Run at 2026-11-22T07:54:52.210Z on commit `ca736d71b`. Tests check: **failed**. 2 pass, 0 fail, 0 skipped, 1 not found; 0 reported by the builder and not run by the gate.
-
-src/daemon/__tests__/source-update-transaction.test.ts: timed out after 261 s; the output of the run was not understood as TAP; named test cases that did not pass: not found: 'Source update receipts retain update results and expose recovery-required under exclusion' in src/daemon/__tests__/source-update-transaction.test.ts
+Run at 2026-11-22T08:15:57.731Z on commit `67a432d7f`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: TUI and detached daemon update survive handoff and expose final outcome**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
 | pass | TUI and detached daemon update survive handoff and expose final outcome | `scripts/__tests__/source-consumers-native.test.ts` |
-| not found | Source update receipts retain update results and expose recovery-required under exclusion | `src/daemon/__tests__/source-update-transaction.test.ts` |
+| pass | Source update receipts retain update results and expose recovery-required under exclusion | `src/daemon/__tests__/source-update-outcomes.test.ts` |
 
 **integration: MCP/start resolve source selection and reject malformed state**
 
@@ -147,5 +145,5 @@ src/daemon/__tests__/source-update-transaction.test.ts: timed out after 261 s; t
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `scripts/__tests__/source-consumers-native.test.ts` | 0 | 2 | 339.2 s |  |
-| `src/daemon/__tests__/source-update-transaction.test.ts` | timed out | 0 | 260.8 s | timed out after 261 s; the output of the run was not understood as TAP |
+| `scripts/__tests__/source-consumers-native.test.ts` | 0 | 2 | 347.2 s |  |
+| `src/daemon/__tests__/source-update-outcomes.test.ts` | 0 | 1 | 29 s |  |

@@ -25,7 +25,7 @@ export interface HostAdapterDeps {
   /** The host-owned-file seam the writers use. */
   fs: HostFileSystem;
   /** Resolver for the built insrc-mcp stdio entry (~/.insrc/daemon/scripts/insrc-mcp), or undefined. */
-  launchTarget: () => string | undefined;
+  launchTarget: () => string | undefined | Promise<string | undefined>;
   /** The tracked-workflow steering body; defaults to the extension-bundled canonical block (test seam). */
   steeringBody?: () => string;
 }
@@ -66,7 +66,7 @@ export function createHostAdapter(spec: HostSpec, deps: HostAdapterDeps): AiHost
     async wire(): Promise<void> {
       const { mcpConfigPath, steeringPath } = spec.resolveConfig();
       // mcp registration — skipped (steering-only) when the launch target is absent (k2).
-      const entry = composeMcpEntry(deps.launchTarget());
+      const entry = composeMcpEntry(await deps.launchTarget());
       if (entry !== undefined) {
         mcp.writeInsrcServer(mcpConfigPath, entry);
       }

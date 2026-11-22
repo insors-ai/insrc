@@ -10,23 +10,19 @@ import { promisify } from 'node:util';
 
 const exec = promisify(execFile);
 const installer = fileURLToPath(new URL('../../../scripts/insrc-daemon-install.sh', import.meta.url));
-const control = fileURLToPath(new URL('../../../scripts/daemon-ctl.sh', import.meta.url));
 
 const shim = async (dir: string, name: string, content: string) =>
 	writeFile(join(dir, name), `#!/bin/bash\nset -eu\n${content}\n`, { mode: 0o700 });
 
-const git = (args: string[], cwd?: string) => exec('git', args, cwd === undefined ? undefined : { cwd });
 
-test('Installer and updated CLI, VS Code and JetBrains route matrix', { timeout: 340_000 }, async t => {
+test('Current Mac installer authorizes the staged bridge and preserves the incumbent on denial', { timeout: 340_000 }, async t => {
 	const root = await realpath(await mkdtemp('/tmp/insrc-bridge-routing-'));
 	t.after(() => rm(root, { recursive: true, force: true }));
 
 	// -------------------------------------------------------------------------
-	// Part 1 — the raw installer's own signed macOS upgrade bridge, UNCHANGED:
-	// it still migrates an unmanaged existing checkout on Darwin, and still
-	// refuses cleanly when the bridge's own authorization is denied. This
-	// Story never touched scripts/insrc-daemon-install.sh, only the THREE
-	// callers that used to re-exec into it for a plain `update`.
+	// The real installer dispatches only an independently authorized bridge.
+	// Command shims isolate this routing check; actual native/data qualification
+	// lives in historical-macos-upgrade-native.test.ts.
 	// -------------------------------------------------------------------------
 	const home = join(root, 'home');
 	const checkout = join(home, '.insrc/daemon');
@@ -93,119 +89,42 @@ exit 45`);
 		{ env: bridgeEnv, cwd: root, timeout: 12_000 }), /macOS upgrade bridge authorization failed/);
 	await requireRefusal();
 
-	// -------------------------------------------------------------------------
-	// Part 2 — the fix: daemon-ctl.sh update, VS Code's controller.run('update')
-	// and JetBrains' DaemonLifecycleCommandRunner no longer pre-empt into the
-	// signed bridge for an unmanaged (plain git-clone) install — they now run a
-	// plain git-fetch + npm-install + npm-build update directly, needing no
-	// signing at all. Exercised against a REAL local origin + real git (the
-	// bridge fixture's git is faked and only understands the handful of
-	// subcommands the bridge itself issues), with only `uname` and `npm`
-	// shimmed — `npm` to keep this fast, `uname` to force Darwin for
-	// CI-portability. `node` is shimmed too: daemon-ctl.sh resolves a `node`
-	// on PATH unconditionally for every command, even though the plain update
-	// path never actually invokes it.
-	// -------------------------------------------------------------------------
-	const plainRoot = join(root, 'plain');
-	const plainTools = join(plainRoot, 'bin');
-	await mkdir(plainTools, { recursive: true });
-	const plainTrace = join(plainRoot, 'trace');
-	await shim(plainTools, 'uname', 'printf "Darwin\\n"');
-	await shim(plainTools, 'node', `if [ "\${1##*/}" = npm ]; then shift; exec '${join(plainTools, 'npm')}' "$@"; fi\nexit 0`);
-	await shim(plainTools, 'npm', 'printf "npm:%s\\n" "$1" >> "$INSRC_TEST_TRACE"');
-	const plainEnv = (surfaceHome: string) => ({ ...process.env, HOME: surfaceHome, TMPDIR: plainRoot,
-		PATH: `${plainTools}:/usr/bin:/bin`, INSRC_CTL_LOG_DIR: plainRoot, INSRC_TEST_TRACE: plainTrace });
+});
 
-	const commit = async (dir: string, message: string) => {
-		await git(['add', '-A'], dir);
-		await git(['-c', 'user.email=t@insrc.test', '-c', 'user.name=t', 'commit', '-m', message], dir);
-		await git(['push', 'origin', 'HEAD:main'], dir);
-	};
-	const originRepo = join(plainRoot, 'origin.git');
-	await git(['init', '--bare', '--initial-branch=main', originRepo]);
-	const seed = join(plainRoot, 'seed');
-	await git(['clone', '--quiet', originRepo, seed]);
-	await mkdir(join(seed, 'src'), { recursive: true });
-	await mkdir(join(seed, 'scripts'), { recursive: true });
-	await writeFile(join(seed, 'package.json'), '{"name":"insrc-daemon-fixture"}\n');
-	await writeFile(join(seed, 'package-lock.json'), '{"lockfileVersion":3}\n');
-	await writeFile(join(seed, 'src/index.js'), 'v1\n');
-	await copyFile(control, join(seed, 'scripts/daemon-ctl.sh'));
-	await writeFile(join(seed, 'scripts/node-runtime-env.sh'), `insrc_source_toolchain() { NODE_BIN='${join(plainTools, 'node')}'; NPM_CLI='${join(plainTools, 'npm')}'; TOOLCHAIN_ID=fixture; }\n`);
-	await commit(seed, 'v1');
 
-	const freshCheckout = async (name: string) => {
-		const surfaceHome = join(plainRoot, name);
-		await mkdir(join(surfaceHome, '.insrc'), { recursive: true });
-		const surfaceCheckout = join(surfaceHome, '.insrc/daemon');
-		await git(['clone', '--quiet', originRepo, surfaceCheckout]);
-		return { home: surfaceHome, checkout: surfaceCheckout };
-	};
-	const ctlSurface = await freshCheckout('daemon-ctl');
-	const vscodeSurface = await freshCheckout('vscode');
-	const jetbrainsSurface = await freshCheckout('jetbrains');
-
-	await writeFile(join(seed, 'src/index.js'), 'v2\n');
-	await commit(seed, 'v2');
-	const head2 = (await git(['rev-parse', 'HEAD'], seed)).stdout.trim();
-
-	const requirePlainUpdate = async (surfaceCheckout: string) => {
-		assert.equal((await git(['rev-parse', 'HEAD'], surfaceCheckout)).stdout.trim(), head2,
-			'a real git fetch + fast-forward merge actually ran');
-		const events = (await readFile(plainTrace, 'utf8')).trim();
-		assert.doesNotMatch(events, /authorize|controller:|npm:ci\b/,
-			'no signed-bridge trace event fires for a plain update');
-		assert.match(events, /npm:install/, 'npm install ran');
-		assert.match(events, /npm:run/, 'npm run build ran');
-	};
-
-	await writeFile(plainTrace, '');
-	await exec('/bin/bash', [join(ctlSurface.checkout, 'scripts/daemon-ctl.sh'), 'update'], { env: plainEnv(ctlSurface.home), cwd: plainRoot, timeout: 30_000 });
-	await requirePlainUpdate(ctlSurface.checkout);
-
-	const vscodeController = new URL('../../../vscode-plugin/src/daemon/controller.ts', import.meta.url).href;
-	const vscodeSubprocess = new URL('../../../vscode-plugin/src/daemon/subprocess.ts', import.meta.url).href;
-	const { createDaemonLifecycleController } = await import(vscodeController);
-	const { defaultSubprocessRunner } = await import(vscodeSubprocess);
-	const controller = createDaemonLifecycleController({
-		paths: { daemonRoot: vscodeSurface.checkout, bundledInstaller: routedInstaller,
-			daemonEntry: join(vscodeSurface.checkout, 'out/daemon/index.js'),
-			ctlScript: join(vscodeSurface.checkout, 'scripts/daemon-ctl.sh'), managedStateRoot: join(vscodeSurface.home, '.insrc') },
-		runner: { run: (argv: readonly string[]) => defaultSubprocessRunner.run(argv, { env: plainEnv(vscodeSurface.home), cwd: plainRoot }) },
-		client: { reachability: async () => 'running' },
-	});
-	await writeFile(plainTrace, '');
-	assert.deepEqual(await controller.run('update'), { ok: true, state: 'running' });
-	await requirePlainUpdate(vscodeSurface.checkout);
-
-	// controller.ts's unrelated candidate-script selection still works after
-	// the pre-emption removal: once a managed selector appears, run('update')
-	// picks the SELECTED release's own ctl script instead of the original
-	// checkout's — pure path-selection, exercised with a no-op stub so it
-	// needs no git/npm at all.
-	const candidate = join(vscodeSurface.home, 'selected');
-	const candidateCtl = join(candidate, 'scripts', 'daemon-ctl.sh');
-	await mkdir(join(candidate, 'scripts'), { recursive: true });
-	await writeFile(candidateCtl, '#!/bin/sh\n', { mode: 0o700 });
-	await mkdir(join(candidate, 'out', 'daemon'), { recursive: true });
-	await writeFile(join(candidate, 'out', 'daemon', 'index.js'), '');
-	await mkdir(join(vscodeSurface.home, '.insrc', 'managed-lifecycle'), { recursive: true, mode: 0o700 });
-	await writeFile(join(vscodeSurface.home, '.insrc', 'managed-lifecycle', 'installation.json'), JSON.stringify({
-		version: 1, stateRoot: join(vscodeSurface.home, '.insrc'), releaseRoot: candidate, releaseId: 'candidate',
-		runtime: process.execPath, pathEnv: '/usr/bin', enabled: true,
-	}), { mode: 0o600 });
-	await writeFile(plainTrace, '');
-	assert.deepEqual(await controller.run('update'), { ok: true, state: 'running' });
-	assert.equal((await readFile(plainTrace, 'utf8')).trim(), '',
-		'the trivial candidate stub ran instead of the checkout\'s real daemon-ctl.sh (no git/npm activity)');
-
-	const jetbrains = new URL('../../../jetbrains-plugin/test-bridge/run-focused-junit.ts', import.meta.url).href;
-	const { runFocusedJUnit } = await import(jetbrains);
-	await writeFile(plainTrace, '');
-	await runFocusedJUnit(['ai.insors.insrc.jetbrains.lifecycle.DaemonLifecycleCommandRunnerTest'], {
-		...process.env, INSRC_ROUTE_MATRIX_HOME: jetbrainsSurface.home, INSRC_ROUTE_MATRIX_PATH: plainEnv(jetbrainsSurface.home).PATH,
-		INSRC_ROUTE_MATRIX_TMP: plainRoot, INSRC_ROUTE_MATRIX_TRACE: plainTrace,
-		INSRC_ROUTE_MATRIX_INSTALLER: routedInstaller, INSRC_ROUTE_MATRIX_EXPECTED: 'ok',
-	});
-	await requirePlainUpdate(jetbrainsSurface.checkout);
+test('Updated VS Code uses its bundled installer for unmanaged and managed updates and preserves failures', async t => {
+ const root = await realpath(await mkdtemp('/tmp/insrc-current-route-'));
+ t.after(() => rm(root, { recursive: true, force: true }));
+ const checkout = join(root, 'legacy'), selected = join(root, 'selected'), state = join(root, 'state');
+ const bundledInstaller = join(root, 'current-installer.sh'), trace = join(root, 'trace'), forbidden = join(root, 'old-ctl-used'), deny = join(root, 'deny');
+ for (const path of [checkout, selected]) {
+  await mkdir(join(path, 'scripts'), { recursive: true });
+  await mkdir(join(path, 'out/daemon'), { recursive: true });
+  await writeFile(join(path, 'out/daemon/index.js'), 'retained daemon');
+  await writeFile(join(path, 'scripts/daemon-ctl.sh'), `#!/bin/sh\ntouch '${forbidden}'\nexit 66\n`, { mode: 0o700 });
+ }
+ await writeFile(bundledInstaller, `#!/bin/sh\nprintf '%s\n' "$@" > '${trace}'\nif [ -e '${deny}' ]; then echo 'source issuer rejected this release'; exit 4; fi\n`, { mode: 0o700 });
+ const { createDaemonLifecycleController } = await import(new URL('../../../vscode-plugin/src/daemon/controller.ts', import.meta.url).href);
+ const { defaultSubprocessRunner } = await import(new URL('../../../vscode-plugin/src/daemon/subprocess.ts', import.meta.url).href);
+ const controller = createDaemonLifecycleController({
+  paths: { daemonRoot: checkout, bundledInstaller, daemonEntry: join(checkout, 'out/daemon/index.js'), ctlScript: join(checkout, 'scripts/daemon-ctl.sh'), managedStateRoot: state },
+  runner: { run: (argv: readonly string[]) => defaultSubprocessRunner.run(argv, { cwd: root }) },
+  client: { reachability: async () => 'running' },
+ });
+ for (const managed of [false, true]) {
+  if (managed) {
+   await mkdir(join(state, 'managed-lifecycle'), { recursive: true, mode: 0o700 });
+   await writeFile(join(state, 'managed-lifecycle/installation.json'), JSON.stringify({ version: 1, stateRoot: state, releaseRoot: selected, releaseId: 'selected', runtime: process.execPath, pathEnv: '/usr/bin:/bin', enabled: true }), { mode: 0o600 });
+  }
+  assert.deepEqual(await controller.run('update'), { ok: true, state: 'running' });
+  assert.deepEqual((await readFile(trace, 'utf8')).trim().split('\n'), ['-y', '--target', checkout, '--migrate-runtime', '--no-start']);
+  await assert.rejects(readFile(forbidden), { code: 'ENOENT' });
+  await writeFile(deny, 'deny');
+  const refused = await controller.run('update');
+  assert.equal(refused.ok, false); assert.equal(refused.state, 'errored');
+  assert.match(refused.message, /source issuer rejected/);
+  assert.equal(await readFile(join(checkout, 'out/daemon/index.js'), 'utf8'), 'retained daemon');
+  await assert.rejects(readFile(forbidden), { code: 'ENOENT' });
+  await rm(deny);
+ }
 });

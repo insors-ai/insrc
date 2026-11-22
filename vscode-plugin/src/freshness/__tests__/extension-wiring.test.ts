@@ -51,7 +51,7 @@ test('extension.ts wires gitLsRemote to a child_process git ls-remote (no pull, 
   assert.match(src, /execFile\('git',\s*\['-C',\s*checkout,\s*'ls-remote',\s*'--',\s*configured\.repoUrl \?\? 'origin',\s*configured\.branch \?\? branch\]/);
 });
 
-test('extension.ts routes only unmanaged macOS freshness through the installer bridge', () => {
+test('extension.ts routes freshness through the independently packaged installer', () => {
   const src = extensionSource();
   // Extract exactly the runDaemonFreshnessCheck({ ... }); deps block and assert on
   // its contents (not the whole file), so the k2 check is scoped to the flow wiring.
@@ -59,7 +59,7 @@ test('extension.ts routes only unmanaged macOS freshness through the installer b
   assert.ok(block, 'the runDaemonFreshnessCheck({ ... }); block is present');
   const depsBlock = block![1]!;
   assert.match(depsBlock, /(^|\W)client,/, 'the freshness deps pass the shared ipc client');
-  assert.match(depsBlock, /upgradeLegacy: async \(\) => paths\.managedStateRoot !== undefined && await selectedDaemonRoot\(paths\) === undefined\s+\? controller\.run\('update'\) : undefined/);
+  assert.match(depsBlock, /upgradeLegacy: async \(\) => controller\.run\('update'\)/);
 });
 
 test('extension.ts wires the reloadWindow seam to workbench.action.reloadWindow (S001 post-update nudge)', () => {

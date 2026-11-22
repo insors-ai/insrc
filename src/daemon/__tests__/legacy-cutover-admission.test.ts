@@ -232,6 +232,30 @@ await db.close();
 	assert.ok((await readFile(graph)).length > 0);
 });
 
+test('Generated migration launchers clear Node injection before the pinned interpreter and recover older fences', options, async t => {
+	const f = await fixture(t);
+	await mkdir(join(f.candidate.releaseRoot, 'out/bin'), { recursive: true });
+	await writeFile(join(f.candidate.releaseRoot, 'out/bin/insrc-daemon-control.js'),
+		`process.stdout.write(JSON.stringify({args:process.argv.slice(2),options:process.env.NODE_OPTIONS??null,nodePath:process.env.NODE_PATH??null,executable:process.execPath}));`);
+	const update = await f.gate.reserve({ kind: 'update', owner: f.owner,
+		predecessor: { ...f.predecessor, pins: { prior: f.prior, candidate: f.candidate }, launch: { kind: 'stopped' } },
+	}) as Extract<MutationReservation, { kind: 'update' }>;
+	const first = await fenceLegacyLauncher(f.gate, update, f.helper);
+	for (const name of ['daemon-ctl.sh', 'insrc', 'insrc-mcp', 'insrc-daemon-install.sh']) {
+		const output = execFileSync('/bin/bash', [join(f.oldRoot, 'scripts', name), 'probe'], {
+			env: { ...process.env, PATH: '/usr/bin:/bin', NODE_OPTIONS: '--invalid-migration-launcher-injection', NODE_PATH: '/untrusted/injection' },
+			encoding: 'utf8', timeout: 10_000,
+		});
+		assert.deepEqual(JSON.parse(output), { args: ['dispatch', f.stateRoot, name, 'probe'], options: null, nodePath: null, executable: f.runtime });
+	}
+	// An interrupted transaction made by the earlier producer remains recoverable;
+	// accepting its exact known form does not make new fences emit that form.
+	const path = join(f.oldRoot, 'scripts/daemon-ctl.sh');
+	await writeFile(path, (await readFile(path, 'utf8')).replace('unset NODE_OPTIONS NODE_PATH\n', ''));
+	assert.equal((await fenceLegacyLauncher(f.gate, update, f.helper)).archive, first.archive);
+	await restoreLegacyLauncher(f.gate, update, f.helper);
+});
+
 test('Legacy cutover admits only the verified tsx esbuild child and waits for its exit', options, async t => {
 	const f = await fixture(t);
 	const packageName = `@esbuild/darwin-${process.arch}`;

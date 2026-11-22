@@ -14,7 +14,7 @@ export interface SubprocessOptions {
 
 export interface SubprocessRunner {
   /** Spawn `command` (argv) and resolve its exit code. Never rejects. */
-  run(command: readonly string[], opts?: SubprocessOptions): Promise<{ code: number }>;
+  run(command: readonly string[], opts?: SubprocessOptions): Promise<{ code: number; output?: string }>;
 }
 
 /** A non-zero sentinel used when the child cannot be spawned at all. */
@@ -27,7 +27,7 @@ const SPAWN_FAILURE_CODE = 127;
  */
 export const defaultSubprocessRunner: SubprocessRunner = {
   run(command, opts) {
-    return new Promise<{ code: number }>((resolve) => {
+    return new Promise<{ code: number; output?: string }>((resolve) => {
       const [cmd, ...args] = command;
       if (cmd === undefined) {
         resolve({ code: SPAWN_FAILURE_CODE });
@@ -38,13 +38,16 @@ export const defaultSubprocessRunner: SubprocessRunner = {
       const child = spawn(cmd, args, {
         env,
         ...(opts?.cwd !== undefined ? { cwd: opts.cwd } : {}),
-        stdio: 'ignore',
+        stdio: ['ignore', 'pipe', 'pipe'],
       });
+      let output = '';
+      const capture = (chunk: Buffer): void => { output = (output + chunk.toString('utf8')).slice(-8192); };
+      child.stdout?.on('data', capture); child.stderr?.on('data', capture);
       let settled = false;
       const finish = (code: number): void => {
         if (settled) return;
         settled = true;
-        resolve({ code });
+        resolve({ code, output });
       };
       child.on('error', () => finish(SPAWN_FAILURE_CODE));
       child.on('close', (code) => finish(code ?? SPAWN_FAILURE_CODE));

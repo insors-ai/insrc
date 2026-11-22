@@ -40,7 +40,7 @@ class DaemonLifecycleCommandRunnerTest {
         val runner = RecordingRunner(exit = 0)
         val result = DaemonLifecycleCommandRunner(runner, locator(script), noNode, emptyMap()).run(LifecycleCommand.START)
 
-        assertEquals(listOf("/bin/bash", script.toString(), "start"), runner.lastSpec?.command)
+        assertEquals(listOf("/bin/bash", script.toString(), "start", "--skip-sync", "--skip-install", "--skip-build"), runner.lastSpec?.command)
         assertTrue(result is DaemonActionResult.Ok)
     }
 
@@ -54,56 +54,28 @@ class DaemonLifecycleCommandRunnerTest {
         )) {
             val runner = RecordingRunner(exit = 0)
             DaemonLifecycleCommandRunner(runner, locator(script), noNode, emptyMap()).run(cmd)
-            assertEquals(sub, runner.lastSpec?.command?.last())
+            if (cmd == LifecycleCommand.UPDATE) assertTrue(runner.lastSpec!!.command.containsAll(listOf("--migrate-runtime", "--no-start")))
+            else assertEquals(sub, runner.lastSpec?.command?.get(2))
         }
     }
 
     @Test
-    fun `update always invokes the resolved daemon-ctl_sh directly, both before and after migrating to a managed release`() {
-        val matrixHome = System.getenv("INSRC_ROUTE_MATRIX_HOME")
-        if (matrixHome != null) {
-            val home = Path.of(matrixHome)
-            val fixture = Path.of(System.getenv("INSRC_ROUTE_MATRIX_INSTALLER"))
-            val locator = DefaultDaemonScriptLocator(homeDir = home, macOS = true, daemonRootOverride = null,
-                bundledInstaller = { Files.newInputStream(fixture) })
-            val env = System.getenv() + mapOf(
-                "HOME" to matrixHome,
-                "PATH" to System.getenv("INSRC_ROUTE_MATRIX_PATH"),
-                "TMPDIR" to System.getenv("INSRC_ROUTE_MATRIX_TMP"),
-                "INSRC_TEST_TRACE" to System.getenv("INSRC_ROUTE_MATRIX_TRACE"),
-            )
-            val result = DaemonLifecycleCommandRunner(ScriptDaemonProvisioner.ProcessBuilderRunner(), locator, noNode, env)
-                .run(LifecycleCommand.UPDATE)
-            assertEquals(System.getenv("INSRC_ROUTE_MATRIX_EXPECTED") == "ok", result is DaemonActionResult.Ok)
-        }
-        val home = Files.createTempDirectory("insrc-legacy-locator").toRealPath()
+    fun `updates require the current bundled installer even with an old controller present`() {
+        val home = Files.createTempDirectory("insrc-current-installer").toRealPath()
         try {
-            val legacy = home.resolve("legacy")
-            val oldCtl = legacy.resolve("scripts/daemon-ctl.sh")
-            Files.createDirectories(oldCtl.parent)
-            Files.writeString(oldCtl, "old controller")
-            val locator = DefaultDaemonScriptLocator(homeDir = home, bundledInstaller = { null },
-                macOS = true, daemonRootOverride = legacy.toString())
+            val old = home.resolve(".insrc/daemon/scripts/daemon-ctl.sh")
+            Files.createDirectories(old.parent)
+            Files.writeString(old, "exit 91")
+            val installer = tempScript()
+            val locator = DefaultDaemonScriptLocator(homeDir = home, daemonRootOverride = null,
+                bundledInstaller = { Files.newInputStream(installer) })
             val runner = RecordingRunner(0)
-            val controller = DaemonLifecycleCommandRunner(runner, locator, noNode, emptyMap())
-            // Before migration (no managed-lifecycle/installation.json yet): daemon-ctl.sh
-            // itself routes managed vs. unmanaged safely, so UPDATE never pre-empts into the
-            // bundled installer — it spawns the legacy checkout's OWN daemon-ctl.sh directly.
-            assertTrue(controller.run(LifecycleCommand.UPDATE) is DaemonActionResult.Ok)
-            assertEquals(listOf("/bin/bash", oldCtl.toString(), "update"), runner.lastSpec?.command)
-
-            val state = home.resolve(".insrc")
-            val selector = state.resolve("managed-lifecycle/installation.json")
-            val release = home.resolve("selected")
-            val entry = release.resolve("out/daemon/index.js")
-            val script = release.resolve("scripts/daemon-ctl.sh")
-            for (path in listOf(selector, entry, script)) Files.createDirectories(path.parent)
-            Files.writeString(entry, "selected daemon")
-            Files.writeString(script, "selected controller")
-            Files.writeString(selector, """{"version":1,"stateRoot":"$state","enabled":true,"releaseRoot":"$release"}""")
-            assertTrue(controller.run(LifecycleCommand.UPDATE) is DaemonActionResult.Ok)
-            assertEquals(listOf("/bin/bash", script.toString(), "update"), runner.lastSpec?.command)
-            assertEquals("1", runner.lastSpec?.env?.get("INSRC_DAEMON_UPDATE_WAIT"))
+            assertTrue(DaemonLifecycleCommandRunner(runner, locator, noNode, emptyMap()).run(LifecycleCommand.UPDATE) is DaemonActionResult.Ok)
+            assertTrue(runner.lastSpec!!.command.contains("--migrate-runtime"))
+            assertTrue(runner.lastSpec!!.command.contains(home.resolve(".insrc/daemon").toString()))
+            assertTrue(runner.lastSpec!!.command[1] != old.toString())
+            val missing = DefaultDaemonScriptLocator(homeDir = home, bundledInstaller = { null }, daemonRootOverride = null)
+            assertTrue(DaemonLifecycleCommandRunner(runner, missing, noNode, emptyMap()).run(LifecycleCommand.UPDATE) is DaemonActionResult.Failed)
         } finally { home.toFile().deleteRecursively() }
     }
 

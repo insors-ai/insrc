@@ -41,7 +41,7 @@ fun interface NodeRuntimeResolver {
 
 /**
  * Delegates install/update to the existing backend tooling (Story S003 / t6):
- * INSTALL -> insrc-daemon-install.sh, UPDATE -> daemon-ctl.sh update, run under
+ * INSTALL and UPDATE -> the current packaged insrc-daemon-install.sh, run under
  * the resolved [NodeRuntime]. Captures the outcome (never reproduces the
  * installer's clone/build logic — lc1/k5).
  */

@@ -2,7 +2,8 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, realpathSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { TestContext } from 'node:test';
 import policy from '../../../assets/node-runtime-policy.json' with { type: 'json' };
@@ -13,7 +14,7 @@ export async function sourceLinux(t: TestContext, file: string, project: string,
  if (process.platform === 'linux') { await run(); return; }
  assert.equal(process.platform, 'darwin', 'these tests require Linux or the known OrbStack fixtures');
  const inventory = JSON.parse(execFileSync('orb', ['list', '--format=json'], { encoding: 'utf8' })) as Array<{ name: string; state: string }>;
- const stage = mkdtempSync(join(project, '.insrc/tmp/source-transaction-linux-'));
+ const stage = realpathSync(mkdtempSync(join(tmpdir(), 'insrc-source-transaction-linux-')));
  const bundle = join(stage, 'tests.mjs');
  const { buildSync } = await import('esbuild');
  buildSync({ entryPoints: [file], outfile: bundle, bundle: true, platform: 'node', format: 'esm', packages: 'external', logLevel: 'silent' });

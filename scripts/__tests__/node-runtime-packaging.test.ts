@@ -5,11 +5,16 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import test from 'node:test';
 import { gunzipSync } from 'node:zlib';
-import { NODE_RUNTIME_ASSETS, assertPackagedRuntimeAssets, packageNodeRuntimeInstaller } from '../node-runtime-assets.mjs';
+import { NODE_RUNTIME_ASSETS, assertPackagedRuntimeAssets, assertPackagedSourceBootstrap, packageNodeRuntimeInstaller } from '../node-runtime-assets.mjs';
 import { composeMcpEntry } from '../../vscode-plugin/src/hosts/mcp-writer.js';
 import { archive, nativeOptions, ownedSourceFixture } from './helpers/owned-source-fixture.js';
 
 const source=readFileSync(resolve('scripts/insrc-daemon-install.sh'),'utf8');
+test('qualified IDE payload refuses development installers without release authority',()=>{
+ assert.throws(()=>assertPackagedSourceBootstrap(packageNodeRuntimeInstaller(source)),/authenticated release bootstrap/);
+ const bogus=source.replace("INSRC_RELEASE_BOOTSTRAP_B64=''",`INSRC_RELEASE_BOOTSTRAP_B64='${Buffer.from('missing public authority').toString('base64')}'`);
+ assert.throws(()=>assertPackagedSourceBootstrap(packageNodeRuntimeInstaller(bogus)),/public authority/);
+});
 test('packaged installer embeds exactly the canonical shared runtime assets and detects drift',()=>{
  const packaged=packageNodeRuntimeInstaller(source);
  assertPackagedRuntimeAssets(packaged);

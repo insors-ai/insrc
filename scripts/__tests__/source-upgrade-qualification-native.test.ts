@@ -105,7 +105,8 @@ test('Linux source promotion requires target-specific historical upgrade evidenc
 	git(origin, 'add', '.'); git(origin, 'commit', '-qm', 'candidate');
 	const commit = git(origin, 'rev-parse', 'HEAD'), tree = git(origin, 'rev-parse', 'HEAD^{tree}');
 	const { key } = await authority(root);
-	const names = ['historical-upgrade', 'migrated-update', 'guarded-rollback', 'restored-retry', 'full-regression'];
+	const names = ['historical-upgrade', 'migrated-update', 'guarded-rollback', 'restored-retry', 'full-regression',
+   'source-selection-shell', 'source-selection-cli-daemon-mcp', 'source-selection-vscode', 'source-selection-jetbrains'];
 	for (const target of ['linux-arm64', 'linux-x64']) {
 		const evidenceFile = join(root, target + '.json'), output = join(root, target + '-installer.sh');
 		const checks = [];

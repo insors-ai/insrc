@@ -141,7 +141,8 @@ sourceSets.named("test") {
 val bundleBackendAssets by tasks.registering(Exec::class) {
     workingDir(rootProject.projectDir)
     commandLine("node", "../scripts/sync-client-runtime-assets.mjs", "jetbrains")
-    inputs.files(fileTree("../scripts") { include("*node-runtime*", "provision-node-runtime.sh", "insrc-daemon-install.sh", "sync-client-runtime-assets.mjs") })
+    inputs.files(fileTree("../scripts") { include("*node-runtime*", "provision-node-runtime.sh", "source-selection-env.sh", "insrc-daemon-install.sh", "sync-client-runtime-assets.mjs") })
+    inputs.property("qualifiedUpgradeChannel", providers.environmentVariable("INSRC_QUALIFIED_UPGRADE_CHANNEL").orElse("0"))
     inputs.file("../src/assets/node-runtime-policy.json")
     inputs.file("../src/prompts/steering-block.md")
     providers.environmentVariable("INSRC_PACKAGED_INSTALLER").orNull?.let { inputs.file(it) }

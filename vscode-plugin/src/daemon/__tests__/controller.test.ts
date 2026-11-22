@@ -13,6 +13,7 @@ import { dirname } from 'node:path';
 import { createDaemonLifecycleController, type LifecycleAction } from '../controller.js';
 import type { SubprocessRunner } from '../subprocess.js';
 import type { DaemonPaths } from '../paths.js';
+import { selectedDaemonRoot, selectedMcpRoot } from '../paths.js';
 import type { IpcClient, DaemonReachability, DaemonStatus } from '../../../../src/shared/ipc-client.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -54,17 +55,17 @@ test('run(action) spawns bash <ctlScript> <action> for each lifecycle action and
     const runner = new FakeRunner(0);
     // update⇒stopped: reachability is the source of truth even when the exit code is 0.
     const reach: DaemonReachability = action === 'update' ? 'stopped' : 'running';
-    const ctl = createDaemonLifecycleController({ runner, paths: fixturePaths({ ctl: true }), client: fakeClient(reach) });
+    const ctl = createDaemonLifecycleController({ runner, paths: fixturePaths({ ctl: true, installer: true }), client: fakeClient(reach) });
     const result = await ctl.run(action);
     assert.equal(runner.calls.length, 1);
     assert.equal(runner.calls[0]![0], '/bin/bash');
-    assert.equal(runner.calls[0]![2], action);
+    assert.equal(runner.calls[0]![2], action === 'update' ? '-y' : action);
     assert.equal(result.ok, true);
     assert.equal(result.state, reach, `${action} reflects the real reachability`);
   }
 });
 
-test('run(\'update\') always spawns daemon-ctl.sh update — for an unmanaged-but-present install and for a managed one after migration', {
+test('run(\'update\') uses the current installer — for an unmanaged-but-present install and for a managed one after migration', {
   skip: process.platform !== 'darwin',
 }, async t => {
   const paths = fixturePaths({ ctl: true, entry: true, installer: true });
@@ -73,11 +74,9 @@ test('run(\'update\') always spawns daemon-ctl.sh update — for an unmanaged-bu
   paths.managedStateRoot = root;
   const runner = new FakeRunner(0);
   const ctl = createDaemonLifecycleController({ runner, paths, client: fakeClient('stopped') });
-  // Unmanaged-but-present (no managed-lifecycle/installation.json yet): daemon-ctl.sh
-  // itself now routes managed vs. unmanaged safely, so run('update') never pre-empts
-  // into the bundled signed installer — it always spawns the resolved ctl script.
+  // Both source states use the packaged current installer.
   assert.deepEqual(await ctl.run('update'), { ok: true, state: 'stopped' });
-  assert.deepEqual(runner.calls[0], ['/bin/bash', paths.ctlScript, 'update']);
+  assert.deepEqual(runner.calls[0], ['/bin/bash', paths.bundledInstaller, '-y', '--target', paths.daemonRoot, '--migrate-runtime', '--no-start']);
   const candidate = join(root, 'selected');
   const ctlScript = join(candidate, 'scripts', 'daemon-ctl.sh');
   mkdirSync(dirname(ctlScript), { recursive: true });
@@ -91,7 +90,28 @@ test('run(\'update\') always spawns daemon-ctl.sh update — for an unmanaged-bu
   rmSync(paths.daemonEntry);
   assert.equal(await ctl.isInstalled(), true);
   assert.deepEqual(await ctl.run('update'), { ok: true, state: 'stopped' });
-  assert.deepEqual(runner.calls[1], ['/bin/bash', ctlScript, 'update']);
+  assert.deepEqual(runner.calls[1], ['/bin/bash', paths.bundledInstaller, '-y', '--target', paths.daemonRoot, '--migrate-runtime', '--no-start']);
+  assert.deepEqual(await ctl.run('restart'), { ok: true, state: 'stopped' });
+  assert.deepEqual(runner.calls[2], ['/bin/bash', ctlScript, 'restart', '--skip-sync', '--skip-install', '--skip-build']);
+  assert.equal(await selectedMcpRoot(paths), candidate);
+});
+
+test('source adapter keeps the current MCP wrapper after rollback and refuses an invalid query', async t => {
+  const paths = fixturePaths({ ctl: true, entry: true, installer: true });
+  t.after(() => rmSync(paths.daemonRoot, { recursive: true, force: true }));
+  paths.sourceStateRoot = join(paths.daemonRoot, 'state');
+  mkdirSync(join(paths.sourceStateRoot, 'source-lifecycle'), { recursive: true });
+  writeFileSync(join(paths.sourceStateRoot, 'source-lifecycle/journal.json'), 'opaque to the editor');
+  const prior = join(paths.daemonRoot, 'qualified-prior'), manager = join(paths.daemonRoot, 'current-owner');
+  writeFileSync(paths.bundledInstaller, `test "$1" = --print-source-route || exit 91\nprintf '%s' '${JSON.stringify({launchRoot:prior, controlRoot:manager})}'`);
+  assert.equal(await selectedDaemonRoot(paths), prior);
+  assert.equal(await selectedMcpRoot(paths), manager);
+  writeFileSync(paths.bundledInstaller, "printf '{malformed'");
+  await assert.rejects(() => selectedMcpRoot(paths));
+  const runner = new FakeRunner(0);
+  const result = await createDaemonLifecycleController({runner, paths, client:fakeClient('stopped')}).run('restart');
+  assert.equal(result.ok, false);
+  assert.equal(runner.calls.length, 0, 'invalid selection must never execute the old controller');
 });
 
 test('run(action) maps EACH ctl exit code 1/2/3/4 to its documented reason and never throws', async () => {
@@ -125,7 +145,8 @@ test('install() spawns bash <bundledInstaller> -y; exit 0 → reachability; code
   const ctlOk = createDaemonLifecycleController({ runner: ok, paths: fixturePaths({ installer: true }), client: fakeClient('running') });
   const okRes = await ctlOk.install();
   assert.deepEqual(ok.calls[0]!.slice(0, 1), ['/bin/bash']);
-  assert.equal(ok.calls[0]!.at(-1), '-y');
+  assert.equal(ok.calls[0]![2], '-y');
+  assert.equal(ok.calls[0]![3], '--target');
   assert.equal(okRes.ok, true);
   assert.equal(okRes.state, 'running');
 
@@ -156,7 +177,7 @@ test('isInstalled() is true iff the compiled daemon entry exists, false for a cl
 
 test('source-scan: vscode-plugin/src/daemon/ imports only node builtins + the shared ipc-client + the s1 surfaces (k5)', () => {
   const files = ['subprocess.ts', 'paths.ts', 'controller.ts', 'commands.ts'];
-  const allowedNode = new Set(['node:child_process', 'node:fs', 'node:os', 'node:path']);
+  const allowedNode = new Set(['node:child_process', 'node:fs', 'node:os', 'node:path', 'node:fs/promises', 'node:util']);
   for (const f of files) {
     const src = readFileSync(join(DAEMON_SRC, f), 'utf8');
     assert.doesNotMatch(src, /https?:\/\//, `${f} opens no cloud/HTTP path`);
@@ -176,18 +197,18 @@ test('source-scan: vscode-plugin/src/daemon/ imports only node builtins + the sh
   }
 });
 
-test('a plain start runs daemon-ctl.sh start with --skip-sync, --skip-install and --skip-build, and a run without options builds the same command line as before', async () => {
+test('a plain start runs daemon-ctl.sh start with --skip-sync, --skip-install and --skip-build, and all start/restart variants avoid incumbent builds', async () => {
   const runner = new FakeRunner(0);
   const ctl = createDaemonLifecycleController({ runner, paths: fixturePaths({ ctl: true }), client: fakeClient('running') });
   const plain = await ctl.run('start', { plain: true });
   assert.equal(plain.ok, true);
   const ctlScript = runner.calls[0]![1]!;
   assert.deepEqual(runner.calls[0], ['/bin/bash', ctlScript, 'start', '--skip-sync', '--skip-install', '--skip-build']);
-  // Without options, or with plain off, the command is what it always was.
+  // Every start/restart is a pure lifecycle action, including callers with old options.
   await ctl.run('start');
   await ctl.run('start', {});
   await ctl.run('restart', { plain: false });
-  assert.deepEqual(runner.calls[1], ['/bin/bash', ctlScript, 'start']);
-  assert.deepEqual(runner.calls[2], ['/bin/bash', ctlScript, 'start']);
-  assert.deepEqual(runner.calls[3], ['/bin/bash', ctlScript, 'restart']);
+  assert.deepEqual(runner.calls[1], ['/bin/bash', ctlScript, 'start', '--skip-sync', '--skip-install', '--skip-build']);
+  assert.deepEqual(runner.calls[2], ['/bin/bash', ctlScript, 'start', '--skip-sync', '--skip-install', '--skip-build']);
+  assert.deepEqual(runner.calls[3], ['/bin/bash', ctlScript, 'restart', '--skip-sync', '--skip-install', '--skip-build']);
 });

@@ -7,9 +7,10 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const [evidenceFile, repoUrl, branch, sequenceText, signingKey, publicKey, output] = process.argv.slice(2);
+const [evidenceFile, repoUrl, branch, sequenceText, signingKey, publicKey, output, target = 'darwin'] = process.argv.slice(2);
+if (!['darwin', 'linux-arm64', 'linux-x64'].includes(target)) throw new Error('unsupported source release qualification target');
 if ([evidenceFile, repoUrl, branch, sequenceText, signingKey, publicKey, output].some(value => !value)) {
-	throw new Error('usage: node scripts/prepare-source-release.mjs EVIDENCE REPO_URL BRANCH SEQUENCE SIGNING_KEY PUBLIC_KEY OUTPUT_INSTALLER');
+	throw new Error('usage: node scripts/prepare-source-release.mjs EVIDENCE REPO_URL BRANCH SEQUENCE SIGNING_KEY PUBLIC_KEY OUTPUT_INSTALLER [darwin|linux-arm64|linux-x64]');
 }
 if (!/^(https:\/\/[^\s]+|ssh:\/\/[^\s]+|[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+:[^\s]+|\/[^\s]+)$/.test(repoUrl)
 	|| !/^[a-zA-Z0-9][a-zA-Z0-9._/-]{0,127}$/.test(branch) || !/^[1-9]\d*$/.test(sequenceText)
@@ -21,16 +22,23 @@ const commit = git('rev-parse', '--verify', 'refs/heads/' + branch + '^{commit}'
 const tree = git('rev-parse', '--verify', commit + '^{tree}');
 const remoteHead = git('ls-remote', '--exit-code', '--refs', '--', repoUrl, 'refs/heads/' + branch);
 if (remoteHead !== commit + '\trefs/heads/' + branch) throw new Error('configured source branch does not match the proposed head');
-const catalog = git('rev-parse', '--verify', commit + ':release/macos-compatibility.json');
+const catalogPath = target === 'darwin' ? 'release/macos-compatibility.json' : `release/${target}-compatibility.json`;
+const catalog = git('rev-parse', '--verify', commit + ':' + catalogPath);
 const catalogSize = Number(git('cat-file', '-s', catalog));
 if (git('cat-file', '-t', catalog) !== 'blob' || !Number.isSafeInteger(catalogSize)
 	|| catalogSize < 1 || catalogSize > 64 * 1024) throw new Error('missing or invalid source release compatibility catalog');
-const required = ['fresh-start', 'fresh-idle', 'legacy-broker-denied', 'managed-running', 'managed-stopped',
-	'guarded-rollback', 'restored-retry', 'linux-regression', 'full-regression'];
+if (target !== 'darwin' && JSON.parse(git('cat-file', 'blob', catalog)).target !== target) {
+	throw new Error('source compatibility catalog does not name the qualification target');
+}
+const required = target === 'darwin'
+	? ['fresh-start', 'fresh-idle', 'legacy-broker-denied', 'managed-running', 'managed-stopped',
+		'guarded-rollback', 'restored-retry', 'linux-regression', 'full-regression']
+	: ['historical-upgrade', 'migrated-update', 'guarded-rollback', 'restored-retry', 'full-regression'];
 const evidence = JSON.parse(readFileSync(evidenceFile, 'utf8'));
 if (evidence.version !== 1 || evidence.commit !== commit || evidence.tree !== tree || !Array.isArray(evidence.checks)) {
 	throw new Error('qualification evidence does not match the proposed source head');
 }
+if (target !== 'darwin' && evidence.target !== target) throw new Error('qualification evidence target does not match');
 for (const name of required) {
 	const entries = evidence.checks.filter(check => check?.name === name);
 	if (entries.length !== 1 || entries[0].result !== 'pass'
@@ -45,13 +53,14 @@ for (const name of required) {
 	}
 	const report = JSON.parse(readFileSync(file, 'utf8'));
 	if (report.version !== 1 || report.name !== name || report.commit !== commit || report.tree !== tree
+		|| (target !== 'darwin' && report.target !== target)
 		|| report.execution !== 'source-build' || report.exitCode !== 0 || !Number.isSafeInteger(report.passed)
 		|| report.passed < 1 || report.failed !== 0 || report.skipped !== 0) {
 		throw new Error('qualification receipt did not record a passing source build for ' + name);
 	}
 }
 const script = fileURLToPath(new URL('./bundle-release-bootstrap.mjs', import.meta.url));
-execFileSync(process.execPath, [script, publicKey, output], { stdio: 'inherit', timeout: 120_000 });
+execFileSync(process.execPath, [script, publicKey, output, target], { stdio: 'inherit', timeout: 120_000 });
 const key = readFileSync(publicKey, 'utf8').trim().split(/\s+/).slice(0, 2).join(' ');
 const temporary = mkdtempSync(join(tmpdir(), 'insrc-release-promotion-'));
 const allowedSigners = join(temporary, 'allowed-signers');

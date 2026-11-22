@@ -1,0 +1,705 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1795279237774-wa6nmz",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-21T16:43:25.841Z",
+    "epicCreatedAt": "2026-11-21T15:31:04.425Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 167733,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a03e99e17a364550",
+    "epicSlug": "restore-upgrades-from-existing-daemon-installations",
+    "storyId": "s1",
+    "lldRunId": "wf-1795277045609-pvtnhf",
+    "lldEffectiveHash": "6593ac1cd33b5419620028276ffcf8f56b1c1c78b07a7e5371d6c8dc820e7224",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "74f41eca2acc38946c7755f9ca76a9a4bab4b2baf8b90482f97551819da9525c",
+        "at": "2026-11-21T16:43:25.929Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-21T17:32:20.476Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "6515737c49cae5b8fe8a34e2c10becd8527efef9"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Build the existing-install upgrade fix in five coherent batches: verified bootstrap, Linux transaction and recovery, user entrypoint integration, fault verification, and actual native qualification with release guidance. Twelve ordered tasks preserve the current macOS owner while adding Linux source selection and historical-install recovery. Final qualification covers macOS, OrbStack arm64 and x64 separately, including a second update and rollback; production release claims remain tied to authenticated artifacts."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Expose independently verified source bootstrap and staging",
+        "size": "M",
+        "summary": "Factor reusable authorization/staging from Darwin admission in existing release bootstrap/preparation/staging owners. Authorize full source commit and compatible predecessor profile before candidate code/npm; package canonical Node assets and preserve public-key/floor/channel boundaries.",
+        "acceptanceChecks": [
+          "Existing macOS authenticated managed/legacy flows retain their verifier, floors and compatibility semantics.",
+          "Linux source profiles are explicit in qualification/packaging; unsigned/missing/wrong-channel inputs fail before npm.",
+          "Candidate npm ci/build/native smoke use absolute owned22.22.1/npm10.9.4 and complete native environment; explicit ONNX overrides preserved.",
+          "Staging remains out of tree and pins prior runtime independently; no selected source mutation.",
+          "Portable verifier cannot silently read only the old macOS catalog/profile; Linux qualification is verified before candidate execution while existing Mac receipts remain compatible."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "order": 1,
+        "dependsOn": [],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Portable source qualification rejects wrong channel/profile/floor before npm"
+          },
+          {
+            "level": "integration",
+            "name": "Independent staging uses absolute owned npm and preserves Mac signed behavior"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add private Linux source selection and durable journal",
+        "size": "M",
+        "summary": "Implement the LLD Linux source selector/journal persistence separately from Darwin managed installation state. Validate version, canonical roots, generation, private ownership, bounded files and runtime references; fsync and atomically publish without making runtime binding mutable.",
+        "acceptanceChecks": [
+          "Absent selection means legacy; malformed selection fails closed; Darwin managed selector schema unchanged.",
+          "One logical installation maps to one selected release and at most one active transaction.",
+          "Unsafe links/ownership/modes/path escapes and unknown publication outcomes are rejected or recoverable.",
+          "Referenced source/runtime receipts retained; no GC or incumbent rename/overwrite."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c4"
+        ],
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Linux selector/journal reject malformed, linked and nonprivate files"
+          },
+          {
+            "level": "integration",
+            "name": "Atomic publication with unknown fsync/rename outcome reconciles safely"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Admit historical predecessors and explicit failed-update recovery",
+        "size": "M",
+        "summary": "Inventory actual incumbent executable/dependencies, source HEAD/dirt, output provenance and runtime. Diagnose stale output/partial npm/dirty lockfile; prepare an independent qualified rollback baseline or explicit side-by-side recovery without repairing incumbent in place.",
+        "acceptanceChecks": [
+          "Never equate newer source HEAD with actual built release; use authenticated qualification and measured prior bytes.",
+          "Dirty source and lockfile contents remain byte-for-byte preserved; no reset/stash/checkout cleanup.",
+          "Incomplete/unknown predecessor blocks cutover with concrete recovery command/prerequisite.",
+          "Supported recovery stages a qualified prior independently; no proven baseline means retained data and explicit side-by-side route, not automatic destructive migration."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3",
+          "c5"
+        ],
+        "order": 3,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Source-ahead stale output and partial npm preserve incumbent and require qualified recovery"
+          },
+          {
+            "level": "integration",
+            "name": "Dirty lock/source preserved; independently staged rollback baseline admitted only by actual compatibility"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Implement Linux source cutover, rollback and restart recovery",
+        "size": "L",
+        "summary": "Compose exclusive mutation admission, retained existing process capabilities and run-file guards with the source journal. Revalidate pins, stop original only after qualification, prove exit, select candidate, verify readiness and restore qualified prior on failure. Reconcile interruptions before another start.",
+        "acceptanceChecks": [
+          "One mutation owner serializes update/start/restart; stale reservation recovery requires retained incarnation/exit proof, never PID age alone.",
+          "Build failure leaves selected/running incumbent unchanged; candidate starts only after original closure.",
+          "Every durable transition supports crash/retry and unknown fsync/rename results without a second daemon/store owner.",
+          "Failed readiness rolls back only after candidate/children closure; exact old selector/absent sentinel and wasRunning state restored.",
+          "Existing Mac owner and separate IPC-stop fallback scope unchanged."
+        ],
+        "derivedFrom": [
+          "c4",
+          "c5",
+          "c6"
+        ],
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Linux original-process closure precedes selection and candidate start"
+          },
+          {
+            "level": "integration",
+            "name": "Interrupted cutover and failed readiness recover exact prior selection and running state"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Deliver current standalone and shell upgrade entrypoints",
+        "size": "M",
+        "summary": "Route packaged installer --migrate-runtime and updated shell ctl through the independent bootstrap and selected release. Make existing-target Linux migration concrete, preserve current Mac managed dispatch, and replace circular recovery instructions with tested delivery prerequisites.",
+        "acceptanceChecks": [
+          "Exact old a30aa7f91 updater is bypassed for candidate npm; absent/hostile ambient runtimes cannot select npm.",
+          "Existing legacy and runtime-bound source roots reach staged update without successful incumbent build.",
+          "Update/restart/start running-state semantics explicit; selection consumed consistently.",
+          "Missing authenticated package/material fails before mutation with an actionable prerequisite; raw template is not described as a signed recovery package."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c6"
+        ],
+        "order": 5,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3",
+          "t4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Current packaged installer upgrades existing legacy/bound target without old npm"
+          },
+          {
+            "level": "integration",
+            "name": "Shell selected-root routing and update/restart semantics under hostile PATH"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Route TUI, daemon updater and MCP through selected releases",
+        "size": "M",
+        "summary": "Update maintenance, detached update helper and startup/MCP resolution to consume current bootstrap and selected source release. Preserve IPC acknowledgments/final outcomes and the authoritative platform stop/start paths.",
+        "acceptanceChecks": [
+          "TUI and daemon updater avoid delegation into installed old build functions; errors include exact failing command and bounded diagnostics.",
+          "Selected release/root/runtime resolved before launch; malformed selector never falls back.",
+          "Detached updater survives incumbent shutdown and reports final committed/rolled-back/recovery-required outcome.",
+          "Old unchanged clients are documented to use current installer/client once; no claim that existing process functions update themselves."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c4",
+          "c6"
+        ],
+        "order": 6,
+        "dependsOn": [
+          "t4",
+          "t5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "TUI and detached daemon update survive handoff and expose final outcome"
+          },
+          {
+            "level": "integration",
+            "name": "MCP/start resolve source selection and reject malformed state"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Ship VS Code and JetBrains bootstrap and selection routing",
+        "size": "M",
+        "summary": "Integrate both active IDE clients with current independently packaged bootstrap, native environment and Linux selection. Generate runtime/client assets from canonical sources and preserve managed signed bundle behavior.",
+        "acceptanceChecks": [
+          "Both IDE update/restart paths stop selecting old ctl npm functions and consume selected release for startup/MCP.",
+          "Generated package payload contains required canonical runtime assets and authenticated source bootstrap for qualified upgrade channels.",
+          "Child Node/npm/native environment is verified independently of a child provisioner's nonpersistent environment exports.",
+          "Controller/provisioner tests cover legacy, bound source and existing managed Mac; deprecated fork untouched."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c6"
+        ],
+        "order": 7,
+        "dependsOn": [
+          "t5",
+          "t6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "VS Code controller reaches packaged current bootstrap and selected runtime"
+          },
+          {
+            "level": "integration",
+            "name": "JetBrains provisioner inherits owned native environment and packaged verifier"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Verify interrupted upgrades and trust/ownership regressions",
+        "size": "M",
+        "summary": "Extend real-process and contract suites with fault injection across source preparation, persistence and cutover. Integrate launcher contracts, runtime corruption, predecessor recovery and existing Mac managed/native tests.",
+        "acceptanceChecks": [
+          "Crash/failure injection at every journal/selector phase proves selection consistency and child closure.",
+          "Concurrent mutations, PID reuse, stop refusal and ambiguous actor identity cannot start a second DB actor.",
+          "Wrong signatures/profile/floors, source tampering, runtime cache corruption and candidate failure are refused safely.",
+          "Canonical Node22 coordinator build/tests pass for affected scope, cleanup confirmedClosed; unrelated upstream failures separately identified.",
+          "Release/package gate refuses qualified distribution until shell, CLI/daemon/MCP and both IDE consumers understand selection together (t5-t7)."
+        ],
+        "derivedFrom": [
+          "c3",
+          "c4",
+          "c5",
+          "c6",
+          "c7"
+        ],
+        "order": 8,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3",
+          "t4",
+          "t5",
+          "t6",
+          "t7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Every transaction phase crash/timeout and concurrent mutation preserves single daemon ownership"
+          },
+          {
+            "level": "integration",
+            "name": "Corrupt source/runtime and wrong compatibility denied; package integration gate enforced"
+          },
+          {
+            "level": "smoke",
+            "name": "Canonical coordinator cleanup confirms all owned test actors closed"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "Qualify actual macOS historical upgrade and next update",
+        "size": "L",
+        "summary": "On isolated darwin-arm64 state, build/install real historical a30aa7f91 dependencies/output and upgrade through the delivered current bootstrap, then update migrated installation again. Exercise native failure before cutover and readiness rollback/retry; capture exact runtime/source/process/data receipts.",
+        "acceptanceChecks": [
+          "Actual npm/native builds and five native module/CPU ONNX loads succeed under owned runtime; use no/20/26/hostile ambient cases across contract/native coverage.",
+          "Historical and bound-source transitions, subsequent update and applicable new launcher integration are exercised; existing authenticated managed path regresses cleanly.",
+          "Seeded state/config preserved via daemon IPC; no user's real daemon/store modified.",
+          "Failures preserve or restore qualified prior with retained identity and all owned children closed.",
+          "Test keys qualify fixtures only; production source promotion requires operator-signed artifacts and valid qualification evidence."
+        ],
+        "derivedFrom": [
+          "c3",
+          "c5",
+          "c6",
+          "c7"
+        ],
+        "order": 9,
+        "dependsOn": [
+          "t8"
+        ],
+        "tests": [
+          {
+            "level": "live",
+            "name": "darwin-arm64 actual historical upgrade, subsequent update and qualified rollback/retry"
+          },
+          {
+            "level": "live",
+            "name": "Mac native dependency loads and owned Node/npm environment identities"
+          }
+        ]
+      },
+      {
+        "id": "t10",
+        "title": "Qualify OrbStack Linux arm64 historical and subsequent updates",
+        "size": "L",
+        "summary": "Repeat real historical-to-current-to-next upgrade on Ubuntu linux-arm64 OrbStack machines with persistent isolated homes, qualified source profiles and actual native dependencies. Exercise pre-cutover failure, interrupted cutover, failed readiness and explicit recovery cases.",
+        "acceptanceChecks": [
+          "linux-arm64 performs actual native npm builds, selected daemon readiness/start/restart/stop and subsequent update under verified runtime.",
+          "Legacy and bound source targets supported; stale out/partial dependencies/local changes follow qualified recovery without overwriting incumbent.",
+          "No/20/26/hostile ambient cases covered with executable/npm identity evidence and explicit ONNX override checks.",
+          "Seeded data/config retained; every test actor/coordinator closed and named VMs stopped afterward.",
+          "Receipts state arm64 virtualization, resources, source/OS/archive hashes and qualification limits; fresh installs or mock routing alone cannot satisfy completion."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3",
+          "c4",
+          "c5",
+          "c6",
+          "c7"
+        ],
+        "order": 10,
+        "dependsOn": [
+          "t8",
+          "t9"
+        ],
+        "tests": [
+          {
+            "level": "live",
+            "name": "OrbStack linux-arm64 actual historical and migrated-install update, native loads and failure recovery"
+          },
+          {
+            "level": "live",
+            "name": "arm64 retained data and owned-child/coordinator closure census"
+          }
+        ]
+      },
+      {
+        "id": "t11",
+        "title": "Qualify OrbStack Linux x64 historical and subsequent updates",
+        "size": "L",
+        "summary": "Repeat real historical-to-current-to-next upgrade on Ubuntu linux-x64 OrbStack machines with persistent isolated homes, qualified source profiles and actual native dependencies. Exercise pre-cutover failure, interrupted cutover, failed readiness and explicit recovery cases.",
+        "acceptanceChecks": [
+          "linux-x64 performs actual native npm builds, selected daemon readiness/start/restart/stop and subsequent update under verified runtime.",
+          "Legacy and bound source targets supported; stale out/partial dependencies/local changes follow qualified recovery without overwriting incumbent.",
+          "No/20/26/hostile ambient cases covered with executable/npm identity evidence and explicit ONNX override checks.",
+          "Seeded data/config retained; every test actor/coordinator closed and named VMs stopped afterward.",
+          "Receipts state x64 emulation, resources, source/OS/archive hashes and qualification limits; fresh installs or mock routing alone cannot satisfy completion."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3",
+          "c4",
+          "c5",
+          "c6",
+          "c7"
+        ],
+        "order": 11,
+        "dependsOn": [
+          "t10"
+        ],
+        "tests": [
+          {
+            "level": "live",
+            "name": "OrbStack linux-x64 actual historical and migrated-install update, native loads and failure recovery"
+          },
+          {
+            "level": "live",
+            "name": "x64 emulation receipt, retained data and owned-child/coordinator closure census"
+          }
+        ]
+      },
+      {
+        "id": "t12",
+        "title": "Publish supported recovery guidance and release evidence",
+        "size": "M",
+        "summary": "Document the exact current-installer acquisition/package prerequisite, one-time historical client recovery, partial-update branches, subsequent update and rollback. Bind qualification receipts and client package checks to source release evidence; inspect/update design companions for final implementation relationships.",
+        "acceptanceChecks": [
+          "Document commands are exercised against existing installations and distinguish raw source template, authenticated source installer and signed managed bundle.",
+          "All ac1-ac5 evidence points to exact source/runtime/platform, commands, outcomes and cleanup; unavailable remote compiler logs remain an attribution limit.",
+          "Production signing key remains external; unqualified/missing promotion material cannot be represented as production release success.",
+          "Diagrams/relationships match final code; render verified where available and limits stated.",
+          "No Windows enablement, IPC-stop fallback implementation, runtime/store deletion or unrelated test fixes included.",
+          "Pin receipts and shared release/runtime object identities are distinguished; generated cardinalities, diagram source and HTML match the final ownership model."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4",
+          "c5",
+          "c6",
+          "c7"
+        ],
+        "order": 12,
+        "dependsOn": [
+          "t9",
+          "t10",
+          "t11"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "Documented recovery commands match tested independent installer delivery"
+          },
+          {
+            "level": "smoke",
+            "name": "Qualification receipts, generated companions and canonical client package parity verified"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "VS Code install/update/restart and child environment",
+        "coveredByTaskIds": [
+          "t7",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "JetBrains installer/provisioner update/restart and packaged bootstrap",
+        "coveredByTaskIds": [
+          "t7",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "TUI maintenance, daemon detached updater, shell ctl, standalone --migrate-runtime",
+        "coveredByTaskIds": [
+          "t5",
+          "t6",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "Authenticated source packaging completeness and no-signature downgrade",
+        "coveredByTaskIds": [
+          "t1",
+          "t7",
+          "t8",
+          "t12"
+        ]
+      },
+      {
+        "lldStrategyItem": "Linux source selector/journal schema, symlink/hardlink/path/uid/mode rejection",
+        "coveredByTaskIds": [
+          "t2",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "Prior built provenance versus newer source HEAD",
+        "coveredByTaskIds": [
+          "t3",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "ONNX unset/empty/explicit and Node injection environment",
+        "coveredByTaskIds": [
+          "t1",
+          "t7",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "Malformed/missing source qualification and rollback compatibility",
+        "coveredByTaskIds": [
+          "t1",
+          "t3",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "Two concurrent update/start attempts and stale owner identity reuse",
+        "coveredByTaskIds": [
+          "t4",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "Fault injection before/after each durable phase including rename/fsync unknown result",
+        "coveredByTaskIds": [
+          "t2",
+          "t4",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "Native build timeout/failure with child closure before cutover",
+        "coveredByTaskIds": [
+          "t1",
+          "t4",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "Predecessor exit refusal, failed candidate readiness, exact prior restoration and wasRunning behavior",
+        "coveredByTaskIds": [
+          "t4",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "Dirty lockfile/source and partially installed node_modules preservation",
+        "coveredByTaskIds": [
+          "t3",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "Actual darwin-arm64 source predecessor a30aa7f91 -> candidate -> next candidate, existing authenticated managed path regression",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "OrbStack Ubuntu linux-arm64 and linux-x64 historical source -> current -> subsequent update",
+        "coveredByTaskIds": [
+          "t10",
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "No ambient Node, Node20/26 and hostile PATH; actual absolute Node/npm process identity logs",
+        "coveredByTaskIds": [
+          "t5",
+          "t7",
+          "t9",
+          "t10",
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "Actual tree-sitter/LMDB/fs-ext/Lance/Duck loads and CPU ONNX binding",
+        "coveredByTaskIds": [
+          "t9",
+          "t10",
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "Seeded user state/config preservation via daemon IPC, no overlapping DB actor",
+        "coveredByTaskIds": [
+          "t9",
+          "t10",
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "Failed build-before-cutover and failed start rollback/retry with all owned child processes closed",
+        "coveredByTaskIds": [
+          "t9",
+          "t10",
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "Generated canonical/client bootstrap parity and required source authorization material",
+        "coveredByTaskIds": [
+          "t1",
+          "t7",
+          "t12"
+        ]
+      },
+      {
+        "lldStrategyItem": "Supported old-client one-time recovery command works independently of old installed out",
+        "coveredByTaskIds": [
+          "t5",
+          "t9",
+          "t10",
+          "t11",
+          "t12"
+        ]
+      },
+      {
+        "lldStrategyItem": "Generated ownership diagram source/HTML consistency; disclose render availability",
+        "coveredByTaskIds": [
+          "t12"
+        ]
+      },
+      {
+        "lldStrategyItem": "Final controller census and cleanup confirmedClosed after tests",
+        "coveredByTaskIds": [
+          "t8",
+          "t9",
+          "t10",
+          "t11"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails and dataModelChanges: Upgrade bootstrap delivery and routing",
+      "quotedText": "Independent current bootstrap must reach verified candidate build before old npm; old clients require one-time new installer/client delivery."
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 dataModelChanges and migration: source authorization, installation selection and staged upgrade",
+      "quotedText": "Qualified Linux source upgrades and subsequent updates use a separate selector; no in-place incumbent mutation or signing bypass."
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails: resolveOwnedToolchain, ownedNodeEnvironment and stageManagedRelease",
+      "quotedText": "Exact matching Node/npm, native environment, independently authorized source and separate candidate/prior runtime pins."
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 dataModelChanges: Linux source installation selection and source upgrade transaction",
+      "quotedText": "Private versioned selector/journal, exclusive mutation owner, atomic durable publication and retained process closure."
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 dataModelChanges: Predecessor qualification and failed-update recovery",
+      "quotedText": "Actual executable/dependency provenance must be qualified; preserve local edits, stale out and partial npm; explicit independent rollback-baseline or side-by-side recovery."
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 errorPaths and migration",
+      "quotedText": "Failures before cutover preserve incumbent; stop/start and durable rollback use proven actor closure, compatibility and wasRunning; every applicable entrypoint consumes selection."
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 testStrategy, migration and generated companion definitions",
+      "quotedText": "Real historical and second-update/native qualification on Mac and both OrbStack architectures; fault/closure proofs, package delivery, data retention and final diagram/release evidence."
+    }
+  ]
+}

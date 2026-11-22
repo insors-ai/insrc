@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { copyFile, mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
+import { copyFile, cp, mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -89,6 +89,15 @@ test('Published installer and both IDEs embed the same trusted verifier', { time
 	await mkdir(join(root, 'src/prompts'), { recursive: true });
 	await copyFile(join(project, 'vscode-plugin/package.json'), join(plugin, 'package.json'));
 	await copyFile(join(project, 'src/prompts/steering-block.md'), join(root, 'src/prompts/steering-block.md'));
+	// The client generator now validates the canonical runtime policy/assets as
+	// well as copying the supplied verifier. Supply that real fixture closure.
+	await cp(join(project, 'scripts'), join(root, 'scripts'), { recursive: true });
+	for (const path of ['src/assets/node-runtime-policy.json', 'vscode-plugin/assets/node-runtime-policy.json',
+		'jetbrains-plugin/src/main/resources/insrc/node-runtime-policy.json']) {
+		await mkdir(join(root, path, '..'), { recursive: true });
+		await copyFile(join(project, path), join(root, path));
+	}
+	await copyFile(join(project, '.npmrc'), join(root, '.npmrc'));
 	execFileSync('npm', ['run', 'sync-assets', '--silent'], { cwd: plugin, env, stdio: 'pipe' });
 	const jetbrains = join(project, 'jetbrains-plugin');
 	try {

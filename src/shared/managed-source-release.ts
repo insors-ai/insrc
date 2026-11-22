@@ -22,10 +22,11 @@ export function readVerifiedSourceRelease(value: unknown): VerifiedSourceRelease
 }
 
 export function assertSourceReleaseFloor(release: VerifiedSourceRelease, floors: readonly VerifiedSourceRelease[]): void {
-	const previous = floors.find(item => item.channel.repoUrl === release.channel.repoUrl && item.channel.branch === release.channel.branch);
-	if (previous !== undefined && (previous.sequence > release.sequence
-		|| (previous.sequence === release.sequence && (previous.tagObject !== release.tagObject
-			|| previous.commit !== release.commit || previous.tree !== release.tree)))) {
-		throw new Error('signed source release is stale or replaces an existing sequence');
+	for (const previous of floors) {
+		if (previous.channel.repoUrl === release.channel.repoUrl && previous.channel.branch === release.channel.branch && (previous.sequence > release.sequence
+			|| (previous.sequence === release.sequence && (previous.tagObject !== release.tagObject
+				|| previous.commit !== release.commit || previous.tree !== release.tree)))) {
+			throw new Error('signed source release is stale or replaces an existing sequence');
+		}
 	}
 }

@@ -1,10 +1,8 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 
-import { lstat, mkdir, mkdtemp, open, readFile, realpath, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { lstat, mkdir, open, readFile, realpath } from 'node:fs/promises';
 import { isAbsolute, join } from 'node:path';
-import { execFile } from 'node:child_process';
-import { isDeepStrictEqual, promisify } from 'node:util';
+import { isDeepStrictEqual } from 'node:util';
 import { accepted, openManagedSupervisorLink } from '../cli/services/managed-daemon-control.js';
 import { readDarwinIncarnation } from '../shared/darwin-lifecycle.js';
 import { runFileIdentity } from '../shared/daemon-run-files.js';
@@ -19,14 +17,13 @@ import { captureManagedReleasePin, managedReleaseGit as git, stageManagedRelease
 import { readVerifiedSourceRelease } from '../shared/managed-source-release.js';
 import type { VerifiedSourceRelease } from '../shared/managed-source-release.js';
 import { completeLegacyMigration, completeManagedUpdate } from './managed-update-recovery.js';
-import { readTaggedReleaseCompatibility } from './release-compatibility.js';
+import { qualifySourceRelease } from './source-release-qualification.js';
 import { readReleaseCompatibility, requireQualifiedReleasePair } from './release-compatibility.js';
 import { verifyManagedBundleManifest, verifyManagedBundleProof } from './managed-bundle-proof.js';
 import type { ManagedBundleProof } from './managed-bundle-proof.js';
 
 type Update = Extract<MutationReservation, { kind: 'update' }>;
 type Source = { readonly repoUrl: string; readonly branch: string };
-const exec = promisify(execFile);
 const VERIFIER = 'release-verifier.mjs';
 
 function installedVerifier(stateRoot: string): string {
@@ -75,26 +72,9 @@ async function sourceFor(stateRoot: string, releaseRoot: string, override?: Upda
 async function originQualification(prior: ManagedInstallation, source: Source, gate: InstallationMutationGate,
 	verifier: string, checkout?: string,
 ) {
-	const info = await lstat(verifier);
-	if (!info.isFile() || info.uid !== process.getuid?.() || info.nlink !== 1 || (info.mode & 0o077) !== 0
-		|| info.size > 1024 * 1024) throw new Error('installed release verifier is not a bounded private file');
-	const staging = await realpath(await mkdtemp(join(tmpdir(), 'insrc-release-qualification-')));
-	try {
-		const { NODE_OPTIONS: _options, NODE_PATH: _modulePath, ...env } = process.env;
-		const result = await exec(prior.runtime, [verifier, 'qualification', staging, prior.stateRoot, source.repoUrl,
-			source.branch, ...(checkout === undefined ? [] : [checkout])], {
-			env, timeout: 180_000, maxBuffer: 128 * 1024,
-		});
-		const output = JSON.parse(result.stdout) as { receipt: unknown; catalog: string; compatibility: string };
-		const receipt = readVerifiedSourceRelease(output.receipt);
-		if (!isDeepStrictEqual(source, receipt.channel) || !/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/.test(output.catalog)) {
-			throw new Error('verified source receipt does not match the update channel or catalog');
-		}
-		await gate.observeSourceRelease(receipt);
-		const pair = readTaggedReleaseCompatibility(JSON.parse(output.compatibility), prior.releaseId, receipt.commit);
-		return { receipt, catalog: output.catalog, launchProfiles: pair.launchProfiles,
-			qualification: { source, candidate: pair.candidate, pairs: [{ prior: pair.prior, candidate: pair.candidate }] } };
-	} finally { await rm(staging, { recursive: true, force: true }); }
+	const qualified = await qualifySourceRelease({ stateRoot: prior.stateRoot, runtime: prior.runtime,
+		verifier, source, priorCommit: prior.releaseId, target: 'darwin', observeSourceRelease: receipt => gate.observeSourceRelease(receipt) }, checkout);
+	return qualified;
 }
 
 async function stageRelease(prior: ManagedInstallation, runtime: string, gate: InstallationMutationGate,

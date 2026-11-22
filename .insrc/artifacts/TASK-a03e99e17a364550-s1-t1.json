@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-932a70b5-8f55-4180-8c0f-fae2860d8ce2",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-21T17:32:22.145Z",
+    "epicCreatedAt": "2026-11-21T15:31:04.425Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a03e99e17a364550",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Expose independently verified source bootstrap and staging",
+      "parent": {
+        "entityId": "STORY-a03e99e17a364550-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a03e99e17a364550-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "321d5e352623815a54c2397af580e854f35482ec32ca3f381f865812c4fe6ba5",
+        "at": "2026-11-21T17:32:22.146Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-21T17:32:22.147Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Expose independently verified source bootstrap and staging",
+    "summary": "Factor reusable authorization/staging from Darwin admission in existing release bootstrap/preparation/staging owners. Authorize full source commit and compatible predecessor profile before candidate code/npm; package canonical Node assets and preserve public-key/floor/channel boundaries.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "Existing macOS authenticated managed/legacy flows retain their verifier, floors and compatibility semantics.",
+      "Linux source profiles are explicit in qualification/packaging; unsigned/missing/wrong-channel inputs fail before npm.",
+      "Candidate npm ci/build/native smoke use absolute owned22.22.1/npm10.9.4 and complete native environment; explicit ONNX overrides preserved.",
+      "Staging remains out of tree and pins prior runtime independently; no selected source mutation.",
+      "Portable verifier cannot silently read only the old macOS catalog/profile; Linux qualification is verified before candidate execution while existing Mac receipts remain compatible."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Portable source qualification rejects wrong channel/profile/floor before npm"
+      },
+      {
+        "level": "integration",
+        "name": "Independent staging uses absolute owned npm and preserves Mac signed behavior"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

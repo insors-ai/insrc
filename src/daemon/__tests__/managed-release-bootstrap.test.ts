@@ -61,6 +61,12 @@ test('Only an authorized channel tag can reach checkout and npm', async t => {
 	assert.ok(bundled);
 	const verifier = join(root, 'verifier.mjs');
 	await writeFile(verifier, Buffer.from(bundled, 'base64'));
+	// This test owns authorization/routing, not the public runtime qualification.
+	// Delegate explicitly at the runtime-owner seam instead of expecting ambient npm.
+	await writeFile(packaged, installer.replace(/^INSRC_NODE_BOOTSTRAP_B64='[^']*'$/m, "INSRC_NODE_BOOTSTRAP_B64=''"));
+	const npmRecorder = join(root, 'npm-recorder.mjs');
+	await writeFile(npmRecorder, 'import fs from "node:fs"; fs.writeFileSync(process.env.INSRC_TEST_NPM_TRACE,"invoked"); process.exit(1);');
+	await writeFile(join(root, 'node-runtime-env.sh'), `insrc_source_toolchain() { mkdir -p "$2"; NODE_BIN='${process.execPath}'; NPM_CLI='${npmRecorder}'; TOOLCHAIN_ID=fixture; }\n`);
 	const tools = join(root, 'tools');
 	const trace = join(root, 'npm-invoked');
 	await mkdir(tools);
@@ -141,12 +147,22 @@ if [ "\${2:-}" = "activate-fresh" ]; then
 fi
 exec "$INSRC_TEST_NODE" "$@"`);
 	const installer = new URL('scripts/insrc-daemon-install.sh', project).pathname;
+	const fixtureInstaller = join(root, 'installer.sh');
+	await writeFile(fixtureInstaller, await readFile(installer));
+	const npmRecorder = join(root, 'npm-recorder.mjs');
+	await writeFile(npmRecorder, `import fs from 'node:fs';
+fs.appendFileSync(process.env.INSRC_TEST_TRACE, 'npm:'+process.argv[2]+'\\n');
+if(process.argv[2]==='run')fs.writeFileSync('out/bin/insrc-runtime-smoke.js','process.exit(0);');
+`);
+	// Explicit protocol fixture authority; real archive/npm coverage lives in the native suites.
+	await writeFile(join(root, 'node-runtime-env.sh'), `insrc_source_toolchain() { mkdir -p "$2"; NODE_BIN='${join(tools, 'node')}'; NPM_CLI='${npmRecorder}'; TOOLCHAIN_ID=fixture; }\n`);
+	await writeFile(join(root, 'node-runtime-store.mjs'), 'process.exit(0);');
 	for (const platform of ['Darwin', 'Linux']) {
 		const home = join(root, platform);
 		await mkdir(home);
 		const trace = join(home, 'trace');
 		const target = join(home, 'daemon');
-		await exec('/bin/bash', [installer, '-y', '--target', target, '--embedder', 'onnx',
+		await exec('/bin/bash', [fixtureInstaller, '-y', '--target', target, '--embedder', 'onnx',
 			...(platform === 'Darwin' ? ['--no-start'] : [])], {
 			env: { ...process.env, HOME: home, PATH: `${tools}:/usr/bin:/bin`, INSRC_TEST_PLATFORM: platform,
 				INSRC_TEST_TRACE: trace, INSRC_TEST_NODE: process.execPath,
@@ -156,4 +172,66 @@ exec "$INSRC_TEST_NODE" "$@"`);
 			? ['npm:ci', 'npm:run', 'mac-activate:idle']
 			: ['npm:install', 'npm:run', 'linux-start']);
 	}
+});
+
+test('Current macOS installer authenticates managed source before candidate npm and bypasses old updater', {
+ skip: process.platform !== 'darwin',
+}, async t => {
+ const root = await realpath(await mkdtemp('/tmp/insrc-managed-source-routing-'));
+ t.after(() => rm(root, { recursive: true, force: true }));
+ const origin = join(root, 'origin'), installed = join(root, 'installed'), home = join(root, 'home');
+ const state = join(home, '.insrc'), lifecycle = join(state, 'managed-lifecycle'), key = join(root, 'key');
+ const git = async (...args: string[]) => (await exec('/usr/bin/git', ['-C', origin, '-c', 'user.name=Fixture',
+  '-c', 'user.email=test@example.invalid', '-c', 'commit.gpgsign=false', ...args])).stdout.trim();
+ await mkdir(origin); await mkdir(lifecycle, { recursive: true, mode: 0o700 });
+ await exec('/usr/bin/ssh-keygen', ['-q', '-t', 'ed25519', '-N', '', '-f', key]);
+ await git('init', '-qb', 'main'); await writeFile(join(origin, 'package.json'), '{"name":"fixture","version":"1.0.0"}');
+ await git('add', '.'); await git('commit', '-qm', 'prior'); const prior = await git('rev-parse', 'HEAD');
+ await exec('/usr/bin/git', ['clone', '-q', origin, installed]);
+ await mkdir(join(installed, 'out/bin'), { recursive: true }); await mkdir(join(installed, 'scripts'));
+ const oldTrace = join(root, 'old-used'), trace = join(root, 'npm-used'), currentTrace = join(root, 'current-used');
+ await writeFile(join(installed, 'out/bin/insrc-daemon-control.js'),
+  'if(process.argv[2]==="resume-fresh")process.exit(10);require("fs").writeFileSync(process.env.OLD_TRACE,"old controller");process.exit(91);');
+ await writeFile(join(installed, 'scripts/daemon-ctl.sh'), '#!/bin/sh\nprintf old > "$OLD_TRACE"\nexit 91\n', { mode: 0o700 });
+ const descriptor = JSON.stringify({ enabled: true, releaseRoot: installed, releaseId: prior });
+ const journal = JSON.stringify({ version: 1, root: state, sourceReleases: [] });
+ await writeFile(join(lifecycle, 'installation.json'), descriptor, { mode: 0o600 });
+ await writeFile(join(lifecycle, 'journal.json'), journal, { mode: 0o600 });
+ const declaration = { version: 1, graphSchema: 10, startup: 'rollback-compatible',
+  formats: { lance: '1', config: '1', repoAndIndexQueue: '1', workflowAndSession: '1' } };
+ await mkdir(join(origin, 'release')); let sequence = 0;
+ const publish = async (profiles: string[]) => {
+  await writeFile(join(origin, 'release/macos-compatibility.json'), JSON.stringify({ version: 1, candidate: declaration,
+   predecessors: { [prior]: { declaration, crashConsistentReopening: true, launchProfiles: profiles } } }));
+  await git('add', '.'); await git('commit', '-qm', `candidate ${++sequence}`);
+  await git('-c', 'gpg.format=ssh', '-c', `user.signingkey=${key}`, 'tag', '-fs', 'insrc-release/main', '-m',
+   JSON.stringify({ version: 1, repoUrl: origin, branch: 'main', sequence }));
+ };
+ const packaged = join(root, 'installer.sh');
+ await exec(process.execPath, [new URL('scripts/bundle-release-bootstrap.mjs', project).pathname, key + '.pub', packaged]);
+ const installer = await readFile(packaged, 'utf8'), bundled = installer.match(/^INSRC_RELEASE_BOOTSTRAP_B64='([^']+)'$/m)?.[1];
+ assert.ok(bundled);
+ const verifier = join(lifecycle, 'release-verifier.mjs');
+ await writeFile(verifier, Buffer.from(bundled, 'base64'), { mode: 0o600 });
+ const verifierBefore = await readFile(verifier);
+ // Explicit runtime-owner seam: this case tests source authentication/dispatch, not archive qualification.
+ await writeFile(packaged, installer.replace(/^INSRC_NODE_BOOTSTRAP_B64='[^']*'$/m, "INSRC_NODE_BOOTSTRAP_B64=''"));
+ const npm = join(root, 'npm.mjs');
+ const helper = 'require("fs").writeFileSync(process.env.CURRENT_TRACE,JSON.stringify({command:process.argv[2],root:process.cwd(),node:process.execPath}));';
+ await writeFile(npm, `import fs from 'node:fs';fs.appendFileSync(process.env.NPM_TRACE,process.argv[2]+'\\n');if(process.argv[2]==='run'){fs.mkdirSync('out/bin',{recursive:true});fs.writeFileSync('out/bin/insrc-daemon-control.js',${JSON.stringify(helper)});}`);
+ await writeFile(join(root, 'node-runtime-env.sh'), `insrc_source_toolchain() { unset NODE_OPTIONS NODE_PATH; NODE_BIN='${process.execPath}'; NPM_CLI='${npm}'; TOOLCHAIN_ID=fixture; }\n`);
+ const shell = () => exec('/bin/bash', [packaged, '-y', '--target', installed, '--repo', origin, '--branch', 'main', '--no-start'], {
+  env: { ...process.env, HOME: home, TMPDIR: root, PATH: '/usr/bin:/bin', OLD_TRACE: oldTrace, NPM_TRACE: trace, CURRENT_TRACE: currentTrace },
+ });
+ await publish(['legacy-stopped']);
+ await assert.rejects(shell(), /compatibility\/profile was not qualified before candidate npm/);
+ await assert.rejects(readFile(trace), { code: 'ENOENT' });
+ await publish(['managed']); await shell();
+ assert.equal(await readFile(trace, 'utf8'), 'ci\nrun\n');
+ const current = JSON.parse(await readFile(currentTrace, 'utf8')) as { command: string; root: string; node: string };
+ assert.equal(current.command, 'update-local'); assert.notEqual(current.root, installed); assert.equal(current.node, process.execPath);
+ await assert.rejects(readFile(oldTrace), { code: 'ENOENT' });
+ assert.equal(await readFile(join(lifecycle, 'installation.json'), 'utf8'), descriptor);
+ assert.equal(await readFile(join(lifecycle, 'journal.json'), 'utf8'), journal);
+ assert.deepEqual(await readFile(verifier), verifierBefore);
 });

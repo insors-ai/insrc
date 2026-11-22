@@ -1,0 +1,95 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-41243299-e620-406c-8339-9fe7760c650c",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-21T17:32:22.154Z",
+    "epicCreatedAt": "2026-11-21T15:31:04.425Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a03e99e17a364550",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Implement Linux source cutover, rollback and restart recovery",
+      "parent": {
+        "entityId": "STORY-a03e99e17a364550-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a03e99e17a364550-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-a03e99e17a364550-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a03e99e17a364550-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a03e99e17a364550-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "43c12964a34f8d1f40ee0079e64a16a3c977ee92f9daf4fad2301596602d6607",
+        "at": "2026-11-21T17:32:22.154Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-21T17:32:22.156Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement Linux source cutover, rollback and restart recovery",
+    "summary": "Compose exclusive mutation admission, retained existing process capabilities and run-file guards with the source journal. Revalidate pins, stop original only after qualification, prove exit, select candidate, verify readiness and restore qualified prior on failure. Reconcile interruptions before another start.",
+    "size": "L",
+    "order": 4,
+    "acceptanceChecks": [
+      "One mutation owner serializes update/start/restart; stale reservation recovery requires retained incarnation/exit proof, never PID age alone.",
+      "Build failure leaves selected/running incumbent unchanged; candidate starts only after original closure.",
+      "Every durable transition supports crash/retry and unknown fsync/rename results without a second daemon/store owner.",
+      "Failed readiness rolls back only after candidate/children closure; exact old selector/absent sentinel and wasRunning state restored.",
+      "Existing Mac owner and separate IPC-stop fallback scope unchanged."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Linux original-process closure precedes selection and candidate start"
+      },
+      {
+        "level": "integration",
+        "name": "Interrupted cutover and failed readiness recover exact prior selection and running state"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

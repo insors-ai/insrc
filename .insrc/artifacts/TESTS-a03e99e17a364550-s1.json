@@ -1,0 +1,418 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 8,
+        "contentHash": "09a150687252f5262195dbc80c596c8861585c74c6f3bcaa7aa0cda1679fc984",
+        "at": "2026-11-22T05:02:13.804Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "a03e99e17a364550",
+    "storyId": "s1",
+    "createdAt": "2026-11-21T17:48:45.684Z",
+    "updatedAt": "2026-11-22T05:02:13.772Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-21T15:31:04.425Z",
+    "epicSlug": "restore-upgrades-from-existing-daemon-installations",
+    "revision": 8
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "80ace719b",
+        "ranAt": "2026-11-21T17:48:45.684Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Portable source qualification rejects wrong channel/profile/floor before npm",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/source-upgrade-qualification-native.test.ts",
+                "title": "Portable source qualification rejects wrong channel/profile/floor before npm",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/source-upgrade-qualification-native.test.ts",
+                "title": "Linux source promotion requires target-specific historical upgrade evidence",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Independent staging uses absolute owned npm and preserves Mac signed behavior",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/source-upgrade-qualification-native.test.ts",
+                "title": "Independent staging uses absolute owned npm and preserves Mac signed behavior",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/managed-release-staging.test.ts",
+                "title": "Release provenance, changed bytes and absent legacy declaration",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "scripts/__tests__/source-upgrade-qualification-native.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 37846,
+            "titles": [
+              {
+                "title": "Portable source qualification rejects wrong channel/profile/floor before npm",
+                "result": "pass"
+              },
+              {
+                "title": "Linux source promotion requires target-specific historical upgrade evidence",
+                "result": "pass"
+              },
+              {
+                "title": "Independent staging uses absolute owned npm and preserves Mac signed behavior",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/managed-release-staging.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 18343,
+            "titles": [
+              {
+                "title": "Release provenance, changed bytes and absent legacy declaration",
+                "result": "pass"
+              },
+              {
+                "title": "Tagged compatibility rejects a conflicting declaration and admits a known historical predecessor",
+                "result": "pass"
+              },
+              {
+                "title": "Changed local runtime bytes block cutover or offline rollback",
+                "result": "pass"
+              },
+              {
+                "title": "The stopped installed controller fetches and commits a qualified update without daemon IPC",
+                "result": "pass"
+              },
+              {
+                "title": "First supported update of a qualified prior build with broker denial",
+                "result": "pass"
+              },
+              {
+                "title": "Staging leaves the installed release executable and unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "Owned toolchain staging failures preserve prior selection binding and executable bytes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "50a172185",
+        "ranAt": "2026-11-21T19:10:57.925Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Linux selector/journal reject malformed, linked and nonprivate files",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/source-installation.test.ts",
+                "title": "Linux selector/journal reject malformed, linked and nonprivate files",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/source-upgrade-qualification-native.test.ts",
+                "title": "Portable source qualification rejects wrong channel/profile/floor before npm",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Atomic publication with unknown fsync/rename outcome reconciles safely",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/source-installation.test.ts",
+                "title": "Atomic publication with unknown fsync/rename outcome reconciles safely",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/source-installation.test.ts",
+                "title": "Linux source journal serializes competing writers",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "scripts/__tests__/source-upgrade-qualification-native.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 36515,
+            "titles": [
+              {
+                "title": "Portable source qualification rejects wrong channel/profile/floor before npm",
+                "result": "pass"
+              },
+              {
+                "title": "Linux source promotion requires target-specific historical upgrade evidence",
+                "result": "pass"
+              },
+              {
+                "title": "Independent staging uses absolute owned npm and preserves Mac signed behavior",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/shared/__tests__/source-installation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 52432,
+            "titles": [
+              {
+                "title": "Linux selector/journal reject malformed, linked and nonprivate files",
+                "result": "pass"
+              },
+              {
+                "title": "Atomic publication with unknown fsync/rename outcome reconciles safely",
+                "result": "pass"
+              },
+              {
+                "title": "Linux source journal serializes competing writers",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "6f078b30d",
+        "ranAt": "2026-11-21T19:43:49.953Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Source-ahead stale output and partial npm preserve incumbent and require qualified recovery",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/source-predecessor-native.test.ts",
+                "title": "Source-ahead stale output and partial npm preserve incumbent and require qualified recovery",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Dirty lock/source preserved; independently staged rollback baseline admitted only by actual compatibility",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/source-predecessor-native.test.ts",
+                "title": "Dirty lock/source preserved; independently staged rollback baseline admitted only by actual compatibility",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "scripts/__tests__/source-predecessor-native.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 22900,
+            "titles": [
+              {
+                "title": "Source-ahead stale output and partial npm preserve incumbent and require qualified recovery",
+                "result": "pass"
+              },
+              {
+                "title": "Dirty lock/source preserved; independently staged rollback baseline admitted only by actual compatibility",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "f906e433f",
+        "ranAt": "2026-11-21T20:39:00.530Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Linux original-process closure precedes selection and candidate start",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/source-update-transaction.test.ts",
+                "title": "Linux original-process closure precedes selection and candidate start",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Interrupted cutover and failed readiness recover exact prior selection and running state",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/source-update-transaction.test.ts",
+                "title": "Interrupted cutover and failed readiness recover exact prior selection and running state",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/source-update-transaction.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 208001,
+            "titles": [
+              {
+                "title": "Linux original-process closure precedes selection and candidate start",
+                "result": "pass"
+              },
+              {
+                "title": "Interrupted cutover and failed readiness recover exact prior selection and running state",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "3b4af8ead",
+        "ranAt": "2026-11-22T05:02:13.772Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Current packaged installer upgrades existing legacy/bound target without old npm",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/source-entrypoints-native.test.ts",
+                "title": "Current packaged installer upgrades existing legacy/bound target without old npm",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/managed-release-bootstrap.test.ts",
+                "title": "Current macOS installer authenticates managed source before candidate npm and bypasses old updater",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Shell selected-root routing and update/restart semantics under hostile PATH",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/source-entrypoints-native.test.ts",
+                "title": "Shell selected-root routing and update/restart semantics under hostile PATH",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "scripts/__tests__/source-entrypoints-native.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 519038,
+            "titles": [
+              {
+                "title": "Current packaged installer upgrades existing legacy/bound target without old npm",
+                "result": "pass"
+              },
+              {
+                "title": "Shell selected-root routing and update/restart semantics under hostile PATH",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/managed-release-bootstrap.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 12491,
+            "titles": [
+              {
+                "title": "The installation journal persists signed source floors independently per channel",
+                "result": "pass"
+              },
+              {
+                "title": "Only an authorized channel tag can reach checkout and npm",
+                "result": "pass"
+              },
+              {
+                "title": "Fresh macOS install and Linux install preserve their existing build and launch routes",
+                "result": "pass"
+              },
+              {
+                "title": "Current macOS installer authenticates managed source before candidate npm and bypasses old updater",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

@@ -62,6 +62,8 @@ EXPLICIT_BRANCH=0
 START_AFTER_INSTALL=1
 ASSUME_YES=0
 FRESH_MAC_INSTALL=0
+EXISTING_MAC_MANAGED_SOURCE=0
+SOURCE_REFERENCE_ROOT=''
 # Filled by release packaging with the verifier and independently provisioned public key.
 INSRC_RELEASE_BOOTSTRAP_B64=''
 INSRC_NODE_BOOTSTRAP_B64=''
@@ -69,6 +71,8 @@ INSRC_NODE_BOOTSTRAP_SHA256=''
 PRINT_RUNTIME=0
 RUNTIME_ARCHIVE=''
 MIGRATE_RUNTIME=0
+PREDECESSOR_COMMIT=''
+REBUILD_PREDECESSOR=0
 RUNTIME_ASSET_STAGE=''
 BRIDGE=''
 CANDIDATE_MARKER=''
@@ -83,7 +87,7 @@ trap cleanup_install EXIT
 write_release_verifier() {
 	(
 		unset NODE_OPTIONS NODE_PATH
-		"$NODE_BIN" --input-type=commonjs -e 'const fs=require("node:fs"); fs.writeFileSync(process.argv[1], Buffer.from(process.argv[2],"base64"), {flag:"wx",mode:0o600});' "$1" "$INSRC_RELEASE_BOOTSTRAP_B64"
+		printf '%s' "$INSRC_RELEASE_BOOTSTRAP_B64" | "$NODE_BIN" --input-type=commonjs -e 'const fs=require("node:fs"); fs.writeFileSync(process.argv[1], Buffer.from(fs.readFileSync(0,"utf8"),"base64"), {flag:"wx",mode:0o600});' "$1"
 	)
 }
 EMBEDDER_CHOICE="auto"     # auto | ollama | onnx
@@ -134,6 +138,8 @@ while [ $# -gt 0 ]; do
 		--no-start)  START_AFTER_INSTALL=0 ;;
 		--print-runtime) PRINT_RUNTIME=1 ;;
 		--migrate-runtime) MIGRATE_RUNTIME=1 ;;
+		--predecessor) shift; PREDECESSOR_COMMIT="${1:-}"; [ -n "$PREDECESSOR_COMMIT" ] || die '--predecessor requires the exact last-known-good commit' ;;
+		--rebuild-predecessor) REBUILD_PREDECESSOR=1 ;;
 		--runtime-archive) shift; RUNTIME_ARCHIVE="${1:-}"; [ -n "$RUNTIME_ARCHIVE" ] || die "--runtime-archive requires a file" ;;
 		--embedder)
 			shift
@@ -230,23 +236,28 @@ if [ "$(uname -s)" = Darwin ] && [ "$FRESH_MAC_INSTALL" -eq 0 ] && [ -e "$INSTAL
 	fi
 	if [ -f "$HOME/.insrc/managed-lifecycle/installation.json" ] && [ -x "$INSTALL_ROOT/scripts/daemon-ctl.sh" ]; then
 		if "$NODE_BIN" -e 'const fs=require("fs"); process.exit(JSON.parse(fs.readFileSync(process.argv[1],"utf8")).enabled === true ? 0 : 1)' "$HOME/.insrc/managed-lifecycle/installation.json"; then
+			if "$NODE_BIN" -e 'const fs=require("fs");process.exit(JSON.parse(fs.readFileSync(process.argv[1],"utf8")).installedBundle===undefined?1:0)' "$HOME/.insrc/managed-lifecycle/journal.json"; then
 			UPDATE_ARGS=(update)
 			if [ "$EXPLICIT_REPO" -eq 1 ]; then UPDATE_ARGS+=(--repo-url "$REPO_URL"); fi
 			if [ "$EXPLICIT_BRANCH" -eq 1 ]; then UPDATE_ARGS+=(--branch "$BRANCH"); fi
 			cd /
 			cleanup_install
 			INSRC_DAEMON_UPDATE_WAIT=1 INSRC_DAEMON_ROOT="$INSTALL_ROOT" exec "$INSTALL_ROOT/scripts/daemon-ctl.sh" "${UPDATE_ARGS[@]}"
+			fi
+			EXISTING_MAC_MANAGED_SOURCE=1
+			SOURCE_REFERENCE_ROOT=$("$NODE_BIN" -e 'const f=require("fs"),p=process.argv[1],s=f.lstatSync(p);if(!s.isFile()||s.uid!==process.getuid()||s.nlink!==1||(s.mode&0o077)||s.size>65536)throw Error("unsafe managed descriptor");const v=JSON.parse(f.readFileSync(p));if(typeof v.releaseRoot!=="string"||f.realpathSync(v.releaseRoot)!==v.releaseRoot)throw Error("invalid managed source root");process.stdout.write(v.releaseRoot)' "$HOME/.insrc/managed-lifecycle/installation.json")
 		fi
 	fi
-	[ -d "$INSTALL_ROOT/.git" ] || die "existing target is neither a legacy checkout nor a managed launcher" 3
+	if [ -z "$SOURCE_REFERENCE_ROOT" ]; then SOURCE_REFERENCE_ROOT="$INSTALL_ROOT"; fi
+	[ -d "$SOURCE_REFERENCE_ROOT/.git" ] || die "existing target is neither a legacy checkout nor a managed source launcher" 3
 	confirm "stage a verified macOS daemon upgrade" || die "user declined" 1
 	if [ "$EXPLICIT_REPO" -eq 0 ]; then
-		REPO_URL=$(git -C "$INSTALL_ROOT" remote get-url origin)
+		REPO_URL=$(git -C "$SOURCE_REFERENCE_ROOT" remote get-url origin)
 		CONFIG_REPO=$("$NODE_BIN" -e 'try {const c=JSON.parse(require("fs").readFileSync(process.argv[1],"utf8")); console.log(c.daemonUpdate?.repoUrl ?? "");}catch(e){if(e.code!=="ENOENT")throw e;}' "$HOME/.insrc/config.json")
 		if [ -n "$CONFIG_REPO" ]; then REPO_URL="$CONFIG_REPO"; fi
 	fi
 	if [ "$EXPLICIT_BRANCH" -eq 0 ]; then
-		BRANCH=$(git -C "$INSTALL_ROOT" symbolic-ref --short HEAD)
+		BRANCH=$(git -C "$SOURCE_REFERENCE_ROOT" config --get insrc.releaseBranch || git -C "$SOURCE_REFERENCE_ROOT" symbolic-ref --short HEAD)
 		CONFIG_BRANCH=$("$NODE_BIN" -e 'try {const c=JSON.parse(require("fs").readFileSync(process.argv[1],"utf8")); console.log(c.daemonUpdate?.branch ?? "");}catch(e){if(e.code!=="ENOENT")throw e;}' "$HOME/.insrc/config.json")
 		if [ -n "$CONFIG_BRANCH" ]; then BRANCH="$CONFIG_BRANCH"; fi
 	fi
@@ -257,20 +268,110 @@ if [ "$(uname -s)" = Darwin ] && [ "$FRESH_MAC_INSTALL" -eq 0 ] && [ -e "$INSTAL
 	log "preparing the macOS upgrade bridge beside the installed release"
 	[ -n "$INSRC_RELEASE_BOOTSTRAP_B64" ] || die "production source release signing key is not provisioned" 4
 	write_release_verifier "$BRIDGE/verifier.mjs"
+	if [ "$EXISTING_MAC_MANAGED_SOURCE" -eq 1 ]; then
+		mkdir -m 700 "$BRIDGE/qualified"
+		MAC_VERIFIER="$HOME/.insrc/managed-lifecycle/release-verifier.mjs"
+		"$NODE_BIN" -e 'const f=require("fs"),s=f.lstatSync(process.argv[1]);if(!s.isFile()||s.uid!==process.getuid()||s.nlink!==1||(s.mode&0o077)||s.size>1048576)throw Error("unsafe installed managed verifier")' "$MAC_VERIFIER" || die 'the existing macOS source issuer verifier is unavailable; retain the installation and obtain matching release material' 4
+		"$NODE_BIN" "$MAC_VERIFIER" qualification "$BRIDGE/qualified" "$HOME/.insrc" "$REPO_URL" "$BRANCH" > "$BRIDGE/qualified.json" || die 'installed macOS source authority rejected this release' 4
+		chmod 600 "$BRIDGE/qualified.json"
+		MAC_PRIOR=$("$NODE_BIN" -e 'process.stdout.write(JSON.parse(require("fs").readFileSync(process.argv[1])).releaseId)' "$HOME/.insrc/managed-lifecycle/installation.json")
+		"$NODE_BIN" "$BRIDGE/verifier.mjs" admit-macos-catalog "$BRIDGE/qualified.json" "$MAC_PRIOR" managed >/dev/null || die 'macOS source compatibility/profile was not qualified before candidate npm' 4
+		"$NODE_BIN" "$MAC_VERIFIER" authorize "$BRIDGE" "$HOME/.insrc" "$REPO_URL" "$BRANCH" || die 'installed macOS source authority rejected the controller checkout' 4
+		"$NODE_BIN" -e 'const f=require("fs"),u=require("util");if(!u.isDeepStrictEqual(JSON.parse(f.readFileSync(process.argv[1])).receipt,JSON.parse(f.readFileSync(process.argv[2]))))throw Error("source changed before controller build")' "$BRIDGE/qualified.json" "$BRIDGE/source-release.json" || die 'macOS source authorization changed before candidate npm' 4
+	else
 	(
 		unset NODE_OPTIONS NODE_PATH
 		"$NODE_BIN" "$BRIDGE/verifier.mjs" authorize "$BRIDGE" "$HOME/.insrc" "$REPO_URL" "$BRANCH"
 	) || die "macOS upgrade bridge authorization failed" 4
+	fi
 	( cd "$BRIDGE/checkout" && CXXFLAGS="${CXXFLAGS:+$CXXFLAGS }-std=c++17" "$NODE_BIN" "$NPM_CLI" ci --no-fund --no-audit && "$NODE_BIN" "$NPM_CLI" run --silent build )
 	[ -f "$BRIDGE/checkout/out/bin/insrc-daemon-control.js" ] || die "selected branch has no macOS upgrade bridge" 4
 	INSTALL_ROOT=$(cd "$INSTALL_ROOT" && pwd -P)
 	cd /
+	if [ "$EXISTING_MAC_MANAGED_SOURCE" -eq 1 ]; then
+		INSRC_DAEMON_UPDATE_REPO_URL="$REPO_URL" INSRC_DAEMON_UPDATE_BRANCH="$BRANCH" "$NODE_BIN" "$BRIDGE/checkout/out/bin/insrc-daemon-control.js" update-local || die 'current macOS controller could not commit the managed source update' 4
+		ok 'managed macOS source update completed through its existing owner'
+		exit 0
+	fi
 	# The controller owns bridge cleanup after exec; bootstrap assets are no longer needed.
 	[ -z "$RUNTIME_ASSET_STAGE" ] || /bin/rm -rf "$RUNTIME_ASSET_STAGE"
 	RUNTIME_ASSET_STAGE=''
 	# No old checkout shell remains during the fence census.
 	unset NODE_OPTIONS NODE_PATH
 	exec "$NODE_BIN" "$BRIDGE/checkout/out/bin/insrc-daemon-control.js" prepare-legacy-upgrade "$INSTALL_ROOT" "$REPO_URL" "$BRANCH" "$BRIDGE"
+fi
+
+if [ "$(uname -s)" = Linux ] && [ -e "$INSTALL_ROOT" ]; then
+ [ -d "$INSTALL_ROOT" ] && [ ! -L "$INSTALL_ROOT" ] || die 'existing source target must be a canonical directory' 3
+ [ -n "$INSRC_RELEASE_BOOTSTRAP_B64" ] || die 'existing-target upgrades require the current authenticated release installer; the raw source template has no release signing authority' 4
+ INSTALL_ROOT=$(cd "$INSTALL_ROOT" && pwd -P)
+ BRIDGE=$(mktemp -d "${TMPDIR:-/tmp}/insrc-source-upgrade-XXXXXXXX"); chmod 700 "$BRIDGE"
+ mkdir -m 700 "$BRIDGE/head-current" "$BRIDGE/authority"
+ write_release_verifier "$BRIDGE/verifier.mjs"
+ "$NODE_BIN" "$BRIDGE/verifier.mjs" installation "$HOME/.insrc" "$INSTALL_ROOT" > "$BRIDGE/installation.json" || die 'source installation identity is unavailable; retain the existing installation and repair its qualified records' 4
+ if [ "$EXPLICIT_REPO" -eq 0 ]; then
+  REPO_URL=$("$NODE_BIN" -e 'const fs=require("fs"),s=JSON.parse(fs.readFileSync(process.argv[1])).state;const r=s.active?.candidate??s.selected??s.outcome?.legacyRoute?.candidate;process.stdout.write(r?.source.channel.repoUrl??"")' "$BRIDGE/installation.json")
+  if [ -z "$REPO_URL" ]; then REPO_URL=$(git -C "$INSTALL_ROOT" remote get-url origin); fi
+ fi
+ if [ "$EXPLICIT_BRANCH" -eq 0 ]; then
+  BRANCH=$("$NODE_BIN" -e 'const fs=require("fs"),s=JSON.parse(fs.readFileSync(process.argv[1])).state;const r=s.active?.candidate??s.selected??s.outcome?.legacyRoute?.candidate;process.stdout.write(r?.source.channel.branch??"")' "$BRIDGE/installation.json")
+  if [ -z "$BRANCH" ]; then BRANCH=$(git -C "$INSTALL_ROOT" symbolic-ref --short HEAD); fi
+ fi
+ if [ -z "$PREDECESSOR_COMMIT" ]; then
+  PREDECESSOR_COMMIT=$("$NODE_BIN" -e 'const fs=require("fs"),s=JSON.parse(fs.readFileSync(process.argv[1])).state;process.stdout.write(s.active?.execution?.compatibility.prior.releaseId??s.selected?.pin.commit??s.outcome?.legacyRoute?.prior?.commit??"")' "$BRIDGE/installation.json")
+ fi
+ [ -n "$PREDECESSOR_COMMIT" ] || die 'historical build identity is unproven: inspect the last successful release, then rerun this authenticated installer with --migrate-runtime --predecessor FULL_COMMIT --rebuild-predecessor; source HEAD alone is not proof' 4
+ PROFILE=$("$NODE_BIN" -e 'const fs=require("fs"),r=JSON.parse(fs.readFileSync(process.argv[1]));process.stdout.write((r.state.active?.wasRunning??r.running)?"linux-source-running":"linux-source-stopped")' "$BRIDGE/installation.json")
+ PRIOR_RUNTIME=$("$NODE_BIN" -e 'const fs=require("fs"),r=JSON.parse(fs.readFileSync(process.argv[1]));process.stdout.write(r.state.selected?.pin.runtime??r.state.outcome?.legacyRoute?.prior?.runtime??"unknown")' "$BRIDGE/installation.json")
+ if [ "$PRIOR_RUNTIME" = unknown ] && [ -f "$HOME/.insrc/daemon-node" ] && [ ! -L "$HOME/.insrc/daemon-node" ]; then
+  PRIOR_RUNTIME=$("$NODE_BIN" -e 'const fs=require("fs"),p=process.argv[1],s=fs.lstatSync(p);if(!s.isFile()||s.uid!==process.getuid()||s.nlink!==1||s.size>4096||(s.mode&0o022))throw Error("unsafe legacy runtime marker");const t=fs.readFileSync(p,"utf8").trim();try{process.stdout.write(fs.realpathSync(t))}catch{process.stdout.write("unknown")}' "$HOME/.insrc/daemon-node")
+ fi
+ # Existing issuer authority must independently agree before current candidate code/npm runs.
+ # Keep its verifier unchanged; the delivered package supplies current staging implementation.
+ RETAINED_VERIFIER="$HOME/.insrc/source-lifecycle/verifier.mjs"
+ STAGE_TARGET="linux-$("$NODE_BIN" -p 'process.arch')"
+ "$NODE_BIN" "$BRIDGE/verifier.mjs" head "$BRIDGE/head-current" "$HOME/.insrc" "$REPO_URL" "$BRANCH" "--target=$STAGE_TARGET" > "$BRIDGE/head-current.json" || die 'current source head could not be authenticated' 4
+ if [ -e "$RETAINED_VERIFIER" ] || [ -L "$RETAINED_VERIFIER" ]; then
+  mkdir -m 700 "$BRIDGE/head-retained" "$BRIDGE/qualified-retained" "$BRIDGE/qualified-current"
+  "$NODE_BIN" --input-type=commonjs -e 'const fs=require("fs"),s=fs.lstatSync(process.argv[1]);if(!s.isFile()||s.uid!==process.getuid()||s.nlink!==1||(s.mode&0o077)||s.size>1048576)throw Error("unsafe retained verifier")' "$RETAINED_VERIFIER"
+  "$NODE_BIN" "$RETAINED_VERIFIER" head "$BRIDGE/head-retained" "$HOME/.insrc" "$REPO_URL" "$BRANCH" "--target=$STAGE_TARGET" > "$BRIDGE/head-retained.json" || die 'the installed issuer did not authorize this source head; retain its authority and obtain matching release material' 4
+  "$NODE_BIN" --input-type=commonjs -e 'const fs=require("fs"),u=require("util"),a=JSON.parse(fs.readFileSync(process.argv[1])),b=JSON.parse(fs.readFileSync(process.argv[2]));if(!u.isDeepStrictEqual(a,b))throw Error("independent and installed source authorities disagree")' "$BRIDGE/head-current.json" "$BRIDGE/head-retained.json" || die 'source authority changed during head verification' 4
+ fi
+ ALREADY_CURRENT=$("$NODE_BIN" -e 'const fs=require("fs"),s=JSON.parse(fs.readFileSync(process.argv[1])).state,h=JSON.parse(fs.readFileSync(process.argv[2])).receipt,r=s.selected;process.stdout.write(!s.active&&r&&r.pin.commit===h.commit&&r.source.tree===h.tree&&require("util").isDeepStrictEqual(r.source.channel,h.channel)?"yes":"no")' "$BRIDGE/installation.json" "$BRIDGE/head-current.json")
+ if [ "$ALREADY_CURRENT" = yes ]; then
+  "$NODE_BIN" "$BRIDGE/verifier.mjs" resolve "$HOME/.insrc" "$INSTALL_ROOT" > "$BRIDGE/resolved.json" || die 'selected compiled source or owned runtime failed independent verification' 4
+  CURRENT_ROOT=$("$NODE_BIN" -e 'process.stdout.write(JSON.parse(require("fs").readFileSync(process.argv[1])).manager.root)' "$BRIDGE/resolved.json")
+  CURRENT_NODE=$("$NODE_BIN" -e 'process.stdout.write(JSON.parse(require("fs").readFileSync(process.argv[1])).manager.runtime)' "$BRIDGE/resolved.json")
+  [ -f "$RETAINED_VERIFIER" ] || die 'selected source lacks its independent issuer verifier; recover with matching authenticated release material' 4
+  PATH="$(dirname "$CURRENT_NODE"):$PATH" "$CURRENT_NODE" "$CURRENT_ROOT/out/bin/insrc-source-control.js" unchanged "$HOME/.insrc" "$INSTALL_ROOT" "$RETAINED_VERIFIER" || die 'current selected source could not be independently verified' 4
+  if [ "$START_AFTER_INSTALL" -eq 1 ]; then
+   PATH="$(dirname "$CURRENT_NODE"):$PATH" "$CURRENT_NODE" "$CURRENT_ROOT/out/bin/insrc-source-control.js" start "$HOME/.insrc" "$INSTALL_ROOT" || die 'selected source startup was withheld; inspect its durable outcome' 4
+  fi
+  ok 'authenticated source is already selected; startup policy applied'
+  exit 0
+ fi
+ log 'staging authenticated source with the verified local Node/npm toolchain'
+ if [ -f "$RETAINED_VERIFIER" ]; then
+  "$NODE_BIN" "$RETAINED_VERIFIER" qualification "$BRIDGE/qualified-retained" "$HOME/.insrc" "$REPO_URL" "$BRANCH" "--target=$STAGE_TARGET" "--prior=$PREDECESSOR_COMMIT" "--profile=$PROFILE" > "$BRIDGE/qualified-retained.json" || die 'installed issuer rejected the predecessor/profile before candidate npm' 4
+  "$NODE_BIN" "$BRIDGE/verifier.mjs" qualification "$BRIDGE/qualified-current" "$HOME/.insrc" "$REPO_URL" "$BRANCH" "--target=$STAGE_TARGET" "--prior=$PREDECESSOR_COMMIT" "--profile=$PROFILE" > "$BRIDGE/qualified-current.json" || die 'current delivered verifier rejected the predecessor/profile' 4
+  "$NODE_BIN" --input-type=commonjs -e 'const fs=require("fs"),u=require("util");if(!u.isDeepStrictEqual(JSON.parse(fs.readFileSync(process.argv[1])),JSON.parse(fs.readFileSync(process.argv[2]))))throw Error("source qualification changed")' "$BRIDGE/qualified-current.json" "$BRIDGE/qualified-retained.json" || die 'source qualification changed before staging' 4
+ fi
+ "$NODE_BIN" "$BRIDGE/verifier.mjs" stage "$BRIDGE/authority" "$HOME/.insrc" "$REPO_URL" "$BRANCH" \
+  "--target=$STAGE_TARGET" "--prior=$PREDECESSOR_COMMIT" "--profile=$PROFILE" > "$BRIDGE/staged.json" || die 'independent source staging failed; incumbent files and process were retained' 4
+ chmod 600 "$BRIDGE/staged.json"
+ STAGED_ROOT=$("$NODE_BIN" -e 'process.stdout.write(JSON.parse(require("fs").readFileSync(process.argv[1])).candidate.pin.root)' "$BRIDGE/staged.json")
+ STAGED_NODE=$("$NODE_BIN" -e 'process.stdout.write(JSON.parse(require("fs").readFileSync(process.argv[1])).candidate.pin.runtime)' "$BRIDGE/staged.json")
+ [ -f "$STAGED_ROOT/out/bin/insrc-source-control.js" ] || die 'authenticated source does not contain the Linux source controller' 4
+ # The independently delivered verifier is retained outside candidate source for subsequent updates.
+ "$NODE_BIN" --input-type=commonjs -e 'const fs=require("fs"),p=process.argv[1],source=fs.readFileSync(process.argv[2]);fs.mkdirSync(require("path").dirname(p),{recursive:true,mode:0o700});try{fs.writeFileSync(p,source,{flag:"wx",mode:0o600});const f=fs.openSync(p,"r");try{fs.fsyncSync(f)}finally{fs.closeSync(f)}const d=fs.openSync(require("path").dirname(p),"r");try{fs.fsyncSync(d)}finally{fs.closeSync(d)}}catch(e){if(e.code!=="EEXIST")throw e;const s=fs.lstatSync(p);if(!s.isFile()||s.uid!==process.getuid()||s.nlink!==1||(s.mode&0o077))throw Error("unsafe retained verifier");}' "$RETAINED_VERIFIER" "$BRIDGE/verifier.mjs"
+ UPGRADE_ARGS=(upgrade "$HOME/.insrc" "$INSTALL_ROOT" "$BRIDGE/staged.json" "$RETAINED_VERIFIER" "$PRIOR_RUNTIME")
+ if [ "$REBUILD_PREDECESSOR" -eq 1 ]; then UPGRADE_ARGS+=(--rebuild-predecessor); fi
+ PATH="$(dirname "$STAGED_NODE"):$PATH" "$STAGED_NODE" "$STAGED_ROOT/out/bin/insrc-source-control.js" "${UPGRADE_ARGS[@]}" || die 'source cutover was withheld or restored; retain the reported state. An unmanaged running predecessor must first be stopped through its existing owner before retrying this current installer' 4
+ if [ "$START_AFTER_INSTALL" -eq 1 ]; then
+  PATH="$(dirname "$STAGED_NODE"):$PATH" "$STAGED_NODE" "$STAGED_ROOT/out/bin/insrc-source-control.js" start "$HOME/.insrc" "$INSTALL_ROOT" || die 'source installation selected but start failed; inspect the durable source outcome' 4
+ fi
+ ok "qualified source selected at $STAGED_ROOT"
+ exit 0
 fi
 
 if [ -e "$INSTALL_ROOT" ] && [ "$FRESH_MAC_INSTALL" -eq 0 ]; then

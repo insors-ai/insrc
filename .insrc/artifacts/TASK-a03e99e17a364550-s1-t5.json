@@ -1,0 +1,99 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4b0048c3-b2b4-4994-a4e8-a5b80a626356",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-21T17:32:22.158Z",
+    "epicCreatedAt": "2026-11-21T15:31:04.425Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a03e99e17a364550",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Deliver current standalone and shell upgrade entrypoints",
+      "parent": {
+        "entityId": "STORY-a03e99e17a364550-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a03e99e17a364550-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-a03e99e17a364550-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a03e99e17a364550-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a03e99e17a364550-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a03e99e17a364550-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a7be745102e545824d64bed251599fe5eea27e3596f65d99416ca07aa2e8f6e2",
+        "at": "2026-11-21T17:32:22.158Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-21T17:32:22.159Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Deliver current standalone and shell upgrade entrypoints",
+    "summary": "Route packaged installer --migrate-runtime and updated shell ctl through the independent bootstrap and selected release. Make existing-target Linux migration concrete, preserve current Mac managed dispatch, and replace circular recovery instructions with tested delivery prerequisites.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "Exact old a30aa7f91 updater is bypassed for candidate npm; absent/hostile ambient runtimes cannot select npm.",
+      "Existing legacy and runtime-bound source roots reach staged update without successful incumbent build.",
+      "Update/restart/start running-state semantics explicit; selection consumed consistently.",
+      "Missing authenticated package/material fails before mutation with an actionable prerequisite; raw template is not described as a signed recovery package."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Current packaged installer upgrades existing legacy/bound target without old npm"
+      },
+      {
+        "level": "integration",
+        "name": "Shell selected-root routing and update/restart semantics under hostile PATH"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2588ef99-b089-4312-9d87-6c1e48d18933",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-21T17:32:22.161Z",
+    "epicCreatedAt": "2026-11-21T15:31:04.425Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a03e99e17a364550",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Route TUI, daemon updater and MCP through selected releases",
+      "parent": {
+        "entityId": "STORY-a03e99e17a364550-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a03e99e17a364550-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-a03e99e17a364550-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a03e99e17a364550-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a11ada9114e3757ca3fc6e1eeb98da069e8082058e57c9744e9fb4e00b8db156",
+        "at": "2026-11-21T17:32:22.161Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-21T17:32:22.163Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Route TUI, daemon updater and MCP through selected releases",
+    "summary": "Update maintenance, detached update helper and startup/MCP resolution to consume current bootstrap and selected source release. Preserve IPC acknowledgments/final outcomes and the authoritative platform stop/start paths.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "TUI and daemon updater avoid delegation into installed old build functions; errors include exact failing command and bounded diagnostics.",
+      "Selected release/root/runtime resolved before launch; malformed selector never falls back.",
+      "Detached updater survives incumbent shutdown and reports final committed/rolled-back/recovery-required outcome.",
+      "Old unchanged clients are documented to use current installer/client once; no claim that existing process functions update themselves."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "TUI and detached daemon update survive handoff and expose final outcome"
+      },
+      {
+        "level": "integration",
+        "name": "MCP/start resolve source selection and reject malformed state"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

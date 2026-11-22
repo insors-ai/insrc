@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-76e83f9c-207c-409e-a872-ee8051245084",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-21T17:32:22.172Z",
+    "epicCreatedAt": "2026-11-21T15:31:04.425Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a03e99e17a364550",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Qualify actual macOS historical upgrade and next update",
+      "parent": {
+        "entityId": "STORY-a03e99e17a364550-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a03e99e17a364550-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-a03e99e17a364550-s1-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a79b814b76ceeded0207a2918929d85b3f2dd6233021d7527e9a47d9066cb256",
+        "at": "2026-11-21T17:32:22.172Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-21T17:32:22.175Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Qualify actual macOS historical upgrade and next update",
+    "summary": "On isolated darwin-arm64 state, build/install real historical a30aa7f91 dependencies/output and upgrade through the delivered current bootstrap, then update migrated installation again. Exercise native failure before cutover and readiness rollback/retry; capture exact runtime/source/process/data receipts.",
+    "size": "L",
+    "order": 9,
+    "acceptanceChecks": [
+      "Actual npm/native builds and five native module/CPU ONNX loads succeed under owned runtime; use no/20/26/hostile ambient cases across contract/native coverage.",
+      "Historical and bound-source transitions, subsequent update and applicable new launcher integration are exercised; existing authenticated managed path regresses cleanly.",
+      "Seeded state/config preserved via daemon IPC; no user's real daemon/store modified.",
+      "Failures preserve or restore qualified prior with retained identity and all owned children closed.",
+      "Test keys qualify fixtures only; production source promotion requires operator-signed artifacts and valid qualification evidence."
+    ],
+    "tests": [
+      {
+        "level": "live",
+        "name": "darwin-arm64 actual historical upgrade, subsequent update and qualified rollback/retry"
+      },
+      {
+        "level": "live",
+        "name": "Mac native dependency loads and owned Node/npm environment identities"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

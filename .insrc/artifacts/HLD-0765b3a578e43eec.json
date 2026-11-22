@@ -57,8 +57,8 @@
       "q860d1b4e": {
         "question": "(s3 LLD) The epicHash/storyId mapping persistVerificationReceipt requires has no documented derivation from the Epic's pinned content identity; the s3 LLD must specify it explicitly before the persistence call can be implemented.",
         "status": "deferred",
-        "rationale": "Tagged (s3 LLD) in the HLD; out of s1's scope (security model selection). Will resurface via review_deferred when authoring s3's LLD.",
-        "resolvedAt": "2026-11-22T06:26:50.179Z"
+        "rationale": "Tagged s3 LLD; persistVerificationReceipt mapping is s3's own receipt-persistence boundary, out of s2's scope (s2 produces SecurityAdvisoryEvidence only, no receipt persistence).",
+        "resolvedAt": "2026-11-22T09:43:13.533Z"
       },
       "qfab24fea": {
         "question": "(s3 LLD) The supplemental report structure carrying FR003's exploit-prerequisite/remediation/advisory-provenance content has no persistence mechanism specified yet -- the s3 LLD must decide whether it is a new stored artifact type or an in-memory assembly over the existing SecurityFinding/VerificationReceipt records.",

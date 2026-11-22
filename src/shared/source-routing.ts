@@ -8,7 +8,7 @@ import { isDeepStrictEqual, promisify } from 'node:util';
 import { PATHS } from './paths.js';
 import { SourceInstallationStore } from './source-installation.js';
 import type { SourceInstallationState, SourceSelection } from './source-installation.js';
-import { ownedNodeEnvironment, resolveOwnedToolchain } from './owned-node-runtime.js';
+import { ownedNodeEnvironment } from './owned-node-runtime.js';
 import type { OwnedToolchain } from './owned-node-runtime.js';
 import { verifyStagedReleasePin } from '../daemon/managed-release-staging.js';
 import type { StagedReleasePin } from '../daemon/managed-release-staging.js';
@@ -16,6 +16,7 @@ import { verifySourceRuntime } from '../daemon/source-store-inspection.js';
 
 const execute = promisify(execFile);
 export type SourceControlOutcome = NonNullable<SourceInstallationState['outcome']>;
+export type SourceControlReply = SourceControlOutcome & { readonly forced?: boolean | undefined };
 export interface SourceControlRoute {
  readonly store: SourceInstallationStore;
  readonly manager: SourceSelection;
@@ -76,16 +77,14 @@ export async function resolveSourceLaunch(stateRoot = PATHS.insrc, expectedRoot?
  if (!route) return undefined;
  if (route.active) throw new Error('Source transaction recovery must finish before launching a client');
  await verifyStagedReleasePin(route.launch);
- if (route.launch.runtime !== route.toolchain.node) {
-  const prior = await resolveOwnedToolchain(route.launch.root, route.store.root);
-  if (prior.node !== route.launch.runtime) throw new Error('Restored source runtime differs from its verified binding');
- }
+ // A qualified restored prior retains its separately pinned runtime. Its full
+ // executable bytes are included in the verified release fingerprint above.
  return route;
 }
 
 /** Reuse the selected controller for lifecycle effects; never call incumbent build functions. */
 export async function runSourceControl(route: SourceControlRoute, command: 'start' | 'restart' | 'stop' | 'update' | 'recover',
- env: NodeJS.ProcessEnv = process.env): Promise<SourceControlOutcome> {
+ env: NodeJS.ProcessEnv = process.env): Promise<SourceControlReply> {
  const entry = join(route.manager.pin.root, 'out/bin/insrc-source-control.js');
  const args = [entry, command, route.store.root, route.store.installationRoot];
  let stdout: string;
@@ -94,9 +93,18 @@ export async function runSourceControl(route: SourceControlRoute, command: 'star
    cwd: route.manager.pin.root, timeout: 30 * 60_000, maxBuffer: 256 * 1024 }));
  } catch (error) {
   const result = error as { message?: string; stdout?: string; stderr?: string };
-  throw new Error(`Source command failed ${JSON.stringify([route.toolchain.node, ...args])}: ${(result.stderr || result.stdout || result.message || String(error)).slice(-8192)}`, { cause: error });
+  let detail = '';
+  try { const outcome = JSON.parse(result.stdout ?? '') as { detail?: unknown }; if (typeof outcome.detail === 'string') detail = outcome.detail.slice(0, 4096); } catch { /* Raw diagnostics remain available below. */ }
+  const diagnostic = [detail, result.stderr?.slice(-3072), detail ? '' : result.stdout?.slice(-4096), result.message?.slice(-1024)].filter(Boolean).join('\n').slice(0, 8192);
+  throw new Error(`Source command failed ${JSON.stringify([route.toolchain.node, ...args])}: ${diagnostic || String(error).slice(-8192)}`, { cause: error });
  }
- const outcome = route.store.read().outcome;
- if (!outcome || !isDeepStrictEqual(JSON.parse(stdout), outcome)) throw new Error('Source controller reply differs from its durable outcome');
- return outcome;
+ try {
+  const reply = JSON.parse(stdout) as SourceControlReply;
+  const { forced, ...record } = reply;
+  const outcome = route.store.read().outcome;
+  if ((forced !== undefined && typeof forced !== 'boolean') || !outcome || !isDeepStrictEqual(record, outcome)) throw new Error('Reply differs from its durable outcome');
+  return { ...outcome, ...(forced === undefined ? {} : { forced }) };
+ } catch (error) {
+  throw new Error(`Invalid source reply for ${JSON.stringify([route.toolchain.node, ...args])}: ${stdout.slice(-8192)}`, { cause: error });
+ }
 }

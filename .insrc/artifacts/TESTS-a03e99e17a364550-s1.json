@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 8,
-        "contentHash": "09a150687252f5262195dbc80c596c8861585c74c6f3bcaa7aa0cda1679fc984",
-        "at": "2026-11-22T05:02:13.804Z",
+        "number": 11,
+        "contentHash": "d96cd52d630f33194f156b7f1d5b9e9687473d901abe526bbb69b59c9bd9bdb7",
+        "at": "2026-11-22T08:15:57.782Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "a03e99e17a364550",
     "storyId": "s1",
     "createdAt": "2026-11-21T17:48:45.684Z",
-    "updatedAt": "2026-11-22T05:02:13.772Z",
+    "updatedAt": "2026-11-22T08:15:57.731Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-21T15:31:04.425Z",
     "epicSlug": "restore-upgrades-from-existing-daemon-installations",
-    "revision": 8
+    "revision": 11
   },
   "body": {
     "tasks": [
@@ -405,6 +405,77 @@
               },
               {
                 "title": "Current macOS installer authenticates managed source before candidate npm and bypasses old updater",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "67a432d7f",
+        "ranAt": "2026-11-22T08:15:57.731Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "TUI and detached daemon update survive handoff and expose final outcome",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/source-consumers-native.test.ts",
+                "title": "TUI and detached daemon update survive handoff and expose final outcome",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/source-update-outcomes.test.ts",
+                "title": "Source update receipts retain update results and expose recovery-required under exclusion",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "MCP/start resolve source selection and reject malformed state",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/source-consumers-native.test.ts",
+                "title": "MCP/start resolve source selection and reject malformed state",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "scripts/__tests__/source-consumers-native.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 347214,
+            "titles": [
+              {
+                "title": "TUI and detached daemon update survive handoff and expose final outcome",
+                "result": "pass"
+              },
+              {
+                "title": "MCP/start resolve source selection and reject malformed state",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/source-update-outcomes.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 28970,
+            "titles": [
+              {
+                "title": "Source update receipts retain update results and expose recovery-required under exclusion",
                 "result": "pass"
               }
             ],

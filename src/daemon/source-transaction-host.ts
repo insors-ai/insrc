@@ -5,6 +5,7 @@ import { readdir } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { isDeepStrictEqual } from 'node:util';
+import { finishSourceUpdate } from '../shared/source-update-outcomes.js';
 import { cleanNodeEnvironment } from '../shared/owned-node-runtime.js';
 import { sameProcess } from '../shared/daemon-process.js';
 import type { ProcessIdentity } from '../shared/daemon-process.js';
@@ -57,6 +58,8 @@ function publication(actor: SourceNativeActor): Publication | undefined {
 /** Production effects for actors owned by the Linux source supervisor.
  * Unmanaged running predecessors need a separate qualified owner; a PID file is never adoption authority. */
 export class NativeSourceTransactionHost implements SourceTransactionHost {
+ private forcedStop = false;
+ get forced(): boolean { return this.forcedStop; }
  private readonly actors = new Map<string, SourceNativeActor>();
  private readonly binary: string;
  private readonly directory: string;
@@ -96,7 +99,7 @@ export class NativeSourceTransactionHost implements SourceTransactionHost {
     catch { /* Retain the original owned actor even if its public reply is absent. */ }
     const deadline = performance.now() + 30_000;
     while (!await actor.target.handle.hasExited() && performance.now() < deadline) await delay(100);
-    if (!await actor.target.handle.hasExited()) await actor.kill();
+    if (!await actor.target.handle.hasExited()) { this.forcedStop = true; await actor.kill(); }
    }
    await actor.childrenClosed();
   } };
@@ -107,7 +110,7 @@ export class NativeSourceTransactionHost implements SourceTransactionHost {
   for (const actor of actors) {
    if (!await actor.target.handle.hasExited()) live.push(actor); else await actor.childrenClosed();
   }
-  if (live.length > 1 || live.some(actor => actor.ticket.role === 'probe' || !isDeepStrictEqual(actor.ticket.release, prior))) throw new Error('Source installation has an unrelated or concurrent live actor');
+  if (live.length > 1 || live.some(actor => !['candidate', 'prior'].includes(actor.ticket.role) || !isDeepStrictEqual(actor.ticket.release, prior))) throw new Error('Source installation has an unrelated or concurrent live actor');
   if (live[0]) {
    await this.ready(this.wrap(live[0]), prior);
    return this.wrap(live[0]);
@@ -197,6 +200,9 @@ export class NativeSourceTransactionHost implements SourceTransactionHost {
   const actor = (await this.scan()).find(item => sameProcess(item.target, identity));
   if (!actor) throw new Error('Terminal source actor ownership is missing');
   if (await actor.target.handle.hasExited()) await actor.childrenClosed(); else await actor.commit();
+ }
+ async published(outcome: NonNullable<ReturnType<SourceInstallationStore['read']>['outcome']>, guard: RunFileGuard): Promise<void> {
+  finishSourceUpdate(this.store, outcome, guard);
  }
  async close(): Promise<void> { for (const actor of this.actors.values()) await actor.close(); this.actors.clear(); }
 }

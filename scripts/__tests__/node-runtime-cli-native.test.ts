@@ -30,26 +30,19 @@ test('installed TUI and MCP symlink wrappers use official owned Node under absen
  } finally { f.clean(); }
 });
 
-test('TUI update runs absolute official npm and lifecycle Node with the shared shell marker', nativeOptions, () => {
+test('TUI refuses historical inline builds without invoking ambient or incumbent npm', nativeOptions, () => {
  const f = ownedSourceFixture();
  try {
-  // Exercise the source TUI adapter; macOS's separately tested managed bridge
-  // is selected only when an installer/managed manifest exists.
   rmSync(join(f.scripts,'insrc-daemon-install.sh'));
   const worker = join(f.root,'update.mjs');
   writeFileSync(worker, `process.env.NODE_OPTIONS='--invalid-injection';process.env.NODE_PATH='/external';
 const {update}=await import(${JSON.stringify(moduleUrl('maintenance'))});
-const result=await update({skipSync:true},line=>process.stderr.write(line+'\\n'));
-if(!result.ok)throw Error(result.error);`);
+const result=await update({},()=>{});
+if(result.ok||!result.error?.includes('current authenticated release installer'))throw Error(JSON.stringify(result));`);
   const result = spawnSync(process.execPath,[worker],{env:{...f.env,NODE_OPTIONS:'',NODE_PATH:'',INSRC_DAEMON_ROOT:f.seed},encoding:'utf8',timeout:60000});
   assert.equal(result.status,0,result.stdout+result.stderr);
-  assert.match(readFileSync(join(f.seed,'node_modules/.insrc-install-ok'),'utf8'),/^v2:[a-f0-9]+:22\.22\.1:/);
-  for(const phase of ['preinstall','build']) {
-   const record = f.records().find(r=>r.phase===phase); assert.ok(record,phase);
-   assert.equal(record.version,'22.22.1'); assert.equal(record.exe,join(f.distribution,'bin/node'));
-   assert.equal(record.options,null); assert.equal(record.nodePath,null);
-  }
-  assert.ok(!existsSync(f.fakeTrace));
+  assert.equal(existsSync(join(f.seed,'node_modules/.insrc-install-ok')),false);
+  assert.equal(existsSync(f.trace),false); assert.ok(!existsSync(f.fakeTrace));
  } finally { f.clean(); }
 });
 

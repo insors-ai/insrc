@@ -29,6 +29,7 @@ import { runFileGuardConflict } from '../../shared/daemon-run-files.js';
 import { readManagedInstallation } from '../../shared/managed-daemon-installation.js';
 import { ManagedDaemonControl } from './managed-daemon-control.js';
 import { ownedNodeEnvironment, resolveOwnedToolchain } from './owned-runtime.js';
+import { resolveSourceControl, runSourceControl } from '../../shared/source-routing.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 /** Daemon entry point relative to this compiled file (out/cli/services).
@@ -72,6 +73,13 @@ export async function getStatus(): Promise<DaemonStatus> {
  *  ready — pid file + socket present and the pid alive. The long
  *  window covers ONNX cold-boot on a fresh install. */
 export async function startDaemon(): Promise<StartResult> {
+ const source = await resolveSourceControl(PATHS.insrc, process.env['INSRC_DAEMON_ROOT']);
+ if (source) {
+  const outcome = await runSourceControl(source, 'start');
+  const transaction = outcome.transaction, actor = transaction?.execution?.candidate ?? transaction?.execution?.original;
+  return { started: transaction?.wasRunning !== true, logPath: PATHS.daemonLog, alreadyRunning: transaction?.wasRunning === true,
+   ...(actor ? { pid: actor.pid } : {}) };
+ }
 	const managed = await readManagedInstallation();
 	if (managed !== undefined) {
 		const result = await new ManagedDaemonControl(managed).run('start');
@@ -171,6 +179,11 @@ const realStopDeps: StopDeps = {
  *  free to start on the same store. */
 export async function stopDaemon(over: Partial<StopDeps> = {}): Promise<StopOutcome> {
 	if (Object.keys(over).length === 0) {
+  const source = await resolveSourceControl(PATHS.insrc, process.env['INSRC_DAEMON_ROOT']);
+  if (source) {
+   const result = await runSourceControl(source, 'stop');
+   return { stopped: true, forced: result.forced === true };
+  }
 		const managed = await readManagedInstallation();
 		if (managed !== undefined) {
 			const result = await new ManagedDaemonControl(managed).run('stop');

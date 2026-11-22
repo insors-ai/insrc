@@ -9,6 +9,8 @@ import type { StopTarget } from '../shared/daemon-process-client.js';
 import { SourceInstallationStore, SourcePublicationUnknownError } from '../shared/source-installation.js';
 import type { SourceExecution, SourceInstallationState, SourceSelection, SourceTransaction } from '../shared/source-installation.js';
 import { assertSourceReleaseFloor } from '../shared/managed-source-release.js';
+import { readVerifiedSourceRelease } from '../shared/managed-source-release.js';
+import type { VerifiedSourceRelease } from '../shared/managed-source-release.js';
 import type { QualifiedReleasePair } from '../shared/source-release-compatibility.js';
 import { requireQualifiedReleasePair } from '../shared/source-release-compatibility.js';
 import type { StagedReleasePin } from './managed-release-staging.js';
@@ -26,6 +28,8 @@ export interface SourceUpgrade {
  readonly candidate: SourceSelection;
  readonly compatibility: QualifiedReleasePair;
 }
+/** An authenticated observation of the already-selected bytes, never an update pair. */
+export interface SourceObservation { readonly unchanged: VerifiedSourceRelease; }
 
 /** Platform effects record actors under exclusion, then hand the startup lease to their granted entry. */
 export interface SourceTransactionHost {
@@ -48,10 +52,15 @@ export interface SourceTransactionHost {
  verifyRuntime(selection: SourceSelection): Promise<void>;
  /** Called only after the terminal outcome is durable; attach committed actor ownership to its native supervisor. */
  settled?(transaction: SourceTransaction): Promise<void>;
+ /** Publish public update receipts under the same mutation lease, before clearing active. */
+ published?(outcome: NonNullable<SourceInstallationState['outcome']>, guard: RunFileGuard): Promise<void>;
 }
 
 type Outcome = NonNullable<SourceInstallationState['outcome']>;
-const message = (error: unknown) => (error instanceof Error ? error.message : String(error)).slice(0, 1800);
+const message = (error: unknown) => {
+ const text = error instanceof Error ? error.message : String(error);
+ return text.length <= 1800 ? text : `${text.slice(0, 600)}\n…\n${text.slice(-1190)}`;
+};
 const identity = ({ pid, startedAt, commandLine }: ProcessIdentity): ProcessIdentity => ({ pid, startedAt, commandLine });
 const terminal = (phase: SourceTransaction['phase']) => phase === 'committed' || phase === 'rolled-back';
 function unique<T>(values: readonly T[]): T[] { return [...new Map(values.map(value => [JSON.stringify(value), value])).values()]; }
@@ -156,10 +165,9 @@ export class LinuxSourceTransaction {
   const outcome = { id, decision, detail: detail.slice(0, 4096), transaction, ...(legacyRoute ? { legacyRoute } : {}) };
   this.publish(state => ({ ...state, active: transaction, outcome }));
   if (decision === 'recovery-required') this.fenced = true;
-  else {
-   await this.host.settled?.(transaction);
-   this.publish(state => ({ ...state, active: null }));
-  }
+  else await this.host.settled?.(transaction);
+  await this.host.published?.(outcome, this.guard!);
+  if (decision !== 'recovery-required') this.publish(state => ({ ...state, active: null }));
   return outcome;
  }
 
@@ -176,7 +184,8 @@ export class LinuxSourceTransaction {
   }, operation);
  }
 
- async update(prepare: (initial: SourceSelection | null) => Promise<SourceUpgrade>, operation: SourceExecution['operation'] = 'update'): Promise<Outcome> {
+ async update(prepare: (initial: SourceSelection | null) => Promise<SourceUpgrade | SourceObservation>, operation: SourceExecution['operation'] = 'update',
+  admitted?: (id: string, guard: RunFileGuard) => Promise<void>): Promise<Outcome> {
   this.acquire();
   let id: string | undefined;
   try {
@@ -186,9 +195,25 @@ export class LinuxSourceTransaction {
    id = randomUUID();
    this.publish(state => ({ ...state, active: { id: id!, phase: 'reserved', owner: this.owner,
     baselineGeneration: state.generation, initialSelector: state.selected, prior: null, candidate: null, wasRunning: false } }));
-   let prepared: SourceUpgrade;
-   try { prepared = await prepare(initial.selected); }
+   let prepared: SourceUpgrade | SourceObservation;
+   try { await admitted?.(id, this.guard!); prepared = await prepare(initial.selected); }
    catch (error) { return await this.finish(id, 'rolled-back', `Preparation failed before incumbent mutation: ${message(error)}`); }
+   if ('unchanged' in prepared) {
+    const receipt = readVerifiedSourceRelease(prepared.unchanged), selected = initial.selected;
+    if (operation !== 'update' || !selected || receipt.commit !== selected.pin.commit || receipt.tree !== selected.source.tree
+     || !isDeepStrictEqual(receipt.channel, selected.source.channel)) throw new Error('Source observation does not identify the selected authenticated bytes/channel');
+    await verifyStagedReleasePin(selected.pin); await this.host.verifyRuntime(selected);
+    this.publish(state => {
+     if (!isDeepStrictEqual(state.selected, selected)) throw new Error('Source selector changed during authenticated observation');
+     const priorFloor = state.sourceReleases.find(item => isDeepStrictEqual(item.channel, receipt.channel));
+     assertSourceReleaseFloor(receipt, priorFloor ? [priorFloor] : []);
+     return { ...state, sourceReleases: [...state.sourceReleases.filter(item => !isDeepStrictEqual(item.channel, receipt.channel)), receipt],
+      // Older readers already understand a terminal preparation-only record.
+      // No execution or same-release update compatibility pair is fabricated.
+      active: { ...state.active!, prior: selected.pin, candidate: selected } };
+    });
+    return await this.finish(id, 'committed', 'Authenticated release is already selected; process and selection unchanged');
+   }
    const { prior, candidate } = prepared;
    const legacy = operation.startsWith('legacy-');
    if (operation === 'update' || legacy) requireQualifiedReleasePair(prepared.compatibility.prior, candidate.compatibility, [prepared.compatibility]);

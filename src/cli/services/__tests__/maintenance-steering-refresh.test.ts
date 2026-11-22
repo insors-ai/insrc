@@ -3,19 +3,9 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-/**
- * Tests for the maintenance.update post-build steering refresh (S001).
- *
- * SCOPE NOTE (mirrors maintenance-reconcile.test.ts): update()'s
- * git-fetch / npm-install / npm-build plumbing spawns real subprocesses against
- * DAEMON_ROOT and is not cleanly isolable in-process. So the NEW step is driven
- * through the exported `runUpdateSteeringRefresh` (the exact best-effort logic
- * update() runs, minus that unchanged plumbing) with a temp daemon-root asset +
- * an injected deps seam, and the sequencing / never-flip-ok / no-restart
- * properties are pinned by a source-level assertion over update().
- *
- * Run: npx tsx --test src/cli/services/__tests__/maintenance-steering-refresh.test.ts
- */
+/** Independent reconciliation helpers remain supported. Source updates now
+ * delegate to the selected transaction owner; daemon startup owns reconciliation.
+ * Public caller/lifecycle coverage lives in source-consumers-native.test.ts. */
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -111,28 +101,4 @@ test('runUpdateSteeringRefresh: empty steering asset is treated as a failure →
 	} finally {
 		rmSync(root, { recursive: true, force: true });
 	}
-});
-
-test('SOURCE contract: steering-refresh is sequenced after build+reconcile, best-effort (never flips ok:false), and issues no restart', () => {
-	const src = readFileSync(MAINTENANCE_SRC, 'utf-8');
-
-	const buildIdx     = src.indexOf("steps.push('build')");
-	const reconcileIdx  = src.indexOf("steps.push('reconcile')");
-	const steeringIdx   = src.indexOf("steps.push('steering-refresh')");
-	assert.ok(buildIdx > 0 && reconcileIdx > 0 && steeringIdx > 0);
-	assert.ok(steeringIdx > buildIdx,     'steering-refresh sequenced after build');
-	assert.ok(steeringIdx > reconcileIdx, 'steering-refresh sequenced after reconcile');
-
-	// The wire-in sits in its own try/catch and the success return carries the field.
-	assert.match(src, /steeringRefresh = await runUpdateSteeringRefresh\(root, onLog\)/);
-	assert.match(src, /return \{ ok: true, steps, configReconcile, steeringRefresh \}/);
-
-	// update() itself must not restart the daemon (contract preserved).
-	const updateBody = src.slice(src.indexOf('export async function update'), src.indexOf('type ReconcileSummary'));
-	assert.doesNotMatch(updateBody, /startDaemon|stopDaemon/);
-	assert.match(updateBody, /daemon NOT restarted/);
-
-	// UpdateOptions gains no steering flag (unconditional, like reconcile).
-	const updateOptions = src.slice(src.indexOf('interface UpdateOptions'), src.indexOf('interface MaintenanceResult'));
-	assert.doesNotMatch(updateOptions, /steering/i);
 });

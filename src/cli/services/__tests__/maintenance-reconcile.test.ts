@@ -3,22 +3,9 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-/**
- * Tests for the maintenance.update post-build config reconcile (t12).
- *
- * SCOPE NOTE: update()'s git-fetch / npm-install / npm-build plumbing is
- * pre-existing, unchanged, and spawns real subprocesses against DAEMON_ROOT
- * (bound from process.env at module load) and the REAL PATHS.config — none of
- * which is cleanly isolable in-process without risking the developer's actual
- * daemon checkout and config. So the NEW reconcile step is driven through the
- * exported `runUpdateReconcile` / `summarizeReconcile` (the exact logic update()
- * runs, minus that unchanged plumbing) with a temp config-path seam and a temp
- * built-catalog fixture, and the sequencing/unconditional/no-new-flag
- * properties are pinned by a source-level assertion over update(). Nothing is
- * silently skipped.
- *
- * Run: npx tsx --test src/cli/services/__tests__/maintenance-reconcile.test.ts
- */
+/** Independent reconciliation helpers remain supported. Source updates now
+ * delegate to the selected transaction owner; daemon startup owns reconciliation.
+ * Public caller/lifecycle coverage lives in source-consumers-native.test.ts. */
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -190,17 +177,4 @@ test('summarizeReconcile: a config with ONLY retired keys to prune reports prune
 	assert.equal(summary.filled, 0);
 	assert.equal(summary.repaired, 0);
 	assert.equal(summary.pruned, 1);
-});
-
-test('SOURCE contract: the reconcile is sequenced after build, is unconditional, and adds no UpdateOptions flag', () => {
-	const src = readFileSync(MAINTENANCE_SRC, 'utf-8');
-	const buildIdx = src.indexOf("steps.push('build')");
-	const reconcileIdx = src.indexOf("steps.push('reconcile')");
-	assert.ok(buildIdx > 0 && reconcileIdx > 0);
-	assert.ok(reconcileIdx > buildIdx, 'reconcile must be sequenced after build');
-	// The reconcile call is not guarded by any opt-in flag.
-	assert.match(src, /const configReconcile = await runUpdateReconcile\(root, onLog\);/);
-	// UpdateOptions gains no reconcile field.
-	const updateOptions = src.slice(src.indexOf('interface UpdateOptions'), src.indexOf('interface MaintenanceResult'));
-	assert.doesNotMatch(updateOptions, /reconcile/i);
 });

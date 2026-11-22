@@ -7,8 +7,9 @@
 **Epic:** `add-dedicated-security-reviews`
 **HLD base run:** `wf-1795324517306-yi2irl`
 **HLD effective hash:** `60b05edbecc2...`
+**Tracker:** [insors-ai/insrc#226](https://github.com/insors-ai/insrc/issues/226)
 
-This Story lets an operator pin an explicit security-reviewer model (CLI family + model id) via new, global-only `models.security.*` catalog options, independent of the core/mid/cheap tiers every other reasoning site uses. A pure, synchronous selection step picks that pin -- or, when none is configured, the 'security.review' role's own tier-default model -- and rejects outright, with no substitution, a pin that is malformed, unlisted, or does not meet the role's coreFloor-required capability. Only a selection that survives that check proceeds to a bounded, asynchronous availability check against the real CLI backend; a review then either starts with the resolved model and records its identity, or the resolver reports the specific blocker (a malformed/below-floor pin, an unreachable backend, or a timed-out/cancelled check) without ever substituting a different model.
+This Story lets an operator pin an explicit security-reviewer model (CLI family + model id) via new, global-only models.security.* catalog options, independent of the core/mid/cheap tiers every other reasoning site uses. A pure, synchronous selection step picks that pin -- or, when none is configured, the 'security.review' role's own tier-default model -- and rejects outright, with no substitution, a pin that is malformed, unlisted, or does not meet the role's coreFloor-required capability. Only a selection that survives that check proceeds to a bounded, asynchronous availability check against the real CLI backend; a review then either starts with the resolved model and records its identity, or the resolver reports the specific blocker (a malformed/below-floor pin, an unreachable backend, or a timed-out/cancelled check) without ever substituting a different model.
 
 ## Contents
 
@@ -114,6 +115,7 @@ A new helper, e.g. securityPinMeetsFloor(registry: ModelRegistry, familyId: Fami
 
 The HLD-defined output record this Story owns and produces via resolveSecurityModel: { status: 'configured' | 'unavailable'; modelId?: string; provider: 'cli-claude' | 'cli-codex' | 'cli-vibe'; blockerReason?: string }. Lives in the Epic's new standalone orchestration module (outside src/workflow/review-round/, per the HLD's chosen alternative), e.g. src/workflow/security-review/model-selection.ts, and crosses the s1->s3 boundary unchanged. Unchanged from revision 1 -- the shape already supports both an immediate (sync-known) rejection and an availability-check (async) failure with the same status/blockerReason fields.
 
+
 ## 4. Interaction with shared contracts
 
 | Contract | Role | How |
@@ -207,9 +209,26 @@ Keep a 'security.review' RoleId (critical, coreFloor-protected) for tier semanti
 
 Register 'security.review' in role-taxonomy.ts as critical/defaultTier 'core' so it inherits coreFloor protection and shows up in the settings UI like every other role (reusing RoleRouter's tier precedence for the FLOOR only). Add one new config-catalog.ts field (e.g. tiering.securityModel: {provider, modelId} | undefined, byRepo > global) that, when present, names the exact provider/model to use for this role instead of the tier's registry-driven default -- independent selection, but still coreFloor-checked. A dedicated resolveSecurityModel(cfg, repoPath) (not inside RoleRouter) composes: read the override if present, else fall through to the taxonomy tier's default model; attempt construction; unavailable/unsupported -> {status:'unavailable', blockerReason}, never a silent substitution; available -> {status:'configured', modelId, provider}.
 
-(Revision 2 corrects this alternative's own global-only-vs-byRepo config shape and sync/async split per the review findings below -- see §2, §3.2-3.4, §5, §6 for the corrected design; the choice of a3 over a1/a2 stands unchanged.)
-
 ## 8. References
+
+- **[[c1]]** `code` `src/config/role-taxonomy.ts:31`
+- **[[c2]]** `code` `src/config/role-taxonomy.ts:56-120`
+- **[[c3]]** `code` `src/config/settings-catalog.ts:86`
+- **[[c4]]** `code` `src/analyze/context/role-router.ts:103-174`
+- **[[c5]]** `code` `src/analyze/context/shaper-provider.ts:313-330`
+- **[[c6]]** `code` `src/daemon/model-registry.ts:67`
+- **[[c7]]** `code` `src/config/__tests__/role-taxonomy.test.ts:49`
+- **[[c8]]** `code` `src/config/__tests__/core-floor-guard.test.ts:25`
+- **[[c9]]** `artifact` `HLD-0765b3a578e43eec`
+- **[[c10]]** `code` `src/config/config-catalog.ts:94-99`
+- **[[c11]]** `code` `src/config/config-catalog.ts:133-135`
+- **[[c12]]** `code` `src/config/analyze.ts:384-431`
+- **[[c13]]** `code` `src/daemon/model-catalog.ts:72-86`
+- **[[c14]]** `code` `src/daemon/model-registry.ts:96-100`
+- **[[c15]]** `code` `src/config/core-floor-guard.ts:107-141`
+- **[[c16]]** `code` `src/analyze/context/role-router.ts:25-29`
+
+## Citations
 
 - **[[c1]]** `code` `src/config/role-taxonomy.ts:31`
 - **[[c2]]** `code` `src/config/role-taxonomy.ts:56-120`

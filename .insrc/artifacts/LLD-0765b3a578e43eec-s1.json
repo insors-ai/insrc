@@ -27,7 +27,7 @@
     "storyTitle": "Configure a dedicated security model",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 2,
         "contentHash": "af3a400310bf052fa9bea8089e67749191050e4ef9451fa7194f7bfc7e4b0a47",
@@ -38,9 +38,23 @@
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-22T09:40:02.876Z"
+      }
     },
-    "revision": 2
+    "revision": 2,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    }
   },
   "body": {
     "summary": {

@@ -2,6 +2,8 @@
 #define _GNU_SOURCE
 #include <errno.h>
 #include <fcntl.h>
+#include <limits.h>
+#include <linux/sched.h>
 #include <poll.h>
 #include <signal.h>
 #include <stddef.h>
@@ -144,7 +146,61 @@ static int client(int argc, char **argv) {
  if (!ok) return 5;
  puts(reply); return 0;
 }
+/* The resident owner creates a sibling supervisor, outside the daemon subtree.
+ * Its retained creator pidfd still cancels an uncommitted handoff. No numeric
+ * PID signal, double-fork escape, or exception to ECHILD closure is introduced. */
+static int detach_update(const char *binary, int directory, const char *directoryPath, const char *runtime,
+ const char *barrier, const char *token, int creatorfd, pid_t creator, const char *creatorStart) {
+ if (strlen(token) != 64 || strspn(token, "0123456789abcdef") != 64 || dead(creatorfd) != 0) return -1;
+ char name[96], path[PATH_MAX], executable[PATH_MAX], controller[PATH_MAX], parent[32];
+ snprintf(name, sizeof(name), "update-%s", token);
+ int n = snprintf(path, sizeof(path), "%s/%s", directoryPath, name);
+ if (n < 0 || (size_t)n >= sizeof(path)) return -1;
+ int target = openat(directory, name, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC);
+ struct stat st;
+ if (target < 0 || fstat(target, &st) < 0 || st.st_uid != getuid() || (st.st_mode & 077)) { if (target >= 0) close(target); return -1; }
+ int request = openat(target, "request.json", O_RDONLY | O_NOFOLLOW | O_NONBLOCK | O_CLOEXEC);
+ if (request < 0 || fstat(request, &st) < 0 || !S_ISREG(st.st_mode) || st.st_uid != getuid()
+  || st.st_nlink != 1 || (st.st_mode & 077) || st.st_size > 128 * 1024) {
+  if (request >= 0) close(request);
+  close(target); return -1;
+ }
+ close(request);
+ if (!realpath(binary, executable)) { close(target); return -1; }
+ size_t length = strlen(executable);
+ const char *suffix = "/out/bin/insrc-source-actor";
+ if (length >= sizeof(executable) - 1) { close(target); errno = ENAMETOOLONG; return -1; }
+ executable[length] = 0;
+ size_t prefix = (size_t)length, ending = strlen(suffix);
+ if (prefix <= ending || strcmp(executable + prefix - ending, suffix)) { close(target); errno = ENOEXEC; return -1; }
+ executable[prefix - ending] = 0;
+ n = snprintf(controller, sizeof(controller), "%s/out/bin/insrc-source-control.js", executable);
+ if (n < 0 || (size_t)n >= sizeof(controller)) { close(target); return -1; }
+ int log = openat(target, "process.log", O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC, 0600);
+ close(target); if (log < 0) return -1;
+ snprintf(parent, sizeof(parent), "%ld", (long)creator);
+ pid_t monitor = (pid_t)syscall(SYS_clone, CLONE_PARENT | SIGCHLD, NULL, NULL, NULL, 0);
+ if (monitor == 0) {
+  /* All native owner descriptors are CLOEXEC (including pidfd_open results).
+   * Only this inherited creator capability deliberately survives exec. */
+  if (dup2(log, STDOUT_FILENO) < 0 || dup2(log, STDERR_FILENO) < 0 || dup2(creatorfd, 3) < 0
+   || fcntl(3, F_SETFD, 0) < 0) _exit(126);
+  execl(binary, binary, "detached", path, runtime, controller, barrier,
+   token, parent, creatorStart, (char *)NULL); _exit(127);
+ }
+ close(log);
+ return (int)monitor;
+}
+static int inherited_creator(long parent, const char *expected) {
+ FILE *f = fopen("/proc/self/fdinfo/3", "r"); if (!f) return -1;
+ char text[256], actual[256]; long found = -1;
+ while (fgets(text, sizeof(text), f)) if (sscanf(text, "Pid: %ld", &found) == 1) break;
+ fclose(f);
+ if (found != parent || dead(3) != 0 || marker((pid_t)parent, actual, sizeof(actual)) < 0 || strcmp(actual, expected)) return -1;
+ return fcntl(3, F_DUPFD_CLOEXEC, 5);
+}
 int main(int argc, char **argv) {
+ const char *binary = argv[0];
  signal(SIGPIPE, SIG_IGN);
  signal(SIGCHLD, SIG_DFL); /* A direct child's PID cannot be reused before our waitpid. */
  if (argc == 2 && !strcmp(argv[1], "preflight")) {
@@ -155,13 +211,21 @@ int main(int argc, char **argv) {
  }
  if (argc > 1 && !strcmp(argv[1], "control")) return client(argc - 1, argv + 1);
  if (argc > 1 && !strcmp(argv[1], "rpc")) return public_rpc(argc - 1, argv + 1);
- if (argc != 7) return 2;
+ int detached = argc > 1 && !strcmp(argv[1], "detached");
+ if (detached) { argc--; argv++; }
+ if (argc != (detached ? 8 : 7)) return 2;
  const char *directoryPath = argv[1], *runtime = argv[2], *entry = argv[3], *barrier = argv[4], *token = argv[5];
  if (strlen(token) != 64 || strspn(token, "0123456789abcdef") != 64 || runtime[0] != '/' || entry[0] != '/' || barrier[0] != '/') return 2;
- char *end; long parent = strtol(argv[6], &end, 10); if (*end || parent <= 0 || getppid() != parent) return 3;
+ char *end; long parent = strtol(argv[6], &end, 10); if (*end || parent <= 0 || (!detached && getppid() != parent)) return 3;
  int directory = open(directoryPath, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC);
  struct stat st; if (directory < 0 || fstat(directory, &st) < 0 || st.st_uid != getuid() || (st.st_mode & 077)) return 3;
- int parentfd = pidfd((pid_t)parent); if (parentfd < 0 || prctl(PR_SET_CHILD_SUBREAPER, 1, 0, 0, 0) < 0) return 3;
+ int parentfd = detached ? inherited_creator(parent, argv[7]) : pidfd((pid_t)parent);
+ if (parentfd < 0 || prctl(PR_SET_CHILD_SUBREAPER, 1, 0, 0, 0) < 0) return 3;
+ if (detached) {
+  close(3);
+  char request[PATH_MAX]; int n = snprintf(request, sizeof(request), "%s/request.json", directoryPath);
+  if (n < 0 || (size_t)n >= sizeof(request) || setenv("INSRC_SOURCE_UPDATE_REQUEST", request, 1) < 0) return 3;
+ } else if (unsetenv("INSRC_SOURCE_UPDATE_REQUEST") < 0) return 3;
  struct sockaddr_un address; int length = socket_address(&address, token);
  int listener = socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0);
  if (length < 0 || listener < 0 || bind(listener, (struct sockaddr *)&address, (socklen_t)length) < 0 || listen(listener, 8) < 0) return 3;
@@ -181,7 +245,7 @@ int main(int argc, char **argv) {
  }
  close(channel[1]); int rootfd = pidfd(root); char start[256];
  if (rootfd < 0 || marker(root, start, sizeof(start)) < 0) { close(channel[0]); return 4; }
- int waiting = 0, granted = 0, committed = 0, closed = 0, failure = 0;
+ int waiting = 0, granted = 0, committed = 0, closed = 0, failure = 0, updaterfd = -1;
  for (;;) {
   struct pollfd p[4] = { { .fd = listener, .events = POLLIN }, { .fd = channel[0], .events = POLLIN },
    { .fd = rootfd, .events = POLLIN }, { .fd = committed ? -1 : parentfd, .events = POLLIN } };
@@ -199,9 +263,9 @@ int main(int argc, char **argv) {
   }
   if (p[0].revents & POLLIN) {
    int fd = accept4(listener, NULL, NULL, SOCK_CLOEXEC); if (fd < 0) continue;
-   struct ucred peer; socklen_t size = sizeof(peer); char input[256], operation[64], supplied[128], extra;
+   struct ucred peer; socklen_t size = sizeof(peer); char input[512], operation[160], supplied[128], extra;
    if (getsockopt(fd, SOL_SOCKET, SO_PEERCRED, &peer, &size) < 0 || peer.uid != getuid()
-    || line(fd, input, sizeof(input), 2000) < 0 || sscanf(input, "%63s %127s %c", operation, supplied, &extra) != 2 || strcmp(supplied, token)) {
+    || line(fd, input, sizeof(input), 2000) < 0 || sscanf(input, "%159s %127s %c", operation, supplied, &extra) != 2 || strcmp(supplied, token)) {
     close(fd); continue;
    }
    if (!strcmp(operation, "STATUS")) dprintf(fd, "%s %ld\n", committed ? "COMMITTED" : granted ? "RUNNING" : waiting ? "WAITING" : "STARTING", (long)root);
@@ -212,6 +276,16 @@ int main(int argc, char **argv) {
      if (channel[0] >= 0) close(channel[0]);
      committed = 1; channel[0] = -1; dprintf(fd, "COMMITTED %ld\n", (long)root);
     }
+   } else if (!strncmp(operation, "DETACH_UPDATE:", 14) && committed && dead(rootfd) == 0
+    && strlen(entry) > strlen("/out/daemon/index.js") && !strcmp(entry + strlen(entry) - strlen("/out/daemon/index.js"), "/out/daemon/index.js")) {
+    if (updaterfd >= 0 && dead(updaterfd) == 1) { close(updaterfd); updaterfd = -1; }
+    if (updaterfd < 0) {
+     int updater = detach_update(binary, directory, directoryPath, runtime, barrier, operation + 14, rootfd, root, start);
+     char birth[256];
+     if (updater > 0 && (updaterfd = pidfd((pid_t)updater)) >= 0 && marker((pid_t)updater, birth, sizeof(birth)) == 0)
+      dprintf(fd, "DETACHED %d %s\n", updater, birth);
+     else dprintf(fd, "UNCONFIRMED %ld errno=%d\n", (long)root, errno);
+    } else dprintf(fd, "REFUSED %ld\n", (long)root);
    } else if (!strcmp(operation, "KILL")) {
     if (close_tree(rootfd) == 0 && closed_receipt(directory, token, root, start) == 0) { closed = 1; dprintf(fd, "CLOSED %ld\n", (long)root); }
     else { failure = 1; dprintf(fd, "UNCONFIRMED %ld\n", (long)root); }
@@ -222,6 +296,7 @@ int main(int argc, char **argv) {
  }
  if (!closed && close_tree(rootfd) == 0 && closed_receipt(directory, token, root, start) == 0) closed = 1;
  if (channel[0] >= 0) close(channel[0]);
+ if (updaterfd >= 0) close(updaterfd);
  close(rootfd); close(parentfd); close(listener); close(directory);
  (void)failure;
  return closed ? 0 : 5;

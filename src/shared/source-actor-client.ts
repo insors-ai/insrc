@@ -4,7 +4,7 @@ import type { ChildProcess } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { once } from 'node:events';
 import { closeSync, constants, fstatSync, fsyncSync, lstatSync, openSync, readFileSync, readSync, realpathSync, renameSync, writeFileSync } from 'node:fs';
-import { mkdir, mkdtemp } from 'node:fs/promises';
+import { mkdir, mkdtemp, readdir } from 'node:fs/promises';
 import { isAbsolute, join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { isDeepStrictEqual, promisify } from 'node:util';
@@ -26,7 +26,7 @@ export interface SourceActorTicket {
  readonly root: ProcessIdentity;
  readonly release: StagedReleasePin;
  readonly transactionId: string;
- readonly role: 'candidate' | 'prior' | 'probe';
+ readonly role: 'candidate' | 'prior' | 'probe' | 'update';
 }
 export interface SourceActorLaunch {
  /** Current authenticated package supplies executables, never an arbitrary value from a ticket. */
@@ -36,7 +36,7 @@ export interface SourceActorLaunch {
  readonly directory: string;
  readonly release: StagedReleasePin;
  readonly transactionId: string;
- readonly role: SourceActorTicket['role'];
+ readonly role: Exclude<SourceActorTicket['role'], 'update'>;
  readonly env?: NodeJS.ProcessEnv | undefined;
 }
 function canonical(path: string): void {
@@ -77,7 +77,7 @@ function validateIntent(directory: string, ticket: SourceActorTicket): string {
 }
 
 function entry(root: string, role: SourceActorTicket['role']): string {
- return join(root, role === 'probe' ? 'out/daemon/source-store-probe.js' : 'out/daemon/index.js');
+ return join(root, role === 'probe' ? 'out/daemon/source-store-probe.js' : role === 'update' ? 'out/bin/insrc-source-control.js' : 'out/daemon/index.js');
 }
 
 /** Authenticate the Unix peer against the caller's retained actor before sending lifecycle RPC. */
@@ -149,6 +149,55 @@ export class SourceNativeActor {
    throw new Error(`Source actor startup failed: ${error instanceof Error ? error.message : String(error)}\n${diagnostic}`, { cause: error });
   }
  }
+ /** The resident owner creates an independent supervisor before entry is granted.
+  * A normal detached fork remains in the incumbent subreaper's subtree. */
+ async detachUpdater(release: StagedReleasePin, request: unknown, transactionId: string): Promise<SourceNativeActor> {
+  if (this.ticket.role === 'probe' || this.ticket.role === 'update' || await this.target.handle.hasExited()) throw new Error('Source updater requires a live daemon owner');
+  canonical(release.root); canonical(release.runtime);
+  if (this.binary !== join(release.root, 'out/bin/insrc-source-actor') || release.runtime !== this.ticket.release.runtime) throw new Error('Source updater must use the current resident owner and owned runtime');
+  for (const name of await readdir(this.directory)) {
+   if (!name.startsWith('update-')) continue;
+   if (!/^update-[a-f0-9]{64}$/.test(name)) throw new Error('Invalid retained source updater directory');
+   const previous = await SourceNativeActor.reopen(join(this.directory, name), this.binary);
+   try {
+    if (previous.ticket.role !== 'update' || !await previous.target.handle.hasExited()) throw new Error('Source updater already owns a handoff');
+    await previous.childrenClosed();
+   } finally { await previous.target.handle.close(); }
+  }
+  const token = randomBytes(32).toString('hex'), directory = join(this.directory, `update-${token}`);
+  await mkdir(directory, { mode: 0o700 }); privateDirectory(directory);
+  publish(directory, { version: 1, token, creator: this.ticket.root, release, transactionId, role: 'update' }, 'intent');
+  publish(directory, request, 'request');
+  let monitor: ProcessIdentity | undefined;
+  try {
+   const response = await SourceNativeActor.control(this.binary, this.ticket.token, this.ticket.monitor, `DETACH_UPDATE:${token}`);
+   const match = /^DETACHED ([1-9]\d*) (linux:[a-f0-9-]+:[0-9]+)$/.exec(response);
+   if (!match) throw new Error(`Resident source owner refused detached updater: ${response}`);
+   monitor = requireProcessIdentity(Number(match[1]));
+   if (monitor.startedAt !== match[2]) throw new Error('Detached source supervisor changed during capture');
+   let root = 0;
+   for (let i = 0; i < 300; i++) {
+    let reply: string;
+    try { reply = await SourceNativeActor.control(this.binary, token, monitor, 'STATUS'); }
+    catch (error) { if ((error as { code?: number }).code !== 3) throw error; await delay(50); continue; }
+    const waiting = /^WAITING ([1-9]\d*)$/.exec(reply);
+    if (waiting) { root = Number(waiting[1]); break; }
+    await delay(50);
+   }
+   if (!root) throw new Error('Detached source updater did not reach its entry barrier');
+   const observed = requireProcessIdentity(root), currentMonitor = requireProcessIdentity(monitor.pid);
+   if (currentMonitor.startedAt !== monitor.startedAt || !observed.commandLine.endsWith(entry(release.root, 'update'))
+    || realpathSync(`/proc/${root}/exe`) !== release.runtime) throw new Error('Detached source updater differs from its pinned runtime/entry');
+   const ticket: SourceActorTicket = { version: 1, token, monitor: currentMonitor, root: observed, release, transactionId, role: 'update' };
+   const target = SourceNativeActor.residentTarget(directory, ticket, this.binary);
+   if (await target.handle.hasExited()) throw new Error('Detached source updater exited before capture');
+   publish(directory, ticket);
+   return new SourceNativeActor(directory, ticket, target, this.binary);
+  } catch (error) {
+   if (monitor) await SourceNativeActor.control(this.binary, token, monitor, 'KILL');
+   throw error;
+  }
+ }
  private static async control(binary: string, token: string, monitor: ProcessIdentity, command: string): Promise<string> {
   const result = await exec(binary, ['control', token, String(monitor.pid), monitor.startedAt, command], {
    env: cleanNodeEnvironment(process.env), timeout: 20_000, maxBuffer: 8192 });
@@ -216,7 +265,7 @@ export class SourceNativeActor {
   const keys = ['version', 'token', 'monitor', 'root', 'release', 'transactionId', 'role'];
   if (Object.keys(ticket).length !== keys.length || keys.some(key => !Object.hasOwn(ticket, key))
    || ticket.version !== 1 || !/^[a-f0-9]{64}$/.test(ticket.token) || typeof ticket.transactionId !== 'string'
-   || !['candidate', 'prior', 'probe'].includes(ticket.role)) throw new Error('Invalid source actor ticket fields');
+   || !['candidate', 'prior', 'probe', 'update'].includes(ticket.role)) throw new Error('Invalid source actor ticket fields');
   for (const id of [ticket.root, ticket.monitor]) {
    if (!id || Object.keys(id).length !== 3 || !Number.isSafeInteger(id.pid) || id.pid <= 0
     || typeof id.startedAt !== 'string' || !LINUX_BIRTH.test(id.startedAt) || typeof id.commandLine !== 'string' || !id.commandLine) throw new Error('Invalid source actor incarnation');

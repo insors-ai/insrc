@@ -18,7 +18,8 @@ const file = fileURLToPath(import.meta.url), project = process.env.INSRC_SOURCE_
 async function fixture(t: TestContext) {
  const root = mkdtempSync(join(tmpdir(), 'insrc-source-actor-')), release = join(root, 'release');
  mkdirSync(join(release, 'out/daemon'), { recursive: true });
- const binary = join(root, 'source-actor'), broker = join(root, 'broker');
+ mkdirSync(join(release, 'out/bin'), { recursive: true });
+ const binary = join(release, 'out/bin/insrc-source-actor'), broker = join(root, 'broker');
  const native = join(project, 'src/native');
  execFileSync('cc', ['-std=c11', '-O2', '-Wall', '-Wextra', '-Werror', join(native, 'source-actor/main.c'), '-o', binary]);
  execFileSync('cc', ['-std=c11', '-O2', '-Wall', '-Wextra', '-Werror', join(native, 'process-broker/main.c'), join(native, 'process-broker/linux.c'), '-o', broker]);
@@ -158,6 +159,43 @@ execFileSync(${JSON.stringify(f.options.binary)},process.argv.slice(2),{stdio:'i
   }
  }
  await actor.close(); f.retain(undefined);
+}));
+
+test('Detached source updater retains independent native ownership across incumbent closure', { timeout: 480_000 }, async t => sourceLinux(t, file, project, async () => {
+ for (const commit of [false, true]) {
+  const f = await fixture(t);
+  writeFileSync(join(f.options.release.root, 'out/bin/insrc-source-control.js'), `import fs from 'node:fs';import{spawn}from'node:child_process';
+const root=process.env.ACTOR_TEST_ROOT, directory=process.env.INSRC_SOURCE_ACTOR_DIRECTORY;
+const request=JSON.parse(fs.readFileSync(process.env.INSRC_SOURCE_UPDATE_REQUEST,'utf8'));
+if(request.bound!=='current-owner')throw Error('request did not reach the pinned updater');
+fs.writeFileSync(root+'/update-entered',String(process.pid));
+const child=spawn(process.execPath,['-e','setInterval(()=>{},1000)'],{stdio:'ignore',detached:true});
+fs.writeFileSync(root+'/update-descendant',String(child.pid));setInterval(()=>{},1000);`);
+  const actor = await SourceNativeActor.launch(f.options); f.retain(actor);
+  let updater: SourceNativeActor | undefined;
+  try {
+   await actor.grant(); await ready(f.root); await actor.commit();
+   updater = await actor.detachUpdater(f.options.release, { bound: 'current-owner' }, 'fixture-update');
+   assert.equal(existsSync(join(f.root, 'update-entered')), false, 'independent supervisor must still gate updater entry');
+   assert.equal(await updater.target.handle.hasExited(), false);
+   await assert.rejects(actor.detachUpdater(f.options.release, {}, 'second-update'), /already owns a handoff/);
+   await updater.grant();
+   for (let i = 0; !existsSync(join(f.root, 'update-descendant')) && i < 400; i++) await delay(10);
+   const child = requireProcessIdentity(Number(readFileSync(join(f.root, 'update-descendant'), 'utf8')));
+   if (commit) await updater.commit();
+   await actor.kill(); await actor.childrenClosed();
+   if (commit) {
+    assert.equal(await updater.target.handle.hasExited(), false, 'committed updater must outlive full incumbent subtree closure');
+    assert.equal(processIdentityState(child), 'same');
+    const reopened = await SourceNativeActor.reopen(updater.directory, f.options.binary);
+    try { await reopened.kill(); await reopened.childrenClosed(); } finally { await reopened.close(); }
+   }
+   await updater.childrenClosed();
+   assert.notEqual(processIdentityState(child), 'same', 'the independent owner must close its own descendants');
+  } finally {
+   if (updater) { try { await updater.kill(); await updater.childrenClosed(); } finally { await updater.close(); } }
+  }
+ }
 }));
 
 test('Daemon store probe is gated, leaves empty state untouched and refuses incomplete stores', { timeout: 480_000 }, async t => sourceLinux(t, file, project, async () => {

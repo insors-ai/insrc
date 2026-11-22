@@ -27,6 +27,8 @@ async function fixture(t: TestContext) {
  writeFileSync(join(release, 'out/daemon/index.js'), `import fs from 'node:fs';import net from 'node:net';import {spawn,fork} from 'node:child_process';import {Worker} from 'node:worker_threads';
 const root=process.env.ACTOR_TEST_ROOT;
 fs.writeFileSync(root+'/entered',String(process.pid));
+fs.writeFileSync(root+'/scope-env',process.env.ACTOR_SCOPE_PROOF??'none');
+fs.writeFileSync(root+'/scope-cwd',process.cwd());
 const child=spawn(process.execPath,['-e','setInterval(()=>{},1000)'],{stdio:'ignore',detached:true});
 fs.writeFileSync(root+'/descendant',String(child.pid));
 const worker=new Worker('setInterval(()=>{},1000)',{eval:true});
@@ -60,7 +62,13 @@ async function ready(root: string) {
  throw new Error('fixture daemon did not enter after grant');
 }
 
-if (process.env.INSRC_SOURCE_ACTOR_CONTROLLER) {
+if (process.env.INSRC_SOURCE_NESTED_ACTOR) {
+ const request = JSON.parse(process.env.INSRC_SOURCE_NESTED_ACTOR) as { options: Parameters<typeof SourceNativeActor.launch>[0]; report: string };
+ const actor = await SourceNativeActor.launch(request.options);
+ await actor.grant(); await ready(request.options.env!.ACTOR_TEST_ROOT!); await actor.commit();
+ writeFileSync(request.report, JSON.stringify({ directory: actor.directory }));
+ await actor.close();
+} else if (process.env.INSRC_SOURCE_ACTOR_CONTROLLER) {
  const options = JSON.parse(process.env.INSRC_SOURCE_ACTOR_CONTROLLER) as Parameters<typeof SourceNativeActor.launch>[0];
  const actor = await SourceNativeActor.launch(options);
  await actor.grant(); await ready(options.env!.ACTOR_TEST_ROOT!);
@@ -164,18 +172,27 @@ execFileSync(${JSON.stringify(f.options.binary)},process.argv.slice(2),{stdio:'i
 test('Detached source updater retains independent native ownership across incumbent closure', { timeout: 480_000 }, async t => sourceLinux(t, file, project, async () => {
  for (const commit of [false, true]) {
   const f = await fixture(t);
+  const replacement = commit ? await fixture(t) : undefined;
   writeFileSync(join(f.options.release.root, 'out/bin/insrc-source-control.js'), `import fs from 'node:fs';import{spawn}from'node:child_process';
 const root=process.env.ACTOR_TEST_ROOT, directory=process.env.INSRC_SOURCE_ACTOR_DIRECTORY;
 const request=JSON.parse(fs.readFileSync(process.env.INSRC_SOURCE_UPDATE_REQUEST,'utf8'));
 if(request.bound!=='current-owner')throw Error('request did not reach the pinned updater');
 fs.writeFileSync(root+'/update-entered',String(process.pid));
 const child=spawn(process.execPath,['-e','setInterval(()=>{},1000)'],{stdio:'ignore',detached:true});
-fs.writeFileSync(root+'/update-descendant',String(child.pid));setInterval(()=>{},1000);`);
+fs.writeFileSync(root+'/update-descendant',String(child.pid));setInterval(()=>{},1000);
+if(request.nested){
+ while(!fs.existsSync(root+'/allow-nested'))await new Promise(r=>setTimeout(r,10));
+ process.env.INSRC_SOURCE_NESTED_ACTOR=JSON.stringify(request.nested);
+ await import(${JSON.stringify(file)});
+}`);
   const actor = await SourceNativeActor.launch(f.options); f.retain(actor);
   let updater: SourceNativeActor | undefined;
+  let nested: SourceNativeActor | undefined;
   try {
    await actor.grant(); await ready(f.root); await actor.commit();
-   updater = await actor.detachUpdater(f.options.release, { bound: 'current-owner' }, 'fixture-update');
+   updater = await actor.detachUpdater(f.options.release, { bound: 'current-owner', ...(replacement ? {
+    nested: { options: { ...replacement.options, env: { ...replacement.options.env, ACTOR_SCOPE_PROOF: 'replacement-env' } }, report: join(f.root, 'nested.json') },
+   } : {}) }, 'fixture-update', f.options.env);
    assert.equal(existsSync(join(f.root, 'update-entered')), false, 'independent supervisor must still gate updater entry');
    assert.equal(await updater.target.handle.hasExited(), false);
    await assert.rejects(actor.detachUpdater(f.options.release, {}, 'second-update'), /already owns a handoff/);
@@ -187,12 +204,21 @@ fs.writeFileSync(root+'/update-descendant',String(child.pid));setInterval(()=>{}
    if (commit) {
     assert.equal(await updater.target.handle.hasExited(), false, 'committed updater must outlive full incumbent subtree closure');
     assert.equal(processIdentityState(child), 'same');
+    writeFileSync(join(f.root, 'allow-nested'), 'grant');
+    for (let i = 0; !existsSync(join(f.root, 'nested.json')) && i < 800; i++) await delay(25);
+    const report = JSON.parse(readFileSync(join(f.root, 'nested.json'), 'utf8')) as { directory: string };
+    nested = await SourceNativeActor.reopen(report.directory, replacement!.options.binary); replacement!.retain(nested);
+    assert.equal(readFileSync(join(replacement!.root, 'scope-env'), 'utf8'), 'replacement-env', 'the new scope must receive its own environment');
+    assert.equal(readFileSync(join(replacement!.root, 'scope-cwd'), 'utf8'), replacement!.options.release.root);
     const reopened = await SourceNativeActor.reopen(updater.directory, f.options.binary);
     try { await reopened.kill(); await reopened.childrenClosed(); } finally { await reopened.close(); }
+    assert.equal(await nested.target.handle.hasExited(), false, 'committed replacement must outlive full updater subtree closure');
+    await nested.kill(); await nested.childrenClosed();
    }
    await updater.childrenClosed();
    assert.notEqual(processIdentityState(child), 'same', 'the independent owner must close its own descendants');
   } finally {
+   if (nested) { try { await nested.kill(); await nested.childrenClosed(); } finally { await nested.close(); } }
    if (updater) { try { await updater.kill(); await updater.childrenClosed(); } finally { await updater.close(); } }
   }
  }

@@ -33,6 +33,10 @@ static long long now_ms(void) {
  struct timespec t; if (clock_gettime(CLOCK_MONOTONIC, &t) < 0) return -1;
  return (long long)t.tv_sec * 1000 + t.tv_nsec / 1000000;
 }
+static int ends_with(const char *text, const char *suffix) {
+ size_t length = strlen(text), ending = strlen(suffix);
+ return length >= ending && !strcmp(text + length - ending, suffix);
+}
 static int socket_address(struct sockaddr_un *address, const char *token) {
  memset(address, 0, sizeof(*address)); address->sun_family = AF_UNIX;
  int length = snprintf(address->sun_path + 1, sizeof(address->sun_path) - 1, "insrc-source-%s", token);
@@ -65,6 +69,46 @@ static int line(int fd, char *buffer, size_t size, int timeout) {
   if (buffer[used++] == '\n') { buffer[used - 1] = 0; return 0; }
  }
  return -1;
+}
+extern char **environ;
+struct launch_environment { char *bytes; char **values; };
+/* Transfer child environment only over the authenticated private socket. It is
+ * never persisted with launch metadata or printed in diagnostics. */
+static int send_environment(int fd) {
+ size_t size = 0;
+ for (char **p = environ; *p; p++) { size += strlen(*p) + 1; if (size > 128 * 1024) return -1; }
+ if (dprintf(fd, "ENV %zu\n", size) <= 0) return -1;
+ for (char **p = environ; *p; p++) {
+  size_t count = strlen(*p) + 1, offset = 0;
+  while (offset < count) { ssize_t n = write(fd, *p + offset, count - offset); if (n < 0 && errno == EINTR) continue; if (n <= 0) return -1; offset += (size_t)n; }
+ }
+ return 0;
+}
+static struct launch_environment receive_environment(int fd) {
+ struct launch_environment result = { 0 }; char header[64], extra; size_t size;
+ if (line(fd, header, sizeof(header), 2000) < 0 || sscanf(header, "ENV %zu %c", &size, &extra) != 1 || size > 128 * 1024) return result;
+ result.bytes = malloc(size + 1); if (!result.bytes) return result;
+ size_t offset = 0, count = 0; long long deadline = now_ms() + 2000;
+ while (offset < size) {
+  long long remaining = deadline - now_ms(); if (remaining <= 0) goto failed;
+  struct pollfd p = { .fd = fd, .events = POLLIN };
+  int ready = poll(&p, 1, (int)remaining); if (ready < 0 && errno == EINTR) continue; if (ready <= 0) goto failed;
+  ssize_t n = read(fd, result.bytes + offset, size - offset); if (n < 0 && errno == EINTR) continue; if (n <= 0) goto failed;
+  offset += (size_t)n;
+ }
+ result.bytes[size] = 0;
+ for (offset = 0; offset < size;) {
+  size_t length = strnlen(result.bytes + offset, size - offset);
+  char *equal = memchr(result.bytes + offset, '=', length);
+  if (!length || !equal || equal == result.bytes + offset || length >= size - offset || ++count > 4096) goto failed;
+  offset += length + 1;
+ }
+ result.values = calloc(count + 1, sizeof(char *)); if (!result.values) goto failed;
+ offset = 0;
+ for (size_t i = 0; i < count; i++) { result.values[i] = result.bytes + offset; offset += strlen(result.values[i]) + 1; }
+ return result;
+failed:
+ free(result.bytes); result.bytes = NULL; return result;
 }
 /* The connected peer and the retained capability must name the same Linux incarnation
  * before any request bytes are sent. A replaced socket is never a shutdown target. */
@@ -141,6 +185,7 @@ static int client(int argc, char **argv) {
  int capability = peer_capability(fd, owner, expected);
  if (capability < 0) { close(fd); return 4; }
  int sent = dprintf(fd, "%s %s\n", command, token);
+ if (sent > 0 && (!strncmp(command, "DETACH_UPDATE:", 14) || !strncmp(command, "DETACH_ACTOR:", 13)) && send_environment(fd) < 0) sent = -1;
  char reply[1024]; int ok = sent > 0 && line(fd, reply, sizeof(reply), 15000) == 0;
  close(capability); close(fd);
  if (!ok) return 5;
@@ -149,47 +194,77 @@ static int client(int argc, char **argv) {
 /* The resident owner creates a sibling supervisor, outside the daemon subtree.
  * Its retained creator pidfd still cancels an uncommitted handoff. No numeric
  * PID signal, double-fork escape, or exception to ECHILD closure is introduced. */
-static int detach_update(const char *binary, int directory, const char *directoryPath, const char *runtime,
- const char *barrier, const char *token, int creatorfd, pid_t creator, const char *creatorStart) {
+static int spawn_detached(const char *binary, const char *path, const char *runtime, const char *entry,
+ const char *barrier, const char *token, int creatorfd, pid_t creator, const char *creatorStart, char **environment) {
  if (strlen(token) != 64 || strspn(token, "0123456789abcdef") != 64 || dead(creatorfd) != 0) return -1;
- char name[96], path[PATH_MAX], executable[PATH_MAX], controller[PATH_MAX], parent[32];
- snprintf(name, sizeof(name), "update-%s", token);
- int n = snprintf(path, sizeof(path), "%s/%s", directoryPath, name);
- if (n < 0 || (size_t)n >= sizeof(path)) return -1;
- int target = openat(directory, name, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC);
- struct stat st;
+ const char *suffix = ends_with(entry, "/out/daemon/index.js") ? "/out/daemon/index.js"
+  : ends_with(entry, "/out/daemon/source-store-probe.js") ? "/out/daemon/source-store-probe.js"
+  : ends_with(entry, "/out/bin/insrc-source-control.js") ? "/out/bin/insrc-source-control.js" : NULL;
+ char workingDirectory[PATH_MAX];
+ if (!suffix || strlen(entry) <= strlen(suffix) || strlen(entry) >= sizeof(workingDirectory)) { errno = EINVAL; return -1; }
+ memcpy(workingDirectory, entry, strlen(entry) - strlen(suffix)); workingDirectory[strlen(entry) - strlen(suffix)] = 0;
+ int target = open(path, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC); struct stat st;
  if (target < 0 || fstat(target, &st) < 0 || st.st_uid != getuid() || (st.st_mode & 077)) { if (target >= 0) close(target); return -1; }
- int request = openat(target, "request.json", O_RDONLY | O_NOFOLLOW | O_NONBLOCK | O_CLOEXEC);
+ const char *metadata = ends_with(entry, "/out/bin/insrc-source-control.js") ? "request.json" : "intent.json";
+ int request = openat(target, metadata, O_RDONLY | O_NOFOLLOW | O_NONBLOCK | O_CLOEXEC);
  if (request < 0 || fstat(request, &st) < 0 || !S_ISREG(st.st_mode) || st.st_uid != getuid()
   || st.st_nlink != 1 || (st.st_mode & 077) || st.st_size > 128 * 1024) {
   if (request >= 0) close(request);
   close(target); return -1;
  }
  close(request);
- if (!realpath(binary, executable)) { close(target); return -1; }
- size_t length = strlen(executable);
- const char *suffix = "/out/bin/insrc-source-actor";
- if (length >= sizeof(executable) - 1) { close(target); errno = ENAMETOOLONG; return -1; }
- executable[length] = 0;
- size_t prefix = (size_t)length, ending = strlen(suffix);
- if (prefix <= ending || strcmp(executable + prefix - ending, suffix)) { close(target); errno = ENOEXEC; return -1; }
- executable[prefix - ending] = 0;
- n = snprintf(controller, sizeof(controller), "%s/out/bin/insrc-source-control.js", executable);
- if (n < 0 || (size_t)n >= sizeof(controller)) { close(target); return -1; }
  int log = openat(target, "process.log", O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC, 0600);
  close(target); if (log < 0) return -1;
- snprintf(parent, sizeof(parent), "%ld", (long)creator);
+ char parent[32]; snprintf(parent, sizeof(parent), "%ld", (long)creator);
  pid_t monitor = (pid_t)syscall(SYS_clone, CLONE_PARENT | SIGCHLD, NULL, NULL, NULL, 0);
  if (monitor == 0) {
-  /* All native owner descriptors are CLOEXEC (including pidfd_open results).
-   * Only this inherited creator capability deliberately survives exec. */
-  if (dup2(log, STDOUT_FILENO) < 0 || dup2(log, STDERR_FILENO) < 0 || dup2(creatorfd, 3) < 0
-   || fcntl(3, F_SETFD, 0) < 0) _exit(126);
-  execl(binary, binary, "detached", path, runtime, controller, barrier,
-   token, parent, creatorStart, (char *)NULL); _exit(127);
+  /* Owner descriptors are CLOEXEC. Only the creator capability survives exec. */
+  if (dup2(log, STDOUT_FILENO) < 0 || dup2(log, STDERR_FILENO) < 0 || dup2(creatorfd, 3) < 0 || fcntl(3, F_SETFD, 0) < 0
+   || chdir(workingDirectory) < 0) _exit(126);
+  char *arguments[] = { (char *)binary, "detached", (char *)path, (char *)runtime, (char *)entry,
+   (char *)barrier, (char *)token, parent, (char *)creatorStart, NULL };
+  execve(binary, arguments, environment); _exit(127);
  }
- close(log);
- return (int)monitor;
+ close(log); return (int)monitor;
+}
+static int detach_update(const char *binary, const char *directoryPath, const char *runtime,
+ const char *barrier, const char *token, int creatorfd, pid_t creator, const char *creatorStart, char **environment) {
+ if (strlen(token) != 64 || strspn(token, "0123456789abcdef") != 64) { errno = EINVAL; return -1; }
+ char path[PATH_MAX], executable[PATH_MAX], controller[PATH_MAX];
+ int n = snprintf(path, sizeof(path), "%s/update-%s", directoryPath, token);
+ if (n < 0 || (size_t)n >= sizeof(path) || !realpath(binary, executable)) return -1;
+ const char *suffix = "/out/bin/insrc-source-actor"; size_t prefix = strlen(executable), ending = strlen(suffix);
+ if (prefix <= ending || strcmp(executable + prefix - ending, suffix)) { errno = ENOEXEC; return -1; }
+ executable[prefix - ending] = 0;
+ n = snprintf(controller, sizeof(controller), "%s/out/bin/insrc-source-control.js", executable);
+ if (n < 0 || (size_t)n >= sizeof(controller)) { errno = ENAMETOOLONG; return -1; }
+ return spawn_detached(binary, path, runtime, controller, barrier, token, creatorfd, creator, creatorStart, environment);
+}
+static int detach_actor(int directory, const char *token, int creatorfd, pid_t creator, const char *creatorStart, char **environment) {
+ if (strlen(token) != 64 || strspn(token, "0123456789abcdef") != 64) { errno = EINVAL; return -1; }
+ char name[96], bytes[6 * PATH_MAX + 64], *fields[6]; snprintf(name, sizeof(name), "launch-%s", token);
+ int fd = openat(directory, name, O_RDONLY | O_NOFOLLOW | O_NONBLOCK | O_CLOEXEC); struct stat before, after;
+ if (fd < 0) return -1;
+ if (fstat(fd, &before) < 0 || !S_ISREG(before.st_mode) || before.st_uid != getuid() || before.st_nlink != 1
+  || (before.st_mode & 077) || before.st_size <= 0 || (size_t)before.st_size >= sizeof(bytes)) { close(fd); errno = EINVAL; return -1; }
+ ssize_t count = read(fd, bytes, sizeof(bytes));
+ int stable = fstat(fd, &after) == 0 && before.st_size == count && before.st_size == after.st_size
+  && before.st_mtim.tv_sec == after.st_mtim.tv_sec && before.st_mtim.tv_nsec == after.st_mtim.tv_nsec
+  && before.st_ctim.tv_sec == after.st_ctim.tv_sec && before.st_ctim.tv_nsec == after.st_ctim.tv_nsec;
+ close(fd); if (!stable) { errno = EINVAL; return -1; }
+ size_t offset = 0;
+ for (size_t i = 0; i < 6; i++) {
+  if (offset >= (size_t)count) { errno = EINVAL; return -1; }
+  size_t length = strnlen(bytes + offset, (size_t)count - offset);
+  if (!length || length >= (size_t)count - offset || length >= PATH_MAX) { errno = EINVAL; return -1; }
+  fields[i] = bytes + offset; offset += length + 1;
+ }
+ if (offset != (size_t)count || strcmp(fields[0], "INSRC-SOURCE-ACTOR-1")) { errno = EINVAL; return -1; }
+ for (size_t i = 1; i < 6; i++) {
+  char canonical[PATH_MAX];
+  if (fields[i][0] != '/' || !realpath(fields[i], canonical) || strcmp(canonical, fields[i])) { errno = EINVAL; return -1; }
+ }
+ return spawn_detached(fields[2], fields[1], fields[3], fields[4], fields[5], token, creatorfd, creator, creatorStart, environment);
 }
 static int inherited_creator(long parent, const char *expected) {
  FILE *f = fopen("/proc/self/fdinfo/3", "r"); if (!f) return -1;
@@ -221,8 +296,8 @@ int main(int argc, char **argv) {
  struct stat st; if (directory < 0 || fstat(directory, &st) < 0 || st.st_uid != getuid() || (st.st_mode & 077)) return 3;
  int parentfd = detached ? inherited_creator(parent, argv[7]) : pidfd((pid_t)parent);
  if (parentfd < 0 || prctl(PR_SET_CHILD_SUBREAPER, 1, 0, 0, 0) < 0) return 3;
- if (detached) {
-  close(3);
+ if (detached) close(3);
+ if (detached && ends_with(entry, "/out/bin/insrc-source-control.js")) {
   char request[PATH_MAX]; int n = snprintf(request, sizeof(request), "%s/request.json", directoryPath);
   if (n < 0 || (size_t)n >= sizeof(request) || setenv("INSRC_SOURCE_UPDATE_REQUEST", request, 1) < 0) return 3;
  } else if (unsetenv("INSRC_SOURCE_UPDATE_REQUEST") < 0) return 3;
@@ -239,7 +314,7 @@ int main(int argc, char **argv) {
   snprintf(rootPid, sizeof(rootPid), "%ld", (long)getpid()); snprintf(ownerPid, sizeof(ownerPid), "%ld", (long)getppid());
   if (setenv("INSRC_SOURCE_ACTOR_TOKEN", token, 1) < 0
    || setenv("INSRC_SOURCE_ACTOR_ROOT_PID", rootPid, 1) < 0 || setenv("INSRC_SOURCE_ACTOR_MONITOR_PID", ownerPid, 1) < 0
-   || setenv("INSRC_SOURCE_ACTOR_DIRECTORY", directoryPath, 1) < 0
+   || setenv("INSRC_SOURCE_ACTOR_DIRECTORY", directoryPath, 1) < 0 || setenv("INSRC_SOURCE_ACTOR_BINARY", binary, 1) < 0
    || unsetenv("NODE_CHANNEL_FD") < 0 || unsetenv("NODE_CHANNEL_SERIALIZATION_MODE") < 0 || unsetenv("NODE_UNIQUE_ID") < 0) _exit(126);
   execl(runtime, runtime, "--import", barrier, entry, (char *)NULL); _exit(127);
  }
@@ -280,12 +355,21 @@ int main(int argc, char **argv) {
     && strlen(entry) > strlen("/out/daemon/index.js") && !strcmp(entry + strlen(entry) - strlen("/out/daemon/index.js"), "/out/daemon/index.js")) {
     if (updaterfd >= 0 && dead(updaterfd) == 1) { close(updaterfd); updaterfd = -1; }
     if (updaterfd < 0) {
-     int updater = detach_update(binary, directory, directoryPath, runtime, barrier, operation + 14, rootfd, root, start);
+     struct launch_environment environment = receive_environment(fd);
+     int updater = environment.values ? detach_update(binary, directoryPath, runtime, barrier, operation + 14, rootfd, root, start, environment.values) : -1;
+     free(environment.values); free(environment.bytes);
      char birth[256];
      if (updater > 0 && (updaterfd = pidfd((pid_t)updater)) >= 0 && marker((pid_t)updater, birth, sizeof(birth)) == 0)
       dprintf(fd, "DETACHED %d %s\n", updater, birth);
      else dprintf(fd, "UNCONFIRMED %ld errno=%d\n", (long)root, errno);
     } else dprintf(fd, "REFUSED %ld\n", (long)root);
+   } else if (!strncmp(operation, "DETACH_ACTOR:", 13) && committed && dead(rootfd) == 0) {
+    struct launch_environment environment = receive_environment(fd);
+    int actor = environment.values ? detach_actor(directory, operation + 13, rootfd, root, start, environment.values) : -1;
+    free(environment.values); free(environment.bytes);
+    char birth[256];
+    if (actor > 0 && marker((pid_t)actor, birth, sizeof(birth)) == 0) dprintf(fd, "DETACHED %d %s\n", actor, birth);
+    else dprintf(fd, "UNCONFIRMED %ld errno=%d\n", (long)root, errno);
    } else if (!strcmp(operation, "KILL")) {
     if (close_tree(rootfd) == 0 && closed_receipt(directory, token, root, start) == 0) { closed = 1; dprintf(fd, "CLOSED %ld\n", (long)root); }
     else { failure = 1; dprintf(fd, "UNCONFIRMED %ld\n", (long)root); }

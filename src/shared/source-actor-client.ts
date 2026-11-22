@@ -10,7 +10,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { isDeepStrictEqual, promisify } from 'node:util';
 import { captureStopTarget } from './daemon-process-client.js';
 import type { StopTarget } from './daemon-process-client.js';
-import { requireProcessIdentity } from './daemon-process.js';
+import { requireProcessIdentity, sameProcess } from './daemon-process.js';
 import { processIdentityState } from './daemon-process.js';
 import type { ProcessIdentity } from './daemon-process.js';
 import { cleanNodeEnvironment } from './owned-node-runtime.js';
@@ -105,12 +105,18 @@ export class SourceNativeActor {
   for (const path of [options.binary, options.broker, options.barrier, options.release.root, options.release.runtime]) canonical(path);
   await mkdir(options.directory, { recursive: true, mode: 0o700 }); privateDirectory(options.directory);
   const directory = await mkdtemp(join(options.directory, 'actor-')); privateDirectory(directory);
-  const token = randomBytes(32).toString('hex'), log = openSync(join(directory, 'process.log'), 'wx', 0o600);
+  const token = randomBytes(32).toString('hex');
   // This is written before any monitor/root can be forked, including an unobserved spawn.
   publish(directory, { version: 1, token, creator: requireProcessIdentity(process.pid), release: options.release,
    transactionId: options.transactionId, role: options.role }, 'intent');
   const executableEntry = entry(options.release.root, options.role);
   canonical(executableEntry);
+  const updater = await SourceNativeActor.currentUpdater();
+  if (updater) {
+   try { return await updater.launchIndependent(options, directory, token); }
+   finally { await updater.target.handle.close(); }
+  }
+  const log = openSync(join(directory, 'process.log'), 'wx', 0o600);
   const child = spawn(options.binary, [directory, options.release.runtime, executableEntry,
    options.barrier, token, String(process.pid)], { cwd: options.release.root,
     env: cleanNodeEnvironment(options.env ?? process.env), stdio: ['ignore', log, log], detached: true });
@@ -151,7 +157,7 @@ export class SourceNativeActor {
  }
  /** The resident owner creates an independent supervisor before entry is granted.
   * A normal detached fork remains in the incumbent subreaper's subtree. */
- async detachUpdater(release: StagedReleasePin, request: unknown, transactionId: string): Promise<SourceNativeActor> {
+ async detachUpdater(release: StagedReleasePin, request: unknown, transactionId: string, env: NodeJS.ProcessEnv = process.env): Promise<SourceNativeActor> {
   if (this.ticket.role === 'probe' || this.ticket.role === 'update' || await this.target.handle.hasExited()) throw new Error('Source updater requires a live daemon owner');
   canonical(release.root); canonical(release.runtime);
   if (this.binary !== join(release.root, 'out/bin/insrc-source-actor') || release.runtime !== this.ticket.release.runtime) throw new Error('Source updater must use the current resident owner and owned runtime');
@@ -170,37 +176,76 @@ export class SourceNativeActor {
   publish(directory, request, 'request');
   let monitor: ProcessIdentity | undefined;
   try {
-   const response = await SourceNativeActor.control(this.binary, this.ticket.token, this.ticket.monitor, `DETACH_UPDATE:${token}`);
+   const response = await SourceNativeActor.control(this.binary, this.ticket.token, this.ticket.monitor, `DETACH_UPDATE:${token}`, env);
    const match = /^DETACHED ([1-9]\d*) (linux:[a-f0-9-]+:[0-9]+)$/.exec(response);
    if (!match) throw new Error(`Resident source owner refused detached updater: ${response}`);
    monitor = requireProcessIdentity(Number(match[1]));
    if (monitor.startedAt !== match[2]) throw new Error('Detached source supervisor changed during capture');
-   let root = 0;
-   for (let i = 0; i < 300; i++) {
-    let reply: string;
-    try { reply = await SourceNativeActor.control(this.binary, token, monitor, 'STATUS'); }
-    catch (error) { if ((error as { code?: number }).code !== 3) throw error; await delay(50); continue; }
-    const waiting = /^WAITING ([1-9]\d*)$/.exec(reply);
-    if (waiting) { root = Number(waiting[1]); break; }
-    await delay(50);
-   }
-   if (!root) throw new Error('Detached source updater did not reach its entry barrier');
-   const observed = requireProcessIdentity(root), currentMonitor = requireProcessIdentity(monitor.pid);
-   if (currentMonitor.startedAt !== monitor.startedAt || !observed.commandLine.endsWith(entry(release.root, 'update'))
-    || realpathSync(`/proc/${root}/exe`) !== release.runtime) throw new Error('Detached source updater differs from its pinned runtime/entry');
-   const ticket: SourceActorTicket = { version: 1, token, monitor: currentMonitor, root: observed, release, transactionId, role: 'update' };
-   const target = SourceNativeActor.residentTarget(directory, ticket, this.binary);
-   if (await target.handle.hasExited()) throw new Error('Detached source updater exited before capture');
-   publish(directory, ticket);
-   return new SourceNativeActor(directory, ticket, target, this.binary);
+   return await SourceNativeActor.captureIndependent(directory, token, monitor, release, transactionId, 'update', this.binary);
   } catch (error) {
    if (monitor) await SourceNativeActor.control(this.binary, token, monitor, 'KILL');
    throw error;
   }
  }
- private static async control(binary: string, token: string, monitor: ProcessIdentity, command: string): Promise<string> {
+ private static async currentUpdater(): Promise<SourceNativeActor | undefined> {
+  if (process.env['INSRC_SOURCE_ACTOR_ROOT_PID'] !== String(process.pid)) return undefined;
+  const directory = process.env['INSRC_SOURCE_ACTOR_DIRECTORY'], binary = process.env['INSRC_SOURCE_ACTOR_BINARY'];
+  if (!directory || !binary) throw new Error('Source actor has incomplete resident ownership metadata');
+  const actor = await SourceNativeActor.reopen(directory, binary);
+  if (!sameProcess(actor.target, requireProcessIdentity(process.pid)) || actor.ticket.token !== process.env['INSRC_SOURCE_ACTOR_TOKEN']) throw new Error('Source creator differs from its native ticket');
+  if (actor.ticket.role === 'update') return actor;
+  await actor.target.handle.close(); return undefined;
+ }
+ private async launchIndependent(options: SourceActorLaunch, directory: string, token: string): Promise<SourceNativeActor> {
+  // No environment is persisted: the authenticated control client sends it over
+  // the private native socket immediately before creating the independent scope.
+  const descriptor = ['INSRC-SOURCE-ACTOR-1', directory, options.binary, options.release.runtime,
+   entry(options.release.root, options.role), options.barrier].join('\0') + '\0';
+  const file = openSync(join(this.directory, `launch-${token}`), constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | constants.O_NOFOLLOW, 0o600);
+  try { writeFileSync(file, descriptor); fsyncSync(file); } finally { closeSync(file); }
+  const parent = openSync(this.directory, constants.O_RDONLY | constants.O_DIRECTORY | constants.O_NOFOLLOW);
+  try { fsyncSync(parent); } finally { closeSync(parent); }
+  let monitor: ProcessIdentity | undefined;
+  try {
+   const response = await SourceNativeActor.control(this.binary, this.ticket.token, this.ticket.monitor, `DETACH_ACTOR:${token}`, options.env);
+   const match = /^DETACHED ([1-9]\d*) (linux:[a-f0-9-]+:[0-9]+)$/.exec(response);
+   if (!match) throw new Error(`Resident source updater refused independent actor: ${response}`);
+   monitor = requireProcessIdentity(Number(match[1]));
+   if (monitor.startedAt !== match[2]) throw new Error('Independent source supervisor changed during capture');
+   return await SourceNativeActor.captureIndependent(directory, token, monitor, options.release, options.transactionId, options.role, options.binary, options.broker);
+  } catch (error) {
+   if (monitor) await SourceNativeActor.control(options.binary, token, monitor, 'KILL');
+   throw error;
+  }
+ }
+ private static async captureIndependent(directory: string, token: string, monitor: ProcessIdentity, release: StagedReleasePin,
+  transactionId: string, role: SourceActorTicket['role'], binary: string, broker?: string): Promise<SourceNativeActor> {
+  let root = 0;
+  for (let i = 0; i < 300; i++) {
+   let reply: string;
+   try { reply = await SourceNativeActor.control(binary, token, monitor, 'STATUS'); }
+   catch (error) { if ((error as { code?: number }).code !== 3) throw error; await delay(50); continue; }
+   const waiting = /^WAITING ([1-9]\d*)$/.exec(reply);
+   if (waiting) { root = Number(waiting[1]); break; }
+   await delay(50);
+  }
+  if (!root) throw new Error('Independent source actor did not reach its entry barrier');
+  const observed = requireProcessIdentity(root), currentMonitor = requireProcessIdentity(monitor.pid);
+  if (currentMonitor.startedAt !== monitor.startedAt || !observed.commandLine.endsWith(entry(release.root, role))
+   || realpathSync(`/proc/${root}/exe`) !== release.runtime) throw new Error('Independent source actor differs from its pinned runtime/entry');
+  const ticket: SourceActorTicket = { version: 1, token, monitor: currentMonitor, root: observed, release, transactionId, role };
+  const target = role === 'update' || role === 'probe' ? SourceNativeActor.residentTarget(directory, ticket, binary)
+   : broker ? await captureStopTarget(root, { executable: broker }) : undefined;
+  if (!target) throw new Error('Independent source actor has no retained capability');
+  try {
+   if (target.startedAt !== observed.startedAt || target.commandLine !== observed.commandLine || await target.handle.hasExited()) throw new Error('Independent source actor changed during capture');
+   publish(directory, ticket);
+   return new SourceNativeActor(directory, ticket, target, binary);
+  } catch (error) { await target.handle.close(); throw error; }
+ }
+ private static async control(binary: string, token: string, monitor: ProcessIdentity, command: string, env: NodeJS.ProcessEnv = process.env): Promise<string> {
   const result = await exec(binary, ['control', token, String(monitor.pid), monitor.startedAt, command], {
-   env: cleanNodeEnvironment(process.env), timeout: 20_000, maxBuffer: 8192 });
+   env: cleanNodeEnvironment(env), timeout: 20_000, maxBuffer: 8192 });
   return result.stdout.trim();
  }
  async grant(): Promise<void> {

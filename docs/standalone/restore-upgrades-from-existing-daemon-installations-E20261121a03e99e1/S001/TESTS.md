@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 25 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+**Totals:** 25 pass, 0 fail, 0 skipped, 0 not found; 3 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -202,3 +202,17 @@ Reported by the builder, not run by the gate: **pass**. Evidence: docs/plans/nod
 | `scripts/__tests__/source-upgrade-qualification-native.test.ts` | 0 | 3 | 36 s |  |
 | `src/daemon/__tests__/source-interruption.test.ts` | 0 | 1 | 373.9 s |  |
 | `src/daemon/__tests__/source-release-promotion.test.ts` | 0 | 2 | 8.9 s |  |
+
+## t9
+
+Run at 2026-11-22T12:11:16.574Z on commit `ee97116b4`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
+
+the gate ran no test: every named test of this Task was reported by the builder
+
+**live: darwin-arm64 actual historical upgrade, subsequent update and qualified rollback/retry**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/plans/node-runtime-evidence/historical-macos-upgrade.md#canonical-live-run; canonical Node22 live run 5ec26117-36cd-4cba-bf58-1f8436543ca8: scripts/__tests__/historical-macos-upgrade-native.test.ts exact named case passed in 1339 seconds, no skips. Its cleanup.json confirmedClosed:true with no cancellation/evidence errors. Real fixture /private/tmp/insrc-historical-mac-dM4Z0T retains IPC snapshots, fault-receipts.json, mcp-route.json and qualification-summary.json (SHA256 fe388f9d59eaffc85488e417cf3e859152ba1b1a803bc78eecde8615db6e0e45); final process/open-path census zero. Surrounding legacy-cutover and managed-development proof cases passed; obsolete IDE in-place update fixture corrected and focused run dac378b8-8e0d-4aa2-b42b-89c31049632f passed both routing cases and JetBrains native bootstrap, no skips/cleanup errors. No production runtime changes after successful live run.
+
+**live: Mac native dependency loads and owned Node/npm environment identities**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: Same canonical live run 5ec26117-36cd-4cba-bf58-1f8436543ca8, scripts/__tests__/historical-macos-upgrade-native.test.ts exact named case passed, no skips. /private/tmp/insrc-historical-mac-dM4Z0T/prior-native-modules.log proves actual tree-sitter/lmdb/fs-ext/Lance/Duck loads under owned Node22.22.1; owned-npm-version.log=10.9.4; prior-cpu-onnx.log and candidate-cpu-onnx.log prove real CPU Identity inference=42 under that executable. Actual npm ci/build logs and source commit/tree receipts retained. Before native compiler failure, full PID/start-time/executable identity was captured and verified unchanged; live MCP child identity/argv pointed at the selected release and owned Node. Fixtures do not claim embedding-model quality or production signing authority. Independent tsc --noEmit and git diff --check passed.

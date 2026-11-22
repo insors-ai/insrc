@@ -1,6 +1,6 @@
 # Real historical macOS source upgrade qualification
 
-Story `a03e99e17a364550/s1`, task t9. Canonical live qualification and affected regressions passed. Registered task validation is pending; story BUILD approval remains deferred until all tasks are built and tested.
+Story `a03e99e17a364550/s1`, task t9. Canonical live qualification, affected regressions and registered validation passed. Story BUILD approval remains deferred until all tasks are built and tested.
 
 ## What is real
 
@@ -31,6 +31,8 @@ The same run passed four legacy-cutover cases and two authenticated managed-deve
 Both coordinators recorded `confirmedClosed: true`, `interrupted: false` and empty cancellation/evidence errors. An additional final process and same-user open-file census found **zero** processes or open paths under the live fixture. Its `qualification-summary.json` inventories four actual staged source commit/tree identities and SHA256 digests of the command, native, IPC and MCP evidence. The summary digest is `fe388f9d59eaffc85488e417cf3e859152ba1b1a803bc78eecde8615db6e0e45`. These are fixture qualification receipts, not production promotion receipts. No source/runtime verification, actor ownership, journal schema or managed trust policy was replaced.
 
 `tsc --noEmit` and `git diff --check` passed after the fixture correction. The complete backend sweep remains the final story regression.
+
+Registered validation passed on implementation commit `ee97116b4` at `2026-11-22T12:12:40.276Z`, accepting all five task checks and scope. The gate independently typechecked backend and VS Code; the two long live results were recorded as builder-observed evidence, rather than rerun by the gate. It verified that all nine retained IPC snapshots share SHA256 `8ca9c1749d73696e6144e081648f017a1d6a0e8c4ee1f6e9601d86b8ac2cc539`.
 
 ## Limits
 

@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1795348502664-1icd0v",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-22T11:55:50.711Z",
+    "epicCreatedAt": "2026-11-22T11:55:50.711Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 48047,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "f2c92404fe4d50a6",
+    "epicSlug": "expose-safe-artifact-revision-integrity-recovery",
+    "standalone": true,
+    "magnitude": "sized",
+    "kind": "defect",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "c2be8b6c82c681e55822f898c464154dd7e1f5769402db39720e78039bbe65fc",
+        "at": "2026-11-22T11:55:50.717Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Expose safe artifact revision and integrity recovery to tool sessions",
+    "reproduction": "1. In an installed insrc session on another machine or while working outside the insrc source repository, start with a human-approved HLD (the same gap applies to other lifecycle-managed artifacts).\n2. Need to incorporate edits and obtain approval of the revised content. The public tool catalog exposes approval but no supported content-revision or integrity-recovery operation; the session cannot invoke the internal LifecycleService.updateContent API.\n3. If canonical JSON is edited directly without lifecycle bookkeeping, the stored content hash can differ from the current body/citations. Approval refuses with hash-mismatch, and retrying approval cannot repair the record. [[c1]] [[c2]] [[c4]]\nExpected: a supported public operation records the revised content as a new draft revision, refreshes the review document, and permits a separate presentation/human-reapproval step; an already inconsistent head has an explicit audited recovery path.\nEvidence limit: the user reported this on another machine; its exact artifact and error trace were not supplied. The current local security HLD is not the affected reproduction. The missing public operation and integrity-refusal behavior were confirmed from source; no remote reproduction is claimed. [[c5]]",
+    "rootCause": "LifecycleService.updateContent provides journaled content replacement internally, and reconcileLifecycle returns changed non-terminal artifacts to draft with a new content hash/revision. checkIntegrity checks both canonical content and revision-bearing history; approveArtifactByJsonPath refuses inconsistent heads before approval. The store has explicit conflict-resolved handling, but the inspected public MCP/workflow surface exposes neither an artifact-content revision operation nor an explicit recovery route. Thus tool-only sessions lack the supported transition from approved content to a consistent revised draft, and cannot recover a directly edited mismatched head. Automatic adoption handles eligible self-consistent head-ahead-of-log revisions, not hash-mismatch. [[c1]] [[c2]] [[c3]] [[c4]]",
+    "fixIntent": "Provide a supported tool/workflow operation to revise lifecycle-managed artifact content using expected prior revision/hash to refuse stale writers. Reuse lifecycle/store authority to create and log a new draft revision, preserve prior approval/history as historical evidence, and regenerate the rendered document. Provide explicit audited recovery for already mismatched canonical heads, distinguishing content/hash damage from conflicting history and refusing ambiguous recovery. Keep integrity checks and team/signoff/terminal-state restrictions intact. Revision/recovery must never approve content: require insrc_present and explicit human approval afterward. Validate normal approved-to-draft revision, stale-writer rejection, mismatch recovery/history consistency, rendering refresh, and tool-only access. Record this issue only; do not implement or auto-approve as part of logging it. [[c1]] [[c2]] [[c3]] [[c5]]"
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/artifact-core/lifecycle-service.ts",
+      "quotedText": "updateContent replaces content through the store; apply adopts eligible head-ahead-of-log writes but refuses hash mismatch."
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/artifact-core/lifecycle.ts",
+      "quotedText": "contentHash covers canonical description/body/citations; reconcileLifecycle returns changed non-terminal content to draft."
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/artifact-core/store.ts",
+      "quotedText": "An ordinary write on a head whose stored hash differs from its content is refused; explicit conflict-resolved handling exists internally."
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/gates.ts",
+      "quotedText": "Approval calls lifecycle.inspect with adoptable:true and rejects failed integrity before approval."
+    },
+    {
+      "id": "c5",
+      "kind": "stakeholder",
+      "ref": "User report in this conversation",
+      "quotedText": "LifecycleService.updateContent is not exposed as a tool; sessions not working on this repo have no access to it. A different machine is affected."
+    },
+    {
+      "id": "c6",
+      "kind": "analyze-bundle",
+      "ref": "insrc_analyze_step artifact-core investigation in this session",
+      "quotedText": "Located LifecycleService, ArtifactStore, reconcileLifecycle and checkIntegrity, with gates.ts as an importer. Graph incomplete; public-surface and store behavior supplemented by direct source reads."
+    }
+  ]
+}

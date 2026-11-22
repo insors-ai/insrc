@@ -1270,6 +1270,8 @@ export interface DaemonUpdateResult {
  * failure; there is no retry or rollback (the daemon owns its own state).
  */
 export interface DaemonUpdateOutcome {
+  /** Source lifecycle terminal decision; omitted by legacy updaters. */
+  decision?: 'committed' | 'rolled-back' | 'recovery-required' | undefined;
   state:      'succeeded' | 'failed';
   /** raw error summary on failure */
   error?:     string;

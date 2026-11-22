@@ -248,6 +248,16 @@ export class SourceNativeActor {
    env: cleanNodeEnvironment(env), timeout: 20_000, maxBuffer: 8192 });
   return result.stdout.trim();
  }
+ /** Private updater handoff only; these are not public daemon/workflow messages. */
+ readUpdateMessage(name: 'request' | 'ready' | 'release'): unknown | undefined {
+  if (this.ticket.role !== 'update') throw new Error('Source actor is not an updater');
+  try { return JSON.parse(ownedText(join(this.directory, `${name}.json`), 16 * 1024)); }
+  catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return undefined; throw error; }
+ }
+ writeUpdateMessage(name: 'ready' | 'release', value: unknown): void {
+  if (this.ticket.role !== 'update') throw new Error('Source actor is not an updater');
+  privateDirectory(this.directory); publish(this.directory, value, name);
+ }
  async grant(): Promise<void> {
   const reply = await SourceNativeActor.control(this.binary, this.ticket.token, this.ticket.monitor, 'GRANT');
   if (reply !== `GRANTED ${this.target.pid}`) throw new Error('Source actor refused its startup grant');

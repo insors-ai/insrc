@@ -1,5 +1,9 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 
+import { beginSourceUpdate } from '../shared/source-update-outcomes.js';
+import { SourceNativeActor } from '../shared/source-actor-client.js';
+import { awaitSourceUpdateAcknowledgment } from '../daemon/source-update-launch.js';
+import { requireProcessIdentity, sameProcess } from '../shared/daemon-process.js';
 import { constants } from 'node:fs';
 import { lstat, open, realpath } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -19,7 +23,9 @@ import { qualifySourceRelease, authorizeSourceReleaseHead, stageQualifiedSourceR
 import { assertSourceReleaseFloor } from '../shared/managed-source-release.js';
 import { checkUpdateSource, readUpdateSource } from '../shared/update-source.js';
 import { readProcessIdentity } from '../shared/daemon-process.js';
-import type { SourceUpgrade } from '../daemon/source-update-transaction.js';
+import type { SourceTransactionHost } from '../daemon/source-update-transaction.js';
+
+type SourceControlOutcome = NonNullable<ReturnType<SourceInstallationStore['read']>['outcome']>;
 
 const packageRoot = fileURLToPath(new URL('../../', import.meta.url));
 const NOT_SOURCE = 10;
@@ -93,48 +99,65 @@ function observeUnchanged(store: SourceInstallationStore, receipt: SourceSelecti
  catch (error) { if (!(error instanceof SourcePublicationUnknownError) || store.reconcile(error.publication).status !== 'published') throw error; }
  return outcome;
 }
-async function updateSelected(store: SourceInstallationStore, manager: SourceSelection): Promise<void> {
+async function updateSelected(store: SourceInstallationStore, manager: SourceSelection,
+ admitted?: (id: string) => Promise<void>): Promise<SourceControlOutcome> {
  const verifier = join(store.root, 'source-lifecycle/verifier.mjs');
- const stageHost = new NativeSourceTransactionHost(store, manager);
- let staged: (SourceUpgrade & { readonly launchProfile: LaunchProfile }) | undefined;
- let unchanged: ReturnType<typeof observeUnchanged> | undefined;
  const initial = store.read(), prior = initial.selected?.pin ?? initial.outcome?.legacyRoute?.prior;
  if (!prior) throw new Error('Historical upgrade needs the current authenticated installer and qualified predecessor');
  const configured = readUpdateSource(join(store.root, 'config.json'));
  const checked = checkUpdateSource({ repoUrl: process.env['INSRC_DAEMON_UPDATE_REPO_URL'] || configured.repoUrl,
   branch: process.env['INSRC_DAEMON_UPDATE_BRANCH'] || configured.branch });
  const source = { repoUrl: checked.repoUrl ?? manager.source.channel.repoUrl, branch: checked.branch ?? manager.source.channel.branch };
+ let host = new NativeSourceTransactionHost(store, manager);
+ // Preparation discovers the next verified manager before any platform effect.
+ const effects: SourceTransactionHost = {
+  capture: (...args) => host.capture(...args), recover: id => host.recover(id), proveClosed: id => host.proveClosed(id),
+  quiescent: (...args) => host.quiescent(...args), verifyStores: (...args) => host.verifyStores(...args),
+  start: (...args) => host.start(...args), ready: (...args) => host.ready(...args),
+  verifyRuntime: selection => host.verifyRuntime(selection), settled: transaction => host.settled(transaction),
+  published: (outcome, guard) => host.published(outcome, guard),
+ };
  try {
-  await new LinuxSourceTransaction(store, stageHost).exclusive(async () => {
-   const state = store.read();
-   if (!isDeepStrictEqual(state.selected, initial.selected) || !isDeepStrictEqual(state.outcome?.legacyRoute, initial.outcome?.legacyRoute)) throw new Error('Source selection changed before update staging');
+  return await new LinuxSourceTransaction(store, effects).update(async selected => {
+   if (!isDeepStrictEqual(selected, initial.selected)) throw new Error('Source selection changed before update preparation');
    const head = await authorizeSourceReleaseHead({ stateRoot: store.root, runtime: process.execPath, verifier, source, target: manager.target });
-   if (state.selected && head.receipt.commit === state.selected.pin.commit && head.receipt.tree === state.selected.source.tree) {
-    await verifyStagedReleasePin(state.selected.pin); unchanged = observeUnchanged(store, head.receipt); return;
-   }
+   if (selected && head.receipt.commit === selected.pin.commit && head.receipt.tree === selected.source.tree
+    && isDeepStrictEqual(head.receipt.channel, selected.source.channel)) return { unchanged: head.receipt };
    const launchProfile = await sourceLaunchProfile(store);
-   const input = { stateRoot: store.root, runtime: process.execPath, verifier, source, priorCommit: prior.commit,
-    target: manager.target, launchProfile };
+   const input = { stateRoot: store.root, runtime: process.execPath, verifier, source, priorCommit: prior.commit, target: manager.target, launchProfile };
    const prepared = await stageQualifiedSourceRelease(input, prior.root, prior.runtime);
    if (!prepared.prior || !prepared.compatibility) throw new Error('Staged selected-source update has no qualified predecessor');
    const candidate = await verifiedSourceSelection(store.root, prepared.candidate, prepared.sourceRelease, prepared.compatibility.candidate);
-   staged = { prior: prepared.prior, candidate, compatibility: prepared.compatibility, launchProfile };
-  });
- } finally { await stageHost.close(); }
- if (unchanged) { process.stdout.write(JSON.stringify(unchanged) + '\n'); return; }
- if (!staged) throw new Error('Update staging returned no candidate');
- const upgrade = staged, host = new NativeSourceTransactionHost(store, upgrade.candidate);
- try {
-  const outcome = await new LinuxSourceTransaction(store, host).update(async selected => {
-   if (!isDeepStrictEqual(selected, initial.selected)) throw new Error('Source selection changed after staging');
-   await assertLaunchProfile(store, upgrade.launchProfile);
-   return upgrade;
-  });
-  process.stdout.write(JSON.stringify(outcome) + '\n'); if (outcome.decision !== 'committed') process.exitCode = 4;
+   await assertLaunchProfile(store, launchProfile);
+   await host.close(); host = new NativeSourceTransactionHost(store, candidate);
+   return { prior: prepared.prior, candidate, compatibility: prepared.compatibility };
+  }, 'update', async (id, guard) => { beginSourceUpdate(store, id, guard); await admitted?.(id); });
  } finally { await host.close(); }
 }
+
 async function main(): Promise<void> {
  if (process.platform !== 'linux') { process.exitCode = NOT_SOURCE; return; }
+ if (process.env['INSRC_SOURCE_UPDATE_REQUEST']) {
+  const directory = process.env['INSRC_SOURCE_ACTOR_DIRECTORY'], binary = process.env['INSRC_SOURCE_ACTOR_BINARY'];
+  if (!directory || !binary || process.env['INSRC_SOURCE_UPDATE_REQUEST'] !== join(directory, 'request.json')) throw new Error('Incomplete source updater handoff');
+  const actor = await SourceNativeActor.reopen(directory, binary);
+  try {
+   if (actor.ticket.role !== 'update' || !sameProcess(actor.target, requireProcessIdentity(process.pid))
+    || actor.ticket.token !== process.env['INSRC_SOURCE_ACTOR_TOKEN']) throw new Error('Source updater differs from its native owner');
+   const request = actor.readUpdateMessage('request');
+   if (!object(request) || Object.keys(request).length !== 3 || request.version !== 1
+    || typeof request.stateRoot !== 'string' || typeof request.installationRoot !== 'string') throw new Error('Invalid source update request');
+   const store = (await installation(request.stateRoot, request.installationRoot))!;
+   const state = store.read(), manager = state.selected ?? state.outcome?.legacyRoute?.candidate;
+   if (!manager || state.active || await realpath(packageRoot) !== manager.pin.root
+    || !isDeepStrictEqual(manager.pin, actor.ticket.release) || binary !== join(manager.pin.root, 'out/bin/insrc-source-actor')) throw new Error('Source updater is not the current selected controller');
+   await verifyStagedReleasePin(manager.pin); await verifySourceRuntime(manager, store.root);
+   if (await realpath(process.execPath) !== manager.pin.runtime) throw new Error('Source updater did not use the selected owned Node');
+   const result = await updateSelected(store, manager, id => awaitSourceUpdateAcknowledgment(actor, id));
+   process.stdout.write(JSON.stringify(result) + '\n'); if (result.decision !== 'committed') process.exitCode = 4;
+  } finally { await actor.close(); }
+  return;
+ }
  const [command, stateRoot, ...args] = process.argv.slice(2);
  if (!stateRoot) throw new Error('Source controller requires its state root');
  if (command === 'unchanged') {
@@ -220,11 +243,14 @@ async function main(): Promise<void> {
  const recoverHost = new NativeSourceTransactionHost(store, manager);
  try { await new LinuxSourceTransaction(store, recoverHost).recover(); } finally { await recoverHost.close(); }
  if (command === 'recover') { process.stdout.write(JSON.stringify(store.read().outcome) + '\n'); return; }
- if (command === 'update') { await updateSelected(store, manager); return; }
+ if (command === 'update') {
+  const result = await updateSelected(store, manager);
+  process.stdout.write(JSON.stringify(result) + '\n'); if (result.decision !== 'committed') process.exitCode = 4; return;
+ }
  const host = new NativeSourceTransactionHost(store, manager);
  try {
   const result = await new LinuxSourceTransaction(store, host).lifecycle(command as 'start' | 'restart' | 'stop');
-  process.stdout.write(JSON.stringify(result) + '\n'); if (result.decision !== 'committed') process.exitCode = 4;
+  process.stdout.write(JSON.stringify({ ...result, forced: host.forced }) + '\n'); if (result.decision !== 'committed') process.exitCode = 4;
  } finally { await host.close(); }
 }
 

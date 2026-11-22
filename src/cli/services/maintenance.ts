@@ -9,12 +9,10 @@
  * (which lives in the IDE repo; this backend repo keeps its own copy so
  * it stays self-contained).
  *
- * `update` targets the daemon install root — `$INSRC_DAEMON_ROOT` or
- * `~/.insrc/daemon` — and does: fast-forward sync against origin →
- * `npm install` unless the install marker records a successful install of
- * this lockfile → `npm run build`. It does
- * NOT (re)start the daemon. `restart` does a drained stop then a start
- * of the daemon spawned from the running tree.
+ * Installed source updates run through the verified current transaction owner.
+ * An update preserves running/stopped state; restart starts a stopped installation.
+ * Historical installations need a one-time authenticated current installer.
+ * The daemon's own startup owns configuration and steering reconciliation.
  *
  * Every step streams its output through an `onLog` callback so the pane
  * can show a live log instead of `stdio:inherit` (which would corrupt
@@ -22,22 +20,25 @@
  */
 
 import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
+import { join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { rpc } from '../client.js';
-import { checkUpdateSource, readUpdateSource, updateSourceArgs } from '../../shared/update-source.js';
+import { checkUpdateSource, readUpdateSource } from '../../shared/update-source.js';
 import type { UpdateSource } from '../../shared/update-source.js';
 import type { RegisteredRepo } from '../../shared/types.js';
 import { describeStop, startDaemon, stopDaemon } from './daemon.js';
 import { readManagedInstallation } from '../../shared/managed-daemon-installation.js';
 import { ManagedDaemonControl } from './managed-daemon-control.js';
-import { cleanNodeEnvironment, hasSourceRuntimeBinding, ownedNodeEnvironment, resolveOwnedToolchain, toolchainInstallMarker } from './owned-runtime.js';
+import { cleanNodeEnvironment, resolveOwnedToolchain } from './owned-runtime.js';
+import { resolveSourceControl, runSourceControl } from '../../shared/source-routing.js';
+import { PATHS } from '../../shared/paths.js';
 import type { StartResult, StopOutcome } from './daemon.js';
 import { loadBuiltCatalog } from '../../config/config-catalog-loader.js';
 import { reconcileConfigFile, type ConfigIoOutcome } from '../../config/reconcile-io.js';
-import { refreshSteeringAcrossRepos, type SteeringRefreshDeps, type SteeringRefreshReport } from '../../daemon/steering-inject.js';
+import type { SteeringRefreshDeps, SteeringRefreshReport } from '../../daemon/steering-inject.js';
 
 /** Where the installed daemon checkout lives. */
 export const DAEMON_ROOT = process.env['INSRC_DAEMON_ROOT'] ?? join(homedir(), '.insrc', 'daemon');
@@ -106,180 +107,35 @@ export interface MaintenanceResult {
 
 export type LogFn = (line: string) => void;
 
-/** Fast-forward sync + conditional install + build against DAEMON_ROOT.
- *  Never starts the daemon. Faithful to `daemon-ctl.sh cmd_update`. */
+/** Resolve the current source owner before update; incumbent build functions are never called. */
 export async function update(opts: UpdateOptions, onLog: LogFn): Promise<MaintenanceResult> {
-	const root = DAEMON_ROOT;
-	if (process.platform === 'darwin') {
-		try {
-			if (await readManagedInstallation() !== undefined || existsSync(join(root, 'scripts', 'insrc-daemon-install.sh'))) {
-				const source = opts.source ?? readUpdateSource();
-				const wanted = checkUpdateSource({ repoUrl: opts.repoUrl ?? source.repoUrl, branch: opts.branch ?? source.branch });
-				const args = [join(root, 'scripts', 'daemon-ctl.sh'), 'update', ...updateSourceArgs(wanted)];
-				const code = await stream('/bin/bash', args, onLog, '/', { ...process.env, INSRC_DAEMON_ROOT: root, INSRC_DAEMON_UPDATE_WAIT: '1' });
-				return code === 0 ? { ok: true, steps: ['transactional-update'] } : { ok: false, steps: [], error: 'macOS daemon update failed' };
-			}
-		} catch (error) {
-			return { ok: false, steps: [], error: error instanceof Error ? error.message : String(error) };
-		}
-	}
-	const steps: string[] = [];
-
-	if (!existsSync(join(root, '.git')) || !existsSync(join(root, 'package.json')) || !existsSync(join(root, 'src'))) {
-		return { ok: false, steps, error: `not a daemon git checkout: ${root}` };
-	}
-
-	try {
-		await resolveOwnedToolchain(root);
-		if (hasSourceRuntimeBinding(root)) return { ok: false, steps, error: 'Selected source installation requires staged migration; use the authenticated packaged installer --migrate-runtime.' };
-		let source: UpdateSource;
-		try { source = opts.source ?? readUpdateSource(); }
-		catch (err) { return { ok: false, steps, error: `invalid daemonUpdate config: ${(err as Error).message}` }; }
-		const currentBranch = (await capture('git', ['-C', root, 'rev-parse', '--abbrev-ref', 'HEAD'])).stdout.trim();
-		// the values handed in directly become git arguments too: they get the same checks as the config
-		let wanted: UpdateSource;
-		try { wanted = checkUpdateSource({ repoUrl: opts.repoUrl ?? source.repoUrl, branch: opts.branch ?? source.branch }); }
-		catch (err) { return { ok: false, steps, error: `invalid update source: ${(err as Error).message}` }; }
-		const branch = wanted.branch ?? currentBranch;
-		const repoUrl = wanted.repoUrl;
-
-		if (opts.skipSync !== true) {
-			// `npm install` rewrites package-lock.json; the install mirrors origin exactly, so discard that churn before the
-			// cleanliness check (otherwise every post-install update would refuse as "dirty" and the merge --ff-only would
-			// fail on the local lockfile edit). Mirrors `daemon-ctl.sh sync_repo`, including its order: a dirty tree is
-			// refused before origin is touched.
-			await capture('git', ['-C', root, 'checkout', '--', 'package-lock.json']);
-			const dirty = (await capture('git', ['-C', root, 'status', '--porcelain'])).stdout.trim();
-			if (dirty.length > 0) {
-				return { ok: false, steps, error: 'daemon checkout has uncommitted changes; refusing to overwrite' };
-			}
-			const previousOrigin = (await capture('git', ['-C', root, 'remote', 'get-url', 'origin'])).stdout.trim();
-			const repointed = repoUrl !== undefined && previousOrigin !== repoUrl;
-			if (repointed) {
-				onLog(`pointing origin at ${repoUrl}`);
-				if (await stream('git', ['-C', root, 'remote', 'set-url', 'origin', repoUrl], onLog) !== 0) {
-					return { ok: false, steps, error: 'git remote set-url origin failed' };
-				}
-			}
-			onLog(`syncing ${root} against origin/${branch}`);
-			// An explicit refspec: the install is a single-branch clone, so a plain `fetch origin <branch>` of any other
-			// branch would not create origin/<branch>.
-			if (await stream('git', ['-C', root, 'fetch', '--quiet', 'origin', `+refs/heads/${branch}:refs/remotes/origin/${branch}`], onLog) !== 0) {
-				// a URL that cannot be fetched from must not stay as origin: an unset repoUrl keeps origin as it is
-				if (repointed && previousOrigin.length > 0) {
-					const restored = await capture('git', ['-C', root, 'remote', 'set-url', 'origin', previousOrigin]);
-					onLog(restored.code === 0
-						? `fetch from ${repoUrl} failed; origin restored to ${previousOrigin}`
-						: `fetch from ${repoUrl} failed; origin could NOT be restored to ${previousOrigin}: run git remote set-url origin by hand`);
-				}
-				return { ok: false, steps, error: `git fetch origin/${branch} failed` };
-			}
-			const current  = (await capture('git', ['-C', root, 'rev-parse', 'HEAD'])).stdout.trim();
-			const incoming = (await capture('git', ['-C', root, 'rev-parse', `origin/${branch}`])).stdout.trim();
-			if (branch !== currentBranch) {
-				// Switching branch: never discard commits that exist only here.
-				const contained = (await capture('git', ['-C', root, 'branch', '-r', '--contains', 'HEAD'])).stdout.trim();
-				if (contained.length === 0) {
-					return { ok: false, steps, error: `HEAD has commits no remote branch has; refusing to switch to ${branch}` };
-				}
-				// ... nor commits that exist only on an existing local branch of that name (checkout -B resets it).
-				const localBranch = await capture('git', ['-C', root, 'show-ref', '--verify', '--quiet', `refs/heads/${branch}`]);
-				if (localBranch.code === 0 && (await capture('git', ['-C', root, 'merge-base', '--is-ancestor', `refs/heads/${branch}`, incoming])).code !== 0) {
-					return { ok: false, steps, error: `local branch ${branch} has commits origin/${branch} does not; refusing to reset it` };
-				}
-				onLog(`switching branch: ${currentBranch} -> ${branch} (${incoming.slice(0, 8)})`);
-				if (await stream('git', ['-C', root, 'checkout', '--quiet', '-B', branch, `origin/${branch}`], onLog) !== 0) {
-					return { ok: false, steps, error: `git checkout ${branch} failed` };
-				}
-			} else if (current === incoming) {
-				onLog(`already at ${incoming.slice(0, 8)} (no-op)`);
-			} else {
-				const anc = await capture('git', ['-C', root, 'merge-base', '--is-ancestor', current, incoming]);
-				if (anc.code !== 0) {
-					return { ok: false, steps, error: `HEAD diverged from origin/${branch}; resolve manually` };
-				}
-				onLog(`fast-forward: ${current.slice(0, 8)} -> ${incoming.slice(0, 8)}`);
-				if (await stream('git', ['-C', root, 'merge', '--ff-only', incoming], onLog) !== 0) {
-					return { ok: false, steps, error: 'git merge --ff-only failed' };
-				}
-			}
-			steps.push('sync');
-		}
-
-		const toolchain = await resolveOwnedToolchain(root);
-		const runtimeEnv = ownedNodeEnvironment(toolchain);
-		if (opts.skipInstall !== true) {
-			// The synced lockfile's blob hash, taken before npm rewrites it; empty
-			// when there is none, which never matches and writes no marker.
-			const lockHash = (await capture('git', ['-C', root, 'hash-object', 'package-lock.json'])).stdout.trim();
-			const markerPath = join(root, INSTALL_MARKER);
-			const marker = existsSync(markerPath) ? readFileSync(markerPath, 'utf8').trim() : undefined;
-			if (lockHash !== '' && marker === toolchainInstallMarker(lockHash, toolchain)) {
-				onLog('npm install: the install marker matches package-lock.json; skipping');
-			} else {
-				onLog(`npm install (${lockHash === '' ? 'package-lock.json not found' : marker === undefined ? 'no install marker' : 'the install marker is for another package-lock.json'})`);
-				rmSync(markerPath, { force: true });
-				if (await stream(toolchain.node, [toolchain.npm, 'install'], onLog, root, nativeBuildEnv(runtimeEnv)) !== 0) {
-					return { ok: false, steps, error: 'npm install failed' };
-				}
-				if (lockHash !== '') {
-					try {
-						mkdirSync(dirname(markerPath), { recursive: true });
-						writeFileSync(markerPath, `${toolchainInstallMarker(lockHash, toolchain)}\n`);
-					} catch (err) {
-						return { ok: false, steps, error: `npm install succeeded but the install marker could not be written: ${err instanceof Error ? err.message : String(err)}` };
-					}
-				}
-				steps.push('install');
-			}
-		}
-
-		if (opts.skipBuild !== true) {
-			onLog('npm run build');
-			if (await stream(toolchain.node, [toolchain.npm, 'run', 'build'], onLog, root, runtimeEnv) !== 0) {
-				return { ok: false, steps, error: 'npm run build failed' };
-			}
-			steps.push('build');
-		}
-
-		// Post-build config reconcile. Runs STRICTLY after git-pull + build,
-		// unconditionally (no opt-in flag), writing at most once and only when
-		// changed. It must NOT flip a successful update to failed, so it sits in
-		// its OWN inner try/catch (the surrounding body early-returns ok:false on
-		// every real failure; this is best-effort).
-		//
-		// STALE-CATALOG resolution (see src/config/config-catalog-loader.ts):
-		// this CLI process holds the PRE-update catalog in memory; `npm run
-		// build` just rewrote out/ underneath it, so reconciling against the
-		// resident module would be a no-op for exactly the shape change an update
-		// applies. We load the FRESHLY BUILT catalog via dynamic import and
-		// reconcile against that; if the import fails we DEFER the authoritative
-		// reconcile to the next daemon boot (t9) rather than trust the stale
-		// in-memory catalog. The direct config.json write here is the s8-sbdry3
-		// deviation the approver confirmed — see the deviation note in
-		// src/config/reconcile-io.ts.
-		const configReconcile = await runUpdateReconcile(root, onLog);   // writes ~/.insrc/config.json (PATHS.config)
-		steps.push('reconcile');
-
-		// Post-build steering refresh. Like the reconcile above, it runs STRICTLY
-		// after the build and is best-effort: `runUpdateSteeringRefresh` already
-		// swallows every failure into `undefined`, and this outer guard is a
-		// belt-and-suspenders so a steering-refresh fault can NEVER flip a
-		// successful update to failed. It re-stamps the freshly built steering
-		// block into every registered repo that already carries the markers.
-		let steeringRefresh: SteeringRefreshReport | undefined;
-		try {
-			steeringRefresh = await runUpdateSteeringRefresh(root, onLog);
-		} catch (err) {
-			onLog(`steering refresh failed: ${err instanceof Error ? err.message : String(err)}`);
-		}
-		steps.push('steering-refresh');
-
-		onLog('update complete (daemon NOT restarted)');
-		return { ok: true, steps, configReconcile, steeringRefresh };
-	} catch (err) {
-		return { ok: false, steps, error: err instanceof Error ? err.message : String(err) };
-	}
+ try {
+  if (opts.skipSync || opts.skipInstall || opts.skipBuild) throw new Error('Installed source updates cannot skip authentication, installation or build validation');
+  const configured = opts.source ?? readUpdateSource();
+  const wanted = checkUpdateSource({ repoUrl: opts.repoUrl ?? configured.repoUrl, branch: opts.branch ?? configured.branch });
+  const env = { ...cleanNodeEnvironment(process.env), INSRC_DAEMON_UPDATE_REPO_URL: wanted.repoUrl ?? '', INSRC_DAEMON_UPDATE_BRANCH: wanted.branch ?? '' };
+  const source = await resolveSourceControl(PATHS.insrc, process.env['INSRC_DAEMON_ROOT']);
+  if (source) {
+   onLog('staging update through the verified source owner');
+   const outcome = await runSourceControl(source, 'update', env);
+   onLog(`${outcome.decision}: ${outcome.detail}`);
+   return { ok: true, steps: ['update'] };
+  }
+  if (process.platform === 'darwin' && await readManagedInstallation() !== undefined) {
+   const root = fileURLToPath(new URL('../../../', import.meta.url));
+   const entry = join(root, 'out/bin/insrc-daemon-control.js');
+   if (!existsSync(entry)) throw new Error(`Current managed controller missing at ${entry}; obtain the current authenticated client or installer`);
+   const args = [entry, 'update-local']; let diagnostic = '';
+   const command = JSON.stringify([process.execPath, ...args]);
+   onLog(`running current managed controller ${command}`);
+   const code = await stream(process.execPath, args, line => { diagnostic = `${diagnostic}\n${line}`.slice(-8192); onLog(line); }, root, env);
+   if (code !== 0) throw new Error(`Managed update command failed (${code}) ${command}: ${diagnostic}`);
+   return { ok: true, steps: ['update'] };
+  }
+  throw new Error(`Obtain the current authenticated release installer for the configured channel from insors-ai/insrc GitHub Releases (or its release owner). Run it with --migrate-runtime --target ${JSON.stringify(DAEMON_ROOT)}; historical Linux recovery also needs --predecessor <known-good-full-commit> --rebuild-predecessor. The raw repository template has no release signing authority; unpublished signing/bootstrap material must be supplied before upgrading.`);
+ } catch (error) {
+  return { ok: false, steps: [], error: error instanceof Error ? error.message : String(error) };
+ }
 }
 
 type ReconcileSummary = NonNullable<MaintenanceResult['configReconcile']>;
@@ -333,6 +189,7 @@ export async function runUpdateSteeringRefresh(
 		const block = readFileSync(blockPath, 'utf8').trim();
 		if (block.length === 0) throw new Error(`steering block asset is empty: ${blockPath}`);
 
+		const { refreshSteeringAcrossRepos } = await import('../../daemon/steering-inject.js');
 		const report = await refreshSteeringAcrossRepos({ readBlock: () => block, listRepos: listReposFromDaemon, ...deps });
 		const refreshed = report.filter(o => o.action === 'replaced').length;
 		const skipped   = report.filter(o => o.action === 'skipped').length;
@@ -391,6 +248,17 @@ async function installedControl(): Promise<ManagedDaemonControl | undefined> {
 }
 
 export async function restart(onLog: LogFn, deps?: RestartDeps): Promise<MaintenanceResult> {
+ if (deps === undefined) {
+  try {
+   const source = await resolveSourceControl(PATHS.insrc, process.env['INSRC_DAEMON_ROOT']);
+   if (source) {
+    onLog('restarting through the verified source owner');
+    const outcome = await runSourceControl(source, 'restart');
+    onLog(`${outcome.decision}: ${outcome.detail}`);
+    return { ok: true, steps: outcome.forced ? ['stop', 'force-stop', 'start'] : ['stop', 'start'] };
+   }
+  } catch (error) { return { ok: false, steps: [], error: error instanceof Error ? error.message : String(error) }; }
+ }
 	if (deps === undefined || deps.managed !== undefined) {
 		try {
 			const control = await (deps?.managed ?? installedControl)();
@@ -461,18 +329,5 @@ function stream(cmd: string, args: readonly string[], onLog: LogFn, cwd?: string
 		child.stderr.on('data', emit);
 		child.on('error', err => { onLog(`error: ${err.message}`); resolve(1); });
 		child.on('close', code => resolve(code ?? 0));
-	});
-}
-
-/** Run a command and capture its stdout (for git plumbing queries). */
-function capture(cmd: string, args: readonly string[]): Promise<{ code: number; stdout: string; stderr: string }> {
-	return new Promise(resolve => {
-		const child = spawn(cmd, args as string[], { stdio: ['ignore', 'pipe', 'pipe'] });
-		let stdout = '';
-		let stderr = '';
-		child.stdout.on('data', c => { stdout += c.toString(); });
-		child.stderr.on('data', c => { stderr += c.toString(); });
-		child.on('error', () => resolve({ code: 1, stdout, stderr }));
-		child.on('close', code => resolve({ code: code ?? 0, stdout, stderr }));
 	});
 }

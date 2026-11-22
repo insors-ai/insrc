@@ -1,5 +1,7 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 
+import { readSourceInstallation } from '../shared/source-routing.js';
+import { readSourceUpdateOutcome } from '../shared/source-update-outcomes.js';
 import { realpath } from 'node:fs/promises';
 import { InstallationMutationGate } from '../shared/installation-mutation-gate.js';
 import type { InstallationJournal } from '../shared/installation-mutation-gate.js';
@@ -37,7 +39,10 @@ export async function readPublicInstalledCommit(
 }
 
 export async function readPublicUpdateOutcome(gate?: JournalReader): Promise<DaemonUpdateOutcome | null> {
-	if (gate === undefined && !isManagedDaemon()) return readUpdateOutcome();
+	if (gate === undefined && !isManagedDaemon()) {
+		try { const source = await readSourceInstallation(); return source ? readSourceUpdateOutcome(source) : readUpdateOutcome(); }
+		catch { return null; }
+	}
 	try {
 		const { active, outcome } = await readJournal(gate);
 		if (outcome?.finishedAt === undefined || (active?.kind === 'update' && outcome.id !== active.id)) return null;

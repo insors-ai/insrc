@@ -17,6 +17,7 @@ import { captureStopTarget } from '../../shared/daemon-process-client.js';
 import { processIdentityState, requireProcessIdentity, sameProcess } from '../../shared/daemon-process.js';
 import type { ProcessIdentity } from '../../shared/daemon-process.js';
 import { acquireRunFileGuard } from '../../shared/daemon-run-files.js';
+import { beginSourceUpdate, finishSourceUpdate, readSourceUpdateOutcome } from '../../shared/source-update-outcomes.js';
 import { SourceInstallationStore, _setSourcePublicationFaultForTests } from '../../shared/source-installation.js';
 import type { SourceSelection } from '../../shared/source-installation.js';
 import { captureManagedReleasePin } from '../managed-release-staging.js';
@@ -396,4 +397,61 @@ if (process.env.INSRC_SOURCE_TRANSACTION_WORKER) {
   assert.throws(() => lease.release(), /replaced/);
   assert.equal(readFileSync(join(parent, 'sentinel'), 'utf8'), 'preserved');
  }));
+test('Source update admission precedes preparation and unchanged observation preserves running selection', { timeout: 480_000 }, async t => sourceLinux(t, file, project, async () => {
+ const f = await fixture(t, true), store = new SourceInstallationStore(f.root, f.logical), h = host(f);
+ await startOriginal(f);
+ const originalPid = readFileSync(join(f.root, 'daemon.pid'), 'utf8'), order: string[] = [];
+ const receipt = { ...f.initial!.source, sequence: 2, tagObject: 'c'.repeat(40) };
+ const result = await new LinuxSourceTransaction(store, h.effects).update(async selected => {
+  order.push('prepare'); assert.deepEqual(selected, f.initial); return { unchanged: receipt };
+ }, 'update', async id => {
+  order.push('admitted'); assert.equal(store.read().active?.id, id); assert.equal(store.read().active?.phase, 'reserved');
+  await assert.rejects(new LinuxSourceTransaction(store, host(f).effects).exclusive(async () => {}), /guard/);
+ });
+ assert.equal(result.decision, 'committed'); assert.deepEqual(order, ['admitted', 'prepare']);
+ assert.deepEqual(store.read().selected, f.initial); assert.equal(store.read().active, null);
+ assert.equal(readFileSync(join(f.root, 'daemon.pid'), 'utf8'), originalPid);
+ assert.equal(store.read().sourceReleases[0]?.sequence, 2); assert.deepEqual(h.events, ['runtime-verified']);
+ assert.equal(result.transaction?.execution, undefined, 'an observation must not fabricate a same-release update pair');
+ let prepared = false;
+ const cancelled = await new LinuxSourceTransaction(store, h.effects).update(async () => {
+  prepared = true; return { unchanged: receipt };
+ }, 'update', async () => { throw Error('reply not acknowledged'); });
+ assert.equal(prepared, false); assert.equal(cancelled.decision, 'rolled-back');
+ assert.equal(readFileSync(join(f.root, 'daemon.pid'), 'utf8'), originalPid);
+ const invalidPair = await new LinuxSourceTransaction(store, h.effects).update(async () => ({
+  prior: f.initial!.pin, candidate: f.initial!, compatibility: { prior: f.initial!.compatibility, candidate: f.initial!.compatibility },
+ }));
+ assert.equal(invalidPair.decision, 'rolled-back'); assert.match(invalidPair.detail, /distinct pinned releases/);
+ assert.equal(readFileSync(join(f.root, 'daemon.pid'), 'utf8'), originalPid);
+}));
+test('Source update receipts retain update results and expose recovery-required under exclusion', { timeout: 480_000 }, async t => sourceLinux(t, file, project, async () => {
+ const f = await fixture(t, true), store = new SourceInstallationStore(f.root, f.logical), h = host(f);
+ let settled = false;
+ h.effects.settled = async () => { settled = true; assert.equal(readSourceUpdateOutcome(store), null); };
+ h.effects.published = async (outcome, guard) => {
+  assert.ok(settled); assert.equal(store.read().active?.id, outcome.id);
+  await assert.rejects(new LinuxSourceTransaction(store, host(f).effects).exclusive(async () => {}), /guard/);
+  finishSourceUpdate(store, outcome, guard);
+ };
+ const result = await new LinuxSourceTransaction(store, h.effects).update(async () => { throw Error('fixture install failed'); }, 'update', async (id, guard) => {
+  beginSourceUpdate(store, id, guard); assert.equal(readSourceUpdateOutcome(store), null);
+ });
+ assert.equal(result.decision, 'rolled-back');
+ const recorded = readSourceUpdateOutcome(store); assert.equal(recorded?.updateId, result.id); assert.equal(recorded?.state, 'failed');
+ assert.equal(recorded?.decision, 'rolled-back'); assert.match(recorded?.error ?? '', /fixture install failed/);
+ await new LinuxSourceTransaction(store, host(f).effects).lifecycle('stop');
+ assert.deepEqual(readSourceUpdateOutcome(store), recorded);
+ const path = join(f.root, 'source-lifecycle/update-outcomes', result.id + '.json'), bytes = readFileSync(path);
+ try { writeFileSync(path, '{malformed'); assert.throws(() => readSourceUpdateOutcome(store)); }
+ finally { writeFileSync(path, bytes); }
+ await startOriginal(f);
+ const uncertain = host(f, { unknownChildren: true });
+ uncertain.effects.published = async (outcome, guard) => finishSourceUpdate(store, outcome, guard);
+ const fenced = await new LinuxSourceTransaction(store, uncertain.effects).update(async () => upgrade(f), 'update', async (id, guard) => beginSourceUpdate(store, id, guard));
+ assert.equal(fenced.decision, 'recovery-required'); assert.equal(store.read().active?.id, fenced.id);
+ assert.equal(readSourceUpdateOutcome(store)?.decision, 'recovery-required');
+ await assert.rejects(new LinuxSourceTransaction(store, host(f).effects).exclusive(async () => {}), /guard/);
+}));
+
 }

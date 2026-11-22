@@ -62,8 +62,8 @@ export async function stageRuntime(source, stage, runtime, target) {
 	}
 	await mkdir(join(stage, 'scripts'));
 	const scripts = target === 'linux-x64'
-		? ['daemon-ctl.sh', 'insrc', 'insrc-mcp', 'verify-installed-runtime.mjs', 'stage-daemon-bundle.mjs', 'daemon-bundle-metadata.mjs', 'linux-daemon-metadata.mjs']
-		: ['daemon-ctl.sh', 'insrc', 'insrc-mcp', 'verify-installed-runtime.mjs', 'insrc-daemon-install.sh', 'stage-daemon-bundle.mjs',
+		? ['daemon-ctl.sh', 'insrc', 'insrc-mcp', 'source-selection-env.sh', 'verify-installed-runtime.mjs', 'stage-daemon-bundle.mjs', 'daemon-bundle-metadata.mjs', 'linux-daemon-metadata.mjs']
+		: ['daemon-ctl.sh', 'insrc', 'insrc-mcp', 'source-selection-env.sh', 'verify-installed-runtime.mjs', 'insrc-daemon-install.sh', 'stage-daemon-bundle.mjs',
 			'daemon-bundle-metadata.mjs', 'verify-daemon-bundle.mjs'];
 	for (const name of scripts) {
 		await copy(join(source, 'scripts', name), join(stage, 'scripts', name));

@@ -21,19 +21,9 @@ import { probeMcpClients } from './mcp-register.js';
 import { validateRepoPath } from '../db/repos.js';
 import type { RpcHandlers } from './server.js';
 import { readSteeringBlock } from './steering-inject.js';
-import { launchUpdate, makeUpdateHandlers } from './update-runner.js';
 import { readPublicUpdateOutcome } from './managed-update-ipc.js';
-import { isManagedDaemon } from './managed-daemon-lifecycle.js';
 
 const log = getLogger('daemon');
-
-/**
- * Delay before the daemon shuts itself down after a daemon.update launch —
- * long enough for the { launched:true } result to flush to the caller's
- * socket, short enough that the detached helper's stop+start proceeds
- * promptly (Story S001 / sc1).
- */
-export const UPDATE_SHUTDOWN_DELAY_MS = 250;
 
 /**
  * config.show, config.catalog, guide.get, guide.list, daemon.shutdown,
@@ -100,24 +90,11 @@ export function sharedAdminHandlers(shutdown: (reason: string) => void | Promise
 			return { ok: true };
 		},
 
-		// Story S001 (sc1): the daemon-owned update+restart IPC. `daemon.update`
-		// spawns a DETACHED helper (daemon-ctl.sh restart) that outlives this
-		// process, then schedules our own shutdown so the helper's stop+start is
-		// clean — the caller's socket drops and it reconnects to the fresh daemon.
-		// `daemon.updateOutcome` reads back the terminal result the helper persists.
-		...makeUpdateHandlers({
-			launch:      () => {
-				if (isManagedDaemon()) throw new Error('managed daemon update is not available yet');
-				return launchUpdate();
-			},
-			readOutcome: () => readPublicUpdateOutcome(),
-			scheduleShutdown: () => {
-				const t = setTimeout(() => {
-					void Promise.resolve(shutdown('daemon.update RPC')).catch(error => log.error({ error }, 'daemon update shutdown failed'));
-				}, UPDATE_SHUTDOWN_DELAY_MS);
-				t.unref();
-			},
-		}),
+		// The main unary socket owner handles update acknowledgment and cutover.
+		// A worker/direct dispatch must never launch an incumbent ctl build or
+		// schedule shutdown before that owner has reserved an authenticated update.
+		'daemon.update': async () => { throw new Error('Daemon updates require the unary lifecycle owner; obtain the current authenticated installer for historical installations'); },
+		'daemon.updateOutcome': () => readPublicUpdateOutcome(),
 	};
 }
 

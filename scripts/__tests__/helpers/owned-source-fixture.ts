@@ -12,7 +12,7 @@ export function ownedSourceFixture(ambient: 'absent' | '20' | '26' = '26') {
 	const root = realpathSync(mkdtempSync(join(process.platform === 'darwin' ? '/tmp' : tmpdir(), 'insrc-native-shell-'))), seed = join(root, 'seed'), home = join(root, 'home');
 	const scripts = join(seed, 'scripts'); mkdirSync(scripts, { recursive: true }); mkdirSync(home);
 	mkdirSync(join(seed, 'src/assets/models'), { recursive: true });
-	for (const file of ['provision-node-runtime.sh', 'node-runtime-archive.sh', 'node-runtime-env.sh', 'node-runtime-policy.mjs', 'node-runtime-store.mjs', 'daemon-ctl.sh', 'insrc-daemon-install.sh', 'insrc', 'insrc-mcp']) {
+	for (const file of ['provision-node-runtime.sh', 'node-runtime-archive.sh', 'node-runtime-env.sh', 'node-runtime-policy.mjs', 'node-runtime-store.mjs', 'daemon-ctl.sh', 'insrc-daemon-install.sh', 'insrc', 'insrc-mcp', 'source-selection-env.sh']) {
 		copyFileSync(new URL(`../../${file}`, import.meta.url), join(scripts, file));
 	}
 	const policy = structuredClone(NODE_RUNTIME_POLICY);

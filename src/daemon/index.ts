@@ -53,6 +53,7 @@ import { IndexerService } from '../indexer/index.js';
 import { IpcServer, directDispatch } from './server.js';
 import { declareLiveStoreOwner } from '../db/graph/store.js';
 import { startManagedDaemonProbation } from './managed-daemon-probation.js';
+import { launchSourceUpdate } from './source-update-launch.js';
 import { launchManagedUpdate } from './managed-update-launch.js';
 import { installStoreFileOpenDiagnostic } from './store-file-open-diagnostic.js';
 import { reportFatal } from './fatal.js';
@@ -568,13 +569,15 @@ async function main(): Promise<void> {
 	const progressForward = executorProgress.forward(normalForward);
 	const managedUpdate = directDispatch({
 		'daemon.update': async (_params, context) => {
-			if (context?.awaitUpdateReply === undefined) throw new Error('managed update requires a unary socket request');
+			if (context?.awaitUpdateReply === undefined) throw new Error('daemon update requires a unary socket request');
+			if (process.platform === 'linux') return launchSourceUpdate(context.awaitUpdateReply);
+			if (managed === undefined) throw new Error('Daemon updates require the current authenticated installer to establish lifecycle ownership');
 			const entry = fileURLToPath(new URL('../bin/insrc-daemon-update.js', import.meta.url));
 			return launchManagedUpdate(entry, [], context.awaitUpdateReply);
 		},
 	});
 	const forward = connectionSessionRuntime.forward((request, deliver) =>
-		(managed !== undefined && request.method === 'daemon.update' ? managedUpdate : progressForward)(request, deliver));
+		(request.method === 'daemon.update' ? managedUpdate : progressForward)(request, deliver));
 	const server = probation?.server ?? new IpcServer(forward);
 	server.onConnectionClose(context => {
 		connectionSessionRuntime.disconnect(context);

@@ -29,9 +29,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 2,
-        "contentHash": "48b9a5e411e7a813fde0b2af9be21f423c7d38f4927b5074f866fd64917ebffe",
-        "at": "2026-11-22T10:19:27.435Z",
+        "number": 3,
+        "contentHash": "c7ac21e92ac24e563cc906ab955d0c26a5d818fab6d0592bdb00c72b67e518ed",
+        "at": "2026-11-22T13:00:21.196Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
@@ -40,11 +40,11 @@
       },
       "signoffs": []
     },
-    "revision": 2
+    "revision": 3
   },
   "body": {
     "summary": {
-      "prose": "This Story checks a repository's dependencies against public advisories while confining what each package manager can read, execute, and transmit. Every audit runs against an isolated, disposable copy of exactly the files it needs (never the live repository tree), pinned to the moment that copy is made so the reported content identity cannot drift from what was actually audited. Each manager is driven through a documented, concrete invocation that avoids dependency resolution and code execution where the tool allows it (pip/pipenv/poetry via pip-audit's --no-deps --require-hashes mode; cargo audit's local-comparison, no-disclosure design) and pins network egress to the one destination that manager's own configuration supports, verified by a negative-access probe before any manager is trusted. A manager, dependency or source that cannot be scoped, confined, or verified this way is reported as an explicit gap -- never silently skipped, never run against the live tree, and never accepted on an unverified assumption.",
+      "prose": "This Story checks a repository's dependencies against public advisories. The reviewer runs with the SAME host access as the controller itself -- no sandboxing or egress/filesystem restriction is attempted, since constraining the reviewer would degrade the review's own accuracy (explicit user direction, applied across the Epic). s2 instead focuses on two things that matter for correctness regardless of access level: pointing each package manager's audit at the repository's own actual dependencies (never an ambient or mismatched environment pip-audit/govulncheck would otherwise default to), and computing one deterministic content identity by hashing the complete set of required input files' actual bytes directly, so s3 can verify it reviewed the exact same content. Every destination a manager's audit actually reaches, and what it discloses there, is recorded for the final report's audit trail -- observability, not an enforced boundary. A manager, dependency or source that cannot be correctly targeted or resolved is reported as an explicit gap, never silently skipped and never run against the wrong target.",
       "audience": "technical"
     },
     "hldContextSlice": {
@@ -53,7 +53,7 @@
         {
           "id": "sc2",
           "name": "SecurityAdvisoryEvidence",
-          "purpose": "Carries s2's dependency-advisory collection outcome (controller-side, no model) across the boundary: the pinned contentIdentity it was collected against (so s3 can verify it recomputes/matches the same identity before trusting this evidence), the queried coordinates, the actual advisory matches with affected versions and provenance, the per-match advisory destination enforced (not merely observed), the per-manager input mode used (manifest-scoped | isolated-environment | confined-source-copy | unsupported), and the dependencies/sources that stayed unresolved, unavailable or unsupported -- so s3 can report confirmed affected dependencies and unverified coverage as DISTINCT values bound to the SAME content identity as its own code findings.",
+          "purpose": "Carries s2's dependency-advisory collection outcome (controller-side, no model) across the boundary: the pinned contentIdentity it was collected against (so s3 can verify it recomputes/matches the same identity before trusting this evidence), the queried coordinates, the actual advisory matches with affected versions and provenance, the per-match advisory destination actually reached (recorded for audit, not enforced -- s2 runs with controller-equivalent access, no sandboxing), the per-manager input mode used (manifest-scoped | isolated-environment | confined-source-copy | unsupported, retained as a correctness/targeting concern, not an isolation one), and the dependencies/sources that stayed unresolved, unavailable or unsupported -- so s3 can report confirmed affected dependencies and unverified coverage as DISTINCT values bound to the SAME content identity as its own code findings.",
           "interfaceSketch": "interface SecurityAdvisoryMatch {\n\treadonly coordinate: string;\n\treadonly advisoryId: string;\n\treadonly affectedVersions: string;\n\treadonly severity: string;\n\treadonly provenance: string;\n\treadonly advisoryDestination: string;\n}\n\ninterface SecurityAdvisoryEvidence {\n\treadonly contentIdentity: string;\n\treadonly readOnly: true;\n\treadonly queriedCoordinates: readonly string[];\n\treadonly matches: readonly SecurityAdvisoryMatch[];\n\treadonly perManagerMode: readonly { readonly manager: string; readonly mode: 'manifest-scoped' | 'isolated-environment' | 'confined-source-copy' | 'unsupported'; }[];\n\treadonly unresolvedDependencies: readonly string[];\n\treadonly unavailableSources: readonly string[];\n}",
           "ownedByStory": "s2",
           "consumedByStories": [
@@ -71,7 +71,7 @@
           "sc2"
         ],
         "depends": [],
-        "internal": "pkg_audit's package-manager resolution; the ENFORCED (not merely recorded) per-manager network boundary -- blocking any request to an unapproved destination before it leaves the process, including redirects and a tool's own secondary requests, and refusing to run a manager's audit at all when that enforcement cannot be established; the documented per-manager input/mode mapping (npm/pnpm/yarn/cargo: manifest+lockfile scope; pip/pipenv/poetry: an isolated environment resolved from the pinned manifest, never the ambient active environment pip-audit defaults to; go: a confined copy of the pinned snapshot's module source, since govulncheck performs source-level analysis, not a manifest read) with an explicit coverage gap for any manager s2 cannot correctly scope under that mapping; and the advisory-match collection that populates SecurityAdvisoryEvidence (stamped with the pinned contentIdentity) stay private to s2. No model, tool-loop, or CLI session is involved in s2 at all. ac2's gap-reporting distinguishes a SUCCESSFUL audit that found vulnerabilities (a valid, parseable result regardless of exit code -- pkg_audit's own auditArgv already marks every supported manager nonZeroOk:true) from an EXECUTION GAP (spawn failure, unparseable output, an unsupported manager, or a manager s2's input/mode mapping cannot correctly scope) -- these are never conflated."
+        "internal": "pkg_audit's package-manager resolution; s2 runs with the SAME host access as the controller itself -- no network or filesystem sandboxing is attempted (explicit user direction: constraining the reviewer degrades review accuracy). s2 instead RECORDS, per manager, which destination was actually reached and what was disclosed (observability for the final report, not a basis for refusal); the documented per-manager input/mode mapping (npm/pnpm/yarn/cargo: manifest+lockfile scope; pip/pipenv/poetry: the repository's own resolved environment, never the ambient active environment pip-audit defaults to; go: the repository's own module source directly, since govulncheck performs source-level analysis, not a manifest read) is retained as a CORRECTNESS/targeting requirement, with an explicit coverage gap for any manager s2 cannot correctly target under that mapping; and the advisory-match collection that populates SecurityAdvisoryEvidence (stamped with the pinned contentIdentity, computed by hashing the complete required input set's actual bytes directly) stay private to s2. No model, tool-loop, or CLI session is involved in s2 at all. ac2's gap-reporting distinguishes a SUCCESSFUL audit that found vulnerabilities (a valid, parseable result regardless of exit code -- pkg_audit's own auditArgv already marks every supported manager nonZeroOk:true) from an EXECUTION GAP (spawn failure, unparseable output, an unsupported manager, or a manager s2's input/mode mapping cannot correctly target) -- these are never conflated."
       },
       "adjacentBoundaries": [
         {
@@ -89,15 +89,15 @@
             "sc1",
             "sc2"
           ],
-          "internal": "The RoundDriverHooks.security adapter function; the CliProvider.runReadOnlySession dispatch of the code-vulnerability pass against the SAME pinned contentIdentity s2 collected against (recomputed/verified by s3, refusing on a mismatch), using s1's resolved model, under a backend REQUIRED to deny credential-location reads, out-of-scope reads and unauthorized MCP operations -- verified per backend by an actual negative-access test (not merely confirming a restricting flag was passed), with s3 refusing to dispatch through a backend that cannot be so verified; the exact per-provider mechanism is an s3 LLD decision, the three denials and the refuse-if-unverifiable rule are fixed here. The call into runReviewRound and the separate ownership of everything runReviewRound itself does NOT do (sandbox/mutation checkpoint execution, round reconciliation, VerificationReceipt persistence, and checkpoint cleanup); the mapping from the review's pinned contentIdentity onto the epicHash/storyId identity persistVerificationReceipt requires; and the assembly of SecurityFinding/SecurityEvidence plus a supplemental report structure stay private to s3. It consumes s1's SecurityModelSelection and s2's SecurityAdvisoryEvidence to produce that report."
+          "internal": "The RoundDriverHooks.security adapter function; the CliProvider.runReadOnlySession dispatch of the code-vulnerability pass against the SAME pinned contentIdentity s2 collected against (recomputed/verified by s3, refusing on a content MISMATCH only -- never on an access/enforcement question), using s1's resolved model, with the SAME host access every other CLI-backed session in this codebase already has (no additional credential/out-of-scope/MCP denial gate; explicit user direction, applied across the Epic's design). The call into runReviewRound and the separate ownership of everything runReviewRound itself does NOT do (sandbox/mutation checkpoint execution, round reconciliation, VerificationReceipt persistence, and checkpoint cleanup); the mapping from the review's pinned contentIdentity onto the epicHash/storyId identity persistVerificationReceipt requires; and the assembly of SecurityFinding/SecurityEvidence plus a supplemental report structure stay private to s3. It consumes s1's SecurityModelSelection and s2's SecurityAdvisoryEvidence to produce that report."
         }
       ],
-      "rolloutPhase": "Phase A -- foundational contracts (model selection and enforced advisory collection)",
+      "rolloutPhase": "Phase A -- foundational contracts (model selection and dependency-advisory collection)",
       "nonFunctional": {
-        "security": "The per-manager network boundary in s2 is ENFORCED before any request leaves the process (blocking unapproved destinations, redirects and a tool's own secondary requests), not merely observed and recorded afterward; a manager for which that boundary cannot be established is refused, not run unconfined. s2's filesystem/environment scope follows a documented per-manager mode (manifest-scoped for npm/pnpm/yarn/cargo; an isolated resolved environment for pip/pipenv/poetry, since pip-audit otherwise audits the ambient active environment; a confined source copy for go, since govulncheck performs source-level analysis) -- a manager outside that mapping is an explicit coverage gap, never a best-effort run against the wrong target. This is SEPARATE from the configured CLI model's own inference traffic (k1: routes through the installed CLI provider), which is expected and unrelated to dependency-advisory egress. s3's code-vulnerability pass is dispatched only through a CLI backend REQUIRED to deny credential-location reads, out-of-scope reads (outside the pinned contentIdentity), and unauthorized MCP operations -- each denial verified by a real negative-access test, not by checking that a flag exists; a backend that cannot be so verified is refused. The exact per-provider enforcement mechanism for both s2's and s3's boundaries is an s2/s3 LLD decision; the invariants, the owners, and the refuse-if-unenforceable rule are fixed by this HLD.",
-        "observability": "Every checkpoint run -- pass or fail, whether or not a SecurityFinding corroborates it -- is recorded as a VerificationReceipt (already built, src/workflow/review-round/receipt-record.ts), so a security review's execution is auditable independent of its findings. s3 owns stamping that record with the epicHash/storyId persistVerificationReceipt requires, mapped from the review's own pinned contentIdentity.",
+        "security": "s2 and s3 run with the SAME host access as the controller itself (explicit user direction: sandboxing or constraining the reviewer degrades the review's own accuracy, applied across this Epic's design) -- neither attempts network or filesystem confinement, and this codebase has no sandbox/network-namespace infrastructure to build such confinement on in any case. s2 records, per manager, which destination was actually reached and what was disclosed, attaching that to SecurityAdvisoryEvidence for audit; this is observability, not an enforced boundary, and is NOT a basis for refusing to run a manager. s2's per-manager input/mode mapping (manifest-scoped for npm/pnpm/yarn/cargo; the repository's own resolved environment for pip/pipenv/poetry, since pip-audit otherwise audits the ambient active environment; the repository's own module source for go, since govulncheck performs source-level analysis) is retained as a CORRECTNESS requirement -- pointing each tool at the right target -- not an isolation one; a manager outside that mapping is still an explicit coverage gap, because s2 cannot correctly target it, not because it cannot be confined. s3's code-vulnerability pass is dispatched through CliProvider.runReadOnlySession with the same access level every other CLI-backed session in this codebase already has; no additional credential/out-of-scope/MCP denial or negative-access test gates dispatch. contentIdentity remains a hard, non-negotiable CORRECTNESS invariant, unrelated to the access-level decision: s2 and s3 must operate against the exact same pinned content, computed by hashing the complete, required input set's actual bytes directly (never inferred from git status alone, which can miss a tracked file marked assume-unchanged) -- s3 recomputes and verifies this identity before trusting s2's evidence, refusing ONLY on an actual content mismatch.",
+        "observability": "Every checkpoint run -- pass or fail, whether or not a SecurityFinding corroborates it -- is recorded as a VerificationReceipt (already built, src/workflow/review-round/receipt-record.ts), so a security review's execution is auditable independent of its findings. s3 owns stamping that record with the epicHash/storyId persistVerificationReceipt requires, mapped from the review's own pinned contentIdentity. s2's per-manager recorded destinations/disclosures (see nonFunctional.security) are the equivalent audit trail for the dependency-advisory pass.",
         "durability": "No new persistent storage is introduced for s1/s2's own outputs (SecurityModelSelection, SecurityAdvisoryEvidence are transient per-review values); the durable records are the already-typed SecurityFinding/VerificationReceipt heads the shared round-driver machinery (Epic 03f4fd3b9102aab8) persists, plus s3's new supplemental report structure (not yet a stored artifact type; its persistence mechanism is an open question for the s3 LLD).",
-        "performance": "Not a stated constraint for this Epic; the new module's cost is bounded by one pkg_audit invocation (per confined manager) and one CLI read-only session per request, not a new background job."
+        "performance": "Not a stated constraint for this Epic; the new module's cost is bounded by one pkg_audit invocation (per targeted manager) and one CLI read-only session per request, not a new background job."
       }
     },
     "contractDetails": {
@@ -110,7 +110,7 @@
             {
               "name": "repoPath",
               "type": "string",
-              "purpose": "The registered repo root git_rev_parse/git_status run against, and the base every targets.entries path is resolved and validated against -- removes the ambiguity of a relative path across two registered repos (revision-1 gap).",
+              "purpose": "The registered repo root git_rev_parse runs against, and the base every targets.entries path is resolved and validated against -- removes the ambiguity of a relative path across two registered repos.",
               "optional": false
             },
             {
@@ -122,12 +122,12 @@
           ],
           "returns": {
             "type": "Promise<string>",
-            "meaning": "A deterministic digest over the repo's HEAD commit sha (via git_rev_parse) plus a sha256 (Node's own crypto, not git_hash_object) of every dirty/untracked file's raw bytes within the complete, per-manager input set -- computed in the SAME pass that materializes the isolated audit copy (see the materialization entity below), so there is no window between 'hash computed' and 'bytes audited' for the live repo to change in. s3 recomputes the same function independently against the same repoPath/targets to verify it reviewed the same content."
+            "meaning": "A deterministic digest over the repo's HEAD commit sha (via git_rev_parse) plus a sha256 (Node's own crypto, not git_hash_object) of EVERY required input file's actual, current raw bytes -- read and hashed unconditionally, never gated on whether git status reports a file as dirty/untracked. This closes the gap where a tracked file marked assume-unchanged diverges from HEAD while git status stays empty: computeContentIdentity still sees the real, current bytes because it reads every required file directly rather than trusting git's own change-tracking to decide what to include. s3 recomputes the same function independently against the same repoPath/targets to verify it reviewed the same content."
           },
           "errors": [
             {
               "type": "Error",
-              "condition": "the target repository's git state cannot be read (not a git repository, repoPath not registered, or the underlying git_rev_parse/git_status calls fail)"
+              "condition": "the target repository's git state cannot be read (not a git repository, repoPath not registered, or the underlying git_rev_parse call fails)"
             },
             {
               "type": "Error",
@@ -138,9 +138,10 @@
             "repoPath is a registered repo root with a resolvable HEAD"
           ],
           "postconditions": [
-            "pure function of the repo's current git state, repoPath and targets.entries -- calling it twice with no intervening change to the complete per-manager input set yields the identical string",
+            "pure function of the repo's current file bytes, repoPath and targets.entries -- calling it twice with no intervening change to the complete per-manager input set yields the identical string",
             "never includes file content from outside repoPath or the complete per-manager input set",
-            "hashes raw file bytes directly (crypto.createHash('sha256') over the file read from disk) -- never delegates to git_hash_object, which applies git attribute clean filters before hashing and can collide on different raw content"
+            "hashes raw file bytes directly (crypto.createHash('sha256') over the file read from disk) -- never delegates to git_hash_object, which applies git attribute clean filters before hashing and can collide on different raw content",
+            "never relies on git status/dirty-file enumeration to decide which files to hash -- every required input file is read and hashed unconditionally"
           ]
         },
         {
@@ -169,10 +170,11 @@
             "enumerateManagers(repoPath, targets) has found at least an attempt-worthy manifest, or the result is an all-gaps SecurityAdvisoryEvidence"
           ],
           "postconditions": [
-            "every manager it attempts runs ONLY against the isolated, materialized copy created in the same pass as its contentIdentity hashing -- never against the live repoPath tree directly, for any manager",
-            "never sends a manager's traffic anywhere but that manager's own documented, pinned destination, and only after a negative-access probe confirms a disallowed decoy destination is unreachable via that manager's own configured path; a manager whose enforcement cannot be verified is recorded in perManagerMode as 'unsupported' and is never actually run",
+            "every manager it attempts runs with the SAME host access as the controller itself -- no sandboxing, no isolated copy; pkg_audit runs directly against repoPath (or the manager's own manifest directory within it), the real environment",
+            "every manager is correctly TARGETED per requiredInputsForManager's mapping (the repository's own resolved environment for pip/pipenv/poetry, the repository's own module source for go) -- never left pointed at an ambient or mismatched default; a manager s2 cannot correctly target produces an explicit coverage gap (perManagerMode 'unsupported'), never a mis-targeted run",
+            "records, per manager, the destination actually reached and what was disclosed there, attached to the returned SecurityAdvisoryEvidence for audit -- this is observability, never a basis for refusing to run a manager",
             "every queried coordinate ends up in exactly one of matches or unresolvedDependencies (or contributes to a 'no findings' result) -- never silently dropped",
-            "the returned contentIdentity equals computeContentIdentity(repoPath, targets) called over the exact same materialized input set each manager actually audited",
+            "the returned contentIdentity equals computeContentIdentity(repoPath, targets) computed over the exact same repository state each manager actually audited",
             "never throws -- every manager-level failure becomes an explicit perManagerMode/unavailableSources/unresolvedDependencies entry, not an exception, matching ac2's 'remain explicit gaps' requirement"
           ]
         },
@@ -201,21 +203,9 @@
     },
     "dataModelChanges": [
       {
-        "entity": "pkgAuditTool inputSchema + execute (src/daemon/tools/builtins/pkg/index.ts) -- env override",
-        "change": "field-add",
-        "details": "Add one optional `env?: Record<string, string>` property to pkgAuditTool's inputSchema, forwarded straight to runShell's existing per-call options.env (shell-helper.ts:40,103,181) inside execute() -- purely additive; no existing caller passes `env` today. `cwd` (already an accepted input) is pointed at the isolated materialized copy for every manager, never the live repo tree.",
-        "callSites": [
-          "src/daemon/tools/builtins/pkg/index.ts:164-175",
-          "src/daemon/tools/builtins/pkg/index.ts:468-507",
-          "src/daemon/tools/shell-helper.ts:40",
-          "src/daemon/tools/shell-helper.ts:103",
-          "src/daemon/tools/shell-helper.ts:181"
-        ]
-      },
-      {
-        "entity": "auditArgv's pipenv/poetry cases -- switched to pip-audit against a generated hash-pinned requirements file",
+        "entity": "pkgAuditTool execute -- plain pip pointed at the repository's own requirements, never the ambient environment",
         "change": "field-modify",
-        "details": "CURRENT INVARIANT BEING REPLACED: auditArgv's pipenv case runs `pipenv check --output json` and its poetry case runs `poetry audit` (pkg/index.ts:164-175) -- each manager's OWN native audit command, run against whatever environment that command resolves on its own. NEW behavior: pipenv/poetry's audit path is switched to the SAME pip-audit invocation pip itself uses (`pip-audit -r <generated requirements> --no-deps --require-hashes -f json`), where `<generated requirements>` is produced by this Story from Pipfile.lock/poetry.lock's own pinned {name, version, hash} triples -- both lockfiles already carry hashes, so no new resolution is needed to produce it. This is a deliberate, additive-only-at-the-manager-level change to pkg_audit's existing exported behavior for manager:'pipenv'|'poetry' specifically; npm/pnpm/yarn/go/cargo/plain-pip cases are untouched.",
+        "details": "CURRENT INVARIANT BEING REPLACED: auditArgv's pip case runs `['pip-audit', '-f', 'json']` (pkg/index.ts:164-175) with no `-r`/`--path` argument, so pip-audit audits whatever is installed in the ambient active Python environment by default -- not the repository's own requirements file, even though cwd points at it. NEW behavior: when a requirements file (requirements.txt, or one generated from Pipfile.lock/poetry.lock for pipenv/poetry) is present, auditArgv's pip/pipenv/poetry cases pass it explicitly via pip-audit's own `-r <path>` argument, so the audit targets the repository's own declared dependencies directly. This is a correctness/targeting fix, not an isolation one -- resolution and installation behave exactly as pip-audit's own documented `-r` mode already does; no `--no-deps`/`--require-hashes` restriction is imposed, since the reviewer runs with controller-equivalent access and a full, accurate resolution is preferred over a restricted one.",
         "callSites": [
           "src/daemon/tools/builtins/pkg/index.ts:164-175"
         ]
@@ -223,32 +213,23 @@
       {
         "entity": "Repository-root threading (repoPath) through computeContentIdentity, collectDependencyAdvisories, createDependencySbomEvidenceProvider",
         "change": "field-add",
-        "details": "ReviewTargets carries no repository identity (entries are bare paths -- artifact-core/types.ts:345-347), so a relative path like package.json is ambiguous across two registered repos sharing that relative path. Every s2-owned function now takes an explicit repoPath (a registered repo root); every targets.entries path is validated as resolving inside repoPath before use, and git_rev_parse/git_status/the manifest enumerator all run with repoPath as their base, never the daemon's own ambient process.cwd().",
+        "details": "ReviewTargets carries no repository identity (entries are bare paths -- artifact-core/types.ts:345-347), so a relative path like package.json is ambiguous across two registered repos sharing that relative path. Every s2-owned function now takes an explicit repoPath (a registered repo root); every targets.entries path is validated as resolving inside repoPath before use, and git_rev_parse and the manifest enumerator both run with repoPath as their base, never the daemon's own ambient process.cwd().",
         "callSites": [
           "src/workflow/artifact-core/types.ts:345-347"
         ]
       },
       {
-        "entity": "requiredInputsForManager + isolated materialization (replaces the revision-1 'mode preparer')",
+        "entity": "requiredInputsForManager (replaces the revision-1/2 isolation-driven 'mode preparer')",
         "change": "new",
-        "details": "requiredInputsForManager(manager) names the COMPLETE set of files that manager's audit genuinely needs, not just the single manifest path a caller might name: npm/pnpm/yarn -> {package.json, the matching lockfile}; cargo -> {Cargo.toml, Cargo.lock}; pip (hash-pinned requirements only) -> {the hash-pinned requirements file}; pipenv -> {Pipfile, Pipfile.lock}; poetry -> {pyproject.toml, poetry.lock}; go -> {go.mod, go.sum} plus the module source tree govulncheck's source-level analysis needs. For EVERY manager, that complete set (never anything else from repoPath) is copied byte-for-byte into a fresh, disposable temp directory in the SAME pass computeContentIdentity hashes those same bytes -- closing the gap where a later audit could read content that changed after hashing (revision-1's TOCTOU gap) and guaranteeing the hash set is actually complete (revision-1 only hashed the single named path, missing e.g. a sibling lockfile). Every manager's pkg_audit invocation runs with `cwd` pointed at this temp copy -- never repoPath directly, and never an ambient install/venv outside it.",
+        "details": "requiredInputsForManager(manager) names the manifest (and, where one exists, the lockfile) that manager's audit actually needs, used only to point pkg_audit's existing `cwd` at the right real directory and, for pip/pipenv/poetry, to resolve the right `-r <requirements path>` argument (generating one from Pipfile.lock/poetry.lock when the native manager has no bare requirements.txt). There is no copying, no temp directory, and no isolation step -- s2 runs pkg_audit directly against the manager's real manifest location within repoPath, matching the controller's own access level.",
         "callSites": [
           "src/daemon/tools/builtins/pkg/index.ts:164-175"
         ]
       },
       {
-        "entity": "Per-manager destination pin + negative-access verification (replaces the revision-1 generic allowlisting proxy + decoy probe)",
+        "entity": "Per-manager destination/disclosure recording (replaces the revision-2 destination pin + negative-access verification)",
         "change": "new",
-        "details": "Each manager is pinned to the ONE network destination its OWN configuration surface supports, rather than relying on an env-var proxy a tool might ignore: npm/pnpm/yarn -> `--registry <the one approved registry>` (a native CLI flag, not env-var proxying); cargo -> `audit.toml`'s db-url pinned to the single official RustSec advisory-db git remote; pip-audit (hash-pinned mode) -> its own `--index-url`-equivalent pinned to one approved index/OSV source; go -> `GOPROXY` pinned to the one approved module proxy with `GOFLAGS=-mod=readonly` (refuses any go.mod/go.sum change). Before trusting ANY manager, run a per-manager-type NEGATIVE-access probe (cached per manager type, not just a single decoy-reachable check): confirm that pointing the SAME manager at a disallowed decoy destination, through that manager's own configured path, demonstrably fails -- not merely that the approved destination is reachable. A manager with a KNOWN auxiliary network path its own configuration cannot bound (e.g. an undocumented telemetry call) is refused outright (perManagerMode 'unsupported'), and this residual limitation -- no OS-level network-namespace/sandbox enforcement exists in this codebase, so a manager's native tool spawning an unconfigured subprocess or secondary client is NOT independently blockable -- is stated explicitly, never silently assumed away.",
-        "callSites": [
-          "src/daemon/tools/builtins/pkg/index.ts:164-175",
-          "src/daemon/tools/shell-helper.ts:40"
-        ]
-      },
-      {
-        "entity": "Per-manager disclosure profile (resolves the 'approved coordinates' requirement honestly per manager)",
-        "change": "new",
-        "details": "Documents, per manager, exactly what crosses the pinned destination, since 'send only approved coordinates' cannot be uniformly true for every native audit command: npm/pnpm/yarn's own audit command can disclose the FULL lockfile dependency tree plus CLI/platform metadata to its one pinned registry (npm's own documented Quick Audit fallback payload) -- an accepted, explicitly recorded disclosure to that single approved destination, not a coordinate-only one; cargo audit discloses NOTHING over the network (the advisory comparison runs locally against the cloned RustSec database after one git fetch) -- the strongest case; pip-audit in --no-deps --require-hashes mode discloses name+version+hash per pinned requirement, never a full environment dump; go discloses the module path+version coordinates GOPROXY needs to fetch content already hash-verified by go.sum. Each SecurityAdvisoryMatch.advisoryDestination plus this documented disclosure profile is what s3 and the final report rely on -- never a blanket 'coordinates only' claim pkg_audit's wrapped native tools cannot actually keep for every manager.",
+        "details": "After each manager's audit completes, s2 records which destination that manager's native tool actually reached (e.g. the configured registry/index/advisory-database host) and a short description of what was disclosed there, attaching both to the corresponding SecurityAdvisoryMatch.advisoryDestination and the final report. This is pure observability -- no proxy, no destination pin, no negative-access probe, and no refusal based on network behavior; s2 runs with the same host access as the controller and trusts the same native tool behavior the controller would.",
         "callSites": [
           "src/daemon/tools/builtins/pkg/index.ts:164-175"
         ]
@@ -280,27 +261,20 @@
       {
         "contractId": "sc2",
         "role": "implements",
-        "howDetails": "collectDependencyAdvisories is the sole producer of SecurityAdvisoryEvidence. For every manager enumerateManagers finds, it materializes that manager's COMPLETE required input set into an isolated temp copy (hashing those exact bytes into contentIdentity in the same pass), pins that manager's audit to its own documented single destination, verifies that pin with a negative-access probe, and -- only if verified -- runs pkg_audit against the isolated copy and maps its output into SecurityAdvisoryMatch[] with an honest, per-manager disclosure profile. Every unresolved/unavailable/unsupported case is recorded explicitly rather than dropped. s3 consumes the returned value directly (not through the EvidenceProvider registry) to recompute and verify contentIdentity before trusting the evidence, and to report confirmed affected dependencies vs. unverified coverage as distinct values in its own report."
+        "howDetails": "collectDependencyAdvisories is the sole producer of SecurityAdvisoryEvidence. For every manager enumerateManagers finds, it stamps the result with computeContentIdentity (hashing the complete required input set's actual bytes directly), correctly targets that manager's audit at the repository's own real manifest/environment/source (never an ambient default), runs pkg_audit with the same host access the controller has, records the destination actually reached and what was disclosed, and maps the output into SecurityAdvisoryMatch[]. Every unresolved/unavailable/unsupported case is recorded explicitly rather than dropped. s3 consumes the returned value directly (not through the EvidenceProvider registry) to recompute and verify contentIdentity before trusting the evidence, and to report confirmed affected dependencies vs. unverified coverage as distinct values in its own report."
       }
     ],
     "errorPaths": {
       "errorCases": [
         {
-          "scenario": "A manager's negative-access probe fails: pointing it at a disallowed decoy destination through its own configured path still succeeds, meaning its enforcement cannot be verified (e.g. a manager that does not honor its own documented proxy/registry/index configuration).",
-          "detection": "The per-manager-type negative-access probe (run before any audit for that manager type) observes the decoy destination being reached when it should have been refused.",
-          "response": "That manager's perManagerMode is recorded 'unsupported'; pkg_audit is never invoked for it at all, and its coordinates are added to unresolvedDependencies instead.",
-          "userImpact": "No uncontrolled egress ever occurs for a manager whose destination-pinning cannot be verified; the report explains exactly why that manager's dependencies are unresolved.",
+          "scenario": "A targets.entries path resolves outside repoPath (e.g. a path-traversal or a mismatched relative path against the wrong registered repo).",
+          "detection": "computeContentIdentity/collectDependencyAdvisories validate every targets.entries path against repoPath before use.",
+          "response": "Throws (computeContentIdentity) / records an explicit gap for that entry (collectDependencyAdvisories); the out-of-scope path is never read.",
+          "userImpact": "A misconfigured or ambiguous path never silently includes the wrong repository's content.",
           "recoverable": true
         },
         {
-          "scenario": "Materializing a manager's complete required input set (requiredInputsForManager) into the isolated temp copy fails -- a required sibling file (e.g. the lockfile beside the manifest) is missing or unreadable.",
-          "detection": "The materialization step's own file-copy/read fails before any hashing or audit begins for that manager.",
-          "response": "That manager's perManagerMode is recorded 'unsupported'; no partial copy is ever audited, and no fallback to the live repoPath tree occurs.",
-          "userImpact": "Never audits an incomplete or substituted input set silently; the gap is explicit.",
-          "recoverable": true
-        },
-        {
-          "scenario": "pkg_audit's underlying CLI binary is not installed for a manager that DID pass its negative-access probe (e.g. pip-audit itself is missing).",
+          "scenario": "pkg_audit's underlying CLI binary is not installed for a manager enumerateManagers found (e.g. pip-audit itself is missing).",
           "detection": "runShell's existing r.spawnError flag (pkg/index.ts:487-489's existing check) surfaces back to collectDependencyAdvisories.",
           "response": "That manager is recorded in unavailableSources as an execution gap, never conflated with 'no findings reported'.",
           "userImpact": "Distinguishes 'the audit tool is genuinely absent' from 'the audit ran and found nothing.'",
@@ -314,10 +288,10 @@
           "recoverable": true
         },
         {
-          "scenario": "A bare `pip` manifest (requirements.txt with no Pipfile.lock/poetry.lock) does not have per-dependency hashes, so --require-hashes --no-deps cannot run without either failing outright or falling back to resolution (which can execute setup.py).",
-          "detection": "The generated-requirements step checks every line for a --hash pin before invoking pip-audit; an unhashed requirements.txt fails this check.",
-          "response": "Plain 'pip' with an unhashed manifest is recorded perManagerMode 'unsupported' -- never falls back to resolving or installing to make the audit possible.",
-          "userImpact": "Never silently executes third-party setup.py code just to make an audit possible; the coverage gap is explicit instead.",
+          "scenario": "A plain `pip` project has neither a requirements.txt nor a Pipfile.lock/poetry.lock -- there is nothing to point pip-audit's `-r` argument at.",
+          "detection": "requiredInputsForManager finds no requirements-shaped file for the detected pip project.",
+          "response": "Recorded as perManagerMode 'unsupported' (an explicit coverage gap) -- never falls back to auditing the ambient active environment.",
+          "userImpact": "Never silently reverts to the wrong (ambient) target just because the expected file is missing.",
           "recoverable": true
         },
         {
@@ -342,12 +316,12 @@
           "expected": "Each manager's match is recorded independently in matches, keyed by its own manager-scoped coordinate; no de-duplication that could hide one manager's distinct finding."
         },
         {
-          "input": "A dirty/untracked file within a manager's complete required input set has git attributes that would apply a clean filter (e.g. line-ending normalization) if hashed via git_hash_object.",
-          "expected": "computeContentIdentity hashes the file's raw bytes directly via Node's crypto, bypassing git attribute filters entirely, so the digest reflects exactly what is copied into the isolated materialization and audited -- never a filter-transformed value."
+          "input": "A tracked requirements/lockfile is marked assume-unchanged (git update-index --assume-unchanged) and its real on-disk content has diverged from HEAD; git status reports nothing.",
+          "expected": "computeContentIdentity still reflects the change, because it reads and hashes every required input file's actual current bytes directly -- it never consults git status/dirty-file enumeration to decide what to include."
         },
         {
-          "input": "cargo audit's advisory-database git fetch succeeds but finds the local clone already up to date (no new commits).",
-          "expected": "Still counted as a successful, verified fetch against the one pinned remote -- not treated as a failure merely because nothing changed."
+          "input": "A required input file has git attributes that would apply a clean filter (e.g. line-ending normalization) if hashed via git_hash_object.",
+          "expected": "computeContentIdentity hashes the file's raw bytes directly via Node's crypto, bypassing git attribute filters entirely, so the digest reflects exactly what pkg_audit actually reads -- never a filter-transformed value."
         }
       ],
       "invariantsToPreserve": []
@@ -357,23 +331,14 @@
       "testLevels": [
         {
           "level": "unit",
-          "purpose": "Prove computeContentIdentity's determinism, scoping, and raw-byte hashing in isolation, with a fake git-plumbing layer (no real git_rev_parse/git_status subprocess calls) and real Node crypto over fixture bytes.",
+          "purpose": "Prove computeContentIdentity's determinism, scoping, and unconditional raw-byte hashing in isolation, with a fake git-plumbing layer for git_rev_parse and real Node crypto + real filesystem fixtures for the file-hashing step.",
           "subjects": [
-            "computeContentIdentity: identical HEAD sha + identical complete-input-set bytes -> identical string on repeated calls",
-            "computeContentIdentity: a change to a dirty file's raw bytes within the complete input set -> a different string",
-            "computeContentIdentity: a change to a file OUTSIDE the complete input set -> no change to the string",
+            "computeContentIdentity: identical HEAD sha + identical required-input-set bytes -> identical string on repeated calls",
+            "computeContentIdentity: a change to a required input file's raw bytes -> a different string, even when the file is marked assume-unchanged (git status reports nothing)",
+            "computeContentIdentity: a change to a file OUTSIDE the required input set -> no change to the string",
             "computeContentIdentity: a targets.entries path resolving outside repoPath -> throws",
-            "computeContentIdentity: a file with git attributes that would apply a clean filter -> the digest reflects the RAW bytes, not the filtered content (a fixture repo with a .gitattributes clean filter, comparing computeContentIdentity's result against the raw file bytes hashed independently)",
+            "computeContentIdentity: a file with git attributes that would apply a clean filter -> the digest reflects the RAW bytes, not the filtered content",
             "computeContentIdentity: git state unreadable (not a git repo) -> throws the documented Error"
-          ]
-        },
-        {
-          "level": "unit",
-          "purpose": "Prove requiredInputsForManager + the isolated materialization step produce a complete, isolated copy and never touch repoPath directly during audit.",
-          "subjects": [
-            "requiredInputsForManager: npm/pnpm/yarn/cargo/pipenv/poetry each return their full {manifest, lockfile} pair, not just the single named path",
-            "materialization: copies exactly the required input set into a fresh temp directory; no other repoPath file is present in the copy",
-            "materialization: the hash computed during materialization matches a hash computed independently over the copy's own bytes afterward"
           ]
         },
         {
@@ -387,21 +352,19 @@
         },
         {
           "level": "unit",
-          "purpose": "Prove collectDependencyAdvisories' per-manager gating and gap-reporting logic in isolation, with a fake negative-access probe and a fake pkg_audit invocation -- no real subprocesses.",
+          "purpose": "Prove collectDependencyAdvisories' per-manager targeting, destination recording, and gap-reporting logic in isolation, with a fake pkg_audit invocation -- no real subprocesses.",
           "subjects": [
-            "collectDependencyAdvisories: a manager whose negative-access probe fails -> perManagerMode 'unsupported', coordinates moved to unresolvedDependencies, pkg_audit never invoked for it",
-            "collectDependencyAdvisories: pkg_audit spawnError for a manager that passed its probe -> recorded in unavailableSources, not conflated with 'no findings'",
+            "collectDependencyAdvisories: pkg_audit spawnError for a manager -> recorded in unavailableSources, not conflated with 'no findings'",
             "collectDependencyAdvisories: a non-zero exit with parseable output (pkg_audit's nonZeroOk:true convention) -> treated as a successful audit, matches populated, no gap",
             "collectDependencyAdvisories: unparseable/malformed output -> recorded in unavailableSources, never reported as 'no findings'",
-            "collectDependencyAdvisories: materialization failure (missing required sibling file) -> perManagerMode 'unsupported', no fallback to the live repoPath tree",
-            "collectDependencyAdvisories: a bare pip requirements.txt with no hash pins -> perManagerMode 'unsupported', never falls back to resolving/installing",
-            "collectDependencyAdvisories: pipenv/poetry audited via the generated hash-pinned requirements + pip-audit path, not their own native `pipenv check`/`poetry audit` commands",
+            "collectDependencyAdvisories: a plain pip project with no requirements.txt/lockfile -> perManagerMode 'unsupported', never falls back to the ambient environment",
+            "collectDependencyAdvisories: pip-audit is invoked with `-r <requirements path>` pointed at the repository's own file, not the ambient environment",
+            "collectDependencyAdvisories: the destination each manager's audit actually reached is recorded on the corresponding SecurityAdvisoryMatch.advisoryDestination",
             "collectDependencyAdvisories: the same coordinate name via two different managers in two different directories -> two independent matches, no de-duplication"
           ],
           "fixturesNeeded": [
             "a fake pkg_audit invocation (controllable exit code / stdout / spawnError per manager) standing in for the real pkgAuditTool.execute call",
-            "a fake negative-access probe returning pass/fail per manager type on command",
-            "repoPath fixtures with varying manifest combinations (npm+pip in separate dirs, go-only, no manifest, duplicate coordinate names across managers, Pipfile.lock/poetry.lock fixtures for the pip-audit substitution path)"
+            "repoPath fixtures with varying manifest combinations (npm+pip in separate dirs, go-only, no manifest, duplicate coordinate names across managers, Pipfile.lock/poetry.lock fixtures for the -r path generation)"
           ]
         },
         {
@@ -414,23 +377,13 @@
           ]
         },
         {
-          "level": "unit",
-          "purpose": "Prove pkgAuditTool's new, additive `env` input is forwarded correctly and does not change behavior for any caller that omits it.",
-          "subjects": [
-            "pkgAuditTool.execute: no `env` provided -> runShell is called exactly as before (process.env unchanged), matching existing behavior for every current caller",
-            "pkgAuditTool.execute: `env` provided -> runShell is called with that exact env object, not merged silently with process.env in a way that could leak unrelated variables",
-            "pkgAuditTool.execute: manager:'pipenv'/'poetry' now invokes pip-audit against the generated hash-pinned requirements file, not `pipenv check`/`poetry audit`"
-          ]
-        },
-        {
           "level": "live",
-          "purpose": "Prove at least one manager's destination pin and negative-access probe actually confine real traffic end-to-end against a real subprocess, and that cargo audit's local-comparison design discloses nothing -- gated behind INSRC_LIVE_TESTS=1 per the project's existing live-service-test convention.",
+          "purpose": "Prove pip-audit's `-r` targeting actually audits the repository's own requirements rather than the ambient environment end-to-end, against a real subprocess -- gated behind INSRC_LIVE_TESTS=1 per the project's existing live-service-test convention.",
           "subjects": [
-            "collectDependencyAdvisories against a real npm manifest: the audit's traffic goes only to the pinned registry, and a decoy destination outside that pin is confirmed unreachable via npm's own configured path",
-            "collectDependencyAdvisories against a real cargo manifest: no package coordinate is ever transmitted over the network (only the one advisory-db git fetch occurs), confirmed by observing the actual network calls made"
+            "collectDependencyAdvisories against a real pip project: a deliberately vulnerable version pinned in the repository's own requirements.txt is found, while a DIFFERENT, non-vulnerable version installed in the ambient environment is NOT what gets reported -- proving the audit targeted the repo's own file"
           ],
           "fixturesNeeded": [
-            "real npm and cargo manifest fixture repos, run only under INSRC_LIVE_TESTS=1"
+            "a real pip project fixture with a known-vulnerable pinned requirement, run only under INSRC_LIVE_TESTS=1"
           ]
         }
       ],
@@ -438,15 +391,13 @@
         {
           "criterionId": "ac2",
           "provingTests": [
-            "collectDependencyAdvisories: a manager whose negative-access probe fails -> perManagerMode 'unsupported', coordinates moved to unresolvedDependencies, pkg_audit never invoked for it",
-            "collectDependencyAdvisories: pkg_audit spawnError for a manager that passed its probe -> recorded in unavailableSources, not conflated with 'no findings'",
+            "collectDependencyAdvisories: pkg_audit spawnError for a manager -> recorded in unavailableSources, not conflated with 'no findings'",
             "collectDependencyAdvisories: a non-zero exit with parseable output (pkg_audit's nonZeroOk:true convention) -> treated as a successful audit, matches populated, no gap",
             "collectDependencyAdvisories: unparseable/malformed output -> recorded in unavailableSources, never reported as 'no findings'",
-            "collectDependencyAdvisories: materialization failure (missing required sibling file) -> perManagerMode 'unsupported', no fallback to the live repoPath tree",
-            "collectDependencyAdvisories: a bare pip requirements.txt with no hash pins -> perManagerMode 'unsupported', never falls back to resolving/installing",
-            "pkgAuditTool.execute: no `env` provided -> runShell is called exactly as before (process.env unchanged), matching existing behavior for every current caller",
-            "collectDependencyAdvisories against a real npm manifest: the audit's traffic goes only to the pinned registry, and a decoy destination outside that pin is confirmed unreachable via npm's own configured path",
-            "collectDependencyAdvisories against a real cargo manifest: no package coordinate is ever transmitted over the network (only the one advisory-db git fetch occurs), confirmed by observing the actual network calls made"
+            "collectDependencyAdvisories: a plain pip project with no requirements.txt/lockfile -> perManagerMode 'unsupported', never falls back to the ambient environment",
+            "collectDependencyAdvisories: pip-audit is invoked with `-r <requirements path>` pointed at the repository's own file, not the ambient environment",
+            "collectDependencyAdvisories: the destination each manager's audit actually reached is recorded on the corresponding SecurityAdvisoryMatch.advisoryDestination",
+            "collectDependencyAdvisories against a real pip project: a deliberately vulnerable version pinned in the repository's own requirements.txt is found, while a DIFFERENT, non-vulnerable version installed in the ambient environment is NOT what gets reported -- proving the audit targeted the repo's own file"
           ]
         }
       ]
@@ -456,17 +407,16 @@
         "id": "a1",
         "name": "Minimal additive pkg_audit env override + per-call ephemeral allowlisting proxy",
         "oneLineSummary": "Add one optional `env` field to pkgAuditTool's existing inputSchema (cwd is already there), forwarded to runShell's own per-call env option; s2's orchestration module starts a short-lived allowlisting proxy and per-manager scoped cwd/env for exactly the duration of one audit call.",
-        "approach": "Extend pkgAuditTool's inputSchema/execute with an optional `env?: Record<string,string>` passed straight to runShell's existing options.env (shell-helper.ts:40,103) -- a single additive field, not a behavior change to any existing caller. s2's own module: (1) computes contentIdentity (git_rev_parse + git_status + git_hash_object); (2) for each manager in scope, prepares its per-manager mode (npm/pnpm/yarn/cargo: pkg_audit's existing `cwd` points at the manifest directly; pip/pipenv/poetry: materialize an isolated environment resolved from the pinned manifest, pass its path via `cwd`/`env`; go: materialize a confined copy of the pinned source, pass via `cwd`); (3) starts one ephemeral local allowlisting proxy scoped to this single audit call, verifies the manager actually respects it via a decoy-destination probe, and calls pkgAuditTool.execute with `env` set to route that manager's traffic through the proxy; a manager that fails the probe is refused (coverage gap), never run unconfined; (4) maps pkg_audit's raw per-manager `parsed` output into SecurityAdvisoryMatch[], and (5) wraps the whole result into both the thin EvidenceProviderOutput (for the dependency-sbom registry contract) and the richer SecurityAdvisoryEvidence (sc2, returned directly for s3).",
+        "approach": "Extend pkgAuditTool's inputSchema/execute with the pip/pipenv/poetry `-r <requirements path>` fix (an additive-at-the-call-site change, not a schema addition) -- the single code change to pkg_audit itself, directly satisfying ac2's 'not a new fetcher' requirement. s2's own module: (1) computes contentIdentity by hashing the complete required input set's actual bytes directly; (2) enumerates every manager in scope and points pkg_audit's existing `cwd` (and, for pip-family managers, `-r`) at the repository's own real manifest/requirements, never an isolated copy or an ambient default; (3) runs pkg_audit with the same host access the controller has -- no proxy, no sandbox, no negative-access probe; (4) records the destination each manager's audit actually reached for the final report; (5) maps pkg_audit's raw per-manager output into SecurityAdvisoryMatch[], and (6) wraps the result into both the thin EvidenceProviderOutput (for the dependency-sbom registry contract) and the richer SecurityAdvisoryEvidence (sc2, returned directly for s3). Revision 3 drops the revision-2 proxy/negative-access-probe/isolated-materialization machinery entirely, per the HLD's own revision-5 amendment (the reviewer runs with controller-equivalent access, not sandboxed); the choice of a1 over a2/a3 stands unchanged -- a1 remains the smallest change that reuses pkg_audit directly.",
         "pros": [
-          "Reuses pkg_audit's existing tool contract almost unchanged -- one additive, optional field, no change to any other caller's behavior, directly satisfying ac2's 'not a new fetcher' requirement",
-          "The proxy and env are scoped to exactly one subprocess call (runShell's per-call options.env), so concurrent unrelated audits or other daemon work in the same process are never affected",
-          "Matches the HLD's own performance note ('bounded by one pkg_audit invocation... not a new background job') -- the proxy is ephemeral, started and torn down per call"
+          "Reuses pkg_audit directly -- the only code change is pointing pip-family managers at the repo's own requirements via -r, satisfying ac2's 'not a new fetcher' requirement",
+          "No proxy, isolation, or verification machinery to build or maintain -- the reviewer runs with the same host access as the controller, per the HLD's revision-5 policy",
+          "Full, accurate resolution (no --no-deps/--require-hashes restriction) is preferred over a restricted one now that sandboxing is explicitly out of scope"
         ],
         "cons": [
-          "s2 still has to build real net-new machinery (the proxy itself, the per-manager mode preparers, the per-manager verification probe, the raw-output-to-SecurityAdvisoryMatch mapper) -- this is genuinely the Story's substance, not something pkg_audit already provides",
-          "Starting and tearing down a fresh local proxy per manager per review adds a small but real per-call startup cost"
+          "s2's own reports of which destination each manager reached are self-reported by the native tool, not independently verified -- an accepted, documented tradeoff (HLD risky bit 'Controller-equivalent access tradeoff'), not a gap this Story tries to close"
         ],
-        "costEstimate": "M"
+        "costEstimate": "S"
       },
       {
         "id": "a2",
@@ -496,7 +446,7 @@
           "A restore-in-finally still has a window where a concurrent call on another async task sees the mutated environment, since Node's single-threaded event loop interleaves awaits -- this is not a theoretical risk given the daemon already runs many concurrent tool calls per session"
         ],
         "costEstimate": "S",
-        "reasonRejected": "Nominally keeps ac2's wiring intact (same pkgAuditTool.execute call site, no schema change) but the enforcement mechanism itself is unsafe under the daemon's own concurrent, threaded session model -- a global process.env mutation is not a boundary sc2's 'enforced, not merely observed' advisoryDestination can rely on."
+        "reasonRejected": "Nominally keeps ac2's wiring intact (same pkgAuditTool.execute call site, no schema change) but the enforcement mechanism itself is unsafe under the daemon's own concurrent, threaded session model -- a global process.env mutation is not a boundary sc2's 'enforced, not merely observed' advisoryDestination can rely on. Moot at revision 3 since no env-based network enforcement of any kind is attempted anymore, but a1's per-call scoping remains the better code-change pattern regardless."
       }
     ],
     "chosenAlternative": "a1",
@@ -597,6 +547,11 @@
       "id": "c19",
       "kind": "stakeholder",
       "ref": "reviewer finding: 5 HIGH + 3 MED on LLD revision 1 (process.env probes against temporary fixtures; git hash-object filter collision; npm quick-audit payload; pip-audit code-execution risk)"
+    },
+    {
+      "id": "c20",
+      "kind": "stakeholder",
+      "ref": "HLD-0765b3a578e43eec revision 5 (controller-equivalent access policy, applied across s2 and s3 by explicit user direction)"
     }
   ]
 }

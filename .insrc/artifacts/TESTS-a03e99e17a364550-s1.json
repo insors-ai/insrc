@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 11,
-        "contentHash": "d96cd52d630f33194f156b7f1d5b9e9687473d901abe526bbb69b59c9bd9bdb7",
-        "at": "2026-11-22T08:15:57.782Z",
+        "number": 12,
+        "contentHash": "6afdbcc63d95ede4d26a39449614b5908c3e975d641e0e8b60908bf97a843268",
+        "at": "2026-11-22T09:52:24.032Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "a03e99e17a364550",
     "storyId": "s1",
     "createdAt": "2026-11-21T17:48:45.684Z",
-    "updatedAt": "2026-11-22T08:15:57.731Z",
+    "updatedAt": "2026-11-22T09:52:23.988Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-21T15:31:04.425Z",
     "epicSlug": "restore-upgrades-from-existing-daemon-installations",
-    "revision": 11
+    "revision": 12
   },
   "body": {
     "tasks": [
@@ -476,6 +476,68 @@
             "titles": [
               {
                 "title": "Source update receipts retain update results and expose recovery-required under exclusion",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "dcb92e3ff",
+        "ranAt": "2026-11-22T09:52:23.988Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "VS Code controller reaches packaged current bootstrap and selected runtime",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/ide-source-entrypoints-native.test.ts",
+                "title": "VS Code controller reaches packaged current bootstrap and selected runtime",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "JetBrains provisioner inherits owned native environment and packaged verifier",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "jetbrains-plugin/__tests__/source-bootstrap-gradle.test.ts",
+                "title": "JetBrains provisioner inherits owned native environment and packaged verifier",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "jetbrains-plugin/__tests__/source-bootstrap-gradle.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 14080,
+            "titles": [
+              {
+                "title": "JetBrains provisioner inherits owned native environment and packaged verifier",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "scripts/__tests__/ide-source-entrypoints-native.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 525346,
+            "titles": [
+              {
+                "title": "VS Code controller reaches packaged current bootstrap and selected runtime",
                 "result": "pass"
               }
             ],

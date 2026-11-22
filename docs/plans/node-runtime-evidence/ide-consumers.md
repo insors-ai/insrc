@@ -1,6 +1,6 @@
 # IDE source bootstrap and selection evidence
 
-Story `a03e99e17a364550/s1`, approved task t7. Implementation and controller checks below are complete; registered task validation is pending. Human BUILD approval remains deferred until all twelve tasks are built and tested.
+Story `a03e99e17a364550/s1`, approved task t7. Registered validation passed on `dcb92e3ff` at 2026-11-22T09:53:21.242Z. Human BUILD approval remains deferred until all twelve tasks are built and tested.
 
 ## Reuse and boundaries
 
@@ -44,9 +44,11 @@ The first request on `a004a8ac1` lost its MCP transport after 300 seconds. The i
 
 Positive process absence and socket `ECONNREFUSED` were established before restoring the same installed `a30aa7f91` build through its normal startup guard (new PID 46743). No run files were manually removed and no installed source/dependencies were rebuilt. Owned fixture origins/workers now use the canonical OS temp directory outside the watched repository; an actual OrbStack read verified its `/mnt/mac` projection. This isolates test churn and does not claim to fix the installed watcher defect.
 
-Canonical run `88c0ee02-375c-4201-90bd-ab403b377724` passed the unchanged four-variant native matrix after fixture relocation (525 seconds, no skips, coordinator closure confirmed). Receipts are `/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-source-entrypoints-SGPDNV`. The restored daemon remained alive throughout. Explicit test prerequisites now skip OrbStack-only cases on non-Mac hosts and the pinned native bootstrap case when its public target/archive is unavailable; all required prerequisites are available on this qualification host. Registered validation retry remains pending.
+Canonical run `88c0ee02-375c-4201-90bd-ab403b377724` passed the unchanged four-variant native matrix after fixture relocation (525 seconds, no skips, coordinator closure confirmed). Receipts are `/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-source-entrypoints-SGPDNV`. The restored daemon remained alive throughout. Explicit test prerequisites now skip OrbStack-only cases on non-Mac hosts and the pinned native bootstrap case when its public target/archive is unavailable; all required prerequisites are available on this qualification host.
 
 Canonical run `999f026a-2802-46f8-98e6-2e784e927f70` passed the Kotlin integration and VS Code controller after those explicit prerequisites were added; neither skipped on this host. The application implementation is unchanged from the four-variant native pass.
+
+Merged four upstream design-artifact commits cleanly as `dcb92e3ff` (no runtime changes). Canonical merged-tree rebuild/controller run `f1148240-910d-4369-b91c-a45374de610f` passed. Registered validation retry on that commit again exceeded the 300-second MCP transport lifetime, while its live daemon request continued. The framework recorded both integrations passed at 09:52:23.988Z (Kotlin 14.1 seconds; native matrix 525.3 seconds; no failures/skips/not-found), then persisted task t7 PASS at 09:53:21.242Z with clean typechecking. Verdict: “All acceptance checks are supported by repository code and substantive tests; both required integrations and typechecks passed according to daemon results.” The full test/BUILD/TASKS records retain the result. No duplicate request was submitted while the retry was active. Guest receipts are `/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-source-entrypoints-4K2bmC`; the daemon remained alive and both VMs stopped after fixture closure.
 
 Required mappings:
 

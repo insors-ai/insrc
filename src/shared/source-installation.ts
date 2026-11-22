@@ -16,6 +16,7 @@ import type { ReleaseCompatibility } from './source-release-compatibility.js';
 import { requireQualifiedReleasePair } from './source-release-compatibility.js';
 import type { QualifiedReleasePair } from './source-release-compatibility.js';
 import type { StagedReleasePin } from '../daemon/managed-release-staging.js';
+import { resolveOwnedToolchain } from './owned-node-runtime.js';
 
 type LinuxTarget = 'linux-arm64' | 'linux-x64';
 export interface SourceSelection {
@@ -27,6 +28,17 @@ export interface SourceSelection {
 	readonly compatibility: ReleaseCompatibility;
 	/** Reference only: activation must still verify the archive/inventory through its runtime owner. */
 	readonly binding: string;
+}
+
+/** Build a reference only after the independently authorized staging owner has bound its verified runtime. */
+export async function verifiedSourceSelection(stateRoot: string, pin: StagedReleasePin, source: VerifiedSourceRelease,
+ compatibility: ReleaseCompatibility): Promise<SourceSelection> {
+ if (source.commit !== pin.commit || compatibility.releaseId !== pin.commit) throw new Error('Source selection identities differ from the staged commit');
+ const toolchain = await resolveOwnedToolchain(pin.root, stateRoot);
+ const [nodeVersion, target, archiveSha256] = toolchain.identity.split(':');
+ if (!nodeVersion || !archiveSha256 || (target !== 'linux-arm64' && target !== 'linux-x64') || toolchain.node !== pin.runtime) throw new Error('Staged source runtime differs from its verified binding');
+ return { pin, source, compatibility, target, toolchain: { nodeVersion, archiveSha256 },
+  binding: join(stateRoot, 'source-runtimes', `${createHash('sha256').update(pin.root).digest('hex')}.json`) };
 }
 
 export type SourceTransactionPhase = 'reserved' | 'staged' | 'predecessor-exited' | 'candidate-selected'

@@ -13,8 +13,11 @@ import type { VerifiedSourceRelease } from '../shared/managed-source-release.js'
 import { readSourceReleaseTarget, sourceReleaseCatalog } from '../shared/source-release-target.js';
 import type { SourceReleaseTarget } from '../shared/source-release-target.js';
 import { readTaggedReleaseCompatibility } from '../shared/source-release-compatibility.js';
-import { readSourceInstallationState } from '../shared/source-installation.js';
+import { readSourceInstallationState, SourceInstallationStore, verifiedSourceSelection } from '../shared/source-installation.js';
+import { readProcessIdentity } from '../shared/daemon-process.js';
 import { inspectSourcePredecessor } from '../daemon/source-predecessor.js';
+import { stageManagedRelease, verifyStagedReleasePin } from '../daemon/managed-release-staging.js';
+import { resolveOwnedToolchain } from '../shared/owned-node-runtime.js';
 
 declare const __INSRC_RELEASE_KEY__: string | undefined;
 declare const __INSRC_SOURCE_TARGET__: string | undefined;
@@ -223,11 +226,60 @@ export async function readAuthorizedReleaseCatalog(
 if (process.argv[1] !== undefined && fileURLToPath(import.meta.url) === await realpath(resolve(process.argv[1])).catch(() => '')) {
 	const [mode, workspace, stateRoot, repoUrl, branch, ...rest] = process.argv.slice(2);
 	try {
-		if (mode === 'inventory') {
+		if (mode === 'admit-macos-catalog') {
+			const [file, prior, profile, ...extra] = process.argv.slice(3);
+			if (!file || !prior || !profile || extra.length) throw new Error('usage: admit-macos-catalog AUTHENTICATED_OUTPUT PRIOR_COMMIT PROFILE');
+			const input = await open(file, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
+			try {
+				const info = await input.stat();
+				if (!info.isFile() || info.uid !== process.getuid?.() || info.nlink !== 1 || (info.mode & 0o077) || info.size > 128 * 1024) throw new Error('authenticated catalog output is not bounded, private and owned');
+				const bytes = Buffer.alloc(info.size + 1), { bytesRead } = await input.read(bytes, 0, bytes.length, 0);
+				if (bytesRead !== info.size) throw new Error('authenticated catalog output changed');
+				const output = JSON.parse(bytes.subarray(0, bytesRead).toString('utf8')) as { receipt: unknown; compatibility: string };
+				const receipt = readVerifiedSourceRelease(output.receipt);
+				const pair = readTaggedReleaseCompatibility(JSON.parse(output.compatibility), prior, receipt.commit, 'darwin');
+				if (!pair.launchProfiles.includes(profile)) throw new Error('authenticated macOS catalog does not qualify this launch profile');
+				process.stdout.write(JSON.stringify({ authority: 'authenticated-output-check-only', activationPermitted: false, receipt,
+					compatibility: { prior: pair.prior, candidate: pair.candidate } }) + '\n');
+			} finally { await input.close(); }
+		} else if (mode === 'inventory') {
 			const [root, runtime, ...extra] = process.argv.slice(3);
 			if (!root || extra.length) throw new Error('usage: inventory INSTALLATION_ROOT [INCUMBENT_RUNTIME]');
 			const inventory = await inspectSourcePredecessor({ root, runtime });
 			process.stdout.write(JSON.stringify({ inventory, authority: 'diagnostic-only', activationPermitted: false }) + '\n');
+		} else if (mode === 'installation' || mode === 'resolve' || mode === 'manager') {
+			const [root, logicalRoot, ...extra] = process.argv.slice(3);
+			if (process.platform !== 'linux' || !root || !logicalRoot || extra.length) throw new Error('usage: installation STATE_ROOT INSTALLATION_ROOT (Linux only)');
+			const store = new SourceInstallationStore(await realpath(root), await realpath(logicalRoot)), state = store.read();
+			const file = await open(join(store.root, 'daemon.pid'), constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK)
+				.catch((error: NodeJS.ErrnoException) => { if (error.code !== 'ENOENT') throw error; });
+			let running = false;
+			if (file) {
+				try {
+					const before = await file.stat();
+					if (!before.isFile() || before.uid !== process.getuid?.() || before.nlink !== 1 || (before.mode & 0o022) || before.size > 32) throw new Error('unsafe daemon PID publication');
+					const bytes = Buffer.alloc(before.size + 1), { bytesRead } = await file.read(bytes, 0, bytes.length, 0);
+					const after = await file.stat();
+					const text = bytes.subarray(0, bytesRead).toString('utf8').trim();
+					if (bytesRead !== before.size || after.ctimeMs !== before.ctimeMs || after.mtimeMs !== before.mtimeMs || !/^[1-9]\d*$/.test(text)) throw new Error('invalid daemon PID publication');
+					const processIdentity = readProcessIdentity(Number(text));
+					const roots = [store.installationRoot, state.selected?.pin.root, state.active?.prior?.root, state.active?.candidate?.pin.root, state.outcome?.legacyRoute?.prior?.root];
+					const related = processIdentity && roots.some(path => path && processIdentity.commandLine.endsWith(join(path, 'out/daemon/index.js')));
+					if (processIdentity && !related && !state.selected && !state.active && !state.outcome?.legacyRoute) throw new Error('daemon PID publication names an unrelated process');
+					running = !!related;
+				} finally { await file.close(); }
+			}
+			if (mode === 'resolve' || mode === 'manager') {
+				if (mode === 'resolve' && state.active) throw new Error('source recovery must finish before resolving a launch');
+				const manager = (mode === 'manager' ? state.active?.candidate : undefined) ?? state.selected ?? state.outcome?.legacyRoute?.candidate;
+				const launch = state.selected?.pin ?? state.outcome?.legacyRoute?.prior;
+				if (!manager || (mode === 'resolve' && !launch)) throw new Error('source installation has no qualified launch route');
+				await verifyStagedReleasePin(manager.pin);
+				const toolchain = await resolveOwnedToolchain(manager.pin.root, store.root);
+				if (toolchain.node !== manager.pin.runtime || toolchain.identity !== `${manager.toolchain.nodeVersion}:${manager.target}:${manager.toolchain.archiveSha256}`) throw new Error('resolved source runtime differs from its verified binding');
+				if (launch && mode === 'resolve') await verifyStagedReleasePin(launch);
+				process.stdout.write(JSON.stringify({ installationRoot: store.installationRoot, manager: manager.pin, launch }) + '\n');
+			} else process.stdout.write(JSON.stringify({ state, running, authority: 'diagnostic-only', activationPermitted: false }) + '\n');
 		} else {
 		const targets = rest.filter(arg => arg.startsWith('--target='));
 		const priors = rest.filter(arg => arg.startsWith('--prior='));
@@ -238,12 +290,12 @@ if (process.argv[1] !== undefined && fileURLToPath(import.meta.url) === await re
 			?? (typeof __INSRC_SOURCE_TARGET__ === 'string' ? __INSRC_SOURCE_TARGET__ : 'darwin'));
 		const checkout = paths[0];
 		if (workspace === undefined || stateRoot === undefined || repoUrl === undefined || branch === undefined
-			|| (mode !== 'authorize' && mode !== 'qualification' && mode !== 'recovery')) throw new Error('invalid release bootstrap invocation');
+			|| !['authorize', 'qualification', 'recovery', 'stage', 'head'].includes(mode ?? '')) throw new Error('invalid release bootstrap invocation');
 		const publicKey = typeof __INSRC_RELEASE_KEY__ === 'string' ? __INSRC_RELEASE_KEY__ : '';
 		const authorization = await fetchReleaseAuthorization({ workspace, stateRoot, repoUrl, branch, publicKey });
 		const { catalog, compatibility } = await readAuthorizedReleaseCatalog(authorization, target);
 		let predecessor: ReturnType<typeof readTaggedReleaseCompatibility> | undefined;
-		if (target !== 'darwin' || priors.length || profiles.length || mode === 'recovery') {
+		if (mode !== 'head' && (target !== 'darwin' || priors.length || profiles.length || mode === 'recovery')) {
 			const prior = priors[0]?.slice('--prior='.length);
 			const profile = profiles[0]?.slice('--profile='.length);
 			if (!prior || !/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/.test(prior) || !profile) {
@@ -253,7 +305,19 @@ if (process.argv[1] !== undefined && fileURLToPath(import.meta.url) === await re
 			if (!pair.launchProfiles.includes(profile)) throw new Error('signed source does not support the requested launch profile');
 			predecessor = pair;
 		}
-		if (mode === 'authorize') {
+		if (mode === 'head') {
+			if (priors.length || profiles.length || checkout) throw new Error('head does not accept predecessor/profile/checkout arguments');
+			process.stdout.write(JSON.stringify({ receipt: authorization.receipt, catalog, compatibility, ...(target === 'darwin' ? {} : { target }) }) + '\n');
+		} else if (mode === 'stage') {
+			if (target === 'darwin' || !predecessor || checkout !== undefined) throw new Error('stage requires a qualified Linux predecessor/profile and no checkout override');
+			const staged = await stageManagedRelease({ stateRoot, runtime: process.execPath, source: authorization.receipt.channel,
+				sourceTarget: target, qualification: { source: authorization.receipt.channel, candidate: predecessor.candidate, pairs: [predecessor] },
+				checkoutAuthorized: async root => { await checkoutAuthorizedRelease(authorization, root); } });
+			const candidate = await verifiedSourceSelection(stateRoot, staged.candidate, authorization.receipt, predecessor.candidate);
+			if (candidate.target !== target) throw new Error('staged target differs from its release');
+			process.stdout.write(JSON.stringify({ version: 1, candidate,
+				compatibility: { prior: predecessor.prior, candidate: predecessor.candidate }, launchProfile: profiles[0]!.slice('--profile='.length), catalog }) + '\n');
+		} else if (mode === 'authorize') {
 			await checkoutAuthorizedRelease(authorization, join(authorization.ownedWorkspace, 'checkout'));
 			await writeFile(join(authorization.ownedWorkspace, 'source-release.json'),
 				JSON.stringify(authorization.receipt), { flag: 'wx', mode: 0o600 });

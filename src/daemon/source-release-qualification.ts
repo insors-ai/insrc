@@ -30,6 +30,25 @@ export interface SourceQualificationInput {
 	readonly observeSourceRelease?: ((release: VerifiedSourceRelease) => Promise<void>) | undefined;
 }
 
+/** Authenticate the current channel without treating an unchanged release as a new update pair.
+ * This permits no checkout or candidate execution. */
+export async function authorizeSourceReleaseHead(input: Pick<SourceQualificationInput, 'stateRoot' | 'runtime' | 'verifier' | 'source' | 'target'>) {
+	const target = readSourceReleaseTarget(input.target ?? (process.platform === 'darwin' ? 'darwin' : `${process.platform}-${process.arch}`));
+	checkUpdateSource(input.source);
+	const info = await lstat(input.verifier);
+	if (!info.isFile() || info.uid !== process.getuid?.() || info.nlink !== 1 || (info.mode & 0o077) || info.size > 1024 * 1024) throw new Error('installed release verifier is not a bounded private file');
+	const staging = await realpath(await mkdtemp(join(tmpdir(), 'insrc-release-head-')));
+	try {
+		const { stdout } = await exec(input.runtime, [input.verifier, 'head', staging, input.stateRoot,
+			input.source.repoUrl, input.source.branch, `--target=${target}`], { env: cleanNodeEnvironment(process.env), timeout: 180_000, maxBuffer: 128 * 1024 });
+		const output = JSON.parse(stdout) as { receipt: unknown; catalog: string; compatibility: string; target?: string };
+		const receipt = readVerifiedSourceRelease(output.receipt);
+		if (!isDeepStrictEqual(receipt.channel, input.source) || !/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/.test(output.catalog)
+			|| typeof output.compatibility !== 'string' || (target !== 'darwin' && output.target !== target)) throw new Error('authenticated head does not match its channel/target');
+		return { receipt, catalog: output.catalog, compatibility: output.compatibility };
+	} finally { await rm(staging, { recursive: true, force: true }); }
+}
+
 /** Portable source authority. It does not reserve, select, stop or start an installation. */
 export async function qualifySourceRelease(input: SourceQualificationInput, checkout?: string, rebuildPredecessor = false) {
 	const target = readSourceReleaseTarget(input.target ?? (process.platform === 'darwin' ? 'darwin' : `${process.platform}-${process.arch}`));

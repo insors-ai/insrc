@@ -277,7 +277,35 @@ socket_status() {
 
 # Exit 10 is the bridge's explicit "unmanaged" result. Any other error is
 # terminal so a stale managed installation can never fall back to spawning.
+source_lifecycle() {
+ [ "$(uname -s)" = Linux ] || return 10
+ local journal="$HOME/.insrc/source-lifecycle/journal.json" verifier="$HOME/.insrc/source-lifecycle/verifier.mjs"
+ [ -e "$journal" ] || [ -L "$journal" ] || return 10
+ local logical operation result rc resolved manager runtime active
+ # Read only the bounded private header before asking the independent verifier to validate all references.
+ if logical=$("$NODE_BIN" --input-type=commonjs -e 'const f=require("fs"),p=process.argv[1],s=f.lstatSync(p);if(!s.isFile()||s.uid!==process.getuid()||s.nlink!==1||(s.mode&0o077)||s.size>131072)throw Error("unsafe source journal");const v=JSON.parse(f.readFileSync(p));if(typeof v.installationRoot!=="string")throw Error("invalid source identity");process.stdout.write(v.installationRoot)' "$journal" 2>&1); then :; else log "ERROR: $logical"; return 4; fi
+ [ -f "$verifier" ] && [ ! -L "$verifier" ] || { log 'ERROR: source authority is missing; obtain the current authenticated installer for this channel'; return 4; }
+ "$NODE_BIN" -e 'const s=require("fs").lstatSync(process.argv[1]);if(!s.isFile()||s.uid!==process.getuid()||s.nlink!==1||(s.mode&0o077)||s.size>1048576)throw Error("unsafe source verifier")' "$verifier" || return 4
+ if resolved=$("$NODE_BIN" "$verifier" installation "$HOME/.insrc" "$logical" 2>&1); then :; else log "ERROR: $resolved"; return 4; fi
+ active=$(printf '%s' "$resolved" | "$NODE_BIN" -e 'let t="";process.stdin.on("data",b=>t+=b);process.stdin.on("end",()=>{const s=JSON.parse(t).state;process.stdout.write(s.selected||s.active||s.outcome?.legacyRoute?"yes":"no")})') || return 4
+ [ "$active" = yes ] || return 10
+ if resolved=$("$NODE_BIN" "$verifier" manager "$HOME/.insrc" "$logical" 2>&1); then :; else log "ERROR: $resolved"; return 4; fi
+ manager=$(printf '%s' "$resolved" | "$NODE_BIN" -e 'let t="";process.stdin.on("data",b=>t+=b);process.stdin.on("end",()=>process.stdout.write(JSON.parse(t).manager.root))') || return 4
+ runtime=$(printf '%s' "$resolved" | "$NODE_BIN" -e 'let t="";process.stdin.on("data",b=>t+=b);process.stdin.on("end",()=>process.stdout.write(JSON.parse(t).manager.runtime))') || return 4
+ operation="$1"; [ "$operation" != update-local ] || operation=update
+ if result=$(PATH="$(dirname "$runtime"):$PATH" "$runtime" "$manager/out/bin/insrc-source-control.js" "$operation" "$HOME/.insrc" "$logical" 2>&1); then
+  local summary
+  if summary=$(printf '%s' "$result" | "$NODE_BIN" -e 'let t="";process.stdin.on("data",b=>t+=b);process.stdin.on("end",()=>{const r=JSON.parse(t);if(r.decision)process.stdout.write(r.decision+": "+r.detail);else if(typeof r.running==="boolean")process.stdout.write(r.running?"daemon running (pid "+r.pid+", release "+r.launch.commit+")":"daemon stopped");else process.stdout.write("source lifecycle reconciled")})'); then log "$summary"; else log 'source controller completed'; fi
+  return 0
+ else
+  rc=$?; log "ERROR: source controller refused ($rc): $result"; return 4
+ fi
+}
+
 supervised_lifecycle() {
+	local source_rc
+	if source_lifecycle "$1"; then return 0; else source_rc=$?; fi
+	[ "$source_rc" -eq 10 ] || return "$source_rc"
 	[ "$(uname -s)" = "Darwin" ] || return 10
 	local manifest="$HOME/.insrc/managed-lifecycle/installation.json"
 	local journal="$HOME/.insrc/managed-lifecycle/journal.json"

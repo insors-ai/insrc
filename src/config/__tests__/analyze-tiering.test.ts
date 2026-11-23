@@ -16,6 +16,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import type { FamilyDefinition } from '../../daemon/model-catalog.js';
+import { getModelRegistry } from '../../daemon/model-registry.js';
 import type { ModelRegistry, ResolvedModel } from '../../daemon/model-registry.js';
 import type { AnalyzeConfig, AnalyzeTiering, TierResolution } from '../analyze.js';
 import { _setSecurityProbeDepsForTests, parseSecurityModelPin, parseTiering, resolveSecurityModel, resolveSecurityModelCandidate, securityPinMeetsFloor } from '../analyze.js';
@@ -365,3 +366,32 @@ test("resolveSecurityModel: opts.signal is aborted while the probe is outstandin
 		_setSecurityProbeDepsForTests();
 	}
 });
+
+test(
+	'live: resolveSecurityModel reports a genuinely unreachable CLI backend via ENOENT, within the deadline, never a hang or substitution',
+	{ skip: process.env.INSRC_LIVE_TESTS !== '1' },
+	async () => {
+		const registry = getModelRegistry();
+		const claude = registry.families().find(f => f.id === 'cli-claude');
+		assert.ok(claude?.tierDefaults?.core, 'cli-claude must have a core tier default to pin');
+		const model = claude.tierDefaults.core.model;
+		assert.ok(registry.find('cli-claude', model) !== undefined, 'the pinned model must be listed');
+		assert.ok(securityPinMeetsFloor(registry, 'cli-claude', model, 'core'), 'the pinned model must be floor-eligible');
+
+		const cfg = fakeAnalyzeConfig({ security: { kind: 'valid', runner: 'cli-claude', model } });
+		const savedPath = process.env.PATH;
+		// Only the CLI subprocess resolution is affected -- this node process
+		// itself was already launched before this line runs.
+		process.env.PATH = '/insrc-live-test-nonexistent-path';
+		try {
+			const start = Date.now();
+			const result = await resolveSecurityModel(cfg, registry, { deadlineMs: 8000 });
+			const elapsed = Date.now() - start;
+			assert.ok(elapsed < 8000, `settled at ${elapsed}ms, within the 8000ms deadline`);
+			assert.equal(result.status, 'unavailable');
+			assert.ok(result.status === 'unavailable' && /ENOENT/.test(result.blockerReason), result.status === 'unavailable' ? result.blockerReason : '');
+		} finally {
+			process.env.PATH = savedPath;
+		}
+	},
+);

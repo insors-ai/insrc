@@ -21,10 +21,17 @@ import type { GitRevParseData } from '../../daemon/tools/builtins/git/schemas.js
 import { executeTool } from '../../daemon/tools/executor.js';
 import type { ToolDeps } from '../../daemon/tools/types.js';
 import { listRepos } from '../../db/repos.js';
+import { currentStepContext } from '../../shared/step-context.js';
 import type { ReviewTargets } from '../artifact-core/types.js';
 
+/** executeTool's assertExplicitConnectionExecution rejects a call made under a bound
+ *  connection-execution context (e.g. a review driven from inside an analyze/workflow
+ *  step) unless that EXACT trusted carrier is passed through explicitly -- omitting it
+ *  is only safe for a genuinely unbound caller. Reading the ambient one from the step
+ *  context (undefined outside any step call) and threading it through keeps both cases
+ *  working with the same deps shape. */
 function makeToolDeps(repoPath: string): ToolDeps {
-	return { sessionId: 'security-review-identity', repoPath, send: () => undefined, requestId: 0, caller: 'workflow' };
+	return { sessionId: 'security-review-identity', repoPath, send: () => undefined, requestId: 0, caller: 'workflow', connectionExecution: currentStepContext()?.connectionExecution };
 }
 
 /** The repo-registration check, overridable for unit tests (so a test does not

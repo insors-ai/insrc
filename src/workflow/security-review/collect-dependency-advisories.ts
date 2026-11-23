@@ -23,6 +23,7 @@ import { pkgAuditTool, type Manager } from '../../daemon/tools/builtins/pkg/inde
 import { executeTool } from '../../daemon/tools/executor.js';
 import { runShell, type ShellResult } from '../../daemon/tools/shell-helper.js';
 import type { ToolDeps, ToolInput, ToolResult } from '../../daemon/tools/types.js';
+import { currentStepContext } from '../../shared/step-context.js';
 import type { ReviewTargets } from '../artifact-core/types.js';
 import { computeContentIdentity } from './content-identity.js';
 import { enumerateManagers, verifyManagerClosureCoverage } from './dependency-advisories.js';
@@ -454,8 +455,13 @@ interface PkgAuditResultData {
 	readonly stderr: string;
 }
 
+/** executeTool's assertExplicitConnectionExecution rejects a call made under a bound
+ *  connection-execution context unless that EXACT trusted carrier is passed through
+ *  explicitly -- omitting it is only safe for a genuinely unbound caller. Reading the
+ *  ambient one from the step context (undefined outside any step call) and threading
+ *  it through keeps both cases working with the same deps shape. */
 function makeToolDeps(repoPath: string): ToolDeps {
-	return { sessionId: 'security-review-s2', repoPath, send: () => undefined, requestId: 0, caller: 'workflow' };
+	return { sessionId: 'security-review-s2', repoPath, send: () => undefined, requestId: 0, caller: 'workflow', connectionExecution: currentStepContext()?.connectionExecution };
 }
 
 /** The pkg_audit invocation, overridable for unit tests (so collectDependencyAdvisories'

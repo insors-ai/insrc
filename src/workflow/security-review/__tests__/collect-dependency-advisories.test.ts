@@ -16,6 +16,8 @@ import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 
 import { registerGitTools } from '../../../daemon/tools/builtins/git/index.js';
+import { savedAnalysisExecution } from '../../../analyze/connection-access.js';
+import { runInStepContext } from '../../../shared/step-context.js';
 import { collectDependencyAdvisories, _setPkgAuditExecuteForTests, _setConfigGetForTests } from '../collect-dependency-advisories.js';
 import { _setContentIdentityDepsForTests } from '../content-identity.js';
 import type { ToolInput, ToolResult } from '../../../daemon/tools/types.js';
@@ -69,6 +71,27 @@ function cleanup(repo: string): void {
 	_setContentIdentityDepsForTests();
 	rmSync(repo, { recursive: true, force: true });
 }
+
+test('collectDependencyAdvisories: succeeds (and threads the exact trusted execution through) under a BOUND saved connection-execution context, not just unbound -- regression: both dispatcher calls (git_rev_parse via computeContentIdentity, pkg_audit) must carry it explicitly, never omit it', async () => {
+	const repo = initRepo();
+	treatAsRegistered(repo);
+	try {
+		writeFileSync(join(repo, 'package.json'), '{}\n');
+		writeFileSync(join(repo, 'package-lock.json'), '{}\n');
+		const saved = savedAnalysisExecution(repo);
+		let capturedConnectionExecution: unknown;
+		_setPkgAuditExecuteForTests(async (_input: ToolInput, deps) => {
+			capturedConnectionExecution = deps.connectionExecution;
+			return okResult({ manager: 'npm', exitCode: 0, parsed: { vulnerabilities: {} } });
+		});
+		const result = await runInStepContext({ cwd: repo, connectionExecution: saved }, () =>
+			collectDependencyAdvisories(repo, { entries: [{ path: 'app.ts' }, { path: 'package.json' }, { path: 'package-lock.json' }] }));
+		assert.equal(typeof result.contentIdentity, 'string');
+		assert.equal(capturedConnectionExecution, saved);
+	} finally {
+		cleanup(repo);
+	}
+});
 
 test('collectDependencyAdvisories: a generated requirementsPath (poetry) is ALWAYS invoked with noDeps:true, using the actual generated file', async () => {
 	const repo = initRepo();

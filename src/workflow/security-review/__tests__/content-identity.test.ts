@@ -16,6 +16,8 @@ import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 
 import { registerGitTools } from '../../../daemon/tools/builtins/git/index.js';
+import { savedAnalysisExecution } from '../../../analyze/connection-access.js';
+import { runInStepContext } from '../../../shared/step-context.js';
 import { computeContentIdentity, _setContentIdentityDepsForTests } from '../content-identity.js';
 
 // computeContentIdentity now resolves HEAD through the shared executeTool
@@ -42,6 +44,20 @@ function initRepo(): string {
 function treatAsRegistered(repoPath: string): void {
 	_setContentIdentityDepsForTests(async candidate => candidate === repoPath);
 }
+
+test('computeContentIdentity: succeeds under a BOUND saved connection-execution context, not just unbound (regression: the dispatcher call must carry the exact trusted execution through, not omit it)', async () => {
+	const repo = initRepo();
+	treatAsRegistered(repo);
+	try {
+		const saved = savedAnalysisExecution(repo);
+		const identity = await runInStepContext({ cwd: repo, connectionExecution: saved }, () => computeContentIdentity(repo, { entries: [{ path: 'app.ts' }] }));
+		assert.equal(typeof identity, 'string');
+		assert.ok(identity.length > 0);
+	} finally {
+		_setContentIdentityDepsForTests();
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
 
 test('computeContentIdentity: an application-source file in targets.entries is edited, manifests/lockfiles unchanged -> digest changes', async () => {
 	const repo = initRepo();

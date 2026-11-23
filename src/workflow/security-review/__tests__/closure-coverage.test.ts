@@ -160,6 +160,30 @@ test("verifyManagerClosureCoverage: a go module's closure also covers assembly (
 	}
 });
 
+test("verifyManagerClosureCoverage: a go module's closure also covers //go:embed-referenced files", async () => {
+	const repo = tmpRepo();
+	try {
+		writeFileSync(join(repo, 'go.mod'), 'module example.com/x\n');
+		writeFileSync(join(repo, 'go.sum'), '');
+		writeFileSync(join(repo, 'main.go'), 'package main\n\n//go:embed assets/logo.png\nvar logo []byte\n');
+		mkdirSync(join(repo, 'assets'));
+		writeFileSync(join(repo, 'assets', 'logo.png'), 'fake-png-bytes');
+		const fullyScoped = await verifyManagerClosureCoverage(
+			repo,
+			{ entries: [{ path: 'go.mod' }, { path: 'go.sum' }, { path: 'main.go' }, { path: join('assets', 'logo.png') }] },
+			'go',
+			repo,
+		);
+		assert.deepEqual(fullyScoped, { covered: true });
+
+		const missingEmbed = await verifyManagerClosureCoverage(repo, { entries: [{ path: 'go.mod' }, { path: 'go.sum' }, { path: 'main.go' }] }, 'go', repo);
+		assert.equal(missingEmbed.covered, false);
+		assert.ok(!missingEmbed.covered && missingEmbed.missing.includes(join('assets', 'logo.png')), JSON.stringify(missingEmbed));
+	} finally {
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
 test('verifyManagerClosureCoverage: a go module closure covers every .go source file under manifestDir', async () => {
 	const repo = tmpRepo();
 	try {

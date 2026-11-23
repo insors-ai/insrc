@@ -96,7 +96,7 @@ const PENDING_KIND_SET: ReadonlySet<string> = new Set(PENDING_KINDS);
 interface ArtifactShape {
 	readonly meta?: Record<string, unknown>;
 	readonly body?: Record<string, unknown>;
-	/** AMD records are flat: the decision status sits at the top level. */
+	/** Legacy flat AMD records carry their decision at the top level. */
 	readonly status?: unknown;
 	readonly [key: string]: unknown;
 }
@@ -136,8 +136,9 @@ export function listPendingArtifacts(repoPath: string): readonly PendingArtifact
 
 		const meta = art.meta ?? {};
 		// Pending = neither approved nor rejected in the lifecycle, the state approve and reject write.
-		// An AMD record is flat (no meta): its own top-level status carries the decision (ISSUE-6dbf14435972af7a).
-		if (kind === 'AMD') {
+		// Current AMD heads use the same lifecycle as other artifacts. Only a
+		// legacy flat record (no meta) uses its top-level decision status.
+		if (kind === 'AMD' && art.meta === undefined) {
 			if (art['status'] !== 'pending') continue;
 		} else if (approvalStateOf(meta) !== 'pending') continue;
 

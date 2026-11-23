@@ -153,7 +153,7 @@ test("listPendingArtifacts lists a pending BUILD record whose Story has a code r
 	}
 });
 
-test('ISSUE-6dbf14435972af7a: EXT and AMD records are listed while pending (AMD with no mdPath, decided via its own status)', () => {
+test('ISSUE-6dbf14435972af7a: EXT and legacy flat AMD records are listed while pending', () => {
 	const repo = fixtureRepo({
 		[`EXT-${HASH}-s1.json`]: { meta: buildMeta(), body: { scope: 'more' } },
 		[`AMD-${HASH}-1.json`]: { id: `AMD-${HASH}-1`, epicHash: HASH, status: 'pending' },
@@ -172,6 +172,17 @@ test('ISSUE-6dbf14435972af7a: EXT and AMD records are listed while pending (AMD 
 		assert.equal(amd.title, `Amendment AMD-${HASH}-1`);
 		const ext = list.find(a => a.artifactId === `EXT-${HASH}-s1`)!;
 		assert.match(ext.mdPath, /S?001[\\/]EXT\.md$/, 'an EXT resolves its EXT.md');
+	} finally { cleanup(repo); }
+});
+
+test('lifecycle-backed AMD decisions take precedence over stale flat status fields', () => {
+	const repo = fixtureRepo({
+		[`AMD-${HASH}-1.json`]: { meta: draftMeta(), body: {}, status: 'applied' },
+		[`AMD-${HASH}-2.json`]: { meta: approvedMeta(), body: {}, status: 'pending' },
+		[`AMD-${HASH}-3.json`]: { meta: rejectedMeta(), body: {}, status: 'pending' },
+	});
+	try {
+		assert.deepEqual(listPendingArtifacts(repo).map(a => a.artifactId), [`AMD-${HASH}-1`]);
 	} finally { cleanup(repo); }
 });
 

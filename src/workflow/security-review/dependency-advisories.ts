@@ -12,7 +12,7 @@
  * SecurityFinding/EvidenceProvider shapes without redefining them.
  */
 
-import { existsSync, globSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, globSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 
 import type { Manager } from '../../daemon/tools/builtins/pkg/index.js';
@@ -212,13 +212,44 @@ function resolveEmbeddedFiles(goFile: string): string[] {
 		if (m?.[1] === undefined) { continue; }
 		const patterns = m[1].match(/"[^"]*"|\S+/g) ?? [];
 		for (const raw of patterns) {
-			const pattern = raw.replace(/^"|"$/g, '');
+			// Go's own `all:` prefix includes dotfiles/underscore-prefixed names
+			// that a bare directory embed otherwise skips.
+			const all = raw.startsWith('"all:') || raw.startsWith('all:');
+			const pattern = raw.replace(/^"|"$/g, '').replace(/^all:/, '');
 			try {
 				for (const match of globSync(pattern, { cwd: dir })) {
-					files.push(resolve(dir, match));
+					const matchPath = resolve(dir, match);
+					let isDir = false;
+					try {
+						isDir = statSync(matchPath).isDirectory();
+					} catch { /* a glob match that vanished before the stat names nothing further */ }
+					// Embedding a directory embeds every file under it, recursively
+					// (Go's own semantics) -- a bare match is never just the directory
+					// entry itself.
+					files.push(...(isDir ? expandEmbeddedDir(matchPath, all) : [matchPath]));
 				}
 			} catch { /* a malformed pattern names nothing; never throw the whole closure over it */ }
 		}
+	}
+	return files;
+}
+
+/** Every file under `dir`, recursively -- Go's own default directory-embed
+ *  behavior skips a name starting with `.` or `_` unless the directive used
+ *  the `all:` prefix. */
+function expandEmbeddedDir(dir: string, all: boolean): string[] {
+	const files: string[] = [];
+	let entries: import('node:fs').Dirent[];
+	try {
+		entries = readdirSync(dir, { withFileTypes: true });
+	} catch {
+		return files;
+	}
+	for (const entry of entries) {
+		if (!all && (entry.name.startsWith('.') || entry.name.startsWith('_'))) { continue; }
+		const full = join(dir, entry.name);
+		if (entry.isDirectory()) { files.push(...expandEmbeddedDir(full, all)); }
+		else { files.push(full); }
 	}
 	return files;
 }

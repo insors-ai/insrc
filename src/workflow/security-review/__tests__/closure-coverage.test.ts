@@ -184,6 +184,42 @@ test("verifyManagerClosureCoverage: a go module's closure also covers //go:embed
 	}
 });
 
+test("verifyManagerClosureCoverage: a '//go:embed <directory>' directive (no wildcard) embeds every file under that directory recursively, not the directory entry itself", async () => {
+	const repo = tmpRepo();
+	try {
+		writeFileSync(join(repo, 'go.mod'), 'module example.com/x\n');
+		writeFileSync(join(repo, 'go.sum'), '');
+		writeFileSync(join(repo, 'main.go'), 'package main\n\n//go:embed assets\nvar assets embed.FS\n');
+		mkdirSync(join(repo, 'assets'));
+		mkdirSync(join(repo, 'assets', 'nested'));
+		writeFileSync(join(repo, 'assets', 'logo.png'), 'fake-png-bytes');
+		writeFileSync(join(repo, 'assets', 'nested', 'icon.png'), 'fake-icon-bytes');
+		const fullyScoped = await verifyManagerClosureCoverage(
+			repo,
+			{
+				entries: [
+					{ path: 'go.mod' }, { path: 'go.sum' }, { path: 'main.go' },
+					{ path: join('assets', 'logo.png') }, { path: join('assets', 'nested', 'icon.png') },
+				],
+			},
+			'go',
+			repo,
+		);
+		assert.deepEqual(fullyScoped, { covered: true });
+
+		const missingNested = await verifyManagerClosureCoverage(
+			repo,
+			{ entries: [{ path: 'go.mod' }, { path: 'go.sum' }, { path: 'main.go' }, { path: join('assets', 'logo.png') }] },
+			'go',
+			repo,
+		);
+		assert.equal(missingNested.covered, false);
+		assert.ok(!missingNested.covered && missingNested.missing.includes(join('assets', 'nested', 'icon.png')), JSON.stringify(missingNested));
+	} finally {
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
 test('verifyManagerClosureCoverage: a go module closure covers every .go source file under manifestDir', async () => {
 	const repo = tmpRepo();
 	try {

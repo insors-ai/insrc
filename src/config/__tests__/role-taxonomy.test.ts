@@ -72,3 +72,14 @@ test('every descriptor carries a valid tier + criticality', () => {
 		assert.ok(['critical', 'peripheral'].includes(r.criticality), r.id);
 	}
 });
+
+test("the 'security.review' entry is criticality:'critical' with defaultTier:'core'", () => {
+	const r = roleDescriptor('security.review');
+	assert.ok(r, "security.review must be registered");
+	assert.equal(r?.criticality, 'critical');
+	assert.equal(r?.defaultTier, 'core');
+});
+
+test("roleDescriptor('security.review') returns the registered descriptor", () => {
+	assert.deepEqual(roleDescriptor('security.review'), { id: 'security.review', criticality: 'critical', defaultTier: 'core' });
+});

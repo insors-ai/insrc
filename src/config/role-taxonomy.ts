@@ -103,6 +103,9 @@ const ROLES: readonly RoleDescriptor[] = [
 	{ id: 'understanding.grade', criticality: 'critical', defaultTier: 'core' },
 	{ id: 'understanding.verify', criticality: 'critical', defaultTier: 'core' },
 	{ id: 'understanding.guide', criticality: 'critical', defaultTier: 'core' },
+
+	// Dedicated security review (Epic add-dedicated-security-reviews, s1) — CRITICAL → core.
+	{ id: 'security.review', criticality: 'critical', defaultTier: 'core' },
 ];
 
 const ROLE_TAXONOMY: RoleTaxonomy = { roles: ROLES, rankOf: RANK_OF };

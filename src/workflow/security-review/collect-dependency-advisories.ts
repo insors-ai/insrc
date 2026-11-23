@@ -17,6 +17,7 @@
 
 import { dirname, join } from 'node:path';
 import { readFileSync, rmSync } from 'node:fs';
+import { homedir } from 'node:os';
 
 import { pkgAuditTool, type Manager } from '../../daemon/tools/builtins/pkg/index.js';
 import type { ToolDeps, ToolInput, ToolResult } from '../../daemon/tools/types.js';
@@ -66,7 +67,9 @@ const MANAGER_MODE: Record<Manager, PerManagerMode> = {
 
 /** The manager's own CONFIGURED advisory destination -- explicitly a
  *  configured value, never claimed as independently observed (pkg_audit's
- *  own output carries no network trace to observe from). */
+ *  own output carries no network trace to observe from). npm/pnpm/yarn's
+ *  default here is overridden by resolveNpmRegistry whenever a project's
+ *  own (or the user's) .npmrc sets a different `registry`. */
 const MANAGER_DESTINATION: Record<Manager, string> = {
 	npm: 'https://registry.npmjs.org (npm audit)',
 	pnpm: 'https://registry.npmjs.org (pnpm audit)',
@@ -77,6 +80,32 @@ const MANAGER_DESTINATION: Record<Manager, string> = {
 	poetry: 'PyPI Advisory Database (pip-audit)',
 	go: 'https://vuln.go.dev (govulncheck)',
 };
+
+/** npm/pnpm/yarn's effective registry, resolved the same way npm itself
+ *  does: a project-level `.npmrc` (in the manifest's own directory)
+ *  overrides the user-level `~/.npmrc`, which overrides the documented
+ *  default. Resolved per audit, not hardcoded, so an actually-configured
+ *  private registry (`.npmrc`'s `registry=...`) is reported honestly
+ *  instead of the public default every manager falls back to when nothing
+ *  overrides it. */
+function resolveNpmRegistry(manifestDir: string, auditLabel: string): string {
+	for (const configPath of [join(manifestDir, '.npmrc'), join(homedir(), '.npmrc')]) {
+		try {
+			const content = readFileSync(configPath, 'utf8');
+			for (const rawLine of content.split('\n')) {
+				const line = rawLine.replace(/\s*#.*$/, '').trim();
+				const m = /^registry\s*=\s*(\S+)/.exec(line);
+				if (m?.[1] !== undefined) { return `${m[1]} (${auditLabel})`; }
+			}
+		} catch { /* no .npmrc at this level -- fall through to the next, then the default */ }
+	}
+	return `https://registry.npmjs.org (${auditLabel})`;
+}
+
+function resolveConfiguredDestination(manager: Manager, manifestDir: string): string {
+	if (manager === 'npm' || manager === 'pnpm' || manager === 'yarn') { return resolveNpmRegistry(manifestDir, `${manager} audit`); }
+	return MANAGER_DESTINATION[manager];
+}
 
 function isRecord(v: unknown): v is Record<string, unknown> {
 	return typeof v === 'object' && v !== null;
@@ -401,7 +430,7 @@ export async function collectDependencyAdvisories(repoPath: string, targets: Rev
 
 	for (const { manager, manifestDir } of managers) {
 		const mode = MANAGER_MODE[manager];
-		const configuredDestination = MANAGER_DESTINATION[manager];
+		const configuredDestination = resolveConfiguredDestination(manager, manifestDir);
 
 		const preCoverage = await verifyManagerClosureCoverage(repoPath, targets, manager, manifestDir);
 		if (!preCoverage.covered) {

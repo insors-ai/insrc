@@ -517,6 +517,23 @@ url = "https://github.com/example/privatelib.git"
 	}
 });
 
+test("collectDependencyAdvisories: npm's configuredDestination reflects a project-level .npmrc's own 'registry' setting, not the hardcoded public default", async () => {
+	const repo = initRepo();
+	treatAsRegistered(repo);
+	try {
+		writeFileSync(join(repo, 'package.json'), '{}\n');
+		writeFileSync(join(repo, 'package-lock.json'), '{}\n');
+		writeFileSync(join(repo, '.npmrc'), 'registry=https://registry.example.invalid/\n');
+		_setPkgAuditExecuteForTests(async () => okResult({ manager: 'npm', exitCode: 0, parsed: { vulnerabilities: {} } }));
+		const result = await collectDependencyAdvisories(repo, { entries: [{ path: 'app.ts' }, { path: 'package.json' }, { path: 'package-lock.json' }, { path: '.npmrc' }] });
+		const npmEntry = result.perManagerMode.find(e => e.manager === 'npm');
+		assert.ok(npmEntry?.configuredDestination?.includes('registry.example.invalid'), JSON.stringify(npmEntry));
+		assert.ok(!npmEntry?.configuredDestination?.includes('registry.npmjs.org'), JSON.stringify(npmEntry));
+	} finally {
+		cleanup(repo);
+	}
+});
+
 test('collectDependencyAdvisories: a genuine manager ambiguity (two lockfiles of the same family in one directory) is recorded as a coverage gap, never silently dropped from the evidence', async () => {
 	const repo = initRepo();
 	treatAsRegistered(repo);

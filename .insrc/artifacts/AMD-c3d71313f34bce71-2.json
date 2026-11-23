@@ -15,7 +15,7 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 1,
         "contentHash": "9d08cd804b7dd6a36f66472c43e6b2938a758b478a4837953df920f4b8ff5f2e",
@@ -26,7 +26,16 @@
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-23T17:31:55.263Z"
+      }
     },
     "revision": 1
   },

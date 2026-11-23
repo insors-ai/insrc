@@ -415,7 +415,12 @@ function effectiveSecurityReviewTier(cfg: AnalyzeConfig, repoPath: string | unde
 }
 
 /**
- * Resolve sc1's security-reviewer candidate (pure, synchronous; zero I/O).
+ * Resolve sc1's security-reviewer candidate (pure, synchronous; no network or
+ * subprocess I/O). May log a clamp via effectiveSecurityReviewTier's own
+ * applyCoreFloor call, matching resolveTierWith's and parseTieringOverride's
+ * existing logging convention elsewhere in this file -- never a correctness
+ * side effect, since the clamp decision itself is already reflected in the
+ * returned candidate.
  * A malformed or below-floor/unlisted pin resolves to 'unavailable' immediately
  * and NEVER falls through to the 'security.review' role's tier-default model --
  * only a genuinely absent pin falls through to it, which is itself checked

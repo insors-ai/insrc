@@ -1,0 +1,98 @@
+Command: INSRC_LIVE_TESTS=1 npx tsx --test src/config/__tests__/analyze-tiering.test.ts
+Run at: 2026-11-23T07:15:14Z
+Purpose: Task s1/t6 live acceptance check -- captured raw stdout+stderr of the actual execution.
+---
+npm warn Unknown project config "target". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "runtime". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+✔ a valid tier table parses to {runner, model} TierModels (1.080457ms)
+✔ a tier with a non-k1 runner is dropped (no direct-REST backend admitted) (0.390525ms)
+✔ an unknown tier name is dropped (0.151501ms)
+✔ coreFloor accepts only a TierName; other strings are dropped (0.094005ms)
+✔ models.tasks parses valid RoleId→TierName entries and drops non-tier values (0.113291ms)
+✔ byRepo tiering overrides are parsed per repo path (tasks key) (0.089847ms)
+✔ absent tiering keys → {} (legacy single-provider path), aside from the always-present security tri-state (0.107059ms)
+✔ empty tiers:{} / tasks:{} are treated as absent, not an error (0.120354ms)
+✔ a byRepo entry with no valid tiering keys is not retained (0.183761ms)
+✔ parseTiering reads effort on the global core/mid/cheap tiers; models.byRepo[repo].tiers is ignored (tiers are global only); '' is an explicit CLI default and absent gives no effort (0.239224ms)
+✔ a non-string effort is dropped with a warning while the tier keeps its runner and model; any level name is parsed (the registry decides acceptance per model) (0.189151ms)
+✔ parseSecurityModelPin: no models.security key at all -> { kind: 'absent' } (0.054691ms)
+✔ parseSecurityModelPin: a complete, well-typed { runner, model } -> { kind: 'valid', ... } (0.078286ms)
+✔ parseSecurityModelPin: runner set with no model -> { kind: 'malformed', detail } (0.090578ms)
+✔ parseSecurityModelPin: model set with no runner -> { kind: 'malformed', detail } (0.075571ms)
+✔ parseSecurityModelPin: runner is not a recognized FamilyId -> { kind: 'malformed', detail } (0.090518ms)
+✔ parseSecurityModelPin: a valid pin with effort carries it through; an empty security object is absent, not malformed (0.06446ms)
+✔ parseTiering threads parseSecurityModelPin's own tri-state result onto AnalyzeTiering.security, always present (never collapsed to undefined); parseTieringOverride's own tiers parsing is unaffected (0.07569ms)
+✔ securityPinMeetsFloor: a pin matching its own family's tierDefaults at a tier at/above the floor -> true (0.155379ms)
+✔ securityPinMeetsFloor: a pin matching a DIFFERENT family's tierDefaults at a tier at/above the floor -> true (0.06953ms)
+✔ securityPinMeetsFloor: a pin matching a tierDefaults entry BELOW the floor rank -> false (0.053099ms)
+✔ securityPinMeetsFloor: a pin matching no family's tierDefaults at any tier (unclassifiable) -> false (0.066002ms)
+✔ resolveSecurityModelCandidate: a valid, floor-eligible pin -> status:'candidate' with that (runner, model) (0.136013ms)
+✔ resolveSecurityModelCandidate: a malformed pin -> status:'unavailable' immediately, never falling through to the tier-default model (0.062837ms)
+✔ resolveSecurityModelCandidate: a valid but below-floor/unclassifiable pin -> status:'unavailable', never substituted (0.056635ms)
+✔ resolveSecurityModelCandidate: an absent pin falls through to the 'security.review' role's tier-default model as a normal candidate (0.052417ms)
+✔ resolveSecurityModelCandidate: an absent pin whose tier-default model is itself unlisted/below-floor -> status:'unavailable' (0.057136ms)
+✔ resolveSecurityModel: candidate already 'unavailable' -> resolves immediately, no probe attempted (0.153064ms)
+✔ resolveSecurityModel: probe resolves successfully within the deadline -> status:'configured' (0.224717ms)
+✔ resolveSecurityModel: probe rejects (simulated ENOENT/auth failure) -> status:'unavailable' with a backend-failure blockerReason (0.163344ms)
+[07:15:00] [33mWARN[39m: [36m[config:analyze] models.tiers[tier]: expected { runner: cli-claude|cli-codex|cli-vibe|ollama|ollama-claude, model: string }; ignored[39m
+    [35mmodule[39m: "config:analyze"
+    [35mwhere[39m: "global"
+    [35mtier[39m: "cheap"
+[07:15:00] [33mWARN[39m: [36m[config:analyze] models.tiers: unknown tier name; ignored[39m
+    [35mmodule[39m: "config:analyze"
+    [35mwhere[39m: "global"
+    [35mtier[39m: "huge"
+[07:15:00] [33mWARN[39m: [36m[config:analyze] models.coreFloor: not a tier name; ignored[39m
+    [35mmodule[39m: "config:analyze"
+    [35mwhere[39m: "global"
+    [35mcoreFloor[39m: "high"
+[07:15:00] [33mWARN[39m: [36m[config:analyze] models.tasks[role]: not a tier name; ignored[39m
+    [35mmodule[39m: "config:analyze"
+    [35mwhere[39m: "global"
+    [35mrole[39m: "bogus"
+    [35mtier[39m: "nope"
+[07:15:00] [33mWARN[39m: [36m[config:analyze] models.coreFloor: not a tier name; ignored[39m
+    [35mmodule[39m: "config:analyze"
+    [35mwhere[39m: "byRepo[/r]"
+    [35mcoreFloor[39m: "bad"
+[07:15:00] [33mWARN[39m: [36m[config:analyze] models.tiers[tier].effort: expected an effort level name; ignored[39m
+    [35mmodule[39m: "config:analyze"
+    [35mtier[39m: "mid"
+    [35meffort[39m: 3
+[07:15:00] [33mWARN[39m: [36m[config:analyze] models.tiers[tier].effort: expected an effort level name; ignored[39m
+    [35mmodule[39m: "config:analyze"
+    [35mtier[39m: "mid"
+    [35meffort[39m: {
+      "level": "high"
+    }
+[07:15:00] [33mWARN[39m: [36m[config:analyze] models.tiers[tier].effort: expected an effort level name; ignored[39m
+    [35mmodule[39m: "config:analyze"
+    [35mtier[39m: "mid"
+    [35meffort[39m: null
+✔ resolveSecurityModel: probe neither resolves nor rejects before opts.deadlineMs -> status:'unavailable' with a timeout blockerReason (50.185274ms)
+✔ resolveSecurityModel: opts.signal is aborted while the probe is outstanding -> status:'unavailable' with a cancellation blockerReason (0.376389ms)
+✔ live: resolveSecurityModel reports a genuinely unreachable CLI backend via ENOENT, within the deadline, never a hang or substitution (103.686617ms)
+[07:15:00] [32mINFO[39m: [36m[daemon:model-catalog] model definitions validated[39m
+    [35mmodule[39m: "daemon:model-catalog"
+    [35mdir[39m: "/home/subho/work/dev/insors/insrc/src/assets/models"
+    [35mversion[39m: 1
+    [35mmodels[39m: {
+      "cli-claude": 4,
+      "cli-codex": 7,
+      "cli-vibe": 5,
+      "ollama": 2,
+      "ollama-claude": 6
+    }
+[07:15:00] [32mINFO[39m: [36m[daemon:model-registry] approved profile shadowed by the shipped definition[39m
+    [35mmodule[39m: "daemon:model-registry"
+    [35mfamily[39m: "cli-vibe"
+    [35mmodelId[39m: "mistral-large-4"
+ℹ tests 33
+ℹ suites 0
+ℹ pass 33
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5190.686636
+exit code: 0

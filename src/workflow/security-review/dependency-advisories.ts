@@ -12,8 +12,8 @@
  * SecurityFinding/EvidenceProvider shapes without redefining them.
  */
 
-import { readdirSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { dirname, join, relative, resolve } from 'node:path';
 
 import type { Manager } from '../../daemon/tools/builtins/pkg/index.js';
 import type { ReviewTargets } from '../artifact-core/types.js';
@@ -138,4 +138,91 @@ export function enumerateManagers(repoPath: string, _targets: ReviewTargets): Ma
 
 	walk(repoPath);
 	return { managers, ambiguities };
+}
+
+// ---------------------------------------------------------------------------
+// verifyManagerClosureCoverage (s2/t4)
+// ---------------------------------------------------------------------------
+
+export type ClosureCoverage =
+	| { readonly covered: true }
+	| { readonly covered: false; readonly missing: readonly string[] };
+
+/** A requirements.txt-shaped file's own nested `-r <file>` / `-c <file>`
+ *  references, resolved recursively and relative to the referencing file's
+ *  own directory (pip's own convention). Re-reads from disk on every call --
+ *  no caching, so a file added between two calls is always picked up fresh. */
+function resolveRequirementsClosure(file: string, seen: Set<string>): string[] {
+	if (seen.has(file)) { return []; }
+	seen.add(file);
+	const result = [file];
+	let content: string;
+	try {
+		content = readFileSync(file, 'utf8');
+	} catch {
+		return result;
+	}
+	for (const line of content.split('\n')) {
+		const m = /^\s*-(?:r|c)\s+(\S.*)$/.exec(line);
+		if (m?.[1] !== undefined) {
+			result.push(...resolveRequirementsClosure(resolve(dirname(file), m[1].trim()), seen));
+		}
+	}
+	return result;
+}
+
+/** A go module's full source tree under manifestDir: every *.go file plus
+ *  go.mod/go.sum, re-walked fresh on every call. */
+function resolveGoClosure(manifestDir: string): string[] {
+	const files: string[] = [];
+	const walk = (dir: string): void => {
+		let entries: import('node:fs').Dirent[];
+		try {
+			entries = readdirSync(dir, { withFileTypes: true });
+		} catch {
+			return;
+		}
+		for (const entry of entries) {
+			if (entry.isDirectory()) {
+				if (!SKIP_DIRS.has(entry.name)) { walk(join(dir, entry.name)); }
+				continue;
+			}
+			if (entry.name.endsWith('.go') || entry.name === 'go.mod' || entry.name === 'go.sum') {
+				files.push(join(dir, entry.name));
+			}
+		}
+	};
+	walk(manifestDir);
+	return files;
+}
+
+const DEFAULT_CLOSURE_FILES: Partial<Record<Manager, readonly string[]>> = {
+	npm:   ['package.json', 'package-lock.json'],
+	pnpm:  ['package.json', 'pnpm-lock.yaml'],
+	yarn:  ['package.json', 'yarn.lock'],
+	cargo: ['Cargo.toml', 'Cargo.lock'],
+};
+
+/** This manager's own required-input closure, re-resolved fresh (never cached)
+ *  on every call: nested -r/-c references for pip-family, the full source
+ *  tree for go, the manifest+lockfile pair for the rest. */
+function resolveClosure(manager: Manager, manifestDir: string): string[] {
+	if (manager === 'go') { return resolveGoClosure(manifestDir); }
+	if (manager === 'pip') { return resolveRequirementsClosure(join(manifestDir, 'requirements.txt'), new Set()); }
+	if (manager === 'pipenv') { return [join(manifestDir, 'Pipfile.lock')]; }
+	if (manager === 'poetry') { return [join(manifestDir, 'poetry.lock')]; }
+	return (DEFAULT_CLOSURE_FILES[manager] ?? []).map(name => join(manifestDir, name));
+}
+
+/**
+ * Re-resolves `manager`'s required-input closure AT THE TIME OF THE CALL (not
+ * a cached result) and checks whether every file currently in it is present
+ * in targets.entries. Never mutates targets.entries, manifestDir or any other
+ * input -- purely a read-only coverage check.
+ */
+export async function verifyManagerClosureCoverage(repoPath: string, targets: ReviewTargets, manager: Manager, manifestDir: string): Promise<ClosureCoverage> {
+	const closure = resolveClosure(manager, manifestDir).filter(existsSync);
+	const scoped = new Set(targets.entries.map(e => resolve(repoPath, e.path)));
+	const missing = closure.filter(f => !scoped.has(resolve(f))).map(f => relative(repoPath, f));
+	return missing.length === 0 ? { covered: true } : { covered: false, missing };
 }

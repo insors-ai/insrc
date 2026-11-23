@@ -1,0 +1,9 @@
+[
+  {
+    "report": "docs/standalone/remove-existing-daemon-installer-lifecycle-implementation-E202611227dcc640f/S001/evidence/jetbrains-preflight-junit/TEST-ai.insors.insrc.jetbrains.daemon.DaemonStatusGatewayTest.xml",
+    "tests": "8",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  }
+]

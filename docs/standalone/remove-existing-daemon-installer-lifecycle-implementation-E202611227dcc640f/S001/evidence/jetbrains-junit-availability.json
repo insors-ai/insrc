@@ -1,0 +1,9 @@
+{
+  "command": "node --import tsx/esm: existing runFocusedJUnit([DaemonStatusGatewayTest])",
+  "exitCode": 0,
+  "seconds": 12.58,
+  "output": "",
+  "insrcDaemonStarted": false,
+  "insrcInstalledStateChanged": false,
+  "toolCacheScope": "Standard Gradle compiler/project caches are build tooling, not the insrc installation, daemon, runtime, launch jobs or application data."
+}

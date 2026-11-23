@@ -1,693 +1,710 @@
 {
- "meta": {
-  "workflow": "design.story",
-  "runId": "wf-1795408910090-xsj3hr",
-  "repoPath": "/home/subho/work/dev/insors/insrc",
-  "createdAt": "2026-11-23T04:51:19.288Z",
-  "attribution": {
-   "outputs": [
-    {
-     "role": "(client)",
-     "tier": "core",
-     "runner": "cli-claude",
-     "model": "unknown"
-    }
-   ]
-  },
-  "elapsedMs": 559510,
-  "repoIndexedAt": null,
-  "schemaVersion": 1,
-  "epicCreatedAt": "2026-11-10T05:58:05.294Z",
-  "epicHash": "0765b3a578e43eec",
-  "epicSlug": "add-dedicated-security-reviews",
-  "storyId": "s3",
-  "hldBaseRunId": "wf-1795324517306-yi2irl",
-  "hldEffectiveHash": "60b05edbecc26e77425f3711101dac3f1443953fd2b0c1f7570c41c2c631bf03",
-  "hldAmendmentsApplied": [],
-  "storyTitle": "Run and report a security-only review",
-  "authoredBy": "controller",
-  "lifecycle": {
-   "status": "draft",
-   "revision": {
-    "number": 2,
-    "contentHash": "32e75a434659bdec12d9e9d7e67df52c52aa53590b5b7d2606c27b62461d24ce",
-    "at": "2026-11-23T05:14:18.939Z",
-    "by": {
-     "id": "insrc:system",
-     "kind": "system",
-     "properties": {}
-    }
-   },
-   "signoffs": []
-  },
-  "revision": 2
- },
- "body": {
-  "summary": {
-   "prose": "This Story adds the module that actually runs a dedicated security review: it dispatches the code-vulnerability pass through the CLI model s1 selected, folds in the dependency advisories s2 already collected, drives the review through two rounds using the review framework's existing shared machinery, and assembles one report that clearly separates confirmed findings from gaps it could not verify. Nothing in this report is a new data shape -- it is built entirely out of the already-typed SecurityFinding and VerificationReceipt records.",
-   "audience": "product"
-  },
-  "hldContextSlice": {
-   "frameworkSummary": "The Epic adds a standalone orchestration module (outside src/workflow/review-round/) that owns model selection, dependency-advisory collection, code-assessment execution, and reporting, and supplies review-round's existing RoundDriverHooks.security hook as a thin adapter. review-round itself stays unchanged except for the one call site invoking that hook; the data shapes it already exports (SecurityFinding, SecurityLocator, EvidenceProvider, VerificationReceipt) are populated, never redefined.",
-   "ownedContracts": [
-    {
-     "id": "sc3",
-     "name": "SecurityReviewEntryPoint",
-     "purpose": "The daemon IPC method + MCP tool (insrc_security_review_step) a caller actually invokes to trigger a security review -- mirroring insrc_code_review_step's phase-driven shape and its confirm_wait-on-stale-index pattern, collapsed to a single always-daemon-reviews path since the pinned security model always performs the actual assessment, never the controller.",
-     "interfaceSketch": "type SecurityReviewStepRequest =\n\t| { readonly phase: 'start'; readonly repo?: string; readonly targets: ReviewTargets; readonly epicHash?: string; readonly storyId?: string }\n\t| { readonly phase: 'start'; readonly state: string; readonly proceed: boolean };\n\ntype SecurityReviewStepResponse =\n\t| { readonly next: 'confirm_wait'; readonly state: string; readonly guidance: string }\n\t| { readonly next: 'done'; readonly report: SecurityReviewReport; readonly markdown: string };",
-     "ownedByStory": "s3",
-     "consumedByStories": [],
-     "assumptions": [
-      "k2"
-     ]
-    }
-   ],
-   "consumedContracts": [
-    {
-     "id": "sc1",
-     "name": "SecurityModelSelection",
-     "purpose": "Carries s1's resolved security-model identity (or its unavailability) across the boundary so s3 can dispatch the code-vulnerability pass through CliProvider.runReadOnlySession with that exact model, record the effective model in the report without re-resolving it, and refuse with the blocker reason rather than falling back silently.",
-     "interfaceSketch": "interface SecurityModelSelection {\n\treadonly status: 'configured' | 'unavailable';\n\treadonly modelId?: string;\n\treadonly provider: 'cli-claude' | 'cli-codex' | 'cli-vibe';\n\treadonly blockerReason?: string;\n}",
-     "ownedByStory": "s1",
-     "consumedByStories": [
-      "s3"
-     ],
-     "assumptions": [
-      "k2"
-     ]
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1795408910090-xsj3hr",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-23T04:51:19.288Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
     },
-    {
-     "id": "sc2",
-     "name": "SecurityAdvisoryEvidence",
-     "purpose": "Carries s2's dependency-advisory collection outcome across the boundary: the pinned contentIdentity it was collected against, the queried coordinates, the actual advisory matches, the per-match advisory destination recorded for audit, the per-manager input mode used, and the dependencies/sources that stayed unresolved or unavailable. contentStable records whether s2's own post-audit re-verification matched its pre-audit value; each perManagerMode[] entry carries configuredDestination (a configured value, never claimed as independently observed).",
-     "interfaceSketch": "interface SecurityAdvisoryMatch {\n\treadonly coordinate: string;\n\treadonly advisoryId: string;\n\treadonly affectedVersions: string;\n\treadonly severity: string;\n\treadonly provenance: string;\n\treadonly advisoryDestination: string;\n}\n\ninterface SecurityAdvisoryEvidence {\n\treadonly contentIdentity: string;\n\treadonly contentStable: boolean;\n\treadonly readOnly: true;\n\treadonly queriedCoordinates: readonly string[];\n\treadonly matches: readonly SecurityAdvisoryMatch[];\n\treadonly perManagerMode: readonly { readonly manager: string; readonly mode: 'manifest-scoped' | 'isolated-environment' | 'confined-source-copy' | 'unsupported'; readonly configuredDestination?: string; }[];\n\treadonly unresolvedDependencies: readonly string[];\n\treadonly unavailableSources: readonly string[];\n}",
-     "ownedByStory": "s2",
-     "consumedByStories": [
-      "s3"
-     ],
-     "assumptions": [
-      "k2"
-     ]
-    }
-   ],
-   "boundary": {
+    "elapsedMs": 559510,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-11-10T05:58:05.294Z",
+    "epicHash": "0765b3a578e43eec",
+    "epicSlug": "add-dedicated-security-reviews",
     "storyId": "s3",
-    "owns": [
-     "sc3"
-    ],
-    "depends": [
-     "sc1",
-     "sc2"
-    ],
-    "internal": "The RoundDriverHooks.security adapter function; the CliProvider.runReadOnlySession dispatch of the code-vulnerability pass against the SAME pinned contentIdentity s2 collected against (recomputed/verified by s3, refusing on a content MISMATCH only), using s1's resolved model, with the SAME host access every other CLI-backed session in this codebase already has. The call into runReviewRound and the separate ownership of everything runReviewRound itself does NOT do (round reconciliation, VerificationReceipt persistence, checkpoint cleanup); the mapping from contentIdentity onto the epicHash/storyId identity persistVerificationReceipt requires; and the assembly of SecurityFinding/SecurityEvidence plus a supplemental report structure stay private to s3."
-   },
-   "adjacentBoundaries": [
-    {
-     "storyId": "s1",
-     "owns": [
-      "sc1"
-     ],
-     "depends": [],
-     "internal": "Model-tier resolution, availability/credential checks, and no-silent-fallback blocker-reporting stay private to s1; only SecurityModelSelection crosses its boundary."
+    "hldBaseRunId": "wf-1795324517306-yi2irl",
+    "hldEffectiveHash": "60b05edbecc26e77425f3711101dac3f1443953fd2b0c1f7570c41c2c631bf03",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "Run and report a security-only review",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 2,
+        "contentHash": "32e75a434659bdec12d9e9d7e67df52c52aa53590b5b7d2606c27b62461d24ce",
+        "at": "2026-11-23T05:14:18.939Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-23T05:22:33.269Z",
+        "override": {
+          "reason": "Automated design review is retired. Revision 2 adds handleSecurityReviewStep implementing the newly-approved sc3 (HLD rev7) -- the daemon IPC/MCP entry point that was missing entirely before this. Grounded on a real, confirmed-via-code-read primitive (resolveRepoLastIndexedAt) rather than reusing nonexistent legacy code-review machinery, which was called out explicitly in the artifact. Approved by explicit user instruction."
+        }
+      }
     },
-    {
-     "storyId": "s2",
-     "owns": [
-      "sc2"
-     ],
-     "depends": [],
-     "internal": "pkg_audit's package-manager resolution, controller-equivalent-access dependency collection, contentIdentity computation and per-manager destination recording stay private to s2; only SecurityAdvisoryEvidence crosses its boundary."
+    "revision": 2,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
     }
-   ],
-   "rolloutPhase": "Phase B -- run and report the security-only review",
-   "nonFunctional": {
-    "security": "s3's code-vulnerability pass is dispatched through CliProvider.runReadOnlySession with the same access level every other CLI-backed session in this codebase already has; no additional credential/out-of-scope/MCP denial or negative-access test gates dispatch (k2). contentIdentity remains a hard CORRECTNESS invariant: s3 recomputes and verifies it before trusting s2's evidence, refusing ONLY on an actual content mismatch or contentStable:false.",
-    "observability": "Every checkpointed round is recorded as a VerificationReceipt (receipt-record.ts); s3 owns stamping it with the epicHash/storyId persistVerificationReceipt requires, deterministically derived from the review's own pinned contentIdentity.",
-    "durability": "No new persistent storage is introduced; the durable records are the already-typed SecurityFinding/VerificationReceipt heads the shared round-driver machinery persists, plus s3's SecurityReviewReport, which stays in-memory only and is never a stored artifact type.",
-    "performance": "Bounded by one CLI read-only session per request per round, not a background job."
-   }
   },
-  "contractDetails": {
-   "surfaceLevel": "internal-shared",
-   "api": [
-    {
-     "name": "runSecurityReview",
-     "signature": "function runSecurityReview(repoPath: string, targets: ReviewTargets, opts: { readonly reviewId: string; readonly modelSelection: SecurityModelSelection; readonly advisoryEvidence: SecurityAdvisoryEvidence; readonly now: string }): Promise<SecurityReviewReport>",
-     "parameters": [
-      {
-       "name": "repoPath",
-       "type": "string",
-       "purpose": "The registered repo root every targets.entries path is validated against.",
-       "optional": false
+  "body": {
+    "summary": {
+      "prose": "This Story adds the module that actually runs a dedicated security review: it dispatches the code-vulnerability pass through the CLI model s1 selected, folds in the dependency advisories s2 already collected, drives the review through two rounds using the review framework's existing shared machinery, and assembles one report that clearly separates confirmed findings from gaps it could not verify. Nothing in this report is a new data shape -- it is built entirely out of the already-typed SecurityFinding and VerificationReceipt records.",
+      "audience": "product"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "The Epic adds a standalone orchestration module (outside src/workflow/review-round/) that owns model selection, dependency-advisory collection, code-assessment execution, and reporting, and supplies review-round's existing RoundDriverHooks.security hook as a thin adapter. review-round itself stays unchanged except for the one call site invoking that hook; the data shapes it already exports (SecurityFinding, SecurityLocator, EvidenceProvider, VerificationReceipt) are populated, never redefined.",
+      "ownedContracts": [
+        {
+          "id": "sc3",
+          "name": "SecurityReviewEntryPoint",
+          "purpose": "The daemon IPC method + MCP tool (insrc_security_review_step) a caller actually invokes to trigger a security review -- mirroring insrc_code_review_step's phase-driven shape and its confirm_wait-on-stale-index pattern, collapsed to a single always-daemon-reviews path since the pinned security model always performs the actual assessment, never the controller.",
+          "interfaceSketch": "type SecurityReviewStepRequest =\n\t| { readonly phase: 'start'; readonly repo?: string; readonly targets: ReviewTargets; readonly epicHash?: string; readonly storyId?: string }\n\t| { readonly phase: 'start'; readonly state: string; readonly proceed: boolean };\n\ntype SecurityReviewStepResponse =\n\t| { readonly next: 'confirm_wait'; readonly state: string; readonly guidance: string }\n\t| { readonly next: 'done'; readonly report: SecurityReviewReport; readonly markdown: string };",
+          "ownedByStory": "s3",
+          "consumedByStories": [],
+          "assumptions": [
+            "k2"
+          ]
+        }
+      ],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "SecurityModelSelection",
+          "purpose": "Carries s1's resolved security-model identity (or its unavailability) across the boundary so s3 can dispatch the code-vulnerability pass through CliProvider.runReadOnlySession with that exact model, record the effective model in the report without re-resolving it, and refuse with the blocker reason rather than falling back silently.",
+          "interfaceSketch": "interface SecurityModelSelection {\n\treadonly status: 'configured' | 'unavailable';\n\treadonly modelId?: string;\n\treadonly provider: 'cli-claude' | 'cli-codex' | 'cli-vibe';\n\treadonly blockerReason?: string;\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s3"
+          ],
+          "assumptions": [
+            "k2"
+          ]
+        },
+        {
+          "id": "sc2",
+          "name": "SecurityAdvisoryEvidence",
+          "purpose": "Carries s2's dependency-advisory collection outcome across the boundary: the pinned contentIdentity it was collected against, the queried coordinates, the actual advisory matches, the per-match advisory destination recorded for audit, the per-manager input mode used, and the dependencies/sources that stayed unresolved or unavailable. contentStable records whether s2's own post-audit re-verification matched its pre-audit value; each perManagerMode[] entry carries configuredDestination (a configured value, never claimed as independently observed).",
+          "interfaceSketch": "interface SecurityAdvisoryMatch {\n\treadonly coordinate: string;\n\treadonly advisoryId: string;\n\treadonly affectedVersions: string;\n\treadonly severity: string;\n\treadonly provenance: string;\n\treadonly advisoryDestination: string;\n}\n\ninterface SecurityAdvisoryEvidence {\n\treadonly contentIdentity: string;\n\treadonly contentStable: boolean;\n\treadonly readOnly: true;\n\treadonly queriedCoordinates: readonly string[];\n\treadonly matches: readonly SecurityAdvisoryMatch[];\n\treadonly perManagerMode: readonly { readonly manager: string; readonly mode: 'manifest-scoped' | 'isolated-environment' | 'confined-source-copy' | 'unsupported'; readonly configuredDestination?: string; }[];\n\treadonly unresolvedDependencies: readonly string[];\n\treadonly unavailableSources: readonly string[];\n}",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s3"
+          ],
+          "assumptions": [
+            "k2"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s3",
+        "owns": [
+          "sc3"
+        ],
+        "depends": [
+          "sc1",
+          "sc2"
+        ],
+        "internal": "The RoundDriverHooks.security adapter function; the CliProvider.runReadOnlySession dispatch of the code-vulnerability pass against the SAME pinned contentIdentity s2 collected against (recomputed/verified by s3, refusing on a content MISMATCH only), using s1's resolved model, with the SAME host access every other CLI-backed session in this codebase already has. The call into runReviewRound and the separate ownership of everything runReviewRound itself does NOT do (round reconciliation, VerificationReceipt persistence, checkpoint cleanup); the mapping from contentIdentity onto the epicHash/storyId identity persistVerificationReceipt requires; and the assembly of SecurityFinding/SecurityEvidence plus a supplemental report structure stay private to s3."
       },
-      {
-       "name": "targets",
-       "type": "ReviewTargets",
-       "purpose": "The review's content scope; recomputed against to verify s2's pinned contentIdentity.",
-       "optional": false
-      },
-      {
-       "name": "opts",
-       "type": "{ reviewId, modelSelection, advisoryEvidence, now }",
-       "purpose": "The review's identity plus s1's and s2's already-resolved outputs.",
-       "optional": false
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1"
+          ],
+          "depends": [],
+          "internal": "Model-tier resolution, availability/credential checks, and no-silent-fallback blocker-reporting stay private to s1; only SecurityModelSelection crosses its boundary."
+        },
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc2"
+          ],
+          "depends": [],
+          "internal": "pkg_audit's package-manager resolution, controller-equivalent-access dependency collection, contentIdentity computation and per-manager destination recording stay private to s2; only SecurityAdvisoryEvidence crosses its boundary."
+        }
+      ],
+      "rolloutPhase": "Phase B -- run and report the security-only review",
+      "nonFunctional": {
+        "security": "s3's code-vulnerability pass is dispatched through CliProvider.runReadOnlySession with the same access level every other CLI-backed session in this codebase already has; no additional credential/out-of-scope/MCP denial or negative-access test gates dispatch (k2). contentIdentity remains a hard CORRECTNESS invariant: s3 recomputes and verifies it before trusting s2's evidence, refusing ONLY on an actual content mismatch or contentStable:false.",
+        "observability": "Every checkpointed round is recorded as a VerificationReceipt (receipt-record.ts); s3 owns stamping it with the epicHash/storyId persistVerificationReceipt requires, deterministically derived from the review's own pinned contentIdentity.",
+        "durability": "No new persistent storage is introduced; the durable records are the already-typed SecurityFinding/VerificationReceipt heads the shared round-driver machinery persists, plus s3's SecurityReviewReport, which stays in-memory only and is never a stored artifact type.",
+        "performance": "Bounded by one CLI read-only session per request per round, not a background job."
       }
-     ],
-     "returns": {
-      "type": "Promise<SecurityReviewReport>",
-      "meaning": "The final, in-memory assembled report."
-     },
-     "errors": [
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "runSecurityReview",
+          "signature": "function runSecurityReview(repoPath: string, targets: ReviewTargets, opts: { readonly reviewId: string; readonly modelSelection: SecurityModelSelection; readonly advisoryEvidence: SecurityAdvisoryEvidence; readonly now: string }): Promise<SecurityReviewReport>",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "The registered repo root every targets.entries path is validated against.",
+              "optional": false
+            },
+            {
+              "name": "targets",
+              "type": "ReviewTargets",
+              "purpose": "The review's content scope; recomputed against to verify s2's pinned contentIdentity.",
+              "optional": false
+            },
+            {
+              "name": "opts",
+              "type": "{ reviewId, modelSelection, advisoryEvidence, now }",
+              "purpose": "The review's identity plus s1's and s2's already-resolved outputs.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<SecurityReviewReport>",
+            "meaning": "The final, in-memory assembled report."
+          },
+          "errors": [
+            {
+              "type": "ContentIdentityMismatchError",
+              "condition": "Recomputed contentIdentity does not match advisoryEvidence.contentIdentity, or contentStable is false."
+            },
+            {
+              "type": "SecurityModelUnavailableError",
+              "condition": "modelSelection.status is 'unavailable'."
+            }
+          ],
+          "preconditions": [
+            "modelSelection and advisoryEvidence are already resolved by s1/s2."
+          ],
+          "postconditions": [
+            "On success a VerificationReceipt is persisted and the scratch folder cleaned up; on refusal, neither happens."
+          ]
+        },
+        {
+          "name": "buildSecurityRoundHooks",
+          "signature": "function buildSecurityRoundHooks(repoPath: string, targets: ReviewTargets, modelSelection: SecurityModelSelection, reviewId: string): RoundDriverHooks<SecurityFinding>",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "Threaded into the security hook for path validation.",
+              "optional": false
+            },
+            {
+              "name": "targets",
+              "type": "ReviewTargets",
+              "purpose": "Closed over by the returned hooks.",
+              "optional": false
+            },
+            {
+              "name": "modelSelection",
+              "type": "SecurityModelSelection",
+              "purpose": "The pinned model identity.",
+              "optional": false
+            },
+            {
+              "name": "reviewId",
+              "type": "string",
+              "purpose": "Logging context only.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "RoundDriverHooks<SecurityFinding>",
+            "meaning": "{reviewKind:'code', checkpointGranularity:'round', ground: async()=>[], security: runSecurityCodePass bound to these args}."
+          },
+          "errors": [],
+          "preconditions": [
+            "modelSelection.status is 'configured'."
+          ],
+          "postconditions": [
+            "hooks.ground never performs I/O."
+          ]
+        },
+        {
+          "name": "runSecurityCodePass",
+          "signature": "function runSecurityCodePass(repoPath: string, targets: ReviewTargets, modelSelection: SecurityModelSelection, round: number): Promise<readonly SecurityFinding[]>",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "The cwd for ReadOnlySessionOpts.",
+              "optional": false
+            },
+            {
+              "name": "targets",
+              "type": "ReviewTargets",
+              "purpose": "Scopes the prompt.",
+              "optional": false
+            },
+            {
+              "name": "modelSelection",
+              "type": "SecurityModelSelection",
+              "purpose": "Supplies the pinned modelId.",
+              "optional": false
+            },
+            {
+              "name": "round",
+              "type": "number",
+              "purpose": "1 initial, 2 correction-and-re-review.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<readonly SecurityFinding[]>",
+            "meaning": "Structured findings from the CLI session's schema-validated output."
+          },
+          "errors": [
+            {
+              "type": "ReadOnlySessionTimeoutError",
+              "condition": "The session exceeds its deadline."
+            }
+          ],
+          "preconditions": [
+            "This is the RoundDriverHooks.security implementation."
+          ],
+          "postconditions": [
+            "Dispatched with READ_ONLY_SESSION_READ_TOOLS + READ_ONLY_SESSION_ANALYZE_TOOLS only."
+          ]
+        },
+        {
+          "name": "verifyContentIdentityMatch",
+          "signature": "function verifyContentIdentityMatch(repoPath: string, targets: ReviewTargets, advisoryEvidence: SecurityAdvisoryEvidence): Promise<void>",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "Passed through to computeContentIdentity.",
+              "optional": false
+            },
+            {
+              "name": "targets",
+              "type": "ReviewTargets",
+              "purpose": "The SAME targets s2 was given.",
+              "optional": false
+            },
+            {
+              "name": "advisoryEvidence",
+              "type": "SecurityAdvisoryEvidence",
+              "purpose": "Carries the pinned contentIdentity and contentStable flag.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "Resolves silently on a match."
+          },
+          "errors": [
+            {
+              "type": "ContentIdentityMismatchError",
+              "condition": "computeContentIdentity(repoPath, targets) !== advisoryEvidence.contentIdentity, or contentStable===false."
+            }
+          ],
+          "preconditions": [
+            "Called once, before round 1."
+          ],
+          "postconditions": []
+        },
+        {
+          "name": "deriveReceiptIdentity",
+          "signature": "function deriveReceiptIdentity(contentIdentity: string): { readonly epicHash: string; readonly storyId: string }",
+          "parameters": [
+            {
+              "name": "contentIdentity",
+              "type": "string",
+              "purpose": "The review's pinned content identity.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "{ epicHash: string; storyId: string }",
+            "meaning": "epicHash = sha256('security-review:'+contentIdentity) truncated to hex-32; storyId = fixed sentinel 's-security'."
+          },
+          "errors": [],
+          "preconditions": [
+            "contentIdentity is non-empty."
+          ],
+          "postconditions": [
+            "Pure and synchronous; no new persistent mapping table."
+          ]
+        },
+        {
+          "name": "assembleSecurityReport",
+          "signature": "function assembleSecurityReport(advisoryEvidence: SecurityAdvisoryEvidence, codeFindings: readonly SecurityFinding[], reconciliation: readonly ReconciliationResult[], receipt: VerificationReceipt, baseReport: { readonly path: string; readonly markdown: string }): SecurityReviewReport",
+          "parameters": [
+            {
+              "name": "advisoryEvidence",
+              "type": "SecurityAdvisoryEvidence",
+              "purpose": "Supplies confirmed matches plus unresolved/unavailable gaps.",
+              "optional": false
+            },
+            {
+              "name": "codeFindings",
+              "type": "readonly SecurityFinding[]",
+              "purpose": "Round 2's own output.",
+              "optional": false
+            },
+            {
+              "name": "reconciliation",
+              "type": "readonly ReconciliationResult[]",
+              "purpose": "Attached for audit only.",
+              "optional": false
+            },
+            {
+              "name": "receipt",
+              "type": "VerificationReceipt",
+              "purpose": "Its id is stamped onto every assembled finding's receiptId.",
+              "optional": false
+            },
+            {
+              "name": "baseReport",
+              "type": "{ path, markdown }",
+              "purpose": "renderReviewReport's own unmodified output.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "SecurityReviewReport",
+            "meaning": "{findings, unresolvedDependencies, unavailableSources, reconciliation, receipt, baseReportMarkdown, supplementalMarkdown} -- never persisted."
+          },
+          "errors": [],
+          "preconditions": [
+            "Called once, after both rounds and the receipt exist."
+          ],
+          "postconditions": [
+            "Dependency-advisory findings carry checkId:'dependency-advisory'.",
+            "unresolvedDependencies/unavailableSources carried through verbatim."
+          ]
+        },
+        {
+          "name": "handleSecurityReviewStep",
+          "signature": "function handleSecurityReviewStep(request: SecurityReviewStepRequest): Promise<SecurityReviewStepResponse>",
+          "parameters": [
+            {
+              "name": "request",
+              "type": "SecurityReviewStepRequest",
+              "purpose": "A fresh phase:'start' request (repo/targets/epicHash?/storyId?) or a resumption after confirm_wait ({phase:'start', state, proceed}).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<SecurityReviewStepResponse>",
+            "meaning": "{next:'confirm_wait', state, guidance} when the repo's graph index is stale relative to the pinned content (the security model's own insrc_analyze/insrc_analyze_step drill-down tool calls would otherwise read stale data) and the caller has not yet said proceed; otherwise {next:'done', report, markdown} after running the whole review end-to-end: resolveSecurityModel (s1), collectDependencyAdvisories (s2), then runSecurityReview (s3's own orchestrator)."
+          },
+          "errors": [
+            {
+              "type": "ContentIdentityMismatchError",
+              "condition": "Propagated unchanged from runSecurityReview."
+            },
+            {
+              "type": "SecurityModelUnavailableError",
+              "condition": "Propagated unchanged from runSecurityReview."
+            }
+          ],
+          "preconditions": [
+            "This is the ONLY function the daemon IPC handler and the insrc_security_review_step MCP tool call -- neither registers its own orchestration logic."
+          ],
+          "postconditions": [
+            "A resume call (state + proceed:false) runs the review against the index as-is, the same as code-review's degraded/diff-based review path, never silently waiting again.",
+            "A resume call (state + proceed:true) waits for the index to catch up (bounded) before running the review.",
+            "epicHash/storyId on the ORIGINAL request, if supplied, are threaded unchanged into runSecurityReview's opts and persistVerificationReceipt's ident (standalone left unset); if omitted, runSecurityReview derives them itself via deriveReceiptIdentity and sets standalone:true."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
       {
-       "type": "ContentIdentityMismatchError",
-       "condition": "Recomputed contentIdentity does not match advisoryEvidence.contentIdentity, or contentStable is false."
+        "entity": "SecurityReviewReport",
+        "change": "new",
+        "details": "The Story's own in-memory return shape, never persisted as a tracked artifact (resolved open question qfab24fea). {findings, unresolvedDependencies, unavailableSources, reconciliation, receipt, baseReportMarkdown, supplementalMarkdown}.",
+        "callSites": [
+          "src/workflow/review-round/finding.ts",
+          "src/workflow/review-round/receipt-record.ts:42",
+          "src/workflow/review-round/reconciliation.ts:30"
+        ]
       },
       {
-       "type": "SecurityModelUnavailableError",
-       "condition": "modelSelection.status is 'unavailable'."
+        "entity": "ContentIdentityMismatchError",
+        "change": "new",
+        "details": "Thrown by verifyContentIdentityMatch on a recomputed-identity mismatch or advisoryEvidence.contentStable===false.",
+        "callSites": [
+          "docs/epics/add-dedicated-security-reviews-E202611100765b3a5/S002/LLD.md"
+        ]
+      },
+      {
+        "entity": "SecurityReviewStepRequest / SecurityReviewStepResponse",
+        "change": "new",
+        "details": "The daemon IPC method's and insrc_security_review_step MCP tool's own request/response shapes (sc3's interfaceSketch). A fresh request carries repo/targets/epicHash?/storyId?; a resumption after confirm_wait carries state+proceed. The response is either confirm_wait (with a state token to resume) or done (with the SecurityReviewReport and its rendered markdown).",
+        "callSites": [
+          "src/daemon/steps/analyze-step/phases/start.ts:77"
+        ]
       }
-     ],
-     "preconditions": [
-      "modelSelection and advisoryEvidence are already resolved by s1/s2."
-     ],
-     "postconditions": [
-      "On success a VerificationReceipt is persisted and the scratch folder cleaned up; on refusal, neither happens."
-     ]
-    },
-    {
-     "name": "buildSecurityRoundHooks",
-     "signature": "function buildSecurityRoundHooks(repoPath: string, targets: ReviewTargets, modelSelection: SecurityModelSelection, reviewId: string): RoundDriverHooks<SecurityFinding>",
-     "parameters": [
-      {
-       "name": "repoPath",
-       "type": "string",
-       "purpose": "Threaded into the security hook for path validation.",
-       "optional": false
-      },
-      {
-       "name": "targets",
-       "type": "ReviewTargets",
-       "purpose": "Closed over by the returned hooks.",
-       "optional": false
-      },
-      {
-       "name": "modelSelection",
-       "type": "SecurityModelSelection",
-       "purpose": "The pinned model identity.",
-       "optional": false
-      },
-      {
-       "name": "reviewId",
-       "type": "string",
-       "purpose": "Logging context only.",
-       "optional": false
-      }
-     ],
-     "returns": {
-      "type": "RoundDriverHooks<SecurityFinding>",
-      "meaning": "{reviewKind:'code', checkpointGranularity:'round', ground: async()=>[], security: runSecurityCodePass bound to these args}."
-     },
-     "errors": [],
-     "preconditions": [
-      "modelSelection.status is 'configured'."
-     ],
-     "postconditions": [
-      "hooks.ground never performs I/O."
-     ]
-    },
-    {
-     "name": "runSecurityCodePass",
-     "signature": "function runSecurityCodePass(repoPath: string, targets: ReviewTargets, modelSelection: SecurityModelSelection, round: number): Promise<readonly SecurityFinding[]>",
-     "parameters": [
-      {
-       "name": "repoPath",
-       "type": "string",
-       "purpose": "The cwd for ReadOnlySessionOpts.",
-       "optional": false
-      },
-      {
-       "name": "targets",
-       "type": "ReviewTargets",
-       "purpose": "Scopes the prompt.",
-       "optional": false
-      },
-      {
-       "name": "modelSelection",
-       "type": "SecurityModelSelection",
-       "purpose": "Supplies the pinned modelId.",
-       "optional": false
-      },
-      {
-       "name": "round",
-       "type": "number",
-       "purpose": "1 initial, 2 correction-and-re-review.",
-       "optional": false
-      }
-     ],
-     "returns": {
-      "type": "Promise<readonly SecurityFinding[]>",
-      "meaning": "Structured findings from the CLI session's schema-validated output."
-     },
-     "errors": [
-      {
-       "type": "ReadOnlySessionTimeoutError",
-       "condition": "The session exceeds its deadline."
-      }
-     ],
-     "preconditions": [
-      "This is the RoundDriverHooks.security implementation."
-     ],
-     "postconditions": [
-      "Dispatched with READ_ONLY_SESSION_READ_TOOLS + READ_ONLY_SESSION_ANALYZE_TOOLS only."
-     ]
-    },
-    {
-     "name": "verifyContentIdentityMatch",
-     "signature": "function verifyContentIdentityMatch(repoPath: string, targets: ReviewTargets, advisoryEvidence: SecurityAdvisoryEvidence): Promise<void>",
-     "parameters": [
-      {
-       "name": "repoPath",
-       "type": "string",
-       "purpose": "Passed through to computeContentIdentity.",
-       "optional": false
-      },
-      {
-       "name": "targets",
-       "type": "ReviewTargets",
-       "purpose": "The SAME targets s2 was given.",
-       "optional": false
-      },
-      {
-       "name": "advisoryEvidence",
-       "type": "SecurityAdvisoryEvidence",
-       "purpose": "Carries the pinned contentIdentity and contentStable flag.",
-       "optional": false
-      }
-     ],
-     "returns": {
-      "type": "Promise<void>",
-      "meaning": "Resolves silently on a match."
-     },
-     "errors": [
-      {
-       "type": "ContentIdentityMismatchError",
-       "condition": "computeContentIdentity(repoPath, targets) !== advisoryEvidence.contentIdentity, or contentStable===false."
-      }
-     ],
-     "preconditions": [
-      "Called once, before round 1."
-     ],
-     "postconditions": []
-    },
-    {
-     "name": "deriveReceiptIdentity",
-     "signature": "function deriveReceiptIdentity(contentIdentity: string): { readonly epicHash: string; readonly storyId: string }",
-     "parameters": [
-      {
-       "name": "contentIdentity",
-       "type": "string",
-       "purpose": "The review's pinned content identity.",
-       "optional": false
-      }
-     ],
-     "returns": {
-      "type": "{ epicHash: string; storyId: string }",
-      "meaning": "epicHash = sha256('security-review:'+contentIdentity) truncated to hex-32; storyId = fixed sentinel 's-security'."
-     },
-     "errors": [],
-     "preconditions": [
-      "contentIdentity is non-empty."
-     ],
-     "postconditions": [
-      "Pure and synchronous; no new persistent mapping table."
-     ]
-    },
-    {
-     "name": "assembleSecurityReport",
-     "signature": "function assembleSecurityReport(advisoryEvidence: SecurityAdvisoryEvidence, codeFindings: readonly SecurityFinding[], reconciliation: readonly ReconciliationResult[], receipt: VerificationReceipt, baseReport: { readonly path: string; readonly markdown: string }): SecurityReviewReport",
-     "parameters": [
-      {
-       "name": "advisoryEvidence",
-       "type": "SecurityAdvisoryEvidence",
-       "purpose": "Supplies confirmed matches plus unresolved/unavailable gaps.",
-       "optional": false
-      },
-      {
-       "name": "codeFindings",
-       "type": "readonly SecurityFinding[]",
-       "purpose": "Round 2's own output.",
-       "optional": false
-      },
-      {
-       "name": "reconciliation",
-       "type": "readonly ReconciliationResult[]",
-       "purpose": "Attached for audit only.",
-       "optional": false
-      },
-      {
-       "name": "receipt",
-       "type": "VerificationReceipt",
-       "purpose": "Its id is stamped onto every assembled finding's receiptId.",
-       "optional": false
-      },
-      {
-       "name": "baseReport",
-       "type": "{ path, markdown }",
-       "purpose": "renderReviewReport's own unmodified output.",
-       "optional": false
-      }
-     ],
-     "returns": {
-      "type": "SecurityReviewReport",
-      "meaning": "{findings, unresolvedDependencies, unavailableSources, reconciliation, receipt, baseReportMarkdown, supplementalMarkdown} -- never persisted."
-     },
-     "errors": [],
-     "preconditions": [
-      "Called once, after both rounds and the receipt exist."
-     ],
-     "postconditions": [
-      "Dependency-advisory findings carry checkId:'dependency-advisory'.",
-      "unresolvedDependencies/unavailableSources carried through verbatim."
-     ]
-    },
-    {
-     "name": "handleSecurityReviewStep",
-     "signature": "function handleSecurityReviewStep(request: SecurityReviewStepRequest): Promise<SecurityReviewStepResponse>",
-     "parameters": [
-      {
-       "name": "request",
-       "type": "SecurityReviewStepRequest",
-       "purpose": "A fresh phase:'start' request (repo/targets/epicHash?/storyId?) or a resumption after confirm_wait ({phase:'start', state, proceed}).",
-       "optional": false
-      }
-     ],
-     "returns": {
-      "type": "Promise<SecurityReviewStepResponse>",
-      "meaning": "{next:'confirm_wait', state, guidance} when the repo's graph index is stale relative to the pinned content (the security model's own insrc_analyze/insrc_analyze_step drill-down tool calls would otherwise read stale data) and the caller has not yet said proceed; otherwise {next:'done', report, markdown} after running the whole review end-to-end: resolveSecurityModel (s1), collectDependencyAdvisories (s2), then runSecurityReview (s3's own orchestrator)."
-     },
-     "errors": [
-      {
-       "type": "ContentIdentityMismatchError",
-       "condition": "Propagated unchanged from runSecurityReview."
-      },
-      {
-       "type": "SecurityModelUnavailableError",
-       "condition": "Propagated unchanged from runSecurityReview."
-      }
-     ],
-     "preconditions": [
-      "This is the ONLY function the daemon IPC handler and the insrc_security_review_step MCP tool call -- neither registers its own orchestration logic."
-     ],
-     "postconditions": [
-      "A resume call (state + proceed:false) runs the review against the index as-is, the same as code-review's degraded/diff-based review path, never silently waiting again.",
-      "A resume call (state + proceed:true) waits for the index to catch up (bounded) before running the review.",
-      "epicHash/storyId on the ORIGINAL request, if supplied, are threaded unchanged into runSecurityReview's opts and persistVerificationReceipt's ident (standalone left unset); if omitted, runSecurityReview derives them itself via deriveReceiptIdentity and sets standalone:true."
-     ]
-    }
-   ]
-  },
-  "dataModelChanges": [
-   {
-    "entity": "SecurityReviewReport",
-    "change": "new",
-    "details": "The Story's own in-memory return shape, never persisted as a tracked artifact (resolved open question qfab24fea). {findings, unresolvedDependencies, unavailableSources, reconciliation, receipt, baseReportMarkdown, supplementalMarkdown}.",
-    "callSites": [
-     "src/workflow/review-round/finding.ts",
-     "src/workflow/review-round/receipt-record.ts:42",
-     "src/workflow/review-round/reconciliation.ts:30"
-    ]
-   },
-   {
-    "entity": "ContentIdentityMismatchError",
-    "change": "new",
-    "details": "Thrown by verifyContentIdentityMatch on a recomputed-identity mismatch or advisoryEvidence.contentStable===false.",
-    "callSites": [
-     "docs/epics/add-dedicated-security-reviews-E202611100765b3a5/S002/LLD.md"
-    ]
-   },
-   {
-    "entity": "SecurityReviewStepRequest / SecurityReviewStepResponse",
-    "change": "new",
-    "details": "The daemon IPC method's and insrc_security_review_step MCP tool's own request/response shapes (sc3's interfaceSketch). A fresh request carries repo/targets/epicHash?/storyId?; a resumption after confirm_wait carries state+proceed. The response is either confirm_wait (with a state token to resume) or done (with the SecurityReviewReport and its rendered markdown).",
-    "callSites": [
-     "src/daemon/steps/analyze-step/phases/start.ts:77"
-    ]
-   }
-  ],
-  "interactionWithShared": [
-   {
-    "contractId": "sc1",
-    "role": "consumes",
-    "howDetails": "runSecurityReview reads modelSelection as-is, refusing with blockerReason on 'unavailable', otherwise threading modelId into buildSecurityRoundHooks -> runSecurityCodePass."
-   },
-   {
-    "contractId": "sc2",
-    "role": "consumes",
-    "howDetails": "verifyContentIdentityMatch recomputes identity against advisoryEvidence; assembleSecurityReport maps matches/unresolvedDependencies/unavailableSources through unchanged."
-   },
-   {
-    "contractId": "sc3",
-    "role": "implements",
-    "howDetails": "handleSecurityReviewStep IS sc3: it is the daemon IPC method + MCP tool body. On a fresh request it checks the repo's index freshness via resolveRepoLastIndexedAt(repoPath) against the request's targets; if stale, it returns confirm_wait with a state token rather than silently running the model's drill-down tools against outdated graph data. Otherwise -- or on a resumed proceed:true/false call -- it resolves sc1 (resolveSecurityModel) and sc2 (collectDependencyAdvisories) itself, then calls runSecurityReview and returns done."
-   }
-  ],
-  "errorPaths": {
-   "errorCases": [
-    {
-     "scenario": "Recomputed contentIdentity over targets does not match advisoryEvidence.contentIdentity.",
-     "detection": "verifyContentIdentityMatch compares the two strings byte-for-byte before any round runs.",
-     "response": "Throw ContentIdentityMismatchError(expected, actual, contentStable); no round dispatches, no receipt persisted.",
-     "userImpact": "The review is refused outright; the caller must re-run s2's collection against current content.",
-     "recoverable": true
-    },
-    {
-     "scenario": "advisoryEvidence.contentStable is false.",
-     "detection": "verifyContentIdentityMatch checks this flag even when identity strings match.",
-     "response": "Throw ContentIdentityMismatchError with contentStable:false; same refusal path.",
-     "userImpact": "The review is refused; the caller re-runs s2's collection for a stable read.",
-     "recoverable": true
-    },
-    {
-     "scenario": "modelSelection.status is 'unavailable'.",
-     "detection": "runSecurityReview checks status before constructing any hooks.",
-     "response": "Throw SecurityModelUnavailableError(blockerReason); no fallback model is attempted.",
-     "userImpact": "The review reports the exact blocker instead of silently using a different model.",
-     "recoverable": true
-    },
-    {
-     "scenario": "runSecurityCodePass's CliProvider.runReadOnlySession call exceeds its deadline.",
-     "detection": "ReadOnlySessionTimeoutError thrown by runReadOnlySession itself, never internally retried.",
-     "response": "Propagated unchanged out of runSecurityCodePass -> hooks.security -> runReviewRound -> runSecurityReview; no partial round result is checkpointed.",
-     "userImpact": "The review fails for that round; a retry re-dispatches round 1 since no checkpoint exists yet.",
-     "recoverable": true
-    },
-    {
-     "scenario": "finalizeAndCleanup's durable-copy step throws.",
-     "detection": "finalizeAndCleanup's own documented contract leaves the scratch folder intact on a durable-copy failure.",
-     "response": "Propagated unchanged; the already-persisted VerificationReceipt is not rolled back.",
-     "userImpact": "The caller sees the persistence failure, but the receipt and round outputs are not lost.",
-     "recoverable": true
-    },
-    {
-     "scenario": "reconcileRound returns a verdicts array whose length does not match priorFindings.length.",
-     "detection": "reconcileRound's own internal check throws before returning.",
-     "response": "Propagated unchanged; s3 does not paper over a reconciliation-module internal-contract violation.",
-     "userImpact": "The review fails with the reconciliation module's own error.",
-     "recoverable": false
-    },
-    {
-     "scenario": "targets.entries contains a path outside repoPath.",
-     "detection": "s3's own path-containment check, run before any I/O.",
-     "response": "Throw synchronously before computeContentIdentity or any CLI dispatch.",
-     "userImpact": "The review is refused immediately with a clear out-of-scope-path message.",
-     "recoverable": true
-    },
-    {
-     "scenario": "The repo's graph index is stale relative to the pinned content when handleSecurityReviewStep's first phase:'start' call is made.",
-     "detection": "resolveRepoLastIndexedAt(repoPath) returns a timestamp older than the content the request targets.",
-     "response": "Return {next:'confirm_wait', state, guidance} instead of running any round; the caller must re-call with {phase:'start', state, proceed} to continue.",
-     "userImpact": "The controller is asked whether to wait for a fresh index (more accurate drill-down) or proceed anyway (degraded, since the model's own insrc_analyze/insrc_analyze_step tool calls would read stale data) -- never silently one or the other.",
-     "recoverable": true
-    }
-   ],
-   "edgeCases": [
-    {
-     "input": "The code pass finds zero findings and advisoryEvidence.matches is also empty.",
-     "expected": "SecurityReviewReport.findings is empty; a VerificationReceipt with result:'pass' is still persisted."
-    },
-    {
-     "input": "advisoryEvidence.matches is non-empty but unresolvedDependencies is also non-empty.",
-     "expected": "Both reported distinctly: confirmed matches become findings, unresolvedDependencies carried through verbatim, never merged."
-    },
-    {
-     "input": "Round 2 finds zero findings where round 1 found some.",
-     "expected": "reconcileRound classifies round 1's findings 'no-longer-surfaced'; findings reflect round 2's own result."
-    },
-    {
-     "input": "targets.entries is empty.",
-     "expected": "computeContentIdentity still produces a stable identity; the code pass is expected to return zero findings -- a well-defined degenerate review, not an error."
-    },
-    {
-     "input": "A manager has mode:'unsupported' alongside others that succeeded.",
-     "expected": "supplementalMarkdown surfaces the unsupported manager as an explicit coverage gap, distinct from successfully-audited managers' findings."
-    },
-    {
-     "input": "A resumed call supplies proceed:false.",
-     "expected": "handleSecurityReviewStep runs the review against the index as-is; this is a DEGRADED run (equivalent to code-review's diff-only path), not an error -- the report is still fully populated, just potentially grounded on stale drill-down data for the model's own tool calls."
-    }
-   ],
-   "invariantsToPreserve": [
-    {
-     "text": "The reviewer runs with the same host access as the controller itself -- no sandboxing, egress restriction, or filesystem confinement beyond CliProvider.runReadOnlySession's own tool allowlist.",
-     "source": "c1"
-    },
-    {
-     "text": "Cloud inference for the security review's code pass uses the installed CLI provider, never a direct REST call.",
-     "source": "c2"
-    }
-   ]
-  },
-  "testStrategy": {
-   "testFramework": "node:test",
-   "testLevels": [
-    {
-     "level": "unit",
-     "purpose": "Exercise s3's own pure/deterministic logic without any real CLI session, filesystem, or network I/O.",
-     "subjects": [
-      "deriveReceiptIdentity -- same contentIdentity always re-derives the identical pair; different identities derive different pairs.",
-      "verifyContentIdentityMatch -- resolves on a match with contentStable:true; throws on mismatch; throws on contentStable:false even when identity matches.",
-      "assembleSecurityReport -- confirmed matches map to dependency-advisory SecurityFindings with checkId:'dependency-advisory' and receiptId stamped; unresolvedDependencies/unavailableSources pass through verbatim; empty inputs produce an empty findings array.",
-      "buildSecurityRoundHooks -- hooks.ground always resolves to [] without I/O; hooks.security delegates to the injected code-pass function."
-     ]
-    },
-    {
-     "level": "integration",
-     "purpose": "Exercise runSecurityReview's full orchestration against the real review-round/ machinery, with only the CLI session faked via an injected test double.",
-     "subjects": [
-      "runSecurityReview end-to-end: round 1, correction round 2, reconciliation, a real persisted+read-back VerificationReceipt, and real checkpoint cleanup.",
-      "runSecurityReview refuses before any round dispatches on a contentIdentity mismatch.",
-      "runSecurityReview refuses before any round dispatches on modelSelection.status:'unavailable', verified via the fake CLI session never being called.",
-      "A clean-run case still persists a VerificationReceipt with result:'pass'.",
-      "handleSecurityReviewStep: a stale-index fresh request returns confirm_wait with a state token, never runs a round; a resumed call with proceed:true or proceed:false both reach done; epicHash/storyId supplied on the request are threaded into the persisted receipt unchanged (standalone unset), while an omitted pair is derived via deriveReceiptIdentity with standalone:true."
-     ]
-    }
-   ],
-   "acceptanceMapping": [
-    {
-     "criterionId": "ac3",
-     "provingTests": [
-      "unit: assembleSecurityReport separates confirmed matches from unresolved/unavailable gaps",
-      "integration: runSecurityReview end-to-end populates SecurityFinding/VerificationReceipt unchanged",
-      "unit: supplementalMarkdown surfaces fixability/evidence/coverage gaps",
-      "integration: handleSecurityReviewStep end-to-end -- a fresh request with a fresh index reaches done directly; a stale index reaches confirm_wait first (proves ac3's 'when a user requests a security review' actually has a caller-invocable trigger)."
-     ]
-    }
-   ]
-  },
-  "alternativesConsidered": [
-   {
-    "id": "a1",
-    "name": "Security-hook adapter, no-op ground",
-    "oneLineSummary": "Supply hooks.security as the real CliProvider.runReadOnlySession adapter (matching the HLD's own literal framing) and hooks.ground as a trivial, zero-cost function that always resolves to [] -- runReviewRound's unconditional ground call costs nothing extra since it never performs I/O.",
-    "approach": "s3's new orchestrator module builds one RoundDriverHooks<SecurityFinding> object per review: ground=async()=>[] (a one-line, synchronous-resolving no-op -- a security-only review has no general code-quality ground pass to run, and review-round's own ground pass belongs to a sibling Story, out of scope here), security=the real adapter that resolves s1's SecurityModelSelection, builds the code-review prompt/schema, calls CliProvider.runReadOnlySession with s1's pinned modelId against repoPath/targets, and maps the structured result into SecurityFinding[] (plus s2's SecurityAdvisoryEvidence folded in as dependency-advisory SecurityFindings). The module calls runReviewRound(reviewId, hooks, round, targets) for round 1 and round 2 (correction-and-re-review), reconcileRound between them, writeCheckpoint after each, renderReviewReport for the base report, persistVerificationReceipt once at the end (ident derived from contentIdentity per q860d1b4e), finalizeAndCleanup last. This is the ONLY alternative whose wiring matches the HLD's own stated framework text verbatim ('supplies review-round's existing RoundDriverHooks.security hook as a thin adapter').",
-    "pros": [
-     "Matches the HLD's own literal framework text (hooks.security, not hooks.ground) -- no silent deviation from the approved design",
-     "Reuses runReviewRound, reconcileRound, writeCheckpoint/readCheckpoint/finalizeAndCleanup, renderReviewReport, persistVerificationReceipt completely unchanged -- zero new code in review-round/ itself",
-     "The no-op ground costs nothing (no I/O, resolves immediately) so there is no real waste from the unconditional hooks.ground call"
     ],
-    "cons": [
-     "Two hook fields (ground + security) for what is conceptually a single pass reads slightly oddly in isolation -- mitigated by a clear doc comment on the hooks object explaining why ground is a no-op for this review kind"
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "runSecurityReview reads modelSelection as-is, refusing with blockerReason on 'unavailable', otherwise threading modelId into buildSecurityRoundHooks -> runSecurityCodePass."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "verifyContentIdentityMatch recomputes identity against advisoryEvidence; assembleSecurityReport maps matches/unresolvedDependencies/unavailableSources through unchanged."
+      },
+      {
+        "contractId": "sc3",
+        "role": "implements",
+        "howDetails": "handleSecurityReviewStep IS sc3: it is the daemon IPC method + MCP tool body. On a fresh request it checks the repo's index freshness via resolveRepoLastIndexedAt(repoPath) against the request's targets; if stale, it returns confirm_wait with a state token rather than silently running the model's drill-down tools against outdated graph data. Otherwise -- or on a resumed proceed:true/false call -- it resolves sc1 (resolveSecurityModel) and sc2 (collectDependencyAdvisories) itself, then calls runSecurityReview and returns done."
+      }
     ],
-    "costEstimate": "M",
-    "reasonRejected": "Winner -- not rejected."
-   },
-   {
-    "id": "a2",
-    "name": "Real logic in ground, security left undefined",
-    "oneLineSummary": "Put the real CliProvider adapter in hooks.ground directly and leave hooks.security undefined, since ground always runs and the field names are otherwise interchangeable at the type level.",
-    "approach": "Same orchestrator and same runReviewRound/reconcileRound/checkpoint/report/receipt calls as a1, but the roles of ground and security are swapped: hooks.ground is the real adapter, hooks.security is omitted (driver.ts's own code treats hooks.security as optional and skips calling it when undefined, exactly mirroring a1's no-op case from the other side).",
-    "pros": [
-     "Saves writing the trivial no-op ground function -- one field, not two, carries the real work",
-     "Functionally identical findings output to a1 since runReviewRound only ever concatenates whatever both hooks return"
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Recomputed contentIdentity over targets does not match advisoryEvidence.contentIdentity.",
+          "detection": "verifyContentIdentityMatch compares the two strings byte-for-byte before any round runs.",
+          "response": "Throw ContentIdentityMismatchError(expected, actual, contentStable); no round dispatches, no receipt persisted.",
+          "userImpact": "The review is refused outright; the caller must re-run s2's collection against current content.",
+          "recoverable": true
+        },
+        {
+          "scenario": "advisoryEvidence.contentStable is false.",
+          "detection": "verifyContentIdentityMatch checks this flag even when identity strings match.",
+          "response": "Throw ContentIdentityMismatchError with contentStable:false; same refusal path.",
+          "userImpact": "The review is refused; the caller re-runs s2's collection for a stable read.",
+          "recoverable": true
+        },
+        {
+          "scenario": "modelSelection.status is 'unavailable'.",
+          "detection": "runSecurityReview checks status before constructing any hooks.",
+          "response": "Throw SecurityModelUnavailableError(blockerReason); no fallback model is attempted.",
+          "userImpact": "The review reports the exact blocker instead of silently using a different model.",
+          "recoverable": true
+        },
+        {
+          "scenario": "runSecurityCodePass's CliProvider.runReadOnlySession call exceeds its deadline.",
+          "detection": "ReadOnlySessionTimeoutError thrown by runReadOnlySession itself, never internally retried.",
+          "response": "Propagated unchanged out of runSecurityCodePass -> hooks.security -> runReviewRound -> runSecurityReview; no partial round result is checkpointed.",
+          "userImpact": "The review fails for that round; a retry re-dispatches round 1 since no checkpoint exists yet.",
+          "recoverable": true
+        },
+        {
+          "scenario": "finalizeAndCleanup's durable-copy step throws.",
+          "detection": "finalizeAndCleanup's own documented contract leaves the scratch folder intact on a durable-copy failure.",
+          "response": "Propagated unchanged; the already-persisted VerificationReceipt is not rolled back.",
+          "userImpact": "The caller sees the persistence failure, but the receipt and round outputs are not lost.",
+          "recoverable": true
+        },
+        {
+          "scenario": "reconcileRound returns a verdicts array whose length does not match priorFindings.length.",
+          "detection": "reconcileRound's own internal check throws before returning.",
+          "response": "Propagated unchanged; s3 does not paper over a reconciliation-module internal-contract violation.",
+          "userImpact": "The review fails with the reconciliation module's own error.",
+          "recoverable": false
+        },
+        {
+          "scenario": "targets.entries contains a path outside repoPath.",
+          "detection": "s3's own path-containment check, run before any I/O.",
+          "response": "Throw synchronously before computeContentIdentity or any CLI dispatch.",
+          "userImpact": "The review is refused immediately with a clear out-of-scope-path message.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The repo's graph index is stale relative to the pinned content when handleSecurityReviewStep's first phase:'start' call is made.",
+          "detection": "resolveRepoLastIndexedAt(repoPath) returns a timestamp older than the content the request targets.",
+          "response": "Return {next:'confirm_wait', state, guidance} instead of running any round; the caller must re-call with {phase:'start', state, proceed} to continue.",
+          "userImpact": "The controller is asked whether to wait for a fresh index (more accurate drill-down) or proceed anyway (degraded, since the model's own insrc_analyze/insrc_analyze_step tool calls would read stale data) -- never silently one or the other.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "The code pass finds zero findings and advisoryEvidence.matches is also empty.",
+          "expected": "SecurityReviewReport.findings is empty; a VerificationReceipt with result:'pass' is still persisted."
+        },
+        {
+          "input": "advisoryEvidence.matches is non-empty but unresolvedDependencies is also non-empty.",
+          "expected": "Both reported distinctly: confirmed matches become findings, unresolvedDependencies carried through verbatim, never merged."
+        },
+        {
+          "input": "Round 2 finds zero findings where round 1 found some.",
+          "expected": "reconcileRound classifies round 1's findings 'no-longer-surfaced'; findings reflect round 2's own result."
+        },
+        {
+          "input": "targets.entries is empty.",
+          "expected": "computeContentIdentity still produces a stable identity; the code pass is expected to return zero findings -- a well-defined degenerate review, not an error."
+        },
+        {
+          "input": "A manager has mode:'unsupported' alongside others that succeeded.",
+          "expected": "supplementalMarkdown surfaces the unsupported manager as an explicit coverage gap, distinct from successfully-audited managers' findings."
+        },
+        {
+          "input": "A resumed call supplies proceed:false.",
+          "expected": "handleSecurityReviewStep runs the review against the index as-is; this is a DEGRADED run (equivalent to code-review's diff-only path), not an error -- the report is still fully populated, just potentially grounded on stale drill-down data for the model's own tool calls."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The reviewer runs with the same host access as the controller itself -- no sandboxing, egress restriction, or filesystem confinement beyond CliProvider.runReadOnlySession's own tool allowlist.",
+          "source": "c1"
+        },
+        {
+          "text": "Cloud inference for the security review's code pass uses the installed CLI provider, never a direct REST call.",
+          "source": "c2"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Exercise s3's own pure/deterministic logic without any real CLI session, filesystem, or network I/O.",
+          "subjects": [
+            "deriveReceiptIdentity -- same contentIdentity always re-derives the identical pair; different identities derive different pairs.",
+            "verifyContentIdentityMatch -- resolves on a match with contentStable:true; throws on mismatch; throws on contentStable:false even when identity matches.",
+            "assembleSecurityReport -- confirmed matches map to dependency-advisory SecurityFindings with checkId:'dependency-advisory' and receiptId stamped; unresolvedDependencies/unavailableSources pass through verbatim; empty inputs produce an empty findings array.",
+            "buildSecurityRoundHooks -- hooks.ground always resolves to [] without I/O; hooks.security delegates to the injected code-pass function."
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Exercise runSecurityReview's full orchestration against the real review-round/ machinery, with only the CLI session faked via an injected test double.",
+          "subjects": [
+            "runSecurityReview end-to-end: round 1, correction round 2, reconciliation, a real persisted+read-back VerificationReceipt, and real checkpoint cleanup.",
+            "runSecurityReview refuses before any round dispatches on a contentIdentity mismatch.",
+            "runSecurityReview refuses before any round dispatches on modelSelection.status:'unavailable', verified via the fake CLI session never being called.",
+            "A clean-run case still persists a VerificationReceipt with result:'pass'.",
+            "handleSecurityReviewStep: a stale-index fresh request returns confirm_wait with a state token, never runs a round; a resumed call with proceed:true or proceed:false both reach done; epicHash/storyId supplied on the request are threaded into the persisted receipt unchanged (standalone unset), while an omitted pair is derived via deriveReceiptIdentity with standalone:true."
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "unit: assembleSecurityReport separates confirmed matches from unresolved/unavailable gaps",
+            "integration: runSecurityReview end-to-end populates SecurityFinding/VerificationReceipt unchanged",
+            "unit: supplementalMarkdown surfaces fixability/evidence/coverage gaps",
+            "integration: handleSecurityReviewStep end-to-end -- a fresh request with a fresh index reaches done directly; a stale index reaches confirm_wait first (proves ac3's 'when a user requests a security review' actually has a caller-invocable trigger)."
+          ]
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Security-hook adapter, no-op ground",
+        "oneLineSummary": "Supply hooks.security as the real CliProvider.runReadOnlySession adapter (matching the HLD's own literal framing) and hooks.ground as a trivial, zero-cost function that always resolves to [] -- runReviewRound's unconditional ground call costs nothing extra since it never performs I/O.",
+        "approach": "s3's new orchestrator module builds one RoundDriverHooks<SecurityFinding> object per review: ground=async()=>[] (a one-line, synchronous-resolving no-op -- a security-only review has no general code-quality ground pass to run, and review-round's own ground pass belongs to a sibling Story, out of scope here), security=the real adapter that resolves s1's SecurityModelSelection, builds the code-review prompt/schema, calls CliProvider.runReadOnlySession with s1's pinned modelId against repoPath/targets, and maps the structured result into SecurityFinding[] (plus s2's SecurityAdvisoryEvidence folded in as dependency-advisory SecurityFindings). The module calls runReviewRound(reviewId, hooks, round, targets) for round 1 and round 2 (correction-and-re-review), reconcileRound between them, writeCheckpoint after each, renderReviewReport for the base report, persistVerificationReceipt once at the end (ident derived from contentIdentity per q860d1b4e), finalizeAndCleanup last. This is the ONLY alternative whose wiring matches the HLD's own stated framework text verbatim ('supplies review-round's existing RoundDriverHooks.security hook as a thin adapter').",
+        "pros": [
+          "Matches the HLD's own literal framework text (hooks.security, not hooks.ground) -- no silent deviation from the approved design",
+          "Reuses runReviewRound, reconcileRound, writeCheckpoint/readCheckpoint/finalizeAndCleanup, renderReviewReport, persistVerificationReceipt completely unchanged -- zero new code in review-round/ itself",
+          "The no-op ground costs nothing (no I/O, resolves immediately) so there is no real waste from the unconditional hooks.ground call"
+        ],
+        "cons": [
+          "Two hook fields (ground + security) for what is conceptually a single pass reads slightly oddly in isolation -- mitigated by a clear doc comment on the hooks object explaining why ground is a no-op for this review kind"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Winner -- not rejected."
+      },
+      {
+        "id": "a2",
+        "name": "Real logic in ground, security left undefined",
+        "oneLineSummary": "Put the real CliProvider adapter in hooks.ground directly and leave hooks.security undefined, since ground always runs and the field names are otherwise interchangeable at the type level.",
+        "approach": "Same orchestrator and same runReviewRound/reconcileRound/checkpoint/report/receipt calls as a1, but the roles of ground and security are swapped: hooks.ground is the real adapter, hooks.security is omitted (driver.ts's own code treats hooks.security as optional and skips calling it when undefined, exactly mirroring a1's no-op case from the other side).",
+        "pros": [
+          "Saves writing the trivial no-op ground function -- one field, not two, carries the real work",
+          "Functionally identical findings output to a1 since runReviewRound only ever concatenates whatever both hooks return"
+        ],
+        "cons": [
+          "Contradicts the HLD's own explicit framework text, which names hooks.security (not hooks.ground) as the adapter s3 supplies -- a reviewer checking the implementation against the HLD would find a literal mismatch requiring either an HLD wording fix or a confusing explanation",
+          "Loses the self-documenting signal that this pass is specifically a SECURITY pass -- a future maintainer reading RoundDriverHooks usage elsewhere (the sibling general-review Story) would see 'ground' used for an ordinary code-quality pass there and a security pass here, with no field-name cue to tell them apart"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Functionally equivalent to a1 but contradicts the HLD's literal hooks.security framing for no compensating benefit."
+      },
+      {
+        "id": "a3",
+        "name": "Bypass runReviewRound with a dedicated security-review loop",
+        "oneLineSummary": "Write s3's own round-loop, reconciliation-call, and checkpoint-call sequencing directly, instead of going through the shared runReviewRound entry point.",
+        "approach": "s3 implements its own async function that performs the same sequence runReviewRound already performs (call the security logic for round N, concatenate results) but inline, without calling driver.ts's runReviewRound at all -- reasoning that a security-only review has no 'ground' concept and the two-hook abstraction is unnecessary overhead for a caller that only ever wants one kind of finding.",
+        "pros": [
+          "Avoids ever constructing a hooks object with an empty/unused field",
+          "Slightly fewer lines in the immediate call site"
+        ],
+        "cons": [
+          "Duplicates runReviewRound's own round-validation logic (the RangeError on round<1, the synchronous-throw contract) -- a second, divergent implementation of the exact same round-driving rule this codebase already has once, in exactly the place the HLD says to reuse it ('S001... Initial Review and Correction-and-Re-review run through this exact same function')",
+          "Directly violates the HLD's own explicit text naming runReviewRound and RoundDriverHooks.security as what s3 drives -- this is an HLD back-flow-worthy deviation, not a Story-local implementation choice, and there is no finding motivating one",
+          "Breaks the sibling round-driver Story's own invariant that EVERY review (design or security) goes through the one shared driver -- a future change to round-driving behavior (e.g. a new checkpoint timing rule) would need to be duplicated into s3's private loop by hand"
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Bypasses and duplicates the already-built, shared runReviewRound/RoundDriverHooks machinery the HLD explicitly says to reuse."
+      }
     ],
-    "cons": [
-     "Contradicts the HLD's own explicit framework text, which names hooks.security (not hooks.ground) as the adapter s3 supplies -- a reviewer checking the implementation against the HLD would find a literal mismatch requiring either an HLD wording fix or a confusing explanation",
-     "Loses the self-documenting signal that this pass is specifically a SECURITY pass -- a future maintainer reading RoundDriverHooks usage elsewhere (the sibling general-review Story) would see 'ground' used for an ordinary code-quality pass there and a security pass here, with no field-name cue to tell them apart"
-    ],
-    "costEstimate": "S",
-    "reasonRejected": "Functionally equivalent to a1 but contradicts the HLD's literal hooks.security framing for no compensating benefit."
-   },
-   {
-    "id": "a3",
-    "name": "Bypass runReviewRound with a dedicated security-review loop",
-    "oneLineSummary": "Write s3's own round-loop, reconciliation-call, and checkpoint-call sequencing directly, instead of going through the shared runReviewRound entry point.",
-    "approach": "s3 implements its own async function that performs the same sequence runReviewRound already performs (call the security logic for round N, concatenate results) but inline, without calling driver.ts's runReviewRound at all -- reasoning that a security-only review has no 'ground' concept and the two-hook abstraction is unnecessary overhead for a caller that only ever wants one kind of finding.",
-    "pros": [
-     "Avoids ever constructing a hooks object with an empty/unused field",
-     "Slightly fewer lines in the immediate call site"
-    ],
-    "cons": [
-     "Duplicates runReviewRound's own round-validation logic (the RangeError on round<1, the synchronous-throw contract) -- a second, divergent implementation of the exact same round-driving rule this codebase already has once, in exactly the place the HLD says to reuse it ('S001... Initial Review and Correction-and-Re-review run through this exact same function')",
-     "Directly violates the HLD's own explicit text naming runReviewRound and RoundDriverHooks.security as what s3 drives -- this is an HLD back-flow-worthy deviation, not a Story-local implementation choice, and there is no finding motivating one",
-     "Breaks the sibling round-driver Story's own invariant that EVERY review (design or security) goes through the one shared driver -- a future change to round-driving behavior (e.g. a new checkpoint timing rule) would need to be duplicated into s3's private loop by hand"
-    ],
-    "costEstimate": "L",
-    "reasonRejected": "Bypasses and duplicates the already-built, shared runReviewRound/RoundDriverHooks machinery the HLD explicitly says to reuse."
-   }
-  ],
-  "chosenAlternative": "a1",
-  "openQuestions": []
- },
- "citations": [
-  {
-   "id": "c1",
-   "kind": "code",
-   "ref": "src/workflow/review-round/driver.ts:24"
+    "chosenAlternative": "a1",
+    "openQuestions": []
   },
-  {
-   "id": "c2",
-   "kind": "code",
-   "ref": "src/workflow/review-round/reconciliation.ts:242"
-  },
-  {
-   "id": "c3",
-   "kind": "code",
-   "ref": "src/workflow/review-round/checkpoint.ts:33"
-  },
-  {
-   "id": "c4",
-   "kind": "code",
-   "ref": "src/workflow/review-round/review-report.ts:1"
-  },
-  {
-   "id": "c5",
-   "kind": "code",
-   "ref": "src/workflow/review-round/receipt-record.ts:42"
-  },
-  {
-   "id": "c6",
-   "kind": "code",
-   "ref": "src/agent/providers/cli-provider.ts:526"
-  },
-  {
-   "id": "c7",
-   "kind": "code",
-   "ref": "src/workflow/review-round/security-finding.ts:1"
-  },
-  {
-   "id": "c8",
-   "kind": "prior-artifact",
-   "ref": "LLD-0765b3a578e43eec-s2"
-  },
-  {
-   "id": "c9",
-   "kind": "code",
-   "ref": "src/daemon/steps/analyze-step/phases/start.ts:77"
-  },
-  {
-   "id": "c10",
-   "kind": "code",
-   "ref": "src/mcp/server.ts:668"
-  }
- ]
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/review-round/driver.ts:24"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/review-round/reconciliation.ts:242"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/review-round/checkpoint.ts:33"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/review-round/review-report.ts:1"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/review-round/receipt-record.ts:42"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/agent/providers/cli-provider.ts:526"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/workflow/review-round/security-finding.ts:1"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD-0765b3a578e43eec-s2"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "src/daemon/steps/analyze-step/phases/start.ts:77"
+    },
+    {
+      "id": "c10",
+      "kind": "code",
+      "ref": "src/mcp/server.ts:668"
+    }
+  ]
 }

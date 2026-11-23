@@ -7,6 +7,7 @@
 **Epic:** `add-dedicated-security-reviews`
 **HLD base run:** `wf-1795324517306-yi2irl`
 **HLD effective hash:** `60b05edbecc2...`
+**Tracker:** [insors-ai/insrc#228](https://github.com/insors-ai/insrc/issues/228)
 
 This Story adds the module that actually runs a dedicated security review: it dispatches the code-vulnerability pass through the CLI model s1 selected, folds in the dependency advisories s2 already collected, drives the review through two rounds using the review framework's existing shared machinery, and assembles one report that clearly separates confirmed findings from gaps it could not verify. Nothing in this report is a new data shape -- it is built entirely out of the already-typed SecurityFinding and VerificationReceipt records.
 
@@ -167,24 +168,22 @@ function assembleSecurityReport(advisoryEvidence: SecurityAdvisoryEvidence, code
 function handleSecurityReviewStep(request: SecurityReviewStepRequest): Promise<SecurityReviewStepResponse>
 ```
 
-This IS `sc3` -- the daemon IPC method + MCP tool (`insrc_security_review_step`) body, mirroring `insrc_code_review_step`'s phase-driven shape and confirm_wait-on-stale-index pattern, collapsed to a single always-daemon-reviews branch.
-
 **Parameters:**
-- `request: SecurityReviewStepRequest` — A fresh `phase:'start'` request (repo/targets/epicHash?/storyId?) or a resumption after confirm_wait (`{phase:'start', state, proceed}`).
+- `request: SecurityReviewStepRequest` — A fresh phase:'start' request (repo/targets/epicHash?/storyId?) or a resumption after confirm_wait ({phase:'start', state, proceed}).
 
-**Returns:** `Promise<SecurityReviewStepResponse>` — `{next:'confirm_wait', state, guidance}` when the repo's graph index is stale relative to the pinned content (the security model's own `insrc_analyze`/`insrc_analyze_step` drill-down tool calls would otherwise read stale data) and the caller has not yet said `proceed`; otherwise `{next:'done', report, markdown}` after running the whole review end-to-end: `resolveSecurityModel` (s1), `collectDependencyAdvisories` (s2), then `runSecurityReview` (s3's own orchestrator).
+**Returns:** `Promise<SecurityReviewStepResponse>` — {next:'confirm_wait', state, guidance} when the repo's graph index is stale relative to the pinned content (the security model's own insrc_analyze/insrc_analyze_step drill-down tool calls would otherwise read stale data) and the caller has not yet said proceed; otherwise {next:'done', report, markdown} after running the whole review end-to-end: resolveSecurityModel (s1), collectDependencyAdvisories (s2), then runSecurityReview (s3's own orchestrator).
 
 **Errors:**
-- `ContentIdentityMismatchError` — propagated unchanged from `runSecurityReview`.
-- `SecurityModelUnavailableError` — propagated unchanged from `runSecurityReview`.
+- `ContentIdentityMismatchError` when Propagated unchanged from runSecurityReview.
+- `SecurityModelUnavailableError` when Propagated unchanged from runSecurityReview.
 
 **Preconditions:**
-- This is the ONLY function the daemon IPC handler and the `insrc_security_review_step` MCP tool call -- neither registers its own orchestration logic.
+- This is the ONLY function the daemon IPC handler and the insrc_security_review_step MCP tool call -- neither registers its own orchestration logic.
 
 **Postconditions:**
-- A resume call (`state` + `proceed:false`) runs the review against the index as-is, the same as code-review's degraded/diff-based review path, never silently waiting again.
-- A resume call (`state` + `proceed:true`) waits for the index to catch up (bounded) before running the review.
-- `epicHash`/`storyId` on the ORIGINAL request, if supplied, are threaded unchanged into `runSecurityReview`'s `opts` and `persistVerificationReceipt`'s `ident` (`standalone` left unset); if omitted, `runSecurityReview` derives them itself via `deriveReceiptIdentity` and sets `standalone:true`.
+- A resume call (state + proceed:false) runs the review against the index as-is, the same as code-review's degraded/diff-based review path, never silently waiting again.
+- A resume call (state + proceed:true) waits for the index to catch up (bounded) before running the review.
+- epicHash/storyId on the ORIGINAL request, if supplied, are threaded unchanged into runSecurityReview's opts and persistVerificationReceipt's ident (standalone left unset); if omitted, runSecurityReview derives them itself via deriveReceiptIdentity and sets standalone:true.
 
 ## 3. Data model changes
 
@@ -204,9 +203,9 @@ Thrown by verifyContentIdentityMatch on a recomputed-identity mismatch or adviso
 **Call sites:**
 - `docs/epics/add-dedicated-security-reviews-E202611100765b3a5/S002/LLD.md`
 
-### 3.3 `SecurityReviewStepRequest` / `SecurityReviewStepResponse` — new
+### 3.3 `SecurityReviewStepRequest / SecurityReviewStepResponse` — new
 
-The daemon IPC method's and `insrc_security_review_step` MCP tool's own request/response shapes (`sc3`'s interfaceSketch). A fresh request carries `repo`/`targets`/`epicHash?`/`storyId?`; a resumption after confirm_wait carries `state`+`proceed`. The response is either `confirm_wait` (with a `state` token to resume) or `done` (with the `SecurityReviewReport` and its rendered markdown).
+The daemon IPC method's and insrc_security_review_step MCP tool's own request/response shapes (sc3's interfaceSketch). A fresh request carries repo/targets/epicHash?/storyId?; a resumption after confirm_wait carries state+proceed. The response is either confirm_wait (with a state token to resume) or done (with the SecurityReviewReport and its rendered markdown).
 
 **Call sites:**
 - `src/daemon/steps/analyze-step/phases/start.ts:77`
@@ -287,7 +286,7 @@ The daemon IPC method's and `insrc_security_review_step` MCP tool's own request/
 
 | Criterion | Proving tests |
 | :--- | :--- |
-| `ac3` | `unit: assembleSecurityReport separates confirmed matches from unresolved/unavailable gaps`, `integration: runSecurityReview end-to-end populates SecurityFinding/VerificationReceipt unchanged`, `unit: supplementalMarkdown surfaces fixability/evidence/coverage gaps`, `integration: handleSecurityReviewStep end-to-end -- a fresh request with a fresh index reaches done directly; a stale index reaches confirm_wait first (proves ac3's 'when a user requests a security review' actually has a caller-invocable trigger)` |
+| `ac3` | `unit: assembleSecurityReport separates confirmed matches from unresolved/unavailable gaps`, `integration: runSecurityReview end-to-end populates SecurityFinding/VerificationReceipt unchanged`, `unit: supplementalMarkdown surfaces fixability/evidence/coverage gaps`, `integration: handleSecurityReviewStep end-to-end -- a fresh request with a fresh index reaches done directly; a stale index reaches confirm_wait first (proves ac3's 'when a user requests a security review' actually has a caller-invocable trigger).` |
 
 ## 7. Alternatives considered
 
@@ -316,6 +315,19 @@ s3 implements its own async function that performs the same sequence runReviewRo
 **Rejected because:** Bypasses and duplicates the already-built, shared runReviewRound/RoundDriverHooks machinery the HLD explicitly says to reuse.
 
 ## 8. References
+
+- **[[c1]]** `code` `src/workflow/review-round/driver.ts:24`
+- **[[c2]]** `code` `src/workflow/review-round/reconciliation.ts:242`
+- **[[c3]]** `code` `src/workflow/review-round/checkpoint.ts:33`
+- **[[c4]]** `code` `src/workflow/review-round/review-report.ts:1`
+- **[[c5]]** `code` `src/workflow/review-round/receipt-record.ts:42`
+- **[[c6]]** `code` `src/agent/providers/cli-provider.ts:526`
+- **[[c7]]** `code` `src/workflow/review-round/security-finding.ts:1`
+- **[[c8]]** `prior-artifact` `LLD-0765b3a578e43eec-s2`
+- **[[c9]]** `code` `src/daemon/steps/analyze-step/phases/start.ts:77`
+- **[[c10]]** `code` `src/mcp/server.ts:668`
+
+## Citations
 
 - **[[c1]]** `code` `src/workflow/review-round/driver.ts:24`
 - **[[c2]]** `code` `src/workflow/review-round/reconciliation.ts:242`

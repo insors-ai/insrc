@@ -506,3 +506,26 @@ Both storage alternatives use operation-owner escalation and correlated bridge c
 - **[[c18]]** `prior-artifact` `.insrc/artifacts/AMD-c3d71313f34bce71-2.json`
 - **[[c19]]** `prior-artifact` `.insrc/artifacts/AMD-c3d71313f34bce71-3.json`
 - **[[c20]]** `prior-artifact` `.insrc/artifacts/AMD-c3d71313f34bce71-4.json`
+
+## Citations
+
+- **[[c1]]** `doc` `AGENTS.md`
+- **[[c2]]** `prior-artifact` `docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/HLD.md`
+- **[[c3]]** `prior-artifact` `docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/DEF.md`
+- **[[c4]]** `analyze-bundle` `scripts/insrc` — "Current launcher is source/development boundary, not reusable installed private-runtime bootstrap unchanged."
+- **[[c5]]** `analyze-bundle` `copy-assets.mjs`
+- **[[c6]]** `analyze-bundle` `src/design/corpus/contracts.ts` — "Existing ReleaseManifest name is a separate design-corpus schema; not installer reuse."
+- **[[c7]]** `analyze-bundle` `scripts/__tests__/client-assets-retirement.test.ts`
+- **[[c8]]** `analyze-bundle` `src/shared/__tests__/ipc-client.test.ts`
+- **[[c9]]** `code` `.npmrc`
+- **[[c10]]** `doc` `https://github.com/thejoshwolfe/yauzl/blob/master/README.md`
+- **[[c11]]** `doc` `https://nodejs.org/docs/latest-v22.x/api/n-api.html`
+- **[[c12]]** `doc` `https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-lockfileex`
+- **[[c13]]** `step-output` `s4` — "New proposed record/contract detail scoped to s1; no sibling execution implementations."
+- **[[c14]]** `step-output` `s5`
+- **[[c15]]** `step-output` `s6`
+- **[[c16]]** `stakeholder` `User LLD advisory review: clarify contract-shape reference and publisher/launcher call-site context; preserve forged source/bootstrap marker test intent verbatim in plan. FR-to-AC traceability needs no change.`
+- **[[c17]]** `prior-artifact` `.insrc/artifacts/AMD-c3d71313f34bce71-1.json`
+- **[[c18]]** `prior-artifact` `.insrc/artifacts/AMD-c3d71313f34bce71-2.json`
+- **[[c19]]** `prior-artifact` `.insrc/artifacts/AMD-c3d71313f34bce71-3.json`
+- **[[c20]]** `prior-artifact` `.insrc/artifacts/AMD-c3d71313f34bce71-4.json`

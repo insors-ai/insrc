@@ -32,7 +32,7 @@
     "storyTitle": "Install and upgrade release bundles with a private runtime",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 5,
         "contentHash": "cdebddfb67cd3cbb260f75351f6ded3b9e1348f6bfefa5a4599eae4ed713fb8d",
@@ -43,9 +43,20 @@
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 5,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-23T18:17:37.717Z"
+      }
     },
     "envelope": {
+      "description": "",
+      "references": [],
       "attachments": []
     },
     "revision": 5

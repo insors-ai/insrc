@@ -1,0 +1,14 @@
+{
+  "command": [
+    "./gradlew",
+    "--offline",
+    "--no-daemon",
+    "test",
+    "--dry-run",
+    "--console=plain"
+  ],
+  "exitCode": 0,
+  "seconds": 7.55,
+  "testTaskConfigured": true,
+  "output": "To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.10.2/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.\nDaemon will be stopped at the end of the build \nCalculating task graph as no cached configuration is available for tasks: test\n:checkKotlinGradlePluginConfigurationErrors SKIPPED\n:compileKotlin SKIPPED\n:initializeIntellijPlatformPlugin SKIPPED\n:patchPluginXml SKIPPED\n:verifyPluginProjectConfiguration SKIPPED\n:compileJava SKIPPED\n:bundleBackendAssets SKIPPED\n:processResources SKIPPED\n:classes SKIPPED\n:generateManifest SKIPPED\n:instrumentCode SKIPPED\n:jar SKIPPED\n:compileTestKotlin SKIPPED\n:compileTestJava SKIPPED\n:processTestResources SKIPPED\n:testClasses SKIPPED\n:instrumentTestCode SKIPPED\n:instrumentedJar SKIPPED\n:composedJar SKIPPED\n:prepareTestSandbox SKIPPED\n:prepareTest SKIPPED\n:test SKIPPED\n\nBUILD SUCCESSFUL in 7s\nConfiguration cache entry stored.\n"
+}

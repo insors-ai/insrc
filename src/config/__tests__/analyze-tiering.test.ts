@@ -119,6 +119,12 @@ test("parseSecurityModelPin: a complete, well-typed { runner, model } -> { kind:
 });
 
 test("parseSecurityModelPin: runner set with no model -> { kind: 'malformed', detail }", () => {
+	const r = parseSecurityModelPin({ security: { runner: 'cli-claude' } });
+	assert.equal(r.kind, 'malformed');
+	assert.ok('detail' in r && typeof r.detail === 'string' && r.detail.length > 0);
+});
+
+test("parseSecurityModelPin: model set with no runner -> { kind: 'malformed', detail }", () => {
 	const r = parseSecurityModelPin({ security: { model: 'x' } });
 	assert.equal(r.kind, 'malformed');
 	assert.ok('detail' in r && typeof r.detail === 'string' && r.detail.length > 0);

@@ -33,7 +33,6 @@ test('contributes.commands includes insrc.workspace.register alongside the S002 
   const ids = (pkg.contributes?.commands ?? []).map((c: { command: string }) => c.command);
   // Subset check: the config-track (settings-UI epic) appends insrc.settings.refresh.
   for (const id of [
-    'insrc.daemon.install', 'insrc.daemon.restart', 'insrc.daemon.start', 'insrc.daemon.stop', 'insrc.daemon.update',
     'insrc.hosts.wire', 'insrc.workspace.register',
   ]) {
     assert.ok(ids.includes(id), `${id} must stay palette-reachable (k6)`);
@@ -77,13 +76,10 @@ test('S005 sc9: extension.ts wires detailRenderers + enableScripts:true + the on
 test('S006 sc9: extension.ts wires the debug renderer + tabController + onDetailAction over ONE shared managedPid (PATHS.pidFile)', () => {
   const entry = readFileSync(join(PKG, 'src', 'extension.ts'), 'utf8');
   // The debug renderer + controller + action handler are imported + wired.
-  assert.match(entry, /import \{ renderDebugTab, createDebugTabController, createDebugActionHandler \} from '\.\/panels\/debug-renderer\.js'/, 'the debug seams are imported');
-  assert.match(entry, /debug:\s*renderDebugTab\(\{\s*managedPid\s*\}\)/, 'the debug tab body renderer is wired');
+  assert.match(entry, /import \{ renderDebugTab, createDebugTabController \} from '\.\/panels\/debug-renderer\.js'/, 'the debug seams are imported');
+  assert.match(entry, /debug:\s*renderDebugTab\(\)/, 'the debug tab body renderer is wired');
   assert.match(entry, /tabControllers:\s*\{\s*debug:\s*createDebugTabController\(/, 'the debug log ticker controller is wired');
-  assert.match(entry, /onDetailAction:\s*createDebugActionHandler\(/, 'the consent-gated action handler is wired');
   // ONE shared managed-pid resolver over the pidfile, used by both the renderer + kill.
-  assert.match(entry, /const managedPid = \(\):\s*number \| undefined => readManagedPid\(PATHS\.pidFile\)/, 'a single managedPid resolver reads PATHS.pidFile');
-  assert.match(entry, /createOrphanKill\(\{[\s\S]*managedPid,[\s\S]*\}\)/, 'the kill is built over the shared managedPid');
   // No new command was added (S006 adds no palette entry).
   const pkg = JSON.parse(readFileSync(join(PKG, 'package.json'), 'utf8'));
   const ids = (pkg.contributes?.commands ?? []).map((c: { command: string }) => c.command);

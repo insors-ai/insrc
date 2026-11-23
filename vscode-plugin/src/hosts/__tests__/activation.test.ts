@@ -20,7 +20,7 @@ test('extension.ts constructs the AiHostRegistry (HostSpecs + real HostEnv/HostF
   assert.match(entry, /defaultHostFileSystem/, 'uses the real node:fs HostFileSystem');
   assert.match(entry, /registerHostCommands\(\{\s*commands,\s*consent,\s*status,\s*registry\s*\}\)/, 'wires the durable command with the s1 surfaces');
   // launch target resolved from the SAME daemon home S002 installs (reuse, not a new path).
-  assert.match(entry, /join\(paths\.daemonRoot, 'scripts', 'insrc-mcp'\)/, 'resolves the launch target from the S002 daemon home');
+  assert.match(entry, /join\(daemonRoot, 'scripts', 'insrc-mcp'\)/, 'resolves the launch target from the S002 daemon home');
 });
 
 test('the activation-time host-wire step runs through the guarded runOnboarding sequence (S005 coalescing) and only fires when present hosts exist', () => {
@@ -38,7 +38,7 @@ test('contributes.commands includes insrc.hosts.wire alongside the S002 daemon e
   // Subset check: later stories (S004 workspace register, …) append their own
   // commands to the same array — assert the S002 daemon + S003 wire entries are
   // present, not the exact set.
-  for (const id of ['insrc.daemon.install', 'insrc.daemon.start', 'insrc.daemon.stop', 'insrc.daemon.restart', 'insrc.daemon.update', 'insrc.hosts.wire']) {
+  for (const id of ['insrc.hosts.wire']) {
     assert.ok(ids.has(id), `${id} must stay palette-reachable (k6)`);
   }
 });

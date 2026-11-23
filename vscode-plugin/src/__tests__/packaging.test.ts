@@ -43,14 +43,9 @@ test('package.json carries every Marketplace-required field for a single install
   assert.ok(Array.isArray(pkg.keywords) && pkg.keywords.length > 0, 'keywords is a non-empty list');
 });
 
-test('the 7 durable ad0d45c9 contributes.commands are preserved + the config/panel-track additions (S003 refresh, S004 panel commands)', () => {
+test('remaining durable host/workspace contributes.commands are preserved + the config/panel-track additions (S003 refresh, S004 panel commands)', () => {
   const ids = (pkg.contributes?.commands ?? []).map((c: { command: string }) => c.command);
   const shipped = [
-    'insrc.daemon.install',
-    'insrc.daemon.restart',
-    'insrc.daemon.start',
-    'insrc.daemon.stop',
-    'insrc.daemon.update',
     'insrc.hosts.wire',
     'insrc.workspace.register',
   ];

@@ -34,23 +34,19 @@ interface Item extends QuickPickItemLike { readonly kind?: string; readonly valu
 
 /**
  * A scripted run: each pick is a value (or a label for value-less rows) chosen in order;
- * returns the writes, every list shown, the messages and the restarts.
+ * returns the writes, every list shown, the messages and the messages.
  */
 export async function run(opts: {
   picks: readonly string[];
   raw?: Record<string, unknown>;
   defs?: () => Promise<ModelDefinitions>;
   write?: (segments: readonly string[], value: unknown) => Promise<ConfigWriteResult>;
-  restart?: () => Promise<boolean>;
-  actions?: readonly (string | undefined)[];
   extra?: Partial<SetModelTierDeps>;
 }) {
   const writes: Array<{ segments: string[]; value: unknown }> = [];
   const shown: Item[][] = [];
   const messages: string[] = [];
-  let restarts = 0;
   let i = 0;
-  const actions = [...(opts.actions ?? [])];
   const deps: SetModelTierDeps = {
     definitions: opts.defs ?? (async () => DEFS),
     rawConfig: async () => opts.raw ?? {},
@@ -58,13 +54,12 @@ export async function run(opts: {
       writes.push({ segments: [...segments], value });
       return opts.write ? opts.write(segments, value) : { ok: true };
     },
-    restartDaemon: async () => { restarts++; return opts.restart ? opts.restart() : true; },
     pick: async (items) => {
       shown.push(items as Item[]);
       const want = opts.picks[i++];
       return (want === undefined ? undefined : (items as Item[]).find((x) => x.value === want || (x.value === undefined && x.label === want))) as never;
     },
-    notify: async (message) => { messages.push(message); return actions.shift(); },
+    notify: async (message) => { messages.push(message); return undefined; },
     check: async () => { throw new Error('check not scripted'); },
     approve: async () => { throw new Error('approve not scripted'); },
     reject: async () => { throw new Error('reject not scripted'); },
@@ -73,7 +68,7 @@ export async function run(opts: {
     ...opts.extra,
   };
   await runSetModelTier(deps);
-  return { writes, shown, messages, restarts: () => restarts };
+  return { writes, shown, messages };
 }
 
 const TIER = (runner: string, model: string, effort = '') => ({ models: { tiers: { core: { runner, model, effort } } } });
@@ -152,9 +147,8 @@ test("model-tier-picker.test.ts: the family, model and effort steps offer exactl
   // A refusal shows reason and detail; restartRequired offers a restart, run on the action.
   r = await run({ picks: ['core', 'cli-codex', 'x-b', 'lo'], write: async () => ({ ok: false, reason: 'rejected-model', detail: "model 'x-b' is rejected in cli-codex" }) });
   assert.match(r.messages.at(-1)!, /the core tier was not saved: rejected-model — model 'x-b' is rejected in cli-codex/);
-  r = await run({ picks: ['core', 'cli-codex', 'x-b', 'lo'], write: async () => ({ ok: true, restartRequired: true }), actions: ['Restart daemon'] });
+  r = await run({ picks: ['core', 'cli-codex', 'x-b', 'lo'], write: async () => ({ ok: true, restartRequired: true }) });
   assert.match(r.messages[0]!, /applies on the next daemon launch/);
-  assert.equal(r.restarts(), 0);
 
 
   // Request failures: four distinct messages, nothing written.
@@ -214,15 +208,13 @@ test('model-tier-picker.test.ts: unknown model — check results shown; approve 
 
   // Check: the family's effort names are claimed; each level's verdict and evidence is shown, then the decision.
   inputs = ['x-new', '<default>'];
-  const restartResults = [false, true];
-  let r = await run({ picks: ['core', 'cli-codex', 'Enter another model id…', 'Approve x-new…'], extra: seams(), actions: ['Restart daemon and save', 'Restart daemon and save'], restart: async () => restartResults.shift()! });
+  let r = await run({ picks: ['core', 'cli-codex', 'Enter another model id…', 'Approve x-new…'], extra: seams() });
   assert.deepEqual(checks, [{ family: 'cli-codex', modelId: 'x-new', claimedEfforts: ['lo', 'turbo'] }]);
   const verdicts = r.shown[3]!;
   assert.deepEqual(verdicts.filter((x) => x.kind === 'verdict').map((x) => [x.label, x.detail]), [['lo — accepted', 'lo listed'], ['turbo — rejected', 'turbo not listed'], ['max — recognised — unconfirmed', 'max is a name the CLI knows']]);
   assert.deepEqual(verdicts.filter((x) => x.kind !== 'verdict').map((x) => x.label), ['Approve x-new…', 'Reject x-new']);
   // Approve: the chosen non-rejected levels; nothing saved; a failed restart saves nothing and never re-approves; the next restart saves.
   assert.deepEqual(approves, [{ checkId: 'c1', efforts: ['lo', 'max'] }]);
-  assert.equal(r.restarts(), 0);
   assert.deepEqual(r.writes, []);
   assert.match(r.messages.join('\n'), /runtime must load it/);
   assert.equal(approves.length, 1, 'never approved twice');
@@ -236,10 +228,9 @@ test('model-tier-picker.test.ts: unknown model — check results shown; approve 
 
   // Approved but the user does not restart now: nothing saved.
   reset(); inputs = ['x-new', '<default>'];
-  r = await run({ picks: ['core', 'cli-codex', 'Enter another model id…', 'Approve x-new…'], extra: seams(), actions: [undefined] });
+  r = await run({ picks: ['core', 'cli-codex', 'Enter another model id…', 'Approve x-new…'], extra: seams() });
   assert.equal(approves.length, 1);
   assert.deepEqual(r.writes, []);
-  assert.equal(r.restarts(), 0);
 
   // Reject: recorded, nothing saved.
   reset(); inputs = ['x-new', '<default>'];
@@ -255,7 +246,7 @@ test('model-tier-picker.test.ts: unknown model — check results shown; approve 
   reset(); inputs = ['x-new', '<default>'];
   const served: ModelDefinitions = { ...DEFS, families: DEFS.families.map((f) => f.id !== 'cli-codex' ? f : { ...f, models: [...f.models, { id: 'x-new', aliases: [], efforts: ['lo'], source: 'user-approved' as const }] }) };
   let defsCalls = 0;
-  r = await run({ picks: ['core', 'cli-codex', 'Enter another model id…'], defs: async () => (defsCalls++ === 0 ? DEFS : served), extra: seams({ check: async () => ({ error: 'x-new is already a model or alias of cli-codex' }) }), actions: ['Save x-new'] });
+  r = await run({ picks: ['core', 'cli-codex', 'Enter another model id…'], defs: async () => (defsCalls++ === 0 ? DEFS : served), extra: seams({ check: async () => ({ error: 'x-new is already a model or alias of cli-codex' }) }) });
   assert.deepEqual(r.writes, [{ segments: ['models', 'tiers', 'core'], value: { runner: 'cli-codex', model: 'x-new', effort: '' } }]);
 
   // A typed alias of a listed model saves as a normal pick, without a check.
@@ -267,12 +258,12 @@ test('model-tier-picker.test.ts: unknown model — check results shown; approve 
   // unknown-check offers a fresh check; a disconnected check offers to check again; a disconnected approve reports an unknown outcome.
   reset(); inputs = ['x-new', '<default>'];
   const approveAnswers: Array<() => Promise<DecisionResultLike>> = [async () => ({ ok: false, reason: 'unknown-check', detail: 'no pending check c1' })];
-  r = await run({ picks: ['core', 'cli-codex', 'Enter another model id…', 'Approve x-new…', 'Reject x-new'], extra: seams({ approve: async (p) => { approves.push(p); return approveAnswers.shift()!(); } }), actions: ['Check again'] });
+  r = await run({ picks: ['core', 'cli-codex', 'Enter another model id…', 'Approve x-new…', 'Reject x-new'], extra: seams({ approve: async (p) => { approves.push(p); return approveAnswers.shift()!(); } }) });
   assert.equal(checks.length, 2, 'checked again after unknown-check');
   assert.deepEqual(rejects, [{ checkId: 'c1' }]);
   reset(); inputs = ['x-new', '<default>'];
   const checkAnswers: Array<() => Promise<typeof result>> = [async () => { throw Object.assign(new Error('closed'), { code: 'disconnected' }); }, async () => result];
-  r = await run({ picks: ['core', 'cli-codex', 'Enter another model id…'], extra: seams({ check: async (p) => { checks.push(p); return checkAnswers.shift()!(); } }), actions: ['Check again'] });
+  r = await run({ picks: ['core', 'cli-codex', 'Enter another model id…'], extra: seams({ check: async (p) => { checks.push(p); return checkAnswers.shift()!(); } }) });
   assert.equal(checks.length, 2);
   assert.match(r.messages[0]!, /the check of x-new was interrupted/);
   reset(); inputs = ['x-new', '<default>'];

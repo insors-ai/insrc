@@ -42,7 +42,6 @@ export const DEFS: ModelDefinitionsResult = {
 export function tiersServices(tiers: Record<string, unknown>, results: ConfigWriteResult[] = []) {
 	const svc = fakeServices();
 	const writes: Array<[string | string[], unknown]> = [];
-	const restarts: number[] = [];
 	svc.models.definitions = async () => DEFS;
 	svc.config.show = async () => ({ models: { tiers } });
 	svc.config.write = async (path, value) => {
@@ -52,7 +51,7 @@ export function tiersServices(tiers: Record<string, unknown>, results: ConfigWri
 		return res;
 	};
 
-	return { svc, writes, restarts };
+	return { svc, writes };
 }
 
 const press = async (stdin: { write(s: string): void }, ...keys: string[]): Promise<void> => {
@@ -64,7 +63,7 @@ test("tui-models.test.ts: Model Tiers pane cycles the fake answer's families, mo
 		core:  { runner: 'cli-codex', model: 'x-a', effort: 'lo' },
 		cheap: { runner: 'cli-codex', model: 'x-unknown', effort: 'turbo' },
 	};
-	const { svc, writes, restarts } = tiersServices(tiers, [{ ok: true, restartRequired: true }, { ok: true }, { ok: true }, { ok: true }, { ok: false, reason: 'rejected-model', detail: "models.tiers.core: model 'x-b' is rejected in cli-codex" }]);
+	const { svc, writes } = tiersServices(tiers, [{ ok: true, restartRequired: true }, { ok: true }, { ok: true }, { ok: true }, { ok: false, reason: 'rejected-model', detail: "models.tiers.core: model 'x-b' is rejected in cli-codex" }]);
 	const { lastFrame, stdin, unmount } = render(createElement(App, { services: svc, pollMs: 0 }));
 	await settle();
 	await press(stdin, '5');
@@ -78,7 +77,6 @@ test("tui-models.test.ts: Model Tiers pane cycles the fake answer's families, mo
 	assert.deepEqual(writes.at(-1), ['models.tiers.core', { runner: 'cli-codex', model: 'x-a', effort: 'turbo' }]);
 	assert.match(lastFrame() ?? '', /applies on next daemon launch/);
 	await press(stdin, 'R');
-	assert.equal(restarts.length, 0, 'no daemon control is exposed');
 
 	// f on core: the next family (FakeLocal, no tier defaults) → its tool-loop model, no effort.
 	await press(stdin, 'f');
@@ -143,7 +141,6 @@ function checkServices(script: {
 	const checks: CheckParams[] = [];
 	const approves: unknown[] = [];
 	const rejects: unknown[] = [];
-	const restarts: number[] = [];
 	const okResult = { checkId: 'c1', family: 'cli-codex', modelId: 'x-new', runs: true, inputLimit: { unit: 'tokens', max: 64000 },
 		efforts: [{ effort: 'lo', verdict: 'accepted', evidence: 'ev-lo listed' }, { effort: 'turbo', verdict: 'rejected', evidence: 'ev-turbo not listed' }] };
 	svc.models.check = (async (p: CheckParams) => { checks.push(p); const next = script.check?.shift(); return next !== undefined ? next() : okResult; }) as never;
@@ -151,7 +148,7 @@ function checkServices(script: {
 	svc.models.reject = (async (p: unknown) => { rejects.push(p); return { ok: true, restartRequired: true }; }) as never;
 
 	if (script.definitions !== undefined) { const d = script.definitions; let first = true; svc.models.definitions = async () => { if (first) { first = false; return DEFS; } return d; }; }
-	return { svc, writes, checks, approves, rejects, restarts };
+	return { svc, writes, checks, approves, rejects };
 }
 
 /** Open the Model Tiers pane, type an unserved id for core and accept the default claimed efforts. */

@@ -13,7 +13,7 @@ const PKG = join(HERE, '..', '..', '..'); // vscode-plugin/
 
 test('extension.ts calls runOnboarding exactly ONCE (guarded fire-and-forget) and NO LONGER fires the three separate offer IIFEs', () => {
   const entry = readFileSync(join(PKG, 'src', 'extension.ts'), 'utf8');
-  assert.match(entry, /runOnboarding\(\{ controller, registrar, registry, consent, status, folders, prompts, onboarded \}\)/, 'one coalesced runOnboarding call');
+  assert.match(entry, /runOnboarding\(\{ registrar, registry, consent, status, folders, prompts, onboarded \}\)/, 'one coalesced runOnboarding call');
   // The scattered offers no longer run directly from activation.
   assert.doesNotMatch(entry, /await offerDaemonInstall\(/, 'offerDaemonInstall no longer fired directly from activation');
   assert.doesNotMatch(entry, /await offerHostWiring\(/, 'offerHostWiring no longer fired directly from activation');
@@ -35,7 +35,7 @@ test('package.json declares scripts["vscode:uninstall"] = "node ./out/uninstall.
 test('the S002/S003/S004 durable commands remain in contributes.commands (subset check, k6)', () => {
   const pkg = JSON.parse(readFileSync(join(PKG, 'package.json'), 'utf8'));
   const ids = new Set((pkg.contributes?.commands ?? []).map((c: { command: string }) => c.command));
-  for (const id of ['insrc.daemon.install', 'insrc.daemon.start', 'insrc.daemon.stop', 'insrc.daemon.restart', 'insrc.daemon.update', 'insrc.hosts.wire', 'insrc.workspace.register']) {
+  for (const id of ['insrc.hosts.wire', 'insrc.workspace.register']) {
     assert.ok(ids.has(id), `${id} must stay palette-reachable (k6)`);
   }
 });

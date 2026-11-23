@@ -35489,18 +35489,6 @@
         ],
         [
           "serialization",
-          "JSON.parse"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "serialization",
           "JSON.stringify"
         ],
         [
@@ -35518,15 +35506,11 @@
         [
           "serialization",
           "socket.write"
-        ],
-        [
-          "serialization",
-          "socket.write"
         ]
       ],
-      "siteCount": 13,
-      "sitesDigest": "2ad9e1f2dfcbeb1334eb02bdf8e0adbfdfe444c559009705b3db518f60035268",
-      "sourceDigest": "f42693e7f47c28075bf190c91ea3ed5f12789a3af02506e2ac1cb5027dc138a5"
+      "siteCount": 9,
+      "sitesDigest": "d4e5f71584c292a693b970e8fdcc7bcaf6a625c1754e260e53ba9b6db889a959",
+      "sourceDigest": "5b92a3e28ee7bf2fde1842ff83b66462552c3803014f6561407684ad8decc7a1"
     },
     "src/mcp/design-review/handler.ts": {
       "classification": "mcp-client-boundary",
@@ -36317,7 +36301,7 @@
       ],
       "siteCount": 21,
       "sitesDigest": "d2326f93bf20bc63d3d419be65a35924d680e7f4961f69cafce813285dc23393",
-      "sourceDigest": "6dc162eb5963c55c14698ca9bcbf757d714a91ad0764fffc6b299517d60af8a0"
+      "sourceDigest": "f92d8819e2c7a9f43607014bb5389d8ba317a43eb8d26cd040e3f5dd47ea7fb9"
     },
     "src/shared/keystore.ts": {
       "classification": "saved-foundation-boundary",

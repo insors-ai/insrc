@@ -141,7 +141,7 @@ test('manifest-key-map-engine.test.ts: native tier edits over the real merged ke
 
   // definitions() failing: the classified message, the edit reverted, nothing written.
   for (const [err, message] of [
-    [new Error('daemon is not running — start it with: insrc daemon start'), /could not check the core tier — the daemon is not running — change not applied/],
+    [new Error('daemon is not running'), /could not check the core tier — the daemon is not running — change not applied/],
     [new Error('unknown method: models.definitions'), /update the daemon/],
     [Object.assign(new Error('closed'), { code: 'disconnected' }), /the daemon closed the connection/],
     [new Error('invalid response from daemon'), /could not check the core tier — invalid response from daemon — change not applied/],

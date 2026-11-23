@@ -128,7 +128,7 @@ export async function rpc<T = unknown>(
     socket.on('error', (err: NodeJS.ErrnoException) => {
       if (sent) reject(new DaemonDisconnectedError(method, err));
       else if (err.code === 'ENOENT' || err.code === 'ECONNREFUSED') {
-        reject(new Error('daemon is not running — start it with: insrc daemon start'));
+        reject(new Error('daemon is not running'));
       } else {
         reject(err);
       }
@@ -204,7 +204,7 @@ export function openStream(
     }
   });
   socket.on('error', (err: NodeJS.ErrnoException) => {
-    finish(err.code === 'ENOENT' || err.code === 'ECONNREFUSED' ? new Error('daemon is not running — start it with: insrc daemon start') : err);
+    finish(err.code === 'ENOENT' || err.code === 'ECONNREFUSED' ? new Error('daemon is not running') : err);
   });
   socket.on('close', () => finish(closed ? undefined : new Error('daemon closed the stream')));
   return { close: () => { if (closed) return; closed = true; socket.destroy(); onClose?.(); } };

@@ -140,6 +140,11 @@ sourceSets.named("main") {
     resources.srcDir(layout.buildDirectory.dir("generated-resources"))
 }
 
-tasks.named("processResources") {
+tasks.named<ProcessResources>("processResources") {
     dependsOn(bundleBackendAssets)
+    // Copy tasks retain removed input files; purge only the retired resources.
+    doFirst {
+        check(!destinationDir.resolve("insrc/insrc-daemon-install.sh").exists() || destinationDir.resolve("insrc/insrc-daemon-install.sh").delete())
+        check(!destinationDir.resolve("insrc/node-runtime-policy.json").exists() || destinationDir.resolve("insrc/node-runtime-policy.json").delete())
+    }
 }

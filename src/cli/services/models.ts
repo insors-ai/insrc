@@ -48,5 +48,5 @@ export function daemonProblem(err: unknown): { readonly down: boolean; readonly 
 	if (typeof err === 'object' && err !== null && (err as { code?: unknown }).code === 'disconnected') {
 		return { down: true, text: 'the daemon closed the connection before answering' };
 	}
-	return { down: false, text: `the daemon could not answer: ${message} — if it is older than this TUI, update it (daemon update)` };
+	return { down: false, text: `the daemon could not answer: ${message} — if it is older than this TUI, use a compatible daemon build` };
 }

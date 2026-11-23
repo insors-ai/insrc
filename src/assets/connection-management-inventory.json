@@ -30722,15 +30722,7 @@
       "sites": [
         [
           "serialization",
-          "chunk.toString"
-        ],
-        [
-          "serialization",
-          "chunk.toString"
-        ],
-        [
-          "serialization",
-          "chunk.toString"
+          "decoder.write"
         ],
         [
           "diagnostic",
@@ -30743,18 +30735,6 @@
         [
           "serialization",
           "JSON.parse"
-        ],
-        [
-          "serialization",
-          "JSON.parse"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
         ],
         [
           "serialization",
@@ -30775,15 +30755,11 @@
         [
           "serialization",
           "socket.write"
-        ],
-        [
-          "serialization",
-          "socket.write"
         ]
       ],
-      "siteCount": 15,
-      "sitesDigest": "ec3321264249fb3f9c9d11d564422c5a5cfed11d58080aac59c184c8135e27a7",
-      "sourceDigest": "c9863b232d73fb75c49b998775ce54ef130a2a10355c139ad2a6ed5f14243e39",
+      "siteCount": 9,
+      "sitesDigest": "d4e5f71584c292a693b970e8fdcc7bcaf6a625c1754e260e53ba9b6db889a959",
+      "sourceDigest": "5b92a3e28ee7bf2fde1842ff83b66462552c3803014f6561407684ad8decc7a1",
       "boundaries": [
         "diagnostic",
         "serialization"
@@ -31188,7 +31164,7 @@
       ],
       "siteCount": 21,
       "sitesDigest": "d2326f93bf20bc63d3d419be65a35924d680e7f4961f69cafce813285dc23393",
-      "sourceDigest": "6dc162eb5963c55c14698ca9bcbf757d714a91ad0764fffc6b299517d60af8a0",
+      "sourceDigest": "f92d8819e2c7a9f43607014bb5389d8ba317a43eb8d26cd040e3f5dd47ea7fb9",
       "boundaries": [
         "serialization"
       ]
@@ -36577,7 +36553,7 @@
     "src/cli/services/models.ts": {
       "classification": "no-boundary-sites",
       "rationale": "The complete TypeScript-resolved scan found no provider/resolver/factory/serialization/storage/diagnostic/file-write submission in this production file; retain its exact code hash for complete deployment coverage.",
-      "sourceDigest": "7b61fa8c088cc3b1123a9bb0716fb18dca0c3340a0f09f388c6d3731e29ea4b1",
+      "sourceDigest": "43f419ba62f75d16b0065ca4e55a1eb5308804243f31d92275e40e352c33d5f3",
       "sites": [],
       "siteCount": 0,
       "sitesDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"

@@ -95,7 +95,7 @@ test('extension.ts registers insrc.delivery.openBoard outside the chat gate with
     createWebviewPanel: (viewType, title) => { const panel = fakePanel(); panels.push({ viewType, title, panel }); return panel; },
     rpc: (async (method: string, params?: unknown) => {
       rpcCalls.push({ method, params });
-      throw new Error('daemon is not running — start it with: insrc daemon start');
+      throw new Error('daemon is not running');
     }) as never,
     repo: () => repo,
     logger: { warn: m => logs.warn.push(m), error: m => logs.error.push(m) },

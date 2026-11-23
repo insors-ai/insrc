@@ -212,7 +212,7 @@ test('the modal lists payload rows, edits local rows only and shows an error mes
 
 	// A transport failure (daemon down) is shown the same way.
 	const down = fixture();
-	down.svc.config.repoSettings = async () => { throw new Error('daemon is not running — start it with: insrc daemon start'); };
+	down.svc.config.repoSettings = async () => { throw new Error('daemon is not running'); };
 	const d = await openModal(down);
 	try { assert.match(d.lastFrame() ?? '', /✗ daemon is not running/); } finally { d.unmount(); }
 });

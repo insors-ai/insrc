@@ -1,0 +1,17 @@
+[
+  {
+    "jar": "jetbrains-plugin/build/libs/insrc-jetbrains-0.5.2-base.jar",
+    "retiredEntries": [],
+    "steeringPresent": true
+  },
+  {
+    "jar": "jetbrains-plugin/build/libs/insrc-jetbrains-0.5.2-instrumented.jar",
+    "retiredEntries": [],
+    "steeringPresent": true
+  },
+  {
+    "jar": "jetbrains-plugin/build/libs/insrc-jetbrains-0.5.2.jar",
+    "retiredEntries": [],
+    "steeringPresent": true
+  }
+]

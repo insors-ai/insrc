@@ -111,7 +111,7 @@ test("tui-models.test.ts: Model Tiers pane cycles the fake answer's families, mo
 
 test('tui-models.test.ts: daemon down shows the not-running message in the Model Tiers pane and Setup', async () => {
 	const svc = fakeServices();
-	svc.models.definitions = async () => { throw new Error('daemon is not running — start it with: insrc daemon start'); };
+	svc.models.definitions = async () => { throw new Error('daemon is not running'); };
 	svc.setup.detect = () => ({ cpu: { model: 'M-Test', cores: 8 }, ram: { totalMb: 32768, freeMb: 16384 }, gpu: null, ollama: { available: true, version: '0.1', models: [] } }) as never;
 	const applied: unknown[] = [];
 	svc.setup.apply = rec => { applied.push(rec); return '/tmp/config.json'; };
@@ -284,7 +284,7 @@ test('tui-models.test.ts: Model Tiers pane retries after the daemon starts, name
 	// Down, then up: r on the not-running screen reloads.
 	let up = false;
 	const { svc } = tiersServices({ cheap: { runner: 'cli-codex', model: 'x-b', effort: '' }, core: { runner: 'cli-codex', model: 'x-b', effort: 'turbo' } });
-	svc.models.definitions = async () => { if (!up) throw new Error('daemon is not running — start it with: insrc daemon start'); return DEFS; };
+	svc.models.definitions = async () => { if (!up) throw new Error('daemon is not running'); return DEFS; };
 	let r = render(createElement(App, { services: svc, pollMs: 0 }));
 	await settle();
 	await press(r.stdin, '5');
@@ -428,7 +428,7 @@ test('tui-models.test.ts: a lost connection reads as daemon down; r waits for a 
 	const blind = checkServices({ definitions: { ...DEFS, families: DEFS.families.map(f => f.id === 'cli-codex' ? { ...f, models: [...f.models, { id: 'x-new', aliases: [], efforts: ['lo'], source: 'user-approved' as const }] } : f) } });
 	blind.svc.config.write = async () => { throw Object.assign(new Error('the daemon closed the connection before answering config.write'), { code: 'disconnected' }); };
 	r = await openCheck(blind.svc);
-	blind.svc.config.show = async () => { throw new Error('daemon is not running — start it with: insrc daemon start'); };
+	blind.svc.config.show = async () => { throw new Error('daemon is not running'); };
 	await press(r.stdin, 'a', 's'); await settle(); await settle();
 	const frame = r.lastFrame() ?? '';
 	assert.match(frame, /whether core was saved is unknown/);

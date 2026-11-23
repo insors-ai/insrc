@@ -444,7 +444,7 @@ test("command.test.ts: setup show|apply|pull recommend the definitions' tool-loo
 	assert.deepEqual(pulled, [['fake-local:2']]);
 
 	// The daemon is down: every sub-command stops before recommending, applying or pulling.
-	const down = setupWith(async () => { throw new Error('daemon is not running — start it with: insrc daemon start'); });
+	const down = setupWith(async () => { throw new Error('daemon is not running'); });
 	applied.length = 0; pulled.length = 0; seen.length = 0;
 	for (const sub of ['show', 'apply', 'pull']) {
 		assert.deepEqual(await runCommand(`setup ${sub}`, down.ctx), ['cannot recommend a local model: the daemon is not running'], sub);

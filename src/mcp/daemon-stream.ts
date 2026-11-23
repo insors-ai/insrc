@@ -190,7 +190,7 @@ export function runWorkflowStream(
 		socket.on('error', (err: NodeJS.ErrnoException) => {
 			finish(() => {
 				if (err.code === 'ENOENT' || err.code === 'ECONNREFUSED') {
-					reject(new Error('daemon is not running — start it with: insrc daemon start'));
+					reject(new Error('daemon is not running'));
 				} else {
 					reject(err);
 				}
@@ -250,7 +250,7 @@ function unaryRpc<T>(method: string, params: unknown, deps: UnaryRpcDeps): Promi
 		});
 		socket.on('error', (err: NodeJS.ErrnoException) => {
 			if (err.code === 'ENOENT' || err.code === 'ECONNREFUSED') {
-				reject(new Error('daemon is not running — start it with: insrc daemon start'));
+				reject(new Error('daemon is not running'));
 			} else {
 				reject(err);
 			}

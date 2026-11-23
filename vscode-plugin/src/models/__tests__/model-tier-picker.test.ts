@@ -159,7 +159,7 @@ test("model-tier-picker.test.ts: the family, model and effort steps offer exactl
 
   // Request failures: four distinct messages, nothing written.
   const failures: Array<[Error, RegExp]> = [
-    [new Error('daemon is not running — start it with: insrc daemon start'), /the daemon is not running — start it to set model tiers/],
+    [new Error('daemon is not running'), /the daemon is not running — start it to set model tiers/],
     [Object.assign(new Error('closed'), { code: 'disconnected' }), /the daemon closed the connection before answering — try again/],
     [new Error('unknown method: models.definitions'), /does not know this request \(unknown method: models\.definitions\) — update the daemon/],
     [new Error('invalid response from daemon'), /could not read the model definitions: invalid response from daemon/],

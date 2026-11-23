@@ -7023,6 +7023,19 @@
         "src/cli/__tests__/entry-scripts.test.ts"
       ],
       "reason": "Replace impossible live-after-stop observations with independently supplied protected evidence; retain offline registration/store guards. Exercise real development launch scripts in isolated fixture roots."
+    },
+    {
+      "task": "t8",
+      "paths": [
+        "scripts/sync-client-runtime-assets.mjs",
+        "jetbrains-plugin/build.gradle.kts",
+        "scripts/__tests__/client-assets-retirement.test.ts",
+        "src/cli/services/__tests__/daemon-maintenance.test.ts",
+        "src/cli/services/models.ts",
+        "src/shared/ipc-client.ts",
+        "src/mcp/daemon-stream.ts"
+      ],
+      "reason": "Remove unsupported lifecycle diagnostic command hints, verify preserved maintenance RPCs, and purge stale generated installer resources before packaging."
     }
   ]
 }

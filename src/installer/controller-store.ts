@@ -124,6 +124,30 @@ export class ControllerStore {
       throw new InstallerError('controller-write-uncertain', 'Publication failed; inspect authoritative state before any further mutation', { cause });
     } finally { try { unlinkSync(temp); } catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; } }
   }
+  /** Manager-owned operation metadata. Candidate journals and wrapper receipts
+   * use separate namespaces and are never written through this API. */
+  readOperationData(operationId: string, name: string): unknown | undefined {
+    this.assertHeld(); assertToken(operationId); assertToken(name);
+    const directory = join(this.#root, 'operations', operationId);
+    assertLocalControlRoot(directory, process.platform === 'win32' ? path => controlBinding().localVolume(path) : undefined);
+    const file = join(directory, `${name}.json`);
+    return present(file) ? readRecord(file) : undefined;
+  }
+  writeOperationData(operationId: string, name: string, value: unknown, replace = false): void {
+    this.assertHeld(); assertToken(operationId); assertToken(name);
+    const bytes = JSON.stringify(value);
+    if (!bytes || Buffer.byteLength(bytes) > MAX_CONTROL_BYTES) throw new InstallerError('record-invalid', 'Operation metadata exceeds its bound');
+    const directory = join(this.#root, 'operations', operationId);
+    assertLocalControlRoot(directory, process.platform === 'win32' ? path => controlBinding().localVolume(path) : undefined);
+    mkdirSync(directory, { recursive: true, mode: 0o700 }); controlBinding().protect(directory);
+    const target = join(directory, `${name}.json`), temp = join(directory, `.record-${randomUUID()}.tmp`);
+    if (!replace && present(target)) throw new InstallerError('operation-conflict', 'Operation metadata already exists');
+    try {
+      const fd = openSync(temp, 'wx', 0o600);
+      try { writeFileSync(fd, bytes); fsyncSync(fd); } finally { closeSync(fd); }
+      this.assertHeld(); controlBinding().replace(this.#handle, temp, target); flushDirectory(directory);
+    } finally { try { unlinkSync(temp); } catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; } }
+  }
   /** Publish only a caller-owned candidate stage; never replace an existing release. */
   publishCandidate(stagedDirectory: string, releaseId: string): string {
     this.assertHeld(); assertToken(releaseId);

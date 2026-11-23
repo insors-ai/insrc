@@ -161,14 +161,35 @@ function outdatedArgv(manager: Manager): { argv: string[]; expectsJson: boolean;
   }
 }
 
-function auditArgv(manager: Manager): { argv: string[]; expectsJson: boolean; nonZeroOk: boolean } {
+interface AuditArgvOpts {
+  /** A requirements-shaped file to audit via `pip-audit -r` instead of a manager's own
+   *  native audit command. Omitted, every manager's argv is unchanged from today. */
+  readonly requirementsPath?: string | undefined;
+  /** Appends `--no-deps`, so pip-audit never re-resolves beyond the exact set named by
+   *  requirementsPath. Only meaningful together with requirementsPath. */
+  readonly noDeps?: boolean | undefined;
+}
+
+export function auditArgv(manager: Manager, opts: AuditArgvOpts = {}): { argv: string[]; expectsJson: boolean; nonZeroOk: boolean } {
+  const pipAuditArgv = (requirementsPath?: string): string[] => {
+    const argv = ['pip-audit', '-f', 'json'];
+    if (requirementsPath !== undefined) { argv.push('-r', requirementsPath); }
+    if (opts.noDeps === true) { argv.push('--no-deps'); }
+    return argv;
+  };
   switch (manager) {
     case 'npm':    return { argv: ['npm', 'audit', '--json'],    expectsJson: true,  nonZeroOk: true };
     case 'pnpm':   return { argv: ['pnpm', 'audit', '--json'],   expectsJson: true,  nonZeroOk: true };
     case 'yarn':   return { argv: ['yarn', 'audit', '--json'],   expectsJson: false, nonZeroOk: true }; // NDJSON, not a single doc
-    case 'pip':    return { argv: ['pip-audit', '-f', 'json'],   expectsJson: true,  nonZeroOk: true };
-    case 'pipenv': return { argv: ['pipenv', 'check', '--output', 'json'], expectsJson: true, nonZeroOk: true };
-    case 'poetry': return { argv: ['poetry', 'audit'],           expectsJson: false, nonZeroOk: true };
+    case 'pip':    return { argv: pipAuditArgv(opts.requirementsPath), expectsJson: true, nonZeroOk: true };
+    case 'pipenv':
+      return opts.requirementsPath !== undefined
+        ? { argv: pipAuditArgv(opts.requirementsPath), expectsJson: true, nonZeroOk: true }
+        : { argv: ['pipenv', 'check', '--output', 'json'], expectsJson: true, nonZeroOk: true };
+    case 'poetry':
+      return opts.requirementsPath !== undefined
+        ? { argv: pipAuditArgv(opts.requirementsPath), expectsJson: true, nonZeroOk: true }
+        : { argv: ['poetry', 'audit'], expectsJson: false, nonZeroOk: true };
     case 'go':     return { argv: ['govulncheck', './...'],      expectsJson: false, nonZeroOk: true };
     case 'cargo':  return { argv: ['cargo', 'audit', '--json'],  expectsJson: true,  nonZeroOk: true };
   }
@@ -473,6 +494,8 @@ export const pkgAuditTool: Tool = {
     properties: {
       cwd: { type: 'string' },
       manager: { type: 'string', enum: [...MANAGERS] },
+      requirementsPath: { type: 'string', description: 'Audit this requirements-shaped file via pip-audit -r instead of the manager\'s own native audit command (pip/pipenv/poetry only).' },
+      noDeps: { type: 'boolean', description: 'Pass --no-deps to pip-audit, so it never re-resolves beyond the exact set named by requirementsPath.' },
     },
     additionalProperties: false,
   },
@@ -482,7 +505,7 @@ export const pkgAuditTool: Tool = {
     const mgr = await resolveManager(input, cwd, 'pkg_audit');
     if (typeof mgr !== 'string') { return mgr; }
 
-    const { argv, expectsJson, nonZeroOk } = auditArgv(mgr);
+    const { argv, expectsJson, nonZeroOk } = auditArgv(mgr, { requirementsPath: str(input, 'requirementsPath'), noDeps: bool(input, 'noDeps') });
     const r = await runShell(argv, { cwd, timeoutMs: 10 * 60_000 });
     if (r.spawnError) {
       return fail('pkg_audit', `${argv[0]} not found: ${r.stderr.trim()}. For pip use pip-audit, for go use govulncheck, for cargo use cargo-audit.`);

@@ -1,0 +1,748 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1795449258910-xuuzpy",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-23T15:54:20.250Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 1025,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-11-23T13:27:35.399Z",
+    "epicHash": "c3d71313f34bce71",
+    "epicSlug": "reliable-cross-platform-daemon-installation-lifecycle",
+    "storyId": "s7",
+    "hldBaseRunId": "wf-1795445383474-itgkv3",
+    "hldEffectiveHash": "77bfb88eed6d557fbc298ffc881afc2ccf6e682b9f0d0696361d1e77e5f93d83",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "Manage daemon installation and lifecycle in JetBrains",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "c71430d3b4797f20e06ab982c0c127fcba19c354fe04e8a5f7da6e2f3b61db55",
+        "at": "2026-11-23T15:54:20.368Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Choose a1: one shared user-level installer/manager with bundle and dev delivery adapters. Install launched from either IDE runs the same public platform installer script interactively in a visible terminal; the script owns prompts and output. IDE-specific installation wizards and hidden background installs are excluded. Lifecycle, migration, runtime and privilege constraints remain shared and unchanged. Successful interactive installation hands the same terminal directly to the installed insrc TUI after daemon readiness; it does not finish at an idle shell.",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "Installation and release identity",
+          "purpose": "One installation owns one selected delivery mode, zero or one active release and zero or one unresolved operation. Release identities are immutable; the controller metadata never stores application DB contents.",
+          "interfaceSketch": "type Delivery = { mode: 'bundle'; repository: string; channel: string } | { mode: 'dev'; repository: string; branch: string };\ninterface Target { os: 'darwin' | 'linux' | 'win32'; arch: 'arm64' | 'x64'; baseline: string }\ninterface RuntimeIdentity { version: string; target: Target; sha256: string; relativeExecutable: string }\ninterface ReleaseManifest { schemaVersion: 1; releaseId: string; sourceCommit: string; target: Target; runtime: RuntimeIdentity; payloadSha256: string; daemonEntry: string; managerEntry: string; tuiEntry: string; protocolVersion: 1; compatiblePredecessors: string[]; migrations: HookReference[] }\ninterface Installation { schemaVersion: 1; installationId: string; dataHome: string; delivery: Delivery; activeReleaseId?: string; operationId?: string }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc2",
+          "name": "Manager command and operation state",
+          "purpose": "A private-runtime command runner serves both IDEs when daemon is running, stopped or blocked. One OS-backed exclusive lock serializes all mutating operations per installation; controller records and bounded progress are shared across clients. Interactive install is invoked by the shared script in the terminal. The structured manager protocol remains for ordinary control/status; the IDE does not drive installation prompts through it. The 'install' action is reserved exclusively for the shared bootstrap/installer script executing inside the interactive terminal. VS Code/JetBrains adapters must never invoke ManagerAction.install directly or drive its prompts through this protocol; they only launch/focus the terminal and observe completion/readiness. The s1 LLD must state and enforce this caller restriction.",
+          "interfaceSketch": "/** 'install' is terminal-bootstrap-only; IDE adapters may not invoke it directly. */\ntype ManagerAction = 'inspect' | 'check-upgrade' | 'install' | 'upgrade' | 'start' | 'stop' | 'restart' | 'retry-migration';\ntype Phase = 'preparing' | 'quiescing' | 'migrating' | 'activating' | 'ready' | 'stopped' | 'blocked';\ninterface ManagerRequest { protocolVersion: 1; operationId: string; action: ManagerAction; installationId: string; shutdownMode?: 'graceful' | 'immediate'; acceptedOfferId?: string; installOllama?: boolean }\ninterface OperationRecord { operationId: string; predecessorId?: string; candidateId?: string; phase: Phase; hookId?: string; hookStage?: 'check' | 'run' | 'test'; errorCode?: string; message?: string }\ninterface ManagerEvent { protocolVersion: 1; operationId: string; kind: 'progress' | 'result'; state: OperationRecord; retryable: boolean }\ninterface UpgradeOffer { offerId: string; installationId: string; currentReleaseId?: string; candidateReleaseId: string; delivery: Delivery }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc3",
+          "name": "Dependency report and consent",
+          "purpose": "Foundation contract separates required private Node, Ollama availability and advisory agent CLI detection from their platform implementations in s3; IDEs cannot infer consent from plugin updates.",
+          "interfaceSketch": "interface DependencyReport { runtimeReady: boolean; ollama: 'ready' | 'installed-not-running' | 'missing' | 'unavailable'; ollamaInstallOffer?: { id: string; destination: string; version: string }; agents: { claude: boolean; codex: boolean; vibe: boolean }; recommendations: string[]; blockers: string[] }\ninterface DependencyDecision { offerId: string; choice: 'install' | 'decline' }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc4",
+          "name": "Daemon shutdown and readiness",
+          "purpose": "The selected daemon admits shutdown over its local JSON-RPC endpoint only. Acknowledgement is not exit completion. Readiness reports instance/release identity and startup gating; immediate escalation is an explicit second request.",
+          "interfaceSketch": "interface DaemonIdentity { instanceId: string; installationId: string; releaseId: string; protocolVersion: 1; state: 'ready' | 'draining' | 'migration-blocked' }\ninterface ShutdownRequest { operationId: string; expectedInstanceId: string; mode: 'graceful' | 'immediate'; completionEndpoint: string; completionNonce: string }\ninterface ShutdownAccepted { operationId: string; instanceId: string; accepted: true; mode: 'graceful' | 'immediate' }\ninterface ShutdownCompletion { operationId: string; instanceId: string; completionNonce: string; resourceOwnershipReleased: true }",
+          "ownedByStory": "s4",
+          "consumedByStories": [
+            "s5",
+            "s6",
+            "s7",
+            "s8"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc5",
+          "name": "Ordered upgrade hook delegation",
+          "purpose": "Owned by foundational s1 because delivery preparation, startup guard and s5 runner all require the same hook manifest. s5 implements execution. Hooks run in-process inside a candidate daemon migration-only process that exclusively owns data; manager and IDE never open LMDB/Lance.",
+          "interfaceSketch": "interface HookReference { id: string; version: string; module: string }\ninterface MigrationContext { installationId: string; operationId: string; fromReleaseId?: string; toReleaseId: string; dataHome: string }\ninterface HookDecision { needed: boolean; reason: string }\ninterface HookValidation { passed: boolean; detail: string }\ninterface UpgradeHook { check(context: MigrationContext): Promise<HookDecision>; run(context: MigrationContext): Promise<void>; test(context: MigrationContext): Promise<HookValidation> }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc6",
+          "name": "Local transport and explicit installation home",
+          "purpose": "All consumers resolve the same installation home and endpoint. Unix retains daemon.sock; Windows uses a per-user/per-installation named pipe. The manager's Node bridge supplies JetBrains Windows transport without changing application RPC payloads.",
+          "interfaceSketch": "interface LocalEndpoint { kind: 'unix' | 'named-pipe'; address: string; installationId: string }\ninterface InstallationLocation { home: string; installationId: string; daemonEndpoint: LocalEndpoint }\ninterface IpcBridgeRequest { protocolVersion: 1; endpoint: LocalEndpoint; rpcFrame: string }\ninterface IpcBridgeEvent { kind: 'frame' | 'closed' | 'error'; frame?: string; written?: boolean; code?: string }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc7",
+          "name": "Shared terminal installer launch",
+          "purpose": "Foundation-owned contract makes manual and both IDE installation entrypoints identical. IDE adapters only open/focus a terminal and invoke the same script; the terminal owns the interaction and durable operation state/readiness determines success. On successful install/readiness the shared script releases installation ownership and launches the installed TUI in the same terminal; failure/cancel does not launch it.",
+          "interfaceSketch": "interface TerminalInstallLaunch { operationId: string; installationId: string; home: string; platform: 'posix' | 'powershell'; scriptPath: string; scriptVersion: string; scriptSha256: string; arguments: string[]; terminalName: 'Insrc Installation'; onInstallSuccess: 'launch-tui' }\ninterface TerminalInstallHandle { operationId: string; terminalSessionId: string; state: 'opened' | 'reused' | 'launch-failed' }\ninterface InstallationObservation { operationId: string; phase: Phase; daemonReady: boolean; errorCode?: string }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s6",
+            "s7",
+            "s8"
+          ],
+          "assumptions": []
+        }
+      ],
+      "boundary": {
+        "storyId": "s7",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc4",
+          "sc5",
+          "sc6",
+          "sc7"
+        ],
+        "internal": "Private JetBrains native terminal open/focus/launch integration with the same script, stdin/output and post-install readiness behavior as VS Code; no independent wizard or hidden install. Preserve background activation/control and Windows IPC bridge for ordinary daemon operations. Successful installation automatically enters the installed TUI in that same terminal; the IDE only reconnects/status-checks and does not require a second click. DEF traceability: E20261123c3d71313:S007:FR001 and this story's DEF acceptance criteria apply unchanged."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc5",
+            "sc6",
+            "sc7"
+          ],
+          "depends": [],
+          "internal": "Own the foundational manifest, controller/operation/consent/hook/transport contracts because every branch already depends on s1. Private implementation covers bootstrap, runtime/payload integrity, bundle preparation/publication, platform lock adapter and atomic install records. Later stories implement lifecycle, checks and hooks behind these contracts. The canonical scripts and interactive installer mode are shared with manual invocation and both IDEs; terminal prompts and durable results are part of this foundation. Include the selected release's installed TUI entry/assets in the payload and default successful interactive installer-to-TUI handoff. The s1 LLD must explicitly reserve ManagerAction.install to the shared terminal bootstrap script and forbid IDE-adapter invocation. DEF traceability: E20261123c3d71313:S001:FR001 and this story's DEF acceptance criteria apply unchanged."
+        },
+        {
+          "storyId": "s2",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc5",
+            "sc6"
+          ],
+          "internal": "Private dev checkout/branch sync, lockfile installation and native build preparation; returns the same immutable prepared candidate. It does not define a second lifecycle or migration engine. Include the selected release's installed TUI entry/assets in the payload and default successful interactive installer-to-TUI handoff. DEF traceability: E20261123c3d71313:S002:FR001 and this story's DEF acceptance criteria apply unchanged."
+        },
+        {
+          "storyId": "s3",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc6"
+          ],
+          "internal": "Private platform dependency detection, user-level Ollama installation and agent CLI recommendations. It implements foundational reports/consent and never auto-installs agent CLIs. DEF traceability: E20261123c3d71313:S003:FR001 and this story's DEF acceptance criteria apply unchanged."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc4"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc5",
+            "sc6"
+          ],
+          "internal": "Private daemon start/readiness, boot guard integration, shutdown drain/immediate exit and exit-completion launcher wrapper; transport is shared. No delivery sync/build on start and no signal/PID daemon control. DEF traceability: E20261123c3d71313:S004:FR001 and this story's DEF acceptance criteria apply unchanged."
+        },
+        {
+          "storyId": "s5",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6"
+          ],
+          "internal": "Private ordered migration runner, daemon migration-only mode, blocked-state persistence, interrupted-run validation and explicit retry. Hooks alone choose data changes and recovery policy. DEF traceability: E20261123c3d71313:S005:FR001 and this story's DEF acceptance criteria apply unchanged."
+        },
+        {
+          "storyId": "s6",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6",
+            "sc7"
+          ],
+          "internal": "Private VS Code native terminal open/focus/launch integration, duplicate-action handling and post-install reconnect. It invokes the shared script and leaves all install prompts/output in that terminal, including after failure. Existing ordinary lifecycle and upgrade-consent UI remains thin. Successful installation automatically enters the installed TUI in that same terminal; the IDE only reconnects/status-checks and does not require a second click. DEF traceability: E20261123c3d71313:S006:FR001 and this story's DEF acceptance criteria apply unchanged."
+        },
+        {
+          "storyId": "s8",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6",
+            "sc7"
+          ],
+          "internal": "Private isolated VM/runner fixtures, target matrix evidence and release qualification results, including real Windows named-pipe behavior and preservation of host v2 daemon. Terminal-install parity checks cover each IDE and manual invocation, paths with spaces/Unicode, missing terminal support, declined Ollama, Ctrl+C/close, duplicate windows, retained output and readiness-confirmed completion. Verify successful install enters TUI in the original terminal, install lock is released before TUI use, TUI exit leaves daemon running, and failure/cancellation never opens TUI. DEF traceability: E20261123c3d71313:S008:FR001 and this story's DEF acceptance criteria apply unchanged."
+        }
+      ],
+      "rolloutPhase": "E — IDE parity",
+      "nonFunctional": {
+        "performance": "Targets: local read-only inspection/reachability <=3 seconds; activation never blocks IDE UI. Progress/phase changes emit within 1 second after state changes. Ready startup target <=15 seconds excluding dependency/model initialization; startup probe deadline 30 seconds. Default graceful wait 60 seconds with configurable user deadline; timeout reports uncertainty and never silently escalates. Downloads/builds/hooks have per-operation budgets and progress, not an arbitrary task retry loop.",
+        "security": "No elevated commands, global PATH edits, user credential capture, LLM calls for dependency detection or shell-interpolated actions. Verify payload/runtime digests and targets, reject archive traversal/symlink escapes and module paths outside candidate payload. Local endpoints are user-scoped, capability-protected where needed; bind operation/instance/release identity. Signing deferred and no cryptographic authenticity claim from unsigned digest metadata. No IDE prompt automation or credential/input capture; terminal launch preserves argument boundaries. User-visible script identity matches manual release assets.",
+        "observability": "Structured operationId/installationId/from-to identity, platform/runtime/digest, phase/hook/stage, duration and actionable error code. Bounded NDJSON to IDE, logs in installation home with rotation; no credentials/tokens or full migration data. Report explicitly which platform/native checks passed and which were unavailable. Interactive installation prints human-readable phases and errors directly in the terminal. The terminal is retained after completion/failure; its output is not scraped or treated as success evidence.",
+        "durability": "OS-backed mutation exclusivity plus atomic versioned controller records. Prepared payloads immutable; candidate data mutation is daemon-owned only. Record hook run-started before execution and require test before completion; failures/interruption retain blocked startup. Retry never substitutes a different candidate or starts the predecessor after data changes automatically. Installation completion and lock release precede the interactive TUI session. TUI exit/launch failure cannot roll back the completed installation or keep an installation lock held."
+      }
+    },
+    "summary": {
+      "prose": "JetBrains gets the same terminal-led installation, automatic TUI handoff and explicit upgrade consent as VS Code. Background coordination keeps the IDE responsive. Unix keeps its existing IPC path; Windows uses the private Node bridge without accessing daemon data.",
+      "audience": "technical"
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "TerminalInstallLaunch",
+          "signature": "interface TerminalInstallLaunch { operationId: string; installationId: string; home: string; platform: 'posix' | 'powershell'; scriptPath: string; scriptVersion: string; scriptSha256: string; arguments: string[]; terminalName: 'Insrc Installation'; onInstallSuccess: 'launch-tui' }",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "unknown",
+              "purpose": "Wire-compatible launch descriptor represented as Kotlin DTO.; untrusted wire input is schema-validated before use.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "TerminalInstallLaunch",
+            "meaning": "Wire-compatible launch descriptor represented as Kotlin DTO."
+          },
+          "preconditions": [
+            "Canonical script identity verified; native Terminal plugin available.",
+            "Terminal creation/focus is EDT-only; filesystem/process/IPC work stays background."
+          ],
+          "postconditions": [
+            "Dedicated terminal uses an explicit supported shell without changing global IDE shell settings.",
+            "Shared script owns prompts and installed TUI; no direct ManagerRequest.install."
+          ],
+          "errors": []
+        },
+        {
+          "name": "IpcBridgeRequest",
+          "signature": "interface IpcBridgeRequest { protocolVersion: 1; endpoint: LocalEndpoint; rpcFrame: string }",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "unknown",
+              "purpose": "Exact Windows application frame forwarded by the private runtime bridge.; untrusted wire input is schema-validated before use.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "IpcBridgeRequest",
+            "meaning": "Exact Windows application frame forwarded by the private runtime bridge."
+          },
+          "preconditions": [
+            "Resolve installed manager/runtime and protected per-user endpoint/capability; do not use host Node.",
+            "Preserve current UTF-8 newline framing and request ids."
+          ],
+          "postconditions": [
+            "Do not reinterpret application payloads or load DB/provider code.",
+            "Unix existing transport remains unchanged."
+          ],
+          "errors": []
+        },
+        {
+          "name": "IpcBridgeEvent",
+          "signature": "interface IpcBridgeEvent { kind: 'frame' | 'closed' | 'error'; frame?: string; written?: boolean; code?: string }",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "unknown",
+              "purpose": "Frame/close/error with send uncertainty preserved.; untrusted wire input is schema-validated before use.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "IpcBridgeEvent",
+            "meaning": "Frame/close/error with send uncertainty preserved."
+          },
+          "preconditions": [
+            "Bridge validates envelope and limits before forwarding."
+          ],
+          "postconditions": [
+            "Pre-write cancellation prevents dispatch; after-write cancellation/close retains uncertainty and never promises rollback.",
+            "Unicode/stream frames survive byte chunking; late retired-id replies are discarded."
+          ],
+          "errors": []
+        },
+        {
+          "name": "UpgradeOffer",
+          "signature": "interface UpgradeOffer { offerId: string; installationId: string; currentReleaseId?: string; candidateReleaseId: string; delivery: Delivery }",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "unknown",
+              "purpose": "Native notification offer for one candidate.; untrusted wire input is schema-validated before use.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "UpgradeOffer",
+            "meaning": "Native notification offer for one candidate."
+          },
+          "preconditions": [
+            "Application-level single-flight coordinator avoids duplicate project prompts/actions."
+          ],
+          "postconditions": [
+            "Every upgrade including plugin-update path requires explicit acceptance.",
+            "Dismiss/stale offer causes no mutation."
+          ],
+          "errors": []
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "Native terminal compatibility binding",
+        "change": "new",
+        "details": "Current build targets SDK 2024.2/Java21. Compile against the bundled Terminal plugin as an optional dependency, keeping core status/MCP available when it is disabled. Use TerminalToolWindowManager/TerminalWidget abstraction rather than ShellTerminalWidget casts or the experimental 2025.3-only TerminalView API. For a dedicated explicit-shell session, TerminalTabState.myShellCommand accepts a list; createNewSession with the runner/tab state is available at the pinned baseline. Capture the newly created widget on the EDT using setup notification or before/after widget identity, failing if ambiguous. Send the one safely encoded command through TerminalWidget.sendCommandToExecute and request focus; never read terminal text for status. Native compatibility is verified against configured IDE products/versions.",
+        "callSites": []
+      },
+      {
+        "entity": "Shell and terminal lifetime",
+        "change": "new",
+        "details": "POSIX session starts a supported sh-family interpreter; Windows starts supported PowerShell with interactive/no-exit behavior. The shared literal-argument encoder handles spaces, Unicode, quotes and metacharacters; no execution-policy bypass or global settings change. Preserve widget identity even if user renames its tab. Duplicate Install focuses the same session; terminal close/cancel never replays setup. The script, not Kotlin, launches TUI after ready/lock release and returns to shell on TUI exit. Missing Terminal support produces visible instructions/manual command, never hidden setup.",
+        "callSites": []
+      },
+      {
+        "entity": "Background service and ordinary controls",
+        "change": "new",
+        "details": "Proposed new JetBrains lifecycle/terminal adapter composes with current DaemonGatewayService; SDK UI calls are marshalled to EDT, all bounded probes/manager operations run off it. Running/stopped/missing/errored states follow VS Code semantics and exact identity checks. Project dispose cancels observations, not the daemon. Native notification Upgrade/Dismiss always gates both bundle/dev upgrades, including plugin updates. Existing settings/registration/MCP remain gateway IPC clients.",
+        "callSites": [
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGatewayService.kt"
+        ]
+      },
+      {
+        "entity": "Windows bridge transport",
+        "change": "new",
+        "details": "Use an installed private-node manager bridge for Windows only; no JVM UnixDomainSocketAddress on Windows and no new JNA pipe dependency. Persistent unary lanes retain current 64-pending/16MiB aggregate budgets and safe-id/late-reply logic; streams use independently closable bridge lanes where socket close is their cancellation semantic. Input EOF closes only the bridge client; it does not shut down daemon. Separate stderr diagnostics from frame-only stdout, bind local endpoint/auth to selected user/install, and preserve before/after-write error meaning. No new smaller frame limit breaks existing payloads; large fragmented UTF-8/frame tests prove parity.",
+        "callSites": [
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/UnixSocketDaemonRpc.kt"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Bind shared contract to Kotlin/native IDE behavior and platform client transport only; owner semantics and install/migration policy remain unchanged."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "Bind shared contract to Kotlin/native IDE behavior and platform client transport only; owner semantics and install/migration policy remain unchanged."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "Bind shared contract to Kotlin/native IDE behavior and platform client transport only; owner semantics and install/migration policy remain unchanged."
+      },
+      {
+        "contractId": "sc4",
+        "role": "consumes",
+        "howDetails": "Bind shared contract to Kotlin/native IDE behavior and platform client transport only; owner semantics and install/migration policy remain unchanged."
+      },
+      {
+        "contractId": "sc5",
+        "role": "consumes",
+        "howDetails": "Bind shared contract to Kotlin/native IDE behavior and platform client transport only; owner semantics and install/migration policy remain unchanged."
+      },
+      {
+        "contractId": "sc6",
+        "role": "consumes",
+        "howDetails": "Bind shared contract to Kotlin/native IDE behavior and platform client transport only; owner semantics and install/migration policy remain unchanged."
+      },
+      {
+        "contractId": "sc7",
+        "role": "consumes",
+        "howDetails": "Bind shared contract to Kotlin/native IDE behavior and platform client transport only; owner semantics and install/migration policy remain unchanged."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Terminal plugin/API unavailable",
+          "detection": "Optional service resolution or compatible SDK API invocation fails.",
+          "response": "Show terminal unavailable and manual command; no hidden installer.",
+          "userImpact": "Core status/MCP still loads.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Windows bridge missing or disconnects",
+          "detection": "Private runtime/entry identity, child framing/deadline/EOF or pipe authentication fails.",
+          "response": "Typed gateway error with written/uncertain status; no PID fallback or automatic retry.",
+          "userImpact": "Caller can inspect/retry deliberately.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Ambiguous terminal identity or shell failure",
+          "detection": "Native creation yields no unique owned widget or launch validation fails.",
+          "response": "Do not send commands to arbitrary user terminals; show exact failure.",
+          "userImpact": "No unrelated shell receives installer input.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Upgrade offer stale or dismissed",
+          "detection": "Candidate identity changes or user dismisses native notification.",
+          "response": "No mutation.",
+          "userImpact": "Consent remains exact and explicit.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Terminal engine changes across IDE versions",
+          "expected": "Use TerminalWidget abstraction and verifier matrix; no classic-widget casts or output-buffer dependence."
+        },
+        {
+          "input": "Project closes while daemon/TUI remains active",
+          "expected": "Release observers/bridge clients only; no daemon stop or setup replay."
+        },
+        {
+          "input": "Private runtime absent during Windows inspection",
+          "expected": "Differentiate missing installation/prerequisite from IPC error; shared script handles first install."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Remain inside s7 boundary; no elevated commands, PID/kill daemon fallback, direct cloud LLM REST, or host v2 daemon mutation.",
+          "source": "c1"
+        },
+        {
+          "text": "Approved HLD shared contracts, terminal-only install and success-to-TUI handoff remain unchanged.",
+          "source": "c2"
+        },
+        {
+          "text": "DEF E20261123c3d71313:S007:FR001 and this story acceptance criteria apply unchanged.",
+          "source": "c3"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "JetBrains JUnit Platform (existing JUnit 5/4 build configuration) for Kotlin/native adapters; canonical node:test coordinator for shared bridge peers; real IDE/OS evidence separate.",
+      "testLevels": [
+        {
+          "level": "contract",
+          "purpose": "Kotlin DTO/actions and consent parity.",
+          "subjects": [
+            "startup state/single-flight project coordination",
+            "no direct install action",
+            "literal shell command encoding and owned widget reuse"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Native JetBrains terminal and bridge behavior.",
+          "subjects": [
+            "real terminal visibility/focus/script/TUI",
+            "Windows named-pipe Unicode/stream/cancel/EOF parity",
+            "SDK verifier across current IDE family and terminal-disabled path"
+          ],
+          "fixturesNeeded": [
+            "Disposable IDE sandbox/home and deterministic Node bridge peers."
+          ]
+        },
+        {
+          "level": "live",
+          "purpose": "Both modes/control/migration UI on actual target OS.",
+          "subjects": [
+            "Install terminal/manual byte parity",
+            "startup/autostart and explicit upgrade consent",
+            "readiness-confirmed TUI and migration diagnostics"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "background-running-stopped-missing-errored-matrix",
+            "native-terminal-open-focus-shared-script",
+            "UI-thread-nonblocking"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "bundle-dev-offer-accept-dismiss",
+            "plugin-update-never-silent",
+            "application-single-flight-prompt"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "all-actions-shared-result-parity",
+            "windows-pipe-bridge-cancel-stream-written-semantics",
+            "terminal-success-tui-and-migration-error-retry"
+          ]
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Native terminal adapter and platform RPC selector",
+        "oneLineSummary": "Keep one Kotlin UI adapter and use the private Node pipe bridge only where Unix sockets do not apply.",
+        "approach": "An application-scoped coordinator runs probes/control off the EDT; project-scoped native terminal handles launch the exact shared script. Platform selection preserves direct Unix RPC and uses the foundation bridge for Windows.\n\nThe plugin observes shared state and exact readiness, with no terminal scraping or silent upgrades. Optional terminal binding loads only when the Terminal plugin is available.",
+        "pros": [
+          "Preserves existing Unix gateway behavior and SDK baseline.",
+          "Windows needs no second JVM native named-pipe library."
+        ],
+        "cons": [
+          "Bridge framing/cancellation and terminal API compatibility need native IDE verification."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Node bridge for all JetBrains RPC",
+        "oneLineSummary": "Route Unix and Windows through the same helper subprocess.",
+        "approach": "The same terminal adapter is retained, but every application RPC goes through a private Node helper even on Unix. Kotlin owns one process transport rather than selecting direct Unix sockets.\n\nThis can unify code paths but replaces a working Unix transport and adds a private-runtime prerequisite to current Unix status calls.",
+        "pros": [
+          "One process transport implementation for all OS families."
+        ],
+        "cons": [
+          "Adds helper lifetime/dependency risk to Unix behavior without a requested benefit."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Routing working Unix RPC through an extra helper broadens the change and creates an unnecessary runtime/lifetime dependency."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [],
+    "componentDependencyDefinition": {
+      "id": "jetbrains-terminal-and-transport",
+      "narrative": "JetBrains opens the same installer in its native terminal. Normal Unix RPC stays direct; Windows uses the private Node bridge to the user-scoped named pipe. Neither path owns daemon data or installer policy.",
+      "components": [
+        {
+          "id": "ui",
+          "label": "JetBrains thin adapter",
+          "description": "Background status/control and native actions."
+        },
+        {
+          "id": "terminal",
+          "label": "Native Terminal widget",
+          "description": "Dedicated explicit-shell session; shared script and TUI use its direct I/O."
+        },
+        {
+          "id": "manager",
+          "label": "Shared manager/script",
+          "description": "Foundation-owned install/control semantics."
+        },
+        {
+          "id": "unix",
+          "label": "Existing Unix RPC",
+          "description": "Current Unix transport remains direct."
+        },
+        {
+          "id": "bridge",
+          "label": "Private Node stdio bridge",
+          "description": "Windows frame forwarding with existing cancellation/uncertainty semantics."
+        },
+        {
+          "id": "daemon",
+          "label": "Daemon local IPC",
+          "description": "Unix socket or authenticated Windows named pipe; daemon owns data."
+        }
+      ],
+      "dependencies": [
+        {
+          "from": "ui",
+          "to": "terminal",
+          "label": "Install: open/focus"
+        },
+        {
+          "from": "terminal",
+          "to": "manager",
+          "label": "Same manual script → TUI"
+        },
+        {
+          "from": "ui",
+          "to": "manager",
+          "label": "Ordinary control/status"
+        },
+        {
+          "from": "ui",
+          "to": "unix",
+          "label": "Unix calls"
+        },
+        {
+          "from": "unix",
+          "to": "daemon",
+          "label": "Existing wire contract"
+        },
+        {
+          "from": "ui",
+          "to": "bridge",
+          "label": "Windows only"
+        },
+        {
+          "from": "bridge",
+          "to": "daemon",
+          "label": "Same frames / named pipe"
+        }
+      ]
+    },
+    "adherence": {
+      "dimensions": [
+        "diagram-component",
+        "functional-coverage"
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S007/component-dependency.html",
+        "title": "Component dependencies"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "AGENTS.md"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/HLD.md"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/DEF.md"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGatewayService.kt"
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/UnixSocketDaemonRpc.kt"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "jetbrains-plugin/gradle.properties"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "jetbrains-plugin/build.gradle.kts"
+    },
+    {
+      "id": "c8",
+      "kind": "doc",
+      "ref": "https://raw.githubusercontent.com/JetBrains/intellij-community/idea/242.23726.103/plugins/terminal/src/org/jetbrains/plugins/terminal/TerminalToolWindowManager.java"
+    },
+    {
+      "id": "c9",
+      "kind": "doc",
+      "ref": "https://raw.githubusercontent.com/JetBrains/intellij-community/idea/242.23726.103/plugins/terminal/src/org/jetbrains/plugins/terminal/TerminalTabState.java"
+    },
+    {
+      "id": "c10",
+      "kind": "doc",
+      "ref": "https://platform.jetbrains.com/t/terminal-implementation-changes-from-v2025-2-of-intellij-based-ides/2264"
+    },
+    {
+      "id": "c11",
+      "kind": "doc",
+      "ref": "https://plugins.jetbrains.com/docs/intellij/embedded-terminal.html"
+    }
+  ]
+}

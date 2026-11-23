@@ -1,0 +1,728 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1795448963103-fj9lkm",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-23T15:49:24.373Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 976,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-11-23T13:27:35.399Z",
+    "epicHash": "c3d71313f34bce71",
+    "epicSlug": "reliable-cross-platform-daemon-installation-lifecycle",
+    "storyId": "s5",
+    "hldBaseRunId": "wf-1795445383474-itgkv3",
+    "hldEffectiveHash": "77bfb88eed6d557fbc298ffc881afc2ccf6e682b9f0d0696361d1e77e5f93d83",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "Delegate upgrade migrations to ordered hooks",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "f9484ea88685b3fe36c30c03f44a8b44b0189dac7f2693e9f4c9bdd90ce94468",
+        "at": "2026-11-23T15:49:24.470Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Choose a1: one shared user-level installer/manager with bundle and dev delivery adapters. Install launched from either IDE runs the same public platform installer script interactively in a visible terminal; the script owns prompts and output. IDE-specific installation wizards and hidden background installs are excluded. Lifecycle, migration, runtime and privilege constraints remain shared and unchanged. Successful interactive installation hands the same terminal directly to the installed insrc TUI after daemon readiness; it does not finish at an idle shell.",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "Installation and release identity",
+          "purpose": "One installation owns one selected delivery mode, zero or one active release and zero or one unresolved operation. Release identities are immutable; the controller metadata never stores application DB contents.",
+          "interfaceSketch": "type Delivery = { mode: 'bundle'; repository: string; channel: string } | { mode: 'dev'; repository: string; branch: string };\ninterface Target { os: 'darwin' | 'linux' | 'win32'; arch: 'arm64' | 'x64'; baseline: string }\ninterface RuntimeIdentity { version: string; target: Target; sha256: string; relativeExecutable: string }\ninterface ReleaseManifest { schemaVersion: 1; releaseId: string; sourceCommit: string; target: Target; runtime: RuntimeIdentity; payloadSha256: string; daemonEntry: string; managerEntry: string; tuiEntry: string; protocolVersion: 1; compatiblePredecessors: string[]; migrations: HookReference[] }\ninterface Installation { schemaVersion: 1; installationId: string; dataHome: string; delivery: Delivery; activeReleaseId?: string; operationId?: string }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc2",
+          "name": "Manager command and operation state",
+          "purpose": "A private-runtime command runner serves both IDEs when daemon is running, stopped or blocked. One OS-backed exclusive lock serializes all mutating operations per installation; controller records and bounded progress are shared across clients. Interactive install is invoked by the shared script in the terminal. The structured manager protocol remains for ordinary control/status; the IDE does not drive installation prompts through it. The 'install' action is reserved exclusively for the shared bootstrap/installer script executing inside the interactive terminal. VS Code/JetBrains adapters must never invoke ManagerAction.install directly or drive its prompts through this protocol; they only launch/focus the terminal and observe completion/readiness. The s1 LLD must state and enforce this caller restriction.",
+          "interfaceSketch": "/** 'install' is terminal-bootstrap-only; IDE adapters may not invoke it directly. */\ntype ManagerAction = 'inspect' | 'check-upgrade' | 'install' | 'upgrade' | 'start' | 'stop' | 'restart' | 'retry-migration';\ntype Phase = 'preparing' | 'quiescing' | 'migrating' | 'activating' | 'ready' | 'stopped' | 'blocked';\ninterface ManagerRequest { protocolVersion: 1; operationId: string; action: ManagerAction; installationId: string; shutdownMode?: 'graceful' | 'immediate'; acceptedOfferId?: string; installOllama?: boolean }\ninterface OperationRecord { operationId: string; predecessorId?: string; candidateId?: string; phase: Phase; hookId?: string; hookStage?: 'check' | 'run' | 'test'; errorCode?: string; message?: string }\ninterface ManagerEvent { protocolVersion: 1; operationId: string; kind: 'progress' | 'result'; state: OperationRecord; retryable: boolean }\ninterface UpgradeOffer { offerId: string; installationId: string; currentReleaseId?: string; candidateReleaseId: string; delivery: Delivery }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc3",
+          "name": "Dependency report and consent",
+          "purpose": "Foundation contract separates required private Node, Ollama availability and advisory agent CLI detection from their platform implementations in s3; IDEs cannot infer consent from plugin updates.",
+          "interfaceSketch": "interface DependencyReport { runtimeReady: boolean; ollama: 'ready' | 'installed-not-running' | 'missing' | 'unavailable'; ollamaInstallOffer?: { id: string; destination: string; version: string }; agents: { claude: boolean; codex: boolean; vibe: boolean }; recommendations: string[]; blockers: string[] }\ninterface DependencyDecision { offerId: string; choice: 'install' | 'decline' }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc4",
+          "name": "Daemon shutdown and readiness",
+          "purpose": "The selected daemon admits shutdown over its local JSON-RPC endpoint only. Acknowledgement is not exit completion. Readiness reports instance/release identity and startup gating; immediate escalation is an explicit second request.",
+          "interfaceSketch": "interface DaemonIdentity { instanceId: string; installationId: string; releaseId: string; protocolVersion: 1; state: 'ready' | 'draining' | 'migration-blocked' }\ninterface ShutdownRequest { operationId: string; expectedInstanceId: string; mode: 'graceful' | 'immediate'; completionEndpoint: string; completionNonce: string }\ninterface ShutdownAccepted { operationId: string; instanceId: string; accepted: true; mode: 'graceful' | 'immediate' }\ninterface ShutdownCompletion { operationId: string; instanceId: string; completionNonce: string; resourceOwnershipReleased: true }",
+          "ownedByStory": "s4",
+          "consumedByStories": [
+            "s5",
+            "s6",
+            "s7",
+            "s8"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc5",
+          "name": "Ordered upgrade hook delegation",
+          "purpose": "Owned by foundational s1 because delivery preparation, startup guard and s5 runner all require the same hook manifest. s5 implements execution. Hooks run in-process inside a candidate daemon migration-only process that exclusively owns data; manager and IDE never open LMDB/Lance.",
+          "interfaceSketch": "interface HookReference { id: string; version: string; module: string }\ninterface MigrationContext { installationId: string; operationId: string; fromReleaseId?: string; toReleaseId: string; dataHome: string }\ninterface HookDecision { needed: boolean; reason: string }\ninterface HookValidation { passed: boolean; detail: string }\ninterface UpgradeHook { check(context: MigrationContext): Promise<HookDecision>; run(context: MigrationContext): Promise<void>; test(context: MigrationContext): Promise<HookValidation> }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc6",
+          "name": "Local transport and explicit installation home",
+          "purpose": "All consumers resolve the same installation home and endpoint. Unix retains daemon.sock; Windows uses a per-user/per-installation named pipe. The manager's Node bridge supplies JetBrains Windows transport without changing application RPC payloads.",
+          "interfaceSketch": "interface LocalEndpoint { kind: 'unix' | 'named-pipe'; address: string; installationId: string }\ninterface InstallationLocation { home: string; installationId: string; daemonEndpoint: LocalEndpoint }\ninterface IpcBridgeRequest { protocolVersion: 1; endpoint: LocalEndpoint; rpcFrame: string }\ninterface IpcBridgeEvent { kind: 'frame' | 'closed' | 'error'; frame?: string; written?: boolean; code?: string }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8"
+          ],
+          "assumptions": []
+        }
+      ],
+      "boundary": {
+        "storyId": "s5",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc4",
+          "sc5",
+          "sc6"
+        ],
+        "internal": "Private ordered migration runner, daemon migration-only mode, blocked-state persistence, interrupted-run validation and explicit retry. Hooks alone choose data changes and recovery policy. DEF traceability: E20261123c3d71313:S005:FR001 and this story's DEF acceptance criteria apply unchanged."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc5",
+            "sc6",
+            "sc7"
+          ],
+          "depends": [],
+          "internal": "Own the foundational manifest, controller/operation/consent/hook/transport contracts because every branch already depends on s1. Private implementation covers bootstrap, runtime/payload integrity, bundle preparation/publication, platform lock adapter and atomic install records. Later stories implement lifecycle, checks and hooks behind these contracts. The canonical scripts and interactive installer mode are shared with manual invocation and both IDEs; terminal prompts and durable results are part of this foundation. Include the selected release's installed TUI entry/assets in the payload and default successful interactive installer-to-TUI handoff. The s1 LLD must explicitly reserve ManagerAction.install to the shared terminal bootstrap script and forbid IDE-adapter invocation. DEF traceability: E20261123c3d71313:S001:FR001 and this story's DEF acceptance criteria apply unchanged."
+        },
+        {
+          "storyId": "s2",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc5",
+            "sc6"
+          ],
+          "internal": "Private dev checkout/branch sync, lockfile installation and native build preparation; returns the same immutable prepared candidate. It does not define a second lifecycle or migration engine. Include the selected release's installed TUI entry/assets in the payload and default successful interactive installer-to-TUI handoff. DEF traceability: E20261123c3d71313:S002:FR001 and this story's DEF acceptance criteria apply unchanged."
+        },
+        {
+          "storyId": "s3",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc6"
+          ],
+          "internal": "Private platform dependency detection, user-level Ollama installation and agent CLI recommendations. It implements foundational reports/consent and never auto-installs agent CLIs. DEF traceability: E20261123c3d71313:S003:FR001 and this story's DEF acceptance criteria apply unchanged."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc4"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc5",
+            "sc6"
+          ],
+          "internal": "Private daemon start/readiness, boot guard integration, shutdown drain/immediate exit and exit-completion launcher wrapper; transport is shared. No delivery sync/build on start and no signal/PID daemon control. DEF traceability: E20261123c3d71313:S004:FR001 and this story's DEF acceptance criteria apply unchanged."
+        },
+        {
+          "storyId": "s6",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6",
+            "sc7"
+          ],
+          "internal": "Private VS Code native terminal open/focus/launch integration, duplicate-action handling and post-install reconnect. It invokes the shared script and leaves all install prompts/output in that terminal, including after failure. Existing ordinary lifecycle and upgrade-consent UI remains thin. Successful installation automatically enters the installed TUI in that same terminal; the IDE only reconnects/status-checks and does not require a second click. DEF traceability: E20261123c3d71313:S006:FR001 and this story's DEF acceptance criteria apply unchanged."
+        },
+        {
+          "storyId": "s7",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6",
+            "sc7"
+          ],
+          "internal": "Private JetBrains native terminal open/focus/launch integration with the same script, stdin/output and post-install readiness behavior as VS Code; no independent wizard or hidden install. Preserve background activation/control and Windows IPC bridge for ordinary daemon operations. Successful installation automatically enters the installed TUI in that same terminal; the IDE only reconnects/status-checks and does not require a second click. DEF traceability: E20261123c3d71313:S007:FR001 and this story's DEF acceptance criteria apply unchanged."
+        },
+        {
+          "storyId": "s8",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6",
+            "sc7"
+          ],
+          "internal": "Private isolated VM/runner fixtures, target matrix evidence and release qualification results, including real Windows named-pipe behavior and preservation of host v2 daemon. Terminal-install parity checks cover each IDE and manual invocation, paths with spaces/Unicode, missing terminal support, declined Ollama, Ctrl+C/close, duplicate windows, retained output and readiness-confirmed completion. Verify successful install enters TUI in the original terminal, install lock is released before TUI use, TUI exit leaves daemon running, and failure/cancellation never opens TUI. DEF traceability: E20261123c3d71313:S008:FR001 and this story's DEF acceptance criteria apply unchanged."
+        }
+      ],
+      "rolloutPhase": "D — delegated upgrades",
+      "nonFunctional": {
+        "performance": "Targets: local read-only inspection/reachability <=3 seconds; activation never blocks IDE UI. Progress/phase changes emit within 1 second after state changes. Ready startup target <=15 seconds excluding dependency/model initialization; startup probe deadline 30 seconds. Default graceful wait 60 seconds with configurable user deadline; timeout reports uncertainty and never silently escalates. Downloads/builds/hooks have per-operation budgets and progress, not an arbitrary task retry loop.",
+        "security": "No elevated commands, global PATH edits, user credential capture, LLM calls for dependency detection or shell-interpolated actions. Verify payload/runtime digests and targets, reject archive traversal/symlink escapes and module paths outside candidate payload. Local endpoints are user-scoped, capability-protected where needed; bind operation/instance/release identity. Signing deferred and no cryptographic authenticity claim from unsigned digest metadata. No IDE prompt automation or credential/input capture; terminal launch preserves argument boundaries. User-visible script identity matches manual release assets.",
+        "observability": "Structured operationId/installationId/from-to identity, platform/runtime/digest, phase/hook/stage, duration and actionable error code. Bounded NDJSON to IDE, logs in installation home with rotation; no credentials/tokens or full migration data. Report explicitly which platform/native checks passed and which were unavailable. Interactive installation prints human-readable phases and errors directly in the terminal. The terminal is retained after completion/failure; its output is not scraped or treated as success evidence.",
+        "durability": "OS-backed mutation exclusivity plus atomic versioned controller records. Prepared payloads immutable; candidate data mutation is daemon-owned only. Record hook run-started before execution and require test before completion; failures/interruption retain blocked startup. Retry never substitutes a different candidate or starts the predecessor after data changes automatically. Installation completion and lock release precede the interactive TUI session. TUI exit/launch failure cannot roll back the completed installation or keep an installation lock held."
+      }
+    },
+    "summary": {
+      "prose": "Upgrade migrations run as ordered in-process hooks inside a candidate daemon with exclusive data ownership. Each hook decides what to migrate and validates its result. Failure or interruption blocks startup until explicit retry or hook-owned recovery succeeds.",
+      "audience": "technical"
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "HookReference",
+          "signature": "interface HookReference { id: string; version: string; module: string }",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "unknown",
+              "purpose": "Immutable ordered hook identity.; untrusted wire input is schema-validated before use.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "HookReference",
+            "meaning": "Immutable ordered hook identity."
+          },
+          "preconditions": [
+            "Candidate identity/inventory and module containment validated by s1.",
+            "Unique id/version entries retain manifest order."
+          ],
+          "postconditions": [
+            "No dependency sorting, remote hook endpoint, arbitrary external module path or implicit migration discovery."
+          ],
+          "errors": []
+        },
+        {
+          "name": "MigrationContext",
+          "signature": "interface MigrationContext { installationId: string; operationId: string; fromReleaseId?: string; toReleaseId: string; dataHome: string }",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "unknown",
+              "purpose": "Exact upgrade scope passed to all hook methods.; untrusted wire input is schema-validated before use.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "MigrationContext",
+            "meaning": "Exact upgrade scope passed to all hook methods."
+          },
+          "preconditions": [
+            "Operation admitted and incumbent stopped through s4 completion proof.",
+            "Candidate acquires exclusive daemon-owned data lease before opening stores."
+          ],
+          "postconditions": [
+            "Same from/to identity survives retry; manager/IDE never open LMDB/Lance.",
+            "Migration-only mode does not start normal indexing/model/workflow services."
+          ],
+          "errors": []
+        },
+        {
+          "name": "UpgradeHook",
+          "signature": "interface UpgradeHook { check(context: MigrationContext): Promise<HookDecision>; run(context: MigrationContext): Promise<void>; test(context: MigrationContext): Promise<HookValidation> }",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "unknown",
+              "purpose": "Delegated local in-process migration.; untrusted wire input is schema-validated before use.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "UpgradeHook",
+            "meaning": "Delegated local in-process migration."
+          },
+          "preconditions": [
+            "check/test are validation/applicability operations; run owns mutation and recovery policy.",
+            "Hook modules loaded only from the verified candidate; trusted code is not claimed sandboxed."
+          ],
+          "postconditions": [
+            "Serial manifest order; no later hook on check/run/test failure.",
+            "Record run-started before run; require test after any possibly executed unvalidated run.",
+            "An unstarted not-needed hook skips cleanly; retry not-needed never erases pending test obligation."
+          ],
+          "errors": [
+            {
+              "type": "migration-hook-failed",
+              "condition": "Method throws, times out, exits or validation returns passed=false."
+            }
+          ]
+        },
+        {
+          "name": "HookValidation",
+          "signature": "interface HookValidation { passed: boolean; detail: string }",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "unknown",
+              "purpose": "Evidence supplied by a hook's test method.; untrusted wire input is schema-validated before use.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "HookValidation",
+            "meaning": "Evidence supplied by a hook's test method."
+          },
+          "preconditions": [
+            "Hook has the exact admitted context and exclusive data owner."
+          ],
+          "postconditions": [
+            "Only passed=true can complete an unvalidated run; diagnostics preserve false/exception stage."
+          ],
+          "errors": []
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "Migration-only boot mode",
+        "change": "new",
+        "details": "New private boundary src/daemon/upgrade-hooks.ts and a gated migration-only branch of src/daemon/index.ts. Validate controller admission before importing/opening stores. Initialize only hook-required daemon-owned resources, run serial hooks, close those resources and exit before normal daemon start. The existing graph ownership/health guards remain authoritative; a lost/corrupt owner fails closed. This mode is not a second DB owner and does not run application indexing/model boot.",
+        "callSites": [
+          "src/daemon/index.ts",
+          "src/db/graph/store.ts"
+        ]
+      },
+      {
+        "entity": "Atomic hook-stage journal",
+        "change": "new",
+        "details": "One user-protected journal binds installation/operation/from/to/candidate inventory and ordered entries {index,id,version,moduleDigest,stage,runStarted,testPassed,detail}. Persist atomically under the same operation's ownership; the public OperationRecord reports current hook/stage/blocked state while this private record keeps exact versions. Validated prefix order cannot be reordered or reused for another candidate. Keep run-started through interruption until test passes, even if a retry check says not-needed.",
+        "callSites": []
+      },
+      {
+        "entity": "Failure, retry and startup guard",
+        "change": "new",
+        "details": "Any check/run/test error or ambiguous process exit records blocked diagnostics and stops later work. Normal boot observes foundation blocked guard before stores; migration-only mode is admitted only for the same explicit retry. The hook's check/run/test and documented manual recovery decide how to reconcile partial state; no generic backup, rebuild, deletion or rollback policy is imposed. Never auto-start predecessor after data changes. A hung/unreachable migration is uncertain, not falsely cancelled or externally killed.",
+        "callSites": []
+      },
+      {
+        "entity": "No-op and predecessor adoption",
+        "change": "new",
+        "details": "Ordinary startup does not execute hooks. An upgrade with no applicable work still yields an explicit validated no-migration outcome; first install without predecessor does not invent one. Supported legacy/predecessor acceptance is checked before disruption, and each release carries all ordered hooks needed for its declared predecessor set. Unsupported source state is diagnosed before mutation.",
+        "callSites": []
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Exact immutable candidate and predecessor acceptance."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "Publish stage/blocked outcome via existing operation state; explicit same-candidate retry."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "Consume dependency/precondition readiness; no dependency installer."
+      },
+      {
+        "contractId": "sc4",
+        "role": "consumes",
+        "howDetails": "Require incumbent exit and exclusive ownership release before data open."
+      },
+      {
+        "contractId": "sc5",
+        "role": "consumes",
+        "howDetails": "Execute the foundation-owned check/run/test contract serially; do not redesign it."
+      },
+      {
+        "contractId": "sc6",
+        "role": "consumes",
+        "howDetails": "Honor explicit home and user-scoped local control endpoints."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Hook method fails or test is false",
+          "detection": "Method result/exception, deadline or child exit plus durable stage indicates failure.",
+          "response": "Record exact hook/version/stage as blocked and stop later hooks/startup.",
+          "userImpact": "User sees actionable diagnostics and explicit retry.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Candidate or context changes on retry",
+          "detection": "Journal identity/digest/order does not match admitted operation.",
+          "response": "migration-context-conflict; do not import hooks or touch data.",
+          "userImpact": "New upgrade cannot silently replace a failed migration.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Check says not-needed after an interrupted run",
+          "detection": "Journal has runStarted without testPassed.",
+          "response": "Run required validation anyway; failure stays blocked.",
+          "userImpact": "Partial mutation is not mistaken for completed migration.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Data owner unavailable or stores fail to close",
+          "detection": "Exclusive lease/store-health/close or observed exit evidence fails.",
+          "response": "Blocked/uncertain outcome; no normal start or manager DB access.",
+          "userImpact": "No simultaneous store ownership.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "All clean checks return not-needed",
+          "expected": "Skip runs and report validated no-op; no hook on ordinary startup."
+        },
+        {
+          "input": "Hook run completed but test response was lost",
+          "expected": "Retry reconciles exact journal and requires test; no automatic destructive rerun."
+        },
+        {
+          "input": "Hook needs manual recovery",
+          "expected": "Expose hook-owned instructions; framework provides no generic data policy."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Remain inside s5 boundary; no elevated commands, PID/kill daemon fallback, direct cloud LLM REST, or host v2 daemon mutation.",
+          "source": "c1"
+        },
+        {
+          "text": "Approved HLD shared contracts, terminal-only install and success-to-TUI handoff remain unchanged.",
+          "source": "c2"
+        },
+        {
+          "text": "DEF E20261123c3d71313:S005:FR001 and this story acceptance criteria apply unchanged.",
+          "source": "c3"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test + node:assert/strict; canonical *.test.ts coordinator. Real platform/IDE qualification is recorded separately and not inferred from fakes.",
+      "testLevels": [
+        {
+          "level": "contract",
+          "purpose": "Verify delegation/order/context and the pending-validation invariant.",
+          "subjects": [
+            "skip/needed/exception/false-test paths",
+            "same-candidate retry",
+            "no graph or implicit rollback policy"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Exercise actual candidate process/store ownership and durable journal crash points.",
+          "subjects": [
+            "crash before/after run-started/run/test/commit",
+            "not-needed after partial run still tests",
+            "normal boot blocked",
+            "later hooks never execute after failure"
+          ],
+          "fixturesNeeded": [
+            "Disposable registered graph/Lance state, hook fixtures and self-exiting child processes."
+          ]
+        },
+        {
+          "level": "live",
+          "purpose": "Qualify supported real predecessor paths and native closure.",
+          "subjects": [
+            "no concurrent old/candidate stores",
+            "hook-owned migration recovery",
+            "startup only after validated completion"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "ordered-check-skip-run-test",
+            "unique-hook-reference-validation"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "check-run-test-failure-blocks-later-and-startup",
+            "false-test-and-process-interruption-diagnostics"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "same-candidate-explicit-retry",
+            "partial-run-not-needed-still-tests",
+            "hook-owned-recovery-only"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "ordinary-start-no-hooks",
+            "no-applicable-upgrade-noop",
+            "bundle-dev-same-runner"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "supported-predecessor-representative-state",
+            "unsupported-predecessor-before-mutation",
+            "no-generic-delete-rebuild-policy"
+          ]
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Ordered hook list with one stage journal",
+        "oneLineSummary": "Execute the manifest list serially with exact-operation stage receipts.",
+        "approach": "The candidate daemon reads ordered unique hook references and one small operation-bound journal. Each hook decides applicability and owns its work/validation; the runner only enforces sequencing and startup blocking.\n\nRetry reuses the immutable candidate and source identity, reconciles prior run/test stage, and never skips required validation.",
+        "pros": [
+          "Matches check/run/test delegation without a graph or rollback engine.",
+          "Journal distinguishes skipped work from an unvalidated interrupted run."
+        ],
+        "cons": [
+          "Hooks must document their own idempotency/manual recovery; framework cannot invent it."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "One receipt file per hook invocation",
+        "oneLineSummary": "Separate hook-stage receipts, assembled into an operation outcome.",
+        "approach": "Use the same ordered hook interface but persist independent invocation files for each hook/version/stage. The runner assembles their valid prefix before starting the next hook.\n\nThis can retain more detailed history but introduces multi-file completeness and cleanup rules in addition to the required operation identity.",
+        "pros": [
+          "Detailed per-invocation history can be retained independently."
+        ],
+        "cons": [
+          "More partial-file combinations than one atomic journal, without a requested audit-history product feature."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Per-invocation receipt aggregation adds durability/cleanup combinations that the small operation journal already avoids."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [],
+    "sequenceDefinition": {
+      "id": "ordered-upgrade-hooks",
+      "narrative": "Hooks execute inside a candidate daemon that owns data. An interrupted or possibly completed run is not validated until test passes, even when a retry check returns not-needed. Later hooks and ordinary startup remain blocked on failure.",
+      "participants": [
+        {
+          "id": "manager",
+          "label": "Controller",
+          "description": "Owns operation state, not application DB."
+        },
+        {
+          "id": "candidate",
+          "label": "Migration-only daemon",
+          "description": "Exclusive data owner and hook runner."
+        },
+        {
+          "id": "hook",
+          "label": "Current in-process hook",
+          "description": "Delegated check/run/test in release order."
+        },
+        {
+          "id": "journal",
+          "label": "Hook journal",
+          "description": "Candidate/operation-bound durable stage evidence."
+        }
+      ],
+      "messages": [
+        {
+          "from": "manager",
+          "to": "candidate",
+          "label": "Run admitted immutable candidate",
+          "description": "Incumbent exit/ownership release already verified by s4."
+        },
+        {
+          "from": "candidate",
+          "to": "journal",
+          "label": "Validate exact identity and prior stage",
+          "description": "No candidate substitution on retry."
+        },
+        {
+          "from": "candidate",
+          "to": "hook",
+          "label": "check(context)",
+          "description": "Read-only applicability decision."
+        },
+        {
+          "from": "candidate",
+          "to": "journal",
+          "label": "Persist run-started when required",
+          "description": "Must precede any hook mutation."
+        },
+        {
+          "from": "candidate",
+          "to": "hook",
+          "label": "run(context) when needed",
+          "description": "Hook owns migration/idempotency/recovery."
+        },
+        {
+          "from": "candidate",
+          "to": "hook",
+          "label": "test(context) after any unvalidated run",
+          "description": "Required even when retry check says not-needed."
+        },
+        {
+          "from": "candidate",
+          "to": "journal",
+          "label": "Validated completion or blocked diagnostics",
+          "description": "Persist hook id/version/order and exact failing stage."
+        },
+        {
+          "from": "candidate",
+          "to": "manager",
+          "label": "All hooks validated, or blocked",
+          "kind": "return",
+          "description": "Close owned stores and exit; controller activates only on successful complete outcome."
+        }
+      ]
+    },
+    "adherence": {
+      "dimensions": [
+        "diagram-sequence",
+        "functional-coverage"
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S005/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "AGENTS.md"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/HLD.md"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/DEF.md"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "src/daemon/index.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "src/db/graph/store.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "analyze-bundle",
+      "ref": "src/daemon/server.ts"
+    }
+  ]
+}

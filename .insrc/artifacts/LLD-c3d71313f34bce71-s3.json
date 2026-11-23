@@ -1,0 +1,545 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1795448758031-rnz7n0",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-23T15:45:59.347Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 1034,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-11-23T13:27:35.399Z",
+    "epicHash": "c3d71313f34bce71",
+    "epicSlug": "reliable-cross-platform-daemon-installation-lifecycle",
+    "storyId": "s3",
+    "hldBaseRunId": "wf-1795445383474-itgkv3",
+    "hldEffectiveHash": "77bfb88eed6d557fbc298ffc881afc2ccf6e682b9f0d0696361d1e77e5f93d83",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "Guide dependency setup without privilege escalation",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "16f4f8dea7bb77e198ab02160e1ff4e2a02a646372c7ca5d7116718ccdaca674",
+        "at": "2026-11-23T15:45:59.439Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Choose a1: one shared user-level installer/manager with bundle and dev delivery adapters. Install launched from either IDE runs the same public platform installer script interactively in a visible terminal; the script owns prompts and output. IDE-specific installation wizards and hidden background installs are excluded. Lifecycle, migration, runtime and privilege constraints remain shared and unchanged. Successful interactive installation hands the same terminal directly to the installed insrc TUI after daemon readiness; it does not finish at an idle shell.",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "Installation and release identity",
+          "purpose": "One installation owns one selected delivery mode, zero or one active release and zero or one unresolved operation. Release identities are immutable; the controller metadata never stores application DB contents.",
+          "interfaceSketch": "type Delivery = { mode: 'bundle'; repository: string; channel: string } | { mode: 'dev'; repository: string; branch: string };\ninterface Target { os: 'darwin' | 'linux' | 'win32'; arch: 'arm64' | 'x64'; baseline: string }\ninterface RuntimeIdentity { version: string; target: Target; sha256: string; relativeExecutable: string }\ninterface ReleaseManifest { schemaVersion: 1; releaseId: string; sourceCommit: string; target: Target; runtime: RuntimeIdentity; payloadSha256: string; daemonEntry: string; managerEntry: string; tuiEntry: string; protocolVersion: 1; compatiblePredecessors: string[]; migrations: HookReference[] }\ninterface Installation { schemaVersion: 1; installationId: string; dataHome: string; delivery: Delivery; activeReleaseId?: string; operationId?: string }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc2",
+          "name": "Manager command and operation state",
+          "purpose": "A private-runtime command runner serves both IDEs when daemon is running, stopped or blocked. One OS-backed exclusive lock serializes all mutating operations per installation; controller records and bounded progress are shared across clients. Interactive install is invoked by the shared script in the terminal. The structured manager protocol remains for ordinary control/status; the IDE does not drive installation prompts through it. The 'install' action is reserved exclusively for the shared bootstrap/installer script executing inside the interactive terminal. VS Code/JetBrains adapters must never invoke ManagerAction.install directly or drive its prompts through this protocol; they only launch/focus the terminal and observe completion/readiness. The s1 LLD must state and enforce this caller restriction.",
+          "interfaceSketch": "/** 'install' is terminal-bootstrap-only; IDE adapters may not invoke it directly. */\ntype ManagerAction = 'inspect' | 'check-upgrade' | 'install' | 'upgrade' | 'start' | 'stop' | 'restart' | 'retry-migration';\ntype Phase = 'preparing' | 'quiescing' | 'migrating' | 'activating' | 'ready' | 'stopped' | 'blocked';\ninterface ManagerRequest { protocolVersion: 1; operationId: string; action: ManagerAction; installationId: string; shutdownMode?: 'graceful' | 'immediate'; acceptedOfferId?: string; installOllama?: boolean }\ninterface OperationRecord { operationId: string; predecessorId?: string; candidateId?: string; phase: Phase; hookId?: string; hookStage?: 'check' | 'run' | 'test'; errorCode?: string; message?: string }\ninterface ManagerEvent { protocolVersion: 1; operationId: string; kind: 'progress' | 'result'; state: OperationRecord; retryable: boolean }\ninterface UpgradeOffer { offerId: string; installationId: string; currentReleaseId?: string; candidateReleaseId: string; delivery: Delivery }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc3",
+          "name": "Dependency report and consent",
+          "purpose": "Foundation contract separates required private Node, Ollama availability and advisory agent CLI detection from their platform implementations in s3; IDEs cannot infer consent from plugin updates.",
+          "interfaceSketch": "interface DependencyReport { runtimeReady: boolean; ollama: 'ready' | 'installed-not-running' | 'missing' | 'unavailable'; ollamaInstallOffer?: { id: string; destination: string; version: string }; agents: { claude: boolean; codex: boolean; vibe: boolean }; recommendations: string[]; blockers: string[] }\ninterface DependencyDecision { offerId: string; choice: 'install' | 'decline' }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc6",
+          "name": "Local transport and explicit installation home",
+          "purpose": "All consumers resolve the same installation home and endpoint. Unix retains daemon.sock; Windows uses a per-user/per-installation named pipe. The manager's Node bridge supplies JetBrains Windows transport without changing application RPC payloads.",
+          "interfaceSketch": "interface LocalEndpoint { kind: 'unix' | 'named-pipe'; address: string; installationId: string }\ninterface InstallationLocation { home: string; installationId: string; daemonEndpoint: LocalEndpoint }\ninterface IpcBridgeRequest { protocolVersion: 1; endpoint: LocalEndpoint; rpcFrame: string }\ninterface IpcBridgeEvent { kind: 'frame' | 'closed' | 'error'; frame?: string; written?: boolean; code?: string }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8"
+          ],
+          "assumptions": []
+        }
+      ],
+      "boundary": {
+        "storyId": "s3",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc6"
+        ],
+        "internal": "Private platform dependency detection, user-level Ollama installation and agent CLI recommendations. It implements foundational reports/consent and never auto-installs agent CLIs. DEF traceability: E20261123c3d71313:S003:FR001 and this story's DEF acceptance criteria apply unchanged."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc5",
+            "sc6",
+            "sc7"
+          ],
+          "depends": [],
+          "internal": "Own the foundational manifest, controller/operation/consent/hook/transport contracts because every branch already depends on s1. Private implementation covers bootstrap, runtime/payload integrity, bundle preparation/publication, platform lock adapter and atomic install records. Later stories implement lifecycle, checks and hooks behind these contracts. The canonical scripts and interactive installer mode are shared with manual invocation and both IDEs; terminal prompts and durable results are part of this foundation. Include the selected release's installed TUI entry/assets in the payload and default successful interactive installer-to-TUI handoff. The s1 LLD must explicitly reserve ManagerAction.install to the shared terminal bootstrap script and forbid IDE-adapter invocation. DEF traceability: E20261123c3d71313:S001:FR001 and this story's DEF acceptance criteria apply unchanged."
+        },
+        {
+          "storyId": "s2",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc5",
+            "sc6"
+          ],
+          "internal": "Private dev checkout/branch sync, lockfile installation and native build preparation; returns the same immutable prepared candidate. It does not define a second lifecycle or migration engine. Include the selected release's installed TUI entry/assets in the payload and default successful interactive installer-to-TUI handoff. DEF traceability: E20261123c3d71313:S002:FR001 and this story's DEF acceptance criteria apply unchanged."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc4"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc5",
+            "sc6"
+          ],
+          "internal": "Private daemon start/readiness, boot guard integration, shutdown drain/immediate exit and exit-completion launcher wrapper; transport is shared. No delivery sync/build on start and no signal/PID daemon control. DEF traceability: E20261123c3d71313:S004:FR001 and this story's DEF acceptance criteria apply unchanged."
+        },
+        {
+          "storyId": "s5",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6"
+          ],
+          "internal": "Private ordered migration runner, daemon migration-only mode, blocked-state persistence, interrupted-run validation and explicit retry. Hooks alone choose data changes and recovery policy. DEF traceability: E20261123c3d71313:S005:FR001 and this story's DEF acceptance criteria apply unchanged."
+        },
+        {
+          "storyId": "s6",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6",
+            "sc7"
+          ],
+          "internal": "Private VS Code native terminal open/focus/launch integration, duplicate-action handling and post-install reconnect. It invokes the shared script and leaves all install prompts/output in that terminal, including after failure. Existing ordinary lifecycle and upgrade-consent UI remains thin. Successful installation automatically enters the installed TUI in that same terminal; the IDE only reconnects/status-checks and does not require a second click. DEF traceability: E20261123c3d71313:S006:FR001 and this story's DEF acceptance criteria apply unchanged."
+        },
+        {
+          "storyId": "s7",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6",
+            "sc7"
+          ],
+          "internal": "Private JetBrains native terminal open/focus/launch integration with the same script, stdin/output and post-install readiness behavior as VS Code; no independent wizard or hidden install. Preserve background activation/control and Windows IPC bridge for ordinary daemon operations. Successful installation automatically enters the installed TUI in that same terminal; the IDE only reconnects/status-checks and does not require a second click. DEF traceability: E20261123c3d71313:S007:FR001 and this story's DEF acceptance criteria apply unchanged."
+        },
+        {
+          "storyId": "s8",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6",
+            "sc7"
+          ],
+          "internal": "Private isolated VM/runner fixtures, target matrix evidence and release qualification results, including real Windows named-pipe behavior and preservation of host v2 daemon. Terminal-install parity checks cover each IDE and manual invocation, paths with spaces/Unicode, missing terminal support, declined Ollama, Ctrl+C/close, duplicate windows, retained output and readiness-confirmed completion. Verify successful install enters TUI in the original terminal, install lock is released before TUI use, TUI exit leaves daemon running, and failure/cancellation never opens TUI. DEF traceability: E20261123c3d71313:S008:FR001 and this story's DEF acceptance criteria apply unchanged."
+        }
+      ],
+      "rolloutPhase": "C — dependencies and lifecycle",
+      "nonFunctional": {
+        "performance": "Targets: local read-only inspection/reachability <=3 seconds; activation never blocks IDE UI. Progress/phase changes emit within 1 second after state changes. Ready startup target <=15 seconds excluding dependency/model initialization; startup probe deadline 30 seconds. Default graceful wait 60 seconds with configurable user deadline; timeout reports uncertainty and never silently escalates. Downloads/builds/hooks have per-operation budgets and progress, not an arbitrary task retry loop.",
+        "security": "No elevated commands, global PATH edits, user credential capture, LLM calls for dependency detection or shell-interpolated actions. Verify payload/runtime digests and targets, reject archive traversal/symlink escapes and module paths outside candidate payload. Local endpoints are user-scoped, capability-protected where needed; bind operation/instance/release identity. Signing deferred and no cryptographic authenticity claim from unsigned digest metadata. No IDE prompt automation or credential/input capture; terminal launch preserves argument boundaries. User-visible script identity matches manual release assets.",
+        "observability": "Structured operationId/installationId/from-to identity, platform/runtime/digest, phase/hook/stage, duration and actionable error code. Bounded NDJSON to IDE, logs in installation home with rotation; no credentials/tokens or full migration data. Report explicitly which platform/native checks passed and which were unavailable. Interactive installation prints human-readable phases and errors directly in the terminal. The terminal is retained after completion/failure; its output is not scraped or treated as success evidence.",
+        "durability": "OS-backed mutation exclusivity plus atomic versioned controller records. Prepared payloads immutable; candidate data mutation is daemon-owned only. Record hook run-started before execution and require test before completion; failures/interruption retain blocked startup. Retry never substitutes a different candidate or starts the predecessor after data changes automatically. Installation completion and lock release precede the interactive TUI session. TUI exit/launch failure cannot roll back the completed installation or keep an installation lock held."
+      }
+    },
+    "summary": {
+      "prose": "Dependency setup checks local Ollama and coding-agent availability without starting model work or sign-in. Missing Ollama is offered as a user-level installation with explicit terminal consent; coding agents are recommendations only. Existing installations are reused.",
+      "audience": "technical"
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "DependencyReport",
+          "signature": "interface DependencyReport { runtimeReady: boolean; ollama: 'ready' | 'installed-not-running' | 'missing' | 'unavailable'; ollamaInstallOffer?: { id: string; destination: string; version: string }; agents: { claude: boolean; codex: boolean; vibe: boolean }; recommendations: string[]; blockers: string[] }",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "unknown",
+              "purpose": "Truthful bounded detection report.; untrusted wire input is schema-validated before use.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "DependencyReport",
+            "meaning": "Truthful bounded detection report."
+          },
+          "preconditions": [
+            "Private runtime readiness comes from verified s1 policy, not PATH Node.",
+            "Filesystem/HTTP probe errors must not be silently recast as missing."
+          ],
+          "postconditions": [
+            "A service-ready result requires a bounded local version response; executable-only is installed-not-running.",
+            "Agent checks detect executables without LLM requests, auth prompts or installation."
+          ],
+          "errors": [
+            {
+              "type": "dependency-probe-failed",
+              "condition": "Unreadable path, malformed endpoint/version reply or bounded probe failure."
+            }
+          ]
+        },
+        {
+          "name": "DependencyDecision",
+          "signature": "interface DependencyDecision { offerId: string; choice: 'install' | 'decline' }",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "unknown",
+              "purpose": "One exact user decision from the shared terminal script.; untrusted wire input is schema-validated before use.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "DependencyDecision",
+            "meaning": "One exact user decision from the shared terminal script."
+          },
+          "preconditions": [
+            "Offer binds target/version/digest/destination and whether starting a user-session Ollama process is included.",
+            "No IDE-generated/default-yes consent; stale offers re-prompt."
+          ],
+          "postconditions": [
+            "Decline changes nothing and retains visible unmet requirement.",
+            "Accept installs only Ollama, never agent CLIs or GPU drivers/system services."
+          ],
+          "errors": [
+            {
+              "type": "dependency-offer-stale",
+              "condition": "Policy, target, destination or existing installation changed."
+            }
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "Qualified Ollama offer",
+        "change": "new",
+        "details": "Private s3 policy selects explicit per-target official payload/version/digest and user-owned destination under the selected installation home. Reuse a healthy existing Ollama binary/service; never overwrite it. Offer text says install and start for this user when that side effect is needed. No models or GPU/system drivers are downloaded implicitly. Proposed boundary: src/installer/dependencies.ts; provider modules are inspected context, not reused for model initialization.",
+        "callSites": []
+      },
+      {
+        "entity": "Platform extraction and readiness",
+        "change": "new",
+        "details": "Windows uses a qualified official standalone archive; macOS uses a user-local app/CLI location without global links, quarantine removal or automatic privilege escalation. Linux extracts official tar.zst into a user-owned directory, never running the upstream privileged installer. Bundle a pinned streaming fzstd decoder plus validated tar reader rather than depending on root-installed zstd; qualify the exact large payload/frame window and fail with a concrete limitation if unsupported. Apply byte/path/symlink and free-space limits before publication. Start only an accepted owned Ollama user-session process with logs and a bounded loopback version probe; do not stop another user's/existing service or create system launch services.",
+        "callSites": []
+      },
+      {
+        "entity": "Detection-only coding agents",
+        "change": "new",
+        "details": "Resolve claude, codex and vibe through bounded platform executable lookup including Windows executable suffixes. Existence/executability is reported without spawning login/model commands; recommendations are shown when none are found. Permission/lookup diagnostics stay visible and never trigger automatic agent installation. The original terminal handles all prompts; normal daemon/TUI launch remains the foundation owner's responsibility.",
+        "callSites": []
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Use selected target/private runtime/home; do not select a new delivery mode."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "Publish bounded dependency progress through the existing operation; no new install action."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "Provide real detection/setup behavior behind foundation-owned report/decision types."
+      },
+      {
+        "contractId": "sc6",
+        "role": "consumes",
+        "howDetails": "Resolve the same explicit user home; local service probing is not daemon lifecycle."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Missing or stale consent",
+          "detection": "Offer identity no longer matches policy/destination or no terminal decision exists.",
+          "response": "No side effects; report stale/no consent.",
+          "userImpact": "User can re-read the exact offer.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Download/extraction/readiness failure",
+          "detection": "Digest, archive limits, filesystem write or bounded local-version probe fails.",
+          "response": "Report dependency unavailable with owned staging/log location; do not mark ready or request elevation.",
+          "userImpact": "Installation state remains accurate; no model work starts.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Existing endpoint is not Ollama or is unhealthy",
+          "detection": "Version response fails shape/identity validation.",
+          "response": "unavailable, not missing; do not overwrite or replace a running service.",
+          "userImpact": "User gets the real probe error.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Unsupported user-level platform payload",
+          "detection": "Qualification policy lacks this target or decompressor rejects its exact archive.",
+          "response": "Concrete user-level limitation; no sudo/system installer fallback.",
+          "userImpact": "User may install Ollama manually and retry detection.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Ollama executable exists but service is stopped",
+          "expected": "Report installed-not-running; a separate explicit start choice is visible."
+        },
+        {
+          "input": "User declines missing Ollama",
+          "expected": "No install/start; report remains unmet and no success claim for Ollama-dependent functionality."
+        },
+        {
+          "input": "One or several coding agents found",
+          "expected": "Report them; no install or sign-in action."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Remain inside s3 boundary; no elevated commands, PID/kill daemon fallback, direct cloud LLM REST, or host v2 daemon mutation.",
+          "source": "c1"
+        },
+        {
+          "text": "Approved HLD shared contracts, terminal-only install and success-to-TUI handoff remain unchanged.",
+          "source": "c2"
+        },
+        {
+          "text": "DEF E20261123c3d71313:S003:FR001 and this story acceptance criteria apply unchanged.",
+          "source": "c3"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test + node:assert/strict; canonical *.test.ts coordinator. Real platform/IDE qualification is recorded separately and not inferred from fakes.",
+      "testLevels": [
+        {
+          "level": "contract",
+          "purpose": "Verify truthful report/consent classification and advisory boundaries.",
+          "subjects": [
+            "missing versus unavailable versus installed-not-running",
+            "stale/declined consent cannot mutate",
+            "agent lookup never calls auth/model/install"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Exercise safe user-level extraction and readiness without any LLM.",
+          "subjects": [
+            "local version endpoint fixtures",
+            "official payload layout/hostile archive/large frame limits",
+            "no-elevation and no-global-PATH sentinels"
+          ],
+          "fixturesNeeded": [
+            "Disposable home, loopback server and owned process fixtures."
+          ]
+        },
+        {
+          "level": "live",
+          "purpose": "Qualify each offered exact payload on actual platforms without downloading models.",
+          "subjects": [
+            "private executable version and local serve/version readiness",
+            "existing Ollama reused",
+            "decline path remains untouched"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "missing-ollama-exact-consent-before-user-install",
+            "accepted-official-payload-user-only",
+            "unsupported-route-no-elevation"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "existing-healthy-reuse",
+            "installed-stopped-classification",
+            "decline-keeps-unmet-state"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "zero-one-many-agent-detection",
+            "no-auth-model-or-agent-install-side-effects"
+          ]
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Bounded report and exact consent offer",
+        "oneLineSummary": "Probe local availability, then bind each side effect to one exact terminal offer.",
+        "approach": "Produce the existing DependencyReport from filesystem/executable and lightweight local service checks. Missing Ollama produces a version/destination offer; the canonical script returns explicit acceptance or decline.\n\nInstall only qualified official payloads into the user's private dependency directory, verify readiness, and keep coding-agent detection advisory.",
+        "pros": [
+          "One report supports both modes and IDEs without independent installers.",
+          "Declining or a failed probe remains distinguishable from ready."
+        ],
+        "cons": [
+          "OS payload extraction and service readiness need separate native qualification."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Persistent dependency task queue",
+        "oneLineSummary": "Store dependency setup jobs and replay them across restarts.",
+        "approach": "Use the same report/decision contracts but persist a queue of detection, download and service-start jobs. Terminal interaction confirms jobs and watches their state.\n\nQueue replay and cancellation require an additional lifecycle separate from the existing installation operation record.",
+        "pros": [
+          "Can resume long downloads through persistent jobs."
+        ],
+        "cons": [
+          "Duplicates operation/cancellation state already provided by the installer without a requested background dependency scheduler."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "A separate dependency scheduler/replay model duplicates foundation state and makes terminal-owned consent harder to reason about."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "AGENTS.md"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/HLD.md"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/DEF.md"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "src/agent/providers/ollama.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "src/agent/providers/cli-provider.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "doc",
+      "ref": "https://docs.ollama.com/linux"
+    },
+    {
+      "id": "c7",
+      "kind": "doc",
+      "ref": "https://docs.ollama.com/windows"
+    },
+    {
+      "id": "c8",
+      "kind": "doc",
+      "ref": "https://docs.ollama.com/macos"
+    },
+    {
+      "id": "c9",
+      "kind": "doc",
+      "ref": "https://github.com/101arrowz/fzstd"
+    }
+  ]
+}

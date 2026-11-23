@@ -1,0 +1,740 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1795448885545-rwf7bu",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-23T15:48:06.890Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 1030,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-11-23T13:27:35.399Z",
+    "epicHash": "c3d71313f34bce71",
+    "epicSlug": "reliable-cross-platform-daemon-installation-lifecycle",
+    "storyId": "s4",
+    "hldBaseRunId": "wf-1795445383474-itgkv3",
+    "hldEffectiveHash": "77bfb88eed6d557fbc298ffc881afc2ccf6e682b9f0d0696361d1e77e5f93d83",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "Control daemon start and shutdown through IPC",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "5749a9010cba897fd60576126c7b84dd1abf45e2f315acf15d492c04522bb273",
+        "at": "2026-11-23T15:48:07.016Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Choose a1: one shared user-level installer/manager with bundle and dev delivery adapters. Install launched from either IDE runs the same public platform installer script interactively in a visible terminal; the script owns prompts and output. IDE-specific installation wizards and hidden background installs are excluded. Lifecycle, migration, runtime and privilege constraints remain shared and unchanged. Successful interactive installation hands the same terminal directly to the installed insrc TUI after daemon readiness; it does not finish at an idle shell.",
+      "ownedContracts": [
+        {
+          "id": "sc4",
+          "name": "Daemon shutdown and readiness",
+          "purpose": "The selected daemon admits shutdown over its local JSON-RPC endpoint only. Acknowledgement is not exit completion. Readiness reports instance/release identity and startup gating; immediate escalation is an explicit second request.",
+          "interfaceSketch": "interface DaemonIdentity { instanceId: string; installationId: string; releaseId: string; protocolVersion: 1; state: 'ready' | 'draining' | 'migration-blocked' }\ninterface ShutdownRequest { operationId: string; expectedInstanceId: string; mode: 'graceful' | 'immediate'; completionEndpoint: string; completionNonce: string }\ninterface ShutdownAccepted { operationId: string; instanceId: string; accepted: true; mode: 'graceful' | 'immediate' }\ninterface ShutdownCompletion { operationId: string; instanceId: string; completionNonce: string; resourceOwnershipReleased: true }",
+          "ownedByStory": "s4",
+          "consumedByStories": [
+            "s5",
+            "s6",
+            "s7",
+            "s8"
+          ],
+          "assumptions": []
+        }
+      ],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "Installation and release identity",
+          "purpose": "One installation owns one selected delivery mode, zero or one active release and zero or one unresolved operation. Release identities are immutable; the controller metadata never stores application DB contents.",
+          "interfaceSketch": "type Delivery = { mode: 'bundle'; repository: string; channel: string } | { mode: 'dev'; repository: string; branch: string };\ninterface Target { os: 'darwin' | 'linux' | 'win32'; arch: 'arm64' | 'x64'; baseline: string }\ninterface RuntimeIdentity { version: string; target: Target; sha256: string; relativeExecutable: string }\ninterface ReleaseManifest { schemaVersion: 1; releaseId: string; sourceCommit: string; target: Target; runtime: RuntimeIdentity; payloadSha256: string; daemonEntry: string; managerEntry: string; tuiEntry: string; protocolVersion: 1; compatiblePredecessors: string[]; migrations: HookReference[] }\ninterface Installation { schemaVersion: 1; installationId: string; dataHome: string; delivery: Delivery; activeReleaseId?: string; operationId?: string }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc2",
+          "name": "Manager command and operation state",
+          "purpose": "A private-runtime command runner serves both IDEs when daemon is running, stopped or blocked. One OS-backed exclusive lock serializes all mutating operations per installation; controller records and bounded progress are shared across clients. Interactive install is invoked by the shared script in the terminal. The structured manager protocol remains for ordinary control/status; the IDE does not drive installation prompts through it. The 'install' action is reserved exclusively for the shared bootstrap/installer script executing inside the interactive terminal. VS Code/JetBrains adapters must never invoke ManagerAction.install directly or drive its prompts through this protocol; they only launch/focus the terminal and observe completion/readiness. The s1 LLD must state and enforce this caller restriction.",
+          "interfaceSketch": "/** 'install' is terminal-bootstrap-only; IDE adapters may not invoke it directly. */\ntype ManagerAction = 'inspect' | 'check-upgrade' | 'install' | 'upgrade' | 'start' | 'stop' | 'restart' | 'retry-migration';\ntype Phase = 'preparing' | 'quiescing' | 'migrating' | 'activating' | 'ready' | 'stopped' | 'blocked';\ninterface ManagerRequest { protocolVersion: 1; operationId: string; action: ManagerAction; installationId: string; shutdownMode?: 'graceful' | 'immediate'; acceptedOfferId?: string; installOllama?: boolean }\ninterface OperationRecord { operationId: string; predecessorId?: string; candidateId?: string; phase: Phase; hookId?: string; hookStage?: 'check' | 'run' | 'test'; errorCode?: string; message?: string }\ninterface ManagerEvent { protocolVersion: 1; operationId: string; kind: 'progress' | 'result'; state: OperationRecord; retryable: boolean }\ninterface UpgradeOffer { offerId: string; installationId: string; currentReleaseId?: string; candidateReleaseId: string; delivery: Delivery }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc3",
+          "name": "Dependency report and consent",
+          "purpose": "Foundation contract separates required private Node, Ollama availability and advisory agent CLI detection from their platform implementations in s3; IDEs cannot infer consent from plugin updates.",
+          "interfaceSketch": "interface DependencyReport { runtimeReady: boolean; ollama: 'ready' | 'installed-not-running' | 'missing' | 'unavailable'; ollamaInstallOffer?: { id: string; destination: string; version: string }; agents: { claude: boolean; codex: boolean; vibe: boolean }; recommendations: string[]; blockers: string[] }\ninterface DependencyDecision { offerId: string; choice: 'install' | 'decline' }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc5",
+          "name": "Ordered upgrade hook delegation",
+          "purpose": "Owned by foundational s1 because delivery preparation, startup guard and s5 runner all require the same hook manifest. s5 implements execution. Hooks run in-process inside a candidate daemon migration-only process that exclusively owns data; manager and IDE never open LMDB/Lance.",
+          "interfaceSketch": "interface HookReference { id: string; version: string; module: string }\ninterface MigrationContext { installationId: string; operationId: string; fromReleaseId?: string; toReleaseId: string; dataHome: string }\ninterface HookDecision { needed: boolean; reason: string }\ninterface HookValidation { passed: boolean; detail: string }\ninterface UpgradeHook { check(context: MigrationContext): Promise<HookDecision>; run(context: MigrationContext): Promise<void>; test(context: MigrationContext): Promise<HookValidation> }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc6",
+          "name": "Local transport and explicit installation home",
+          "purpose": "All consumers resolve the same installation home and endpoint. Unix retains daemon.sock; Windows uses a per-user/per-installation named pipe. The manager's Node bridge supplies JetBrains Windows transport without changing application RPC payloads.",
+          "interfaceSketch": "interface LocalEndpoint { kind: 'unix' | 'named-pipe'; address: string; installationId: string }\ninterface InstallationLocation { home: string; installationId: string; daemonEndpoint: LocalEndpoint }\ninterface IpcBridgeRequest { protocolVersion: 1; endpoint: LocalEndpoint; rpcFrame: string }\ninterface IpcBridgeEvent { kind: 'frame' | 'closed' | 'error'; frame?: string; written?: boolean; code?: string }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8"
+          ],
+          "assumptions": []
+        }
+      ],
+      "boundary": {
+        "storyId": "s4",
+        "owns": [
+          "sc4"
+        ],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc5",
+          "sc6"
+        ],
+        "internal": "Private daemon start/readiness, boot guard integration, shutdown drain/immediate exit and exit-completion launcher wrapper; transport is shared. No delivery sync/build on start and no signal/PID daemon control. DEF traceability: E20261123c3d71313:S004:FR001 and this story's DEF acceptance criteria apply unchanged."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc5",
+            "sc6",
+            "sc7"
+          ],
+          "depends": [],
+          "internal": "Own the foundational manifest, controller/operation/consent/hook/transport contracts because every branch already depends on s1. Private implementation covers bootstrap, runtime/payload integrity, bundle preparation/publication, platform lock adapter and atomic install records. Later stories implement lifecycle, checks and hooks behind these contracts. The canonical scripts and interactive installer mode are shared with manual invocation and both IDEs; terminal prompts and durable results are part of this foundation. Include the selected release's installed TUI entry/assets in the payload and default successful interactive installer-to-TUI handoff. The s1 LLD must explicitly reserve ManagerAction.install to the shared terminal bootstrap script and forbid IDE-adapter invocation. DEF traceability: E20261123c3d71313:S001:FR001 and this story's DEF acceptance criteria apply unchanged."
+        },
+        {
+          "storyId": "s2",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc5",
+            "sc6"
+          ],
+          "internal": "Private dev checkout/branch sync, lockfile installation and native build preparation; returns the same immutable prepared candidate. It does not define a second lifecycle or migration engine. Include the selected release's installed TUI entry/assets in the payload and default successful interactive installer-to-TUI handoff. DEF traceability: E20261123c3d71313:S002:FR001 and this story's DEF acceptance criteria apply unchanged."
+        },
+        {
+          "storyId": "s3",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc6"
+          ],
+          "internal": "Private platform dependency detection, user-level Ollama installation and agent CLI recommendations. It implements foundational reports/consent and never auto-installs agent CLIs. DEF traceability: E20261123c3d71313:S003:FR001 and this story's DEF acceptance criteria apply unchanged."
+        },
+        {
+          "storyId": "s5",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6"
+          ],
+          "internal": "Private ordered migration runner, daemon migration-only mode, blocked-state persistence, interrupted-run validation and explicit retry. Hooks alone choose data changes and recovery policy. DEF traceability: E20261123c3d71313:S005:FR001 and this story's DEF acceptance criteria apply unchanged."
+        },
+        {
+          "storyId": "s6",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6",
+            "sc7"
+          ],
+          "internal": "Private VS Code native terminal open/focus/launch integration, duplicate-action handling and post-install reconnect. It invokes the shared script and leaves all install prompts/output in that terminal, including after failure. Existing ordinary lifecycle and upgrade-consent UI remains thin. Successful installation automatically enters the installed TUI in that same terminal; the IDE only reconnects/status-checks and does not require a second click. DEF traceability: E20261123c3d71313:S006:FR001 and this story's DEF acceptance criteria apply unchanged."
+        },
+        {
+          "storyId": "s7",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6",
+            "sc7"
+          ],
+          "internal": "Private JetBrains native terminal open/focus/launch integration with the same script, stdin/output and post-install readiness behavior as VS Code; no independent wizard or hidden install. Preserve background activation/control and Windows IPC bridge for ordinary daemon operations. Successful installation automatically enters the installed TUI in that same terminal; the IDE only reconnects/status-checks and does not require a second click. DEF traceability: E20261123c3d71313:S007:FR001 and this story's DEF acceptance criteria apply unchanged."
+        },
+        {
+          "storyId": "s8",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6",
+            "sc7"
+          ],
+          "internal": "Private isolated VM/runner fixtures, target matrix evidence and release qualification results, including real Windows named-pipe behavior and preservation of host v2 daemon. Terminal-install parity checks cover each IDE and manual invocation, paths with spaces/Unicode, missing terminal support, declined Ollama, Ctrl+C/close, duplicate windows, retained output and readiness-confirmed completion. Verify successful install enters TUI in the original terminal, install lock is released before TUI use, TUI exit leaves daemon running, and failure/cancellation never opens TUI. DEF traceability: E20261123c3d71313:S008:FR001 and this story's DEF acceptance criteria apply unchanged."
+        }
+      ],
+      "rolloutPhase": "C — dependencies and lifecycle",
+      "nonFunctional": {
+        "performance": "Targets: local read-only inspection/reachability <=3 seconds; activation never blocks IDE UI. Progress/phase changes emit within 1 second after state changes. Ready startup target <=15 seconds excluding dependency/model initialization; startup probe deadline 30 seconds. Default graceful wait 60 seconds with configurable user deadline; timeout reports uncertainty and never silently escalates. Downloads/builds/hooks have per-operation budgets and progress, not an arbitrary task retry loop.",
+        "security": "No elevated commands, global PATH edits, user credential capture, LLM calls for dependency detection or shell-interpolated actions. Verify payload/runtime digests and targets, reject archive traversal/symlink escapes and module paths outside candidate payload. Local endpoints are user-scoped, capability-protected where needed; bind operation/instance/release identity. Signing deferred and no cryptographic authenticity claim from unsigned digest metadata. No IDE prompt automation or credential/input capture; terminal launch preserves argument boundaries. User-visible script identity matches manual release assets.",
+        "observability": "Structured operationId/installationId/from-to identity, platform/runtime/digest, phase/hook/stage, duration and actionable error code. Bounded NDJSON to IDE, logs in installation home with rotation; no credentials/tokens or full migration data. Report explicitly which platform/native checks passed and which were unavailable. Interactive installation prints human-readable phases and errors directly in the terminal. The terminal is retained after completion/failure; its output is not scraped or treated as success evidence.",
+        "durability": "OS-backed mutation exclusivity plus atomic versioned controller records. Prepared payloads immutable; candidate data mutation is daemon-owned only. Record hook run-started before execution and require test before completion; failures/interruption retain blocked startup. Retry never substitutes a different candidate or starts the predecessor after data changes automatically. Installation completion and lock release precede the interactive TUI session. TUI exit/launch failure cannot roll back the completed installation or keep an installation lock held."
+      }
+    },
+    "summary": {
+      "prose": "Daemon controls use instance-bound local IPC and a single shutdown state. Graceful shutdown drains work; an explicit immediate request bypasses that drain. Restart waits for observed child exit and then confirms the selected release is ready.",
+      "audience": "technical"
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "DaemonIdentity",
+          "signature": "interface DaemonIdentity { instanceId: string; installationId: string; releaseId: string; protocolVersion: 1; state: 'ready' | 'draining' | 'migration-blocked' }",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "unknown",
+              "purpose": "Exact readiness and lifecycle identity.; untrusted wire input is schema-validated before use.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "DaemonIdentity",
+            "meaning": "Exact readiness and lifecycle identity."
+          },
+          "preconditions": [
+            "Read shared boot guard before opening application stores.",
+            "Start uses the selected private runtime and validated payload."
+          ],
+          "postconditions": [
+            "Already-ready matching instance is reused; conflicting identity or blocked migration is not success.",
+            "No sync/npm/build on start."
+          ],
+          "errors": []
+        },
+        {
+          "name": "ShutdownRequest",
+          "signature": "interface ShutdownRequest { operationId: string; expectedInstanceId: string; mode: 'graceful' | 'immediate'; completionEndpoint: string; completionNonce: string }",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "unknown",
+              "purpose": "Authenticated daemon.shutdown request.; untrusted wire input is schema-validated before use.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ShutdownRequest",
+            "meaning": "Authenticated daemon.shutdown request."
+          },
+          "preconditions": [
+            "Validate operation/instance, mode, endpoint containment and nonce; default graceful at caller boundary.",
+            "Control handler executes before general work queue and never awaits drain inside the IPC reply handler."
+          ],
+          "postconditions": [
+            "Flush accepted reply before selected exit action.",
+            "Repeated same request is idempotent; explicit immediate can supersede draining.",
+            "No timeout-triggered escalation, PID inspection, signal or kill fallback."
+          ],
+          "errors": [
+            {
+              "type": "shutdown-instance-mismatch",
+              "condition": "Expected instance differs."
+            },
+            {
+              "type": "shutdown-control-unavailable",
+              "condition": "Control request/acknowledgement cannot complete."
+            }
+          ]
+        },
+        {
+          "name": "ShutdownAccepted",
+          "signature": "interface ShutdownAccepted { operationId: string; instanceId: string; accepted: true; mode: 'graceful' | 'immediate' }",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "unknown",
+              "purpose": "Acknowledgement only.; untrusted wire input is schema-validated before use.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ShutdownAccepted",
+            "meaning": "Acknowledgement only."
+          },
+          "preconditions": [
+            "Corresponding validated request has been admitted."
+          ],
+          "postconditions": [
+            "Never interpreted as resource or process exit evidence."
+          ],
+          "errors": []
+        },
+        {
+          "name": "ShutdownCompletion",
+          "signature": "interface ShutdownCompletion { operationId: string; instanceId: string; completionNonce: string; resourceOwnershipReleased: true }",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "unknown",
+              "purpose": "Wrapper-observed child exit evidence.; untrusted wire input is schema-validated before use.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ShutdownCompletion",
+            "meaning": "Wrapper-observed child exit evidence."
+          },
+          "preconditions": [
+            "Wrapper owns the child exit event and request-bound completion channel.",
+            "Any durable receipt is user-protected, identity/nonce-bound and emitted only after child exit."
+          ],
+          "postconditions": [
+            "Restart requires matching completion and endpoint/ownership reconciliation.",
+            "Missing evidence stays uncertain/blocked; no competing replacement."
+          ],
+          "errors": []
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "Daemon control state",
+        "change": "new",
+        "details": "Proposed private boundary src/daemon/installation-lifecycle.ts integrates with current src/daemon/index.ts and src/daemon/server.ts. One state machine admits status/shutdown while rejecting ordinary new work during draining. Refactor only the control closure ordering: do not close the control listener before an immediate override can arrive. Existing queue/resource disposal remains application-owned; preserve storage-health checks and native ownership guards. APIs on src/daemon/lifecycle.ts remain model bootstrap, not a restored process engine.",
+        "callSites": [
+          "src/daemon/index.ts",
+          "src/daemon/server.ts",
+          "src/daemon/queue.ts"
+        ]
+      },
+      {
+        "entity": "Immediate self-exit path",
+        "change": "new",
+        "details": "Immediate is an authenticated explicit IPC request, not a drain timeout policy. After reply flush, a small target-qualified Node-API primitive performs calling-process _Exit(0), bypassing pending graceful promises and native atexit hooks. This is self-exit inside the daemon, not a PID-based or external termination command. It opens no control process handle and sends no signal. If unavailable, return an explicit unsupported-handler failure. Qualify crash recovery of actual native stores afterward; never claim immediate works when IPC itself is unresponsive.",
+        "callSites": []
+      },
+      {
+        "entity": "Lifetime wrapper and ownership",
+        "change": "new",
+        "details": "Wrapper starts detached from the install terminal with log-bound standard streams and a private child IPC channel; child readiness binds installation/release/instance. It observes child exit, produces ShutdownCompletion on the manager's protected local endpoint and optionally an atomic receipt keyed by operation/nonce, then exits. It has no watchdog, respawn or kill policy. Normal daemon and migration-only process share an exclusive daemon-owned data-lease primitive; manager never opens DB. All managed boot paths apply foundation startup guard and refuse conflicting ownership before store open.",
+        "callSites": []
+      },
+      {
+        "entity": "Platform transport integration",
+        "change": "new",
+        "details": "Unix retains protected daemon.sock and existing application payloads; never unlink a live endpoint. Windows uses the sc6 per-user/install named pipe with protected capability handshake before lifecycle control. Foundation manager adapters and application IPC consumers use identical location resolution. Existing application cleanup signal handlers can remain for OS/application disposal; manager stop/restart never sends those signals. Legacy daemons without qualified completion evidence are a diagnosed adoption precondition, not automatically replaceable.",
+        "callSites": []
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Consume foundation identity/state/home/report/hook-shape boundary; only lifecycle/readiness implementation is owned here."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "Consume foundation identity/state/home/report/hook-shape boundary; only lifecycle/readiness implementation is owned here."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "Consume foundation identity/state/home/report/hook-shape boundary; only lifecycle/readiness implementation is owned here."
+      },
+      {
+        "contractId": "sc5",
+        "role": "consumes",
+        "howDetails": "Consume foundation identity/state/home/report/hook-shape boundary; only lifecycle/readiness implementation is owned here."
+      },
+      {
+        "contractId": "sc6",
+        "role": "consumes",
+        "howDetails": "Consume foundation identity/state/home/report/hook-shape boundary; only lifecycle/readiness implementation is owned here."
+      },
+      {
+        "contractId": "sc4",
+        "role": "implements",
+        "howDetails": "Own request/acknowledgement/readiness/completion semantics, control-lane ordering, wrapper exit proof and platform-qualified immediate self-exit."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "IPC failure or wrong instance",
+          "detection": "Connect/auth/timeout/schema/instance validation fails.",
+          "response": "Report shutdown failed/uncertain; no kill fallback or replacement.",
+          "userImpact": "User may explicitly retry IPC.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Graceful drain exceeds deadline",
+          "detection": "Caller deadline expires without matching completion.",
+          "response": "Keep draining state observable; offer explicit immediate IPC choice.",
+          "userImpact": "No silent escalation or false stopped state.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Completion lost or forged",
+          "detection": "Nonce/operation/instance mismatch, missing exit event/receipt or ambiguous ownership.",
+          "response": "Block restart until exact evidence reconciles.",
+          "userImpact": "No competing daemon.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Immediate primitive/native cleanup not qualified",
+          "detection": "Target policy/binding unavailable or test evidence absent.",
+          "response": "Explicit unsupported/qualification failure; no alternate process killer.",
+          "userImpact": "Target cannot claim this lifecycle behavior yet.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Duplicate start from multiple IDEs",
+          "expected": "Foundation serialization reuses one matching ready daemon."
+        },
+        {
+          "input": "Immediate request arrives during graceful drain",
+          "expected": "Control lane admits it independently of the drain promise."
+        },
+        {
+          "input": "Daemon is unresponsive to IPC",
+          "expected": "Report inability to stop; do not claim an immediate override can bypass an unreachable control channel."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Remain inside s4 boundary; no elevated commands, PID/kill daemon fallback, direct cloud LLM REST, or host v2 daemon mutation.",
+          "source": "c1"
+        },
+        {
+          "text": "Approved HLD shared contracts, terminal-only install and success-to-TUI handoff remain unchanged.",
+          "source": "c2"
+        },
+        {
+          "text": "DEF E20261123c3d71313:S004:FR001 and this story acceptance criteria apply unchanged.",
+          "source": "c3"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test + node:assert/strict; canonical *.test.ts coordinator. Real platform/IDE qualification is recorded separately and not inferred from fakes.",
+      "testLevels": [
+        {
+          "level": "contract",
+          "purpose": "Validate instance/nonce/auth/idempotency and distinct ack/exit evidence.",
+          "subjects": [
+            "wrong-instance/stale/duplicate requests",
+            "ack cannot authorize restart",
+            "forged completion rejected"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Exercise real child lifetime and resource control without external daemon signals.",
+          "subjects": [
+            "pending work graceful drain and immediate supersession",
+            "wrapper receipt after child self-exit",
+            "control remains available while draining",
+            "startup guard and exclusive data lease"
+          ],
+          "fixturesNeeded": [
+            "Disposable daemon/queue/store peers and isolated IPC paths."
+          ]
+        },
+        {
+          "level": "live",
+          "purpose": "Prove actual native shutdown/recovery on every target.",
+          "subjects": [
+            "Mac/Linux/Windows graceful and immediate exit",
+            "restart exact release ready",
+            "no PID/kill command execution",
+            "native DB reopen after immediate self-exit"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "serialized-start-reuse-and-identity",
+            "start-no-sync-install-build",
+            "conflicting-instance-refused"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "graceful-drain-before-exit-completion",
+            "restart-waits-actual-child-exit",
+            "ready-identity-matches-selected-release"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "explicit-immediate-bypasses-drain-and-native-exit-hooks",
+            "immediate-ack-flushed-before-self-exit",
+            "native-recovery-per-target"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "ipc-failure-no-kill-no-replacement",
+            "missing-forged-completion-blocks",
+            "deadline-does-not-auto-escalate"
+          ]
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "One in-daemon control state and lifetime exit wrapper",
+        "oneLineSummary": "Daemon owns drain/immediate decisions; wrapper proves actual child exit.",
+        "approach": "A single daemon control lane transitions ready to draining and still admits authenticated shutdown/status requests. Start and restart use s1 controller serialization and release identity.\n\nA minimal detached lifetime wrapper observes child exit and emits the nonce-bound completion; it never signals, kills, retries or selects another release.",
+        "pros": [
+          "Immediate override can bypass the graceful work queue.",
+          "Restart does not confuse acknowledgement/socket closure with process exit."
+        ],
+        "cons": [
+          "Wrapper and completion receipt must be qualified on all target runtimes."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Separate daemon-local control worker",
+        "oneLineSummary": "A dedicated worker brokers shutdown while the application drains.",
+        "approach": "A daemon-owned control worker handles the same public IPC contracts and forwards resource draining to the application. The wrapper still observes process exit.\n\nWorker boot/channel health and shutdown handoff add a second control lifetime inside the daemon, despite an existing main-thread server.",
+        "pros": [
+          "Can isolate some control work from application scheduling."
+        ],
+        "cons": [
+          "Adds worker lifecycle and transport handoff without making an unresponsive process externally stoppable under IPC-only rules."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "A second control worker adds lifecycle/channel states; it does not eliminate the required wrapper or solve a fully unresponsive process under IPC-only constraints."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [],
+    "sequenceDefinition": {
+      "id": "ipc-shutdown-completion",
+      "narrative": "Shutdown acknowledgement never proves exit. The daemon keeps its control lane available while draining, immediate mode is explicit, and the wrapper reports actual child exit before restart can proceed.",
+      "participants": [
+        {
+          "id": "manager",
+          "label": "Manager",
+          "description": "Serialized lifecycle client."
+        },
+        {
+          "id": "daemon",
+          "label": "Daemon control lane",
+          "description": "Authenticated instance-bound shutdown and readiness."
+        },
+        {
+          "id": "wrapper",
+          "label": "Exit wrapper",
+          "description": "Observes child exit; has no kill or restart policy."
+        },
+        {
+          "id": "next",
+          "label": "Next daemon",
+          "description": "Starts only after verified completion and ownership release."
+        }
+      ],
+      "messages": [
+        {
+          "from": "manager",
+          "to": "daemon",
+          "label": "ShutdownRequest: graceful by default",
+          "description": "Operation and expected instance checked."
+        },
+        {
+          "from": "daemon",
+          "to": "manager",
+          "label": "ShutdownAccepted",
+          "kind": "return",
+          "description": "Reply is flushed; control lane remains available."
+        },
+        {
+          "from": "daemon",
+          "to": "daemon",
+          "label": "Drain admission/work and dispose resources",
+          "description": "Ordinary requests are rejected while status/shutdown remain admissible."
+        },
+        {
+          "from": "manager",
+          "to": "daemon",
+          "label": "Optional explicit immediate override",
+          "description": "Only when user chooses it; never timeout escalation."
+        },
+        {
+          "from": "daemon",
+          "to": "daemon",
+          "label": "Self-exit after selected shutdown path",
+          "description": "Immediate path bypasses draining/native cleanup through bounded self-exit primitive."
+        },
+        {
+          "from": "wrapper",
+          "to": "manager",
+          "label": "Nonce-bound actual child-exit completion",
+          "kind": "return",
+          "description": "Only after observed child exit; receipt can reconcile manager interruption."
+        },
+        {
+          "from": "manager",
+          "to": "next",
+          "label": "Start selected release and verify identity",
+          "description": "No replacement on missing/uncertain completion."
+        }
+      ]
+    },
+    "adherence": {
+      "dimensions": [
+        "diagram-sequence",
+        "functional-coverage"
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S004/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "AGENTS.md"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/HLD.md"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/DEF.md"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "src/daemon/index.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "src/daemon/server.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "analyze-bundle",
+      "ref": "src/daemon/queue.ts"
+    },
+    {
+      "id": "c7",
+      "kind": "analyze-bundle",
+      "ref": "src/db/graph/store.ts"
+    },
+    {
+      "id": "c8",
+      "kind": "doc",
+      "ref": "https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/exit-exit-exit?view=msvc-170"
+    },
+    {
+      "id": "c9",
+      "kind": "doc",
+      "ref": "https://nodejs.org/docs/latest-v22.x/api/net.html"
+    }
+  ]
+}

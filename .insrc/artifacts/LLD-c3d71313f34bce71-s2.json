@@ -1,0 +1,560 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1795448342178-cpno5e",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-23T15:44:32.378Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 329810,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-11-23T13:27:35.399Z",
+    "epicHash": "c3d71313f34bce71",
+    "epicSlug": "reliable-cross-platform-daemon-installation-lifecycle",
+    "storyId": "s2",
+    "hldBaseRunId": "wf-1795445383474-itgkv3",
+    "hldEffectiveHash": "77bfb88eed6d557fbc298ffc881afc2ccf6e682b9f0d0696361d1e77e5f93d83",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "Install and upgrade development checkouts",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "3f43f7a0ee8310d79ef6059bf238ddc84b3a6bf76824ad5f6cd4360ab2c12221",
+        "at": "2026-11-23T15:44:32.462Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Choose a1: one shared user-level installer/manager with bundle and dev delivery adapters. Install launched from either IDE runs the same public platform installer script interactively in a visible terminal; the script owns prompts and output. IDE-specific installation wizards and hidden background installs are excluded. Lifecycle, migration, runtime and privilege constraints remain shared and unchanged. Successful interactive installation hands the same terminal directly to the installed insrc TUI after daemon readiness; it does not finish at an idle shell.",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "Installation and release identity",
+          "purpose": "One installation owns one selected delivery mode, zero or one active release and zero or one unresolved operation. Release identities are immutable; the controller metadata never stores application DB contents.",
+          "interfaceSketch": "type Delivery = { mode: 'bundle'; repository: string; channel: string } | { mode: 'dev'; repository: string; branch: string };\ninterface Target { os: 'darwin' | 'linux' | 'win32'; arch: 'arm64' | 'x64'; baseline: string }\ninterface RuntimeIdentity { version: string; target: Target; sha256: string; relativeExecutable: string }\ninterface ReleaseManifest { schemaVersion: 1; releaseId: string; sourceCommit: string; target: Target; runtime: RuntimeIdentity; payloadSha256: string; daemonEntry: string; managerEntry: string; tuiEntry: string; protocolVersion: 1; compatiblePredecessors: string[]; migrations: HookReference[] }\ninterface Installation { schemaVersion: 1; installationId: string; dataHome: string; delivery: Delivery; activeReleaseId?: string; operationId?: string }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc2",
+          "name": "Manager command and operation state",
+          "purpose": "A private-runtime command runner serves both IDEs when daemon is running, stopped or blocked. One OS-backed exclusive lock serializes all mutating operations per installation; controller records and bounded progress are shared across clients. Interactive install is invoked by the shared script in the terminal. The structured manager protocol remains for ordinary control/status; the IDE does not drive installation prompts through it. The 'install' action is reserved exclusively for the shared bootstrap/installer script executing inside the interactive terminal. VS Code/JetBrains adapters must never invoke ManagerAction.install directly or drive its prompts through this protocol; they only launch/focus the terminal and observe completion/readiness. The s1 LLD must state and enforce this caller restriction.",
+          "interfaceSketch": "/** 'install' is terminal-bootstrap-only; IDE adapters may not invoke it directly. */\ntype ManagerAction = 'inspect' | 'check-upgrade' | 'install' | 'upgrade' | 'start' | 'stop' | 'restart' | 'retry-migration';\ntype Phase = 'preparing' | 'quiescing' | 'migrating' | 'activating' | 'ready' | 'stopped' | 'blocked';\ninterface ManagerRequest { protocolVersion: 1; operationId: string; action: ManagerAction; installationId: string; shutdownMode?: 'graceful' | 'immediate'; acceptedOfferId?: string; installOllama?: boolean }\ninterface OperationRecord { operationId: string; predecessorId?: string; candidateId?: string; phase: Phase; hookId?: string; hookStage?: 'check' | 'run' | 'test'; errorCode?: string; message?: string }\ninterface ManagerEvent { protocolVersion: 1; operationId: string; kind: 'progress' | 'result'; state: OperationRecord; retryable: boolean }\ninterface UpgradeOffer { offerId: string; installationId: string; currentReleaseId?: string; candidateReleaseId: string; delivery: Delivery }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc3",
+          "name": "Dependency report and consent",
+          "purpose": "Foundation contract separates required private Node, Ollama availability and advisory agent CLI detection from their platform implementations in s3; IDEs cannot infer consent from plugin updates.",
+          "interfaceSketch": "interface DependencyReport { runtimeReady: boolean; ollama: 'ready' | 'installed-not-running' | 'missing' | 'unavailable'; ollamaInstallOffer?: { id: string; destination: string; version: string }; agents: { claude: boolean; codex: boolean; vibe: boolean }; recommendations: string[]; blockers: string[] }\ninterface DependencyDecision { offerId: string; choice: 'install' | 'decline' }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc5",
+          "name": "Ordered upgrade hook delegation",
+          "purpose": "Owned by foundational s1 because delivery preparation, startup guard and s5 runner all require the same hook manifest. s5 implements execution. Hooks run in-process inside a candidate daemon migration-only process that exclusively owns data; manager and IDE never open LMDB/Lance.",
+          "interfaceSketch": "interface HookReference { id: string; version: string; module: string }\ninterface MigrationContext { installationId: string; operationId: string; fromReleaseId?: string; toReleaseId: string; dataHome: string }\ninterface HookDecision { needed: boolean; reason: string }\ninterface HookValidation { passed: boolean; detail: string }\ninterface UpgradeHook { check(context: MigrationContext): Promise<HookDecision>; run(context: MigrationContext): Promise<void>; test(context: MigrationContext): Promise<HookValidation> }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc6",
+          "name": "Local transport and explicit installation home",
+          "purpose": "All consumers resolve the same installation home and endpoint. Unix retains daemon.sock; Windows uses a per-user/per-installation named pipe. The manager's Node bridge supplies JetBrains Windows transport without changing application RPC payloads.",
+          "interfaceSketch": "interface LocalEndpoint { kind: 'unix' | 'named-pipe'; address: string; installationId: string }\ninterface InstallationLocation { home: string; installationId: string; daemonEndpoint: LocalEndpoint }\ninterface IpcBridgeRequest { protocolVersion: 1; endpoint: LocalEndpoint; rpcFrame: string }\ninterface IpcBridgeEvent { kind: 'frame' | 'closed' | 'error'; frame?: string; written?: boolean; code?: string }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8"
+          ],
+          "assumptions": []
+        }
+      ],
+      "boundary": {
+        "storyId": "s2",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc5",
+          "sc6"
+        ],
+        "internal": "Private dev checkout/branch sync, lockfile installation and native build preparation; returns the same immutable prepared candidate. It does not define a second lifecycle or migration engine. Include the selected release's installed TUI entry/assets in the payload and default successful interactive installer-to-TUI handoff. DEF traceability: E20261123c3d71313:S002:FR001 and this story's DEF acceptance criteria apply unchanged."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc5",
+            "sc6",
+            "sc7"
+          ],
+          "depends": [],
+          "internal": "Own the foundational manifest, controller/operation/consent/hook/transport contracts because every branch already depends on s1. Private implementation covers bootstrap, runtime/payload integrity, bundle preparation/publication, platform lock adapter and atomic install records. Later stories implement lifecycle, checks and hooks behind these contracts. The canonical scripts and interactive installer mode are shared with manual invocation and both IDEs; terminal prompts and durable results are part of this foundation. Include the selected release's installed TUI entry/assets in the payload and default successful interactive installer-to-TUI handoff. The s1 LLD must explicitly reserve ManagerAction.install to the shared terminal bootstrap script and forbid IDE-adapter invocation. DEF traceability: E20261123c3d71313:S001:FR001 and this story's DEF acceptance criteria apply unchanged."
+        },
+        {
+          "storyId": "s3",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc6"
+          ],
+          "internal": "Private platform dependency detection, user-level Ollama installation and agent CLI recommendations. It implements foundational reports/consent and never auto-installs agent CLIs. DEF traceability: E20261123c3d71313:S003:FR001 and this story's DEF acceptance criteria apply unchanged."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc4"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc5",
+            "sc6"
+          ],
+          "internal": "Private daemon start/readiness, boot guard integration, shutdown drain/immediate exit and exit-completion launcher wrapper; transport is shared. No delivery sync/build on start and no signal/PID daemon control. DEF traceability: E20261123c3d71313:S004:FR001 and this story's DEF acceptance criteria apply unchanged."
+        },
+        {
+          "storyId": "s5",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6"
+          ],
+          "internal": "Private ordered migration runner, daemon migration-only mode, blocked-state persistence, interrupted-run validation and explicit retry. Hooks alone choose data changes and recovery policy. DEF traceability: E20261123c3d71313:S005:FR001 and this story's DEF acceptance criteria apply unchanged."
+        },
+        {
+          "storyId": "s6",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6",
+            "sc7"
+          ],
+          "internal": "Private VS Code native terminal open/focus/launch integration, duplicate-action handling and post-install reconnect. It invokes the shared script and leaves all install prompts/output in that terminal, including after failure. Existing ordinary lifecycle and upgrade-consent UI remains thin. Successful installation automatically enters the installed TUI in that same terminal; the IDE only reconnects/status-checks and does not require a second click. DEF traceability: E20261123c3d71313:S006:FR001 and this story's DEF acceptance criteria apply unchanged."
+        },
+        {
+          "storyId": "s7",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6",
+            "sc7"
+          ],
+          "internal": "Private JetBrains native terminal open/focus/launch integration with the same script, stdin/output and post-install readiness behavior as VS Code; no independent wizard or hidden install. Preserve background activation/control and Windows IPC bridge for ordinary daemon operations. Successful installation automatically enters the installed TUI in that same terminal; the IDE only reconnects/status-checks and does not require a second click. DEF traceability: E20261123c3d71313:S007:FR001 and this story's DEF acceptance criteria apply unchanged."
+        },
+        {
+          "storyId": "s8",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6",
+            "sc7"
+          ],
+          "internal": "Private isolated VM/runner fixtures, target matrix evidence and release qualification results, including real Windows named-pipe behavior and preservation of host v2 daemon. Terminal-install parity checks cover each IDE and manual invocation, paths with spaces/Unicode, missing terminal support, declined Ollama, Ctrl+C/close, duplicate windows, retained output and readiness-confirmed completion. Verify successful install enters TUI in the original terminal, install lock is released before TUI use, TUI exit leaves daemon running, and failure/cancellation never opens TUI. DEF traceability: E20261123c3d71313:S008:FR001 and this story's DEF acceptance criteria apply unchanged."
+        }
+      ],
+      "rolloutPhase": "B — dev preparation",
+      "nonFunctional": {
+        "performance": "Targets: local read-only inspection/reachability <=3 seconds; activation never blocks IDE UI. Progress/phase changes emit within 1 second after state changes. Ready startup target <=15 seconds excluding dependency/model initialization; startup probe deadline 30 seconds. Default graceful wait 60 seconds with configurable user deadline; timeout reports uncertainty and never silently escalates. Downloads/builds/hooks have per-operation budgets and progress, not an arbitrary task retry loop.",
+        "security": "No elevated commands, global PATH edits, user credential capture, LLM calls for dependency detection or shell-interpolated actions. Verify payload/runtime digests and targets, reject archive traversal/symlink escapes and module paths outside candidate payload. Local endpoints are user-scoped, capability-protected where needed; bind operation/instance/release identity. Signing deferred and no cryptographic authenticity claim from unsigned digest metadata. No IDE prompt automation or credential/input capture; terminal launch preserves argument boundaries. User-visible script identity matches manual release assets.",
+        "observability": "Structured operationId/installationId/from-to identity, platform/runtime/digest, phase/hook/stage, duration and actionable error code. Bounded NDJSON to IDE, logs in installation home with rotation; no credentials/tokens or full migration data. Report explicitly which platform/native checks passed and which were unavailable. Interactive installation prints human-readable phases and errors directly in the terminal. The terminal is retained after completion/failure; its output is not scraped or treated as success evidence.",
+        "durability": "OS-backed mutation exclusivity plus atomic versioned controller records. Prepared payloads immutable; candidate data mutation is daemon-owned only. Record hook run-started before execution and require test before completion; failures/interruption retain blocked startup. Retry never substitutes a different candidate or starts the predecessor after data changes automatically. Installation completion and lock release precede the interactive TUI session. TUI exit/launch failure cannot roll back the completed installation or keep an installation lock held."
+      }
+    },
+    "summary": {
+      "prose": "Developers can prepare a selected repository and branch as a new immutable installation candidate using private Node and npm. Dirty source and failed builds leave the active installation intact. The shared installer still owns activation, terminal prompts and the TUI handoff.",
+      "audience": "technical"
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "Delivery",
+          "signature": "type Delivery = { mode: 'bundle'; repository: string; channel: string } | { mode: 'dev'; repository: string; branch: string };",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "unknown",
+              "purpose": "Validated configured development source.; untrusted wire input is schema-validated before use.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Delivery",
+            "meaning": "Validated configured development source."
+          },
+          "preconditions": [
+            "Dev mode explicitly chosen; validate repository scheme/path and branch with Git ref rules.",
+            "No option-like repository/ref arguments, credential logging or shell interpolation."
+          ],
+          "postconditions": [
+            "Resolve configured branch once; persist exact commit before build.",
+            "No implicit default branch or bundle fallback."
+          ],
+          "errors": [
+            {
+              "type": "source-invalid",
+              "condition": "Invalid repository/ref or unavailable exact branch."
+            }
+          ]
+        },
+        {
+          "name": "ReleaseManifest",
+          "signature": "interface ReleaseManifest { schemaVersion: 1; releaseId: string; sourceCommit: string; target: Target; runtime: RuntimeIdentity; payloadSha256: string; daemonEntry: string; managerEntry: string; tuiEntry: string; protocolVersion: 1; compatiblePredecessors: string[]; migrations: HookReference[] }",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "unknown",
+              "purpose": "Immutable prepared dev candidate with common target/runtime identity.; untrusted wire input is schema-validated before use.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ReleaseManifest",
+            "meaning": "Immutable prepared dev candidate with common target/runtime identity."
+          },
+          "preconditions": [
+            "Private Node 22.22.1/matching npm verified; required compiler/native prerequisites available without elevation."
+          ],
+          "postconditions": [
+            "Source commit and compiled/dependency inventory digest bind the candidate.",
+            "Common controller receives preparation result; s2 never stops daemon, runs migrations or starts TUI independently."
+          ],
+          "errors": []
+        },
+        {
+          "name": "ManagerRequest",
+          "signature": "interface ManagerRequest { protocolVersion: 1; operationId: string; action: ManagerAction; installationId: string; shutdownMode?: 'graceful' | 'immediate'; acceptedOfferId?: string; installOllama?: boolean }",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "unknown",
+              "purpose": "Existing manager selection of dev preparation, not a second install protocol.; untrusted wire input is schema-validated before use.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ManagerRequest",
+            "meaning": "Existing manager selection of dev preparation, not a second install protocol."
+          },
+          "preconditions": [
+            "Terminal-only install remains enforced by s1; upgrade binds exact accepted offer."
+          ],
+          "postconditions": [
+            "Reuse foundation state/locks/errors; no new IDE-facing install path.",
+            "Missing sibling execution capability is explicit before disruption."
+          ],
+          "errors": []
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "Development preparation record",
+        "change": "new",
+        "details": "New private s2 record binds operation id, configured repository/branch, once-resolved commit, private runtime and staging root. Fetch configured refs/heads/<branch> into a new operation-owned repository and checkout detached at FETCH_HEAD. Verify remote/source identity and avoid changing global Git settings or user credentials. Git subprocesses use argument arrays, bounded output/deadlines and disabled repository hooks/fsmonitor where untrusted preparation could trigger them. Proposed implementation boundary: src/installer/dev.ts; existing build coordinator is inspected input, not an instruction to rewrite it.",
+        "callSites": []
+      },
+      {
+        "entity": "Source preservation and build result",
+        "change": "new",
+        "details": "Detect dirty/conflicting managed source before upgrade and refuse with an actionable message; never reset/clean user trees. Build only the isolated checkout using its lockfile and absolute private Node/npm; optional native dependencies are retained. Set ONNXRUNTIME_NODE_INSTALL_CUDA=skip only when absent, preserving and recording an explicit inherited value. Run the repository's documented build through the existing coordinator, capture source/build fingerprints and copy only validated runtime dependency closure. Untrusted dev source executes only after explicit source selection; no elevated install of Git/compiler/system libraries.",
+        "callSites": []
+      },
+      {
+        "entity": "Prepared dev payload",
+        "change": "new",
+        "details": "Canonical inventory digest identifies the prepared dev payload; payloadSha256 denotes this immutable inventory digest in dev mode, while the bundle adapter owns archive-digest semantics. Mode/sourceCommit/target remain explicit. Candidate files are operation-owned until validation/publish; common s1 controller owns atomic selection and subsequent sibling handoff. Failed prepare cleans only its own staging and never changes running/stopped intent. Installed TUI/assets remain part of the selected payload.",
+        "callSites": []
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Validate and return common prepared identity; never change delivery mode implicitly."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "Use foundation operation/lock/candidate admission; install remains script-only."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "Consume prerequisite/dependency result; do not implement detection/install."
+      },
+      {
+        "contractId": "sc5",
+        "role": "consumes",
+        "howDetails": "Carry ordered hook references unchanged; execution belongs to s5."
+      },
+      {
+        "contractId": "sc6",
+        "role": "consumes",
+        "howDetails": "Use explicit shared home/target/endpoint resolution."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Dirty/conflicting managed source",
+          "detection": "Git status/conflict markers and configured source identity fail preflight.",
+          "response": "source-dirty; refuse before disruption without reset/clean.",
+          "userImpact": "User keeps all changes.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Fetch/auth/ref failure",
+          "detection": "Git exit/deadline and exact ref validation fail.",
+          "response": "source-fetch-failed with redacted diagnostics; discard only owned staging.",
+          "userImpact": "Active release remains usable.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Private toolchain/native build failure",
+          "detection": "Verified executable identity, npm/build exit or inventory probes fail.",
+          "response": "source-build-failed; no candidate activation or source-mode switch.",
+          "userImpact": "Install/upgrade is not falsely successful.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Source moved during preparation",
+          "detection": "Recorded fetched commit differs from later branch observations.",
+          "response": "Continue only the already accepted exact commit, or require a new offer for a new candidate.",
+          "userImpact": "No silent revision substitution.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Remote branch advances after fetch",
+          "expected": "Build the recorded commit; next check may offer another commit."
+        },
+        {
+          "input": "Repository/branch/home contains spaces or Unicode",
+          "expected": "Argument arrays and validated ref/path handling preserve identity."
+        },
+        {
+          "input": "Explicit CUDA install env value exists",
+          "expected": "Preserve it; set skip only when absent and record effective value."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Remain inside s2 boundary; no elevated commands, PID/kill daemon fallback, direct cloud LLM REST, or host v2 daemon mutation.",
+          "source": "c1"
+        },
+        {
+          "text": "Approved HLD shared contracts, terminal-only install and success-to-TUI handoff remain unchanged.",
+          "source": "c2"
+        },
+        {
+          "text": "DEF E20261123c3d71313:S002:FR001 and this story acceptance criteria apply unchanged.",
+          "source": "c3"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test + node:assert/strict; canonical *.test.ts coordinator. Real platform/IDE qualification is recorded separately and not inferred from fakes.",
+      "testLevels": [
+        {
+          "level": "integration",
+          "purpose": "Prove source preservation and exact private build behavior with local Git remotes and process fixtures.",
+          "subjects": [
+            "branch movement/dirty checkout/auth errors",
+            "wrong/no host Node and npm",
+            "build failure leaves incumbent unchanged"
+          ],
+          "fixturesNeeded": [
+            "Two local repositories and operation-owned temp homes; no real daemon socket."
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "Verify identical prepared-candidate contracts and terminal ownership.",
+          "subjects": [
+            "mode/source/runtime/inventory identity",
+            "missing sibling capabilities fail explicitly",
+            "shared script success-to-TUI path is consumed, not reimplemented"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "dev-private-runtime-and-target-build",
+            "missing-prerequisite-no-elevation",
+            "selected-repo-branch-exact-commit"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "branch-movement-pinned-candidate",
+            "unrelated-branch-never-selected",
+            "dev-mode-survives-common-activation"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "dirty-and-conflicting-source-preserved",
+            "npm/build/fetch-failure-incumbent-unchanged"
+          ]
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Isolated exact-commit checkout",
+        "oneLineSummary": "Prepare a fresh operation-owned checkout and publish an immutable built candidate.",
+        "approach": "Fetch only the configured branch into an isolated preparation root, resolve FETCH_HEAD once and build that exact commit. The selected installed checkout and user changes are never reset.\n\nReturn the same validated candidate manifest as bundle preparation; common controller, lifecycle, migration and terminal behavior stays with its owner.",
+        "pros": [
+          "Preparation cannot overwrite the active source tree.",
+          "One resolved commit is stable even if the remote branch advances during build."
+        ],
+        "cons": [
+          "A clean checkout can download more bytes than a shared worktree cache."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Shared bare cache and linked worktrees",
+        "oneLineSummary": "Cache Git objects and prepare operation-specific worktrees.",
+        "approach": "Keep a controlled bare repository per configured source and allocate a separate detached worktree at the fetched commit. Build outputs remain candidate-local.\n\nCommon candidate contracts remain unchanged, but cache lock, worktree cleanup and repository ownership become extra internal state.",
+        "pros": [
+          "Repeated builds can reuse downloaded Git objects."
+        ],
+        "cons": [
+          "Adds cache/worktree cleanup and corruption recovery without a requested user capability."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Shared object caching is optional optimization; its ownership and cleanup states add complexity without improving correctness."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "AGENTS.md"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/HLD.md"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/DEF.md"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "scripts/test-harness/build.mjs"
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "copy-assets.mjs"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": ".npmrc"
+    }
+  ]
+}

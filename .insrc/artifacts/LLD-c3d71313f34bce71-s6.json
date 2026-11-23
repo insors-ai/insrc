@@ -1,0 +1,729 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1795449119006-a48vb2",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-23T15:52:00.291Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 999,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-11-23T13:27:35.399Z",
+    "epicHash": "c3d71313f34bce71",
+    "epicSlug": "reliable-cross-platform-daemon-installation-lifecycle",
+    "storyId": "s6",
+    "hldBaseRunId": "wf-1795445383474-itgkv3",
+    "hldEffectiveHash": "77bfb88eed6d557fbc298ffc881afc2ccf6e682b9f0d0696361d1e77e5f93d83",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "Manage daemon installation and lifecycle in VS Code",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "10b876b765f15c44bdd875f2fad1aa50bfab467d4514c6622d9a8586cdc1a180",
+        "at": "2026-11-23T15:52:00.397Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Choose a1: one shared user-level installer/manager with bundle and dev delivery adapters. Install launched from either IDE runs the same public platform installer script interactively in a visible terminal; the script owns prompts and output. IDE-specific installation wizards and hidden background installs are excluded. Lifecycle, migration, runtime and privilege constraints remain shared and unchanged. Successful interactive installation hands the same terminal directly to the installed insrc TUI after daemon readiness; it does not finish at an idle shell.",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "Installation and release identity",
+          "purpose": "One installation owns one selected delivery mode, zero or one active release and zero or one unresolved operation. Release identities are immutable; the controller metadata never stores application DB contents.",
+          "interfaceSketch": "type Delivery = { mode: 'bundle'; repository: string; channel: string } | { mode: 'dev'; repository: string; branch: string };\ninterface Target { os: 'darwin' | 'linux' | 'win32'; arch: 'arm64' | 'x64'; baseline: string }\ninterface RuntimeIdentity { version: string; target: Target; sha256: string; relativeExecutable: string }\ninterface ReleaseManifest { schemaVersion: 1; releaseId: string; sourceCommit: string; target: Target; runtime: RuntimeIdentity; payloadSha256: string; daemonEntry: string; managerEntry: string; tuiEntry: string; protocolVersion: 1; compatiblePredecessors: string[]; migrations: HookReference[] }\ninterface Installation { schemaVersion: 1; installationId: string; dataHome: string; delivery: Delivery; activeReleaseId?: string; operationId?: string }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc2",
+          "name": "Manager command and operation state",
+          "purpose": "A private-runtime command runner serves both IDEs when daemon is running, stopped or blocked. One OS-backed exclusive lock serializes all mutating operations per installation; controller records and bounded progress are shared across clients. Interactive install is invoked by the shared script in the terminal. The structured manager protocol remains for ordinary control/status; the IDE does not drive installation prompts through it. The 'install' action is reserved exclusively for the shared bootstrap/installer script executing inside the interactive terminal. VS Code/JetBrains adapters must never invoke ManagerAction.install directly or drive its prompts through this protocol; they only launch/focus the terminal and observe completion/readiness. The s1 LLD must state and enforce this caller restriction.",
+          "interfaceSketch": "/** 'install' is terminal-bootstrap-only; IDE adapters may not invoke it directly. */\ntype ManagerAction = 'inspect' | 'check-upgrade' | 'install' | 'upgrade' | 'start' | 'stop' | 'restart' | 'retry-migration';\ntype Phase = 'preparing' | 'quiescing' | 'migrating' | 'activating' | 'ready' | 'stopped' | 'blocked';\ninterface ManagerRequest { protocolVersion: 1; operationId: string; action: ManagerAction; installationId: string; shutdownMode?: 'graceful' | 'immediate'; acceptedOfferId?: string; installOllama?: boolean }\ninterface OperationRecord { operationId: string; predecessorId?: string; candidateId?: string; phase: Phase; hookId?: string; hookStage?: 'check' | 'run' | 'test'; errorCode?: string; message?: string }\ninterface ManagerEvent { protocolVersion: 1; operationId: string; kind: 'progress' | 'result'; state: OperationRecord; retryable: boolean }\ninterface UpgradeOffer { offerId: string; installationId: string; currentReleaseId?: string; candidateReleaseId: string; delivery: Delivery }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc3",
+          "name": "Dependency report and consent",
+          "purpose": "Foundation contract separates required private Node, Ollama availability and advisory agent CLI detection from their platform implementations in s3; IDEs cannot infer consent from plugin updates.",
+          "interfaceSketch": "interface DependencyReport { runtimeReady: boolean; ollama: 'ready' | 'installed-not-running' | 'missing' | 'unavailable'; ollamaInstallOffer?: { id: string; destination: string; version: string }; agents: { claude: boolean; codex: boolean; vibe: boolean }; recommendations: string[]; blockers: string[] }\ninterface DependencyDecision { offerId: string; choice: 'install' | 'decline' }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc4",
+          "name": "Daemon shutdown and readiness",
+          "purpose": "The selected daemon admits shutdown over its local JSON-RPC endpoint only. Acknowledgement is not exit completion. Readiness reports instance/release identity and startup gating; immediate escalation is an explicit second request.",
+          "interfaceSketch": "interface DaemonIdentity { instanceId: string; installationId: string; releaseId: string; protocolVersion: 1; state: 'ready' | 'draining' | 'migration-blocked' }\ninterface ShutdownRequest { operationId: string; expectedInstanceId: string; mode: 'graceful' | 'immediate'; completionEndpoint: string; completionNonce: string }\ninterface ShutdownAccepted { operationId: string; instanceId: string; accepted: true; mode: 'graceful' | 'immediate' }\ninterface ShutdownCompletion { operationId: string; instanceId: string; completionNonce: string; resourceOwnershipReleased: true }",
+          "ownedByStory": "s4",
+          "consumedByStories": [
+            "s5",
+            "s6",
+            "s7",
+            "s8"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc5",
+          "name": "Ordered upgrade hook delegation",
+          "purpose": "Owned by foundational s1 because delivery preparation, startup guard and s5 runner all require the same hook manifest. s5 implements execution. Hooks run in-process inside a candidate daemon migration-only process that exclusively owns data; manager and IDE never open LMDB/Lance.",
+          "interfaceSketch": "interface HookReference { id: string; version: string; module: string }\ninterface MigrationContext { installationId: string; operationId: string; fromReleaseId?: string; toReleaseId: string; dataHome: string }\ninterface HookDecision { needed: boolean; reason: string }\ninterface HookValidation { passed: boolean; detail: string }\ninterface UpgradeHook { check(context: MigrationContext): Promise<HookDecision>; run(context: MigrationContext): Promise<void>; test(context: MigrationContext): Promise<HookValidation> }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc6",
+          "name": "Local transport and explicit installation home",
+          "purpose": "All consumers resolve the same installation home and endpoint. Unix retains daemon.sock; Windows uses a per-user/per-installation named pipe. The manager's Node bridge supplies JetBrains Windows transport without changing application RPC payloads.",
+          "interfaceSketch": "interface LocalEndpoint { kind: 'unix' | 'named-pipe'; address: string; installationId: string }\ninterface InstallationLocation { home: string; installationId: string; daemonEndpoint: LocalEndpoint }\ninterface IpcBridgeRequest { protocolVersion: 1; endpoint: LocalEndpoint; rpcFrame: string }\ninterface IpcBridgeEvent { kind: 'frame' | 'closed' | 'error'; frame?: string; written?: boolean; code?: string }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc7",
+          "name": "Shared terminal installer launch",
+          "purpose": "Foundation-owned contract makes manual and both IDE installation entrypoints identical. IDE adapters only open/focus a terminal and invoke the same script; the terminal owns the interaction and durable operation state/readiness determines success. On successful install/readiness the shared script releases installation ownership and launches the installed TUI in the same terminal; failure/cancel does not launch it.",
+          "interfaceSketch": "interface TerminalInstallLaunch { operationId: string; installationId: string; home: string; platform: 'posix' | 'powershell'; scriptPath: string; scriptVersion: string; scriptSha256: string; arguments: string[]; terminalName: 'Insrc Installation'; onInstallSuccess: 'launch-tui' }\ninterface TerminalInstallHandle { operationId: string; terminalSessionId: string; state: 'opened' | 'reused' | 'launch-failed' }\ninterface InstallationObservation { operationId: string; phase: Phase; daemonReady: boolean; errorCode?: string }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s6",
+            "s7",
+            "s8"
+          ],
+          "assumptions": []
+        }
+      ],
+      "boundary": {
+        "storyId": "s6",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc4",
+          "sc5",
+          "sc6",
+          "sc7"
+        ],
+        "internal": "Private VS Code native terminal open/focus/launch integration, duplicate-action handling and post-install reconnect. It invokes the shared script and leaves all install prompts/output in that terminal, including after failure. Existing ordinary lifecycle and upgrade-consent UI remains thin. Successful installation automatically enters the installed TUI in that same terminal; the IDE only reconnects/status-checks and does not require a second click. DEF traceability: E20261123c3d71313:S006:FR001 and this story's DEF acceptance criteria apply unchanged."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc5",
+            "sc6",
+            "sc7"
+          ],
+          "depends": [],
+          "internal": "Own the foundational manifest, controller/operation/consent/hook/transport contracts because every branch already depends on s1. Private implementation covers bootstrap, runtime/payload integrity, bundle preparation/publication, platform lock adapter and atomic install records. Later stories implement lifecycle, checks and hooks behind these contracts. The canonical scripts and interactive installer mode are shared with manual invocation and both IDEs; terminal prompts and durable results are part of this foundation. Include the selected release's installed TUI entry/assets in the payload and default successful interactive installer-to-TUI handoff. The s1 LLD must explicitly reserve ManagerAction.install to the shared terminal bootstrap script and forbid IDE-adapter invocation. DEF traceability: E20261123c3d71313:S001:FR001 and this story's DEF acceptance criteria apply unchanged."
+        },
+        {
+          "storyId": "s2",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc5",
+            "sc6"
+          ],
+          "internal": "Private dev checkout/branch sync, lockfile installation and native build preparation; returns the same immutable prepared candidate. It does not define a second lifecycle or migration engine. Include the selected release's installed TUI entry/assets in the payload and default successful interactive installer-to-TUI handoff. DEF traceability: E20261123c3d71313:S002:FR001 and this story's DEF acceptance criteria apply unchanged."
+        },
+        {
+          "storyId": "s3",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc6"
+          ],
+          "internal": "Private platform dependency detection, user-level Ollama installation and agent CLI recommendations. It implements foundational reports/consent and never auto-installs agent CLIs. DEF traceability: E20261123c3d71313:S003:FR001 and this story's DEF acceptance criteria apply unchanged."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc4"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc5",
+            "sc6"
+          ],
+          "internal": "Private daemon start/readiness, boot guard integration, shutdown drain/immediate exit and exit-completion launcher wrapper; transport is shared. No delivery sync/build on start and no signal/PID daemon control. DEF traceability: E20261123c3d71313:S004:FR001 and this story's DEF acceptance criteria apply unchanged."
+        },
+        {
+          "storyId": "s5",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6"
+          ],
+          "internal": "Private ordered migration runner, daemon migration-only mode, blocked-state persistence, interrupted-run validation and explicit retry. Hooks alone choose data changes and recovery policy. DEF traceability: E20261123c3d71313:S005:FR001 and this story's DEF acceptance criteria apply unchanged."
+        },
+        {
+          "storyId": "s7",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6",
+            "sc7"
+          ],
+          "internal": "Private JetBrains native terminal open/focus/launch integration with the same script, stdin/output and post-install readiness behavior as VS Code; no independent wizard or hidden install. Preserve background activation/control and Windows IPC bridge for ordinary daemon operations. Successful installation automatically enters the installed TUI in that same terminal; the IDE only reconnects/status-checks and does not require a second click. DEF traceability: E20261123c3d71313:S007:FR001 and this story's DEF acceptance criteria apply unchanged."
+        },
+        {
+          "storyId": "s8",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6",
+            "sc7"
+          ],
+          "internal": "Private isolated VM/runner fixtures, target matrix evidence and release qualification results, including real Windows named-pipe behavior and preservation of host v2 daemon. Terminal-install parity checks cover each IDE and manual invocation, paths with spaces/Unicode, missing terminal support, declined Ollama, Ctrl+C/close, duplicate windows, retained output and readiness-confirmed completion. Verify successful install enters TUI in the original terminal, install lock is released before TUI use, TUI exit leaves daemon running, and failure/cancellation never opens TUI. DEF traceability: E20261123c3d71313:S008:FR001 and this story's DEF acceptance criteria apply unchanged."
+        }
+      ],
+      "rolloutPhase": "E — IDE parity",
+      "nonFunctional": {
+        "performance": "Targets: local read-only inspection/reachability <=3 seconds; activation never blocks IDE UI. Progress/phase changes emit within 1 second after state changes. Ready startup target <=15 seconds excluding dependency/model initialization; startup probe deadline 30 seconds. Default graceful wait 60 seconds with configurable user deadline; timeout reports uncertainty and never silently escalates. Downloads/builds/hooks have per-operation budgets and progress, not an arbitrary task retry loop.",
+        "security": "No elevated commands, global PATH edits, user credential capture, LLM calls for dependency detection or shell-interpolated actions. Verify payload/runtime digests and targets, reject archive traversal/symlink escapes and module paths outside candidate payload. Local endpoints are user-scoped, capability-protected where needed; bind operation/instance/release identity. Signing deferred and no cryptographic authenticity claim from unsigned digest metadata. No IDE prompt automation or credential/input capture; terminal launch preserves argument boundaries. User-visible script identity matches manual release assets.",
+        "observability": "Structured operationId/installationId/from-to identity, platform/runtime/digest, phase/hook/stage, duration and actionable error code. Bounded NDJSON to IDE, logs in installation home with rotation; no credentials/tokens or full migration data. Report explicitly which platform/native checks passed and which were unavailable. Interactive installation prints human-readable phases and errors directly in the terminal. The terminal is retained after completion/failure; its output is not scraped or treated as success evidence.",
+        "durability": "OS-backed mutation exclusivity plus atomic versioned controller records. Prepared payloads immutable; candidate data mutation is daemon-owned only. Record hook run-started before execution and require test before completion; failures/interruption retain blocked startup. Retry never substitutes a different candidate or starts the predecessor after data changes automatically. Installation completion and lock release precede the interactive TUI session. TUI exit/launch failure cannot roll back the completed installation or keep an installation lock held."
+      }
+    },
+    "summary": {
+      "prose": "VS Code offers Install by opening a focused native terminal and running the shared manual installer script. It observes real operation/readiness state, reconnects existing features and lets that script launch TUI. Startup, upgrade consent and manual controls remain responsive native IDE actions.",
+      "audience": "technical"
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "TerminalInstallLaunch",
+          "signature": "interface TerminalInstallLaunch { operationId: string; installationId: string; home: string; platform: 'posix' | 'powershell'; scriptPath: string; scriptVersion: string; scriptSha256: string; arguments: string[]; terminalName: 'Insrc Installation'; onInstallSuccess: 'launch-tui' }",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "unknown",
+              "purpose": "Validated native terminal launch descriptor.; untrusted wire input is schema-validated before use.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "TerminalInstallLaunch",
+            "meaning": "Validated native terminal launch descriptor."
+          },
+          "preconditions": [
+            "Script bytes/version/hash match manual release assets; target execution environment matches selected daemon home.",
+            "Use a real shell terminal, not a pseudoterminal/webview pretending to install."
+          ],
+          "postconditions": [
+            "Open/focus Insrc Installation once, then send the one canonical command safely.",
+            "No dependency prompt automation and no ManagerRequest.install from extension."
+          ],
+          "errors": [
+            {
+              "type": "terminal-launch-failed",
+              "condition": "Native terminal unavailable, script mismatch or shell policy prevents execution."
+            }
+          ]
+        },
+        {
+          "name": "TerminalInstallHandle",
+          "signature": "interface TerminalInstallHandle { operationId: string; terminalSessionId: string; state: 'opened' | 'reused' | 'launch-failed' }",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "unknown",
+              "purpose": "UI handle, never installation-success proof.; untrusted wire input is schema-validated before use.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "TerminalInstallHandle",
+            "meaning": "UI handle, never installation-success proof."
+          },
+          "preconditions": [
+            "Handle belongs to selected installation and current extension lifetime."
+          ],
+          "postconditions": [
+            "Same-IDE duplicates focus the active terminal; other windows respect shared busy state.",
+            "Closing terminal does not mark ready or automatically relaunch."
+          ],
+          "errors": []
+        },
+        {
+          "name": "InstallationObservation",
+          "signature": "interface InstallationObservation { operationId: string; phase: Phase; daemonReady: boolean; errorCode?: string }",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "unknown",
+              "purpose": "Authoritative shared state and exact readiness observation.; untrusted wire input is schema-validated before use.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "InstallationObservation",
+            "meaning": "Authoritative shared state and exact readiness observation."
+          },
+          "preconditions": [
+            "Observe controller/IPC through bounded calls, not terminal text/exit parsing."
+          ],
+          "postconditions": [
+            "Ready means exact selected release and completed operation; TUI remains in terminal.",
+            "Failure shows operation/hook/stage and explicit log/retry action."
+          ],
+          "errors": []
+        },
+        {
+          "name": "UpgradeOffer",
+          "signature": "interface UpgradeOffer { offerId: string; installationId: string; currentReleaseId?: string; candidateReleaseId: string; delivery: Delivery }",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "unknown",
+              "purpose": "Native Upgrade/Dismiss prompt for one exact candidate.; untrusted wire input is schema-validated before use.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "UpgradeOffer",
+            "meaning": "Native Upgrade/Dismiss prompt for one exact candidate."
+          },
+          "preconditions": [
+            "Check on startup after reachability/start settles; plugin update supplies no implicit consent."
+          ],
+          "postconditions": [
+            "Dismiss changes nothing; accepted offer alone dispatches upgrade.",
+            "Stale changed candidate requires a new prompt; no infinite retry."
+          ],
+          "errors": []
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "Activation and state observation",
+        "change": "new",
+        "details": "Proposed boundary vscode-plugin/src/installer-terminal.ts binds into inspected activation.ts/extension.ts. A <=3-second initial reachability probe returns running/stopped/errored, never assumes errored means absent. Read-only installation inspection distinguishes missing from corrupt. Installed/stopped starts via common manager; ready reuses exact daemon; missing offers Install. A single settling callback reconnects existing status/config/MCP; no editor-startup blocking or daemon-private imports.",
+        "callSites": [
+          "vscode-plugin/src/activation.ts",
+          "vscode-plugin/src/extension.ts"
+        ]
+      },
+      {
+        "entity": "Native terminal launch",
+        "change": "new",
+        "details": "Use window.createTerminal with explicit supported shell, home/cwd and nonsecret launch environment, then terminal.show(false) and one safely encoded command via sendText. POSIX literal arguments use shell-safe quoting; Windows chooses supported PowerShell and literal single-quote encoding, never cmd interpolation or execution-policy bypass. The shell remains interactive so successful installer can enter TUI and TUI exit returns to shell. Terminal stream/keystrokes are not logged or scraped. VS Code's API escaping is not a security guarantee: test shell punctuation/Unicode/whitespace explicitly.",
+        "callSites": []
+      },
+      {
+        "entity": "Packaged resources and ordinary controls",
+        "change": "new",
+        "details": "Client resource sync copies only current canonical script/policy/metadata bytes from s1 release resources and verifies equality; do not restore retired script names as compatibility. Private Node manager handles ordinary start/stop/restart/check-upgrade/retry, with bounded NDJSON and exact operation identity; install action is rejected by design and never generated here. Explicit immediate shutdown is separately labelled. Every available upgrade, including after extension update, prompts; regular status/config/registration/MCP continue through existing daemon IPC. If remote execution context differs from the daemon target, fail visibly rather than install in the wrong environment.",
+        "callSites": []
+      },
+      {
+        "entity": "Install outcome and terminal lifetime",
+        "change": "new",
+        "details": "After success the shared script releases the install lock and starts selected TUI; extension merely observes readiness. Cancel/failure leaves terminal diagnostics, not a fake success notification. While a terminal hosts TUI, duplicate Install focuses it rather than starting a new setup. After reload, inspect durable state before reattaching; do not replay prior launch intent.",
+        "callSites": []
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Consume authoritative shared identity/state/report/control/hook-shape/home/terminal contract; implement only VS Code UI/transport binding, never the owner engine."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "Consume authoritative shared identity/state/report/control/hook-shape/home/terminal contract; implement only VS Code UI/transport binding, never the owner engine."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "Consume authoritative shared identity/state/report/control/hook-shape/home/terminal contract; implement only VS Code UI/transport binding, never the owner engine."
+      },
+      {
+        "contractId": "sc4",
+        "role": "consumes",
+        "howDetails": "Consume authoritative shared identity/state/report/control/hook-shape/home/terminal contract; implement only VS Code UI/transport binding, never the owner engine."
+      },
+      {
+        "contractId": "sc5",
+        "role": "consumes",
+        "howDetails": "Consume authoritative shared identity/state/report/control/hook-shape/home/terminal contract; implement only VS Code UI/transport binding, never the owner engine."
+      },
+      {
+        "contractId": "sc6",
+        "role": "consumes",
+        "howDetails": "Consume authoritative shared identity/state/report/control/hook-shape/home/terminal contract; implement only VS Code UI/transport binding, never the owner engine."
+      },
+      {
+        "contractId": "sc7",
+        "role": "consumes",
+        "howDetails": "Consume authoritative shared identity/state/report/control/hook-shape/home/terminal contract; implement only VS Code UI/transport binding, never the owner engine."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Terminal cannot open or command cannot run",
+          "detection": "Native API exception, absent shell, script identity check or policy failure.",
+          "response": "Visible launch error plus exact manual command; no hidden installer fallback.",
+          "userImpact": "User can fix terminal support and retry explicitly.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Startup probe/manager errors",
+          "detection": "Bounded IPC/process read reports failure or wrong instance.",
+          "response": "Show errored/conflict; do not treat as missing or launch competing daemon.",
+          "userImpact": "Editor remains responsive.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Upgrade offer changed or dismissed",
+          "detection": "Offer identity comparison/user dismissal before dispatch.",
+          "response": "No upgrade; re-prompt changed candidate only after explicit new check.",
+          "userImpact": "No silent changes.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Terminal closes during installation",
+          "detection": "Terminal lifetime event plus still-incomplete authoritative record.",
+          "response": "Show incomplete/cancelled/blocked state; no automatic relaunch or success inference.",
+          "userImpact": "Diagnostics and explicit retry remain available.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Two IDE windows choose Install",
+          "expected": "One shared operation; focus/reuse local session or show busy."
+        },
+        {
+          "input": "No coding CLI or declined Ollama",
+          "expected": "Shared script owns recommendations/consent, not an IDE wizard."
+        },
+        {
+          "input": "TUI runs or exits after successful install",
+          "expected": "Daemon readiness/status remains accurate; no reinstall or automatic daemon stop."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Remain inside s6 boundary; no elevated commands, PID/kill daemon fallback, direct cloud LLM REST, or host v2 daemon mutation.",
+          "source": "c1"
+        },
+        {
+          "text": "Approved HLD shared contracts, terminal-only install and success-to-TUI handoff remain unchanged.",
+          "source": "c2"
+        },
+        {
+          "text": "DEF E20261123c3d71313:S006:FR001 and this story acceptance criteria apply unchanged.",
+          "source": "c3"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test + node:assert/strict; canonical *.test.ts coordinator. Real platform/IDE qualification is recorded separately and not inferred from fakes.",
+      "testLevels": [
+        {
+          "level": "contract",
+          "purpose": "Prove adapter never generates forbidden install protocol or silent upgrade.",
+          "subjects": [
+            "startup state classification and one settling callback",
+            "terminal command literal encoding",
+            "offer accept/dismiss/plugin-update behavior"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Native extension-host terminal and daemon-peer behavior.",
+          "subjects": [
+            "real visible/focused terminal with exact script",
+            "spaces/Unicode/metacharacters and PowerShell/POSIX shells",
+            "TUI handoff/close/failure and duplicate windows"
+          ],
+          "fixturesNeeded": [
+            "VS Code extension host, disposable home, deterministic script/daemon peers."
+          ]
+        },
+        {
+          "level": "live",
+          "purpose": "Actual both-mode installer/control in VS Code on each qualified target.",
+          "subjects": [
+            "Install → terminal → TUI",
+            "startup autostart and upgrade prompts",
+            "migration status/retry and explicit immediate stop"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "running-stopped-missing-errored-startup-matrix",
+            "nonblocking-native-terminal-install-offer",
+            "one-ready-reconnect"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "startup-offer-accept-dismiss",
+            "plugin-update-still-prompts",
+            "stale-offer-no-dispatch"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "native-actions-use-shared-contracts",
+            "terminal-only-install-then-tui",
+            "migration-diagnostics-retry-and-explicit-immediate"
+          ]
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "One thin activation/terminal adapter",
+        "oneLineSummary": "Native commands call the shared manager or launch the canonical installer terminal.",
+        "approach": "Keep bounded startup coordination and one terminal-session handle per installation in the extension. Installation launches the shared script with direct user I/O; manager observation confirms completion.\n\nOrdinary lifecycle/status and exact upgrade offers use the private-runtime manager/IPC boundary. The extension does no install/migration interpretation beyond displaying typed results.",
+        "pros": [
+          "No duplicate setup wizard or install engine.",
+          "Existing status/config/MCP surfaces reconnect after verified readiness."
+        ],
+        "cons": [
+          "Native shell quoting and terminal visibility require real extension-host tests."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Persistent extension-side operation queue",
+        "oneLineSummary": "Store pending commands and replay them after extension reload.",
+        "approach": "The same shared installer can be launched through an extension-owned queue of startup and user operations. Pending queue items are persisted across IDE reloads.\n\nThis requires a second replay/cancellation policy in addition to the controller operation record and can resend actions after the user closed a terminal.",
+        "pros": [
+          "Can remember intended UI operations across reload."
+        ],
+        "cons": [
+          "Duplicates authoritative operation state and risks surprise retries not requested by the user."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "An extension-side replay queue duplicates controller ownership and risks relaunching user-cancelled operations."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [],
+    "sequenceDefinition": {
+      "id": "vscode-terminal-install",
+      "narrative": "VS Code launches a real terminal and the canonical script; it does not drive installation over the manager protocol. Completion comes from operation state and exact daemon readiness, while the script starts TUI in that same terminal.",
+      "participants": [
+        {
+          "id": "user",
+          "label": "Engineer",
+          "description": "Chooses native Install action."
+        },
+        {
+          "id": "ide",
+          "label": "VS Code adapter",
+          "description": "Launch/focus and status only."
+        },
+        {
+          "id": "terminal",
+          "label": "Native terminal / shared script",
+          "description": "Owns direct prompt input/output and success TUI handoff."
+        },
+        {
+          "id": "manager",
+          "label": "Shared controller",
+          "description": "Durable operation and lifecycle ownership."
+        }
+      ],
+      "messages": [
+        {
+          "from": "user",
+          "to": "ide",
+          "label": "Install",
+          "description": "No separate IDE setup wizard."
+        },
+        {
+          "from": "ide",
+          "to": "terminal",
+          "label": "Create/focus terminal; run exact script",
+          "description": "Explicit shell, safely quoted argument vector and validated script identity."
+        },
+        {
+          "from": "terminal",
+          "to": "manager",
+          "label": "Terminal-only interactive install",
+          "description": "Script handles mode, dependency consent and progress."
+        },
+        {
+          "from": "ide",
+          "to": "manager",
+          "label": "Observe operation and readiness",
+          "description": "Never submit install action or scrape output."
+        },
+        {
+          "from": "manager",
+          "to": "terminal",
+          "label": "Ready completion; lock released",
+          "kind": "return",
+          "description": "Failure/cancel stops before success handoff."
+        },
+        {
+          "from": "terminal",
+          "to": "terminal",
+          "label": "Installed TUI takes foreground",
+          "description": "Existing terminal remains the interaction surface."
+        },
+        {
+          "from": "ide",
+          "to": "user",
+          "label": "Reconnect existing status/config/MCP",
+          "description": "Terminal exit alone is not success evidence."
+        }
+      ]
+    },
+    "adherence": {
+      "dimensions": [
+        "diagram-sequence",
+        "functional-coverage"
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S006/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "AGENTS.md"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/HLD.md"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/DEF.md"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "vscode-plugin/src/activation.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "vscode-plugin/src/extension.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "analyze-bundle",
+      "ref": "scripts/sync-client-runtime-assets.mjs"
+    },
+    {
+      "id": "c7",
+      "kind": "doc",
+      "ref": "https://code.visualstudio.com/api/references/vscode-api"
+    }
+  ]
+}

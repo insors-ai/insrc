@@ -187,8 +187,18 @@ function resolveRequirementsClosure(file: string, seen: Set<string>): string[] {
  *  in the closure). */
 const GO_CLOSURE_SKIP_DIRS = new Set(['.git', 'vendor']);
 
-/** A go module's full source tree under manifestDir: every *.go file plus
- *  go.mod/go.sum, re-walked fresh on every call. */
+/** Extensions the go build system itself compiles as part of a package, beyond
+ *  plain *.go: assembly (.s/.S) and cgo's own C/C++ sources and headers --
+ *  real build inputs, not merely documentation/config that happens to sit
+ *  alongside the Go files. Embed-directive-referenced arbitrary files
+ *  (//go:embed) are NOT covered: that set is open-ended and would require
+ *  parsing embed comments, out of scope for a closure walk. */
+const GO_SOURCE_EXTENSIONS = ['.go', '.s', '.S', '.c', '.h', '.cc', '.cpp', '.hpp'];
+const GO_MODULE_FILES = new Set(['go.mod', 'go.sum', 'go.work', 'go.work.sum']);
+
+/** A go module's full source tree under manifestDir: every source file the
+ *  go build system itself compiles (see GO_SOURCE_EXTENSIONS) plus its module
+ *  files, re-walked fresh on every call. */
 function resolveGoClosure(manifestDir: string): string[] {
 	const files: string[] = [];
 	const walk = (dir: string): void => {
@@ -203,7 +213,7 @@ function resolveGoClosure(manifestDir: string): string[] {
 				if (!GO_CLOSURE_SKIP_DIRS.has(entry.name)) { walk(join(dir, entry.name)); }
 				continue;
 			}
-			if (entry.name.endsWith('.go') || entry.name === 'go.mod' || entry.name === 'go.sum') {
+			if (GO_MODULE_FILES.has(entry.name) || GO_SOURCE_EXTENSIONS.some(ext => entry.name.endsWith(ext))) {
 				files.push(join(dir, entry.name));
 			}
 		}

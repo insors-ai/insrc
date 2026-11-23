@@ -135,6 +135,31 @@ test("verifyManagerClosureCoverage: a go package directory literally named 'buil
 	}
 });
 
+test("verifyManagerClosureCoverage: a go module's closure also covers assembly (.s) and cgo (.c/.h) source files, not just .go", async () => {
+	const repo = tmpRepo();
+	try {
+		writeFileSync(join(repo, 'go.mod'), 'module example.com/x\n');
+		writeFileSync(join(repo, 'go.sum'), '');
+		writeFileSync(join(repo, 'main.go'), 'package main\n');
+		writeFileSync(join(repo, 'asm.s'), '// assembly\n');
+		writeFileSync(join(repo, 'cgo.c'), '// cgo\n');
+		writeFileSync(join(repo, 'cgo.h'), '// cgo header\n');
+		const fullyScoped = await verifyManagerClosureCoverage(
+			repo,
+			{ entries: [{ path: 'go.mod' }, { path: 'go.sum' }, { path: 'main.go' }, { path: 'asm.s' }, { path: 'cgo.c' }, { path: 'cgo.h' }] },
+			'go',
+			repo,
+		);
+		assert.deepEqual(fullyScoped, { covered: true });
+
+		const missingCgo = await verifyManagerClosureCoverage(repo, { entries: [{ path: 'go.mod' }, { path: 'go.sum' }, { path: 'main.go' }, { path: 'asm.s' }] }, 'go', repo);
+		assert.equal(missingCgo.covered, false);
+		assert.ok(!missingCgo.covered && missingCgo.missing.includes('cgo.c') && missingCgo.missing.includes('cgo.h'), JSON.stringify(missingCgo));
+	} finally {
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
 test('verifyManagerClosureCoverage: a go module closure covers every .go source file under manifestDir', async () => {
 	const repo = tmpRepo();
 	try {

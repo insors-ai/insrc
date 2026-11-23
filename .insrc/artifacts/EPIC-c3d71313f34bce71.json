@@ -23,6 +23,50 @@
           "revision": 6,
           "at": "2026-11-23T14:52:38.448Z",
           "externalId": "7104671895"
+        },
+        {
+          "target": {
+            "entityId": "HLD-c3d71313f34bce71",
+            "type": "HLD",
+            "relation": "documents",
+            "fragment": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/er-model.html"
+          },
+          "revision": 6,
+          "at": "2026-11-23T17:31:14.337Z",
+          "externalId": "7108778688"
+        },
+        {
+          "target": {
+            "entityId": "HLD-c3d71313f34bce71",
+            "type": "HLD",
+            "relation": "documents",
+            "fragment": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/ux-mock.html"
+          },
+          "revision": 6,
+          "at": "2026-11-23T17:31:15.538Z",
+          "externalId": "7108779145"
+        },
+        {
+          "target": {
+            "entityId": "HLD-c3d71313f34bce71",
+            "type": "HLD",
+            "relation": "documents",
+            "fragment": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/sequence-diagram.html"
+          },
+          "revision": 6,
+          "at": "2026-11-23T17:31:16.581Z",
+          "externalId": "7108779625"
+        },
+        {
+          "target": {
+            "entityId": "HLD-c3d71313f34bce71",
+            "type": "HLD",
+            "relation": "documents",
+            "fragment": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/component-dependency.html"
+          },
+          "revision": 6,
+          "at": "2026-11-23T17:31:17.653Z",
+          "externalId": "7108780058"
         }
       ],
       "binding": {

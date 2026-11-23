@@ -14,7 +14,6 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { killProcessGroup, observeOwnedProcessDisposal } from '../../../shared/process-group.js';
 import type { ProcessDisposal } from '../../../shared/process-group.js';
-import type { StopTarget } from '../../../shared/daemon-process-client.js';
 import { participantContext } from '../../../../scripts/test-harness/context.mjs';
 
 const owned = new WeakMap<ChildProcess, { disposal: () => ProcessDisposal; marker: string | undefined; groupOwned: boolean }>();

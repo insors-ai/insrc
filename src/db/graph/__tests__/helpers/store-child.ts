@@ -186,40 +186,20 @@ async function run(cmd: StoreChildCommand): Promise<StoreChildReply> {
 			startPeriodicReaderCheck(cmd.ms);
 			return { ok: true };
 		case 'daemon-like': {
+			// Application status/queue fixture only; retired process lifecycle is absent.
 			const { IpcServer, directDispatch } = await import('../../../../daemon/server.js');
 			const { IndexQueue } = await import('../../../../daemon/queue.js');
-			const { writePid } = await import('../../../../daemon/lifecycle.js');
-			const { daemonRunFiles, endForRunFileConflict } = await import('../../../../daemon/run-file-ownership.js');
-			const { createShutdown, realEndDeps } = await import('../../../../daemon/shutdown.js');
-			const { reportFatal } = await import('../../../../daemon/fatal.js');
 			const { buildDaemonStatus } = await import('../../../../daemon/status.js');
-			const { entitiesForSourceRoots, METHOD_ENTITIES_FOR_SOURCE_ROOTS } = await import('../../../../daemon/source-roots-rpc.js');
+			const { METHOD_ENTITIES_FOR_SOURCE_ROOTS, entitiesForSourceRoots } = await import('../../../../daemon/source-roots-rpc.js');
 			const { PATHS } = await import('../../../../shared/paths.js');
-			const { getLogger } = await import('../../../../shared/logger.js');
-			const log = getLogger('store-child');
-
-			const end = { ...realEndDeps, lastLinePath: cmd.logPath };
-			process.on('unhandledRejection', reason => reportFatal('unhandledRejection', reason, {
-				logFatal: (o, m) => { log.fatal(o, m); }, crashLogDir: cmd.crashLogDir, end,
-			}));
-
-			const publication = daemonRunFiles.lease();
-			writePid();
 			const queue = new IndexQueue();
-			const queueDone = queue.start(async job => {
+			void queue.start(async job => {
 				const j = job as unknown as { ms: number; key: string };
 				await new Promise(res => setTimeout(res, j.ms));
 				await withWriteTxn(s => { void s.meta.put(j.key, '1'); });
 			});
 			const server = new IpcServer(directDispatch({
-				'daemon.shutdown': async () => { shutdown('daemon.shutdown RPC'); return { ok: true }; },
-				'daemon.status': async () => buildDaemonStatus({
-					uptimeSec: 1,
-					listRepos: async () => { opened().meta.get('a'); return []; },
-					queueDepth: queue.depth,
-					modelState: { status: 'ready' },
-					installedCommit: '',
-				}),
+				'daemon.status': async () => buildDaemonStatus({ uptimeSec: 1, listRepos: async () => { opened().meta.get('a'); return []; }, queueDepth: queue.depth, modelState: { status: 'ready' } }),
 				[METHOD_ENTITIES_FOR_SOURCE_ROOTS]: async params => entitiesForSourceRoots(params),
 				'repo.list': async () => (await import('../../../repos.js')).listRepos(null as never),
 				'test.enqueue': async params => {
@@ -228,16 +208,7 @@ async function run(cmd: StoreChildCommand): Promise<StoreChildReply> {
 					return { ok: true };
 				},
 			}));
-			let serverClosing: Promise<void> | undefined;
-			const shutdown = createShutdown({
-				log,
-				stopBackgroundWork: () => { queue.stop(); serverClosing = server.close(); void serverClosing.catch(endForRunFileConflict); },
-				queueDone,
-				closeStores: async () => { await server.flushPendingWrites(1000); server.disconnectClients(); await serverClosing; await closeGraphStore(); },
-				end,
-			});
 			await server.listen();
-			publication.release();
 			return { ok: true, value: PATHS.sockFile };
 		}
 		case 'seed-repo': {

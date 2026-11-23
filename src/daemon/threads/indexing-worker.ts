@@ -32,7 +32,7 @@ import { unattributedUnwritable, withCompleteness } from '../repo-completeness.j
 import { directDispatch } from '../server.js';
 import type { RpcHandlers } from '../server.js';
 import { INDEXING_DRAINED, INDEXING_PORT, INDEXING_STOP_OP } from './indexing-port.js';
-import { MAINTENANCE_RUN_OP, SHUTDOWN_OP } from './main-services.js';
+import { MAINTENANCE_RUN_OP } from './main-services.js';
 import type { WorkerConnection } from './main-services.js';
 import { methodClasses } from './method-class.js';
 import { StatusBoardClient } from './status-board.js';
@@ -115,7 +115,6 @@ function publishStore(): Promise<void> {
 // The indexing-class methods, as the daemon's handler runtime builds them over this worker's queue and indexer.
 const runtime = buildHandlerRuntime({
 	db, configStore, queue, indexer: service, startedAt: Date.now(),
-	shutdown: reason => hub.send(SHUTDOWN_OP, reason),
 	attachedClients: () => [],
 	understandingService: () => undefined,
 });

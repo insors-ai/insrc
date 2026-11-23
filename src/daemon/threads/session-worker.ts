@@ -42,7 +42,7 @@ import type { InDaemonClient } from '../steps/daemon-client.js';
 import { setRunBoard } from '../workflow-run-registry.js';
 import type { MethodClass } from './channel.js';
 import { IndexingPortClient } from './indexing-port.js';
-import { ROUTE_OP, SHUTDOWN_OP } from './main-services.js';
+import { ROUTE_OP } from './main-services.js';
 import type { RouteRequest, WorkerConnection } from './main-services.js';
 import { inDaemonTarget } from './method-class.js';
 import { StatusBoardClient } from './status-board.js';
@@ -86,7 +86,6 @@ let inDaemon: InDaemonClient | undefined;
 let understanding: UnderstandingService | undefined;
 const runtime = buildHandlerRuntime({
 	db, configStore, queue: port, indexer: port, startedAt: Date.now(),
-	shutdown: reason => hub.send(SHUTDOWN_OP, reason),
 	attachedClients: () => [],
 	understandingService: () => understanding,
 	nestedCall: (method, params) => inDaemon!.request(method, params),

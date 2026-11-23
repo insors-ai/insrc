@@ -3874,10 +3874,11 @@
       "preserve": "Keep ModelBootstrapState/getModelState/bootstrapEmbeddingModel and embedder selection.",
       "requiresExtraction": false,
       "revalidatedSourceSha256": "883f2085fe89e30ac36d91033748c856e1a4503b0f14e073bbf9622e6f4ede05",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "export function writePid(): void { daemonRunFiles.writePid(); }",
-      "observedSourceSha256": "883f2085fe89e30ac36d91033748c856e1a4503b0f14e073bbf9622e6f4ede05"
+      "observedSourceSha256": "883f2085fe89e30ac36d91033748c856e1a4503b0f14e073bbf9622e6f4ede05",
+      "task": "t3"
     },
     {
       "id": "M016",
@@ -3891,10 +3892,11 @@
       "preserve": "Keep ModelBootstrapState/getModelState/bootstrapEmbeddingModel and embedder selection.",
       "requiresExtraction": false,
       "revalidatedSourceSha256": "883f2085fe89e30ac36d91033748c856e1a4503b0f14e073bbf9622e6f4ede05",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "export function clearPid(): void { daemonRunFiles.clearRunFiles(); }",
-      "observedSourceSha256": "883f2085fe89e30ac36d91033748c856e1a4503b0f14e073bbf9622e6f4ede05"
+      "observedSourceSha256": "883f2085fe89e30ac36d91033748c856e1a4503b0f14e073bbf9622e6f4ede05",
+      "task": "t3"
     },
     {
       "id": "M017",
@@ -3908,10 +3910,11 @@
       "preserve": "Keep ModelBootstrapState/getModelState/bootstrapEmbeddingModel and embedder selection.",
       "requiresExtraction": false,
       "revalidatedSourceSha256": "883f2085fe89e30ac36d91033748c856e1a4503b0f14e073bbf9622e6f4ede05",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "export function isAlreadyRunning(): boolean { return daemonRunFiles.isAlreadyRunning(); }",
-      "observedSourceSha256": "883f2085fe89e30ac36d91033748c856e1a4503b0f14e073bbf9622e6f4ede05"
+      "observedSourceSha256": "883f2085fe89e30ac36d91033748c856e1a4503b0f14e073bbf9622e6f4ede05",
+      "task": "t3"
     },
     {
       "id": "M018",
@@ -3925,10 +3928,11 @@
       "preserve": "Keep acquireRunFileGuard, runFileGuardConflict and shared identity/owner/reclaim primitives needed by keystore. Do not delete supporting helpers until remaining use is checked.",
       "requiresExtraction": false,
       "revalidatedSourceSha256": "1cca74b969b29260d6cf8cf09c95e2a3d57dfdb0e2121cd42726f43bea185041",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "export function transferRunFileGuard(path: string, from: RunFileGuardPin, owner: ProcessIdentity, nonce: string): RunFileGuard {",
-      "observedSourceSha256": "1cca74b969b29260d6cf8cf09c95e2a3d57dfdb0e2121cd42726f43bea185041"
+      "observedSourceSha256": "1cca74b969b29260d6cf8cf09c95e2a3d57dfdb0e2121cd42726f43bea185041",
+      "task": "t3"
     },
     {
       "id": "M019",
@@ -3942,10 +3946,11 @@
       "preserve": "Keep acquireRunFileGuard, runFileGuardConflict and shared identity/owner/reclaim primitives needed by keystore. Do not delete supporting helpers until remaining use is checked.",
       "requiresExtraction": false,
       "revalidatedSourceSha256": "1cca74b969b29260d6cf8cf09c95e2a3d57dfdb0e2121cd42726f43bea185041",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "export function borrowRunFileGuard(path: string, supervisorPid: number, assertGrant: () => void): RunFileGuard {",
-      "observedSourceSha256": "1cca74b969b29260d6cf8cf09c95e2a3d57dfdb0e2121cd42726f43bea185041"
+      "observedSourceSha256": "1cca74b969b29260d6cf8cf09c95e2a3d57dfdb0e2121cd42726f43bea185041",
+      "task": "t3"
     },
     {
       "id": "M020",
@@ -3959,10 +3964,11 @@
       "preserve": "Keep acquireRunFileGuard, runFileGuardConflict and shared identity/owner/reclaim primitives needed by keystore. Do not delete supporting helpers until remaining use is checked.",
       "requiresExtraction": false,
       "revalidatedSourceSha256": "1cca74b969b29260d6cf8cf09c95e2a3d57dfdb0e2121cd42726f43bea185041",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "export function removeOwnedRunFile(path: string, expected: RunFileIdentity | undefined, guard: RunFileGuard): void {",
-      "observedSourceSha256": "1cca74b969b29260d6cf8cf09c95e2a3d57dfdb0e2121cd42726f43bea185041"
+      "observedSourceSha256": "1cca74b969b29260d6cf8cf09c95e2a3d57dfdb0e2121cd42726f43bea185041",
+      "task": "t3"
     },
     {
       "id": "M021",
@@ -4299,10 +4305,11 @@
       "preserve": "Keep other shared types and status metrics.",
       "requiresExtraction": false,
       "revalidatedSourceSha256": "d226953569b3b1d258899039588a28d3b9f3e9e6139f9a787a6aa1f8bbafa672",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "export interface DaemonUpdateParams {",
-      "observedSourceSha256": "d226953569b3b1d258899039588a28d3b9f3e9e6139f9a787a6aa1f8bbafa672"
+      "observedSourceSha256": "d226953569b3b1d258899039588a28d3b9f3e9e6139f9a787a6aa1f8bbafa672",
+      "task": "t3"
     },
     {
       "id": "M041",
@@ -4316,10 +4323,11 @@
       "preserve": "Keep other shared types and status metrics.",
       "requiresExtraction": false,
       "revalidatedSourceSha256": "d226953569b3b1d258899039588a28d3b9f3e9e6139f9a787a6aa1f8bbafa672",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "export interface DaemonUpdateResult {",
-      "observedSourceSha256": "d226953569b3b1d258899039588a28d3b9f3e9e6139f9a787a6aa1f8bbafa672"
+      "observedSourceSha256": "d226953569b3b1d258899039588a28d3b9f3e9e6139f9a787a6aa1f8bbafa672",
+      "task": "t3"
     },
     {
       "id": "M042",
@@ -4333,10 +4341,11 @@
       "preserve": "Keep other shared types and status metrics.",
       "requiresExtraction": false,
       "revalidatedSourceSha256": "d226953569b3b1d258899039588a28d3b9f3e9e6139f9a787a6aa1f8bbafa672",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "export interface DaemonUpdateOutcome {",
-      "observedSourceSha256": "d226953569b3b1d258899039588a28d3b9f3e9e6139f9a787a6aa1f8bbafa672"
+      "observedSourceSha256": "d226953569b3b1d258899039588a28d3b9f3e9e6139f9a787a6aa1f8bbafa672",
+      "task": "t3"
     },
     {
       "id": "M043",
@@ -4350,10 +4359,11 @@
       "preserve": "Keep general DaemonStatus fields; replace freshness-specific projection with new update contract if required.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "d226953569b3b1d258899039588a28d3b9f3e9e6139f9a787a6aa1f8bbafa672",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "   */",
-      "observedSourceSha256": "d226953569b3b1d258899039588a28d3b9f3e9e6139f9a787a6aa1f8bbafa672"
+      "observedSourceSha256": "d226953569b3b1d258899039588a28d3b9f3e9e6139f9a787a6aa1f8bbafa672",
+      "task": "t3"
     },
     {
       "id": "M044",
@@ -4367,10 +4377,11 @@
       "preserve": "Keep sockFile (generic IPC), vaultGuard, data/config/log/model paths and the PATHS object.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "5719b7b3d5bb3cd950f4291bffc8599d69a2aa4c4659bcf3396966bde1fb9196",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "  pidFile:     join(INSRC_DIR, 'daemon.pid'),",
-      "observedSourceSha256": "5719b7b3d5bb3cd950f4291bffc8599d69a2aa4c4659bcf3396966bde1fb9196"
+      "observedSourceSha256": "5719b7b3d5bb3cd950f4291bffc8599d69a2aa4c4659bcf3396966bde1fb9196",
+      "task": "t3"
     },
     {
       "id": "M045",
@@ -4384,10 +4395,11 @@
       "preserve": "Keep sockFile (generic IPC), vaultGuard, data/config/log/model paths and the PATHS object.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "5719b7b3d5bb3cd950f4291bffc8599d69a2aa4c4659bcf3396966bde1fb9196",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "  daemonRunGuard: join(INSRC_DIR, 'daemon.run-files.guard'),",
-      "observedSourceSha256": "5719b7b3d5bb3cd950f4291bffc8599d69a2aa4c4659bcf3396966bde1fb9196"
+      "observedSourceSha256": "5719b7b3d5bb3cd950f4291bffc8599d69a2aa4c4659bcf3396966bde1fb9196",
+      "task": "t3"
     },
     {
       "id": "M046",
@@ -4401,10 +4413,11 @@
       "preserve": "Keep sockFile (generic IPC), vaultGuard, data/config/log/model paths and the PATHS object.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "5719b7b3d5bb3cd950f4291bffc8599d69a2aa4c4659bcf3396966bde1fb9196",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "  updateOutcome: join(INSRC_DIR, 'daemon.update-outcome.json'),",
-      "observedSourceSha256": "5719b7b3d5bb3cd950f4291bffc8599d69a2aa4c4659bcf3396966bde1fb9196"
+      "observedSourceSha256": "5719b7b3d5bb3cd950f4291bffc8599d69a2aa4c4659bcf3396966bde1fb9196",
+      "task": "t3"
     },
     {
       "id": "M047",
@@ -4418,10 +4431,11 @@
       "preserve": "Keep sockFile (generic IPC), vaultGuard, data/config/log/model paths and the PATHS object.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "5719b7b3d5bb3cd950f4291bffc8599d69a2aa4c4659bcf3396966bde1fb9196",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "  updateLock:    join(INSRC_DIR, 'daemon.update.lock'),",
-      "observedSourceSha256": "5719b7b3d5bb3cd950f4291bffc8599d69a2aa4c4659bcf3396966bde1fb9196"
+      "observedSourceSha256": "5719b7b3d5bb3cd950f4291bffc8599d69a2aa4c4659bcf3396966bde1fb9196",
+      "task": "t3"
     },
     {
       "id": "M048",
@@ -4435,10 +4449,11 @@
       "preserve": "Keep rpc/status/reachability/stream, generic error/timeout/uncertainty handling and persistent lanes.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "0f883a2be0309d6c4d7ef73e44f9321fac6e6e82a37d5a71d32b2ace55969dce",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "  update(): Promise<DaemonUpdateResult>;",
-      "observedSourceSha256": "0f883a2be0309d6c4d7ef73e44f9321fac6e6e82a37d5a71d32b2ace55969dce"
+      "observedSourceSha256": "0f883a2be0309d6c4d7ef73e44f9321fac6e6e82a37d5a71d32b2ace55969dce",
+      "task": "t3"
     },
     {
       "id": "M049",
@@ -4452,10 +4467,11 @@
       "preserve": "Keep all generic client transport and other methods.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "0f883a2be0309d6c4d7ef73e44f9321fac6e6e82a37d5a71d32b2ace55969dce",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "    update: () => rpc<DaemonUpdateResult>('daemon.update', {}, connect, { timeoutMs: 20_000, uncertainAfterWrite: true }),",
-      "observedSourceSha256": "0f883a2be0309d6c4d7ef73e44f9321fac6e6e82a37d5a71d32b2ace55969dce"
+      "observedSourceSha256": "0f883a2be0309d6c4d7ef73e44f9321fac6e6e82a37d5a71d32b2ace55969dce",
+      "task": "t3"
     },
     {
       "id": "M050",
@@ -4469,10 +4485,11 @@
       "preserve": "Keep all other config keys, validation, catalog generation and model settings.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "cde9a0ae421d5516a3610c1cecaf642ceb167fa64900f80f39893d56caa4cc1d",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "\t\t{ path: 'daemonUpdate.repoUrl',  type: 'string', default: '',                        desc: 'git remote URL the daemon update follows (a fork can be deployed); empty keeps the checkout\\'s origin', group: 'General' },",
-      "observedSourceSha256": "cde9a0ae421d5516a3610c1cecaf642ceb167fa64900f80f39893d56caa4cc1d"
+      "observedSourceSha256": "cde9a0ae421d5516a3610c1cecaf642ceb167fa64900f80f39893d56caa4cc1d",
+      "task": "t3"
     },
     {
       "id": "M051",
@@ -4486,10 +4503,11 @@
       "preserve": "Keep config/guide/MCP/status/repo admin handlers; adjust shutdown parameter and AdminWorkerDeps.shutdown only with replacement wiring.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "bbbb866a68f15ae44b817027e6cac9cd021741bcc2fea8577da1944d3b1412c4",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "\t\t},",
-      "observedSourceSha256": "bbbb866a68f15ae44b817027e6cac9cd021741bcc2fea8577da1944d3b1412c4"
+      "observedSourceSha256": "bbbb866a68f15ae44b817027e6cac9cd021741bcc2fea8577da1944d3b1412c4",
+      "task": "t3"
     },
     {
       "id": "M052",
@@ -4503,10 +4521,11 @@
       "preserve": "Keep other handler runtime and graph operations; remove qualification-only imports after references are gone.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "eef50bff7d86ee487fc96c81beb5421d4e16c5678d17e86d7727082a2de6daf7",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "\t\t},",
-      "observedSourceSha256": "eef50bff7d86ee487fc96c81beb5421d4e16c5678d17e86d7727082a2de6daf7"
+      "observedSourceSha256": "eef50bff7d86ee487fc96c81beb5421d4e16c5678d17e86d7727082a2de6daf7",
+      "task": "t3"
     },
     {
       "id": "M053",
@@ -4520,10 +4539,11 @@
       "preserve": "Keep HandlerRuntimeDeps and unrelated dispatch assembly.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "eef50bff7d86ee487fc96c81beb5421d4e16c5678d17e86d7727082a2de6daf7",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "\t/** Called by daemon.shutdown and daemon.update; the shutdown is created after the tables. */",
-      "observedSourceSha256": "eef50bff7d86ee487fc96c81beb5421d4e16c5678d17e86d7727082a2de6daf7"
+      "observedSourceSha256": "eef50bff7d86ee487fc96c81beb5421d4e16c5678d17e86d7727082a2de6daf7",
+      "task": "t3"
     },
     {
       "id": "M054",
@@ -4537,10 +4557,11 @@
       "preserve": "Keep buildDaemonStatus and other status fields.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "eef50bff7d86ee487fc96c81beb5421d4e16c5678d17e86d7727082a2de6daf7",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "\t\t\t\t// checks. Best-effort git read; '' when undeterminable, never throws.",
-      "observedSourceSha256": "eef50bff7d86ee487fc96c81beb5421d4e16c5678d17e86d7727082a2de6daf7"
+      "observedSourceSha256": "eef50bff7d86ee487fc96c81beb5421d4e16c5678d17e86d7727082a2de6daf7",
+      "task": "t3"
     },
     {
       "id": "M055",
@@ -4554,10 +4575,11 @@
       "preserve": "Keep general status composition, store health and repository metrics.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "5f56106b3a19c387f74205af2cfab1468903fd008c7b693fc7f2be8ea0c63617",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "\treadonly modelState:      { status: string; pct?: number | undefined };",
-      "observedSourceSha256": "5f56106b3a19c387f74205af2cfab1468903fd008c7b693fc7f2be8ea0c63617"
+      "observedSourceSha256": "5f56106b3a19c387f74205af2cfab1468903fd008c7b693fc7f2be8ea0c63617",
+      "task": "t3"
     },
     {
       "id": "M056",
@@ -4571,10 +4593,11 @@
       "preserve": "Keep request lifetime, drain, signal, executor and connection authority metadata.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "3e7b4ce820d34110d35a31f62daead18f6eac34a5cd6fe3feb0bbd176f8ecbda",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "\t/** True only after the main-thread socket writes this update acknowledgement. */",
-      "observedSourceSha256": "3e7b4ce820d34110d35a31f62daead18f6eac34a5cd6fe3feb0bbd176f8ecbda"
+      "observedSourceSha256": "3e7b4ce820d34110d35a31f62daead18f6eac34a5cd6fe3feb0bbd176f8ecbda",
+      "task": "t3"
     },
     {
       "id": "M057",
@@ -4588,10 +4611,11 @@
       "preserve": "Keep IpcServer, socket transport, attached-client registry, request lifetimes, normal listen/close and frame delivery. Replace PID/socket ownership behavior through new owner.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "68c17bfaddc6789c6b6bb0b0a169d83b60c8741a925c12cd58d8cc9e6f80295b",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "  private closing: Promise<void> | null = null;",
-      "observedSourceSha256": "68c17bfaddc6789c6b6bb0b0a169d83b60c8741a925c12cd58d8cc9e6f80295b"
+      "observedSourceSha256": "68c17bfaddc6789c6b6bb0b0a169d83b60c8741a925c12cd58d8cc9e6f80295b",
+      "task": "t3"
     },
     {
       "id": "M058",
@@ -4605,10 +4629,11 @@
       "preserve": "Keep generic reply delivery, cancellation, stream drains and write flushing.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "68c17bfaddc6789c6b6bb0b0a169d83b60c8741a925c12cd58d8cc9e6f80295b",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "    let pendingFrame: Promise<boolean> | undefined;",
-      "observedSourceSha256": "68c17bfaddc6789c6b6bb0b0a169d83b60c8741a925c12cd58d8cc9e6f80295b"
+      "observedSourceSha256": "68c17bfaddc6789c6b6bb0b0a169d83b60c8741a925c12cd58d8cc9e6f80295b",
+      "task": "t3"
     },
     {
       "id": "M059",
@@ -4622,10 +4647,11 @@
       "preserve": "Preserve a replacement fatal reporting/exit path, not silent loss of crash handling.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "2350f8b4b5a7d5c4a99e785cba15e7e10e4b37fda3594ee8d8238332c27fb107",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "const fatalDeps = { logFatal: (o: object, m: string) => { log.fatal(o, m); } };",
-      "observedSourceSha256": "2350f8b4b5a7d5c4a99e785cba15e7e10e4b37fda3594ee8d8238332c27fb107"
+      "observedSourceSha256": "2350f8b4b5a7d5c4a99e785cba15e7e10e4b37fda3594ee8d8238332c27fb107",
+      "task": "t3"
     },
     {
       "id": "M060",
@@ -4639,10 +4665,11 @@
       "preserve": "Keep main(), live-store owner declaration, diagnostics, config/model bootstrap, DB/indexing/worker/handler initialization.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "2350f8b4b5a7d5c4a99e785cba15e7e10e4b37fda3594ee8d8238332c27fb107",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "let startupRunFiles: RunFileLease | undefined;",
-      "observedSourceSha256": "2350f8b4b5a7d5c4a99e785cba15e7e10e4b37fda3594ee8d8238332c27fb107"
+      "observedSourceSha256": "2350f8b4b5a7d5c4a99e785cba15e7e10e4b37fda3594ee8d8238332c27fb107",
+      "task": "t3"
     },
     {
       "id": "M061",
@@ -4656,10 +4683,11 @@
       "preserve": "Keep intervening live-store declaration and application bootstrap; this is a statement-level slice, not the entire opening block.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "2350f8b4b5a7d5c4a99e785cba15e7e10e4b37fda3594ee8d8238332c27fb107",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "async function main(): Promise<void> {",
-      "observedSourceSha256": "2350f8b4b5a7d5c4a99e785cba15e7e10e4b37fda3594ee8d8238332c27fb107"
+      "observedSourceSha256": "2350f8b4b5a7d5c4a99e785cba15e7e10e4b37fda3594ee8d8238332c27fb107",
+      "task": "t3"
     },
     {
       "id": "M062",
@@ -4673,10 +4701,11 @@
       "preserve": "Keep worker Supervisor and resource management; rewire only process-ending callback.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "2350f8b4b5a7d5c4a99e785cba15e7e10e4b37fda3594ee8d8238332c27fb107",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "\t// The daemon's shutdown, once it is made below; a worker supervisor's fatal before then ends the process.",
-      "observedSourceSha256": "2350f8b4b5a7d5c4a99e785cba15e7e10e4b37fda3594ee8d8238332c27fb107"
+      "observedSourceSha256": "2350f8b4b5a7d5c4a99e785cba15e7e10e4b37fda3594ee8d8238332c27fb107",
+      "task": "t3"
     },
     {
       "id": "M063",
@@ -4690,10 +4719,11 @@
       "preserve": "Keep indexing queue startup and application service initialization.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "2350f8b4b5a7d5c4a99e785cba15e7e10e4b37fda3594ee8d8238332c27fb107",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "\tif (probation === undefined) writePid();",
-      "observedSourceSha256": "2350f8b4b5a7d5c4a99e785cba15e7e10e4b37fda3594ee8d8238332c27fb107"
+      "observedSourceSha256": "2350f8b4b5a7d5c4a99e785cba15e7e10e4b37fda3594ee8d8238332c27fb107",
+      "task": "t3"
     },
     {
       "id": "M064",
@@ -4707,10 +4737,11 @@
       "preserve": "Keep generic directDispatch/progressForward/router dispatch.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "2350f8b4b5a7d5c4a99e785cba15e7e10e4b37fda3594ee8d8238332c27fb107",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "\tconst progressForward = executorProgress.forward(normalForward);",
-      "observedSourceSha256": "2350f8b4b5a7d5c4a99e785cba15e7e10e4b37fda3594ee8d8238332c27fb107"
+      "observedSourceSha256": "2350f8b4b5a7d5c4a99e785cba15e7e10e4b37fda3594ee8d8238332c27fb107",
+      "task": "t3"
     },
     {
       "id": "M065",
@@ -4724,10 +4755,11 @@
       "preserve": "Keep actual IPC server creation/listening through replacement lifecycle owner.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "2350f8b4b5a7d5c4a99e785cba15e7e10e4b37fda3594ee8d8238332c27fb107",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "\t\t(request.method === 'daemon.update' ? managedUpdate : progressForward)(request, deliver));",
-      "observedSourceSha256": "2350f8b4b5a7d5c4a99e785cba15e7e10e4b37fda3594ee8d8238332c27fb107"
+      "observedSourceSha256": "2350f8b4b5a7d5c4a99e785cba15e7e10e4b37fda3594ee8d8238332c27fb107",
+      "task": "t3"
     },
     {
       "id": "M066",
@@ -4741,10 +4773,11 @@
       "preserve": "Keep resource drain callback bodies: queues, timers, store roots, connection tests, workers, session pool and IPC flush/close must still run under replacement shutdown.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "2350f8b4b5a7d5c4a99e785cba15e7e10e4b37fda3594ee8d8238332c27fb107",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "\tlet serverClosing: Promise<void> | undefined;",
-      "observedSourceSha256": "2350f8b4b5a7d5c4a99e785cba15e7e10e4b37fda3594ee8d8238332c27fb107"
+      "observedSourceSha256": "2350f8b4b5a7d5c4a99e785cba15e7e10e4b37fda3594ee8d8238332c27fb107",
+      "task": "t3"
     },
     {
       "id": "M067",
@@ -4758,10 +4791,11 @@
       "preserve": "Keep error reporting and deterministic failed-start exit under new owner.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "2350f8b4b5a7d5c4a99e785cba15e7e10e4b37fda3594ee8d8238332c27fb107",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "\tif (isManagedDaemon()) { realEndDeps.killSelf(); return; }",
-      "observedSourceSha256": "2350f8b4b5a7d5c4a99e785cba15e7e10e4b37fda3594ee8d8238332c27fb107"
+      "observedSourceSha256": "2350f8b4b5a7d5c4a99e785cba15e7e10e4b37fda3594ee8d8238332c27fb107",
+      "task": "t3"
     },
     {
       "id": "M068",
@@ -4775,10 +4809,11 @@
       "preserve": "Keep other handler dependencies and general thread-status initialization.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "2350f8b4b5a7d5c4a99e785cba15e7e10e4b37fda3594ee8d8238332c27fb107",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "\t\t\tshutdown: reason => requestPublicShutdown(reason),",
-      "observedSourceSha256": "2350f8b4b5a7d5c4a99e785cba15e7e10e4b37fda3594ee8d8238332c27fb107"
+      "observedSourceSha256": "2350f8b4b5a7d5c4a99e785cba15e7e10e4b37fda3594ee8d8238332c27fb107",
+      "task": "t3"
     },
     {
       "id": "M069",
@@ -4792,10 +4827,11 @@
       "preserve": "Keep MainThreadServices, all other hub operations and worker resource lifecycle.",
       "requiresExtraction": false,
       "revalidatedSourceSha256": "89d79c730931d97f5f0a6ca7304c2dadcc25a6cf22e112a3b16c7253c9ae3e07",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "export const SHUTDOWN_OP = 'daemon.shutdown';",
-      "observedSourceSha256": "89d79c730931d97f5f0a6ca7304c2dadcc25a6cf22e112a3b16c7253c9ae3e07"
+      "observedSourceSha256": "89d79c730931d97f5f0a6ca7304c2dadcc25a6cf22e112a3b16c7253c9ae3e07",
+      "task": "t3"
     },
     {
       "id": "M070",
@@ -4809,10 +4845,11 @@
       "preserve": "Keep class and unrelated service operations; replace process-stop transport.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "89d79c730931d97f5f0a6ca7304c2dadcc25a6cf22e112a3b16c7253c9ae3e07",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "\tprivate toolSettings: ToolSettings | undefined;",
-      "observedSourceSha256": "89d79c730931d97f5f0a6ca7304c2dadcc25a6cf22e112a3b16c7253c9ae3e07"
+      "observedSourceSha256": "89d79c730931d97f5f0a6ca7304c2dadcc25a6cf22e112a3b16c7253c9ae3e07",
+      "task": "t3"
     },
     {
       "id": "M071",
@@ -4826,10 +4863,11 @@
       "preserve": "Keep worker entry, message handling, queue/store/resource cleanup and worker supervision.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "9bd6dd9024d443bde614aa07180054493648d03799754111d18332c8a73d2154",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "\tshutdown: reason => hub.request<void>(SHUTDOWN_OP, reason),",
-      "observedSourceSha256": "9bd6dd9024d443bde614aa07180054493648d03799754111d18332c8a73d2154"
+      "observedSourceSha256": "9bd6dd9024d443bde614aa07180054493648d03799754111d18332c8a73d2154",
+      "task": "t3"
     },
     {
       "id": "M072",
@@ -4843,10 +4881,11 @@
       "preserve": "Keep worker entry, message handling, queue/store/resource cleanup and worker supervision.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "f0b4ab9ab06aa4eba2b01ad9a191b5a16380059f80f8ef306e5b7e76d60cec7b",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "\tshutdown: reason => hub.send(SHUTDOWN_OP, reason),",
-      "observedSourceSha256": "f0b4ab9ab06aa4eba2b01ad9a191b5a16380059f80f8ef306e5b7e76d60cec7b"
+      "observedSourceSha256": "f0b4ab9ab06aa4eba2b01ad9a191b5a16380059f80f8ef306e5b7e76d60cec7b",
+      "task": "t3"
     },
     {
       "id": "M073",
@@ -4860,10 +4899,11 @@
       "preserve": "Keep worker entry, message handling, queue/store/resource cleanup and worker supervision.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "be53fb17834536eec9f7b698404d0830545446e94e62a08669dc028bc0949dc8",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "\tshutdown: reason => hub.send(SHUTDOWN_OP, reason),",
-      "observedSourceSha256": "be53fb17834536eec9f7b698404d0830545446e94e62a08669dc028bc0949dc8"
+      "observedSourceSha256": "be53fb17834536eec9f7b698404d0830545446e94e62a08669dc028bc0949dc8",
+      "task": "t3"
     },
     {
       "id": "M074",
@@ -4877,10 +4917,11 @@
       "preserve": "Keep method-class table and unrelated routes.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "345ef134f541224ba8645033cc296487ad175ed08100ab99ab8b95a1ab8d33ba",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "\t['daemon.shutdown', 'admin', false],",
-      "observedSourceSha256": "345ef134f541224ba8645033cc296487ad175ed08100ab99ab8b95a1ab8d33ba"
+      "observedSourceSha256": "345ef134f541224ba8645033cc296487ad175ed08100ab99ab8b95a1ab8d33ba",
+      "task": "t3"
     },
     {
       "id": "M075",
@@ -5557,10 +5598,11 @@
       "preserve": "Keep repository mutation policy/audit table and unrelated method entries.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "2b26b5810658a9ed5febd9e19a74a87182d177d663f7fded0a148c7baa2af9ec",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "\t\"daemon.debug-status\": {\"kind\": \"read-only\", \"evidence\": \"admin-handlers.ts reads daemon status, MCP registration status or shipped guidance\"} ,",
-      "observedSourceSha256": "2b26b5810658a9ed5febd9e19a74a87182d177d663f7fded0a148c7baa2af9ec"
+      "observedSourceSha256": "2b26b5810658a9ed5febd9e19a74a87182d177d663f7fded0a148c7baa2af9ec",
+      "task": "t3"
     },
     {
       "id": "M115",
@@ -5591,10 +5633,11 @@
       "preserve": "Keep admin status composition and store/queue/worker metrics.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "fb935f522f1f5ee5c7ec61cbe32053c2aaca14ff0f845a4ba58d5c2db021e0e8",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "\t\t\t\tmodelState: info.modelState,",
-      "observedSourceSha256": "fb935f522f1f5ee5c7ec61cbe32053c2aaca14ff0f845a4ba58d5c2db021e0e8"
+      "observedSourceSha256": "fb935f522f1f5ee5c7ec61cbe32053c2aaca14ff0f845a4ba58d5c2db021e0e8",
+      "task": "t3"
     },
     {
       "id": "M117",
@@ -5863,10 +5906,11 @@
       "preserve": "Keep generic disconnect, timeout and request-written uncertainty tests.",
       "requiresExtraction": false,
       "revalidatedSourceSha256": "395a6c3cede3fff0b98b318538b5cf3d3091043f1f7ad9a2e19610c1bf8e8c92",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "test('A missing update acknowledgement is classified as uncertain after the request write', async () => {",
-      "observedSourceSha256": "395a6c3cede3fff0b98b318538b5cf3d3091043f1f7ad9a2e19610c1bf8e8c92"
+      "observedSourceSha256": "395a6c3cede3fff0b98b318538b5cf3d3091043f1f7ad9a2e19610c1bf8e8c92",
+      "task": "t3"
     },
     {
       "id": "M139",
@@ -5914,10 +5958,11 @@
       "preserve": "Replace process trigger/exit mechanism; retain worker/session resource drain and flush expectations.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "e409919f6b5400fa2017b133ff121e928179cce87dc063f0ba4fee9cc7f9e872",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "test(\"s4 ac3: SIGTERM and daemon.shutdown exit 0 after 'bye' with every worker, session-pool workers included, terminated\", { timeout: 180_000 }, async () => {",
-      "observedSourceSha256": "e409919f6b5400fa2017b133ff121e928179cce87dc063f0ba4fee9cc7f9e872"
+      "observedSourceSha256": "e409919f6b5400fa2017b133ff121e928179cce87dc063f0ba4fee9cc7f9e872",
+      "task": "t3"
     },
     {
       "id": "M142",
@@ -5931,10 +5976,11 @@
       "preserve": "Keep worker routing, maintenance exclusion, resource draining and healthy store close assertions.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "f76a97777ce61d47e80c8e066824e3e2daf8240c2d44204d6931968585a0cd06",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "test(\"SIGTERM during an indexing pass: workers stop, the queue drains, the main thread closes the stores after the workers exit, 'bye' is logged\", { timeout: 120_000 }, async () => {",
-      "observedSourceSha256": "f76a97777ce61d47e80c8e066824e3e2daf8240c2d44204d6931968585a0cd06"
+      "observedSourceSha256": "f76a97777ce61d47e80c8e066824e3e2daf8240c2d44204d6931968585a0cd06",
+      "task": "t3"
     },
     {
       "id": "M143",
@@ -5948,10 +5994,11 @@
       "preserve": "Keep worker routing, maintenance exclusion, resource draining and healthy store close assertions.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "f76a97777ce61d47e80c8e066824e3e2daf8240c2d44204d6931968585a0cd06",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "test('daemon.shutdown during maintenance is refused with the activity and reason; SIGTERM during maintenance waits for the compaction and then shuts down', { timeout: 120_000 }, async () => {",
-      "observedSourceSha256": "f76a97777ce61d47e80c8e066824e3e2daf8240c2d44204d6931968585a0cd06"
+      "observedSourceSha256": "f76a97777ce61d47e80c8e066824e3e2daf8240c2d44204d6931968585a0cd06",
+      "task": "t3"
     },
     {
       "id": "M144",
@@ -5965,10 +6012,11 @@
       "preserve": "Keep worker routing, maintenance exclusion, resource draining and healthy store close assertions.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "f76a97777ce61d47e80c8e066824e3e2daf8240c2d44204d6931968585a0cd06",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "test('boot: threads enabled serves a session method from a session worker over the socket, and SIGTERM drains and exits 0', { timeout: 120_000 }, async () => {",
-      "observedSourceSha256": "f76a97777ce61d47e80c8e066824e3e2daf8240c2d44204d6931968585a0cd06"
+      "observedSourceSha256": "f76a97777ce61d47e80c8e066824e3e2daf8240c2d44204d6931968585a0cd06",
+      "task": "t3"
     },
     {
       "id": "M145",
@@ -5982,10 +6030,11 @@
       "preserve": "Keep proof that retired review runtime/hooks are not allocated.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "fea24c74a660e1041be8ceb5921c8acf7eb8154967bcadb4427ecf8ea62fb75c",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "test('daemon startup shutdown and dispatch allocate no review runtime or hooks', () => {",
-      "observedSourceSha256": "fea24c74a660e1041be8ceb5921c8acf7eb8154967bcadb4427ecf8ea62fb75c"
+      "observedSourceSha256": "fea24c74a660e1041be8ceb5921c8acf7eb8154967bcadb4427ecf8ea62fb75c",
+      "task": "t3"
     },
     {
       "id": "M146",
@@ -5999,10 +6048,11 @@
       "preserve": "Replace stop executor; keep rejection while previous daemon survives and exclusive offline-maintenance guarantees.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "68c904bbb85aeb2d3d498e32f21cfcae12b518b283844b07915094b82c9dbafb",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "test('maintenance control verifies the old daemon before stopping and never runs maintenance while it survives', async () => {",
-      "observedSourceSha256": "68c904bbb85aeb2d3d498e32f21cfcae12b518b283844b07915094b82c9dbafb"
+      "observedSourceSha256": "68c904bbb85aeb2d3d498e32f21cfcae12b518b283844b07915094b82c9dbafb",
+      "task": "t3"
     },
     {
       "id": "M147",
@@ -6203,10 +6253,11 @@
       "preserve": "Keep model catalog validation/default equivalence and summarizer assertions.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "fee92230b632f8081e63a2fdcb04d03f50a0a231dc2de3f120f78bdaa8a8f681",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "test('model-catalog-asset.test.ts: shipped asset validates, ships via copy-assets, lists today\\'s models and aliases; its tier defaults equal DEFAULT_TIERS; the installer reads its defaults from the file; the summariser comes from summariserModel', () => {",
-      "observedSourceSha256": "fee92230b632f8081e63a2fdcb04d03f50a0a231dc2de3f120f78bdaa8a8f681"
+      "observedSourceSha256": "fee92230b632f8081e63a2fdcb04d03f50a0a231dc2de3f120f78bdaa8a8f681",
+      "task": "t3"
     },
     {
       "id": "M159",
@@ -6340,10 +6391,11 @@
       "addedByRevalidation": true,
       "requiresExtraction": false,
       "revalidatedSourceSha256": "1cca74b969b29260d6cf8cf09c95e2a3d57dfdb0e2121cd42726f43bea185041",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "export interface RunFileGuardPin {",
-      "observedSourceSha256": "1cca74b969b29260d6cf8cf09c95e2a3d57dfdb0e2121cd42726f43bea185041"
+      "observedSourceSha256": "1cca74b969b29260d6cf8cf09c95e2a3d57dfdb0e2121cd42726f43bea185041",
+      "task": "t3"
     },
     {
       "id": "M173",
@@ -6358,10 +6410,11 @@
       "addedByRevalidation": true,
       "requiresExtraction": false,
       "revalidatedSourceSha256": "1cca74b969b29260d6cf8cf09c95e2a3d57dfdb0e2121cd42726f43bea185041",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "export function readRunFileGuardPin(path: string): RunFileGuardPin | undefined {",
-      "observedSourceSha256": "1cca74b969b29260d6cf8cf09c95e2a3d57dfdb0e2121cd42726f43bea185041"
+      "observedSourceSha256": "1cca74b969b29260d6cf8cf09c95e2a3d57dfdb0e2121cd42726f43bea185041",
+      "task": "t3"
     },
     {
       "id": "M174",
@@ -6376,10 +6429,11 @@
       "addedByRevalidation": true,
       "requiresExtraction": false,
       "revalidatedSourceSha256": "1cca74b969b29260d6cf8cf09c95e2a3d57dfdb0e2121cd42726f43bea185041",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "function sameOwner(a: ProcessIdentity, b: ProcessIdentity): boolean {",
-      "observedSourceSha256": "1cca74b969b29260d6cf8cf09c95e2a3d57dfdb0e2121cd42726f43bea185041"
+      "observedSourceSha256": "1cca74b969b29260d6cf8cf09c95e2a3d57dfdb0e2121cd42726f43bea185041",
+      "task": "t3"
     },
     {
       "id": "M175",
@@ -6394,10 +6448,11 @@
       "addedByRevalidation": true,
       "requiresExtraction": true,
       "revalidatedSourceSha256": "8df2269bad8f7b8c4f14db2c9a8877b838bed29812f000ce5de66e2d4a94f715",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "test('store failure to stop: exit within 5 seconds, pid file and socket gone, second start succeeds, last log line names the skipped close', { skip }, async () => {",
-      "observedSourceSha256": "8df2269bad8f7b8c4f14db2c9a8877b838bed29812f000ce5de66e2d4a94f715"
+      "observedSourceSha256": "8df2269bad8f7b8c4f14db2c9a8877b838bed29812f000ce5de66e2d4a94f715",
+      "task": "t3"
     },
     {
       "id": "M176",
@@ -6412,10 +6467,11 @@
       "addedByRevalidation": true,
       "requiresExtraction": true,
       "revalidatedSourceSha256": "8df2269bad8f7b8c4f14db2c9a8877b838bed29812f000ce5de66e2d4a94f715",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "test('fatal after failure: an unhandled rejection with the store failed ends the process within 5 seconds', { skip }, async () => {",
-      "observedSourceSha256": "8df2269bad8f7b8c4f14db2c9a8877b838bed29812f000ce5de66e2d4a94f715"
+      "observedSourceSha256": "8df2269bad8f7b8c4f14db2c9a8877b838bed29812f000ce5de66e2d4a94f715",
+      "task": "t3"
     },
     {
       "id": "M177",
@@ -6430,10 +6486,11 @@
       "addedByRevalidation": true,
       "requiresExtraction": true,
       "revalidatedSourceSha256": "8df2269bad8f7b8c4f14db2c9a8877b838bed29812f000ce5de66e2d4a94f715",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "test('healthy shutdown is unchanged: queue drained, connections closed in order, normal exit', { skip }, async () => {",
-      "observedSourceSha256": "8df2269bad8f7b8c4f14db2c9a8877b838bed29812f000ce5de66e2d4a94f715"
+      "observedSourceSha256": "8df2269bad8f7b8c4f14db2c9a8877b838bed29812f000ce5de66e2d4a94f715",
+      "task": "t3"
     },
     {
       "id": "M178",
@@ -6448,10 +6505,11 @@
       "addedByRevalidation": true,
       "requiresExtraction": true,
       "revalidatedSourceSha256": "8df2269bad8f7b8c4f14db2c9a8877b838bed29812f000ce5de66e2d4a94f715",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "test('with the store failed no path calls exit: the shutdown, its backstop, a failure found during the drain, and any other exit', async () => {",
-      "observedSourceSha256": "8df2269bad8f7b8c4f14db2c9a8877b838bed29812f000ce5de66e2d4a94f715"
+      "observedSourceSha256": "8df2269bad8f7b8c4f14db2c9a8877b838bed29812f000ce5de66e2d4a94f715",
+      "task": "t3"
     },
     {
       "id": "M179",
@@ -6466,10 +6524,11 @@
       "addedByRevalidation": true,
       "requiresExtraction": true,
       "revalidatedSourceSha256": "8df2269bad8f7b8c4f14db2c9a8877b838bed29812f000ce5de66e2d4a94f715",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "test('Store-child fixture exercises owned publication watchdog readiness and guarded close', { skip }, async () => {",
-      "observedSourceSha256": "8df2269bad8f7b8c4f14db2c9a8877b838bed29812f000ce5de66e2d4a94f715"
+      "observedSourceSha256": "8df2269bad8f7b8c4f14db2c9a8877b838bed29812f000ce5de66e2d4a94f715",
+      "task": "t3"
     },
     {
       "id": "M180",
@@ -6484,10 +6543,11 @@
       "addedByRevalidation": true,
       "requiresExtraction": true,
       "revalidatedSourceSha256": "c74d6f2be72832f7ec5485b71b90edfb5cb35e871dc9965c4130dcb2c8bfc85c",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "async function runDaemon(home: string, dir: string): Promise<{ code: number | null; listened: boolean; stderr: string }> {",
-      "observedSourceSha256": "c74d6f2be72832f7ec5485b71b90edfb5cb35e871dc9965c4130dcb2c8bfc85c"
+      "observedSourceSha256": "c74d6f2be72832f7ec5485b71b90edfb5cb35e871dc9965c4130dcb2c8bfc85c",
+      "task": "t3"
     },
     {
       "id": "M181",
@@ -6658,5 +6718,11 @@
     "policy": "One normal build and focused retained tests after integration; no live user lifecycle or native qualification matrix."
   },
   "workspaceOnly": true,
-  "newLifecycleEngine": false
+  "newLifecycleEngine": false,
+  "integrationEdits": [
+    {
+      "path": "src/db/graph/__tests__/helpers/store-child.ts",
+      "reason": "Retained graph/status fixture referenced deleted lifecycle modules dynamically; preserved real graph/queue/status RPC behavior and removed retired lifecycle operations."
+    }
+  ]
 }

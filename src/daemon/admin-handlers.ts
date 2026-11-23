@@ -21,7 +21,6 @@ import { probeMcpClients } from './mcp-register.js';
 import { validateRepoPath } from '../db/repos.js';
 import type { RpcHandlers } from './server.js';
 import { readSteeringBlock } from './steering-inject.js';
-import { readPublicUpdateOutcome } from './managed-update-ipc.js';
 
 const log = getLogger('daemon');
 
@@ -30,7 +29,7 @@ const log = getLogger('daemon');
  * daemon.update and daemon.updateOutcome, as the daemon has always served
  * them; `shutdown` starts the daemon's shutdown with a reason.
  */
-export function sharedAdminHandlers(shutdown: (reason: string) => void | Promise<void>): RpcHandlers {
+export function sharedAdminHandlers(): RpcHandlers {
 	return {
 		'config.show': async () => {
 			try {
@@ -83,24 +82,11 @@ export function sharedAdminHandlers(shutdown: (reason: string) => void | Promise
 			}
 			return probeMcpClients({}, repoPath);
 		},
-
-		'daemon.shutdown': async () => {
-			log.info('shutdown requested');
-			await shutdown('daemon.shutdown RPC');
-			return { ok: true };
-		},
-
-		// The main unary socket owner handles update acknowledgment and cutover.
-		// A worker/direct dispatch must never launch an incumbent ctl build or
-		// schedule shutdown before that owner has reserved an authenticated update.
-		'daemon.update': async () => { throw new Error('Daemon updates require the unary lifecycle owner; obtain the current authenticated installer for historical installations'); },
-		'daemon.updateOutcome': () => readPublicUpdateOutcome(),
 	};
 }
 
 /** What the admin worker's own three methods read. */
 export interface AdminWorkerDeps {
-	readonly shutdown: (reason: string) => void | Promise<void>;
 	readonly status: () => Promise<DaemonStatus>;
 	readonly clients: () => Promise<readonly AttachedClient[]>;
 	readonly repoList: () => Promise<unknown>;
@@ -111,7 +97,7 @@ export interface AdminWorkerDeps {
 /** The admin worker's table: the ten admin methods. */
 export function adminWorkerHandlers(deps: AdminWorkerDeps): RpcHandlers {
 	return {
-		...sharedAdminHandlers(deps.shutdown),
+		...sharedAdminHandlers(),
 		'daemon.status': async () => deps.status(),
 		// Read-only: the clients the router published on the status board (k5).
 		// With the worker threads beside them once any is published (s4); clients unchanged.

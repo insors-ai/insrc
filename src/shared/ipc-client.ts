@@ -1,6 +1,6 @@
 import { onUtf8Data } from './utf8-stream.js';
 import { createConnection, type Socket } from 'node:net';
-import type { IpcRequest, IpcResponse, IpcStreamMessage, DaemonStatus, DaemonUpdateResult, DaemonUpdateOutcome } from './types.js';
+import type { IpcRequest, IpcResponse, IpcStreamMessage, DaemonStatus } from './types.js';
 import { PATHS } from './paths.js';
 
 // The single thin socket-client boundary shared by the CLI/TUI and the VS Code
@@ -157,16 +157,6 @@ export interface IpcClient {
   /** Coarse reachability, derived from a `daemon.status` outcome. Never throws. */
   reachability(): Promise<DaemonReachability>;
   /**
-   * Ask the daemon to update AND restart itself (Story S001 / sc1). Resolves with
-   * a launch acknowledgement ({ launched:true }); the daemon then restarts, so
-   * the caller's socket drops and it must reconnect. The terminal result is read
-   * back via {@link updateOutcome} after reconnect. Rejects (result.error) when an
-   * update is already in progress or the daemon root/helper cannot be resolved.
-   */
-  update(): Promise<DaemonUpdateResult>;
-  /** The last persisted daemon self-update outcome, or null when none exists. */
-  updateOutcome(): Promise<DaemonUpdateOutcome | null>;
-  /**
    * Open a stream method on the daemon and deliver every frame it pushes to `onFrame`.
    * Optional: a client that cannot stream (a test double) omits it, and only the modules
    * that subscribe (the approval prompts) check for it. `onClose` runs once when the stream
@@ -241,8 +231,6 @@ export function createIpcClient(connect?: () => Socket): IpcClient {
         return message.startsWith(DAEMON_DOWN_PREFIX) ? 'stopped' : 'errored';
       }
     },
-    update: () => rpc<DaemonUpdateResult>('daemon.update', {}, connect, { timeoutMs: 20_000, uncertainAfterWrite: true }),
-    updateOutcome: () => rpc<DaemonUpdateOutcome | null>('daemon.updateOutcome', {}, connect, { timeoutMs: 4_000 }),
     stream: (method, params, onFrame, onClose) => openStream(method, params, onFrame, onClose, connect),
   };
 }

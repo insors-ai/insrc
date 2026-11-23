@@ -1,4 +1,4 @@
-import { daemonRunFiles } from './run-file-ownership.js';
+
 import {
   embeddingDim,
   ensureEmbeddingModel,
@@ -12,19 +12,6 @@ import {
 import { getLogger } from '../shared/logger.js';
 
 const log = getLogger('daemon');
-
-// ---------------------------------------------------------------------------
-// PID file management
-// ---------------------------------------------------------------------------
-
-/** Publish only under the managed run-file guard; never overwrite foreign evidence. */
-export function writePid(): void { daemonRunFiles.writePid(); }
-
-/** Remove only this process's captured publications under the shared guard. */
-export function clearPid(): void { daemonRunFiles.clearRunFiles(); }
-
-/** Guarded stale cleanup requires a positively exited PID; uncertainty refuses startup. */
-export function isAlreadyRunning(): boolean { return daemonRunFiles.isAlreadyRunning(); }
 
 // ---------------------------------------------------------------------------
 // Embedding model bootstrap

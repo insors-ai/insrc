@@ -1,7 +1,6 @@
 import { onUtf8Data } from '../shared/utf8-stream.js';
 import { connectionExecutionErrorCode, currentStepContext } from '../shared/step-context.js';
 import { createServer, type Server, type Socket } from 'node:net';
-import { DaemonRunFileOwnership, daemonRunFiles } from './run-file-ownership.js';
 import { randomUUID } from 'node:crypto';
 import type { TrustedRpcContext } from './request-context.js';
 import { RequestLifetime } from './request-context.js';
@@ -182,7 +181,6 @@ export function failureMessage(err: unknown, method: string, context?: TrustedRp
 export class IpcServer {
   private server: Server | null = null;
   private closing: Promise<void> | null = null;
-  private readonly ownership: DaemonRunFileOwnership;
   private readonly pendingWrites = new Set<Promise<boolean>>();
   private writeFailed = false;
 
@@ -243,9 +241,8 @@ export class IpcServer {
   private registryListener: ((clients: AttachedClient[]) => void) | undefined;
   private connectionCloseListener: ((context: TrustedRpcContext) => void) | undefined;
 
-  constructor(private readonly forward: ForwardRequest, now: () => number = Date.now, private readonly socketPath = PATHS.sockFile, ownership?: DaemonRunFileOwnership | undefined) {
+  constructor(private readonly forward: ForwardRequest, now: () => number = Date.now, private readonly socketPath = PATHS.sockFile) {
     this.now = now;
-    this.ownership = ownership ?? (socketPath === PATHS.sockFile ? daemonRunFiles : new DaemonRunFileOwnership({ socketFile: socketPath, guardPath: `${socketPath}.guard` }));
   }
 
   /**
@@ -282,35 +279,22 @@ export class IpcServer {
   }
 
   async listen(): Promise<void> {
-    const lease = this.ownership.lease();
-    try {
-      this.ownership.assertSocketVacant();
-      this.closing = null;
-      await new Promise<void>((resolve, reject) => {
-        this.server = createServer((socket: Socket) => this.handleConnection(socket));
-        this.server.on('error', reject);
-        this.server.listen(this.socketPath, () => {
-          try { this.ownership.claimSocket(); log.info(`listening on ${this.socketPath}`); resolve(); }
-          catch (error) { reject(error); }
-        });
-      });
-    } finally { lease.release(); }
+    this.closing = null;
+    await new Promise<void>((resolve, reject) => {
+      this.server = createServer((socket: Socket) => this.handleConnection(socket));
+      this.server.once('error', reject);
+      this.server.listen(this.socketPath, () => { log.info(`listening on ${this.socketPath}`); resolve(); });
+    });
   }
 
   close(): Promise<void> {
     if (this.closing) return this.closing;
     const server = this.server;
-    if (!server || (!server.listening && !this.ownership.hasSocketPublication)) return Promise.resolve();
-    this.closing = (async () => {
-      const lease = this.ownership.lease();
-      try {
-        // Refuse before server.close: libuv may unlink the pathname implicitly.
-        this.ownership.assertSocketOwned();
-        await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
-        this.ownership.markListenerClosed();
-        this.ownership.removeSocket(); this.server = null;
-      } finally { lease.release(); }
-    })();
+    if (!server?.listening) return Promise.resolve();
+    this.closing = new Promise<void>((resolve, reject) => server.close(error => {
+      this.server = null;
+      if (error) reject(error); else resolve();
+    }));
     return this.closing;
   }
 
@@ -391,15 +375,6 @@ export class IpcServer {
     const settled = new Promise<void>(resolve => { settle = resolve; });
     let cancel: () => void = () => {};
     let pendingFrame: Promise<boolean> | undefined;
-    let finishUpdate: ((written: boolean) => void) | undefined;
-    const updateReply = request.method === 'daemon.update' && request.stream !== true
-      ? new Promise<boolean>(resolve => { finishUpdate = resolve; })
-      : undefined;
-    if (updateReply !== undefined) {
-      const abortUpdate = () => finishUpdate?.(false);
-      conn.controller.signal.addEventListener('abort', abortUpdate, { once: true });
-      void updateReply.then(() => conn.controller.signal.removeEventListener('abort', abortUpdate));
-    }
     const end = (): void => { ended = true; settle(); };
     // A terminal frame ends delivery; socket cancellation remains live through actual cleanup.
     void Promise.all([lifetime.completed, lifetime.drained]).then(() => { running?.delete(requestId); settle(); });
@@ -409,7 +384,6 @@ export class IpcServer {
       if (envelope.kind === 'reply') {
         end();
         const written = this.send(socket, envelope.error !== undefined ? { id: request.id, error: envelope.error } : { id: request.id, result: envelope.result });
-        if (finishUpdate !== undefined) void written.then(ok => finishUpdate?.(ok && envelope.error === undefined));
         return;
       }
       // Always override the frame's id with the request's id so the client can correlate.
@@ -427,7 +401,7 @@ export class IpcServer {
       ...(client !== undefined ? { session: client } : {}),
       trustedContext: request.method === 'progress.subscribe'
         ? { ...this.connectionContext(conn), awaitProgressWrite: () => pendingFrame ?? Promise.resolve(false) }
-        : { ...this.connectionContext(conn), ...(updateReply === undefined ? {} : { awaitUpdateReply: () => updateReply }) },
+        : this.connectionContext(conn),
       ...(lifetime ? { lifetime } : {}),
     }, deliver); }
     catch (error) {

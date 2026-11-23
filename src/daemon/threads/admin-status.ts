@@ -111,7 +111,6 @@ export function createAdminStatus(deps: AdminStatusDeps): AdminStatus {
 				queueDepth,
 				queueLanes: () => queueLanes,
 				modelState: info.modelState,
-				installedCommit: info.installedCommit,
 				lmdbFileSizeMb: info.lmdbFileSizeMb,
 			});
 			const threads = threadViews(snap, now());

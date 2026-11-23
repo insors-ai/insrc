@@ -94,15 +94,12 @@ export function currentLmdbFileSizeMb(): number | undefined {
 export interface DaemonInfo {
 	readonly startedAt: number;
 	readonly modelState: { status: string; pct?: number | undefined };
-	readonly installedCommit: string;
 	readonly lmdbFileSizeMb?: number | undefined;
 	readonly maintenance?: DaemonStatus['maintenance'];
 }
 
 export const DAEMON_INFO_OP = 'daemon.info';
 export const EMBEDDER_BACKEND_OP = 'embedder.backend';
-/** A worker asks the main thread to shut the daemon down (daemon.shutdown and daemon.update served on the admin worker). */
-export const SHUTDOWN_OP = 'daemon.shutdown';
 /** A worker's keystore call, served by the vault on the main thread. */
 export const KEYSTORE_OP = 'keystore.call';
 /** The code-indexing worker's daemon.compact asks the main thread to run maintenance now; answers its CompactResult. */
@@ -156,7 +153,6 @@ export class ThreadServices {
  reclaimArtifactWrites(port:MessagePort):void{this.artifactWrites.reclaim(port);}
 	private embedderBackend: EmbedderBackend | undefined;
 	private toolSettings: ToolSettings | undefined;
-	private shutdown: ((reason: string) => void | Promise<void>) | undefined;
 	private maintenance: (() => Promise<unknown>) | undefined;
 	private route: ((request: RouteRequest) => Promise<unknown>) | undefined;
 
@@ -173,7 +169,6 @@ export class ThreadServices {
 			...wireMainStoreHealth(() => this.ports),
 			[DAEMON_INFO_OP]: () => this.info(),
 			[KEYSTORE_OP]: call => serveKeystoreCall(call),
-			[SHUTDOWN_OP]: reason => this.shutdown?.(String(reason)),
 			[ROUTE_OP]: a => {
 				if (this.route === undefined) throw new Error('the daemon cannot route a nested call yet');
 				return this.route(a as RouteRequest);
@@ -183,11 +178,6 @@ export class ThreadServices {
 				return this.maintenance();
 			},
 		};
-	}
-
-	/** The daemon's shutdown, which a worker's SHUTDOWN_OP starts with its reason. */
-	onShutdown(shutdown: (reason: string) => void | Promise<void>): void {
-		this.shutdown = shutdown;
 	}
 
 	/** What ROUTE_OP runs: the router's request to another thread (s3). */

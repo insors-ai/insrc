@@ -33,7 +33,6 @@ export interface DaemonStatusSources {
 	readonly listRepos:       () => Promise<RegisteredRepo[]>;
 	readonly queueDepth:      number;
 	readonly modelState:      { status: string; pct?: number | undefined };
-	readonly installedCommit: string;
 	/** Best-effort; undefined when the file is absent or cannot be read. */
 	readonly lmdbFileSizeMb?: number | undefined;
 	/** Test seam; production reads the store module's record. */
@@ -112,7 +111,6 @@ export async function buildDaemonStatus(src: DaemonStatusSources): Promise<Daemo
 		embeddingsPending: src.queueDepth, // approximate
 		modelPullStatus: src.modelState.status === 'pulling' ? 'pulling' : 'ready',
 		...(src.modelState.pct !== undefined && { modelPullPct: src.modelState.pct }),
-		installedCommit: src.installedCommit,
 		features: DAEMON_FEATURES,
 		...(src.lmdbFileSizeMb !== undefined && { lmdbFileSizeMb: src.lmdbFileSizeMb }),
 		...(failure !== undefined && { storeFailure: failure }),

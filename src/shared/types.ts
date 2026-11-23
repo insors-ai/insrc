@@ -1171,14 +1171,6 @@ export interface DaemonStatus {
   /** Relationships refused with no repository to count them against (Epic c2ba6fa6 s1); absent when it cannot be read. */
   unattributedUnwritable?: UnattributedUnwritableCount | undefined;
   /**
-   * The daemon's currently-installed source commit (Story S002 / sc2): the full
-   * `git rev-parse HEAD` of the daemon checkout root, or `""` when undeterminable
-   * (non-git/absent root, or git unavailable). A caller compares it against the
-   * upstream default-branch commit to judge freshness — no version scheme (k1).
-   * Read best-effort inside daemon.status's never-throw contract.
-   */
-  installedCommit:   string;
-  /**
    * The index queue's two lanes (Story b94cf2c9 S001): each lane's queued
    * count, whether its worker is running a job, and the running summary
    * sweep's progress. `queueDepth` stays the total of both lanes; a consumer
@@ -1235,50 +1227,6 @@ export interface QueueLanes {
   summary: { depth: number; running: boolean; sweep?: { repoPath: string; done: number; total: number } };
   /** The vector backfill's own lane (Epic c2ba6fa6 s2); absent from a daemon that predates it. */
   backfill?: { depth: number; running: boolean } | undefined;
-}
-
-/**
- * Params for the `daemon.update` IPC (Story S001 / sc1). Reserved for
- * future options (e.g. a target branch); no fields are required today, so
- * the handler accepts an absent or empty object.
- */
-export interface DaemonUpdateParams {
-  // reserved for future options; no fields required today
-  [key: string]: unknown;
-}
-
-/**
- * Result of the `daemon.update` IPC (Story S001 / sc1). This is a LAUNCH
- * acknowledgement, NOT the terminal outcome: the daemon spawns a detached
- * update+restart helper and then exits, so the caller's socket drops. The
- * caller reconnects and reads the terminal result via `daemon.updateOutcome`
- * (plus the fresh installed commit from `daemon.status`).
- */
-export interface DaemonUpdateResult {
-  /** the detached update+restart helper was spawned */
-  launched: boolean;
-  /** human-readable status (e.g. which branch is being updated) */
-  message?: string;
-  /** Correlates a managed update with its durable terminal outcome. */
-  updateId?: string;
-}
-
-/**
- * Terminal record of a daemon self-update (Story S001 / sc1), persisted by
- * the detached helper to `PATHS.updateOutcome` and returned verbatim by the
- * `daemon.updateOutcome` IPC. `error` carries the raw underlying error on
- * failure; there is no retry or rollback (the daemon owns its own state).
- */
-export interface DaemonUpdateOutcome {
-  /** Source lifecycle terminal decision; omitted by legacy updaters. */
-  decision?: 'committed' | 'rolled-back' | 'recovery-required' | undefined;
-  state:      'succeeded' | 'failed';
-  /** raw error summary on failure */
-  error?:     string;
-  /** ISO-8601 timestamp of when the helper finished */
-  finishedAt: string;
-  /** Omitted by legacy updaters. */
-  updateId?: string;
 }
 
 /** The index status of a registered repo — the same union `RegisteredRepo.status` uses. */

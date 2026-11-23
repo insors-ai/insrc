@@ -21,9 +21,6 @@ import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { createConnection } from 'node:net';
 import { join } from 'node:path';
-
-import { createShutdown, endAfterStoreFailure, exitRespectingStoreHealth, lastLineFor } from '../shutdown.js';
-import type { EndDeps } from '../shutdown.js';
 import type { StoreHealth } from '../../db/graph/store.js';
 import type { DaemonStatus } from '../../shared/types.js';
 import { killAllStoreChildren, runLockLossSequence, spawnStoreChild } from '../../db/graph/__tests__/helpers/store-child-driver.js';
@@ -74,7 +71,7 @@ function ask(sock: string, method: string, params: unknown = {}): Promise<{ resu
 async function becomeDaemon(child: StoreChild, h: Home): Promise<void> {
 	const r = await child.send({ op: 'daemon-like', logPath: h.log, crashLogDir: h.crashDir });
 	assert.ok(r.ok, r.ok ? '' : r.message);
-	assert.ok(existsSync(h.pid) && existsSync(h.sock), 'pid file and socket are in place');
+	assert.ok(existsSync(h.sock), 'request socket is in place');
 }
 
 /** A child with a store broken by the real sequence, serving as a daemon. */
@@ -83,22 +80,6 @@ async function brokenDaemon(name: string): Promise<{ child: StoreChild; h: Home 
 	const child = await runLockLossSequence(h.store, { env: { HOME: h.home } });
 	await becomeDaemon(child, h);
 	return { child, h };
-}
-
-async function endedWithin(child: StoreChild, ms: number): Promise<{ code: number | null; signal: NodeJS.Signals | null }> {
-	const started = Date.now();
-	const how = await Promise.race([child.exited, new Promise<'still running'>(r => setTimeout(() => r('still running'), ms))]);
-	assert.notEqual(how, 'still running', `the process ended within ${ms} ms`);
-	assert.ok(Date.now() - started < ms);
-	return how as { code: number | null; signal: NodeJS.Signals | null };
-}
-
-function assertLastLine(h: Home, reason: RegExp): void {
-	const lines = readFileSync(h.log, 'utf8').trimEnd().split('\n');
-	const last = lines[lines.length - 1] ?? '';
-	assert.match(last, reason);
-	assert.match(last, /the graph store's close was skipped because the store lost its locks/);
-	assert.doesNotMatch(last, /semume/);
 }
 
 test('status after failure: storeFailure names another process and does not contain \'semume\'', { skip }, async () => {
@@ -115,182 +96,4 @@ test('status after failure: storeFailure names another process and does not cont
 	const again = await ask(h.sock, 'daemon.status');
 	assert.equal((again as { result: DaemonStatus }).result.storeFailure?.kind, 'locks-lost');
 	await child.kill();
-});
-
-test('store failure to stop: exit within 5 seconds, pid file and socket gone, second start succeeds, last log line names the skipped close', { skip }, async () => {
-	// (a) the failure is known to the daemon when the stop arrives;
-	// (b) nothing has met it yet: the shutdown itself must find it.
-	for (const known of [true, false]) {
-		const { child, h } = await brokenDaemon(`stop-${known ? 'known' : 'unknown'}`);
-		if (known) await ask(h.sock, 'daemon.status');
-
-		const answer = await ask(h.sock, 'daemon.shutdown');
-		if (known) assert.deepEqual(answer, { id: 1, result: { ok: true } }, 'the stop request is answered before the process ends');
-		const how = await endedWithin(child, 5_000);
-		assert.equal(how.signal, 'SIGKILL', 'ended by a kill to itself, not by an exit (whose hook would hang)');
-		assert.equal(existsSync(h.pid), false, 'pid file removed');
-		assert.equal(existsSync(h.sock), false, 'socket removed');
-		assertLastLine(h, /ending after shutdown \(daemon\.shutdown RPC\)/);
-
-		// A second start in the same home, on the same store, succeeds.
-		const second = await spawnStoreChild(h.store, { env: { HOME: h.home } });
-		assert.deepEqual(await second.send({ op: 'open' }), { ok: true });
-		await becomeDaemon(second, h);
-		assert.deepEqual(await second.send({ op: 'wrapper-async', key: 'after', probeAfterMs: 10_000 }), { ok: true });
-		const status = await ask(h.sock, 'daemon.status');
-		assert.equal('storeFailure' in (status as { result: DaemonStatus }).result, false, 'the new process is healthy');
-		await second.kill();
-	}
-});
-
-test('fatal after failure: an unhandled rejection with the store failed ends the process within 5 seconds', { skip }, async () => {
-	const { child, h } = await brokenDaemon('fatal');
-	await ask(h.sock, 'daemon.status');   // the failure is recorded
-
-	await child.send({ op: 'reject-unhandled' });
-	const how = await endedWithin(child, 5_000);
-	assert.equal(how.signal, 'SIGKILL');
-	assert.equal(existsSync(h.pid), false, 'pid file removed');
-	assert.equal(existsSync(h.sock), false, 'socket removed');
-	assertLastLine(h, /ending after a fatal error \(unhandledRejection\)/);
-	assert.match(readFileSync(join(h.crashDir, 'daemon.crash.log'), 'utf8'), /\[unhandledRejection\] nothing handles this/, 'the crash log is still written');
-});
-
-test('healthy shutdown is unchanged: queue drained, connections closed in order, normal exit', { skip }, async () => {
-	// --- The order, with every act observed.
-	const acts: string[] = [];
-	let release: () => void = () => {};
-	const queueDone = new Promise<void>(res => { release = res; });
-	const health: StoreHealth = { state: 'ok' };
-	const end: EndDeps = {
-		clearPid: () => { acts.push('clearPid'); },
-		exit: code => { acts.push(`exit(${code})`); },
-		killSelf: () => { acts.push('KILL'); },
-		lastLinePath: join(base, 'never-written.log'),
-		storeHealth: () => health,
-	};
-	const shutdown = createShutdown({
-    armWatchdog: async () => ({ pid: 1, stage() {}, disarm() {} }),
-		log: { info: () => {}, warn: () => {} },
-		stopBackgroundWork: () => { acts.push('stopBackgroundWork'); },
-		queueDone,
-		closeStores: async () => { acts.push('closeStores'); },
-		end,
-	});
-	shutdown('SIGTERM');
-	shutdown('SIGINT');   // a second signal is ignored
-	await new Promise(r => setTimeout(r, 120));
-	assert.deepEqual(acts, ['stopBackgroundWork'], 'nothing closes and nothing exits while the queue drains');
-	release();
-	await new Promise(r => setTimeout(r, 20));
-	assert.deepEqual(acts, ['stopBackgroundWork', 'closeStores', 'clearPid', 'exit(0)']);
-	assert.doesNotMatch(readFileSync(end.lastLinePath, 'utf8'), /shutdown failed/);
-
-	// --- A real process: a job in flight is finished before the exit.
-	const h = tempHome('healthy');
-	const child = await spawnStoreChild(h.store, { env: { HOME: h.home } });
-	assert.deepEqual(await child.send({ op: 'open' }), { ok: true });
-	await becomeDaemon(child, h);
-	await ask(h.sock, 'test.enqueue', { ms: 400, key: 'drained' });
-	assert.deepEqual(await ask(h.sock, 'daemon.shutdown'), { id: 1, result: { ok: true } });
-	const how = await endedWithin(child, 5_000);
-	assert.deepEqual(how, { code: 0, signal: null }, 'a normal exit, not a kill');
-	assert.equal(existsSync(h.pid), false);
-	assert.equal(existsSync(h.sock), false);
-	assert.doesNotMatch(readFileSync(h.log, 'utf8'), /ending after|deadline exceeded/, 'healthy shutdown records stages without failure');
-
-	const reader = await spawnStoreChild(h.store, { env: { HOME: h.home } });
-	await reader.send({ op: 'open' });
-	assert.deepEqual(await reader.send({ op: 'read', key: 'drained' }), { ok: true, value: '1' }, 'the job in flight was finished');
-	await reader.kill();
-});
-
-test('with the store failed no path calls exit: the shutdown, its backstop, a failure found during the drain, and any other exit', async () => {
-	const lost: StoreHealth = { state: 'locks-lost', at: '2026-10-11T10:00:00.000Z', operation: 'request search', detectedBy: 'read', libraryMessage: 'MDB_LOCK_FAILURE (kern.sysv.semume)' };
-	const scene = (health: () => StoreHealth, name: string) => {
-		const acts: string[] = [];
-		const end: EndDeps = {
-			clearPid: () => { acts.push('clearPid'); },
-			exit: code => { acts.push(`exit(${code})`); },
-			killSelf: () => { acts.push('KILL'); },
-			lastLinePath: join(base, `${name}.log`),
-			storeHealth: health,
-		};
-		return { acts, end };
-	};
-
-	// The shutdown: no wait for a queue that never drains, no store close.
-	const a = scene(() => lost, 'a');
-	createShutdown({
-    armWatchdog: async () => ({ pid: 1, stage() {}, disarm() {} }),
-		log: { info: () => {}, warn: () => {} },
-		stopBackgroundWork: () => { a.acts.push('stopBackgroundWork'); },
-		queueDone: new Promise(() => {}),
-		closeStores: async () => { a.acts.push('closeStores'); },
-		end: a.end,
-	})('SIGTERM');
-	await new Promise(r => setTimeout(r, 150));
-	assert.deepEqual(a.acts, ['stopBackgroundWork', 'clearPid', 'KILL']);
-	assert.equal(readFileSync(a.end.lastLinePath, 'utf8').split('\n').filter(line => line.startsWith('[insrc-daemon]')).join('\n').concat('\n').replace(/^\[insrc-daemon\]\[[^\]]*\]/, ''), lastLineFor('shutdown (SIGTERM)', lost).replace(/^\[insrc-daemon\]\[[^\]]*\]/, ''));
-
-	// The failure is found while the queue drains: the close is skipped.
-	let now: StoreHealth = { state: 'ok' };
-	let release: () => void = () => {};
-	const b = scene(() => now, 'b');
-	createShutdown({
-    armWatchdog: async () => ({ pid: 1, stage() {}, disarm() {} }),
-		log: { info: () => {}, warn: () => {} },
-		stopBackgroundWork: () => {},
-		queueDone: new Promise<void>(res => { release = res; }),
-		closeStores: async () => { b.acts.push('closeStores'); },
-		end: b.end,
-	})('SIGTERM');
-	now = lost;
-	release();
-	await new Promise(r => setTimeout(r, 90));
-	assert.deepEqual(b.acts, ['clearPid', 'KILL']);
-
-	// The backstop, with the queue stalled and the store failed meanwhile.
-	now = { state: 'ok' };
-	const c = scene(() => now, 'c');
-	createShutdown({
-    armWatchdog: async () => ({ pid: 1, stage() {}, disarm() {} }),
-		log: { info: () => {}, warn: () => {} },
-		stopBackgroundWork: () => {},
-		queueDone: new Promise(() => {}),
-		closeStores: async () => { c.acts.push('closeStores'); },
-		end: c.end,
-		hardExitMs: 40,
-	})('SIGTERM');
-	now = lost;
-	await new Promise(r => setTimeout(r, 120));
-	assert.ok(c.acts.includes('KILL') && !c.acts.some(x => x.startsWith('exit')), `backstop ends by kill (${c.acts.join(',')})`);
-
-	// Any other exit.
-	const d = scene(() => lost, 'd');
-	exitRespectingStoreHealth(1, 'a failed start', d.end);
-	assert.deepEqual(d.acts, ['clearPid', 'KILL']);
-	const e = scene(() => ({ state: 'ok' }), 'e');
-	exitRespectingStoreHealth(1, 'a failed start', e.end);
-	assert.deepEqual(e.acts, ['exit(1)']);
-
-	// The last line survives a pid file that cannot be removed.
-	const f = scene(() => lost, 'f');
-	endAfterStoreFailure('x', lost as Exclude<StoreHealth, { state: 'ok' }>, { ...f.end, clearPid: () => { throw new Error('EPERM'); } });
-	assert.deepEqual(f.acts, ['KILL']);
-	assert.match(readFileSync(f.end.lastLinePath, 'utf8'), /ending after x: the graph store's close was skipped/);
-});
-
-test('Store-child fixture exercises owned publication watchdog readiness and guarded close', { skip }, async () => {
- const h = tempHome('watchdog-contract');
- const child = await spawnStoreChild(h.store, { env: { HOME: h.home } });
- await child.send({ op: 'open' }); await becomeDaemon(child, h);
- assert.equal(readFileSync(h.pid, 'utf8'), String(child.pid));
- assert.equal(existsSync(join(h.home, '.insrc/daemon.run-files.guard')), false);
- await ask(h.sock, 'daemon.shutdown');
- assert.deepEqual(await endedWithin(child, 5000), { code: 0, signal: null });
- const log = readFileSync(h.log, 'utf8');
- assert.match(log, /watchdog arm/); assert.match(log, /stop background work/); assert.match(log, /exit hooks/);
- assert.equal(existsSync(h.pid), false); assert.equal(existsSync(h.sock), false);
- assert.equal(existsSync(join(h.home, '.insrc/daemon.run-files.guard')), false);
 });

@@ -20,7 +20,7 @@ import { adminWorkerHandlers } from '../admin-handlers.js';
 import { unattributedUnwritable, withCompleteness } from '../repo-completeness.js';
 import { directDispatch } from '../server.js';
 import { createAdminStatus } from './admin-status.js';
-import { DAEMON_INFO_OP, SHUTDOWN_OP } from './main-services.js';
+import { DAEMON_INFO_OP } from './main-services.js';
 import type { DaemonInfo, WorkerConnection } from './main-services.js';
 import { StatusBoardClient } from './status-board.js';
 import { startDaemonWorker } from './worker-entry.js';
@@ -38,7 +38,6 @@ const status = createAdminStatus({
 });
 
 serveRequests(init.hubPort, directDispatch(adminWorkerHandlers({
-	shutdown: reason => hub.request<void>(SHUTDOWN_OP, reason),
 	status: () => status.daemonStatus(),
 	clients: async () => (await board.snapshot()).clients,
 	repoList: () => status.repoList(),

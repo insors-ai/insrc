@@ -37,9 +37,6 @@ const TABLE: readonly (readonly [string, MethodClass, boolean])[] = [
 	// Admin: liveness, status and control, answered from the status board.
 	['daemon.status', 'admin', false],
 	['daemon.debug-status', 'admin', false],
-	['daemon.shutdown', 'admin', false],
-	['daemon.update', 'admin', false],
-	['daemon.updateOutcome', 'admin', false],
 	['repo.list', 'admin', false],
 	['mcp.status', 'admin', false],
 	['config.show', 'admin', false],

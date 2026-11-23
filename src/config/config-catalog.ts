@@ -101,8 +101,6 @@ export function buildConfigCatalog(defs: ModelDefinitionsFile): readonly ConfigO
 		// ── main config (src/daemon/index.ts first-boot default + Config type) ──
 		{ path: 'logLevel',              type: 'enum',   default: 'info',                    desc: "daemon log level: 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace' (matches shared/logger VALID_LEVELS)", enumValues: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'], group: 'General' },
 		{ path: 'ollama.host',           type: 'string', default: 'http://localhost:11434',  desc: 'Ollama server URL (daemon-wide)', group: 'General' },
-		{ path: 'daemonUpdate.repoUrl',  type: 'string', default: '',                        desc: 'git remote URL the daemon update follows (a fork can be deployed); empty keeps the checkout\'s origin', group: 'General' },
-		{ path: 'daemonUpdate.branch',   type: 'string', default: '',                        desc: 'branch the daemon update follows; empty keeps the checkout\'s current branch', group: 'General' },
 		{ path: 'daemon.threads.enabled', type: 'boolean', default: true,                    desc: 'serve admin and indexing work on their own worker threads (Epic 86197ac6); false runs the daemon on one thread', group: 'General' },
 		{ path: 'daemon.threads.sessionIdleMs', type: 'number', default: 900_000,           desc: 'ms a client session\'s worker thread may sit idle before it is released (Epic 86197ac6 s3); its step state outlives the release', group: 'General' },
 		// Idle maintenance (graph compaction) with daemon threads (Epic 86197ac6 s2).

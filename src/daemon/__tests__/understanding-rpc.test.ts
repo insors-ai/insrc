@@ -7,7 +7,6 @@ import { randomUUID } from 'node:crypto';
 import { connect } from 'node:net';
 import type { Socket } from 'node:net';
 import { EventEmitter } from 'node:events';
-import { createShutdown } from '../shutdown.js';
 import { assertUnderstandingRoles, understandingRoles } from '../../understanding/roles.js';
 import { roleDescriptor } from '../../config/role-taxonomy.js';
 import { once } from 'node:events';

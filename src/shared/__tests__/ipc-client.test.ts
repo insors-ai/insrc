@@ -206,12 +206,3 @@ test('ipc-client.test.ts: a connection lost after the request (end/close or ECON
   e.emit('close');
   await assert.rejects(pe, (err: unknown) => !(err instanceof DaemonDisconnectedError) && (err as Error).message === 'boom');
 });
-
-test('A missing update acknowledgement is classified as uncertain after the request write', async () => {
-  const socket = new FakeSocket();
-  const client = createIpcClient(() => socket as unknown as import('node:net').Socket);
-  const update = client.update();
-  socket.emit('connect');
-  socket.emit('end');
-  await assert.rejects(update, (error: unknown) => error instanceof DaemonDisconnectedError && error.method === 'daemon.update');
-});

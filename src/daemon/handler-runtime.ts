@@ -54,9 +54,6 @@ import { approveCheck, checkModel, rejectCheck } from './model-check.js';
 import { sharedAdminHandlers } from './admin-handlers.js';
 import { getGraphStore } from '../db/graph/store.js';
 import { createHash } from 'node:crypto';
-import { InstallationMutationGate } from '../shared/installation-mutation-gate.js';
-import { readManagedInstallation } from '../shared/managed-daemon-installation.js';
-import { readPublicInstalledCommit } from './managed-update-ipc.js';
 
 import { getModelState } from './lifecycle.js';
 import { resolveClosure, searchEntities, findCallers, findCallees, closureEntities, unreachableEntities } from '../db/search.js';
@@ -163,8 +160,6 @@ export interface HandlerRuntimeDeps {
 	readonly indexer: RuntimeIndexer;
 	/** When the daemon started, for daemon.status's uptime. */
 	readonly startedAt: number;
-	/** Called by daemon.shutdown and daemon.update; the shutdown is created after the tables. */
-	readonly shutdown: (reason: string) => void | Promise<void>;
 	/** The socket server's attached clients, for daemon.debug-status; the server is created after the tables. */
 	readonly attachedClients: () => AttachedClient[];
 	/** The understanding service once it has opened (after the server listens), else undefined. */
@@ -987,26 +982,10 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 				queueDepth: queue.depth,
 				queueLanes: () => composeQueueLanes(queue.laneStatus(), indexer.summarySweepProgress()),
 				modelState: getModelState(),
-				// Story S002 (sc2): the daemon's installed source commit for freshness
-				// checks. Best-effort git read; '' when undeterminable, never throws.
-				installedCommit: await readPublicInstalledCommit(),
 				lmdbFileSizeMb,
 			});
 			const reviewThreads=deps.reviewThreads?.();
    return reviewThreads?.length?{...status,threads:reviewThreads}:status;
-		},
-		'daemon.qualificationState': async () => {
-			const journal = await new InstallationMutationGate(PATHS.insrc).read();
-			const outcome = journal.outcome;
-			const observed = outcome?.developmentRollback;
-			const installed = await readManagedInstallation(PATHS.insrc);
-			if (journal.active !== null || outcome?.decision !== 'rolled-back' || observed?.fixtureSha256 === undefined ||
-				installed?.releaseId !== observed.predecessorCommit || installed.releaseRoot !== process.env['INSRC_DAEMON_ROOT']) {
-				throw new Error('no completed development qualification on this daemon');
-			}
-			const value = (await getGraphStore()).meta.get(`development-qualification:${outcome.id}`);
-			if (value !== outcome.id) throw new Error('restored daemon could not read the qualification fixture');
-			return { transactionId: outcome.id, release: installed.releaseId, stateSha256: createHash('sha256').update(value).digest('hex') };
 		},
 
 		// Story s4: read-only diagnostic — the daemon's own list of currently-attached
@@ -1417,7 +1396,7 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		// config.show, config.catalog, guide.get, guide.list, daemon.shutdown,
 		// daemon.update and daemon.updateOutcome: shared with the admin worker
 		// (./admin-handlers.ts), so both serve them from one source.
-		...sharedAdminHandlers(deps.shutdown),
+		...sharedAdminHandlers(),
 
 		// Repo-scoped tracker settings (Story s3): the daemon is the only writer of
 		// ~/.insrc/repo-config.json, so every client edits it through these methods.

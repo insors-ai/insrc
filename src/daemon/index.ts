@@ -1,3 +1,4 @@
+import { getStoreHealth } from '../db/graph/store.js';
 import { threadId as mainThreadId } from 'node:worker_threads';
 import { connectionTestSupervisor } from './db/draft-test.js';
 import { connectionSessionRuntime } from './connection-session-rpc.js';
@@ -39,9 +40,6 @@ const log = getLogger('daemon');
 //
 // See ./fatal.ts for what is logged and where. The handler ends the process;
 // with the graph store's locks lost it does so without process.exit.
-const fatalDeps = { logFatal: (o: object, m: string) => { log.fatal(o, m); } };
-process.on('uncaughtException',  (err) =>    reportFatal('uncaughtException',  err, fatalDeps));
-process.on('unhandledRejection', (reason) => reportFatal('unhandledRejection', reason, fatalDeps));
 
 import { getDb, initDb, closeDb } from '../db/client.js';
 import { closeDuckDB } from './db/duckdb-pool.js';
@@ -52,12 +50,7 @@ import { cheapTierIgnoreModel } from '../indexer/ignore-proposal-model.js';
 import { IndexerService } from '../indexer/index.js';
 import { IpcServer, directDispatch } from './server.js';
 import { declareLiveStoreOwner } from '../db/graph/store.js';
-import { startManagedDaemonProbation } from './managed-daemon-probation.js';
-import { launchSourceUpdate } from './source-update-launch.js';
-import { launchManagedUpdate } from './managed-update-launch.js';
 import { installStoreFileOpenDiagnostic } from './store-file-open-diagnostic.js';
-import { reportFatal } from './fatal.js';
-import { createShutdown, exitRespectingStoreHealth, realEndDeps } from './shutdown.js';
 import { buildHandlerRuntime, inDaemonOnlyHandlers } from './handler-runtime.js';
 import { closeDefaultManagedRoots } from './db/management-defaults.js';
 import { initChatHandlers, disposeChatHandlers } from './chat-handler.js';
@@ -72,7 +65,6 @@ import { registerParkOffer } from './steps/workflow-step/park-offer.js';
 import { registerSignoff } from './steps/workflow-step/signoff-registration.js';
 
 import { writePid, isAlreadyRunning, bootstrapEmbeddingModel, getModelState } from './lifecycle.js';
-import { readPublicInstalledCommit } from './managed-update-ipc.js';
 import { ThreadServices, currentLmdbFileSizeMb, maintenanceConfig, sessionIdleMs, threadsEnabled } from './threads/main-services.js';
 import { threadViews } from './threads/admin-status.js';
 import type { SessionPool } from './threads/session-pool.js';
@@ -99,19 +91,13 @@ import { buildConfigCatalog } from '../config/config-catalog.js';
 import { resetLocalProviderConfigCache } from '../config/local.js';
 import { resetAnalyzeConfigCache } from '../config/analyze.js';
 import * as todosRpc from './todos-rpc.js';
-import { daemonRunFiles, endForRunFileConflict, RunFileOwnershipError, cleanupFailedPublication } from './run-file-ownership.js';
-import type { RunFileLease } from './run-file-ownership.js';
-import { isManagedDaemon, ManagedDaemonLifecycle } from './managed-daemon-lifecycle.js';
 
 // ---------------------------------------------------------------------------
 // Startup
 // ---------------------------------------------------------------------------
 
-let startupRunFiles: RunFileLease | undefined;
-let startupServer: IpcServer | undefined;
 
 async function main(): Promise<void> {
-	const managed = ManagedDaemonLifecycle.open();
 	// 0. This process owns the live graph store; every other process is
 	//    refused it (Epic c2ba6fa6, Story s4).
 	declareLiveStoreOwner();
@@ -119,25 +105,7 @@ async function main(): Promise<void> {
 	// the code that drops the daemon's lock on the store is not identified.
 	installStoreFileOpenDiagnostic();
 
-	// 1. Serialize stale cleanup and publication through socket readiness.
-	const startupGrant = await managed?.borrow(daemonRunFiles, PATHS.daemonRunGuard);
-	startupRunFiles = startupGrant ?? daemonRunFiles.lease();
-	if (managed === undefined && isAlreadyRunning()) {
-		log.error('already running — exiting');
-		startupRunFiles.release(); startupRunFiles = undefined;
-		process.exit(1);
-	}
-	const probation = managed === undefined ? undefined : await startManagedDaemonProbation(managed);
-	if (probation !== undefined && managed !== undefined && startupGrant !== undefined) {
-		startupServer = probation.server;
-		managed.setShutdownHandler(() => realEndDeps.killSelf());
-		await startupGrant.returnGrant();
-		startupRunFiles = undefined;
-		await managed.ready();
-		await probation.waitForCommit();
-	}
-
-	// 2. Ensure directories
+	// Application configuration and data directories.
 	mkdirSync(PATHS.insrc, { recursive: true });
 
 	// 2-repo-config. The per-repository settings file was ~/.insrc/github.json and is now repo-config.json. Move an
@@ -288,7 +256,6 @@ async function main(): Promise<void> {
 	const workerServices = new ThreadServices(async () => ({
 			startedAt,
 			modelState: getModelState(),
-			installedCommit: await readPublicInstalledCommit(),
 			lmdbFileSizeMb: currentLmdbFileSizeMb(),
 			maintenance: maintenance?.status(),
 		}));
@@ -346,11 +313,7 @@ async function main(): Promise<void> {
 	let indexer: RuntimeIndexer;
 	let startQueue: () => Promise<void>;
 	let stopIndexing: () => void;
-	// The daemon's shutdown, once it is made below; a worker supervisor's fatal before then ends the process.
-	let shutdownDaemon: (reason: string) => void = reason => {
-		if (managed !== undefined) realEndDeps.killSelf();
-		else exitRespectingStoreHealth(1, reason);
-	};
+	let closeApplication: ((reason: string) => Promise<void>) | undefined;
 	let supervisor: Supervisor | undefined;
 	let sessionPool: SessionPool | undefined;
 	if (threadServices !== undefined && router !== undefined) {
@@ -358,7 +321,7 @@ async function main(): Promise<void> {
 		queue = port;
 		indexer = port;
 		routed.add('indexing');
-		const workers = new Supervisor({ services: threadServices, router, shutdown: reason => shutdownDaemon(reason) });
+		const workers = new Supervisor({ services: threadServices, router, shutdown: reason => { log.error({ reason }, 'worker failure'); void closeApplication?.(reason); } });
 		supervisor = workers;
 		// The full index runs on the code-indexing worker: its run records come from the board.
 		setIndexRunSource(repoPath => threadServices.board.indexRun(repoPath));
@@ -430,7 +393,6 @@ async function main(): Promise<void> {
 	const queueDone = startQueue();
 
 	// 6. Write PID
-	if (probation === undefined) writePid();
 	const startedAt = Date.now();
 
 	// 6b. Register the unified tool set (docs/plans/tools.md stage 5). Covers
@@ -537,7 +499,6 @@ async function main(): Promise<void> {
 	const buildRuntime = (): ForwardRequest => {
 		const runtime = buildHandlerRuntime({
 			db, configStore, queue, indexer, startedAt,
-			shutdown: reason => requestPublicShutdown(reason),
 			attachedClients: () => server.attachedClients(),
 			understandingService: () => understandingService,
 			progressRuntime: getProgressRuntime,
@@ -567,28 +528,16 @@ async function main(): Promise<void> {
 	localForward = local;
 	const normalForward = router?.forward ?? local;
 	const progressForward = executorProgress.forward(normalForward);
-	const managedUpdate = directDispatch({
-		'daemon.update': async (_params, context) => {
-			if (context?.awaitUpdateReply === undefined) throw new Error('daemon update requires a unary socket request');
-			if (process.platform === 'linux') return launchSourceUpdate(context.awaitUpdateReply);
-			if (managed === undefined) throw new Error('Daemon updates require the current authenticated installer to establish lifecycle ownership');
-			const entry = fileURLToPath(new URL('../bin/insrc-daemon-update.js', import.meta.url));
-			return launchManagedUpdate(entry, [], context.awaitUpdateReply);
-		},
-	});
-	const forward = connectionSessionRuntime.forward((request, deliver) =>
-		(request.method === 'daemon.update' ? managedUpdate : progressForward)(request, deliver));
-	const server = probation?.server ?? new IpcServer(forward);
+	const forward = connectionSessionRuntime.forward(progressForward);
+	const server = new IpcServer(forward);
 	server.onConnectionClose(context => {
 		connectionSessionRuntime.disconnect(context);
 		void progressRuntime?.then(runtime => runtime.access.disconnect(context)).catch(() => {});
 	});
 	connectionOwners.push({ close: () => connectionSessionRuntime.close() });
 	connectionOwners.push({ close: async () => { await (await progressRuntime)?.close(); } });
-	startupServer = server;
 	if (threadServices !== undefined && router !== undefined) {
 		server.onRegistryChange(clients => threadServices.board.publishClients(clients));
-		threadServices.onShutdown(reason => requestPublicShutdown(reason));
 		// Admin methods go to the admin worker; a request arriving before it is
 		// ready is held for it (at most 30 s). A first start that fails is replaced
 		// like an exit (rate-limited; past the limit the daemon shuts down).
@@ -612,13 +561,8 @@ async function main(): Promise<void> {
 	const hostsSharedState = !routed.has('session');
 	if (hostsSharedState) initChatHandlers();
 
-	if (probation === undefined) await server.listen();
-	else probation.activate(forward);
+	await server.listen();
 	void getProgressRuntime().catch(() => { log.warn('could not initialize task progress storage'); });
-	if (probation === undefined && startupGrant !== undefined) await startupGrant.returnGrant();
-	else startupRunFiles?.release();
-	startupRunFiles = undefined;
-	startupServer = undefined;
 	// The shared-state worker starts now, after the socket listens (its understanding service is a client
 	// of it), so the todos retention sweep runs at boot as it does here without daemon threads.
 	if (sessionPool !== undefined) {
@@ -651,43 +595,10 @@ async function main(): Promise<void> {
 	//     write has met the failure.
 	const readerCheckTimer = startPeriodicReaderCheck();
 
-	// 9. Graceful shutdown on signals
-	// Shutdown handler. Race between two timelines:
-	//
-	//   1. `queueDone.finally(...)` cleanly drains the indexer + cross-
-	//      file resolver queue, then calls process.exit(0) with pino
-	//      having flushed.
-	//   2. The hard-exit backstop fires at HARD_EXIT_MS regardless of
-	//      queue state. Used to be: queueDone never resolved if a
-	//      long-running indexer job was in flight, so SIGTERM left the
-	//      process running until the IDE escalated to SIGKILL --
-	//      silent death, no flush, no PID cleanup. Live testing
-	//      2026-04-29 confirmed every IDE restart that re-pulled the
-	//      daemon code produced this signature.
-	//
-	// HARD_EXIT_MS is intentionally less than the IDE's
-	// TERMINATE_GRACE_MS (30 s) so the backstop fires first whenever
-	// possible -- the daemon flushes pino + clears its PID before
-	// the IDE escalates to SIGKILL.
-	//
-	// With the graph store's locks lost none of this applies: see
-	// ./shutdown.ts, which holds the sequence.
+	// Application-owned resource disposal. Installation/process supervision is removed.
 	let serverClosing: Promise<void> | undefined;
-	const shutdown = createShutdown({
-		log,
-		...(managed === undefined ? {} : {
-			armWatchdog: () => managed.watchdog(),
-			parentOwnsDeadline: true,
-			end: {
-				...realEndDeps,
-				clearPid() {}, // The supervisor reconciles the PID and socket after exact reap.
-				exit(code: number) {
-					if (daemonRunFiles.hasSocketPublication) realEndDeps.killSelf();
-					else process.exit(code);
-				},
-			},
-		}),
-		stopBackgroundWork: () => {
+	let closing: Promise<void> | undefined;
+	const stopBackgroundWork = () => {
 			connectionSessionRuntime.stopAdmission();
 			void connectionTestSupervisor.shutdown();
 			understandingService?.stop();
@@ -700,12 +611,10 @@ async function main(): Promise<void> {
 			void maintenance?.stop();
 			stopIndexing();
 			if (hostsSharedState) void disposeChatHandlers();
-			serverClosing = managed === undefined ? server.close()
-				: managed.withRunFiles(daemonRunFiles, PATHS.daemonRunGuard, () => server.close());
-			void serverClosing.catch(endForRunFileConflict);
-		},
-		queueDone,
-		closeStores: async () => {
+			serverClosing = server.close();
+			void serverClosing.catch(error => log.warn({ error }, 'socket close failed'));
+		};
+	const closeStores = async () => {
 			await connectionTestSupervisor.shutdown();
 			await server.flushPendingWrites(1000);
 			server.disconnectClients();
@@ -730,36 +639,28 @@ async function main(): Promise<void> {
 			if (closedOwners.some(result => result.status === 'rejected')) throw new Error('Connection cleanup is pending.');
 			await closeDb();
 			await closeDuckDB();
-			await closeGraphStore();
-			await closeLanceConn();
+			// Do not invoke native close/exit hooks after the graph lost ownership.
+			if (getStoreHealth().state === 'ok') {
+				await closeGraphStore();
+				await closeLanceConn();
+			}
 			log.info('shutdown: stores closed');
-		},
-	});
-	function requestPublicShutdown(reason: string): void | Promise<void> {
-		return managed === undefined ? shutdown(reason) : managed.publicShutdown(reason);
-	}
-	shutdownDaemon = managed === undefined ? shutdown : () => realEndDeps.killSelf();
-	if (managed === undefined) {
-		process.on('SIGTERM', () => shutdown('SIGTERM'));
-		process.on('SIGINT', () => shutdown('SIGINT'));
-	} else {
-		managed.setShutdownHandler(shutdown);
-		process.on('SIGTERM', () => managed.signal('SIGTERM', realEndDeps.killSelf));
-		process.on('SIGINT', () => managed.signal('SIGINT', realEndDeps.killSelf));
-		if (probation === undefined && !managed.draining) {
-			try { await managed.ready(); }
-			catch (error) { if (!managed.draining) throw error; }
-		}
-	}
+		};
+	closeApplication = (reason: string): Promise<void> => closing ??= (async () => {
+		log.info({ reason }, 'closing application resources');
+		stopBackgroundWork();
+		await queueDone;
+		await closeStores();
+		log.info('bye');
+	})();
+	const dispose = (reason: string): void => {
+		void closeApplication!(reason).catch(error => { log.error({ error }, 'resource disposal failed'); process.exitCode = 1; });
+	};
+	process.once('SIGTERM', () => dispose('SIGTERM'));
+	process.once('SIGINT', () => dispose('SIGINT'));
 }
 
-main().catch(async err => {
+main().catch(err => {
 	log.fatal({ err }, 'fatal error');
-	if (isManagedDaemon()) { realEndDeps.killSelf(); return; }
-	if (err instanceof RunFileOwnershipError) { endForRunFileConflict(err); return; }
-	try {
-		await cleanupFailedPublication(startupServer, startupRunFiles);
-		startupRunFiles = undefined;
-	} catch (cleanupError) { endForRunFileConflict(cleanupError); return; }
-	exitRespectingStoreHealth(1, 'a failed start');
+	process.exitCode = 1;
 });

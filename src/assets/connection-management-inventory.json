@@ -13048,7 +13048,19 @@
         ],
         [
           "storage-call",
+          "closeDb"
+        ],
+        [
+          "storage-call",
           "closeGraphStore"
+        ],
+        [
+          "storage-call",
+          "closeGraphStore"
+        ],
+        [
+          "storage-call",
+          "closeLanceConn"
         ],
         [
           "storage-call",
@@ -13085,6 +13097,18 @@
         [
           "storage-call",
           "getStoreHealth"
+        ],
+        [
+          "storage-call",
+          "getStoreHealth"
+        ],
+        [
+          "unresolved-call",
+          "import"
+        ],
+        [
+          "unresolved-call",
+          "import"
         ],
         [
           "unresolved-call",
@@ -13173,6 +13197,14 @@
         [
           "storage-call",
           "listRepos"
+        ],
+        [
+          "diagnostic",
+          "log.error"
+        ],
+        [
+          "diagnostic",
+          "log.error"
         ],
         [
           "diagnostic",
@@ -13339,9 +13371,9 @@
           "startPeriodicReaderCheck"
         ]
       ],
-      "siteCount": 74,
-      "sitesDigest": "f3641ca0f995d3df4f2ae8d7c7d9b771501b57d82fd2912e26917ee682c75b61",
-      "sourceDigest": "9ab5ae9893b8e4bc46c2f9a60cfdcdf10831095b222a22b102fff4bc50639f0c",
+      "siteCount": 82,
+      "sitesDigest": "737a9d49973e9e3543defb2f2dfe38ce081a450ee2fb748344ec79f7e24660dd",
+      "sourceDigest": "cf127bab0f89ac79f16d83d6c4ab7eb67d7a88308090b1a01af66a4e8eac4a21",
       "boundaries": [
         "diagnostic",
         "filesystem-write",

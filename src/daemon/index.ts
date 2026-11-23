@@ -98,6 +98,16 @@ import * as todosRpc from './todos-rpc.js';
 
 
 async function main(): Promise<void> {
+	// Resources acquired before boot completes must also be released if boot fails.
+	const startupDisposers: (() => void | Promise<void>)[] = [];
+	let startupFailure: Error | undefined;
+	let closeApplication = async (_reason: string): Promise<void> => {
+		while (startupDisposers.length > 0) {
+			try { await startupDisposers.pop()!(); }
+			catch (error) { log.error({ error }, 'startup resource disposal failed'); }
+		}
+	};
+	try {
 	// 0. This process owns the live graph store; every other process is
 	//    refused it (Epic c2ba6fa6, Story s4).
 	declareLiveStoreOwner();
@@ -272,6 +282,7 @@ async function main(): Promise<void> {
 
 	// 3. Open DB
 	const db = await getDb();
+	startupDisposers.push(async () => { await closeDb(); await closeDuckDB(); });
 	await initDb(db);
 	const { initTodosTables } = await import('../db/todos.js');
 	await initTodosTables(db);
@@ -284,6 +295,13 @@ async function main(): Promise<void> {
 	//     it finds anything.
 	const { compactGraphStore, getGraphStore, getStoreHealth, graphStoreReclaimable, runReaderCheck, startPeriodicReaderCheck } = await import('../db/graph/store.js');
 	await getGraphStore();   // ensure env is open
+	startupDisposers.push(async () => {
+		if (getStoreHealth().state === 'ok') {
+			const { closeGraphStore } = await import('../db/graph/store.js');
+			const { closeLanceConn } = await import('../db/lance/conn.js');
+			await closeGraphStore(); await closeLanceConn();
+		}
+	});
 	runReaderCheck('startup');
 
 	// 4. Bootstrap embedding model (async, non-blocking)
@@ -313,7 +331,6 @@ async function main(): Promise<void> {
 	let indexer: RuntimeIndexer;
 	let startQueue: () => Promise<void>;
 	let stopIndexing: () => void;
-	let closeApplication: ((reason: string) => Promise<void>) | undefined;
 	let supervisor: Supervisor | undefined;
 	let sessionPool: SessionPool | undefined;
 	if (threadServices !== undefined && router !== undefined) {
@@ -321,8 +338,9 @@ async function main(): Promise<void> {
 		queue = port;
 		indexer = port;
 		routed.add('indexing');
-		const workers = new Supervisor({ services: threadServices, router, shutdown: reason => { log.error({ reason }, 'worker failure'); void closeApplication?.(reason); } });
+		const workers = new Supervisor({ services: threadServices, router, shutdown: reason => { log.error({ reason }, 'worker failure'); startupFailure = new Error(reason); process.exitCode = 1; void closeApplication(reason).catch(error => log.error({ error }, 'resource disposal failed')); } });
 		supervisor = workers;
+		startupDisposers.push(() => workers.terminateAll());
 		// The full index runs on the code-indexing worker: its run records come from the board.
 		setIndexRunSource(repoPath => threadServices.board.indexRun(repoPath));
 		const testHoldMs = process.env['INSRC_TEST_HOOKS'] === '1' ? Number(process.env['INSRC_TEST_MAINTENANCE_HOLD_MS'] ?? 0) : 0;
@@ -342,6 +360,7 @@ async function main(): Promise<void> {
 		const controller = maintenance;
 		threadServices.onMaintenance(() => controller.runNow());
 		controller.start();
+		startupDisposers.push(() => controller.stop());
 		// Code indexing and document summaries, each on a worker of its own.
 		const indexingWorkers = startIndexingWorkers(workers, threadServices.indexingBlock, threadServices.board);
 		// The queue lives on the code-indexing worker: "done" is the current one's
@@ -391,6 +410,7 @@ async function main(): Promise<void> {
 
 	// Run queue in background (never awaited until shutdown)
 	const queueDone = startQueue();
+	startupDisposers.push(async () => { await maintenance?.stop(); stopIndexing(); await queueDone; });
 
 	// 6. Write PID
 	const startedAt = Date.now();
@@ -479,6 +499,7 @@ async function main(): Promise<void> {
 	// Built at boot without daemon threads; with them, only when the first request that must stay
 	// on this thread arrives (s4), so a daemon that never sees one never builds the handler tables here.
 	let understandingRoutes: HandlerRuntime['understandingRoutes'] | undefined;
+	startupDisposers.push(async () => { understandingService?.stop(); understandingRoutes?.stop(); connectionSessionRuntime.stopAdmission(); await connectionTestSupervisor.shutdown(); for (const owner of connectionOwners) await owner.close(); });
 	// One progress runtime serves ordinary executor kinds and historical task rows: a single
 	// store with the composed validator, one coordinator, one set of progress.* routes.
 	// The coordinator's producers are registered through its widened type; the
@@ -530,6 +551,7 @@ async function main(): Promise<void> {
 	const progressForward = executorProgress.forward(normalForward);
 	const forward = connectionSessionRuntime.forward(progressForward);
 	const server = new IpcServer(forward);
+	startupDisposers.push(async () => { const closed = server.close(); server.disconnectClients(); await closed; });
 	server.onConnectionClose(context => {
 		connectionSessionRuntime.disconnect(context);
 		void progressRuntime?.then(runtime => runtime.access.disconnect(context)).catch(() => {});
@@ -550,6 +572,7 @@ async function main(): Promise<void> {
 		// identity on the unattributed worker, chat/todos/understanding on the shared-state worker.
 		routed.add('session');
 		sessionPool = startSessionRouting(threadServices, router, sessionIdleMs(), supervisor);
+		startupDisposers.push(() => sessionPool!.close());
 		sessionPool.startSweeping();
 		// A detached run started here (a connection-scoped request) is polled from the board like any other.
 		setRunBoard(threadServices.board);
@@ -561,7 +584,9 @@ async function main(): Promise<void> {
 	const hostsSharedState = !routed.has('session');
 	if (hostsSharedState) initChatHandlers();
 
+	if (startupFailure) throw startupFailure;
 	await server.listen();
+	if (startupFailure) throw startupFailure;
 	void getProgressRuntime().catch(() => { log.warn('could not initialize task progress storage'); });
 	// The shared-state worker starts now, after the socket listens (its understanding service is a client
 	// of it), so the todos retention sweep runs at boot as it does here without daemon threads.
@@ -580,6 +605,7 @@ async function main(): Promise<void> {
 
 	// 8. Nightly pruning job — runs every 24 hours (under the maintenance lock with daemon threads)
 	const pruneTimer = schedulePruneTimer(db);
+	startupDisposers.push(() => clearInterval(pruneTimer));
 
 	// 8b. Todos retention sweep (plans/todo-framework.md Phase 2).
 	// Fires once at boot and every 24 h; drops archived todo lists
@@ -594,6 +620,7 @@ async function main(): Promise<void> {
 	//     store that lost its locks is recorded even when no request or
 	//     write has met the failure.
 	const readerCheckTimer = startPeriodicReaderCheck();
+	startupDisposers.push(() => { clearInterval(readerCheckTimer); stopTodosRetention(); });
 
 	// Application-owned resource disposal. Installation/process supervision is removed.
 	let serverClosing: Promise<void> | undefined;
@@ -658,6 +685,11 @@ async function main(): Promise<void> {
 	};
 	process.once('SIGTERM', () => dispose('SIGTERM'));
 	process.once('SIGINT', () => dispose('SIGINT'));
+	if (startupFailure) throw startupFailure;
+	} catch (error) {
+		await closeApplication('startup failure');
+		throw error;
+	}
 }
 
 main().catch(err => {

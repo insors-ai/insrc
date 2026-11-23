@@ -218,3 +218,26 @@ test('boot: threads disabled runs every session method on the main thread as tod
 		rmSync(home, { recursive: true, force: true });
 	}
 });
+
+test('failed startup disposes workers and open stores when socket listen throws', { timeout: 30000 }, async () => {
+  const home = mkdtempSync(join(tmpdir(), 'insrc-failed-boot-'));
+  mkdirSync(join(home, '.insrc'), { recursive: true });
+  writeFileSync(join(home, '.insrc', 'config.json'), JSON.stringify({ daemon: { threads: { enabled: true } } }));
+  const child = spawn(process.execPath, ['--import', fileURLToPath(import.meta.resolve('tsx/esm')),
+    '--import', fileURLToPath(new URL('./fixtures/fail-listen.mjs', import.meta.url)), join(REPO_ROOT, 'src/daemon/index.ts')],
+    { cwd: REPO_ROOT, env: { ...childEnv(home), INSRC_MODE: 'mcp' }, stdio: ['ignore', 'pipe', 'pipe'] });
+  let stderr = '';
+  child.stderr.on('data', chunk => { stderr += String(chunk); });
+  child.stdout.on('data', chunk => { stderr += String(chunk); });
+  let timedOut = false;
+  const timer = setTimeout(() => { timedOut = true; child.kill('SIGKILL'); }, 20000);
+  try {
+    const code = await new Promise<number | null>(resolve => child.once('close', resolve));
+    assert.equal(timedOut, false, stderr.slice(-4000));
+    assert.equal(code, 1, stderr.slice(-4000));
+    assert.match(stderr, /database ready/);
+    assert.match(stderr, /daemon threads enabled/);
+    assert.match(stderr, /injected startup listen failure/);
+    assert.equal(alive(child.pid!), false);
+  } finally { clearTimeout(timer); if (alive(child.pid!)) child.kill('SIGKILL'); rmSync(home, { recursive: true, force: true }); }
+});

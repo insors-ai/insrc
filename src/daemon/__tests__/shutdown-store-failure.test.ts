@@ -3,17 +3,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-/**
- * How a daemon ends once its graph store has lost its locks (Epic c2ba6fa6,
- * Story s4, t7). Before this, a stop left the daemon hung for ever: both ends
- * of the shutdown called process.exit, whose exit hook in the store library
- * never returns in that state.
- *
- * The child process here is not a whole daemon, but what ends it is the
- * daemon's own code: createShutdown, reportFatal, the request server, the job
- * queue and the status builder, on a store broken by the real sequence.
- *
- * Run: npx tsx --test src/daemon/__tests__/shutdown-store-failure.test.ts
+/** Retained broken-store status and application resource disposal invariants.
+ * The actual disposal callbacks are exercised without installation or PID control.
  */
 
 import { after, afterEach, test } from 'node:test';
@@ -96,4 +87,55 @@ test('status after failure: storeFailure names another process and does not cont
 	const again = await ask(h.sock, 'daemon.status');
 	assert.equal((again as { result: DaemonStatus }).result.storeFailure?.kind, 'locks-lost');
 	await child.kill();
+});
+
+// Execute the surviving application callbacks themselves with observed resource ports.
+// Importing index.ts would boot the real daemon; AST extraction avoids that side effect.
+import ts from 'typescript';
+import { runInNewContext } from 'node:vm';
+
+function applicationCallback(name: 'closeStores' | 'closeApplication'): string {
+  const source = readFileSync(new URL('../index.ts', import.meta.url), 'utf8');
+  const tree = ts.createSourceFile('index.ts', source, ts.ScriptTarget.Latest, true);
+  let expression: string | undefined;
+  function visit(node: ts.Node): void {
+    if (name === 'closeStores' && ts.isVariableDeclaration(node) && node.name.getText(tree) === name && node.initializer) expression = node.initializer.getText(tree);
+    if (name === 'closeApplication' && ts.isBinaryExpression(node) && node.operatorToken.kind === ts.SyntaxKind.EqualsToken && node.left.getText(tree) === name) expression = node.right.getText(tree);
+    ts.forEachChild(node, visit);
+  }
+  visit(tree);
+  assert.ok(expression, `${name}: production callback must exist`);
+  return ts.transpile(expression, { target: ts.ScriptTarget.ES2022 });
+}
+
+test('application disposal coalesces, drains before closing resources and skips unsafe native closes after lock loss during drain', async () => {
+  for (const loseLocks of [false, true]) {
+    const acts: string[] = [];
+    let release!: () => void;
+    let health = 'ok';
+    const record = (name: string) => async () => { acts.push(name); };
+    const context = {
+      closing: undefined, stopBackgroundWork: () => { acts.push('stop'); },
+      queueDone: new Promise<void>(r => { release = r; }),
+      connectionTestSupervisor: { shutdown: record('tests') },
+      server: { flushPendingWrites: record('flush'), disconnectClients: () => { acts.push('disconnect'); } },
+      serverClosing: Promise.resolve(),
+      maintenance: { stop: record('maintenance') }, sessionPool: { close: record('sessions') },
+      supervisor: { terminateAll: record('workers') }, connectionOwners: [{ close: record('owner') }],
+      closeDb: record('db'), closeDuckDB: record('duck'),
+      graphModule: { closeGraphStore: record('graph') }, lanceModule: { closeLanceConn: record('lance') },
+      getStoreHealth: () => ({ state: health }), log: { info() {} },
+    };
+    const stores = applicationCallback('closeStores')
+      .replace("await import('../db/graph/store.js')", 'graphModule')
+      .replace("await import('../db/lance/conn.js')", 'lanceModule');
+    const closeStores = runInNewContext(`(${stores.trim().replace(/;$/, '')})`, context) as () => Promise<void>;
+    const dispose = runInNewContext(`(${applicationCallback('closeApplication').trim().replace(/;$/, '')})`, { ...context, closeStores }) as (reason: string) => Promise<void>;
+    const first = dispose('SIGTERM');
+    assert.equal(dispose('SIGINT'), first, 'concurrent disposal shares the same drain');
+    assert.deepEqual(acts, ['stop'], 'stores remain open while work drains');
+    if (loseLocks) health = 'locks-lost';
+    release(); await first;
+    assert.deepEqual(acts, ['stop', 'tests', 'flush', 'disconnect', 'maintenance', 'sessions', 'workers', 'owner', 'db', 'duck', ...(loseLocks ? [] : ['graph', 'lance'])]);
+  }
 });

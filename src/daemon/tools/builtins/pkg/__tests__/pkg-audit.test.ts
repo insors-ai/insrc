@@ -12,16 +12,34 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { auditArgv, pkgAuditTool } from '../index.js';
+import { auditArgv, pkgAuditTool, _setPkgAuditShellForTests } from '../index.js';
 
-test("pkgAuditTool.execute: noDeps:true -> argv includes --no-deps", () => {
-	const { argv } = auditArgv('pip', { noDeps: true });
-	assert.ok(argv.includes('--no-deps'), argv.join(' '));
+function fakeShellOk(stdout = '{}'): ReturnType<typeof import('../../../shell-helper.js')['runShell']> {
+	return Promise.resolve({ stdout, stderr: '', code: 0, spawnError: false, timedOut: false, stdoutTruncated: false });
+}
+
+test("pkgAuditTool.execute: noDeps:true -> argv includes --no-deps", async () => {
+	let capturedArgv: readonly string[] = [];
+	_setPkgAuditShellForTests((argv) => { capturedArgv = argv; return fakeShellOk(); });
+	try {
+		await pkgAuditTool.execute({ manager: 'pip', noDeps: true });
+		assert.ok(capturedArgv.includes('--no-deps'), capturedArgv.join(' '));
+	} finally {
+		_setPkgAuditShellForTests();
+	}
 });
 
-test("pkgAuditTool.execute: noDeps omitted/false -> argv is identical to today", () => {
-	assert.deepEqual(auditArgv('pip', {}).argv, ['pip-audit', '-f', 'json']);
-	assert.deepEqual(auditArgv('pip', { noDeps: false }).argv, ['pip-audit', '-f', 'json']);
+test("pkgAuditTool.execute: noDeps omitted/false -> argv is identical to today", async () => {
+	let capturedArgv: readonly string[] = [];
+	_setPkgAuditShellForTests((argv) => { capturedArgv = argv; return fakeShellOk(); });
+	try {
+		await pkgAuditTool.execute({ manager: 'pip' });
+		assert.deepEqual(capturedArgv, ['pip-audit', '-f', 'json']);
+		await pkgAuditTool.execute({ manager: 'pip', noDeps: false });
+		assert.deepEqual(capturedArgv, ['pip-audit', '-f', 'json']);
+	} finally {
+		_setPkgAuditShellForTests();
+	}
 });
 
 test("auditArgv('pip', {requirementsPath}) appends -r <requirementsPath>", () => {

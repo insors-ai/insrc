@@ -486,6 +486,12 @@ interface PkgAuditData {
   stderr: string;
 }
 
+/** pkgAuditTool's own subprocess call, overridable for unit tests (so execute()'s
+ *  real argv-building + response-shaping can be exercised without a real spawn).
+ *  No argument resets to the real runShell. */
+let pkgAuditShell: typeof runShell = runShell;
+export function _setPkgAuditShellForTests(fn: typeof runShell = runShell): void { pkgAuditShell = fn; }
+
 export const pkgAuditTool: Tool = {
   id: 'pkg_audit',
   description: 'Run a security audit. npm/pnpm/yarn/pip/poetry/go/cargo via their native audit tooling.',
@@ -506,7 +512,7 @@ export const pkgAuditTool: Tool = {
     if (typeof mgr !== 'string') { return mgr; }
 
     const { argv, expectsJson, nonZeroOk } = auditArgv(mgr, { requirementsPath: str(input, 'requirementsPath'), noDeps: bool(input, 'noDeps') });
-    const r = await runShell(argv, { cwd, timeoutMs: 10 * 60_000 });
+    const r = await pkgAuditShell(argv, { cwd, timeoutMs: 10 * 60_000 });
     if (r.spawnError) {
       return fail('pkg_audit', `${argv[0]} not found: ${r.stderr.trim()}. For pip use pip-audit, for go use govulncheck, for cargo use cargo-audit.`);
     }

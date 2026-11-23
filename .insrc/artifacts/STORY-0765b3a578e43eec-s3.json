@@ -18,7 +18,19 @@
         "relation": "derived-from"
       },
       "references": [],
-      "attachments": [],
+      "attachments": [
+        {
+          "target": {
+            "entityId": "LLD-0765b3a578e43eec-s3",
+            "type": "LLD",
+            "relation": "documents",
+            "fragment": "docs/epics/add-dedicated-security-reviews-E202611100765b3a5/S003/LLD.md"
+          },
+          "revision": 2,
+          "at": "2026-11-23T05:23:48.192Z",
+          "externalId": "7092369748"
+        }
+      ],
       "binding": {
         "reference": {
           "entityId": "insors-ai/insrc#228",

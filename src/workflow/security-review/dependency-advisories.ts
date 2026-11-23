@@ -179,13 +179,14 @@ function resolveRequirementsClosure(file: string, seen: Set<string>): string[] {
 	return result;
 }
 
-/** Directories never part of a go module's OWN source: vendored dependencies
- *  and VCS metadata. Deliberately NOT src/daemon/tools/builtins/pkg's or this
- *  module's own enumerateManagers SKIP_DIRS (build/dist/target are JS/Rust
- *  output-directory conventions, not reserved names in Go -- a package
- *  genuinely named `build` or `target` is real module source and must stay
- *  in the closure). */
-const GO_CLOSURE_SKIP_DIRS = new Set(['.git', 'vendor']);
+/** The only directory never part of a go module's required-input closure:
+ *  VCS metadata, which the go build never reads. Deliberately NOT 'vendor'
+ *  (a vendored dependency IS compiled by `go build` when present -- excluding
+ *  it would under-report the closure the same way an extension allowlist
+ *  did) and NOT src/daemon/tools/builtins/pkg's or this module's own
+ *  enumerateManagers SKIP_DIRS (build/dist/target are JS/Rust output-directory
+ *  conventions, not reserved names in Go). */
+const GO_CLOSURE_SKIP_DIRS = new Set(['.git']);
 
 /**
  * A go module's full source tree under manifestDir: EVERY regular file,

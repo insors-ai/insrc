@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "design.story",
-    "runId": "wf-1795449119006-a48vb2",
+    "runId": "wf-1795450845446-u0h0va",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-11-23T15:52:00.291Z",
+    "createdAt": "2026-11-23T16:20:46.852Z",
     "attribution": {
       "outputs": [
         {
@@ -14,7 +14,7 @@
         }
       ]
     },
-    "elapsedMs": 999,
+    "elapsedMs": 1099,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicCreatedAt": "2026-11-23T13:27:35.399Z",
@@ -29,9 +29,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 1,
-        "contentHash": "10b876b765f15c44bdd875f2fad1aa50bfab467d4514c6622d9a8586cdc1a180",
-        "at": "2026-11-23T15:52:00.397Z",
+        "number": 2,
+        "contentHash": "664c6c9b442ad55492b1f71b2b6a250656837f590e0c5ea52877e68dd18104bd",
+        "at": "2026-11-23T16:20:46.979Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
@@ -40,7 +40,7 @@
       },
       "signoffs": []
     },
-    "revision": 1
+    "revision": 2
   },
   "body": {
     "hldContextSlice": {
@@ -412,6 +412,12 @@
         "change": "new",
         "details": "After success the shared script releases the install lock and starts selected TUI; extension merely observes readiness. Cancel/failure leaves terminal diagnostics, not a fake success notification. While a terminal hosts TUI, duplicate Install focuses it rather than starting a new setup. After reload, inspect durable state before reattaching; do not replay prior launch intent.",
         "callSites": []
+      },
+      {
+        "entity": "Operation escalation UI binding",
+        "change": "new",
+        "details": "An explicitly selected immediate override during a draining operation consumes proposed sc2 escalateShutdown with the existing operationId. Other windows may forward the same intent to the owner; no second mutation/lock, fresh operation id, repeated shutdown timer or automatic escalation. Display escalation-unavailable/uncertain on dead owner; explicit recovery remains separate.",
+        "callSites": []
       }
     ],
     "interactionWithShared": [
@@ -529,7 +535,8 @@
           "subjects": [
             "real visible/focused terminal with exact script",
             "spaces/Unicode/metacharacters and PowerShell/POSIX shells",
-            "TUI handoff/close/failure and duplicate windows"
+            "TUI handoff/close/failure and duplicate windows",
+            "Two windows: graceful stop remains under owner lock; user immediate override reaches that owner; duplicate/stale/dead-owner results remain accurate."
           ],
           "fixturesNeeded": [
             "VS Code extension host, disposable home, deterministic script/daemon peers."
@@ -567,7 +574,8 @@
           "provingTests": [
             "native-actions-use-shared-contracts",
             "terminal-only-install-then-tui",
-            "migration-diagnostics-retry-and-explicit-immediate"
+            "migration-diagnostics-retry-and-explicit-immediate",
+            "cross-window-immediate-existing-operation"
           ]
         }
       ]

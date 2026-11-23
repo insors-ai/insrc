@@ -7,6 +7,7 @@
 **Epic:** `reliable-cross-platform-daemon-installation-lifecycle`
 **HLD base run:** `wf-1795445383474-itgkv3`
 **HLD effective hash:** `77bfb88eed6d...`
+**Tracker:** [insors-ai/insrc#250](https://github.com/insors-ai/insrc/issues/250)
 
 Qualification proves both delivery modes and both IDE integrations on isolated real platforms. Each result names the exact release/runtime, environment and scenario, with unavailable coverage kept separate from passes. This story supplies evidence and release gates, not another implementation of the installer.
 
@@ -55,7 +56,7 @@ Linux primary: isolated Ubuntu 24.04 OrbStack arm64 and x64 guests, recreating p
 
 ### 3.3 `Scenario matrix` — new
 
-For both bundle and dev delivery: clean install with no/wrong host Node; exact successor upgrade; unchanged delivery/ref selection; shared terminal/manual script parity; readiness-confirmed same-terminal TUI; start/no-build; graceful stop; explicit immediate override; restart/actual exit proof; migration skip/success/check-run-test failure/interruption/retry; dependency existing/missing/decline/install; zero/one/many agent recommendations; concurrent windows; Unicode/space/metacharacter paths; download/digest/target/archive corruption; source dirty/build failure; stale offers; and corrupt controller/journal recovery. Each IDE separately proves native terminal visibility/focus, ordinary control, startup autostart, explicit upgrade accept/dismiss including plugin updates, blocked migration UI and close/cancel behavior.
+For both bundle and dev delivery: clean install with no/wrong host Node; exact successor upgrade; unchanged delivery/ref selection; shared terminal/manual script parity; readiness-confirmed same-terminal TUI; start/no-build; graceful stop; explicit immediate override; restart/actual exit proof; migration skip/success/check-run-test failure/interruption/retry; dependency existing/missing/decline/install; zero/one/many agent recommendations; concurrent windows; Unicode/space/metacharacter paths; download/digest/target/archive corruption; source dirty/build failure; stale offers; and corrupt controller/journal recovery. Each IDE separately proves native terminal visibility/focus, ordinary control, startup autostart, explicit upgrade accept/dismiss including plugin updates, blocked migration UI and close/cancel behavior. Cross-review regression matrix explicitly includes: two clients escalate immediate while graceful operation lock remains held; first migration admission versus ordinary startup; manager death with live candidate at every journal boundary, no second runner, exact journal/exit reconciliation; correlated Windows per-request pre-write cancel, first-write race, helper death and protocol mismatch. Record full owner/session/operation identities with secrets redacted. Proposed sc2/sc6 amendments must be approved and consumer designs rebased before this matrix executes. Require migration-wrapper durable receipts on natural success, hook failure and manager death, including crash before/after receipt fsync/publication and mismatched session/nonce/digest. Require protocol-2 hello/ready success, 3-second timeout, malformed/duplicate/wrong version/nonce/early outcome and unsupported-helper cases with zero pre-ready application sends.
 
 
 ### 3.4 `Isolation and native probes` — new
@@ -124,7 +125,7 @@ Use bounded canonical Node coordinator, existing JetBrains JUnit and native IDE 
 - **contract** — Validate matrix/evidence completeness and identity binding.
   - Subjects: `no missing AC/scenario entries`, `unavailable distinct from pass`, `digest/environment mismatch rejected`
 - **integration** — Bounded isolated orchestration with actual owner components.
-  - Subjects: `all mode/scenario combinations`, `fault injection and cleanup evidence`, `host-home/endpoint sentinel`
+  - Subjects: `all mode/scenario combinations`, `fault injection and cleanup evidence`, `host-home/endpoint sentinel`, `All four cross-design regression scenarios use actual owner components and exact candidate/platform evidence.`, `Real target migration receipt persistence/recovery and Node/Kotlin handshake failures, independent of fixture-only evidence.`, `Actual Windows outer protocol-2 negotiation with unchanged inner protocol-1 RPC frames.`
 - **live** — Native platform and real IDE acceptance.
   - Subjects: `OrbStack Linux, UTM macOS, actual Windows`, `native/translated/minimum-baseline distinctions`, `terminal/manual/TUI and IPC/migration behavior`
 
@@ -132,8 +133,8 @@ Use bounded canonical Node coordinator, existing JetBrains JUnit and native IDE 
 
 | Criterion | Proving tests |
 | :--- | :--- |
-| `ac1` | `both-mode-clean-install-upgrade-runtime-isolation-matrix`, `native-start-graceful-immediate-restart-matrix`, `migration-skip-success-failure-interruption-retry-matrix`, `exact-target-native-provenance` |
-| `ac2` | `both-IDE-real-terminal-tui-and-startup-matrix`, `upgrade-accept-dismiss-plugin-update-consent`, `dependency-prompt-and-migration-diagnostics-parity`, `missing-Windows-never-counts-as-pass` |
+| `ac1` | `both-mode-clean-install-upgrade-runtime-isolation-matrix`, `native-start-graceful-immediate-restart-matrix`, `migration-skip-success-failure-interruption-retry-matrix`, `exact-target-native-provenance`, `held-lock-cross-window-immediate`, `first-migration-and-owner-death-journal-recovery`, `migration-durable-exit-receipt-platform-matrix` |
+| `ac2` | `both-IDE-real-terminal-tui-and-startup-matrix`, `upgrade-accept-dismiss-plugin-update-consent`, `dependency-prompt-and-migration-diagnostics-parity`, `missing-Windows-never-counts-as-pass`, `Windows-correlated-bridge-cancellation-parity`, `bridge-hello-ready-target-matrix` |
 | `ac3` | `host-v2-home-endpoint-mutation-sentinel`, `no-elevation-no-daemon-kill-control-sentinel`, `bounded-owned-fixture-cleanup-and-diagnostics` |
 
 ## 7. Alternatives considered

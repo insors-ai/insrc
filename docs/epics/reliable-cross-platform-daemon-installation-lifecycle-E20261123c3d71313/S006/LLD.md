@@ -7,6 +7,7 @@
 **Epic:** `reliable-cross-platform-daemon-installation-lifecycle`
 **HLD base run:** `wf-1795445383474-itgkv3`
 **HLD effective hash:** `77bfb88eed6d...`
+**Tracker:** [insors-ai/insrc#248](https://github.com/insors-ai/insrc/issues/248)
 
 VS Code offers Install by opening a focused native terminal and running the shared manual installer script. It observes real operation/readiness state, reconnects existing features and lets that script launch TUI. Startup, upgrade consent and manual controls remain responsive native IDE actions.
 
@@ -143,6 +144,11 @@ Client resource sync copies only current canonical script/policy/metadata bytes 
 After success the shared script releases the install lock and starts selected TUI; extension merely observes readiness. Cancel/failure leaves terminal diagnostics, not a fake success notification. While a terminal hosts TUI, duplicate Install focuses it rather than starting a new setup. After reload, inspect durable state before reattaching; do not replay prior launch intent.
 
 
+### 3.5 `Operation escalation UI binding` — new
+
+An explicitly selected immediate override during a draining operation consumes proposed sc2 escalateShutdown with the existing operationId. Other windows may forward the same intent to the owner; no second mutation/lock, fresh operation id, repeated shutdown timer or automatic escalation. Display escalation-unavailable/uncertain on dead owner; explicit recovery remains separate.
+
+
 ## 4. Diagrams
 
 - [Sequence diagram](docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S006/sequence-diagram.html)
@@ -203,7 +209,7 @@ After success the shared script releases the install lock and starts selected TU
 - **contract** — Prove adapter never generates forbidden install protocol or silent upgrade.
   - Subjects: `startup state classification and one settling callback`, `terminal command literal encoding`, `offer accept/dismiss/plugin-update behavior`
 - **integration** — Native extension-host terminal and daemon-peer behavior.
-  - Subjects: `real visible/focused terminal with exact script`, `spaces/Unicode/metacharacters and PowerShell/POSIX shells`, `TUI handoff/close/failure and duplicate windows`
+  - Subjects: `real visible/focused terminal with exact script`, `spaces/Unicode/metacharacters and PowerShell/POSIX shells`, `TUI handoff/close/failure and duplicate windows`, `Two windows: graceful stop remains under owner lock; user immediate override reaches that owner; duplicate/stale/dead-owner results remain accurate.`
   - Fixtures: `VS Code extension host, disposable home, deterministic script/daemon peers.`
 - **live** — Actual both-mode installer/control in VS Code on each qualified target.
   - Subjects: `Install → terminal → TUI`, `startup autostart and upgrade prompts`, `migration status/retry and explicit immediate stop`
@@ -214,7 +220,7 @@ After success the shared script releases the install lock and starts selected TU
 | :--- | :--- |
 | `ac1` | `running-stopped-missing-errored-startup-matrix`, `nonblocking-native-terminal-install-offer`, `one-ready-reconnect` |
 | `ac2` | `startup-offer-accept-dismiss`, `plugin-update-still-prompts`, `stale-offer-no-dispatch` |
-| `ac3` | `native-actions-use-shared-contracts`, `terminal-only-install-then-tui`, `migration-diagnostics-retry-and-explicit-immediate` |
+| `ac3` | `native-actions-use-shared-contracts`, `terminal-only-install-then-tui`, `migration-diagnostics-retry-and-explicit-immediate`, `cross-window-immediate-existing-operation` |
 
 ## 8. Alternatives considered
 

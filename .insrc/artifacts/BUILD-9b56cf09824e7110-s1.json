@@ -1,0 +1,115 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 3,
+        "contentHash": "326f1c30b7d53a0f2dbd25a3ba55b930625453b54913474ba4d8a9169df3e175",
+        "at": "2026-11-23T17:01:55.383Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 3,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-23T17:06:16.480Z"
+      }
+    },
+    "workflow": "build",
+    "runId": "store-20c8cfb3-e904-4caa-95f7-bc4c4343a3c8",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-23T16:55:47.898Z",
+    "epicCreatedAt": "2026-11-23T16:40:38.057Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b56cf09824e7110",
+    "storyId": "s1",
+    "revision": 3,
+    "standalone": true,
+    "sizeClass": "trivial",
+    "authoredBy": "controller",
+    "epicSlug": "present-lifecycle-backed-pending-amendments",
+    "updatedAt": "2026-11-23T17:00:53.566Z"
+  },
+  "body": {
+    "focus": "Make pending amendment discovery agree with the canonical lifecycle-backed amendment writer/reader without changing saved amendment decisions or weakening approval gates. Retain legacy flat-record behavior only where deliberately supported and ensure lifecycle-backed decisions take precedence over stale legacy fields. Add meaningful regression coverage using real amendment creation and draft/approved/rejected decisions, then verify pending discovery and insrc_present agree. Do not change the installer designs or restart/update the host daemon as part of this patch. Validate under a project-supported Node 22 runtime; report source/test results separately from availability in the running daemon. [[c1]] [[c2]] [[c3]] [[c4]]",
+    "producesLld": false,
+    "commit": "ef9563435",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "Corrected lifecycle-backed amendment discovery with legacy-flat compatibility and writer-to-presentation regressions. Explicit Node 22.23.2 coordinator runs passed all 38 relevant tests; runtime executable is also recorded in run 093817ad-1882-48eb-8f69-ab8e4748d758/prepared.json. Tracked S001/VALIDATION.md records commands, logs, local discovery of four amendments and the explicit limitation that the host daemon was not updated/restarted, so live presentation remains unverified.",
+    "testRecord": {
+      "md": "docs/standalone/present-lifecycle-backed-pending-amendments-E202611239b56cf09/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-9b56cf09824e7110.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-23T17:00:53.566Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-9b56cf09824e7110.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-23T17:00:53.566Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/present-lifecycle-backed-pending-amendments-E202611239b56cf09/ISSUE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-23T17:00:53.566Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/__tests__/present-dispatch.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-23T17:00:53.566Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/pending.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-23T17:00:53.566Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/pending.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-23T17:00:53.566Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/present-lifecycle-backed-pending-amendments-E202611239b56cf09/S001/VALIDATION.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-23T17:00:53.566Z"
+      }
+    ]
+  },
+  "citations": []
+}

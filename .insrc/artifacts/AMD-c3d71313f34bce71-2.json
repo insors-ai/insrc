@@ -1,0 +1,56 @@
+{
+  "meta": {
+    "workflow": "design.epic",
+    "runId": "store-81dbdd39-2328-4ec7-ad5a-eba65a13a011",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-23T16:19:24.959Z",
+    "epicCreatedAt": "2026-11-23T13:27:35.399Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c3d71313f34bce71",
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "9d08cd804b7dd6a36f66472c43e6b2938a758b478a4837953df920f4b8ff5f2e",
+        "at": "2026-11-23T16:19:24.960Z",
+        "by": {
+          "id": "insrc:design.story",
+          "kind": "agent",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "id": "AMD-c3d71313f34bce71-2",
+    "epicSlug": "reliable-cross-platform-daemon-installation-lifecycle",
+    "hldBaseRunId": "wf-1795445383474-itgkv3",
+    "amendment": {
+      "type": "sharedContract.methodAdd",
+      "contractId": "sc6",
+      "method": {
+        "name": "controlBridge",
+        "signature": "controlBridge(command: { kind: 'send'; transportId: string; request: IpcBridgeRequest } | { kind: 'cancel'; transportId: string }): AsyncIterable<{ transportId: string; kind: 'written' | 'cancelled' | 'frame' | 'closed' | 'error'; written?: boolean; frame?: string; code?: string }>;",
+        "purpose": "The additive sc6 controlBridge envelope preserves existing inner frame types. Launch the helper explicitly in bridge-control protocol 2 and require version confirmation before sending; mismatch fails with no legacy fallback. Each send/cancel/event has a unique transportId bound to its embedded RPC request id and lane, never reused during helper lifetime. Validate before queue admission. A cancel processed before the first named-pipe write attempt removes the send, confirms cancelled/written=false and forbids later dispatch. At the first write attempt, mark written=true conservatively: possible dispatch, not application completion. A helper-stdin write is not pipe dispatch evidence. Post-write cancellation retires the local reply without rollback/replay promises. Helper death/lost outcome leaves unresolved sends unknown unless not-written was positively confirmed. Frame/error/close events carry transportId; report every pending id on lane failure where possible. Preserve 64-pending/16MiB aggregate bounds, fragmented UTF-8 and separate stream-lane cancellation. Input EOF closes the helper lane, never daemon."
+      }
+    },
+    "rationale": "Provide correlated cancellation/write outcomes for multiplexed Windows bridge lanes without changing application RPC frames.",
+    "proposedBy": {
+      "workflow": "design.story",
+      "runId": "wf-1795450558398-ldvl7x",
+      "storyId": "s1",
+      "stepId": "s5"
+    },
+    "proposedAt": "2026-11-23T16:19:24.958Z"
+  },
+  "citations": []
+}

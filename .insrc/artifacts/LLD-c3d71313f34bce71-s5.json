@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "design.story",
-    "runId": "wf-1795448963103-fj9lkm",
+    "runId": "wf-1795451491785-6m3ksv",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-11-23T15:49:24.373Z",
+    "createdAt": "2026-11-23T16:31:33.110Z",
     "attribution": {
       "outputs": [
         {
@@ -14,7 +14,7 @@
         }
       ]
     },
-    "elapsedMs": 976,
+    "elapsedMs": 1055,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicCreatedAt": "2026-11-23T13:27:35.399Z",
@@ -29,9 +29,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 1,
-        "contentHash": "f9484ea88685b3fe36c30c03f44a8b44b0189dac7f2693e9f4c9bdd90ce94468",
-        "at": "2026-11-23T15:49:24.470Z",
+        "number": 3,
+        "contentHash": "011be8a099c8bf51a2aa18260623b788d259379d5a01d454a5cd59b9d2b228f5",
+        "at": "2026-11-23T16:31:33.212Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
@@ -40,7 +40,7 @@
       },
       "signoffs": []
     },
-    "revision": 1
+    "revision": 3
   },
   "body": {
     "hldContextSlice": {
@@ -309,7 +309,8 @@
           },
           "preconditions": [
             "Operation admitted and incumbent stopped through s4 completion proof.",
-            "Candidate acquires exclusive daemon-owned data lease before opening stores."
+            "Candidate acquires exclusive daemon-owned data lease before opening stores.",
+            "First admitted upgrade and explicit reconciled same-candidate retry are both valid; first install uses no predecessor and requires exclusive ownership, not nonexistent incumbent completion."
           ],
           "postconditions": [
             "Same from/to identity survives retry; manager/IDE never open LMDB/Lance.",
@@ -386,13 +387,13 @@
       {
         "entity": "Atomic hook-stage journal",
         "change": "new",
-        "details": "One user-protected journal binds installation/operation/from/to/candidate inventory and ordered entries {index,id,version,moduleDigest,stage,runStarted,testPassed,detail}. Persist atomically under the same operation's ownership; the public OperationRecord reports current hook/stage/blocked state while this private record keeps exact versions. Validated prefix order cannot be reordered or reused for another candidate. Keep run-started through interruption until test passes, even if a retry check says not-needed.",
+        "details": "One user-protected journal binds installation/operation/from/to/candidate inventory and ordered entries {index,id,version,moduleDigest,stage,runStarted,testPassed,detail}. Persist atomically under the same operation's ownership; the public OperationRecord reports current hook/stage/blocked state while this private record keeps exact versions. Validated prefix order cannot be reordered or reused for another candidate. Keep run-started through interruption until test passes, even if a retry check says not-needed. Only the lock-owning manager writes controller.json. Only the candidate daemon writes its operation/candidate-bound hook journal atomically while holding the exclusive data lease; it never writes controller.json or inherits the manager lock. Journal run-started commits before mutation. Stage events are advisory; OperationRecord is a possibly lagging projection, never migration validation evidence. Validate journal identity/version/order/digests before accepting results. On manager exit, a live candidate may finish its admitted hooks/journal but cannot activate or write controller state. A new lock owner first reconciles the exact candidate session, lease and protected observed-exit evidence; held/unknown ownership means busy/uncertain, never a second runner. Lease availability alone is not migration success. Only after prior candidate actual exit may explicit recovery validate the journal and resume the same operation or retry unvalidated hooks under hook policy. Reject stale session/revision writes; no PID/age inference or predecessor restart. Initial migration in migrating and candidate normal boot in activating require matching live-owner admission; independent ordinary boot remains denied.",
         "callSites": []
       },
       {
         "entity": "Failure, retry and startup guard",
         "change": "new",
-        "details": "Any check/run/test error or ambiguous process exit records blocked diagnostics and stops later work. Normal boot observes foundation blocked guard before stores; migration-only mode is admitted only for the same explicit retry. The hook's check/run/test and documented manual recovery decide how to reconcile partial state; no generic backup, rebuild, deletion or rollback policy is imposed. Never auto-start predecessor after data changes. A hung/unreachable migration is uncertain, not falsely cancelled or externally killed.",
+        "details": "Initial migration-only boot is admitted for a live manager-owned operation in migrating; an explicit same-operation/same-candidate retry is also admitted after reconciliation. Ordinary startup executes no hooks. Normal candidate boot in activating requires live-owner admission, validated journal and prior migration-process exit. Only the lock-owning manager writes controller.json. Only the candidate daemon writes its operation/candidate-bound hook journal atomically while holding the exclusive data lease; it never writes controller.json or inherits the manager lock. Journal run-started commits before mutation. Stage events are advisory; OperationRecord is a possibly lagging projection, never migration validation evidence. Validate journal identity/version/order/digests before accepting results. On manager exit, a live candidate may finish its admitted hooks/journal but cannot activate or write controller state. A new lock owner first reconciles the exact candidate session, lease and protected observed-exit evidence; held/unknown ownership means busy/uncertain, never a second runner. Lease availability alone is not migration success. Only after prior candidate actual exit may explicit recovery validate the journal and resume the same operation or retry unvalidated hooks under hook policy. Reject stale session/revision writes; no PID/age inference or predecessor restart. Initial migration in migrating and candidate normal boot in activating require matching live-owner admission; independent ordinary boot remains denied. Hook check/run/test and documented manual recovery retain all data-policy decisions; a hung/unreachable candidate remains uncertain, never externally killed. Consume s4's proposed mandatory MigrationExitReceipt: manager records the full admission/session identity before spawn; wrapper writes durable proof after natural or failed child exit even if manager died. Recovery validates that receipt and the exact hook journal; neither exit code nor journal alone is success. Missing receipt remains uncertain; no second runner. This story does not define another receipt format/writer.",
         "callSites": []
       },
       {
@@ -513,7 +514,10 @@
             "crash before/after run-started/run/test/commit",
             "not-needed after partial run still tests",
             "normal boot blocked",
-            "later hooks never execute after failure"
+            "later hooks never execute after failure",
+            "First upgrade admits migration-only boot, while ordinary startup and forged/stale admission fail.",
+            "Manager self-exit before/after run-started/run/test/final journal; surviving candidate finish, held/unknown lease and missing-exit cases; no duplicate run or stale controller write.",
+            "Manager exits during hook run/test; candidate finishes; wrapper receipt plus journal permits exact recovery. Zero-exit without validated tests never activates."
           ],
           "fixturesNeeded": [
             "Disposable registered graph/Lance state, hook fixtures and self-exiting child processes."
@@ -534,14 +538,16 @@
           "criterionId": "ac1",
           "provingTests": [
             "ordered-check-skip-run-test",
-            "unique-hook-reference-validation"
+            "unique-hook-reference-validation",
+            "first-upgrade-migration-admission"
           ]
         },
         {
           "criterionId": "ac2",
           "provingTests": [
             "check-run-test-failure-blocks-later-and-startup",
-            "false-test-and-process-interruption-diagnostics"
+            "false-test-and-process-interruption-diagnostics",
+            "manager-exit-candidate-alive-blocks-second-runner"
           ]
         },
         {
@@ -549,7 +555,10 @@
           "provingTests": [
             "same-candidate-explicit-retry",
             "partial-run-not-needed-still-tests",
-            "hook-owned-recovery-only"
+            "hook-owned-recovery-only",
+            "durable-journal-reconcile-after-owner-death",
+            "mandatory-receipt-and-journal-recovery",
+            "exit-code-not-migration-validation"
           ]
         },
         {
@@ -557,7 +566,8 @@
           "provingTests": [
             "ordinary-start-no-hooks",
             "no-applicable-upgrade-noop",
-            "bundle-dev-same-runner"
+            "bundle-dev-same-runner",
+            "ordinary-boot-denied-but-admitted-first-migration-allowed"
           ]
         },
         {
@@ -625,6 +635,11 @@
           "id": "journal",
           "label": "Hook journal",
           "description": "Candidate/operation-bound durable stage evidence."
+        },
+        {
+          "id": "wrapper",
+          "label": "Migration lifetime wrapper",
+          "description": "s4-owned observer writes the mandatory durable exit receipt independently of manager IPC."
         }
       ],
       "messages": [
@@ -632,13 +647,19 @@
           "from": "manager",
           "to": "candidate",
           "label": "Run admitted immutable candidate",
-          "description": "Incumbent exit/ownership release already verified by s4."
+          "description": "First admitted upgrade in migrating, or explicit reconciled same-candidate retry; predecessor actual exit already verified when one exists."
         },
         {
           "from": "candidate",
           "to": "journal",
           "label": "Validate exact identity and prior stage",
           "description": "No candidate substitution on retry."
+        },
+        {
+          "from": "candidate",
+          "to": "journal",
+          "label": "Candidate is sole journal writer",
+          "description": "Manager alone projects controller state under operation lock; it cannot treat event projection as validated migration evidence."
         },
         {
           "from": "candidate",
@@ -675,7 +696,13 @@
           "to": "manager",
           "label": "All hooks validated, or blocked",
           "kind": "return",
-          "description": "Close owned stores and exit; controller activates only on successful complete outcome."
+          "description": "Candidate commits journal, closes stores and exits. Hook journal alone cannot authorize activation."
+        },
+        {
+          "from": "wrapper",
+          "to": "manager",
+          "label": "Persist mandatory session-bound exit receipt, then notify",
+          "description": "Natural/failed child exit is observed; receipt survives manager loss. Recovery requires receipt, released ownership and validated journal."
         }
       ]
     },

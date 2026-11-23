@@ -1,0 +1,56 @@
+{
+  "meta": {
+    "workflow": "design.epic",
+    "runId": "store-4c874d53-69d9-4d5f-ad1b-3baf7a44a227",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-23T16:19:24.949Z",
+    "epicCreatedAt": "2026-11-23T13:27:35.399Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c3d71313f34bce71",
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "1b1e37d7ed4fabd65ad07a0887f07b2de3322316aa0ad34dae3b3b0a13d4c13f",
+        "at": "2026-11-23T16:19:24.949Z",
+        "by": {
+          "id": "insrc:design.story",
+          "kind": "agent",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "id": "AMD-c3d71313f34bce71-1",
+    "epicSlug": "reliable-cross-platform-daemon-installation-lifecycle",
+    "hldBaseRunId": "wf-1795445383474-itgkv3",
+    "amendment": {
+      "type": "sharedContract.methodAdd",
+      "contractId": "sc2",
+      "method": {
+        "name": "escalateShutdown",
+        "signature": "escalateShutdown(request: ManagerRequest): Promise<ManagerEvent>;",
+        "purpose": "An immediate override during quiescing/draining is a message to the current operation, not a competing mutation. Invoke escalateShutdown with the existing installationId/operationId, action='stop', shutdownMode='immediate'. Before ordinary lock admission, the manager command forwards it to the current lock owner's user-protected local control endpoint. The owner remains responsive while awaiting drain/exit, validates recorded instance/operation and alone sends s4 IPC using its original completion endpoint/nonce and writes controller state. Cross-window requests use this path; duplicates coalesce; all independent mutations still return busy. Private endpoint discovery binds installation/operation/owner-session nonce, validates same-user authorization and phase/identity, and rejects stale endpoints. No lock release/steal to escalate. Missing/dead owner returns escalation-unavailable/uncertain; explicit recovery must acquire the lock and reconcile instance/exit evidence before acting, never automatically replace the daemon. Writer/admission contract: Only the lock-owning manager writes controller.json. Only the candidate daemon writes its operation/candidate-bound hook journal atomically while holding the exclusive data lease; it never writes controller.json or inherits the manager lock. Journal run-started commits before mutation. Stage events are advisory; OperationRecord is a possibly lagging projection, never migration validation evidence. Validate journal identity/version/order/digests before accepting results. On manager exit, a live candidate may finish its admitted hooks/journal but cannot activate or write controller state. A new lock owner first reconciles the exact candidate session, lease and protected observed-exit evidence; held/unknown ownership means busy/uncertain, never a second runner. Lease availability alone is not migration success. Only after prior candidate actual exit may explicit recovery validate the journal and resume the same operation or retry unvalidated hooks under hook policy. Reject stale session/revision writes; no PID/age inference or predecessor restart. Initial migration in migrating and candidate normal boot in activating require matching live-owner admission; independent ordinary boot remains denied."
+      }
+    },
+    "rationale": "Resolve exclusive-lock escalation conflict and specify controller/journal crash ownership while retaining existing boundaries.",
+    "proposedBy": {
+      "workflow": "design.story",
+      "runId": "wf-1795450558398-ldvl7x",
+      "storyId": "s1",
+      "stepId": "s4"
+    },
+    "proposedAt": "2026-11-23T16:19:24.940Z"
+  },
+  "citations": []
+}

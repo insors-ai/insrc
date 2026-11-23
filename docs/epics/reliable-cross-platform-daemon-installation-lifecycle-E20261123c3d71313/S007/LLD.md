@@ -7,6 +7,7 @@
 **Epic:** `reliable-cross-platform-daemon-installation-lifecycle`
 **HLD base run:** `wf-1795445383474-itgkv3`
 **HLD effective hash:** `77bfb88eed6d...`
+**Tracker:** [insors-ai/insrc#249](https://github.com/insors-ai/insrc/issues/249)
 
 JetBrains gets the same terminal-led installation, automatic TUI handoff and explicit upgrade consent as VS Code. Background coordination keeps the IDE responsive. Unix keeps its existing IPC path; Windows uses the private Node bridge without accessing daemon data.
 
@@ -75,6 +76,8 @@ interface IpcBridgeRequest { protocolVersion: 1; endpoint: LocalEndpoint; rpcFra
 **Preconditions:**
 - Resolve installed manager/runtime and protected per-user endpoint/capability; do not use host Node.
 - Preserve current UTF-8 newline framing and request ids.
+- Require correlated bridge-control protocol 2 and transportId/RPC-id binding under proposed sc6 before dispatch; old frame-only peer is incompatible with this lane.
+- First exchange proposed sc6 bridgeHandshake hello/ready within three seconds; no frame dispatch until exact nonce/version confirmation.
 
 **Postconditions:**
 - Do not reinterpret application payloads or load DB/provider code.
@@ -97,6 +100,7 @@ interface IpcBridgeEvent { kind: 'frame' | 'closed' | 'error'; frame?: string; w
 **Postconditions:**
 - Pre-write cancellation prevents dispatch; after-write cancellation/close retains uncertainty and never promises rollback.
 - Unicode/stream frames survive byte chunking; late retired-id replies are discarded.
+- This is an inner frame type. Per-request write/cancel outcomes use the proposed sc6 controlBridge outer envelope; do not infer named-pipe writes from helper stdin.
 
 ### 2.4 `UpgradeOffer`
 
@@ -137,13 +141,19 @@ Proposed new JetBrains lifecycle/terminal adapter composes with current DaemonGa
 
 ### 3.4 `Windows bridge transport` — new
 
-Use an installed private-node manager bridge for Windows only; no JVM UnixDomainSocketAddress on Windows and no new JNA pipe dependency. Persistent unary lanes retain current 64-pending/16MiB aggregate budgets and safe-id/late-reply logic; streams use independently closable bridge lanes where socket close is their cancellation semantic. Input EOF closes only the bridge client; it does not shut down daemon. Separate stderr diagnostics from frame-only stdout, bind local endpoint/auth to selected user/install, and preserve before/after-write error meaning. No new smaller frame limit breaks existing payloads; large fragmented UTF-8/frame tests prove parity.
+Use an installed private-node manager bridge for Windows only; no JVM UnixDomainSocketAddress on Windows and no new JNA pipe dependency. Persistent unary lanes retain current 64-pending/16MiB aggregate budgets and safe-id/late-reply logic; streams use independently closable bridge lanes where socket close is their cancellation semantic. Input EOF closes only the bridge client; it does not shut down daemon. Separate stderr diagnostics from protocol-only stdout, bind local endpoint/auth to selected user/install, and preserve before/after-write error meaning. No new smaller frame limit breaks existing payloads; large fragmented UTF-8/frame tests prove parity. Consume the proposed sc6 controlBridge protocol, not an independent Kotlin protocol. The additive sc6 controlBridge envelope preserves existing inner frame types. Launch the helper explicitly in bridge-control protocol 2 and require version confirmation before sending; mismatch fails with no legacy fallback. Each send/cancel/event has a unique transportId bound to its embedded RPC request id and lane, never reused during helper lifetime. Validate before queue admission. A cancel processed before the first named-pipe write attempt removes the send, confirms cancelled/written=false and forbids later dispatch. At the first write attempt, mark written=true conservatively: possible dispatch, not application completion. A helper-stdin write is not pipe dispatch evidence. Post-write cancellation retires the local reply without rollback/replay promises. Helper death/lost outcome leaves unresolved sends unknown unless not-written was positively confirmed. Frame/error/close events carry transportId; report every pending id on lane failure where possible. Preserve 64-pending/16MiB aggregate bounds, fragmented UTF-8 and separate stream-lane cancellation. Input EOF closes the helper lane, never daemon. Consume the foundation-owned bridgeHandshake startup exchange without introducing Kotlin-specific messages. The bridge-control protocol-2 startup wire exchange is exactly one UTF-8 NDJSON hello record {kind:'hello',protocolVersion:2,sessionNonce} from the client on helper stdin, then exactly one ready record {kind:'ready',protocolVersion:2,sessionNonce} on helper stdout. The client generates a fresh unpredictable sessionNonce per helper process; helper echoes it only after validating the version and binding its configured local installation endpoint. This is a separate startup envelope, not an IpcBridgeRequest and not a correlated controlBridge outcome; it has no transportId because no request exists yet. The helper must not forward any application frame before emitting ready, and the client must not send send/cancel records until matching ready is received. Set a 3-second handshake deadline from helper spawn; missing/malformed/duplicate/wrong-version/wrong-nonce ready, early outcome frames, or helper exit fail with bridge-protocol-mismatch/bridge-handshake-timeout before dispatch. On error the client closes stdin and that helper lane, reports no sends dispatched, and performs no automatic fallback/replay; it sends no daemon signal/stop. Unsupported hello yields only a bounded stderr diagnostic and helper exit without opening an application RPC lane. After ready, stdout contains only the specified correlated controlBridge events, stderr only diagnostics; later hello/ready records are protocol errors. Handshake bytes count toward the bounded parser/input limits; no credentials/capability tokens are echoed. Existing inner IpcBridgeRequest.protocolVersion=1 remains unchanged and is distinct from outer bridge-control version 2.
 
 **Call sites:**
 - `jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/UnixSocketDaemonRpc.kt`
 
+### 3.5 `Operation escalation UI binding` — new
+
+An explicitly selected immediate override during a draining operation consumes proposed sc2 escalateShutdown with the existing operationId. Other windows may forward the same intent to the owner; no second mutation/lock, fresh operation id, repeated shutdown timer or automatic escalation. Display escalation-unavailable/uncertain on dead owner; explicit recovery remains separate.
+
+
 ## 4. Diagrams
 
+- [Sequence diagram](docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S007/sequence-diagram.html)
 - [Component dependencies](docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S007/component-dependency.html)
 
 ## 5. Interaction with shared contracts
@@ -202,7 +212,7 @@ Use an installed private-node manager bridge for Windows only; no JVM UnixDomain
 - **contract** — Kotlin DTO/actions and consent parity.
   - Subjects: `startup state/single-flight project coordination`, `no direct install action`, `literal shell command encoding and owned widget reuse`
 - **integration** — Native JetBrains terminal and bridge behavior.
-  - Subjects: `real terminal visibility/focus/script/TUI`, `Windows named-pipe Unicode/stream/cancel/EOF parity`, `SDK verifier across current IDE family and terminal-disabled path`
+  - Subjects: `real terminal visibility/focus/script/TUI`, `Windows named-pipe Unicode/stream/cancel/EOF parity`, `SDK verifier across current IDE family and terminal-disabled path`, `Two windows: graceful stop remains under owner lock; user immediate override reaches that owner; duplicate/stale/dead-owner results remain accurate.`, `Cancel queued send before pipe write confirms false and sends no bytes; cancel racing first write stays possibly-written; each of 64 requests gets correct outcome.`, `Helper dies after stdin accept/before pipe write acknowledgement: unresolved outcome unknown, no replay; protocol mismatch fails before send.`, `Real Node/Kotlin hello/ready exchange: exact nonce/version and deadline; no named-pipe application bytes before ready; malformed/early/late/duplicate startup records fail.`
   - Fixtures: `Disposable IDE sandbox/home and deterministic Node bridge peers.`
 - **live** — Both modes/control/migration UI on actual target OS.
   - Subjects: `Install terminal/manual byte parity`, `startup/autostart and explicit upgrade consent`, `readiness-confirmed TUI and migration diagnostics`
@@ -213,7 +223,7 @@ Use an installed private-node manager bridge for Windows only; no JVM UnixDomain
 | :--- | :--- |
 | `ac1` | `background-running-stopped-missing-errored-matrix`, `native-terminal-open-focus-shared-script`, `UI-thread-nonblocking` |
 | `ac2` | `bundle-dev-offer-accept-dismiss`, `plugin-update-never-silent`, `application-single-flight-prompt` |
-| `ac3` | `all-actions-shared-result-parity`, `windows-pipe-bridge-cancel-stream-written-semantics`, `terminal-success-tui-and-migration-error-retry` |
+| `ac3` | `all-actions-shared-result-parity`, `windows-pipe-bridge-cancel-stream-written-semantics`, `terminal-success-tui-and-migration-error-retry`, `cross-window-immediate-existing-operation`, `bridge-correlated-cancel-write-race`, `bridge-death-unconfirmed-write-unknown`, `bridge-control-version-mismatch`, `bridge-handshake-native-client-parity`, `handshake-failure-zero-dispatch` |
 
 ## 8. Alternatives considered
 

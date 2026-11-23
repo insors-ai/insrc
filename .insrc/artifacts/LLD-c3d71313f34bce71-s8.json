@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "design.story",
-    "runId": "wf-1795449352448-ygpabv",
+    "runId": "wf-1795451495026-uwmxek",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-11-23T15:55:53.726Z",
+    "createdAt": "2026-11-23T16:31:36.592Z",
     "attribution": {
       "outputs": [
         {
@@ -14,7 +14,7 @@
         }
       ]
     },
-    "elapsedMs": 980,
+    "elapsedMs": 1245,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicCreatedAt": "2026-11-23T13:27:35.399Z",
@@ -29,9 +29,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 1,
-        "contentHash": "60f3c2f9256b48d6e31942580c5c749c48d4fc6f45ec3ce3c703ecb17243da6f",
-        "at": "2026-11-23T15:55:53.810Z",
+        "number": 3,
+        "contentHash": "2e1da52b18dfe5ac3f937bedb932fe38ec954db6a65c669b4d110683e0d5e4a9",
+        "at": "2026-11-23T16:31:36.693Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
@@ -40,7 +40,7 @@
       },
       "signoffs": []
     },
-    "revision": 1
+    "revision": 3
   },
   "body": {
     "hldContextSlice": {
@@ -298,7 +298,7 @@
       {
         "entity": "Scenario matrix",
         "change": "new",
-        "details": "For both bundle and dev delivery: clean install with no/wrong host Node; exact successor upgrade; unchanged delivery/ref selection; shared terminal/manual script parity; readiness-confirmed same-terminal TUI; start/no-build; graceful stop; explicit immediate override; restart/actual exit proof; migration skip/success/check-run-test failure/interruption/retry; dependency existing/missing/decline/install; zero/one/many agent recommendations; concurrent windows; Unicode/space/metacharacter paths; download/digest/target/archive corruption; source dirty/build failure; stale offers; and corrupt controller/journal recovery. Each IDE separately proves native terminal visibility/focus, ordinary control, startup autostart, explicit upgrade accept/dismiss including plugin updates, blocked migration UI and close/cancel behavior.",
+        "details": "For both bundle and dev delivery: clean install with no/wrong host Node; exact successor upgrade; unchanged delivery/ref selection; shared terminal/manual script parity; readiness-confirmed same-terminal TUI; start/no-build; graceful stop; explicit immediate override; restart/actual exit proof; migration skip/success/check-run-test failure/interruption/retry; dependency existing/missing/decline/install; zero/one/many agent recommendations; concurrent windows; Unicode/space/metacharacter paths; download/digest/target/archive corruption; source dirty/build failure; stale offers; and corrupt controller/journal recovery. Each IDE separately proves native terminal visibility/focus, ordinary control, startup autostart, explicit upgrade accept/dismiss including plugin updates, blocked migration UI and close/cancel behavior. Cross-review regression matrix explicitly includes: two clients escalate immediate while graceful operation lock remains held; first migration admission versus ordinary startup; manager death with live candidate at every journal boundary, no second runner, exact journal/exit reconciliation; correlated Windows per-request pre-write cancel, first-write race, helper death and protocol mismatch. Record full owner/session/operation identities with secrets redacted. Proposed sc2/sc6 amendments must be approved and consumer designs rebased before this matrix executes. Require migration-wrapper durable receipts on natural success, hook failure and manager death, including crash before/after receipt fsync/publication and mismatched session/nonce/digest. Require protocol-2 hello/ready success, 3-second timeout, malformed/duplicate/wrong version/nonce/early outcome and unsupported-helper cases with zero pre-ready application sends.",
         "callSites": []
       },
       {
@@ -429,7 +429,10 @@
           "subjects": [
             "all mode/scenario combinations",
             "fault injection and cleanup evidence",
-            "host-home/endpoint sentinel"
+            "host-home/endpoint sentinel",
+            "All four cross-design regression scenarios use actual owner components and exact candidate/platform evidence.",
+            "Real target migration receipt persistence/recovery and Node/Kotlin handshake failures, independent of fixture-only evidence.",
+            "Actual Windows outer protocol-2 negotiation with unchanged inner protocol-1 RPC frames."
           ]
         },
         {
@@ -449,7 +452,10 @@
             "both-mode-clean-install-upgrade-runtime-isolation-matrix",
             "native-start-graceful-immediate-restart-matrix",
             "migration-skip-success-failure-interruption-retry-matrix",
-            "exact-target-native-provenance"
+            "exact-target-native-provenance",
+            "held-lock-cross-window-immediate",
+            "first-migration-and-owner-death-journal-recovery",
+            "migration-durable-exit-receipt-platform-matrix"
           ]
         },
         {
@@ -458,7 +464,9 @@
             "both-IDE-real-terminal-tui-and-startup-matrix",
             "upgrade-accept-dismiss-plugin-update-consent",
             "dependency-prompt-and-migration-diagnostics-parity",
-            "missing-Windows-never-counts-as-pass"
+            "missing-Windows-never-counts-as-pass",
+            "Windows-correlated-bridge-cancellation-parity",
+            "bridge-hello-ready-target-matrix"
           ]
         },
         {

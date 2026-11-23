@@ -7,6 +7,7 @@
 **Epic:** `reliable-cross-platform-daemon-installation-lifecycle`
 **HLD base run:** `wf-1795445383474-itgkv3`
 **HLD effective hash:** `77bfb88eed6d...`
+**Tracker:** [insors-ai/insrc#247](https://github.com/insors-ai/insrc/issues/247)
 
 Upgrade migrations run as ordered in-process hooks inside a candidate daemon with exclusive data ownership. Each hook decides what to migrate and validates its result. Failure or interruption blocks startup until explicit retry or hook-owned recovery succeeds.
 
@@ -74,6 +75,7 @@ interface MigrationContext { installationId: string; operationId: string; fromRe
 **Preconditions:**
 - Operation admitted and incumbent stopped through s4 completion proof.
 - Candidate acquires exclusive daemon-owned data lease before opening stores.
+- First admitted upgrade and explicit reconciled same-candidate retry are both valid; first install uses no predecessor and requires exclusive ownership, not nonexistent incumbent completion.
 
 **Postconditions:**
 - Same from/to identity survives retry; manager/IDE never open LMDB/Lance.
@@ -131,12 +133,12 @@ New private boundary src/daemon/upgrade-hooks.ts and a gated migration-only bran
 
 ### 3.2 `Atomic hook-stage journal` — new
 
-One user-protected journal binds installation/operation/from/to/candidate inventory and ordered entries {index,id,version,moduleDigest,stage,runStarted,testPassed,detail}. Persist atomically under the same operation's ownership; the public OperationRecord reports current hook/stage/blocked state while this private record keeps exact versions. Validated prefix order cannot be reordered or reused for another candidate. Keep run-started through interruption until test passes, even if a retry check says not-needed.
+One user-protected journal binds installation/operation/from/to/candidate inventory and ordered entries {index,id,version,moduleDigest,stage,runStarted,testPassed,detail}. Persist atomically under the same operation's ownership; the public OperationRecord reports current hook/stage/blocked state while this private record keeps exact versions. Validated prefix order cannot be reordered or reused for another candidate. Keep run-started through interruption until test passes, even if a retry check says not-needed. Only the lock-owning manager writes controller.json. Only the candidate daemon writes its operation/candidate-bound hook journal atomically while holding the exclusive data lease; it never writes controller.json or inherits the manager lock. Journal run-started commits before mutation. Stage events are advisory; OperationRecord is a possibly lagging projection, never migration validation evidence. Validate journal identity/version/order/digests before accepting results. On manager exit, a live candidate may finish its admitted hooks/journal but cannot activate or write controller state. A new lock owner first reconciles the exact candidate session, lease and protected observed-exit evidence; held/unknown ownership means busy/uncertain, never a second runner. Lease availability alone is not migration success. Only after prior candidate actual exit may explicit recovery validate the journal and resume the same operation or retry unvalidated hooks under hook policy. Reject stale session/revision writes; no PID/age inference or predecessor restart. Initial migration in migrating and candidate normal boot in activating require matching live-owner admission; independent ordinary boot remains denied.
 
 
 ### 3.3 `Failure, retry and startup guard` — new
 
-Any check/run/test error or ambiguous process exit records blocked diagnostics and stops later work. Normal boot observes foundation blocked guard before stores; migration-only mode is admitted only for the same explicit retry. The hook's check/run/test and documented manual recovery decide how to reconcile partial state; no generic backup, rebuild, deletion or rollback policy is imposed. Never auto-start predecessor after data changes. A hung/unreachable migration is uncertain, not falsely cancelled or externally killed.
+Initial migration-only boot is admitted for a live manager-owned operation in migrating; an explicit same-operation/same-candidate retry is also admitted after reconciliation. Ordinary startup executes no hooks. Normal candidate boot in activating requires live-owner admission, validated journal and prior migration-process exit. Only the lock-owning manager writes controller.json. Only the candidate daemon writes its operation/candidate-bound hook journal atomically while holding the exclusive data lease; it never writes controller.json or inherits the manager lock. Journal run-started commits before mutation. Stage events are advisory; OperationRecord is a possibly lagging projection, never migration validation evidence. Validate journal identity/version/order/digests before accepting results. On manager exit, a live candidate may finish its admitted hooks/journal but cannot activate or write controller state. A new lock owner first reconciles the exact candidate session, lease and protected observed-exit evidence; held/unknown ownership means busy/uncertain, never a second runner. Lease availability alone is not migration success. Only after prior candidate actual exit may explicit recovery validate the journal and resume the same operation or retry unvalidated hooks under hook policy. Reject stale session/revision writes; no PID/age inference or predecessor restart. Initial migration in migrating and candidate normal boot in activating require matching live-owner admission; independent ordinary boot remains denied. Hook check/run/test and documented manual recovery retain all data-policy decisions; a hung/unreachable candidate remains uncertain, never externally killed. Consume s4's proposed mandatory MigrationExitReceipt: manager records the full admission/session identity before spawn; wrapper writes durable proof after natural or failed child exit even if manager died. Recovery validates that receipt and the exact hook journal; neither exit code nor journal alone is success. Missing receipt remains uncertain; no second runner. This story does not define another receipt format/writer.
 
 
 ### 3.4 `No-op and predecessor adoption` — new
@@ -203,7 +205,7 @@ Ordinary startup does not execute hooks. An upgrade with no applicable work stil
 - **contract** — Verify delegation/order/context and the pending-validation invariant.
   - Subjects: `skip/needed/exception/false-test paths`, `same-candidate retry`, `no graph or implicit rollback policy`
 - **integration** — Exercise actual candidate process/store ownership and durable journal crash points.
-  - Subjects: `crash before/after run-started/run/test/commit`, `not-needed after partial run still tests`, `normal boot blocked`, `later hooks never execute after failure`
+  - Subjects: `crash before/after run-started/run/test/commit`, `not-needed after partial run still tests`, `normal boot blocked`, `later hooks never execute after failure`, `First upgrade admits migration-only boot, while ordinary startup and forged/stale admission fail.`, `Manager self-exit before/after run-started/run/test/final journal; surviving candidate finish, held/unknown lease and missing-exit cases; no duplicate run or stale controller write.`, `Manager exits during hook run/test; candidate finishes; wrapper receipt plus journal permits exact recovery. Zero-exit without validated tests never activates.`
   - Fixtures: `Disposable registered graph/Lance state, hook fixtures and self-exiting child processes.`
 - **live** — Qualify supported real predecessor paths and native closure.
   - Subjects: `no concurrent old/candidate stores`, `hook-owned migration recovery`, `startup only after validated completion`
@@ -212,10 +214,10 @@ Ordinary startup does not execute hooks. An upgrade with no applicable work stil
 
 | Criterion | Proving tests |
 | :--- | :--- |
-| `ac1` | `ordered-check-skip-run-test`, `unique-hook-reference-validation` |
-| `ac2` | `check-run-test-failure-blocks-later-and-startup`, `false-test-and-process-interruption-diagnostics` |
-| `ac3` | `same-candidate-explicit-retry`, `partial-run-not-needed-still-tests`, `hook-owned-recovery-only` |
-| `ac4` | `ordinary-start-no-hooks`, `no-applicable-upgrade-noop`, `bundle-dev-same-runner` |
+| `ac1` | `ordered-check-skip-run-test`, `unique-hook-reference-validation`, `first-upgrade-migration-admission` |
+| `ac2` | `check-run-test-failure-blocks-later-and-startup`, `false-test-and-process-interruption-diagnostics`, `manager-exit-candidate-alive-blocks-second-runner` |
+| `ac3` | `same-candidate-explicit-retry`, `partial-run-not-needed-still-tests`, `hook-owned-recovery-only`, `durable-journal-reconcile-after-owner-death`, `mandatory-receipt-and-journal-recovery`, `exit-code-not-migration-validation` |
+| `ac4` | `ordinary-start-no-hooks`, `no-applicable-upgrade-noop`, `bundle-dev-same-runner`, `ordinary-boot-denied-but-admitted-first-migration-allowed` |
 | `ac5` | `supported-predecessor-representative-state`, `unsupported-predecessor-before-mutation`, `no-generic-delete-rebuild-policy` |
 
 ## 8. Alternatives considered

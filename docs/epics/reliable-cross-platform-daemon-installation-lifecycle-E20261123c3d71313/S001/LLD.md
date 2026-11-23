@@ -113,6 +113,7 @@ interface ManagerRequest { protocolVersion: 1; operationId: string; action: Mana
 - IDE adapters cannot synthesize a source flag or submit an install action to bypass the terminal.
 - Interactive installer internally creates the install action; no cloud/DB/IDE runtime is loaded.
 - Unsupported sibling operations fail explicitly rather than using stub success.
+- Only same-operation escalation is forwarded before busy admission; the forwarder never writes controller state.
 
 ### 2.4 `OperationRecord`
 
@@ -220,6 +221,67 @@ interface TerminalInstallLaunch { operationId: string; installationId: string; h
 - TUI launch failure is a post-install error with exact retry command; no reinstall/rollback.
 - Exiting TUI returns to shell and does not stop daemon; installation failure/cancel launches no TUI.
 
+### 2.9 `escalateShutdown`
+
+```typescript
+escalateShutdown(request: ManagerRequest): Promise<ManagerEvent>;
+```
+
+**Parameters:**
+- `input: validated shared-contract input` — Proposed additive HLD method input; validate unknown wire data before use.
+
+**Returns:** `Promise<ManagerEvent>` — Identity-bound control outcome, never synthetic success.
+
+**Errors:**
+- `escalation-unavailable` when Missing/stale owner or incompatible peer respectively.
+
+**Preconditions:**
+- Proposed localized HLD amendment; no application DB access.
+
+**Postconditions:**
+- An immediate override during quiescing/draining is a message to the current operation, not a competing mutation. Invoke escalateShutdown with the existing installationId/operationId, action='stop', shutdownMode='immediate'. Before ordinary lock admission, the manager command forwards it to the current lock owner's user-protected local control endpoint. The owner remains responsive while awaiting drain/exit, validates recorded instance/operation and alone sends s4 IPC using its original completion endpoint/nonce and writes controller state. Cross-window requests use this path; duplicates coalesce; all independent mutations still return busy. Private endpoint discovery binds installation/operation/owner-session nonce, validates same-user authorization and phase/identity, and rejects stale endpoints. No lock release/steal to escalate. Missing/dead owner returns escalation-unavailable/uncertain; explicit recovery must acquire the lock and reconcile instance/exit evidence before acting, never automatically replace the daemon.
+
+### 2.10 `controlBridge`
+
+```typescript
+controlBridge(command: { kind: 'send'; transportId: string; request: IpcBridgeRequest } | { kind: 'cancel'; transportId: string }): AsyncIterable<{ transportId: string; kind: 'written' | 'cancelled' | 'frame' | 'closed' | 'error'; written?: boolean; frame?: string; code?: string }>;
+```
+
+**Parameters:**
+- `input: validated shared-contract input` — Proposed additive HLD method input; validate unknown wire data before use.
+
+**Returns:** `AsyncIterable<correlated bridge events>` — Identity-bound control outcome, never synthetic success.
+
+**Errors:**
+- `bridge-protocol-mismatch` when Missing/stale owner or incompatible peer respectively.
+
+**Preconditions:**
+- Proposed localized HLD amendment; no application DB access.
+
+**Postconditions:**
+- The additive sc6 controlBridge envelope preserves existing inner frame types. Launch the helper explicitly in bridge-control protocol 2 and require version confirmation before sending; mismatch fails with no legacy fallback. Each send/cancel/event has a unique transportId bound to its embedded RPC request id and lane, never reused during helper lifetime. Validate before queue admission. A cancel processed before the first named-pipe write attempt removes the send, confirms cancelled/written=false and forbids later dispatch. At the first write attempt, mark written=true conservatively: possible dispatch, not application completion. A helper-stdin write is not pipe dispatch evidence. Post-write cancellation retires the local reply without rollback/replay promises. Helper death/lost outcome leaves unresolved sends unknown unless not-written was positively confirmed. Frame/error/close events carry transportId; report every pending id on lane failure where possible. Preserve 64-pending/16MiB aggregate bounds, fragmented UTF-8 and separate stream-lane cancellation. Input EOF closes the helper lane, never daemon.
+
+### 2.11 `bridgeHandshake`
+
+```typescript
+bridgeHandshake(request: { kind: 'hello'; protocolVersion: 2; sessionNonce: string }): Promise<{ kind: 'ready'; protocolVersion: 2; sessionNonce: string }>;
+```
+
+**Parameters:**
+- `request: { kind: 'hello'; protocolVersion: 2; sessionNonce: string }` — Exact shared-contract identity input; validate untrusted wire data before use.
+
+**Returns:** `Promise<{ kind: 'ready'; protocolVersion: 2; sessionNonce: string }>` — Validated shared-contract evidence, not application success.
+
+**Errors:**
+- `bridge-handshake-timeout` when No matching ready within three seconds.
+- `bridge-protocol-mismatch` when Malformed, mismatched or out-of-order startup record.
+
+**Preconditions:**
+- Pending localized HLD amendment; owner implementation and consumer integration remain separate.
+
+**Postconditions:**
+- The bridge-control protocol-2 startup wire exchange is exactly one UTF-8 NDJSON hello record {kind:'hello',protocolVersion:2,sessionNonce} from the client on helper stdin, then exactly one ready record {kind:'ready',protocolVersion:2,sessionNonce} on helper stdout. The client generates a fresh unpredictable sessionNonce per helper process; helper echoes it only after validating the version and binding its configured local installation endpoint. This is a separate startup envelope, not an IpcBridgeRequest and not a correlated controlBridge outcome; it has no transportId because no request exists yet. The helper must not forward any application frame before emitting ready, and the client must not send send/cancel records until matching ready is received. Set a 3-second handshake deadline from helper spawn; missing/malformed/duplicate/wrong-version/wrong-nonce ready, early outcome frames, or helper exit fail with bridge-protocol-mismatch/bridge-handshake-timeout before dispatch. On error the client closes stdin and that helper lane, reports no sends dispatched, and performs no automatic fallback/replay; it sends no daemon signal/stop. Unsupported hello yields only a bounded stderr diagnostic and helper exit without opening an application RPC lane. After ready, stdout contains only the specified correlated controlBridge events, stderr only diagnostics; later hello/ready records are protocol errors. Handshake bytes count toward the bounded parser/input limits; no credentials/capability tokens are echoed. Existing inner IpcBridgeRequest.protocolVersion=1 remains unchanged and is distinct from outer bridge-control version 2.
+
 ## 3. Data model changes
 
 ### 3.1 `Controller snapshot` — new
@@ -261,6 +323,21 @@ s1 controller prepares candidate and owns durable installation transitions. It r
 ### 3.6 `OS operation-lock handle` — new
 
 A minimal bundled Node-API v8 addon owns only an OS file-lock handle: nonblocking flock(LOCK_EX|LOCK_NB) on macOS/Linux; LockFileEx(LOCKFILE_EXCLUSIVE_LOCK|LOCKFILE_FAIL_IMMEDIATELY) on a fixed byte range on Windows. Keep the descriptor/handle alive, mark non-inheritable, release on close and process exit. Never rename/delete the lock file, and do not interpret file contents/PIDs as ownership. Deny lock-root symlinks and restrict user access; atomic-replace helper and user-SID lookup can share this small platform binding. It opens no DB, sends no process signal and is built/qualified in release environments, never compiled on client machines. Ongoing controller cancellation/exit must close handles; killed/crashed fixture cases are simulated by fixture self-exit commands, not daemon kill controls.
+
+
+### 3.7 `Operation-bound escalation routing` — new
+
+An immediate override during quiescing/draining is a message to the current operation, not a competing mutation. Invoke escalateShutdown with the existing installationId/operationId, action='stop', shutdownMode='immediate'. Before ordinary lock admission, the manager command forwards it to the current lock owner's user-protected local control endpoint. The owner remains responsive while awaiting drain/exit, validates recorded instance/operation and alone sends s4 IPC using its original completion endpoint/nonce and writes controller state. Cross-window requests use this path; duplicates coalesce; all independent mutations still return busy. Private endpoint discovery binds installation/operation/owner-session nonce, validates same-user authorization and phase/identity, and rejects stale endpoints. No lock release/steal to escalate. Missing/dead owner returns escalation-unavailable/uncertain; explicit recovery must acquire the lock and reconcile instance/exit evidence before acting, never automatically replace the daemon.
+
+
+### 3.8 `Controller and hook-journal writer protocol` — new
+
+Only the lock-owning manager writes controller.json. Only the candidate daemon writes its operation/candidate-bound hook journal atomically while holding the exclusive data lease; it never writes controller.json or inherits the manager lock. Journal run-started commits before mutation. Stage events are advisory; OperationRecord is a possibly lagging projection, never migration validation evidence. Validate journal identity/version/order/digests before accepting results. On manager exit, a live candidate may finish its admitted hooks/journal but cannot activate or write controller state. A new lock owner first reconciles the exact candidate session, lease and protected observed-exit evidence; held/unknown ownership means busy/uncertain, never a second runner. Lease availability alone is not migration success. Only after prior candidate actual exit may explicit recovery validate the journal and resume the same operation or retry unvalidated hooks under hook policy. Reject stale session/revision writes; no PID/age inference or predecessor restart. Initial migration in migrating and candidate normal boot in activating require matching live-owner admission; independent ordinary boot remains denied. s4 owns lease/exit evidence; s5 owns hook execution/journal. Consume s4's proposed mandatory migration receipt contract: manager records admission/session/nonce/path before spawn and validates receipt before recovery; receipt writing is wrapper-owned, not a controller.json mutation. Full receipt production/format is owned by s4.
+
+
+### 3.9 `Correlated bridge-control envelope` — new
+
+The additive sc6 controlBridge envelope preserves existing inner frame types. Launch the helper explicitly in bridge-control protocol 2 and require version confirmation before sending; mismatch fails with no legacy fallback. Each send/cancel/event has a unique transportId bound to its embedded RPC request id and lane, never reused during helper lifetime. Validate before queue admission. A cancel processed before the first named-pipe write attempt removes the send, confirms cancelled/written=false and forbids later dispatch. At the first write attempt, mark written=true conservatively: possible dispatch, not application completion. A helper-stdin write is not pipe dispatch evidence. Post-write cancellation retires the local reply without rollback/replay promises. Helper death/lost outcome leaves unresolved sends unknown unless not-written was positively confirmed. Frame/error/close events carry transportId; report every pending id on lane failure where possible. Preserve 64-pending/16MiB aggregate bounds, fragmented UTF-8 and separate stream-lane cancellation. Input EOF closes the helper lane, never daemon. s1 defines schemas; s7 implements Windows transport. The bridge-control protocol-2 startup wire exchange is exactly one UTF-8 NDJSON hello record {kind:'hello',protocolVersion:2,sessionNonce} from the client on helper stdin, then exactly one ready record {kind:'ready',protocolVersion:2,sessionNonce} on helper stdout. The client generates a fresh unpredictable sessionNonce per helper process; helper echoes it only after validating the version and binding its configured local installation endpoint. This is a separate startup envelope, not an IpcBridgeRequest and not a correlated controlBridge outcome; it has no transportId because no request exists yet. The helper must not forward any application frame before emitting ready, and the client must not send send/cancel records until matching ready is received. Set a 3-second handshake deadline from helper spawn; missing/malformed/duplicate/wrong-version/wrong-nonce ready, early outcome frames, or helper exit fail with bridge-protocol-mismatch/bridge-handshake-timeout before dispatch. On error the client closes stdin and that helper lane, reports no sends dispatched, and performs no automatic fallback/replay; it sends no daemon signal/stop. Unsupported hello yields only a bounded stderr diagnostic and helper exit without opening an application RPC lane. After ready, stdout contains only the specified correlated controlBridge events, stderr only diagnostics; later hello/ready records are protocol errors. Handshake bytes count toward the bounded parser/input limits; no credentials/capability tokens are echoed. Existing inner IpcBridgeRequest.protocolVersion=1 remains unchanged and is distinct from outer bridge-control version 2.
 
 
 ## 4. Diagrams
@@ -309,7 +386,7 @@ A minimal bundled Node-API v8 addon owns only an OS file-lock handle: nonblockin
   - User impact: User gets explicit recovery diagnostics; data remains untouched.
 - **Concurrent mutation** (recoverable)
   - Detection: OS nonblocking lock acquisition returns busy; lock contents/age are never considered.
-  - Response: busy with observable recorded operation; caller may inspect rather than spawn another installer.
+  - Response: Independent mutation returns busy; same-operation immediate escalation forwards to the live lock owner under proposed sc2.
   - User impact: Duplicate windows do not race upgrades.
 - **Missing lifecycle/dependency/migration capability** (recoverable)
   - Detection: Required handler admission fails before destructive phase; no fixture or implicit no-op is available in production.
@@ -331,6 +408,10 @@ A minimal bundled Node-API v8 addon owns only an OS file-lock handle: nonblockin
   - Detection: Staging/fsync/atomic-replace adapter reports OS error; reread validates whether old or new snapshot is authoritative.
   - Response: Before disruption preserve usable incumbent; after disruption retain/report blocked/uncertain state and avoid further writes until reconciled.
   - User impact: Never claim success from an uncommitted state transition.
+- **Manager exits while candidate hooks run** (recoverable)
+  - Detection: Owner control fails; explicit recovery validates controller revision, journal identity, candidate lease/session and observed exit.
+  - Response: Follow sole-writer/journal reconciliation; never launch duplicate hooks or trust a lagging controller projection.
+  - User impact: Safe explicit recovery without automatic activation/rollback.
 
 **Edge cases**
 
@@ -361,7 +442,7 @@ A minimal bundled Node-API v8 addon owns only an OS file-lock handle: nonblockin
   - Subjects: `Strict manifest/runtime/entrypoint/hook validation; unrelated design-corpus ReleaseManifest is not imported.`, `Manager JSON install is rejected even with a forged source/bootstrap marker; non-TTY interactive entry is rejected.`, `Explicit home/endpoint and terminal launch schema preserve operation/release identity.`
   - Fixtures: `Malformed/wrong-target descriptors; corrupt enrolled snapshots; unsafe entrypoints; duplicate hooks; hostile shell/path values.`
 - **integration** — Prove real filesystem preparation/state transitions and cross-process OS-lock exclusion with deterministic admitted peer processes.
-  - Subjects: `Immutable safe ZIP preparation and inventory verification, including ZIP traversal/ADS/case collision/symlink/oversize/truncation attacks.`, `Native lock exclusion/release and atomic-replace crash points with fixture processes that self-exit on control input.`, `Prepare/peer-quiesce/peer-migrate/peer-ready transitions; missing capabilities, uncertainty and first-data-write failures remain blocked.`, `Complete state and release lock before TUI fixture enters foreground; TUI fixture exit/failure leaves ready installation and peer daemon alive.`
+  - Subjects: `Immutable safe ZIP preparation and inventory verification, including ZIP traversal/ADS/case collision/symlink/oversize/truncation attacks.`, `Native lock exclusion/release and atomic-replace crash points with fixture processes that self-exit on control input.`, `Prepare/peer-quiesce/peer-migrate/peer-ready transitions; missing capabilities, uncertainty and first-data-write failures remain blocked.`, `Complete state and release lock before TUI fixture enters foreground; TUI fixture exit/failure leaves ready installation and peer daemon alive.`, `Cross-window immediate forwarding while lock stays held: duplicates, stale endpoint, owner death and same completion nonce.`, `Manager self-exit at journal crash points; live candidate completion; held/unknown lease; stale session/revision; no duplicate hook runs.`, `Correlated protocol-2 send/cancel/write-boundary contract fixtures; actual Windows binding belongs to s7.`, `Protocol-2 hello/ready with exact nonce, three-second deadline, no application send before ready, old-helper/malformed/duplicate/early frame failures.`
   - Fixtures: `Small local HTTPS artifact server with controlled descriptors/runtime stubs and corrupt ZIPs; no cloud or LLM calls.`, `Disposable isolated home; peer capability/daemon/TUI fixtures clearly labelled non-production; phase fault injection.`, `Private-runtime identity spy; wrong-host-node executable trap; no default host daemon socket is ever used.`
 - **smoke** — Exercise real platform bootstrap and built dependency-minimal control assets without host Node/npm/compiler in the consumer environment.
   - Subjects: `Exact Node version/architecture and native lock addon under each target's shipped runtime.`, `Shared POSIX/PowerShell scripts preserve direct TTY I/O, report failure/cancel and successful same-terminal TUI handoff.`, `Bundled manager has no application DB/index/model imports; bundle consumer performs no npm/source build.`
@@ -375,8 +456,8 @@ A minimal bundled Node-API v8 addon owns only an OS file-lock handle: nonblockin
 | Criterion | Proving tests |
 | :--- | :--- |
 | `ac1` | `contract-target-and-runtime-policy; integration-bootstrap-with-host-node-trap; terminal-entry-caller-restriction; foreground-tui-after-ready-lock-release`, `Required later live: clean consumer install per target with actual private runtime and IPC readiness.` |
-| `ac2` | `integration-successor-mode-preservation; exact-ready-candidate-validation; missing-peer-admission; peer-migration-failure-no-activation; interrupted-cutover-blocked`, `Required later live: real predecessor/successor upgrade with s4/s5 and retained representative state.` |
-| `ac3` | `integration-download-status-timeout-size-and-digest; unsafe-zip-corpus; wrong-target-runtime; corrupt-controller-fail-closed; pre-cutover-incumbent-remains-usable` |
+| `ac2` | `integration-successor-mode-preservation; exact-ready-candidate-validation; missing-peer-admission; peer-migration-failure-no-activation; interrupted-cutover-blocked`, `Required later live: real predecessor/successor upgrade with s4/s5 and retained representative state.`, `cross-window-immediate-with-lock-held`, `manager-crash-journal-reconcile-no-duplicate-hooks` |
+| `ac3` | `integration-download-status-timeout-size-and-digest; unsafe-zip-corpus; wrong-target-runtime; corrupt-controller-fail-closed; pre-cutover-incumbent-remains-usable`, `stale-owner-session-and-lagging-projection-rejected`, `bridge-handshake-before-any-send` |
 | `ac4` | `package-bundle-inventory-and-independent-sidecar-digest; exact-source-target-runtime-identity; native-lock-runtime-smoke; manual-IDE-script-byte-parity; production-dependency-closure-with-workspace-links`, `Required per-target native qualification before publication; translated evidence is identified and cannot substitute unsupported native checks.` |
 
 ## 8. Alternatives considered
@@ -389,6 +470,8 @@ Keep the HLD Installation and OperationRecord together in one schema-validated c
 
 A bundle preparer and terminal-only interactive entrypoint return typed results. Lifecycle, dependencies and migration are required capability ports implemented by their owning sibling stories, not interchangeable plugin registries. Missing capability yields explicit unavailable/blocked results, not a successful partial install.
 
+Both storage alternatives use operation-owner escalation and correlated bridge control only through the proposed sc2/sc6 amendments; no permanent supervisor or second controller writer is added.
+
 ### 8.2 a2: Append-only event journal with projected installation records
 
 Every phase transition is a durable event, with installation and operation views projected from history.
@@ -397,28 +480,11 @@ Keep the same HLD public types but persist an append-only sequence of admission,
 
 The terminal entrypoint and bundle preparer use the same sibling capability ports. Journal replay, projection versioning and truncation policy become additional internal contracts even though no user-facing history feature was requested.
 
+Both storage alternatives use operation-owner escalation and correlated bridge control only through the proposed sc2/sc6 amendments; no permanent supervisor or second controller writer is added.
+
 **Rejected because:** Technically viable, but event replay/projection lifecycle adds unnecessary internal contracts.
 
 ## 9. References
-
-- **[[c1]]** `doc` `AGENTS.md`
-- **[[c2]]** `prior-artifact` `docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/HLD.md`
-- **[[c3]]** `prior-artifact` `docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/DEF.md`
-- **[[c4]]** `analyze-bundle` `scripts/insrc` — "Current launcher is source/development boundary, not reusable installed private-runtime bootstrap unchanged."
-- **[[c5]]** `analyze-bundle` `copy-assets.mjs`
-- **[[c6]]** `analyze-bundle` `src/design/corpus/contracts.ts` — "Existing ReleaseManifest name is a separate design-corpus schema; not installer reuse."
-- **[[c7]]** `analyze-bundle` `scripts/__tests__/client-assets-retirement.test.ts`
-- **[[c8]]** `analyze-bundle` `src/shared/__tests__/ipc-client.test.ts`
-- **[[c9]]** `code` `.npmrc`
-- **[[c10]]** `doc` `https://github.com/thejoshwolfe/yauzl/blob/master/README.md`
-- **[[c11]]** `doc` `https://nodejs.org/docs/latest-v22.x/api/n-api.html`
-- **[[c12]]** `doc` `https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-lockfileex`
-- **[[c13]]** `step-output` `s4` — "New proposed record/contract detail scoped to s1; no sibling execution implementations."
-- **[[c14]]** `step-output` `s5`
-- **[[c15]]** `step-output` `s6`
-- **[[c16]]** `stakeholder` `User LLD advisory review: clarify contract-shape reference and publisher/launcher call-site context; preserve forged source/bootstrap marker test intent verbatim in plan. FR-to-AC traceability needs no change.`
-
-## Citations
 
 - **[[c1]]** `doc` `AGENTS.md`
 - **[[c2]]** `prior-artifact` `docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/HLD.md`

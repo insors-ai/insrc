@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "design.story",
-    "runId": "wf-1795447856245-efvwu3",
+    "runId": "wf-1795451464979-32awsg",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-11-23T15:31:39.706Z",
+    "createdAt": "2026-11-23T16:31:06.962Z",
     "attribution": {
       "outputs": [
         {
@@ -14,7 +14,7 @@
         }
       ]
     },
-    "elapsedMs": 43185,
+    "elapsedMs": 1694,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicCreatedAt": "2026-11-23T13:27:35.399Z",
@@ -27,34 +27,23 @@
     "storyTitle": "Install and upgrade release bundles with a private runtime",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "approved",
+      "status": "draft",
       "revision": {
-        "number": 2,
-        "contentHash": "356eafcf266c3e099c7ca418d24cf33095de27c67913863bd8b8cb86a44d902b",
-        "at": "2026-11-23T15:31:39.800Z",
+        "number": 4,
+        "contentHash": "7d8ecc74545ca45d63ba479eba6b73fb48713c595a990451a1ffbe392c7caa5a",
+        "at": "2026-11-23T16:31:07.113Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
           "properties": {}
         }
       },
-      "signoffs": [],
-      "approval": {
-        "revision": 2,
-        "by": {
-          "id": "insrc:approval",
-          "kind": "system",
-          "properties": {}
-        },
-        "at": "2026-11-23T15:36:57.510Z"
-      }
+      "signoffs": []
     },
-    "revision": 2,
     "envelope": {
-      "description": "",
-      "references": [],
       "attachments": []
-    }
+    },
+    "revision": 4
   },
   "body": {
     "hldContextSlice": {
@@ -364,7 +353,8 @@
           "postconditions": [
             "IDE adapters cannot synthesize a source flag or submit an install action to bypass the terminal.",
             "Interactive installer internally creates the install action; no cloud/DB/IDE runtime is loaded.",
-            "Unsupported sibling operations fail explicitly rather than using stub success."
+            "Unsupported sibling operations fail explicitly rather than using stub success.",
+            "Only same-operation escalation is forwarded before busy admission; the forwarder never writes controller state."
           ],
           "errors": [
             {
@@ -524,6 +514,94 @@
             "Exiting TUI returns to shell and does not stop daemon; installation failure/cancel launches no TUI."
           ],
           "errors": []
+        },
+        {
+          "name": "escalateShutdown",
+          "signature": "escalateShutdown(request: ManagerRequest): Promise<ManagerEvent>;",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "validated shared-contract input",
+              "purpose": "Proposed additive HLD method input; validate unknown wire data before use.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<ManagerEvent>",
+            "meaning": "Identity-bound control outcome, never synthetic success."
+          },
+          "errors": [
+            {
+              "type": "escalation-unavailable",
+              "condition": "Missing/stale owner or incompatible peer respectively."
+            }
+          ],
+          "preconditions": [
+            "Proposed localized HLD amendment; no application DB access."
+          ],
+          "postconditions": [
+            "An immediate override during quiescing/draining is a message to the current operation, not a competing mutation. Invoke escalateShutdown with the existing installationId/operationId, action='stop', shutdownMode='immediate'. Before ordinary lock admission, the manager command forwards it to the current lock owner's user-protected local control endpoint. The owner remains responsive while awaiting drain/exit, validates recorded instance/operation and alone sends s4 IPC using its original completion endpoint/nonce and writes controller state. Cross-window requests use this path; duplicates coalesce; all independent mutations still return busy. Private endpoint discovery binds installation/operation/owner-session nonce, validates same-user authorization and phase/identity, and rejects stale endpoints. No lock release/steal to escalate. Missing/dead owner returns escalation-unavailable/uncertain; explicit recovery must acquire the lock and reconcile instance/exit evidence before acting, never automatically replace the daemon."
+          ]
+        },
+        {
+          "name": "controlBridge",
+          "signature": "controlBridge(command: { kind: 'send'; transportId: string; request: IpcBridgeRequest } | { kind: 'cancel'; transportId: string }): AsyncIterable<{ transportId: string; kind: 'written' | 'cancelled' | 'frame' | 'closed' | 'error'; written?: boolean; frame?: string; code?: string }>;",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "validated shared-contract input",
+              "purpose": "Proposed additive HLD method input; validate unknown wire data before use.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "AsyncIterable<correlated bridge events>",
+            "meaning": "Identity-bound control outcome, never synthetic success."
+          },
+          "errors": [
+            {
+              "type": "bridge-protocol-mismatch",
+              "condition": "Missing/stale owner or incompatible peer respectively."
+            }
+          ],
+          "preconditions": [
+            "Proposed localized HLD amendment; no application DB access."
+          ],
+          "postconditions": [
+            "The additive sc6 controlBridge envelope preserves existing inner frame types. Launch the helper explicitly in bridge-control protocol 2 and require version confirmation before sending; mismatch fails with no legacy fallback. Each send/cancel/event has a unique transportId bound to its embedded RPC request id and lane, never reused during helper lifetime. Validate before queue admission. A cancel processed before the first named-pipe write attempt removes the send, confirms cancelled/written=false and forbids later dispatch. At the first write attempt, mark written=true conservatively: possible dispatch, not application completion. A helper-stdin write is not pipe dispatch evidence. Post-write cancellation retires the local reply without rollback/replay promises. Helper death/lost outcome leaves unresolved sends unknown unless not-written was positively confirmed. Frame/error/close events carry transportId; report every pending id on lane failure where possible. Preserve 64-pending/16MiB aggregate bounds, fragmented UTF-8 and separate stream-lane cancellation. Input EOF closes the helper lane, never daemon."
+          ]
+        },
+        {
+          "name": "bridgeHandshake",
+          "signature": "bridgeHandshake(request: { kind: 'hello'; protocolVersion: 2; sessionNonce: string }): Promise<{ kind: 'ready'; protocolVersion: 2; sessionNonce: string }>;",
+          "parameters": [
+            {
+              "name": "request",
+              "type": "{ kind: 'hello'; protocolVersion: 2; sessionNonce: string }",
+              "purpose": "Exact shared-contract identity input; validate untrusted wire data before use.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<{ kind: 'ready'; protocolVersion: 2; sessionNonce: string }>",
+            "meaning": "Validated shared-contract evidence, not application success."
+          },
+          "preconditions": [
+            "Pending localized HLD amendment; owner implementation and consumer integration remain separate."
+          ],
+          "postconditions": [
+            "The bridge-control protocol-2 startup wire exchange is exactly one UTF-8 NDJSON hello record {kind:'hello',protocolVersion:2,sessionNonce} from the client on helper stdin, then exactly one ready record {kind:'ready',protocolVersion:2,sessionNonce} on helper stdout. The client generates a fresh unpredictable sessionNonce per helper process; helper echoes it only after validating the version and binding its configured local installation endpoint. This is a separate startup envelope, not an IpcBridgeRequest and not a correlated controlBridge outcome; it has no transportId because no request exists yet. The helper must not forward any application frame before emitting ready, and the client must not send send/cancel records until matching ready is received. Set a 3-second handshake deadline from helper spawn; missing/malformed/duplicate/wrong-version/wrong-nonce ready, early outcome frames, or helper exit fail with bridge-protocol-mismatch/bridge-handshake-timeout before dispatch. On error the client closes stdin and that helper lane, reports no sends dispatched, and performs no automatic fallback/replay; it sends no daemon signal/stop. Unsupported hello yields only a bounded stderr diagnostic and helper exit without opening an application RPC lane. After ready, stdout contains only the specified correlated controlBridge events, stderr only diagnostics; later hello/ready records are protocol errors. Handshake bytes count toward the bounded parser/input limits; no credentials/capability tokens are echoed. Existing inner IpcBridgeRequest.protocolVersion=1 remains unchanged and is distinct from outer bridge-control version 2."
+          ],
+          "errors": [
+            {
+              "type": "bridge-handshake-timeout",
+              "condition": "No matching ready within three seconds."
+            },
+            {
+              "type": "bridge-protocol-mismatch",
+              "condition": "Malformed, mismatched or out-of-order startup record."
+            }
+          ]
         }
       ]
     },
@@ -571,6 +649,24 @@
         "change": "new",
         "callSites": [],
         "details": "A minimal bundled Node-API v8 addon owns only an OS file-lock handle: nonblocking flock(LOCK_EX|LOCK_NB) on macOS/Linux; LockFileEx(LOCKFILE_EXCLUSIVE_LOCK|LOCKFILE_FAIL_IMMEDIATELY) on a fixed byte range on Windows. Keep the descriptor/handle alive, mark non-inheritable, release on close and process exit. Never rename/delete the lock file, and do not interpret file contents/PIDs as ownership. Deny lock-root symlinks and restrict user access; atomic-replace helper and user-SID lookup can share this small platform binding. It opens no DB, sends no process signal and is built/qualified in release environments, never compiled on client machines. Ongoing controller cancellation/exit must close handles; killed/crashed fixture cases are simulated by fixture self-exit commands, not daemon kill controls."
+      },
+      {
+        "entity": "Operation-bound escalation routing",
+        "change": "new",
+        "details": "An immediate override during quiescing/draining is a message to the current operation, not a competing mutation. Invoke escalateShutdown with the existing installationId/operationId, action='stop', shutdownMode='immediate'. Before ordinary lock admission, the manager command forwards it to the current lock owner's user-protected local control endpoint. The owner remains responsive while awaiting drain/exit, validates recorded instance/operation and alone sends s4 IPC using its original completion endpoint/nonce and writes controller state. Cross-window requests use this path; duplicates coalesce; all independent mutations still return busy. Private endpoint discovery binds installation/operation/owner-session nonce, validates same-user authorization and phase/identity, and rejects stale endpoints. No lock release/steal to escalate. Missing/dead owner returns escalation-unavailable/uncertain; explicit recovery must acquire the lock and reconcile instance/exit evidence before acting, never automatically replace the daemon.",
+        "callSites": []
+      },
+      {
+        "entity": "Controller and hook-journal writer protocol",
+        "change": "new",
+        "details": "Only the lock-owning manager writes controller.json. Only the candidate daemon writes its operation/candidate-bound hook journal atomically while holding the exclusive data lease; it never writes controller.json or inherits the manager lock. Journal run-started commits before mutation. Stage events are advisory; OperationRecord is a possibly lagging projection, never migration validation evidence. Validate journal identity/version/order/digests before accepting results. On manager exit, a live candidate may finish its admitted hooks/journal but cannot activate or write controller state. A new lock owner first reconciles the exact candidate session, lease and protected observed-exit evidence; held/unknown ownership means busy/uncertain, never a second runner. Lease availability alone is not migration success. Only after prior candidate actual exit may explicit recovery validate the journal and resume the same operation or retry unvalidated hooks under hook policy. Reject stale session/revision writes; no PID/age inference or predecessor restart. Initial migration in migrating and candidate normal boot in activating require matching live-owner admission; independent ordinary boot remains denied. s4 owns lease/exit evidence; s5 owns hook execution/journal. Consume s4's proposed mandatory migration receipt contract: manager records admission/session/nonce/path before spawn and validates receipt before recovery; receipt writing is wrapper-owned, not a controller.json mutation. Full receipt production/format is owned by s4.",
+        "callSites": []
+      },
+      {
+        "entity": "Correlated bridge-control envelope",
+        "change": "new",
+        "details": "The additive sc6 controlBridge envelope preserves existing inner frame types. Launch the helper explicitly in bridge-control protocol 2 and require version confirmation before sending; mismatch fails with no legacy fallback. Each send/cancel/event has a unique transportId bound to its embedded RPC request id and lane, never reused during helper lifetime. Validate before queue admission. A cancel processed before the first named-pipe write attempt removes the send, confirms cancelled/written=false and forbids later dispatch. At the first write attempt, mark written=true conservatively: possible dispatch, not application completion. A helper-stdin write is not pipe dispatch evidence. Post-write cancellation retires the local reply without rollback/replay promises. Helper death/lost outcome leaves unresolved sends unknown unless not-written was positively confirmed. Frame/error/close events carry transportId; report every pending id on lane failure where possible. Preserve 64-pending/16MiB aggregate bounds, fragmented UTF-8 and separate stream-lane cancellation. Input EOF closes the helper lane, never daemon. s1 defines schemas; s7 implements Windows transport. The bridge-control protocol-2 startup wire exchange is exactly one UTF-8 NDJSON hello record {kind:'hello',protocolVersion:2,sessionNonce} from the client on helper stdin, then exactly one ready record {kind:'ready',protocolVersion:2,sessionNonce} on helper stdout. The client generates a fresh unpredictable sessionNonce per helper process; helper echoes it only after validating the version and binding its configured local installation endpoint. This is a separate startup envelope, not an IpcBridgeRequest and not a correlated controlBridge outcome; it has no transportId because no request exists yet. The helper must not forward any application frame before emitting ready, and the client must not send send/cancel records until matching ready is received. Set a 3-second handshake deadline from helper spawn; missing/malformed/duplicate/wrong-version/wrong-nonce ready, early outcome frames, or helper exit fail with bridge-protocol-mismatch/bridge-handshake-timeout before dispatch. On error the client closes stdin and that helper lane, reports no sends dispatched, and performs no automatic fallback/replay; it sends no daemon signal/stop. Unsupported hello yields only a bounded stderr diagnostic and helper exit without opening an application RPC lane. After ready, stdout contains only the specified correlated controlBridge events, stderr only diagnostics; later hello/ready records are protocol errors. Handshake bytes count toward the bounded parser/input limits; no credentials/capability tokens are echoed. Existing inner IpcBridgeRequest.protocolVersion=1 remains unchanged and is distinct from outer bridge-control version 2.",
+        "callSites": []
       }
     ],
     "interactionWithShared": [
@@ -652,7 +748,7 @@
         {
           "scenario": "Concurrent mutation",
           "detection": "OS nonblocking lock acquisition returns busy; lock contents/age are never considered.",
-          "response": "busy with observable recorded operation; caller may inspect rather than spawn another installer.",
+          "response": "Independent mutation returns busy; same-operation immediate escalation forwards to the live lock owner under proposed sc2.",
           "userImpact": "Duplicate windows do not race upgrades.",
           "recoverable": true
         },
@@ -689,6 +785,13 @@
           "detection": "Staging/fsync/atomic-replace adapter reports OS error; reread validates whether old or new snapshot is authoritative.",
           "response": "Before disruption preserve usable incumbent; after disruption retain/report blocked/uncertain state and avoid further writes until reconciled.",
           "userImpact": "Never claim success from an uncommitted state transition.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Manager exits while candidate hooks run",
+          "detection": "Owner control fails; explicit recovery validates controller revision, journal identity, candidate lease/session and observed exit.",
+          "response": "Follow sole-writer/journal reconciliation; never launch duplicate hooks or trust a lagging controller projection.",
+          "userImpact": "Safe explicit recovery without automatic activation/rollback.",
           "recoverable": true
         }
       ],
@@ -763,7 +866,11 @@
             "Immutable safe ZIP preparation and inventory verification, including ZIP traversal/ADS/case collision/symlink/oversize/truncation attacks.",
             "Native lock exclusion/release and atomic-replace crash points with fixture processes that self-exit on control input.",
             "Prepare/peer-quiesce/peer-migrate/peer-ready transitions; missing capabilities, uncertainty and first-data-write failures remain blocked.",
-            "Complete state and release lock before TUI fixture enters foreground; TUI fixture exit/failure leaves ready installation and peer daemon alive."
+            "Complete state and release lock before TUI fixture enters foreground; TUI fixture exit/failure leaves ready installation and peer daemon alive.",
+            "Cross-window immediate forwarding while lock stays held: duplicates, stale endpoint, owner death and same completion nonce.",
+            "Manager self-exit at journal crash points; live candidate completion; held/unknown lease; stale session/revision; no duplicate hook runs.",
+            "Correlated protocol-2 send/cancel/write-boundary contract fixtures; actual Windows binding belongs to s7.",
+            "Protocol-2 hello/ready with exact nonce, three-second deadline, no application send before ready, old-helper/malformed/duplicate/early frame failures."
           ],
           "fixturesNeeded": [
             "Small local HTTPS artifact server with controlled descriptors/runtime stubs and corrupt ZIPs; no cloud or LLM calls.",
@@ -810,13 +917,17 @@
           "criterionId": "ac2",
           "provingTests": [
             "integration-successor-mode-preservation; exact-ready-candidate-validation; missing-peer-admission; peer-migration-failure-no-activation; interrupted-cutover-blocked",
-            "Required later live: real predecessor/successor upgrade with s4/s5 and retained representative state."
+            "Required later live: real predecessor/successor upgrade with s4/s5 and retained representative state.",
+            "cross-window-immediate-with-lock-held",
+            "manager-crash-journal-reconcile-no-duplicate-hooks"
           ]
         },
         {
           "criterionId": "ac3",
           "provingTests": [
-            "integration-download-status-timeout-size-and-digest; unsafe-zip-corpus; wrong-target-runtime; corrupt-controller-fail-closed; pre-cutover-incumbent-remains-usable"
+            "integration-download-status-timeout-size-and-digest; unsafe-zip-corpus; wrong-target-runtime; corrupt-controller-fail-closed; pre-cutover-incumbent-remains-usable",
+            "stale-owner-session-and-lagging-projection-rejected",
+            "bridge-handshake-before-any-send"
           ]
         },
         {
@@ -833,7 +944,7 @@
         "id": "a1",
         "name": "One versioned controller snapshot and immutable candidates",
         "oneLineSummary": "Atomic installation/operation snapshot plus immutable release folders and a small typed set of sibling-service ports.",
-        "approach": "Keep the HLD Installation and OperationRecord together in one schema-validated controller snapshot so selected release and operation phase change atomically. Manifests, target policy and immutable payloads are separate read-only inputs; an OS-backed lock serializes writes.\n\nA bundle preparer and terminal-only interactive entrypoint return typed results. Lifecycle, dependencies and migration are required capability ports implemented by their owning sibling stories, not interchangeable plugin registries. Missing capability yields explicit unavailable/blocked results, not a successful partial install.",
+        "approach": "Keep the HLD Installation and OperationRecord together in one schema-validated controller snapshot so selected release and operation phase change atomically. Manifests, target policy and immutable payloads are separate read-only inputs; an OS-backed lock serializes writes.\n\nA bundle preparer and terminal-only interactive entrypoint return typed results. Lifecycle, dependencies and migration are required capability ports implemented by their owning sibling stories, not interchangeable plugin registries. Missing capability yields explicit unavailable/blocked results, not a successful partial install.\n\nBoth storage alternatives use operation-owner escalation and correlated bridge control only through the proposed sc2/sc6 amendments; no permanent supervisor or second controller writer is added.",
         "pros": [
           "One durable controller replacement avoids inconsistent active-release and operation files.",
           "The type surface matches HLD contracts without an extra storage engine or service.",
@@ -849,7 +960,7 @@
         "id": "a2",
         "name": "Append-only event journal with projected installation records",
         "oneLineSummary": "Every phase transition is a durable event, with installation and operation views projected from history.",
-        "approach": "Keep the same HLD public types but persist an append-only sequence of admission, preparation, cutover and completion events. Inspection replays events or reads a versioned projection to reconstruct Installation and OperationRecord.\n\nThe terminal entrypoint and bundle preparer use the same sibling capability ports. Journal replay, projection versioning and truncation policy become additional internal contracts even though no user-facing history feature was requested.",
+        "approach": "Keep the same HLD public types but persist an append-only sequence of admission, preparation, cutover and completion events. Inspection replays events or reads a versioned projection to reconstruct Installation and OperationRecord.\n\nThe terminal entrypoint and bundle preparer use the same sibling capability ports. Journal replay, projection versioning and truncation policy become additional internal contracts even though no user-facing history feature was requested.\n\nBoth storage alternatives use operation-owner escalation and correlated bridge control only through the proposed sc2/sc6 amendments; no permanent supervisor or second controller writer is added.",
         "pros": [
           "Every state transition has a durable event history for diagnosis.",
           "A failed projection can be rebuilt from valid journal records."
@@ -953,6 +1064,12 @@
           "label": "Require admitted prerequisite and activation outcomes",
           "description": "Actual dependency, shutdown/readiness and migration execution belong to s3/s4/s5.",
           "kind": "call"
+        },
+        {
+          "from": "manager",
+          "to": "manager",
+          "label": "Responsive operation control under held lock",
+          "description": "Forward existing-operation immediate intent; one controller writer and separate candidate journal."
         },
         {
           "from": "peers",

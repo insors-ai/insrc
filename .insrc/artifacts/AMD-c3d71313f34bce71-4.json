@@ -1,0 +1,56 @@
+{
+  "meta": {
+    "workflow": "design.epic",
+    "runId": "store-c2f20ed4-8a1c-45dc-8dd7-9ae636941204",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-23T16:31:07.005Z",
+    "epicCreatedAt": "2026-11-23T13:27:35.399Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c3d71313f34bce71",
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "e77a31acbe69c436d91053fb92610347ea8752b8605122153ed874c6bbd188fd",
+        "at": "2026-11-23T16:31:07.005Z",
+        "by": {
+          "id": "insrc:design.story",
+          "kind": "agent",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "id": "AMD-c3d71313f34bce71-4",
+    "epicSlug": "reliable-cross-platform-daemon-installation-lifecycle",
+    "hldBaseRunId": "wf-1795445383474-itgkv3",
+    "amendment": {
+      "type": "sharedContract.methodAdd",
+      "contractId": "sc6",
+      "method": {
+        "name": "bridgeHandshake",
+        "signature": "bridgeHandshake(request: { kind: 'hello'; protocolVersion: 2; sessionNonce: string }): Promise<{ kind: 'ready'; protocolVersion: 2; sessionNonce: string }>;",
+        "purpose": "The bridge-control protocol-2 startup wire exchange is exactly one UTF-8 NDJSON hello record {kind:'hello',protocolVersion:2,sessionNonce} from the client on helper stdin, then exactly one ready record {kind:'ready',protocolVersion:2,sessionNonce} on helper stdout. The client generates a fresh unpredictable sessionNonce per helper process; helper echoes it only after validating the version and binding its configured local installation endpoint. This is a separate startup envelope, not an IpcBridgeRequest and not a correlated controlBridge outcome; it has no transportId because no request exists yet. The helper must not forward any application frame before emitting ready, and the client must not send send/cancel records until matching ready is received. Set a 3-second handshake deadline from helper spawn; missing/malformed/duplicate/wrong-version/wrong-nonce ready, early outcome frames, or helper exit fail with bridge-protocol-mismatch/bridge-handshake-timeout before dispatch. On error the client closes stdin and that helper lane, reports no sends dispatched, and performs no automatic fallback/replay; it sends no daemon signal/stop. Unsupported hello yields only a bounded stderr diagnostic and helper exit without opening an application RPC lane. After ready, stdout contains only the specified correlated controlBridge events, stderr only diagnostics; later hello/ready records are protocol errors. Handshake bytes count toward the bounded parser/input limits; no credentials/capability tokens are echoed. Existing inner IpcBridgeRequest.protocolVersion=1 remains unchanged and is distinct from outer bridge-control version 2."
+      }
+    },
+    "rationale": "Complete pending controlBridge protocol-2 negotiation with an exact wire handshake, deadline and zero-dispatch failure semantics.",
+    "proposedBy": {
+      "workflow": "design.story",
+      "runId": "wf-1795451464979-32awsg",
+      "storyId": "s1",
+      "stepId": "s4"
+    },
+    "proposedAt": "2026-11-23T16:31:07.003Z"
+  },
+  "citations": []
+}

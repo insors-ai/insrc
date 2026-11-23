@@ -1,0 +1,56 @@
+{
+  "meta": {
+    "workflow": "design.epic",
+    "runId": "store-ead56711-e3b6-4203-9752-a9a22f2d8a81",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-23T16:31:04.790Z",
+    "epicCreatedAt": "2026-11-23T13:27:35.399Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c3d71313f34bce71",
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "c4664f2554e7a0cdc0fcaa5493ed40bdd3ece8db4c8dfb9aaa57a17c550372d9",
+        "at": "2026-11-23T16:31:04.790Z",
+        "by": {
+          "id": "insrc:design.story",
+          "kind": "agent",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "id": "AMD-c3d71313f34bce71-3",
+    "epicSlug": "reliable-cross-platform-daemon-installation-lifecycle",
+    "hldBaseRunId": "wf-1795445383474-itgkv3",
+    "amendment": {
+      "type": "sharedContract.methodAdd",
+      "contractId": "sc4",
+      "method": {
+        "name": "readMigrationExitReceipt",
+        "signature": "interface MigrationExitReceipt { schemaVersion: 1; purpose: 'migration'; installationId: string; operationId: string; candidateReleaseId: string; candidateInventorySha256: string; sessionId: string; childInstanceId: string; completionNonce: string; exitCode: number | null; signal: string | null }\nreadMigrationExitReceipt(expected: MigrationExitReceiptIdentity): Promise<MigrationExitReceipt>;\ninterface MigrationExitReceiptIdentity { installationId: string; operationId: string; candidateReleaseId: string; candidateInventorySha256: string; sessionId: string; childInstanceId: string; completionNonce: string }",
+        "purpose": "Every migration-only child is launched through the s4 lifetime wrapper. Before spawn, the manager atomically records an immutable admission containing installationId, operationId, candidateReleaseId, candidateInventorySha256, sessionId, childInstanceId, completionNonce and the exact protected receipt path <home>/install/receipts/<operationId>/<sessionId>.json. IDs are validated opaque path-safe tokens, never arbitrary paths. Wrapper/child acknowledge that admission; a delayed unstarted child must still validate the live owner admission before acquiring the data lease/opening stores. The wrapper is detached from manager/terminal lifetime and never opens application stores. After observing that exact child actually exit, it MUST atomically persist MigrationExitReceipt to the predeclared path, flush file and containing directory where supported, then notify any live observer and exit. This requirement applies to natural migration completion, hook failure and child self-exit; it does not depend on a shutdown request or surviving manager IPC. Wrapper is the sole receipt writer; candidate alone writes hook journal; manager alone writes controller.json. Receipt is immutable per session, user-protected, identity/nonce/digest validated and retained until operation completion/recovery no longer needs it. Native lock/receipt filesystem durability support is qualified before target enablement. A replacement manager under the operation lock reconciles the admitted session, mandatory receipt, lease and exact journal; only matching actual-exit evidence plus released ownership permits another runner/start. ExitCode=0 is never migration success by itself: successful applicable hook tests and exact journal validation are also required. A failure receipt may authorize same-candidate explicit hook recovery, never automatic activation. Missing/corrupt/forged receipt or wrapper death remains blocked/uncertain, never inferred from PID, endpoint disappearance, free lease or completed journal. The wrapper never kills/restarts the child. This mandatory migration receipt does not make general shutdown's optional receipt mandatory."
+      }
+    },
+    "rationale": "Post-fix cross-review found recovery requires child-exit evidence but the only durable receipt was optional and shutdown-request-bound. Specify mandatory natural migration-exit evidence surviving manager loss.",
+    "proposedBy": {
+      "workflow": "design.story",
+      "runId": "wf-1795451463306-2o1c7r",
+      "storyId": "s4",
+      "stepId": "s4"
+    },
+    "proposedAt": "2026-11-23T16:31:04.786Z"
+  },
+  "citations": []
+}

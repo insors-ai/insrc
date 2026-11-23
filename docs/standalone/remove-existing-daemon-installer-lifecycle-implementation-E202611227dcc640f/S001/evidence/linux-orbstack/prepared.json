@@ -1,0 +1,17 @@
+{
+  "runId": "822b4a9e-fd6a-4900-8d38-1bff3a04a60a",
+  "canonicalRoot": "/home/subhagho/insrc-installer-validation-44db80005",
+  "runtimeExecutable": "/home/subhagho/insrc-node-qualification/home/.insrc/runtimes/node-v22.22.1-linux-arm64/1d1690e9aba47e887a275abc6d8f7317e571a0700deaef493f768377e99155f5/distribution/bin/node",
+  "buildExitCode": 0,
+  "completedAt": "2026-11-23T05:50:05.606Z",
+  "inputFingerprint": "db25e9d45fc9e3661b26bcaff60ca16834bef03608d3f92faf598dfd54fc0810",
+  "outputFingerprint": "e51bf52806ee8a74b094600aec2a7debb43c366d104afbb6d1fa71caa79966c9",
+  "requiredArtifacts": [
+    "out/daemon/index.js",
+    "out/bin/insrc-mcp.js",
+    "out/shared/daemon-run-files.js",
+    "out/cli/services/daemon.js",
+    "out/daemon/server.js",
+    "out/shared/daemon-process.js"
+  ]
+}

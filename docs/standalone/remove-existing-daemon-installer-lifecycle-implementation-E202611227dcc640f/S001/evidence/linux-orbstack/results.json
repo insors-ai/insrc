@@ -1,0 +1,903 @@
+{
+  "runId": "822b4a9e-fd6a-4900-8d38-1bff3a04a60a",
+  "runtime": {
+    "executable": "/home/subhagho/insrc-node-qualification/home/.insrc/runtimes/node-v22.22.1-linux-arm64/1d1690e9aba47e887a275abc6d8f7317e571a0700deaef493f768377e99155f5/distribution/bin/node",
+    "version": "v22.22.1"
+  },
+  "budgets": {
+    "buildMs": 600000,
+    "fileMs": 180000,
+    "runMs": 900000,
+    "cleanupMs": 5000
+  },
+  "selectedFiles": [
+    "scripts/__tests__/client-assets-retirement.test.ts",
+    "src/cli/__tests__/command.test.ts",
+    "src/cli/__tests__/entry-scripts.test.ts",
+    "src/cli/__tests__/tui-models.test.ts",
+    "src/cli/__tests__/tui.test.ts",
+    "src/cli/panes/__tests__/DaemonSection.test.ts",
+    "src/cli/services/__tests__/daemon-maintenance.test.ts",
+    "src/cli/services/__tests__/debug-daemon-status.test.ts",
+    "src/cli/ui/__tests__/messages.test.ts",
+    "src/config/__tests__/config-catalog-contract.test.ts",
+    "src/config/__tests__/tier-defaults.test.ts",
+    "src/daemon/__tests__/handler-runtime.test.ts",
+    "src/daemon/__tests__/model-catalog-asset.test.ts",
+    "src/daemon/__tests__/repo-call-audit.test.ts",
+    "src/daemon/__tests__/shutdown-store-failure.test.ts",
+    "src/daemon/__tests__/status-store-failure.test.ts",
+    "src/daemon/db/__tests__/connection-maintenance-control.test.ts",
+    "src/daemon/threads/__tests__/admin-status.test.ts",
+    "src/daemon/threads/__tests__/admin-worker.test.ts",
+    "src/daemon/threads/__tests__/method-class.test.ts",
+    "src/daemon/threads/__tests__/review-retirement-runtime.test.ts",
+    "src/daemon/threads/__tests__/s4-acceptance.test.ts",
+    "src/daemon/threads/__tests__/threads-boot.test.ts",
+    "src/shared/__tests__/daemon-process.test.ts",
+    "src/shared/__tests__/daemon-run-files.test.ts",
+    "src/shared/__tests__/ipc-client-close-aware.test.ts",
+    "src/shared/__tests__/ipc-client-stream.test.ts",
+    "src/shared/__tests__/ipc-client-timeout.test.ts",
+    "src/shared/__tests__/ipc-client.test.ts",
+    "src/shared/__tests__/ipc-lane.test.ts",
+    "src/workflow/__tests__/prepare-artifact-write.test.ts",
+    "vscode-plugin/src/__tests__/activation.test.ts",
+    "vscode-plugin/src/__tests__/packaging.test.ts",
+    "vscode-plugin/src/hosts/__tests__/activation.test.ts",
+    "vscode-plugin/src/models/__tests__/model-tier-picker.test.ts",
+    "vscode-plugin/src/onboarding/__tests__/activation.test.ts",
+    "vscode-plugin/src/onboarding/__tests__/onboarding.test.ts",
+    "vscode-plugin/src/panels/__tests__/debug-renderer.test.ts",
+    "vscode-plugin/src/panels/__tests__/repo-config.test.ts",
+    "vscode-plugin/src/workspace/__tests__/activation.test.ts"
+  ],
+  "requestedConcurrency": 1,
+  "effectiveConcurrency": 1,
+  "diagnosticFlags": [],
+  "liveTests": "unset",
+  "results": [
+    {
+      "file": "scripts/__tests__/client-assets-retirement.test.ts",
+      "childId": "19bc3afd-64af-4f7c-ba31-f1c3a7dcdf4b",
+      "log": ".insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/0-scripts___tests___client-assets-retirement.test.ts.log",
+      "closeJournal": "/home/subhagho/insrc-installer-validation-44db80005/.insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/cli/__tests__/command.test.ts",
+      "childId": "ee687c2c-9920-41f7-9366-89531799950b",
+      "log": ".insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/1-src_cli___tests___command.test.ts.log",
+      "closeJournal": "/home/subhagho/insrc-installer-validation-44db80005/.insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 29,
+          "pass": 29,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/cli/__tests__/entry-scripts.test.ts",
+      "childId": "e9b8eaa5-54a2-4395-b56f-6f30b904fb8d",
+      "log": ".insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/2-src_cli___tests___entry-scripts.test.ts.log",
+      "closeJournal": "/home/subhagho/insrc-installer-validation-44db80005/.insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/cli/__tests__/tui-models.test.ts",
+      "childId": "e46a7a50-c03f-4578-bab5-3cf601040c75",
+      "log": ".insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/3-src_cli___tests___tui-models.test.ts.log",
+      "closeJournal": "/home/subhagho/insrc-installer-validation-44db80005/.insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 13,
+          "pass": 13,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/cli/__tests__/tui.test.ts",
+      "childId": "eea72b19-6d32-430e-8511-cc826cb21def",
+      "log": ".insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/4-src_cli___tests___tui.test.ts.log",
+      "closeJournal": "/home/subhagho/insrc-installer-validation-44db80005/.insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 24,
+          "pass": 24,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/cli/panes/__tests__/DaemonSection.test.ts",
+      "childId": "57166263-65c6-4fe7-9675-9d32c10e33b4",
+      "log": ".insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/5-src_cli_panes___tests___DaemonSection.test.ts.log",
+      "closeJournal": "/home/subhagho/insrc-installer-validation-44db80005/.insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 4,
+          "pass": 4,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/cli/services/__tests__/daemon-maintenance.test.ts",
+      "childId": "d1f94acb-b2d3-4ed0-bf47-832bc6458e3f",
+      "log": ".insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/6-src_cli_services___tests___daemon-maintenance.test.ts.log",
+      "closeJournal": "/home/subhagho/insrc-installer-validation-44db80005/.insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/cli/services/__tests__/debug-daemon-status.test.ts",
+      "childId": "5351f2cd-4d5f-43e9-a1ad-c53ba4c7febf",
+      "log": ".insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/7-src_cli_services___tests___debug-daemon-status.test.ts.log",
+      "closeJournal": "/home/subhagho/insrc-installer-validation-44db80005/.insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 5,
+          "pass": 5,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/cli/ui/__tests__/messages.test.ts",
+      "childId": "69043fdc-1e66-4e82-863c-94c1a023be56",
+      "log": ".insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/8-src_cli_ui___tests___messages.test.ts.log",
+      "closeJournal": "/home/subhagho/insrc-installer-validation-44db80005/.insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 7,
+          "pass": 7,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/config/__tests__/config-catalog-contract.test.ts",
+      "childId": "4e67055c-1129-489e-bf15-1a5811e18c51",
+      "log": ".insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/9-src_config___tests___config-catalog-contract.test.ts.log",
+      "closeJournal": "/home/subhagho/insrc-installer-validation-44db80005/.insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 13,
+          "pass": 13,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/config/__tests__/tier-defaults.test.ts",
+      "childId": "d7ec5864-1ee3-44a8-a431-df249e4047ad",
+      "log": ".insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/10-src_config___tests___tier-defaults.test.ts.log",
+      "closeJournal": "/home/subhagho/insrc-installer-validation-44db80005/.insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 3,
+          "pass": 3,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/daemon/__tests__/handler-runtime.test.ts",
+      "childId": "8e17bb26-ccb5-44d1-aa0a-de6da05e7a1a",
+      "log": ".insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/11-src_daemon___tests___handler-runtime.test.ts.log",
+      "closeJournal": "/home/subhagho/insrc-installer-validation-44db80005/.insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 12,
+          "pass": 12,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/daemon/__tests__/model-catalog-asset.test.ts",
+      "childId": "6bc0f326-ee07-440e-9356-1d4e4e06e859",
+      "log": ".insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/12-src_daemon___tests___model-catalog-asset.test.ts.log",
+      "closeJournal": "/home/subhagho/insrc-installer-validation-44db80005/.insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 6,
+          "pass": 6,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/daemon/__tests__/repo-call-audit.test.ts",
+      "childId": "d2cb82d5-5c59-440d-aa80-155446ad5b8a",
+      "log": ".insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/13-src_daemon___tests___repo-call-audit.test.ts.log",
+      "closeJournal": "/home/subhagho/insrc-installer-validation-44db80005/.insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/daemon/__tests__/shutdown-store-failure.test.ts",
+      "childId": "51a31f3f-5a44-4595-b3e6-8067486f1b86",
+      "log": ".insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/14-src_daemon___tests___shutdown-store-failure.test.ts.log",
+      "closeJournal": "/home/subhagho/insrc-installer-validation-44db80005/.insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/daemon/__tests__/status-store-failure.test.ts",
+      "childId": "0bc71769-20b9-4b54-aa8b-90d9c4bb78ba",
+      "log": ".insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/15-src_daemon___tests___status-store-failure.test.ts.log",
+      "closeJournal": "/home/subhagho/insrc-installer-validation-44db80005/.insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/daemon/db/__tests__/connection-maintenance-control.test.ts",
+      "childId": "48073e8b-1cfc-40b9-896c-4f175059e024",
+      "log": ".insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/16-src_daemon_db___tests___connection-maintenance-control.test.ts.log",
+      "closeJournal": "/home/subhagho/insrc-installer-validation-44db80005/.insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/daemon/threads/__tests__/admin-status.test.ts",
+      "childId": "84921145-7a2d-494a-83fc-7fdcaaf53ae5",
+      "log": ".insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/17-src_daemon_threads___tests___admin-status.test.ts.log",
+      "closeJournal": "/home/subhagho/insrc-installer-validation-44db80005/.insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 5,
+          "pass": 5,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/daemon/threads/__tests__/admin-worker.test.ts",
+      "childId": "6dd9023e-65df-4c50-a204-f69a3edd978c",
+      "log": ".insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/18-src_daemon_threads___tests___admin-worker.test.ts.log",
+      "closeJournal": "/home/subhagho/insrc-installer-validation-44db80005/.insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 4,
+          "pass": 4,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/daemon/threads/__tests__/method-class.test.ts",
+      "childId": "6d560169-7d20-4661-b723-76d9add88ba5",
+      "log": ".insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/19-src_daemon_threads___tests___method-class.test.ts.log",
+      "closeJournal": "/home/subhagho/insrc-installer-validation-44db80005/.insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 9,
+          "pass": 9,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/daemon/threads/__tests__/review-retirement-runtime.test.ts",
+      "childId": "75904113-7734-43ce-bfdb-e92a3ffe0840",
+      "log": ".insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/20-src_daemon_threads___tests___review-retirement-runtime.test.ts.log",
+      "closeJournal": "/home/subhagho/insrc-installer-validation-44db80005/.insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/daemon/threads/__tests__/s4-acceptance.test.ts",
+      "childId": "360f6df1-ba5f-4fb2-8835-43732f1e53b7",
+      "log": ".insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/21-src_daemon_threads___tests___s4-acceptance.test.ts.log",
+      "closeJournal": "/home/subhagho/insrc-installer-validation-44db80005/.insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 5,
+          "pass": 5,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/daemon/threads/__tests__/threads-boot.test.ts",
+      "childId": "12e8b713-7ad8-4b5a-884a-1f2c93522ac2",
+      "log": ".insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/22-src_daemon_threads___tests___threads-boot.test.ts.log",
+      "closeJournal": "/home/subhagho/insrc-installer-validation-44db80005/.insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 6,
+          "pass": 6,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/shared/__tests__/daemon-process.test.ts",
+      "childId": "fffa7d5c-c034-44a9-8b81-e1bf2a6e8e44",
+      "log": ".insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/23-src_shared___tests___daemon-process.test.ts.log",
+      "closeJournal": "/home/subhagho/insrc-installer-validation-44db80005/.insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 3,
+          "pass": 3,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/shared/__tests__/daemon-run-files.test.ts",
+      "childId": "4dd1c6ac-c41d-4b8e-8bd4-b96070ff01f5",
+      "log": ".insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/24-src_shared___tests___daemon-run-files.test.ts.log",
+      "closeJournal": "/home/subhagho/insrc-installer-validation-44db80005/.insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 17,
+          "pass": 17,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/shared/__tests__/ipc-client-close-aware.test.ts",
+      "childId": "ea1d9375-1db9-48ca-a052-65e5d0191142",
+      "log": ".insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/25-src_shared___tests___ipc-client-close-aware.test.ts.log",
+      "closeJournal": "/home/subhagho/insrc-installer-validation-44db80005/.insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/shared/__tests__/ipc-client-stream.test.ts",
+      "childId": "7037aa88-3b6b-4a2a-b9d7-069a0d9f35b5",
+      "log": ".insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/26-src_shared___tests___ipc-client-stream.test.ts.log",
+      "closeJournal": "/home/subhagho/insrc-installer-validation-44db80005/.insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/shared/__tests__/ipc-client-timeout.test.ts",
+      "childId": "9c364999-e170-4326-9104-f29ff58f50f2",
+      "log": ".insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/27-src_shared___tests___ipc-client-timeout.test.ts.log",
+      "closeJournal": "/home/subhagho/insrc-installer-validation-44db80005/.insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/shared/__tests__/ipc-client.test.ts",
+      "childId": "fe74030c-136b-4473-af1b-61a5bb49d7de",
+      "log": ".insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/28-src_shared___tests___ipc-client.test.ts.log",
+      "closeJournal": "/home/subhagho/insrc-installer-validation-44db80005/.insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 11,
+          "pass": 11,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/shared/__tests__/ipc-lane.test.ts",
+      "childId": "a8bb36ee-f2be-4d6a-a62f-508cbb1593fe",
+      "log": ".insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/29-src_shared___tests___ipc-lane.test.ts.log",
+      "closeJournal": "/home/subhagho/insrc-installer-validation-44db80005/.insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 6,
+          "pass": 6,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/workflow/__tests__/prepare-artifact-write.test.ts",
+      "childId": "b18d99d9-1ab3-47c8-a064-31594fa4312a",
+      "log": ".insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/30-src_workflow___tests___prepare-artifact-write.test.ts.log",
+      "closeJournal": "/home/subhagho/insrc-installer-validation-44db80005/.insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "vscode-plugin/src/__tests__/activation.test.ts",
+      "childId": "07a502b3-d7f7-41b7-8b2a-3f2c13562794",
+      "log": ".insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/31-vscode-plugin_src___tests___activation.test.ts.log",
+      "closeJournal": "/home/subhagho/insrc-installer-validation-44db80005/.insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 9,
+          "pass": 9,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "vscode-plugin/src/__tests__/packaging.test.ts",
+      "childId": "0169c3db-4a03-4486-bc78-a86f50037a4f",
+      "log": ".insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/32-vscode-plugin_src___tests___packaging.test.ts.log",
+      "closeJournal": "/home/subhagho/insrc-installer-validation-44db80005/.insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 11,
+          "pass": 11,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "vscode-plugin/src/hosts/__tests__/activation.test.ts",
+      "childId": "762264b5-fb21-46ee-83d7-d906ece2202b",
+      "log": ".insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/33-vscode-plugin_src_hosts___tests___activation.test.ts.log",
+      "closeJournal": "/home/subhagho/insrc-installer-validation-44db80005/.insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 4,
+          "pass": 4,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "vscode-plugin/src/models/__tests__/model-tier-picker.test.ts",
+      "childId": "afc3465d-7176-4a6d-8646-caac35811ad6",
+      "log": ".insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/34-vscode-plugin_src_models___tests___model-tier-picker.test.ts.log",
+      "closeJournal": "/home/subhagho/insrc-installer-validation-44db80005/.insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 9,
+          "pass": 9,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "vscode-plugin/src/onboarding/__tests__/activation.test.ts",
+      "childId": "1d625d26-1e5a-4e08-9b8e-e6597658005f",
+      "log": ".insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/35-vscode-plugin_src_onboarding___tests___activation.test.ts.log",
+      "closeJournal": "/home/subhagho/insrc-installer-validation-44db80005/.insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 4,
+          "pass": 4,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "vscode-plugin/src/onboarding/__tests__/onboarding.test.ts",
+      "childId": "76998f0e-8153-4962-b5a8-ca42a68b86e7",
+      "log": ".insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/36-vscode-plugin_src_onboarding___tests___onboarding.test.ts.log",
+      "closeJournal": "/home/subhagho/insrc-installer-validation-44db80005/.insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 8,
+          "pass": 8,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "vscode-plugin/src/panels/__tests__/debug-renderer.test.ts",
+      "childId": "ab5b7ba5-3cef-4ba3-a6c6-59ef6bbd66f8",
+      "log": ".insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/37-vscode-plugin_src_panels___tests___debug-renderer.test.ts.log",
+      "closeJournal": "/home/subhagho/insrc-installer-validation-44db80005/.insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 6,
+          "pass": 6,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "vscode-plugin/src/panels/__tests__/repo-config.test.ts",
+      "childId": "7cb9f785-e3c7-42b3-abbf-813655cf1c2f",
+      "log": ".insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/38-vscode-plugin_src_panels___tests___repo-config.test.ts.log",
+      "closeJournal": "/home/subhagho/insrc-installer-validation-44db80005/.insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 21,
+          "pass": 21,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "vscode-plugin/src/workspace/__tests__/activation.test.ts",
+      "childId": "229bd4b1-7368-4b19-842a-6b6bc5c5d0eb",
+      "log": ".insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/39-vscode-plugin_src_workspace___tests___activation.test.ts.log",
+      "closeJournal": "/home/subhagho/insrc-installer-validation-44db80005/.insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 8,
+          "pass": 8,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    }
+  ],
+  "cleanupPath": ".insrc/tmp/test-harness/runs/822b4a9e-fd6a-4900-8d38-1bff3a04a60a/cleanup.json",
+  "incomplete": false
+}

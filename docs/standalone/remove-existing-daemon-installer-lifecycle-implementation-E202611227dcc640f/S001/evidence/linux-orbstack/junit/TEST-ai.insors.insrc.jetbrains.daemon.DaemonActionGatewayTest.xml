@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.daemon.DaemonActionGatewayTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-23T05:55:23" hostname="insrc-node-arm64" time="0.034">
+  <properties/>
+  <testcase name="a malformed RuntimeException reply maps to Failed, never a throw()" classname="ai.insors.insrc.jetbrains.daemon.DaemonActionGatewayTest" time="0.029"/>
+  <testcase name="backup and compact map an unreachable daemon to Failed, never a throw()" classname="ai.insors.insrc.jetbrains.daemon.DaemonActionGatewayTest" time="0.001"/>
+  <testcase name="backup maps a framed 'target path required' error to Failed()" classname="ai.insors.insrc.jetbrains.daemon.DaemonActionGatewayTest" time="0.001"/>
+  <testcase name="compact sends METHOD_COMPACT with no params and maps ok to Ok()" classname="ai.insors.insrc.jetbrains.daemon.DaemonActionGatewayTest" time="0.0"/>
+  <testcase name="backup sends the path param and maps an ok reply to Ok()" classname="ai.insors.insrc.jetbrains.daemon.DaemonActionGatewayTest" time="0.0"/>
+  <testcase name="compact forwards the indexer-busy refusal verbatim as Failed()" classname="ai.insors.insrc.jetbrains.daemon.DaemonActionGatewayTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

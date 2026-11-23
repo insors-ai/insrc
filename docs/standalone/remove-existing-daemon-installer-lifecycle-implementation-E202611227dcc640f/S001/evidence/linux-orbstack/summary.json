@@ -1,0 +1,126 @@
+{
+  "commit": "44db80005f0a5ec53b35f8ad2eb627b5845a4630",
+  "machine": "insrc-node-arm64",
+  "platform": "Linux-7.2.12-orbstack-00394-gbecdd6130068-aarch64-with-glibc2.39",
+  "architecture": "aarch64",
+  "node": "v22.22.1",
+  "npm": "10.9.4",
+  "testRunId": "822b4a9e-fd6a-4900-8d38-1bff3a04a60a",
+  "selectedFiles": 40,
+  "incomplete": false,
+  "counts": {
+    "tests": 280,
+    "pass": 280,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "cleanup": {
+    "confirmedClosed": true,
+    "interrupted": false,
+    "cancellationErrors": [],
+    "evidenceErrors": [],
+    "childCloseJournal": "child-results.jsonl"
+  },
+  "accounting": {
+    "absentWholeFiles": 278,
+    "accountedMembers": 176,
+    "pendingMembers": 0
+  },
+  "jars": [
+    {
+      "path": "jetbrains-plugin/build/libs/insrc-jetbrains-0.5.2-base.jar",
+      "sha256": "df38f278cf4a5b842cbe46b7a1dc7ba4eb7be79f7155edc9d6c545efdb6aef4f",
+      "retiredEntries": [],
+      "steeringPresent": true
+    },
+    {
+      "path": "jetbrains-plugin/build/libs/insrc-jetbrains-0.5.2-instrumented.jar",
+      "sha256": "93ce183d2d316b6491a98ea4e2ee55e20cdbbbd888885961d7b615337b672956",
+      "retiredEntries": [],
+      "steeringPresent": true
+    },
+    {
+      "path": "jetbrains-plugin/build/libs/insrc-jetbrains-0.5.2.jar",
+      "sha256": "ed82969ffab4df7251240551c6aee3048f7ba35e9712b05518f65fb8f0bb89c9",
+      "retiredEntries": [],
+      "steeringPresent": true
+    }
+  ],
+  "installedMacDaemon": "untouched; no control or update command invoked",
+  "junit": {
+    "reports": 7,
+    "tests": 42,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "vmLimits": {
+    "memoryBytes": 8589934592,
+    "cpuMax": "200000 100000"
+  },
+  "javaVersion": "openjdk version \"21.0.13.1\" 2026-11-17",
+  "environment": {
+    "ONNXRUNTIME_NODE_INSTALL_CUDA": "skip",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "INSRC_LIVE_TESTS": "unset",
+    "home": "/home/subhagho/insrc-installer-validation-state-44db80005/home"
+  },
+  "checks": {
+    "npm-ci": 0,
+    "vscode-npm-ci": 0,
+    "vscode-build": 0,
+    "vscode-bundle": 0,
+    "focused-tests": 0,
+    "jetbrains-build": 0,
+    "jetbrains-junit-online": 0,
+    "known-inventory-check": 1,
+    "jetbrains-offline-bridge": 0
+  },
+  "inventoryBaselineSources": [
+    {
+      "path": "src/daemon/git-hooks/hook-block.ts",
+      "matchesRecordedBaseline": true
+    },
+    {
+      "path": "src/daemon/mcp-register.ts",
+      "matchesRecordedBaseline": true
+    },
+    {
+      "path": "src/daemon/model-check.ts",
+      "matchesRecordedBaseline": true
+    },
+    {
+      "path": "src/indexer/file-filter.ts",
+      "matchesRecordedBaseline": true
+    },
+    {
+      "path": "src/workflow/convert/backfill-issue.ts",
+      "matchesRecordedBaseline": true
+    },
+    {
+      "path": "src/workflow/convert/repair-amendments.ts",
+      "matchesRecordedBaseline": true
+    },
+    {
+      "path": "src/workflow/review-round/checkpoint.ts",
+      "matchesRecordedBaseline": true
+    },
+    {
+      "path": "src/workflow/review-round/receipt-record.ts",
+      "matchesRecordedBaseline": true
+    },
+    {
+      "path": "src/workflow/review-round/review-report.ts",
+      "matchesRecordedBaseline": true
+    }
+  ],
+  "sourceWorktreeClean": true,
+  "knownInventoryCheck": {
+    "tests": 10,
+    "pass": 9,
+    "fail": 1,
+    "reason": "unchanged missing writer classifications and stale repo-ignore-config.ts entry"
+  }
+}

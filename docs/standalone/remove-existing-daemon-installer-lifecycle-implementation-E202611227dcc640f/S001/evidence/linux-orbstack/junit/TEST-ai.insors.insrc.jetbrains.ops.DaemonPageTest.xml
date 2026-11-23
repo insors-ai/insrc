@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.ops.DaemonPageTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-23T05:55:23" hostname="insrc-node-arm64" time="0.006">
+  <properties/>
+  <testcase name="ac1 - buildBody renders the three daemonStatus states from sc2()" classname="ai.insors.insrc.jetbrains.ops.DaemonPageTest" time="0.003"/>
+  <testcase name="ac2 - the page consumes sc1 (extends the base) and does not touch the parent settings page()" classname="ai.insors.insrc.jetbrains.ops.DaemonPageTest" time="0.002"/>
+  <testcase name="ac2 - backup and compact actions remain wired()" classname="ai.insors.insrc.jetbrains.ops.DaemonPageTest" time="0.0"/>
+  <testcase name="ac2 - every action runs off the EDT under ProgressManager and Backup asks for a directory first()" classname="ai.insors.insrc.jetbrains.ops.DaemonPageTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -48,5 +48,13 @@
     "t2",
     "t3"
   ],
-  "boundary": "No installed daemon start/stop/update performed. Awaiting user authorization to start existing installed daemon; plan excluded installed-state changes."
+  "boundary": "No installed daemon start/stop/update performed. Awaiting user authorization to start existing installed daemon; plan excluded installed-state changes.",
+  "userDirection": "Leave existing Mac daemon tracking v2 untouched; test in OrbStack Linux VM.",
+  "linuxValidation": {
+    "evidence": "linux-orbstack/README.md",
+    "focusedTestsPassed": 280,
+    "junitCasesPassed": 42,
+    "sourceChangesNeeded": false,
+    "formalWorkflowGatesStillPending": true
+  }
 }

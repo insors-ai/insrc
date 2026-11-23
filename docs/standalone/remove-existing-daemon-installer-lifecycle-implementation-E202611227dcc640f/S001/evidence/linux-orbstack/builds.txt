@@ -1,0 +1,154 @@
+
+### node-version.txt
+v22.22.1
+
+### npm-version.txt
+10.9.4
+
+### npm-ci.log
+npm warn deprecated rimraf@2.7.1: Rimraf versions prior to v4 are no longer supported
+npm warn deprecated prebuild-install@7.1.3: No longer maintained. Please contact the author of the relevant native addon; alternatives are available.
+npm warn deprecated node-domexception@1.0.0: Use your platform's native DOMException instead
+npm warn deprecated lodash.isequal@4.5.0: This package is deprecated. Use require('node:util').isDeepStrictEqual instead.
+npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+npm warn deprecated fstream@1.0.12: This package is no longer supported.
+npm warn deprecated boolean@3.2.0: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+
+added 679 packages, and audited 681 packages in 2m
+
+119 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+
+### vscode-npm-ci.log
+
+added 4 packages, and audited 5 packages in 478ms
+
+found 0 vulnerabilities
+
+### vscode-build.log
+
+> insrc-vscode@0.5.24 build
+> npm run sync-assets && tsx scripts/sync-manifest-catalog.mjs --check && tsc -p tsconfig.json
+
+
+> insrc-vscode@0.5.24 sync-assets
+> node ../scripts/sync-client-runtime-assets.mjs vscode
+
+[sync-manifest-catalog] manifest is up to date
+
+### vscode-bundle.log
+
+> insrc-vscode@0.5.24 bundle
+> npm run sync-assets && node esbuild.mjs
+
+
+> insrc-vscode@0.5.24 sync-assets
+> node ../scripts/sync-client-runtime-assets.mjs vscode
+
+bundled -> out/extension.js, out/uninstall.js and out/vibe-session-worker.js (CJS)
+
+### jetbrains-build.log
+Fetching distribution.
+Downloading https://services.gradle.org/distributions/gradle-8.10.2-bin.zip
+.............10%.............20%.............30%.............40%.............50%.............60%.............70%.............80%.............90%.............100%
+
+Welcome to Gradle 8.10.2!
+
+Here are the highlights of this release:
+ - Support for Java 23
+ - Faster configuration cache
+ - Better configuration cache reports
+
+For more details see https://docs.gradle.org/8.10.2/release-notes.html
+
+Starting a Gradle Daemon (subsequent builds will be faster)
+Calculating task graph as no cached configuration is available for tasks: composedJar compileTestKotlin
+> Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :bundleBackendAssets
+
+> Task :initializeIntellijPlatformPlugin
+[org.jetbrains.intellij.platform] IntelliJ Platform Gradle Plugin is outdated: 2.1.0. Update `org.jetbrains.intellij.platform` to: 2.20.1
+
+> Task :generateManifest
+> Task :patchPluginXml
+> Task :processResources
+
+> Task :verifyPluginProjectConfiguration
+[org.jetbrains.intellij.platform] The following plugin configuration issues were found:
+- The dependency on the Kotlin Standard Library (stdlib) is automatically added when using the Gradle Kotlin plugin and may conflict with the version provided with the IntelliJ Platform, see: https://jb.gg/intellij-platform-kotlin-stdlib
+
+> Task :compileKotlin
+w: file:///home/subhagho/insrc-installer-validation-44db80005/jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsManagerModel.kt:9:36 Non-public primary constructor is exposed via the generated 'copy()' method of the 'data' class.
+
+The generated 'copy()' will change its visibility in future releases.
+
+To suppress the warning do one of the following:
+- Annotate the data class with the '@ConsistentCopyVisibility' annotation.
+- Use the '-Xconsistent-data-class-copy-visibility' compiler flag.
+- Annotate the data class with the '@ExposedCopyVisibility' annotation 
+  (Discouraged, but can be used to keep binary compatibility).
+
+To learn more, see the documentation of the '@ConsistentCopyVisibility' and '@ExposedCopyVisibility' annotations.
+
+This will become an error in Kotlin 2.1.
+w: file:///home/subhagho/insrc-installer-validation-44db80005/jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt:1796:58 Unchecked cast of 'kotlin.Any?' to 'kotlin.collections.Map<kotlin.String, kotlin.Any?>'.
+w: file:///home/subhagho/insrc-installer-validation-44db80005/jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt:1797:53 Unchecked cast of 'kotlin.Any?' to 'kotlin.collections.Map<kotlin.String, kotlin.Any?>'.
+w: file:///home/subhagho/insrc-installer-validation-44db80005/jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt:1798:88 Unchecked cast of 'kotlin.Any?' to 'kotlin.collections.Map<kotlin.String, kotlin.Any?>'.
+
+> Task :compileJava NO-SOURCE
+> Task :classes
+> Task :instrumentCode
+> Task :jar
+> Task :instrumentedJar
+> Task :composedJar
+
+> Task :compileTestKotlin
+w: file:///home/subhagho/insrc-installer-validation-44db80005/jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionDraftTestsTest.kt:57:81 'fun createProject(p0: @Nullable() String?, p1: @NotNull() String): @NotNull() Project' is deprecated. Deprecated in Java.
+w: file:///home/subhagho/insrc-installer-validation-44db80005/jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionDraftTestsTest.kt:112:81 'fun createProject(p0: @Nullable() String?, p1: @NotNull() String): @NotNull() Project' is deprecated. Deprecated in Java.
+w: file:///home/subhagho/insrc-installer-validation-44db80005/jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionMutationControllerTest.kt:115:119 'fun createProject(p0: @Nullable() String?, p1: @NotNull() String): @NotNull() Project' is deprecated. Deprecated in Java.
+w: file:///home/subhagho/insrc-installer-validation-44db80005/jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionRemovalsTest.kt:21:85 'fun createProject(p0: @Nullable() String?, p1: @NotNull() String): @NotNull() Project' is deprecated. Deprecated in Java.
+w: file:///home/subhagho/insrc-installer-validation-44db80005/jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsCompatibilityTest.kt:28:50 'fun createProject(p0: @Nullable() String?, p1: @NotNull() String): @NotNull() Project' is deprecated. Deprecated in Java.
+w: file:///home/subhagho/insrc-installer-validation-44db80005/jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsEntryTest.kt:39:53 'fun createProject(p0: @Nullable() String?, p1: @NotNull() String): @NotNull() Project' is deprecated. Deprecated in Java.
+w: file:///home/subhagho/insrc-installer-validation-44db80005/jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsEntryTest.kt:62:49 'fun createProject(p0: @Nullable() String?, p1: @NotNull() String): @NotNull() Project' is deprecated. Deprecated in Java.
+w: file:///home/subhagho/insrc-installer-validation-44db80005/jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsIsolationTest.kt:24:58 'fun createProject(p0: @Nullable() String?, p1: @NotNull() String): @NotNull() Project' is deprecated. Deprecated in Java.
+w: file:///home/subhagho/insrc-installer-validation-44db80005/jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsIsolationTest.kt:25:22 'fun createProject(p0: @Nullable() String?, p1: @NotNull() String): @NotNull() Project' is deprecated. Deprecated in Java.
+w: file:///home/subhagho/insrc-installer-validation-44db80005/jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsManagerPanelTest.kt:35:85 'fun createProject(p0: @Nullable() String?, p1: @NotNull() String): @NotNull() Project' is deprecated. Deprecated in Java.
+w: file:///home/subhagho/insrc-installer-validation-44db80005/jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsManagerPanelTest.kt:87:85 'fun createProject(p0: @Nullable() String?, p1: @NotNull() String): @NotNull() Project' is deprecated. Deprecated in Java.
+w: file:///home/subhagho/insrc-installer-validation-44db80005/jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsPrivacyTest.kt:29:150 'fun createProject(p0: @Nullable() String?, p1: @NotNull() String): @NotNull() Project' is deprecated. Deprecated in Java.
+w: file:///home/subhagho/insrc-installer-validation-44db80005/jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsPrivacyTest.kt:57:116 'fun createProject(p0: @Nullable() String?, p1: @NotNull() String): @NotNull() Project' is deprecated. Deprecated in Java.
+w: file:///home/subhagho/insrc-installer-validation-44db80005/jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsSessionServiceTest.kt:98:60 'fun createProject(p0: @Nullable() String?, p1: @NotNull() String): @NotNull() Project' is deprecated. Deprecated in Java.
+w: file:///home/subhagho/insrc-installer-validation-44db80005/jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/RepoFieldsContractTest.kt:158:42 Check for instance is always 'true'.
+
+BUILD SUCCESSFUL in 4m 11s
+12 actionable tasks: 12 executed
+Configuration cache entry stored.
+
+### jetbrains-junit-online.log
+> Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :compileKotlin UP-TO-DATE
+> Task :initializeIntellijPlatformPlugin
+> Task :patchPluginXml UP-TO-DATE
+> Task :verifyPluginProjectConfiguration UP-TO-DATE
+> Task :compileJava NO-SOURCE
+> Task :bundleBackendAssets UP-TO-DATE
+> Task :processResources UP-TO-DATE
+> Task :classes UP-TO-DATE
+> Task :generateManifest UP-TO-DATE
+> Task :instrumentCode UP-TO-DATE
+> Task :jar UP-TO-DATE
+> Task :compileTestKotlin UP-TO-DATE
+> Task :compileTestJava NO-SOURCE
+> Task :processTestResources UP-TO-DATE
+> Task :testClasses UP-TO-DATE
+> Task :instrumentTestCode UP-TO-DATE
+> Task :instrumentedJar UP-TO-DATE
+> Task :composedJar UP-TO-DATE
+> Task :prepareTestSandbox UP-TO-DATE
+> Task :prepareTest
+> Task :test
+
+BUILD SUCCESSFUL in 14s
+16 actionable tasks: 2 executed, 14 up-to-date

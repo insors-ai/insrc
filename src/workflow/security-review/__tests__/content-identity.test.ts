@@ -126,6 +126,21 @@ test('computeContentIdentity: a git repository with no commits yet (HEAD unresol
 	}
 });
 
+test("computeContentIdentity: two DIFFERENT (path, content) pairs never hash to the same identity merely because their concatenation would coincide (e.g. path 'a' content 'bc' vs path 'ab' content 'c')", async () => {
+	const repo = initRepo();
+	treatAsRegistered(repo);
+	try {
+		writeFileSync(join(repo, 'a'), 'bc');
+		writeFileSync(join(repo, 'ab'), 'c');
+		const identityA = await computeContentIdentity(repo, { entries: [{ path: 'a' }] });
+		const identityAb = await computeContentIdentity(repo, { entries: [{ path: 'ab' }] });
+		assert.notEqual(identityA, identityAb, 'a path/content framing ambiguity would make these equal');
+	} finally {
+		_setContentIdentityDepsForTests();
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
 test('computeContentIdentity: a targets.entries path that is a SYMLINK pointing outside repoPath throws', async () => {
 	const repo = initRepo();
 	treatAsRegistered(repo);

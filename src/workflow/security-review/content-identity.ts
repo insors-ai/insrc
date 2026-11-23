@@ -48,8 +48,14 @@ export async function computeContentIdentity(repoPath: string, targets: ReviewTa
 
 	const realRepoPath = await realpath(repoPath);
 
+	// Each piece is framed as `<path>\0<fixed-length sha256 of its bytes>` before
+	// joining the outer hash. A path can never contain a NUL byte on any
+	// supported filesystem, so the `\0` boundary is unambiguous; hashing each
+	// file's digest (always exactly 32 bytes) rather than its raw, variable-length
+	// bytes directly rules out two different (path, bytes) sequences concatenating
+	// to the identical byte stream -- which raw concatenation alone would not.
 	const hash = createHash('sha256');
-	hash.update(head.stdout.trim());
+	hash.update(`${head.stdout.trim()}\0`);
 	for (const entry of targets.entries) {
 		const resolved = resolve(repoPath, entry.path);
 		const rel = relative(repoPath, resolved);
@@ -65,8 +71,9 @@ export async function computeContentIdentity(repoPath: string, targets: ReviewTa
 			throw new Error(`computeContentIdentity: targets.entries path '${entry.path}' resolves outside repoPath`);
 		}
 		const bytes = await readFile(resolved);
-		hash.update(entry.path);
-		hash.update(bytes);
+		const fileDigest = createHash('sha256').update(bytes).digest();
+		hash.update(`${entry.path}\0`);
+		hash.update(fileDigest);
 	}
 	return hash.digest('hex');
 }

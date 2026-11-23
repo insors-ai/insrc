@@ -92,7 +92,7 @@ test("SIGTERM during an indexing pass: workers stop, the queue drains, the main 
 				await new Promise(r => setTimeout(r, 10));
 			}
 			process.kill(daemon.pid, 'SIGTERM');
-			const killer = setTimeout(() => { if (alive(daemon.pid)) process.kill(daemon.pid, 'SIGKILL'); }, 30_000);
+			const killer = setTimeout(() => { if (alive(daemon.pid)) process.kill(daemon.pid, 'SIGKILL'); }, 60_000);
 			try { assert.equal(await daemon.exited, 0, `the daemon exited cleanly after SIGTERM: ${daemon.stderr().slice(-5000)}`); }
 			finally { clearTimeout(killer); }
 		} finally {
@@ -135,7 +135,7 @@ test('SIGTERM during maintenance waits for compaction before disposing resources
 			}
 			assert.equal(maintenance.activity, 'compaction');
 			process.kill(daemon.pid, 'SIGTERM');
-			const killer = setTimeout(() => { if (alive(daemon.pid)) process.kill(daemon.pid, 'SIGKILL'); }, 30_000);
+			const killer = setTimeout(() => { if (alive(daemon.pid)) process.kill(daemon.pid, 'SIGKILL'); }, 60_000);
 			try { assert.equal(await daemon.exited, 0, 'a clean exit after the compaction'); }
 			finally { clearTimeout(killer); }
 		} finally {

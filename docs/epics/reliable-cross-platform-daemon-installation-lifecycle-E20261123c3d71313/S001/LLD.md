@@ -7,6 +7,7 @@
 **Epic:** `reliable-cross-platform-daemon-installation-lifecycle`
 **HLD base run:** `wf-1795445383474-itgkv3`
 **HLD effective hash:** `77bfb88eed6d...`
+**Tracker:** [insors-ai/insrc#243](https://github.com/insors-ai/insrc/issues/243)
 
 Story 1 supplies the release installer foundation: exact-target bundles, private Node, durable install records and the shared interactive scripts. IDE installation can only launch those scripts in a terminal; success enters the installed TUI after readiness and lock release. Actual daemon shutdown/readiness, migration execution and dependency discovery remain sibling implementations behind required ports.
 
@@ -232,21 +233,21 @@ interface ControllerSnapshot { schemaVersion: 1; revision: number; installation:
 
 ### 3.2 `Target and runtime policy` — new
 
-Release-owned Node 22.22.1 plus matching npm and current .npmrc headers are one policy. Pin exact official archive URL and independently recorded SHA-256 for each OS/arch; no latest or host Node fallback. Installed runtime path is <home>/runtimes/22.22.1/<target>. Bootstrap obtains official tar.gz on POSIX and zip on Windows using platform stock download/extract/hash facilities, verifies first, stages then publishes; if an extraction prerequisite is absent, fail with a user-level prerequisite message rather than sudo. Bundle contains the same official runtime archive so normal successor installs can reuse verified local bytes. Runtime extraction accepts only contained expected files; skip unneeded bin/npm aliases and invoke npm-cli.js through the private Node. Build/publish checks ensure .npmrc and runtime policy remain aligned. Shared source-development launcher is not silently rewritten as the installed launcher.
+Release-owned Node 22.22.1 plus matching npm and current .npmrc headers are one policy. Pin exact official archive URL and independently recorded SHA-256 for each OS/arch; no latest or host Node fallback. Installed runtime path is <home>/runtimes/22.22.1/<target>. Bootstrap obtains official tar.gz on POSIX and zip on Windows using platform stock download/extract/hash facilities, verifies first, stages then publishes; if an extraction prerequisite is absent, fail with a user-level prerequisite message rather than sudo. Bundle contains the same official runtime archive so normal successor installs can reuse verified local bytes. Runtime extraction accepts only contained expected files; skip unneeded bin/npm aliases and invoke npm-cli.js through the private Node. Build/publish checks ensure .npmrc and runtime policy remain aligned. Shared source-development launcher is not silently rewritten as the installed launcher. Call sites here identify inspected publisher/launcher integration context, not existing consumers of this new model or instructions to edit those files.
 
 **Call sites:**
 - `scripts/insrc`
 
 ### 3.3 `Bundle descriptor and payload inventory` — new
 
-Publish release.json sidecar with HLD ReleaseManifest, artifact URLs/sizes and digests for manager bootstrap assets and target lock binding; no hash refers to bytes that contain that hash. ZIP holds inventory.json of file paths/digests/sizes/modes, built out tree/assets, production dependency closure, single-file manager/installer bootstrap JS, native lock binding and the official private runtime archive. Content/root paths are bounded. Pure-JS yauzl reader is bundled into bootstrap JS; use lazyEntries, strictFileNames and validateEntrySizes plus our canonical-path, byte-count, entry-count and ratio limits. Reject absolute/UNC/drive/ADS/traversal/backslash ambiguities, duplicate or case-colliding paths, encrypted/unsupported entries, special files and symlink entries. Package builder dereferences only verified in-root workspace links; it never copies arbitrary host paths. Stage with exclusive creation and atomic same-filesystem publication. No end-user npm, compiler or daemon source build in bundle mode.
+Publish release.json sidecar with HLD ReleaseManifest, artifact URLs/sizes and digests for manager bootstrap assets and target lock binding; no hash refers to bytes that contain that hash. ZIP holds inventory.json of file paths/digests/sizes/modes, built out tree/assets, production dependency closure, single-file manager/installer bootstrap JS, native lock binding and the official private runtime archive. Content/root paths are bounded. Pure-JS yauzl reader is bundled into bootstrap JS; use lazyEntries, strictFileNames and validateEntrySizes plus our canonical-path, byte-count, entry-count and ratio limits. Reject absolute/UNC/drive/ADS/traversal/backslash ambiguities, duplicate or case-colliding paths, encrypted/unsupported entries, special files and symlink entries. Package builder dereferences only verified in-root workspace links; it never copies arbitrary host paths. Stage with exclusive creation and atomic same-filesystem publication. No end-user npm, compiler or daemon source build in bundle mode. Call sites here identify inspected publisher/launcher integration context, not existing consumers of this new model or instructions to edit those files.
 
 **Call sites:**
 - `copy-assets.mjs`
 
 ### 3.4 `Bootstrap/control assets` — new
 
-Proposed source files: scripts/install.sh, scripts/install.ps1 and scripts/package-installer.mjs. A release-specific script embeds Node/bootstrap-JS/lock-binding digests; the tiny bootstrap JS is single-file bundled and uses builtin network/hash/fs plus its bundled ZIP reader. It downloads the separately digest-bound platform lock binding before acquiring the controller lock. This avoids requiring system unzip or host npm to read the full bundle. No payload/controller code runs before its digest matches. Bundle publisher emits identical installer bytes to manual assets and IDE resource staging; package root entrypoint managerEntry identifies this dependency-minimal artifact, not the whole application. Signing remains deferred; this provides digest/transport integrity only.
+Proposed source files: scripts/install.sh, scripts/install.ps1 and scripts/package-installer.mjs. A release-specific script embeds Node/bootstrap-JS/lock-binding digests; the tiny bootstrap JS is single-file bundled and uses builtin network/hash/fs plus its bundled ZIP reader. It downloads the separately digest-bound platform lock binding before acquiring the controller lock. This avoids requiring system unzip or host npm to read the full bundle. No payload/controller code runs before its digest matches. Bundle publisher emits identical installer bytes to manual assets and IDE resource staging; package root entrypoint managerEntry identifies this dependency-minimal artifact, not the whole application. Signing remains deferred; this provides digest/transport integrity only. Call sites here identify inspected publisher/launcher integration context, not existing consumers of this new model or instructions to edit those files.
 
 **Call sites:**
 - `scripts/insrc`
@@ -254,7 +255,7 @@ Proposed source files: scripts/install.sh, scripts/install.ps1 and scripts/packa
 
 ### 3.5 `Required sibling capability boundary` — new
 
-s1 controller prepares candidate and owns durable installation transitions. It requires lifecycle/readiness (s4), dependency report/decision handling (s3), and candidate migration outcome (s5) through explicit peers. Those contracts are defined in contracts.ts but implementations are neither imported from hypothetical modules nor replaced with no-ops. Before any disruption, verify peer availability and exact candidate/predecessor compatibility. In the s1 build, deterministic peer fixtures exercise bundle orchestration; absent real peers produce capability-unavailable. Full live install/upgrade AC evidence remains contingent on sibling integration and s8; do not certify a real upgrade from fixture-only results. Dev preparation is a future s2 adapter, and native IDE terminal launch is s6/s7.
+s1 controller prepares candidate and owns durable installation transitions. It requires lifecycle/readiness (s4), dependency report/decision handling (s3), and candidate migration outcome (s5) through explicit peers. Those contract shapes are specified in this LLD's §2 and the HLD's shared contracts; this does not identify an existing source file. Their implementations are neither imported from hypothetical modules nor replaced with no-ops. Before any disruption, verify peer availability and exact candidate/predecessor compatibility. In the s1 build, deterministic peer fixtures exercise bundle orchestration; absent real peers produce capability-unavailable. Full live install/upgrade AC evidence remains contingent on sibling integration and s8; do not certify a real upgrade from fixture-only results. Dev preparation is a future s2 adapter, and native IDE terminal launch is s6/s7.
 
 
 ### 3.6 `OS operation-lock handle` — new
@@ -415,3 +416,23 @@ The terminal entrypoint and bundle preparer use the same sibling capability port
 - **[[c13]]** `step-output` `s4` — "New proposed record/contract detail scoped to s1; no sibling execution implementations."
 - **[[c14]]** `step-output` `s5`
 - **[[c15]]** `step-output` `s6`
+- **[[c16]]** `stakeholder` `User LLD advisory review: clarify contract-shape reference and publisher/launcher call-site context; preserve forged source/bootstrap marker test intent verbatim in plan. FR-to-AC traceability needs no change.`
+
+## Citations
+
+- **[[c1]]** `doc` `AGENTS.md`
+- **[[c2]]** `prior-artifact` `docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/HLD.md`
+- **[[c3]]** `prior-artifact` `docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/DEF.md`
+- **[[c4]]** `analyze-bundle` `scripts/insrc` — "Current launcher is source/development boundary, not reusable installed private-runtime bootstrap unchanged."
+- **[[c5]]** `analyze-bundle` `copy-assets.mjs`
+- **[[c6]]** `analyze-bundle` `src/design/corpus/contracts.ts` — "Existing ReleaseManifest name is a separate design-corpus schema; not installer reuse."
+- **[[c7]]** `analyze-bundle` `scripts/__tests__/client-assets-retirement.test.ts`
+- **[[c8]]** `analyze-bundle` `src/shared/__tests__/ipc-client.test.ts`
+- **[[c9]]** `code` `.npmrc`
+- **[[c10]]** `doc` `https://github.com/thejoshwolfe/yauzl/blob/master/README.md`
+- **[[c11]]** `doc` `https://nodejs.org/docs/latest-v22.x/api/n-api.html`
+- **[[c12]]** `doc` `https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-lockfileex`
+- **[[c13]]** `step-output` `s4` — "New proposed record/contract detail scoped to s1; no sibling execution implementations."
+- **[[c14]]** `step-output` `s5`
+- **[[c15]]** `step-output` `s6`
+- **[[c16]]** `stakeholder` `User LLD advisory review: clarify contract-shape reference and publisher/launcher call-site context; preserve forged source/bootstrap marker test intent verbatim in plan. FR-to-AC traceability needs no change.`

@@ -5,6 +5,7 @@
 ## Summary
 
 **Flavor:** new-capability
+**Tracker:** [insors-ai/insrc#242](https://github.com/insors-ai/insrc/issues/242)
 
 Users can install and maintain insrc from GitHub release bundles or a chosen development branch on macOS, Linux and Windows. Predictable dependencies, controlled upgrades and consistent IDE actions make setup and ongoing use reliable.
 
@@ -220,6 +221,17 @@ Users can rely on reproducible evidence that both delivery modes and both IDE in
 - **ac3:** Given the host Mac daemon tracks v2 and VM tests are running, when the qualification suite completes, then all mutations remain in isolated installations/state; no elevation, daemon kill command or host-daemon installation/lifecycle mutation occurs, and test failures retain diagnostic evidence. _(operationalizes `k4`, `k7`, `k8`)_
 
 ## 7. References
+
+- **[[c1]]** `stakeholder` `Current installation/lifecycle brainstorm and Define direction, 2026-11-23` — "Bundle default; dev repo/branch sync; Linux/Mac/Windows; private Node; Ollama consent; agent CLI recommendation; IPC-only stop/restart; ordered check/run/test upgrade hooks; both IDEs; isolated VM val"
+- **[[c2]]** `doc` `docs/plans/installer-removal-status.md` — "No replacement is supplied in this change. Earlier installation instructions and historical workflow records describe the retired implementation."
+- **[[c3]]** `prior-artifact` `docs/epics/ship-signed-linux-x86-64-daemon-E2026111656343cf2/DEF.md`
+- **[[c4]]** `doc` `AGENTS.md`
+- **[[c5]]** `code` `src/daemon/index.ts`
+- **[[c6]]** `code` `vscode-plugin/src/activation.ts`
+- **[[c7]]** `code` `jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGatewayService.kt`
+- **[[c8]]** `prior-artifact` `docs/epics/work-framed-approved-spec-proceed-from-E20260923b6c90b3e/DEF.md`
+
+## Citations
 
 - **[[c1]]** `stakeholder` `Current installation/lifecycle brainstorm and Define direction, 2026-11-23` — "Bundle default; dev repo/branch sync; Linux/Mac/Windows; private Node; Ollama consent; agent CLI recommendation; IPC-only stop/restart; ordered check/run/test upgrade hooks; both IDEs; isolated VM val"
 - **[[c2]]** `doc` `docs/plans/installer-removal-status.md` — "No replacement is supplied in this change. Earlier installation instructions and historical workflow records describe the retired implementation."

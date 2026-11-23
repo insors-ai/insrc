@@ -22,7 +22,7 @@
     "epicSlug": "reliable-cross-platform-daemon-installation-lifecycle",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 1,
         "contentHash": "97aaf03ffcd95422d4fbd7c87c834e8a8577b82e1fed943aa21b023a0bf9b25e",
@@ -33,9 +33,23 @@
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-23T13:37:51.415Z"
+      }
     },
-    "revision": 1
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    }
   },
   "body": {
     "title": "Reliable cross-platform daemon installation and lifecycle",

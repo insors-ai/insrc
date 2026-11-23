@@ -81,11 +81,7 @@ class UnixSocketDaemonRpc(
                     val outbound = ByteBuffer.wrap(line.toByteArray(StandardCharsets.UTF_8))
                     while (outbound.hasRemaining()) channel.write(outbound)
                     requestWritten = true
-                    when (method) {
-                        "daemon.update" -> readBoundedUpdateReply(channel, 20_000)
-                        "daemon.updateOutcome" -> readBoundedUpdateReply(channel, 4_000)
-                        else -> readLine(channel)
-                    }
+                    readLine(channel)
                 }
             } catch (e: IOException) {
                 throw DaemonUnavailableException("daemon socket unreachable at $socketPath", e, requestWritten)
@@ -97,33 +93,13 @@ class UnixSocketDaemonRpc(
         return parse(reply, resultErrorIsFailure)
     }
 
-    private fun readBoundedUpdateReply(channel: SocketChannel, timeoutMs: Long): String {
-        channel.configureBlocking(false)
-        return Selector.open().use { selector ->
-            channel.register(selector, SelectionKey.OP_READ)
-            readLine(channel, selector, System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(timeoutMs))
-        }
-    }
-
-    private fun readLine(channel: SocketChannel, selector: Selector? = null, deadline: Long = 0): String {
+    private fun readLine(channel: SocketChannel): String {
         val buf = ByteBuffer.allocate(64 * 1024)
         val sb = StringBuilder()
         while (true) {
             buf.clear()
             val n = channel.read(buf)
-            if (n < 0) {
-                if (selector != null) throw java.io.EOFException("daemon closed before completing its update reply")
-                break
-            }
-            if (selector != null) {
-                val remaining = deadline - System.nanoTime()
-                if (remaining <= 0) throw java.net.SocketTimeoutException("daemon update reply timed out")
-                if (n == 0) {
-                    selector.select(TimeUnit.NANOSECONDS.toMillis(remaining).coerceAtLeast(1))
-                    selector.selectedKeys().clear()
-                    continue
-                }
-            }
+            if (n < 0) break
             buf.flip()
             val chunk = StandardCharsets.UTF_8.decode(buf).toString()
             val newline = chunk.indexOf('\n')

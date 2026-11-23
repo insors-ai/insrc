@@ -14,7 +14,7 @@
  * the compiled .js or the daemon's startup fails with
  * AnalyzePromptValidationError.
  *
- * Runs after tsc, the native process-capability broker build and model-definition checks in `npm run build`. Compiler
+ * Runs after tsc and model-definition checks in `npm run build`. Compiler
  * input maps also bind the generated deployment manifest to these sources.
  */
 
@@ -22,11 +22,6 @@ import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync
 import { createHash } from 'node:crypto';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { syncNodeRuntimeAssets } from './scripts/sync-node-runtime-policy.mjs';
-
-// Refuse stale shell/client policies or release/native pins before publishing assets.
-syncNodeRuntimeAssets(true);
-
 const here    = dirname(fileURLToPath(import.meta.url));
 const srcRoot = resolve(here, 'src');
 const outRoot = resolve(here, 'out');

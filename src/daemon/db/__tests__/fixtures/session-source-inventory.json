@@ -83,7 +83,7 @@
     "src/daemon/threads/method-class.ts": {
       "classification": "removal-admission-routing",
       "rationale": "S004: additive exact endpoint classifications and main-daemon method-set membership keep removal/state/retry with existing owners. No process-local driver/authority crosses worker envelopes; all-consumer Saved affinity remains release-blocking. The new progress routes have main-thread state ownership and the approval FIFO exemptions affect scheduling only. The removal methods still use their existing process-local owner routing.",
-      "sourceDigest": "fb600b3766f2ec2b237bda704f019bef8ed6fdbabe7161bb4e0bf71d78b4d7e0"
+      "sourceDigest": "7eea120b0981e9ad1ff4ead3243664beeffabc9ddf94f59304553dc29676e179"
     },
     "src/daemon/db/management-enablement.ts": {
       "classification": "deployment-code-evidence",
@@ -7181,7 +7181,7 @@
       ],
       "siteCount": 11,
       "sitesDigest": "99ab558a3b8fc48a415e9f120726d5da03345cbcb28b36b14810ee2a40d480cf",
-      "sourceDigest": "32895c82bb7d5cf1dbfbd5ad82de2918173b190fc18b05d6841fbbb1d457c97f",
+      "sourceDigest": "7a8127b4154c5a61c838d9e825711425bf833d6db6c1b30febb3915e0f4bf831",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -7243,201 +7243,6 @@
       "sitesDigest": "f6e6a975c2a0177b6462960b457b0d859af47300b1bf561ca7579479ab92dd7a",
       "sourceDigest": "e31f4102b1e7c6fd06660c52e95b63b4542f71faa440060c7714297b3134d48f"
     },
-    "src/bin/insrc-daemon-control.ts": {
-      "classification": "client-process-boundary",
-      "rationale": "Client/process entry is outside daemon storage ownership. Only dedicated private bootstrap and S002 isolated worker protocol may carry transient authority/config; no persistence in argv/settings/environment/logs. New installed lifecycle control paths read installation metadata and print generation or command outcomes. They do not expose temporary connection registry or query payloads.",
-      "sites": [
-        [
-          "filesystem-read",
-          "access"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "diagnostic",
-          "process.stderr.write"
-        ],
-        [
-          "serialization",
-          "process.stderr.write"
-        ],
-        [
-          "diagnostic",
-          "process.stdout.write"
-        ],
-        [
-          "diagnostic",
-          "process.stdout.write"
-        ],
-        [
-          "diagnostic",
-          "process.stdout.write"
-        ],
-        [
-          "diagnostic",
-          "process.stdout.write"
-        ],
-        [
-          "diagnostic",
-          "process.stdout.write"
-        ],
-        [
-          "diagnostic",
-          "process.stdout.write"
-        ],
-        [
-          "diagnostic",
-          "process.stdout.write"
-        ],
-        [
-          "diagnostic",
-          "process.stdout.write"
-        ],
-        [
-          "diagnostic",
-          "process.stdout.write"
-        ],
-        [
-          "diagnostic",
-          "process.stdout.write"
-        ],
-        [
-          "diagnostic",
-          "process.stdout.write"
-        ],
-        [
-          "diagnostic",
-          "process.stdout.write"
-        ],
-        [
-          "serialization",
-          "process.stdout.write"
-        ],
-        [
-          "serialization",
-          "process.stdout.write"
-        ],
-        [
-          "serialization",
-          "process.stdout.write"
-        ],
-        [
-          "serialization",
-          "process.stdout.write"
-        ],
-        [
-          "serialization",
-          "process.stdout.write"
-        ],
-        [
-          "serialization",
-          "process.stdout.write"
-        ],
-        [
-          "serialization",
-          "process.stdout.write"
-        ],
-        [
-          "serialization",
-          "process.stdout.write"
-        ],
-        [
-          "serialization",
-          "process.stdout.write"
-        ],
-        [
-          "serialization",
-          "process.stdout.write"
-        ],
-        [
-          "serialization",
-          "process.stdout.write"
-        ],
-        [
-          "serialization",
-          "process.stdout.write"
-        ],
-        [
-          "filesystem-read",
-          "realpath"
-        ],
-        [
-          "filesystem-read",
-          "realpath"
-        ],
-        [
-          "filesystem-read",
-          "realpath"
-        ],
-        [
-          "filesystem-read",
-          "realpath"
-        ],
-        [
-          "filesystem-read",
-          "realpath"
-        ],
-        [
-          "filesystem-read",
-          "realpath"
-        ]
-      ],
-      "siteCount": 35,
-      "sitesDigest": "71ef324fd84dfbdb76bbd91666dccbf47cfaa4aaf26f91aa02d95f17632e1a5d",
-      "sourceDigest": "6e833d09da43f33eac01afd54b49509c32fd4a6cc224802942892286b347c3a9"
-    },
-    "src/bin/insrc-daemon-supervisor.ts": {
-      "classification": "client-process-boundary",
-      "rationale": "The supervisor entrypoint reads recovery receipts for stopped and registered jobs and reports startup failure on stderr. It starts installation control with release and process metadata, outside connection RPC dispatch.",
-      "sites": [
-        [
-          "serialization",
-          "JSON.parse"
-        ],
-        [
-          "serialization",
-          "JSON.parse"
-        ],
-        [
-          "diagnostic",
-          "process.stderr.write"
-        ],
-        [
-          "serialization",
-          "process.stderr.write"
-        ],
-        [
-          "filesystem-read",
-          "realpath"
-        ]
-      ],
-      "siteCount": 5,
-      "sitesDigest": "3fb31e41b715213f0fd674fefb001e944adc8c74dce072bde6631d278a7a2ee7",
-      "sourceDigest": "450ac712c2b46587414997b9c4c34768dddfa0f1f2b6de42a9cd214dd01e3e27"
-    },
-    "src/bin/insrc-daemon-update.ts": {
-      "classification": "client-process-boundary",
-      "rationale": "Runs the detached installation update and prints failures from that lifecycle operation. It has no driver request input, connection binding or authority to create one.",
-      "sites": [
-        [
-          "diagnostic",
-          "process.stderr.write"
-        ],
-        [
-          "serialization",
-          "process.stderr.write"
-        ]
-      ],
-      "siteCount": 2,
-      "sitesDigest": "0d7541c1809bcaafcfaa218a522c0e538990f017bdcd05fb3d5a7ef781bc9dd0",
-      "sourceDigest": "c18897aad3984105f4ceb8b84affb21323042a4e3968e519fe0e3167c4f3b5a5"
-    },
     "src/bin/insrc-mcp.ts": {
       "classification": "client-process-boundary",
       "rationale": "Client/process entry is outside daemon storage ownership. Only dedicated private bootstrap and S002 isolated worker protocol may carry transient authority/config; no persistence in argv/settings/environment/logs.",
@@ -7466,39 +7271,6 @@
       "siteCount": 5,
       "sitesDigest": "c991cdb7053b936820d6ca172b88e9468139eaed9e2e2b432c12143c6dedabc8",
       "sourceDigest": "de46d3551f706df33c3c02b716e4174dd54c549dc20fb5011718fc0843e342ad"
-    },
-    "src/bin/insrc-shutdown-watchdog.ts": {
-      "classification": "client-process-boundary",
-      "rationale": "Client/process entry is outside daemon storage ownership. Only dedicated private bootstrap and S002 isolated worker protocol may carry transient authority/config; no persistence in argv/settings/environment/logs.",
-      "sites": [
-        [
-          "filesystem-write",
-          "appendFileSync"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "filesystem-write",
-          "mkdirSync"
-        ],
-        [
-          "serialization",
-          "process.send"
-        ],
-        [
-          "serialization",
-          "send"
-        ],
-        [
-          "serialization",
-          "send"
-        ]
-      ],
-      "siteCount": 6,
-      "sitesDigest": "b22fcbdd62182d1289a0d6735b5d2220c09b6b545217e2c6c74962c198b63da8",
-      "sourceDigest": "a1a4a8b18fb2a7120ea49a45e0df9d3e4230c3393fe278ada98fcb99fe728bb1"
     },
     "src/cli/command.ts": {
       "classification": "client-process-boundary",
@@ -7539,7 +7311,7 @@
       ],
       "siteCount": 8,
       "sitesDigest": "bd55207ff364d332c205993df243c0845ca84ff1a22f68b3c06fc9323a909100",
-      "sourceDigest": "94d5a3d657d17dd4ff8649a077f0419ecb46b81401d4ad1d67647486498ffd9b"
+      "sourceDigest": "b69b0e1238c3f916793175caefab49056471442546a3f9f3324f2d35a0e1d9a6"
     },
     "src/cli/index.tsx": {
       "classification": "client-process-boundary",
@@ -7585,7 +7357,7 @@
       ],
       "siteCount": 1,
       "sitesDigest": "e11e0946fd8703dd24ee3e0e0e40852ce11b20e738ee08d17780bb37c26178ee",
-      "sourceDigest": "63f64ba4f9d83c2107c2e2e0d1c9d0f03e8f00fd5ca6df8abc55d2479cd3e067"
+      "sourceDigest": "4565cedb07cd518948c485d4e1bd993618ebaa0513dab4f2c9768e6389226f8b"
     },
     "src/cli/panes/ModelTiersPane.tsx": {
       "classification": "client-process-boundary",
@@ -7598,7 +7370,7 @@
       ],
       "siteCount": 1,
       "sitesDigest": "88067e898f65401d84cf7d0f524d34839744e7da17cac62699953d2ceff1af4e",
-      "sourceDigest": "6954cce27448772cde88544e3b2220cbba66976c0c9b669fe0377f5a5ac8077d"
+      "sourceDigest": "8a843b9e278586dbd1485adee580aeca3fe3f068f8f864956f8e25fbd8bcba16"
     },
     "src/cli/panes/RepoModelsView.tsx": {
       "classification": "client-process-boundary",
@@ -7644,24 +7416,15 @@
       ],
       "siteCount": 6,
       "sitesDigest": "3e2a9e570583125528ac2697c43eac95bba997a9e21544849d00dbd377ac946d",
-      "sourceDigest": "358243292fa568f048db6f639e48aacc8355083002c8203c6959c2046913c8e9"
+      "sourceDigest": "8097fd6149cc11bcdcb0e3ea2e7e81467ecd04e5867bf260769a090f420eb97a"
     },
     "src/cli/services/daemon.ts": {
       "classification": "client-process-boundary",
       "rationale": "Client/process entry is outside daemon storage ownership. Only dedicated private bootstrap and S002 isolated worker protocol may carry transient authority/config; no persistence in argv/settings/environment/logs.",
-      "sites": [
-        [
-          "filesystem-write",
-          "mkdirSync"
-        ],
-        [
-          "filesystem-open",
-          "openSync"
-        ]
-      ],
-      "siteCount": 2,
-      "sitesDigest": "f3ad4ba752d15fcb97db2f3a33bf3888de876a6458c9eae72354ccf188702886",
-      "sourceDigest": "e127ce3a8f727e2f31a8f4068d9ddb23fdf0cf73ecae03be92391ebb5b6a21bf"
+      "sites": [],
+      "siteCount": 0,
+      "sitesDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "sourceDigest": "d009867c1a4741fc999fc9a4bb0ba5a33bb5f6b972695c248794a6925352621f"
     },
     "src/cli/services/debug.ts": {
       "classification": "client-process-boundary",
@@ -7722,246 +7485,7 @@
       ],
       "siteCount": 13,
       "sitesDigest": "a7ce403925f225cc7c90c47b0d95777a8732a649bcc84dbf331e904ad3a1b3b3",
-      "sourceDigest": "e3c48db49f4540cb599e7d284c5328e6594d02d6b7954cb852f2a24119563743"
-    },
-    "src/cli/services/lifecycle.ts": {
-      "classification": "client-process-boundary",
-      "rationale": "Client/process entry is outside daemon storage ownership. Only dedicated private bootstrap and S002 isolated worker protocol may carry transient authority/config; no persistence in argv/settings/environment/logs.",
-      "sites": [
-        [
-          "filesystem-write",
-          "mkdirSync"
-        ],
-        [
-          "filesystem-read",
-          "readFileSync"
-        ]
-      ],
-      "siteCount": 2,
-      "sitesDigest": "8d0c5e47bc191e18a5c876d722e093d2fc42004a0a6583c620b4abbad2a63dd1",
-      "sourceDigest": "ad8068b067790a68a3065e998777420bc7e08fb53ca7a531f65673ca16815c26"
-    },
-    "src/cli/services/maintenance.ts": {
-      "classification": "client-process-boundary",
-      "rationale": "Client/process entry is outside daemon storage ownership. Only dedicated private bootstrap and S002 isolated worker protocol may carry transient authority/config; no persistence in argv/settings/environment/logs. The added callback emits an installed supervisor restart progress message. It reports daemon lifecycle status, not connection state or result data.",
-      "sites": [
-        [
-          "serialization",
-          "c.toString"
-        ],
-        [
-          "serialization",
-          "c.toString"
-        ],
-        [
-          "unresolved-call",
-          "c.toString"
-        ],
-        [
-          "unresolved-call",
-          "c.toString"
-        ],
-        [
-          "serialization",
-          "chunk.toString"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "filesystem-write",
-          "mkdirSync"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "filesystem-read",
-          "readFileSync"
-        ],
-        [
-          "filesystem-read",
-          "readFileSync"
-        ],
-        [
-          "filesystem-write",
-          "rmSync"
-        ],
-        [
-          "filesystem-write",
-          "writeFileSync"
-        ],
-        [
-          "serialization",
-          "writeFileSync"
-        ]
-      ],
-      "siteCount": 45,
-      "sitesDigest": "d2b9b0f65ad5c62bafbaab9a176f9f4a8bf3b4d645724cf75798fc2c6c08cd6f",
-      "sourceDigest": "2f5055f2c12a18747ac5fdf125903938166b615113f2327de872393a89baf7dd"
-    },
-    "src/cli/services/managed-daemon-control.ts": {
-      "classification": "client-process-boundary",
-      "rationale": "Frames lifecycle commands and replies over the installed supervisor socket. Its serialized bodies describe the installation, generation and control command, outside the data connection RPC.",
-      "sites": [
-        [
-          "serialization",
-          "encodeSupervisorFrame"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "unresolved-call",
-          "SupervisorFrameReader"
-        ],
-        [
-          "serialization",
-          "this.socket.write"
-        ]
-      ],
-      "siteCount": 6,
-      "sitesDigest": "dccb04505b71430bf99577896987d3681c15a378fab50f389582452acc598979",
-      "sourceDigest": "af22c27feaa28b3889c454bcea9a6db4f9dceeb3687b3cd3282e1836820e3007"
+      "sourceDigest": "5d7923a99af23eb8ae9da663d332b44485076da1fb38f4908f994cbf58d94b45"
     },
     "src/cli/services/setup.ts": {
       "classification": "client-process-boundary",
@@ -8752,14 +8276,6 @@
           "JSON.parse"
         ],
         [
-          "diagnostic",
-          "log.error"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
           "filesystem-read",
           "readFileSync"
         ],
@@ -8772,9 +8288,9 @@
           "validateRepoPath"
         ]
       ],
-      "siteCount": 8,
-      "sitesDigest": "70d7f72427b53ce845b0300731be78a3f692e84e5ba600b43d5c0d324810061e",
-      "sourceDigest": "3069c106b9cbfbe1d1ed7b4c15f3c5ed63ac9d1352fc2506a00f59b1edbc5292"
+      "siteCount": 6,
+      "sitesDigest": "02c264e86e97e918ffcb893f25274d9c5aeb4d2a2485fe561614f477a4ca486e",
+      "sourceDigest": "d851c9718585756f4d0f48e8a729da6beae24582059f31547f4065f584211e32"
     },
     "src/daemon/analyze-rpc.ts": {
       "classification": "owner-rpc-boundary",
@@ -14010,31 +13526,6 @@
       "sitesDigest": "bbcc5f3bf79364cc2add8e2dd9cd2328192a35a8f9939c4067dce7ceffda5e75",
       "sourceDigest": "1334997094b1ba6ec74b194898aed9db3703481d093e49deb10fe6a71518e83a"
     },
-    "src/daemon/fatal.ts": {
-      "classification": "daemon-admission-boundary",
-      "rationale": "Process/service infrastructure or non-session RPC. No implicit session admission: unsupported stateful methods refuse at dispatch; coarse lifecycle/background diagnostics must not receive temporary payloads.",
-      "sites": [
-        [
-          "filesystem-write",
-          "appendFileSync"
-        ],
-        [
-          "filesystem-write",
-          "mkdirSync"
-        ],
-        [
-          "diagnostic",
-          "process.stderr.write"
-        ],
-        [
-          "serialization",
-          "process.stderr.write"
-        ]
-      ],
-      "siteCount": 4,
-      "sitesDigest": "1defc2fe10e6c004e2954ffdea00463c639ee15a29ce1b46d5c724b5e05dae75",
-      "sourceDigest": "1c0ce24c8b2428adae95366bf6d1d8c214a79436df323c596cddb87172a98cd8"
-    },
     "src/daemon/git-hooks-methods.ts": {
       "classification": "daemon-admission-boundary",
       "rationale": "Assigned during the 2026-11-03 merge of origin/main into v2 from the existing classification of its directory (daemon-admission-boundary); boundaries seen: diagnostic, serialization. A mechanical assignment, not an independent review: revisit at the next review of the connection-management gate.",
@@ -14611,94 +14102,6 @@
           "import"
         ],
         [
-          "unresolved-call",
-          "import"
-        ],
-        [
-          "unresolved-call",
-          "import"
-        ],
-        [
-          "unresolved-call",
-          "import"
-        ],
-        [
-          "unresolved-call",
-          "import"
-        ],
-        [
-          "unresolved-call",
-          "import"
-        ],
-        [
-          "unresolved-call",
-          "import"
-        ],
-        [
-          "unresolved-call",
-          "import"
-        ],
-        [
-          "unresolved-call",
-          "import"
-        ],
-        [
-          "unresolved-call",
-          "import"
-        ],
-        [
-          "unresolved-call",
-          "import"
-        ],
-        [
-          "unresolved-call",
-          "import"
-        ],
-        [
-          "unresolved-call",
-          "import"
-        ],
-        [
-          "unresolved-call",
-          "import"
-        ],
-        [
-          "unresolved-call",
-          "import"
-        ],
-        [
-          "unresolved-call",
-          "import"
-        ],
-        [
-          "unresolved-call",
-          "import"
-        ],
-        [
-          "unresolved-call",
-          "import"
-        ],
-        [
-          "unresolved-call",
-          "import"
-        ],
-        [
-          "unresolved-call",
-          "import"
-        ],
-        [
-          "unresolved-call",
-          "import"
-        ],
-        [
-          "unresolved-call",
-          "import"
-        ],
-        [
-          "unresolved-call",
-          "import"
-        ],
-        [
           "serialization",
           "JSON.parse"
         ],
@@ -14809,6 +14212,10 @@
         [
           "diagnostic",
           "log.info"
+        ],
+        [
+          "diagnostic",
+          "log.warn"
         ],
         [
           "diagnostic",
@@ -15023,9 +14430,9 @@
           "writeFileSync"
         ]
       ],
-      "siteCount": 226,
-      "sitesDigest": "f95a307abc17c612f3d9df4980bf8d27464f99ea6a80c4a783014ff702405c54",
-      "sourceDigest": "3bc5d72cfa53f407261561d56e5acf5628020b90f3e02271be5bd38da02d6bf8"
+      "siteCount": 205,
+      "sitesDigest": "0908e371fa5e8e0d3b8b08dd9e9f0a564bcc7c47ec1e684f7f0902b55d95b8ff",
+      "sourceDigest": "d15dbc78b60615f78bdc5cc0b1acfcccc4e58974aea8ff66b5bec7feb213d425"
     },
     "src/daemon/index.ts": {
       "classification": "daemon-admission-boundary",
@@ -15066,6 +14473,10 @@
         [
           "diagnostic",
           "getLogger"
+        ],
+        [
+          "storage-call",
+          "getStoreHealth"
         ],
         [
           "storage-call",
@@ -15165,7 +14576,7 @@
         ],
         [
           "diagnostic",
-          "log.fatal"
+          "log.error"
         ],
         [
           "diagnostic",
@@ -15218,6 +14629,18 @@
         [
           "diagnostic",
           "log.info"
+        ],
+        [
+          "diagnostic",
+          "log.info"
+        ],
+        [
+          "diagnostic",
+          "log.info"
+        ],
+        [
+          "diagnostic",
+          "log.warn"
         ],
         [
           "diagnostic",
@@ -15310,93 +14733,11 @@
         [
           "storage-call",
           "startPeriodicReaderCheck"
-        ],
-        [
-          "serialization",
-          "writePid"
         ]
       ],
-      "siteCount": 71,
-      "sitesDigest": "974e81c620f34713fb093bfb99671bc98d3e2cc2930e2036ec1c24a9c38a5e49",
-      "sourceDigest": "cf4e0fc7d45abaa5f576e67376bf3f1021f9d5c234f2dde3b3ff623c2c77da51"
-    },
-    "src/daemon/legacy-daemon-cutover.ts": {
-      "classification": "daemon-admission-boundary",
-      "rationale": "Validates legacy process and run-file identity before sending the cooperative shutdown RPC. The socket payload is a shutdown control frame; the read files provide process ownership and installation identity.",
-      "sites": [
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "filesystem-read",
-          "lstatSync"
-        ],
-        [
-          "filesystem-read",
-          "lstatSync"
-        ],
-        [
-          "filesystem-read",
-          "readFileSync"
-        ],
-        [
-          "filesystem-read",
-          "realpath"
-        ],
-        [
-          "filesystem-read",
-          "realpath"
-        ],
-        [
-          "filesystem-read",
-          "realpath"
-        ],
-        [
-          "serialization",
-          "socket!.write"
-        ]
-      ],
-      "siteCount": 8,
-      "sitesDigest": "2dbda3509bdf22831133ea156eccfe038a2c70f7d4fefa45cce2ab19a6d026f3",
-      "sourceDigest": "368953ea20999676faab83748a348dfd5fadfc5164e29d4fa4230b4602d413bf"
-    },
-    "src/daemon/legacy-launch-job.ts": {
-      "classification": "daemon-admission-boundary",
-      "rationale": "Inspects legacy LaunchAgent registration and parses the job descriptor to verify cutover ownership. The examined data describes the job and release paths, independent of connection registry and driver state.",
-      "sites": [
-        [
-          "serialization",
-          "JSON.parse"
-        ],
-        [
-          "filesystem-read",
-          "lstat"
-        ],
-        [
-          "filesystem-read",
-          "lstat"
-        ],
-        [
-          "filesystem-read",
-          "readFile"
-        ],
-        [
-          "filesystem-read",
-          "readFile"
-        ],
-        [
-          "filesystem-read",
-          "realpath"
-        ],
-        [
-          "filesystem-read",
-          "realpath"
-        ]
-      ],
-      "siteCount": 7,
-      "sitesDigest": "2576207706872f1128d3d8e48392657a831bcd4c035578a99fb93adcfe3ca2b8",
-      "sourceDigest": "f8d29d2e1a121cd25c6488791b22639738292cedd4d7da0b447116f08fc8a66c"
+      "siteCount": 74,
+      "sitesDigest": "f3641ca0f995d3df4f2ae8d7c7d9b771501b57d82fd2912e26917ee682c75b61",
+      "sourceDigest": "9ab5ae9893b8e4bc46c2f9a60cfdcdf10831095b222a22b102fff4bc50639f0c"
     },
     "src/daemon/lifecycle-registry.ts": {
       "classification": "daemon-admission-boundary",
@@ -15419,10 +14760,6 @@
       "classification": "daemon-admission-boundary",
       "rationale": "Process/service infrastructure or non-session RPC. No implicit session admission: unsupported stateful methods refuse at dispatch; coarse lifecycle/background diagnostics must not receive temporary payloads.",
       "sites": [
-        [
-          "serialization",
-          "daemonRunFiles.writePid"
-        ],
         [
           "provider-adapter",
           "embeddingDim"
@@ -15516,211 +14853,9 @@
           "setActiveEmbedderBackend"
         ]
       ],
-      "siteCount": 24,
-      "sitesDigest": "ca5757b765ca5b35169a2d917547b3937a03fde5bbec5ac500168b6491cfd1ed",
-      "sourceDigest": "883f2085fe89e30ac36d91033748c856e1a4503b0f14e073bbf9622e6f4ede05"
-    },
-    "src/daemon/managed-daemon-lifecycle.ts": {
-      "classification": "daemon-admission-boundary",
-      "rationale": "The managed child sends lifecycle readiness and shutdown frames over its supervisor channel. This channel carries generation and process status, separate from public IPC and temporary connection transport.",
-      "sites": [
-        [
-          "serialization",
-          "encodeSupervisorFrame"
-        ],
-        [
-          "serialization",
-          "encodeSupervisorFrame"
-        ],
-        [
-          "unresolved-call",
-          "SupervisorFrameReader"
-        ],
-        [
-          "serialization",
-          "this.channel.write"
-        ],
-        [
-          "serialization",
-          "this.channel.write"
-        ]
-      ],
-      "siteCount": 5,
-      "sitesDigest": "a3836822e71847afc79e395b9770c17e345952309f269fb7dfc47a6864664c59",
-      "sourceDigest": "09cbf25837c1e48d46d592763a25f270c3d27b8d3dd92d9cbc2a59034f529dfc"
-    },
-    "src/daemon/managed-daemon-probation.ts": {
-      "classification": "daemon-admission-boundary",
-      "rationale": "Verifies the selected release and publishes the managed PID before opening the daemon index store during probation. Indexer readiness uses the daemon-owned store without acquiring a connection session or driver.",
-      "sites": [
-        [
-          "storage-call",
-          "getDb"
-        ],
-        [
-          "filesystem-read",
-          "realpath"
-        ],
-        [
-          "serialization",
-          "writePid"
-        ]
-      ],
-      "siteCount": 3,
-      "sitesDigest": "0b3703e585c34356da1425200880f2c65f184440383f0540239c442d1a20bc8c",
-      "sourceDigest": "97118b7b85c16fb177ce94ce9f9ccccaa2acc0bc50489e3c0c67a81d79e58c4a"
-    },
-    "src/daemon/managed-update-handoff.ts": {
-      "classification": "daemon-admission-boundary",
-      "rationale": "Records pinned releases, stop and launch outcomes, and generation receipts in the installation mutation journal. Those writes carry lifecycle ownership metadata, with store-owner handoff independent of connection leases.",
-      "sites": [
-        [
-          "storage-call",
-          "declareLiveStoreOwner"
-        ],
-        [
-          "unresolved-call",
-          "import"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ]
-      ],
-      "siteCount": 12,
-      "sitesDigest": "b33f8af8660f48518e8c9b5e5f4e8ef85fe8f60ff8e9a41705f1b3c7f2d212c6",
-      "sourceDigest": "db7228af45b9293360261f294d275309096a8d8e9af57b57f70fd09342abc936"
-    },
-    "src/daemon/managed-update-ipc.ts": {
-      "classification": "daemon-admission-boundary",
-      "rationale": "Projects installed commit and update outcome from the selected release and mutation journal. Its resolved paths and status values have no temporary connection configuration or result payload.",
-      "sites": [
-        [
-          "filesystem-read",
-          "realpath"
-        ]
-      ],
-      "siteCount": 1,
-      "sitesDigest": "de0342b58ecc17de4b55d5981306b2e1bf229edb5cff31ee9e25af7328d9b7a2",
-      "sourceDigest": "a5a0a368b0a4551bbe1462cd0b745d66d7b17405bd4be54c8eb5915b51405153"
-    },
-    "src/daemon/managed-update-launch.ts": {
-      "classification": "daemon-admission-boundary",
-      "rationale": "Reads release compatibility metadata, reserves the update and acknowledges the detached helper through process IPC. Its serialized values are release selector and handoff data, outside the connection runtime.",
-      "sites": [
-        [
-          "serialization",
-          "child.send"
-        ],
-        [
-          "serialization",
-          "JSON.parse"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "filesystem-read",
-          "lstat"
-        ],
-        [
-          "serialization",
-          "process.send!"
-        ],
-        [
-          "filesystem-read",
-          "readFile"
-        ],
-        [
-          "filesystem-read",
-          "realpath"
-        ]
-      ],
-      "siteCount": 8,
-      "sitesDigest": "f59cdda1dc67daed327c5d445c00f1befbf5fb17dded2cbad8dc542f8b47d44c",
-      "sourceDigest": "a29d675c3e7c85ee4fbdf8956542bb60c88323f65fba29440fdc22adbe145f7b"
-    },
-    "src/daemon/managed-update-recovery.ts": {
-      "classification": "daemon-admission-boundary",
-      "rationale": "Decodes mutation receipts and records restored job, process exit and generation status during rollback. Recovery journal writes concern installation state and do not reconstruct connection-session state.",
-      "sites": [
-        [
-          "serialization",
-          "JSON.parse"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ]
-      ],
-      "siteCount": 8,
-      "sitesDigest": "314bf12d148cbe273ac27c9ac50e691412df835efc6f4c05dfb0f1eb466b68ef",
-      "sourceDigest": "007ef127237bb103d45415ea571f6467f1d7c51383065eb0f2a8d82df86ef74c"
+      "siteCount": 23,
+      "sitesDigest": "436f3ea5bb48ba91e5509be2c0308d0d665ce4ffdd1c0f54cc1836b37a2935f9",
+      "sourceDigest": "d12ccfa053f531c62b34b16649f8a462c97856ea115990dd907e6c0cd7c23f56"
     },
     "src/daemon/mcp-register.ts": {
       "classification": "daemon-admission-boundary",
@@ -16061,59 +15196,6 @@
       "sitesDigest": "222c57c4402fcd795fddbf35b7000985cf96368fc1e68305c66b52e4092f4fa8",
       "sourceDigest": "7d06c1b3b29195139c54fa5d70883bf6ec3fbb1d930033ebddb3448059f01c81"
     },
-    "src/daemon/release-compatibility.ts": {
-      "classification": "persistent-storage-boundary",
-      "rationale": "Probes the quiesced graph schema and Lance table schemas for release compatibility, then closes the inspection handles. It reads store metadata only and neither scans stored rows nor acquires a connection driver.",
-      "sites": [
-        [
-          "storage-call",
-          "connect"
-        ],
-        [
-          "storage-call",
-          "connection.close"
-        ],
-        [
-          "storage-call",
-          "connection.openTable"
-        ],
-        [
-          "storage-call",
-          "connection.tableNames"
-        ],
-        [
-          "unresolved-call",
-          "import"
-        ],
-        [
-          "unresolved-call",
-          "import"
-        ],
-        [
-          "storage-call",
-          "inspectQuiescedGraphSchema"
-        ],
-        [
-          "serialization",
-          "JSON.parse"
-        ],
-        [
-          "filesystem-read",
-          "lstat"
-        ],
-        [
-          "storage-call",
-          "table.close"
-        ],
-        [
-          "storage-call",
-          "table.schema"
-        ]
-      ],
-      "siteCount": 11,
-      "sitesDigest": "ab503be7330a5972c329af9ac98c75499e0c463a66772dc21ba92c8b8f917722",
-      "sourceDigest": "51239fa908ae0097585abf355621ad9ba07061a268600a35142e5ae8689c4f49"
-    },
     "src/daemon/repo-call-gate.ts": {
       "classification": "daemon-admission-boundary",
       "rationale": "Assigned during the 2026-11-03 merge of origin/main into v2 from the existing classification of its directory (daemon-admission-boundary); boundaries seen: filesystem-read. A mechanical assignment, not an independent review: revisit at the next review of the connection-management gate.",
@@ -16320,59 +15402,6 @@
       "sitesDigest": "e3b9683b14abdbf5b6dcc945afe0549bc4e5f4b3c26b616a268ccf22710b64f5",
       "sourceDigest": "63aa3d30d0ae55f3028cdf5933eb0710e36b19add0a48c023a61d52b8797ba94"
     },
-    "src/daemon/run-file-ownership.ts": {
-      "classification": "daemon-admission-boundary",
-      "rationale": "Process/service infrastructure or non-session RPC. No implicit session admission: unsupported stateful methods refuse at dispatch; coarse lifecycle/background diagnostics must not receive temporary payloads.",
-      "sites": [
-        [
-          "filesystem-write",
-          "appendFileSync"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "filesystem-read",
-          "lstatSync"
-        ],
-        [
-          "filesystem-write",
-          "mkdirSync"
-        ],
-        [
-          "filesystem-write",
-          "mkdirSync"
-        ],
-        [
-          "diagnostic",
-          "process.stderr.write"
-        ],
-        [
-          "serialization",
-          "process.stderr.write"
-        ],
-        [
-          "filesystem-read",
-          "readFileSync"
-        ],
-        [
-          "filesystem-read",
-          "readFileSync"
-        ],
-        [
-          "filesystem-write",
-          "writeFileSync"
-        ],
-        [
-          "serialization",
-          "writeFileSync"
-        ]
-      ],
-      "siteCount": 11,
-      "sitesDigest": "562b074fec50dfc8e9fb00551b4cc5813225b6a114f56bc6aa0e72dc5aa803d4",
-      "sourceDigest": "2f721b5ffef868b9f9cb16414f16dc688e65e19299aa299a0299edbe779ea6db"
-    },
     "src/daemon/search-guard.ts": {
       "classification": "daemon-admission-boundary",
       "rationale": "Process/service infrastructure or non-session RPC. No implicit session admission: unsupported stateful methods refuse at dispatch; coarse lifecycle/background diagnostics must not receive temporary payloads.",
@@ -16477,69 +15506,7 @@
       ],
       "siteCount": 15,
       "sitesDigest": "336d555fe17123ef6ce9baad4d35be84b2e707d9c1fa7c2b6fa146f7c2bcbb18",
-      "sourceDigest": "68c17bfaddc6789c6b6bb0b0a169d83b60c8741a925c12cd58d8cc9e6f80295b"
-    },
-    "src/daemon/shutdown-watchdog.ts": {
-      "classification": "daemon-admission-boundary",
-      "rationale": "Process/service infrastructure or non-session RPC. No implicit session admission: unsupported stateful methods refuse at dispatch; coarse lifecycle/background diagnostics must not receive temporary payloads.",
-      "sites": [
-        [
-          "serialization",
-          "child.send"
-        ],
-        [
-          "serialization",
-          "send"
-        ],
-        [
-          "serialization",
-          "send"
-        ]
-      ],
-      "siteCount": 3,
-      "sitesDigest": "209b39d2ed9da33622e18c7fbdf9fec6139e4122125f7143ca7a8991dbec6648",
-      "sourceDigest": "e7859d8fa6cdd1a838e6e088197799865eda8e68363a887cb692e69b29d425ed"
-    },
-    "src/daemon/shutdown.ts": {
-      "classification": "daemon-admission-boundary",
-      "rationale": "Process/service infrastructure or non-session RPC. No implicit session admission: unsupported stateful methods refuse at dispatch; coarse lifecycle/background diagnostics must not receive temporary payloads.",
-      "sites": [
-        [
-          "filesystem-write",
-          "appendFileSync"
-        ],
-        [
-          "filesystem-write",
-          "appendFileSync"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "filesystem-write",
-          "mkdirSync"
-        ],
-        [
-          "filesystem-write",
-          "mkdirSync"
-        ],
-        [
-          "diagnostic",
-          "parts.log.info"
-        ],
-        [
-          "diagnostic",
-          "parts.log.info"
-        ],
-        [
-          "diagnostic",
-          "parts.log.warn"
-        ]
-      ],
-      "siteCount": 8,
-      "sitesDigest": "706b0ae72e9e75930a1848d2bd6082bbe1d38340380653c59b12a83c51c70960",
-      "sourceDigest": "e23df74286f32923b682d3df9463436dcdce161ffbb713cbc9c3bb3be67027c6"
+      "sourceDigest": "cf3f06a1fb909a3e4d243eb9a1040c44269ac13cbe2f3161cf9f9e773659a6c4"
     },
     "src/daemon/source-roots-rpc.ts": {
       "classification": "daemon-admission-boundary",
@@ -16569,7 +15536,7 @@
       ],
       "siteCount": 1,
       "sitesDigest": "6fca26a42e42ecba5ef2d6a8381549249110a5bf01db6f2896057066b6b03398",
-      "sourceDigest": "5f56106b3a19c387f74205af2cfab1468903fd008c7b693fc7f2be8ea0c63617"
+      "sourceDigest": "8204d40d730d1c417d5ee4171a7896c22bf805a53c8a4a7e6718dec6cbd99f62"
     },
     "src/daemon/steering-inject.ts": {
       "classification": "daemon-admission-boundary",
@@ -17531,153 +16498,6 @@
       "sitesDigest": "5c1020f95856e3cbc1953d2f633eafba5ffe7c0a29c1bfd20a35fb1133e5805c",
       "sourceDigest": "de8250ad22085d46be68f3ce1c4e4c92b9a25596b85e9f64874813d0df60aef7"
     },
-    "src/daemon/supervisor-run-files.ts": {
-      "classification": "daemon-admission-boundary",
-      "rationale": "Reads and writes supervisor ownership records and removes only matching run-file publications. The persisted values are lifecycle process identity, owner and nonce, outside connection state.",
-      "sites": [
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "filesystem-read",
-          "lstat"
-        ],
-        [
-          "filesystem-write",
-          "mkdir"
-        ],
-        [
-          "filesystem-write",
-          "mkdir"
-        ],
-        [
-          "filesystem-read",
-          "readFile"
-        ],
-        [
-          "filesystem-read",
-          "readFile"
-        ],
-        [
-          "filesystem-write",
-          "unlink"
-        ],
-        [
-          "filesystem-write",
-          "unlink"
-        ],
-        [
-          "filesystem-write",
-          "writeFile"
-        ],
-        [
-          "serialization",
-          "writeFile"
-        ]
-      ],
-      "siteCount": 10,
-      "sitesDigest": "9d1f9ace9e4a74ba16c71dd206ab75c92a648ebca76f0033a8338eaf77788aa8",
-      "sourceDigest": "9f99e1fe826a39f9a04222c05fe32be46b1092e19722f578391f15c3462cdb6d"
-    },
-    "src/daemon/supervisor-socket.ts": {
-      "classification": "daemon-admission-boundary",
-      "rationale": "Accepts typed lifecycle control frames on the supervisor socket and emits process state and operation replies. It has no connection route or generic payload forwarder.",
-      "sites": [
-        [
-          "serialization",
-          "encodeSupervisorFrame"
-        ],
-        [
-          "serialization",
-          "encodeSupervisorFrame"
-        ],
-        [
-          "serialization",
-          "encodeSupervisorFrame"
-        ],
-        [
-          "filesystem-read",
-          "lstat"
-        ],
-        [
-          "serialization",
-          "send"
-        ],
-        [
-          "serialization",
-          "socket.write"
-        ],
-        [
-          "serialization",
-          "socket.write"
-        ],
-        [
-          "unresolved-call",
-          "SupervisorFrameReader"
-        ]
-      ],
-      "siteCount": 8,
-      "sitesDigest": "b89ac0a05a068c7c2be63831c433e5407d36c04afa3278bb30abe6e8a8756172",
-      "sourceDigest": "07211532d266c93ae92730a3a1d74433cded9743c5762200d6f0f28652bb9eab"
-    },
-    "src/daemon/supervisor.ts": {
-      "classification": "daemon-admission-boundary",
-      "rationale": "Owns child generation lifecycle and sends startup, readiness and exit control messages. Its child IPC and supervisor protocol frames track process state separately from the daemon's connection transport.",
-      "sites": [
-        [
-          "filesystem-read",
-          "access"
-        ],
-        [
-          "filesystem-read",
-          "access"
-        ],
-        [
-          "serialization",
-          "active.child.send"
-        ],
-        [
-          "serialization",
-          "active.child.send"
-        ],
-        [
-          "serialization",
-          "active.child.send"
-        ],
-        [
-          "serialization",
-          "active.child.send"
-        ],
-        [
-          "serialization",
-          "channel.write"
-        ],
-        [
-          "serialization",
-          "encodeSupervisorFrame"
-        ],
-        [
-          "filesystem-read",
-          "stat"
-        ],
-        [
-          "filesystem-read",
-          "stat"
-        ],
-        [
-          "filesystem-read",
-          "stat"
-        ],
-        [
-          "unresolved-call",
-          "SupervisorFrameReader"
-        ]
-      ],
-      "siteCount": 12,
-      "sitesDigest": "761b27c49d5203aa1d657f7296534b74e60097bfa4972a03ba965e7236c8adb6",
-      "sourceDigest": "d10bcfaa6e6903b3bb1d9d5e3cc1610505c666539e3368786bf569d1d9792dfa"
-    },
     "src/daemon/task-progress/access.ts": {
       "classification": "daemon-admission-boundary",
       "rationale": "Authorizes progress origin and attachment with trusted socket identity and hashed capabilities. Its serialized project identity is based on canonical path and registration, with no data-source binding. Executor admission chooses a unique verified origin for a registered project. Scope checks use registered paths and do not resolve or store connection-session data.",
@@ -18070,7 +16890,7 @@
       ],
       "siteCount": 1,
       "sitesDigest": "2662f602b592544a387419976e43b04c1fa9b635b8a11a68c56749a4be7ebe31",
-      "sourceDigest": "a5e2c85550011e22fec12883aa649520715462861338f0f4495df7a955a4c69e"
+      "sourceDigest": "f20128769fd6c403e6a555bc56abc895fc5af2bfa6de90338ee9c19bde72be57"
     },
     "src/daemon/threads/admin-worker.ts": {
       "classification": "routing-background-boundary",
@@ -18091,7 +16911,7 @@
       ],
       "siteCount": 3,
       "sitesDigest": "83ae85819fb20de268c9851a510311b255a8fbaa740e671059b56f2fb54a7234",
-      "sourceDigest": "9bd6dd9024d443bde614aa07180054493648d03799754111d18332c8a73d2154"
+      "sourceDigest": "35d802c62b60109ae3f9333b1d0746b3f911a1b4b96ae05b209fc9b93ad86a97"
     },
     "src/daemon/threads/channel.ts": {
       "classification": "routing-background-boundary",
@@ -18168,10 +16988,6 @@
           "getLogger"
         ],
         [
-          "serialization",
-          "hub.send"
-        ],
-        [
           "storage-call",
           "listRepos"
         ],
@@ -18192,9 +17008,9 @@
           "parentPort!.postMessage"
         ]
       ],
-      "siteCount": 8,
-      "sitesDigest": "44a0f8dc4f0d1450a8dcf9f0e118e2d4076c32cdbe446981709c93e5bcf520c3",
-      "sourceDigest": "f0b4ab9ab06aa4eba2b01ad9a191b5a16380059f80f8ef306e5b7e76d60cec7b"
+      "siteCount": 7,
+      "sitesDigest": "6cd43a2d4f62c87d2371ebe3e45872afa13b5fb12b4c4c58e8654d0366c8a7f7",
+      "sourceDigest": "7f17053c20891c7e8e9b193a68ecfa5ccee599b13c40bf683a1fc03db268351a"
     },
     "src/daemon/threads/indexing-workers.ts": {
       "classification": "routing-background-boundary",
@@ -18251,6 +17067,10 @@
       "rationale": "Thread infrastructure must route session and owner-mutating requests to main daemon; maintenance retains real completion/drain. Background indexing/summary workers receive no session payload or capability.",
       "sites": [
         [
+          "unresolved-call",
+          "ArtifactWriteAuthorityHost"
+        ],
+        [
           "storage-call",
           "createStoreGuardBlock"
         ],
@@ -18299,9 +17119,9 @@
           "this.info"
         ]
       ],
-      "siteCount": 12,
-      "sitesDigest": "931d07e3458e3d656af5f0cdb2ac5df5523f3e6c59e9292b181eabcb8bfe6bef",
-      "sourceDigest": "c030d7e1fb7891f176d43391c393ca4ed196303c8519675cffd302215c65e7f3",
+      "siteCount": 13,
+      "sitesDigest": "46714519786704ec5da0512d05aeea434eb0c91f86e8cf05c14cd09315967be3",
+      "sourceDigest": "213ce4d0af86469ef91e0ecf092ec831309ef06b1feadc5b7bf079aad08da0d5",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -18535,8 +17355,12 @@
           "getLogger"
         ],
         [
-          "serialization",
-          "hub.send"
+          "unresolved-call",
+          "import"
+        ],
+        [
+          "unresolved-call",
+          "import"
         ],
         [
           "unresolved-call",
@@ -18555,9 +17379,9 @@
           "parentPort!.postMessage"
         ]
       ],
-      "siteCount": 7,
-      "sitesDigest": "8dd8d3f552b7ef2265d2fe0e921cd235231dec33b8e9b43988a453093e4fb922",
-      "sourceDigest": "e0c0c072ede85b32a055c2e4306c909a0d3d2ea886c7756e558f8ee2f34691d8"
+      "siteCount": 8,
+      "sitesDigest": "1314ad332834c98d4879bbab83f5d5fe3f8521f0713240c74dc5c68eed7107b3",
+      "sourceDigest": "a0517ae99b90f1d697db1e5cee946963b2d2186ef011e8248b2652ffd5d04253"
     },
     "src/daemon/threads/status-board.ts": {
       "classification": "routing-background-boundary",
@@ -21795,95 +20619,6 @@
       "siteCount": 8,
       "sitesDigest": "4877cf1ef936e1efde2a6d9ca103ac4723ccd9bd026450f278e746e75b524514",
       "sourceDigest": "2b99e6c961a42b87cc1e277b012491e0713edde48436c38a91d15e72cbca8ffd"
-    },
-    "src/daemon/update-runner.ts": {
-      "classification": "daemon-admission-boundary",
-      "rationale": "Process/service infrastructure or non-session RPC. No implicit session admission: unsupported stateful methods refuse at dispatch; coarse lifecycle/background diagnostics must not receive temporary payloads.",
-      "sites": [
-        [
-          "serialization",
-          "c.toString"
-        ],
-        [
-          "diagnostic",
-          "getLogger"
-        ],
-        [
-          "serialization",
-          "JSON.parse"
-        ],
-        [
-          "serialization",
-          "JSON.parse"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
-        ],
-        [
-          "filesystem-write",
-          "mkdirSync"
-        ],
-        [
-          "filesystem-open",
-          "openSync"
-        ],
-        [
-          "filesystem-read",
-          "readFileSync"
-        ],
-        [
-          "filesystem-read",
-          "readFileSync"
-        ],
-        [
-          "filesystem-write",
-          "rmSync"
-        ],
-        [
-          "filesystem-write",
-          "rmSync"
-        ],
-        [
-          "filesystem-write",
-          "writeFileSync"
-        ],
-        [
-          "filesystem-write",
-          "writeFileSync"
-        ],
-        [
-          "serialization",
-          "writeFileSync"
-        ],
-        [
-          "serialization",
-          "writeFileSync"
-        ],
-        [
-          "serialization",
-          "writeUpdateOutcome"
-        ]
-      ],
-      "siteCount": 20,
-      "sitesDigest": "94a5f06833fed18dc64d400f6511315417d87774d761607017de383d08c3a365",
-      "sourceDigest": "d879c5e709b1d3bb14cf5c6acaac8892e8962e3983f501621c672f6c32503111"
     },
     "src/daemon/workflow-rpc.ts": {
       "classification": "daemon-admission-boundary",
@@ -37300,35 +36035,6 @@
       "sitesDigest": "2d1c5086d8373eec03a875ad6f73169d17c313b6469a4fde020576d3b0767a42",
       "sourceDigest": "b6ea16547ce84c5208ec7dba9c73d1f1ba744e91f398ea50362abb0a641e7857"
     },
-    "src/shared/daemon-process-client.ts": {
-      "classification": "shared-transport-foundation",
-      "rationale": "Shared serializer/logger/transport primitive is not an authorization boundary. Daemon callers must validate session tuple and use nonserializable authority plus execution-local quiet diagnostics; global logging stays enabled.",
-      "sites": [
-        [
-          "serialization",
-          "Buffer.from"
-        ],
-        [
-          "serialization",
-          "Buffer.from"
-        ],
-        [
-          "serialization",
-          "decoder.decode"
-        ],
-        [
-          "serialization",
-          "decoder.decode"
-        ],
-        [
-          "serialization",
-          "this.child.stdin.write"
-        ]
-      ],
-      "siteCount": 5,
-      "sitesDigest": "bca2ea1462215e864dc1442638e90581ebc470b753766ca7679b9f1e3429dd1f",
-      "sourceDigest": "c4b3bf9f2395f954d0cfc2f5b9113166fb805c1a822fbab52eaa0ba767f88d24"
-    },
     "src/shared/daemon-process.ts": {
       "classification": "shared-transport-foundation",
       "rationale": "Shared serializer/logger/transport primitive is not an authorization boundary. Daemon callers must validate session tuple and use nonserializable authority plus execution-local quiet diagnostics; global logging stays enabled.",
@@ -37363,8 +36069,16 @@
       "rationale": "Shared serializer/logger/transport primitive is not an authorization boundary. Daemon callers must validate session tuple and use nonserializable authority plus execution-local quiet diagnostics; global logging stays enabled.",
       "sites": [
         [
+          "filesystem-write",
+          "appendFileSync"
+        ],
+        [
           "serialization",
           "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
         ],
         [
           "serialization",
@@ -37379,11 +36093,59 @@
           "mkdirSync"
         ],
         [
+          "filesystem-write",
+          "mkdirSync"
+        ],
+        [
+          "filesystem-read",
+          "readdirSync"
+        ],
+        [
+          "filesystem-read",
+          "readdirSync"
+        ],
+        [
+          "filesystem-read",
+          "readdirSync"
+        ],
+        [
+          "filesystem-read",
+          "readFileSync"
+        ],
+        [
+          "filesystem-read",
+          "readFileSync"
+        ],
+        [
+          "filesystem-read",
+          "readFileSync"
+        ],
+        [
+          "filesystem-read",
+          "readFileSync"
+        ],
+        [
           "filesystem-read",
           "readFileSync"
         ],
         [
           "filesystem-write",
+          "renameSync"
+        ],
+        [
+          "filesystem-write",
+          "unlinkSync"
+        ],
+        [
+          "filesystem-write",
+          "unlinkSync"
+        ],
+        [
+          "filesystem-write",
+          "unlinkSync"
+        ],
+        [
+          "filesystem-write",
           "unlinkSync"
         ],
         [
@@ -37395,59 +36157,21 @@
           "writeFileSync"
         ],
         [
+          "filesystem-write",
+          "writeFileSync"
+        ],
+        [
+          "serialization",
+          "writeFileSync"
+        ],
+        [
           "serialization",
           "writeFileSync"
         ]
       ],
-      "siteCount": 9,
-      "sitesDigest": "0feb33aa60e20d00d69b37f4c82af0323889bb7a67ab3c580540ddb884ff0ea4",
-      "sourceDigest": "9bfc6c89f49a68ec9a4a31f5d03645c1f1b3358b96dc40e4725e46e7e499193c"
-    },
-    "src/shared/daemon-supervisor-protocol.ts": {
-      "classification": "shared-transport-foundation",
-      "rationale": "Encodes and decodes bounded, validated installation supervisor frames. The protocol describes operations, generations and process results and is separate from data connection IPC.",
-      "sites": [
-        [
-          "serialization",
-          "Buffer.alloc"
-        ],
-        [
-          "serialization",
-          "Buffer.from"
-        ],
-        [
-          "serialization",
-          "JSON.parse"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "serialization",
-          "this.utf8.decode"
-        ]
-      ],
-      "siteCount": 5,
-      "sitesDigest": "d62152298182427553365f268920988c47c445fbd887ad0ef2fd53e3db21c6ff",
-      "sourceDigest": "d8e8f7d6a58f9121cf8f22053597d306d57e1b58b90ad2fad9b58780fa519e99"
-    },
-    "src/shared/darwin-lifecycle.ts": {
-      "classification": "shared-transport-foundation",
-      "rationale": "Resolves canonical Darwin process and installation identity paths for lifecycle ownership checks. Its filesystem reads inspect process metadata, outside the temporary connection runtime.",
-      "sites": [
-        [
-          "filesystem-read",
-          "realpath"
-        ],
-        [
-          "filesystem-read",
-          "realpath"
-        ]
-      ],
-      "siteCount": 2,
-      "sitesDigest": "c1d5d0aab35d37111261935951a29c7644daf4cffd18254c7609fad4ee1ab50f",
-      "sourceDigest": "eed126b550ab0a0c40cf733b9affae342104c75643efe793a1cb4b0ea63c7609"
+      "siteCount": 25,
+      "sitesDigest": "5fbd0e9a2f268117e4034ba6df878d444f25ab269791507a889e5243ecd4f79e",
+      "sourceDigest": "7d580ec63dc4efa4ee9189657fa92a20ca5ff1c954a012894edb20ecde0cbc1a"
     },
     "src/shared/db-driver.ts": {
       "classification": "shared-transport-foundation",
@@ -37465,119 +36189,6 @@
       "siteCount": 2,
       "sitesDigest": "2a16263ae35f30fd9879ff994ea9a506163762ed615da5578f3beb1a5ad6b935",
       "sourceDigest": "bd13706157b9d8c74e82103be3e3c3a5b64cf5462fd0cffee9e59b280428334e"
-    },
-    "src/shared/installation-mutation-gate.ts": {
-      "classification": "shared-transport-foundation",
-      "rationale": "Persists validated installation reservations, progress intents and operation receipts with atomic writes and filesystem fencing. Its state is scoped to install and update ownership rather than a connection session.",
-      "sites": [
-        [
-          "serialization",
-          "Buffer.alloc"
-        ],
-        [
-          "serialization",
-          "bytes.subarray(0, bytesRead).toString"
-        ],
-        [
-          "filesystem-read",
-          "file.stat"
-        ],
-        [
-          "filesystem-read",
-          "file.stat"
-        ],
-        [
-          "filesystem-write",
-          "file.writeFile"
-        ],
-        [
-          "serialization",
-          "file.writeFile"
-        ],
-        [
-          "serialization",
-          "JSON.parse"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "filesystem-read",
-          "lstat"
-        ],
-        [
-          "filesystem-read",
-          "lstat"
-        ],
-        [
-          "filesystem-write",
-          "mkdir"
-        ],
-        [
-          "filesystem-open",
-          "open"
-        ],
-        [
-          "filesystem-open",
-          "open"
-        ],
-        [
-          "filesystem-open",
-          "open"
-        ],
-        [
-          "filesystem-open",
-          "open"
-        ],
-        [
-          "filesystem-read",
-          "realpath"
-        ],
-        [
-          "filesystem-write",
-          "rename"
-        ],
-        [
-          "filesystem-write",
-          "rm"
-        ],
-        [
-          "serialization",
-          "this.write"
-        ],
-        [
-          "serialization",
-          "this.write"
-        ],
-        [
-          "serialization",
-          "this.write"
-        ],
-        [
-          "serialization",
-          "this.write"
-        ],
-        [
-          "serialization",
-          "this.write"
-        ],
-        [
-          "serialization",
-          "this.write"
-        ]
-      ],
-      "siteCount": 26,
-      "sitesDigest": "b34411b6a2d2696b9f731ea00fc7dded527b0731b027fd58d9cc66348fd54747",
-      "sourceDigest": "bee640a5f44151d872830392237bc1d2a363a2c973151ac3ab678da2b19fa8ab"
     },
     "src/shared/ipc-client.ts": {
       "classification": "shared-transport-foundation",
@@ -37670,7 +36281,7 @@
       ],
       "siteCount": 21,
       "sitesDigest": "d2326f93bf20bc63d3d419be65a35924d680e7f4961f69cafce813285dc23393",
-      "sourceDigest": "0f883a2be0309d6c4d7ef73e44f9321fac6e6e82a37d5a71d32b2ace55969dce"
+      "sourceDigest": "6dc162eb5963c55c14698ca9bcbf757d714a91ad0764fffc6b299517d60af8a0"
     },
     "src/shared/keystore.ts": {
       "classification": "saved-foundation-boundary",
@@ -37868,143 +36479,6 @@
       "sitesDigest": "9f2975e08b900a2244c0da4cb0fdb2a2fe5da4326c52a38f8c6b1d64180a59fd",
       "sourceDigest": "4d37ca182c80dbec718286e3eb32c500997697df566d9fff1936a854ca8ce5e5"
     },
-    "src/shared/managed-daemon-installation.ts": {
-      "classification": "shared-transport-foundation",
-      "rationale": "Reads and writes selected release descriptors and installed LaunchAgent files. These filesystem and JSON operations cover installation metadata and do not access a connection store.",
-      "sites": [
-        [
-          "filesystem-read",
-          "access"
-        ],
-        [
-          "filesystem-read",
-          "access"
-        ],
-        [
-          "filesystem-read",
-          "access"
-        ],
-        [
-          "filesystem-read",
-          "access"
-        ],
-        [
-          "filesystem-write",
-          "file.writeFile"
-        ],
-        [
-          "serialization",
-          "file.writeFile"
-        ],
-        [
-          "serialization",
-          "JSON.parse"
-        ],
-        [
-          "serialization",
-          "JSON.parse"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "filesystem-read",
-          "lstat"
-        ],
-        [
-          "filesystem-read",
-          "lstat"
-        ],
-        [
-          "filesystem-read",
-          "lstat"
-        ],
-        [
-          "filesystem-read",
-          "lstat"
-        ],
-        [
-          "filesystem-read",
-          "lstat"
-        ],
-        [
-          "filesystem-write",
-          "mkdir"
-        ],
-        [
-          "filesystem-open",
-          "open"
-        ],
-        [
-          "filesystem-open",
-          "open"
-        ],
-        [
-          "filesystem-read",
-          "readFile"
-        ],
-        [
-          "filesystem-read",
-          "readFile"
-        ],
-        [
-          "filesystem-read",
-          "readFile"
-        ],
-        [
-          "filesystem-read",
-          "readFile"
-        ],
-        [
-          "filesystem-read",
-          "realpath"
-        ],
-        [
-          "filesystem-read",
-          "realpath"
-        ],
-        [
-          "filesystem-read",
-          "realpath"
-        ],
-        [
-          "filesystem-write",
-          "rename"
-        ],
-        [
-          "filesystem-write",
-          "rm"
-        ],
-        [
-          "filesystem-write",
-          "unlink"
-        ],
-        [
-          "filesystem-write",
-          "writeFile"
-        ],
-        [
-          "filesystem-write",
-          "writeFile"
-        ],
-        [
-          "serialization",
-          "writeFile"
-        ],
-        [
-          "serialization",
-          "writeFile"
-        ]
-      ],
-      "siteCount": 32,
-      "sitesDigest": "624bec1ac6c019f692729001b233569e45e2f933a0322634837da60b402b8c71",
-      "sourceDigest": "d9b2cae3466e677b8ff89642a53465e82f6e2c1aaebbcbef8c1aa8cc90f9c4e9"
-    },
     "src/shared/process-group.ts": {
       "classification": "shared-transport-foundation",
       "rationale": "Shared serializer/logger/transport primitive is not an authorization boundary. Daemon callers must validate session tuple and use nonserializable authority plus execution-local quiet diagnostics; global logging stays enabled.",
@@ -38140,23 +36614,6 @@
       "siteCount": 1,
       "sitesDigest": "b5b316be70a70e22c7edac6dbdf2febeef162ae991ab3c32edae653def4f27c7",
       "sourceDigest": "9887f8eafe5a0a80bbd54e5532803ba2887af169a6ad823db93c0a5f23dc34be"
-    },
-    "src/shared/update-source.ts": {
-      "classification": "shared-transport-foundation",
-      "rationale": "Shared serializer/logger/transport primitive is not an authorization boundary. Daemon callers must validate session tuple and use nonserializable authority plus execution-local quiet diagnostics; global logging stays enabled.",
-      "sites": [
-        [
-          "serialization",
-          "JSON.parse"
-        ],
-        [
-          "filesystem-read",
-          "readFileSync"
-        ]
-      ],
-      "siteCount": 2,
-      "sitesDigest": "c42d2aaed7a5082f830a95e83fa7f6ac6a6fc9c2eebadff3b645cc810a46c525",
-      "sourceDigest": "457ce7c6b02f4c818b799b30bc8af43facfcf98c5d5b3b7cf321ac78f530dd34"
     },
     "src/shared/utf8-stream.ts": {
       "classification": "shared-transport-foundation",
@@ -39219,7 +37676,7 @@
       ],
       "siteCount": 3,
       "sitesDigest": "bb9a3e4c2e13892e1cca6ced5fbfcb8a7faf4aa083de16be9123cfe2c98f5be1",
-      "sourceDigest": "1b188cedc53548097682ae2dd2a6e02fb337b261e6014cf97faa5a43766b8a10"
+      "sourceDigest": "e6c29617cf4598634ff478d11690a29ab0d39989fc583ab1a350a5fdc3813116"
     },
     "src/workflow/artifacts/companion/adaptive-cards.ts": {
       "classification": "forbidden-session-service",

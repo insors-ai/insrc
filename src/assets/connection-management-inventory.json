@@ -5599,7 +5599,7 @@
       ],
       "siteCount": 11,
       "sitesDigest": "99ab558a3b8fc48a415e9f120726d5da03345cbcb28b36b14810ee2a40d480cf",
-      "sourceDigest": "32895c82bb7d5cf1dbfbd5ad82de2918173b190fc18b05d6841fbbb1d457c97f",
+      "sourceDigest": "7a8127b4154c5a61c838d9e825711425bf833d6db6c1b30febb3915e0f4bf831",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -5856,7 +5856,7 @@
       ],
       "siteCount": 8,
       "sitesDigest": "bd55207ff364d332c205993df243c0845ca84ff1a22f68b3c06fc9323a909100",
-      "sourceDigest": "a98038298bee6529c5daa9f2045bcd674590bf6152005c59c966a0a8f9c6242b",
+      "sourceDigest": "b69b0e1238c3f916793175caefab49056471442546a3f9f3324f2d35a0e1d9a6",
       "boundaries": [
         "diagnostic",
         "serialization"
@@ -5911,7 +5911,7 @@
       ],
       "siteCount": 1,
       "sitesDigest": "e11e0946fd8703dd24ee3e0e0e40852ce11b20e738ee08d17780bb37c26178ee",
-      "sourceDigest": "63f64ba4f9d83c2107c2e2e0d1c9d0f03e8f00fd5ca6df8abc55d2479cd3e067",
+      "sourceDigest": "4565cedb07cd518948c485d4e1bd993618ebaa0513dab4f2c9768e6389226f8b",
       "boundaries": [
         "serialization"
       ]
@@ -5927,7 +5927,7 @@
       ],
       "siteCount": 1,
       "sitesDigest": "88067e898f65401d84cf7d0f524d34839744e7da17cac62699953d2ceff1af4e",
-      "sourceDigest": "88f1513a96fc13d374505953de4f3dec88b63943d1c1e65856d4668c72f637a4",
+      "sourceDigest": "8a843b9e278586dbd1485adee580aeca3fe3f068f8f864956f8e25fbd8bcba16",
       "boundaries": [
         "serialization"
       ]
@@ -5979,7 +5979,7 @@
       ],
       "siteCount": 6,
       "sitesDigest": "3e2a9e570583125528ac2697c43eac95bba997a9e21544849d00dbd377ac946d",
-      "sourceDigest": "358243292fa568f048db6f639e48aacc8355083002c8203c6959c2046913c8e9",
+      "sourceDigest": "8097fd6149cc11bcdcb0e3ea2e7e81467ecd04e5867bf260769a090f420eb97a",
       "boundaries": [
         "filesystem-open",
         "filesystem-read",
@@ -5990,27 +5990,10 @@
     "src/cli/services/daemon.ts": {
       "classification": "client-process-boundary",
       "rationale": "Client/process entry is outside daemon storage ownership. Only dedicated private bootstrap and S002 isolated worker protocol may carry transient authority/config; no persistence in argv/settings/environment/logs.",
-      "sites": [
-        [
-          "filesystem-write",
-          "mkdirSync"
-        ],
-        [
-          "filesystem-open",
-          "openSync"
-        ],
-        [
-          "filesystem-write",
-          "rmSync"
-        ],
-        [
-          "filesystem-write",
-          "rmSync"
-        ]
-      ],
-      "siteCount": 4,
-      "sitesDigest": "afa3e46e1e69535e0123a73467a1b28880b2ccc9b4ad2972a5ab226cb13adb31",
-      "sourceDigest": "34bcd5eee1ab8250ef95f4b540cdb1cc1d1df70345fa7cbba26d50374a891ddc",
+      "sites": [],
+      "siteCount": 0,
+      "sitesDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "sourceDigest": "d009867c1a4741fc999fc9a4bb0ba5a33bb5f6b972695c248794a6925352621f",
       "boundaries": [
         "filesystem-open",
         "filesystem-write"
@@ -6022,6 +6005,14 @@
       "sites": [
         [
           "serialization",
+          "c.toString"
+        ],
+        [
+          "serialization",
+          "c.toString"
+        ],
+        [
+          "unresolved-call",
           "c.toString"
         ],
         [
@@ -6059,192 +6050,16 @@
         [
           "filesystem-read",
           "readFileSync"
-        ]
-      ],
-      "siteCount": 10,
-      "sitesDigest": "a730848f560888e4c6a3c08ffab8cd4f84b2bcfff394377f5429b9ff0a48e9e1",
-      "sourceDigest": "436ef6724a355a7991846437789c1f2757e17d3d2f6960f9d4b36a247b46d59f",
-      "boundaries": [
-        "filesystem-read",
-        "serialization",
-        "unresolved-call"
-      ]
-    },
-    "src/cli/services/lifecycle.ts": {
-      "classification": "client-process-boundary",
-      "rationale": "Client/process entry is outside daemon storage ownership. Only dedicated private bootstrap and S002 isolated worker protocol may carry transient authority/config; no persistence in argv/settings/environment/logs.",
-      "sites": [
-        [
-          "filesystem-read",
-          "readFileSync"
-        ],
-        [
-          "filesystem-write",
-          "rmSync"
-        ]
-      ],
-      "siteCount": 2,
-      "sitesDigest": "4bef4066c175a736fbed94d42512ed6daf0e14d59b64bf513d3930f83d608868",
-      "sourceDigest": "62bd8251042fe962317286f2a0f11a37c07da881768b7614521d53836b75b191",
-      "boundaries": [
-        "filesystem-read",
-        "filesystem-write"
-      ]
-    },
-    "src/cli/services/maintenance.ts": {
-      "classification": "client-process-boundary",
-      "rationale": "Client/process entry is outside daemon storage ownership. Only dedicated private bootstrap and S002 isolated worker protocol may carry transient authority/config; no persistence in argv/settings/environment/logs.",
-      "sites": [
-        [
-          "serialization",
-          "c.toString"
-        ],
-        [
-          "serialization",
-          "c.toString"
-        ],
-        [
-          "unresolved-call",
-          "c.toString"
-        ],
-        [
-          "unresolved-call",
-          "c.toString"
-        ],
-        [
-          "serialization",
-          "chunk.toString"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
-        ],
-        [
-          "diagnostic",
-          "onLog"
         ],
         [
           "filesystem-read",
           "readFileSync"
         ]
       ],
-      "siteCount": 36,
-      "sitesDigest": "a1d0c042dd4494aa4ac0ce488125f786d70ebf0e3bf4713da815e37d82170a49",
-      "sourceDigest": "92de625ecbf332855eb15779ed3eb51e575ab4d75ed1f449c9bd7d3e68f70e00",
+      "siteCount": 13,
+      "sitesDigest": "a7ce403925f225cc7c90c47b0d95777a8732a649bcc84dbf331e904ad3a1b3b3",
+      "sourceDigest": "5d7923a99af23eb8ae9da663d332b44485076da1fb38f4908f994cbf58d94b45",
       "boundaries": [
-        "diagnostic",
         "filesystem-read",
         "serialization",
         "unresolved-call"
@@ -7116,21 +6931,21 @@
           "JSON.parse"
         ],
         [
-          "diagnostic",
-          "log.info"
-        ],
-        [
           "filesystem-read",
           "readFileSync"
         ],
         [
           "filesystem-read",
           "readFileSync"
+        ],
+        [
+          "storage-call",
+          "validateRepoPath"
         ]
       ],
       "siteCount": 6,
-      "sitesDigest": "6bde8502fdfa0f7605e01834cbaebb0c4eb2bf724de41c30a846a5d839822eb4",
-      "sourceDigest": "2ed1a012d200d2688eec99a3063addec0c50c02876dbf30c9a9d055a5d9ab300",
+      "sitesDigest": "02c264e86e97e918ffcb893f25274d9c5aeb4d2a2485fe561614f477a4ca486e",
+      "sourceDigest": "d851c9718585756f4d0f48e8a729da6beae24582059f31547f4065f584211e32",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -12383,36 +12198,6 @@
         "connection-use"
       ]
     },
-    "src/daemon/fatal.ts": {
-      "classification": "daemon-admission-boundary",
-      "rationale": "Process/service infrastructure or non-session RPC. No implicit session admission: unsupported stateful methods refuse at dispatch; coarse lifecycle/background diagnostics must not receive temporary payloads.",
-      "sites": [
-        [
-          "filesystem-write",
-          "appendFileSync"
-        ],
-        [
-          "filesystem-write",
-          "mkdirSync"
-        ],
-        [
-          "diagnostic",
-          "process.stderr.write"
-        ],
-        [
-          "serialization",
-          "process.stderr.write"
-        ]
-      ],
-      "siteCount": 4,
-      "sitesDigest": "1defc2fe10e6c004e2954ffdea00463c639ee15a29ce1b46d5c724b5e05dae75",
-      "sourceDigest": "1c0ce24c8b2428adae95366bf6d1d8c214a79436df323c596cddb87172a98cd8",
-      "boundaries": [
-        "diagnostic",
-        "filesystem-write",
-        "serialization"
-      ]
-    },
     "src/daemon/handler-runtime.ts": {
       "classification": "owner-rpc-boundary",
       "rationale": "Daemon entry must validate root/session/audience before routing or input use; main-daemon owner paths and canonical saved guards preserve exact-path compatibility and safe error/drain semantics.",
@@ -12584,94 +12369,6 @@
         [
           "diagnostic",
           "getLogger"
-        ],
-        [
-          "unresolved-call",
-          "import"
-        ],
-        [
-          "unresolved-call",
-          "import"
-        ],
-        [
-          "unresolved-call",
-          "import"
-        ],
-        [
-          "unresolved-call",
-          "import"
-        ],
-        [
-          "unresolved-call",
-          "import"
-        ],
-        [
-          "unresolved-call",
-          "import"
-        ],
-        [
-          "unresolved-call",
-          "import"
-        ],
-        [
-          "unresolved-call",
-          "import"
-        ],
-        [
-          "unresolved-call",
-          "import"
-        ],
-        [
-          "unresolved-call",
-          "import"
-        ],
-        [
-          "unresolved-call",
-          "import"
-        ],
-        [
-          "unresolved-call",
-          "import"
-        ],
-        [
-          "unresolved-call",
-          "import"
-        ],
-        [
-          "unresolved-call",
-          "import"
-        ],
-        [
-          "unresolved-call",
-          "import"
-        ],
-        [
-          "unresolved-call",
-          "import"
-        ],
-        [
-          "unresolved-call",
-          "import"
-        ],
-        [
-          "unresolved-call",
-          "import"
-        ],
-        [
-          "unresolved-call",
-          "import"
-        ],
-        [
-          "unresolved-call",
-          "import"
-        ],
-        [
-          "unresolved-call",
-          "import"
-        ],
-        [
-          "unresolved-call",
-          "import"
         ],
         [
           "unresolved-call",
@@ -13174,6 +12871,10 @@
           "log.warn"
         ],
         [
+          "diagnostic",
+          "log.warn"
+        ],
+        [
           "provider-backend",
           "ollama.list"
         ],
@@ -13322,9 +13023,9 @@
           "writeFileSync"
         ]
       ],
-      "siteCount": 226,
-      "sitesDigest": "f95a307abc17c612f3d9df4980bf8d27464f99ea6a80c4a783014ff702405c54",
-      "sourceDigest": "88352a48eb47699dfe46923b65274c7a750e53c184a1bba2ec19c3ca150f20e2",
+      "siteCount": 205,
+      "sitesDigest": "0908e371fa5e8e0d3b8b08dd9e9f0a564bcc7c47ec1e684f7f0902b55d95b8ff",
+      "sourceDigest": "d15dbc78b60615f78bdc5cc0b1acfcccc4e58974aea8ff66b5bec7feb213d425",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -13376,6 +13077,10 @@
         [
           "diagnostic",
           "getLogger"
+        ],
+        [
+          "storage-call",
+          "getStoreHealth"
         ],
         [
           "storage-call",
@@ -13466,6 +13171,14 @@
           "listRepos"
         ],
         [
+          "storage-call",
+          "listRepos"
+        ],
+        [
+          "diagnostic",
+          "log.error"
+        ],
+        [
           "diagnostic",
           "log.error"
         ],
@@ -13475,10 +13188,6 @@
         ],
         [
           "diagnostic",
-          "log.fatal"
-        ],
-        [
-          "diagnostic",
           "log.info"
         ],
         [
@@ -13520,6 +13229,34 @@
         [
           "diagnostic",
           "log.info"
+        ],
+        [
+          "diagnostic",
+          "log.info"
+        ],
+        [
+          "diagnostic",
+          "log.info"
+        ],
+        [
+          "diagnostic",
+          "log.info"
+        ],
+        [
+          "diagnostic",
+          "log.warn"
+        ],
+        [
+          "diagnostic",
+          "log.warn"
+        ],
+        [
+          "diagnostic",
+          "log.warn"
+        ],
+        [
+          "diagnostic",
+          "log.warn"
         ],
         [
           "diagnostic",
@@ -13600,15 +13337,11 @@
         [
           "storage-call",
           "startPeriodicReaderCheck"
-        ],
-        [
-          "serialization",
-          "writePid"
         ]
       ],
-      "siteCount": 66,
-      "sitesDigest": "26179eb865ebf467ae0ad2ee08ed5b868d73b8766942c7d53a6596f27ff7ac16",
-      "sourceDigest": "d09d6ac5d5a1227731dd9b802ed40c5c2b2de2988e5bc5ef3bebbb54d54533bc",
+      "siteCount": 74,
+      "sitesDigest": "f3641ca0f995d3df4f2ae8d7c7d9b771501b57d82fd2912e26917ee682c75b61",
+      "sourceDigest": "9ab5ae9893b8e4bc46c2f9a60cfdcdf10831095b222a22b102fff4bc50639f0c",
       "boundaries": [
         "diagnostic",
         "filesystem-write",
@@ -13695,22 +13428,6 @@
           "log.warn"
         ],
         [
-          "filesystem-write",
-          "mkdirSync"
-        ],
-        [
-          "filesystem-read",
-          "readFileSync"
-        ],
-        [
-          "filesystem-write",
-          "rmSync"
-        ],
-        [
-          "filesystem-write",
-          "rmSync"
-        ],
-        [
           "provider-adapter",
           "setActiveEmbedderBackend"
         ],
@@ -13729,19 +13446,11 @@
         [
           "provider-adapter",
           "setActiveEmbedderBackend"
-        ],
-        [
-          "filesystem-write",
-          "writeFileSync"
-        ],
-        [
-          "serialization",
-          "writeFileSync"
         ]
       ],
-      "siteCount": 29,
-      "sitesDigest": "c0a54658b88b12d583ad6659b58b066e1532cbf66b5d851034ecd2cf729ce67a",
-      "sourceDigest": "6cd4c5950151af2d1f8a07942e0df4f47f25599ef27410f93a5b2e9f97f498b6",
+      "siteCount": 23,
+      "sitesDigest": "436f3ea5bb48ba91e5509be2c0308d0d665ce4ffdd1c0f54cc1836b37a2935f9",
+      "sourceDigest": "d12ccfa053f531c62b34b16649f8a462c97856ea115990dd907e6c0cd7c23f56",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -14200,10 +13909,6 @@
       "rationale": "Daemon entry must validate root/session/audience before routing or input use; main-daemon owner paths and canonical saved guards preserve exact-path compatibility and safe error/drain semantics.",
       "sites": [
         [
-          "serialization",
-          "chunk.toString"
-        ],
-        [
           "diagnostic",
           "getLogger"
         ],
@@ -14232,14 +13937,6 @@
           "recordStoreFailureIfLockError"
         ],
         [
-          "filesystem-write",
-          "rmSync"
-        ],
-        [
-          "filesystem-write",
-          "rmSync"
-        ],
-        [
           "serialization",
           "send"
         ],
@@ -14261,6 +13958,10 @@
         ],
         [
           "serialization",
+          "this.send"
+        ],
+        [
+          "serialization",
           "this.writeLine"
         ],
         [
@@ -14268,59 +13969,14 @@
           "this.writeLine"
         ]
       ],
-      "siteCount": 17,
-      "sitesDigest": "d683bf7c565c3a8ec1590e1377fc79733231650b2a178411e5fdca9983564394",
-      "sourceDigest": "e6d5e883e5f88ba4bca517e4b5bb44f43adc44ed560a7d6ddc3872b88eae281e",
+      "siteCount": 15,
+      "sitesDigest": "336d555fe17123ef6ce9baad4d35be84b2e707d9c1fa7c2b6fa146f7c2bcbb18",
+      "sourceDigest": "cf3f06a1fb909a3e4d243eb9a1040c44269ac13cbe2f3161cf9f9e773659a6c4",
       "boundaries": [
         "diagnostic",
         "filesystem-write",
         "serialization",
         "storage-call"
-      ]
-    },
-    "src/daemon/shutdown.ts": {
-      "classification": "daemon-admission-boundary",
-      "rationale": "Process/service infrastructure or non-session RPC. No implicit session admission: unsupported stateful methods refuse at dispatch; coarse lifecycle/background diagnostics must not receive temporary payloads.",
-      "sites": [
-        [
-          "filesystem-write",
-          "appendFileSync"
-        ],
-        [
-          "filesystem-write",
-          "mkdirSync"
-        ],
-        [
-          "diagnostic",
-          "parts.log.info"
-        ],
-        [
-          "diagnostic",
-          "parts.log.info"
-        ],
-        [
-          "diagnostic",
-          "parts.log.warn"
-        ],
-        [
-          "diagnostic",
-          "parts.log.warn"
-        ],
-        [
-          "diagnostic",
-          "parts.log.warn"
-        ],
-        [
-          "diagnostic",
-          "parts.log.warn"
-        ]
-      ],
-      "siteCount": 8,
-      "sitesDigest": "e8925f043ea768b29bd245c4df9ef9cf12bccb71660bf8d8ab99b8bbefa57ccc",
-      "sourceDigest": "fead7e9bd4cd8170d0082ead8e3b881566b7b0b968caacd8f366320b0728ffdc",
-      "boundaries": [
-        "diagnostic",
-        "filesystem-write"
       ]
     },
     "src/daemon/source-roots-rpc.ts": {
@@ -14354,7 +14010,7 @@
       ],
       "siteCount": 1,
       "sitesDigest": "6fca26a42e42ecba5ef2d6a8381549249110a5bf01db6f2896057066b6b03398",
-      "sourceDigest": "a44bad319d6058060c1fd3c5373b8e3f9e2a8cf7ae2d3649a1bbee0eecc3b07e",
+      "sourceDigest": "8204d40d730d1c417d5ee4171a7896c22bf805a53c8a4a7e6718dec6cbd99f62",
       "boundaries": [
         "storage-call"
       ]
@@ -15602,7 +15258,7 @@
       ],
       "siteCount": 1,
       "sitesDigest": "2662f602b592544a387419976e43b04c1fa9b635b8a11a68c56749a4be7ebe31",
-      "sourceDigest": "41a9b16918830cd676a9807c94b7832753e824df427e04a5178d73ff71a8a573",
+      "sourceDigest": "f20128769fd6c403e6a555bc56abc895fc5af2bfa6de90338ee9c19bde72be57",
       "boundaries": [
         "diagnostic"
       ]
@@ -15616,10 +15272,6 @@
           "getDb"
         ],
         [
-          "serialization",
-          "hub.send"
-        ],
-        [
           "storage-call",
           "listRepos"
         ],
@@ -15628,9 +15280,9 @@
           "parentPort!.postMessage"
         ]
       ],
-      "siteCount": 4,
-      "sitesDigest": "c3112db9091dc7c5b69f03ddff583b9b65296b97b619e6f76c5a05865e54f57c",
-      "sourceDigest": "8f66fdacc7be4c3de14431347eece4242286a7efcc2cff09d49fb40921990b67",
+      "siteCount": 3,
+      "sitesDigest": "83ae85819fb20de268c9851a510311b255a8fbaa740e671059b56f2fb54a7234",
+      "sourceDigest": "35d802c62b60109ae3f9333b1d0746b3f911a1b4b96ae05b209fc9b93ad86a97",
       "boundaries": [
         "serialization",
         "storage-call"
@@ -15718,10 +15370,6 @@
           "getLogger"
         ],
         [
-          "serialization",
-          "hub.send"
-        ],
-        [
           "storage-call",
           "listRepos"
         ],
@@ -15740,15 +15388,11 @@
         [
           "serialization",
           "parentPort!.postMessage"
-        ],
-        [
-          "unresolved-call",
-          "Watcher"
         ]
       ],
-      "siteCount": 9,
-      "sitesDigest": "4a7c3bf8701abefbb1ccfcb3f0b522b13122f18c8551c415d02af22be429cce0",
-      "sourceDigest": "b46257987ae2e55c073bced914c028f4475352bf0626e078ebaedcaf995ce698",
+      "siteCount": 7,
+      "sitesDigest": "6cd43a2d4f62c87d2371ebe3e45872afa13b5fb12b4c4c58e8654d0366c8a7f7",
+      "sourceDigest": "7f17053c20891c7e8e9b193a68ecfa5ccee599b13c40bf683a1fc03db268351a",
       "boundaries": [
         "diagnostic",
         "serialization",
@@ -15789,6 +15433,10 @@
       "classification": "routing-background-boundary",
       "rationale": "Thread infrastructure must route session and owner-mutating requests to main daemon; maintenance retains real completion/drain. Background indexing/summary workers receive no session payload or capability.",
       "sites": [
+        [
+          "unresolved-call",
+          "ArtifactWriteAuthorityHost"
+        ],
         [
           "storage-call",
           "createStoreGuardBlock"
@@ -15838,9 +15486,9 @@
           "this.info"
         ]
       ],
-      "siteCount": 12,
-      "sitesDigest": "931d07e3458e3d656af5f0cdb2ac5df5523f3e6c59e9292b181eabcb8bfe6bef",
-      "sourceDigest": "c38c560df16293d95efce169ef8925821765efef0c09d05c6ce46d8e3a043954",
+      "siteCount": 13,
+      "sitesDigest": "46714519786704ec5da0512d05aeea434eb0c91f86e8cf05c14cd09315967be3",
+      "sourceDigest": "213ce4d0af86469ef91e0ecf092ec831309ef06b1feadc5b7bf079aad08da0d5",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -18827,102 +18475,6 @@
         "diagnostic",
         "serialization",
         "storage-call"
-      ]
-    },
-    "src/daemon/update-runner.ts": {
-      "classification": "daemon-admission-boundary",
-      "rationale": "Process/service infrastructure or non-session RPC. No implicit session admission: unsupported stateful methods refuse at dispatch; coarse lifecycle/background diagnostics must not receive temporary payloads.",
-      "sites": [
-        [
-          "serialization",
-          "c.toString"
-        ],
-        [
-          "diagnostic",
-          "getLogger"
-        ],
-        [
-          "serialization",
-          "JSON.parse"
-        ],
-        [
-          "serialization",
-          "JSON.parse"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "serialization",
-          "JSON.stringify"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.info"
-        ],
-        [
-          "diagnostic",
-          "log.warn"
-        ],
-        [
-          "filesystem-write",
-          "mkdirSync"
-        ],
-        [
-          "filesystem-open",
-          "openSync"
-        ],
-        [
-          "filesystem-read",
-          "readFileSync"
-        ],
-        [
-          "filesystem-read",
-          "readFileSync"
-        ],
-        [
-          "filesystem-write",
-          "rmSync"
-        ],
-        [
-          "filesystem-write",
-          "rmSync"
-        ],
-        [
-          "filesystem-write",
-          "writeFileSync"
-        ],
-        [
-          "filesystem-write",
-          "writeFileSync"
-        ],
-        [
-          "serialization",
-          "writeFileSync"
-        ],
-        [
-          "serialization",
-          "writeFileSync"
-        ],
-        [
-          "serialization",
-          "writeUpdateOutcome"
-        ]
-      ],
-      "siteCount": 20,
-      "sitesDigest": "94a5f06833fed18dc64d400f6511315417d87774d761607017de383d08c3a365",
-      "sourceDigest": "e9d0b99c6eb5c1b0a9b08cccc2d2584938c18c273640d90dbf668437dc72e249",
-      "boundaries": [
-        "diagnostic",
-        "filesystem-open",
-        "filesystem-read",
-        "filesystem-write",
-        "serialization"
       ]
     },
     "src/daemon/workflow-review-rpc.ts": {
@@ -31515,7 +31067,35 @@
       "sites": [
         [
           "serialization",
-          "chunk.toString"
+          "Buffer.alloc"
+        ],
+        [
+          "serialization",
+          "Buffer.alloc"
+        ],
+        [
+          "serialization",
+          "Buffer.alloc"
+        ],
+        [
+          "serialization",
+          "Buffer.alloc"
+        ],
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.parse"
         ],
         [
           "serialization",
@@ -31527,12 +31107,52 @@
         ],
         [
           "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "new TextDecoder('utf-8',{fatal:true}).decode"
+        ],
+        [
+          "serialization",
+          "socket.write"
+        ],
+        [
+          "serialization",
+          "socket.write"
+        ],
+        [
+          "serialization",
+          "socket.write"
+        ],
+        [
+          "serialization",
           "socket.write"
         ]
       ],
-      "siteCount": 4,
-      "sitesDigest": "6f65c6ef9ef010a80591b64a73ff0351034f7b0fd31531e4ba4d3020a72aea9c",
-      "sourceDigest": "6136c30776d61af4dfbde8ca440aada23b9fb54709a6e94561fbf0cb8d2643c0",
+      "siteCount": 21,
+      "sitesDigest": "d2326f93bf20bc63d3d419be65a35924d680e7f4961f69cafce813285dc23393",
+      "sourceDigest": "6dc162eb5963c55c14698ca9bcbf757d714a91ad0764fffc6b299517d60af8a0",
       "boundaries": [
         "serialization"
       ]
@@ -36817,7 +36437,7 @@
     "src/cli/panes/DaemonPane.tsx": {
       "classification": "no-boundary-sites",
       "rationale": "The complete TypeScript-resolved scan found no provider/resolver/factory/serialization/storage/diagnostic/file-write submission in this production file; retain its exact code hash for complete deployment coverage.",
-      "sourceDigest": "e583bf5533aa1d2859fb45029b05d3bb965b5cf9af75ed8c7d28b3b9b65e26d8",
+      "sourceDigest": "3be6d409076a0f6d6a091845286679db265e2006bb3a2ab5965f8e043adc11af",
       "sites": [],
       "siteCount": 0,
       "sitesDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
@@ -36825,7 +36445,7 @@
     "src/cli/panes/DaemonSection.tsx": {
       "classification": "no-boundary-sites",
       "rationale": "The complete TypeScript-resolved scan found no provider/resolver/factory/serialization/storage/diagnostic/file-write submission in this production file; retain its exact code hash for complete deployment coverage.",
-      "sourceDigest": "0ef73a061056b90bcbb70bbbf390ca90535985ce66a7b8c5075ad991bfd6327c",
+      "sourceDigest": "abc31a6cd210de49240c8224de8ec367fe02d89d480dfc15d0952e7c6c966fea",
       "sites": [],
       "siteCount": 0,
       "sitesDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
@@ -36905,7 +36525,7 @@
     "src/cli/services/debug-types.ts": {
       "classification": "no-boundary-sites",
       "rationale": "The complete TypeScript-resolved scan found no provider/resolver/factory/serialization/storage/diagnostic/file-write submission in this production file; retain its exact code hash for complete deployment coverage.",
-      "sourceDigest": "c953fe9dc437ea6c6eda12f8d4b276e8e272e0ea333e16073d551458932a9674",
+      "sourceDigest": "ebedaa3bd61708a94f11ed1df9b1bee05d3292ff9f595e0d4e95f9a5b36b168f",
       "sites": [],
       "siteCount": 0,
       "sitesDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
@@ -36913,7 +36533,7 @@
     "src/cli/services/index.ts": {
       "classification": "no-boundary-sites",
       "rationale": "The complete TypeScript-resolved scan found no provider/resolver/factory/serialization/storage/diagnostic/file-write submission in this production file; retain its exact code hash for complete deployment coverage.",
-      "sourceDigest": "abbe48bd2453b784f47f8bf09b0022571ee6c3f1ee327eeaf44f0fa39307e470",
+      "sourceDigest": "387502618b1b8cc467e0e09de5b83a571af5d8922cf7647f60916db3bda10d4c",
       "sites": [],
       "siteCount": 0,
       "sitesDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
@@ -36930,14 +36550,6 @@
       "classification": "no-boundary-sites",
       "rationale": "The complete TypeScript-resolved scan found no provider/resolver/factory/serialization/storage/diagnostic/file-write submission in this production file; retain its exact code hash for complete deployment coverage.",
       "sourceDigest": "d11312f2b69feb14c89bb66aeff6c697033a443b3d6265814f5d135715319415",
-      "sites": [],
-      "siteCount": 0,
-      "sitesDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
-    "src/cli/services/type-contracts/maintenance-result.ts": {
-      "classification": "no-boundary-sites",
-      "rationale": "The complete TypeScript-resolved scan found no provider/resolver/factory/serialization/storage/diagnostic/file-write submission in this production file; retain its exact code hash for complete deployment coverage.",
-      "sourceDigest": "e42f0af8271cf4ef97708a29fdee35b8fa38c180c4b7da2084a545c3c4ab16ab",
       "sites": [],
       "siteCount": 0,
       "sitesDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
@@ -36985,7 +36597,7 @@
     "src/config/config-catalog.ts": {
       "classification": "no-boundary-sites",
       "rationale": "The complete TypeScript-resolved scan found no provider/resolver/factory/serialization/storage/diagnostic/file-write submission in this production file; retain its exact code hash for complete deployment coverage.",
-      "sourceDigest": "a2346eb4f0a6c2da1de95cef864e284b24ed3ccc594600712f917734b3baeb2a",
+      "sourceDigest": "3d63b9172b040c600ed872086353d1531f123cb9c7503963f56750aec685d161",
       "sites": [],
       "siteCount": 0,
       "sitesDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
@@ -37166,14 +36778,6 @@
       "siteCount": 0,
       "sitesDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
-    "src/daemon/installed-commit.ts": {
-      "classification": "no-boundary-sites",
-      "rationale": "The complete TypeScript-resolved scan found no provider/resolver/factory/serialization/storage/diagnostic/file-write submission in this production file; retain its exact code hash for complete deployment coverage.",
-      "sourceDigest": "23da21de4ba77f7071db157509001d521982c250d5dc221b5bd214a8f30c3adb",
-      "sites": [],
-      "siteCount": 0,
-      "sitesDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
-    },
     "src/daemon/list-models.ts": {
       "classification": "no-boundary-sites",
       "rationale": "The complete TypeScript-resolved scan found no provider/resolver/factory/serialization/storage/diagnostic/file-write submission in this production file; retain its exact code hash for complete deployment coverage.",
@@ -37185,7 +36789,7 @@
     "src/daemon/request-context.ts": {
       "classification": "no-boundary-sites",
       "rationale": "The complete TypeScript-resolved scan found no provider/resolver/factory/serialization/storage/diagnostic/file-write submission in this production file; retain its exact code hash for complete deployment coverage.",
-      "sourceDigest": "e920c2be90314e3d9d6b97005cffbd392470fb63fc2d0f3a173ad709007312a6",
+      "sourceDigest": "6f771186c1d2c403f9ab26153b8246e83d10469b8a14df412065ba39ab6353ac",
       "sites": [],
       "siteCount": 0,
       "sitesDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
@@ -37385,7 +36989,7 @@
     "src/daemon/threads/method-class.ts": {
       "classification": "no-boundary-sites",
       "rationale": "The complete TypeScript-resolved scan found no provider/resolver/factory/serialization/storage/diagnostic/file-write submission in this production file; retain its exact code hash for complete deployment coverage.",
-      "sourceDigest": "01ebaf462e9e215381b614d14f3a77d048429a065922492325d67d8651c5446c",
+      "sourceDigest": "7eea120b0981e9ad1ff4ead3243664beeffabc9ddf94f59304553dc29676e179",
       "sites": [],
       "siteCount": 0,
       "sitesDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
@@ -38326,7 +37930,7 @@
     "src/shared/paths.ts": {
       "classification": "no-boundary-sites",
       "rationale": "The complete TypeScript-resolved scan found no provider/resolver/factory/serialization/storage/diagnostic/file-write submission in this production file; retain its exact code hash for complete deployment coverage.",
-      "sourceDigest": "5719b7b3d5bb3cd950f4291bffc8599d69a2aa4c4659bcf3396966bde1fb9196",
+      "sourceDigest": "2e67c6705a2159ac84eff0a76ebe593947811a13bf9d6c4e201e7ef2a6985f30",
       "sites": [],
       "siteCount": 0,
       "sitesDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
@@ -38402,7 +38006,7 @@
     "src/shared/types.ts": {
       "classification": "no-boundary-sites",
       "rationale": "The complete TypeScript-resolved scan found no provider/resolver/factory/serialization/storage/diagnostic/file-write submission in this production file; retain its exact code hash for complete deployment coverage.",
-      "sourceDigest": "c3a9a516ded45a69ccb626872e2fb59d8e4b3cea8b993008bf8352efbf85e898",
+      "sourceDigest": "6fb7d104f0c47f5bb310219204af0254c9b63798f7bb8fe18b52c4b76e5ae464",
       "sites": [],
       "siteCount": 0,
       "sitesDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"

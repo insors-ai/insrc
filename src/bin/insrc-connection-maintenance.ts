@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 /** Daemon-owned offline maintenance entry. CLI never opens the graph or keychain. */
+import { join } from 'node:path';
 import { lstat } from 'node:fs/promises';
 import { PATHS } from '../shared/paths.js';
 import { readProtected } from '../daemon/db/management-files.js';
@@ -23,7 +24,7 @@ async function main() {
 }
 async function adopt(root: string, proofPath: string) {
 	// A new daemon or unknown socket after the stop invalidates maintenance admission.
-	for (const path of [PATHS.pidFile, PATHS.sockFile]) {
+	for (const path of [join(PATHS.insrc, 'daemon.pid'), PATHS.sockFile]) {
 		try {
 			await lstat(path);
 			throw new Error('Daemon control files remain.');

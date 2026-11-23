@@ -246,7 +246,7 @@ export function activate(context: vscode.ExtensionContext): void {
     keyMap: MERGED_KEY_MAP,
     // Native tier edits are checked against the daemon's model definitions (s6).
     definitions: () => client.rpc<ModelDefinitions>('models.definitions'),
-    onRestartRequired: (keys) => { void vscode.window.showInformationMessage(`insrc: ${keys.join(', ')} saved — applies on the next daemon launch`); },
+    onRestartRequired: (keys) => { void vscode.window.showInformationMessage(`insrc: ${keys.join(', ')} saved — applies on the next daemon launch`, {}); },
   });
   // Reconcile the native mirror with the daemon on activation (non-blocking).
   // Then move a value the user typed under a renamed settings id (ISSUE-8d7b4704660a5866) to its new id, once.

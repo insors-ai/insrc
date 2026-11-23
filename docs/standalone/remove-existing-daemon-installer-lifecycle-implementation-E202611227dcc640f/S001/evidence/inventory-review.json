@@ -1,0 +1,607 @@
+{
+  "scope": "Only paths changed since the frozen removal baseline were refreshed; unrelated pre-existing stale entries remain untouched. No gate readiness was enabled.",
+  "changes": [
+    {
+      "inventory": "src/assets/connection-management-inventory.json",
+      "path": "src/bin/insrc-connection-maintenance.ts",
+      "outcome": "reviewed lifecycle removal with retained resource/provider/database boundaries",
+      "beforeSiteCount": 11,
+      "afterSiteCount": 11
+    },
+    {
+      "inventory": "src/assets/connection-management-inventory.json",
+      "path": "src/cli/command.ts",
+      "outcome": "reviewed lifecycle removal with retained resource/provider/database boundaries",
+      "beforeSiteCount": 8,
+      "afterSiteCount": 8
+    },
+    {
+      "inventory": "src/assets/connection-management-inventory.json",
+      "path": "src/cli/panes/ModelCheckScreen.tsx",
+      "outcome": "reviewed lifecycle removal with retained resource/provider/database boundaries",
+      "beforeSiteCount": 1,
+      "afterSiteCount": 1
+    },
+    {
+      "inventory": "src/assets/connection-management-inventory.json",
+      "path": "src/cli/panes/ModelTiersPane.tsx",
+      "outcome": "reviewed lifecycle removal with retained resource/provider/database boundaries",
+      "beforeSiteCount": 1,
+      "afterSiteCount": 1
+    },
+    {
+      "inventory": "src/assets/connection-management-inventory.json",
+      "path": "src/cli/services/connection-maintenance.ts",
+      "outcome": "reviewed lifecycle removal with retained resource/provider/database boundaries",
+      "beforeSiteCount": 6,
+      "afterSiteCount": 6
+    },
+    {
+      "inventory": "src/assets/connection-management-inventory.json",
+      "path": "src/cli/services/daemon.ts",
+      "outcome": "reviewed lifecycle removal with retained resource/provider/database boundaries",
+      "beforeSiteCount": 4,
+      "afterSiteCount": 0
+    },
+    {
+      "inventory": "src/assets/connection-management-inventory.json",
+      "path": "src/cli/services/debug.ts",
+      "outcome": "reviewed lifecycle removal with retained resource/provider/database boundaries",
+      "beforeSiteCount": 10,
+      "afterSiteCount": 13
+    },
+    {
+      "inventory": "src/assets/connection-management-inventory.json",
+      "path": "src/cli/services/lifecycle.ts",
+      "outcome": "removed deleted module",
+      "beforeSiteCount": 0,
+      "afterSiteCount": 0
+    },
+    {
+      "inventory": "src/assets/connection-management-inventory.json",
+      "path": "src/cli/services/maintenance.ts",
+      "outcome": "removed deleted module",
+      "beforeSiteCount": 0,
+      "afterSiteCount": 0
+    },
+    {
+      "inventory": "src/assets/connection-management-inventory.json",
+      "path": "src/daemon/admin-handlers.ts",
+      "outcome": "reviewed lifecycle removal with retained resource/provider/database boundaries",
+      "beforeSiteCount": 6,
+      "afterSiteCount": 6
+    },
+    {
+      "inventory": "src/assets/connection-management-inventory.json",
+      "path": "src/daemon/fatal.ts",
+      "outcome": "removed deleted module",
+      "beforeSiteCount": 0,
+      "afterSiteCount": 0
+    },
+    {
+      "inventory": "src/assets/connection-management-inventory.json",
+      "path": "src/daemon/handler-runtime.ts",
+      "outcome": "reviewed lifecycle removal with retained resource/provider/database boundaries",
+      "beforeSiteCount": 226,
+      "afterSiteCount": 205
+    },
+    {
+      "inventory": "src/assets/connection-management-inventory.json",
+      "path": "src/daemon/index.ts",
+      "outcome": "reviewed lifecycle removal with retained resource/provider/database boundaries",
+      "beforeSiteCount": 66,
+      "afterSiteCount": 74
+    },
+    {
+      "inventory": "src/assets/connection-management-inventory.json",
+      "path": "src/daemon/lifecycle.ts",
+      "outcome": "reviewed lifecycle removal with retained resource/provider/database boundaries",
+      "beforeSiteCount": 29,
+      "afterSiteCount": 23
+    },
+    {
+      "inventory": "src/assets/connection-management-inventory.json",
+      "path": "src/daemon/server.ts",
+      "outcome": "reviewed lifecycle removal with retained resource/provider/database boundaries",
+      "beforeSiteCount": 17,
+      "afterSiteCount": 15
+    },
+    {
+      "inventory": "src/assets/connection-management-inventory.json",
+      "path": "src/daemon/shutdown.ts",
+      "outcome": "removed deleted module",
+      "beforeSiteCount": 0,
+      "afterSiteCount": 0
+    },
+    {
+      "inventory": "src/assets/connection-management-inventory.json",
+      "path": "src/daemon/status.ts",
+      "outcome": "reviewed lifecycle removal with retained resource/provider/database boundaries",
+      "beforeSiteCount": 1,
+      "afterSiteCount": 1
+    },
+    {
+      "inventory": "src/assets/connection-management-inventory.json",
+      "path": "src/daemon/threads/admin-status.ts",
+      "outcome": "reviewed lifecycle removal with retained resource/provider/database boundaries",
+      "beforeSiteCount": 1,
+      "afterSiteCount": 1
+    },
+    {
+      "inventory": "src/assets/connection-management-inventory.json",
+      "path": "src/daemon/threads/admin-worker.ts",
+      "outcome": "reviewed lifecycle removal with retained resource/provider/database boundaries",
+      "beforeSiteCount": 4,
+      "afterSiteCount": 3
+    },
+    {
+      "inventory": "src/assets/connection-management-inventory.json",
+      "path": "src/daemon/threads/indexing-worker.ts",
+      "outcome": "reviewed lifecycle removal with retained resource/provider/database boundaries",
+      "beforeSiteCount": 9,
+      "afterSiteCount": 7
+    },
+    {
+      "inventory": "src/assets/connection-management-inventory.json",
+      "path": "src/daemon/threads/main-services.ts",
+      "outcome": "reviewed lifecycle removal with retained resource/provider/database boundaries",
+      "beforeSiteCount": 12,
+      "afterSiteCount": 13
+    },
+    {
+      "inventory": "src/assets/connection-management-inventory.json",
+      "path": "src/daemon/update-runner.ts",
+      "outcome": "removed deleted module",
+      "beforeSiteCount": 0,
+      "afterSiteCount": 0
+    },
+    {
+      "inventory": "src/assets/connection-management-inventory.json",
+      "path": "src/shared/ipc-client.ts",
+      "outcome": "reviewed lifecycle removal with retained resource/provider/database boundaries",
+      "beforeSiteCount": 4,
+      "afterSiteCount": 21
+    },
+    {
+      "inventory": "src/assets/connection-management-inventory.json",
+      "path": "src/cli/panes/DaemonPane.tsx",
+      "outcome": "reviewed lifecycle removal with retained resource/provider/database boundaries",
+      "beforeSiteCount": 0,
+      "afterSiteCount": 0
+    },
+    {
+      "inventory": "src/assets/connection-management-inventory.json",
+      "path": "src/cli/panes/DaemonSection.tsx",
+      "outcome": "reviewed lifecycle removal with retained resource/provider/database boundaries",
+      "beforeSiteCount": 0,
+      "afterSiteCount": 0
+    },
+    {
+      "inventory": "src/assets/connection-management-inventory.json",
+      "path": "src/cli/services/debug-types.ts",
+      "outcome": "reviewed lifecycle removal with retained resource/provider/database boundaries",
+      "beforeSiteCount": 0,
+      "afterSiteCount": 0
+    },
+    {
+      "inventory": "src/assets/connection-management-inventory.json",
+      "path": "src/cli/services/index.ts",
+      "outcome": "reviewed lifecycle removal with retained resource/provider/database boundaries",
+      "beforeSiteCount": 0,
+      "afterSiteCount": 0
+    },
+    {
+      "inventory": "src/assets/connection-management-inventory.json",
+      "path": "src/cli/services/type-contracts/maintenance-result.ts",
+      "outcome": "removed deleted module",
+      "beforeSiteCount": 0,
+      "afterSiteCount": 0
+    },
+    {
+      "inventory": "src/assets/connection-management-inventory.json",
+      "path": "src/config/config-catalog.ts",
+      "outcome": "reviewed lifecycle removal with retained resource/provider/database boundaries",
+      "beforeSiteCount": 0,
+      "afterSiteCount": 0
+    },
+    {
+      "inventory": "src/assets/connection-management-inventory.json",
+      "path": "src/daemon/installed-commit.ts",
+      "outcome": "removed deleted module",
+      "beforeSiteCount": 0,
+      "afterSiteCount": 0
+    },
+    {
+      "inventory": "src/assets/connection-management-inventory.json",
+      "path": "src/daemon/request-context.ts",
+      "outcome": "reviewed lifecycle removal with retained resource/provider/database boundaries",
+      "beforeSiteCount": 0,
+      "afterSiteCount": 0
+    },
+    {
+      "inventory": "src/assets/connection-management-inventory.json",
+      "path": "src/daemon/threads/method-class.ts",
+      "outcome": "reviewed lifecycle removal with retained resource/provider/database boundaries",
+      "beforeSiteCount": 0,
+      "afterSiteCount": 0
+    },
+    {
+      "inventory": "src/assets/connection-management-inventory.json",
+      "path": "src/shared/paths.ts",
+      "outcome": "reviewed lifecycle removal with retained resource/provider/database boundaries",
+      "beforeSiteCount": 0,
+      "afterSiteCount": 0
+    },
+    {
+      "inventory": "src/assets/connection-management-inventory.json",
+      "path": "src/shared/types.ts",
+      "outcome": "reviewed lifecycle removal with retained resource/provider/database boundaries",
+      "beforeSiteCount": 0,
+      "afterSiteCount": 0
+    },
+    {
+      "inventory": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "path": "src/bin/insrc-connection-maintenance.ts",
+      "outcome": "reviewed lifecycle removal with retained resource/provider/database boundaries",
+      "beforeSiteCount": 11,
+      "afterSiteCount": 11
+    },
+    {
+      "inventory": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "path": "src/bin/insrc-daemon-control.ts",
+      "outcome": "removed deleted module",
+      "beforeSiteCount": 0,
+      "afterSiteCount": 0
+    },
+    {
+      "inventory": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "path": "src/bin/insrc-daemon-supervisor.ts",
+      "outcome": "removed deleted module",
+      "beforeSiteCount": 0,
+      "afterSiteCount": 0
+    },
+    {
+      "inventory": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "path": "src/bin/insrc-daemon-update.ts",
+      "outcome": "removed deleted module",
+      "beforeSiteCount": 0,
+      "afterSiteCount": 0
+    },
+    {
+      "inventory": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "path": "src/bin/insrc-shutdown-watchdog.ts",
+      "outcome": "removed deleted module",
+      "beforeSiteCount": 0,
+      "afterSiteCount": 0
+    },
+    {
+      "inventory": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "path": "src/cli/command.ts",
+      "outcome": "reviewed lifecycle removal with retained resource/provider/database boundaries",
+      "beforeSiteCount": 8,
+      "afterSiteCount": 8
+    },
+    {
+      "inventory": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "path": "src/cli/panes/ModelCheckScreen.tsx",
+      "outcome": "reviewed lifecycle removal with retained resource/provider/database boundaries",
+      "beforeSiteCount": 1,
+      "afterSiteCount": 1
+    },
+    {
+      "inventory": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "path": "src/cli/panes/ModelTiersPane.tsx",
+      "outcome": "reviewed lifecycle removal with retained resource/provider/database boundaries",
+      "beforeSiteCount": 1,
+      "afterSiteCount": 1
+    },
+    {
+      "inventory": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "path": "src/cli/services/connection-maintenance.ts",
+      "outcome": "reviewed lifecycle removal with retained resource/provider/database boundaries",
+      "beforeSiteCount": 6,
+      "afterSiteCount": 6
+    },
+    {
+      "inventory": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "path": "src/cli/services/daemon.ts",
+      "outcome": "reviewed lifecycle removal with retained resource/provider/database boundaries",
+      "beforeSiteCount": 2,
+      "afterSiteCount": 0
+    },
+    {
+      "inventory": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "path": "src/cli/services/debug.ts",
+      "outcome": "reviewed lifecycle removal with retained resource/provider/database boundaries",
+      "beforeSiteCount": 13,
+      "afterSiteCount": 13
+    },
+    {
+      "inventory": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "path": "src/cli/services/lifecycle.ts",
+      "outcome": "removed deleted module",
+      "beforeSiteCount": 0,
+      "afterSiteCount": 0
+    },
+    {
+      "inventory": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "path": "src/cli/services/maintenance.ts",
+      "outcome": "removed deleted module",
+      "beforeSiteCount": 0,
+      "afterSiteCount": 0
+    },
+    {
+      "inventory": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "path": "src/cli/services/managed-daemon-control.ts",
+      "outcome": "removed deleted module",
+      "beforeSiteCount": 0,
+      "afterSiteCount": 0
+    },
+    {
+      "inventory": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "path": "src/daemon/admin-handlers.ts",
+      "outcome": "reviewed lifecycle removal with retained resource/provider/database boundaries",
+      "beforeSiteCount": 8,
+      "afterSiteCount": 6
+    },
+    {
+      "inventory": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "path": "src/daemon/fatal.ts",
+      "outcome": "removed deleted module",
+      "beforeSiteCount": 0,
+      "afterSiteCount": 0
+    },
+    {
+      "inventory": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "path": "src/daemon/handler-runtime.ts",
+      "outcome": "reviewed lifecycle removal with retained resource/provider/database boundaries",
+      "beforeSiteCount": 226,
+      "afterSiteCount": 205
+    },
+    {
+      "inventory": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "path": "src/daemon/index.ts",
+      "outcome": "reviewed lifecycle removal with retained resource/provider/database boundaries",
+      "beforeSiteCount": 71,
+      "afterSiteCount": 74
+    },
+    {
+      "inventory": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "path": "src/daemon/legacy-daemon-cutover.ts",
+      "outcome": "removed deleted module",
+      "beforeSiteCount": 0,
+      "afterSiteCount": 0
+    },
+    {
+      "inventory": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "path": "src/daemon/legacy-launch-job.ts",
+      "outcome": "removed deleted module",
+      "beforeSiteCount": 0,
+      "afterSiteCount": 0
+    },
+    {
+      "inventory": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "path": "src/daemon/lifecycle.ts",
+      "outcome": "reviewed lifecycle removal with retained resource/provider/database boundaries",
+      "beforeSiteCount": 24,
+      "afterSiteCount": 23
+    },
+    {
+      "inventory": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "path": "src/daemon/managed-daemon-lifecycle.ts",
+      "outcome": "removed deleted module",
+      "beforeSiteCount": 0,
+      "afterSiteCount": 0
+    },
+    {
+      "inventory": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "path": "src/daemon/managed-daemon-probation.ts",
+      "outcome": "removed deleted module",
+      "beforeSiteCount": 0,
+      "afterSiteCount": 0
+    },
+    {
+      "inventory": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "path": "src/daemon/managed-update-handoff.ts",
+      "outcome": "removed deleted module",
+      "beforeSiteCount": 0,
+      "afterSiteCount": 0
+    },
+    {
+      "inventory": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "path": "src/daemon/managed-update-ipc.ts",
+      "outcome": "removed deleted module",
+      "beforeSiteCount": 0,
+      "afterSiteCount": 0
+    },
+    {
+      "inventory": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "path": "src/daemon/managed-update-launch.ts",
+      "outcome": "removed deleted module",
+      "beforeSiteCount": 0,
+      "afterSiteCount": 0
+    },
+    {
+      "inventory": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "path": "src/daemon/managed-update-recovery.ts",
+      "outcome": "removed deleted module",
+      "beforeSiteCount": 0,
+      "afterSiteCount": 0
+    },
+    {
+      "inventory": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "path": "src/daemon/release-compatibility.ts",
+      "outcome": "removed deleted module",
+      "beforeSiteCount": 0,
+      "afterSiteCount": 0
+    },
+    {
+      "inventory": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "path": "src/daemon/run-file-ownership.ts",
+      "outcome": "removed deleted module",
+      "beforeSiteCount": 0,
+      "afterSiteCount": 0
+    },
+    {
+      "inventory": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "path": "src/daemon/server.ts",
+      "outcome": "reviewed lifecycle removal with retained resource/provider/database boundaries",
+      "beforeSiteCount": 15,
+      "afterSiteCount": 15
+    },
+    {
+      "inventory": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "path": "src/daemon/shutdown-watchdog.ts",
+      "outcome": "removed deleted module",
+      "beforeSiteCount": 0,
+      "afterSiteCount": 0
+    },
+    {
+      "inventory": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "path": "src/daemon/shutdown.ts",
+      "outcome": "removed deleted module",
+      "beforeSiteCount": 0,
+      "afterSiteCount": 0
+    },
+    {
+      "inventory": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "path": "src/daemon/status.ts",
+      "outcome": "reviewed lifecycle removal with retained resource/provider/database boundaries",
+      "beforeSiteCount": 1,
+      "afterSiteCount": 1
+    },
+    {
+      "inventory": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "path": "src/daemon/supervisor-run-files.ts",
+      "outcome": "removed deleted module",
+      "beforeSiteCount": 0,
+      "afterSiteCount": 0
+    },
+    {
+      "inventory": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "path": "src/daemon/supervisor-socket.ts",
+      "outcome": "removed deleted module",
+      "beforeSiteCount": 0,
+      "afterSiteCount": 0
+    },
+    {
+      "inventory": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "path": "src/daemon/supervisor.ts",
+      "outcome": "removed deleted module",
+      "beforeSiteCount": 0,
+      "afterSiteCount": 0
+    },
+    {
+      "inventory": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "path": "src/daemon/threads/admin-status.ts",
+      "outcome": "reviewed lifecycle removal with retained resource/provider/database boundaries",
+      "beforeSiteCount": 1,
+      "afterSiteCount": 1
+    },
+    {
+      "inventory": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "path": "src/daemon/threads/admin-worker.ts",
+      "outcome": "reviewed lifecycle removal with retained resource/provider/database boundaries",
+      "beforeSiteCount": 3,
+      "afterSiteCount": 3
+    },
+    {
+      "inventory": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "path": "src/daemon/threads/indexing-worker.ts",
+      "outcome": "reviewed lifecycle removal with retained resource/provider/database boundaries",
+      "beforeSiteCount": 8,
+      "afterSiteCount": 7
+    },
+    {
+      "inventory": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "path": "src/daemon/threads/main-services.ts",
+      "outcome": "reviewed lifecycle removal with retained resource/provider/database boundaries",
+      "beforeSiteCount": 12,
+      "afterSiteCount": 13
+    },
+    {
+      "inventory": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "path": "src/daemon/threads/session-worker.ts",
+      "outcome": "reviewed lifecycle removal with retained resource/provider/database boundaries",
+      "beforeSiteCount": 7,
+      "afterSiteCount": 8
+    },
+    {
+      "inventory": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "path": "src/daemon/update-runner.ts",
+      "outcome": "removed deleted module",
+      "beforeSiteCount": 0,
+      "afterSiteCount": 0
+    },
+    {
+      "inventory": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "path": "src/shared/daemon-process-client.ts",
+      "outcome": "removed deleted module",
+      "beforeSiteCount": 0,
+      "afterSiteCount": 0
+    },
+    {
+      "inventory": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "path": "src/shared/daemon-run-files.ts",
+      "outcome": "reviewed lifecycle removal with retained resource/provider/database boundaries",
+      "beforeSiteCount": 9,
+      "afterSiteCount": 25
+    },
+    {
+      "inventory": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "path": "src/shared/daemon-supervisor-protocol.ts",
+      "outcome": "removed deleted module",
+      "beforeSiteCount": 0,
+      "afterSiteCount": 0
+    },
+    {
+      "inventory": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "path": "src/shared/darwin-lifecycle.ts",
+      "outcome": "removed deleted module",
+      "beforeSiteCount": 0,
+      "afterSiteCount": 0
+    },
+    {
+      "inventory": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "path": "src/shared/installation-mutation-gate.ts",
+      "outcome": "removed deleted module",
+      "beforeSiteCount": 0,
+      "afterSiteCount": 0
+    },
+    {
+      "inventory": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "path": "src/shared/ipc-client.ts",
+      "outcome": "reviewed lifecycle removal with retained resource/provider/database boundaries",
+      "beforeSiteCount": 21,
+      "afterSiteCount": 21
+    },
+    {
+      "inventory": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "path": "src/shared/managed-daemon-installation.ts",
+      "outcome": "removed deleted module",
+      "beforeSiteCount": 0,
+      "afterSiteCount": 0
+    },
+    {
+      "inventory": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "path": "src/shared/update-source.ts",
+      "outcome": "removed deleted module",
+      "beforeSiteCount": 0,
+      "afterSiteCount": 0
+    },
+    {
+      "inventory": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "path": "src/workflow/artifact-write-inventory.ts",
+      "outcome": "reviewed lifecycle removal with retained resource/provider/database boundaries",
+      "beforeSiteCount": 3,
+      "afterSiteCount": 3
+    },
+    {
+      "inventory": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+      "path": "src/daemon/threads/method-class.ts",
+      "outcome": "reviewed lifecycle removal with retained resource/provider/database boundaries",
+      "beforeSiteCount": 0,
+      "afterSiteCount": 0
+    }
+  ]
+}

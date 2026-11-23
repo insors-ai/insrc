@@ -127,25 +127,12 @@ sourceSets.named("test") {
     resources.srcDir(rootProject.file("../test-fixtures"))
 }
 
-// Bundle the sibling backend assets the plugin must ship with, so both travel INSIDE
-// the plugin jar rather than being read from an (absent-on-a-fresh-machine) daemon dir:
-//   - insrc-daemon-install.sh (Story S003 / t6-t7): the bootstrap installer that clones
-//     ~/.insrc/daemon, needed for the one-click setup on a machine with no daemon yet;
-//   - steering-block.md (Story S004 / t1): the canonical tracked-workflow steering block —
-//     the SAME src/prompts/steering-block.md the daemon steering-refresh writes — injected
-//     into each detected AI host's rules file on project open (single source of truth).
-// One Copy task into one output dir keeps Gradle's up-to-date/incremental checks intact
-// (no overlapping-task-output warning). Copies individual files from the sibling backend
-// repo; it does NOT wire the two build systems or toolchains together (k6). Both ship
-// under classpath /insrc/ (/insrc/insrc-daemon-install.sh, /insrc/steering-block.md).
+// Bundle the canonical host steering resource.
 val bundleBackendAssets by tasks.registering(Exec::class) {
     workingDir(rootProject.projectDir)
     commandLine("node", "../scripts/sync-client-runtime-assets.mjs", "jetbrains")
-    inputs.files(fileTree("../scripts") { include("*node-runtime*", "provision-node-runtime.sh", "source-selection-env.sh", "insrc-daemon-install.sh", "sync-client-runtime-assets.mjs") })
-    inputs.property("qualifiedUpgradeChannel", providers.environmentVariable("INSRC_QUALIFIED_UPGRADE_CHANNEL").orElse("0"))
-    inputs.file("../src/assets/node-runtime-policy.json")
+    inputs.file("../scripts/sync-client-runtime-assets.mjs")
     inputs.file("../src/prompts/steering-block.md")
-    providers.environmentVariable("INSRC_PACKAGED_INSTALLER").orNull?.let { inputs.file(it) }
     outputs.dir(layout.buildDirectory.dir("generated-resources/insrc"))
 }
 

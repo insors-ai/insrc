@@ -60,17 +60,6 @@ test('src/config/__tests__/tier-defaults.test.ts: the summariser follows the che
   assert.ok(buildSummariserProvider(local) instanceof OllamaProvider);
 });
 
-test('src/config/__tests__/tier-defaults.test.ts: the installer takes the claude and codex tier defaults from the model definitions file (installer-defs.test.ts runs it)', () => {
-  const script = read('scripts/insrc-daemon-install.sh');
-  assert.match(script, /MODEL_DEFS="\$DAEMON_SRC\/src\/assets\/models\/cloud-model-catalog\.json"/);
-  assert.match(script, /ANALYZE_TIERS_JSON="\$\(model_defs "\$CLI_CHOICE" tiers\)"/);
-  assert.equal(script.includes('gpt-5.5'), false, 'no stale Codex model is left in the installer');
-});
-
-test('src/config/__tests__/tier-defaults.test.ts: the plugin\'s copy of the installer is identical to the script', () => {
-  assert.equal(read('vscode-plugin/assets/insrc-daemon-install.sh'), read('scripts/insrc-daemon-install.sh'));
-});
-
 test("a global tier dropped for an empty or invalid model keeps its configured effort on the DEFAULT_TIERS fallback (assembleConfig's shaperEffort / summariserEffort)", () => {
   // The catalog default for core.model is '', which drops the core tier.
   const tiering = parseTiering({ tiers: { core: { runner: 'cli-codex', model: '', effort: 'high' }, cheap: { runner: 'bogus', model: 'x', effort: 'low' } } });

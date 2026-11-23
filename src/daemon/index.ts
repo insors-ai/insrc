@@ -64,7 +64,7 @@ import { createInDaemonClient, installStepDaemonClient } from './steps/daemon-cl
 import { registerParkOffer } from './steps/workflow-step/park-offer.js';
 import { registerSignoff } from './steps/workflow-step/signoff-registration.js';
 
-import { writePid, isAlreadyRunning, bootstrapEmbeddingModel, getModelState } from './lifecycle.js';
+import { bootstrapEmbeddingModel, getModelState } from './lifecycle.js';
 import { ThreadServices, currentLmdbFileSizeMb, maintenanceConfig, sessionIdleMs, threadsEnabled } from './threads/main-services.js';
 import { threadViews } from './threads/admin-status.js';
 import type { SessionPool } from './threads/session-pool.js';

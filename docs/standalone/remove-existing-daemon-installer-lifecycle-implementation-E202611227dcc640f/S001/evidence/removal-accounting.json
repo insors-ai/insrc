@@ -5562,10 +5562,11 @@
       "preserve": "Keep steering-block.md packaging and generic client destination creation.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "ed31b2663bcf24fb656e59d64836230f965d36eb3239ade113512bfaf78f0b86",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "const installer=process.env.INSRC_PACKAGED_INSTALLER;",
-      "observedSourceSha256": "ed31b2663bcf24fb656e59d64836230f965d36eb3239ade113512bfaf78f0b86"
+      "observedSourceSha256": "ed31b2663bcf24fb656e59d64836230f965d36eb3239ade113512bfaf78f0b86",
+      "task": "t7"
     },
     {
       "id": "M109",
@@ -5579,10 +5580,11 @@
       "preserve": "Keep general build coordinator, TypeScript/client builds and unrelated output requirements.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "4ea2fe1d7f6023932a62eb2ebac99581afb0c199fa02a5fc15025c01e27abea9",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "export const REQUIRED_ARTIFACTS = ['out/daemon/index.js', 'out/bin/insrc-process-broker', 'out/bin/insrc-shutdown-watchdog.js',",
-      "observedSourceSha256": "4ea2fe1d7f6023932a62eb2ebac99581afb0c199fa02a5fc15025c01e27abea9"
+      "observedSourceSha256": "4ea2fe1d7f6023932a62eb2ebac99581afb0c199fa02a5fc15025c01e27abea9",
+      "task": "t7"
     },
     {
       "id": "M110",
@@ -5596,10 +5598,11 @@
       "preserve": "Keep other runtime assets, model/catalog/prompt copying.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "4a0e7ccb777cbcde6602a1fb26e650f7ba0fee9d164cbde36004a146f6186112",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "syncNodeRuntimeAssets(true);",
-      "observedSourceSha256": "4a0e7ccb777cbcde6602a1fb26e650f7ba0fee9d164cbde36004a146f6186112"
+      "observedSourceSha256": "4a0e7ccb777cbcde6602a1fb26e650f7ba0fee9d164cbde36004a146f6186112",
+      "task": "t7"
     },
     {
       "id": "M111",
@@ -6009,10 +6012,11 @@
       "preserve": "Keep other tests and shared test harness/fixtures.",
       "requiresExtraction": false,
       "revalidatedSourceSha256": "669c98e160bbc9a2b1f5585ec8a6128742353161ea7061e6b97d3d409f9ef45d",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "test('src/config/__tests__/tier-defaults.test.ts: the installer takes the claude and codex tier defaults from the model definitions file (installer-defs.test.ts runs it)', () => {",
-      "observedSourceSha256": "669c98e160bbc9a2b1f5585ec8a6128742353161ea7061e6b97d3d409f9ef45d"
+      "observedSourceSha256": "669c98e160bbc9a2b1f5585ec8a6128742353161ea7061e6b97d3d409f9ef45d",
+      "task": "t7"
     },
     {
       "id": "M140",
@@ -6026,10 +6030,11 @@
       "preserve": "Keep other tests and shared test harness/fixtures.",
       "requiresExtraction": false,
       "revalidatedSourceSha256": "669c98e160bbc9a2b1f5585ec8a6128742353161ea7061e6b97d3d409f9ef45d",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "test('src/config/__tests__/tier-defaults.test.ts: the plugin\\'s copy of the installer is identical to the script', () => {",
-      "observedSourceSha256": "669c98e160bbc9a2b1f5585ec8a6128742353161ea7061e6b97d3d409f9ef45d"
+      "observedSourceSha256": "669c98e160bbc9a2b1f5585ec8a6128742353161ea7061e6b97d3d409f9ef45d",
+      "task": "t7"
     },
     {
       "id": "M141",
@@ -6367,10 +6372,11 @@
       "preserve": "Update daemonUpdate key/count assertions; keep remaining configuration contract coverage.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "3870ceb784db96ecb3c75321064c3bb7408c0aecf411b655f5dc6c1bd8f930d5",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "test('the real CONFIG_CATALOG has 41 rows (the old review settings codeReview.*, review.chunkTokens and designReview.* are retired with the review engine; models.shaper.ollamaNumCtx and permissions.mode retired; + daemonUpdate.repoUrl, daemonUpdate.branch and tools.commonApproval; flat models.* surface; three models.tiers.*.effort rows; models.local.embeddingKeepAlive; analyzer.dataSourceListingTimeoutMs; daemon.threads.enabled; four daemon.maintenance.* rows)', () => {",
-      "observedSourceSha256": "3870ceb784db96ecb3c75321064c3bb7408c0aecf411b655f5dc6c1bd8f930d5"
+      "observedSourceSha256": "3870ceb784db96ecb3c75321064c3bb7408c0aecf411b655f5dc6c1bd8f930d5",
+      "task": "t7"
     },
     {
       "id": "M160",
@@ -6850,6 +6856,15 @@
         "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/ModelTiersSection.kt"
       ],
       "reason": "Remove callers of deleted lifecycle helpers; retain read-only status and MCP launch target lookup and model approval/settings."
+    },
+    {
+      "task": "t7",
+      "paths": [
+        "src/bin/insrc-connection-maintenance.ts",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/UnixSocketDaemonRpc.kt",
+        "vscode-plugin/package.json"
+      ],
+      "reason": "Retain conservative offline admission with read-only legacy PID detection; remove update-only socket reply handling; regenerate remaining settings contributions."
     }
   ]
 }

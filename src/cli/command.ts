@@ -17,7 +17,6 @@ import type { UnitRef } from '../workflow/tracker/refs.js';
 import type { TrackerSetupStep } from '../workflow/tracker/setup.js';
 import type { ReviewArtifactResult } from '../workflow/review-history/index.js';
 import { formatMcpOutcome } from './services/repo.js';
-import { describeStop } from './services/daemon.js';
 import { formatBytes, formatUptime } from './ui/format.js';
 import { CONFIG_CATALOG } from './config-catalog.js';
 import type { LocalModelChoice } from '../shared/model-recommender.js';
@@ -35,7 +34,7 @@ const PANES: Record<string, number> = { daemon: 0, repos: 1, workflows: 2, setup
 
 export const COMMAND_HELP: readonly string[] = [
 	'repo     add <path> | remove <path> | reindex <path> | list',
-	'daemon   start | stop | restart | update | backup <dir> | compact | status',
+	'daemon   backup <dir> | compact | status',
 	'workflow run <workflow> <focus> | list | chain <hash> | review <path> | findings <path> | resolve <path> <id> <action> | approve <path> [--override <reason>] | reject <path> <reason> | ack-stale <path> <reason> | sync <hash> | deferred <epicSlug|hash>',
 	'tracker  setup [--project]   ·   bootstrap the GitHub tracker (config, labels, issue types, project)',
 	'team     init [path]   ·   write a starter .insrc/policy.json for the team lead to review and commit',
@@ -88,19 +87,6 @@ function switchPane(name: string | undefined, ctx: CommandCtx): string[] {
 
 async function runDaemon(sub: string | undefined, rest: readonly string[], svc: Services, ctx: CommandCtx): Promise<string[]> {
 	switch (sub) {
-		case 'start': {
-			const r = await svc.daemon.startDaemon();
-			return [r.started ? `daemon running${r.pid !== undefined ? ` (pid ${r.pid})` : ''}` : 'daemon did not become ready within 60 s'];
-		}
-		case 'stop': return [describeStop(await svc.daemon.stopDaemon())];
-		case 'restart': {
-			const r = await svc.daemon.restart(ctx.onLog);
-			return [r.ok ? 'daemon restarted' : `✗ restart failed: ${r.error ?? '?'}`];
-		}
-		case 'update': {
-			const r = await svc.daemon.update({}, ctx.onLog);
-			return [r.ok ? `update complete (${r.steps.join(', ') || 'no-op'})` : `✗ update failed: ${r.error ?? '?'}`];
-		}
 		case 'backup': {
 			if (rest[0] === undefined) return ['usage: daemon backup <dir>'];
 			const r = await svc.daemon.backup(rest[0]);
@@ -117,7 +103,7 @@ async function runDaemon(sub: string | undefined, rest: readonly string[], svc: 
 				...(s.storeFailure !== undefined ? [`✗ store FAILED since ${s.storeFailure.at} (during: ${s.storeFailure.operation}): ${s.storeFailure.cause}`] : []),
 			];
 		}
-		default: return ['usage: daemon start|stop|restart|update|backup <dir>|compact|status'];
+		default: return ['usage: daemon backup <dir>|compact|status'];
 	}
 }
 

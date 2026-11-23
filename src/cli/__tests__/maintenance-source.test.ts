@@ -3,7 +3,6 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { git, updateFixture } from '../../daemon/__tests__/helpers-update-fixture.js';
 test('CLI source admission preserves historical checkout and validates explicit source overrides', async () => {
  const f = updateFixture(); process.env.HOME = join(f.root, 'home'); mkdirSync(process.env.HOME);
  process.env.INSRC_DAEMON_ROOT = f.install;

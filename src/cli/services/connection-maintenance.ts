@@ -7,7 +7,6 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { rpc } from '../client.js';
 import { PATHS } from '../../shared/paths.js';
-import { stopDaemon } from './daemon.js';
 import { connectionManagementEnablement } from '../../daemon/db/management-enablement.js';
 import { processObservation } from '../../daemon/db/management-owner-lease.js';
 import { writeProtected } from '../../daemon/db/management-files.js';
@@ -19,7 +18,6 @@ export interface MaintenanceControl {
 	readonly identity: (pid: number) => string | undefined;
 	readonly command: (pid: number) => string;
 	readonly alive: (pid: number) => boolean;
-	readonly stop: () => Promise<unknown>;
 	readonly run: (root: string, proof: StoppedDaemonEvidence) => Promise<void>;
 }
 export async function runConnectionMaintenance(root: string, control: MaintenanceControl): Promise<void> {
@@ -29,9 +27,8 @@ export async function runConnectionMaintenance(root: string, control: Maintenanc
 	if (canonical !== root || !await control.registered(root))
 		throw new Error('Maintenance requires a registered canonical repository.');
 	const pid = await control.pid(), identity = control.identity(pid);
-	if (!Number.isSafeInteger(pid) || pid <= 0 || !identity || !control.alive(pid) || !/(?:^|\/)daemon\/index\.(?:js|ts)(?:\s|$)/.test(control.command(pid)))
+	if (!Number.isSafeInteger(pid) || pid <= 0 || !identity || !/(?:^|\/)daemon\/index\.(?:js|ts)(?:\s|$)/.test(control.command(pid)))
 		throw new Error('Maintenance requires a verified daemon process.');
-	await control.stop();
 	if (control.alive(pid))
 		throw new Error('Maintenance requires the previous daemon to exit.');
 	await control.run(root, { source: 'safe-stop-control', pid, processIdentity: identity, stoppedAt: new Date().toISOString() });
@@ -42,9 +39,9 @@ export async function adoptConnections(root: string): Promise<void> {
 		registered: async (candidate) => (await rpc<{
 			path: string;
 		}[]>('repo.list')).some(repo => repo.path === candidate),
-		pid: async () => Number((await readFile(PATHS.pidFile, 'utf8')).trim()),
+		pid: async () => Number((await readFile(join(PATHS.insrc, 'daemon.pid'), 'utf8')).trim()),
 		identity: processObservation.identity, alive: processObservation.alive,
-		command: pid => execFileSync('ps', ['-o', 'command=', '-p', String(pid)], { encoding: 'utf8' }).trim(), stop: stopDaemon,
+		command: pid => execFileSync('ps', ['-o', 'command=', '-p', String(pid)], { encoding: 'utf8' }).trim(), 
 		run: async (canonical, proof) => {
 			const directory = await mkdtemp(join(tmpdir(), 'insrc-connection-maintenance-'));
 			try {

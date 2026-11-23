@@ -124,17 +124,17 @@ export function ModelCheckScreen(props: {
 	};
 
 	/** Restart, then — only if it worked — save the tier. The approval is not sent again. */
-	const restartThenSave = (efforts: readonly string[]): void => {
-		const task = ui.task('restarting the daemon…');
-		setStep({ kind: 'approved', efforts, busy: true, problem: 'restarting…' });
+	const saveApprovedTier = (efforts: readonly string[]): void => {
+		setStep({ kind: 'approved', efforts, busy: true, problem: 'checking current model definitions…' });
 		void (async () => {
 			try {
-				const res = await svc.daemon.restart(line => task.push(line));
-				if (!res.ok) throw new Error(res.error ?? 'unknown error');
-				task.done('daemon restarted');
-			} catch (err) {
-				task.fail(`restart failed: ${message(err)}`);
-				if (live.current) setStep({ kind: 'approved', efforts, busy: false, problem: `approval recorded; restart failed: ${message(err)} — the tier was not saved (R retries)` });
+				const current = await svc.models.definitions();
+				if (!servedModel(current, target.family, target.modelId)) {
+					if (live.current) setStep({ kind: 'approved', efforts, busy: false, problem: 'approval recorded; the runtime must load this model before its tier can be saved' });
+					return;
+				}
+			} catch (error) {
+				if (live.current) setStep({ kind: 'approved', efforts, busy: false, problem: message(error) });
 				return;
 			}
 			if (!live.current) return;
@@ -146,13 +146,13 @@ export function ModelCheckScreen(props: {
 					return;
 				}
 				const restartRequired = saved.restartRequired === true;
-				ui.toast(`saved ${tierPath(target.tier)} = ${target.modelId}${restartRequired ? ' — restart the daemon to apply (R)' : ''}`);
+				ui.toast(`saved ${tierPath(target.tier)} = ${target.modelId}${restartRequired ? ' — applies on next daemon launch' : ''}`);
 				props.onClose(true, restartRequired);
 			} catch (err) {
 				// A lost connection may come after the write landed: read the config back before saying it did not.
 				const found = disconnected(err) ? await tierInConfig(tier) : 'no';
 				if (found === 'yes') {
-					ui.toast(`saved ${tierPath(target.tier)} = ${target.modelId} — restart the daemon to apply (R)`);
+					ui.toast(`saved ${tierPath(target.tier)} = ${target.modelId} — applies on next daemon launch`);
 					props.onClose(true, true);
 					return;
 				}
@@ -197,7 +197,7 @@ export function ModelCheckScreen(props: {
 		if (step.kind === 'refused' && step.served !== undefined && input === 's') { props.onPickServed(step.served.id, step.served.defs); return; }
 		if (step.kind === 'unknown' && input === 'l') { reload(step.action); return; }
 		if (step.kind === 'unknown' && input === 'c') { runCheck(claimed); return; }
-		if (step.kind === 'approved' && input === 'R') { restartThenSave(step.efforts); return; }
+		if (step.kind === 'approved' && input === 's') { saveApprovedTier(step.efforts); return; }
 		if (step.kind !== 'result') return;
 		const { result } = step;
 		if (input === 'x') { decide('reject', result); return; }
@@ -274,7 +274,7 @@ export function ModelCheckScreen(props: {
 						? (step.result.runs
 						? [['↑/↓', 'select'], ['space', 'allow level'], ['a', 'approve'], ['x', 'reject'], ['esc', 'back']]
 						: [['x', 'reject'], ['esc', 'back']])
-						: step.kind === 'approved' ? (step.busy ? [] : [['R', 'restart and save'], ['esc', 'later']])
+						: step.kind === 'approved' ? (step.busy ? [] : [['s', 'save when served'], ['esc', 'later']])
 						: step.kind === 'refused' && step.served !== undefined ? [['s', 'save as the tier model'], ['esc', 'back']]
 						: step.kind === 'expired' ? [['c', 'check again'], ['esc', 'back']]
 						: step.kind === 'interrupted' ? [['c', 'check again'], ['esc', 'back']]

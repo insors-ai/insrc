@@ -24,7 +24,6 @@ import * as repo from './repo.js';
 import * as workflow from './workflow.js';
 import * as setup from './setup.js';
 import * as config from './config.js';
-import * as maintenance from './maintenance.js';
 import * as team from './team.js';
 import { registerParkOfferProvider } from '../../workflow/team/gate.js';
 import { registerSignoffHook } from '../../workflow/team/signoff.js';
@@ -34,19 +33,12 @@ import { createApprovalWatcher, type ApprovalWatcher } from './approval.js';
 import { createIpcClient } from '../../shared/ipc-client.js';
 import { modelsService, type ModelsService } from './models.js';
 import type { ConfigWriteResult } from './config.js';
-import { isRunning } from './lifecycle.js';
 import type { EpicSummary, ApproveOutcome } from './workflow.js';
 import type { PullTick, PullResult } from './setup.js';
-import type { UpdateOptions, MaintenanceResult, LogFn } from './maintenance.js';
 
 export interface Services {
 	readonly daemon: {
-		isRunning(): boolean;
 		getStatus(): Promise<DaemonStatus>;
-		startDaemon(): Promise<daemon.StartResult>;
-		stopDaemon(): Promise<daemon.StopOutcome>;
-		restart(onLog: LogFn): Promise<MaintenanceResult>;
-		update(opts: UpdateOptions, onLog: LogFn): Promise<MaintenanceResult>;
 		backup(path: string): Promise<daemon.BackupResult>;
 		compact(): Promise<daemon.CompactResult>;
 	};
@@ -115,12 +107,7 @@ export function makeServices(): Services {
 	return {
 		approvals: createApprovalWatcher({ client: createIpcClient() }),
 		daemon: {
-			isRunning,
 			getStatus:   daemon.getStatus,
-			startDaemon: daemon.startDaemon,
-			stopDaemon:  () => daemon.stopDaemon(),
-			restart:     maintenance.restart,
-			update:      maintenance.update,
 			backup:      daemon.backup,
 			compact:     daemon.compact,
 		},
@@ -178,8 +165,6 @@ export function makeServices(): Services {
 		debug: {
 			sections:        debug.sections,
 			daemonStatus:    debug.daemonStatus,
-			scanOrphans:     debug.scanOrphans,
-			killOrphans:     debug.killOrphans,
 			attachedClients: debug.attachedClients,
 			mcpStatus:       debug.mcpStatus,
 			logCategories:   debug.logCategories,

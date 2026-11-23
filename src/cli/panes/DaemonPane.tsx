@@ -19,7 +19,6 @@ import { useServices, useUi, useCaptured } from '../ui/context.js';
 import type { UiTask } from '../ui/context.js';
 import { Panel, KeyHints, TextPrompt } from '../ui/widgets.js';
 import { formatBytes, formatUptime } from '../ui/format.js';
-import { describeStop } from '../services/daemon.js';
 
 type Modal = 'none' | 'busy' | 'backup';
 
@@ -48,22 +47,7 @@ export function DaemonPane(props: { daemon: DaemonState; nonce: number }): React
 	};
 
 	useInput((input) => {
-		if (input === 's') void run('starting daemon…', async () => {
-			const r = await svc.daemon.startDaemon();
-			return r.started ? `daemon running${r.pid !== undefined ? ` (pid ${r.pid})` : ''}` : 'daemon did not become ready within 60 s';
-		});
-		else if (input === 'x') void run('stopping daemon…', async () => describeStop(await svc.daemon.stopDaemon()));
-		else if (input === 'R') void run('restarting daemon…', async (task) => {
-			const r = await svc.daemon.restart(task.push);
-			if (!r.ok) throw new Error(r.error ?? 'restart failed');
-			return 'daemon restarted';
-		});
-		else if (input === 'u') void run('updating daemon…', async (task) => {
-			const r = await svc.daemon.update({}, task.push);
-			if (!r.ok) throw new Error(r.error ?? 'update failed');
-			return `update complete (${r.steps.join(', ') || 'no-op'})`;
-		});
-		else if (input === 'c') void run('compacting LMDB…', async () => {
+		if (input === 'c') void run('compacting LMDB…', async () => {
 			const r = await svc.daemon.compact();
 			return `compacted: saved ${formatBytes(r.savedBytes)} in ${(r.elapsedMs / 1000).toFixed(1)}s`;
 		});
@@ -87,7 +71,7 @@ export function DaemonPane(props: { daemon: DaemonState; nonce: number }): React
 				: <Health daemon={d} />}
 
 			<Box marginTop={1}>
-				<KeyHints hints={[['s', 'start'], ['x', 'stop'], ['R', 'restart'], ['u', 'update'], ['b', 'backup'], ['c', 'compact']]} />
+				<KeyHints hints={[['b', 'backup'], ['c', 'compact']]} />
 			</Box>
 		</Panel>
 	);
@@ -101,7 +85,6 @@ function Health(props: { daemon: DaemonState }): ReactElement {
 			<Box flexDirection="column">
 				<Text color="red">○ daemon is not running</Text>
 				<Text dimColor>{d.error ?? ''}</Text>
-				<Text>Press <Text color="yellow">s</Text> to start it.</Text>
 			</Box>
 		);
 	}
@@ -118,7 +101,6 @@ function Health(props: { daemon: DaemonState }): ReactElement {
 				<Box flexDirection="column">
 					<Text color="red">store     FAILED since {s.storeFailure.at} (during: {s.storeFailure.operation})</Text>
 					<Text color="red">{s.storeFailure.cause}</Text>
-					<Text>Press <Text color="yellow">R</Text> to restart the daemon.</Text>
 				</Box>
 			)}
 		</Box>

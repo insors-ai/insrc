@@ -109,7 +109,7 @@ export function ModelTiersPane(): ReactElement {
 			ui.toast(`✗ not saved: ${res.reason ?? 'refused'}${res.detail !== undefined ? ` — ${res.detail}` : ''}`);
 		} else {
 			if (res.restartRequired === true) setRestartPending(true);
-			ui.toast(`saved ${path}${res.restartRequired === true ? ' — restart the daemon to apply (R)' : ''}`);
+			ui.toast(`saved ${path}${res.restartRequired === true ? ' — applies on next daemon launch' : ''}`);
 		}
 		setNonce(n => n + 1);
 	};
@@ -124,16 +124,6 @@ export function ModelTiersPane(): ReactElement {
 	const saveTier = (tier: TierName, next: TierModel | undefined): void => {
 		if (next === undefined) return;
 		save(tierPath(tier), { runner: next.runner, model: next.model, effort: next.effort ?? '' });
-	};
-
-	const restart = (): void => {
-		const task = ui.task('restarting the daemon…');
-		void svc.daemon.restart(line => task.push(line))
-			.then(res => {
-				if (res.ok) { task.done('daemon restarted'); setRestartPending(false); setNonce(n => n + 1); }
-				else task.fail(`restart failed: ${res.error ?? 'unknown error'}`);
-			})
-			.catch((err: unknown) => task.fail(`restart failed: ${err instanceof Error ? err.message : String(err)}`));
 	};
 
 	const closePrompt = (): void => { setPrompt(undefined); ui.capture(false); };
@@ -169,7 +159,6 @@ export function ModelTiersPane(): ReactElement {
 		if (key.upArrow || input === 'k') { setSel(s => Math.max(0, s - 1)); return; }
 		if (key.downArrow || input === 'j') { setSel(s => Math.min(rows.length - 1, s + 1)); return; }
 		if (input === 'r') { setNonce(n => n + 1); return; }
-		if (input === 'R' && restartPending) { restart(); return; }
 		if (cur.kind === 'tier') {
 			const tier = eff.tiers[cur.tier];
 			const family = familyOf(defs, tier.runner);
@@ -283,7 +272,7 @@ export function ModelTiersPane(): ReactElement {
 					);
 				})}
 			</Box>
-			{restartPending && <Text color="yellow">restart the daemon to apply (R)</Text>}
+			{restartPending && <Text color="yellow">applies on next daemon launch</Text>}
 			<Box marginTop={1}>
 				<Text {...hi(sel === CONFIG_ROWS - 1)}>{rowMark(CONFIG_ROWS - 1)}coreFloor  {eff.coreFloor}</Text>
 				<Text dimColor> {eff.coreFloorSource === 'default' ? '(default)' : '(set)'} · critical roles never resolve below this</Text>
@@ -311,8 +300,8 @@ export function ModelTiersPane(): ReactElement {
 			)}
 			<Box marginTop={1}>
 				<KeyHints hints={cur.kind === 'tier'
-					? [['↑/↓', 'select'], ['f', 'family'], ['m', 'model'], ...(familyOf(defs, eff.tiers[cur.tier].runner)?.host !== undefined ? [] : [['n', 'new model id'] as const]), ['e', 'effort'], ...(restartPending ? [['R', 'restart daemon'] as const] : []), ['r', 'reload']]
-					: [['↑/↓', 'select'], ['e', 'edit'], ...(restartPending ? [['R', 'restart daemon'] as const] : []), ['r', 'reload']]} />
+					? [['↑/↓', 'select'], ['f', 'family'], ['m', 'model'], ...(familyOf(defs, eff.tiers[cur.tier].runner)?.host !== undefined ? [] : [['n', 'new model id'] as const]), ['e', 'effort'], ['r', 'reload']]
+					: [['↑/↓', 'select'], ['e', 'edit'], ['r', 'reload']]} />
 			</Box>
 		</Panel>
 	);

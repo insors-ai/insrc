@@ -84,19 +84,23 @@ function isRecord(v: unknown): v is Record<string, unknown> {
 
 /** pip-audit's JSON output: either a bare array of dependency entries, or
  *  `{ dependencies: [...] }`, each `{ name, version, vulns: [...] }`. A
- *  dependency with an empty vulns array is a cleanly-checked coordinate. */
-function mapPipAuditOutput(parsed: unknown, advisoryDestination: string): { matches: SecurityAdvisoryMatch[]; cleanCoordinates: string[] } | undefined {
+ *  dependency with an empty `vulns` ARRAY is a cleanly-checked coordinate; a
+ *  dependency carrying no `vulns` key at all (or a non-array value) was never
+ *  actually checked by pip-audit -- an unresolved coordinate, not a clean
+ *  one, so it must never be reported as cleanly audited. */
+function mapPipAuditOutput(parsed: unknown, advisoryDestination: string): { matches: SecurityAdvisoryMatch[]; cleanCoordinates: string[]; unresolvedCoordinates: string[] } | undefined {
 	const deps = Array.isArray(parsed) ? parsed : (isRecord(parsed) && Array.isArray(parsed.dependencies) ? parsed.dependencies : undefined);
 	if (deps === undefined) { return undefined; }
 	const matches: SecurityAdvisoryMatch[] = [];
 	const cleanCoordinates: string[] = [];
+	const unresolvedCoordinates: string[] = [];
 	for (const dep of deps) {
 		if (!isRecord(dep) || typeof dep.name !== 'string') { continue; }
 		const version = typeof dep.version === 'string' ? dep.version : '';
 		const coordinate = `${dep.name}@${version}`;
-		const vulns = Array.isArray(dep.vulns) ? dep.vulns : [];
-		if (vulns.length === 0) { cleanCoordinates.push(coordinate); continue; }
-		for (const vuln of vulns) {
+		if (!Array.isArray(dep.vulns)) { unresolvedCoordinates.push(coordinate); continue; }
+		if (dep.vulns.length === 0) { cleanCoordinates.push(coordinate); continue; }
+		for (const vuln of dep.vulns) {
 			if (!isRecord(vuln)) { continue; }
 			matches.push({
 				coordinate,
@@ -108,11 +112,11 @@ function mapPipAuditOutput(parsed: unknown, advisoryDestination: string): { matc
 			});
 		}
 	}
-	return { matches, cleanCoordinates };
+	return { matches, cleanCoordinates, unresolvedCoordinates };
 }
 
 /** npm/pnpm's `audit --json` output: `{ vulnerabilities: { <pkgName>: { range, severity, via: [...] } } }`. */
-function mapNpmAuditOutput(parsed: unknown, advisoryDestination: string, provenance: string): { matches: SecurityAdvisoryMatch[]; cleanCoordinates: string[] } | undefined {
+function mapNpmAuditOutput(parsed: unknown, advisoryDestination: string, provenance: string): { matches: SecurityAdvisoryMatch[]; cleanCoordinates: string[]; unresolvedCoordinates: string[] } | undefined {
 	if (!isRecord(parsed) || !isRecord(parsed.vulnerabilities)) { return undefined; }
 	const matches: SecurityAdvisoryMatch[] = [];
 	const cleanCoordinates: string[] = [];
@@ -133,12 +137,12 @@ function mapNpmAuditOutput(parsed: unknown, advisoryDestination: string, provena
 			});
 		}
 	}
-	return { matches, cleanCoordinates };
+	return { matches, cleanCoordinates, unresolvedCoordinates: [] };
 }
 
 /** cargo-audit's `--json` output: `{ vulnerabilities: { list: [ { package, advisory } ] } }`. cargo-audit does
  *  not list clean dependencies, only vulnerable ones -- no cleanCoordinates here. */
-function mapCargoAuditOutput(parsed: unknown, advisoryDestination: string): { matches: SecurityAdvisoryMatch[]; cleanCoordinates: string[] } | undefined {
+function mapCargoAuditOutput(parsed: unknown, advisoryDestination: string): { matches: SecurityAdvisoryMatch[]; cleanCoordinates: string[]; unresolvedCoordinates: string[] } | undefined {
 	if (!isRecord(parsed) || !isRecord(parsed.vulnerabilities) || !Array.isArray(parsed.vulnerabilities.list)) { return undefined; }
 	const matches: SecurityAdvisoryMatch[] = [];
 	for (const entry of parsed.vulnerabilities.list) {
@@ -154,7 +158,7 @@ function mapCargoAuditOutput(parsed: unknown, advisoryDestination: string): { ma
 			advisoryDestination,
 		});
 	}
-	return { matches, cleanCoordinates: [] };
+	return { matches, cleanCoordinates: [], unresolvedCoordinates: [] };
 }
 
 /** Maps one manager's raw pkg_audit output into SecurityAdvisoryMatch[] plus the
@@ -162,7 +166,7 @@ function mapCargoAuditOutput(parsed: unknown, advisoryDestination: string): { ma
  *  the output cannot be structurally mapped (yarn's NDJSON, go's plain-text
  *  govulncheck output) -- an execution gap, recorded in unavailableSources by
  *  the caller, never a thrown error. */
-function mapAuditOutput(manager: Manager, parsed: unknown, advisoryDestination: string): { matches: SecurityAdvisoryMatch[]; cleanCoordinates: string[] } | undefined {
+function mapAuditOutput(manager: Manager, parsed: unknown, advisoryDestination: string): { matches: SecurityAdvisoryMatch[]; cleanCoordinates: string[]; unresolvedCoordinates: string[] } | undefined {
 	if (manager === 'pip' || manager === 'pipenv' || manager === 'poetry') { return mapPipAuditOutput(parsed, advisoryDestination); }
 	if (manager === 'npm' || manager === 'pnpm') { return mapNpmAuditOutput(parsed, advisoryDestination, `${manager} audit`); }
 	if (manager === 'cargo') { return mapCargoAuditOutput(parsed, advisoryDestination); }
@@ -208,6 +212,16 @@ export async function collectDependencyAdvisories(repoPath: string, targets: Rev
 	const unresolvedDependencies: string[] = [];
 	const unavailableSources: string[] = [];
 	const perManagerMode: PerManagerModeEntry[] = [];
+	// A package name already recorded in unresolvedDependencies (a lockfile-export
+	// gap or a version-uncertain pip pin) must never ALSO land in matches or
+	// queriedCoordinates for the same coordinate -- each coordinate's outcome is
+	// exactly one of the three accounting buckets, never more than one.
+	const unresolvedNames = new Set<string>();
+	const recordUnresolved = (entry: string): void => {
+		unresolvedDependencies.push(entry);
+		const name = entry.split(':')[0]?.trim().toLowerCase();
+		if (name !== undefined && name.length > 0) { unresolvedNames.add(name); }
+	};
 	let closureRegressed = false;
 
 	for (const { manager, manifestDir } of managers) {
@@ -229,7 +243,7 @@ export async function collectDependencyAdvisories(repoPath: string, targets: Rev
 				requirementsPath = exported.requirementsPath;
 				cleanupDir = dirname(exported.requirementsPath);
 				noDeps = true;
-				unresolvedDependencies.push(...exported.unresolvedDependencies);
+				for (const gap of exported.unresolvedDependencies) { recordUnresolved(gap); }
 			} catch (err) {
 				perManagerMode.push({ manager, mode: 'unsupported', configuredDestination });
 				unavailableSources.push(`${manager}: could not generate requirementsPath from its lockfile (${err instanceof Error ? err.message : String(err)})`);
@@ -237,7 +251,7 @@ export async function collectDependencyAdvisories(repoPath: string, targets: Rev
 			}
 		} else if (manager === 'pip') {
 			requirementsPath = `${manifestDir}/requirements.txt`;
-			unresolvedDependencies.push(...findVersionUncertainPipRequirements(requirementsPath));
+			for (const gap of findVersionUncertainPipRequirements(requirementsPath)) { recordUnresolved(gap); }
 		}
 
 		try {
@@ -248,15 +262,16 @@ export async function collectDependencyAdvisories(repoPath: string, targets: Rev
 			const data = result.data as PkgAuditResultData | undefined;
 			if (data === undefined) {
 				unavailableSources.push(`${manager}: ${result.error ?? 'audit execution failed'}`);
-				perManagerMode.push({ manager, mode, configuredDestination });
-				continue;
-			}
-			const mapped = mapAuditOutput(manager, data.parsed, configuredDestination);
-			if (mapped === undefined) {
-				unavailableSources.push(`${manager}: unparseable audit output`);
 			} else {
-				matches.push(...mapped.matches);
-				queriedCoordinates.push(...mapped.cleanCoordinates);
+				const mapped = mapAuditOutput(manager, data.parsed, configuredDestination);
+				if (mapped === undefined) {
+					unavailableSources.push(`${manager}: unparseable audit output`);
+				} else {
+					const nameOf = (coordinate: string): string => (coordinate.split('@')[0] ?? coordinate).toLowerCase();
+					for (const match of mapped.matches) { if (!unresolvedNames.has(nameOf(match.coordinate))) { matches.push(match); } }
+					for (const coordinate of mapped.cleanCoordinates) { if (!unresolvedNames.has(nameOf(coordinate))) { queriedCoordinates.push(coordinate); } }
+					for (const coordinate of mapped.unresolvedCoordinates) { recordUnresolved(`${coordinate}: pip-audit did not report a result for this dependency`); }
+				}
 			}
 			perManagerMode.push({ manager, mode, configuredDestination });
 		} finally {

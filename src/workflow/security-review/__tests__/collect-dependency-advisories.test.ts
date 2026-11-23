@@ -161,6 +161,54 @@ test('collectDependencyAdvisories: a cleanly-audited coordinate with no advisory
 	}
 });
 
+test("collectDependencyAdvisories: pkg_audit spawnError for a manager still checks post-audit closure coverage, not just pre-audit", async () => {
+	const repo = initRepo();
+	treatAsRegistered(repo);
+	try {
+		writeFileSync(join(repo, 'requirements.txt'), 'flask==2.0.0\n');
+		_setPkgAuditExecuteForTests(async () => {
+			// The closure grows mid-"audit" even though the audit itself failed to spawn.
+			writeFileSync(join(repo, 'extra.txt'), 'pytest==7.0.0\n');
+			appendFileSync(join(repo, 'requirements.txt'), '-r extra.txt\n');
+			return spawnErrorResult('pip-audit not found: ENOENT');
+		});
+		const result = await collectDependencyAdvisories(repo, { entries: [{ path: 'app.ts' }, { path: 'requirements.txt' }] });
+		assert.ok(result.unavailableSources.some(s => s.includes('pip')), JSON.stringify(result.unavailableSources));
+		assert.equal(result.contentStable, false, 'the post-audit closure regression must still be caught after a spawnError');
+	} finally {
+		cleanup(repo);
+	}
+});
+
+test('collectDependencyAdvisories: a version-uncertain pip pin that is also cleanly audited is recorded ONLY in unresolvedDependencies, never also in queriedCoordinates', async () => {
+	const repo = initRepo();
+	treatAsRegistered(repo);
+	try {
+		writeFileSync(join(repo, 'requirements.txt'), 'flask>=2.0.0\n');
+		_setPkgAuditExecuteForTests(async () => okResult({ manager: 'pip', exitCode: 0, parsed: { dependencies: [{ name: 'flask', version: '2.1.0', vulns: [] }] } }));
+		const result = await collectDependencyAdvisories(repo, { entries: [{ path: 'app.ts' }, { path: 'requirements.txt' }] });
+		assert.ok(result.unresolvedDependencies.some(d => d.toLowerCase().includes('flask')), JSON.stringify(result.unresolvedDependencies));
+		assert.ok(!result.queriedCoordinates.some(c => c.toLowerCase().includes('flask')), JSON.stringify(result.queriedCoordinates));
+		assert.ok(!result.matches.some(m => m.coordinate.toLowerCase().includes('flask')), JSON.stringify(result.matches));
+	} finally {
+		cleanup(repo);
+	}
+});
+
+test("collectDependencyAdvisories: a pip-audit dependency entry with no 'vulns' key at all is unresolved, never reported as cleanly audited", async () => {
+	const repo = initRepo();
+	treatAsRegistered(repo);
+	try {
+		writeFileSync(join(repo, 'requirements.txt'), 'flask==2.0.0\n');
+		_setPkgAuditExecuteForTests(async () => okResult({ manager: 'pip', exitCode: 0, parsed: { dependencies: [{ name: 'flask', version: '2.0.0' }] } }));
+		const result = await collectDependencyAdvisories(repo, { entries: [{ path: 'app.ts' }, { path: 'requirements.txt' }] });
+		assert.ok(!result.queriedCoordinates.some(c => c.toLowerCase().includes('flask')), JSON.stringify(result.queriedCoordinates));
+		assert.ok(result.unresolvedDependencies.some(d => d.toLowerCase().includes('flask')), JSON.stringify(result.unresolvedDependencies));
+	} finally {
+		cleanup(repo);
+	}
+});
+
 test('collectDependencyAdvisories: pkg_audit spawnError for a manager -> recorded in unavailableSources', async () => {
 	const repo = initRepo();
 	treatAsRegistered(repo);

@@ -162,7 +162,20 @@ function resolveRequirementsClosure(file: string, seen: Set<string>): string[] {
 	} catch {
 		return result;
 	}
-	for (const line of content.split('\n')) {
+	// pip joins a line ending in a trailing '\' with the physical line that
+	// follows it before parsing -- a '-r' directive split across lines with a
+	// line-continuation backslash names one logical reference, not a literal
+	// path ending in '\'.
+	const logicalLines = content.split('\n').reduce<string[]>((lines, raw) => {
+		const prev = lines.at(-1);
+		if (prev !== undefined && prev.endsWith('\\')) {
+			lines[lines.length - 1] = prev.slice(0, -1) + raw;
+		} else {
+			lines.push(raw);
+		}
+		return lines;
+	}, []);
+	for (const line of logicalLines) {
 		// pip accepts both `-r file` and the glued `-rfile` form for -r/-c.
 		const m = /^\s*-(?:r|c)\s*(\S.*)$/.exec(line);
 		if (m?.[1] !== undefined) {

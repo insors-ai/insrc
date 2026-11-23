@@ -95,6 +95,19 @@ test("verifyManagerClosureCoverage: a '-r' line with a trailing inline comment s
 	}
 });
 
+test("verifyManagerClosureCoverage: a '-r' directive split across a trailing-backslash line continuation still resolves to the real referenced file, not a literal backslash path", async () => {
+	const repo = tmpRepo();
+	try {
+		writeFileSync(join(repo, 'requirements.txt'), '-r \\\nmore.txt\nflask==2.0.0\n');
+		writeFileSync(join(repo, 'more.txt'), 'pytest==7.0.0\n');
+		const missing = await verifyManagerClosureCoverage(repo, { entries: [{ path: 'requirements.txt' }] }, 'pip', repo);
+		assert.equal(missing.covered, false);
+		assert.ok(!missing.covered && missing.missing.includes('more.txt'), JSON.stringify(missing));
+	} finally {
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
 test("verifyManagerClosureCoverage: a compact '-rfile' (glued, no space) reference is still resolved, not just the spaced '-r file' form", async () => {
 	const repo = tmpRepo();
 	try {

@@ -134,6 +134,20 @@ test("verifyManagerClosureCoverage: a compact '-rfile' (glued, no space) referen
 	}
 });
 
+test("verifyManagerClosureCoverage: pip's long '--requirement'/'--constraint' forms (spaced or '=') are resolved just like '-r'/'-c'", async () => {
+	const repo = tmpRepo();
+	try {
+		writeFileSync(join(repo, 'requirements.txt'), '--requirement more.txt\n--constraint=constraints.txt\nflask==2.0.0\n');
+		writeFileSync(join(repo, 'more.txt'), 'pytest==7.0.0\n');
+		writeFileSync(join(repo, 'constraints.txt'), 'flask==2.0.0\n');
+		const missing = await verifyManagerClosureCoverage(repo, { entries: [{ path: 'requirements.txt' }] }, 'pip', repo);
+		assert.equal(missing.covered, false);
+		assert.ok(!missing.covered && missing.missing.includes('more.txt') && missing.missing.includes('constraints.txt'), JSON.stringify(missing));
+	} finally {
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
 test('verifyManagerClosureCoverage: a -r reference to a file that does not exist on disk is still reported missing, never silently dropped from the closure', async () => {
 	const repo = tmpRepo();
 	try {

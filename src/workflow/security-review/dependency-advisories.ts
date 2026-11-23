@@ -83,8 +83,15 @@ function managersInDir(dir: string, entries: readonly string[]): Manager[] {
 	for (const [file, manager] of MANIFEST_FILES) {
 		if (entries.includes(file)) { found.add(manager); }
 	}
+	const foundFamilies = new Set([...found].map(manager => familyOf(manager).join(',')));
 	for (const [file, manager] of BARE_MANIFEST_FILES) {
-		if (entries.includes(file) && !found.has(manager)) { found.add(manager); }
+		// A bare manifest (package.json, requirements.txt, ...) only adds its
+		// manager when no manager of that SAME FAMILY was already identified
+		// by a lockfile -- package.json is pnpm's own companion manifest, not
+		// independent evidence of npm, once pnpm-lock.yaml already identified
+		// the project as pnpm (and likewise for yarn.lock+package.json,
+		// poetry.lock+pyproject.toml, Pipfile.lock+requirements.txt, ...).
+		if (entries.includes(file) && !foundFamilies.has(familyOf(manager).join(','))) { found.add(manager); }
 	}
 	return [...found];
 }
@@ -176,8 +183,9 @@ function resolveRequirementsClosure(file: string, seen: Set<string>): string[] {
 		return lines;
 	}, []);
 	for (const line of logicalLines) {
-		// pip accepts both `-r file` and the glued `-rfile` form for -r/-c.
-		const m = /^\s*-(?:r|c)\s*(\S.*)$/.exec(line);
+		// pip accepts `-r file`, the glued `-rfile` form, and the long forms
+		// `--requirement file`/`--requirement=file` (same for -c/--constraint).
+		const m = /^\s*(?:-(?:r|c)\s*|--(?:requirement|constraint)(?:\s+|=))(\S.*)$/.exec(line);
 		if (m?.[1] !== undefined) {
 			// requirements.txt allows a trailing inline comment on any line
 			// (` # note`); strip it before treating the remainder as the path,

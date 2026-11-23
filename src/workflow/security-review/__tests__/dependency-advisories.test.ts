@@ -51,6 +51,28 @@ test('enumerateManagers finds a manager for each of the 8 supported manifest/loc
 	}
 });
 
+test("enumerateManagers: a lockfile's own companion bare manifest (pnpm-lock.yaml + package.json, yarn.lock + package.json, poetry.lock + pyproject.toml) is NOT a second manager -- it is the same manager's own manifest, not independent evidence of another", () => {
+	const repo = tmpRepo();
+	try {
+		const cases: ReadonlyArray<readonly [string, string, string]> = [
+			['pnpm', 'pnpm-lock.yaml', 'package.json'],
+			['yarn', 'yarn.lock', 'package.json'],
+			['poetry', 'poetry.lock', 'pyproject.toml'],
+		];
+		for (const [manager, lockfile, bareManifest] of cases) {
+			const dir = join(repo, manager);
+			mkdirSync(dir);
+			writeFileSync(join(dir, lockfile), '');
+			writeFileSync(join(dir, bareManifest), '');
+			const { managers, ambiguities } = enumerateManagers(dir, EMPTY_TARGETS);
+			assert.deepEqual(ambiguities, [], `${manager}: expected no ambiguity, got ${JSON.stringify(ambiguities)}`);
+			assert.deepEqual(managers.map(m => m.manager), [manager], `${manager}: expected only itself, got ${JSON.stringify(managers)}`);
+		}
+	} finally {
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
 test('enumerateManagers: two manifests for the same manager family -> unresolved ambiguity', () => {
 	const repo = tmpRepo();
 	try {

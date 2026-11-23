@@ -12,6 +12,11 @@ test('explicit home endpoint and terminal launch identity remain consistent', ()
   assert.equal(location.daemonEndpoint.address, '/tmp/person/.insrc/daemon.sock');
   assert.deepEqual(resolveInstallationLocation('home', { os: 'darwin', home: '/tmp/person/.insrc/' }), location);
   assert.deepEqual(parseInstaller('location', location), location);
+  for (const home of ['/', '/tmp/insrc\\', '/tmp/literal\\..']) {
+    const explicit = resolveInstallationLocation('home', { os: 'linux', home });
+    assert.equal(explicit.home, home);
+    assert.deepEqual(parseInstaller('location', explicit), explicit);
+  }
   for (const home of ['relative', '~/insrc', '//server/share', '/tmp/../escape', '/tmp/./insrc']) {
     assert.throws(() => resolveInstallationLocation('home', { home, os: 'linux' }), home);
   }

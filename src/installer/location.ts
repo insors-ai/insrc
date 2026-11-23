@@ -19,7 +19,7 @@ export function normalizeHome(home: string, os: Target['os']): string {
   const path = os === 'win32' ? win32 : posix;
   if (!home || home.length > 4096 || /[\u0000-\u001f\u007f]/.test(home) || /^[\\/]{2}/.test(home)
     || !path.isAbsolute(home) || (os === 'win32' && !/^[a-z]:[\\/]/i.test(home))
-    || home.split(/[\\/]/).some(part => part === '..' || part === '.')) {
+    || home.split(os === 'win32' ? /[\\/]/ : /\//).some(part => part === '..' || part === '.')) {
     throw new InstallerError('home-invalid', 'Installation home must be an absolute local path without traversal');
   }
   if (os === 'win32' && /[:<>"|?*]/.test(home.slice(2))) throw new InstallerError('home-invalid', 'Unsupported Windows home path');
@@ -28,7 +28,7 @@ export function normalizeHome(home: string, os: Target['os']): string {
     if (tail) assertRelativeFile(tail);
   }
   const normalized = path.normalize(home);
-  return normalized.length === path.parse(normalized).root.length ? normalized : normalized.replace(/[\\/]+$/, '');
+  return normalized.length === path.parse(normalized).root.length ? normalized : normalized.replace(os === 'win32' ? /[\\/]+$/ : /\/+$/, '');
 }
 
 /** Pure resolver. The caller obtains a SID from the qualified platform binding. */

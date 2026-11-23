@@ -1,5 +1,6 @@
 import { Ajv } from 'ajv';
 import type { ValidateFunction } from 'ajv';
+import { posix } from 'node:path';
 import { InstallerError, MAX_BRIDGE_BYTES, MAX_CONTROL_BYTES, PRIVATE_NODE_VERSION } from './contracts.js';
 import type * as C from './contracts.js';
 import { assertRelativeFile, normalizeHome } from './location.js';
@@ -94,7 +95,7 @@ export function parseInstaller<K extends keyof WireTypes>(kind: K, input: unknow
     checkEndpoint(location.daemonEndpoint);
     normalizeHome(location.home, location.daemonEndpoint.kind === 'named-pipe' ? 'win32' : 'linux');
     if (location.installationId !== location.daemonEndpoint.installationId
-      || (location.daemonEndpoint.kind === 'unix' && location.daemonEndpoint.address !== `${location.home}/daemon.sock`)) {
+      || (location.daemonEndpoint.kind === 'unix' && location.daemonEndpoint.address !== posix.join(location.home, 'daemon.sock'))) {
       throw new InstallerError('identity-mismatch', 'Location and endpoint identities differ');
     }
   }

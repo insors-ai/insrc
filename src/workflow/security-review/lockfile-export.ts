@@ -26,7 +26,8 @@ export interface LockfileExportResult {
 interface PoetryPackage {
 	readonly name: string;
 	readonly version: string;
-	readonly nonStandardSource: boolean;
+	readonly excluded: boolean;
+	readonly excludedReason: string;
 }
 
 /** Strips a trailing TOML comment (from the first unquoted '#' onward) --
@@ -52,20 +53,23 @@ function stripTomlComment(line: string): string {
  *  parser -- scoped to exactly this file's known structure. */
 function parsePoetryLock(content: string): PoetryPackage[] {
 	const packages: PoetryPackage[] = [];
-	let current: { name?: string; version?: string; nonStandardSource: boolean } | undefined;
+	let current: { name?: string; version?: string; excluded: boolean; excludedReason: string } | undefined;
 	let inSourceSection = false;
 
 	const flush = (): void => {
 		if (current?.name !== undefined && current.version !== undefined) {
-			packages.push({ name: current.name, version: current.version, nonStandardSource: current.nonStandardSource });
+			packages.push({ name: current.name, version: current.version, excluded: current.excluded, excludedReason: current.excludedReason });
 		}
+	};
+	const exclude = (reason: string): void => {
+		if (current !== undefined && !current.excluded) { current.excluded = true; current.excludedReason = reason; }
 	};
 
 	for (const rawLine of content.split('\n')) {
 		const line = stripTomlComment(rawLine).trim();
 		if (line === '[[package]]') {
 			flush();
-			current = { nonStandardSource: false };
+			current = { excluded: false, excludedReason: '' };
 			inSourceSection = false;
 			continue;
 		}
@@ -82,11 +86,19 @@ function parsePoetryLock(content: string): PoetryPackage[] {
 		// a [package.source]/inline source table using either must still be
 		// recognized as naming a source type.
 		if (inSourceSection) {
-			if (/^type\s*=\s*['"]/.test(line)) { current.nonStandardSource = true; }
+			if (/^type\s*=\s*['"]/.test(line)) { exclude('non-standard source (not plain PyPI)'); }
 			continue;
 		}
 		if (/^source\s*=\s*\{/.test(line) && /type\s*=\s*['"]/.test(line)) {
-			current.nonStandardSource = true;
+			exclude('non-standard source (not plain PyPI)');
+			continue;
+		}
+		// A 'markers' key (poetry's environment-marker condition on the
+		// package) means a bare 'name==version' line would drop the
+		// condition the lock recorded it under -- not faithfully
+		// representable in plain requirements.txt syntax.
+		if (/^markers\s*=\s*['"]/.test(line)) {
+			exclude('environment-marker-conditional, not faithfully representable as a plain pin');
 			continue;
 		}
 		const m = /^(\w[\w.-]*)\s*=\s*(?:"((?:[^"\\]|\\.)*)"|'([^']*)')/.exec(line);
@@ -102,12 +114,16 @@ function parsePoetryLock(content: string): PoetryPackage[] {
 interface PipenvPackage {
 	readonly name: string;
 	readonly spec: string | undefined;
-	readonly nonStandardSource: boolean;
+	readonly excluded: boolean;
+	readonly excludedReason: string;
 }
 
 /** Pipfile.lock is plain JSON -- no custom parsing needed. An entry carrying
- *  'git' / 'path' / 'file' (and a 'url'-sourced entry with no plain 'version')
- *  is a non-default source. */
+ *  'git' / 'path' / 'file' / 'url' is a non-default source regardless of
+ *  whether it also carries a 'version'; an 'index' key means it was resolved
+ *  from a secondary (private) package index, not plain PyPI; a 'markers' key
+ *  (an environment-marker condition) is not faithfully representable as a
+ *  bare pin either. */
 function parsePipfileLock(content: string): PipenvPackage[] {
 	const data = JSON.parse(content) as Record<string, unknown>;
 	const packages: PipenvPackage[] = [];
@@ -118,12 +134,19 @@ function parsePipfileLock(content: string): PipenvPackage[] {
 			if (raw === null || typeof raw !== 'object') { continue; }
 			const entry = raw as Record<string, unknown>;
 			const spec = typeof entry.version === 'string' ? entry.version : undefined;
-			// pipenv only adds an 'index' key to a lock entry when it was
-			// explicitly resolved from a secondary (non-default) package
-			// index -- a private/custom source, not plain PyPI.
-			const nonStandardSource = typeof entry.git === 'string' || typeof entry.path === 'string' || typeof entry.file === 'string'
-				|| typeof entry.index === 'string' || (spec === undefined && typeof entry.url === 'string');
-			packages.push({ name, spec, nonStandardSource });
+			let excluded = false;
+			let excludedReason = '';
+			if (typeof entry.git === 'string' || typeof entry.path === 'string' || typeof entry.file === 'string' || typeof entry.url === 'string') {
+				excluded = true;
+				excludedReason = 'non-standard source (not plain PyPI)';
+			} else if (typeof entry.index === 'string') {
+				excluded = true;
+				excludedReason = 'resolved from a secondary package index (not plain PyPI)';
+			} else if (typeof entry.markers === 'string') {
+				excluded = true;
+				excludedReason = 'environment-marker-conditional, not faithfully representable as a plain pin';
+			}
+			packages.push({ name, spec, excluded, excludedReason });
 		}
 	}
 	return packages;
@@ -143,16 +166,16 @@ export function generateLockfileExport(manager: 'pipenv' | 'poetry', manifestDir
 
 	if (manager === 'poetry') {
 		for (const pkg of parsePoetryLock(content)) {
-			if (pkg.nonStandardSource) {
-				unresolvedDependencies.push(`${pkg.name}: non-standard source (not plain PyPI) -- excluded from generated requirements export`);
+			if (pkg.excluded) {
+				unresolvedDependencies.push(`${pkg.name}: ${pkg.excludedReason} -- excluded from generated requirements export`);
 				continue;
 			}
 			lines.push(`${pkg.name}==${pkg.version}`);
 		}
 	} else {
 		for (const pkg of parsePipfileLock(content)) {
-			if (pkg.nonStandardSource || pkg.spec === undefined) {
-				unresolvedDependencies.push(`${pkg.name}: non-standard source (not plain PyPI) -- excluded from generated requirements export`);
+			if (pkg.excluded || pkg.spec === undefined) {
+				unresolvedDependencies.push(`${pkg.name}: ${pkg.excludedReason || 'non-standard source (not plain PyPI)'} -- excluded from generated requirements export`);
 				continue;
 			}
 			lines.push(`${pkg.name}${pkg.spec}`);

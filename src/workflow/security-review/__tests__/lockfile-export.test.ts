@@ -135,6 +135,50 @@ url = "https://github.com/example/mylib.git"
 	}
 });
 
+test("generateLockfileExport(poetry): a poetry.lock entry with a 'markers' (environment-marker) condition is excluded, not exported as an unconditional pin", () => {
+	const dir = tmpDir();
+	try {
+		const lock = `
+[[package]]
+name = "requests"
+version = "2.25.1"
+
+[[package]]
+name = "colorama"
+version = "0.4.4"
+markers = "sys_platform == 'win32'"
+`;
+		writeFileSync(join(dir, 'poetry.lock'), lock);
+		const { requirementsPath, unresolvedDependencies } = generateLockfileExport('poetry', dir);
+		const generated = readFileSync(requirementsPath, 'utf8');
+		assert.ok(!generated.includes('colorama'), generated);
+		assert.ok(unresolvedDependencies.some(d => d.includes('colorama')), JSON.stringify(unresolvedDependencies));
+		assert.ok(generated.includes('requests==2.25.1'), generated);
+	} finally {
+		rmSync(dir, { recursive: true, force: true });
+	}
+});
+
+test("generateLockfileExport(pipenv): a Pipfile.lock entry with both a 'url' and a 'version' is still excluded as a non-standard source", () => {
+	const dir = tmpDir();
+	try {
+		const pipfileLock = JSON.stringify({
+			default: {
+				requests: { version: '==2.25.1', hashes: [] },
+				wheel: { url: 'https://example.com/wheel-1.0-py3-none-any.whl', version: '==1.0' },
+			},
+		});
+		writeFileSync(join(dir, 'Pipfile.lock'), pipfileLock);
+		const { requirementsPath, unresolvedDependencies } = generateLockfileExport('pipenv', dir);
+		const generated = readFileSync(requirementsPath, 'utf8');
+		assert.ok(!generated.includes('wheel'), generated);
+		assert.ok(unresolvedDependencies.some(d => d.includes('wheel')), JSON.stringify(unresolvedDependencies));
+		assert.ok(generated.includes('requests==2.25.1'), generated);
+	} finally {
+		rmSync(dir, { recursive: true, force: true });
+	}
+});
+
 test("findVersionUncertainPipRequirements: a pip 'wildcard match' pin (e.g. '==2.*') is a range, not an exact pin -- also recorded as version-uncertain", () => {
 	const dir = tmpDir();
 	try {

@@ -29,6 +29,22 @@ interface PoetryPackage {
 	readonly nonStandardSource: boolean;
 }
 
+/** Strips a trailing TOML comment (from the first unquoted '#' onward) --
+ *  '#' inside a '...' or "..." string is not a comment marker. */
+function stripTomlComment(line: string): string {
+	let quote: '"' | '\'' | undefined;
+	for (let i = 0; i < line.length; i += 1) {
+		const ch = line[i];
+		if (quote !== undefined) {
+			if (ch === quote) { quote = undefined; }
+			continue;
+		}
+		if (ch === '"' || ch === '\'') { quote = ch; continue; }
+		if (ch === '#') { return line.slice(0, i); }
+	}
+	return line;
+}
+
 /** poetry.lock's own regular, bounded shape: repeated `[[package]]` blocks each
  *  with `name`/`version` keys, optionally followed by a `[package.source]`
  *  sub-table (or an inline `source = { ... }` table on the block itself) when
@@ -46,7 +62,7 @@ function parsePoetryLock(content: string): PoetryPackage[] {
 	};
 
 	for (const rawLine of content.split('\n')) {
-		const line = rawLine.trim();
+		const line = stripTomlComment(rawLine).trim();
 		if (line === '[[package]]') {
 			flush();
 			current = { nonStandardSource: false };

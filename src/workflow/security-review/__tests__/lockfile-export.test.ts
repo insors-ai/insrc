@@ -109,6 +109,32 @@ url = 'https://github.com/example/mylib.git'
 	}
 });
 
+test("generateLockfileExport(poetry): a '[package.source]' header with a trailing inline TOML comment is still recognized, not treated as an unknown section", () => {
+	const dir = tmpDir();
+	try {
+		const lock = `
+[[package]]
+name = "requests"
+version = "2.25.1"
+
+[[package]]
+name = "mylib"
+version = "0.1.0"
+
+[package.source] # origin
+type = "git"
+url = "https://github.com/example/mylib.git"
+`;
+		writeFileSync(join(dir, 'poetry.lock'), lock);
+		const { requirementsPath, unresolvedDependencies } = generateLockfileExport('poetry', dir);
+		const generated = readFileSync(requirementsPath, 'utf8');
+		assert.ok(!generated.includes('mylib'), generated);
+		assert.ok(unresolvedDependencies.some(d => d.includes('mylib')), JSON.stringify(unresolvedDependencies));
+	} finally {
+		rmSync(dir, { recursive: true, force: true });
+	}
+});
+
 test("findVersionUncertainPipRequirements: a pip 'wildcard match' pin (e.g. '==2.*') is a range, not an exact pin -- also recorded as version-uncertain", () => {
 	const dir = tmpDir();
 	try {

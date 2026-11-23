@@ -1,0 +1,489 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1795437482543-w4qj8h",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-23T12:43:22.694Z",
+    "epicCreatedAt": "2026-11-10T05:58:05.294Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 318748,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "0765b3a578e43eec",
+    "epicSlug": "add-dedicated-security-reviews",
+    "storyId": "s2",
+    "lldRunId": "wf-1795340676261-vxtdhu",
+    "lldEffectiveHash": "60b05edbecc26e77425f3711101dac3f1443953fd2b0c1f7570c41c2c631bf03",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "210bad9523a8549a195a9fd029f0d7521d89a14077a12106d7d9add4403ba456",
+        "at": "2026-11-23T12:43:23.114Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-23T12:50:08.763Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "bf17dec13cc7f8c07879367d5a1709abad29c01e"
+  },
+  "body": {
+    "summary": {
+      "prose": "Building this Story adds dependency-advisory collection to the security-review module: a shared content-identity hash reused from s3, a manager-closure coverage check run both before and after each manager's audit, and a lockfile-export step that keeps an excluded private dependency excluded even through pip-audit's own resolution. The existing pkg_audit tool gains two small, additive fields; everything else (enumerating managers, computing the identity, checking closures, exporting lockfiles, and the orchestrator that ties them together) is new.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add requirementsPath + noDeps fields to pkgAuditTool's inputSchema and auditArgv",
+        "summary": "Add two optional inputSchema fields to pkgAuditTool (src/daemon/tools/builtins/pkg/index.ts): requirementsPath?: string and noDeps?: boolean. auditArgv gains the same two parameters: appends `-r <requirementsPath>` for pip/pipenv/poetry when provided, and `--no-deps` when noDeps is true. Both additive; omitted, every existing caller's behavior and argv is byte-for-byte unchanged.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "auditArgv('pip', {requirementsPath:'/tmp/x.txt'}) includes '-r /tmp/x.txt' in argv",
+          "auditArgv('pip', {noDeps:true}) includes '--no-deps' in argv",
+          "auditArgv('npm') with no new params produces the identical argv as today (no requirementsPath/noDeps leakage into unrelated managers)",
+          "pkgAuditTool's inputSchema declares both new fields as optional"
+        ],
+        "derivedFrom": [
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "pkgAuditTool.execute: noDeps:true -> argv includes --no-deps"
+          },
+          {
+            "level": "unit",
+            "name": "pkgAuditTool.execute: noDeps omitted/false -> argv is identical to today"
+          },
+          {
+            "level": "unit",
+            "name": "auditArgv('pip', {requirementsPath}) appends -r <requirementsPath>"
+          },
+          {
+            "level": "unit",
+            "name": "auditArgv('npm') with no new params is unchanged from today"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Implement enumerateManagers",
+        "summary": "enumerateManagers(repoPath, targets) walks repoPath to find every manager's manifest/lockfile, returning each detected manager with its manifestDir, and flags an unresolved ambiguity when two manifests for the same manager family appear in one directory.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "enumerateManagers finds a manager for each of the 8 supported manifest/lockfile shapes (npm/pnpm/yarn/pip/pipenv/poetry/go/cargo)",
+          "two manifests for the same manager family in one directory are recorded as an unresolved ambiguity, never silently resolved to one",
+          "a directory with no recognizable manifest yields no manager for that directory"
+        ],
+        "derivedFrom": [
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "enumerateManagers finds a manager for each of the 8 supported manifest/lockfile shapes"
+          },
+          {
+            "level": "unit",
+            "name": "enumerateManagers: two manifests for the same manager family -> unresolved ambiguity"
+          },
+          {
+            "level": "unit",
+            "name": "enumerateManagers: a directory with no recognizable manifest yields no manager"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Implement computeContentIdentity",
+        "summary": "computeContentIdentity(repoPath, targets) returns a deterministic digest over the repo's HEAD commit sha plus a sha256 of every file named in targets.entries' actual, current raw bytes -- a simple, shared, non-manager-aware hash (the same function s3 will also call over the same targets).",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "editing an application-source file listed in targets.entries changes the digest",
+          "editing a file NOT in targets.entries leaves the digest unchanged",
+          "two calls with no intervening change to targets.entries' files yield the identical string",
+          "a targets.entries path resolving outside repoPath throws",
+          "repoPath that is not a registered git repository, or whose HEAD cannot be resolved, throws"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "computeContentIdentity: an application-source file in targets.entries is edited, manifests/lockfiles unchanged -> digest changes"
+          },
+          {
+            "level": "unit",
+            "name": "computeContentIdentity: a file NOT in targets.entries is edited -> no change"
+          },
+          {
+            "level": "unit",
+            "name": "computeContentIdentity: identical targets.entries bytes -> identical string on repeated calls"
+          },
+          {
+            "level": "unit",
+            "name": "computeContentIdentity: a targets.entries path outside repoPath throws"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Implement verifyManagerClosureCoverage",
+        "summary": "verifyManagerClosureCoverage(repoPath, targets, manager, manifestDir) re-resolves a manager's required-input closure (nested -r/-c references for pip-family; a go module's full source tree for go) fresh on every call, and returns covered:true or covered:false with the missing files listed. Never caches a prior result.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "a manager's closure fully contained in targets.entries -> covered:true",
+          "a manager's closure referencing a file outside targets.entries -> covered:false with that file listed in missing",
+          "two calls in a row after a new file is added to the closure return different results (no caching)",
+          "never mutates targets.entries or any other input"
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "verifyManagerClosureCoverage: re-resolves the closure fresh on each call -- two calls in a row after a file is added return different results"
+          },
+          {
+            "level": "unit",
+            "name": "verifyManagerClosureCoverage: a closure fully contained in targets.entries -> covered:true"
+          },
+          {
+            "level": "unit",
+            "name": "verifyManagerClosureCoverage: a closure referencing a file outside targets.entries -> covered:false with missing listed"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Implement lockfile export (requirementsPath generation) with faithful-export and version-uncertain gap detection",
+        "summary": "For pipenv/poetry, generate a requirementsPath from Pipfile.lock/poetry.lock containing only plain-PyPI-sourced, faithfully-representable entries; a git/path/url-sourced or unfaithfully-representable entry is excluded and recorded as a non-standard-source gap (added to unresolvedDependencies). For plain pip, use the project's own requirements.txt directly; an entry that is not an exact pin is recorded as version-uncertain (also added to unresolvedDependencies), but the file itself is never rewritten. Every requirementsPath this step generates itself (pipenv/poetry only, never plain pip) is always paired with noDeps:true when later passed to pkgAuditTool (t1's fields).",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "a poetry.lock entry with a git/path/url source is excluded from the generated file and recorded in unresolvedDependencies with a non-standard-source note",
+          "a poetry.lock entry with a plain PyPI source and exact version is included in the generated file (confirming the exact-locked version is preferred over a fresh resolution)",
+          "a plain pip requirements.txt entry using a version range (not an exact pin) is recorded in unresolvedDependencies as version-uncertain, while requirements.txt itself is left untouched",
+          "the generation step itself never sets noDeps -- that pairing happens at the collectDependencyAdvisories call site (t6)"
+        ],
+        "derivedFrom": [
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "a poetry.lock entry with a git/path/url source -> excluded, added to unresolvedDependencies"
+          },
+          {
+            "level": "unit",
+            "name": "a plain pip requirements.txt entry with a version range -> recorded in unresolvedDependencies as version-uncertain"
+          },
+          {
+            "level": "unit",
+            "name": "a poetry.lock entry with an exact PyPI pin is included in the generated requirementsPath"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Implement collectDependencyAdvisories",
+        "summary": "collectDependencyAdvisories(repoPath, targets) orchestrates the full sc2 collection: computes contentIdentity once before any manager runs (propagating a failure here) and once after the last manager's audit completes (catching a failure here as contentStable:false, never propagating); for each manager enumerateManagers finds, calls verifyManagerClosureCoverage before (gating whether it is audited at all, 'unsupported' if not covered) and after (a post-audit regression also sets contentStable:false) its audit; invokes pkgAuditTool per manager with the t5-generated requirementsPath + noDeps:true for pipenv/poetry, or the project's own requirements.txt with no noDeps for plain pip; maps each manager's raw output into SecurityAdvisoryMatch[]; records every manager's configuredDestination and perManagerMode, and accounts every queried coordinate into exactly one of matches/unresolvedDependencies/queriedCoordinates-only.",
+        "size": "L",
+        "order": 6,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3",
+          "t4",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "a manager's closure is covered:true pre-audit but covered:false post-audit (a new file appeared during the audit) -> contentStable:false, that manager's own results are still returned",
+          "a targets.entries file deleted between the pre- and post-collection computeContentIdentity calls -> contentStable:false, no exception escapes collectDependencyAdvisories",
+          "the FIRST computeContentIdentity call's own repoPath-level precondition failure DOES propagate (distinct from the second-call case)",
+          "a generated requirementsPath (pipenv/poetry) is ALWAYS invoked with noDeps:true; plain pip's own requirements.txt is NEVER invoked with noDeps:true",
+          "pkg_audit spawnError for a manager -> recorded in unavailableSources, never thrown",
+          "every attempted manager's perManagerMode entry carries a configuredDestination",
+          "a cleanly-checked coordinate with no advisory match appears in queriedCoordinates only; a coordinate with a confirmed finding appears in matches; an unresolved/unavailable coordinate appears in unresolvedDependencies/unavailableSources -- never more than one of these three"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c6",
+          "c7",
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "collectDependencyAdvisories: a generated requirementsPath (pipenv/poetry) is ALWAYS invoked with noDeps:true"
+          },
+          {
+            "level": "unit",
+            "name": "collectDependencyAdvisories: plain pip's own requirements.txt is NEVER invoked with noDeps:true"
+          },
+          {
+            "level": "unit",
+            "name": "collectDependencyAdvisories: a manager's closure is covered:true pre-audit and covered:true post-audit -> no effect on contentStable"
+          },
+          {
+            "level": "unit",
+            "name": "collectDependencyAdvisories: a manager's closure is covered:true pre-audit but covered:false post-audit (a new file appeared during the audit and was never removed) -> contentStable:false, the manager's own results are still returned"
+          },
+          {
+            "level": "unit",
+            "name": "collectDependencyAdvisories: a targets.entries file is deleted between the pre- and post-collection computeContentIdentity calls -> contentStable:false, no exception escapes collectDependencyAdvisories"
+          },
+          {
+            "level": "unit",
+            "name": "collectDependencyAdvisories: the FIRST computeContentIdentity call fails its own repoPath-level precondition -> the error DOES propagate (distinct from the second-call case)"
+          },
+          {
+            "level": "unit",
+            "name": "a cleanly-audited coordinate with no advisory match -> appears in queriedCoordinates only"
+          },
+          {
+            "level": "unit",
+            "name": "collectDependencyAdvisories: pkg_audit spawnError for a manager -> recorded in unavailableSources"
+          },
+          {
+            "level": "unit",
+            "name": "collectDependencyAdvisories: every attempted manager's perManagerMode entry carries a configuredDestination"
+          },
+          {
+            "level": "live",
+            "name": "collectDependencyAdvisories against a real poetry project with an excluded private dependency that is also a transitive dependency of an exported package: the excluded package is NOT resolved or reported on"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Implement createDependencySbomEvidenceProvider",
+        "summary": "createDependencySbomEvidenceProvider(repoPath) returns an EvidenceProvider with category:'dependency-sbom' whose run(input) calls collectDependencyAdvisories(repoPath, input.targets) and maps its matches into the thin EvidenceProviderOutput.evidence, satisfying the EvidenceProvider interface exactly.",
+        "size": "S",
+        "order": 7,
+        "dependsOn": [
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "the returned object's category is 'dependency-sbom'",
+          "run(input) calls collectDependencyAdvisories with the provider's captured repoPath and input.targets",
+          "the returned EvidenceProviderOutput.evidence reflects collectDependencyAdvisories' matches, satisfying SecurityEvidence's shape"
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "createDependencySbomEvidenceProvider: category is 'dependency-sbom' and run() delegates to collectDependencyAdvisories with the captured repoPath"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "pkgAuditTool.execute: noDeps:true -> argv includes --no-deps",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "pkgAuditTool.execute: noDeps omitted/false -> argv is identical to today",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "collectDependencyAdvisories: a generated requirementsPath (pipenv/poetry) is ALWAYS invoked with noDeps:true",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "collectDependencyAdvisories: plain pip's own requirements.txt is NEVER invoked with noDeps:true",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "collectDependencyAdvisories: a manager's closure is covered:true pre-audit and covered:true post-audit -> no effect on contentStable",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "collectDependencyAdvisories: a manager's closure is covered:true pre-audit but covered:false post-audit (a new file appeared during the audit and was never removed) -> contentStable:false, the manager's own results are still returned",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "verifyManagerClosureCoverage: re-resolves the closure fresh on each call -- two calls in a row after a file is added return different results",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "collectDependencyAdvisories: a targets.entries file is deleted between the pre- and post-collection computeContentIdentity calls -> contentStable:false, no exception escapes collectDependencyAdvisories",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "collectDependencyAdvisories: the FIRST computeContentIdentity call fails its own repoPath-level precondition -> the error DOES propagate (distinct from the second-call case)",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "computeContentIdentity: an application-source file in targets.entries is edited, manifests/lockfiles unchanged -> digest changes",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "computeContentIdentity: a file NOT in targets.entries is edited -> no change",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "computeContentIdentity: identical targets.entries bytes -> identical string on repeated calls",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "a poetry.lock entry with a git/path/url source -> excluded, added to unresolvedDependencies",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "a plain pip requirements.txt entry with a version range -> recorded in unresolvedDependencies as version-uncertain",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "a cleanly-audited coordinate with no advisory match -> appears in queriedCoordinates only",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "collectDependencyAdvisories: pkg_audit spawnError for a manager -> recorded in unavailableSources",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "collectDependencyAdvisories: every attempted manager's perManagerMode entry carries a configuredDestination",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "collectDependencyAdvisories against a real poetry project with an excluded private dependency that is also a transitive dependency of an exported package: the excluded package is NOT resolved or reported on",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 contractDetails.api computeContentIdentity",
+      "quotedText": "function computeContentIdentity(repoPath: string, targets: ReviewTargets): Promise<string>"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 contractDetails.api verifyManagerClosureCoverage",
+      "quotedText": "function verifyManagerClosureCoverage(repoPath: string, targets: ReviewTargets, manager: Manager, manifestDir: string): Promise<{ covered: true } | { covered: false; missing: readonly string[] }>"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 contractDetails.api collectDependencyAdvisories",
+      "quotedText": "function collectDependencyAdvisories(repoPath: string, targets: ReviewTargets): Promise<SecurityAdvisoryEvidence>"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 contractDetails.api createDependencySbomEvidenceProvider",
+      "quotedText": "function createDependencySbomEvidenceProvider(repoPath: string): EvidenceProvider"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 dataModelChanges pkgAuditTool inputSchema + execute -- new optional noDeps field; requirementsPath generation + lifecycle",
+      "quotedText": "Add a second optional `noDeps?: boolean` property to pkgAuditTool's inputSchema (alongside revision 4's requirementsPath), appended as `--no-deps` to the pip-audit invocation when true."
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 dataModelChanges Post-audit per-manager closure re-verification; Post-collection hash-read failure -> contentStable:false",
+      "quotedText": "verifyManagerClosureCoverage is called a SECOND time, immediately after that manager's audit completes, re-resolving the closure fresh ... contentStable for the WHOLE collection is set to false"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 dataModelChanges enumerateManagers",
+      "quotedText": "enumerateManagers -- Unchanged from revision 3."
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 dataModelChanges configuredDestination recording; SecurityAdvisoryEvidence (sc2)",
+      "quotedText": "{ contentIdentity, contentStable, readOnly: true, queriedCoordinates, matches, perManagerMode (each entry carrying configuredDestination), unresolvedDependencies, unavailableSources }"
+    }
+  ]
+}

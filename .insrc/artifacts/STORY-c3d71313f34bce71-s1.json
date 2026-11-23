@@ -18,7 +18,19 @@
         "relation": "derived-from"
       },
       "references": [],
-      "attachments": [],
+      "attachments": [
+        {
+          "target": {
+            "entityId": "LLD-c3d71313f34bce71-s1",
+            "type": "LLD",
+            "relation": "documents",
+            "fragment": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S001/LLD.md"
+          },
+          "revision": 2,
+          "at": "2026-11-23T15:37:45.769Z",
+          "externalId": "7105862891"
+        }
+      ],
       "binding": {
         "reference": {
           "entityId": "insors-ai/insrc#243",

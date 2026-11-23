@@ -192,20 +192,28 @@ const CLAUDE_FAMILY: FamilyDefinition = {
 	models: [{ id: 'opus', efforts: [] }, { id: 'haiku', efforts: [] }],
 	tierDefaults: { core: { model: 'opus' }, mid: { model: 'opus' }, cheap: { model: 'haiku' } },
 };
-const CODEX_FAMILY: FamilyDefinition = {
-	id: 'cli-codex', displayName: 'Codex',
-	models: [{ id: 'gpt-6.1-sol', efforts: [] }],
-	tierDefaults: { core: { model: 'gpt-6.1-sol' }, mid: { model: 'gpt-6.1-sol' }, cheap: { model: 'gpt-6.1-sol' } },
-};
-
 test("securityPinMeetsFloor: a pin matching its own family's tierDefaults at a tier at/above the floor -> true", () => {
 	const registry = fakeRegistry([CLAUDE_FAMILY]);
 	assert.equal(securityPinMeetsFloor(registry, 'cli-claude', 'opus', 'mid'), true);
 });
 
 test("securityPinMeetsFloor: a pin matching a DIFFERENT family's tierDefaults at a tier at/above the floor -> true", () => {
-	const registry = fakeRegistry([CLAUDE_FAMILY, CODEX_FAMILY]);
-	assert.equal(securityPinMeetsFloor(registry, 'cli-codex', 'gpt-6.1-sol', 'mid'), true);
+	// 'opus' is pinned against cli-claude, but cli-claude's own tierDefaults
+	// only name it at cheap (below a 'mid' floor); a DIFFERENT family (a fixture
+	// cli-vibe that happens to also use a model id 'opus') names it at mid --
+	// the search spans every family's tierDefaults, not only the pinned one's.
+	const claudeCheapOnly: FamilyDefinition = {
+		id: 'cli-claude', displayName: 'Claude',
+		models: [{ id: 'opus', efforts: [] }],
+		tierDefaults: { cheap: { model: 'opus' } },
+	};
+	const otherFamilySharingModelId: FamilyDefinition = {
+		id: 'cli-vibe', displayName: 'Vibe',
+		models: [{ id: 'opus', efforts: [] }],
+		tierDefaults: { mid: { model: 'opus' } },
+	};
+	const registry = fakeRegistry([claudeCheapOnly, otherFamilySharingModelId]);
+	assert.equal(securityPinMeetsFloor(registry, 'cli-claude', 'opus', 'mid'), true);
 });
 
 test('securityPinMeetsFloor: a pin matching a tierDefaults entry BELOW the floor rank -> false', () => {

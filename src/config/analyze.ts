@@ -181,24 +181,28 @@ export function parseSecurityModelPin(models: Record<string, unknown>): Security
 }
 
 /** Whether a pinned (familyId, modelId) pair meets a coreFloor-style capability
- *  floor: holds iff `familyId`'s own tierDefaults names `modelId` (by id or
- *  alias) at SOME tier whose rank is >= `floorTier`'s rank. A pin matching no
- *  tier of its family's tierDefaults at all is unclassifiable and treated as
- *  below-floor (false) -- never substituted. This is the ONLY link between an
- *  arbitrary pinned pair and coreFloor's TierName ranking, since
+ *  floor: holds iff SOME family's own tierDefaults names a model (by id or
+ *  alias, resolved within that family) equal to the pinned model, at a tier
+ *  whose rank is >= `floorTier`'s rank -- the search spans every family's
+ *  tierDefaults, not only `familyId`'s own, so a pin is still floor-eligible
+ *  when a DIFFERENT family's tier default happens to name the same model. A
+ *  pin matching no family's tierDefaults at any tier is unclassifiable and
+ *  treated as below-floor (false) -- never substituted. This is the ONLY link
+ *  between an arbitrary pinned pair and coreFloor's TierName ranking, since
  *  CoreFloorGuard.applyCoreFloor compares only TierName values and has no
  *  notion of an individual model's capability. */
 export function securityPinMeetsFloor(registry: ModelRegistry, familyId: FamilyId, modelId: string, floorTier: TierName): boolean {
-	const family = registry.families().find(f => f.id === familyId);
-	if (family?.tierDefaults === undefined) return false;
 	const pinned = registry.find(familyId, modelId);
 	if (pinned === undefined) return false;
 	const { rankOf } = reasoningRoleTaxonomy();
-	for (const tier of TIER_NAMES) {
-		const def = family.tierDefaults[tier];
-		if (def === undefined) continue;
-		const resolved = registry.find(familyId, def.model);
-		if (resolved !== undefined && resolved.id === pinned.id && rankOf[tier] >= rankOf[floorTier]) return true;
+	for (const family of registry.families()) {
+		if (family.tierDefaults === undefined) continue;
+		for (const tier of TIER_NAMES) {
+			const def = family.tierDefaults[tier];
+			if (def === undefined) continue;
+			const resolved = registry.find(family.id, def.model);
+			if (resolved !== undefined && resolved.id === pinned.id && rankOf[tier] >= rankOf[floorTier]) return true;
+		}
 	}
 	return false;
 }

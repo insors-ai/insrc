@@ -3,7 +3,7 @@
   "version": "0.2.1",
   "private": true,
   "type": "module",
-  "description": "insrc backend \u2014 daemon, agent, indexer, graph/vector DB",
+  "description": "insrc backend — daemon, agent, indexer, graph/vector DB",
   "engines": {
     "node": ">=22.13.0"
   },
@@ -86,16 +86,20 @@
     "tree-sitter-rust": "0.24.0",
     "tree-sitter-scala": "^0.24.0",
     "tree-sitter-typescript": "^0.23.2",
-    "undici": "^7.30.1"
+    "undici": "^7.30.1",
+    "yauzl": "3.4.0"
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^22.20.5",
     "@types/react": "^18.3.31",
+    "@types/yauzl": "3.4.0",
+    "esbuild": "0.28.2",
     "ink-testing-library": "^4.0.0",
     "ink-text-input": "^6.0.0",
     "tsx": "^4.21.0",
-    "typescript": "^5.9.0"
+    "typescript": "^5.9.0",
+    "yazl": "3.3.1"
   },
   "workspaces": [
     "packages/project-memory"

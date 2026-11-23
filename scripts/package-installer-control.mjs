@@ -4,12 +4,15 @@ import { createHash, randomUUID } from 'node:crypto';
 import { copyFileSync, existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { participantContext } from './test-harness/context.mjs';
-import { requireNativeQualification } from '../out/installer/native-qualification.js';
-export function packageControlBinding({ source, destination, target, evidence }) {
+import { createRequire } from 'node:module';
+const require = createRequire(import.meta.url);
+export function packageControlBinding({ source, destination, target, evidence, run }) {
   const digest = createHash('sha256').update(readFileSync(source)).digest('hex');
   // Deny absent/unexecuted evidence before even creating publication directories.
+  const { requireNativeQualification } = require('../out/installer/native-qualification.js');
   requireNativeQualification(target, digest, evidence);
-  const context = participantContext();
+  if (run) run.assertOwner();
+  const context = run ? run.record : participantContext();
   if (!['preparing', 'mutating'].includes(context.phase)) throw new Error('Native publication requires coordinator writer admission');
   if (target.os !== process.platform || target.arch !== process.arch) throw new Error('Native publication must run on its actual target');
   const id = `${target.os}-${target.arch}`;

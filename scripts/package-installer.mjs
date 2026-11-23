@@ -7,11 +7,11 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { pipeline } from 'node:stream/promises';
 import { ZipFile } from 'yazl';
 import policy from '../src/installer/runtime-policy.json' with { type: 'json' };
-import { collectTree, productionClosure, inventoryFor, sha256, validateEntrypoints } from './installer-payload.mjs';
+import { collectTree, productionClosure, inventoryFor, sha256, validateEntrypoints, isContainedPath } from './installer-payload.mjs';
 import { renderInstallerBootstrap } from './render-installer-bootstrap.mjs';
 import { packageControlBinding } from './package-installer-control.mjs';
 import { createRun } from './test-harness/context.mjs';
-import { prepareBuild } from './test-harness/build.mjs';
+import { prepareBuild, BUILD_INPUTS } from './test-harness/build.mjs';
 import { withRun } from './test-harness/process.mjs';
 
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
@@ -113,6 +113,14 @@ async function probePayload(run, scope, directory, target) {
   rmSync(join(directory, 'probe.lock'), { force: true });
   if (probe.code !== 0 || probe.timedOut) throw new Error(`Target native/runtime payload probe failed: ${probe.log}`);
 }
+export async function assertCommittedSource(run, scope, sourceCommit) {
+  run.assertOwner();
+  const git = await scope.start('git', ['rev-parse', 'HEAD'], { budgetMs: run.budgets.fileMs });
+  if (git.code !== 0 || readFileSync(git.log, 'utf8').trim() !== sourceCommit) throw new Error('Release source revision differs from checkout');
+  // Exactly the coordinator input set, including compiler config and header pins.
+  const status = await scope.start('git', ['status', '--porcelain', '--untracked-files=all', '--', ...BUILD_INPUTS], { budgetMs: run.budgets.fileMs });
+  if (status.code !== 0 || readFileSync(status.log, 'utf8').trim()) throw new Error('Release source inputs are uncommitted');
+}
 /** Production build must be called only under canonical writer ownership. */
 export async function packageInstaller(run, scope, config) {
   run.assertOwner();
@@ -127,13 +135,9 @@ export async function packageInstaller(run, scope, config) {
   const binding = join(root, 'out/installer/native/control.node'), nativeBytes = readFileSync(binding);
   const { requireNativeQualification } = await import('../out/installer/native-qualification.js');
   requireNativeQualification(target, sha256(nativeBytes), qualification);
-  // Source identity is read from git, never caller-labelled arbitrarily.
-  const git = await scope.start('git', ['rev-parse', 'HEAD'], { budgetMs: run.budgets.fileMs });
-  if (git.code !== 0 || readFileSync(git.log, 'utf8').trim() !== sourceCommit) throw new Error('Release source revision differs from checkout');
-  const status = await scope.start('git', ['status', '--porcelain', '--untracked-files=all', '--', 'src', 'scripts', 'packages', 'package.json', 'package-lock.json', 'copy-assets.mjs'], { budgetMs: run.budgets.fileMs });
-  if (status.code !== 0 || readFileSync(status.log, 'utf8').trim()) throw new Error('Release source inputs are uncommitted');
+  await assertCommittedSource(run, scope, sourceCommit);
   const parent = resolve(outputDirectory);
-  for (const input of ['out', 'src', 'scripts', 'packages', 'node_modules']) if (parent === join(root, input) || parent.startsWith(join(root, input) + '/')) throw new Error('Release output cannot be inside source inputs');
+  for (const input of ['out', 'src', 'scripts', 'packages', 'node_modules']) if (isContainedPath(join(root, input), parent)) throw new Error('Release output cannot be inside source inputs');
   mkdirSync(parent, { recursive: true, mode: 0o700 });
   const stage = join(parent, `.release-${randomUUID()}`); mkdirSync(stage, { mode: 0o700 });
   try {

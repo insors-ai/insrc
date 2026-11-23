@@ -1,12 +1,16 @@
 /** Publisher filesystem closure; never used by consumers. */
 import { createHash } from 'node:crypto';
 import { lstatSync, readFileSync, readdirSync, realpathSync, existsSync } from 'node:fs';
-import { dirname, join, relative, resolve, sep } from 'node:path';
+import pathApi, { dirname, join, relative, resolve, sep } from 'node:path';
 const portable = path => path.split(sep).join('/');
 export const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
+export function isContainedPath(root, actual, paths = pathApi) {
+  const rel = paths.relative(paths.resolve(root), paths.resolve(actual));
+  return !paths.isAbsolute(rel) && rel !== '..' && !rel.startsWith(`..${paths.sep}`);
+}
 export function assertContained(root, path) {
   const realRoot = realpathSync(root), actual = realpathSync(path), rel = relative(realRoot, actual);
-  if (rel === '..' || rel.startsWith(`..${sep}`) || resolve(actual) === resolve(realRoot) && resolve(path) !== resolve(root)) throw new Error(`Payload path escapes source root: ${path}`);
+  if (!isContainedPath(realRoot, actual) || resolve(actual) === resolve(realRoot) && resolve(path) !== resolve(root)) throw new Error(`Payload path escapes source root: ${path}`);
   return actual;
 }
 function validPath(path) {

@@ -1,13 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync, symlinkSync } from 'node:fs';
-import { join } from 'node:path';
+import { win32, posix, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { once } from 'node:events';
 import yauzl from 'yauzl';
 import { assembleFixtureRelease, assertManagerBoundary, collectProductionPayload } from '../../../scripts/package-installer.mjs';
-import { productionClosure, sha256 } from '../../../scripts/installer-payload.mjs';
+import { productionClosure, sha256, isContainedPath } from '../../../scripts/installer-payload.mjs';
 import { node22Fixture } from './_runtime-fixture.js';
 import { spawnFixture, stopOwnedChildren } from '../../daemon/tools/__tests__/_proc.js';
 import type { ChildProcess } from 'node:child_process';
@@ -74,6 +74,11 @@ test('production payload closure rejects missing entrypoints and escaping worksp
     rmSync(join(root, 'node_modules/workspace')); writeFileSync(join(outside, 'package.json'), '{"name":"workspace"}');
     symlinkSync(outside, join(root, 'node_modules/workspace'), process.platform === 'win32' ? 'junction' : 'dir');
     assert.throws(() => productionClosure(root), /escapes source root/);
+    assert.equal(isContainedPath('C:\\source', 'D:\\other', win32), false);
+    assert.equal(isContainedPath('C:\\source', 'C:\\source-other', win32), false);
+    assert.equal(isContainedPath('C:\\source', 'C:\\source\\packages\\valid', win32), true);
+    assert.equal(isContainedPath('/source', '/source-other', posix), false);
+
   } finally { rmSync(root, { recursive: true, force: true }); rmSync(outside, { recursive: true, force: true }); }
 });
 
@@ -106,7 +111,7 @@ test('published manual and both IDE installer script assets have exact byte pari
 });
 
 
-test('real bundler produces one dependency-minimal control fixture under owned build scope', async () => {
+async function ownedPublisherFixture(mode = 'bundle') {
   const root = mkdtempSync(join(tmpdir(), 'insrc-bundle-control-')), children: ChildProcess[] = [];
   const runtime = await node22Fixture();
   try {
@@ -114,8 +119,11 @@ test('real bundler produces one dependency-minimal control fixture under owned b
     const zip = fileURLToPath(new URL('../../../node_modules/yauzl/index.js', import.meta.url));
     const entry = join(root, 'fixture.mjs'), output = join(root, 'control.mjs');
     writeFileSync(entry, `import {PRIVATE_NODE_VERSION} from ${JSON.stringify(contracts)};import yauzl from ${JSON.stringify(zip)};process.stdout.write(JSON.stringify({version:PRIVATE_NODE_VERSION,zip:typeof yauzl.open}));`);
-    const child = spawnFixture(runtime.executable, [fileURLToPath(new URL('./publisher-bundle-fixture.mjs', import.meta.url)), root, entry, output], { stdio: ['ignore', 'pipe', 'pipe'] }); children.push(child);
+    const child = spawnFixture(runtime.executable, [fileURLToPath(new URL('./publisher-bundle-fixture.mjs', import.meta.url)), root, entry, output, mode], { stdio: ['ignore', 'pipe', 'pipe'] }); children.push(child);
     let diagnostics = ''; child.stderr!.on('data', (bytes: Buffer) => { diagnostics += bytes; });
     assert.deepEqual(await once(child, 'close'), [0, null], diagnostics);
   } finally { await stopOwnedChildren(children); runtime.cleanup(); rmSync(root, { recursive: true, force: true }); }
-});
+ }
+
+test('real bundler produces one dependency-minimal control fixture under owned build scope', () => ownedPublisherFixture());
+test('publisher rejects uncommitted compiler inputs despite unchanged source revision', () => ownedPublisherFixture('source'));

@@ -131,9 +131,9 @@ test('A timed-out writer retains its reservation until its child closes', { time
 	});
 });
 
-test('Default prepared output requires the host native lifecycle helper', async t => {
+test('Default prepared output requires the host native installer control binding', async t => {
 	const root = rootFixture(t), run = createRun(root);
-	const missing = process.platform === 'darwin' ? 'out/bin/insrc-darwin-lifecycle' : 'out/bin/insrc-process-broker';
+	const missing = 'out/installer/native/control.node';
 	for (const file of REQUIRED_ARTIFACTS.filter(file => file !== missing)) { mkdirSync(resolve(root, file, '..'), { recursive: true }); writeFileSync(join(root, file), 'fixture prerequisite'); }
 	await withRun(run, async () => { assert.throws(() => publishPrepared(run), error => error.code === 'harness-build-incomplete' && error.message.includes(missing)); });
 });

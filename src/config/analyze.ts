@@ -136,11 +136,60 @@ export interface TieringOverride extends RepoTiering {
 	readonly efforts?:   Readonly<Partial<Record<TierName, TierEffort>>> | undefined;
 }
 
+/** An independently-selectable security-reviewer model pin (models.security.*,
+ *  global-only -- a repo picks a tier for a role, never the model behind it,
+ *  and this pin follows that identical rule). */
+export interface SecurityModelPin {
+	readonly runner: AnalyzeShaperProviderKind;
+	readonly model:  string;
+	readonly effort?: TierEffort | undefined;
+}
+
+/** parseSecurityModelPin's tri-state result (Epic add-dedicated-security-reviews,
+ *  s1): 'absent' (no models.security key, or one with neither runner nor model
+ *  set) is the ordinary, expected case and falls through to the 'security.review'
+ *  role's own tier-default model; 'malformed' (present but incomplete or
+ *  mistyped) must NOT be treated as absent, since this Story's fail-closed
+ *  requirement depends on telling the two apart -- unlike parseTieringOverride's
+ *  existing convention of silently dropping a malformed tier entry. */
+export type SecurityModelPinResult =
+	| { readonly kind: 'absent' }
+	| ({ readonly kind: 'valid' } & SecurityModelPin)
+	| { readonly kind: 'malformed'; readonly detail: string };
+
+/** Parse models.security.* as a tri-state result, distinct from
+ *  parseTieringOverride's tiers parsing: a malformed pin is never conflated
+ *  with an absent one. */
+export function parseSecurityModelPin(models: Record<string, unknown>): SecurityModelPinResult {
+	const sec = models['security'];
+	if (!isObject(sec)) return { kind: 'absent' };
+	const runner = sec['runner'];
+	const model  = sec['model'];
+	if (runner === undefined && model === undefined) return { kind: 'absent' };
+	if (!isRunner(runner)) {
+		return { kind: 'malformed', detail: `models.security.runner: expected one of ${SHIPPED_MODEL_DEFAULTS.familyIds.join('|')}, got ${JSON.stringify(runner)}` };
+	}
+	if (typeof model !== 'string' || model === '') {
+		return { kind: 'malformed', detail: 'models.security.model: expected a non-empty string' };
+	}
+	const effort = sec['effort'];
+	if (effort !== undefined && typeof effort !== 'string') {
+		return { kind: 'malformed', detail: 'models.security.effort: expected a string' };
+	}
+	return { kind: 'valid', runner, model, ...(effort !== undefined ? { effort } : {}) };
+}
+
 /** The full parsed models.* tiering shape (sc1). Always present on
  *  AnalyzeConfig; empty (all fields absent) when no tiering config is set, in
  *  which case resolution is identical to the legacy single-provider path. */
 export interface AnalyzeTiering extends TieringOverride {
 	readonly byRepo?: Readonly<Record<string, RepoTiering>> | undefined;
+	/** The independently-selectable security-reviewer pin, present only when
+	 *  parseSecurityModelPin returns kind:'valid'. Both 'absent' and 'malformed'
+	 *  leave this undefined -- resolveSecurityModelCandidate (s1 t5) calls
+	 *  parseSecurityModelPin directly to tell those two apart, since this field
+	 *  alone cannot. */
+	readonly security?: SecurityModelPin | undefined;
 }
 
 export interface AnalyzeConfig {
@@ -451,7 +500,9 @@ export function parseTiering(models: Record<string, unknown>): AnalyzeTiering {
 		}
 		if (Object.keys(acc).length > 0) byRepo = acc;
 	}
-	return { ...global, ...(byRepo !== undefined ? { byRepo } : {}) };
+	const pin = parseSecurityModelPin(models);
+	const security = pin.kind === 'valid' ? { runner: pin.runner, model: pin.model, ...(pin.effort !== undefined ? { effort: pin.effort } : {}) } : undefined;
+	return { ...global, ...(byRepo !== undefined ? { byRepo } : {}), ...(security !== undefined ? { security } : {}) };
 }
 
 /** Drop the cached config so the next read sees config.json as it is now.

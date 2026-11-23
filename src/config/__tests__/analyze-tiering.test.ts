@@ -15,7 +15,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { parseTiering } from '../analyze.js';
+import { parseSecurityModelPin, parseTiering } from '../analyze.js';
 
 test('a valid tier table parses to {runner, model} TierModels', () => {
 	const t = parseTiering({ tiers: { core: { runner: 'cli-claude', model: 'opus' }, cheap: { runner: 'ollama', model: 'qwen3.6:35b-a3b' } } });
@@ -99,4 +99,50 @@ test('a non-string effort is dropped with a warning while the tier keeps its run
 	}
 	const named = parseTiering({ tiers: { mid: { runner: 'cli-codex', model: 'gpt-6.1-sol', effort: 'turbo' } } });
 	assert.deepEqual(named.tiers?.mid, { runner: 'cli-codex', model: 'gpt-6.1-sol', effort: 'turbo' });
+});
+
+// ── parseSecurityModelPin (Epic add-dedicated-security-reviews, s1 t3) ──
+// A tri-state result: absent is the ordinary, expected case (falls through to
+// the 'security.review' role's tier-default model); malformed is never
+// conflated with absent, since this Story's fail-closed requirement depends
+// on telling the two apart.
+
+test('parseSecurityModelPin: no models.security key at all -> { kind: \'absent\' }', () => {
+	assert.deepEqual(parseSecurityModelPin({}), { kind: 'absent' });
+});
+
+test("parseSecurityModelPin: a complete, well-typed { runner, model } -> { kind: 'valid', ... }", () => {
+	assert.deepEqual(
+		parseSecurityModelPin({ security: { runner: 'cli-claude', model: 'x' } }),
+		{ kind: 'valid', runner: 'cli-claude', model: 'x' },
+	);
+});
+
+test("parseSecurityModelPin: runner set with no model -> { kind: 'malformed', detail }", () => {
+	const r = parseSecurityModelPin({ security: { model: 'x' } });
+	assert.equal(r.kind, 'malformed');
+	assert.ok('detail' in r && typeof r.detail === 'string' && r.detail.length > 0);
+});
+
+test("parseSecurityModelPin: runner is not a recognized FamilyId -> { kind: 'malformed', detail }", () => {
+	const r = parseSecurityModelPin({ security: { runner: 'not-a-family', model: 'x' } });
+	assert.equal(r.kind, 'malformed');
+	assert.ok('detail' in r && typeof r.detail === 'string' && r.detail.length > 0);
+});
+
+test('parseSecurityModelPin: a valid pin with effort carries it through; an empty security object is absent, not malformed', () => {
+	assert.deepEqual(
+		parseSecurityModelPin({ security: { runner: 'cli-codex', model: 'y', effort: 'high' } }),
+		{ kind: 'valid', runner: 'cli-codex', model: 'y', effort: 'high' },
+	);
+	assert.deepEqual(parseSecurityModelPin({ security: {} }), { kind: 'absent' });
+});
+
+test('parseTiering threads a valid security pin onto AnalyzeTiering.security; an absent or malformed pin leaves it undefined; parseTieringOverride\'s own tiers parsing is unaffected', () => {
+	const valid = parseTiering({ security: { runner: 'cli-claude', model: 'x' }, tiers: { core: { runner: 'cli-codex', model: 'gpt-6.1-sol' } } });
+	assert.deepEqual(valid.security, { runner: 'cli-claude', model: 'x' });
+	assert.deepEqual(valid.tiers?.core, { runner: 'cli-codex', model: 'gpt-6.1-sol' });
+
+	assert.equal(parseTiering({}).security, undefined);
+	assert.equal(parseTiering({ security: { model: 'x' } }).security, undefined);
 });

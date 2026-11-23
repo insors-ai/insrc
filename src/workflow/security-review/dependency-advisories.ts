@@ -165,11 +165,26 @@ function resolveRequirementsClosure(file: string, seen: Set<string>): string[] {
 	for (const line of content.split('\n')) {
 		const m = /^\s*-(?:r|c)\s+(\S.*)$/.exec(line);
 		if (m?.[1] !== undefined) {
-			result.push(...resolveRequirementsClosure(resolve(dirname(file), m[1].trim()), seen));
+			// requirements.txt allows a trailing inline comment on any line
+			// (` # note`); strip it before treating the remainder as the path,
+			// so e.g. `-r more.txt  # dev deps` resolves to `more.txt`, not the
+			// literal, nonexistent `more.txt  # dev deps`.
+			const ref = m[1].replace(/\s+#.*$/, '').trim();
+			if (ref.length > 0) {
+				result.push(...resolveRequirementsClosure(resolve(dirname(file), ref), seen));
+			}
 		}
 	}
 	return result;
 }
+
+/** Directories never part of a go module's OWN source: vendored dependencies
+ *  and VCS metadata. Deliberately NOT src/daemon/tools/builtins/pkg's or this
+ *  module's own enumerateManagers SKIP_DIRS (build/dist/target are JS/Rust
+ *  output-directory conventions, not reserved names in Go -- a package
+ *  genuinely named `build` or `target` is real module source and must stay
+ *  in the closure). */
+const GO_CLOSURE_SKIP_DIRS = new Set(['.git', 'vendor']);
 
 /** A go module's full source tree under manifestDir: every *.go file plus
  *  go.mod/go.sum, re-walked fresh on every call. */
@@ -184,7 +199,7 @@ function resolveGoClosure(manifestDir: string): string[] {
 		}
 		for (const entry of entries) {
 			if (entry.isDirectory()) {
-				if (!SKIP_DIRS.has(entry.name)) { walk(join(dir, entry.name)); }
+				if (!GO_CLOSURE_SKIP_DIRS.has(entry.name)) { walk(join(dir, entry.name)); }
 				continue;
 			}
 			if (entry.name.endsWith('.go') || entry.name === 'go.mod' || entry.name === 'go.sum') {

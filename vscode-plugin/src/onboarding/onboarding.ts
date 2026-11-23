@@ -1,19 +1,6 @@
-/**
- * Story E20260921ad0d45c9:S005 / t1 — the first-run onboarding orchestrator.
- *
- * runOnboarding COALESCES the three shipped per-capability offers (install →
- * register → wire) into ONE coherent awaited SEQUENCE, gated by a persisted
- * per-workspace OnboardingStore so it auto-runs once. It replaces the three
- * scattered concurrent fire-and-forget offer IIFEs the activation used before
- * (the ac1 'unrelated pop-ups' defect). Pure sequencing: each step keeps its OWN
- * internal guard + sc4 consent (k4 per-action granularity, NO mega-consent), and
- * s5 registers no command / holds no duplicated action logic (lc1). Imports only
- * the shipped daemon/hosts/workspace command modules + the s1 surfaces (k5).
- */
-import { offerDaemonInstall } from '../daemon/commands.js';
+
 import { offerHostWiring } from '../hosts/commands.js';
 import { offerWorkspaceRegistration } from '../workspace/commands.js';
-import type { DaemonLifecycleController } from '../daemon/controller.js';
 import type { AiHostRegistry } from '../hosts/types.js';
 import type { ConsentGate } from '../surfaces/consent-gate.js';
 import type { StatusSurface } from '../surfaces/status-surface.js';
@@ -21,7 +8,6 @@ import type { PromptStore, WorkspaceFolders, WorkspaceRegistrar } from '../works
 import type { OnboardingStore } from './types.js';
 
 export interface OnboardingDeps {
-  controller: DaemonLifecycleController;
   registrar: WorkspaceRegistrar;
   registry: AiHostRegistry;
   consent: ConsentGate;
@@ -50,21 +36,13 @@ async function step(run: () => Promise<void>): Promise<void> {
  * The per-workspace onboarded flag is set only after a rooted run completes.
  */
 export async function runOnboarding(deps: OnboardingDeps): Promise<void> {
-  const { controller, registrar, registry, consent, status, folders, prompts, onboarded } = deps;
+  const { registrar, registry, consent, status, folders, prompts, onboarded } = deps;
   const root = folders()[0];
 
   // One-time gate (lc1): a previously-onboarded workspace re-runs nothing.
   if (root !== undefined && onboarded.wasOnboarded(root)) return;
 
-  // 1. Install (global). offerDaemonInstall does NOT check isInstalled itself, so
-  //    guard here to avoid offering an install when the daemon is already present.
-  await step(async () => {
-    if (!(await controller.isInstalled())) {
-      await offerDaemonInstall({ consent, status, controller });
-    }
-  });
-
-  // 2. Register (per-workspace). Only when a folder is open; the offer self-guards
+  // Register (per-workspace). Only when a folder is open; the offer self-guards
   //    already-registered / previously-dismissed to a no-op.
   if (root !== undefined) {
     await step(() => offerWorkspaceRegistration({ consent, status, registrar, folders, prompts }));

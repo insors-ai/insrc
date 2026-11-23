@@ -24,11 +24,6 @@ import { createStatusSurface } from './surfaces/status-surface.js';
 import { createCommandRegistry } from './surfaces/command-registry.js';
 import { createConsentGate } from './surfaces/consent-gate.js';
 import { activateExtension } from './activation.js';
-import { defaultSubprocessRunner } from './daemon/subprocess.js';
-import { defaultDaemonPaths, selectedDaemonRoot, selectedMcpRoot } from './daemon/paths.js';
-import { readUpdateSource } from '../../src/shared/update-source.js';
-import { createDaemonLifecycleController } from './daemon/controller.js';
-import { registerDaemonCommands, restartDaemonAndReport } from './daemon/commands.js';
 import type { ModelDefinitions } from './models/definitions.js';
 import { defaultHostFileSystem } from './hosts/fs.js';
 import { createHostRegistry } from './hosts/adapter.js';
@@ -50,14 +45,12 @@ import { createDaemonDataGateway } from './panels/daemon-gateway.js';
 import { createWebviewPanelHost } from './panels/webview-host.js';
 import { defaultProcessScan } from './panels/process-scan.js';
 import { renderDaemonTab, renderWorkflowsTab } from './panels/detail-renderers.js';
-import { renderDebugTab, createDebugTabController, createDebugActionHandler } from './panels/debug-renderer.js';
+import { renderDebugTab, createDebugTabController } from './panels/debug-renderer.js';
 import { renderRepoConfig, createRepoConfigWriteHandler, createRepoRegisterProvidersHandler, createRepoTrackerWriteHandler, createRepoBuildSuggestedHandler } from './panels/repo-config.js';
 import { renderModelTiers, createModelTiersWriteHandler } from './panels/model-tiers.js';
 import { createLogTail } from './panels/log-tail.js';
-import { createOrphanKill, readManagedPid } from './panels/orphan-kill.js';
 import type { PanelHandle } from './panels/types.js';
 import { runSetModelTier, type DecisionResult, type ModelCheckResult } from './models/model-tier-picker.js';
-import { runDaemonFreshnessCheck } from './freshness/daemon-freshness.js';
 import { createChatPanelHost, CHAT_PANEL_TITLE, CHAT_VIEW_TYPE, DEFAULT_TURN_LOCK_TIMEOUT_MS, type ChatPanelChannel } from './chat/chat-panel.js';
 import { createScratchStore } from './chat/scratch-store.js';
 import { createScratchHost, SCRATCH_INTENT_TYPES, type ScratchChatSeam } from './chat/scratch-host.js';
@@ -97,8 +90,6 @@ import { tmpdir as osTmpdir } from 'node:os';
 const REGISTER_DISMISSED_KEY = 'insrc.workspace.register.dismissed';
 /** The workspaceState key prefix for the one-time onboarding-completed flag (S005). */
 const ONBOARDED_KEY = 'insrc.workspace.onboarded';
-/** The globalState key for the last plugin version seen — the self-update trigger (S003 daemon-auto-update). */
-const LAST_SEEN_PLUGIN_VERSION_KEY = 'insrc.daemonSelfUpdate.lastSeenPluginVersion';
 
 /**
  * VS Code activation entry. Constructs the shared daemon client + the sc2/sc3/sc4
@@ -137,13 +128,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
   // S002 sc6: the daemon lifecycle controller over the daemon's own scripts, and
   // its durable commands (install gated by sc4; start/stop/restart/update).
-  const paths = defaultDaemonPaths(context.extensionPath);
-  const controller = createDaemonLifecycleController({
-    runner: defaultSubprocessRunner,
-    paths,
-    client,
-  });
-  registerDaemonCommands({ commands, consent, status, controller });
+  const daemonRoot = join(homedir(), '.insrc', 'daemon');
 
   // S003 sc5: the pluggable AI-host registry over the real editor env + fs, with
   // the insrc-mcp launch target resolved from the same daemon home S002 installs.
@@ -157,7 +142,7 @@ export function activate(context: vscode.ExtensionContext): void {
     env,
     fs: defaultHostFileSystem,
     launchTarget: async () => {
-      const target = join(await selectedMcpRoot(paths) ?? paths.daemonRoot, 'scripts', 'insrc-mcp');
+      const target = join(daemonRoot, 'scripts', 'insrc-mcp');
       return existsSync(target) ? target : undefined;
     },
   });
@@ -194,7 +179,7 @@ export function activate(context: vscode.ExtensionContext): void {
   const activationSettled = new Promise<void>((resolve) => {
     resolveActivationSettled = resolve;
   });
-  activateExtension({ client, status, controller, onSettled: () => resolveActivationSettled() });
+  activateExtension({ client, status, onSettled: () => resolveActivationSettled() });
 
   const approvals = createApprovalPrompter({
     client,
@@ -219,46 +204,6 @@ export function activate(context: vscode.ExtensionContext): void {
   void activationSettled.then(() => {
     if (!approvalsDisposed) approvals.start();
   });
-
-  // S003 daemon-auto-update: keep the locally-installed daemon current. This is the
-  // SOLE vscode importer, so it binds the real seams — the daemon-owned update+restart
-  // Current packaged installer bridge plus IPC status/outcomes, the
-  // installed-commit read (client.status, sc2), a plugin-side git ls-remote (no pull,
-  // k1), a native Update/Dismiss notification (k7), and the per-plugin last-seen
-  // version over globalState + packageJSON.version (self-update trigger, k4). Fired
-  // fire-and-forget like runReachabilityProbe so it never blocks activation (k6); the
-  // flow module itself never rejects, so no .catch is needed.
-  void activationSettled.then(() => runDaemonFreshnessCheck({
-    client,
-    daemonRoot: paths.daemonRoot,
-    upgradeLegacy: async () => controller.run('update'),
-    gitLsRemote: async (root, branch) => {
-      const checkout = await selectedDaemonRoot(paths) ?? root;
-      const configured = readUpdateSource();
-      return new Promise<string>((resolve) => {
-        // A failure/timeout ⇒ undeterminable ⇒ '' (the flow skips). Never reject.
-        execFile('git', ['-C', checkout, 'ls-remote', '--', configured.repoUrl ?? 'origin', configured.branch ?? branch], { timeout: 15_000 }, (err, stdout) => {
-          if (err !== null) {
-            resolve('');
-            return;
-          }
-          const firstLine = stdout.split('\n', 1)[0] ?? '';
-          resolve(firstLine.split(/\s+/, 1)[0] ?? '');
-        });
-      });
-    },
-    notify: (message, ...actions) =>
-      Promise.resolve(vscode.window.showInformationMessage(message, {}, ...actions)),
-    versionState: {
-      current: String(context.extension.packageJSON.version ?? ''),
-      getLastSeen: () => context.globalState.get<string>(LAST_SEEN_PLUGIN_VERSION_KEY),
-      setLastSeen: (v) => context.globalState.update(LAST_SEEN_PLUGIN_VERSION_KEY, v),
-    },
-    // Reload the window when the user accepts the post-update nudge: a reload
-    // respawns the MCP host so claude/codex/vibe reconnect to the freshly updated daemon.
-    reloadWindow: () =>
-      Promise.resolve(vscode.commands.executeCommand('workbench.action.reloadWindow')).then(() => undefined),
-  }));
 
   // S001-settings-UI sc8: the ConfigSync engine that keeps the native
   // `contributes.configuration` surface truthful to the daemon. The real
@@ -294,13 +239,6 @@ export function activate(context: vscode.ExtensionContext): void {
   const readDaemon = <T>(method: string, params?: unknown, timeoutMs?: number): Promise<T> =>
     timeoutMs === undefined ? client.rpc<T>(method, params) : rpc<T>(method, params, undefined, { timeoutMs });
   const configGateway = createDaemonConfigGateway(client, readDaemon);
-  // Offer a daemon restart for changes that apply only after one (s6): the action runs the
-  // restart and reports whether the daemon came back (restartDaemonAndReport).
-  const offerRestart = (message: string): void => {
-    void Promise.resolve(vscode.window.showInformationMessage(message, {}, 'Restart daemon')).then((choice) => {
-      if (choice === 'Restart daemon') void restartDaemonAndReport({ status, controller });
-    });
-  };
   const configSync = createConfigSyncEngine({
     gateway: configGateway,
     settings: configSettings,
@@ -308,7 +246,7 @@ export function activate(context: vscode.ExtensionContext): void {
     keyMap: MERGED_KEY_MAP,
     // Native tier edits are checked against the daemon's model definitions (s6).
     definitions: () => client.rpc<ModelDefinitions>('models.definitions'),
-    onRestartRequired: (keys) => offerRestart(`insrc: ${keys.join(', ')} saved — restart the daemon to apply`),
+    onRestartRequired: (keys) => { void vscode.window.showInformationMessage(`insrc: ${keys.join(', ')} saved — applies on the next daemon launch`); },
   });
   // Reconcile the native mirror with the daemon on activation (non-blocking).
   // Then move a value the user typed under a renamed settings id (ISSUE-8d7b4704660a5866) to its new id, once.
@@ -364,7 +302,6 @@ export function activate(context: vscode.ExtensionContext): void {
       const root = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
       return root === undefined ? undefined : join(root, '.insrc', 'artifacts');
     },
-    processScan: defaultProcessScan,
     logger: panelLog,
   });
   const connectionManager = new ConnectionsManagerHost({
@@ -392,11 +329,6 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(connectionManager, registerConnectionCommands(
     (id, run) => vscode.commands.registerCommand(id, run), connectionManager,
   ));
-  // S006 sc9: ONE shared managed-daemon-pid resolver, read from the pidfile. Both
-  // the Debug renderer (to exclude the managed daemon from the orphan offer) and
-  // the consent-gated kill (defence-in-depth re-exclusion) read through it, so they
-  // agree on which process is the managed one.
-  const managedPid = (): number | undefined => readManagedPid(PATHS.pidFile);
   // S006 sc9: the plugin-local rotation-aware daemon-log tail over node:fs (mirrors
   // the daemon CLI's realTailDeps without importing the daemon service module, k5).
   const debugLogTail = createLogTail({
@@ -431,17 +363,6 @@ export function activate(context: vscode.ExtensionContext): void {
       };
     },
     maxLines: 500,
-  });
-  // S006 sc9: the consent-gated orphan kill. NOT on the read-only gateway (killing
-  // is a mutation); invoked only after sc4 consent below, and only for the
-  // non-managed orphans the scan found (k4).
-  const orphanKill = createOrphanKill({
-    kill: (pid, signal) => {
-      process.kill(pid, signal);
-    },
-    wait: (ms) => new Promise<void>((resolve) => { setTimeout(resolve, ms); }),
-    managedPid,
-    platform: process.platform,
   });
   // S001 (E202610317b6a5fa9): bridges the gap between panelHost's construction
   // (here) and registerDeliveryBoard()'s call, ~500 lines below — the closure
@@ -481,21 +402,10 @@ export function activate(context: vscode.ExtensionContext): void {
     logger: panelLog,
     // S005: the daemon + workflows tab bodies. S006: the Debug tab body (mcp clients
     // + managed-pid-excluded orphans + live-log region).
-    detailRenderers: { daemon: renderDaemonTab, workflows: renderWorkflowsTab, debug: renderDebugTab({ managedPid }) },
+    detailRenderers: { daemon: renderDaemonTab, workflows: renderWorkflowsTab, debug: renderDebugTab() },
     // S006: the Debug tab's continuous log ticker (the epic's only ticker), armed
     // while the tab is active and disposed when it is left / the panel closes.
     tabControllers: { debug: createDebugTabController({ logTail: debugLogTail, logger: panelLog }) },
-    // S006: a webview action from a tab body. The ONLY action is the Debug tab's
-    // 'cleanupOrphans' — the VS-Code-free handler re-scans, drops the managed
-    // daemon, prompts sc4 consent (k4), and kills only on accept, surfacing via sc2.
-    onDetailAction: createDebugActionHandler({
-      scanOrphans: () => daemonData.scanOrphans(),
-      managedPid,
-      consent,
-      kill: orphanKill,
-      status,
-      logger: panelLog,
-    }),
     // S007: the Repo Configuration panel body — a repo picker (folder-independent,
     // from the sc9 registeredRepos read) + the selected repo's per-repo model-tiering
     // form read from the sc8 gateway's rawConfig (config.show).
@@ -518,7 +428,6 @@ export function activate(context: vscode.ExtensionContext): void {
       status,
       logger: panelLog,
       refresh: () => panelHost.openRepoConfiguration(),
-      offerRestart,
     }),
     onRepoTrackerWrite: createRepoTrackerWriteHandler({
       consent,
@@ -605,7 +514,6 @@ export function activate(context: vscode.ExtensionContext): void {
       definitions: () => client.rpc<ModelDefinitions>('models.definitions'),
       rawConfig: () => configGateway.rawConfig(),
       writeKeyPath: (segments, value) => configGateway.writeKeyPath(segments, value),
-      restartDaemon: () => restartDaemonAndReport({ status, controller }),
       pick: (items, opts) => Promise.resolve(vscode.window.showQuickPick(items, opts)),
       // The bundled vscode.d.ts stub's showInformationMessage requires the options
       // arg; {} (all fields optional) satisfies it, followed by any action buttons.
@@ -1174,7 +1082,7 @@ export function activate(context: vscode.ExtensionContext): void {
   void (async () => {
     await activationSettled;
     try {
-      await runOnboarding({ controller, registrar, registry, consent, status, folders, prompts, onboarded });
+      await runOnboarding({ registrar, registry, consent, status, folders, prompts, onboarded });
     } catch {
       /* never let onboarding surface an error into activation */
     }

@@ -15,7 +15,6 @@ import {
 } from '../debug-renderer.js';
 import { GatewayReadError, type DaemonDataGateway, type OrphanProcess } from '../types.js';
 import type { LogTail } from '../log-tail.js';
-import type { KillOutcome } from '../orphan-kill.js';
 import type { ConsentGate, ConsentOutcome } from '../surfaces/consent-gate.js';
 import type { StatusSurface } from '../surfaces/status-surface.js';
 

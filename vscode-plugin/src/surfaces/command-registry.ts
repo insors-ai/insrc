@@ -12,11 +12,6 @@ import type { DisposableLike, DisposableSink, RegisterCommandFn } from './types.
 
 /** The closed set of first-class command ids the extension exposes. */
 export type InsrcCommandId =
-  | 'insrc.daemon.install'
-  | 'insrc.daemon.start'
-  | 'insrc.daemon.stop'
-  | 'insrc.daemon.restart'
-  | 'insrc.daemon.update'
   | 'insrc.hosts.wire'
   | 'insrc.workspace.register'
   | 'insrc.settings.refresh'

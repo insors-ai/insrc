@@ -49,8 +49,6 @@ export interface RepoConfigWriteDeps {
   readonly logger: { warn(message: string): void };
   /** Re-render the panel from fresh config after a write (truthful; the k5 discipline). */
   readonly refresh: () => void;
-  /** Offer a daemon restart for a write that applies only after one (a 'Restart daemon' action). */
-  readonly offerRestart: (message: string) => void;
 }
 
 /** Whether a write targets what a repo may set: ['tasks', roleId] or ['coreFloor']. */
@@ -421,7 +419,6 @@ export function createRepoConfigWriteHandler(deps: RepoConfigWriteDeps): (write:
             ? `updated ${label} for ${write.repoPath}`
             : `per-repo write refused: ${result.reason}${result.detail !== undefined ? ` — ${result.detail}` : ''}`,
         });
-        if (result.ok && result.restartRequired === true) deps.offerRestart(`insrc: updated ${label} for ${write.repoPath} — restart the daemon to apply`);
         deps.refresh(); // truthful re-render from fresh config (accepted-ok OR refused).
       } catch (err) {
         deps.logger.warn(`insrc: the per-repo config write failed — ${err instanceof Error ? err.message : String(err)}`);

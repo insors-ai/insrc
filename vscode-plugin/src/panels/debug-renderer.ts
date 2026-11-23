@@ -21,17 +21,10 @@
  */
 
 import { escapeHtml } from './html.js';
-import type { DaemonDataGateway, OrphanProcess, TabActivationCtx, TabController, TabRenderer } from './types.js';
+import type { DaemonDataGateway, TabActivationCtx, TabController, TabRenderer } from './types.js';
 import type { LogTail } from './log-tail.js';
-import type { KillOutcome } from './orphan-kill.js';
 import type { ConsentGate } from '../surfaces/consent-gate.js';
 import type { StatusSurface } from '../surfaces/status-surface.js';
-
-/** Injected inputs for the Debug renderer (the shared managed-pid resolver). */
-export interface DebugRendererDeps {
-  /** The managed daemon's pid (or undefined) — used to exclude it from the orphan offer. */
-  readonly managedPid: () => number | undefined;
-}
 
 /** Injected inputs for the Debug tab controller (the live log tail + a degrade logger). */
 export interface DebugControllerDeps {
@@ -40,29 +33,12 @@ export interface DebugControllerDeps {
 }
 
 /**
- * Injected inputs for the Debug tab's action handler (the consent-gated orphan
- * cleanup, k4). All VS-Code-free surfaces: the read-only orphan scan + the managed
- * pid to exclude, the sc4 ConsentGate, the pure kill seam, the sc2 StatusSurface,
- * and a degrade logger. extension.ts binds the real objects.
- */
-export interface DebugActionDeps {
-  readonly scanOrphans: () => Promise<readonly OrphanProcess[]>;
-  readonly managedPid: () => number | undefined;
-  readonly consent: ConsentGate;
-  readonly kill: (pids: readonly number[]) => Promise<KillOutcome[]>;
-  readonly status: StatusSurface;
-  readonly logger: { warn(message: string): void };
-}
-
-/**
  * The Debug tab body (ac1 + orphan offer + live-log region). Reads the MCP clients
  * and the orphan scan through the gateway; a rejection propagates to the host.
  */
-export function renderDebugTab(deps: DebugRendererDeps): TabRenderer {
+export function renderDebugTab(): TabRenderer {
   return async (gateway: DaemonDataGateway): Promise<string> => {
     const clients = await gateway.mcpClients();
-    const managed = deps.managedPid();
-    const orphans = (await gateway.scanOrphans()).filter((o) => o.pid !== managed);
 
     const clientsSection =
       clients.length === 0
@@ -76,17 +52,9 @@ export function renderDebugTab(deps: DebugRendererDeps): TabRenderer {
             )
             .join('')}</ul>`;
 
-    const orphansSection =
-      orphans.length === 0
-        ? `<p class="placeholder">No orphaned processes.</p>`
-        : `<ul class="orphans">${orphans
-            .map((o) => `<li><span class="pid">${o.pid}</span> — <span class="cmd">${escapeHtml(o.command)}</span></li>`)
-            .join('')}` +
-          `</ul><button type="button" id="insrc-cleanup" class="action" data-action="cleanupOrphans">Clean up orphaned processes</button>`;
 
     return (
       `<section class="mcp"><h3>MCP clients</h3>${clientsSection}</section>` +
-      `<section class="orphans"><h3>Orphaned processes</h3>${orphansSection}</section>` +
       `<section class="logs"><h3>Daemon log</h3><pre id="insrc-log" class="log"></pre></section>`
     );
   };
@@ -111,42 +79,5 @@ export function createDebugTabController(deps: DebugControllerDeps): TabControll
         return () => {};
       }
     },
-  };
-}
-
-/**
- * The Debug tab's webview-action handler (the host's onDetailAction sink). The ONLY
- * action is 'cleanupOrphans': re-scan, DROP the managed daemon, and — ONLY when at
- * least one non-managed orphan remains AND the developer accepts the sc4 consent
- * prompt (k4) — kill exactly those pids, surfacing the outcome via sc2. An unknown
- * action, a zero-orphan scan (no empty modal), or a non-accepted consent kills
- * NOTHING. Fire-and-forget + never-throw (a failure degrades to a logged warn), so
- * the sync host sink stays safe. VS-Code-free.
- */
-export function createDebugActionHandler(deps: DebugActionDeps): (action: string) => void {
-  return (action: string): void => {
-    if (action !== 'cleanupOrphans') return; // unknown action — no-op.
-    void (async () => {
-      try {
-        const managed = deps.managedPid();
-        const orphans = (await deps.scanOrphans()).filter((o) => o.pid !== managed);
-        if (orphans.length === 0) return; // nothing to clean — no prompt (no empty modal).
-        const outcome = await deps.consent.ask({
-          title: 'Clean up orphaned insrc processes?',
-          detail: `Terminate ${orphans.length} stray insrc process(es)? The managed daemon is never touched.`,
-          acceptLabel: 'Terminate',
-          items: orphans.map((o) => `pid ${o.pid} — ${o.command}`),
-        });
-        if (outcome !== 'accepted') return; // declined / dismissed — kill NOTHING (k4).
-        const results = await deps.kill(orphans.map((o) => o.pid));
-        const killed = results.filter((r) => r.result === 'terminated' || r.result === 'forced').length;
-        deps.status.set({
-          state: deps.status.current().state,
-          detail: `cleaned up ${killed}/${orphans.length} orphaned process(es)`,
-        });
-      } catch (err) {
-        deps.logger.warn(`insrc: the orphan cleanup failed — ${err instanceof Error ? err.message : String(err)}`);
-      }
-    })();
   };
 }

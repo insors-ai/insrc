@@ -7,7 +7,6 @@ import assert from 'node:assert/strict';
 
 import { runOnboarding, type OnboardingDeps } from '../onboarding.js';
 import { createInMemoryOnboardingStore } from '../types.js';
-import type { DaemonLifecycleController } from '../../daemon/controller.js';
 import type { AiHostAdapter, AiHostRegistry } from '../../hosts/types.js';
 import type { ConsentGate, ConsentOutcome, ConsentRequest } from '../../surfaces/consent-gate.js';
 import type { StatusSurface, StatusSnapshot } from '../../surfaces/status-surface.js';

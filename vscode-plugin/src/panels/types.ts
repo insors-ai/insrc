@@ -63,7 +63,6 @@ export interface DaemonDataGateway {
    *  already registered, so a settings UI can offer only the rest. */
   mcpRegistration(repoPath?: string, timeoutMs?: number): Promise<readonly McpRegistrationView[]>;
   registeredRepos(timeoutMs?: number): Promise<readonly RepoRef[]>;
-  scanOrphans(): Promise<readonly OrphanProcess[]>;
 }
 
 /** The minimal default Daemon-tab view (ac2). s5 enriches the rendering. */
@@ -96,12 +95,6 @@ export interface McpRegistrationView {
   readonly client: string;
   readonly available: boolean;
   readonly registered: boolean;
-}
-
-/** One stray daemon/mcp process the scan found (s6 consent-gated kill consumes it). */
-export interface OrphanProcess {
-  readonly pid: number;
-  readonly command: string;
 }
 
 /** A registered repo reference (s7 repo picker consumes it; the Daemon tab lists it). */
@@ -261,9 +254,6 @@ export interface PanelLogger {
   warn(message: string): void;
 }
 
-/** A read-only scan of the local process table for stray daemon/mcp processes. */
-export type ProcessScan = () => Promise<readonly OrphanProcess[]>;
-
 // ---------------------------------------------------------------------------
 // Dependency bundles
 // ---------------------------------------------------------------------------
@@ -357,7 +347,5 @@ export interface DaemonDataGatewayDeps {
   readonly rpc: DaemonRead;
   /** Resolves the `.insrc/artifacts` root for the workflow-chain read (or undefined). */
   readonly artifactsRoot: () => string | undefined;
-  /** The local process-table scan (mirrors the JetBrains OrphanProcessSeam). */
-  readonly processScan: ProcessScan;
   readonly logger: PanelLogger;
 }

@@ -53,8 +53,6 @@ export interface SetModelTierDeps {
   rawConfig(): Promise<Record<string, unknown>>;
   /** config.write at literal segments; writes ['models','tiers',tier] with the whole tier. */
   writeKeyPath(segments: readonly string[], value: unknown): Promise<ConfigWriteResult>;
-  /** Restart the daemon; resolves true only when it is running again (restartDaemonAndReport). */
-  restartDaemon(): Promise<boolean>;
   /** Present a single-select dropdown (default vscode.window.showQuickPick). */
   pick<T extends QuickPickItemLike>(items: readonly T[], opts: { placeHolder: string }): Promise<T | undefined>;
   /** Show a message with optional action buttons; resolves the chosen action. */
@@ -114,8 +112,6 @@ const TIER_HINT: Record<Tier, string> = {
   mid: 'default working tier',
   cheap: 'peripheral roles (classification / summaries)',
 };
-
-const RESTART = 'Restart daemon';
 
 /** The QuickPick item the flow drives; `kind` names its role. */
 interface PickItem extends QuickPickItemLike {
@@ -285,7 +281,7 @@ async function runSetModelTierInner(deps: SetModelTierDeps): Promise<void> {
 }
 
 /** Write the whole tier and report the outcome (refusal, restartRequired, unknown outcome). */
-export async function saveTier(deps: Pick<SetModelTierDeps, 'writeKeyPath' | 'notify' | 'restartDaemon'>, tier: string, next: TierValue, current?: TierValue | undefined): Promise<boolean> {
+export async function saveTier(deps: Pick<SetModelTierDeps, 'writeKeyPath' | 'notify'>, tier: string, next: TierValue, current?: TierValue | undefined): Promise<boolean> {
   if (current !== undefined && current.runner === next.runner && current.model === next.model && current.effort === next.effort) {
     await deps.notify(`insrc: the ${tier} tier is unchanged (${describe(next)}).`);
     return true;
@@ -305,8 +301,7 @@ export async function saveTier(deps: Pick<SetModelTierDeps, 'writeKeyPath' | 'no
     return false;
   }
   if (result.restartRequired === true) {
-    const choice = await deps.notify(`insrc: ${tier} tier set to ${describe(next)} — restart the daemon to apply.`, RESTART);
-    if (choice === RESTART && !(await deps.restartDaemon())) await deps.notify('insrc: the daemon did not restart — the change applies at the next restart.');
+    await deps.notify(`insrc: ${tier} tier set to ${describe(next)} — applies on the next daemon launch.`);
   } else {
     await deps.notify(`insrc: ${tier} tier set to ${describe(next)}.`);
   }
@@ -386,7 +381,6 @@ async function pickModel(
 
 const VERDICT: Record<string, string> = { accepted: 'accepted', rejected: 'rejected', 'recognised-unconfirmed': 'recognised — unconfirmed' };
 const CHECK_AGAIN = 'Check again';
-const RESTART_AND_SAVE = 'Restart daemon and save';
 
 /**
  * Check a model the family does not list, then approve or reject it. Approve records the
@@ -471,16 +465,9 @@ async function checkUnlisted(deps: SetModelTierDeps, tier: Tier, family: Defined
       return;
     }
 
-    // Approved: save only after a restart that brings the daemon back; never approve again.
-    let message = `insrc: approved ${modelId} (levels: ${efforts.length > 0 ? efforts.join(', ') : 'none'}) — restart the daemon to use it; the ${tier} tier is saved after the restart.`;
-    for (;;) {
-      if ((await deps.notify(message, RESTART_AND_SAVE)) !== RESTART_AND_SAVE) return;
-      if (await deps.restartDaemon()) {
-        await saveTier(deps, tier, { runner: family.id, model: modelId, effort: efforts[0] ?? '' }, current);
-        return;
-      }
-      message = `insrc: the approval of ${modelId} is recorded, but the daemon did not restart — the ${tier} tier was not saved.`;
-    }
+    // The approval remains recorded; no lifecycle operation is available here.
+    await deps.notify(`insrc: approved ${modelId} — the runtime must load it before the ${tier} tier can be saved.`);
+    return;
   }
 }
 

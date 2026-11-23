@@ -52,7 +52,7 @@ function asReadError(context: string, err: unknown): GatewayReadError {
  * artifacts resolver + a real process scan.
  */
 export function createDaemonDataGateway(deps: DaemonDataGatewayDeps): DaemonDataGateway {
-  const { rpc, artifactsRoot, processScan } = deps;
+  const { rpc, artifactsRoot } = deps;
 
   return {
     async status(): Promise<DaemonStatusView> {
@@ -150,14 +150,6 @@ export function createDaemonDataGateway(deps: DaemonDataGatewayDeps): DaemonData
         });
       }
       return { rows };
-    },
-
-    async scanOrphans() {
-      try {
-        return await processScan();
-      } catch (err) {
-        throw asReadError('the orphan-process scan failed', err);
-      }
     },
   };
 }

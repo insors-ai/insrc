@@ -4968,10 +4968,11 @@
       "preserve": "Keep reachability probing, status updates and activation foundation.",
       "requiresExtraction": false,
       "revalidatedSourceSha256": "f017d583b888b2e2af74bbf33a11ebf5aaacc0eab1b381e4eec609455d37dc1f",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "export async function startDaemonIfStopped(deps: ActivationDeps, probed: DaemonUiState): Promise<void> {",
-      "observedSourceSha256": "f017d583b888b2e2af74bbf33a11ebf5aaacc0eab1b381e4eec609455d37dc1f"
+      "observedSourceSha256": "f017d583b888b2e2af74bbf33a11ebf5aaacc0eab1b381e4eec609455d37dc1f",
+      "task": "t5"
     },
     {
       "id": "M076",
@@ -4985,10 +4986,11 @@
       "preserve": "Keep reachability probing, status updates and activation foundation.",
       "requiresExtraction": false,
       "revalidatedSourceSha256": "f017d583b888b2e2af74bbf33a11ebf5aaacc0eab1b381e4eec609455d37dc1f",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "const NO_ANSWER_AFTER_START = 'the daemon did not answer after start';",
-      "observedSourceSha256": "f017d583b888b2e2af74bbf33a11ebf5aaacc0eab1b381e4eec609455d37dc1f"
+      "observedSourceSha256": "f017d583b888b2e2af74bbf33a11ebf5aaacc0eab1b381e4eec609455d37dc1f",
+      "task": "t5"
     },
     {
       "id": "M077",
@@ -5002,10 +5004,11 @@
       "preserve": "Keep onSettled behavior for generic activation completion; remove only auto-start-specific ordering/assertions.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "f017d583b888b2e2af74bbf33a11ebf5aaacc0eab1b381e4eec609455d37dc1f",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "   */",
-      "observedSourceSha256": "f017d583b888b2e2af74bbf33a11ebf5aaacc0eab1b381e4eec609455d37dc1f"
+      "observedSourceSha256": "f017d583b888b2e2af74bbf33a11ebf5aaacc0eab1b381e4eec609455d37dc1f",
+      "task": "t5"
     },
     {
       "id": "M078",
@@ -5019,10 +5022,11 @@
       "preserve": "Keep unrelated globalState settings.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "b4dfb805b480afd87beaa9e9a3e68b7695980b0b88a56d3a619ac3f6bc4d6ba0",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "const LAST_SEEN_PLUGIN_VERSION_KEY = 'insrc.daemonSelfUpdate.lastSeenPluginVersion';",
-      "observedSourceSha256": "b4dfb805b480afd87beaa9e9a3e68b7695980b0b88a56d3a619ac3f6bc4d6ba0"
+      "observedSourceSha256": "b4dfb805b480afd87beaa9e9a3e68b7695980b0b88a56d3a619ac3f6bc4d6ba0",
+      "task": "t5"
     },
     {
       "id": "M079",
@@ -5036,10 +5040,11 @@
       "preserve": "Keep extension activation and other commands; preserve MCP root resolution with replacement install layout.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "b4dfb805b480afd87beaa9e9a3e68b7695980b0b88a56d3a619ac3f6bc4d6ba0",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "  const paths = defaultDaemonPaths(context.extensionPath);",
-      "observedSourceSha256": "b4dfb805b480afd87beaa9e9a3e68b7695980b0b88a56d3a619ac3f6bc4d6ba0"
+      "observedSourceSha256": "b4dfb805b480afd87beaa9e9a3e68b7695980b0b88a56d3a619ac3f6bc4d6ba0",
+      "task": "t5"
     },
     {
       "id": "M080",
@@ -5053,10 +5058,11 @@
       "preserve": "Keep activation completion sequencing for settings and onboarding.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "b4dfb805b480afd87beaa9e9a3e68b7695980b0b88a56d3a619ac3f6bc4d6ba0",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "  void activationSettled.then(() => runDaemonFreshnessCheck({",
-      "observedSourceSha256": "b4dfb805b480afd87beaa9e9a3e68b7695980b0b88a56d3a619ac3f6bc4d6ba0"
+      "observedSourceSha256": "b4dfb805b480afd87beaa9e9a3e68b7695980b0b88a56d3a619ac3f6bc4d6ba0",
+      "task": "t5"
     },
     {
       "id": "M081",
@@ -5070,10 +5076,11 @@
       "preserve": "Keep config save/validation, status pull and restart-required semantic notification.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "b4dfb805b480afd87beaa9e9a3e68b7695980b0b88a56d3a619ac3f6bc4d6ba0",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "  // restart and reports whether the daemon came back (restartDaemonAndReport).",
-      "observedSourceSha256": "b4dfb805b480afd87beaa9e9a3e68b7695980b0b88a56d3a619ac3f6bc4d6ba0"
+      "observedSourceSha256": "b4dfb805b480afd87beaa9e9a3e68b7695980b0b88a56d3a619ac3f6bc4d6ba0",
+      "task": "t5"
     },
     {
       "id": "M082",
@@ -5087,10 +5094,11 @@
       "preserve": "Keep model check/approve/reject and tier writes.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "b4dfb805b480afd87beaa9e9a3e68b7695980b0b88a56d3a619ac3f6bc4d6ba0",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "      restartDaemon: () => restartDaemonAndReport({ status, controller }),",
-      "observedSourceSha256": "b4dfb805b480afd87beaa9e9a3e68b7695980b0b88a56d3a619ac3f6bc4d6ba0"
+      "observedSourceSha256": "b4dfb805b480afd87beaa9e9a3e68b7695980b0b88a56d3a619ac3f6bc4d6ba0",
+      "task": "t5"
     },
     {
       "id": "M083",
@@ -5104,10 +5112,11 @@
       "preserve": "Keep MCP/client/log debug panel and other controllers.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "b4dfb805b480afd87beaa9e9a3e68b7695980b0b88a56d3a619ac3f6bc4d6ba0",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "      scanOrphans: () => daemonData.scanOrphans(),",
-      "observedSourceSha256": "b4dfb805b480afd87beaa9e9a3e68b7695980b0b88a56d3a619ac3f6bc4d6ba0"
+      "observedSourceSha256": "b4dfb805b480afd87beaa9e9a3e68b7695980b0b88a56d3a619ac3f6bc4d6ba0",
+      "task": "t5"
     },
     {
       "id": "M084",
@@ -5121,10 +5130,11 @@
       "preserve": "Keep model/tier types, checks, decisions and configuration write result contracts.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "a30bc775d450ace5a81dd9852de87ccea9cfc86ca55185842cb836b95a8fd5d6",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "  /** Restart the daemon; resolves true only when it is running again (restartDaemonAndReport). */",
-      "observedSourceSha256": "a30bc775d450ace5a81dd9852de87ccea9cfc86ca55185842cb836b95a8fd5d6"
+      "observedSourceSha256": "a30bc775d450ace5a81dd9852de87ccea9cfc86ca55185842cb836b95a8fd5d6",
+      "task": "t5"
     },
     {
       "id": "M085",
@@ -5138,10 +5148,11 @@
       "preserve": "Keep saveTier validation/write/reporting and restartRequired information; replace execution seam.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "a30bc775d450ace5a81dd9852de87ccea9cfc86ca55185842cb836b95a8fd5d6",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "  if (result.restartRequired === true) {",
-      "observedSourceSha256": "a30bc775d450ace5a81dd9852de87ccea9cfc86ca55185842cb836b95a8fd5d6"
+      "observedSourceSha256": "a30bc775d450ace5a81dd9852de87ccea9cfc86ca55185842cb836b95a8fd5d6",
+      "task": "t5"
     },
     {
       "id": "M086",
@@ -5155,10 +5166,11 @@
       "preserve": "Keep approval result, no-duplicate-decision rule, tier save and definitions refresh; do not delete enclosing model workflow.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "a30bc775d450ace5a81dd9852de87ccea9cfc86ca55185842cb836b95a8fd5d6",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "      if (await deps.restartDaemon()) {",
-      "observedSourceSha256": "a30bc775d450ace5a81dd9852de87ccea9cfc86ca55185842cb836b95a8fd5d6"
+      "observedSourceSha256": "a30bc775d450ace5a81dd9852de87ccea9cfc86ca55185842cb836b95a8fd5d6",
+      "task": "t5"
     },
     {
       "id": "M087",
@@ -5190,10 +5202,11 @@
       "preserve": "Keep MCP registration/session rendering and logs; preserve consent around any replacement kill action.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "b32f1b354d9f442657cf25cbde399e30e6a76722649d21a537a547d957829edd",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "    if (action !== 'cleanupOrphans') return; // unknown action \u2014 no-op.",
-      "observedSourceSha256": "b32f1b354d9f442657cf25cbde399e30e6a76722649d21a537a547d957829edd"
+      "observedSourceSha256": "b32f1b354d9f442657cf25cbde399e30e6a76722649d21a537a547d957829edd",
+      "task": "t5"
     },
     {
       "id": "M089",
@@ -5207,10 +5220,11 @@
       "preserve": "Keep all other Debug tab sections.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "b32f1b354d9f442657cf25cbde399e30e6a76722649d21a537a547d957829edd",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "    const orphans = (await gateway.scanOrphans()).filter((o) => o.pid !== managed);",
-      "observedSourceSha256": "b32f1b354d9f442657cf25cbde399e30e6a76722649d21a537a547d957829edd"
+      "observedSourceSha256": "b32f1b354d9f442657cf25cbde399e30e6a76722649d21a537a547d957829edd",
+      "task": "t5"
     },
     {
       "id": "M090",
@@ -5224,10 +5238,11 @@
       "preserve": "Keep other panel and gateway contracts.",
       "requiresExtraction": false,
       "revalidatedSourceSha256": "af458f2447aa581152379a21a9fa3a6642647c590d48c119ddebd28408d81370",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "export interface OrphanProcess {",
-      "observedSourceSha256": "af458f2447aa581152379a21a9fa3a6642647c590d48c119ddebd28408d81370"
+      "observedSourceSha256": "af458f2447aa581152379a21a9fa3a6642647c590d48c119ddebd28408d81370",
+      "task": "t5"
     },
     {
       "id": "M091",
@@ -5241,10 +5256,11 @@
       "preserve": "Keep gateway status/repos/MCP/workflow methods.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "af458f2447aa581152379a21a9fa3a6642647c590d48c119ddebd28408d81370",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "  registeredRepos(timeoutMs?: number): Promise<readonly RepoRef[]>;",
-      "observedSourceSha256": "af458f2447aa581152379a21a9fa3a6642647c590d48c119ddebd28408d81370"
+      "observedSourceSha256": "af458f2447aa581152379a21a9fa3a6642647c590d48c119ddebd28408d81370",
+      "task": "t5"
     },
     {
       "id": "M092",
@@ -5600,10 +5616,11 @@
       "preserve": "Keep general extension manifest, other commands/config and build scripts; update lifecycle asset generation script portions.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "54d32a6c127b135ee918e837c57a0942bb7b472ef5c3f3864cbf1d3ca9b2062b",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "          \"insrc.daemonUpdate.repoUrl\": {",
-      "observedSourceSha256": "54d32a6c127b135ee918e837c57a0942bb7b472ef5c3f3864cbf1d3ca9b2062b"
+      "observedSourceSha256": "54d32a6c127b135ee918e837c57a0942bb7b472ef5c3f3864cbf1d3ca9b2062b",
+      "task": "t5"
     },
     {
       "id": "M113",
@@ -5653,10 +5670,11 @@
       "preserve": "Keep generic command registry and other command IDs.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "01dce63067cefffdfca8708fce7ee2b94b61a493dcfe15ced089b703a19619f9",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "  | 'insrc.daemon.install'",
-      "observedSourceSha256": "01dce63067cefffdfca8708fce7ee2b94b61a493dcfe15ced089b703a19619f9"
+      "observedSourceSha256": "01dce63067cefffdfca8708fce7ee2b94b61a493dcfe15ced089b703a19619f9",
+      "task": "t5"
     },
     {
       "id": "M116",
@@ -5688,10 +5706,11 @@
       "preserve": "Keep configuration validation/saves, provider registration, restartRequired information and repository UI.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "67e79f18922b8f04f07871640026f7f4991b21d107ba94bf646f87f37092e3c1",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "  /** Offer a daemon restart for a write that applies only after one (a 'Restart daemon' action). */",
-      "observedSourceSha256": "67e79f18922b8f04f07871640026f7f4991b21d107ba94bf646f87f37092e3c1"
+      "observedSourceSha256": "67e79f18922b8f04f07871640026f7f4991b21d107ba94bf646f87f37092e3c1",
+      "task": "t5"
     },
     {
       "id": "M118",
@@ -5705,10 +5724,11 @@
       "preserve": "Keep other tests and shared test harness/fixtures.",
       "requiresExtraction": false,
       "revalidatedSourceSha256": "1c8df65e61a163dff4cfaf37b7b43f078034b806be190f9d90f896a0fa0e5535",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "test('a stopped, installed daemon is started once after the probe, as a plain start, and the status shows running', async () => {",
-      "observedSourceSha256": "1c8df65e61a163dff4cfaf37b7b43f078034b806be190f9d90f896a0fa0e5535"
+      "observedSourceSha256": "1c8df65e61a163dff4cfaf37b7b43f078034b806be190f9d90f896a0fa0e5535",
+      "task": "t5"
     },
     {
       "id": "M119",
@@ -5722,10 +5742,11 @@
       "preserve": "Keep other tests and shared test harness/fixtures.",
       "requiresExtraction": false,
       "revalidatedSourceSha256": "1c8df65e61a163dff4cfaf37b7b43f078034b806be190f9d90f896a0fa0e5535",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "test('no start is attempted for a running or errored daemon, for a daemon that is not installed, or when no controller is given', async () => {",
-      "observedSourceSha256": "1c8df65e61a163dff4cfaf37b7b43f078034b806be190f9d90f896a0fa0e5535"
+      "observedSourceSha256": "1c8df65e61a163dff4cfaf37b7b43f078034b806be190f9d90f896a0fa0e5535",
+      "task": "t5"
     },
     {
       "id": "M120",
@@ -5739,10 +5760,11 @@
       "preserve": "Keep other tests and shared test harness/fixtures.",
       "requiresExtraction": false,
       "revalidatedSourceSha256": "1c8df65e61a163dff4cfaf37b7b43f078034b806be190f9d90f896a0fa0e5535",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "test('a start is skipped when the fresh reachability check just before it finds the daemon running', async () => {",
-      "observedSourceSha256": "1c8df65e61a163dff4cfaf37b7b43f078034b806be190f9d90f896a0fa0e5535"
+      "observedSourceSha256": "1c8df65e61a163dff4cfaf37b7b43f078034b806be190f9d90f896a0fa0e5535",
+      "task": "t5"
     },
     {
       "id": "M121",
@@ -5756,10 +5778,11 @@
       "preserve": "Keep other tests and shared test harness/fixtures.",
       "requiresExtraction": false,
       "revalidatedSourceSha256": "1c8df65e61a163dff4cfaf37b7b43f078034b806be190f9d90f896a0fa0e5535",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "test('a failed or throwing start leaves an errored status with the reason, is not retried, and never rejects into activation', async () => {",
-      "observedSourceSha256": "1c8df65e61a163dff4cfaf37b7b43f078034b806be190f9d90f896a0fa0e5535"
+      "observedSourceSha256": "1c8df65e61a163dff4cfaf37b7b43f078034b806be190f9d90f896a0fa0e5535",
+      "task": "t5"
     },
     {
       "id": "M122",
@@ -5773,10 +5796,11 @@
       "preserve": "Keep other tests and shared test harness/fixtures.",
       "requiresExtraction": false,
       "revalidatedSourceSha256": "1c8df65e61a163dff4cfaf37b7b43f078034b806be190f9d90f896a0fa0e5535",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "test(\"a start that reports success while the daemon is still unreachable is shown as errored with the reason 'the daemon did not answer after start'\", async () => {",
-      "observedSourceSha256": "1c8df65e61a163dff4cfaf37b7b43f078034b806be190f9d90f896a0fa0e5535"
+      "observedSourceSha256": "1c8df65e61a163dff4cfaf37b7b43f078034b806be190f9d90f896a0fa0e5535",
+      "task": "t5"
     },
     {
       "id": "M123",
@@ -5790,10 +5814,11 @@
       "preserve": "Keep generic onSettled/settings/onboarding sequencing assertions; replace auto-start ordering only.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "1c8df65e61a163dff4cfaf37b7b43f078034b806be190f9d90f896a0fa0e5535",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "test('activation calls onSettled once after the probe and any start have finished, also when the probe or the start fails or throws', async () => {",
-      "observedSourceSha256": "1c8df65e61a163dff4cfaf37b7b43f078034b806be190f9d90f896a0fa0e5535"
+      "observedSourceSha256": "1c8df65e61a163dff4cfaf37b7b43f078034b806be190f9d90f896a0fa0e5535",
+      "task": "t5"
     },
     {
       "id": "M124",
@@ -5807,10 +5832,11 @@
       "preserve": "Keep generic onSettled/settings/onboarding sequencing assertions; replace auto-start ordering only.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "1c8df65e61a163dff4cfaf37b7b43f078034b806be190f9d90f896a0fa0e5535",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "test('the extension entry runs the settings pull, the update check and onboarding only after activation has settled', () => {",
-      "observedSourceSha256": "1c8df65e61a163dff4cfaf37b7b43f078034b806be190f9d90f896a0fa0e5535"
+      "observedSourceSha256": "1c8df65e61a163dff4cfaf37b7b43f078034b806be190f9d90f896a0fa0e5535",
+      "task": "t5"
     },
     {
       "id": "M125",
@@ -6110,10 +6136,11 @@
       "preserve": "Remove old lifecycle calls/fakes/assertions only; keep approval/rejection/no-write safety and tier configuration assertions.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "0406e0a4a90554050eac372b245ac940380ebfe426adfd3847250da91d723580",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "test('model-tier-picker.test.ts: unknown model \u2014 check results shown; approve writes nothing; the tier is written only after a successful restart; reject writes nothing; runs:false offers no approve', async () => {",
-      "observedSourceSha256": "0406e0a4a90554050eac372b245ac940380ebfe426adfd3847250da91d723580"
+      "observedSourceSha256": "0406e0a4a90554050eac372b245ac940380ebfe426adfd3847250da91d723580",
+      "task": "t5"
     },
     {
       "id": "M148",
@@ -6181,10 +6208,11 @@
       "preserve": "Keep MCP/client/log debug rendering; isolate mixed renderer snapshots.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "a21e2fdea07451af981e029d53d15ae48b5914b350390d6c4e6166cd465184d5",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "test('renderDebugTab: orphan list EXCLUDES the managed pid; managed-only scan -> empty orphan list, no Clean-up button', async () => {",
-      "observedSourceSha256": "a21e2fdea07451af981e029d53d15ae48b5914b350390d6c4e6166cd465184d5"
+      "observedSourceSha256": "a21e2fdea07451af981e029d53d15ae48b5914b350390d6c4e6166cd465184d5",
+      "task": "t5"
     },
     {
       "id": "M152",
@@ -6198,10 +6226,11 @@
       "preserve": "Keep MCP/client/log debug rendering; isolate mixed renderer snapshots.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "a21e2fdea07451af981e029d53d15ae48b5914b350390d6c4e6166cd465184d5",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "test(\"renderDebugTab: the Clean-up button shows ONLY with >=1 non-managed orphan and posts {type:'action',action:'cleanupOrphans'}\", async () => {",
-      "observedSourceSha256": "a21e2fdea07451af981e029d53d15ae48b5914b350390d6c4e6166cd465184d5"
+      "observedSourceSha256": "a21e2fdea07451af981e029d53d15ae48b5914b350390d6c4e6166cd465184d5",
+      "task": "t5"
     },
     {
       "id": "M153",
@@ -6215,10 +6244,11 @@
       "preserve": "Keep MCP/client/log debug rendering; isolate mixed renderer snapshots.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "a21e2fdea07451af981e029d53d15ae48b5914b350390d6c4e6166cd465184d5",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "test('renderDebugTab: body includes an empty <pre id=\"insrc-log\">; every mcp/orphan value escaped; a gateway rejection propagates', async () => {",
-      "observedSourceSha256": "a21e2fdea07451af981e029d53d15ae48b5914b350390d6c4e6166cd465184d5"
+      "observedSourceSha256": "a21e2fdea07451af981e029d53d15ae48b5914b350390d6c4e6166cd465184d5",
+      "task": "t5"
     },
     {
       "id": "M154",
@@ -6232,10 +6262,11 @@
       "preserve": "Keep MCP/client/log debug rendering; isolate mixed renderer snapshots.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "a21e2fdea07451af981e029d53d15ae48b5914b350390d6c4e6166cd465184d5",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "test(\"action handler: >=1 non-managed orphan -> consent.ask; kill on 'accepted' with exactly those pids; kill NEVER on 'declined'/'dismissed' (k4)\", async () => {",
-      "observedSourceSha256": "a21e2fdea07451af981e029d53d15ae48b5914b350390d6c4e6166cd465184d5"
+      "observedSourceSha256": "a21e2fdea07451af981e029d53d15ae48b5914b350390d6c4e6166cd465184d5",
+      "task": "t5"
     },
     {
       "id": "M155",
@@ -6249,10 +6280,11 @@
       "preserve": "Keep MCP/client/log debug rendering; isolate mixed renderer snapshots.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "a21e2fdea07451af981e029d53d15ae48b5914b350390d6c4e6166cd465184d5",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "test('action handler: managed pid filtered before prompting; zero non-managed orphans -> NO prompt, NO kill', async () => {",
-      "observedSourceSha256": "a21e2fdea07451af981e029d53d15ae48b5914b350390d6c4e6166cd465184d5"
+      "observedSourceSha256": "a21e2fdea07451af981e029d53d15ae48b5914b350390d6c4e6166cd465184d5",
+      "task": "t5"
     },
     {
       "id": "M156",
@@ -6266,10 +6298,11 @@
       "preserve": "Keep MCP/client/log debug rendering; isolate mixed renderer snapshots.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "a21e2fdea07451af981e029d53d15ae48b5914b350390d6c4e6166cd465184d5",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "test(\"action handler: any action !== 'cleanupOrphans' is a no-op (no scan, no consent, no kill)\", async () => {",
-      "observedSourceSha256": "a21e2fdea07451af981e029d53d15ae48b5914b350390d6c4e6166cd465184d5"
+      "observedSourceSha256": "a21e2fdea07451af981e029d53d15ae48b5914b350390d6c4e6166cd465184d5",
+      "task": "t5"
     },
     {
       "id": "M157",
@@ -6283,10 +6316,11 @@
       "preserve": "Keep role/coreFloor controls, write/refusal/consent assertions and provider registration.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "576329e3456e10e697eb5d0e7b76d7a71e61af35afb1b210dca5797967c82bd8",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "test('repo-config.test.ts: the form has role tier selects and a coreFloor select only; the handler writes tasks / coreFloor after consent, drops tiers writes, shows reason and detail and offers a restart', async () => {",
-      "observedSourceSha256": "576329e3456e10e697eb5d0e7b76d7a71e61af35afb1b210dca5797967c82bd8"
+      "observedSourceSha256": "576329e3456e10e697eb5d0e7b76d7a71e61af35afb1b210dca5797967c82bd8",
+      "task": "t5"
     },
     {
       "id": "M158",
@@ -6609,10 +6643,11 @@
       "requiresExtraction": true,
       "revalidatedSourceSha256": "f0f766308b53d2bf67291cc99864d15277cf161c712b7824a586d0badce1f972",
       "addedByRevalidation": true,
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "  controller: DaemonLifecycleController;",
-      "observedSourceSha256": "f0f766308b53d2bf67291cc99864d15277cf161c712b7824a586d0badce1f972"
+      "observedSourceSha256": "f0f766308b53d2bf67291cc99864d15277cf161c712b7824a586d0badce1f972",
+      "task": "t5"
     },
     {
       "id": "M182",
@@ -6627,10 +6662,11 @@
       "requiresExtraction": true,
       "revalidatedSourceSha256": "f0f766308b53d2bf67291cc99864d15277cf161c712b7824a586d0badce1f972",
       "addedByRevalidation": true,
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "      await offerDaemonInstall({ consent, status, controller });",
-      "observedSourceSha256": "f0f766308b53d2bf67291cc99864d15277cf161c712b7824a586d0badce1f972"
+      "observedSourceSha256": "f0f766308b53d2bf67291cc99864d15277cf161c712b7824a586d0badce1f972",
+      "task": "t5"
     },
     {
       "id": "M183",
@@ -6645,10 +6681,11 @@
       "requiresExtraction": true,
       "revalidatedSourceSha256": "6ecf635c20c18ad5fc90a813fce063263055870688c20b92964f39d5bf923439",
       "addedByRevalidation": true,
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "test('runOnboarding awaits the three offers IN ORDER install->register->wire, then markOnboarded(root)', async () => {",
-      "observedSourceSha256": "6ecf635c20c18ad5fc90a813fce063263055870688c20b92964f39d5bf923439"
+      "observedSourceSha256": "6ecf635c20c18ad5fc90a813fce063263055870688c20b92964f39d5bf923439",
+      "task": "t5"
     },
     {
       "id": "M184",
@@ -6663,10 +6700,11 @@
       "requiresExtraction": true,
       "revalidatedSourceSha256": "6ecf635c20c18ad5fc90a813fce063263055870688c20b92964f39d5bf923439",
       "addedByRevalidation": true,
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "test('a step that internally no-ops is silently skipped while the needed steps still run', async () => {",
-      "observedSourceSha256": "6ecf635c20c18ad5fc90a813fce063263055870688c20b92964f39d5bf923439"
+      "observedSourceSha256": "6ecf635c20c18ad5fc90a813fce063263055870688c20b92964f39d5bf923439",
+      "task": "t5"
     },
     {
       "id": "M185",
@@ -6681,10 +6719,11 @@
       "requiresExtraction": true,
       "revalidatedSourceSha256": "6ecf635c20c18ad5fc90a813fce063263055870688c20b92964f39d5bf923439",
       "addedByRevalidation": true,
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "test('one step throwing does NOT abort the sequence; the later steps still run; runOnboarding never throws', async () => {",
-      "observedSourceSha256": "6ecf635c20c18ad5fc90a813fce063263055870688c20b92964f39d5bf923439"
+      "observedSourceSha256": "6ecf635c20c18ad5fc90a813fce063263055870688c20b92964f39d5bf923439",
+      "task": "t5"
     },
     {
       "id": "M186",
@@ -6699,10 +6738,11 @@
       "requiresExtraction": true,
       "revalidatedSourceSha256": "6ecf635c20c18ad5fc90a813fce063263055870688c20b92964f39d5bf923439",
       "addedByRevalidation": true,
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "test('no workspace folder open -> register is skipped and markOnboarded is NOT set, while global install/wire still run', async () => {",
-      "observedSourceSha256": "6ecf635c20c18ad5fc90a813fce063263055870688c20b92964f39d5bf923439"
+      "observedSourceSha256": "6ecf635c20c18ad5fc90a813fce063263055870688c20b92964f39d5bf923439",
+      "task": "t5"
     },
     {
       "id": "M187",
@@ -6717,10 +6757,11 @@
       "requiresExtraction": true,
       "revalidatedSourceSha256": "6ecf635c20c18ad5fc90a813fce063263055870688c20b92964f39d5bf923439",
       "addedByRevalidation": true,
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "test('each step keeps its OWN sc4 consent (no mega-consent): declining install still offers register + wire (k4)', async () => {",
-      "observedSourceSha256": "6ecf635c20c18ad5fc90a813fce063263055870688c20b92964f39d5bf923439"
+      "observedSourceSha256": "6ecf635c20c18ad5fc90a813fce063263055870688c20b92964f39d5bf923439",
+      "task": "t5"
     },
     {
       "id": "M188",
@@ -6735,10 +6776,11 @@
       "requiresExtraction": true,
       "revalidatedSourceSha256": "6ecf635c20c18ad5fc90a813fce063263055870688c20b92964f39d5bf923439",
       "addedByRevalidation": true,
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "function fakeController(installed: boolean): DaemonLifecycleController & { installs: number } {",
-      "observedSourceSha256": "6ecf635c20c18ad5fc90a813fce063263055870688c20b92964f39d5bf923439"
+      "observedSourceSha256": "6ecf635c20c18ad5fc90a813fce063263055870688c20b92964f39d5bf923439",
+      "task": "t5"
     }
   ],
   "preflight": "All current candidate and member hashes match committed manifests; source anchors are navigation only. Preserve all listed mixed behavior.",
@@ -6774,6 +6816,10 @@
     {
       "path": "src/cli/panes/ModelTiersPane.tsx",
       "reason": "Removed additional restart callback and key wiring that referenced deleted CLI lifecycle service; preserved model selection/configuration and apply-later indication."
+    },
+    {
+      "path": "vscode-plugin/src/panels/process-scan.ts",
+      "reason": "Preserved independent read-only daemon/MCP process observations; localized row/type aliases formerly supplied by removed panel lifecycle action contracts. No kill/control integration remains."
     }
   ]
 }

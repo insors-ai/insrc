@@ -11,7 +11,9 @@
 
 import { execFile } from 'node:child_process';
 
-import type { OrphanProcess, ProcessScan } from './types.js';
+// Read-only process observations are independent of removed lifecycle actions.
+interface OrphanProcess { readonly pid: number; readonly command: string }
+type ProcessScan = () => Promise<readonly OrphanProcess[]>;
 
 /** Substrings that mark an insrc daemon/mcp process in a `ps` command line. */
 const INSRC_MARKERS = ['insrc/daemon', 'insrc-mcp', '.insrc/daemon', 'out/daemon/index.js', 'out/bin/insrc-mcp.js'];

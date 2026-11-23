@@ -134,6 +134,15 @@ export function buildConfigCatalog(defs: ModelDefinitionsFile): readonly ConfigO
 		// models.tasks.<roleId> and models.byRepo.<repoPath>.{tiers,tasks,coreFloor} are dynamic-key
 		// overrides — set them directly in ~/.insrc/config.json (see docs/daemon.md).
 
+		// ── independently-selectable security-reviewer model, GLOBAL-ONLY (Epic
+		// add-dedicated-security-reviews, s1) — '' = absent, falls through to the
+		// 'security.review' role's own tier-default model. No byRepo variant: a
+		// repo picks a tier for a role, never the model behind it, and this pin
+		// follows that identical rule. ──
+		{ path: 'models.security.runner', type: 'enum',   default: '', desc: `security-reviewer backend: '' (unset, falls through to the role's tier default) | ${runners.map(r => `'${r}'`).join(' | ')}`, enumValues: ['', ...runners], group: 'Models — security' },
+		{ path: 'models.security.model',  type: 'string', default: '', desc: "security-reviewer model id or alias; '' (unset) falls through to the role's tier default", group: 'Models — security' },
+		{ path: 'models.security.effort', type: 'enum',   default: '', desc: "security-reviewer reasoning effort passed to the CLI ('' = the CLI's own default)", enumValues: efforts, group: 'Models — security' },
+
 		// ── shaper runtime knobs (NOT model specs) — models.shaper.* ──
 		{ path: 'models.shaper.maxToolTurns',            type: 'number', default: 40,    desc: 'max tool-loop turns for the shaper', group: 'Models — shaper' },
 		{ path: 'models.shaper.structuredOutputRetries', type: 'number', default: 3,     desc: 'structured-output retry count', group: 'Models — shaper' },

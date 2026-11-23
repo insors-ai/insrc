@@ -186,3 +186,22 @@ test("config-catalog-defs.test.ts: deriveModelDefaults lists five familyIds, kee
 	const local = shipped.families.find(f => f.id === 'ollama')!;
 	assert.equal(d.toolLoopModel, local.toolLoopModel, "the local family is still 'ollama' (the host family carries a CLI kind)");
 });
+
+test('CONFIG_CATALOG includes models.security.runner/model/effort as global-only rows with no byRepo variant', () => {
+	const runner = row(CONFIG_CATALOG, 'models.security.runner')!;
+	assert.equal(runner.type, 'enum');
+	assert.equal(runner.default, '');
+	assert.ok(runner.enumValues?.includes(''));
+	for (const familyId of SHIPPED_MODEL_DEFAULTS.familyIds) assert.ok(runner.enumValues?.includes(familyId), familyId);
+
+	const model = row(CONFIG_CATALOG, 'models.security.model')!;
+	assert.equal(model.type, 'string');
+	assert.equal(model.default, '');
+
+	const effort = row(CONFIG_CATALOG, 'models.security.effort')!;
+	assert.equal(effort.type, 'enum');
+	assert.equal(effort.default, '');
+	assert.ok(effort.enumValues?.includes(''));
+
+	assert.ok(!CONFIG_CATALOG.some(r => r.path.startsWith('models.byRepo.') && r.path.includes('.security.')), 'no byRepo variant for the security pin');
+});

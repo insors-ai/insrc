@@ -62,16 +62,19 @@ function parsePoetryLock(content: string): PoetryPackage[] {
 			inSourceSection = false;
 			continue;
 		}
+		// TOML allows a basic string in either "double" or 'single' quotes --
+		// a [package.source]/inline source table using either must still be
+		// recognized as naming a source type.
 		if (inSourceSection) {
-			if (/^type\s*=\s*"/.test(line)) { current.nonStandardSource = true; }
+			if (/^type\s*=\s*['"]/.test(line)) { current.nonStandardSource = true; }
 			continue;
 		}
-		if (/^source\s*=\s*\{/.test(line) && /type\s*=\s*"/.test(line)) {
+		if (/^source\s*=\s*\{/.test(line) && /type\s*=\s*['"]/.test(line)) {
 			current.nonStandardSource = true;
 			continue;
 		}
-		const m = /^(\w[\w.-]*)\s*=\s*"((?:[^"\\]|\\.)*)"/.exec(line);
-		const value = m?.[2];
+		const m = /^(\w[\w.-]*)\s*=\s*(?:"((?:[^"\\]|\\.)*)"|'([^']*)')/.exec(line);
+		const value = m?.[2] ?? m?.[3];
 		if (value === undefined) { continue; }
 		if (m?.[1] === 'name') { current.name = value; }
 		else if (m?.[1] === 'version') { current.version = value; }

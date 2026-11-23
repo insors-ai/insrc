@@ -82,6 +82,33 @@ test('findVersionUncertainPipRequirements: a plain pip requirements.txt entry wi
 	}
 });
 
+test("generateLockfileExport(poetry): a poetry.lock '[package.source]' using single-quoted TOML strings (type = 'git') is still excluded, not just double-quoted", () => {
+	const dir = tmpDir();
+	try {
+		const lock = `
+[[package]]
+name = 'requests'
+version = '2.25.1'
+
+[[package]]
+name = 'mylib'
+version = '0.1.0'
+
+[package.source]
+type = 'git'
+url = 'https://github.com/example/mylib.git'
+`;
+		writeFileSync(join(dir, 'poetry.lock'), lock);
+		const { requirementsPath, unresolvedDependencies } = generateLockfileExport('poetry', dir);
+		const generated = readFileSync(requirementsPath, 'utf8');
+		assert.ok(!generated.includes('mylib'), generated);
+		assert.ok(unresolvedDependencies.some(d => d.includes('mylib')), JSON.stringify(unresolvedDependencies));
+		assert.ok(generated.includes('requests==2.25.1'), generated);
+	} finally {
+		rmSync(dir, { recursive: true, force: true });
+	}
+});
+
 test("findVersionUncertainPipRequirements: a pip 'wildcard match' pin (e.g. '==2.*') is a range, not an exact pin -- also recorded as version-uncertain", () => {
 	const dir = tmpDir();
 	try {

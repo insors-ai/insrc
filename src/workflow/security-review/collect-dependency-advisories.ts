@@ -88,7 +88,7 @@ function isRecord(v: unknown): v is Record<string, unknown> {
  *  dependency carrying no `vulns` key at all (or a non-array value) was never
  *  actually checked by pip-audit -- an unresolved coordinate, not a clean
  *  one, so it must never be reported as cleanly audited. */
-function mapPipAuditOutput(parsed: unknown, advisoryDestination: string): { matches: SecurityAdvisoryMatch[]; cleanCoordinates: string[]; unresolvedCoordinates: string[] } | undefined {
+function mapPipAuditOutput(parsed: unknown, advisoryDestination: string, coordinatePrefix: string): { matches: SecurityAdvisoryMatch[]; cleanCoordinates: string[]; unresolvedCoordinates: string[] } | undefined {
 	const deps = Array.isArray(parsed) ? parsed : (isRecord(parsed) && Array.isArray(parsed.dependencies) ? parsed.dependencies : undefined);
 	if (deps === undefined) { return undefined; }
 	const matches: SecurityAdvisoryMatch[] = [];
@@ -97,7 +97,7 @@ function mapPipAuditOutput(parsed: unknown, advisoryDestination: string): { matc
 	for (const dep of deps) {
 		if (!isRecord(dep) || typeof dep.name !== 'string') { continue; }
 		const version = typeof dep.version === 'string' ? dep.version : '';
-		const coordinate = `${dep.name}@${version}`;
+		const coordinate = `${coordinatePrefix}${dep.name}@${version}`;
 		if (!Array.isArray(dep.vulns)) { unresolvedCoordinates.push(coordinate); continue; }
 		if (dep.vulns.length === 0) { cleanCoordinates.push(coordinate); continue; }
 		for (const vuln of dep.vulns) {
@@ -121,7 +121,7 @@ function mapPipAuditOutput(parsed: unknown, advisoryDestination: string): { matc
  *  chain notation) -- a `via` array that is non-empty but contains only strings
  *  still means this package IS vulnerable (transitively), just with no advisory
  *  details of its own in this entry; it must never be reported as cleanly audited. */
-function mapNpmAuditOutput(parsed: unknown, advisoryDestination: string, provenance: string): { matches: SecurityAdvisoryMatch[]; cleanCoordinates: string[]; unresolvedCoordinates: string[] } | undefined {
+function mapNpmAuditOutput(parsed: unknown, advisoryDestination: string, provenance: string, coordinatePrefix: string): { matches: SecurityAdvisoryMatch[]; cleanCoordinates: string[]; unresolvedCoordinates: string[] } | undefined {
 	if (!isRecord(parsed) || !isRecord(parsed.vulnerabilities)) { return undefined; }
 	const matches: SecurityAdvisoryMatch[] = [];
 	const cleanCoordinates: string[] = [];
@@ -129,7 +129,7 @@ function mapNpmAuditOutput(parsed: unknown, advisoryDestination: string, provena
 	for (const [pkgName, rawInfo] of Object.entries(parsed.vulnerabilities)) {
 		if (!isRecord(rawInfo)) { continue; }
 		const range = typeof rawInfo.range === 'string' ? rawInfo.range : '';
-		const coordinate = `${pkgName}@${range}`;
+		const coordinate = `${coordinatePrefix}${pkgName}@${range}`;
 		const via = Array.isArray(rawInfo.via) ? rawInfo.via : [];
 		const advisories = via.filter(isRecord);
 		if (via.length === 0) { cleanCoordinates.push(coordinate); continue; }
@@ -150,7 +150,7 @@ function mapNpmAuditOutput(parsed: unknown, advisoryDestination: string, provena
 
 /** cargo-audit's `--json` output: `{ vulnerabilities: { list: [ { package, advisory } ] } }`. cargo-audit does
  *  not list clean dependencies, only vulnerable ones -- no cleanCoordinates here. */
-function mapCargoAuditOutput(parsed: unknown, advisoryDestination: string): { matches: SecurityAdvisoryMatch[]; cleanCoordinates: string[]; unresolvedCoordinates: string[] } | undefined {
+function mapCargoAuditOutput(parsed: unknown, advisoryDestination: string, coordinatePrefix: string): { matches: SecurityAdvisoryMatch[]; cleanCoordinates: string[]; unresolvedCoordinates: string[] } | undefined {
 	if (!isRecord(parsed) || !isRecord(parsed.vulnerabilities) || !Array.isArray(parsed.vulnerabilities.list)) { return undefined; }
 	const matches: SecurityAdvisoryMatch[] = [];
 	for (const entry of parsed.vulnerabilities.list) {
@@ -158,7 +158,7 @@ function mapCargoAuditOutput(parsed: unknown, advisoryDestination: string): { ma
 		const pkg = isRecord(entry.package) ? entry.package : {};
 		const advisory = isRecord(entry.advisory) ? entry.advisory : {};
 		matches.push({
-			coordinate: `${typeof pkg.name === 'string' ? pkg.name : 'unknown'}@${typeof pkg.version === 'string' ? pkg.version : ''}`,
+			coordinate: `${coordinatePrefix}${typeof pkg.name === 'string' ? pkg.name : 'unknown'}@${typeof pkg.version === 'string' ? pkg.version : ''}`,
 			advisoryId: typeof advisory.id === 'string' ? advisory.id : 'unknown',
 			affectedVersions: typeof pkg.version === 'string' ? pkg.version : '',
 			severity: typeof advisory.severity === 'string' ? advisory.severity : 'unknown',
@@ -175,9 +175,16 @@ function mapCargoAuditOutput(parsed: unknown, advisoryDestination: string): { ma
  *  govulncheck output) -- an execution gap, recorded in unavailableSources by
  *  the caller, never a thrown error. */
 function mapAuditOutput(manager: Manager, parsed: unknown, advisoryDestination: string): { matches: SecurityAdvisoryMatch[]; cleanCoordinates: string[]; unresolvedCoordinates: string[] } | undefined {
-	if (manager === 'pip' || manager === 'pipenv' || manager === 'poetry') { return mapPipAuditOutput(parsed, advisoryDestination); }
-	if (manager === 'npm' || manager === 'pnpm') { return mapNpmAuditOutput(parsed, advisoryDestination, `${manager} audit`); }
-	if (manager === 'cargo') { return mapCargoAuditOutput(parsed, advisoryDestination); }
+	// Every coordinate is prefixed with its own manager: different ecosystems
+	// can share a bare package name (npm's and PyPI's own "flask" are
+	// different packages) without being the same coordinate, so the prefix
+	// is what makes coordinate-string equality actually mean "the same
+	// dependency", both for matching/deduplication here and for the
+	// exclusivity reconciliation in collectDependencyAdvisories.
+	const coordinatePrefix = `${manager}:`;
+	if (manager === 'pip' || manager === 'pipenv' || manager === 'poetry') { return mapPipAuditOutput(parsed, advisoryDestination, coordinatePrefix); }
+	if (manager === 'npm' || manager === 'pnpm') { return mapNpmAuditOutput(parsed, advisoryDestination, `${manager} audit`, coordinatePrefix); }
+	if (manager === 'cargo') { return mapCargoAuditOutput(parsed, advisoryDestination, coordinatePrefix); }
 	return undefined;
 }
 

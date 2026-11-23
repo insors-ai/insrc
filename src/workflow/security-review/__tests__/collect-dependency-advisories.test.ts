@@ -137,7 +137,7 @@ test('collectDependencyAdvisories: a manager\'s closure is covered:true pre-audi
 		});
 		const result = await collectDependencyAdvisories(repo, { entries: [{ path: 'app.ts' }, { path: 'requirements.txt' }] });
 		assert.equal(result.contentStable, false);
-		assert.ok(result.matches.some(m => m.coordinate.startsWith('flask@')), JSON.stringify(result.matches));
+		assert.ok(result.matches.some(m => m.coordinate.startsWith('pip:flask@')), JSON.stringify(result.matches));
 	} finally {
 		cleanup(repo);
 	}
@@ -178,8 +178,8 @@ test('collectDependencyAdvisories: a cleanly-audited coordinate with no advisory
 		writeFileSync(join(repo, 'requirements.txt'), 'flask==2.0.0\n');
 		_setPkgAuditExecuteForTests(async () => okResult({ manager: 'pip', exitCode: 0, parsed: { dependencies: [{ name: 'flask', version: '2.0.0', vulns: [] }] } }));
 		const result = await collectDependencyAdvisories(repo, { entries: [{ path: 'app.ts' }, { path: 'requirements.txt' }] });
-		assert.ok(result.queriedCoordinates.includes('flask@2.0.0'), JSON.stringify(result.queriedCoordinates));
-		assert.ok(!result.matches.some(m => m.coordinate === 'flask@2.0.0'), JSON.stringify(result.matches));
+		assert.ok(result.queriedCoordinates.includes('pip:flask@2.0.0'), JSON.stringify(result.queriedCoordinates));
+		assert.ok(!result.matches.some(m => m.coordinate === 'pip:flask@2.0.0'), JSON.stringify(result.matches));
 		assert.ok(!result.unresolvedDependencies.some(d => d.includes('flask')), JSON.stringify(result.unresolvedDependencies));
 	} finally {
 		cleanup(repo);
@@ -217,7 +217,7 @@ test('collectDependencyAdvisories: a version-uncertain pip pin is recorded in un
 		// range, not an exact pin); it does not contradict pip-audit's own
 		// clean report of whatever version it actually resolved and checked --
 		// the two are different, non-conflicting facts about the same package.
-		assert.ok(result.queriedCoordinates.includes('flask@2.1.0'), JSON.stringify(result.queriedCoordinates));
+		assert.ok(result.queriedCoordinates.includes('pip:flask@2.1.0'), JSON.stringify(result.queriedCoordinates));
 	} finally {
 		cleanup(repo);
 	}
@@ -245,7 +245,7 @@ test("collectDependencyAdvisories: a confirmed match is NEVER suppressed because
 			return okResult({ manager: 'pip', exitCode: 0, parsed: { dependencies: [] } });
 		});
 		const result = await collectDependencyAdvisories(repo, { entries: [{ path: 'app.ts' }, { path: 'package.json' }, { path: 'package-lock.json' }, { path: 'sub/requirements.txt' }] });
-		assert.ok(result.matches.some(m => m.coordinate === 'flask@2.0.0'), JSON.stringify(result.matches));
+		assert.ok(result.matches.some(m => m.coordinate === 'npm:flask@2.0.0'), JSON.stringify(result.matches));
 		assert.ok(result.unresolvedDependencies.some(d => d.toLowerCase().includes('flask')), JSON.stringify(result.unresolvedDependencies));
 	} finally {
 		cleanup(repo);
@@ -262,8 +262,8 @@ test("collectDependencyAdvisories: a pip-audit dependency entry with no 'vulns' 
 			parsed: { dependencies: [{ name: 'flask', version: '2.0.0' }, { name: 'requests', version: '2.25.1', vulns: [{ id: 'PYSEC-1' }] }] },
 		}));
 		const result = await collectDependencyAdvisories(repo, { entries: [{ path: 'app.ts' }, { path: 'requirements.txt' }] });
-		assert.ok(result.unresolvedDependencies.some(d => d.toLowerCase().startsWith('flask@')), JSON.stringify(result.unresolvedDependencies));
-		assert.ok(result.matches.some(m => m.coordinate === 'requests@2.25.1'), JSON.stringify(result.matches));
+		assert.ok(result.unresolvedDependencies.some(d => d.toLowerCase().startsWith('pip:flask@')), JSON.stringify(result.unresolvedDependencies));
+		assert.ok(result.matches.some(m => m.coordinate === 'pip:requests@2.25.1'), JSON.stringify(result.matches));
 	} finally {
 		cleanup(repo);
 	}
@@ -282,8 +282,8 @@ test('collectDependencyAdvisories: the exact same coordinate reported BOTH clean
 			] },
 		}));
 		const result = await collectDependencyAdvisories(repo, { entries: [{ path: 'app.ts' }, { path: 'requirements.txt' }] });
-		assert.ok(result.matches.some(m => m.coordinate === 'requests@2.25.1'), JSON.stringify(result.matches));
-		assert.ok(!result.queriedCoordinates.includes('requests@2.25.1'), JSON.stringify(result.queriedCoordinates));
+		assert.ok(result.matches.some(m => m.coordinate === 'pip:requests@2.25.1'), JSON.stringify(result.matches));
+		assert.ok(!result.queriedCoordinates.includes('pip:requests@2.25.1'), JSON.stringify(result.queriedCoordinates));
 	} finally {
 		cleanup(repo);
 	}
@@ -302,9 +302,9 @@ test("collectDependencyAdvisories: an npm audit entry whose 'via' names only OTH
 			parsed: { vulnerabilities: { lodash: { range: '4.0.0', via: ['some-other-package'] } } },
 		}));
 		const result = await collectDependencyAdvisories(repo, { entries: [{ path: 'app.ts' }, { path: 'package.json' }, { path: 'package-lock.json' }] });
-		assert.ok(!result.queriedCoordinates.some(c => c.startsWith('lodash@')), JSON.stringify(result.queriedCoordinates));
-		assert.ok(!result.matches.some(m => m.coordinate.startsWith('lodash@')), JSON.stringify(result.matches));
-		assert.ok(result.unresolvedDependencies.some(d => d.includes('lodash@4.0.0')), JSON.stringify(result.unresolvedDependencies));
+		assert.ok(!result.queriedCoordinates.some(c => c.startsWith('npm:lodash@')), JSON.stringify(result.queriedCoordinates));
+		assert.ok(!result.matches.some(m => m.coordinate.startsWith('npm:lodash@')), JSON.stringify(result.matches));
+		assert.ok(result.unresolvedDependencies.some(d => d.includes('npm:lodash@4.0.0')), JSON.stringify(result.unresolvedDependencies));
 	} finally {
 		cleanup(repo);
 	}
@@ -323,8 +323,8 @@ test("collectDependencyAdvisories: duplicate raw entries for the SAME coordinate
 			] },
 		}));
 		const result = await collectDependencyAdvisories(repo, { entries: [{ path: 'app.ts' }, { path: 'requirements.txt' }] });
-		assert.ok(result.matches.some(m => m.coordinate === 'requests@2.25.1'), JSON.stringify(result.matches));
-		assert.ok(!result.unresolvedDependencies.some(d => d.includes('requests@2.25.1')), JSON.stringify(result.unresolvedDependencies));
+		assert.ok(result.matches.some(m => m.coordinate === 'pip:requests@2.25.1'), JSON.stringify(result.matches));
+		assert.ok(!result.unresolvedDependencies.some(d => d.includes('pip:requests@2.25.1')), JSON.stringify(result.unresolvedDependencies));
 	} finally {
 		cleanup(repo);
 	}
@@ -343,8 +343,8 @@ test("collectDependencyAdvisories: duplicate raw entries for the SAME coordinate
 			] },
 		}));
 		const result = await collectDependencyAdvisories(repo, { entries: [{ path: 'app.ts' }, { path: 'requirements.txt' }] });
-		assert.ok(result.queriedCoordinates.includes('requests@2.25.1'), JSON.stringify(result.queriedCoordinates));
-		assert.ok(!result.unresolvedDependencies.some(d => d.includes('requests@2.25.1')), JSON.stringify(result.unresolvedDependencies));
+		assert.ok(result.queriedCoordinates.includes('pip:requests@2.25.1'), JSON.stringify(result.queriedCoordinates));
+		assert.ok(!result.unresolvedDependencies.some(d => d.includes('pip:requests@2.25.1')), JSON.stringify(result.unresolvedDependencies));
 	} finally {
 		cleanup(repo);
 	}

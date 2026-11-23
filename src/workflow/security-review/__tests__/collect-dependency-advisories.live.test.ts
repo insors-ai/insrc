@@ -132,8 +132,8 @@ resolved_reference = "abc123"
 			// for this manager, never a confirmed finding or a clean report that
 			// would imply privatelib was somehow accounted for.
 			assert.ok(result.unavailableSources.some(s => s.includes('poetry') || s.includes('pip')), JSON.stringify(result.unavailableSources));
-			assert.ok(!result.matches.some(m => m.coordinate.startsWith('fakepkg@')), JSON.stringify(result.matches));
-			assert.ok(!result.queriedCoordinates.some(c => c.startsWith('fakepkg@')), JSON.stringify(result.queriedCoordinates));
+			assert.ok(!result.matches.some(m => m.coordinate.includes('fakepkg@')), JSON.stringify(result.matches));
+			assert.ok(!result.queriedCoordinates.some(c => c.includes('fakepkg@')), JSON.stringify(result.queriedCoordinates));
 			const poetryEntry = result.perManagerMode.find(e => e.manager === 'poetry');
 			assert.equal(poetryEntry?.mode, 'isolated-environment');
 		} finally {

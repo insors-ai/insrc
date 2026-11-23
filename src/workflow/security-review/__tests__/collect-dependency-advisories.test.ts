@@ -249,6 +249,43 @@ test('collectDependencyAdvisories: a coordinate reported clean by an EARLIER-aud
 	}
 });
 
+test("collectDependencyAdvisories: a pip-audit dependency entry with no 'vulns' key at all, alongside one with an exact-pin match, both reconcile correctly (regression for unresolvedCoordinates carrying the full coordinate instead of a bare name)", async () => {
+	const repo = initRepo();
+	treatAsRegistered(repo);
+	try {
+		writeFileSync(join(repo, 'requirements.txt'), 'flask==2.0.0\nrequests==2.25.1\n');
+		_setPkgAuditExecuteForTests(async () => okResult({
+			manager: 'pip', exitCode: 0,
+			parsed: { dependencies: [{ name: 'flask', version: '2.0.0' }, { name: 'requests', version: '2.25.1', vulns: [{ id: 'PYSEC-1' }] }] },
+		}));
+		const result = await collectDependencyAdvisories(repo, { entries: [{ path: 'app.ts' }, { path: 'requirements.txt' }] });
+		assert.ok(result.unresolvedDependencies.some(d => d.toLowerCase().startsWith('flask:')), JSON.stringify(result.unresolvedDependencies));
+		assert.ok(result.matches.some(m => m.coordinate === 'requests@2.25.1'), JSON.stringify(result.matches));
+	} finally {
+		cleanup(repo);
+	}
+});
+
+test('collectDependencyAdvisories: the exact same coordinate reported BOTH clean and as a match (duplicate/conflicting entries) is kept only in matches, never also in queriedCoordinates', async () => {
+	const repo = initRepo();
+	treatAsRegistered(repo);
+	try {
+		writeFileSync(join(repo, 'requirements.txt'), 'requests==2.25.1\n');
+		_setPkgAuditExecuteForTests(async () => okResult({
+			manager: 'pip', exitCode: 0,
+			parsed: { dependencies: [
+				{ name: 'requests', version: '2.25.1', vulns: [{ id: 'PYSEC-1' }] },
+				{ name: 'requests', version: '2.25.1', vulns: [] },
+			] },
+		}));
+		const result = await collectDependencyAdvisories(repo, { entries: [{ path: 'app.ts' }, { path: 'requirements.txt' }] });
+		assert.ok(result.matches.some(m => m.coordinate === 'requests@2.25.1'), JSON.stringify(result.matches));
+		assert.ok(!result.queriedCoordinates.includes('requests@2.25.1'), JSON.stringify(result.queriedCoordinates));
+	} finally {
+		cleanup(repo);
+	}
+});
+
 test("collectDependencyAdvisories: a pip-audit dependency entry with no 'vulns' key at all is unresolved, never reported as cleanly audited", async () => {
 	const repo = initRepo();
 	treatAsRegistered(repo);

@@ -271,7 +271,10 @@ export async function collectDependencyAdvisories(repoPath: string, targets: Rev
 				} else {
 					rawMatches.push(...mapped.matches);
 					rawQueriedCoordinates.push(...mapped.cleanCoordinates);
-					for (const coordinate of mapped.unresolvedCoordinates) { recordUnresolved(`${coordinate}: pip-audit did not report a result for this dependency`); }
+					for (const coordinate of mapped.unresolvedCoordinates) {
+						const name = coordinate.split('@')[0] ?? coordinate;
+						recordUnresolved(`${name}: pip-audit did not report a result for this dependency (${coordinate})`);
+					}
 				}
 			}
 			perManagerMode.push({ manager, mode, configuredDestination });
@@ -294,10 +297,14 @@ export async function collectDependencyAdvisories(repoPath: string, targets: Rev
 	// Reconcile now that every manager has run and unresolvedNames is
 	// complete: a name unresolved in ANY manager's directory is excluded from
 	// matches/queriedCoordinates everywhere, regardless of which manager ran
-	// first.
+	// first. A coordinate string that is BOTH a confirmed match and reported
+	// clean (duplicate/conflicting entries for the exact same coordinate) is
+	// kept only as a match -- a confirmed finding always outranks a "clean"
+	// report of the identical coordinate, never the reverse.
 	const nameOf = (coordinate: string): string => (coordinate.split('@')[0] ?? coordinate).toLowerCase();
 	const matches = rawMatches.filter(m => !unresolvedNames.has(nameOf(m.coordinate)));
-	const queriedCoordinates = rawQueriedCoordinates.filter(c => !unresolvedNames.has(nameOf(c)));
+	const matchedCoordinates = new Set(matches.map(m => m.coordinate));
+	const queriedCoordinates = [...new Set(rawQueriedCoordinates)].filter(c => !unresolvedNames.has(nameOf(c)) && !matchedCoordinates.has(c));
 
 	return {
 		contentIdentity,

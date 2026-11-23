@@ -21,6 +21,11 @@ import { join } from 'node:path';
 export interface LockfileExportResult {
 	readonly requirementsPath: string;
 	readonly unresolvedDependencies: readonly string[];
+	/** Exactly the package names actually written into requirementsPath --
+	 *  lets a caller reject/quarantine a pkg_audit response that names a
+	 *  package NOT in this set (e.g. a package excluded here, but somehow
+	 *  still returned by pip-audit) instead of accepting it as evidence. */
+	readonly includedNames: ReadonlySet<string>;
 }
 
 interface PoetryPackage {
@@ -185,6 +190,7 @@ export function generateLockfileExport(manager: 'pipenv' | 'poetry', manifestDir
 	const content = readFileSync(lockFile, 'utf8');
 	const lines: string[] = [];
 	const unresolvedDependencies: string[] = [];
+	const includedNames = new Set<string>();
 
 	if (manager === 'poetry') {
 		for (const pkg of parsePoetryLock(content)) {
@@ -193,6 +199,7 @@ export function generateLockfileExport(manager: 'pipenv' | 'poetry', manifestDir
 				continue;
 			}
 			lines.push(`${pkg.name}==${pkg.version}`);
+			includedNames.add(pkg.name);
 		}
 	} else {
 		for (const pkg of parsePipfileLock(content)) {
@@ -201,13 +208,14 @@ export function generateLockfileExport(manager: 'pipenv' | 'poetry', manifestDir
 				continue;
 			}
 			lines.push(`${pkg.name}${pkg.spec}`);
+			includedNames.add(pkg.name);
 		}
 	}
 
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-requirements-export-'));
 	const requirementsPath = join(dir, 'requirements.txt');
 	writeFileSync(requirementsPath, lines.length > 0 ? `${lines.join('\n')}\n` : '');
-	return { requirementsPath, unresolvedDependencies };
+	return { requirementsPath, unresolvedDependencies, includedNames };
 }
 
 /**

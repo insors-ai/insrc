@@ -434,3 +434,102 @@ test("collectDependencyAdvisories: every attempted manager's perManagerMode entr
 		cleanup(repo);
 	}
 });
+
+test('collectDependencyAdvisories: npm -- a vulnerable package name with TWO different locked instances only reports the affected node path, and the OTHER instance stays in queriedCoordinates as clean', async () => {
+	const repo = initRepo();
+	treatAsRegistered(repo);
+	try {
+		writeFileSync(join(repo, 'package.json'), '{}\n');
+		writeFileSync(join(repo, 'package-lock.json'), JSON.stringify({
+			packages: {
+				'': {},
+				'node_modules/demo': { version: '1.0.0' },
+				'node_modules/other/node_modules/demo': { version: '2.0.0' },
+			},
+		}));
+		_setPkgAuditExecuteForTests(async () => okResult({
+			manager: 'npm', exitCode: 0,
+			parsed: { vulnerabilities: { demo: { range: '<2.0.0', nodes: ['node_modules/demo'], via: [{ source: 1, severity: 'high', url: 'https://example.com/advisory' }] } } },
+		}));
+		const result = await collectDependencyAdvisories(repo, { entries: [{ path: 'app.ts' }, { path: 'package.json' }, { path: 'package-lock.json' }] });
+		assert.ok(result.matches.some(m => m.coordinate === 'npm:demo@1.0.0'), JSON.stringify(result.matches));
+		assert.ok(!result.matches.some(m => m.coordinate === 'npm:demo@2.0.0'), JSON.stringify(result.matches));
+		assert.ok(result.queriedCoordinates.includes('npm:demo@2.0.0'), JSON.stringify(result.queriedCoordinates));
+	} finally {
+		cleanup(repo);
+	}
+});
+
+test('collectDependencyAdvisories: cargo -- two locked versions of the same crate, only one reported vulnerable by cargo-audit -- the match uses the REPORTED version, the other stays clean', async () => {
+	const repo = initRepo();
+	treatAsRegistered(repo);
+	try {
+		writeFileSync(join(repo, 'Cargo.toml'), '[package]\nname = "x"\n');
+		writeFileSync(join(repo, 'Cargo.lock'), [
+			'[[package]]', 'name = "demo"', 'version = "1.0.0"', '',
+			'[[package]]', 'name = "demo"', 'version = "2.0.0"', '',
+		].join('\n'));
+		_setPkgAuditExecuteForTests(async () => okResult({
+			manager: 'cargo', exitCode: 0,
+			parsed: { vulnerabilities: { list: [{ package: { name: 'demo', version: '1.0.0' }, advisory: { id: 'RUSTSEC-1', severity: 'high' } }] } },
+		}));
+		const result = await collectDependencyAdvisories(repo, { entries: [{ path: 'app.ts' }, { path: 'Cargo.toml' }, { path: 'Cargo.lock' }] });
+		assert.ok(result.matches.some(m => m.coordinate === 'cargo:demo@1.0.0'), JSON.stringify(result.matches));
+		assert.ok(!result.matches.some(m => m.coordinate === 'cargo:demo@2.0.0'), JSON.stringify(result.matches));
+		assert.ok(result.queriedCoordinates.includes('cargo:demo@2.0.0'), JSON.stringify(result.queriedCoordinates));
+	} finally {
+		cleanup(repo);
+	}
+});
+
+test('collectDependencyAdvisories: a pip-audit response naming a package EXCLUDED from the generated poetry export (not in includedNames) is rejected, never accepted as a clean coordinate', async () => {
+	const repo = initRepo();
+	treatAsRegistered(repo);
+	try {
+		writeFileSync(join(repo, 'poetry.lock'), `
+[[package]]
+name = "requests"
+version = "2.25.1"
+
+[[package]]
+name = "privatelib"
+version = "0.1.0"
+
+[package.source]
+type = "git"
+url = "https://github.com/example/privatelib.git"
+`);
+		_setPkgAuditExecuteForTests(async () => okResult({
+			manager: 'poetry', exitCode: 0,
+			parsed: { dependencies: [
+				{ name: 'requests', version: '2.25.1', vulns: [] },
+				{ name: 'privatelib', version: '0.1.0', vulns: [] },
+			] },
+		}));
+		const result = await collectDependencyAdvisories(repo, { entries: [{ path: 'app.ts' }, { path: 'poetry.lock' }] });
+		assert.ok(result.queriedCoordinates.includes('poetry:requests@2.25.1'), JSON.stringify(result.queriedCoordinates));
+		assert.ok(!result.queriedCoordinates.some(c => c.includes('privatelib')), JSON.stringify(result.queriedCoordinates));
+		assert.ok(!result.matches.some(m => m.coordinate.includes('privatelib')), JSON.stringify(result.matches));
+		assert.ok(result.unavailableSources.some(s => s.includes('privatelib')), JSON.stringify(result.unavailableSources));
+		assert.ok(result.unresolvedDependencies.some(d => d.includes('privatelib')), JSON.stringify(result.unresolvedDependencies));
+	} finally {
+		cleanup(repo);
+	}
+});
+
+test('collectDependencyAdvisories: a genuine manager ambiguity (two lockfiles of the same family in one directory) is recorded as a coverage gap, never silently dropped from the evidence', async () => {
+	const repo = initRepo();
+	treatAsRegistered(repo);
+	try {
+		writeFileSync(join(repo, 'package-lock.json'), '{}\n');
+		writeFileSync(join(repo, 'pnpm-lock.yaml'), '');
+		_setPkgAuditExecuteForTests(async () => { throw new Error('pkg_audit must never run for an ambiguous directory'); });
+		const result = await collectDependencyAdvisories(repo, { entries: [{ path: 'app.ts' }, { path: 'package-lock.json' }, { path: 'pnpm-lock.yaml' }] });
+		assert.deepEqual(result.perManagerMode, []);
+		assert.deepEqual(result.matches, []);
+		assert.ok(result.unavailableSources.some(s => s.includes('npm') && s.includes('pnpm')), JSON.stringify(result.unavailableSources));
+		assert.equal(result.contentStable, true);
+	} finally {
+		cleanup(repo);
+	}
+});

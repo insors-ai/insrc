@@ -42,7 +42,7 @@ export type Manager =
   | 'pip' | 'pipenv' | 'poetry'
   | 'go' | 'cargo';
 
-const MANAGERS: readonly Manager[] = ['npm', 'pnpm', 'yarn', 'pip', 'pipenv', 'poetry', 'go', 'cargo'];
+export const MANAGERS: readonly Manager[] = ['npm', 'pnpm', 'yarn', 'pip', 'pipenv', 'poetry', 'go', 'cargo'];
 
 function parseManager(input: ToolInput): Manager | undefined {
   const raw = str(input, 'manager');

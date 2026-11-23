@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-00860fa1-fc5b-4a11-b4fb-78bcbaee9925",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-23T04:33:27.687Z",
+    "epicCreatedAt": "2026-11-22T19:05:12.455Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7dcc640fef47d9e6",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Delete all dedicated lifecycle sources and tests",
+      "parent": {
+        "entityId": "STORY-7dcc640fef47d9e6-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-7dcc640fef47d9e6-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-7dcc640fef47d9e6-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "045f724a35f9aafa57d66a8b81e97c0a45dbb0ba3059fc5bc35dd02be0767b21",
+        "at": "2026-11-23T04:33:27.694Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-23T04:33:27.696Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Delete all dedicated lifecycle sources and tests",
+    "summary": "Delete exactly the278 whole-file candidates:143 implementation/build/asset/CI files,115 tests and20 helpers. Preserve the manifests/evidence and all noncandidate shared code. This batch owns physical whole-file removal; subsequent tasks remove surviving integration references before final validation. Full build and behavioral tests are deferred until the whole removal sequence is integrated in t8; this task validates physical removal and accounting only.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "All278 candidate files are removed from tracked source and recorded once in deletion accounting.",
+      "No noncandidate whole file is deleted; shared process identity, generic guards and protected model/config/workflow tests remain.",
+      "No replacement installer, supervisor, launcher authority or release-signing system is added."
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "278-path absence and preserved-noncandidate-file accounting check; no per-task full build."
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

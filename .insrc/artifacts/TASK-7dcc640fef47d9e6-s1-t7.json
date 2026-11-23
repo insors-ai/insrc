@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b398fe4b-2bac-4958-b534-f02e1788de52",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-23T04:33:27.737Z",
+    "epicCreatedAt": "2026-11-22T19:05:12.455Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7dcc640fef47d9e6",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Reconcile build packaging inventories and cleanup documentation",
+      "parent": {
+        "entityId": "STORY-7dcc640fef47d9e6-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-7dcc640fef47d9e6-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-7dcc640fef47d9e6-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "4d12727bf1463b7a6a99563c640a14e4b4a051b91d87bc8a62fb759c2588b4c2",
+        "at": "2026-11-23T04:33:27.744Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-23T04:33:27.746Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Reconcile build packaging inventories and cleanup documentation",
+    "summary": "Remove remaining lifecycle-only build requirements,native-helper invocations,installer resource generators and release/control wiring from retained files. Review source classification/digest inventories for actual changed boundaries; keep integrity gates. Finish full manifest/member accounting and document temporary absence of lifecycle controls.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "Current production/client/shell/package/build scans find no executable references to deleted lifecycle targets; historical records may remain.",
+      "All278 file and176 member entries have an outcome; retained non-lifecycle behavior and unavoidable integration edits are identified.",
+      "Build/test coordination and unrelated resource packaging remain intact; source inventories are reviewed, not blindly bypassed."
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "Final 278-file/176-entry accounting, dangling executable reference/asset/command audit, and reviewed source-inventory check."
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

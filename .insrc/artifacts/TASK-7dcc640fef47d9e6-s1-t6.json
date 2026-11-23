@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-036f6770-8a55-4521-b158-d48bc046524b",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-23T04:33:27.726Z",
+    "epicCreatedAt": "2026-11-22T19:05:12.455Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7dcc640fef47d9e6",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Remove JetBrains lifecycle controls and update contracts",
+      "parent": {
+        "entityId": "STORY-7dcc640fef47d9e6-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-7dcc640fef47d9e6-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-7dcc640fef47d9e6-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c7cae80a695e4200fe4b788950d9f866093baf5949e69c1e0df7249c2dcd19f5",
+        "at": "2026-11-23T04:33:27.734Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-23T04:33:27.735Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Remove JetBrains lifecycle controls and update contracts",
+    "summary": "Remove identified gateway lifecycle methods/types/fields,settings daemon lifecycle panel/restart execution and corresponding mixed JUnit slices; dedicated lifecycle/freshness sources were deleted in t2. Preserve generic RPC,status,backup/compact,model/settings workflow and project/host onboarding contracts.",
+    "size": "L",
+    "order": 6,
+    "acceptanceChecks": [
+      "All JetBrains member entries are accounted for; no removed controller/resource/import remains wired in surviving code.",
+      "Generic gateway and backup/compact/status DTOs survive; only update-specific fields and methods are removed.",
+      "Mixed settings/model tests preserve save/decision/error semantics rather than deleting the whole test or flow."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Focused surviving JetBrains gateway/settings/model/onboarding JUnit classes through existing jetbrains-plugin/test-bridge/run-focused-junit.ts where available (executed in t8)."
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

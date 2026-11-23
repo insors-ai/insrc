@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-801cbc9b-5515-4207-a419-28e0d2f6da73",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-23T04:33:27.748Z",
+    "epicCreatedAt": "2026-11-22T19:05:12.455Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7dcc640fef47d9e6",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Build and validate all retained boundaries once removal is complete",
+      "parent": {
+        "entityId": "STORY-7dcc640fef47d9e6-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-7dcc640fef47d9e6-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-7dcc640fef47d9e6-s1-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "29c6ad6a79434e08eb2cca1b46aaee6e485a01745823abdba54fe72e8e528628",
+        "at": "2026-11-23T04:33:27.755Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-23T04:33:27.757Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Build and validate all retained boundaries once removal is complete",
+    "summary": "Run one normal backend build and required typechecks,VS Code typecheck/bundle,available JetBrains compilation/focused JUnit,and bounded focused retained tests chosen in t1. Fix only removal-related integration regressions,record concrete limitations,and prepare one story build approval after all tasks are built/tested. No real user installer/start/stop/update or native qualification matrices.",
+    "size": "L",
+    "order": 8,
+    "acceptanceChecks": [
+      "Backend and VS Code compile/package checks pass; available JetBrains checks pass or exact toolchain limits are reported.",
+      "Selected retained shared guard/identity,IPC,model/config,workflow,client onboarding and application resource-close tests pass; unrelated pre-existing failures are distinguished with evidence.",
+      "Final accounting proves complete deletion scope and no installed-state mutation,no hidden replacement engine,and one pending story build approval only.",
+      "An unavailable required check is explicitly unverified, never reported as a passing result; no repeated matrix or unrelated regression sweep is launched."
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "npm run build and npm run typecheck:tools; VS Code npm run build/npm run bundle after removing retired generator inputs; available JetBrains compile/focused JUnit."
+      },
+      {
+        "level": "unit",
+        "name": "Bounded retained shared guard/identity/IPC and model/config/workflow tests through the existing npm test coordinator; preserve mixed-suite resource teardown and client integration assertions."
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

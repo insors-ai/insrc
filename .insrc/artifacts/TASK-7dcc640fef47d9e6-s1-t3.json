@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e176623c-0cea-4871-b0d2-ac2708eaeaa9",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-23T04:33:27.697Z",
+    "epicCreatedAt": "2026-11-22T19:05:12.455Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7dcc640fef47d9e6",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Remove backend lifecycle slices while preserving shared ownership",
+      "parent": {
+        "entityId": "STORY-7dcc640fef47d9e6-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-7dcc640fef47d9e6-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-7dcc640fef47d9e6-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f8ccd6258552fd66e25defc672501db841d42d04e9141ca78068da1c9caa6331",
+        "at": "2026-11-23T04:33:27.704Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-23T04:33:27.705Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Remove backend lifecycle slices while preserving shared ownership",
+    "summary": "Remove backend/shared lifecycle member entries: managed/probation/control dispatch, update contracts/ack hooks, PID/supervisor wiring, lifecycle-only guard pin/transfer/borrow, worker-to-main stop operations and corresponding mixed-test slices. Keep genericIPC,keystore identity/guards,model bootstrap,workflow artifacts and application-owned resource-close callbacks in surviving modules.",
+    "size": "L",
+    "order": 3,
+    "acceptanceChecks": [
+      "Every backend/shared member entry is removed or narrowed with its required retained behavior preserved.",
+      "Keystore guard acquisition/conflict/reclaim and process identity remain; no generic IPC lifetime/cancellation/uncertainty primitive is removed.",
+      "Mixed model/config/status/resource-close tests retain non-lifecycle assertions; no broad engine is reintroduced."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Retained shared process identity/run-file guard and generic IPC subsets, including src/shared/__tests__/daemon-process.test.ts, src/shared/__tests__/daemon-run-files.test.ts and src/shared/__tests__/ipc-client.test.ts (executed after all edits in t8)."
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

@@ -34,19 +34,21 @@ interface Item extends QuickPickItemLike { readonly kind?: string; readonly valu
 
 /**
  * A scripted run: each pick is a value (or a label for value-less rows) chosen in order;
- * returns the writes, every list shown, the messages and the messages.
+ * returns the writes, every list shown, the messages and the restarts.
  */
 export async function run(opts: {
   picks: readonly string[];
   raw?: Record<string, unknown>;
   defs?: () => Promise<ModelDefinitions>;
   write?: (segments: readonly string[], value: unknown) => Promise<ConfigWriteResult>;
+  actions?: readonly (string | undefined)[];
   extra?: Partial<SetModelTierDeps>;
 }) {
   const writes: Array<{ segments: string[]; value: unknown }> = [];
   const shown: Item[][] = [];
   const messages: string[] = [];
   let i = 0;
+  const actions = [...(opts.actions ?? [])];
   const deps: SetModelTierDeps = {
     definitions: opts.defs ?? (async () => DEFS),
     rawConfig: async () => opts.raw ?? {},
@@ -59,7 +61,7 @@ export async function run(opts: {
       const want = opts.picks[i++];
       return (want === undefined ? undefined : (items as Item[]).find((x) => x.value === want || (x.value === undefined && x.label === want))) as never;
     },
-    notify: async (message) => { messages.push(message); return undefined; },
+    notify: async (message) => { messages.push(message); return actions.shift(); },
     check: async () => { throw new Error('check not scripted'); },
     approve: async () => { throw new Error('approve not scripted'); },
     reject: async () => { throw new Error('reject not scripted'); },
@@ -228,7 +230,7 @@ test('model-tier-picker.test.ts: unknown model — check results shown; approve 
 
   // Approved but the user does not restart now: nothing saved.
   reset(); inputs = ['x-new', '<default>'];
-  r = await run({ picks: ['core', 'cli-codex', 'Enter another model id…', 'Approve x-new…'], extra: seams() });
+  r = await run({ picks: ['core', 'cli-codex', 'Enter another model id…', 'Approve x-new…'], extra: seams(), actions: [undefined] });
   assert.equal(approves.length, 1);
   assert.deepEqual(r.writes, []);
 
@@ -246,7 +248,7 @@ test('model-tier-picker.test.ts: unknown model — check results shown; approve 
   reset(); inputs = ['x-new', '<default>'];
   const served: ModelDefinitions = { ...DEFS, families: DEFS.families.map((f) => f.id !== 'cli-codex' ? f : { ...f, models: [...f.models, { id: 'x-new', aliases: [], efforts: ['lo'], source: 'user-approved' as const }] }) };
   let defsCalls = 0;
-  r = await run({ picks: ['core', 'cli-codex', 'Enter another model id…'], defs: async () => (defsCalls++ === 0 ? DEFS : served), extra: seams({ check: async () => ({ error: 'x-new is already a model or alias of cli-codex' }) }) });
+  r = await run({ picks: ['core', 'cli-codex', 'Enter another model id…'], defs: async () => (defsCalls++ === 0 ? DEFS : served), extra: seams({ check: async () => ({ error: 'x-new is already a model or alias of cli-codex' }) }), actions: ['Save x-new'] });
   assert.deepEqual(r.writes, [{ segments: ['models', 'tiers', 'core'], value: { runner: 'cli-codex', model: 'x-new', effort: '' } }]);
 
   // A typed alias of a listed model saves as a normal pick, without a check.
@@ -258,12 +260,12 @@ test('model-tier-picker.test.ts: unknown model — check results shown; approve 
   // unknown-check offers a fresh check; a disconnected check offers to check again; a disconnected approve reports an unknown outcome.
   reset(); inputs = ['x-new', '<default>'];
   const approveAnswers: Array<() => Promise<DecisionResultLike>> = [async () => ({ ok: false, reason: 'unknown-check', detail: 'no pending check c1' })];
-  r = await run({ picks: ['core', 'cli-codex', 'Enter another model id…', 'Approve x-new…', 'Reject x-new'], extra: seams({ approve: async (p) => { approves.push(p); return approveAnswers.shift()!(); } }) });
+  r = await run({ picks: ['core', 'cli-codex', 'Enter another model id…', 'Approve x-new…', 'Reject x-new'], extra: seams({ approve: async (p) => { approves.push(p); return approveAnswers.shift()!(); } }), actions: ['Check again'] });
   assert.equal(checks.length, 2, 'checked again after unknown-check');
   assert.deepEqual(rejects, [{ checkId: 'c1' }]);
   reset(); inputs = ['x-new', '<default>'];
   const checkAnswers: Array<() => Promise<typeof result>> = [async () => { throw Object.assign(new Error('closed'), { code: 'disconnected' }); }, async () => result];
-  r = await run({ picks: ['core', 'cli-codex', 'Enter another model id…'], extra: seams({ check: async (p) => { checks.push(p); return checkAnswers.shift()!(); } }) });
+  r = await run({ picks: ['core', 'cli-codex', 'Enter another model id…'], extra: seams({ check: async (p) => { checks.push(p); return checkAnswers.shift()!(); } }), actions: ['Check again'] });
   assert.equal(checks.length, 2);
   assert.match(r.messages[0]!, /the check of x-new was interrupted/);
   reset(); inputs = ['x-new', '<default>'];

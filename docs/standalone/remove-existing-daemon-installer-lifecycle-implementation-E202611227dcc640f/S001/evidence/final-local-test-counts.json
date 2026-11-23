@@ -1,0 +1,16 @@
+{
+  "cli": {
+    "tests": 70,
+    "pass": 70,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0
+  },
+  "vscode": {
+    "tests": 80,
+    "pass": 80,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0
+  }
+}

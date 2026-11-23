@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-74812841-fcd6-4ecb-85b9-f92415cba21a",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-23T04:33:27.675Z",
+    "epicCreatedAt": "2026-11-22T19:05:12.455Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7dcc640fef47d9e6",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Freeze deletion accounting and retained validation scope",
+      "parent": {
+        "entityId": "STORY-7dcc640fef47d9e6-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-7dcc640fef47d9e6-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e696d2bdce14d5778adcdd77c7240d5f14d2427b8608367f4ab46a06ada93bac",
+        "at": "2026-11-23T04:33:27.683Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-23T04:33:27.685Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Freeze deletion accounting and retained validation scope",
+    "summary": "Verify current candidate hashes/selectors against baseline728c31abc; capture278 file and176 member entries, retained shared boundaries, actual test selectors and available toolchains. Establish workspace-only command scope and per-entry completion accounting without deleting code yet.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "Every candidate path and member selector is accounted for and matches source; no stale line-range deletion is used.",
+      "Exact backend/VS Code scripts and focused retained tests are selected; JetBrains compile/JUnit availability is recorded.",
+      "No installed daemon process, runtime, launch job or data outside the repository is touched."
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "Preflight source-hash/selector, manifest accounting, existing script/test-selector and toolchain-availability checks (read-only; no live daemon operation)."
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

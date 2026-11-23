@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-dbfa72fc-96f6-4022-bb9f-35c02e5a9006",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-23T04:33:27.717Z",
+    "epicCreatedAt": "2026-11-22T19:05:12.455Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7dcc640fef47d9e6",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Remove VS Code lifecycle controls and installer onboarding",
+      "parent": {
+        "entityId": "STORY-7dcc640fef47d9e6-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-7dcc640fef47d9e6-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-7dcc640fef47d9e6-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "bdf8b2d45cc9be54827f2f7da7264695ce9597be1c2dcdbb3900431159061258",
+        "at": "2026-11-23T04:33:27.723Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-23T04:33:27.724Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Remove VS Code lifecycle controls and installer onboarding",
+    "summary": "Remove identified extension controller/commands,freshness,auto-start,restart offers,orphan action,manifest contributions and install step/test slices. Preserve generic activation/status,settings/model saves,repository registration,host MCP/steering wiring,debug clients/logs and retryable onboarding state.",
+    "size": "L",
+    "order": 5,
+    "acceptanceChecks": [
+      "All VS Code member entries and lifecycle-only contributions/imports are accounted for; no installer/control asset remains a packaging input.",
+      "Onboarding still registers workspaces and wires hosts with existing consent/retry semantics; generic reachability remains.",
+      "Mixed model/configuration tests retain checks/approvals/saves while old restart execution assumptions are removed."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Retained vscode-plugin/src/__tests__/activation.test.ts, vscode-plugin/src/onboarding/__tests__/onboarding.test.ts and mixed model/settings/debug assertions (executed in t8)."
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

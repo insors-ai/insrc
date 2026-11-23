@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4cbb731b-fc0b-4b1b-8e86-2121f1885a66",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-23T04:33:27.707Z",
+    "epicCreatedAt": "2026-11-22T19:05:12.455Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7dcc640fef47d9e6",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Remove CLI lifecycle commands and launcher authority",
+      "parent": {
+        "entityId": "STORY-7dcc640fef47d9e6-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-7dcc640fef47d9e6-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-7dcc640fef47d9e6-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e2276bc3e6d4f5932386d2100a51d5af2679254e9dd1d4d9d44e1d70a56c5679",
+        "at": "2026-11-23T04:33:27.713Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-23T04:33:27.715Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Remove CLI lifecycle commands and launcher authority",
+    "summary": "Remove identified CLI start/stop/restart/update methods,types,command cases,pane actions,orphan kill controls,service bindings and shell-owned-runtime/source-selection slices. Keep CLI/MCP executable contracts, general status/backup/compact,model/tier decisions,host registration,log/MCP diagnostics and offline maintenance safety with direct surviving integration.",
+    "size": "L",
+    "order": 4,
+    "acceptanceChecks": [
+      "CLI lifecycle member entries and their dedicated mixed-test slices are accounted for; no control remains advertised without implementation.",
+      "Generic CLI/MCP launch still resolves a valid development application entry without owned installer/supervisor fallback.",
+      "Status/version/root lookup,backup/compact,model decisions and connection-maintenance stopped-store proofs survive with no hidden lifecycle execution."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Retained CLI command/model/configuration and status/backup/compact assertions, plus CLI/MCP launch contract/source checks (bounded execution in t8)."
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

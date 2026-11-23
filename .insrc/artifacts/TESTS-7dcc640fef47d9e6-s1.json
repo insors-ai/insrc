@@ -1,0 +1,565 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 9,
+        "contentHash": "cea9ab4b547d64f01f162c50e603cc401e47c1ae0a58bf2d1ece7803f2ada245",
+        "at": "2026-11-23T05:28:20.898Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "7dcc640fef47d9e6",
+    "storyId": "s1",
+    "createdAt": "2026-11-23T04:34:59.669Z",
+    "updatedAt": "2026-11-23T05:28:20.845Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-22T19:05:12.455Z",
+    "epicSlug": "remove-existing-daemon-installer-lifecycle-implementation",
+    "revision": 9
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "ad21d4f8b",
+        "ranAt": "2026-11-23T04:40:29.488Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Preflight source-hash/selector, manifest accounting, existing script/test-selector and toolchain-availability checks (read-only; no live daemon operation).",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/standalone/remove-existing-daemon-installer-lifecycle-implementation-E202611227dcc640f/S001/evidence/preflight.md"
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
+      },
+      {
+        "taskId": "t2",
+        "commit": "e00185c8a",
+        "ranAt": "2026-11-23T05:08:21.310Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "278-path absence and preserved-noncandidate-file accounting check; no per-task full build.",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/standalone/remove-existing-daemon-installer-lifecycle-implementation-E202611227dcc640f/S001/evidence/t2-deletion.json"
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
+      },
+      {
+        "taskId": "t3",
+        "commit": "a90576bd2",
+        "ranAt": "2026-11-23T05:20:22.028Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Retained shared process identity/run-file guard and generic IPC subsets, including src/shared/__tests__/daemon-process.test.ts, src/shared/__tests__/daemon-run-files.test.ts and src/shared/__tests__/ipc-client.test.ts (executed after all edits in t8).",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/daemon-process.test.ts",
+                "title": "process start parsers preserve OS markers and distinguish zombies and malformed observations",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/daemon-run-files.test.ts",
+                "title": "guard serializes cooperating owners and release invalidates its authority",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/ipc-client.test.ts",
+                "title": "rpc preserves a multi-byte response character split across socket reads",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/shutdown-store-failure.test.ts",
+                "title": "application disposal coalesces, drains before closing resources and skips unsafe native closes after lock loss during drain",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/shutdown-store-failure.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1324,
+            "titles": [
+              {
+                "title": "status after failure: storeFailure names another process and does not contain 'semume'",
+                "result": "pass"
+              },
+              {
+                "title": "application disposal coalesces, drains before closing resources and skips unsafe native closes after lock loss during drain",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/shared/__tests__/daemon-process.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 452,
+            "titles": [
+              {
+                "title": "process start parsers preserve OS markers and distinguish zombies and malformed observations",
+                "result": "pass"
+              },
+              {
+                "title": "observation-only identities report changes but expose no numeric-PID signalling authority",
+                "result": "pass"
+              },
+              {
+                "title": "real disposable child identity observations distinguish live and exited processes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/shared/__tests__/daemon-run-files.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 848,
+            "titles": [
+              {
+                "title": "guard serializes cooperating owners and release invalidates its authority",
+                "result": "pass"
+              },
+              {
+                "title": "changed guard nonce prevents the previous owner from releasing the replacement",
+                "result": "pass"
+              },
+              {
+                "title": "unverifiable guard records and symlinks fail closed without automatic reclamation",
+                "result": "pass"
+              },
+              {
+                "title": "cross-process guard race admits exactly one owner and releases for the next startup",
+                "result": "pass"
+              },
+              {
+                "title": "killed guard owner is conclusively dead, so the next startup quarantines the stale guard and acquires",
+                "result": "pass"
+              },
+              {
+                "title": "acquireRunFileGuard quarantines and acquires when the verdict is 'gone' (fake reader, mkdtemp guard)",
+                "result": "pass"
+              },
+              {
+                "title": "acquireRunFileGuard quarantines and acquires on previous-boot 'replaced' (boot segments mismatch)",
+                "result": "pass"
+              },
+              {
+                "title": "acquireRunFileGuard withholds 'same', same-boot 'replaced', corrupt or missing owner.json and a throwing reader; nothing is renamed",
+                "result": "pass"
+              },
+              {
+                "title": "acquireRunFileGuard recomputes the conflict and throws when the retry mkdir hits EEXIST",
+                "result": "pass"
+              },
+              {
+                "title": "a paused reclaimer cannot quarantine or vacate the live replacement a starter acquired from the same dead guard",
+                "result": "pass"
+              },
+              {
+                "title": "a standing reclaim claim with a live or unreadable holder withholds; a conclusively dead holder is recovered once",
+                "result": "pass"
+              },
+              {
+                "title": "a standing claim keeps mutual exclusion across its holder's pause: competitors are refused and concurrent pruning is absorbed",
+                "result": "pass"
+              },
+              {
+                "title": "a claim publication that fails after creation leaves no claim holding the guard",
+                "result": "pass"
+              },
+              {
+                "title": "a quarantine rename failure retires the caller's claim and a live retry recovers",
+                "result": "pass"
+              },
+              {
+                "title": "a claim revalidation that cannot read the caller's own claim retires it and withholds",
+                "result": "pass"
+              },
+              {
+                "title": "acquireRunFileGuard leaves a symlink guard as a conflict",
+                "result": "pass"
+              },
+              {
+                "title": "acquireRunFileGuard suffixes the quarantine name on collision; owner.json stays byte-identical and one daemonLog line is keyed by the recorded nonce; a log-write failure is swallowed",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/shared/__tests__/ipc-client.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 388,
+            "titles": [
+              {
+                "title": "rpc preserves a multi-byte response character split across socket reads",
+                "result": "pass"
+              },
+              {
+                "title": "openStream preserves multi-byte characters split across frame chunks",
+                "result": "pass"
+              },
+              {
+                "title": "rpc resolves the daemon result and writes the { label, pid } identity envelope on connect",
+                "result": "pass"
+              },
+              {
+                "title": "rpc rejects with \"daemon is not running\" on ENOENT / ECONNREFUSED",
+                "result": "pass"
+              },
+              {
+                "title": "rpc surfaces a daemon-side error and an unparseable line distinctly",
+                "result": "pass"
+              },
+              {
+                "title": "IpcClient.status returns the wire DaemonStatus via daemon.status",
+                "result": "pass"
+              },
+              {
+                "title": "IpcClient.reachability derives running / stopped / errored and never throws",
+                "result": "pass"
+              },
+              {
+                "title": "sockFilePath resolves to the daemon socket",
+                "result": "pass"
+              },
+              {
+                "title": "src/cli/client.ts re-exports rpc from the shared ipc-client (CLI/TUI surface preserved)",
+                "result": "pass"
+              },
+              {
+                "title": "src/shared/ipc-client imports only node:net and shared IPC/text helpers (no daemon internals/indexer/storage)",
+                "result": "pass"
+              },
+              {
+                "title": "ipc-client.test.ts: a connection lost after the request (end/close or ECONNRESET then close) rejects with DaemonDisconnectedError; pre-connect refusal and replies unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "58fb3f3e5",
+        "ranAt": "2026-11-23T05:28:20.845Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Retained CLI command/model/configuration and status/backup/compact assertions, plus CLI/MCP launch contract/source checks (bounded execution in t8).",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/__tests__/command.test.ts",
+                "title": "help lists the command reference",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/__tests__/tui-models.test.ts",
+                "title": "tui-models.test.ts: Model Tiers pane cycles the fake answer's families, models and efforts and writes whole tiers; unserved model has no effort edit; refusals and deferred application shown",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/panes/__tests__/DaemonSection.test.ts",
+                "title": "reachable model renders running + uptime + socket + version/pid + repos with index state",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/connection-maintenance-control.test.ts",
+                "title": "maintenance consumes captured stopped-process proof without live IPC or fabricated dead-process observations",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/__tests__/entry-scripts.test.ts",
+                "title": "CLI and MCP launch isolated development entries with preserved arguments and workspace without installer fallback",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/cli/__tests__/command.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 493,
+            "titles": [
+              {
+                "title": "help lists the command reference",
+                "result": "pass"
+              },
+              {
+                "title": "repo add without --steering passes no steering (no silent write)",
+                "result": "pass"
+              },
+              {
+                "title": "repo add --steering installs both CLAUDE.md + AGENTS.md",
+                "result": "pass"
+              },
+              {
+                "title": "repo add --steering=claude installs CLAUDE.md only (path parsed past the flag)",
+                "result": "pass"
+              },
+              {
+                "title": "repo add dispatches to repo.add with the path",
+                "result": "pass"
+              },
+              {
+                "title": "daemon status renders a one-line summary",
+                "result": "pass"
+              },
+              {
+                "title": "config list shows known options (default) merged with set values",
+                "result": "pass"
+              },
+              {
+                "title": "config list <search> filters options by substring",
+                "result": "pass"
+              },
+              {
+                "title": "config get navigates a dot-path",
+                "result": "pass"
+              },
+              {
+                "title": "config set parses JSON values (number) and writes the dot-path",
+                "result": "pass"
+              },
+              {
+                "title": "config set keeps a non-JSON token as a string",
+                "result": "pass"
+              },
+              {
+                "title": "command.test.ts: config set / unset refuse model keys and report refusals and restartRequired",
+                "result": "pass"
+              },
+              {
+                "title": "pane switches the active pane",
+                "result": "pass"
+              },
+              {
+                "title": "quit calls exit",
+                "result": "pass"
+              },
+              {
+                "title": "unknown command is reported, not thrown",
+                "result": "pass"
+              },
+              {
+                "title": "service errors surface as a line, not a throw",
+                "result": "pass"
+              },
+              {
+                "title": "workflow review renders verdict, counts, auto-fixes, and pending findings",
+                "result": "pass"
+              },
+              {
+                "title": "workflow approve --override threads the reason to approve",
+                "result": "pass"
+              },
+              {
+                "title": "workflow approve surfaces a review block as a line, not a throw",
+                "result": "pass"
+              },
+              {
+                "title": "workflow run streams progress via onLog and reports path + review verdict",
+                "result": "pass"
+              },
+              {
+                "title": "workflow findings lists pending, workflow resolve resolves one (R3)",
+                "result": "pass"
+              },
+              {
+                "title": "daemon status adds the store failure line when the status carries it",
+                "result": "pass"
+              },
+              {
+                "title": "workflow review says when the source roots could not be read from the index",
+                "result": "pass"
+              },
+              {
+                "title": "team init writes the starter and reports its path",
+                "result": "pass"
+              },
+              {
+                "title": "team refresh runs the refresh and reports the outcome",
+                "result": "pass"
+              },
+              {
+                "title": "team refresh --branch passes the name through and renders the refusal that asks for it",
+                "result": "pass"
+              },
+              {
+                "title": "a thrown error from either team command renders as a cross-prefixed line",
+                "result": "pass"
+              },
+              {
+                "title": "command.test.ts: sync, claim, release and resolveFinding results are awaited before status and text are read",
+                "result": "pass"
+              },
+              {
+                "title": "command.test.ts: setup show|apply|pull recommend the definitions' tool-loop model and stop with the not-running line when the daemon is down",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/cli/__tests__/entry-scripts.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 675,
+            "titles": [
+              {
+                "title": "CLI and MCP launch isolated development entries with preserved arguments and workspace without installer fallback",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/cli/__tests__/tui-models.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 8454,
+            "titles": [
+              {
+                "title": "tui-models.test.ts: Model Tiers pane cycles the fake answer's families, models and efforts and writes whole tiers; unserved model has no effort edit; refusals and deferred application shown",
+                "result": "pass"
+              },
+              {
+                "title": "tui-models.test.ts: daemon down shows the not-running message in the Model Tiers pane and Setup",
+                "result": "pass"
+              },
+              {
+                "title": "tui-models.test.ts: unknown model check, approve then save only when served, reject, runs:false",
+                "result": "pass"
+              },
+              {
+                "title": "tui-models.test.ts: interrupted check and outcome-unknown decision",
+                "result": "pass"
+              },
+              {
+                "title": "tui-models.test.ts: repo models view edits only tasks and coreFloor",
+                "result": "pass"
+              },
+              {
+                "title": "tui-models.test.ts: Model Tiers pane retries after the daemon starts, names an older daemon, shows aliases and an effort the model does not take",
+                "result": "pass"
+              },
+              {
+                "title": "tui-models.test.ts: check screen recovers from an expired check, offers an already-served id as a pick, reloads served definitions before saving",
+                "result": "pass"
+              },
+              {
+                "title": "tui-models.test.ts: an edit waits for the previous save to reload; a save whose connection drops is read back; an older daemon refusing the check is named",
+                "result": "pass"
+              },
+              {
+                "title": "tui-models.test.ts: a lost connection reads as daemon down; r waits for a pending repo save; an unreadable read-back is reported as unknown",
+                "result": "pass"
+              },
+              {
+                "title": "tui-models.test.ts: 'f' reaches the Ollama-hosted runner and writes its first declared model as a whole tier, labelled cloud or local",
+                "result": "pass"
+              },
+              {
+                "title": "tui-models.test.ts: on a host-family tier 'm' and 'e' cycle only declared values, 'n' is hidden and opens nothing, and a model with no efforts says so",
+                "result": "pass"
+              },
+              {
+                "title": "tui-models.test.ts: an undeclared host-family model shows 'not supported ... will not run'; a vendor unserved model keeps the vendor note",
+                "result": "pass"
+              },
+              {
+                "title": "tui-models.test.ts: a tier saved on the Ollama-hosted runner shows its runner, model, cloud/local label and effort after reload",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/cli/panes/__tests__/DaemonSection.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 712,
+            "titles": [
+              {
+                "title": "reachable model renders running + uptime + socket + version/pid + repos with index state",
+                "result": "pass"
+              },
+              {
+                "title": "unreachable model renders a single stopped/unreachable line and no running fields",
+                "result": "pass"
+              },
+              {
+                "title": "zero-repo reachable model renders repo-count 0 with no per-repo rows",
+                "result": "pass"
+              },
+              {
+                "title": "version/pid lines are omitted when those optional fields are undefined",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/connection-maintenance-control.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 448,
+            "titles": [
+              {
+                "title": "maintenance consumes captured stopped-process proof without live IPC or fabricated dead-process observations",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

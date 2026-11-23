@@ -1,0 +1,52 @@
+{
+  "status": "blocked on unavailable installed daemon; local implementation committed",
+  "head": "e677298ac60a44535af01c4679fba38a41f005f2",
+  "daemonPid": 46743,
+  "capturedAt": "2026-11-23 11:03:53.2270 +0530",
+  "exception": {
+    "codes": "0x0000000000000001, 0x00000001949f44fc",
+    "rawCodes": [
+      1,
+      6788433148
+    ],
+    "type": "EXC_BREAKPOINT",
+    "signal": "SIGTRAP"
+  },
+  "termination": {
+    "flags": 0,
+    "code": 5,
+    "namespace": "SIGNAL",
+    "indicator": "Trace/BPT trap: 5",
+    "byProc": "exc handler",
+    "byPid": 46743
+  },
+  "allocatorDiagnostics": {
+    "libsystem_malloc.dylib": [
+      "BUG IN CLIENT OF LIBMALLOC: memory corruption of free block",
+      "Abort Cause 520070209024"
+    ]
+  },
+  "topFrames": [
+    "_xzm_xzone_malloc_from_freelist_chunk.cold.1",
+    "_xzm_xzone_malloc_from_freelist_chunk",
+    "_xzm_xzone_find_and_malloc_from_freelist_chunk",
+    "_xzm_xzone_malloc_freelist_outlined",
+    "operator new(unsigned long)",
+    "node::PipeWrap::New(v8::FunctionCallbackInfo<v8::Value> const&)",
+    "v8::internal::FunctionCallbackArguments::Call(v8::internal::Tagged<v8::internal::FunctionTemplateInfo>)"
+  ],
+  "crashReport": "/Users/subhagho/Library/Logs/DiagnosticReports/node-2026-11-23-110354.ips",
+  "pendingTasks": [
+    "t4: fixes committed; resubmission blocked by daemon-unreachable",
+    "t5",
+    "t6",
+    "t7",
+    "t8"
+  ],
+  "passedTasks": [
+    "t1",
+    "t2",
+    "t3"
+  ],
+  "boundary": "No installed daemon start/stop/update performed. Awaiting user authorization to start existing installed daemon; plan excluded installed-state changes."
+}

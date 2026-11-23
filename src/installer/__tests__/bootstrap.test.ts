@@ -1,34 +1,17 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { get } from 'node:https';
 import { once } from 'node:events';
 import { appendFileSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { ChildProcess } from 'node:child_process';
-import { runtimeArchive, runtimePolicy, privateRuntimeEnvironment } from '../runtime-policy.js';
+import { runtimePolicy, privateRuntimeEnvironment } from '../runtime-policy.js';
+import { archiveFixture } from './_runtime-fixture.js';
 import { renderInstallerBootstrap } from '../../../scripts/render-installer-bootstrap.mjs';
 import { spawnFixture, stopOwnedChildren } from '../../daemon/tools/__tests__/_proc.js';
 const sha = (bytes: string | Buffer): string => createHash('sha256').update(bytes).digest('hex');
 const q = (text: string): string => "'" + text.replaceAll("'", "'\\''") + "'";
-async function archiveFixture(): Promise<string> {
-  if (process.platform !== 'darwin' && process.platform !== 'linux') throw new Error('POSIX fixture requires native Linux/macOS; Windows qualification is separate');
-  if (process.arch !== 'arm64' && process.arch !== 'x64') throw new Error('Unsupported fixture architecture');
-  const archive = runtimeArchive({ os: process.platform, arch: process.arch });
-  const cache = join(realpathSync(tmpdir()), `insrc-test-node-${archive.sha256}.tar.gz`);
-  if (existsSync(cache) && sha(readFileSync(cache)) === archive.sha256) return cache;
-  const bytes = await new Promise<Buffer>((resolve, reject) => {
-    const request = get(archive.url, response => {
-      if (response.statusCode !== 200) { response.resume(); reject(new Error('Official Node fixture download failed')); return; }
-      const chunks: Buffer[] = []; let length = 0;
-      response.on('data', (chunk: Buffer) => { length += chunk.length; if (length > 100 * 1024 * 1024) request.destroy(new Error('Fixture archive too large')); else chunks.push(chunk); });
-      response.on('error', reject); response.on('end', () => resolve(Buffer.concat(chunks)));
-    });
-    request.setTimeout(60_000, () => request.destroy(new Error('Fixture download timeout'))); request.on('error', reject);
-  });
-  assert.equal(sha(bytes), archive.sha256); writeFileSync(cache, bytes, { mode: 0o600 }); return cache;
-}
 async function runBootstrap(options: { corrupt?: boolean; wrongTarget?: boolean; missingTar?: boolean; trapNode?: boolean; cuda?: string; repeat?: boolean; tamper?: boolean } = {}) {
   const archive = await archiveFixture();
   const root = mkdtempSync(join(realpathSync(tmpdir()), 'insrc-bootstrap-')), children: ChildProcess[] = [];

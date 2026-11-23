@@ -23,6 +23,13 @@ export function copyInstallerAssets(source, destination) {
   copyFileSync(join(source, 'installer-assets.json'), join(destination, 'installer-assets.json'));
   return meta;
 }
+/** Shared path routing used by both real IDE packaging adapters. Byte staging
+ * preserves the publication label; only syncClientRuntimeAssets admits release inputs. */
+export function stageClientInstallerAssets(client, source, repositoryRoot = root) {
+  if (!['vscode', 'jetbrains'].includes(client)) throw new Error('expected vscode or jetbrains');
+  const destination = join(repositoryRoot, client === 'vscode' ? 'vscode-plugin/assets' : 'jetbrains-plugin/build/generated-resources/insrc');
+  copyInstallerAssets(source, destination); return destination;
+}
 export function syncClientRuntimeAssets(client, installerDirectory) {
   if (!['vscode', 'jetbrains'].includes(client)) throw new Error('expected vscode or jetbrains');
   const destination = join(root, client === 'vscode' ? 'vscode-plugin/assets' : 'jetbrains-plugin/build/generated-resources/insrc');
@@ -31,6 +38,6 @@ export function syncClientRuntimeAssets(client, installerDirectory) {
   mkdirSync(destination, { recursive: true });
   for (const name of ['insrc-daemon-install.sh', 'node-runtime-policy.json', 'install.sh', 'install.ps1', 'installer-assets.json']) rmSync(join(destination, name), { force: true });
   copyFileSync(join(root, 'src/prompts/steering-block.md'), join(destination, 'steering-block.md'));
-  if (installerDirectory) copyInstallerAssets(installerDirectory, destination);
+  if (installerDirectory) stageClientInstallerAssets(client, installerDirectory);
 }
 if (process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url))) syncClientRuntimeAssets(process.argv[2], process.env.INSRC_INSTALLER_ASSETS);

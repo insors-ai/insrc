@@ -3,24 +3,27 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync, symlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { createRun } from '../../../scripts/test-harness/context.mjs';
-import { withRun } from '../../../scripts/test-harness/process.mjs';
 import { fileURLToPath } from 'node:url';
 import { once } from 'node:events';
 import yauzl from 'yauzl';
-import { assembleFixtureRelease, assertManagerBoundary, collectProductionPayload, bundleControlEntrypoint } from '../../../scripts/package-installer.mjs';
+import { assembleFixtureRelease, assertManagerBoundary, collectProductionPayload } from '../../../scripts/package-installer.mjs';
 import { productionClosure, sha256 } from '../../../scripts/installer-payload.mjs';
-import { copyInstallerAssets } from '../../../scripts/sync-client-runtime-assets.mjs';
+import { node22Fixture } from './_runtime-fixture.js';
+import { spawnFixture, stopOwnedChildren } from '../../daemon/tools/__tests__/_proc.js';
+import type { ChildProcess } from 'node:child_process';
+import { copyInstallerAssets, stageClientInstallerAssets } from '../../../scripts/sync-client-runtime-assets.mjs';
 const manifest = { schemaVersion: 1, releaseId: 'fixture-release', sourceCommit: 'a'.repeat(40), target: { os: 'darwin', arch: 'arm64', baseline: 'macos-13' }, runtime: { version: '22.22.1', target: { os: 'darwin', arch: 'arm64', baseline: 'macos-13' }, sha256: sha256(Buffer.from('controlled runtime archive fixture')), relativeExecutable: 'bin/node' }, daemonEntry: 'out/daemon/index.js', managerEntry: 'manager.mjs', tuiEntry: 'out/cli/index.js', protocolVersion: 1, compatiblePredecessors: ['fixture-old'], migrations: [] };
-async function fixture(root: string) {
+async function fixture(root: string, os: 'darwin' | 'win32' = 'darwin') {
+  const target = { ...manifest.target, os, baseline: os === 'win32' ? 'windows-10' : 'macos-13' };
+  const specific = { ...manifest, target, runtime: { ...manifest.runtime, target, relativeExecutable: os === 'win32' ? 'node.exe' : 'bin/node' } };
   const files = new Map([
     ['out/daemon/index.js', { bytes: Buffer.from('// controlled daemon fixture'), mode: 0o644 }],
     ['out/cli/index.js', { bytes: Buffer.from('// controlled TUI fixture'), mode: 0o644 }],
     ['manager.mjs', { bytes: Buffer.from('// controlled manager fixture'), mode: 0o644 }],
     ['runtime/node.tar.gz', { bytes: Buffer.from('controlled runtime archive fixture'), mode: 0o644 }],
-    ['tools/node/bin/node', { bytes: Buffer.from('controlled runtime fixture'), mode: 0o755 }],
+    [os === 'win32' ? 'tools/node/node.exe' : 'tools/node/bin/node', { bytes: Buffer.from('controlled runtime fixture'), mode: 0o755 }],
   ]);
-  return { files, descriptor: await assembleFixtureRelease({ files, directory: join(root, 'release'), manifest, baseUrl: 'https://example.invalid/fixture-release', bootstrap: Buffer.from('// fixture bootstrap'), native: Buffer.from('fixture binding'), runtimeArchive: { path: 'runtime/node.tar.gz', sha256: sha256(Buffer.from('controlled runtime archive fixture')), bytes: Buffer.byteLength('controlled runtime archive fixture') } }) };
+  return { files, descriptor: await assembleFixtureRelease({ files, directory: join(root, 'release'), manifest: specific, baseUrl: 'https://example.invalid/fixture-release', bootstrap: Buffer.from('// fixture bootstrap'), native: Buffer.from('fixture binding'), runtimeArchive: { path: 'runtime/node.tar.gz', sha256: sha256(Buffer.from('controlled runtime archive fixture')), bytes: Buffer.byteLength('controlled runtime archive fixture') } }) };
 }
 async function readZip(path: string): Promise<Map<string, Buffer>> {
   const zip = await new Promise<yauzl.ZipFile>((resolve, reject) => yauzl.open(path, { lazyEntries: true, strictFileNames: true, validateEntrySizes: true }, (error, value) => error ? reject(error) : resolve(value!)));
@@ -85,13 +88,18 @@ test('bundled manager excludes DB indexer model imports and consumer npm build',
 test('published manual and both IDE installer script assets have exact byte parity', async () => {
   const root = mkdtempSync(join(tmpdir(), 'insrc-parity-'));
   try {
-    await fixture(root);
-    const source = join(root, 'release');
-    for (const client of ['vscode', 'jetbrains']) {
-      const destination = join(root, client, 'assets'); copyInstallerAssets(source, destination);
-      assert.deepEqual(readFileSync(join(destination, 'install.sh')), readFileSync(join(source, 'install.sh')));
-      assert.deepEqual(readFileSync(join(destination, 'installer-assets.json')), readFileSync(join(source, 'installer-assets.json')));
+    for (const os of ['darwin', 'win32'] as const) {
+      const platformRoot = join(root, os); mkdirSync(platformRoot); await fixture(platformRoot, os);
+      const source = join(platformRoot, 'release'), script = os === 'win32' ? 'install.ps1' : 'install.sh';
+      const published = join(source, `insrc-fixture-release-${os}-arm64.${script}`);
+      for (const client of ['vscode', 'jetbrains']) {
+        const destination = stageClientInstallerAssets(client, source, join(platformRoot, 'checkout'));
+        assert.equal(destination, join(platformRoot, 'checkout', client === 'vscode' ? 'vscode-plugin/assets' : 'jetbrains-plugin/build/generated-resources/insrc'));
+        assert.deepEqual(readFileSync(join(destination, script)), readFileSync(published));
+        assert.deepEqual(readFileSync(join(destination, 'installer-assets.json')), readFileSync(join(source, 'installer-assets.json')));
+      }
     }
+    const source = join(root, 'darwin/release');
     writeFileSync(join(source, 'install.sh'), 'changed');
     assert.throws(() => copyInstallerAssets(source, join(root, 'bad')), /digest mismatch/);
   } finally { rmSync(root, { recursive: true, force: true }); }
@@ -99,19 +107,15 @@ test('published manual and both IDE installer script assets have exact byte pari
 
 
 test('real bundler produces one dependency-minimal control fixture under owned build scope', async () => {
-  const root = mkdtempSync(join(tmpdir(), 'insrc-bundle-control-'));
+  const root = mkdtempSync(join(tmpdir(), 'insrc-bundle-control-')), children: ChildProcess[] = [];
+  const runtime = await node22Fixture();
   try {
     const contracts = fileURLToPath(new URL('../../../out/installer/contracts.js', import.meta.url));
     const zip = fileURLToPath(new URL('../../../node_modules/yauzl/index.js', import.meta.url));
     const entry = join(root, 'fixture.mjs'), output = join(root, 'control.mjs');
     writeFileSync(entry, `import {PRIVATE_NODE_VERSION} from ${JSON.stringify(contracts)};import yauzl from ${JSON.stringify(zip)};process.stdout.write(JSON.stringify({version:PRIVATE_NODE_VERSION,zip:typeof yauzl.open}));`);
-    const run = createRun(root, { mode: 'build' });
-    await withRun(run, async scope => {
-      const meta = await bundleControlEntrypoint(run, scope, entry, output);
-      assert.ok(Object.keys(meta.inputs).some((path: string) => path.includes('yauzl')));
-      const result = await scope.start(run.runtime.executable, [output]);
-      assert.equal(result.code, 0, readFileSync(result.log, 'utf8'));
-      assert.deepEqual(JSON.parse(readFileSync(result.log, 'utf8')), { version: '22.22.1', zip: 'function' });
-    });
-  } finally { rmSync(root, { recursive: true, force: true }); }
+    const child = spawnFixture(runtime.executable, [fileURLToPath(new URL('./publisher-bundle-fixture.mjs', import.meta.url)), root, entry, output], { stdio: ['ignore', 'pipe', 'pipe'] }); children.push(child);
+    let diagnostics = ''; child.stderr!.on('data', (bytes: Buffer) => { diagnostics += bytes; });
+    assert.deepEqual(await once(child, 'close'), [0, null], diagnostics);
+  } finally { await stopOwnedChildren(children); runtime.cleanup(); rmSync(root, { recursive: true, force: true }); }
 });

@@ -115,17 +115,25 @@ function mapPipAuditOutput(parsed: unknown, advisoryDestination: string): { matc
 	return { matches, cleanCoordinates, unresolvedCoordinates };
 }
 
-/** npm/pnpm's `audit --json` output: `{ vulnerabilities: { <pkgName>: { range, severity, via: [...] } } }`. */
+/** npm/pnpm's `audit --json` output: `{ vulnerabilities: { <pkgName>: { range, severity, via: [...] } } }`.
+ *  Each `via` entry is EITHER an advisory object OR a bare string naming another
+ *  vulnerable package this one depends on (npm's own "vulnerable via a dependency"
+ *  chain notation) -- a `via` array that is non-empty but contains only strings
+ *  still means this package IS vulnerable (transitively), just with no advisory
+ *  details of its own in this entry; it must never be reported as cleanly audited. */
 function mapNpmAuditOutput(parsed: unknown, advisoryDestination: string, provenance: string): { matches: SecurityAdvisoryMatch[]; cleanCoordinates: string[]; unresolvedCoordinates: string[] } | undefined {
 	if (!isRecord(parsed) || !isRecord(parsed.vulnerabilities)) { return undefined; }
 	const matches: SecurityAdvisoryMatch[] = [];
 	const cleanCoordinates: string[] = [];
+	const unresolvedCoordinates: string[] = [];
 	for (const [pkgName, rawInfo] of Object.entries(parsed.vulnerabilities)) {
 		if (!isRecord(rawInfo)) { continue; }
 		const range = typeof rawInfo.range === 'string' ? rawInfo.range : '';
 		const coordinate = `${pkgName}@${range}`;
-		const advisories = (Array.isArray(rawInfo.via) ? rawInfo.via : []).filter(isRecord);
-		if (advisories.length === 0) { cleanCoordinates.push(coordinate); continue; }
+		const via = Array.isArray(rawInfo.via) ? rawInfo.via : [];
+		const advisories = via.filter(isRecord);
+		if (via.length === 0) { cleanCoordinates.push(coordinate); continue; }
+		if (advisories.length === 0) { unresolvedCoordinates.push(coordinate); continue; }
 		for (const advisory of advisories) {
 			matches.push({
 				coordinate,
@@ -137,7 +145,7 @@ function mapNpmAuditOutput(parsed: unknown, advisoryDestination: string, provena
 			});
 		}
 	}
-	return { matches, cleanCoordinates, unresolvedCoordinates: [] };
+	return { matches, cleanCoordinates, unresolvedCoordinates };
 }
 
 /** cargo-audit's `--json` output: `{ vulnerabilities: { list: [ { package, advisory } ] } }`. cargo-audit does
@@ -207,23 +215,28 @@ export async function collectDependencyAdvisories(repoPath: string, targets: Rev
 
 	const { managers } = enumerateManagers(repoPath, targets);
 
-	// Buffered raw per-manager outcomes; reconciled into the exclusive
-	// matches/queriedCoordinates/unresolvedDependencies buckets only AFTER
-	// every manager has run (see the reconciliation below). Reconciling
-	// per-manager, as the audit loop runs, would miss a name that becomes
-	// unresolved in a LATER manager's directory after an EARLIER manager's
-	// directory already reported that same name as clean.
+	// A coordinate (manager-specific name@version string) is either a
+	// lockfile-export gap/version-uncertain pin (recorded directly into
+	// unresolvedDependencies, and -- for a lockfile-export exclusion --
+	// structurally never reaches pkg_audit's own output at all, since t5
+	// never writes it into the generated file) or one of pkg_audit's own
+	// actually-audited outcomes (clean, a confirmed finding, or itself
+	// unresolved per mapAuditOutput). The only EXACT-coordinate collision
+	// that can occur within pkg_audit's own output is the same literal
+	// coordinate string appearing as both a match and a clean report
+	// (duplicate/conflicting raw entries); that is deduplicated after the
+	// loop, below -- a confirmed finding always outranks a clean report of
+	// the IDENTICAL coordinate. A bare package NAME shared between an
+	// unresolved gap and an unrelated manager's own confirmed finding is
+	// never suppressed: different managers/ecosystems can share a package
+	// name without being the same coordinate (e.g. npm's and PyPI's own
+	// "flask" are different packages), and a real finding must never be
+	// dropped because of an unrelated input-fidelity note elsewhere.
 	const rawMatches: SecurityAdvisoryMatch[] = [];
 	const rawQueriedCoordinates: string[] = [];
 	const unresolvedDependencies: string[] = [];
 	const unavailableSources: string[] = [];
 	const perManagerMode: PerManagerModeEntry[] = [];
-	const unresolvedNames = new Set<string>();
-	const recordUnresolved = (entry: string): void => {
-		unresolvedDependencies.push(entry);
-		const name = entry.split(':')[0]?.trim().toLowerCase();
-		if (name !== undefined && name.length > 0) { unresolvedNames.add(name); }
-	};
 	let closureRegressed = false;
 
 	for (const { manager, manifestDir } of managers) {
@@ -245,7 +258,7 @@ export async function collectDependencyAdvisories(repoPath: string, targets: Rev
 				requirementsPath = exported.requirementsPath;
 				cleanupDir = dirname(exported.requirementsPath);
 				noDeps = true;
-				for (const gap of exported.unresolvedDependencies) { recordUnresolved(gap); }
+				unresolvedDependencies.push(...exported.unresolvedDependencies);
 			} catch (err) {
 				perManagerMode.push({ manager, mode: 'unsupported', configuredDestination });
 				unavailableSources.push(`${manager}: could not generate requirementsPath from its lockfile (${err instanceof Error ? err.message : String(err)})`);
@@ -253,7 +266,7 @@ export async function collectDependencyAdvisories(repoPath: string, targets: Rev
 			}
 		} else if (manager === 'pip') {
 			requirementsPath = `${manifestDir}/requirements.txt`;
-			for (const gap of findVersionUncertainPipRequirements(requirementsPath)) { recordUnresolved(gap); }
+			unresolvedDependencies.push(...findVersionUncertainPipRequirements(requirementsPath));
 		}
 
 		try {
@@ -272,8 +285,7 @@ export async function collectDependencyAdvisories(repoPath: string, targets: Rev
 					rawMatches.push(...mapped.matches);
 					rawQueriedCoordinates.push(...mapped.cleanCoordinates);
 					for (const coordinate of mapped.unresolvedCoordinates) {
-						const name = coordinate.split('@')[0] ?? coordinate;
-						recordUnresolved(`${name}: pip-audit did not report a result for this dependency (${coordinate})`);
+						unresolvedDependencies.push(`${coordinate}: pkg_audit did not report a definite result for this dependency`);
 					}
 				}
 			}
@@ -294,17 +306,13 @@ export async function collectDependencyAdvisories(repoPath: string, targets: Rev
 		contentStable = false;
 	}
 
-	// Reconcile now that every manager has run and unresolvedNames is
-	// complete: a name unresolved in ANY manager's directory is excluded from
-	// matches/queriedCoordinates everywhere, regardless of which manager ran
-	// first. A coordinate string that is BOTH a confirmed match and reported
-	// clean (duplicate/conflicting entries for the exact same coordinate) is
+	// A coordinate string that is BOTH a confirmed match and reported clean
+	// (duplicate/conflicting raw entries for the exact same coordinate) is
 	// kept only as a match -- a confirmed finding always outranks a "clean"
 	// report of the identical coordinate, never the reverse.
-	const nameOf = (coordinate: string): string => (coordinate.split('@')[0] ?? coordinate).toLowerCase();
-	const matches = rawMatches.filter(m => !unresolvedNames.has(nameOf(m.coordinate)));
+	const matches = rawMatches;
 	const matchedCoordinates = new Set(matches.map(m => m.coordinate));
-	const queriedCoordinates = [...new Set(rawQueriedCoordinates)].filter(c => !unresolvedNames.has(nameOf(c)) && !matchedCoordinates.has(c));
+	const queriedCoordinates = [...new Set(rawQueriedCoordinates)].filter(c => !matchedCoordinates.has(c));
 
 	return {
 		contentIdentity,

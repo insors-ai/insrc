@@ -205,7 +205,7 @@ test("collectDependencyAdvisories: pkg_audit spawnError for a manager still chec
 	}
 });
 
-test('collectDependencyAdvisories: a version-uncertain pip pin that is also cleanly audited is recorded ONLY in unresolvedDependencies, never also in queriedCoordinates', async () => {
+test('collectDependencyAdvisories: a version-uncertain pip pin is recorded in unresolvedDependencies as an input-fidelity gap, alongside (not instead of) the actually-audited coordinate in queriedCoordinates', async () => {
 	const repo = initRepo();
 	treatAsRegistered(repo);
 	try {
@@ -213,22 +213,25 @@ test('collectDependencyAdvisories: a version-uncertain pip pin that is also clea
 		_setPkgAuditExecuteForTests(async () => okResult({ manager: 'pip', exitCode: 0, parsed: { dependencies: [{ name: 'flask', version: '2.1.0', vulns: [] }] } }));
 		const result = await collectDependencyAdvisories(repo, { entries: [{ path: 'app.ts' }, { path: 'requirements.txt' }] });
 		assert.ok(result.unresolvedDependencies.some(d => d.toLowerCase().includes('flask')), JSON.stringify(result.unresolvedDependencies));
-		assert.ok(!result.queriedCoordinates.some(c => c.toLowerCase().includes('flask')), JSON.stringify(result.queriedCoordinates));
-		assert.ok(!result.matches.some(m => m.coordinate.toLowerCase().includes('flask')), JSON.stringify(result.matches));
+		// The gap note is about input-pinning fidelity (the requirement was a
+		// range, not an exact pin); it does not contradict pip-audit's own
+		// clean report of whatever version it actually resolved and checked --
+		// the two are different, non-conflicting facts about the same package.
+		assert.ok(result.queriedCoordinates.includes('flask@2.1.0'), JSON.stringify(result.queriedCoordinates));
 	} finally {
 		cleanup(repo);
 	}
 });
 
-test('collectDependencyAdvisories: a coordinate reported clean by an EARLIER-audited manager is still excluded from queriedCoordinates if a LATER manager marks the same package name unresolved', async () => {
+test("collectDependencyAdvisories: a confirmed match is NEVER suppressed because an UNRELATED manager's directory recorded an unresolved gap for the same bare package name (different ecosystems can share a name without being the same coordinate)", async () => {
 	const repo = initRepo();
 	treatAsRegistered(repo);
 	try {
-		// npm (at the repo root, audited first since enumerateManagers processes
-		// a directory's own managers before descending into subdirectories)
-		// reports 'flask' clean; a pip requirements.txt in a subdirectory uses a
-		// version range for 'flask', recording it unresolved. The two managers'
-		// outcomes for the same package name must not disagree in the final result.
+		// npm (at the repo root) reports a REAL confirmed vulnerability for its
+		// own 'flask'-named package; a pip requirements.txt in a subdirectory
+		// uses an unpinned range for PyPI's unrelated 'flask' package, recording
+		// an input-fidelity gap. The two are different packages in different
+		// ecosystems and must never be conflated.
 		writeFileSync(join(repo, 'package.json'), '{}\n');
 		writeFileSync(join(repo, 'package-lock.json'), '{}\n');
 		mkdirSync(join(repo, 'sub'));
@@ -237,12 +240,12 @@ test('collectDependencyAdvisories: a coordinate reported clean by an EARLIER-aud
 		execFileSync('git', ['commit', '-q', '-m', 'add managers'], { cwd: repo });
 		_setPkgAuditExecuteForTests(async (input: ToolInput) => {
 			if (input['manager'] === 'npm') {
-				return okResult({ manager: 'npm', exitCode: 0, parsed: { vulnerabilities: { flask: { range: '2.0.0', via: [] } } } });
+				return okResult({ manager: 'npm', exitCode: 0, parsed: { vulnerabilities: { flask: { range: '2.0.0', via: [{ source: 1, severity: 'high', url: 'https://example.com/advisory' }] } } } });
 			}
 			return okResult({ manager: 'pip', exitCode: 0, parsed: { dependencies: [] } });
 		});
 		const result = await collectDependencyAdvisories(repo, { entries: [{ path: 'app.ts' }, { path: 'package.json' }, { path: 'package-lock.json' }, { path: 'sub/requirements.txt' }] });
-		assert.ok(!result.queriedCoordinates.some(c => c.toLowerCase().startsWith('flask')), JSON.stringify(result.queriedCoordinates));
+		assert.ok(result.matches.some(m => m.coordinate === 'flask@2.0.0'), JSON.stringify(result.matches));
 		assert.ok(result.unresolvedDependencies.some(d => d.toLowerCase().includes('flask')), JSON.stringify(result.unresolvedDependencies));
 	} finally {
 		cleanup(repo);
@@ -259,7 +262,7 @@ test("collectDependencyAdvisories: a pip-audit dependency entry with no 'vulns' 
 			parsed: { dependencies: [{ name: 'flask', version: '2.0.0' }, { name: 'requests', version: '2.25.1', vulns: [{ id: 'PYSEC-1' }] }] },
 		}));
 		const result = await collectDependencyAdvisories(repo, { entries: [{ path: 'app.ts' }, { path: 'requirements.txt' }] });
-		assert.ok(result.unresolvedDependencies.some(d => d.toLowerCase().startsWith('flask:')), JSON.stringify(result.unresolvedDependencies));
+		assert.ok(result.unresolvedDependencies.some(d => d.toLowerCase().startsWith('flask@')), JSON.stringify(result.unresolvedDependencies));
 		assert.ok(result.matches.some(m => m.coordinate === 'requests@2.25.1'), JSON.stringify(result.matches));
 	} finally {
 		cleanup(repo);
@@ -281,6 +284,27 @@ test('collectDependencyAdvisories: the exact same coordinate reported BOTH clean
 		const result = await collectDependencyAdvisories(repo, { entries: [{ path: 'app.ts' }, { path: 'requirements.txt' }] });
 		assert.ok(result.matches.some(m => m.coordinate === 'requests@2.25.1'), JSON.stringify(result.matches));
 		assert.ok(!result.queriedCoordinates.includes('requests@2.25.1'), JSON.stringify(result.queriedCoordinates));
+	} finally {
+		cleanup(repo);
+	}
+});
+
+test("collectDependencyAdvisories: an npm audit entry whose 'via' names only OTHER vulnerable packages (no advisory objects of its own) is unresolved, never reported as cleanly audited", async () => {
+	const repo = initRepo();
+	treatAsRegistered(repo);
+	try {
+		writeFileSync(join(repo, 'package.json'), '{}\n');
+		writeFileSync(join(repo, 'package-lock.json'), '{}\n');
+		_setPkgAuditExecuteForTests(async () => okResult({
+			manager: 'npm', exitCode: 0,
+			// npm's own "transitively vulnerable via another package" shape:
+			// via contains only a bare dependency-name STRING, no advisory object.
+			parsed: { vulnerabilities: { lodash: { range: '4.0.0', via: ['some-other-package'] } } },
+		}));
+		const result = await collectDependencyAdvisories(repo, { entries: [{ path: 'app.ts' }, { path: 'package.json' }, { path: 'package-lock.json' }] });
+		assert.ok(!result.queriedCoordinates.some(c => c.startsWith('lodash@')), JSON.stringify(result.queriedCoordinates));
+		assert.ok(!result.matches.some(m => m.coordinate.startsWith('lodash@')), JSON.stringify(result.matches));
+		assert.ok(result.unresolvedDependencies.some(d => d.includes('lodash@4.0.0')), JSON.stringify(result.unresolvedDependencies));
 	} finally {
 		cleanup(repo);
 	}

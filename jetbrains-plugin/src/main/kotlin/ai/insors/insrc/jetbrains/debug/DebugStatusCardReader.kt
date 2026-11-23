@@ -37,7 +37,7 @@ data class DebugStatusCardModel(
 class DebugStatusCardReader(
     private val status: () -> DaemonStatusResult = { service<DaemonGatewayService>().daemonStatus() },
     private val socketPath: () -> String = { DaemonSocket.defaultPath().toString() },
-    private val pid: () -> Long? = { OrphanProcessSeam.pidFromDaemonPidFile() },
+    private val pid: () -> Long? = { try { Files.readString(Path.of(System.getProperty("user.home"), ".insrc", "daemon.pid")).trim().toLongOrNull() } catch (_: Exception) { null } },
     private val version: () -> String? = { daemonPackageVersion() },
 ) {
 
@@ -70,7 +70,7 @@ class DebugStatusCardReader(
     companion object {
         /** Best-effort installed-daemon version from `<DAEMON_ROOT>/package.json` (mirrors debug.ts readVersion). */
         fun daemonPackageVersion(): String? {
-            val pkg: Path = OrphanProcessSeam.defaultDaemonRoot().resolve("package.json")
+            val pkg: Path = Path.of(System.getenv("INSRC_DAEMON_ROOT") ?: (System.getProperty("user.home") + "/.insrc/daemon")).resolve("package.json")
             return try {
                 if (!Files.isRegularFile(pkg)) return null
                 val obj = com.google.gson.JsonParser.parseString(Files.readString(pkg))

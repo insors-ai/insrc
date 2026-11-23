@@ -56,7 +56,7 @@ class ModelCheckDialog(
     private val effortBoxes = mutableListOf<JCheckBox>()
     private val approveButton = JButton("Approve")
     private val rejectButton = JButton("Reject")
-    private val restartButton = JButton("Restart daemon")
+    private val refreshButton = JButton("Refresh definitions")
     private val message = JLabel(" ")
 
     init {
@@ -65,8 +65,8 @@ class ModelCheckDialog(
         checkButton.addActionListener { onCheck() }
         approveButton.addActionListener { blocking("Recording the approval…") { flow.approve(effortBoxes.filter { it.isSelected }.map { it.text }) } }
         rejectButton.addActionListener { blocking("Recording the rejection…") { flow.reject() } }
-        restartButton.addActionListener {
-            blocking("Restarting the daemon…") { flow.restartAndReload()?.let { reloaded = it } }
+        refreshButton.addActionListener {
+            blocking("Reading model definitions…") { flow.reloadDefinitions()?.let { reloaded = it } }
         }
         init()
         render()
@@ -82,7 +82,7 @@ class ModelCheckDialog(
         panel.add(row(JLabel("Model id"), modelField, checkButton))
         panel.add(row(result))
         panel.add(row(JLabel("Allow efforts"), effortsPanel))
-        panel.add(row(approveButton, rejectButton, restartButton))
+        panel.add(row(approveButton, rejectButton, refreshButton))
         panel.add(row(message))
         return panel
     }
@@ -127,7 +127,7 @@ class ModelCheckDialog(
         effortsPanel.revalidate()
         approveButton.isEnabled = flow.canApprove()
         rejectButton.isEnabled = flow.canReject()
-        restartButton.isVisible = flow.restartPending
+        refreshButton.isVisible = flow.restartPending
         checkButton.text = if (flow.checkAgain) "Check again" else "Check"
         message.text = flow.message ?: " "
     }

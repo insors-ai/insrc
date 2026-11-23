@@ -10,7 +10,6 @@ import ai.insors.insrc.jetbrains.daemon.RegisteredReposResult
 import ai.insors.insrc.jetbrains.daemon.RepoSettingsResult
 import ai.insors.insrc.jetbrains.daemon.SaveResult
 import ai.insors.insrc.jetbrains.daemon.SettingsCatalogResult
-import ai.insors.insrc.jetbrains.lifecycle.DaemonLifecycleCommandRunner
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.components.service
@@ -172,29 +171,7 @@ class InsrcSettingsConfigurable : Configurable {
         for (path in saved) m?.onSaved(path)
         refreshTables()
         // Back on the EDT, outside the save loop: one restart offer, then the failures.
-        finishApply(restartRequired, failures) { offerRestart(gateway) }
-    }
-
-    /**
-     * Offer one daemon restart for saved settings that need it (Epic ce99b72065d03b1b s7).
-     * Yes restarts the daemon under a progress indicator and confirms it answers; the
-     * outcome is reported.
-     */
-    private fun offerRestart(gateway: DaemonGateway) {
-        val answer = Messages.showYesNoDialog(
-            "Some saved settings take effect after a daemon restart. Restart the insrc daemon now?",
-            "insrc",
-            "Restart Daemon",
-            "Later",
-            Messages.getQuestionIcon(),
-        )
-        if (answer != Messages.YES) return
-        var failure: String? = null
-        ProgressManager.getInstance().runProcessWithProgressSynchronously({
-            failure = DaemonRestart({ DaemonLifecycleCommandRunner.production().run(it) }, gateway).restart()
-        }, "Restarting the insrc daemon…", false, null)
-        val reason = failure
-        if (reason == null) Messages.showInfoMessage("The insrc daemon restarted.", "insrc") else Messages.showErrorDialog(reason, "insrc")
+        finishApply(restartRequired, failures) { Messages.showInfoMessage("Saved settings apply on the next daemon launch.", "insrc") }
     }
 
     /** Revert every field + section to its last-saved value and re-seed the tables. */

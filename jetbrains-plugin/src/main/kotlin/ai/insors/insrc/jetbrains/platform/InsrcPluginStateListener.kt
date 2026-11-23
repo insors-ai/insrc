@@ -4,9 +4,7 @@ import ai.insors.insrc.jetbrains.InsrcPlugin
 import ai.insors.insrc.jetbrains.LifecycleBroadcaster
 import ai.insors.insrc.jetbrains.PluginStateEvent
 import ai.insors.insrc.jetbrains.UninstallPolicy
-import ai.insors.insrc.jetbrains.freshness.InstalledCommitFreshnessConsumer
 import ai.insors.insrc.jetbrains.host.McpWiringLifecycle
-import ai.insors.insrc.jetbrains.lifecycle.DaemonLifecycleService
 import ai.insors.insrc.jetbrains.onboarding.OnboardingLifecycle
 import ai.insors.insrc.jetbrains.steering.SteeringInjectionLifecycle
 import com.intellij.ide.plugins.IdeaPluginDescriptor
@@ -102,11 +100,9 @@ internal object AppScopedConsumers {
     fun ensureRegistered() = guard.run {
         PluginInstaller.addStateListener(InsrcPluginStateListener())
         LifecycleBroadcaster.register(McpWiringLifecycle())
-        LifecycleBroadcaster.register(DaemonLifecycleService.production())
         LifecycleBroadcaster.register(SteeringInjectionLifecycle())
         LifecycleBroadcaster.register(OnboardingLifecycle.production())
         // S004: keep the backing daemon current (git-commit freshness check + self-update).
-        LifecycleBroadcaster.register(InstalledCommitFreshnessConsumer.production())
     }
 
     /**

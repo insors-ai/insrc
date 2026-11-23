@@ -4,8 +4,6 @@ import ai.insors.insrc.jetbrains.daemon.DaemonActionResult
 import ai.insors.insrc.jetbrains.daemon.DaemonGatewayService
 import ai.insors.insrc.jetbrains.daemon.DaemonStatusDto
 import ai.insors.insrc.jetbrains.daemon.DaemonStatusResult
-import ai.insors.insrc.jetbrains.daemon.LifecycleCommand
-import ai.insors.insrc.jetbrains.lifecycle.DaemonLifecycleCommandRunner
 import ai.insors.insrc.jetbrains.ui.InsrcCollapsible
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
@@ -32,7 +30,6 @@ import javax.swing.JPanel
 class DaemonConfigurable : InsrcOpsConfigurable() {
 
     private val gateway get() = service<DaemonGatewayService>()
-    private val runner: DaemonLifecycleCommandRunner by lazy { DaemonLifecycleCommandRunner.production() }
 
     override fun pageTitle(): String = "Daemon"
 
@@ -52,7 +49,6 @@ class DaemonConfigurable : InsrcOpsConfigurable() {
         val refresh = { renderStatus(statusHolder, readStatusWithProgress()) }
 
         column.add(InsrcCollapsible.collapsiblePanel("Health", statusHolder))
-        column.add(InsrcCollapsible.collapsiblePanel("Lifecycle", lifecyclePanel(refresh)))
         column.add(InsrcCollapsible.collapsiblePanel("Maintenance", maintenancePanel(refresh)))
         return column
     }
@@ -89,15 +85,6 @@ class DaemonConfigurable : InsrcOpsConfigurable() {
 
     private fun row(label: String, value: String): JComponent =
         JLabel("$label: $value").apply { alignmentX = Component.LEFT_ALIGNMENT }
-
-    /** Start / Stop / Restart / Update. */
-    private fun lifecyclePanel(refresh: () -> Unit): JComponent =
-        buttonRow(
-            actionButton("Start", refresh) { runner.run(LifecycleCommand.START) },
-            actionButton("Stop", refresh) { gateway.shutdown() },
-            actionButton("Restart", refresh) { runner.run(LifecycleCommand.RESTART) },
-            actionButton("Update", refresh) { runner.run(LifecycleCommand.UPDATE) },
-        )
 
     /** Backup (asks where to write) / Compact. */
     private fun maintenancePanel(refresh: () -> Unit): JComponent {

@@ -80,13 +80,10 @@ class DaemonGatewayService : DaemonGateway {
 
     override fun debugStatus(): DebugStatusResult = delegate.debugStatus()
 
-    override fun shutdown(): DaemonActionResult = delegate.shutdown()
 
     override fun backup(targetDir: String): DaemonActionResult = delegate.backup(targetDir)
 
     override fun compact(): DaemonActionResult = delegate.compact()
 
-    override fun update(): DaemonActionResult = delegate.update()
 
-    override fun updateOutcome(): DaemonUpdateOutcomeResult = delegate.updateOutcome()
 }

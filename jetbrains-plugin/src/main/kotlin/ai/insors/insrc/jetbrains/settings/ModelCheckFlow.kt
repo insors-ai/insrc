@@ -1,34 +1,12 @@
 package ai.insors.insrc.jetbrains.settings
 
-import ai.insors.insrc.jetbrains.daemon.DaemonActionResult
 import ai.insors.insrc.jetbrains.daemon.DaemonGateway
-import ai.insors.insrc.jetbrains.daemon.DaemonStatusResult
 import ai.insors.insrc.jetbrains.daemon.DefinedFamilyDto
-import ai.insors.insrc.jetbrains.daemon.LifecycleCommand
 import ai.insors.insrc.jetbrains.daemon.ModelCheckDto
 import ai.insors.insrc.jetbrains.daemon.ModelCheckOutcome
 import ai.insors.insrc.jetbrains.daemon.ModelDecisionResult
 import ai.insors.insrc.jetbrains.daemon.ModelDefinitionsDto
 import ai.insors.insrc.jetbrains.daemon.ModelDefinitionsResult
-
-/**
- * Restart the daemon and confirm it is running again (Epic ce99b72065d03b1b, Story s7).
- * [run] is the lifecycle command (DaemonLifecycleCommandRunner.run in production); only a
- * restart whose status read then answers counts. Returns null on success, else the reason.
- */
-class DaemonRestart(
-    private val run: (LifecycleCommand) -> DaemonActionResult,
-    private val gateway: DaemonGateway,
-) {
-    fun restart(): String? = when (val r = run(LifecycleCommand.RESTART)) {
-        is DaemonActionResult.Failed -> "the daemon did not restart — ${r.reason}"
-        is DaemonActionResult.Ok -> when (val status = gateway.daemonStatus()) {
-            is DaemonStatusResult.Loaded -> null
-            DaemonStatusResult.Stopped -> "the daemon is not running after the restart"
-            is DaemonStatusResult.Unavailable -> "the daemon did not answer after the restart — ${status.reason}"
-        }
-    }
-}
 
 /**
  * The headless controller behind the Check model… dialog (Epic ce99b72065d03b1b, Story s7;
@@ -41,7 +19,6 @@ class DaemonRestart(
 class ModelCheckFlow(
     private val gateway: DaemonGateway,
     private var definitions: ModelDefinitionsDto,
-    private val restarter: DaemonRestart,
 ) {
     /** The check being decided, if any. */
     var check: ModelCheckDto? = null
@@ -51,7 +28,7 @@ class ModelCheckFlow(
     var message: String? = null
         private set
 
-    /** True after an approval was recorded, until a restart confirms it. */
+    /** True after an approval was recorded, until the runtime loads the approved model. */
     var restartPending: Boolean = false
         private set
 
@@ -115,9 +92,9 @@ class ModelCheckFlow(
             ModelDecisionResult.Recorded -> {
                 restartPending = approve
                 message = if (approve) {
-                    "Approved ${c.modelId} — it can be used after a daemon restart"
+                    "Approved ${c.modelId} — it can be used on the next daemon launch"
                 } else {
-                    "Rejected ${c.modelId} — recorded; it applies after a daemon restart"
+                    "Rejected ${c.modelId} — recorded; it applies on the next daemon launch"
                 }
             }
             is ModelDecisionResult.Refused -> {
@@ -137,22 +114,18 @@ class ModelCheckFlow(
      * Returns the fresh definitions (in which an approved model is now listed), or null
      * with [message] saying why. Blocks.
      */
-    fun restartAndReload(): ModelDefinitionsDto? {
-        restarter.restart()?.let {
-            message = it
-            return null
-        }
+    fun reloadDefinitions(): ModelDefinitionsDto? {
         restartPending = false
         return when (val r = gateway.modelDefinitions()) {
             is ModelDefinitionsResult.Loaded -> {
                 definitions = r.definitions
                 val c = check
                 val listed = c != null && r.definitions.families.any { f -> f.id == c.family && f.models.any { it.id == c.modelId } }
-                message = if (listed) "The daemon restarted; ${c!!.modelId} can now be picked for a tier" else "The daemon restarted"
+                message = if (listed) "Definitions refreshed; ${c!!.modelId} can now be picked for a tier" else "Definitions refreshed"
                 r.definitions
             }
             is ModelDefinitionsResult.Failed -> {
-                message = "the daemon restarted but its model definitions could not be read — ${r.failure.text}"
+                message = "model definitions could not be read — ${r.failure.text}"
                 null
             }
         }

@@ -516,7 +516,6 @@ data class DaemonStatusDto(
      * pre-S002 daemon that does not emit the field, or a non-git root). The freshness
      * flow compares it against the upstream default-branch commit (k1). Additive.
      */
-    val installedCommit: String = "",
     /**
      * Present only when the graph store has failed in the daemon's process (Epic
      * c2ba6fa6, Story s4): the `cause` sentence of the payload's optional
@@ -592,42 +591,11 @@ sealed interface DebugStatusResult {
  */
 sealed interface DaemonActionResult {
     /** The action succeeded; [message] is an optional human summary. */
-    data class Ok(val message: String? = null, val updateId: String? = null) : DaemonActionResult
+    data class Ok(val message: String? = null) : DaemonActionResult
 
     /** The action did not succeed; [reason] is a user-facing explanation. */
-    data class Failed(val reason: String, val acknowledgementLost: Boolean = false) : DaemonActionResult
+    data class Failed(val reason: String) : DaemonActionResult
 }
-
-/**
- * The terminal outcome of a daemon self-update (Story S004 / sc1) read back over the
- * `daemon.updateOutcome` IPC after the update+restart. THREE states, mirroring the
- * sc2 [DaemonStatusResult] idiom: [Loaded] carries the persisted record ([state] =
- * "succeeded"|"failed", [error] the raw failure summary, [finishedAt] the ISO-8601
- * completion time); [None] when the daemon has no outcome record yet (still
- * restarting — the reconnect loop keeps polling); [Unavailable] when the socket is
- * unreachable or the reply is malformed. Never throws. The freshness flow treats a
- * [Loaded] outcome as authoritative for the acknowledged update ID, or for a
- * legacy reply whose timestamp is at or after the launch.
- */
-sealed interface DaemonUpdateOutcomeResult {
-    /** The daemon has a persisted terminal outcome. */
-    data class Loaded(val state: String, val error: String?, val finishedAt: String, val updateId: String? = null) : DaemonUpdateOutcomeResult
-
-    /** No outcome record exists yet (the daemon is still restarting). */
-    data object None : DaemonUpdateOutcomeResult
-
-    /** The daemon is unreachable or returned a malformed reply; [reason] explains. */
-    data class Unavailable(val reason: String) : DaemonUpdateOutcomeResult
-}
-
-/**
- * The daemon-ctl.sh subcommands the S002 lifecycle-command runner drives (Story
- * E2026092157298940:S002). START/RESTART/UPDATE only — Stop is served by the
- * daemon.shutdown IPC and backup/compact by their IPCs. DISTINCT from the S003-owned
- * [ProvisionKind][ai.insors.insrc.jetbrains.lifecycle.ProvisionKind] (INSTALL|UPDATE),
- * which is not touched.
- */
-enum class LifecycleCommand { START, RESTART, UPDATE }
 
 /**
  * Per-file steering selection carried on the `repo.add` IPC (Story
@@ -850,14 +818,6 @@ interface DaemonGateway {
     fun debugStatus(): DebugStatusResult
 
     /**
-     * Request a graceful daemon stop over the `daemon.shutdown` IPC (Story
-     * E2026092157298940:S002) — the daemon terminates itself. Returns
-     * [DaemonActionResult.Ok] on success (or when the daemon was already down),
-     * [DaemonActionResult.Failed] on a framed error / malformed reply. Never throws.
-     */
-    fun shutdown(): DaemonActionResult
-
-    /**
      * Back up the daemon's stores to [targetDir] over the `daemon.backup` IPC (Story
      * E2026092157298940:S002) — [targetDir] is forwarded as the required `path` param.
      * Returns [DaemonActionResult.Ok] on success, [DaemonActionResult.Failed] on a
@@ -872,27 +832,6 @@ interface DaemonGateway {
      * the indexer is busy, or on any framed error / unreachable daemon. Never throws.
      */
     fun compact(): DaemonActionResult
-
-    /**
-     * Ask the daemon to update AND restart itself over the daemon-owned `daemon.update`
-     * IPC (Story S004 / sc1). This is a LAUNCH acknowledgement, NOT the terminal
-     * outcome: the daemon spawns a detached update+restart helper and then exits, so the
-     * caller's socket drops and it must reconnect. Returns [DaemonActionResult.Ok] when
-     * the helper was launched, [DaemonActionResult.Failed] when the launch was refused
-     * (e.g. an update already in progress) or the daemon was unreachable. Consumes the
-     * daemon-owned IPC — NEVER the daemon-ctl.sh shell-out (k2). Never throws.
-     */
-    fun update(): DaemonActionResult
-
-    /**
-     * Read the last persisted daemon self-update outcome over the `daemon.updateOutcome`
-     * IPC (Story S004 / sc1) — the terminal succeeded/failed record the freshness flow
-     * reads during reconnect-and-confirm. Returns [DaemonUpdateOutcomeResult.Loaded] with
-     * the record, [DaemonUpdateOutcomeResult.None] when none exists yet (still
-     * restarting), or [DaemonUpdateOutcomeResult.Unavailable] when the daemon is
-     * unreachable / the reply is malformed. Never throws.
-     */
-    fun updateOutcome(): DaemonUpdateOutcomeResult
 
     /**
      * Read the daemon's model definitions (Epic ce99b72065d03b1b, s7; sc3
@@ -1387,12 +1326,6 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
             DebugStatusResult.Unavailable(e.message ?: "unexpected daemon fault")
         }
 
-    override fun shutdown(): DaemonActionResult =
-        // Graceful stop: the daemon.shutdown handler returns {ok:true} then terminates
-        // itself. A DaemonUnavailableException means the socket is already down => the
-        // daemon is already stopped, which is success for a Stop action.
-        runAction(METHOD_SHUTDOWN, emptyMap(), unreachableAsOk = true, okMessage = "daemon stopped")
-
     override fun backup(targetDir: String): DaemonActionResult =
         // daemon.backup requires a non-empty `path`; the page has already prompted for it.
         runAction(METHOD_BACKUP, mapOf(PARAM_PATH to targetDir), okMessage = "backup written to $targetDir")
@@ -1402,54 +1335,21 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
         // forwards that reason verbatim as Failed.
         runAction(METHOD_COMPACT, emptyMap(), okMessage = "index compacted")
 
-    override fun update(): DaemonActionResult =
-        // sc1 (S004): launch the daemon-owned update+restart. An ok reply means the
-        // detached helper was spawned (the daemon then restarts, dropping this socket);
-        // a framed error (e.g. 'update already in progress') / unreachable daemon -> Failed.
-        // runAction reaches the daemon-owned IPC ONLY — never a daemon-ctl.sh shell-out (k2).
-        runAction(METHOD_UPDATE, emptyMap(), okMessage = "daemon update launched")
-
-    override fun updateOutcome(): DaemonUpdateOutcomeResult =
-        try {
-            // sc1 (S004): read the terminal succeeded/failed record. An unreachable socket
-            // (still restarting) -> Unavailable; a framed error/malformed reply -> Unavailable;
-            // a null/absent record -> None; else the parsed Loaded. Never throws.
-            val r = rpc.call(METHOD_UPDATE_OUTCOME, emptyMap())
-            if (!r.ok || r.error != null) {
-                DaemonUpdateOutcomeResult.Unavailable(r.error ?: "daemon.updateOutcome returned an error")
-            } else {
-                parseUpdateOutcome(r.data)
-            }
-        } catch (e: DaemonUnavailableException) {
-            // Reachable-negative mid-restart: not a terminal failure — the reconnect loop retries.
-            DaemonUpdateOutcomeResult.Unavailable(e.message ?: "the daemon is not running")
-        } catch (e: RuntimeException) {
-            DaemonUpdateOutcomeResult.Unavailable(e.message ?: "unexpected daemon fault")
-        }
-
-    /**
-     * Shared classification for the fire-and-report action IPCs (backup/compact/shutdown),
-     * mirroring the repoStats()/daemonStatus() sealed-result idiom: an ok reply -> Ok, a
-     * framed error (!ok || error) -> Failed(reason), a RuntimeException -> Failed; never
-     * throws. [unreachableAsOk] treats a DaemonUnavailableException as Ok (used by
-     * shutdown, where an already-down socket means already-stopped).
-     */
+    /** Shared result classification for backup and compact; transport failures remain failures. */
     private fun runAction(
         method: String,
         params: Map<String, Any?>,
-        unreachableAsOk: Boolean = false,
         okMessage: String? = null,
     ): DaemonActionResult =
         try {
             val r = rpc.call(method, params)
-            if (!r.ok || r.error != null || (method == METHOD_UPDATE && r.data["launched"] == false)) {
+            if (!r.ok || r.error != null) {
                 DaemonActionResult.Failed(r.error ?: "$method returned an error")
             } else {
-                DaemonActionResult.Ok(okMessage, if (method == METHOD_UPDATE) r.data["updateId"] as? String else null)
+                DaemonActionResult.Ok(okMessage)
             }
         } catch (e: DaemonUnavailableException) {
-            if (unreachableAsOk) DaemonActionResult.Ok(okMessage)
-            else DaemonActionResult.Failed(e.message ?: "the daemon is not running", method == METHOD_UPDATE && e.requestWritten)
+            DaemonActionResult.Failed(e.message ?: "the daemon is not running")
         } catch (e: RuntimeException) {
             DaemonActionResult.Failed(e.message ?: "unexpected daemon fault")
         }
@@ -1520,12 +1420,9 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
         const val METHOD_MODELS_REJECT = "models.reject"
         const val METHOD_STATUS = "daemon.status"
         const val METHOD_DEBUG_STATUS = "daemon.debug-status"
-        const val METHOD_SHUTDOWN = "daemon.shutdown"
         const val METHOD_BACKUP = "daemon.backup"
         const val METHOD_COMPACT = "daemon.compact"
         // sc1 (S004): the daemon-owned update+restart IPC + its terminal-outcome read.
-        const val METHOD_UPDATE = "daemon.update"
-        const val METHOD_UPDATE_OUTCOME = "daemon.updateOutcome"
         const val METHOD_REPO_LIST = "repo.list"
         const val METHOD_REPO_ADD = "repo.add"
         const val METHOD_WORKFLOW_PENDING = "workflow.pending"
@@ -1729,7 +1626,6 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
             lmdbFileSizeMb = (data["lmdbFileSizeMb"] as? Number)?.toInt(),
             repoCount = (data["repos"] as? Collection<*>)?.size ?: 0,
             // sc2 (S004): the daemon's installed commit; absent on a pre-S002 daemon -> "".
-            installedCommit = (data["installedCommit"] as? String) ?: "",
             // s4: optional; absent while the store is healthy -> null. ANY present
             // storeFailure object means the store failed: a missing or blank cause
             // falls back to its kind, so a failure is never shown as healthy.
@@ -1738,24 +1634,6 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
                     ?: "the graph store failed (${(f["kind"] as? String)?.takeIf { it.isNotBlank() } ?: "unknown cause"})"
             },
         )
-
-        /**
-         * Parse the `daemon.updateOutcome` reply (Story S004 / sc1). A record with a
-         * `state` field -> [DaemonUpdateOutcomeResult.Loaded] (error/finishedAt tolerated
-         * as absent-null/empty); an empty/absent record (the daemon returns null when no
-         * outcome is persisted yet) -> [DaemonUpdateOutcomeResult.None]. Never throws on a
-         * shape mismatch.
-         */
-        internal fun parseUpdateOutcome(data: Map<String, Any?>): DaemonUpdateOutcomeResult {
-            val state = (data["state"] as? String)?.takeIf { it == "succeeded" || it == "failed" }
-                ?: return DaemonUpdateOutcomeResult.None
-            return DaemonUpdateOutcomeResult.Loaded(
-                state = state,
-                error = (data["error"] as? String),
-                finishedAt = (data["finishedAt"] as? String) ?: "",
-                updateId = data["updateId"] as? String,
-            )
-        }
 
         /**
          * Parse the `daemon.debug-status` reply's `clients[]` into [AttachedSessionDto]s

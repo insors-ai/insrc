@@ -5274,10 +5274,11 @@
       "preserve": "Keep gateway and other enums/DTOs.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "05975b24dcdd352d2ab60ef720cf3f1dd2f327fd4132197ff438d0e32f2a6a14",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "enum class LifecycleCommand { START, RESTART, UPDATE }",
-      "observedSourceSha256": "05975b24dcdd352d2ab60ef720cf3f1dd2f327fd4132197ff438d0e32f2a6a14"
+      "observedSourceSha256": "05975b24dcdd352d2ab60ef720cf3f1dd2f327fd4132197ff438d0e32f2a6a14",
+      "task": "t6"
     },
     {
       "id": "M093",
@@ -5291,10 +5292,11 @@
       "preserve": "Keep generic DaemonActionResult for backup and compact.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "05975b24dcdd352d2ab60ef720cf3f1dd2f327fd4132197ff438d0e32f2a6a14",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "sealed interface DaemonUpdateOutcomeResult {",
-      "observedSourceSha256": "05975b24dcdd352d2ab60ef720cf3f1dd2f327fd4132197ff438d0e32f2a6a14"
+      "observedSourceSha256": "05975b24dcdd352d2ab60ef720cf3f1dd2f327fd4132197ff438d0e32f2a6a14",
+      "task": "t6"
     },
     {
       "id": "M094",
@@ -5308,10 +5310,11 @@
       "preserve": "Keep backup/compact/status and all other gateway methods.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "05975b24dcdd352d2ab60ef720cf3f1dd2f327fd4132197ff438d0e32f2a6a14",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "    fun shutdown(): DaemonActionResult",
-      "observedSourceSha256": "05975b24dcdd352d2ab60ef720cf3f1dd2f327fd4132197ff438d0e32f2a6a14"
+      "observedSourceSha256": "05975b24dcdd352d2ab60ef720cf3f1dd2f327fd4132197ff438d0e32f2a6a14",
+      "task": "t6"
     },
     {
       "id": "M095",
@@ -5325,10 +5328,11 @@
       "preserve": "Keep implementation class and backup/compact functions.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "05975b24dcdd352d2ab60ef720cf3f1dd2f327fd4132197ff438d0e32f2a6a14",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "    override fun shutdown(): DaemonActionResult =",
-      "observedSourceSha256": "05975b24dcdd352d2ab60ef720cf3f1dd2f327fd4132197ff438d0e32f2a6a14"
+      "observedSourceSha256": "05975b24dcdd352d2ab60ef720cf3f1dd2f327fd4132197ff438d0e32f2a6a14",
+      "task": "t6"
     },
     {
       "id": "M096",
@@ -5342,10 +5346,11 @@
       "preserve": "Keep other RPC names.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "05975b24dcdd352d2ab60ef720cf3f1dd2f327fd4132197ff438d0e32f2a6a14",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "        const val METHOD_SHUTDOWN = \"daemon.shutdown\"",
-      "observedSourceSha256": "05975b24dcdd352d2ab60ef720cf3f1dd2f327fd4132197ff438d0e32f2a6a14"
+      "observedSourceSha256": "05975b24dcdd352d2ab60ef720cf3f1dd2f327fd4132197ff438d0e32f2a6a14",
+      "task": "t6"
     },
     {
       "id": "M097",
@@ -5359,10 +5364,11 @@
       "preserve": "Keep status/settings/repository parsers.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "05975b24dcdd352d2ab60ef720cf3f1dd2f327fd4132197ff438d0e32f2a6a14",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "        internal fun parseUpdateOutcome(data: Map<String, Any?>): DaemonUpdateOutcomeResult {",
-      "observedSourceSha256": "05975b24dcdd352d2ab60ef720cf3f1dd2f327fd4132197ff438d0e32f2a6a14"
+      "observedSourceSha256": "05975b24dcdd352d2ab60ef720cf3f1dd2f327fd4132197ff438d0e32f2a6a14",
+      "task": "t6"
     },
     {
       "id": "M098",
@@ -5376,10 +5382,11 @@
       "preserve": "Keep common action result classes for backup/compact.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "05975b24dcdd352d2ab60ef720cf3f1dd2f327fd4132197ff438d0e32f2a6a14",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "    data class Ok(val message: String? = null, val updateId: String? = null) : DaemonActionResult",
-      "observedSourceSha256": "05975b24dcdd352d2ab60ef720cf3f1dd2f327fd4132197ff438d0e32f2a6a14"
+      "observedSourceSha256": "05975b24dcdd352d2ab60ef720cf3f1dd2f327fd4132197ff438d0e32f2a6a14",
+      "task": "t6"
     },
     {
       "id": "M099",
@@ -5393,10 +5400,11 @@
       "preserve": "Keep generic runAction for backup/compact and general exception mapping.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "05975b24dcdd352d2ab60ef720cf3f1dd2f327fd4132197ff438d0e32f2a6a14",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "            if (!r.ok || r.error != null || (method == METHOD_UPDATE && r.data[\"launched\"] == false)) {",
-      "observedSourceSha256": "05975b24dcdd352d2ab60ef720cf3f1dd2f327fd4132197ff438d0e32f2a6a14"
+      "observedSourceSha256": "05975b24dcdd352d2ab60ef720cf3f1dd2f327fd4132197ff438d0e32f2a6a14",
+      "task": "t6"
     },
     {
       "id": "M100",
@@ -5410,10 +5418,11 @@
       "preserve": "Keep general status DTO and parser.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "05975b24dcdd352d2ab60ef720cf3f1dd2f327fd4132197ff438d0e32f2a6a14",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "    val installedCommit: String = \"\",",
-      "observedSourceSha256": "05975b24dcdd352d2ab60ef720cf3f1dd2f327fd4132197ff438d0e32f2a6a14"
+      "observedSourceSha256": "05975b24dcdd352d2ab60ef720cf3f1dd2f327fd4132197ff438d0e32f2a6a14",
+      "task": "t6"
     },
     {
       "id": "M101",
@@ -5427,10 +5436,11 @@
       "preserve": "Keep other gateway delegates and service lifecycle.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "76bf20fa976598395b1d71869560522fb84a4992ceff08f97e1977835fe59a8b",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "    override fun shutdown(): DaemonActionResult = delegate.shutdown()",
-      "observedSourceSha256": "76bf20fa976598395b1d71869560522fb84a4992ceff08f97e1977835fe59a8b"
+      "observedSourceSha256": "76bf20fa976598395b1d71869560522fb84a4992ceff08f97e1977835fe59a8b",
+      "task": "t6"
     },
     {
       "id": "M102",
@@ -5444,10 +5454,11 @@
       "preserve": "Keep status, maintenancePanel backup/compact, actionButton/runActionThenRefresh and general settings scaffolding.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "a66fbdd93e8698cd28268e76650c5c403c194c4f7bbe92445d2ed1c2f9fd6728",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "    private fun lifecyclePanel(refresh: () -> Unit): JComponent =",
-      "observedSourceSha256": "a66fbdd93e8698cd28268e76650c5c403c194c4f7bbe92445d2ed1c2f9fd6728"
+      "observedSourceSha256": "a66fbdd93e8698cd28268e76650c5c403c194c4f7bbe92445d2ed1c2f9fd6728",
+      "task": "t6"
     },
     {
       "id": "M103",
@@ -5461,10 +5472,11 @@
       "preserve": "Keep ModelCheckFlow approval/model validation and definition reload; replace restarter seam.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "b16f075be355f5bef5d18f6c69babb37433cdec6d8ce18232e1861d68f308262",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "class DaemonRestart(",
-      "observedSourceSha256": "b16f075be355f5bef5d18f6c69babb37433cdec6d8ce18232e1861d68f308262"
+      "observedSourceSha256": "b16f075be355f5bef5d18f6c69babb37433cdec6d8ce18232e1861d68f308262",
+      "task": "t6"
     },
     {
       "id": "M104",
@@ -5478,10 +5490,11 @@
       "preserve": "Keep checks/decisions and post-approval consistency; do not remove model workflow wholesale.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "b16f075be355f5bef5d18f6c69babb37433cdec6d8ce18232e1861d68f308262",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "    private val restarter: DaemonRestart,",
-      "observedSourceSha256": "b16f075be355f5bef5d18f6c69babb37433cdec6d8ce18232e1861d68f308262"
+      "observedSourceSha256": "b16f075be355f5bef5d18f6c69babb37433cdec6d8ce18232e1861d68f308262",
+      "task": "t6"
     },
     {
       "id": "M105",
@@ -5495,10 +5508,11 @@
       "preserve": "Keep general settings apply/save/error aggregation and restartRequired reporting.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "57f548e5f1bcf1459f556273055c889e62df79f8360b3d617c126da6a3b13a8f",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "    private fun offerRestart(gateway: DaemonGateway) {",
-      "observedSourceSha256": "57f548e5f1bcf1459f556273055c889e62df79f8360b3d617c126da6a3b13a8f"
+      "observedSourceSha256": "57f548e5f1bcf1459f556273055c889e62df79f8360b3d617c126da6a3b13a8f",
+      "task": "t6"
     },
     {
       "id": "M106",
@@ -5599,10 +5613,11 @@
       "preserve": "Keep Gradle plugin/compiler/JUnit setup and steering resource packaging; replace shared generator invocation.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "a72833524f9f435c39ec089208835e715aaa6d594345f57b3cb28868551c8647",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "    inputs.files(fileTree(\"../scripts\") { include(\"*node-runtime*\", \"provision-node-runtime.sh\", \"source-selection-env.sh\", \"insrc-daemon-install.sh\", \"sync-client-runtime-assets.mjs\") })",
-      "observedSourceSha256": "a72833524f9f435c39ec089208835e715aaa6d594345f57b3cb28868551c8647"
+      "observedSourceSha256": "a72833524f9f435c39ec089208835e715aaa6d594345f57b3cb28868551c8647",
+      "task": "t6"
     },
     {
       "id": "M112",
@@ -6369,10 +6384,11 @@
       "preserve": "Keep backup/compact and generic malformed-reply tests.",
       "requiresExtraction": false,
       "revalidatedSourceSha256": "2055b89f374408d06ae10bac0eea10615b4912104d27cca5022f16a5952e2b10",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "    fun `shutdown sends METHOD_SHUTDOWN and maps ok to Ok`() {",
-      "observedSourceSha256": "2055b89f374408d06ae10bac0eea10615b4912104d27cca5022f16a5952e2b10"
+      "observedSourceSha256": "2055b89f374408d06ae10bac0eea10615b4912104d27cca5022f16a5952e2b10",
+      "task": "t6"
     },
     {
       "id": "M161",
@@ -6386,10 +6402,11 @@
       "preserve": "Keep backup/compact and generic malformed-reply tests.",
       "requiresExtraction": false,
       "revalidatedSourceSha256": "2055b89f374408d06ae10bac0eea10615b4912104d27cca5022f16a5952e2b10",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "    fun `shutdown treats an unreachable daemon as already-stopped Ok (never throws)`() {",
-      "observedSourceSha256": "2055b89f374408d06ae10bac0eea10615b4912104d27cca5022f16a5952e2b10"
+      "observedSourceSha256": "2055b89f374408d06ae10bac0eea10615b4912104d27cca5022f16a5952e2b10",
+      "task": "t6"
     },
     {
       "id": "M168",
@@ -6403,10 +6420,11 @@
       "preserve": "Keep generic Unix socket parsing and disconnect semantics.",
       "requiresExtraction": false,
       "revalidatedSourceSha256": "8cf7a3a971ec90d4251da327cc335502fb595f37d43d100a98a9f8bfbf0200ba",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "    fun `update connection loss after writing the request preserves uncertainty`() {",
-      "observedSourceSha256": "8cf7a3a971ec90d4251da327cc335502fb595f37d43d100a98a9f8bfbf0200ba"
+      "observedSourceSha256": "8cf7a3a971ec90d4251da327cc335502fb595f37d43d100a98a9f8bfbf0200ba",
+      "task": "t6"
     },
     {
       "id": "M169",
@@ -6420,10 +6438,11 @@
       "preserve": "Keep backup/compact wiring assertions and generic page/status behavior.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "0fb3ac9bda5cd700c58b51b446c15e4cf40bc8ebf3341127f8bb8cf0169ed1f6",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "    fun `ac2 - all six actions are wired (runner for start-restart-update, gateway for stop-backup-compact)`() {",
-      "observedSourceSha256": "0fb3ac9bda5cd700c58b51b446c15e4cf40bc8ebf3341127f8bb8cf0169ed1f6"
+      "observedSourceSha256": "0fb3ac9bda5cd700c58b51b446c15e4cf40bc8ebf3341127f8bb8cf0169ed1f6",
+      "task": "t6"
     },
     {
       "id": "M170",
@@ -6437,10 +6456,11 @@
       "preserve": "Keep model checks/decisions/definition reload and no-duplicate-approval semantics.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "134a883f7376cb9ab451c6d3df8641bd64c173b0fc6c1186ae137a154c35938c",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "    fun `approve disabled when not run, reject with the check's id, only ticked non-rejected efforts sent, unknown-check offers check again, no tier write, restart confirmed then definitions re-read`() {",
-      "observedSourceSha256": "134a883f7376cb9ab451c6d3df8641bd64c173b0fc6c1186ae137a154c35938c"
+      "observedSourceSha256": "134a883f7376cb9ab451c6d3df8641bd64c173b0fc6c1186ae137a154c35938c",
+      "task": "t6"
     },
     {
       "id": "M171",
@@ -6454,10 +6474,11 @@
       "preserve": "Replace restart execution/offer assertions; preserve settings save/error aggregation behavior.",
       "requiresExtraction": true,
       "revalidatedSourceSha256": "7c297ec4637f5eb8c69224b9ad25e9ad7cb8d1135817cc5498cf3a2e1cb86ac7",
-      "outcome": "pending",
+      "outcome": "implemented-awaiting-validation",
       "preflightVerified": true,
       "verifiedAnchorText": "    fun `one prompt when any write needed a restart, also with a failure, none otherwise`() {",
-      "observedSourceSha256": "7c297ec4637f5eb8c69224b9ad25e9ad7cb8d1135817cc5498cf3a2e1cb86ac7"
+      "observedSourceSha256": "7c297ec4637f5eb8c69224b9ad25e9ad7cb8d1135817cc5498cf3a2e1cb86ac7",
+      "task": "t6"
     },
     {
       "id": "M172",
@@ -6820,6 +6841,15 @@
     {
       "path": "vscode-plugin/src/panels/process-scan.ts",
       "reason": "Preserved independent read-only daemon/MCP process observations; localized row/type aliases formerly supplied by removed panel lifecycle action contracts. No kill/control integration remains."
+    },
+    {
+      "task": "t6",
+      "paths": [
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/debug/DebugStatusCardReader.kt",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/host/InsrcMcpRegistration.kt",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/ModelTiersSection.kt"
+      ],
+      "reason": "Remove callers of deleted lifecycle helpers; retain read-only status and MCP launch target lookup and model approval/settings."
     }
   ]
 }

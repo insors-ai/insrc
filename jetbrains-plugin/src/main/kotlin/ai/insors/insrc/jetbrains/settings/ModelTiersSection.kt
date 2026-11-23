@@ -5,7 +5,6 @@ import ai.insors.insrc.jetbrains.daemon.ModelDefinitionsDto
 import ai.insors.insrc.jetbrains.daemon.ModelDefinitionsResult
 import ai.insors.insrc.jetbrains.daemon.SaveResult
 import ai.insors.insrc.jetbrains.daemon.SettingsCatalogDto
-import ai.insors.insrc.jetbrains.lifecycle.DaemonLifecycleCommandRunner
 import com.intellij.openapi.options.ConfigurationException
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.ui.JBColor
@@ -265,7 +264,7 @@ class ModelTiersSection(
      */
     private fun checkModel(parent: JComponent) {
         val defs = definitions ?: return
-        val flow = ModelCheckFlow(gateway, defs, DaemonRestart({ DaemonLifecycleCommandRunner.production().run(it) }, gateway))
+        val flow = ModelCheckFlow(gateway, defs)
         val dialog = ModelCheckDialog(parent, flow)
         dialog.show()
         dialog.reloaded?.let {

@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1795452004325-px834y",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-23T16:40:38.057Z",
+    "epicCreatedAt": "2026-11-23T16:40:38.057Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 33730,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "9b56cf09824e7110",
+    "epicSlug": "present-lifecycle-backed-pending-amendments",
+    "standalone": true,
+    "magnitude": "small",
+    "kind": "defect",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "662c9155e161c469c2a12a2aba02e9ad25208f2b7ff6664b02ba932cba3b2f9b",
+        "at": "2026-11-23T16:40:38.075Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-23T16:55:26.494Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "parentRef": {
+      "epicHash": "9b56cf09824e7110",
+      "slug": "EPIC-9b56cf09824e7110"
+    }
+  },
+  "body": {
+    "title": "Present lifecycle-backed pending amendments",
+    "reproduction": "Create an HLD amendment through the normal design.story amendment proposal path. Its stored head contains meta.lifecycle.status='draft' and no top-level status. Call insrc_present with the amendment artifact id. Expected: presented while undecided. Observed: notPending because workflow.pending omits it. Reproduced with AMD-c3d71313f34bce71-1 through -4; all four have lifecycle=draft and fail the current top-level-status predicate. Existing LLD presentation still succeeds. [[c1]] [[c2]]",
+    "rootCause": "The canonical amendment store writes {meta,body,citations} heads through the lifecycle service and reads their decisions through approvalStateOf(meta). listPendingArtifacts still special-cases AMD as a flat legacy record and requires art.status==='pending', excluding all current amendment heads. The pending regression fixture supplies only flat AMD status records, so it does not cover the real writer format. The issue is a stale reader assumption rather than missing amendment content or a requirement for Markdown. [[c1]] [[c2]] [[c3]]",
+    "fixIntent": "Make pending amendment discovery agree with the canonical lifecycle-backed amendment writer/reader without changing saved amendment decisions or weakening approval gates. Retain legacy flat-record behavior only where deliberately supported and ensure lifecycle-backed decisions take precedence over stale legacy fields. Add meaningful regression coverage using real amendment creation and draft/approved/rejected decisions, then verify pending discovery and insrc_present agree. Do not change the installer designs or restart/update the host daemon as part of this patch. Validate under a project-supported Node 22 runtime; report source/test results separately from availability in the running daemon. [[c1]] [[c2]] [[c3]] [[c4]]"
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/pending.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/amendments/store.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "doc",
+      "ref": "src/workflow/__tests__/pending.test.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "doc",
+      "ref": "AGENTS.md"
+    }
+  ]
+}

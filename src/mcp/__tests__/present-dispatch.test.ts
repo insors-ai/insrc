@@ -14,6 +14,10 @@ import { join } from 'node:path';
 import { rmSync } from 'node:fs';
 
 import { handleInsrcPresent, PRESENT_MAX_DOCUMENTS } from '../server.js';
+import { handleWorkflowPending } from '../../workflow/pending.js';
+import { proposeAmendment, approveAmendment, rejectAmendment } from '../../workflow/amendments/store.js';
+import { mkAmendmentRepo } from '../../workflow/amendments/__tests__/epic-head.js';
+import { writeRepoSchema } from '../../workflow/artifact-core/repo-schema.js';
 
 const text = (env: { content: { type: 'text'; text: string }[] }): string => env.content[0]!.text;
 
@@ -52,6 +56,37 @@ const PENDING = {
 	],
 };
 const repoIs = (r: string) => async () => r;
+
+test('writer-created AMD heads are presented only while their lifecycle is pending', async () => {
+	const hash = '9b56cf09824e7110';
+	const repo = mkAmendmentRepo(hash);
+	try {
+		writeRepoSchema(repo, { version: 2 });
+		const ids = [1, 2, 3].map(n => `AMD-${hash}-${n}`);
+		for (const id of ids) {
+			await proposeAmendment(repo, {
+				id, epicHash: hash, epicSlug: 'pending-amendments', hldBaseRunId: 'base-1',
+				amendment: { type: 'sharedContract.fieldAdd', contractId: 'sc1', breaking: false,
+					field: { name: 'sortBy', type: 'string', optional: true, purpose: 'Sort order' } },
+				rationale: 'Exercise the real amendment writer and pending reader together.', citations: [],
+				proposedBy: { workflow: 'design.story', runId: 'lld-1', storyId: 's1', stepId: 's4' },
+				proposedAt: '2026-11-23T00:00:00Z', status: 'pending',
+			});
+		}
+		// Decisions affect only this disposable fixture, never workspace artifacts.
+		await approveAmendment(repo, ids[1]!, 'test-reviewer');
+		await rejectAmendment(repo, ids[2]!, 'Fixture rejection');
+		const pending = handleWorkflowPending({ repo }, undefined);
+		assert.ok('artifacts' in pending);
+		assert.deepEqual(pending.artifacts.filter(a => a.kind === 'AMD').map(a => [a.artifactId, a.mdPath]), [[ids[0], '']]);
+		const daemon = await fakeDaemon(pending);
+		try {
+			const result = await handleInsrcPresent({ documents: ids }, { connect: daemon.connect, resolveRepo: repoIs(repo) });
+			assert.ok(!result.isError, text(result));
+			assert.deepEqual(JSON.parse(text(result)), { presented: [ids[0]], notPending: ids.slice(1) });
+		} finally { await daemon.close(); }
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
 
 test("insrc_present answers presented and notPending against the daemon's pending list and rejects an empty or oversized list", async () => {
 	const daemon = await fakeDaemon(PENDING);

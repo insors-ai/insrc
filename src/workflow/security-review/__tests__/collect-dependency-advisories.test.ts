@@ -310,6 +310,46 @@ test("collectDependencyAdvisories: an npm audit entry whose 'via' names only OTH
 	}
 });
 
+test("collectDependencyAdvisories: duplicate raw entries for the SAME coordinate -- one with no 'vulns' key (unresolved) and one with a confirmed vuln (match) -- reconcile to the match, never also unresolved", async () => {
+	const repo = initRepo();
+	treatAsRegistered(repo);
+	try {
+		writeFileSync(join(repo, 'requirements.txt'), 'requests==2.25.1\n');
+		_setPkgAuditExecuteForTests(async () => okResult({
+			manager: 'pip', exitCode: 0,
+			parsed: { dependencies: [
+				{ name: 'requests', version: '2.25.1' },
+				{ name: 'requests', version: '2.25.1', vulns: [{ id: 'PYSEC-1' }] },
+			] },
+		}));
+		const result = await collectDependencyAdvisories(repo, { entries: [{ path: 'app.ts' }, { path: 'requirements.txt' }] });
+		assert.ok(result.matches.some(m => m.coordinate === 'requests@2.25.1'), JSON.stringify(result.matches));
+		assert.ok(!result.unresolvedDependencies.some(d => d.includes('requests@2.25.1')), JSON.stringify(result.unresolvedDependencies));
+	} finally {
+		cleanup(repo);
+	}
+});
+
+test("collectDependencyAdvisories: duplicate raw entries for the SAME coordinate -- one with no 'vulns' key (unresolved) and one cleanly audited -- reconcile to clean, never also unresolved", async () => {
+	const repo = initRepo();
+	treatAsRegistered(repo);
+	try {
+		writeFileSync(join(repo, 'requirements.txt'), 'requests==2.25.1\n');
+		_setPkgAuditExecuteForTests(async () => okResult({
+			manager: 'pip', exitCode: 0,
+			parsed: { dependencies: [
+				{ name: 'requests', version: '2.25.1' },
+				{ name: 'requests', version: '2.25.1', vulns: [] },
+			] },
+		}));
+		const result = await collectDependencyAdvisories(repo, { entries: [{ path: 'app.ts' }, { path: 'requirements.txt' }] });
+		assert.ok(result.queriedCoordinates.includes('requests@2.25.1'), JSON.stringify(result.queriedCoordinates));
+		assert.ok(!result.unresolvedDependencies.some(d => d.includes('requests@2.25.1')), JSON.stringify(result.unresolvedDependencies));
+	} finally {
+		cleanup(repo);
+	}
+});
+
 test("collectDependencyAdvisories: a pip-audit dependency entry with no 'vulns' key at all is unresolved, never reported as cleanly audited", async () => {
 	const repo = initRepo();
 	treatAsRegistered(repo);

@@ -234,6 +234,13 @@ export async function collectDependencyAdvisories(repoPath: string, targets: Rev
 	// dropped because of an unrelated input-fidelity note elsewhere.
 	const rawMatches: SecurityAdvisoryMatch[] = [];
 	const rawQueriedCoordinates: string[] = [];
+	// Coordinates pkg_audit itself reported as unresolved (a missing 'vulns'
+	// key, or a 'via' naming only other packages) -- tracked separately from
+	// unresolvedDependencies' own free-text gap notes so an exact-coordinate
+	// collision with a match or a clean report (duplicate/conflicting raw
+	// entries for the identical coordinate, however unlikely) can still be
+	// reconciled below by the SAME match > clean > unresolved priority.
+	const rawUnresolvedCoordinates: string[] = [];
 	const unresolvedDependencies: string[] = [];
 	const unavailableSources: string[] = [];
 	const perManagerMode: PerManagerModeEntry[] = [];
@@ -284,9 +291,7 @@ export async function collectDependencyAdvisories(repoPath: string, targets: Rev
 				} else {
 					rawMatches.push(...mapped.matches);
 					rawQueriedCoordinates.push(...mapped.cleanCoordinates);
-					for (const coordinate of mapped.unresolvedCoordinates) {
-						unresolvedDependencies.push(`${coordinate}: pkg_audit did not report a definite result for this dependency`);
-					}
+					rawUnresolvedCoordinates.push(...mapped.unresolvedCoordinates);
 				}
 			}
 			perManagerMode.push({ manager, mode, configuredDestination });
@@ -306,13 +311,23 @@ export async function collectDependencyAdvisories(repoPath: string, targets: Rev
 		contentStable = false;
 	}
 
-	// A coordinate string that is BOTH a confirmed match and reported clean
-	// (duplicate/conflicting raw entries for the exact same coordinate) is
-	// kept only as a match -- a confirmed finding always outranks a "clean"
-	// report of the identical coordinate, never the reverse.
+	// A coordinate string reported under more than one outcome (duplicate or
+	// conflicting raw entries for the exact same coordinate -- unusual, but
+	// not impossible) is reconciled by priority: a confirmed finding (match)
+	// outranks a clean report, which outranks an unresolved report. This
+	// never touches unresolvedDependencies' OTHER entries (lockfile-export
+	// gaps, version-uncertain pins): those are free-text, by-name/range
+	// input-fidelity notes, not the audited coordinate itself, so they
+	// coexist with whatever pkg_audit reports for the coordinate it actually
+	// resolved -- see the module-level comment above.
 	const matches = rawMatches;
 	const matchedCoordinates = new Set(matches.map(m => m.coordinate));
 	const queriedCoordinates = [...new Set(rawQueriedCoordinates)].filter(c => !matchedCoordinates.has(c));
+	const queriedCoordinateSet = new Set(queriedCoordinates);
+	for (const coordinate of new Set(rawUnresolvedCoordinates)) {
+		if (matchedCoordinates.has(coordinate) || queriedCoordinateSet.has(coordinate)) { continue; }
+		unresolvedDependencies.push(`${coordinate}: pkg_audit did not report a definite result for this dependency`);
+	}
 
 	return {
 		contentIdentity,

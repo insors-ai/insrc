@@ -15,11 +15,17 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 
+import { registerGitTools } from '../../../daemon/tools/builtins/git/index.js';
 import { createDependencySbomEvidenceProvider } from '../dependency-sbom-evidence-provider.js';
 import { _setPkgAuditExecuteForTests, _setConfigGetForTests } from '../collect-dependency-advisories.js';
 import { _setContentIdentityDepsForTests } from '../content-identity.js';
 import type { ToolInput, ToolResult } from '../../../daemon/tools/types.js';
 import type { ShellResult } from '../../../daemon/tools/shell-helper.js';
+
+// computeContentIdentity (called by collectDependencyAdvisories) resolves HEAD
+// through the shared executeTool dispatcher (git_rev_parse), not a raw git
+// subprocess -- the tool must be registered before any test in this file runs.
+registerGitTools();
 
 function initRepo(): string {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-sbom-provider-'));
@@ -52,6 +58,31 @@ function cleanup(repo: string): void {
 	_setContentIdentityDepsForTests();
 	rmSync(repo, { recursive: true, force: true });
 }
+
+test('createDependencySbomEvidenceProvider: run() rejects rather than emitting evidence when the collection is contentStable:false', async () => {
+	const repo = initRepo();
+	treatAsRegistered(repo);
+	try {
+		writeFileSync(join(repo, 'requirements.txt'), 'demo==1.0.0\n');
+		execFileSync('git', ['add', '.'], { cwd: repo });
+		execFileSync('git', ['commit', '-q', '-m', 'add requirements.txt'], { cwd: repo });
+		_setPkgAuditExecuteForTests(async () => {
+			// Simulate the target changing mid-audit (the collector's own
+			// post-collection hash re-check is what actually catches this --
+			// the audit result itself is unaffected).
+			writeFileSync(join(repo, 'requirements.txt'), 'demo==2.0.0\n');
+			return okResult({ manager: 'pip', exitCode: 0, parsed: { dependencies: [{ name: 'demo', version: '1.0.0', vulns: [{ id: 'PYSEC-1' }] }] } });
+		});
+		const provider = createDependencySbomEvidenceProvider(repo);
+		await assert.rejects(
+			() => provider.run({ category: 'dependency-sbom', targets: { entries: [{ path: 'requirements.txt' }] } }),
+			/contentStable:false/,
+		);
+	} finally {
+		writeFileSync(join(repo, 'requirements.txt'), 'demo==1.0.0\n');
+		cleanup(repo);
+	}
+});
 
 test("createDependencySbomEvidenceProvider: category is 'dependency-sbom' and run() delegates to collectDependencyAdvisories with the captured repoPath", async () => {
 	const repo = initRepo();

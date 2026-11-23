@@ -20,6 +20,7 @@ import { readFileSync, rmSync } from 'node:fs';
 import { satisfies as semverSatisfies, valid as semverValid, validRange as semverValidRange } from 'semver';
 
 import { pkgAuditTool, type Manager } from '../../daemon/tools/builtins/pkg/index.js';
+import { executeTool } from '../../daemon/tools/executor.js';
 import { runShell, type ShellResult } from '../../daemon/tools/shell-helper.js';
 import type { ToolDeps, ToolInput, ToolResult } from '../../daemon/tools/types.js';
 import type { ReviewTargets } from '../artifact-core/types.js';
@@ -452,11 +453,14 @@ function makeToolDeps(repoPath: string): ToolDeps {
 }
 
 /** The pkg_audit invocation, overridable for unit tests (so collectDependencyAdvisories'
- *  own orchestration logic can be exercised without a real subprocess). No argument
- *  resets to the real pkgAuditTool.execute. */
-let runPkgAudit: (input: ToolInput, deps: ToolDeps) => Promise<ToolResult> = (input, deps) => pkgAuditTool.execute(input, deps);
+ *  own orchestration logic can be exercised without a real subprocess). Routed through
+ *  the shared executeTool dispatcher (never pkgAuditTool.execute directly), per the
+ *  build's own forbidden-spawn-scan gate -- a builtin tool's execute is only called from
+ *  inside the registry/executor, never from an outside caller. No argument resets to
+ *  the real executeTool('pkg_audit', ...). */
+let runPkgAudit: (input: ToolInput, deps: ToolDeps) => Promise<ToolResult> = (input, deps) => executeTool(pkgAuditTool.id, input, deps);
 export function _setPkgAuditExecuteForTests(fn?: (input: ToolInput, deps: ToolDeps) => Promise<ToolResult>): void {
-	runPkgAudit = fn ?? ((input, deps) => pkgAuditTool.execute(input, deps));
+	runPkgAudit = fn ?? ((input, deps) => executeTool(pkgAuditTool.id, input, deps));
 }
 
 /**

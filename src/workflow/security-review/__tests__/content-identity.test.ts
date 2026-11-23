@@ -15,7 +15,13 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 
+import { registerGitTools } from '../../../daemon/tools/builtins/git/index.js';
 import { computeContentIdentity, _setContentIdentityDepsForTests } from '../content-identity.js';
+
+// computeContentIdentity now resolves HEAD through the shared executeTool
+// dispatcher (git_rev_parse), not a raw git subprocess -- the tool must be
+// registered before any test in this file runs.
+registerGitTools();
 
 function initRepo(): string {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-content-identity-'));

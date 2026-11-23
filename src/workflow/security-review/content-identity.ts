@@ -17,9 +17,15 @@ import { createHash } from 'node:crypto';
 import { readFile, realpath } from 'node:fs/promises';
 import { relative, resolve, sep } from 'node:path';
 
-import { runShell } from '../../daemon/tools/shell-helper.js';
+import type { GitRevParseData } from '../../daemon/tools/builtins/git/schemas.js';
+import { executeTool } from '../../daemon/tools/executor.js';
+import type { ToolDeps } from '../../daemon/tools/types.js';
 import { listRepos } from '../../db/repos.js';
 import type { ReviewTargets } from '../artifact-core/types.js';
+
+function makeToolDeps(repoPath: string): ToolDeps {
+	return { sessionId: 'security-review-identity', repoPath, send: () => undefined, requestId: 0, caller: 'workflow' };
+}
 
 /** The repo-registration check, overridable for unit tests (so a test does not
  *  need a real, running daemon graph store to register a fixture repo in).
@@ -41,9 +47,10 @@ export async function computeContentIdentity(repoPath: string, targets: ReviewTa
 		throw new Error(`computeContentIdentity: '${repoPath}' is not a registered repo`);
 	}
 
-	const head = await runShell(['git', 'rev-parse', 'HEAD'], { cwd: repoPath });
-	if (head.spawnError || head.code !== 0) {
-		throw new Error(`computeContentIdentity: '${repoPath}' is a registered repo, but its HEAD cannot be resolved: ${head.stderr.trim()}`);
+	const head = await executeTool('git_rev_parse', { cwd: repoPath, rev: 'HEAD' }, makeToolDeps(repoPath));
+	const headSha = head.success ? (head.data as GitRevParseData | undefined)?.values[0] : undefined;
+	if (headSha === undefined) {
+		throw new Error(`computeContentIdentity: '${repoPath}' is a registered repo, but its HEAD cannot be resolved: ${head.error ?? head.output}`);
 	}
 
 	const realRepoPath = await realpath(repoPath);
@@ -55,7 +62,7 @@ export async function computeContentIdentity(repoPath: string, targets: ReviewTa
 	// bytes directly rules out two different (path, bytes) sequences concatenating
 	// to the identical byte stream -- which raw concatenation alone would not.
 	const hash = createHash('sha256');
-	hash.update(`${head.stdout.trim()}\0`);
+	hash.update(`${headSha}\0`);
 	for (const entry of targets.entries) {
 		const resolved = resolve(repoPath, entry.path);
 		const rel = relative(repoPath, resolved);

@@ -1,0 +1,1161 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1795445625694-xcw35a",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-23T15:01:49.389Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 483340,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-11-23T13:27:35.399Z",
+    "epicHash": "c3d71313f34bce71",
+    "epicSlug": "reliable-cross-platform-daemon-installation-lifecycle",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1795445383474-itgkv3",
+    "hldEffectiveHash": "77bfb88eed6d557fbc298ffc881afc2ccf6e682b9f0d0696361d1e77e5f93d83",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "Install and upgrade release bundles with a private runtime",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "82d292d932b33d29c6a27724e2c0e12a40035da7abf7e12ef7218a165b2b2cb4",
+        "at": "2026-11-23T15:01:49.517Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "hldContextSlice": {
+      "frameworkSummary": "Choose a1: one shared user-level installer/manager with bundle and dev delivery adapters. Install launched from either IDE runs the same public platform installer script interactively in a visible terminal; the script owns prompts and output. IDE-specific installation wizards and hidden background installs are excluded. Lifecycle, migration, runtime and privilege constraints remain shared and unchanged. Successful interactive installation hands the same terminal directly to the installed insrc TUI after daemon readiness; it does not finish at an idle shell.",
+      "ownedContracts": [
+        {
+          "id": "sc1",
+          "name": "Installation and release identity",
+          "purpose": "One installation owns one selected delivery mode, zero or one active release and zero or one unresolved operation. Release identities are immutable; the controller metadata never stores application DB contents.",
+          "interfaceSketch": "type Delivery = { mode: 'bundle'; repository: string; channel: string } | { mode: 'dev'; repository: string; branch: string };\ninterface Target { os: 'darwin' | 'linux' | 'win32'; arch: 'arm64' | 'x64'; baseline: string }\ninterface RuntimeIdentity { version: string; target: Target; sha256: string; relativeExecutable: string }\ninterface ReleaseManifest { schemaVersion: 1; releaseId: string; sourceCommit: string; target: Target; runtime: RuntimeIdentity; payloadSha256: string; daemonEntry: string; managerEntry: string; tuiEntry: string; protocolVersion: 1; compatiblePredecessors: string[]; migrations: HookReference[] }\ninterface Installation { schemaVersion: 1; installationId: string; dataHome: string; delivery: Delivery; activeReleaseId?: string; operationId?: string }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc2",
+          "name": "Manager command and operation state",
+          "purpose": "A private-runtime command runner serves both IDEs when daemon is running, stopped or blocked. One OS-backed exclusive lock serializes all mutating operations per installation; controller records and bounded progress are shared across clients. Interactive install is invoked by the shared script in the terminal. The structured manager protocol remains for ordinary control/status; the IDE does not drive installation prompts through it. The 'install' action is reserved exclusively for the shared bootstrap/installer script executing inside the interactive terminal. VS Code/JetBrains adapters must never invoke ManagerAction.install directly or drive its prompts through this protocol; they only launch/focus the terminal and observe completion/readiness. The s1 LLD must state and enforce this caller restriction.",
+          "interfaceSketch": "/** 'install' is terminal-bootstrap-only; IDE adapters may not invoke it directly. */\ntype ManagerAction = 'inspect' | 'check-upgrade' | 'install' | 'upgrade' | 'start' | 'stop' | 'restart' | 'retry-migration';\ntype Phase = 'preparing' | 'quiescing' | 'migrating' | 'activating' | 'ready' | 'stopped' | 'blocked';\ninterface ManagerRequest { protocolVersion: 1; operationId: string; action: ManagerAction; installationId: string; shutdownMode?: 'graceful' | 'immediate'; acceptedOfferId?: string; installOllama?: boolean }\ninterface OperationRecord { operationId: string; predecessorId?: string; candidateId?: string; phase: Phase; hookId?: string; hookStage?: 'check' | 'run' | 'test'; errorCode?: string; message?: string }\ninterface ManagerEvent { protocolVersion: 1; operationId: string; kind: 'progress' | 'result'; state: OperationRecord; retryable: boolean }\ninterface UpgradeOffer { offerId: string; installationId: string; currentReleaseId?: string; candidateReleaseId: string; delivery: Delivery }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc3",
+          "name": "Dependency report and consent",
+          "purpose": "Foundation contract separates required private Node, Ollama availability and advisory agent CLI detection from their platform implementations in s3; IDEs cannot infer consent from plugin updates.",
+          "interfaceSketch": "interface DependencyReport { runtimeReady: boolean; ollama: 'ready' | 'installed-not-running' | 'missing' | 'unavailable'; ollamaInstallOffer?: { id: string; destination: string; version: string }; agents: { claude: boolean; codex: boolean; vibe: boolean }; recommendations: string[]; blockers: string[] }\ninterface DependencyDecision { offerId: string; choice: 'install' | 'decline' }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc5",
+          "name": "Ordered upgrade hook delegation",
+          "purpose": "Owned by foundational s1 because delivery preparation, startup guard and s5 runner all require the same hook manifest. s5 implements execution. Hooks run in-process inside a candidate daemon migration-only process that exclusively owns data; manager and IDE never open LMDB/Lance.",
+          "interfaceSketch": "interface HookReference { id: string; version: string; module: string }\ninterface MigrationContext { installationId: string; operationId: string; fromReleaseId?: string; toReleaseId: string; dataHome: string }\ninterface HookDecision { needed: boolean; reason: string }\ninterface HookValidation { passed: boolean; detail: string }\ninterface UpgradeHook { check(context: MigrationContext): Promise<HookDecision>; run(context: MigrationContext): Promise<void>; test(context: MigrationContext): Promise<HookValidation> }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc6",
+          "name": "Local transport and explicit installation home",
+          "purpose": "All consumers resolve the same installation home and endpoint. Unix retains daemon.sock; Windows uses a per-user/per-installation named pipe. The manager's Node bridge supplies JetBrains Windows transport without changing application RPC payloads.",
+          "interfaceSketch": "interface LocalEndpoint { kind: 'unix' | 'named-pipe'; address: string; installationId: string }\ninterface InstallationLocation { home: string; installationId: string; daemonEndpoint: LocalEndpoint }\ninterface IpcBridgeRequest { protocolVersion: 1; endpoint: LocalEndpoint; rpcFrame: string }\ninterface IpcBridgeEvent { kind: 'frame' | 'closed' | 'error'; frame?: string; written?: boolean; code?: string }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc7",
+          "name": "Shared terminal installer launch",
+          "purpose": "Foundation-owned contract makes manual and both IDE installation entrypoints identical. IDE adapters only open/focus a terminal and invoke the same script; the terminal owns the interaction and durable operation state/readiness determines success. On successful install/readiness the shared script releases installation ownership and launches the installed TUI in the same terminal; failure/cancel does not launch it.",
+          "interfaceSketch": "interface TerminalInstallLaunch { operationId: string; installationId: string; home: string; platform: 'posix' | 'powershell'; scriptPath: string; scriptVersion: string; scriptSha256: string; arguments: string[]; terminalName: 'Insrc Installation'; onInstallSuccess: 'launch-tui' }\ninterface TerminalInstallHandle { operationId: string; terminalSessionId: string; state: 'opened' | 'reused' | 'launch-failed' }\ninterface InstallationObservation { operationId: string; phase: Phase; daemonReady: boolean; errorCode?: string }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s6",
+            "s7",
+            "s8"
+          ],
+          "assumptions": []
+        }
+      ],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc5",
+          "sc6",
+          "sc7"
+        ],
+        "depends": [],
+        "internal": "Own the foundational manifest, controller/operation/consent/hook/transport contracts because every branch already depends on s1. Private implementation covers bootstrap, runtime/payload integrity, bundle preparation/publication, platform lock adapter and atomic install records. Later stories implement lifecycle, checks and hooks behind these contracts. The canonical scripts and interactive installer mode are shared with manual invocation and both IDEs; terminal prompts and durable results are part of this foundation. Include the selected release's installed TUI entry/assets in the payload and default successful interactive installer-to-TUI handoff. The s1 LLD must explicitly reserve ManagerAction.install to the shared terminal bootstrap script and forbid IDE-adapter invocation. DEF traceability: E20261123c3d71313:S001:FR001 and this story's DEF acceptance criteria apply unchanged."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s2",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc5",
+            "sc6"
+          ],
+          "internal": "Private dev checkout/branch sync, lockfile installation and native build preparation; returns the same immutable prepared candidate. It does not define a second lifecycle or migration engine. Include the selected release's installed TUI entry/assets in the payload and default successful interactive installer-to-TUI handoff. DEF traceability: E20261123c3d71313:S002:FR001 and this story's DEF acceptance criteria apply unchanged."
+        },
+        {
+          "storyId": "s3",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc6"
+          ],
+          "internal": "Private platform dependency detection, user-level Ollama installation and agent CLI recommendations. It implements foundational reports/consent and never auto-installs agent CLIs. DEF traceability: E20261123c3d71313:S003:FR001 and this story's DEF acceptance criteria apply unchanged."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc4"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc5",
+            "sc6"
+          ],
+          "internal": "Private daemon start/readiness, boot guard integration, shutdown drain/immediate exit and exit-completion launcher wrapper; transport is shared. No delivery sync/build on start and no signal/PID daemon control. DEF traceability: E20261123c3d71313:S004:FR001 and this story's DEF acceptance criteria apply unchanged."
+        },
+        {
+          "storyId": "s5",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6"
+          ],
+          "internal": "Private ordered migration runner, daemon migration-only mode, blocked-state persistence, interrupted-run validation and explicit retry. Hooks alone choose data changes and recovery policy. DEF traceability: E20261123c3d71313:S005:FR001 and this story's DEF acceptance criteria apply unchanged."
+        },
+        {
+          "storyId": "s6",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6",
+            "sc7"
+          ],
+          "internal": "Private VS Code native terminal open/focus/launch integration, duplicate-action handling and post-install reconnect. It invokes the shared script and leaves all install prompts/output in that terminal, including after failure. Existing ordinary lifecycle and upgrade-consent UI remains thin. Successful installation automatically enters the installed TUI in that same terminal; the IDE only reconnects/status-checks and does not require a second click. DEF traceability: E20261123c3d71313:S006:FR001 and this story's DEF acceptance criteria apply unchanged."
+        },
+        {
+          "storyId": "s7",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6",
+            "sc7"
+          ],
+          "internal": "Private JetBrains native terminal open/focus/launch integration with the same script, stdin/output and post-install readiness behavior as VS Code; no independent wizard or hidden install. Preserve background activation/control and Windows IPC bridge for ordinary daemon operations. Successful installation automatically enters the installed TUI in that same terminal; the IDE only reconnects/status-checks and does not require a second click. DEF traceability: E20261123c3d71313:S007:FR001 and this story's DEF acceptance criteria apply unchanged."
+        },
+        {
+          "storyId": "s8",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6",
+            "sc7"
+          ],
+          "internal": "Private isolated VM/runner fixtures, target matrix evidence and release qualification results, including real Windows named-pipe behavior and preservation of host v2 daemon. Terminal-install parity checks cover each IDE and manual invocation, paths with spaces/Unicode, missing terminal support, declined Ollama, Ctrl+C/close, duplicate windows, retained output and readiness-confirmed completion. Verify successful install enters TUI in the original terminal, install lock is released before TUI use, TUI exit leaves daemon running, and failure/cancellation never opens TUI. DEF traceability: E20261123c3d71313:S008:FR001 and this story's DEF acceptance criteria apply unchanged."
+        }
+      ],
+      "rolloutPhase": "A — bundle foundation",
+      "nonFunctional": {
+        "performance": "Targets: local read-only inspection/reachability <=3 seconds; activation never blocks IDE UI. Progress/phase changes emit within 1 second after state changes. Ready startup target <=15 seconds excluding dependency/model initialization; startup probe deadline 30 seconds. Default graceful wait 60 seconds with configurable user deadline; timeout reports uncertainty and never silently escalates. Downloads/builds/hooks have per-operation budgets and progress, not an arbitrary task retry loop.",
+        "security": "No elevated commands, global PATH edits, user credential capture, LLM calls for dependency detection or shell-interpolated actions. Verify payload/runtime digests and targets, reject archive traversal/symlink escapes and module paths outside candidate payload. Local endpoints are user-scoped, capability-protected where needed; bind operation/instance/release identity. Signing deferred and no cryptographic authenticity claim from unsigned digest metadata. No IDE prompt automation or credential/input capture; terminal launch preserves argument boundaries. User-visible script identity matches manual release assets.",
+        "observability": "Structured operationId/installationId/from-to identity, platform/runtime/digest, phase/hook/stage, duration and actionable error code. Bounded NDJSON to IDE, logs in installation home with rotation; no credentials/tokens or full migration data. Report explicitly which platform/native checks passed and which were unavailable. Interactive installation prints human-readable phases and errors directly in the terminal. The terminal is retained after completion/failure; its output is not scraped or treated as success evidence.",
+        "durability": "OS-backed mutation exclusivity plus atomic versioned controller records. Prepared payloads immutable; candidate data mutation is daemon-owned only. Record hook run-started before execution and require test before completion; failures/interruption retain blocked startup. Retry never substitutes a different candidate or starts the predecessor after data changes automatically. Installation completion and lock release precede the interactive TUI session. TUI exit/launch failure cannot roll back the completed installation or keep an installation lock held."
+      }
+    },
+    "summary": {
+      "prose": "Story 1 supplies the release installer foundation: exact-target bundles, private Node, durable install records and the shared interactive scripts. IDE installation can only launch those scripts in a terminal; success enters the installed TUI after readiness and lock release. Actual daemon shutdown/readiness, migration execution and dependency discovery remain sibling implementations behind required ports.",
+      "audience": "technical"
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "ReleaseManifest",
+          "signature": "interface ReleaseManifest { schemaVersion: 1; releaseId: string; sourceCommit: string; target: Target; runtime: RuntimeIdentity; payloadSha256: string; daemonEntry: string; managerEntry: string; tuiEntry: string; protocolVersion: 1; compatiblePredecessors: string[]; migrations: HookReference[] }",
+          "parameters": [
+            {
+              "name": "manifest",
+              "type": "unknown",
+              "purpose": "Untrusted standalone release descriptor and requested OS/arch/channel identity.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ReleaseManifest",
+            "meaning": "Schema-validated immutable candidate descriptor; module-local installer type, unrelated to the design-corpus namesake."
+          },
+          "preconditions": [
+            "HTTPS artifact metadata; explicit configured repository/channel and target.",
+            "Manifest/schema, target baseline, entrypoint containment, unique ordered hooks, digest format and predecessor compatibility must validate."
+          ],
+          "postconditions": [
+            "No candidate code is launched before archive and inventory integrity/target validation.",
+            "Archive digest is held in an external sidecar descriptor, never embedded self-referentially inside the archive."
+          ],
+          "errors": [
+            {
+              "type": "manifest-invalid",
+              "condition": "Unsupported schema/protocol, malformed identity/path/digest, wrong target or predecessor."
+            }
+          ]
+        },
+        {
+          "name": "Installation",
+          "signature": "interface Installation { schemaVersion: 1; installationId: string; dataHome: string; delivery: Delivery; activeReleaseId?: string; operationId?: string }",
+          "parameters": [
+            {
+              "name": "record",
+              "type": "unknown",
+              "purpose": "Installation part of the controller snapshot; inspect never allocates an installation.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Installation",
+            "meaning": "Validated installation identity and selected delivery."
+          },
+          "preconditions": [
+            "Explicit absolute home; local supported filesystem; no symlinked control roots.",
+            "A mutating caller must hold the OS operation lock."
+          ],
+          "postconditions": [
+            "Mode and data home cannot silently change during bundle upgrade.",
+            "Default home remains user ~/.insrc; explicit isolated home resolves consistently for all launched peers."
+          ],
+          "errors": [
+            {
+              "type": "controller-corrupt",
+              "condition": "Unreadable/inconsistent state after enrollment; no silent reinitialization."
+            }
+          ]
+        },
+        {
+          "name": "ManagerRequest",
+          "signature": "type IdeManagerAction = Exclude<ManagerAction, 'install'>;\ninterface ManagerRequest { protocolVersion: 1; operationId: string; action: ManagerAction; installationId: string; shutdownMode?: 'graceful' | 'immediate'; acceptedOfferId?: string; installOllama?: boolean }",
+          "parameters": [
+            {
+              "name": "request",
+              "type": "unknown",
+              "purpose": "Bounded structured request for ordinary control/status; install is forbidden on this IDE-facing input.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ManagerEvent",
+            "meaning": "Bounded progress or durable terminal result; all results bind operation and installation identity."
+          },
+          "preconditions": [
+            "Separate executable entrypoints: interactive installer and ordinary manager.",
+            "Ordinary manager input always rejects action=install, including caller/source flags claiming bootstrap origin.",
+            "Only the shared terminal script invokes the interactive installer entrypoint; stdin/stdout/stderr must be a TTY."
+          ],
+          "postconditions": [
+            "IDE adapters cannot synthesize a source flag or submit an install action to bypass the terminal.",
+            "Interactive installer internally creates the install action; no cloud/DB/IDE runtime is loaded.",
+            "Unsupported sibling operations fail explicitly rather than using stub success."
+          ],
+          "errors": [
+            {
+              "type": "install-terminal-required",
+              "condition": "Install on manager protocol or non-TTY interactive entry."
+            },
+            {
+              "type": "busy",
+              "condition": "Another process holds installation lock."
+            },
+            {
+              "type": "capability-unavailable",
+              "condition": "Lifecycle/migration/dependency port not supplied by its owning story."
+            }
+          ]
+        },
+        {
+          "name": "OperationRecord",
+          "signature": "interface OperationRecord { operationId: string; predecessorId?: string; candidateId?: string; phase: Phase; hookId?: string; hookStage?: 'check' | 'run' | 'test'; errorCode?: string; message?: string }",
+          "parameters": [
+            {
+              "name": "record",
+              "type": "OperationRecord",
+              "purpose": "State transition bound to installation lock and immutable candidate.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "OperationRecord",
+            "meaning": "Operation inside one versioned atomic controller snapshot with installation data."
+          },
+          "preconditions": [
+            "OS lock held; exact previous revision/phase/identity checked.",
+            "No destructive operation admitted without required peer capabilities and candidate compatibility."
+          ],
+          "postconditions": [
+            "Single file replacement publishes active release and operation together; no independent active-selector file.",
+            "On ready/stopped completion release lock before TUI launch.",
+            "After disruptive uncertainty mark blocked; no automatic rollback or unbounded retry."
+          ],
+          "errors": [
+            {
+              "type": "phase-conflict",
+              "condition": "Request tries to resume another candidate or stale operation."
+            }
+          ]
+        },
+        {
+          "name": "DependencyReport",
+          "signature": "interface DependencyReport { runtimeReady: boolean; ollama: 'ready' | 'installed-not-running' | 'missing' | 'unavailable'; ollamaInstallOffer?: { id: string; destination: string; version: string }; agents: { claude: boolean; codex: boolean; vibe: boolean }; recommendations: string[]; blockers: string[] }",
+          "parameters": [
+            {
+              "name": "report",
+              "type": "DependencyReport",
+              "purpose": "s3 supplies actual probes and user-level installation; s1 only renders prompts/results.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "DependencyDecision",
+            "meaning": "Exact offer and explicit terminal choice returned to s3."
+          },
+          "preconditions": [
+            "No default-yes or IDE-filled consent.",
+            "Do not invent a report when s3 is unavailable."
+          ],
+          "postconditions": [
+            "Coding CLI recommendations never install CLIs.",
+            "Declining Ollama remains visible; it does not become synthetic ready."
+          ],
+          "errors": [
+            {
+              "type": "capability-unavailable",
+              "condition": "Required s3 dependency implementation missing."
+            }
+          ]
+        },
+        {
+          "name": "UpgradeHook",
+          "signature": "interface UpgradeHook { check(context: MigrationContext): Promise<HookDecision>; run(context: MigrationContext): Promise<void>; test(context: MigrationContext): Promise<HookValidation> }",
+          "parameters": [
+            {
+              "name": "hook",
+              "type": "HookReference",
+              "purpose": "Manifest-owned local module id/version/path.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "HookValidation",
+            "meaning": "Contract definition only here; s5 owns loading/execution and blocked-state policy."
+          },
+          "preconditions": [
+            "s1 validates reference shape, local containment, unique id/version and declared order.",
+            "s1 does not import/run hooks or open application databases."
+          ],
+          "postconditions": [
+            "Candidate is not activated if required s5 migration service is absent, fails or returns unvalidated result.",
+            "Empty hook list still requires owning service to confirm no required migration; manager never assumes arbitrary state compatibility."
+          ],
+          "errors": []
+        },
+        {
+          "name": "LocalEndpoint",
+          "signature": "interface LocalEndpoint { kind: 'unix' | 'named-pipe'; address: string; installationId: string }\ninterface InstallationLocation { home: string; installationId: string; daemonEndpoint: LocalEndpoint }",
+          "parameters": [
+            {
+              "name": "home",
+              "type": "string",
+              "purpose": "User default or explicitly selected absolute home.",
+              "optional": false
+            },
+            {
+              "name": "installationId",
+              "type": "string",
+              "purpose": "Persisted installation identity; stable across release upgrades.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "InstallationLocation",
+            "meaning": "Pure common path/endpoint resolver; peer implementations use this exact result."
+          },
+          "preconditions": [
+            "Reject unsupported/network controller filesystems, relative/traversal homes and overlong Unix socket paths rather than truncating.",
+            "Windows pipe identity derives from user SID and installation identity; Unix default remains daemon.sock."
+          ],
+          "postconditions": [
+            "No application data is opened by the manager.",
+            "s4/s6/s7 wire endpoint/auth transport implementations; s1 only defines/validates location and bridge envelopes."
+          ],
+          "errors": []
+        },
+        {
+          "name": "TerminalInstallLaunch",
+          "signature": "interface TerminalInstallLaunch { operationId: string; installationId: string; home: string; platform: 'posix' | 'powershell'; scriptPath: string; scriptVersion: string; scriptSha256: string; arguments: string[]; terminalName: 'Insrc Installation'; onInstallSuccess: 'launch-tui' }",
+          "parameters": [
+            {
+              "name": "launch",
+              "type": "TerminalInstallLaunch",
+              "purpose": "Canonical script identity and argument vector supplied to later native IDE terminal adapters.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "InstallationObservation",
+            "meaning": "Durable operation phase plus exact IPC readiness, never scraped terminal output."
+          },
+          "preconditions": [
+            "Manual and IDE script bytes/version/digest match release assets.",
+            "Shared POSIX/PowerShell script bootstraps private Node, clears Node injection variables, and invokes interactive installer by absolute path.",
+            "IDE terminal open/focus and quoting belong to s6/s7."
+          ],
+          "postconditions": [
+            "After valid ready result: persist installation completion, release operation lock, then run selected installed TUI with inherited terminal I/O and private runtime.",
+            "TUI launch failure is a post-install error with exact retry command; no reinstall/rollback.",
+            "Exiting TUI returns to shell and does not stop daemon; installation failure/cancel launches no TUI."
+          ],
+          "errors": []
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "Controller snapshot",
+        "change": "new",
+        "callSites": [],
+        "schemaDiff": "interface ControllerSnapshot { schemaVersion: 1; revision: number; installation: Installation; operation?: OperationRecord; lastResult?: OperationRecord }",
+        "details": "One small JSON file at <home>/install/controller.json owns installation plus current operation atomically; relative root notation is a proposed runtime layout. Write a same-directory unique temporary file with exclusive creation, flush contents, replace via platform atomic-replace adapter, then flush containing directory where supported. Never mutate controller.json in place. POSIX rename and Windows ReplaceFile/MoveFileEx semantics are isolated behind state module; qualify interrupted replacement on each filesystem. Serialize all writes under a persistent non-renamed <home>/install/operation.lock OS lock; no PID, heartbeat expiry or stale-lock unlinking. Inspection is read-only and returns missing versus corrupt distinctly. Existing application data is not copied or migrated by this record."
+      },
+      {
+        "entity": "Target and runtime policy",
+        "change": "new",
+        "callSites": [
+          "scripts/insrc"
+        ],
+        "details": "Release-owned Node 22.22.1 plus matching npm and current .npmrc headers are one policy. Pin exact official archive URL and independently recorded SHA-256 for each OS/arch; no latest or host Node fallback. Installed runtime path is <home>/runtimes/22.22.1/<target>. Bootstrap obtains official tar.gz on POSIX and zip on Windows using platform stock download/extract/hash facilities, verifies first, stages then publishes; if an extraction prerequisite is absent, fail with a user-level prerequisite message rather than sudo. Bundle contains the same official runtime archive so normal successor installs can reuse verified local bytes. Runtime extraction accepts only contained expected files; skip unneeded bin/npm aliases and invoke npm-cli.js through the private Node. Build/publish checks ensure .npmrc and runtime policy remain aligned. Shared source-development launcher is not silently rewritten as the installed launcher."
+      },
+      {
+        "entity": "Bundle descriptor and payload inventory",
+        "change": "new",
+        "callSites": [
+          "copy-assets.mjs"
+        ],
+        "details": "Publish release.json sidecar with HLD ReleaseManifest, artifact URLs/sizes and digests for manager bootstrap assets and target lock binding; no hash refers to bytes that contain that hash. ZIP holds inventory.json of file paths/digests/sizes/modes, built out tree/assets, production dependency closure, single-file manager/installer bootstrap JS, native lock binding and the official private runtime archive. Content/root paths are bounded. Pure-JS yauzl reader is bundled into bootstrap JS; use lazyEntries, strictFileNames and validateEntrySizes plus our canonical-path, byte-count, entry-count and ratio limits. Reject absolute/UNC/drive/ADS/traversal/backslash ambiguities, duplicate or case-colliding paths, encrypted/unsupported entries, special files and symlink entries. Package builder dereferences only verified in-root workspace links; it never copies arbitrary host paths. Stage with exclusive creation and atomic same-filesystem publication. No end-user npm, compiler or daemon source build in bundle mode."
+      },
+      {
+        "entity": "Bootstrap/control assets",
+        "change": "new",
+        "callSites": [
+          "scripts/insrc",
+          "copy-assets.mjs"
+        ],
+        "details": "Proposed source files: scripts/install.sh, scripts/install.ps1 and scripts/package-installer.mjs. A release-specific script embeds Node/bootstrap-JS/lock-binding digests; the tiny bootstrap JS is single-file bundled and uses builtin network/hash/fs plus its bundled ZIP reader. It downloads the separately digest-bound platform lock binding before acquiring the controller lock. This avoids requiring system unzip or host npm to read the full bundle. No payload/controller code runs before its digest matches. Bundle publisher emits identical installer bytes to manual assets and IDE resource staging; package root entrypoint managerEntry identifies this dependency-minimal artifact, not the whole application. Signing remains deferred; this provides digest/transport integrity only."
+      },
+      {
+        "entity": "Required sibling capability boundary",
+        "change": "new",
+        "callSites": [],
+        "details": "s1 controller prepares candidate and owns durable installation transitions. It requires lifecycle/readiness (s4), dependency report/decision handling (s3), and candidate migration outcome (s5) through explicit peers. Those contracts are defined in contracts.ts but implementations are neither imported from hypothetical modules nor replaced with no-ops. Before any disruption, verify peer availability and exact candidate/predecessor compatibility. In the s1 build, deterministic peer fixtures exercise bundle orchestration; absent real peers produce capability-unavailable. Full live install/upgrade AC evidence remains contingent on sibling integration and s8; do not certify a real upgrade from fixture-only results. Dev preparation is a future s2 adapter, and native IDE terminal launch is s6/s7."
+      },
+      {
+        "entity": "OS operation-lock handle",
+        "change": "new",
+        "callSites": [],
+        "details": "A minimal bundled Node-API v8 addon owns only an OS file-lock handle: nonblocking flock(LOCK_EX|LOCK_NB) on macOS/Linux; LockFileEx(LOCKFILE_EXCLUSIVE_LOCK|LOCKFILE_FAIL_IMMEDIATELY) on a fixed byte range on Windows. Keep the descriptor/handle alive, mark non-inheritable, release on close and process exit. Never rename/delete the lock file, and do not interpret file contents/PIDs as ownership. Deny lock-root symlinks and restrict user access; atomic-replace helper and user-SID lookup can share this small platform binding. It opens no DB, sends no process signal and is built/qualified in release environments, never compiled on client machines. Ongoing controller cancellation/exit must close handles; killed/crashed fixture cases are simulated by fixture self-exit commands, not daemon kill controls."
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "implements",
+        "howDetails": "Define strict manifest/location/runtime/installation schemas, immutable bundle preparation and identity/digest checks; add only internal sidecar/inventory metadata with no public contract rename."
+      },
+      {
+        "contractId": "sc2",
+        "role": "implements",
+        "howDetails": "Ordinary manager entrypoint rejects install unconditionally; terminal bootstrap entrypoint alone constructs it after TTY validation. One OS-locked atomic snapshot enforces operation transitions; peers are required and never silently successful."
+      },
+      {
+        "contractId": "sc3",
+        "role": "implements",
+        "howDetails": "Own report/decision types and terminal rendering; consume s3 implementation later. No Ollama installation or agent detection implementation in s1."
+      },
+      {
+        "contractId": "sc5",
+        "role": "implements",
+        "howDetails": "Own ordered reference/check-run-test types and shape validation only; s5 owns actual hook execution and migration failure/retry policy. Manager never opens DB."
+      },
+      {
+        "contractId": "sc6",
+        "role": "implements",
+        "howDetails": "Own explicit home/endpoint resolver and bridge envelope schemas. Existing PATHS/IPC adaptations and authenticated daemon transport are integrated by owning lifecycle/client stories."
+      },
+      {
+        "contractId": "sc7",
+        "role": "implements",
+        "howDetails": "Publish identical terminal installer scripts and launch descriptor; success commits ready state/releases lock before foreground TUI. Native IDE terminal open/focus/escaping is explicitly deferred to s6/s7."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Wrong target, schema or predecessor",
+          "detection": "Strict release/target validators compare requested OS/arch/baseline/protocol and installed predecessor before candidate execution.",
+          "response": "manifest-invalid; leave incumbent/controller selection unchanged.",
+          "userImpact": "Actionable unsupported target/release message; no source-mode fallback.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Download or artifact integrity failure",
+          "detection": "HTTP status/deadline/size counters, streaming SHA-256 and pinned control/runtime asset checks fail.",
+          "response": "Remove only operation-owned staging bytes; retain incumbent and retryable diagnostics.",
+          "userImpact": "No partial install is reported ready.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Unsafe or excessive ZIP contents",
+          "detection": "Prevalidated central directory plus canonical destination checks, exclusive creation, actual byte counters, inventory hashes and case-collision tracking detect invalid entries.",
+          "response": "archive-unsafe; do not execute extracted code or publish release directory.",
+          "userImpact": "No filesystem writes escape the staging root.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Runtime version/ABI mismatch",
+          "detection": "Absolute private Node reports different version/arch than policy or packaged native smoke probes fail.",
+          "response": "runtime-invalid before disruption; never fall back to PATH Node/npm.",
+          "userImpact": "Existing unrelated Node installations remain untouched.",
+          "recoverable": true
+        },
+        {
+          "scenario": "IDE attempts direct install",
+          "detection": "Ordinary manager validates the request action before dispatch; install always fails there even with a forged bootstrap/source field.",
+          "response": "install-terminal-required; interactive installer additionally requires TTY on all standard streams.",
+          "userImpact": "User must use the shared terminal script; no hidden install or remote prompt driver.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Controller missing after enrollment or unreadable",
+          "detection": "Schema validation/revision/installation linkage fails when selected state already exists.",
+          "response": "controller-corrupt and fail closed; do not recreate or select arbitrary payloads.",
+          "userImpact": "User gets explicit recovery diagnostics; data remains untouched.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Concurrent mutation",
+          "detection": "OS nonblocking lock acquisition returns busy; lock contents/age are never considered.",
+          "response": "busy with observable recorded operation; caller may inspect rather than spawn another installer.",
+          "userImpact": "Duplicate windows do not race upgrades.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Missing lifecycle/dependency/migration capability",
+          "detection": "Required handler admission fails before destructive phase; no fixture or implicit no-op is available in production.",
+          "response": "capability-unavailable. Internal peer handlers use s1-owned ManagerRequest/ManagerEvent/report contracts; s1 never imports or redesigns s4's shutdown implementation or s5's runner.",
+          "userImpact": "s1 alone cannot falsely report live end-to-end installation; later integration is explicit.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Crash or cancellation before disruption",
+          "detection": "Abort signal/stream close or resumed preparing record with no quiescing admission.",
+          "response": "Retain error/result and clear only owned incomplete candidate staging under lock.",
+          "userImpact": "Incumbent remains usable; no TUI launches.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Interruption after quiescing or during migration/activation",
+          "detection": "Durable phase/hook-stage record lacks successful completion/readiness; owning peer reports failure/uncertainty.",
+          "response": "blocked; retain exact candidate/predecessor and peer diagnostics. Only explicit retry can reconcile; no automatic predecessor start or rollback.",
+          "userImpact": "Ordinary startup stays blocked through sibling boot guard.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Successful install but TUI launch fails",
+          "detection": "Ready result is already durable and lock released; installed private-runtime spawn or executable verification fails.",
+          "response": "post-install-tui-error with exact installed retry command. Do not change ready record or rerun installer.",
+          "userImpact": "Installation remains complete; terminal shows how to open TUI.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Atomic state replacement or disk exhaustion",
+          "detection": "Staging/fsync/atomic-replace adapter reports OS error; reread validates whether old or new snapshot is authoritative.",
+          "response": "Before disruption preserve usable incumbent; after disruption retain/report blocked/uncertain state and avoid further writes until reconciled.",
+          "userImpact": "Never claim success from an uncommitted state transition.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Home or script path contains spaces/Unicode/shell punctuation",
+          "expected": "Argument-vector transport and canonical path handling preserve identity; no shell expansion or global PATH mutation."
+        },
+        {
+          "input": "No host Node or a wrong host Node is first on PATH",
+          "expected": "Bootstrap and all installer/daemon/TUI launches use the pinned private executable; matching npm used only on release/build machines or future dev adapter."
+        },
+        {
+          "input": "Retry exact prepared candidate after a completed download",
+          "expected": "Revalidate immutable digests and resume only the recorded operation/phase; never select a different candidate silently."
+        },
+        {
+          "input": "Fresh installation versus supported bundle upgrade",
+          "expected": "No predecessor is valid on first install; an upgrade retains bundle mode and requires predecessor compatibility and exact peer readiness."
+        },
+        {
+          "input": "Empty hooks list or s3 reports no agent CLI",
+          "expected": "No speculative migration and no automatic agent install; owning peer confirms no-migration result and terminal shows advisory recommendations."
+        },
+        {
+          "input": "User exits the successfully launched TUI",
+          "expected": "Return to the terminal shell with installation lock already released and daemon still running."
+        },
+        {
+          "input": "Inspect/check-upgrade while another operation is busy",
+          "expected": "Read-only schema-validated snapshot/result; no lock stealing, startup or source sync."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Daemon alone owns LMDB/Lance access; installer/control never opens them.",
+          "source": "c1"
+        },
+        {
+          "text": "No host v2 daemon mutation, no daemon PID/kill/signal fallback, and no elevated commands.",
+          "source": "c2"
+        },
+        {
+          "text": "DEF E20261123c3d71313:S001:FR001 and s1 AC1-AC4 apply unchanged; fixture tests are not claimed as live qualification.",
+          "source": "c3"
+        },
+        {
+          "text": "Shared manual/IDE scripts own install prompts; ready → lock release → installed same-terminal TUI, with no direct IDE install action.",
+          "source": "c2"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test + node:assert/strict, *.test.ts under the canonical npm test coordinator; native/terminal evidence is recorded separately per OS/architecture, never inferred from fixtures.",
+      "testLevels": [
+        {
+          "level": "contract",
+          "purpose": "Validate untrusted inputs and enforce shared caller/identity boundaries rather than mirroring implementation.",
+          "subjects": [
+            "Strict manifest/runtime/entrypoint/hook validation; unrelated design-corpus ReleaseManifest is not imported.",
+            "Manager JSON install is rejected even with a forged source/bootstrap marker; non-TTY interactive entry is rejected.",
+            "Explicit home/endpoint and terminal launch schema preserve operation/release identity."
+          ],
+          "fixturesNeeded": [
+            "Malformed/wrong-target descriptors; corrupt enrolled snapshots; unsafe entrypoints; duplicate hooks; hostile shell/path values."
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove real filesystem preparation/state transitions and cross-process OS-lock exclusion with deterministic admitted peer processes.",
+          "subjects": [
+            "Immutable safe ZIP preparation and inventory verification, including ZIP traversal/ADS/case collision/symlink/oversize/truncation attacks.",
+            "Native lock exclusion/release and atomic-replace crash points with fixture processes that self-exit on control input.",
+            "Prepare/peer-quiesce/peer-migrate/peer-ready transitions; missing capabilities, uncertainty and first-data-write failures remain blocked.",
+            "Complete state and release lock before TUI fixture enters foreground; TUI fixture exit/failure leaves ready installation and peer daemon alive."
+          ],
+          "fixturesNeeded": [
+            "Small local HTTPS artifact server with controlled descriptors/runtime stubs and corrupt ZIPs; no cloud or LLM calls.",
+            "Disposable isolated home; peer capability/daemon/TUI fixtures clearly labelled non-production; phase fault injection.",
+            "Private-runtime identity spy; wrong-host-node executable trap; no default host daemon socket is ever used."
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "Exercise real platform bootstrap and built dependency-minimal control assets without host Node/npm/compiler in the consumer environment.",
+          "subjects": [
+            "Exact Node version/architecture and native lock addon under each target's shipped runtime.",
+            "Shared POSIX/PowerShell scripts preserve direct TTY I/O, report failure/cancel and successful same-terminal TUI handoff.",
+            "Bundled manager has no application DB/index/model imports; bundle consumer performs no npm/source build."
+          ],
+          "fixturesNeeded": [
+            "Clean OrbStack Linux and UTM macOS guests; Windows native terminal/runner evidence remains required before Windows acceptance.",
+            "Set missing/wrong host Node, restricted PATH, spaces/Unicode home and no-elevation sentinel."
+          ]
+        },
+        {
+          "level": "live",
+          "purpose": "Final native AC acceptance after real sibling lifecycle/dependency/migration implementations are integrated; not claimed by the s1 fixture suite.",
+          "subjects": [
+            "Clean install and successor upgrade with actual bundle/native dependencies and IPC readiness on every enabled target.",
+            "Both IDE scripts have exact byte parity with manual release script; terminal frontend integration belongs to s6/s7.",
+            "Migration refusal/failure blocks actual startup and upgrade; real TUI uses selected daemon and exits without stopping it."
+          ],
+          "fixturesNeeded": [
+            "s3/s4/s5 integration and s8 platform matrix; exact archive/runtime/source identity and OS/arch/translation evidence.",
+            "Keep host Mac v2 daemon untouched; record unavailable platform evidence as pending, not passed."
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "contract-target-and-runtime-policy; integration-bootstrap-with-host-node-trap; terminal-entry-caller-restriction; foreground-tui-after-ready-lock-release",
+            "Required later live: clean consumer install per target with actual private runtime and IPC readiness."
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "integration-successor-mode-preservation; exact-ready-candidate-validation; missing-peer-admission; peer-migration-failure-no-activation; interrupted-cutover-blocked",
+            "Required later live: real predecessor/successor upgrade with s4/s5 and retained representative state."
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "integration-download-status-timeout-size-and-digest; unsafe-zip-corpus; wrong-target-runtime; corrupt-controller-fail-closed; pre-cutover-incumbent-remains-usable"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "package-bundle-inventory-and-independent-sidecar-digest; exact-source-target-runtime-identity; native-lock-runtime-smoke; manual-IDE-script-byte-parity; production-dependency-closure-with-workspace-links",
+            "Required per-target native qualification before publication; translated evidence is identified and cannot substitute unsupported native checks."
+          ]
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "One versioned controller snapshot and immutable candidates",
+        "oneLineSummary": "Atomic installation/operation snapshot plus immutable release folders and a small typed set of sibling-service ports.",
+        "approach": "Keep the HLD Installation and OperationRecord together in one schema-validated controller snapshot so selected release and operation phase change atomically. Manifests, target policy and immutable payloads are separate read-only inputs; an OS-backed lock serializes writes.\n\nA bundle preparer and terminal-only interactive entrypoint return typed results. Lifecycle, dependencies and migration are required capability ports implemented by their owning sibling stories, not interchangeable plugin registries. Missing capability yields explicit unavailable/blocked results, not a successful partial install.",
+        "pros": [
+          "One durable controller replacement avoids inconsistent active-release and operation files.",
+          "The type surface matches HLD contracts without an extra storage engine or service.",
+          "Failure and retry tests can exercise real filesystem state and explicit peer contracts."
+        ],
+        "cons": [
+          "Readers must validate the entire small snapshot on every inspection.",
+          "s1 live install/upgrade acceptance still needs later sibling ports and target qualification; test peers are not native qualification."
+        ],
+        "costEstimate": "L"
+      },
+      {
+        "id": "a2",
+        "name": "Append-only event journal with projected installation records",
+        "oneLineSummary": "Every phase transition is a durable event, with installation and operation views projected from history.",
+        "approach": "Keep the same HLD public types but persist an append-only sequence of admission, preparation, cutover and completion events. Inspection replays events or reads a versioned projection to reconstruct Installation and OperationRecord.\n\nThe terminal entrypoint and bundle preparer use the same sibling capability ports. Journal replay, projection versioning and truncation policy become additional internal contracts even though no user-facing history feature was requested.",
+        "pros": [
+          "Every state transition has a durable event history for diagnosis.",
+          "A failed projection can be rebuilt from valid journal records."
+        ],
+        "cons": [
+          "Requires event compatibility, replay and compaction semantics beyond the requested small controller record.",
+          "Partial event tails and projection consistency add failure cases without removing the required OS lock or application migration ownership."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Technically viable, but event replay/projection lifecycle adds unnecessary internal contracts."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [],
+    "sequenceDefinition": {
+      "id": "bundle-install-foundation",
+      "narrative": "The terminal script alone admits interactive installation, using verified private runtime/control assets. Candidate activation requires real sibling outcomes; only ready completion and lock release permit the same-terminal TUI handoff. Any missing or failed peer blocks this success path.",
+      "participants": [
+        {
+          "id": "terminal",
+          "label": "Interactive terminal",
+          "description": "Manual or IDE terminal with direct user I/O."
+        },
+        {
+          "id": "script",
+          "label": "Shared installer script",
+          "description": "Canonical POSIX/PowerShell bootstrap; sole interactive install caller."
+        },
+        {
+          "id": "assets",
+          "label": "Release assets",
+          "description": "Pinned runtime/bootstrap assets and descriptor/ZIP with independently checked digests."
+        },
+        {
+          "id": "runtime",
+          "label": "Private Node",
+          "description": "Exact version/target, no host fallback."
+        },
+        {
+          "id": "manager",
+          "label": "Installer core",
+          "description": "Owns lock, candidate preparation and atomic controller state; no DB access."
+        },
+        {
+          "id": "peers",
+          "label": "Required peer handlers",
+          "description": "Sibling-owned dependency/lifecycle/migration services through foundation envelopes; never no-op stubs."
+        },
+        {
+          "id": "tui",
+          "label": "Installed TUI",
+          "description": "Foreground selected-release TUI, entered only after ready and lock release."
+        }
+      ],
+      "messages": [
+        {
+          "from": "terminal",
+          "to": "script",
+          "label": "Run canonical install script",
+          "description": "Same script bytes for manual and IDE entrypoints.",
+          "kind": "call"
+        },
+        {
+          "from": "script",
+          "to": "assets",
+          "label": "Obtain pinned runtime and bootstrap assets",
+          "description": "Check embedded digests/target before executing either JS or native lock binding.",
+          "kind": "call"
+        },
+        {
+          "from": "script",
+          "to": "runtime",
+          "label": "Run interactive installer",
+          "description": "Absolute executable, inherited terminal I/O and sanitized Node injection environment.",
+          "kind": "call"
+        },
+        {
+          "from": "runtime",
+          "to": "manager",
+          "label": "TTY-guarded internal install action",
+          "description": "Ordinary manager protocol refuses install regardless of a claimed caller marker.",
+          "kind": "call"
+        },
+        {
+          "from": "manager",
+          "to": "manager",
+          "label": "Acquire OS lock; read controller",
+          "description": "Existing operation and candidate identities must reconcile; no PID or age ownership.",
+          "kind": "call"
+        },
+        {
+          "from": "manager",
+          "to": "assets",
+          "label": "Prepare validated immutable ZIP candidate",
+          "description": "Sidecar archive digest, inventory hashes, bounded contained extraction and runtime checks.",
+          "kind": "call"
+        },
+        {
+          "from": "manager",
+          "to": "peers",
+          "label": "Require admitted prerequisite and activation outcomes",
+          "description": "Actual dependency, shutdown/readiness and migration execution belong to s3/s4/s5.",
+          "kind": "call"
+        },
+        {
+          "from": "peers",
+          "to": "manager",
+          "label": "Exact ready or blocked result",
+          "description": "No production fixture/no-op success and no automatic rollback.",
+          "kind": "return"
+        },
+        {
+          "from": "manager",
+          "to": "manager",
+          "label": "Commit ready and release lock",
+          "description": "Only on validated success; blocked/uncertain results stop before TUI handoff.",
+          "kind": "call"
+        },
+        {
+          "from": "manager",
+          "to": "tui",
+          "label": "Run installed TUI in same terminal",
+          "description": "Selected installed entry/private runtime with inherited standard streams.",
+          "kind": "call"
+        },
+        {
+          "from": "tui",
+          "to": "terminal",
+          "label": "Foreground UI; exit returns to shell",
+          "description": "Exiting TUI does not stop daemon; TUI launch failure does not revert installation.",
+          "kind": "return"
+        }
+      ]
+    },
+    "componentDependencyDefinition": {
+      "id": "bundle-installer-dependencies",
+      "narrative": "The new installer core stays separate from application boot and databases. Its script, records and target-native lock binding serve bundle delivery, while sibling execution is required through foundation-owned envelopes rather than reverse imports.",
+      "components": [
+        {
+          "id": "bootstrap",
+          "label": "Canonical scripts",
+          "description": "Proposed scripts/install.sh and scripts/install.ps1 establish private Node and invoke interactive entry."
+        },
+        {
+          "id": "core",
+          "label": "Dependency-minimal installer core",
+          "description": "New s1 control entrypoints, validated contracts, bundle preparation and TUI handoff; no application boot."
+        },
+        {
+          "id": "reader",
+          "label": "Descriptor / ZIP validation",
+          "description": "Pure-JS bounded extraction plus identity, inventory and digest checks."
+        },
+        {
+          "id": "state",
+          "label": "Atomic controller state",
+          "description": "One controller snapshot and stable OS-lock file."
+        },
+        {
+          "id": "native",
+          "label": "Target-native file primitives",
+          "description": "Node-API OS lock and atomic replacement; no DB/process-control capabilities."
+        },
+        {
+          "id": "peers",
+          "label": "Sibling peer handlers",
+          "description": "s3 dependency execution, s4 lifecycle/readiness, s5 migration execution; later s2 dev adapter."
+        },
+        {
+          "id": "tui",
+          "label": "Installed TUI",
+          "description": "Existing TUI in the selected payload, foreground same-terminal after ready/lock release."
+        },
+        {
+          "id": "package",
+          "label": "Release packaging",
+          "description": "New packaging script emits descriptor, ZIP, bootstrap assets and identical manual/IDE scripts."
+        }
+      ],
+      "dependencies": [
+        {
+          "from": "bootstrap",
+          "to": "core",
+          "label": "Verified private runtime"
+        },
+        {
+          "from": "core",
+          "to": "reader",
+          "label": "Prepare bundle"
+        },
+        {
+          "from": "core",
+          "to": "state",
+          "label": "Validated transitions"
+        },
+        {
+          "from": "state",
+          "to": "native",
+          "label": "Exclusive lock / atomic replace"
+        },
+        {
+          "from": "core",
+          "to": "peers",
+          "label": "s1-owned request/result envelopes"
+        },
+        {
+          "from": "core",
+          "to": "tui",
+          "label": "After ready and lock release"
+        },
+        {
+          "from": "package",
+          "to": "reader",
+          "label": "Publish validated inventory/descriptor"
+        },
+        {
+          "from": "package",
+          "to": "native",
+          "label": "Ship qualified native binding"
+        }
+      ]
+    },
+    "adherence": {
+      "dimensions": [
+        "diagram-sequence",
+        "diagram-component",
+        "functional-coverage"
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S001/sequence-diagram.html",
+        "title": "Sequence diagram"
+      },
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S001/component-dependency.html",
+        "title": "Component dependencies"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "AGENTS.md"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/HLD.md"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/DEF.md"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "scripts/insrc",
+      "quotedText": "Current launcher is source/development boundary, not reusable installed private-runtime bootstrap unchanged."
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "copy-assets.mjs"
+    },
+    {
+      "id": "c6",
+      "kind": "analyze-bundle",
+      "ref": "src/design/corpus/contracts.ts",
+      "quotedText": "Existing ReleaseManifest name is a separate design-corpus schema; not installer reuse."
+    },
+    {
+      "id": "c7",
+      "kind": "analyze-bundle",
+      "ref": "scripts/__tests__/client-assets-retirement.test.ts"
+    },
+    {
+      "id": "c8",
+      "kind": "analyze-bundle",
+      "ref": "src/shared/__tests__/ipc-client.test.ts"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": ".npmrc"
+    },
+    {
+      "id": "c10",
+      "kind": "doc",
+      "ref": "https://github.com/thejoshwolfe/yauzl/blob/master/README.md"
+    },
+    {
+      "id": "c11",
+      "kind": "doc",
+      "ref": "https://nodejs.org/docs/latest-v22.x/api/n-api.html"
+    },
+    {
+      "id": "c12",
+      "kind": "doc",
+      "ref": "https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-lockfileex"
+    },
+    {
+      "id": "c13",
+      "kind": "step-output",
+      "ref": "s4",
+      "quotedText": "New proposed record/contract detail scoped to s1; no sibling execution implementations."
+    },
+    {
+      "id": "c14",
+      "kind": "step-output",
+      "ref": "s5"
+    },
+    {
+      "id": "c15",
+      "kind": "step-output",
+      "ref": "s6"
+    }
+  ]
+}

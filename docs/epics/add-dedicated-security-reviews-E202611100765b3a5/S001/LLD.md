@@ -9,7 +9,7 @@
 **HLD effective hash:** `60b05edbecc2...`
 **Tracker:** [insors-ai/insrc#226](https://github.com/insors-ai/insrc/issues/226)
 
-This Story lets an operator pin an explicit security-reviewer model (CLI family + model id) via new, global-only models.security.* catalog options, independent of the core/mid/cheap tiers every other reasoning site uses. A pure, synchronous selection step picks that pin -- or, when none is configured, the 'security.review' role's own tier-default model -- and rejects outright, with no substitution, a pin that is malformed, unlisted, or does not meet the role's coreFloor-required capability. Only a selection that survives that check proceeds to a bounded, asynchronous availability check against the real CLI backend; a review then either starts with the resolved model and records its identity, or the resolver reports the specific blocker (a malformed/below-floor pin, an unreachable backend, or a timed-out/cancelled check) without ever substituting a different model.
+This Story lets an operator pin a dedicated security-review model, independent of the core/mid/cheap tiers every other reasoning site uses, and have that pin checked for availability before a security review runs -- a malformed or unreachable pin is reported as a specific blocker, never silently replaced with a different model. This revision corrects the LLD's own contract text: the configuration field that carries the pin must be a required, always-present three-way result (nothing configured / a valid pin / a malformed pin), not the optional field originally sketched, because only the three-way shape lets the selection logic refuse a malformed pin instead of treating it the same as nothing configured.
 
 ## Contents
 
@@ -26,223 +26,159 @@ This Story lets an operator pin an explicit security-reviewer model (CLI family 
 
 > See **HLD-0765b3a578e43eec** § 2. Framework summary
 
-**Rollout phase:** Phase A -- foundational contracts (model selection and enforced advisory collection)
+**Rollout phase:** Phase A -- foundational contracts (model selection and dependency-advisory collection)
 **Owns:** `sc1` (SecurityModelSelection)
-
-**Adjacent scope (owned by other stories — do NOT implement here):**
-- `s2`: pkg_audit's package-manager resolution; the ENFORCED (not merely recorded) per-manager network boundary -- blocking any request to an unapproved destination before it leaves the process, including redirects and a tool's own secondary requests, and refusing to run a manager's audit at all when that enforcement cannot be established; the documented per-manager input/mode mapping (npm/pnpm/yarn/cargo: manifest+lockfile scope; pip/pipenv/poetry: an isolated environment resolved from the pinned manifest, never the ambient active environment pip-audit defaults to; go: a confined copy of the pinned snapshot's module source, since govulncheck performs source-level analysis, not a manifest read) with an explicit coverage gap for any manager s2 cannot correctly scope under that mapping; and the advisory-match collection that populates SecurityAdvisoryEvidence (stamped with the pinned contentIdentity) stay private to s2. No model, tool-loop, or CLI session is involved in s2 at all. ac2's gap-reporting distinguishes a SUCCESSFUL audit that found vulnerabilities (a valid, parseable result regardless of exit code -- pkg_audit's own auditArgv already marks every supported manager nonZeroOk:true) from an EXECUTION GAP (spawn failure, unparseable output, an unsupported manager, or a manager s2's input/mode mapping cannot correctly scope) -- these are never conflated. — owns `sc2`
-- `s3`: The RoundDriverHooks.security adapter function; the CliProvider.runReadOnlySession dispatch of the code-vulnerability pass against the SAME pinned contentIdentity s2 collected against (recomputed/verified by s3, refusing on a mismatch), using s1's resolved model, under a backend REQUIRED to deny credential-location reads, out-of-scope reads and unauthorized MCP operations -- verified per backend by an actual negative-access test (not merely confirming a restricting flag was passed), with s3 refusing to dispatch through a backend that cannot be so verified; the exact per-provider mechanism is an s3 LLD decision, the three denials and the refuse-if-unverifiable rule are fixed here. The call into runReviewRound and the separate ownership of everything runReviewRound itself does NOT do (sandbox/mutation checkpoint execution, round reconciliation, VerificationReceipt persistence, and checkpoint cleanup); the mapping from the review's pinned contentIdentity onto the epicHash/storyId identity persistVerificationReceipt requires; and the assembly of SecurityFinding/SecurityEvidence plus a supplemental report structure stay private to s3. It consumes s1's SecurityModelSelection and s2's SecurityAdvisoryEvidence to produce that report.
 
 ## 2. Contract details
 
-**Surface level:** internal-shared
+**Surface level:** internal
 
-### 2.1 `resolveSecurityModelCandidate`
+### 2.1 `parseSecurityModelPin`
 
 ```typescript
-function resolveSecurityModelCandidate(cfg: AnalyzeConfig, registry: ModelRegistry): SecurityModelCandidate
+function parseSecurityModelPin(models: Record<string, unknown>): SecurityModelPinResult
 ```
 
 **Parameters:**
-- `cfg: AnalyzeConfig` — Carries tiering.security (parsed from the new global-only models.security.* catalog keys) and the 'security.review' role's own tier assignment, used only when no pin is configured.
-- `registry: ModelRegistry` — Supplies the family/model catalog (families(), via FamilyDefinition.tierDefaults) needed both to validate a pin is listed and to run the floor-eligibility check against the role's coreFloor.
+- `models: Record<string, unknown>` — The raw, already-parsed `models` object from config.json (or an equivalent in-memory config source) to read the `security` key from.
 
-**Returns:** `SecurityModelCandidate` — status:'candidate' with {runner, model, effort?} when a listed, floor-eligible model was selected (an explicit models.security pin, or the role's own tier-default when no pin is configured); status:'unavailable' with blockerReason when the configured pin is malformed, unlisted, or below the role's required capability floor -- decided purely from config + registry data, with no I/O and no substitution.
+**Returns:** `SecurityModelPinResult` — A required, always-present tri-state: {kind:'absent'} when no models.security key is set, or it is set to the catalog's own '' runner+model unset sentinel; {kind:'valid', runner, model, effort?} when models.security validates to a listed CLI family + non-empty model; {kind:'malformed', detail} for anything else present (wrong shape entirely, or an incomplete/mistyped object).
 
 **Preconditions:**
-- models.security.* has already been parsed by the dedicated tri-state parseSecurityModelPin function (absent / valid / malformed), never by reusing parseTieringOverride's existing malformed-value-dropped-to-undefined convention
-- the 'security.review' RoleId is registered in role-taxonomy.ts's closed ROLES registry
+- models is the raw models.* config object, not yet validated
 
 **Postconditions:**
-- performs no I/O or subprocess work of any kind
-- a malformed or below-floor pin resolves to status:'unavailable' immediately and never falls through to the role's tier-default model
-- an absent pin falls through to the 'security.review' role's own tier-default model, which is itself checked against the floor the same way a pin would be
+- The result is one of exactly the three SecurityModelPinResult variants; never undefined.
+- An absent key and a malformed value are never conflated: only {kind:'absent'} falls through to the role's tier-default model downstream.
 
-### 2.2 `resolveSecurityModel`
+### 2.2 `resolveSecurityModelCandidate`
 
 ```typescript
-function resolveSecurityModel(cfg: AnalyzeConfig, registry: ModelRegistry, opts: { deadlineMs: number; signal?: AbortSignal }): Promise<SecurityModelSelection>
+function resolveSecurityModelCandidate(cfg: AnalyzeConfig, registry: ModelRegistry, repoPath?: string): SecurityModelCandidate
 ```
 
 **Parameters:**
-- `cfg: AnalyzeConfig` — Forwarded to resolveSecurityModelCandidate.
-- `registry: ModelRegistry` — Forwarded to resolveSecurityModelCandidate.
-- `opts: { deadlineMs: number; signal?: AbortSignal }` — deadlineMs bounds the live availability check so an unreachable CLI subprocess cannot hang a review start; signal lets the caller cancel the in-flight check (e.g. the review itself was aborted).
+- `cfg: AnalyzeConfig` — The loaded analyze config, carrying cfg.tiering.security (the SecurityModelPinResult) and cfg.tierResolutions.
+- `registry: ModelRegistry` — The model registry used to check a pin's listedness and capability floor.
+- `repoPath: string` _(optional)_ — Optional repo path, so a repo's own models.byRepo[repoPath].tasks['security.review'] / coreFloor override is honored when computing the fallback floor tier for an absent pin.
 
-**Returns:** `Promise<SecurityModelSelection>` — Resolves 'configured' only after a bounded, real availability probe against resolveSecurityModelCandidate's selected (runner, model) succeeds. Resolves 'unavailable' immediately, with no probe attempted, when the candidate step itself rejected the pin; otherwise resolves 'unavailable' after the probe fails, times out (opts.deadlineMs), or is cancelled (opts.signal).
+**Returns:** `SecurityModelCandidate` — status:'candidate' with the selected (runner, model, effort?) when a listed, floor-eligible model was found (either the explicit pin, or -- only for a genuinely absent pin -- the 'security.review' role's own tier-default model, resolved via the same byRepo->global->role-default precedence + coreFloor clamp every other role uses); status:'unavailable' with blockerReason otherwise. Takes cfg.tiering.security's kind directly: 'malformed' always resolves to 'unavailable' immediately, never falling through to a tier-default model.
+
+**Preconditions:**
+- cfg.tiering.security is the tri-state SecurityModelPinResult (never undefined).
 
 **Postconditions:**
-- always resolves (never rejects); the promise settles within opts.deadlineMs of starting the availability probe
-- calls resolveSecurityModelCandidate first; if it is already status:'unavailable', resolveSecurityModel returns that result without starting any process
-- otherwise awaits exactly one bounded probe (a minimal CliProvider call) against the candidate; the probe's rejection, a non-zero/ENOENT failure, the deadline, or signal abort are each mapped to a distinct blockerReason
+- A malformed pin, or a pin/tier-default model that is unlisted, below-floor, or whose tier resolution itself carries a silent-substitution fallback, never resolves to 'candidate'.
 
 ## 3. Data model changes
 
-### 3.1 `role-taxonomy.ts ROLES registry` — new
+### 3.1 `AnalyzeTiering.security` — field-modify
 
-Add one new RoleDescriptor entry { id: 'security.review', criticality: 'critical', defaultTier: 'core' } to the closed ROLES array, so the role participates in coreFloor protection and is exposed by settings-catalog.ts like every other critical role. This is a data addition only -- role-taxonomy.ts stays pure DATA + accessors per its own header comment; it still does not resolve providers.
+Corrects this Story's own LLD contract text: AnalyzeTiering.security is `SecurityModelPinResult` (a required, always-present discriminated union: {kind:'absent'} | {kind:'valid', runner, model, effort?} | {kind:'malformed', detail}), not the originally-sketched optional `SecurityModelPin | undefined`. resolveSecurityModelCandidate(cfg, registry, repoPath?) has a fixed signature with no raw models.* access, so it can only tell a genuinely absent pin (which must fall through to the role's tier-default model) apart from a malformed one (which must refuse immediately, per ac1's no-silent-fallback requirement) if the field itself carries that distinction -- an optional field collapses both to undefined and makes the distinction unrecoverable downstream. No code changes result from this revision; the field is already built and tested this way.
 
-**Call sites:**
-- `src/config/role-taxonomy.ts:56-120`
-- `src/config/settings-catalog.ts:86`
-
-### 3.2 `config-catalog.ts CONFIG_CATALOG rows (models.security.*)` — new
-
-Add three new GLOBAL-ONLY scalar catalog rows mirroring the existing models.tiers.<tier>.{runner,model,effort} rows exactly (buildConfigCatalog's tierRows/effortRow pattern): models.security.runner (enum, family ids), models.security.model (string), models.security.effort (enum, optional). No byRepo variant is added -- per-repo config only ever picks a TIER for a role, never the model behind a tier (role-router.ts's own doc comment: 'a repo picks a tier for a role, never the model behind it'); the security pin follows that identical global-only rule. This corrects revision 1, which wrongly introduced a byRepo-over-global precedence for a model identity that no existing catalog mechanism supports.
+```
+- security?: SecurityModelPin | undefined
++ security: SecurityModelPinResult  // { kind: 'absent' } | ({ kind: 'valid' } & SecurityModelPin) | { kind: 'malformed'; detail: string }
+```
 
 **Call sites:**
-- `src/config/config-catalog.ts:94-99`
-- `src/config/config-catalog.ts:133-135`
-
-### 3.3 `AnalyzeConfig.tiering.security + parseSecurityModelPin` — new
-
-Add an optional tiering.security?: { runner: FamilyId; model: string; effort?: EffortLevel } | undefined field, loaded by a NEW, dedicated parseSecurityModelPin(models: Record<string, unknown>) function -- NOT a reuse of parseTieringOverride/effortOf's existing convention of silently dropping a malformed value to undefined (analyze.ts:384-431), since that convention cannot distinguish a malformed pin from an absent one, and this Story's fail-closed requirement depends on telling them apart. parseSecurityModelPin returns a tri-state result: { kind: 'absent' } (no models.security key at all), { kind: 'valid', runner, model, effort? } (a well-typed, complete triple), or { kind: 'malformed', detail } (models.security is present but incomplete or mistyped -- e.g. runner set with no model, or runner not a recognized FamilyId). resolveSecurityModelCandidate treats 'malformed' as an immediate status:'unavailable', never as 'absent'.
-
-**Call sites:**
-- `src/config/analyze.ts:384-431`
-
-### 3.4 `Security-pin floor-eligibility check` — new
-
-A new helper, e.g. securityPinMeetsFloor(registry: ModelRegistry, familyId: FamilyId, modelId: string, floorTier: TierName): boolean, establishes the ONLY link between an arbitrary pinned (family, model) pair and the coreFloor's TierName ranking: it holds iff some family's own FamilyDefinition.tierDefaults[tier].model (by id or alias) equals the pinned model AND reasoningRoleTaxonomy().rankOf[tier] >= rankOf[floorTier]. A pin matching no family's tierDefaults at any tier is 'unclassifiable' and is treated as below-floor (rejected, not substituted). This is necessary because CoreFloorGuard.applyCoreFloor (core-floor-guard.ts:107-141) compares only TierName values via rankOf -- it has no notion of an individual model's capability, so registering 'security.review' as critical/core by itself establishes no eligibility rule for a pin that bypasses tier assignment entirely.
-
-**Call sites:**
-- `src/config/core-floor-guard.ts:107-141`
-- `src/daemon/model-catalog.ts:72-86`
-- `src/daemon/model-registry.ts:96-100`
-- `src/config/role-taxonomy.ts:43-49`
-
-### 3.5 `SecurityModelSelection (sc1)` — new
-
-The HLD-defined output record this Story owns and produces via resolveSecurityModel: { status: 'configured' | 'unavailable'; modelId?: string; provider: 'cli-claude' | 'cli-codex' | 'cli-vibe'; blockerReason?: string }. Lives in the Epic's new standalone orchestration module (outside src/workflow/review-round/, per the HLD's chosen alternative), e.g. src/workflow/security-review/model-selection.ts, and crosses the s1->s3 boundary unchanged. Unchanged from revision 1 -- the shape already supports both an immediate (sync-known) rejection and an availability-check (async) failure with the same status/blockerReason fields.
-
+- `src/config/analyze.ts:166-193`
+- `src/config/analyze.ts:225-233`
+- `src/config/analyze.ts:426-460`
+- `src/config/analyze.ts:505-546`
+- `src/config/__tests__/analyze-tiering.test.ts`
 
 ## 4. Interaction with shared contracts
 
 | Contract | Role | How |
 | :--- | :--- | :--- |
-| `sc1` | implements | resolveSecurityModel is the sole producer of SecurityModelSelection. It first calls resolveSecurityModelCandidate (pure, sync): resolve the models.security pin or, if absent, the 'security.review' role's tier-default model; reject immediately (status:'unavailable', no substitution) if the pin is malformed, unlisted, or fails the coreFloor-eligibility check. Only a surviving candidate proceeds to a bounded, awaited availability probe against the real CLI backend; a probe failure, timeout, or cancellation also resolves to status:'unavailable', each with a distinguishing blockerReason. s3 consumes the returned value as-is to dispatch its CliProvider.runReadOnlySession call and to record the effective model in the report. |
+| `sc1` | consumes | sc1 (SecurityModelSelection) is not produced by the functions this revision documents -- resolveSecurityModel (src/config/analyze.ts:505-546) produces it, by calling resolveSecurityModelCandidate first. This revision only corrects the internal AnalyzeTiering.security field the candidate resolution reads; sc1's own shape (owned by s1, consumed by s3) is unaffected and is not re-specified here. |
 
 ## 5. Error paths
 
 **Error cases**
 
-- **models.security.* is present but malformed -- e.g. models.security.model is set with no models.security.runner, or the runner value is not a recognized FamilyId.** (recoverable)
-  - Detection: parseSecurityModelPin returns { kind: 'malformed', detail }, distinct from { kind: 'absent' }; resolveSecurityModelCandidate checks for this kind explicitly rather than treating a parse failure as if no pin were configured.
-  - Response: resolveSecurityModelCandidate returns status:'unavailable' immediately with a blockerReason naming the malformed field; it does NOT fall through to the 'security.review' role's tier-default model the way an absent pin would.
-  - User impact: An operator's broken configuration is reported as a specific, actionable blocker instead of silently running under a different model than they thought they configured.
-- **models.security.* names a (runner, model) pair that IS a listed, valid model for that family, but does not match any of that family's own FamilyDefinition.tierDefaults entries at or above the 'security.review' role's effective coreFloor rank (or matches none of its tierDefaults at all -- unclassifiable).** (recoverable)
-  - Detection: securityPinMeetsFloor(registry, runner, model, floorTier) returns false for every TierName; resolveSecurityModelCandidate checks this before accepting the pin as a candidate.
-  - Response: Returns status:'unavailable' with a blockerReason stating the pin is below the required capability floor (or unclassifiable against any tier); the pin is rejected outright, never substituted with the tier-default model or a different pin.
-  - User impact: A pin that would silently under-power the security review is refused rather than accepted and run anyway.
-- **The selected candidate's CLI binary is not installed, or its OAuth session has expired, so the bounded availability probe's real subprocess invocation fails (ENOENT / auth rejection) -- a failure mode the earlier analyze bundle confirmed CliProvider has no pre-flight isAvailable()/healthcheck probe for; it can only be observed by actually attempting the call.** (recoverable)
-  - Detection: resolveSecurityModel's awaited probe (a minimal CliProvider call against the candidate) rejects or reports a non-zero/ENOENT failure before opts.deadlineMs elapses; the rejection is caught, not propagated.
-  - Response: Resolves status:'unavailable' with a blockerReason distinguishing a live backend failure from a config-time rejection (malformed/below-floor).
-  - User impact: No review runs against a degraded or silently-substituted model; the operator is told the backend itself could not be reached.
-- **The bounded availability probe neither resolves nor rejects before opts.deadlineMs elapses, or opts.signal is aborted while the probe is still outstanding (e.g. the review itself was cancelled).** (recoverable)
-  - Detection: resolveSecurityModel races the probe against a deadline timer and the given AbortSignal; whichever settles first determines the outcome, and the probe's own eventual settlement (if any) is discarded.
-  - Response: Resolves status:'unavailable' with a blockerReason naming 'timeout' or 'cancelled' respectively, distinct from a live backend failure.
-  - User impact: A hung or cancelled availability check cannot stall review start indefinitely, and the operator can tell a timeout/cancellation apart from an actual backend rejection.
-- **No models.security.* pin is configured (a genuine { kind: 'absent' }, distinct from malformed), AND the 'security.review' role's own tier-default model is also unlisted or fails the same floor-eligibility check.** (recoverable)
-  - Detection: The fallthrough-to-tier-default path in resolveSecurityModelCandidate runs through the identical listed-model + floor-eligibility checks a pin would.
-  - Response: Returns status:'unavailable' with a blockerReason; resolveSecurityModelCandidate does not fall through further to a different role, tier, or UNKNOWN_ROLE_TIER-style default the way RoleRouter's own resolveRoleInternal would.
-  - User impact: No unannounced model substitution -- the blocker is explicit even when there was never an explicit pin to begin with.
+- **models.security.runner is set but models.security.model is missing or empty (a genuine config mistake)** (recoverable)
+  - Detection: parseSecurityModelPin checks runner and model independently; only both being absent or both being the catalog's '' unset sentinel reads as {kind:'absent'} -- one set without the other is {kind:'malformed'}.
+  - Response: resolveSecurityModelCandidate returns status:'unavailable' with the parser's detail string as blockerReason immediately, never falling through to the role's tier-default model.
+  - User impact: The security review reports the specific misconfiguration (e.g. 'models.security.model: expected a non-empty string') instead of silently reviewing with a different model.
+- **models.security is present but the wrong shape entirely (null, a string, an array, a number)** (recoverable)
+  - Detection: parseSecurityModelPin treats sec === undefined as the only absent case; any other non-object value is {kind:'malformed'}, distinct from a genuinely absent key.
+  - Response: resolveSecurityModelCandidate refuses immediately with status:'unavailable', same as any other malformed pin.
+  - User impact: A config author's typo (e.g. models.security: 'claude') is reported as a malformed configuration, not silently treated as unset.
+- **No pin is configured, and the role's own fallback-tier model was itself silently substituted (unlisted/rejected) by the registry** (recoverable)
+  - Detection: resolveSecurityModelCandidate checks cfg.tierResolutions[floorTier].fallback for the absent-pin fallthrough path.
+  - Response: Refuses with status:'unavailable', naming the fallback.reason and fallback.requested, rather than silently using the registry's own substitute model.
+  - User impact: The operator is told their configured tier model was rejected, instead of the security review silently running on an unrequested substitute.
+- **The caller's opts.signal is already aborted before resolveSecurityModel is called, or is aborted while the probe is outstanding** (recoverable)
+  - Detection: resolveSecurityModel checks opts.signal?.aborted at function entry before any dispatch; an abort while outstanding is caught by an 'abort' listener on the caller's signal.
+  - Response: Resolves immediately (pre-aborted case) or as soon as the abort fires (in-flight case) with status:'unavailable' and a cancellation blockerReason; an internal AbortController is aborted in both cases and its signal is threaded into the underlying CliProvider.complete() call, which genuinely stops the CLI subprocess and bypasses its retry chain rather than leaving it running past the deadline.
+  - User impact: A cancelled review stops promptly and does not leave a background CLI process retrying after the caller gave up.
 
 **Edge cases**
 
 | Input | Expected |
 | :--- | :--- |
-| models.security.* is wholly absent (no key at all) and the 'security.review' role's tier-default model is listed and floor-eligible. | resolveSecurityModelCandidate falls through cleanly to the tier-default model as a normal candidate (status:'candidate', not 'unavailable') -- an absent pin is expected, ordinary behavior, not itself a blocker; resolveSecurityModel then still runs the bounded availability probe against it before reporting 'configured'. |
-| repoPath / per-repo config is irrelevant to the security pin: models.byRepo.<repo>.security does not exist as a catalog key. | resolveSecurityModelCandidate and resolveSecurityModel take no repoPath parameter and consult only the global models.security.* catalog keys -- unlike models.tasks (roleTiers) and models.coreFloor, which do have byRepo overrides for TIER ASSIGNMENT, the pinned model identity itself is global-only, mirroring models.tiers.<tier>.{runner,model} exactly. |
-| models.security.* names a (runner, model) pair that matches a DIFFERENT family's own tierDefaults at a tier whose rank is at or above the floor (e.g. the pin is codex's own mid-tier default model, and the floor is 'mid'). | securityPinMeetsFloor returns true (the check is per-pin against ANY family's tierDefaults, not restricted to the 'security.review' role's own currently-assigned family/tier) -- the pin is accepted as a floor-eligible candidate. |
-| The live-test's chosen backend: a VALID, listed, floor-eligible model is pinned, but the backend made unreachable for the test (e.g. CLI binary removed from PATH or auth revoked in the test environment) -- NOT an invalid/unlisted model id. | resolveSecurityModelCandidate accepts the pin as a candidate (the config-time checks pass); the failure surfaces only from resolveSecurityModel's awaited availability probe, exercising the genuinely asynchronous failure path rather than being rejected before availability is ever checked. |
+| models.security: {runner: '', model: ''} -- the catalog's own persisted 'unset' default, written by config reconciliation on every ordinary install | Reads identically to no models.security key at all: {kind:'absent'}, falling through to the role's tier-default model. |
+| A valid pin with effort: '' (the catalog's documented 'use the CLI's own default' value) | The '' effort is stripped before the {kind:'valid'} result is returned; it is never forwarded as a literal --effort '' to the CLI. |
 
 ## 6. Test strategy
 
-**Test framework:** `node:test (node --test) with node:assert, per the existing src/config/__tests__/*.test.ts convention this Story's own role-taxonomy.ts change sits beside (e.g. role-taxonomy.test.ts's assert.equal(r.defaultTier, ...) pattern).`
+**Test framework:** `node:test (npx tsx --test), per the project's existing src/config/__tests__ convention`
 
 **Test levels**
 
-- **unit** — Prove parseSecurityModelPin's tri-state parsing in isolation -- absent vs valid vs malformed are never conflated.
-  - Subjects: `parseSecurityModelPin: no models.security key at all -> { kind: 'absent' }`, `parseSecurityModelPin: a complete, well-typed { runner, model } -> { kind: 'valid', ... }`, `parseSecurityModelPin: runner set with no model -> { kind: 'malformed', detail }`, `parseSecurityModelPin: runner is not a recognized FamilyId -> { kind: 'malformed', detail }`
-- **unit** — Prove securityPinMeetsFloor's eligibility rule against a fake registry's FamilyDefinition.tierDefaults.
-  - Subjects: `securityPinMeetsFloor: a pin matching its own family's tierDefaults at a tier at/above the floor -> true`, `securityPinMeetsFloor: a pin matching a DIFFERENT family's tierDefaults at a tier at/above the floor -> true`, `securityPinMeetsFloor: a pin matching a tierDefaults entry BELOW the floor rank -> false`, `securityPinMeetsFloor: a pin matching no family's tierDefaults at any tier (unclassifiable) -> false`
-  - Fixtures: `a fake ModelRegistry exposing FamilyDefinition entries with controlled tierDefaults, so at/above-floor, below-floor, and unclassifiable pins are each deterministic`
-- **unit** — Prove resolveSecurityModelCandidate's precedence and fail-closed decisions in isolation -- no I/O, no CLI subprocess.
-  - Subjects: `resolveSecurityModelCandidate: a valid, floor-eligible pin -> status:'candidate' with that (runner, model)`, `resolveSecurityModelCandidate: a malformed pin -> status:'unavailable' immediately, never falling through to the tier-default model`, `resolveSecurityModelCandidate: a valid but below-floor/unclassifiable pin -> status:'unavailable', never substituted`, `resolveSecurityModelCandidate: an absent pin falls through to the 'security.review' role's tier-default model as a normal candidate`, `resolveSecurityModelCandidate: an absent pin whose tier-default model is itself unlisted/below-floor -> status:'unavailable'`
-  - Fixtures: `a fake ModelRegistry exposing a small, controlled family/model list with tierDefaults, so listed/unlisted and floor-eligible/ineligible pins are each deterministic`, `an AnalyzeConfig fixture with tiering.security variants (absent/valid/malformed) and a configured coreFloor`
-- **unit** — Prove resolveSecurityModel's async composition -- bounded probe, timeout, and cancellation -- using a fake/controllable probe, not a real CLI subprocess.
-  - Subjects: `resolveSecurityModel: candidate already 'unavailable' -> resolves immediately, no probe attempted`, `resolveSecurityModel: probe resolves successfully within the deadline -> status:'configured'`, `resolveSecurityModel: probe rejects (simulated ENOENT/auth failure) -> status:'unavailable' with a backend-failure blockerReason`, `resolveSecurityModel: probe neither resolves nor rejects before opts.deadlineMs -> status:'unavailable' with a timeout blockerReason`, `resolveSecurityModel: opts.signal is aborted while the probe is outstanding -> status:'unavailable' with a cancellation blockerReason`
-  - Fixtures: `a fake/controllable probe function (resolves, rejects, or never settles on command) injected in place of the real CliProvider call`
-- **unit** — Prove the new role-taxonomy.ts registration itself follows the same shape every other critical role already must, reusing role-taxonomy.test.ts's own existing assertions.
-  - Subjects: `role-taxonomy.ts ROLES: the 'security.review' entry is criticality:'critical' with defaultTier:'core' (mirrors role-taxonomy.test.ts:49's existing 'critical role must default to core' assertion)`, `roleDescriptor('security.review') returns the registered descriptor`
-- **live** — Prove resolveSecurityModel detects a genuinely unavailable CLI backend end-to-end against the real CliProvider path, using a VALID, listed, floor-eligible pin whose backend is made unreachable (binary removed from PATH or an unauthenticated session) -- NOT an invalid/unlisted model, which would be rejected before any availability check is ever attempted. Gated behind INSRC_LIVE_TESTS=1 per the project's existing live-service-test convention.
-  - Subjects: `resolveSecurityModel against a real CliProvider probe for a valid, floor-eligible pin whose backend is deliberately unreachable, asserting status:'unavailable' with a populated blockerReason within the configured deadline, rather than a hang or a silent substitute model`
-  - Fixtures: `an environment with a valid, listed, floor-eligible model pin whose backend is deliberately made unreachable (uninstalled binary or unauthenticated session), run only under INSRC_LIVE_TESTS=1`
+- **unit** — Exercise parseSecurityModelPin's tri-state classification and resolveSecurityModelCandidate's/resolveSecurityModel's selection logic directly against a fake ModelRegistry/AnalyzeConfig, with no real CLI subprocess.
+  - Subjects: `parseSecurityModelPin`, `securityPinMeetsFloor`, `resolveSecurityModelCandidate`, `resolveSecurityModel`
+  - Fixtures: `fakeRegistry(families)`, `fakeAnalyzeConfig(tiering)`, `_setSecurityProbeDepsForTests(deps) injectable probe seam`
+- **live** — Confirm resolveSecurityModel reports a genuinely unreachable CLI backend (real ENOENT) within its deadline, never a hang or silent substitution, against the real default probe.
+  - Subjects: `resolveSecurityModel`
+  - Fixtures: `INSRC_LIVE_TESTS=1 gate`, `PATH overridden to a nonexistent directory for the subprocess spawn only`
 
 **Acceptance mapping**
 
 | Criterion | Proving tests |
 | :--- | :--- |
-| `ac1` | `resolveSecurityModelCandidate: a valid, floor-eligible pin -> status:'candidate' with that (runner, model)`, `resolveSecurityModelCandidate: a malformed pin -> status:'unavailable' immediately, never falling through to the tier-default model`, `resolveSecurityModelCandidate: a valid but below-floor/unclassifiable pin -> status:'unavailable', never substituted`, `resolveSecurityModelCandidate: an absent pin falls through to the 'security.review' role's tier-default model as a normal candidate`, `resolveSecurityModel: probe resolves successfully within the deadline -> status:'configured'`, `resolveSecurityModel: probe rejects (simulated ENOENT/auth failure) -> status:'unavailable' with a backend-failure blockerReason`, `resolveSecurityModel: probe neither resolves nor rejects before opts.deadlineMs -> status:'unavailable' with a timeout blockerReason`, `resolveSecurityModel against a real CliProvider probe for a valid, floor-eligible pin whose backend is deliberately unreachable, asserting status:'unavailable' with a populated blockerReason within the configured deadline, rather than a hang or a silent substitute model` |
+| `ac1` | `parseSecurityModelPin: no models.security key at all -> { kind: 'absent' }`, `parseSecurityModelPin: a complete, well-typed { runner, model } -> { kind: 'valid', ... }`, `parseSecurityModelPin: runner set with no model -> { kind: 'malformed', detail }`, `parseSecurityModelPin: model set with no runner -> { kind: 'malformed', detail }`, `parseSecurityModelPin: the catalog's own persisted unset sentinel (runner:'', model:'') -> { kind: 'absent' }, not malformed`, `parseSecurityModelPin: a valid pin never carries a literal '' effort (the CLI's own default, not a flag value)`, `parseSecurityModelPin: models.security present but the wrong shape (null/string/array/number) -> malformed, not absent`, `resolveSecurityModelCandidate: a malformed pin -> status:'unavailable' immediately, never falling through to the tier-default model`, `resolveSecurityModelCandidate: an absent pin falls through to the 'security.review' role's tier-default model as a normal candidate`, `resolveSecurityModelCandidate: models.tasks['security.review'] (roleTiers) is honored for an absent pin, not just the role's bare defaultTier`, `resolveSecurityModelCandidate: a byRepo roleTiers override takes precedence over the global one, for the given repoPath`, `resolveSecurityModelCandidate: a critical role's tier is clamped up to coreFloor even when roleTiers assigns it lower`, `resolveSecurityModelCandidate: an absent pin refuses (never silently falls through) when the floor tier's own configured model was itself rejected/substituted`, `resolveSecurityModel: candidate already 'unavailable' -> resolves immediately, no probe attempted`, `resolveSecurityModel: probe resolves successfully within the deadline -> status:'configured'`, `resolveSecurityModel: probe rejects (simulated ENOENT/auth failure) -> status:'unavailable' with a backend-failure blockerReason`, `resolveSecurityModel: an opts.signal that is ALREADY aborted before the call short-circuits immediately, with no probe dispatched`, `resolveSecurityModel: a timeout aborts the internal signal threaded into the probe, so the underlying call is actually cancelled`, `resolveSecurityModel: the caller's own cancellation also aborts the internal signal threaded into the probe`, `live: resolveSecurityModel reports a genuinely unreachable CLI backend via ENOENT, within the deadline, never a hang or substitution` |
 
 ## 7. Alternatives considered
 
-### 7.1 a1: Wrap the existing RoleRouter unchanged
+### 7.1 a1: Required, always-present tri-state SecurityModelPinResult (as built) — **CHOSEN**
 
-Add a 'security.review' RoleId to role-taxonomy.ts and resolve it through the existing RoleRouter/config-catalog tier machinery, then wrap the result in a thin fail-closed check.
+AnalyzeTiering.security: SecurityModelPinResult, a discriminated union {kind:'absent'}|{kind:'valid',...SecurityModelPin}|{kind:'malformed',detail}, never undefined.
 
-Register a new critical RoleId ('security.review', defaultTier 'core') in src/config/role-taxonomy.ts, selectable only via the existing roleTiers/byRepo precedence RoleRouter already implements. A new, separate function (outside RoleRouter, since RoleRouter's resolveRole/materialize contract is explicitly total and must stay that way for every other caller) calls resolveProviderForRole for this role, attempts one lightweight construction/probe, and maps the outcome onto SecurityModelSelection: success -> {status:'configured', modelId, provider}; a thrown ModelNotSupportedError or a failed construction -> {status:'unavailable', blockerReason} instead of letting the tier's own silent mid-fallback happen.
+parseSecurityModelPin(models) always returns one of the three tagged variants; parseTiering wires it onto AnalyzeTiering.security unconditionally (never collapsed to undefined). resolveSecurityModelCandidate(cfg, registry, repoPath?) switches on cfg.tiering.security.kind: 'malformed' refuses immediately (status:'unavailable', never falls through to the role's tier-default model, satisfying ac1's 'reports the blocker without a silent fallback'); 'absent' falls through to the role's own tier-default model (resolved via the same byRepo->global->role-default precedence + coreFloor clamp every other role uses); 'valid' is checked against the listed-model + capability-floor requirements like any pin. This is the smallest shape that lets resolveSecurityModelCandidate's own fixed signature (cfg, registry) distinguish all three states without any raw models.* access.
 
-**Rejected because:** Only partially met ac1/sc1/k2: the model stays tier-bound rather than independently selectable, and the fail-closed guarantee is bolted onto RoleRouter's explicitly permissive, never-throws contract rather than owned by a dedicated resolver.
+### 7.2 a2: Optional SecurityModelPin | undefined (original sketch)
 
-### 7.2 a2: Fully standalone security-model config key
+AnalyzeTiering.security?: {runner, model, effort?} | undefined -- absent and malformed both read as undefined.
 
-A brand-new config-catalog.ts field (e.g. security.model: {provider, modelId}) resolved by a dedicated function that never touches role-taxonomy.ts or RoleRouter.
+parseSecurityModelPin returns a SecurityModelPin when models.security validates, or undefined otherwise (silently dropping a malformed entry, mirroring parseTieringOverride's existing tier-entry convention). resolveSecurityModelCandidate(cfg, registry) checks cfg.tiering.security !== undefined and falls through to the role's tier-default model whenever it is undefined.
 
-Add a net-new config-catalog.ts entry (byRepo > global precedence, mirroring the existing merge pattern but implemented as its own small resolver, not a call into RoleRouter) that names an explicit CLI provider + model pin. A dedicated resolveSecurityModel(cfg, repoPath) function reads only that key, attempts construction, and returns SecurityModelSelection directly: unset or unresolvable -> {status:'unavailable', blockerReason}; set and constructible -> {status:'configured', modelId, provider}. No RoleId, no tier, no coreFloor interaction.
+**Rejected because:** Violates ac1 and k2: a malformed pin collapses to the same undefined as an absent one, so resolveSecurityModelCandidate(cfg, registry) silently falls through to the tier-default model instead of refusing -- the silent fallback both constraints forbid.
 
-**Rejected because:** Fully satisfies ac1 and sc1 via the same dedicated fail-closed resolver pattern as a3, but leaves the HLD's own flagged open question unresolved -- it forgoes coreFloor participation and the settings-UI consistency every other critical role gets.
+### 7.3 a3: Two separate optional fields (presence + error)
 
-### 7.3 a3: Taxonomy entry for tier semantics + a dedicated override for the model pin — **CHOSEN**
+AnalyzeTiering.securityPin?: SecurityModelPin | undefined plus AnalyzeTiering.securityPinError?: string | undefined, read together.
 
-Keep a 'security.review' RoleId (critical, coreFloor-protected) for tier semantics, but add a separate config field that can pin an explicit provider/model independent of the tier's registry-driven choice, with a dedicated fail-closed resolver.
+parseSecurityModelPin populates securityPin when valid, or securityPinError (a detail string) when malformed; both undefined means absent. resolveSecurityModelCandidate checks securityPinError first (refuse if set), then securityPin (use if set), else falls through.
 
-Register 'security.review' in role-taxonomy.ts as critical/defaultTier 'core' so it inherits coreFloor protection and shows up in the settings UI like every other role (reusing RoleRouter's tier precedence for the FLOOR only). Add one new config-catalog.ts field (e.g. tiering.securityModel: {provider, modelId} | undefined, byRepo > global) that, when present, names the exact provider/model to use for this role instead of the tier's registry-driven default -- independent selection, but still coreFloor-checked. A dedicated resolveSecurityModel(cfg, repoPath) (not inside RoleRouter) composes: read the override if present, else fall through to the taxonomy tier's default model; attempt construction; unavailable/unsupported -> {status:'unavailable', blockerReason}, never a silent substitution; available -> {status:'configured', modelId, provider}.
+**Rejected because:** Functionally satisfies the same constraints as a1 today but with a non-exhaustive two-field convention that can silently regress to a2's failure mode if a future caller reads securityPin without checking securityPinError.
 
 ## 8. References
 
-- **[[c1]]** `code` `src/config/role-taxonomy.ts:31`
-- **[[c2]]** `code` `src/config/role-taxonomy.ts:56-120`
-- **[[c3]]** `code` `src/config/settings-catalog.ts:86`
-- **[[c4]]** `code` `src/analyze/context/role-router.ts:103-174`
-- **[[c5]]** `code` `src/analyze/context/shaper-provider.ts:313-330`
-- **[[c6]]** `code` `src/daemon/model-registry.ts:67`
-- **[[c7]]** `code` `src/config/__tests__/role-taxonomy.test.ts:49`
-- **[[c8]]** `code` `src/config/__tests__/core-floor-guard.test.ts:25`
-- **[[c9]]** `artifact` `HLD-0765b3a578e43eec`
-- **[[c10]]** `code` `src/config/config-catalog.ts:94-99`
-- **[[c11]]** `code` `src/config/config-catalog.ts:133-135`
-- **[[c12]]** `code` `src/config/analyze.ts:384-431`
-- **[[c13]]** `code` `src/daemon/model-catalog.ts:72-86`
-- **[[c14]]** `code` `src/daemon/model-registry.ts:96-100`
-- **[[c15]]** `code` `src/config/core-floor-guard.ts:107-141`
-- **[[c16]]** `code` `src/analyze/context/role-router.ts:25-29`
+- **[[c1]]** `code` `src/config/analyze.ts:158-161` — "SecurityModelPinResult type"
+- **[[c2]]** `code` `src/config/analyze.ts:166-193` — "parseSecurityModelPin(models: Record<string, unknown>): SecurityModelPinResult"
+- **[[c3]]** `code` `src/config/analyze.ts:225-233` — "AnalyzeTiering interface"
+- **[[c4]]** `code` `src/config/analyze.ts:426-460` — "resolveSecurityModelCandidate(cfg: AnalyzeConfig, registry: ModelRegistry, repoPath?: string): SecurityModelCandidate"
+- **[[c5]]** `code` `src/config/analyze.ts:505-546` — "resolveSecurityModel(cfg: AnalyzeConfig, registry: ModelRegistry, opts): Promise<SecurityModelSelection>"
+- **[[c6]]** `code` `src/config/__tests__/analyze-tiering.test.ts` — "42 passing tests covering parseSecurityModelPin, securityPinMeetsFloor, resolveSecurityModelCandidate, resolveSecurityModel"
 
 ## Citations
 
-- **[[c1]]** `code` `src/config/role-taxonomy.ts:31`
-- **[[c2]]** `code` `src/config/role-taxonomy.ts:56-120`
-- **[[c3]]** `code` `src/config/settings-catalog.ts:86`
-- **[[c4]]** `code` `src/analyze/context/role-router.ts:103-174`
-- **[[c5]]** `code` `src/analyze/context/shaper-provider.ts:313-330`
-- **[[c6]]** `code` `src/daemon/model-registry.ts:67`
-- **[[c7]]** `code` `src/config/__tests__/role-taxonomy.test.ts:49`
-- **[[c8]]** `code` `src/config/__tests__/core-floor-guard.test.ts:25`
-- **[[c9]]** `artifact` `HLD-0765b3a578e43eec`
-- **[[c10]]** `code` `src/config/config-catalog.ts:94-99`
-- **[[c11]]** `code` `src/config/config-catalog.ts:133-135`
-- **[[c12]]** `code` `src/config/analyze.ts:384-431`
-- **[[c13]]** `code` `src/daemon/model-catalog.ts:72-86`
-- **[[c14]]** `code` `src/daemon/model-registry.ts:96-100`
-- **[[c15]]** `code` `src/config/core-floor-guard.ts:107-141`
-- **[[c16]]** `code` `src/analyze/context/role-router.ts:25-29`
+- **[[c1]]** `code` `src/config/analyze.ts:158-161` — "SecurityModelPinResult type"
+- **[[c2]]** `code` `src/config/analyze.ts:166-193` — "parseSecurityModelPin(models: Record<string, unknown>): SecurityModelPinResult"
+- **[[c3]]** `code` `src/config/analyze.ts:225-233` — "AnalyzeTiering interface"
+- **[[c4]]** `code` `src/config/analyze.ts:426-460` — "resolveSecurityModelCandidate(cfg: AnalyzeConfig, registry: ModelRegistry, repoPath?: string): SecurityModelCandidate"
+- **[[c5]]** `code` `src/config/analyze.ts:505-546` — "resolveSecurityModel(cfg: AnalyzeConfig, registry: ModelRegistry, opts): Promise<SecurityModelSelection>"
+- **[[c6]]** `code` `src/config/__tests__/analyze-tiering.test.ts` — "42 passing tests covering parseSecurityModelPin, securityPinMeetsFloor, resolveSecurityModelCandidate, resolveSecurityModel"

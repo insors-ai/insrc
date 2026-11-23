@@ -28,7 +28,7 @@
       "status": "approved",
       "revision": {
         "number": 1,
-        "contentHash": "3b035daa3d7748123aef326664108334fa408642299925c8ddf64f6b87596bbb",
+        "contentHash": "eea98737b50a749a03b047461942e14b40548177bd72dd885f981119e95cc571",
         "at": "2026-11-23T06:28:09.061Z",
         "by": {
           "id": "insrc:system",
@@ -112,7 +112,7 @@
       {
         "id": "t3",
         "title": "Add AnalyzeConfig.tiering.security + the tri-state parseSecurityModelPin parser",
-        "summary": "Add an optional tiering.security?: {runner: FamilyId; model: string; effort?: EffortLevel} field to AnalyzeConfig, populated by a NEW, dedicated parseSecurityModelPin(models: Record<string, unknown>) function in analyze.ts -- NOT a reuse of parseTieringOverride's existing silently-drops-to-undefined convention. Returns a tri-state result distinguishing {kind:'absent'} from {kind:'valid', runner, model, effort?} from {kind:'malformed', detail}.",
+        "summary": "Add a required, always-present tiering.security: SecurityModelPinResult tri-state field to AnalyzeConfig (corrected per LLD-0765b3a578e43eec-s1 revision 3: an optional field cannot distinguish absent from malformed, which resolveSecurityModelCandidate's fixed (cfg, registry) signature needs), populated by a NEW, dedicated parseSecurityModelPin(models: Record<string, unknown>) function in analyze.ts -- NOT a reuse of parseTieringOverride's existing silently-drops-to-undefined convention. Returns a tri-state result distinguishing {kind:'absent'} from {kind:'valid', runner, model, effort?} from {kind:'malformed', detail}.",
         "size": "M",
         "order": 3,
         "dependsOn": [

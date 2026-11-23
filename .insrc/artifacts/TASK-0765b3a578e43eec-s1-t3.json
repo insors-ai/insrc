@@ -1,0 +1,102 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3c71a469-682e-4577-92ef-95d8b90af578",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-23T06:30:42.997Z",
+    "epicCreatedAt": "2026-11-10T05:58:05.294Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "0765b3a578e43eec",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add AnalyzeConfig.tiering.security + the tri-state parseSecurityModelPin parser",
+      "parent": {
+        "entityId": "STORY-0765b3a578e43eec-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-0765b3a578e43eec-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-0765b3a578e43eec-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#231",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "5752e08f0104fcb9955db778662d88686b31e5e7d0843a5387b6e406bf0c1cce",
+        "at": "2026-11-23T06:30:42.997Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-23T06:30:42.998Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add AnalyzeConfig.tiering.security + the tri-state parseSecurityModelPin parser",
+    "summary": "Add a required, always-present tiering.security: SecurityModelPinResult tri-state field to AnalyzeConfig (corrected per LLD-0765b3a578e43eec-s1 revision 3: an optional field cannot distinguish absent from malformed, which resolveSecurityModelCandidate's fixed (cfg, registry) signature needs), populated by a NEW, dedicated parseSecurityModelPin(models: Record<string, unknown>) function in analyze.ts -- NOT a reuse of parseTieringOverride's existing silently-drops-to-undefined convention. Returns a tri-state result distinguishing {kind:'absent'} from {kind:'valid', runner, model, effort?} from {kind:'malformed', detail}.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "parseSecurityModelPin({}) -> {kind:'absent'}",
+      "parseSecurityModelPin({security:{runner:'cli-claude', model:'x'}}) -> {kind:'valid', runner:'cli-claude', model:'x'}",
+      "parseSecurityModelPin({security:{model:'x'}}) (runner missing) -> {kind:'malformed', detail}",
+      "parseSecurityModelPin({security:{runner:'not-a-family', model:'x'}}) -> {kind:'malformed', detail}",
+      "parseTieringOverride itself is untouched -- no shared logic or behavioral change to the existing tiers.* parsing path"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "parseSecurityModelPin: no models.security key at all -> { kind: 'absent' }"
+      },
+      {
+        "level": "unit",
+        "name": "parseSecurityModelPin: a complete, well-typed { runner, model } -> { kind: 'valid', ... }"
+      },
+      {
+        "level": "unit",
+        "name": "parseSecurityModelPin: runner set with no model -> { kind: 'malformed', detail }"
+      },
+      {
+        "level": "unit",
+        "name": "parseSecurityModelPin: runner is not a recognized FamilyId -> { kind: 'malformed', detail }"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

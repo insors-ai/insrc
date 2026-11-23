@@ -47,7 +47,7 @@ Add three new GLOBAL-ONLY scalar rows to config-catalog.ts, mirroring the existi
 
 ### 1.3 TASK-0765b3a578e43eec-s1-t3 — Add AnalyzeConfig.tiering.security + the tri-state parseSecurityModelPin parser
 
-Add an optional tiering.security?: {runner: FamilyId; model: string; effort?: EffortLevel} field to AnalyzeConfig, populated by a NEW, dedicated parseSecurityModelPin(models: Record<string, unknown>) function in analyze.ts -- NOT a reuse of parseTieringOverride's existing silently-drops-to-undefined convention. Returns a tri-state result distinguishing {kind:'absent'} from {kind:'valid', runner, model, effort?} from {kind:'malformed', detail}.
+Add a required, always-present tiering.security: SecurityModelPinResult tri-state field to AnalyzeConfig (corrected per LLD-0765b3a578e43eec-s1 revision 3: an optional field cannot distinguish absent from malformed, which resolveSecurityModelCandidate's fixed (cfg, registry) signature needs), populated by a NEW, dedicated parseSecurityModelPin(models: Record<string, unknown>) function in analyze.ts -- NOT a reuse of parseTieringOverride's existing silently-drops-to-undefined convention. Returns a tri-state result distinguishing {kind:'absent'} from {kind:'valid', runner, model, effort?} from {kind:'malformed', detail}.
 
 **Acceptance checks:**
 - parseSecurityModelPin({}) -> {kind:'absent'}

@@ -489,6 +489,57 @@ test("resolveSecurityModel: the caller's own cancellation also aborts the intern
 	}
 });
 
+test("resolveSecurityModel: opts.repoPath is forwarded to resolveSecurityModelCandidate -- an absent pin probes the REPO's own roleTiers-assigned tier-default model, not the global one", async () => {
+	let probedModel: string | undefined;
+	_setSecurityProbeDepsForTests({ probe: async (_k, model) => { probedModel = model; } });
+	try {
+		const registry = fakeRegistry([DISTINCT_TIER_FAMILY]);
+		const cfg = fakeAnalyzeConfig({
+			security: { kind: 'absent' },
+			roleTiers: { 'security.review': 'cheap' },
+			coreFloor: 'cheap', // so the global 'cheap' assignment below is not itself clamped up
+			byRepo: { '/work/repo': { roleTiers: { 'security.review': 'core' } } },
+			tiers: { core: { runner: 'cli-claude', model: 'opus' }, cheap: { runner: 'cli-claude', model: 'haiku' } },
+		});
+
+		const withoutRepo = await resolveSecurityModel(cfg, registry, { deadlineMs: 1000 });
+		assert.deepEqual(withoutRepo, { status: 'configured', modelId: 'haiku', provider: 'cli-claude' });
+		assert.equal(probedModel, 'haiku');
+
+		const withRepo = await resolveSecurityModel(cfg, registry, { deadlineMs: 1000, repoPath: '/work/repo' });
+		assert.deepEqual(withRepo, { status: 'configured', modelId: 'opus', provider: 'cli-claude' });
+		assert.equal(probedModel, 'opus');
+	} finally {
+		_setSecurityProbeDepsForTests();
+	}
+});
+
+test("resolveSecurityModel: opts.repoPath is forwarded to resolveSecurityModelCandidate -- an explicit pin eligible under the global role tier is refused without ever probing once the REPO's own roleTiers assignment raises the floor", async () => {
+	let probeCalled = false;
+	_setSecurityProbeDepsForTests({ probe: async () => { probeCalled = true; } });
+	try {
+		const registry = fakeRegistry([DISTINCT_TIER_FAMILY]);
+		const cfg = fakeAnalyzeConfig({
+			security: { kind: 'valid', runner: 'cli-claude', model: 'haiku' },
+			roleTiers: { 'security.review': 'cheap' },
+			coreFloor: 'cheap',
+			byRepo: { '/work/repo': { roleTiers: { 'security.review': 'core' } } },
+		});
+
+		probeCalled = false;
+		const withoutRepo = await resolveSecurityModel(cfg, registry, { deadlineMs: 1000 });
+		assert.deepEqual(withoutRepo, { status: 'configured', modelId: 'haiku', provider: 'cli-claude' });
+		assert.equal(probeCalled, true, "the pin is floor-eligible under the global 'cheap' role tier, so the probe runs");
+
+		probeCalled = false;
+		const withRepo = await resolveSecurityModel(cfg, registry, { deadlineMs: 1000, repoPath: '/work/repo' });
+		assert.equal(withRepo.status, 'unavailable');
+		assert.equal(probeCalled, false, "the repo's own 'core' role-tier assignment raises the floor past haiku's eligibility, refusing before any probe");
+	} finally {
+		_setSecurityProbeDepsForTests();
+	}
+});
+
 test(
 	'live: resolveSecurityModel reports a genuinely unreachable CLI backend via ENOENT, within the deadline, never a hang or substitution',
 	{ skip: process.env.INSRC_LIVE_TESTS !== '1' },

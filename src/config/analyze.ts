@@ -501,16 +501,20 @@ async function defaultSecurityProbe(kind: CliKind, model: string, effort: Effort
  * threaded into the probe itself, so the underlying CLI subprocess is actually
  * killed and withTransientRetry's own isAbortError exemption stops it from
  * retrying -- cancellation genuinely stops the call, not just this function's
- * returned promise.
+ * returned promise. `opts.repoPath`, when given, is forwarded to
+ * resolveSecurityModelCandidate so a repo's own models.byRepo[repoPath]
+ * roleTiers/coreFloor override is honored here too, not only by a caller that
+ * calls resolveSecurityModelCandidate directly.
  */
 export async function resolveSecurityModel(
-	cfg: AnalyzeConfig, registry: ModelRegistry, opts: { readonly deadlineMs: number; readonly signal?: AbortSignal | undefined },
+	cfg: AnalyzeConfig, registry: ModelRegistry,
+	opts: { readonly deadlineMs: number; readonly signal?: AbortSignal | undefined; readonly repoPath?: string | undefined },
 ): Promise<SecurityModelSelection> {
 	if (opts.signal?.aborted === true) {
 		return { status: 'unavailable', blockerReason: 'security model probe cancelled' };
 	}
 
-	const candidate = resolveSecurityModelCandidate(cfg, registry);
+	const candidate = resolveSecurityModelCandidate(cfg, registry, opts.repoPath);
 	if (candidate.status === 'unavailable') return candidate;
 
 	const kind = registry.cliKind(candidate.runner);

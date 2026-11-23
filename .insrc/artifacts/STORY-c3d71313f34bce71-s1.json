@@ -29,6 +29,39 @@
           "revision": 2,
           "at": "2026-11-23T15:37:45.769Z",
           "externalId": "7105862891"
+        },
+        {
+          "target": {
+            "entityId": "LLD-c3d71313f34bce71-s1",
+            "type": "LLD",
+            "relation": "documents",
+            "fragment": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S001/LLD.md"
+          },
+          "revision": 5,
+          "at": "2026-11-23T18:18:18.781Z",
+          "externalId": "7109962344"
+        },
+        {
+          "target": {
+            "entityId": "LLD-c3d71313f34bce71-s1",
+            "type": "LLD",
+            "relation": "documents",
+            "fragment": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S001/sequence-diagram.html"
+          },
+          "revision": 5,
+          "at": "2026-11-23T18:18:19.925Z",
+          "externalId": "7109962811"
+        },
+        {
+          "target": {
+            "entityId": "LLD-c3d71313f34bce71-s1",
+            "type": "LLD",
+            "relation": "documents",
+            "fragment": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S001/component-dependency.html"
+          },
+          "revision": 5,
+          "at": "2026-11-23T18:18:21.014Z",
+          "externalId": "7109963271"
         }
       ],
       "binding": {

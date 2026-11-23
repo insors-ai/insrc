@@ -1,0 +1,447 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1795414961239-flp0p5",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-23T06:28:06.413Z",
+    "epicCreatedAt": "2026-11-10T05:58:05.294Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 316797,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "0765b3a578e43eec",
+    "epicSlug": "add-dedicated-security-reviews",
+    "storyId": "s1",
+    "lldRunId": "wf-1795329813601-41klc0",
+    "lldEffectiveHash": "60b05edbecc26e77425f3711101dac3f1443953fd2b0c1f7570c41c2c631bf03",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3b035daa3d7748123aef326664108334fa408642299925c8ddf64f6b87596bbb",
+        "at": "2026-11-23T06:28:09.061Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-23T06:30:40.491Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "247160f783cf5179a35c0451a0fc37bb20fbfaba"
+  },
+  "body": {
+    "summary": {
+      "prose": "Building this Story means adding one new role entry, three new global config keys, a dedicated fail-closed parser and floor check, and two resolver functions (a pure synchronous selector and a bounded async availability probe) that together let an operator pin an independent security-reviewer model and guarantee it is either used exactly as configured or explicitly refused -- never silently substituted.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Register the 'security.review' role in role-taxonomy.ts",
+        "summary": "Add one new RoleDescriptor entry {id:'security.review', criticality:'critical', defaultTier:'core'} to the closed ROLES array in src/config/role-taxonomy.ts, so the role participates in coreFloor protection and is exposed by settings-catalog.ts like every other critical role. Pure data addition -- no accessor logic changes.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "roleDescriptor('security.review') returns the registered descriptor with criticality:'critical' and defaultTier:'core'",
+          "Every existing role-taxonomy.test.ts assertion (e.g. 'critical role must default to core') still passes for the new entry",
+          "settings-catalog.ts's generic 'every critical role appears' assertion covers the new entry without any settings-catalog.ts code change"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "role-taxonomy.ts ROLES: the 'security.review' entry is criticality:'critical' with defaultTier:'core' (mirrors role-taxonomy.test.ts:49's existing 'critical role must default to core' assertion)"
+          },
+          {
+            "level": "unit",
+            "name": "roleDescriptor('security.review') returns the registered descriptor"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add models.security.{runner,model,effort} global-only config-catalog rows",
+        "summary": "Add three new GLOBAL-ONLY scalar rows to config-catalog.ts, mirroring the existing models.tiers.<tier>.{runner,model,effort} row shape exactly (same {path, type, default, desc, enumValues?, group} shape as buildConfigCatalog's tierRows/effortRow pattern), under a new group label (e.g. 'Models -- security'). No byRepo variant -- per-repo config only ever picks a TIER for a role, never the model behind it.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "config-catalog.ts exposes models.security.runner (enum of FamilyId), models.security.model (string), models.security.effort (enum, optional) as global-only rows",
+          "No byRepo.* variant exists for these three keys",
+          "settings-catalog.ts surfaces the new rows the same way it surfaces models.tiers.* rows, with no changes to how models.tiers.* itself is rendered"
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "CONFIG_CATALOG includes models.security.runner/model/effort as global-only rows with no byRepo variant"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Add AnalyzeConfig.tiering.security + the tri-state parseSecurityModelPin parser",
+        "summary": "Add an optional tiering.security?: {runner: FamilyId; model: string; effort?: EffortLevel} field to AnalyzeConfig, populated by a NEW, dedicated parseSecurityModelPin(models: Record<string, unknown>) function in analyze.ts -- NOT a reuse of parseTieringOverride's existing silently-drops-to-undefined convention. Returns a tri-state result distinguishing {kind:'absent'} from {kind:'valid', runner, model, effort?} from {kind:'malformed', detail}.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "parseSecurityModelPin({}) -> {kind:'absent'}",
+          "parseSecurityModelPin({security:{runner:'cli-claude', model:'x'}}) -> {kind:'valid', runner:'cli-claude', model:'x'}",
+          "parseSecurityModelPin({security:{model:'x'}}) (runner missing) -> {kind:'malformed', detail}",
+          "parseSecurityModelPin({security:{runner:'not-a-family', model:'x'}}) -> {kind:'malformed', detail}",
+          "parseTieringOverride itself is untouched -- no shared logic or behavioral change to the existing tiers.* parsing path"
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "parseSecurityModelPin: no models.security key at all -> { kind: 'absent' }"
+          },
+          {
+            "level": "unit",
+            "name": "parseSecurityModelPin: a complete, well-typed { runner, model } -> { kind: 'valid', ... }"
+          },
+          {
+            "level": "unit",
+            "name": "parseSecurityModelPin: runner set with no model -> { kind: 'malformed', detail }"
+          },
+          {
+            "level": "unit",
+            "name": "parseSecurityModelPin: runner is not a recognized FamilyId -> { kind: 'malformed', detail }"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Add securityPinMeetsFloor eligibility check",
+        "summary": "Add securityPinMeetsFloor(registry: ModelRegistry, familyId: FamilyId, modelId: string, floorTier: TierName): boolean -- holds iff some family's own FamilyDefinition.tierDefaults[tier].model (by id or alias) equals the pinned model AND that tier's rank is >= the floor tier's rank. A pin matching no family's tierDefaults at any tier is unclassifiable and treated as below-floor (false). This is the ONLY link between an arbitrary pinned pair and coreFloor's TierName ranking, since CoreFloorGuard.applyCoreFloor compares only TierName values and has no notion of an individual model's capability.",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "A pin matching its OWN family's tierDefaults at a tier at/above the floor -> true",
+          "A pin matching a DIFFERENT family's tierDefaults at a tier at/above the floor -> true",
+          "A pin matching a tierDefaults entry BELOW the floor rank -> false",
+          "A pin matching no family's tierDefaults at any tier (unclassifiable) -> false"
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "securityPinMeetsFloor: a pin matching its own family's tierDefaults at a tier at/above the floor -> true"
+          },
+          {
+            "level": "unit",
+            "name": "securityPinMeetsFloor: a pin matching a DIFFERENT family's tierDefaults at a tier at/above the floor -> true"
+          },
+          {
+            "level": "unit",
+            "name": "securityPinMeetsFloor: a pin matching a tierDefaults entry BELOW the floor rank -> false"
+          },
+          {
+            "level": "unit",
+            "name": "securityPinMeetsFloor: a pin matching no family's tierDefaults at any tier (unclassifiable) -> false"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Implement resolveSecurityModelCandidate (pure, synchronous selection)",
+        "summary": "function resolveSecurityModelCandidate(cfg: AnalyzeConfig, registry: ModelRegistry): SecurityModelCandidate. Resolves tiering.security (via parseSecurityModelPin's result already on cfg) or, if absent, the 'security.review' role's tier-default model; rejects immediately (status:'unavailable', no substitution) if malformed, unlisted, or failing securityPinMeetsFloor. Zero I/O, zero subprocess work.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t1",
+          "t3",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "A valid, floor-eligible pin -> status:'candidate' with that (runner, model)",
+          "A malformed pin -> status:'unavailable' immediately, never falling through to the tier-default model",
+          "A valid but below-floor/unclassifiable pin -> status:'unavailable', never substituted",
+          "An absent pin falls through to the 'security.review' role's tier-default model as a normal candidate",
+          "An absent pin whose tier-default model is itself unlisted/below-floor -> status:'unavailable'"
+        ],
+        "derivedFrom": [
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "resolveSecurityModelCandidate: a valid, floor-eligible pin -> status:'candidate' with that (runner, model)"
+          },
+          {
+            "level": "unit",
+            "name": "resolveSecurityModelCandidate: a malformed pin -> status:'unavailable' immediately, never falling through to the tier-default model"
+          },
+          {
+            "level": "unit",
+            "name": "resolveSecurityModelCandidate: a valid but below-floor/unclassifiable pin -> status:'unavailable', never substituted"
+          },
+          {
+            "level": "unit",
+            "name": "resolveSecurityModelCandidate: an absent pin falls through to the 'security.review' role's tier-default model as a normal candidate"
+          },
+          {
+            "level": "unit",
+            "name": "resolveSecurityModelCandidate: an absent pin whose tier-default model is itself unlisted/below-floor -> status:'unavailable'"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Implement resolveSecurityModel (bounded async availability probe)",
+        "summary": "function resolveSecurityModel(cfg, registry, opts: {deadlineMs, signal?}): Promise<SecurityModelSelection>. Calls resolveSecurityModelCandidate first; if already 'unavailable', returns immediately with no probe. Otherwise awaits exactly one bounded probe (a minimal CliProvider call) against the candidate, racing it against opts.deadlineMs and opts.signal; maps rejection/non-zero/ENOENT, timeout, and cancellation to distinct blockerReasons. Never rejects; always settles within opts.deadlineMs.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "Candidate already 'unavailable' -> resolves immediately, no probe attempted",
+          "Probe resolves successfully within the deadline -> status:'configured'",
+          "Probe rejects (simulated ENOENT/auth failure) -> status:'unavailable' with a backend-failure blockerReason",
+          "Probe neither resolves nor rejects before opts.deadlineMs -> status:'unavailable' with a timeout blockerReason",
+          "opts.signal aborted while the probe is outstanding -> status:'unavailable' with a cancellation blockerReason",
+          "Live (INSRC_LIVE_TESTS=1): a valid, listed, floor-eligible pin whose backend is deliberately unreachable resolves 'unavailable' with a populated blockerReason within the deadline, never a hang or silent substitution"
+        ],
+        "derivedFrom": [
+          "c7",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "resolveSecurityModel: candidate already 'unavailable' -> resolves immediately, no probe attempted"
+          },
+          {
+            "level": "unit",
+            "name": "resolveSecurityModel: probe resolves successfully within the deadline -> status:'configured'"
+          },
+          {
+            "level": "unit",
+            "name": "resolveSecurityModel: probe rejects (simulated ENOENT/auth failure) -> status:'unavailable' with a backend-failure blockerReason"
+          },
+          {
+            "level": "unit",
+            "name": "resolveSecurityModel: probe neither resolves nor rejects before opts.deadlineMs -> status:'unavailable' with a timeout blockerReason"
+          },
+          {
+            "level": "unit",
+            "name": "resolveSecurityModel: opts.signal is aborted while the probe is outstanding -> status:'unavailable' with a cancellation blockerReason"
+          },
+          {
+            "level": "live",
+            "name": "resolveSecurityModel against a real CliProvider probe for a valid, floor-eligible pin whose backend is deliberately unreachable, asserting status:'unavailable' with a populated blockerReason within the configured deadline, rather than a hang or a silent substitute model"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "parseSecurityModelPin: no models.security key at all -> { kind: 'absent' }",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "parseSecurityModelPin: a complete, well-typed { runner, model } -> { kind: 'valid', ... }",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "parseSecurityModelPin: runner set with no model -> { kind: 'malformed', detail }",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "parseSecurityModelPin: runner is not a recognized FamilyId -> { kind: 'malformed', detail }",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "securityPinMeetsFloor: a pin matching its own family's tierDefaults at a tier at/above the floor -> true",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "securityPinMeetsFloor: a pin matching a DIFFERENT family's tierDefaults at a tier at/above the floor -> true",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "securityPinMeetsFloor: a pin matching a tierDefaults entry BELOW the floor rank -> false",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "securityPinMeetsFloor: a pin matching no family's tierDefaults at any tier (unclassifiable) -> false",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "resolveSecurityModelCandidate: a valid, floor-eligible pin -> status:'candidate' with that (runner, model)",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "resolveSecurityModelCandidate: a malformed pin -> status:'unavailable' immediately, never falling through to the tier-default model",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "resolveSecurityModelCandidate: a valid but below-floor/unclassifiable pin -> status:'unavailable', never substituted",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "resolveSecurityModelCandidate: an absent pin falls through to the 'security.review' role's tier-default model as a normal candidate",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "resolveSecurityModelCandidate: an absent pin whose tier-default model is itself unlisted/below-floor -> status:'unavailable'",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "resolveSecurityModel: candidate already 'unavailable' -> resolves immediately, no probe attempted",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "resolveSecurityModel: probe resolves successfully within the deadline -> status:'configured'",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "resolveSecurityModel: probe rejects (simulated ENOENT/auth failure) -> status:'unavailable' with a backend-failure blockerReason",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "resolveSecurityModel: probe neither resolves nor rejects before opts.deadlineMs -> status:'unavailable' with a timeout blockerReason",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "resolveSecurityModel: opts.signal is aborted while the probe is outstanding -> status:'unavailable' with a cancellation blockerReason",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "role-taxonomy.ts ROLES: the 'security.review' entry is criticality:'critical' with defaultTier:'core' (mirrors role-taxonomy.test.ts:49's existing 'critical role must default to core' assertion)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "roleDescriptor('security.review') returns the registered descriptor",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "resolveSecurityModel against a real CliProvider probe for a valid, floor-eligible pin whose backend is deliberately unreachable, asserting status:'unavailable' with a populated blockerReason within the configured deadline, rather than a hang or a silent substitute model",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 dataModelChanges: role-taxonomy.ts ROLES registry"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 dataModelChanges: config-catalog.ts CONFIG_CATALOG rows (models.security.*)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 dataModelChanges: AnalyzeConfig.tiering.security + parseSecurityModelPin"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 dataModelChanges: Security-pin floor-eligibility check"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails.api: resolveSecurityModelCandidate"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 dataModelChanges: SecurityModelSelection (sc1)"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails.api: resolveSecurityModel"
+    }
+  ]
+}

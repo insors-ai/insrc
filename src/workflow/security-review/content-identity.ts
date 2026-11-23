@@ -14,7 +14,7 @@
  */
 
 import { createHash } from 'node:crypto';
-import { readFile } from 'node:fs/promises';
+import { readFile, realpath } from 'node:fs/promises';
 import { relative, resolve, sep } from 'node:path';
 
 import { runShell } from '../../daemon/tools/shell-helper.js';
@@ -33,12 +33,22 @@ export async function computeContentIdentity(repoPath: string, targets: ReviewTa
 		throw new Error(`computeContentIdentity: '${repoPath}' is not a registered git repository, or its HEAD cannot be resolved: ${head.stderr.trim()}`);
 	}
 
+	const realRepoPath = await realpath(repoPath);
+
 	const hash = createHash('sha256');
 	hash.update(head.stdout.trim());
 	for (const entry of targets.entries) {
 		const resolved = resolve(repoPath, entry.path);
 		const rel = relative(repoPath, resolved);
 		if (rel === '..' || rel.startsWith(`..${sep}`)) {
+			throw new Error(`computeContentIdentity: targets.entries path '${entry.path}' resolves outside repoPath`);
+		}
+		// A symlinked component (or the target itself a symlink) can point outside
+		// repoPath without the lexical check above ever seeing '..'; realpath resolves
+		// every symlink so the final location is checked against repoPath for real.
+		const realResolved = await realpath(resolved);
+		const realRel = relative(realRepoPath, realResolved);
+		if (realRel === '..' || realRel.startsWith(`..${sep}`)) {
 			throw new Error(`computeContentIdentity: targets.entries path '${entry.path}' resolves outside repoPath`);
 		}
 		const bytes = await readFile(resolved);

@@ -76,11 +76,35 @@ test('computeContentIdentity: a targets.entries path outside repoPath throws', a
 	}
 });
 
-test('computeContentIdentity: repoPath that is not a registered git repository throws', async () => {
+test('computeContentIdentity: repoPath that is not a git repository at all throws', async () => {
 	const notRepo = mkdtempSync(join(tmpdir(), 'insrc-not-a-repo-'));
 	try {
 		await assert.rejects(() => computeContentIdentity(notRepo, { entries: [] }));
 	} finally {
 		rmSync(notRepo, { recursive: true, force: true });
+	}
+});
+
+test('computeContentIdentity: a git repository with no commits yet (HEAD unresolvable) throws', async () => {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-no-commits-'));
+	try {
+		execFileSync('git', ['init', '-q'], { cwd: repo });
+		await assert.rejects(() => computeContentIdentity(repo, { entries: [] }));
+	} finally {
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
+test('computeContentIdentity: a targets.entries path that is a SYMLINK pointing outside repoPath throws', async () => {
+	const repo = initRepo();
+	const outsideDir = mkdtempSync(join(tmpdir(), 'insrc-outside-'));
+	try {
+		writeFileSync(join(outsideDir, 'secret.ts'), 'export const secret = 1;\n');
+		const { symlinkSync } = await import('node:fs');
+		symlinkSync(join(outsideDir, 'secret.ts'), join(repo, 'linked.ts'));
+		await assert.rejects(() => computeContentIdentity(repo, { entries: [{ path: 'linked.ts' }] }));
+	} finally {
+		rmSync(repo, { recursive: true, force: true });
+		rmSync(outsideDir, { recursive: true, force: true });
 	}
 });

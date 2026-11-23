@@ -52,7 +52,7 @@ function runSecurityReview(repoPath: string, targets: ReviewTargets, opts: { rea
 **Returns:** `Promise<SecurityReviewReport>` — The final, in-memory assembled report.
 
 **Errors:**
-- `ContentIdentityMismatchError` when recomputed contentIdentity does not match advisoryEvidence.contentIdentity, or contentStable is false -- checked before round 1, again before round 2, and again before finalization.
+- `ContentIdentityMismatchError` when Recomputed contentIdentity does not match advisoryEvidence.contentIdentity, or contentStable is false.
 - `SecurityModelUnavailableError` when modelSelection.status is 'unavailable'.
 
 **Preconditions:**
@@ -60,13 +60,13 @@ function runSecurityReview(repoPath: string, targets: ReviewTargets, opts: { rea
 - targets.entries paths all resolve inside repoPath (validated before any I/O).
 
 **Postconditions:**
-- The ENTIRE body runs inside `runInStepContext({ ...currentStepContext(), cwd: repoPath, envRepo: repoPath }, ...)` (`src/shared/step-context.ts`) -- spreading the OUTER context first (preserving `connectionExecution`/`client` exactly as `src/shared/step-context.ts:195`'s own established pattern does) and overriding only `cwd`/`envRepo`. Passing `{cwd, envRepo}` alone (dropping `connectionExecution`) would make `runInStepContext` itself reject the call with `session-expired` whenever the request already carries a trusted binding (`ctx.connectionExecution !== outer` when `outer` is defined) -- this is why the spread, not a fresh literal, is required.
-- contentIdentity is reverified (`verifyContentIdentityMatch`) a SECOND time immediately before round 2 dispatches and a THIRD time immediately before persisting round 2's receipt/report; any divergence detected at either point aborts the review with `ContentIdentityMismatchError`, distinct from s2's own `contentStable` (which covers only s2's OWN collection window, not s3's).
-- A fresh `attemptId` (`randomBytes(8).toString('hex')`) is generated ONCE per `runSecurityReview` call -- NOT derived from `reviewId` alone, which a caller may reuse across retries. Each round's `receipt.id` is `{reviewId}-{attemptId}-round-{round}`, so a failed attempt's receipt is never silently overwritten by a later retry's receipt under the same id (`persistVerificationReceiptUnlocked` replaces any PRIOR receipt sharing the exact same id -- confirmed by reading `receipt-record.ts`'s own merge logic -- so reusing `reviewId-round-N` across attempts would erase the earlier failure's evidence).
-- ONE VerificationReceipt is persisted PER ROUND, corroborating that round's OWN CLI-dispatch EXECUTION only (pass: the round's code pass completed with schema-valid output and no execution-level failure; fail: a timeout, malformed output, or a content-identity divergence caught during that round) -- an EXECUTION-auditability receipt, matching the HLD's own observability framing ("a security review's execution is auditable independent of its findings"), NOT an independent reproduction/exploit-confirmation of any specific claim. A round that throws still persists its own 'fail' receipt via a per-round try/catch before the error propagates. A refusal BEFORE any round starts persists nothing.
-- receiptId is attached ONLY to the code findings a round's OWN execution actually produced: round-1 code findings get round 1's `receipt.id`, round-2 code findings get round 2's `receipt.id`. Dependency-advisory findings (s2's output, never produced by either round's CLI execution) get NO receiptId -- there is no round-execution receipt that corroborates them, and attaching one would misrepresent what was actually verified.
+- The ENTIRE body runs inside runInStepContext({ ...currentStepContext(), cwd: repoPath, envRepo: repoPath }, ...) (src/shared/step-context.ts) -- spreading the OUTER context first (preserving connectionExecution/client exactly as src/shared/step-context.ts:195's own established pattern does) and overriding only cwd/envRepo. Passing {cwd, envRepo} alone (dropping connectionExecution) would make runInStepContext itself reject the call with session-expired whenever the request already carries a trusted binding (ctx.connectionExecution !== outer when outer is defined) -- this is why the spread, not a fresh literal, is required.
+- contentIdentity is reverified (verifyContentIdentityMatch) a SECOND time immediately before round 2 dispatches and a THIRD time immediately before persisting round 2's receipt/report; any divergence detected at either point aborts the review with ContentIdentityMismatchError, distinct from s2's own contentStable (which covers only s2's OWN collection window, not s3's).
+- A fresh attemptId (randomBytes(8).toString('hex')) is generated ONCE per runSecurityReview call -- NOT derived from reviewId alone, which a caller may reuse across retries. Each round's receipt.id is `{reviewId}-{attemptId}-round-{round}`, so a failed attempt's receipt is never silently overwritten by a later retry's receipt under the same id (persistVerificationReceiptUnlocked replaces any PRIOR receipt sharing the exact same id -- confirmed by reading receipt-record.ts's own merge logic -- so reusing reviewId-round-N across attempts would erase the earlier failure's evidence).
+- ONE VerificationReceipt is persisted PER ROUND, corroborating that round's OWN CLI-dispatch EXECUTION only (pass: the round's code pass completed with schema-valid output and no execution-level failure; fail: a timeout, malformed output, or a content-identity divergence caught during that round) -- an EXECUTION-auditability receipt, matching the HLD's own observability framing ('a security review's execution is auditable independent of its findings'), NOT an independent reproduction/exploit-confirmation of any specific claim. A round that throws still persists its own 'fail' receipt via a per-round try/catch before the error propagates. A refusal BEFORE any round starts persists nothing.
+- receiptId is attached ONLY to the code findings a round's OWN execution actually produced: round-1 code findings get round 1's receipt.id, round-2 code findings get round 2's receipt.id. Dependency-advisory findings (s2's output, never produced by either round's CLI execution) get NO receiptId -- there is no round-execution receipt that corroborates them, and attaching one would misrepresent what was actually verified.
 - On success both receipts exist and the scratch folder is cleaned up via finalizeAndCleanup; on a pre-flight refusal, neither a receipt nor a checkpoint exists.
-- VerificationReceipt's scoped meaning for THIS Epic (CLI-dispatch execution auditability, never sandbox/mutation verification) is now also stated explicitly in the HLD itself (revision 8 amendment), which previously still named "s3 owns sandbox/mutation checkpoint execution" -- stale wording left over from driver.ts's own generic doc comment, never updated after HLD revision 5 ruled out sandboxing/mutation testing for this Epic entirely. This LLD and the HLD now agree.
+- VerificationReceipt's scoped meaning for THIS Epic (CLI-dispatch execution auditability, never sandbox/mutation verification) is now also stated explicitly in the HLD itself (revision 8 amendment), which previously still named 's3 owns sandbox/mutation checkpoint execution' -- stale wording left over from driver.ts's own generic doc comment, never updated after HLD revision 5 ruled out sandboxing/mutation testing for this Epic entirely. This LLD and the HLD now agree.
 
 ### 2.2 `buildSecurityRoundHooks`
 
@@ -103,7 +103,7 @@ function runSecurityCodePass(repoPath: string, targets: ReviewTargets, modelSele
 **Returns:** `Promise<readonly SecurityFinding[]>` — Structured findings from the CLI session's schema-validated output.
 
 **Errors:**
-- `ReadOnlySessionTimeoutError` when the session exceeds its deadline.
+- `ReadOnlySessionTimeoutError` when The session exceeds its deadline.
 
 **Preconditions:**
 - This is the RoundDriverHooks.security implementation.
@@ -128,7 +128,7 @@ function verifyContentIdentityMatch(repoPath: string, targets: ReviewTargets, ad
 - `ContentIdentityMismatchError` when computeContentIdentity(repoPath, targets) !== advisoryEvidence.contentIdentity, or contentStable===false.
 
 **Preconditions:**
-- Called before round 1, again before round 2, and again before finalization (runSecurityReview's own responsibility -- see § 2.1 postconditions), never just once.
+- Called once, before round 1.
 
 ### 2.5 `deriveReceiptIdentity`
 
@@ -139,14 +139,14 @@ function deriveReceiptIdentity(contentIdentity: string): { readonly epicHash: st
 **Parameters:**
 - `contentIdentity: string` — The review's pinned content identity.
 
-**Returns:** `{ epicHash: string; storyId: string }` — `epicHash = createHash('sha256').update('security-review:'+contentIdentity).digest('hex').slice(0,16)` -- exactly 16 lowercase hex characters, matching this codebase's own artifact-id convention (`src/workflow/tracker/resolve.ts`'s `LLD_RE`/`STORY_RE`: `/^...-([0-9a-f]{16})-(s\d+)\..../`); `storyId` = the fixed literal `'s1'` (matches the SAME regex's `(s\d+)` group and `admission.ts`'s `/^s\d+$/` check -- `'s-security'` does NOT match and was rejected by both probes this round).
+**Returns:** `{ epicHash: string; storyId: string }` — epicHash = createHash('sha256').update('security-review:'+contentIdentity).digest('hex').slice(0,16) -- exactly 16 lowercase hex characters, matching this codebase's own artifactJsonPath-enforced id convention (src/workflow/tracker/resolve.ts's LLD_RE/STORY_RE: /^...-([0-9a-f]{16})-(s\d+)\.../); storyId = the fixed literal 's1' (matches the SAME regex's (s\d+) group and admission.ts's /^s\d+$/ check -- 's-security' does NOT match and was rejected by both probes this round).
 
 **Preconditions:**
 - contentIdentity is non-empty.
 
 **Postconditions:**
 - Pure and synchronous; no new persistent mapping table.
-- Tested through the REAL receipt persistence/read-back path (`persistVerificationReceipt` + `readReceiptRecord`), not just as a string-shape unit test, so an id the storage layer itself rejects is caught here rather than first in production.
+- Tested through the REAL receipt persistence/read-back path (persistVerificationReceipt + readReceiptRecord), not just as a string-shape unit test, so an id the storage layer itself rejects is caught here rather than first in production.
 
 ### 2.6 `assembleSecurityReport`
 
@@ -159,16 +159,16 @@ function assembleSecurityReport(advisoryEvidence: SecurityAdvisoryEvidence, code
 - `codeFindings: readonly SecurityFinding[]` — Round 2's own output.
 - `reconciliation: readonly ReconciliationResult[]` — Attached for audit only.
 - `receipts: { round1: VerificationReceipt; round2: VerificationReceipt }` — Both rounds' persisted receipts; round 1's id is stamped onto dependency-advisory findings and round 1's code findings, round 2's id onto round 2's code findings.
-- `modelSelection: SecurityModelSelection` — FR001's "record the effective model in the report" -- carried into `SecurityReviewReport.effectiveModel` and into supplementalMarkdown, never re-resolved.
+- `modelSelection: SecurityModelSelection` — FR001's 'record the effective model in the report' -- carried into SecurityReviewReport.effectiveModel and into supplementalMarkdown, never re-resolved.
 - `baseReport: { path, markdown }` — renderReviewReport's own unmodified output.
 
-**Returns:** `SecurityReviewReport` — {findings, unresolvedDependencies, unavailableSources, reconciliation, receipts, effectiveModel: {provider, modelId}, baseReportMarkdown, supplementalMarkdown} -- never persisted.
+**Returns:** `SecurityReviewReport` — {findings, unresolvedDependencies, unavailableSources, reconciliation, receipts, effectiveModel: {provider, modelId}, baseReportMarkdown, supplementalMarkdown} -- never persisted as its own artifact.
 
 **Preconditions:**
-- Called once, after both rounds and both receipts exist.
+- Called once, after both rounds and the receipt exist.
 
 **Postconditions:**
-- Round-1 and round-2 CODE findings carry `receiptId: receipts.round1.id` / `receiptId: receipts.round2.id` respectively -- the round whose OWN execution actually produced them.
+- Round-1 and round-2 CODE findings carry receiptId: receipts.round1.id / receipts.round2.id respectively -- the round whose OWN execution actually produced them.
 - Dependency-advisory findings (from advisoryEvidence) carry NO receiptId: no round-execution receipt corroborates them, since they were never produced by either round's CLI dispatch.
 - unresolvedDependencies/unavailableSources carried through verbatim.
 - effectiveModel is copied from modelSelection as-dispatched (status:'configured' always, by this point) -- never re-derived from config, so the report always names the model that ACTUALLY ran, not whatever is currently configured.
@@ -179,43 +179,41 @@ function assembleSecurityReport(advisoryEvidence: SecurityAdvisoryEvidence, code
 function handleSecurityReviewStep(request: SecurityReviewStepRequest): Promise<SecurityReviewStepResponse>
 ```
 
-This IS `sc3` -- the daemon IPC method + MCP tool (`insrc_security_review_step`) body, mirroring `insrc_code_review_step`'s phase-driven shape and confirm_wait-on-stale-index pattern, collapsed to a single always-daemon-reviews branch.
-
 **Parameters:**
-- `request: SecurityReviewStepRequest` — A fresh `phase:'start'` request (repo/targets/epicHash?/storyId?) or a resumption after confirm_wait (`{phase:'start', state, proceed}`).
+- `request: SecurityReviewStepRequest` — A fresh phase:'start' request (repo/targets/epicHash?/storyId?) or a resumption after confirm_wait ({phase:'start', state, proceed}).
 
-**Returns:** `Promise<SecurityReviewStepResponse>` — `{next:'confirm_wait', state, guidance}` when the repo's graph index is stale relative to the pinned content (the security model's own `insrc_analyze`/`insrc_analyze_step` drill-down tool calls would otherwise read stale data) and the caller has not yet said `proceed`; otherwise `{next:'done', report, markdown}` after running the whole review end-to-end: `resolveSecurityModel` (s1), `collectDependencyAdvisories` (s2), then `runSecurityReview` (s3's own orchestrator).
+**Returns:** `Promise<SecurityReviewStepResponse>` — {next:'confirm_wait', state, guidance} when the repo's graph index is stale relative to the pinned content (the security model's own insrc_analyze/insrc_analyze_step drill-down tool calls would otherwise read stale data) and the caller has not yet said proceed; otherwise {next:'done', report, markdown} after running the whole review end-to-end: resolveSecurityModel (s1), collectDependencyAdvisories (s2), then runSecurityReview (s3's own orchestrator).
 
 **Errors:**
-- `ContentIdentityMismatchError` — propagated unchanged from `runSecurityReview`.
-- `SecurityModelUnavailableError` — propagated unchanged from `runSecurityReview`.
+- `ContentIdentityMismatchError` when Propagated unchanged from runSecurityReview.
+- `SecurityModelUnavailableError` when Propagated unchanged from runSecurityReview.
 
 **Preconditions:**
-- This is the ONLY function the daemon IPC handler and the `insrc_security_review_step` MCP tool call -- neither registers its own orchestration logic.
+- This is the ONLY function the daemon IPC handler and the insrc_security_review_step MCP tool call -- neither registers its own orchestration logic.
 
 **Postconditions:**
-- A resume call (`state` + `proceed:false`) runs the review against the index as-is, the same as code-review's degraded/diff-based review path, never silently waiting again.
-- A resume call (`state` + `proceed:true`) waits for the index to catch up (bounded) before running the review.
-- epicHash/storyId on the ORIGINAL request, if supplied, are passed straight through into `runSecurityReview`'s opts unchanged; handleSecurityReviewStep itself never re-derives or second-guesses them.
-- The repo-binding fix (`runInStepContext`) and the per-round receipt/content-identity logic live inside `runSecurityReview`, not duplicated here -- handleSecurityReviewStep is a thin phase/resume wrapper only.
+- A resume call (state + proceed:false) runs the review against the index as-is, the same as code-review's degraded/diff-based review path, never silently waiting again.
+- A resume call (state + proceed:true) waits for the index to catch up (bounded) before running the review.
+- epicHash/storyId on the ORIGINAL request, if supplied, are passed straight through into runSecurityReview's opts unchanged; handleSecurityReviewStep itself never re-derives or second-guesses them.
+- The repo-binding fix (runInStepContext) and the per-round receipt/content-identity logic live inside runSecurityReview, not duplicated here -- handleSecurityReviewStep is a thin phase/resume wrapper only.
 
 ## 3. Data model changes
 
 ### 3.1 `SecurityReviewReport` — new
 
-The Story's own in-memory return shape, never persisted as a tracked artifact (resolved open question qfab24fea). {findings, unresolvedDependencies, unavailableSources, reconciliation, receipts: {round1, round2}, effectiveModel: {provider, modelId}, baseReportMarkdown, supplementalMarkdown}. `receipts` is a PAIR (one per round, matching the HLD's "every checkpointed round is recorded as a VerificationReceipt"); each receipt corroborates ONLY that round's own CLI-dispatch execution (pass/fail of the dispatch itself), never a specific finding's reproduction -- `findings[].receiptId` is therefore set ONLY on the code findings the corresponding round actually produced, and left unset on dependency-advisory findings. `effectiveModel` carries FR001's "record the effective model in the report" requirement, copied from the modelSelection actually dispatched, never re-resolved.
+The Story's own in-memory return shape, never persisted as a tracked artifact (resolved open question qfab24fea). {findings, unresolvedDependencies, unavailableSources, reconciliation, receipts: {round1, round2}, effectiveModel: {provider, modelId}, baseReportMarkdown, supplementalMarkdown}. receipts is a PAIR (one per round, matching the HLD's 'every checkpointed round is recorded as a VerificationReceipt'); each receipt corroborates ONLY that round's own CLI-dispatch execution (pass/fail of the dispatch itself), never a specific finding's reproduction -- findings.receiptId is therefore set ONLY on the code findings the corresponding round actually produced, and left unset on dependency-advisory findings. effectiveModel carries FR001's 'record the effective model in the report' requirement, copied from the modelSelection actually dispatched, never re-resolved.
 
-```typescript
-interface SecurityReviewReport {
-	readonly findings: readonly SecurityFinding[];
-	readonly unresolvedDependencies: readonly string[];
-	readonly unavailableSources: readonly string[];
-	readonly reconciliation: readonly ReconciliationResult[];
-	readonly receipts: { readonly round1: VerificationReceipt; readonly round2: VerificationReceipt };
-	readonly effectiveModel: { readonly provider: string; readonly modelId?: string };
-	readonly baseReportMarkdown: string;
-	readonly supplementalMarkdown: string;
-}
+```
++ interface SecurityReviewReport {
++	readonly findings: readonly SecurityFinding[];
++	readonly unresolvedDependencies: readonly string[];
++	readonly unavailableSources: readonly string[];
++	readonly reconciliation: readonly ReconciliationResult[];
++	readonly receipts: { readonly round1: VerificationReceipt; readonly round2: VerificationReceipt };
++	readonly effectiveModel: { readonly provider: string; readonly modelId?: string };
++	readonly baseReportMarkdown: string;
++	readonly supplementalMarkdown: string;
++}
 ```
 
 **Call sites:**
@@ -225,12 +223,12 @@ interface SecurityReviewReport {
 
 ### 3.2 `ContentIdentityMismatchError` — new
 
-Thrown by verifyContentIdentityMatch on a recomputed-identity mismatch or advisoryEvidence.contentStable===false, at any of the three points runSecurityReview checks it.
+Thrown by verifyContentIdentityMatch on a recomputed-identity mismatch or advisoryEvidence.contentStable===false.
 
 **Call sites:**
 - `docs/epics/add-dedicated-security-reviews-E202611100765b3a5/S002/LLD.md`
 
-### 3.3 `SecurityReviewStepRequest` / `SecurityReviewStepResponse` — new
+### 3.3 `SecurityReviewStepRequest / SecurityReviewStepResponse` — new
 
 The daemon IPC method's and insrc_security_review_step MCP tool's own request/response shapes (sc3's interfaceSketch). A fresh request carries repo/targets/epicHash?/storyId?; a resumption after confirm_wait carries state+proceed. The response is either confirm_wait (with a state token to resume) or done (with the SecurityReviewReport and its rendered markdown).
 
@@ -241,15 +239,15 @@ The daemon IPC method's and insrc_security_review_step MCP tool's own request/re
 
 | Contract | Role | How |
 | :--- | :--- | :--- |
-| `sc1` | consumes | runSecurityReview reads modelSelection as-is, refusing with blockerReason on 'unavailable', otherwise threading modelId into buildSecurityRoundHooks -> runSecurityCodePass, and into assembleSecurityReport's effectiveModel. |
-| `sc2` | consumes | verifyContentIdentityMatch recomputes identity against advisoryEvidence (at entry, before round 2, and before finalization); assembleSecurityReport maps matches/unresolvedDependencies/unavailableSources through unchanged. |
+| `sc1` | consumes | runSecurityReview reads modelSelection as-is, refusing with blockerReason on 'unavailable', otherwise threading modelId into buildSecurityRoundHooks -> runSecurityCodePass. |
+| `sc2` | consumes | verifyContentIdentityMatch recomputes identity against advisoryEvidence; assembleSecurityReport maps matches/unresolvedDependencies/unavailableSources through unchanged. |
 | `sc3` | implements | handleSecurityReviewStep IS sc3: it is the daemon IPC method + MCP tool body. On a fresh request it checks the repo's index freshness via resolveRepoLastIndexedAt(repoPath) against the request's targets; if stale, it returns confirm_wait with a state token rather than silently running the model's drill-down tools against outdated graph data. Otherwise -- or on a resumed proceed:true/false call -- it resolves sc1 (resolveSecurityModel) and sc2 (collectDependencyAdvisories) itself, then calls runSecurityReview and returns done. |
 
 ## 5. Error paths
 
 **Error cases**
 
-- **Recomputed contentIdentity over targets does not match advisoryEvidence.contentIdentity (at entry).** (recoverable)
+- **Recomputed contentIdentity over targets does not match advisoryEvidence.contentIdentity.** (recoverable)
   - Detection: verifyContentIdentityMatch compares the two strings byte-for-byte before any round runs.
   - Response: Throw ContentIdentityMismatchError(expected, actual, contentStable); no round dispatches, no receipt persisted.
   - User impact: The review is refused outright; the caller must re-run s2's collection against current content.
@@ -265,22 +263,10 @@ The daemon IPC method's and insrc_security_review_step MCP tool's own request/re
   - Detection: ReadOnlySessionTimeoutError thrown by runReadOnlySession itself, never internally retried.
   - Response: Propagated out of runSecurityCodePass -> hooks.security -> runReviewRound, but FIRST caught by runSecurityReview's own per-round try/catch: a result:'fail' VerificationReceipt is persisted for THAT round (round1 or round2, whichever was executing) before the error is rethrown. No automatic resumption is attempted: round-1 findings are never durably cached anywhere resumable (writeCheckpoint stores only {reviewId, lastCompletedUnit}, not the findings themselves), so a retry of the WHOLE runSecurityReview call restarts cleanly at round 1 -- this is a deliberate restart-always design, not an unintended gap: readCheckpoint is read only for observability (surfacing that a prior attempt existed), never to skip a round.
   - User impact: The review fails for that round, but the failure itself is now durably recorded (a 'fail' receipt), not silently lost; a retry always restarts at round 1, deterministically, rather than attempting a partial resume the design cannot actually support.
-- **contentIdentity, reverified immediately before round 2 or before persisting round 2's receipt/report, no longer matches the value verified before round 1 (a persistent edit during round 1 or between rounds).** (recoverable)
-  - Detection: verifyContentIdentityMatch is called a second and third time (not just once before round 1); a mismatch at either point is detected the same way as the original pre-flight check.
-  - Response: Throw ContentIdentityMismatchError; a result:'fail' VerificationReceipt is persisted for the round that was executing when the divergence was caught, then the error propagates -- the review never finalizes a report against content different from what round 1 (and s2's advisories) actually reviewed.
-  - User impact: A review is aborted mid-run rather than silently producing a report whose findings describe two different trees; the caller must restart once the repository is back to a stable state.
-- **The caller's own session repo (whatever resolveRepoPath(undefined) would resolve to) differs from the explicit repoPath this review targets.** (recoverable)
-  - Detection: Without binding, checkpoint.ts/reconciliation.ts/review-report.ts's own ambient resolveRepoPath(undefined) calls would silently resolve to the CALLER's repo, not repoPath.
-  - Response: runSecurityReview wraps its entire body in runInStepContext({ ...currentStepContext(), cwd: repoPath, envRepo: repoPath }, ...) (src/shared/step-context.ts) -- spreading the outer context FIRST so an already-bound connectionExecution/client survive unchanged, and overriding only cwd/envRepo -- so every nested helper call binds to the SAME explicit repoPath, never the ambient session repo, WITHOUT dropping a trusted execution binding the request already carried (a bare {cwd, envRepo} literal would make runInStepContext itself reject the call with session-expired whenever the request is already bound).
-  - User impact: A caller working in repo A can request (and get) a review correctly scoped to a different repo B -- findings, checkpoints, reports and receipts never split across repositories, and an already-attached/bound request is never rejected as a side effect of this fix.
-- **A caller retries runSecurityReview with the SAME reviewId after an earlier attempt's round failed (e.g. after the timeout case above).** (recoverable)
-  - Detection: persistVerificationReceiptUnlocked (receipt-record.ts) replaces any PRIOR receipt sharing the exact same id -- confirmed by reading its own merge logic (kept = prior.receipts.filter(r => r.id !== receipt.id)); reusing {reviewId}-round-N across attempts would silently erase the earlier failure's receipt.
-  - Response: Each runSecurityReview call generates a fresh attemptId (randomBytes(8).toString('hex')) once, and every receipt.id for that call is {reviewId}-{attemptId}-round-{round} -- a retry's receipts never collide with a prior attempt's, so both the failed attempt's 'fail' receipt and the successful retry's 'pass' receipt persist as distinct entries in the Story's RECEIPTS record.
-  - User impact: The full execution history (failed attempt, successful retry) stays auditable in one RECEIPTS record, rather than the retry's success silently overwriting evidence that an earlier attempt failed.
 - **finalizeAndCleanup's durable-copy step throws.** (recoverable)
   - Detection: finalizeAndCleanup's own documented contract leaves the scratch folder intact on a durable-copy failure.
-  - Response: Propagated unchanged; the already-persisted VerificationReceipts are not rolled back.
-  - User impact: The caller sees the persistence failure, but the receipts and round outputs are not lost.
+  - Response: Propagated unchanged; the already-persisted VerificationReceipt is not rolled back.
+  - User impact: The caller sees the persistence failure, but the receipt and round outputs are not lost.
 - **reconcileRound returns a verdicts array whose length does not match priorFindings.length.** (terminal)
   - Detection: reconcileRound's own internal check throws before returning.
   - Response: Propagated unchanged; s3 does not paper over a reconciliation-module internal-contract violation.
@@ -293,12 +279,24 @@ The daemon IPC method's and insrc_security_review_step MCP tool's own request/re
   - Detection: resolveRepoLastIndexedAt(repoPath) returns a timestamp older than the content the request targets.
   - Response: Return {next:'confirm_wait', state, guidance} instead of running any round; the caller must re-call with {phase:'start', state, proceed} to continue.
   - User impact: The controller is asked whether to wait for a fresh index (more accurate drill-down) or proceed anyway (degraded, since the model's own insrc_analyze/insrc_analyze_step tool calls would read stale data) -- never silently one or the other.
+- **contentIdentity, reverified immediately before round 2 or before persisting round 2's receipt/report, no longer matches the value verified before round 1 (a persistent edit during round 1 or between rounds).** (recoverable)
+  - Detection: verifyContentIdentityMatch is called a second and third time (not just once before round 1); a mismatch at either point is detected the same way as the original pre-flight check.
+  - Response: Throw ContentIdentityMismatchError; a result:'fail' VerificationReceipt is persisted for the round that was executing when the divergence was caught, then the error propagates -- the review never finalizes a report against content different from what round 1 (and s2's advisories) actually reviewed.
+  - User impact: A review is aborted mid-run rather than silently producing a report whose findings describe two different trees; the caller must restart once the repository is back to a stable state.
+- **The caller's own session repo (whatever resolveRepoPath(undefined) would resolve to) differs from the explicit repoPath this review targets.** (recoverable)
+  - Detection: Without binding, checkpoint.ts/reconciliation.ts/review-report.ts's own ambient resolveRepoPath(undefined) calls would silently resolve to the CALLER's repo, not repoPath.
+  - Response: runSecurityReview wraps its entire body in runInStepContext({ ...currentStepContext(), cwd: repoPath, envRepo: repoPath }, ...) (src/shared/step-context.ts) -- spreading the outer context FIRST so an already-bound connectionExecution/client survive unchanged, and overriding only cwd/envRepo -- so every nested helper call binds to the SAME explicit repoPath, never the ambient session repo, WITHOUT dropping a trusted execution binding the request already carried (a bare {cwd, envRepo} literal would make runInStepContext itself reject the call with session-expired whenever the request is already bound).
+  - User impact: A caller working in repo A can request (and get) a review correctly scoped to a different repo B -- findings, checkpoints, reports and receipts never split across repositories.
+- **A caller retries runSecurityReview with the SAME reviewId after an earlier attempt's round failed (e.g. after the timeout case above).** (recoverable)
+  - Detection: persistVerificationReceiptUnlocked (receipt-record.ts) replaces any PRIOR receipt sharing the exact same id -- confirmed by reading its own merge logic (kept = prior.receipts.filter(r => r.id !== receipt.id)); reusing {reviewId}-round-N across attempts would silently erase the earlier failure's receipt.
+  - Response: Each runSecurityReview call generates a fresh attemptId (randomBytes(8).toString('hex')) once, and every receipt.id for that call is {reviewId}-{attemptId}-round-{round} -- a retry's receipts never collide with a prior attempt's, so both the failed attempt's 'fail' receipt and the successful retry's 'pass' receipt persist as distinct entries in the Story's RECEIPTS record.
+  - User impact: The full execution history (failed attempt, successful retry) stays auditable in one RECEIPTS record, rather than the retry's success silently overwriting evidence that an earlier attempt failed.
 
 **Edge cases**
 
 | Input | Expected |
 | :--- | :--- |
-| The code pass finds zero findings and advisoryEvidence.matches is also empty. | SecurityReviewReport.findings is empty; a VerificationReceipt pair with result:'pass' is still persisted (one per round). |
+| The code pass finds zero findings and advisoryEvidence.matches is also empty. | SecurityReviewReport.findings is empty; a VerificationReceipt with result:'pass' is still persisted. |
 | advisoryEvidence.matches is non-empty but unresolvedDependencies is also non-empty. | Both reported distinctly: confirmed matches become findings, unresolvedDependencies carried through verbatim, never merged. |
 | Round 2 finds zero findings where round 1 found some. | reconcileRound classifies round 1's findings 'no-longer-surfaced'; findings reflect round 2's own result. |
 | targets.entries is empty. | computeContentIdentity still produces a stable identity; the code pass is expected to return zero findings -- a well-defined degenerate review, not an error. |
@@ -318,9 +316,9 @@ The daemon IPC method's and insrc_security_review_step MCP tool's own request/re
 **Test levels**
 
 - **unit** — Exercise s3's own pure/deterministic logic without any real CLI session, filesystem, or network I/O.
-  - Subjects: `deriveReceiptIdentity -- same contentIdentity always re-derives the identical pair; different identities derive different pairs.`, `verifyContentIdentityMatch -- resolves on a match with contentStable:true; throws on mismatch; throws on contentStable:false even when identity matches.`, `assembleSecurityReport -- confirmed matches map to dependency-advisory SecurityFindings with checkId:'dependency-advisory' and the correct round's receiptId stamped; unresolvedDependencies/unavailableSources pass through verbatim; empty inputs produce an empty findings array; effectiveModel copied verbatim from the passed-in modelSelection.`, `buildSecurityRoundHooks -- hooks.ground always resolves to [] without I/O; hooks.security delegates to the injected code-pass function.`, `deriveReceiptIdentity's output is exercised through the REAL persistVerificationReceipt + readReceiptRecord round trip (not just asserted as a string shape) -- catches an id the storage layer itself would reject.`
+  - Subjects: `deriveReceiptIdentity -- same contentIdentity always re-derives the identical pair; different identities derive different pairs.`, `verifyContentIdentityMatch -- resolves on a match with contentStable:true; throws on mismatch; throws on contentStable:false even when identity matches.`, `assembleSecurityReport -- confirmed matches map to dependency-advisory SecurityFindings with checkId:'dependency-advisory' and receiptId stamped; unresolvedDependencies/unavailableSources pass through verbatim; empty inputs produce an empty findings array.`, `buildSecurityRoundHooks -- hooks.ground always resolves to [] without I/O; hooks.security delegates to the injected code-pass function.`, `deriveReceiptIdentity's output is exercised through the REAL persistVerificationReceipt + readReceiptRecord round trip (not just asserted as a string shape) -- catches an id the storage layer itself would reject.`
 - **integration** — Exercise runSecurityReview's full orchestration against the real review-round/ machinery, with only the CLI session faked via an injected test double.
-  - Subjects: `runSecurityReview end-to-end: round 1, correction round 2, reconciliation, a real persisted+read-back VerificationReceipt pair, and real checkpoint cleanup.`, `runSecurityReview refuses before any round dispatches on a contentIdentity mismatch.`, `runSecurityReview refuses before any round dispatches on modelSelection.status:'unavailable', verified via the fake CLI session never being called.`, `A clean-run case still persists a VerificationReceipt pair with result:'pass'.`, `handleSecurityReviewStep: a stale-index fresh request returns confirm_wait with a state token, never runs a round; a resumed call with proceed:true or proceed:false both reach done; epicHash/storyId supplied on the request are threaded into the persisted receipt unchanged (standalone unset), while an omitted pair is derived via deriveReceiptIdentity with standalone:true.`, `runSecurityReview persists ONE VerificationReceipt per round (round1, round2), each with the correct result ('pass' on success, 'fail' on that round's own execution failure); a round-1 failure persists only round1's fail receipt and never dispatches round 2.`, `runSecurityReview reverifies contentIdentity before round 2 and before finalization; a repository edit injected between round 1 and round 2 in the test fixture is caught and aborts with ContentIdentityMismatchError, with round1's receipt already durably persisted as 'pass' from before the edit.`, `runSecurityReview run with repoPath=B while the test harness's own ambient cwd is A: writeCheckpoint/reconcileRound/renderReviewReport/finalizeAndCleanup all read/write under B, verified by asserting on B's own .insrc/tmp/<reviewId>/ contents, never A's -- proves the runInStepContext binding, not a global test override.`, `SecurityReviewReport.effectiveModel matches the modelSelection actually passed in, in a case where it differs from the repo's currently-configured tier default (proving the report never re-resolves configuration).`, `runSecurityReview invoked from inside an ALREADY-BOUND step context (a real connectionExecution set via runInStepContext in the test, mirroring a genuine attached-request caller) succeeds -- the previous ambient-cwd-only test (A vs B repos with no connectionExecution bound) would NOT have caught the session-expired rejection this fixes, since that rejection only fires when an outer binding already exists.`, `Two sequential runSecurityReview calls with the SAME reviewId -- the first failing a round, the second succeeding -- persist TWO distinct receipts per round slot (different attemptId), both readable back via readReceiptRecord; the first attempt's 'fail' receipt is never overwritten by the second's 'pass'.`, `assembleSecurityReport leaves receiptId unset on every dependency-advisory finding, and sets it only on the code findings produced by the matching round -- verified by asserting the field's presence/absence per finding, not just its value.`
+  - Subjects: `runSecurityReview end-to-end: round 1, correction round 2, reconciliation, a real persisted+read-back VerificationReceipt, and real checkpoint cleanup.`, `runSecurityReview refuses before any round dispatches on a contentIdentity mismatch.`, `runSecurityReview refuses before any round dispatches on modelSelection.status:'unavailable', verified via the fake CLI session never being called.`, `A clean-run case still persists a VerificationReceipt with result:'pass'.`, `handleSecurityReviewStep: a stale-index fresh request returns confirm_wait with a state token, never runs a round; a resumed call with proceed:true or proceed:false both reach done; epicHash/storyId supplied on the request are threaded into the persisted receipt unchanged (standalone unset), while an omitted pair is derived via deriveReceiptIdentity with standalone:true.`, `runSecurityReview persists ONE VerificationReceipt per round (round1, round2), each with the correct result ('pass' on success, 'fail' on that round's own execution failure); a round-1 failure persists only round1's fail receipt and never dispatches round 2.`, `runSecurityReview reverifies contentIdentity before round 2 and before finalization; a repository edit injected between round 1 and round 2 in the test fixture is caught and aborts with ContentIdentityMismatchError, with round1's receipt already durably persisted as 'pass' from before the edit.`, `runSecurityReview run with repoPath=B while the test harness's own ambient cwd is A: writeCheckpoint/reconcileRound/renderReviewReport/finalizeAndCleanup all read/write under B, verified by asserting on B's own .insrc/tmp/<reviewId>/ contents, never A's -- proves the runInStepContext binding, not a global test override.`, `SecurityReviewReport.effectiveModel matches the modelSelection actually passed in, in a case where it differs from the repo's currently-configured tier default (proving the report never re-resolves configuration).`, `runSecurityReview invoked from inside an ALREADY-BOUND step context (a real connectionExecution set via runInStepContext in the test, mirroring a genuine attached-request caller) succeeds -- the previous ambient-cwd-only test (A vs B repos with no connectionExecution bound) would NOT have caught the session-expired rejection this fixes, since that rejection only fires when an outer binding already exists.`, `Two sequential runSecurityReview calls with the SAME reviewId -- the first failing a round, the second succeeding -- persist TWO distinct receipts per round slot (different attemptId), both readable back via readReceiptRecord; the first attempt's 'fail' receipt is never overwritten by the second's 'pass'.`, `assembleSecurityReport leaves receiptId unset on every dependency-advisory finding, and sets it only on the code findings produced by the matching round -- verified by asserting the field's presence/absence per finding, not just its value.`
 
 **Acceptance mapping**
 
@@ -334,7 +332,7 @@ The daemon IPC method's and insrc_security_review_step MCP tool's own request/re
 
 Supply hooks.security as the real CliProvider.runReadOnlySession adapter (matching the HLD's own literal framing) and hooks.ground as a trivial, zero-cost function that always resolves to [] -- runReviewRound's unconditional ground call costs nothing extra since it never performs I/O.
 
-s3's new orchestrator module builds one RoundDriverHooks<SecurityFinding> object per review: ground=async()=>[] (a one-line, synchronous-resolving no-op -- a security-only review has no general code-quality ground pass to run, and review-round's own ground pass belongs to a sibling Story, out of scope here), security=the real adapter that resolves s1's SecurityModelSelection, builds the code-review prompt/schema, calls CliProvider.runReadOnlySession with s1's pinned modelId against repoPath/targets, and maps the structured result into SecurityFinding[] (plus s2's SecurityAdvisoryEvidence folded in as dependency-advisory SecurityFindings). The module calls runReviewRound(reviewId, hooks, round, targets) for round 1 and round 2 (correction-and-re-review), reconcileRound between them, writeCheckpoint after each, renderReviewReport for the base report, persistVerificationReceipt once per round (ident derived from contentIdentity per q860d1b4e, or threaded from the caller), finalizeAndCleanup last. This is the ONLY alternative whose wiring matches the HLD's own stated framework text verbatim ('supplies review-round's existing RoundDriverHooks.security hook as a thin adapter').
+s3's new orchestrator module builds one RoundDriverHooks<SecurityFinding> object per review: ground=async()=>[] (a one-line, synchronous-resolving no-op -- a security-only review has no general code-quality ground pass to run, and review-round's own ground pass belongs to a sibling Story, out of scope here), security=the real adapter that resolves s1's SecurityModelSelection, builds the code-review prompt/schema, calls CliProvider.runReadOnlySession with s1's pinned modelId against repoPath/targets, and maps the structured result into SecurityFinding[] (plus s2's SecurityAdvisoryEvidence folded in as dependency-advisory SecurityFindings). The module calls runReviewRound(reviewId, hooks, round, targets) for round 1 and round 2 (correction-and-re-review), reconcileRound between them, writeCheckpoint after each, renderReviewReport for the base report, persistVerificationReceipt once at the end (ident derived from contentIdentity per q860d1b4e), finalizeAndCleanup last. This is the ONLY alternative whose wiring matches the HLD's own stated framework text verbatim ('supplies review-round's existing RoundDriverHooks.security hook as a thin adapter').
 
 **Rejected because:** Winner -- not rejected.
 

@@ -1,9 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import { closeSync, constants, existsSync, fstatSync, fsyncSync, lstatSync, mkdirSync, openSync, readSync, unlinkSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, relative, isAbsolute, sep } from 'node:path';
 import { InstallerError, MAX_CONTROL_BYTES } from './contracts.js';
 import type { ControllerSnapshot, InstallationLocation } from './contracts.js';
-import { assertLocalControlRoot } from './location.js';
+import { assertLocalControlRoot, assertToken } from './location.js';
 import { controlBinding } from './native.js';
 import { parseInstaller } from './schemas.js';
 
@@ -72,6 +72,8 @@ export class ControllerStore {
   #closed = false;
   private constructor(readonly location: InstallationLocation, handle: object) {
     this.#handle = handle; this.#root = join(location.home, 'install');
+    Object.freeze(location.daemonEndpoint); Object.freeze(location);
+    Object.defineProperty(this, 'location', { value: location, writable: false, configurable: false, enumerable: true });
   }
   static acquire(location: InstallationLocation): ControllerStore {
     // Validate ancestors before allocation. Recheck after each allocation.
@@ -121,6 +123,19 @@ export class ControllerStore {
     } catch (cause) {
       throw new InstallerError('controller-write-uncertain', 'Publication failed; inspect authoritative state before any further mutation', { cause });
     } finally { try { unlinkSync(temp); } catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; } }
+  }
+  /** Publish only a caller-owned candidate stage; never replace an existing release. */
+  publishCandidate(stagedDirectory: string, releaseId: string): string {
+    this.assertHeld(); assertToken(releaseId);
+    const staging = join(this.#root, 'staging'), rel = relative(staging, stagedDirectory);
+    if (!rel || isAbsolute(rel) || rel === '..' || rel.startsWith(`..${sep}`)) throw new InstallerError('path-invalid', 'Candidate must originate in owned installer staging');
+    const releases = join(this.location.home, 'releases');
+    const probe = process.platform === 'win32' ? (path: string) => controlBinding().localVolume(path) : undefined;
+    assertLocalControlRoot(stagedDirectory, probe); assertLocalControlRoot(releases, probe);
+    mkdirSync(releases, { recursive: true, mode: 0o700 }); controlBinding().protect(releases);
+    const destination = join(releases, releaseId);
+    controlBinding().publishDirectory(this.#handle, stagedDirectory, destination);
+    flushDirectory(releases); return destination;
   }
   close(): void { if (!this.#closed) { controlBinding().close(this.#handle); this.#closed = true; } }
 }

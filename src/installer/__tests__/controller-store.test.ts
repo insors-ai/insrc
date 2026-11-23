@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
-import { mkdtempSync, realpathSync, rmSync, lstatSync, writeFileSync, unlinkSync, symlinkSync, chmodSync } from 'node:fs';
+import { mkdirSync, readFileSync, mkdtempSync, realpathSync, rmSync, lstatSync, writeFileSync, unlinkSync, symlinkSync, chmodSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
@@ -123,5 +123,25 @@ test('native publisher denies unqualified output before publishing target artifa
     const destination = join(f.home, 'published');
     assert.throws(() => packageControlBinding({ source: 'out/installer/native/control.node', destination, target: { os: process.platform, arch: process.arch, baseline: 'fixture' } }), /writer admission|Publication requires/);
     assert.throws(() => lstatSync(destination), { code: 'ENOENT' });
+  } finally { f.cleanup(); }
+});
+
+
+test('candidate publication is exclusive and requires retained location and lock', () => {
+  const f = setup();
+  try {
+    const store = ControllerStore.acquire(f.location);
+    try {
+      store.commit(initial(f.home), null);
+      assert.throws(() => { store.location.home = '/different'; }, TypeError);
+      const first = join(f.home, 'install/staging/one/payload'), second = join(f.home, 'install/staging/two/payload');
+      mkdirSync(first, { recursive: true, mode: 0o700 }); mkdirSync(second, { recursive: true, mode: 0o700 });
+      writeFileSync(join(first, 'original'), 'first'); writeFileSync(join(second, 'replacement'), 'second');
+      const destination = store.publishCandidate(first, 'immutable');
+      assert.throws(() => store.publishCandidate(second, 'immutable'), { code: 'candidate-exists' });
+      assert.equal(readFileSync(join(destination, 'original'), 'utf8'), 'first');
+      assert.throws(() => store.publishCandidate(f.home, 'outside'), { code: 'path-invalid' });
+      store.close(); assert.throws(() => store.publishCandidate(second, 'closed'), { code: 'lock-lost' });
+    } finally { store.close(); }
   } finally { f.cleanup(); }
 });

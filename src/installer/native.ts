@@ -6,6 +6,7 @@ interface ControlBinding {
   held(handle: object): boolean;
   close(handle: object): void;
   replace(handle: object, from: string, to: string): void;
+  publishDirectory(handle: object, from: string, to: string): void;
   protect(directory: string): void;
   userSid(): string;
   localVolume(directory: string): boolean;

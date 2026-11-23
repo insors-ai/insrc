@@ -18,6 +18,12 @@ typedef struct { HANDLE fd; pathchar *path; } lease;
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
+#ifdef __linux__
+#include <sys/syscall.h>
+#ifndef RENAME_NOREPLACE
+#define RENAME_NOREPLACE 1
+#endif
+#endif
 typedef char pathchar;
 typedef struct { int fd; pathchar *path; } lease;
 #define CLOSED -1
@@ -142,6 +148,27 @@ static napi_value replace(napi_env e,napi_callback_info info) {
 #endif
   free(from);free(to); if(!ok) return fail(e,"replace-uncertain","Atomic replacement failed; inspect authoritative state before proceeding"); return nothing(e);
 }
+/* Exclusive same-volume directory publication; an existing release is never replaced. */
+static napi_value publish_directory(napi_env e,napi_callback_info info) {
+  size_t n=3; napi_value a[3]; napi_get_cb_info(e,info,&n,a,NULL,NULL);
+  if(n!=3 || !anchor(handle(e,a[0]))) return fail(e,"lock-lost","Directory publication requires live lock");
+  pathchar *from=patharg(e,a[1]),*to=patharg(e,a[2]);
+  if(!from||!to) { free(from);free(to);return fail(e,"path-invalid","Expected publication paths"); }
+  int ok,exists;
+#ifdef _WIN32
+  ok=MoveFileExW(from,to,MOVEFILE_WRITE_THROUGH);
+  DWORD err=ok?0:GetLastError(); exists=err==ERROR_ALREADY_EXISTS || err==ERROR_FILE_EXISTS;
+#elif defined(__APPLE__)
+  ok=renamex_np(from,to,RENAME_EXCL)==0; exists=!ok && errno==EEXIST;
+#elif defined(__linux__)
+  ok=syscall(SYS_renameat2,AT_FDCWD,from,AT_FDCWD,to,RENAME_NOREPLACE)==0; exists=!ok && errno==EEXIST;
+#else
+  ok=0;exists=0;
+#endif
+  free(from);free(to);
+  if(!ok) return fail(e,exists?"candidate-exists":"candidate-publish-uncertain","Exclusive candidate publication failed");
+  return nothing(e);
+}
 static napi_value protect(napi_env e,napi_callback_info info) {
   size_t n=1;napi_value a[1];napi_get_cb_info(e,info,&n,a,NULL,NULL);pathchar *p=n==1?patharg(e,a[0]):NULL;
   if(!p)return fail(e,"path-invalid","Expected private directory");
@@ -179,6 +206,7 @@ static napi_value init(napi_env e,napi_value exports) {
   napi_property_descriptor props[]={
     {"acquire",NULL,acquire,NULL,NULL,NULL,napi_default,NULL}, {"held",NULL,held,NULL,NULL,NULL,napi_default,NULL},
     {"close",NULL,close_lock,NULL,NULL,NULL,napi_default,NULL}, {"replace",NULL,replace,NULL,NULL,NULL,napi_default,NULL},
+    {"publishDirectory",NULL,publish_directory,NULL,NULL,NULL,napi_default,NULL},
     {"protect",NULL,protect,NULL,NULL,NULL,napi_default,NULL}, {"userSid",NULL,sid,NULL,NULL,NULL,napi_default,NULL},
     {"localVolume",NULL,local,NULL,NULL,NULL,napi_default,NULL}
   };

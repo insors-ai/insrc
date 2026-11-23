@@ -76,7 +76,7 @@ try {
     Expand-Archive -LiteralPath $archive -DestinationPath $stage
     $runtimeStage = Join-Path $stage $runtimeRoot
     # Skip unnecessary npm aliases; use npm-cli.js through private node on dev/build only.
-    foreach ($alias in @('npm','npm.cmd','npx','npx.cmd','corepack','corepack.cmd')) { Remove-Item -LiteralPath (Join-Path $runtimeStage $alias) -ErrorAction SilentlyContinue }
+    foreach ($alias in @('npm','npm.cmd','npm.ps1','npx','npx.cmd','npx.ps1','corepack','corepack.cmd','corepack.ps1')) { Remove-Item -LiteralPath (Join-Path $runtimeStage $alias) -ErrorAction SilentlyContinue }
     $node = Join-Path $runtimeStage 'node.exe'
     # @@PUBLISH_RUNTIME@@
     $node = Join-Path $HomeDirectory "runtimes/22.22.1/$target/node.exe"

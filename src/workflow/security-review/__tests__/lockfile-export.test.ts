@@ -81,3 +81,15 @@ test('findVersionUncertainPipRequirements: a plain pip requirements.txt entry wi
 		rmSync(dir, { recursive: true, force: true });
 	}
 });
+
+test("findVersionUncertainPipRequirements: a pip 'wildcard match' pin (e.g. '==2.*') is a range, not an exact pin -- also recorded as version-uncertain", () => {
+	const dir = tmpDir();
+	try {
+		const requirementsPath = join(dir, 'requirements.txt');
+		writeFileSync(requirementsPath, 'django==2.*\n');
+		const uncertain = findVersionUncertainPipRequirements(requirementsPath);
+		assert.ok(uncertain.some(d => d.includes('django')), JSON.stringify(uncertain));
+	} finally {
+		rmSync(dir, { recursive: true, force: true });
+	}
+});

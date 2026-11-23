@@ -99,7 +99,11 @@ function parsePipfileLock(content: string): PipenvPackage[] {
 			if (raw === null || typeof raw !== 'object') { continue; }
 			const entry = raw as Record<string, unknown>;
 			const spec = typeof entry.version === 'string' ? entry.version : undefined;
-			const nonStandardSource = typeof entry.git === 'string' || typeof entry.path === 'string' || typeof entry.file === 'string' || (spec === undefined && typeof entry.url === 'string');
+			// pipenv only adds an 'index' key to a lock entry when it was
+			// explicitly resolved from a secondary (non-default) package
+			// index -- a private/custom source, not plain PyPI.
+			const nonStandardSource = typeof entry.git === 'string' || typeof entry.path === 'string' || typeof entry.file === 'string'
+				|| typeof entry.index === 'string' || (spec === undefined && typeof entry.url === 'string');
 			packages.push({ name, spec, nonStandardSource });
 		}
 	}
@@ -156,7 +160,9 @@ export function findVersionUncertainPipRequirements(requirementsPath: string): s
 		const m = /^([A-Za-z0-9][A-Za-z0-9._-]*)(\[[^\]]*\])?\s*(.*)$/.exec(withoutMarker);
 		if (m?.[1] === undefined) { continue; }
 		const [, name, , rest] = m;
-		const isExactPin = /^==\s*[^,;\s]+$/.test((rest ?? '').trim());
+		// '==2.*' is pip's wildcard match syntax, not an exact pin -- a '*'
+		// anywhere in the version makes it a range, however it is spelled.
+		const isExactPin = /^==\s*[^,;\s*]+$/.test((rest ?? '').trim());
 		if (!isExactPin) {
 			uncertain.push(`${name}: version-uncertain (${line})`);
 		}

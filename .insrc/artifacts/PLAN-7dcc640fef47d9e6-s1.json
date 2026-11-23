@@ -1,0 +1,442 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1795407857615-6humx0",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-23T04:26:43.819Z",
+    "epicCreatedAt": "2026-11-22T19:05:12.455Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 145828,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7dcc640fef47d9e6",
+    "epicSlug": "remove-existing-daemon-installer-lifecycle-implementation",
+    "storyId": "s1",
+    "lldRunId": "wf-1795374098665-sasfw7",
+    "lldEffectiveHash": "7dcc640fef47d9e61394ebb950c25b7bb21863110ccbc89f5c03566058bbeeac",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "623c89a3248cef0c379bd82752bc5177c673cabb7387f799896fe5ba0c6ad119",
+        "at": "2026-11-23T04:26:43.912Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-23T04:33:26.148Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "ea01598b8f1319e9a8a8fb85b2b1c18075f9e0d1"
+  },
+  "body": {
+    "summary": {
+      "prose": "Remove the committed daemon lifecycle deletion scope in coherent backend, CLI and IDE batches, then reconcile packaging and validate the retained application boundaries. Account for all 278 whole files and 176 member/test entries without touching installed user state or introducing a replacement engine. Run the final build and focused retained tests after all edits, then request one story build approval.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Freeze deletion accounting and retained validation scope",
+        "summary": "Verify current candidate hashes/selectors against baseline728c31abc; capture278 file and176 member entries, retained shared boundaries, actual test selectors and available toolchains. Establish workspace-only command scope and per-entry completion accounting without deleting code yet.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Every candidate path and member selector is accounted for and matches source; no stale line-range deletion is used.",
+          "Exact backend/VS Code scripts and focused retained tests are selected; JetBrains compile/JUnit availability is recorded.",
+          "No installed daemon process, runtime, launch job or data outside the repository is touched."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c4",
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "Preflight source-hash/selector, manifest accounting, existing script/test-selector and toolchain-availability checks (read-only; no live daemon operation)."
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Delete all dedicated lifecycle sources and tests",
+        "summary": "Delete exactly the278 whole-file candidates:143 implementation/build/asset/CI files,115 tests and20 helpers. Preserve the manifests/evidence and all noncandidate shared code. This batch owns physical whole-file removal; subsequent tasks remove surviving integration references before final validation. Full build and behavioral tests are deferred until the whole removal sequence is integrated in t8; this task validates physical removal and accounting only.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "All278 candidate files are removed from tracked source and recorded once in deletion accounting.",
+          "No noncandidate whole file is deleted; shared process identity, generic guards and protected model/config/workflow tests remain.",
+          "No replacement installer, supervisor, launcher authority or release-signing system is added."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "278-path absence and preserved-noncandidate-file accounting check; no per-task full build."
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Remove backend lifecycle slices while preserving shared ownership",
+        "summary": "Remove backend/shared lifecycle member entries: managed/probation/control dispatch, update contracts/ack hooks, PID/supervisor wiring, lifecycle-only guard pin/transfer/borrow, worker-to-main stop operations and corresponding mixed-test slices. Keep genericIPC,keystore identity/guards,model bootstrap,workflow artifacts and application-owned resource-close callbacks in surviving modules.",
+        "size": "L",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "Every backend/shared member entry is removed or narrowed with its required retained behavior preserved.",
+          "Keystore guard acquisition/conflict/reclaim and process identity remain; no generic IPC lifetime/cancellation/uncertainty primitive is removed.",
+          "Mixed model/config/status/resource-close tests retain non-lifecycle assertions; no broad engine is reintroduced."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Retained shared process identity/run-file guard and generic IPC subsets, including src/shared/__tests__/daemon-process.test.ts, src/shared/__tests__/daemon-run-files.test.ts and src/shared/__tests__/ipc-client.test.ts (executed after all edits in t8)."
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Remove CLI lifecycle commands and launcher authority",
+        "summary": "Remove identified CLI start/stop/restart/update methods,types,command cases,pane actions,orphan kill controls,service bindings and shell-owned-runtime/source-selection slices. Keep CLI/MCP executable contracts, general status/backup/compact,model/tier decisions,host registration,log/MCP diagnostics and offline maintenance safety with direct surviving integration.",
+        "size": "L",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "CLI lifecycle member entries and their dedicated mixed-test slices are accounted for; no control remains advertised without implementation.",
+          "Generic CLI/MCP launch still resolves a valid development application entry without owned installer/supervisor fallback.",
+          "Status/version/root lookup,backup/compact,model decisions and connection-maintenance stopped-store proofs survive with no hidden lifecycle execution."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Retained CLI command/model/configuration and status/backup/compact assertions, plus CLI/MCP launch contract/source checks (bounded execution in t8)."
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Remove VS Code lifecycle controls and installer onboarding",
+        "summary": "Remove identified extension controller/commands,freshness,auto-start,restart offers,orphan action,manifest contributions and install step/test slices. Preserve generic activation/status,settings/model saves,repository registration,host MCP/steering wiring,debug clients/logs and retryable onboarding state.",
+        "size": "L",
+        "order": 5,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "All VS Code member entries and lifecycle-only contributions/imports are accounted for; no installer/control asset remains a packaging input.",
+          "Onboarding still registers workspaces and wires hosts with existing consent/retry semantics; generic reachability remains.",
+          "Mixed model/configuration tests retain checks/approvals/saves while old restart execution assumptions are removed."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Retained vscode-plugin/src/__tests__/activation.test.ts, vscode-plugin/src/onboarding/__tests__/onboarding.test.ts and mixed model/settings/debug assertions (executed in t8)."
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Remove JetBrains lifecycle controls and update contracts",
+        "summary": "Remove identified gateway lifecycle methods/types/fields,settings daemon lifecycle panel/restart execution and corresponding mixed JUnit slices; dedicated lifecycle/freshness sources were deleted in t2. Preserve generic RPC,status,backup/compact,model/settings workflow and project/host onboarding contracts.",
+        "size": "L",
+        "order": 6,
+        "dependsOn": [
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "All JetBrains member entries are accounted for; no removed controller/resource/import remains wired in surviving code.",
+          "Generic gateway and backup/compact/status DTOs survive; only update-specific fields and methods are removed.",
+          "Mixed settings/model tests preserve save/decision/error semantics rather than deleting the whole test or flow."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Focused surviving JetBrains gateway/settings/model/onboarding JUnit classes through existing jetbrains-plugin/test-bridge/run-focused-junit.ts where available (executed in t8)."
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Reconcile build packaging inventories and cleanup documentation",
+        "summary": "Remove remaining lifecycle-only build requirements,native-helper invocations,installer resource generators and release/control wiring from retained files. Review source classification/digest inventories for actual changed boundaries; keep integrity gates. Finish full manifest/member accounting and document temporary absence of lifecycle controls.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "Current production/client/shell/package/build scans find no executable references to deleted lifecycle targets; historical records may remain.",
+          "All278 file and176 member entries have an outcome; retained non-lifecycle behavior and unavoidable integration edits are identified.",
+          "Build/test coordination and unrelated resource packaging remain intact; source inventories are reviewed, not blindly bypassed."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4",
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "Final 278-file/176-entry accounting, dangling executable reference/asset/command audit, and reviewed source-inventory check."
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Build and validate all retained boundaries once removal is complete",
+        "summary": "Run one normal backend build and required typechecks,VS Code typecheck/bundle,available JetBrains compilation/focused JUnit,and bounded focused retained tests chosen in t1. Fix only removal-related integration regressions,record concrete limitations,and prepare one story build approval after all tasks are built/tested. No real user installer/start/stop/update or native qualification matrices.",
+        "size": "L",
+        "order": 8,
+        "dependsOn": [
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "Backend and VS Code compile/package checks pass; available JetBrains checks pass or exact toolchain limits are reported.",
+          "Selected retained shared guard/identity,IPC,model/config,workflow,client onboarding and application resource-close tests pass; unrelated pre-existing failures are distinguished with evidence.",
+          "Final accounting proves complete deletion scope and no installed-state mutation,no hidden replacement engine,and one pending story build approval only.",
+          "An unavailable required check is explicitly unverified, never reported as a passing result; no repeated matrix or unrelated regression sweep is launched."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4",
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "npm run build and npm run typecheck:tools; VS Code npm run build/npm run bundle after removing retired generator inputs; available JetBrains compile/focused JUnit."
+          },
+          {
+            "level": "unit",
+            "name": "Bounded retained shared guard/identity/IPC and model/config/workflow tests through the existing npm test coordinator; preserve mixed-suite resource teardown and client integration assertions."
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "All 278 whole-file candidates absent from tracked source; all 176 member/test entries accounted for as removed declaration or narrowed slice.",
+        "coveredByTaskIds": [
+          "t1",
+          "t2",
+          "t7",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "No executable imports, commands, packaging inputs, lifecycle CI or test selectors point at removed targets.",
+        "coveredByTaskIds": [
+          "t1",
+          "t2",
+          "t7",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "Retained files and tests preserve the explicit non-lifecycle responsibilities from both manifests.",
+        "coveredByTaskIds": [
+          "t1",
+          "t2",
+          "t7",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "Shared process identity and shared run-file/keystore guard behavior.",
+        "coveredByTaskIds": [
+          "t3",
+          "t4",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "Configuration/catalog/model validation and generic IPC framing, timeout, uncertainty and persistent lanes.",
+        "coveredByTaskIds": [
+          "t3",
+          "t4",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "Retained workflow artifact lifecycle and model approval/tier save assertions.",
+        "coveredByTaskIds": [
+          "t3",
+          "t4",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "VS Code activation/reachability, onboarding registration/host wiring, settings/model flows, backup/compact/status and debug MCP/log surfaces.",
+        "coveredByTaskIds": [
+          "t3",
+          "t4",
+          "t5",
+          "t6",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "JetBrains remaining gateway/settings/model/onboarding code and focused JUnit suites where toolchain is available.",
+        "coveredByTaskIds": [
+          "t3",
+          "t4",
+          "t5",
+          "t6",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "Application-owned worker/queue/store/socket draining assertions retained from mixed suites.",
+        "coveredByTaskIds": [
+          "t3",
+          "t4",
+          "t5",
+          "t6",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "One normal backend build plus required backend/tool typechecks.",
+        "coveredByTaskIds": [
+          "t1",
+          "t7",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "VS Code typecheck/bundle and resource checks.",
+        "coveredByTaskIds": [
+          "t1",
+          "t7",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "JetBrains compile/focused tests when available; explicitly record any unavailable check.",
+        "coveredByTaskIds": [
+          "t1",
+          "t7",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "No test invokes real installer/update/start/stop on the user's installation; no multi-platform native qualification matrix.",
+        "coveredByTaskIds": [
+          "t1",
+          "t7",
+          "t8"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails and summary"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 dataModelChanges and retained shared ownership"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 errorPaths and invariantsToPreserve"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 testStrategy and acceptanceMapping"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 migration and backwardCompat"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 dataModelChanges exact 278-file/176-member manifests"
+    }
+  ]
+}

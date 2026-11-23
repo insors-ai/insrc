@@ -15,7 +15,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { parseSecurityModelPin, parseTiering } from '../analyze.js';
+import type { FamilyDefinition } from '../../daemon/model-catalog.js';
+import type { ModelRegistry, ResolvedModel } from '../../daemon/model-registry.js';
+import { parseSecurityModelPin, parseTiering, securityPinMeetsFloor } from '../analyze.js';
 
 test('a valid tier table parses to {runner, model} TierModels', () => {
 	const t = parseTiering({ tiers: { core: { runner: 'cli-claude', model: 'opus' }, cheap: { runner: 'ollama', model: 'qwen3.6:35b-a3b' } } });
@@ -151,4 +153,73 @@ test('parseTiering threads a valid security pin onto AnalyzeTiering.security; an
 
 	assert.equal(parseTiering({}).security, undefined);
 	assert.equal(parseTiering({ security: { model: 'x' } }).security, undefined);
+});
+
+// ── securityPinMeetsFloor (Epic add-dedicated-security-reviews, s1 t4) ──
+// The ONLY link between an arbitrary pinned (family, model) pair and
+// coreFloor's TierName ranking: CoreFloorGuard.applyCoreFloor compares only
+// TierName values and has no notion of an individual model's capability.
+
+function fakeResolvedModel(family: string, id: string): ResolvedModel {
+	return { id, efforts: [], family, source: 'shipped' } as unknown as ResolvedModel;
+}
+
+function fakeRegistry(families: readonly FamilyDefinition[]): ModelRegistry {
+	const notUsed = (): never => { throw new Error('not used by securityPinMeetsFloor'); };
+	return {
+		families: () => families,
+		defaultFamily: notUsed,
+		models: notUsed,
+		rejected: notUsed,
+		find: (family, idOrAlias) => {
+			const f = families.find(fam => fam.id === family);
+			if (f === undefined) return undefined;
+			const m = f.models.find(mod => mod.id === idOrAlias || mod.aliases?.includes(idOrAlias));
+			return m === undefined ? undefined : fakeResolvedModel(family, m.id);
+		},
+		tierDefault: notUsed,
+		summariserModel: notUsed,
+		toolLoopModel: notUsed,
+		cliKind: notUsed,
+		host: notUsed,
+		effortLevels: notUsed,
+		resolveTier: notUsed,
+	};
+}
+
+const CLAUDE_FAMILY: FamilyDefinition = {
+	id: 'cli-claude', displayName: 'Claude',
+	models: [{ id: 'opus', efforts: [] }, { id: 'haiku', efforts: [] }],
+	tierDefaults: { core: { model: 'opus' }, mid: { model: 'opus' }, cheap: { model: 'haiku' } },
+};
+const CODEX_FAMILY: FamilyDefinition = {
+	id: 'cli-codex', displayName: 'Codex',
+	models: [{ id: 'gpt-6.1-sol', efforts: [] }],
+	tierDefaults: { core: { model: 'gpt-6.1-sol' }, mid: { model: 'gpt-6.1-sol' }, cheap: { model: 'gpt-6.1-sol' } },
+};
+
+test("securityPinMeetsFloor: a pin matching its own family's tierDefaults at a tier at/above the floor -> true", () => {
+	const registry = fakeRegistry([CLAUDE_FAMILY]);
+	assert.equal(securityPinMeetsFloor(registry, 'cli-claude', 'opus', 'mid'), true);
+});
+
+test("securityPinMeetsFloor: a pin matching a DIFFERENT family's tierDefaults at a tier at/above the floor -> true", () => {
+	const registry = fakeRegistry([CLAUDE_FAMILY, CODEX_FAMILY]);
+	assert.equal(securityPinMeetsFloor(registry, 'cli-codex', 'gpt-6.1-sol', 'mid'), true);
+});
+
+test('securityPinMeetsFloor: a pin matching a tierDefaults entry BELOW the floor rank -> false', () => {
+	const registry = fakeRegistry([CLAUDE_FAMILY]);
+	// haiku is only the cheap-tier default; the floor is core.
+	assert.equal(securityPinMeetsFloor(registry, 'cli-claude', 'haiku', 'core'), false);
+});
+
+test("securityPinMeetsFloor: a pin matching no family's tierDefaults at any tier (unclassifiable) -> false", () => {
+	const family: FamilyDefinition = {
+		id: 'cli-claude', displayName: 'Claude',
+		models: [{ id: 'opus', efforts: [] }, { id: 'some-other-model', efforts: [] }],
+		tierDefaults: { core: { model: 'opus' }, mid: { model: 'opus' }, cheap: { model: 'opus' } },
+	};
+	const registry = fakeRegistry([family]);
+	assert.equal(securityPinMeetsFloor(registry, 'cli-claude', 'some-other-model', 'cheap'), false);
 });

@@ -16,6 +16,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 test('build-script.test.ts: package.json build runs forbidden-spawn-scan.mjs --fail and the scan finds nothing outside the exemptions', () => {
 	const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')) as { scripts: { build: string } };
 	assert.equal(pkg.scripts.build, 'node scripts/test-harness/build.mjs');
+	assert.ok(buildStages({ environment: () => process.env }).some(args => args[0] === 'scripts/build-installer-control.mjs'));
 	assert.ok(buildStages({ environment: () => process.env }).some(args => args[0] === 'scripts/forbidden-spawn-scan.mjs' && args[1] === '--fail'));
 	const run = spawnSync(process.execPath, [join(ROOT, 'scripts', 'forbidden-spawn-scan.mjs'), '--fail', '--json'], { encoding: 'utf8' });
 	assert.equal(run.status, 0, run.stdout + run.stderr);
@@ -23,5 +24,5 @@ test('build-script.test.ts: package.json build runs forbidden-spawn-scan.mjs --f
 	assert.equal(report.mode, 'failing');
 	assert.deepEqual(report.violations, []);
 	assert.deepEqual(report.unscanned, []);
-	assert.deepEqual(report.exempt.map(e => e.file).sort(), ['cli/services/maintenance.ts', 'daemon/installed-commit.ts', 'indexer/file-filter.ts']);
+	assert.deepEqual(report.exempt.map(e => e.file).sort(), ['indexer/file-filter.ts']);
 });

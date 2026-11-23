@@ -8,7 +8,7 @@ import { processScope, withRun } from './process.mjs';
 export const ROOT = fileURLToPath(new URL('../../', import.meta.url));
 export const REQUIRED_ARTIFACTS = ['out/daemon/index.js', 'out/bin/insrc-mcp.js',
 	'out/shared/daemon-run-files.js', 'out/cli/services/daemon.js',
-	'out/daemon/server.js', 'out/shared/daemon-process.js'];
+	'out/daemon/server.js', 'out/shared/daemon-process.js', 'out/installer/native/control.node'];
 const REQUIRED = REQUIRED_ARTIFACTS;
 const INPUTS = ['src', 'scripts', 'packages/project-memory/src', 'packages/project-memory/package.json', 'packages/project-memory/tsconfig.json', 'package.json', 'package-lock.json', 'tsconfig.json', 'tsconfig.typecheck.json', 'copy-assets.mjs', 'vscode-plugin/src', 'vscode-plugin/package.json'];
 export const inputFingerprint = root => fingerprint(root, INPUTS);
@@ -43,7 +43,7 @@ export function buildStages(run) {
 		['node_modules/typescript/bin/tsc', '--inlineSources'],
 		[npm, 'run', 'typecheck:tools'],
 		['scripts/forbidden-spawn-scan.mjs', '--fail'],
-		['scripts/check-model-definitions.mjs'], ['copy-assets.mjs'],
+		['scripts/check-model-definitions.mjs'], ['copy-assets.mjs'], ['scripts/build-installer-control.mjs'],
 	];
 }
 

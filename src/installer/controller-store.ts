@@ -1,0 +1,126 @@
+import { randomUUID } from 'node:crypto';
+import { closeSync, constants, existsSync, fstatSync, fsyncSync, lstatSync, mkdirSync, openSync, readSync, unlinkSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { InstallerError, MAX_CONTROL_BYTES } from './contracts.js';
+import type { ControllerSnapshot, InstallationLocation } from './contracts.js';
+import { assertLocalControlRoot } from './location.js';
+import { controlBinding } from './native.js';
+import { parseInstaller } from './schemas.js';
+
+export type ControllerInspection = { kind: 'missing' } | { kind: 'present'; snapshot: ControllerSnapshot } | { kind: 'corrupt'; reason: string };
+export type CommitPoint = 'temp-flushed' | 'replaced' | 'directory-flushed';
+const privateFile = (file: string): void => {
+  const s = lstatSync(file);
+  if (!s.isFile() || s.isSymbolicLink() || s.nlink !== 1 || (process.platform !== 'win32' && (s.uid !== process.getuid?.() || (s.mode & 0o077) !== 0))) {
+    throw new InstallerError('controller-corrupt', 'Control record is not a private regular file');
+  }
+};
+function readRecord(file: string): unknown {
+  privateFile(file);
+  const fd = openSync(file, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0));
+  try {
+    const s = fstatSync(fd);
+    if (!s.isFile() || s.size > MAX_CONTROL_BYTES) throw new Error('Control record exceeds bound');
+    const bytes = Buffer.alloc(MAX_CONTROL_BYTES + 1);
+    let count = 0, got: number;
+    while (count < bytes.length && (got = readSync(fd, bytes, count, bytes.length - count, null)) > 0) count += got;
+    if (count > MAX_CONTROL_BYTES) throw new Error('Control record exceeds bound');
+    return JSON.parse(bytes.subarray(0, count).toString('utf8')) as unknown;
+  } finally { closeSync(fd); }
+}
+function present(path: string): boolean {
+  try { lstatSync(path); return true; } catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return false; throw error; }
+}
+function safeRoot(location: InstallationLocation): void {
+  parseInstaller('location', location);
+  assertLocalControlRoot(location.home, process.platform === 'win32' ? path => controlBinding().localVolume(path) : undefined);
+  const root = join(location.home, 'install');
+  if (existsSync(root)) {
+    const s = lstatSync(root);
+    if (process.platform !== 'win32' && (s.uid !== process.getuid?.() || (s.mode & 0o077) !== 0)) throw new InstallerError('permissions-invalid', 'Installer control directory must be private');
+  }
+}
+function flushDirectory(root: string): void {
+  // Windows does not expose a portable directory fsync. File contents are flushed;
+  // ReplaceFile failure remains uncertain and requires inspection, never reinit.
+  if (process.platform === 'win32') return;
+  const fd = openSync(root, constants.O_RDONLY | constants.O_DIRECTORY);
+  try { fsyncSync(fd); } finally { closeSync(fd); }
+}
+
+/** Read-only inspection: no identity allocation, mkdir, application DB or lock. */
+export function inspectController(location: InstallationLocation): ControllerInspection {
+  try {
+    safeRoot(location);
+    const root = join(location.home, 'install'), controller = join(root, 'controller.json'), enrolled = join(root, 'enrollment.json');
+    const hasController = present(controller), hasEnrollment = present(enrolled);
+    if (!hasController && !hasEnrollment) return { kind: 'missing' };
+    if (!hasController || !hasEnrollment) throw new Error('Incomplete enrollment; explicit recovery required');
+    const identity = readRecord(enrolled) as Record<string, unknown>;
+    if (!identity || Object.keys(identity).sort().join(',') !== 'dataHome,installationId,schemaVersion' || identity['schemaVersion'] !== 1
+      || identity['installationId'] !== location.installationId || identity['dataHome'] !== location.home) throw new Error('Enrollment identity mismatch');
+    const snapshot = parseInstaller('snapshot', readRecord(controller));
+    if (snapshot.installation.installationId !== location.installationId || snapshot.installation.dataHome !== location.home) throw new Error('Controller identity mismatch');
+    return { kind: 'present', snapshot };
+  } catch (error) { return { kind: 'corrupt', reason: error instanceof Error ? error.message : 'Unreadable controller' }; }
+}
+
+/** One retained lock capability. No PID or file-age ownership inference. */
+export class ControllerStore {
+  readonly #handle: object;
+  readonly #root: string;
+  #closed = false;
+  private constructor(readonly location: InstallationLocation, handle: object) {
+    this.#handle = handle; this.#root = join(location.home, 'install');
+  }
+  static acquire(location: InstallationLocation): ControllerStore {
+    // Validate ancestors before allocation. Recheck after each allocation.
+    parseInstaller('location', location);
+    assertLocalControlRoot(location.home, process.platform === 'win32' ? path => controlBinding().localVolume(path) : undefined);
+    mkdirSync(location.home, { recursive: true, mode: 0o700 });
+    const root = join(location.home, 'install');
+    mkdirSync(root, { mode: 0o700, recursive: true });
+    assertLocalControlRoot(location.home, process.platform === 'win32' ? path => controlBinding().localVolume(path) : undefined);
+    controlBinding().protect(root);
+    safeRoot(location);
+    return new ControllerStore(structuredClone(location), controlBinding().acquire(join(root, 'operation.lock')));
+  }
+  assertHeld(): void {
+    if (this.#closed || !controlBinding().held(this.#handle)) throw new InstallerError('lock-lost', 'Controller mutation requires the original OS lock');
+    safeRoot(this.location);
+  }
+  inspect(): ControllerInspection { return inspectController(this.location); }
+  /** expectedRevision=null is explicit first enrollment, never a recovery shortcut. */
+  commit(next: ControllerSnapshot, expectedRevision: number | null, checkpoint?: (point: CommitPoint) => void): void {
+    this.assertHeld();
+    const value = parseInstaller('snapshot', next), current = this.inspect();
+    if (current.kind === 'corrupt') throw new InstallerError('controller-corrupt', current.reason);
+    if (value.installation.installationId !== this.location.installationId || value.installation.dataHome !== this.location.home) throw new InstallerError('identity-invalid', 'Snapshot belongs to another installation');
+    if (current.kind === 'missing') {
+      if (expectedRevision !== null || value.revision !== 0) throw new InstallerError('revision-conflict', 'First enrollment must explicitly start at revision zero');
+      // Immutable enrollment sentinel is not a selected-release record. If interrupted
+      // before controller publication, subsequent ordinary mutation fails closed.
+      const marker = join(this.#root, 'enrollment.json');
+      const fd = openSync(marker, 'wx', 0o600);
+      try { writeFileSync(fd, JSON.stringify({ schemaVersion: 1, installationId: this.location.installationId, dataHome: this.location.home })); fsyncSync(fd); }
+      finally { closeSync(fd); }
+      flushDirectory(this.#root);
+    } else if (expectedRevision !== current.snapshot.revision || value.revision !== expectedRevision + 1) {
+      throw new InstallerError('revision-conflict', 'Controller revision changed or next revision is not consecutive');
+    }
+    const temp = join(this.#root, `.controller-${randomUUID()}.tmp`);
+    try {
+      const fd = openSync(temp, 'wx', 0o600);
+      try { writeFileSync(fd, JSON.stringify(value) + '\n'); fsyncSync(fd); } finally { closeSync(fd); }
+      checkpoint?.('temp-flushed');
+      this.assertHeld();
+      controlBinding().replace(this.#handle, temp, join(this.#root, 'controller.json'));
+      checkpoint?.('replaced');
+      flushDirectory(this.#root);
+      checkpoint?.('directory-flushed');
+    } catch (cause) {
+      throw new InstallerError('controller-write-uncertain', 'Publication failed; inspect authoritative state before any further mutation', { cause });
+    } finally { try { unlinkSync(temp); } catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; } }
+  }
+  close(): void { if (!this.#closed) { controlBinding().close(this.#handle); this.#closed = true; } }
+}

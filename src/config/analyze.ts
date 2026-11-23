@@ -28,6 +28,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { getLogger } from '../shared/logger.js';
 import { PATHS } from '../shared/paths.js';
 import type { EffortLevel, FamilyId } from '../daemon/model-catalog.js';
+import type { CliKind } from '../agent/providers/cli-provider.js';
 import { getModelRegistry, type ModelRegistry, type TierResolution, type TierSetting } from '../daemon/model-registry.js';
 import { SHIPPED_MODEL_DEFAULTS } from './model-defaults.js';
 import { reasoningRoleTaxonomy, roleDescriptor } from './role-taxonomy.js';
@@ -420,6 +421,74 @@ export function resolveSecurityModelCandidate(cfg: AnalyzeConfig, registry: Mode
 		return { status: 'unavailable', blockerReason: `'security.review' role's ${floorTier}-tier default model does not meet its own capability floor (${floorTier})` };
 	}
 	return { status: 'candidate', runner: def.runner, model: def.model, ...(def.effort !== undefined ? { effort: def.effort } : {}) };
+}
+
+/** sc1's HLD-defined boundary record: either a configured, PROBED-available
+ *  model (status:'configured') or the specific blocker (status:'unavailable') --
+ *  never a silent substitution. `provider` is always one of the three CLI-backed
+ *  families at runtime (never an Ollama-hosted one: k1 routes cloud inference
+ *  through the installed CLI provider only, checked via registry.cliKind, never
+ *  a hand-written family-id literal here); typed as the broader FamilyId
+ *  (imported, not re-declared) since model-literal-scan.test.ts restricts
+ *  writing a CLI family-id literal to the definitions' own owner files. */
+export type SecurityModelSelection =
+	| { readonly status: 'configured'; readonly modelId: string; readonly provider: FamilyId; readonly effort?: EffortLevel | undefined }
+	| { readonly status: 'unavailable'; readonly blockerReason: string };
+
+/** The bounded availability probe's own test seam -- a fake/controllable probe
+ *  (resolves, rejects, or never settles on command) injected in place of the
+ *  real CliProvider call, matching this codebase's own _set*DepsForTests
+ *  convention (e.g. review-round/checkpoint.ts). No argument resets to the
+ *  real probe. */
+export interface SecurityProbeDeps {
+	readonly probe?: ((kind: CliKind, model: string, effort: EffortLevel | undefined) => Promise<void>) | undefined;
+}
+let securityProbeDeps: SecurityProbeDeps = {};
+export function _setSecurityProbeDepsForTests(deps: SecurityProbeDeps = {}): void { securityProbeDeps = deps; }
+
+async function defaultSecurityProbe(kind: CliKind, model: string, effort: EffortLevel | undefined, deadlineMs: number): Promise<void> {
+	const { CliProvider } = await import('../agent/providers/cli-provider.js');
+	const provider = new CliProvider({ kind, model, effort, timeoutMs: deadlineMs });
+	await provider.complete([{ role: 'user', content: 'ping' }]);
+}
+
+/**
+ * Resolve sc1's SecurityModelSelection: calls resolveSecurityModelCandidate
+ * first (pure, sync); a candidate already 'unavailable' resolves immediately
+ * with no probe attempted. Otherwise awaits exactly ONE bounded probe against
+ * the candidate, racing it against opts.deadlineMs and opts.signal -- never
+ * rejects; always settles within opts.deadlineMs of starting the probe.
+ */
+export async function resolveSecurityModel(
+	cfg: AnalyzeConfig, registry: ModelRegistry, opts: { readonly deadlineMs: number; readonly signal?: AbortSignal | undefined },
+): Promise<SecurityModelSelection> {
+	const candidate = resolveSecurityModelCandidate(cfg, registry);
+	if (candidate.status === 'unavailable') return candidate;
+
+	const kind = registry.cliKind(candidate.runner);
+	if (kind === undefined) {
+		return { status: 'unavailable', blockerReason: `${candidate.runner} is not a CLI-backed family; a security review requires a CLI provider (k1)` };
+	}
+
+	const probe = securityProbeDeps.probe ?? ((k, model, effort) => defaultSecurityProbe(k, model, effort, opts.deadlineMs));
+	let settled = false;
+	const outcome = await new Promise<'ok' | { blockerReason: string }>(resolve => {
+		const finish = (result: 'ok' | { blockerReason: string }): void => {
+			if (settled) return;
+			settled = true;
+			resolve(result);
+		};
+		const timer = setTimeout(() => finish({ blockerReason: `security model probe timed out after ${opts.deadlineMs}ms` }), opts.deadlineMs);
+		const onAbort = (): void => finish({ blockerReason: 'security model probe cancelled' });
+		opts.signal?.addEventListener('abort', onAbort, { once: true });
+		probe(kind, candidate.model, candidate.effort).then(
+			() => { clearTimeout(timer); opts.signal?.removeEventListener('abort', onAbort); finish('ok'); },
+			(err: unknown) => { clearTimeout(timer); opts.signal?.removeEventListener('abort', onAbort); finish({ blockerReason: `security model backend unreachable: ${err instanceof Error ? err.message : String(err)}` }); },
+		);
+	});
+
+	if (outcome !== 'ok') return { status: 'unavailable', blockerReason: outcome.blockerReason };
+	return { status: 'configured', modelId: candidate.model, provider: candidate.runner, ...(candidate.effort !== undefined ? { effort: candidate.effort } : {}) };
 }
 
 /**

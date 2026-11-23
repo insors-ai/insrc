@@ -18,7 +18,7 @@ import assert from 'node:assert/strict';
 import type { FamilyDefinition } from '../../daemon/model-catalog.js';
 import type { ModelRegistry, ResolvedModel } from '../../daemon/model-registry.js';
 import type { AnalyzeConfig, AnalyzeTiering, TierResolution } from '../analyze.js';
-import { parseSecurityModelPin, parseTiering, resolveSecurityModelCandidate, securityPinMeetsFloor } from '../analyze.js';
+import { _setSecurityProbeDepsForTests, parseSecurityModelPin, parseTiering, resolveSecurityModel, resolveSecurityModelCandidate, securityPinMeetsFloor } from '../analyze.js';
 
 test('a valid tier table parses to {runner, model} TierModels', () => {
 	const t = parseTiering({ tiers: { core: { runner: 'cli-claude', model: 'opus' }, cheap: { runner: 'ollama', model: 'qwen3.6:35b-a3b' } } });
@@ -182,7 +182,7 @@ function fakeRegistry(families: readonly FamilyDefinition[]): ModelRegistry {
 		tierDefault: notUsed,
 		summariserModel: notUsed,
 		toolLoopModel: notUsed,
-		cliKind: notUsed,
+		cliKind: family => family.startsWith('cli-') ? family.slice('cli-'.length) as 'claude' | 'codex' | 'vibe' : undefined,
 		host: notUsed,
 		effortLevels: notUsed,
 		resolveTier: notUsed,
@@ -290,4 +290,78 @@ test("resolveSecurityModelCandidate: an absent pin whose tier-default model is i
 	// Also unlisted: the core-tier model is not even a model of the family at all.
 	const cfgUnlisted = fakeAnalyzeConfig({ security: { kind: 'absent' }, tiers: { core: { runner: 'cli-claude', model: 'nonexistent' } } });
 	assert.equal(resolveSecurityModelCandidate(cfgUnlisted, registry).status, 'unavailable');
+});
+
+// ── resolveSecurityModel (Epic add-dedicated-security-reviews, s1 t6) ──
+// A bounded, async availability probe layered over resolveSecurityModelCandidate.
+// Never rejects; always settles within opts.deadlineMs. Uses the injectable
+// probe seam (_setSecurityProbeDepsForTests) matching this codebase's own
+// _set*DepsForTests convention, so no real CLI subprocess is ever spawned here.
+
+test("resolveSecurityModel: candidate already 'unavailable' -> resolves immediately, no probe attempted", async () => {
+	let probeCalled = false;
+	_setSecurityProbeDepsForTests({ probe: async () => { probeCalled = true; } });
+	try {
+		const registry = fakeRegistry([CLAUDE_FAMILY]);
+		const cfg = fakeAnalyzeConfig({ security: { kind: 'malformed', detail: 'bad pin' } });
+		const result = await resolveSecurityModel(cfg, registry, { deadlineMs: 1000 });
+		assert.equal(result.status, 'unavailable');
+		assert.equal(probeCalled, false);
+	} finally {
+		_setSecurityProbeDepsForTests();
+	}
+});
+
+test("resolveSecurityModel: probe resolves successfully within the deadline -> status:'configured'", async () => {
+	_setSecurityProbeDepsForTests({ probe: async () => {} });
+	try {
+		const registry = fakeRegistry([CLAUDE_FAMILY]);
+		const cfg = fakeAnalyzeConfig({ security: { kind: 'valid', runner: 'cli-claude', model: 'opus' } });
+		const result = await resolveSecurityModel(cfg, registry, { deadlineMs: 1000 });
+		assert.deepEqual(result, { status: 'configured', modelId: 'opus', provider: 'cli-claude' });
+	} finally {
+		_setSecurityProbeDepsForTests();
+	}
+});
+
+test("resolveSecurityModel: probe rejects (simulated ENOENT/auth failure) -> status:'unavailable' with a backend-failure blockerReason", async () => {
+	_setSecurityProbeDepsForTests({ probe: async () => { throw new Error('ENOENT: claude not found'); } });
+	try {
+		const registry = fakeRegistry([CLAUDE_FAMILY]);
+		const cfg = fakeAnalyzeConfig({ security: { kind: 'valid', runner: 'cli-claude', model: 'opus' } });
+		const result = await resolveSecurityModel(cfg, registry, { deadlineMs: 1000 });
+		assert.equal(result.status, 'unavailable');
+		assert.ok(result.status === 'unavailable' && result.blockerReason.includes('ENOENT'));
+	} finally {
+		_setSecurityProbeDepsForTests();
+	}
+});
+
+test("resolveSecurityModel: probe neither resolves nor rejects before opts.deadlineMs -> status:'unavailable' with a timeout blockerReason", async () => {
+	_setSecurityProbeDepsForTests({ probe: () => new Promise(() => {}) });
+	try {
+		const registry = fakeRegistry([CLAUDE_FAMILY]);
+		const cfg = fakeAnalyzeConfig({ security: { kind: 'valid', runner: 'cli-claude', model: 'opus' } });
+		const result = await resolveSecurityModel(cfg, registry, { deadlineMs: 50 });
+		assert.equal(result.status, 'unavailable');
+		assert.ok(result.status === 'unavailable' && result.blockerReason.includes('timed out'));
+	} finally {
+		_setSecurityProbeDepsForTests();
+	}
+});
+
+test("resolveSecurityModel: opts.signal is aborted while the probe is outstanding -> status:'unavailable' with a cancellation blockerReason", async () => {
+	_setSecurityProbeDepsForTests({ probe: () => new Promise(() => {}) });
+	try {
+		const registry = fakeRegistry([CLAUDE_FAMILY]);
+		const cfg = fakeAnalyzeConfig({ security: { kind: 'valid', runner: 'cli-claude', model: 'opus' } });
+		const controller = new AbortController();
+		const resultPromise = resolveSecurityModel(cfg, registry, { deadlineMs: 5000, signal: controller.signal });
+		controller.abort();
+		const result = await resultPromise;
+		assert.equal(result.status, 'unavailable');
+		assert.ok(result.status === 'unavailable' && result.blockerReason.includes('cancelled'));
+	} finally {
+		_setSecurityProbeDepsForTests();
+	}
 });

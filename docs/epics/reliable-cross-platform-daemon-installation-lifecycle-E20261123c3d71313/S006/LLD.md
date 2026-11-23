@@ -6,7 +6,7 @@
 
 **Epic:** `reliable-cross-platform-daemon-installation-lifecycle`
 **HLD base run:** `wf-1795445383474-itgkv3`
-**HLD effective hash:** `77bfb88eed6d...`
+**HLD effective hash:** `acb12724c316...`
 **Tracker:** [insors-ai/insrc#248](https://github.com/insors-ai/insrc/issues/248)
 
 VS Code offers Install by opening a focused native terminal and running the shared manual installer script. It observes real operation/readiness state, reconnects existing features and lets that script launch TUI. Startup, upgrade consent and manual controls remain responsive native IDE actions.
@@ -146,7 +146,7 @@ After success the shared script releases the install lock and starts selected TU
 
 ### 3.5 `Operation escalation UI binding` — new
 
-An explicitly selected immediate override during a draining operation consumes proposed sc2 escalateShutdown with the existing operationId. Other windows may forward the same intent to the owner; no second mutation/lock, fresh operation id, repeated shutdown timer or automatic escalation. Display escalation-unavailable/uncertain on dead owner; explicit recovery remains separate.
+An explicitly selected immediate override during a draining operation consumes approved sc2 escalateShutdown with the existing operationId. Other windows may forward the same intent to the owner; no second mutation/lock, fresh operation id, repeated shutdown timer or automatic escalation. Display escalation-unavailable/uncertain on dead owner; explicit recovery remains separate.
 
 
 ## 4. Diagrams
@@ -251,3 +251,7 @@ This requires a second replay/cancellation policy in addition to the controller 
 - **[[c5]]** `analyze-bundle` `vscode-plugin/src/extension.ts`
 - **[[c6]]** `analyze-bundle` `scripts/sync-client-runtime-assets.mjs`
 - **[[c7]]** `doc` `https://code.visualstudio.com/api/references/vscode-api`
+- **[[c8]]** `prior-artifact` `.insrc/artifacts/AMD-c3d71313f34bce71-1.json`
+- **[[c9]]** `prior-artifact` `.insrc/artifacts/AMD-c3d71313f34bce71-2.json`
+- **[[c10]]** `prior-artifact` `.insrc/artifacts/AMD-c3d71313f34bce71-3.json`
+- **[[c11]]** `prior-artifact` `.insrc/artifacts/AMD-c3d71313f34bce71-4.json`

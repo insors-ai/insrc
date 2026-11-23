@@ -6,7 +6,7 @@
 
 **Epic:** `reliable-cross-platform-daemon-installation-lifecycle`
 **HLD base run:** `wf-1795445383474-itgkv3`
-**HLD effective hash:** `77bfb88eed6d...`
+**HLD effective hash:** `acb12724c316...`
 **Tracker:** [insors-ai/insrc#243](https://github.com/insors-ai/insrc/issues/243)
 
 Story 1 supplies the release installer foundation: exact-target bundles, private Node, durable install records and the shared interactive scripts. IDE installation can only launch those scripts in a terminal; success enters the installed TUI after readiness and lock release. Actual daemon shutdown/readiness, migration execution and dependency discovery remain sibling implementations behind required ports.
@@ -236,7 +236,7 @@ escalateShutdown(request: ManagerRequest): Promise<ManagerEvent>;
 - `escalation-unavailable` when Missing/stale owner or incompatible peer respectively.
 
 **Preconditions:**
-- Proposed localized HLD amendment; no application DB access.
+- Approved HLD amendment; no application DB access.
 
 **Postconditions:**
 - An immediate override during quiescing/draining is a message to the current operation, not a competing mutation. Invoke escalateShutdown with the existing installationId/operationId, action='stop', shutdownMode='immediate'. Before ordinary lock admission, the manager command forwards it to the current lock owner's user-protected local control endpoint. The owner remains responsive while awaiting drain/exit, validates recorded instance/operation and alone sends s4 IPC using its original completion endpoint/nonce and writes controller state. Cross-window requests use this path; duplicates coalesce; all independent mutations still return busy. Private endpoint discovery binds installation/operation/owner-session nonce, validates same-user authorization and phase/identity, and rejects stale endpoints. No lock release/steal to escalate. Missing/dead owner returns escalation-unavailable/uncertain; explicit recovery must acquire the lock and reconcile instance/exit evidence before acting, never automatically replace the daemon.
@@ -256,7 +256,7 @@ controlBridge(command: { kind: 'send'; transportId: string; request: IpcBridgeRe
 - `bridge-protocol-mismatch` when Missing/stale owner or incompatible peer respectively.
 
 **Preconditions:**
-- Proposed localized HLD amendment; no application DB access.
+- Approved HLD amendment; no application DB access.
 
 **Postconditions:**
 - The additive sc6 controlBridge envelope preserves existing inner frame types. Launch the helper explicitly in bridge-control protocol 2 and require version confirmation before sending; mismatch fails with no legacy fallback. Each send/cancel/event has a unique transportId bound to its embedded RPC request id and lane, never reused during helper lifetime. Validate before queue admission. A cancel processed before the first named-pipe write attempt removes the send, confirms cancelled/written=false and forbids later dispatch. At the first write attempt, mark written=true conservatively: possible dispatch, not application completion. A helper-stdin write is not pipe dispatch evidence. Post-write cancellation retires the local reply without rollback/replay promises. Helper death/lost outcome leaves unresolved sends unknown unless not-written was positively confirmed. Frame/error/close events carry transportId; report every pending id on lane failure where possible. Preserve 64-pending/16MiB aggregate bounds, fragmented UTF-8 and separate stream-lane cancellation. Input EOF closes the helper lane, never daemon.
@@ -277,7 +277,7 @@ bridgeHandshake(request: { kind: 'hello'; protocolVersion: 2; sessionNonce: stri
 - `bridge-protocol-mismatch` when Malformed, mismatched or out-of-order startup record.
 
 **Preconditions:**
-- Pending localized HLD amendment; owner implementation and consumer integration remain separate.
+- Approved HLD amendment; owner implementation and consumer integration remain separate.
 
 **Postconditions:**
 - The bridge-control protocol-2 startup wire exchange is exactly one UTF-8 NDJSON hello record {kind:'hello',protocolVersion:2,sessionNonce} from the client on helper stdin, then exactly one ready record {kind:'ready',protocolVersion:2,sessionNonce} on helper stdout. The client generates a fresh unpredictable sessionNonce per helper process; helper echoes it only after validating the version and binding its configured local installation endpoint. This is a separate startup envelope, not an IpcBridgeRequest and not a correlated controlBridge outcome; it has no transportId because no request exists yet. The helper must not forward any application frame before emitting ready, and the client must not send send/cancel records until matching ready is received. Set a 3-second handshake deadline from helper spawn; missing/malformed/duplicate/wrong-version/wrong-nonce ready, early outcome frames, or helper exit fail with bridge-protocol-mismatch/bridge-handshake-timeout before dispatch. On error the client closes stdin and that helper lane, reports no sends dispatched, and performs no automatic fallback/replay; it sends no daemon signal/stop. Unsupported hello yields only a bounded stderr diagnostic and helper exit without opening an application RPC lane. After ready, stdout contains only the specified correlated controlBridge events, stderr only diagnostics; later hello/ready records are protocol errors. Handshake bytes count toward the bounded parser/input limits; no credentials/capability tokens are echoed. Existing inner IpcBridgeRequest.protocolVersion=1 remains unchanged and is distinct from outer bridge-control version 2.
@@ -332,7 +332,7 @@ An immediate override during quiescing/draining is a message to the current oper
 
 ### 3.8 `Controller and hook-journal writer protocol` — new
 
-Only the lock-owning manager writes controller.json. Only the candidate daemon writes its operation/candidate-bound hook journal atomically while holding the exclusive data lease; it never writes controller.json or inherits the manager lock. Journal run-started commits before mutation. Stage events are advisory; OperationRecord is a possibly lagging projection, never migration validation evidence. Validate journal identity/version/order/digests before accepting results. On manager exit, a live candidate may finish its admitted hooks/journal but cannot activate or write controller state. A new lock owner first reconciles the exact candidate session, lease and protected observed-exit evidence; held/unknown ownership means busy/uncertain, never a second runner. Lease availability alone is not migration success. Only after prior candidate actual exit may explicit recovery validate the journal and resume the same operation or retry unvalidated hooks under hook policy. Reject stale session/revision writes; no PID/age inference or predecessor restart. Initial migration in migrating and candidate normal boot in activating require matching live-owner admission; independent ordinary boot remains denied. s4 owns lease/exit evidence; s5 owns hook execution/journal. Consume s4's proposed mandatory migration receipt contract: manager records admission/session/nonce/path before spawn and validates receipt before recovery; receipt writing is wrapper-owned, not a controller.json mutation. Full receipt production/format is owned by s4.
+Only the lock-owning manager writes controller.json. Only the candidate daemon writes its operation/candidate-bound hook journal atomically while holding the exclusive data lease; it never writes controller.json or inherits the manager lock. Journal run-started commits before mutation. Stage events are advisory; OperationRecord is a possibly lagging projection, never migration validation evidence. Validate journal identity/version/order/digests before accepting results. On manager exit, a live candidate may finish its admitted hooks/journal but cannot activate or write controller state. A new lock owner first reconciles the exact candidate session, lease and protected observed-exit evidence; held/unknown ownership means busy/uncertain, never a second runner. Lease availability alone is not migration success. Only after prior candidate actual exit may explicit recovery validate the journal and resume the same operation or retry unvalidated hooks under hook policy. Reject stale session/revision writes; no PID/age inference or predecessor restart. Initial migration in migrating and candidate normal boot in activating require matching live-owner admission; independent ordinary boot remains denied. s4 owns lease/exit evidence; s5 owns hook execution/journal. Consume s4's approved mandatory migration receipt contract: manager records admission/session/nonce/path before spawn and validates receipt before recovery; receipt writing is wrapper-owned, not a controller.json mutation. Full receipt production/format is owned by s4.
 
 
 ### 3.9 `Correlated bridge-control envelope` — new
@@ -386,7 +386,7 @@ The additive sc6 controlBridge envelope preserves existing inner frame types. La
   - User impact: User gets explicit recovery diagnostics; data remains untouched.
 - **Concurrent mutation** (recoverable)
   - Detection: OS nonblocking lock acquisition returns busy; lock contents/age are never considered.
-  - Response: Independent mutation returns busy; same-operation immediate escalation forwards to the live lock owner under proposed sc2.
+  - Response: Independent mutation returns busy; same-operation immediate escalation forwards to the live lock owner under approved sc2.
   - User impact: Duplicate windows do not race upgrades.
 - **Missing lifecycle/dependency/migration capability** (recoverable)
   - Detection: Required handler admission fails before destructive phase; no fixture or implicit no-op is available in production.
@@ -470,7 +470,7 @@ Keep the HLD Installation and OperationRecord together in one schema-validated c
 
 A bundle preparer and terminal-only interactive entrypoint return typed results. Lifecycle, dependencies and migration are required capability ports implemented by their owning sibling stories, not interchangeable plugin registries. Missing capability yields explicit unavailable/blocked results, not a successful partial install.
 
-Both storage alternatives use operation-owner escalation and correlated bridge control only through the proposed sc2/sc6 amendments; no permanent supervisor or second controller writer is added.
+Both storage alternatives use operation-owner escalation and correlated bridge control only through the approved sc2/sc6 amendments; no permanent supervisor or second controller writer is added.
 
 ### 8.2 a2: Append-only event journal with projected installation records
 
@@ -480,7 +480,7 @@ Keep the same HLD public types but persist an append-only sequence of admission,
 
 The terminal entrypoint and bundle preparer use the same sibling capability ports. Journal replay, projection versioning and truncation policy become additional internal contracts even though no user-facing history feature was requested.
 
-Both storage alternatives use operation-owner escalation and correlated bridge control only through the proposed sc2/sc6 amendments; no permanent supervisor or second controller writer is added.
+Both storage alternatives use operation-owner escalation and correlated bridge control only through the approved sc2/sc6 amendments; no permanent supervisor or second controller writer is added.
 
 **Rejected because:** Technically viable, but event replay/projection lifecycle adds unnecessary internal contracts.
 
@@ -502,3 +502,7 @@ Both storage alternatives use operation-owner escalation and correlated bridge c
 - **[[c14]]** `step-output` `s5`
 - **[[c15]]** `step-output` `s6`
 - **[[c16]]** `stakeholder` `User LLD advisory review: clarify contract-shape reference and publisher/launcher call-site context; preserve forged source/bootstrap marker test intent verbatim in plan. FR-to-AC traceability needs no change.`
+- **[[c17]]** `prior-artifact` `.insrc/artifacts/AMD-c3d71313f34bce71-1.json`
+- **[[c18]]** `prior-artifact` `.insrc/artifacts/AMD-c3d71313f34bce71-2.json`
+- **[[c19]]** `prior-artifact` `.insrc/artifacts/AMD-c3d71313f34bce71-3.json`
+- **[[c20]]** `prior-artifact` `.insrc/artifacts/AMD-c3d71313f34bce71-4.json`

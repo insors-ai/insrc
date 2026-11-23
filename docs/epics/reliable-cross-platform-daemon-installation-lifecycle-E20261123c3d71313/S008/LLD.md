@@ -6,7 +6,7 @@
 
 **Epic:** `reliable-cross-platform-daemon-installation-lifecycle`
 **HLD base run:** `wf-1795445383474-itgkv3`
-**HLD effective hash:** `77bfb88eed6d...`
+**HLD effective hash:** `acb12724c316...`
 **Tracker:** [insors-ai/insrc#250](https://github.com/insors-ai/insrc/issues/250)
 
 Qualification proves both delivery modes and both IDE integrations on isolated real platforms. Each result names the exact release/runtime, environment and scenario, with unavailable coverage kept separate from passes. This story supplies evidence and release gates, not another implementation of the installer.
@@ -56,7 +56,7 @@ Linux primary: isolated Ubuntu 24.04 OrbStack arm64 and x64 guests, recreating p
 
 ### 3.3 `Scenario matrix` — new
 
-For both bundle and dev delivery: clean install with no/wrong host Node; exact successor upgrade; unchanged delivery/ref selection; shared terminal/manual script parity; readiness-confirmed same-terminal TUI; start/no-build; graceful stop; explicit immediate override; restart/actual exit proof; migration skip/success/check-run-test failure/interruption/retry; dependency existing/missing/decline/install; zero/one/many agent recommendations; concurrent windows; Unicode/space/metacharacter paths; download/digest/target/archive corruption; source dirty/build failure; stale offers; and corrupt controller/journal recovery. Each IDE separately proves native terminal visibility/focus, ordinary control, startup autostart, explicit upgrade accept/dismiss including plugin updates, blocked migration UI and close/cancel behavior. Cross-review regression matrix explicitly includes: two clients escalate immediate while graceful operation lock remains held; first migration admission versus ordinary startup; manager death with live candidate at every journal boundary, no second runner, exact journal/exit reconciliation; correlated Windows per-request pre-write cancel, first-write race, helper death and protocol mismatch. Record full owner/session/operation identities with secrets redacted. Proposed sc2/sc6 amendments must be approved and consumer designs rebased before this matrix executes. Require migration-wrapper durable receipts on natural success, hook failure and manager death, including crash before/after receipt fsync/publication and mismatched session/nonce/digest. Require protocol-2 hello/ready success, 3-second timeout, malformed/duplicate/wrong version/nonce/early outcome and unsupported-helper cases with zero pre-ready application sends.
+For both bundle and dev delivery: clean install with no/wrong host Node; exact successor upgrade; unchanged delivery/ref selection; shared terminal/manual script parity; readiness-confirmed same-terminal TUI; start/no-build; graceful stop; explicit immediate override; restart/actual exit proof; migration skip/success/check-run-test failure/interruption/retry; dependency existing/missing/decline/install; zero/one/many agent recommendations; concurrent windows; Unicode/space/metacharacter paths; download/digest/target/archive corruption; source dirty/build failure; stale offers; and corrupt controller/journal recovery. Each IDE separately proves native terminal visibility/focus, ordinary control, startup autostart, explicit upgrade accept/dismiss including plugin updates, blocked migration UI and close/cancel behavior. Cross-review regression matrix explicitly includes: two clients escalate immediate while graceful operation lock remains held; first migration admission versus ordinary startup; manager death with live candidate at every journal boundary, no second runner, exact journal/exit reconciliation; correlated Windows per-request pre-write cancel, first-write race, helper death and protocol mismatch. Record full owner/session/operation identities with secrets redacted. The sc2/sc4/sc6 amendments are approved; consumer designs must carry current effective-HLD metadata before this matrix executes. Require migration-wrapper durable receipts on natural success, hook failure and manager death, including crash before/after receipt fsync/publication and mismatched session/nonce/digest. Require protocol-2 hello/ready success, 3-second timeout, malformed/duplicate/wrong version/nonce/early outcome and unsupported-helper cases with zero pre-ready application sends.
 
 
 ### 3.4 `Isolation and native probes` — new
@@ -168,3 +168,7 @@ To meet the HLD, this design still needs explicit target/provenance fields and u
 - **[[c7]]** `analyze-bundle` `jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/UnixSocketDaemonRpc.kt`
 - **[[c8]]** `doc` `docs/testing.md`
 - **[[c9]]** `stakeholder` `User-selected Linux OrbStack and existing macOS UTM validation; Windows remains required and not inferred from Linux/macOS.`
+- **[[c10]]** `prior-artifact` `.insrc/artifacts/AMD-c3d71313f34bce71-1.json`
+- **[[c11]]** `prior-artifact` `.insrc/artifacts/AMD-c3d71313f34bce71-2.json`
+- **[[c12]]** `prior-artifact` `.insrc/artifacts/AMD-c3d71313f34bce71-3.json`
+- **[[c13]]** `prior-artifact` `.insrc/artifacts/AMD-c3d71313f34bce71-4.json`

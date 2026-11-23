@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "design.story",
-    "runId": "wf-1795451493319-rdkl4l",
+    "runId": "wf-1795455318466-e1nxq9",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-11-23T16:31:34.783Z",
+    "createdAt": "2026-11-23T17:35:19.751Z",
     "attribution": {
       "outputs": [
         {
@@ -14,7 +14,7 @@
         }
       ]
     },
-    "elapsedMs": 1178,
+    "elapsedMs": 964,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicCreatedAt": "2026-11-23T13:27:35.399Z",
@@ -22,16 +22,21 @@
     "epicSlug": "reliable-cross-platform-daemon-installation-lifecycle",
     "storyId": "s7",
     "hldBaseRunId": "wf-1795445383474-itgkv3",
-    "hldEffectiveHash": "77bfb88eed6d557fbc298ffc881afc2ccf6e682b9f0d0696361d1e77e5f93d83",
-    "hldAmendmentsApplied": [],
+    "hldEffectiveHash": "acb12724c31638094f715440e8d7679ed70268700c5e10e1d06197fb93ace475",
+    "hldAmendmentsApplied": [
+      "AMD-c3d71313f34bce71-1",
+      "AMD-c3d71313f34bce71-2",
+      "AMD-c3d71313f34bce71-3",
+      "AMD-c3d71313f34bce71-4"
+    ],
     "storyTitle": "Manage daemon installation and lifecycle in JetBrains",
     "authoredBy": "controller",
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 3,
-        "contentHash": "ce07d8973bf1d40a5a32b34742e198247fd926d6e18e83d5daf243e509f6190e",
-        "at": "2026-11-23T16:31:34.912Z",
+        "number": 4,
+        "contentHash": "ebd029aa6ba49ee10e7558944545d4eb0f5fdde6347c2fe1a943ee12281f7da1",
+        "at": "2026-11-23T17:35:19.873Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
@@ -40,7 +45,7 @@
       },
       "signoffs": []
     },
-    "revision": 3
+    "revision": 4
   },
   "body": {
     "hldContextSlice": {
@@ -68,7 +73,7 @@
           "id": "sc2",
           "name": "Manager command and operation state",
           "purpose": "A private-runtime command runner serves both IDEs when daemon is running, stopped or blocked. One OS-backed exclusive lock serializes all mutating operations per installation; controller records and bounded progress are shared across clients. Interactive install is invoked by the shared script in the terminal. The structured manager protocol remains for ordinary control/status; the IDE does not drive installation prompts through it. The 'install' action is reserved exclusively for the shared bootstrap/installer script executing inside the interactive terminal. VS Code/JetBrains adapters must never invoke ManagerAction.install directly or drive its prompts through this protocol; they only launch/focus the terminal and observe completion/readiness. The s1 LLD must state and enforce this caller restriction.",
-          "interfaceSketch": "/** 'install' is terminal-bootstrap-only; IDE adapters may not invoke it directly. */\ntype ManagerAction = 'inspect' | 'check-upgrade' | 'install' | 'upgrade' | 'start' | 'stop' | 'restart' | 'retry-migration';\ntype Phase = 'preparing' | 'quiescing' | 'migrating' | 'activating' | 'ready' | 'stopped' | 'blocked';\ninterface ManagerRequest { protocolVersion: 1; operationId: string; action: ManagerAction; installationId: string; shutdownMode?: 'graceful' | 'immediate'; acceptedOfferId?: string; installOllama?: boolean }\ninterface OperationRecord { operationId: string; predecessorId?: string; candidateId?: string; phase: Phase; hookId?: string; hookStage?: 'check' | 'run' | 'test'; errorCode?: string; message?: string }\ninterface ManagerEvent { protocolVersion: 1; operationId: string; kind: 'progress' | 'result'; state: OperationRecord; retryable: boolean }\ninterface UpgradeOffer { offerId: string; installationId: string; currentReleaseId?: string; candidateReleaseId: string; delivery: Delivery }",
+          "interfaceSketch": "/** 'install' is terminal-bootstrap-only; IDE adapters may not invoke it directly. */\ntype ManagerAction = 'inspect' | 'check-upgrade' | 'install' | 'upgrade' | 'start' | 'stop' | 'restart' | 'retry-migration';\ntype Phase = 'preparing' | 'quiescing' | 'migrating' | 'activating' | 'ready' | 'stopped' | 'blocked';\ninterface ManagerRequest { protocolVersion: 1; operationId: string; action: ManagerAction; installationId: string; shutdownMode?: 'graceful' | 'immediate'; acceptedOfferId?: string; installOllama?: boolean }\ninterface OperationRecord { operationId: string; predecessorId?: string; candidateId?: string; phase: Phase; hookId?: string; hookStage?: 'check' | 'run' | 'test'; errorCode?: string; message?: string }\ninterface ManagerEvent { protocolVersion: 1; operationId: string; kind: 'progress' | 'result'; state: OperationRecord; retryable: boolean }\ninterface UpgradeOffer { offerId: string; installationId: string; currentReleaseId?: string; candidateReleaseId: string; delivery: Delivery }\n  // + escalateShutdown(request: ManagerRequest): Promise<ManagerEvent>;;  // An immediate override during quiescing/draining is a message to the current operation, not a competing mutation. Invoke escalateShutdown with the existing installationId/operationId, action='stop', shutdownMode='immediate'. Before ordinary lock admission, the manager command forwards it to the current lock owner's user-protected local control endpoint. The owner remains responsive while awaiting drain/exit, validates recorded instance/operation and alone sends s4 IPC using its original completion endpoint/nonce and writes controller state. Cross-window requests use this path; duplicates coalesce; all independent mutations still return busy. Private endpoint discovery binds installation/operation/owner-session nonce, validates same-user authorization and phase/identity, and rejects stale endpoints. No lock release/steal to escalate. Missing/dead owner returns escalation-unavailable/uncertain; explicit recovery must acquire the lock and reconcile instance/exit evidence before acting, never automatically replace the daemon. Writer/admission contract: Only the lock-owning manager writes controller.json. Only the candidate daemon writes its operation/candidate-bound hook journal atomically while holding the exclusive data lease; it never writes controller.json or inherits the manager lock. Journal run-started commits before mutation. Stage events are advisory; OperationRecord is a possibly lagging projection, never migration validation evidence. Validate journal identity/version/order/digests before accepting results. On manager exit, a live candidate may finish its admitted hooks/journal but cannot activate or write controller state. A new lock owner first reconciles the exact candidate session, lease and protected observed-exit evidence; held/unknown ownership means busy/uncertain, never a second runner. Lease availability alone is not migration success. Only after prior candidate actual exit may explicit recovery validate the journal and resume the same operation or retry unvalidated hooks under hook policy. Reject stale session/revision writes; no PID/age inference or predecessor restart. Initial migration in migrating and candidate normal boot in activating require matching live-owner admission; independent ordinary boot remains denied. (amend:AMD-c3d71313f34bce71-1)",
           "ownedByStory": "s1",
           "consumedByStories": [
             "s2",
@@ -102,7 +107,7 @@
           "id": "sc4",
           "name": "Daemon shutdown and readiness",
           "purpose": "The selected daemon admits shutdown over its local JSON-RPC endpoint only. Acknowledgement is not exit completion. Readiness reports instance/release identity and startup gating; immediate escalation is an explicit second request.",
-          "interfaceSketch": "interface DaemonIdentity { instanceId: string; installationId: string; releaseId: string; protocolVersion: 1; state: 'ready' | 'draining' | 'migration-blocked' }\ninterface ShutdownRequest { operationId: string; expectedInstanceId: string; mode: 'graceful' | 'immediate'; completionEndpoint: string; completionNonce: string }\ninterface ShutdownAccepted { operationId: string; instanceId: string; accepted: true; mode: 'graceful' | 'immediate' }\ninterface ShutdownCompletion { operationId: string; instanceId: string; completionNonce: string; resourceOwnershipReleased: true }",
+          "interfaceSketch": "interface DaemonIdentity { instanceId: string; installationId: string; releaseId: string; protocolVersion: 1; state: 'ready' | 'draining' | 'migration-blocked' }\ninterface ShutdownRequest { operationId: string; expectedInstanceId: string; mode: 'graceful' | 'immediate'; completionEndpoint: string; completionNonce: string }\ninterface ShutdownAccepted { operationId: string; instanceId: string; accepted: true; mode: 'graceful' | 'immediate' }\ninterface ShutdownCompletion { operationId: string; instanceId: string; completionNonce: string; resourceOwnershipReleased: true }\n  // + interface MigrationExitReceipt { schemaVersion: 1; purpose: 'migration'; installationId: string; operationId: string; candidateReleaseId: string; candidateInventorySha256: string; sessionId: string; childInstanceId: string; completionNonce: string; exitCode: number | null; signal: string | null }\nreadMigrationExitReceipt(expected: MigrationExitReceiptIdentity): Promise<MigrationExitReceipt>;\ninterface MigrationExitReceiptIdentity { installationId: string; operationId: string; candidateReleaseId: string; candidateInventorySha256: string; sessionId: string; childInstanceId: string; completionNonce: string };  // Every migration-only child is launched through the s4 lifetime wrapper. Before spawn, the manager atomically records an immutable admission containing installationId, operationId, candidateReleaseId, candidateInventorySha256, sessionId, childInstanceId, completionNonce and the exact protected receipt path <home>/install/receipts/<operationId>/<sessionId>.json. IDs are validated opaque path-safe tokens, never arbitrary paths. Wrapper/child acknowledge that admission; a delayed unstarted child must still validate the live owner admission before acquiring the data lease/opening stores. The wrapper is detached from manager/terminal lifetime and never opens application stores. After observing that exact child actually exit, it MUST atomically persist MigrationExitReceipt to the predeclared path, flush file and containing directory where supported, then notify any live observer and exit. This requirement applies to natural migration completion, hook failure and child self-exit; it does not depend on a shutdown request or surviving manager IPC. Wrapper is the sole receipt writer; candidate alone writes hook journal; manager alone writes controller.json. Receipt is immutable per session, user-protected, identity/nonce/digest validated and retained until operation completion/recovery no longer needs it. Native lock/receipt filesystem durability support is qualified before target enablement. A replacement manager under the operation lock reconciles the admitted session, mandatory receipt, lease and exact journal; only matching actual-exit evidence plus released ownership permits another runner/start. ExitCode=0 is never migration success by itself: successful applicable hook tests and exact journal validation are also required. A failure receipt may authorize same-candidate explicit hook recovery, never automatic activation. Missing/corrupt/forged receipt or wrapper death remains blocked/uncertain, never inferred from PID, endpoint disappearance, free lease or completed journal. The wrapper never kills/restarts the child. This mandatory migration receipt does not make general shutdown's optional receipt mandatory. (amend:AMD-c3d71313f34bce71-3)",
           "ownedByStory": "s4",
           "consumedByStories": [
             "s5",
@@ -132,7 +137,7 @@
           "id": "sc6",
           "name": "Local transport and explicit installation home",
           "purpose": "All consumers resolve the same installation home and endpoint. Unix retains daemon.sock; Windows uses a per-user/per-installation named pipe. The manager's Node bridge supplies JetBrains Windows transport without changing application RPC payloads.",
-          "interfaceSketch": "interface LocalEndpoint { kind: 'unix' | 'named-pipe'; address: string; installationId: string }\ninterface InstallationLocation { home: string; installationId: string; daemonEndpoint: LocalEndpoint }\ninterface IpcBridgeRequest { protocolVersion: 1; endpoint: LocalEndpoint; rpcFrame: string }\ninterface IpcBridgeEvent { kind: 'frame' | 'closed' | 'error'; frame?: string; written?: boolean; code?: string }",
+          "interfaceSketch": "interface LocalEndpoint { kind: 'unix' | 'named-pipe'; address: string; installationId: string }\ninterface InstallationLocation { home: string; installationId: string; daemonEndpoint: LocalEndpoint }\ninterface IpcBridgeRequest { protocolVersion: 1; endpoint: LocalEndpoint; rpcFrame: string }\ninterface IpcBridgeEvent { kind: 'frame' | 'closed' | 'error'; frame?: string; written?: boolean; code?: string }\n  // + controlBridge(command: { kind: 'send'; transportId: string; request: IpcBridgeRequest } | { kind: 'cancel'; transportId: string }): AsyncIterable<{ transportId: string; kind: 'written' | 'cancelled' | 'frame' | 'closed' | 'error'; written?: boolean; frame?: string; code?: string }>;;  // The additive sc6 controlBridge envelope preserves existing inner frame types. Launch the helper explicitly in bridge-control protocol 2 and require version confirmation before sending; mismatch fails with no legacy fallback. Each send/cancel/event has a unique transportId bound to its embedded RPC request id and lane, never reused during helper lifetime. Validate before queue admission. A cancel processed before the first named-pipe write attempt removes the send, confirms cancelled/written=false and forbids later dispatch. At the first write attempt, mark written=true conservatively: possible dispatch, not application completion. A helper-stdin write is not pipe dispatch evidence. Post-write cancellation retires the local reply without rollback/replay promises. Helper death/lost outcome leaves unresolved sends unknown unless not-written was positively confirmed. Frame/error/close events carry transportId; report every pending id on lane failure where possible. Preserve 64-pending/16MiB aggregate bounds, fragmented UTF-8 and separate stream-lane cancellation. Input EOF closes the helper lane, never daemon. (amend:AMD-c3d71313f34bce71-2)\n  // + bridgeHandshake(request: { kind: 'hello'; protocolVersion: 2; sessionNonce: string }): Promise<{ kind: 'ready'; protocolVersion: 2; sessionNonce: string }>;;  // The bridge-control protocol-2 startup wire exchange is exactly one UTF-8 NDJSON hello record {kind:'hello',protocolVersion:2,sessionNonce} from the client on helper stdin, then exactly one ready record {kind:'ready',protocolVersion:2,sessionNonce} on helper stdout. The client generates a fresh unpredictable sessionNonce per helper process; helper echoes it only after validating the version and binding its configured local installation endpoint. This is a separate startup envelope, not an IpcBridgeRequest and not a correlated controlBridge outcome; it has no transportId because no request exists yet. The helper must not forward any application frame before emitting ready, and the client must not send send/cancel records until matching ready is received. Set a 3-second handshake deadline from helper spawn; missing/malformed/duplicate/wrong-version/wrong-nonce ready, early outcome frames, or helper exit fail with bridge-protocol-mismatch/bridge-handshake-timeout before dispatch. On error the client closes stdin and that helper lane, reports no sends dispatched, and performs no automatic fallback/replay; it sends no daemon signal/stop. Unsupported hello yields only a bounded stderr diagnostic and helper exit without opening an application RPC lane. After ready, stdout contains only the specified correlated controlBridge events, stderr only diagnostics; later hello/ready records are protocol errors. Handshake bytes count toward the bounded parser/input limits; no credentials/capability tokens are echoed. Existing inner IpcBridgeRequest.protocolVersion=1 remains unchanged and is distinct from outer bridge-control version 2. (amend:AMD-c3d71313f34bce71-4)",
           "ownedByStory": "s1",
           "consumedByStories": [
             "s2",
@@ -324,8 +329,8 @@
           "preconditions": [
             "Resolve installed manager/runtime and protected per-user endpoint/capability; do not use host Node.",
             "Preserve current UTF-8 newline framing and request ids.",
-            "Require correlated bridge-control protocol 2 and transportId/RPC-id binding under proposed sc6 before dispatch; old frame-only peer is incompatible with this lane.",
-            "First exchange proposed sc6 bridgeHandshake hello/ready within three seconds; no frame dispatch until exact nonce/version confirmation."
+            "Require correlated bridge-control protocol 2 and transportId/RPC-id binding under approved sc6 before dispatch; old frame-only peer is incompatible with this lane.",
+            "First exchange approved sc6 bridgeHandshake hello/ready within three seconds; no frame dispatch until exact nonce/version confirmation."
           ],
           "postconditions": [
             "Do not reinterpret application payloads or load DB/provider code.",
@@ -354,7 +359,7 @@
           "postconditions": [
             "Pre-write cancellation prevents dispatch; after-write cancellation/close retains uncertainty and never promises rollback.",
             "Unicode/stream frames survive byte chunking; late retired-id replies are discarded.",
-            "This is an inner frame type. Per-request write/cancel outcomes use the proposed sc6 controlBridge outer envelope; do not infer named-pipe writes from helper stdin."
+            "This is an inner frame type. Per-request write/cancel outcomes use the approved sc6 controlBridge outer envelope; do not infer named-pipe writes from helper stdin."
           ],
           "errors": []
         },
@@ -408,7 +413,7 @@
       {
         "entity": "Windows bridge transport",
         "change": "new",
-        "details": "Use an installed private-node manager bridge for Windows only; no JVM UnixDomainSocketAddress on Windows and no new JNA pipe dependency. Persistent unary lanes retain current 64-pending/16MiB aggregate budgets and safe-id/late-reply logic; streams use independently closable bridge lanes where socket close is their cancellation semantic. Input EOF closes only the bridge client; it does not shut down daemon. Separate stderr diagnostics from protocol-only stdout, bind local endpoint/auth to selected user/install, and preserve before/after-write error meaning. No new smaller frame limit breaks existing payloads; large fragmented UTF-8/frame tests prove parity. Consume the proposed sc6 controlBridge protocol, not an independent Kotlin protocol. The additive sc6 controlBridge envelope preserves existing inner frame types. Launch the helper explicitly in bridge-control protocol 2 and require version confirmation before sending; mismatch fails with no legacy fallback. Each send/cancel/event has a unique transportId bound to its embedded RPC request id and lane, never reused during helper lifetime. Validate before queue admission. A cancel processed before the first named-pipe write attempt removes the send, confirms cancelled/written=false and forbids later dispatch. At the first write attempt, mark written=true conservatively: possible dispatch, not application completion. A helper-stdin write is not pipe dispatch evidence. Post-write cancellation retires the local reply without rollback/replay promises. Helper death/lost outcome leaves unresolved sends unknown unless not-written was positively confirmed. Frame/error/close events carry transportId; report every pending id on lane failure where possible. Preserve 64-pending/16MiB aggregate bounds, fragmented UTF-8 and separate stream-lane cancellation. Input EOF closes the helper lane, never daemon. Consume the foundation-owned bridgeHandshake startup exchange without introducing Kotlin-specific messages. The bridge-control protocol-2 startup wire exchange is exactly one UTF-8 NDJSON hello record {kind:'hello',protocolVersion:2,sessionNonce} from the client on helper stdin, then exactly one ready record {kind:'ready',protocolVersion:2,sessionNonce} on helper stdout. The client generates a fresh unpredictable sessionNonce per helper process; helper echoes it only after validating the version and binding its configured local installation endpoint. This is a separate startup envelope, not an IpcBridgeRequest and not a correlated controlBridge outcome; it has no transportId because no request exists yet. The helper must not forward any application frame before emitting ready, and the client must not send send/cancel records until matching ready is received. Set a 3-second handshake deadline from helper spawn; missing/malformed/duplicate/wrong-version/wrong-nonce ready, early outcome frames, or helper exit fail with bridge-protocol-mismatch/bridge-handshake-timeout before dispatch. On error the client closes stdin and that helper lane, reports no sends dispatched, and performs no automatic fallback/replay; it sends no daemon signal/stop. Unsupported hello yields only a bounded stderr diagnostic and helper exit without opening an application RPC lane. After ready, stdout contains only the specified correlated controlBridge events, stderr only diagnostics; later hello/ready records are protocol errors. Handshake bytes count toward the bounded parser/input limits; no credentials/capability tokens are echoed. Existing inner IpcBridgeRequest.protocolVersion=1 remains unchanged and is distinct from outer bridge-control version 2.",
+        "details": "Use an installed private-node manager bridge for Windows only; no JVM UnixDomainSocketAddress on Windows and no new JNA pipe dependency. Persistent unary lanes retain current 64-pending/16MiB aggregate budgets and safe-id/late-reply logic; streams use independently closable bridge lanes where socket close is their cancellation semantic. Input EOF closes only the bridge client; it does not shut down daemon. Separate stderr diagnostics from protocol-only stdout, bind local endpoint/auth to selected user/install, and preserve before/after-write error meaning. No new smaller frame limit breaks existing payloads; large fragmented UTF-8/frame tests prove parity. Consume the approved sc6 controlBridge protocol, not an independent Kotlin protocol. The additive sc6 controlBridge envelope preserves existing inner frame types. Launch the helper explicitly in bridge-control protocol 2 and require version confirmation before sending; mismatch fails with no legacy fallback. Each send/cancel/event has a unique transportId bound to its embedded RPC request id and lane, never reused during helper lifetime. Validate before queue admission. A cancel processed before the first named-pipe write attempt removes the send, confirms cancelled/written=false and forbids later dispatch. At the first write attempt, mark written=true conservatively: possible dispatch, not application completion. A helper-stdin write is not pipe dispatch evidence. Post-write cancellation retires the local reply without rollback/replay promises. Helper death/lost outcome leaves unresolved sends unknown unless not-written was positively confirmed. Frame/error/close events carry transportId; report every pending id on lane failure where possible. Preserve 64-pending/16MiB aggregate bounds, fragmented UTF-8 and separate stream-lane cancellation. Input EOF closes the helper lane, never daemon. Consume the foundation-owned bridgeHandshake startup exchange without introducing Kotlin-specific messages. The bridge-control protocol-2 startup wire exchange is exactly one UTF-8 NDJSON hello record {kind:'hello',protocolVersion:2,sessionNonce} from the client on helper stdin, then exactly one ready record {kind:'ready',protocolVersion:2,sessionNonce} on helper stdout. The client generates a fresh unpredictable sessionNonce per helper process; helper echoes it only after validating the version and binding its configured local installation endpoint. This is a separate startup envelope, not an IpcBridgeRequest and not a correlated controlBridge outcome; it has no transportId because no request exists yet. The helper must not forward any application frame before emitting ready, and the client must not send send/cancel records until matching ready is received. Set a 3-second handshake deadline from helper spawn; missing/malformed/duplicate/wrong-version/wrong-nonce ready, early outcome frames, or helper exit fail with bridge-protocol-mismatch/bridge-handshake-timeout before dispatch. On error the client closes stdin and that helper lane, reports no sends dispatched, and performs no automatic fallback/replay; it sends no daemon signal/stop. Unsupported hello yields only a bounded stderr diagnostic and helper exit without opening an application RPC lane. After ready, stdout contains only the specified correlated controlBridge events, stderr only diagnostics; later hello/ready records are protocol errors. Handshake bytes count toward the bounded parser/input limits; no credentials/capability tokens are echoed. Existing inner IpcBridgeRequest.protocolVersion=1 remains unchanged and is distinct from outer bridge-control version 2.",
         "callSites": [
           "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/UnixSocketDaemonRpc.kt"
         ]
@@ -416,7 +421,7 @@
       {
         "entity": "Operation escalation UI binding",
         "change": "new",
-        "details": "An explicitly selected immediate override during a draining operation consumes proposed sc2 escalateShutdown with the existing operationId. Other windows may forward the same intent to the owner; no second mutation/lock, fresh operation id, repeated shutdown timer or automatic escalation. Display escalation-unavailable/uncertain on dead owner; explicit recovery remains separate.",
+        "details": "An explicitly selected immediate override during a draining operation consumes approved sc2 escalateShutdown with the existing operationId. Other windows may forward the same intent to the owner; no second mutation/lock, fresh operation id, repeated shutdown timer or automatic escalation. Display escalation-unavailable/uncertain on dead owner; explicit recovery remains separate.",
         "callSites": []
       }
     ],
@@ -821,6 +826,26 @@
       "id": "c11",
       "kind": "doc",
       "ref": "https://plugins.jetbrains.com/docs/intellij/embedded-terminal.html"
+    },
+    {
+      "id": "c12",
+      "kind": "prior-artifact",
+      "ref": ".insrc/artifacts/AMD-c3d71313f34bce71-1.json"
+    },
+    {
+      "id": "c13",
+      "kind": "prior-artifact",
+      "ref": ".insrc/artifacts/AMD-c3d71313f34bce71-2.json"
+    },
+    {
+      "id": "c14",
+      "kind": "prior-artifact",
+      "ref": ".insrc/artifacts/AMD-c3d71313f34bce71-3.json"
+    },
+    {
+      "id": "c15",
+      "kind": "prior-artifact",
+      "ref": ".insrc/artifacts/AMD-c3d71313f34bce71-4.json"
     }
   ]
 }

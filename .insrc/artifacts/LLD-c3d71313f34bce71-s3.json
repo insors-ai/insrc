@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "design.story",
-    "runId": "wf-1795448758031-rnz7n0",
+    "runId": "wf-1795455311947-p4jvqd",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-11-23T15:45:59.347Z",
+    "createdAt": "2026-11-23T17:35:13.211Z",
     "attribution": {
       "outputs": [
         {
@@ -14,7 +14,7 @@
         }
       ]
     },
-    "elapsedMs": 1034,
+    "elapsedMs": 996,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicCreatedAt": "2026-11-23T13:27:35.399Z",
@@ -22,16 +22,21 @@
     "epicSlug": "reliable-cross-platform-daemon-installation-lifecycle",
     "storyId": "s3",
     "hldBaseRunId": "wf-1795445383474-itgkv3",
-    "hldEffectiveHash": "77bfb88eed6d557fbc298ffc881afc2ccf6e682b9f0d0696361d1e77e5f93d83",
-    "hldAmendmentsApplied": [],
+    "hldEffectiveHash": "acb12724c31638094f715440e8d7679ed70268700c5e10e1d06197fb93ace475",
+    "hldAmendmentsApplied": [
+      "AMD-c3d71313f34bce71-1",
+      "AMD-c3d71313f34bce71-2",
+      "AMD-c3d71313f34bce71-3",
+      "AMD-c3d71313f34bce71-4"
+    ],
     "storyTitle": "Guide dependency setup without privilege escalation",
     "authoredBy": "controller",
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 1,
-        "contentHash": "16f4f8dea7bb77e198ab02160e1ff4e2a02a646372c7ca5d7116718ccdaca674",
-        "at": "2026-11-23T15:45:59.439Z",
+        "number": 2,
+        "contentHash": "363dd77bcbaf610f5422981af8a685ef64f50f58f7ba7c4c40d3b2b113c0f09c",
+        "at": "2026-11-23T17:35:13.306Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
@@ -40,7 +45,7 @@
       },
       "signoffs": []
     },
-    "revision": 1
+    "revision": 2
   },
   "body": {
     "hldContextSlice": {
@@ -68,7 +73,7 @@
           "id": "sc2",
           "name": "Manager command and operation state",
           "purpose": "A private-runtime command runner serves both IDEs when daemon is running, stopped or blocked. One OS-backed exclusive lock serializes all mutating operations per installation; controller records and bounded progress are shared across clients. Interactive install is invoked by the shared script in the terminal. The structured manager protocol remains for ordinary control/status; the IDE does not drive installation prompts through it. The 'install' action is reserved exclusively for the shared bootstrap/installer script executing inside the interactive terminal. VS Code/JetBrains adapters must never invoke ManagerAction.install directly or drive its prompts through this protocol; they only launch/focus the terminal and observe completion/readiness. The s1 LLD must state and enforce this caller restriction.",
-          "interfaceSketch": "/** 'install' is terminal-bootstrap-only; IDE adapters may not invoke it directly. */\ntype ManagerAction = 'inspect' | 'check-upgrade' | 'install' | 'upgrade' | 'start' | 'stop' | 'restart' | 'retry-migration';\ntype Phase = 'preparing' | 'quiescing' | 'migrating' | 'activating' | 'ready' | 'stopped' | 'blocked';\ninterface ManagerRequest { protocolVersion: 1; operationId: string; action: ManagerAction; installationId: string; shutdownMode?: 'graceful' | 'immediate'; acceptedOfferId?: string; installOllama?: boolean }\ninterface OperationRecord { operationId: string; predecessorId?: string; candidateId?: string; phase: Phase; hookId?: string; hookStage?: 'check' | 'run' | 'test'; errorCode?: string; message?: string }\ninterface ManagerEvent { protocolVersion: 1; operationId: string; kind: 'progress' | 'result'; state: OperationRecord; retryable: boolean }\ninterface UpgradeOffer { offerId: string; installationId: string; currentReleaseId?: string; candidateReleaseId: string; delivery: Delivery }",
+          "interfaceSketch": "/** 'install' is terminal-bootstrap-only; IDE adapters may not invoke it directly. */\ntype ManagerAction = 'inspect' | 'check-upgrade' | 'install' | 'upgrade' | 'start' | 'stop' | 'restart' | 'retry-migration';\ntype Phase = 'preparing' | 'quiescing' | 'migrating' | 'activating' | 'ready' | 'stopped' | 'blocked';\ninterface ManagerRequest { protocolVersion: 1; operationId: string; action: ManagerAction; installationId: string; shutdownMode?: 'graceful' | 'immediate'; acceptedOfferId?: string; installOllama?: boolean }\ninterface OperationRecord { operationId: string; predecessorId?: string; candidateId?: string; phase: Phase; hookId?: string; hookStage?: 'check' | 'run' | 'test'; errorCode?: string; message?: string }\ninterface ManagerEvent { protocolVersion: 1; operationId: string; kind: 'progress' | 'result'; state: OperationRecord; retryable: boolean }\ninterface UpgradeOffer { offerId: string; installationId: string; currentReleaseId?: string; candidateReleaseId: string; delivery: Delivery }\n  // + escalateShutdown(request: ManagerRequest): Promise<ManagerEvent>;;  // An immediate override during quiescing/draining is a message to the current operation, not a competing mutation. Invoke escalateShutdown with the existing installationId/operationId, action='stop', shutdownMode='immediate'. Before ordinary lock admission, the manager command forwards it to the current lock owner's user-protected local control endpoint. The owner remains responsive while awaiting drain/exit, validates recorded instance/operation and alone sends s4 IPC using its original completion endpoint/nonce and writes controller state. Cross-window requests use this path; duplicates coalesce; all independent mutations still return busy. Private endpoint discovery binds installation/operation/owner-session nonce, validates same-user authorization and phase/identity, and rejects stale endpoints. No lock release/steal to escalate. Missing/dead owner returns escalation-unavailable/uncertain; explicit recovery must acquire the lock and reconcile instance/exit evidence before acting, never automatically replace the daemon. Writer/admission contract: Only the lock-owning manager writes controller.json. Only the candidate daemon writes its operation/candidate-bound hook journal atomically while holding the exclusive data lease; it never writes controller.json or inherits the manager lock. Journal run-started commits before mutation. Stage events are advisory; OperationRecord is a possibly lagging projection, never migration validation evidence. Validate journal identity/version/order/digests before accepting results. On manager exit, a live candidate may finish its admitted hooks/journal but cannot activate or write controller state. A new lock owner first reconciles the exact candidate session, lease and protected observed-exit evidence; held/unknown ownership means busy/uncertain, never a second runner. Lease availability alone is not migration success. Only after prior candidate actual exit may explicit recovery validate the journal and resume the same operation or retry unvalidated hooks under hook policy. Reject stale session/revision writes; no PID/age inference or predecessor restart. Initial migration in migrating and candidate normal boot in activating require matching live-owner admission; independent ordinary boot remains denied. (amend:AMD-c3d71313f34bce71-1)",
           "ownedByStory": "s1",
           "consumedByStories": [
             "s2",
@@ -102,7 +107,7 @@
           "id": "sc6",
           "name": "Local transport and explicit installation home",
           "purpose": "All consumers resolve the same installation home and endpoint. Unix retains daemon.sock; Windows uses a per-user/per-installation named pipe. The manager's Node bridge supplies JetBrains Windows transport without changing application RPC payloads.",
-          "interfaceSketch": "interface LocalEndpoint { kind: 'unix' | 'named-pipe'; address: string; installationId: string }\ninterface InstallationLocation { home: string; installationId: string; daemonEndpoint: LocalEndpoint }\ninterface IpcBridgeRequest { protocolVersion: 1; endpoint: LocalEndpoint; rpcFrame: string }\ninterface IpcBridgeEvent { kind: 'frame' | 'closed' | 'error'; frame?: string; written?: boolean; code?: string }",
+          "interfaceSketch": "interface LocalEndpoint { kind: 'unix' | 'named-pipe'; address: string; installationId: string }\ninterface InstallationLocation { home: string; installationId: string; daemonEndpoint: LocalEndpoint }\ninterface IpcBridgeRequest { protocolVersion: 1; endpoint: LocalEndpoint; rpcFrame: string }\ninterface IpcBridgeEvent { kind: 'frame' | 'closed' | 'error'; frame?: string; written?: boolean; code?: string }\n  // + controlBridge(command: { kind: 'send'; transportId: string; request: IpcBridgeRequest } | { kind: 'cancel'; transportId: string }): AsyncIterable<{ transportId: string; kind: 'written' | 'cancelled' | 'frame' | 'closed' | 'error'; written?: boolean; frame?: string; code?: string }>;;  // The additive sc6 controlBridge envelope preserves existing inner frame types. Launch the helper explicitly in bridge-control protocol 2 and require version confirmation before sending; mismatch fails with no legacy fallback. Each send/cancel/event has a unique transportId bound to its embedded RPC request id and lane, never reused during helper lifetime. Validate before queue admission. A cancel processed before the first named-pipe write attempt removes the send, confirms cancelled/written=false and forbids later dispatch. At the first write attempt, mark written=true conservatively: possible dispatch, not application completion. A helper-stdin write is not pipe dispatch evidence. Post-write cancellation retires the local reply without rollback/replay promises. Helper death/lost outcome leaves unresolved sends unknown unless not-written was positively confirmed. Frame/error/close events carry transportId; report every pending id on lane failure where possible. Preserve 64-pending/16MiB aggregate bounds, fragmented UTF-8 and separate stream-lane cancellation. Input EOF closes the helper lane, never daemon. (amend:AMD-c3d71313f34bce71-2)\n  // + bridgeHandshake(request: { kind: 'hello'; protocolVersion: 2; sessionNonce: string }): Promise<{ kind: 'ready'; protocolVersion: 2; sessionNonce: string }>;;  // The bridge-control protocol-2 startup wire exchange is exactly one UTF-8 NDJSON hello record {kind:'hello',protocolVersion:2,sessionNonce} from the client on helper stdin, then exactly one ready record {kind:'ready',protocolVersion:2,sessionNonce} on helper stdout. The client generates a fresh unpredictable sessionNonce per helper process; helper echoes it only after validating the version and binding its configured local installation endpoint. This is a separate startup envelope, not an IpcBridgeRequest and not a correlated controlBridge outcome; it has no transportId because no request exists yet. The helper must not forward any application frame before emitting ready, and the client must not send send/cancel records until matching ready is received. Set a 3-second handshake deadline from helper spawn; missing/malformed/duplicate/wrong-version/wrong-nonce ready, early outcome frames, or helper exit fail with bridge-protocol-mismatch/bridge-handshake-timeout before dispatch. On error the client closes stdin and that helper lane, reports no sends dispatched, and performs no automatic fallback/replay; it sends no daemon signal/stop. Unsupported hello yields only a bounded stderr diagnostic and helper exit without opening an application RPC lane. After ready, stdout contains only the specified correlated controlBridge events, stderr only diagnostics; later hello/ready records are protocol errors. Handshake bytes count toward the bounded parser/input limits; no credentials/capability tokens are echoed. Existing inner IpcBridgeRequest.protocolVersion=1 remains unchanged and is distinct from outer bridge-control version 2. (amend:AMD-c3d71313f34bce71-4)",
           "ownedByStory": "s1",
           "consumedByStories": [
             "s2",
@@ -540,6 +545,26 @@
       "id": "c9",
       "kind": "doc",
       "ref": "https://github.com/101arrowz/fzstd"
+    },
+    {
+      "id": "c10",
+      "kind": "prior-artifact",
+      "ref": ".insrc/artifacts/AMD-c3d71313f34bce71-1.json"
+    },
+    {
+      "id": "c11",
+      "kind": "prior-artifact",
+      "ref": ".insrc/artifacts/AMD-c3d71313f34bce71-2.json"
+    },
+    {
+      "id": "c12",
+      "kind": "prior-artifact",
+      "ref": ".insrc/artifacts/AMD-c3d71313f34bce71-3.json"
+    },
+    {
+      "id": "c13",
+      "kind": "prior-artifact",
+      "ref": ".insrc/artifacts/AMD-c3d71313f34bce71-4.json"
     }
   ]
 }

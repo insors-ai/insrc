@@ -6,7 +6,8 @@
 
 **Epic:** `reliable-cross-platform-daemon-installation-lifecycle`
 **HLD base run:** `wf-1795445383474-itgkv3`
-**HLD effective hash:** `77bfb88eed6d...`
+**HLD effective hash:** `acb12724c316...`
+**Tracker:** [insors-ai/insrc#244](https://github.com/insors-ai/insrc/issues/244)
 
 Developers can prepare a selected repository and branch as a new immutable installation candidate using private Node and npm. Dirty source and failed builds leave the active installation intact. The shared installer still owns activation, terminal prompts and the TUI handoff.
 
@@ -209,3 +210,7 @@ Common candidate contracts remain unchanged, but cache lock, worktree cleanup an
 - **[[c4]]** `analyze-bundle` `scripts/test-harness/build.mjs`
 - **[[c5]]** `analyze-bundle` `copy-assets.mjs`
 - **[[c6]]** `code` `.npmrc`
+- **[[c7]]** `prior-artifact` `.insrc/artifacts/AMD-c3d71313f34bce71-1.json`
+- **[[c8]]** `prior-artifact` `.insrc/artifacts/AMD-c3d71313f34bce71-2.json`
+- **[[c9]]** `prior-artifact` `.insrc/artifacts/AMD-c3d71313f34bce71-3.json`
+- **[[c10]]** `prior-artifact` `.insrc/artifacts/AMD-c3d71313f34bce71-4.json`

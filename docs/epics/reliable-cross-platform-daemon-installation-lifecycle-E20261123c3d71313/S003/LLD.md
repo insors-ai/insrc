@@ -6,7 +6,8 @@
 
 **Epic:** `reliable-cross-platform-daemon-installation-lifecycle`
 **HLD base run:** `wf-1795445383474-itgkv3`
-**HLD effective hash:** `77bfb88eed6d...`
+**HLD effective hash:** `acb12724c316...`
+**Tracker:** [insors-ai/insrc#245](https://github.com/insors-ai/insrc/issues/245)
 
 Dependency setup checks local Ollama and coding-agent availability without starting model work or sign-in. Missing Ollama is offered as a user-level installation with explicit terminal consent; coding agents are recommendations only. Existing installations are reused.
 
@@ -199,3 +200,7 @@ Queue replay and cancellation require an additional lifecycle separate from the 
 - **[[c7]]** `doc` `https://docs.ollama.com/windows`
 - **[[c8]]** `doc` `https://docs.ollama.com/macos`
 - **[[c9]]** `doc` `https://github.com/101arrowz/fzstd`
+- **[[c10]]** `prior-artifact` `.insrc/artifacts/AMD-c3d71313f34bce71-1.json`
+- **[[c11]]** `prior-artifact` `.insrc/artifacts/AMD-c3d71313f34bce71-2.json`
+- **[[c12]]** `prior-artifact` `.insrc/artifacts/AMD-c3d71313f34bce71-3.json`
+- **[[c13]]** `prior-artifact` `.insrc/artifacts/AMD-c3d71313f34bce71-4.json`

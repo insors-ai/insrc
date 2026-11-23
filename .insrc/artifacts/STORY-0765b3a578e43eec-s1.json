@@ -40,6 +40,17 @@
           "revision": 1,
           "at": "2026-11-23T06:33:26.415Z",
           "externalId": "7093447869"
+        },
+        {
+          "target": {
+            "entityId": "LLD-0765b3a578e43eec-s1",
+            "type": "LLD",
+            "relation": "documents",
+            "fragment": "docs/epics/add-dedicated-security-reviews-E202611100765b3a5/S001/LLD.md"
+          },
+          "revision": 3,
+          "at": "2026-11-23T08:50:14.694Z",
+          "externalId": "7095902497"
         }
       ],
       "binding": {

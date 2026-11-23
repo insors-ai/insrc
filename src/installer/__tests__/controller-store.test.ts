@@ -111,3 +111,17 @@ test('native publication remains gated without exact target runtime and live qua
   assert.throws(() => requireNativeQualification({ ...target, os: 'linux' }, digest, fixture), { code: 'target-unqualified' });
   assert.throws(() => requireNativeQualification(target, 'b'.repeat(64), fixture), { code: 'target-unqualified' });
 });
+
+test('native publisher denies unqualified output before publishing target artifacts', async () => {
+  // Importing emitted qualification policy is intentional: production publisher uses it.
+  const { packageControlBinding } = await import('../../../scripts/package-installer-control.mjs');
+  const { buildStages, REQUIRED_ARTIFACTS } = await import('../../../scripts/test-harness/build.mjs');
+  assert.ok(buildStages({ environment: () => process.env }).some((args: string[]) => args[0] === 'scripts/build-installer-control.mjs'));
+  assert.ok(REQUIRED_ARTIFACTS.includes('out/installer/native/control.node'));
+  const f = setup();
+  try {
+    const destination = join(f.home, 'published');
+    assert.throws(() => packageControlBinding({ source: 'out/installer/native/control.node', destination, target: { os: process.platform, arch: process.arch, baseline: 'fixture' } }), /writer admission|Publication requires/);
+    assert.throws(() => lstatSync(destination), { code: 'ENOENT' });
+  } finally { f.cleanup(); }
+});

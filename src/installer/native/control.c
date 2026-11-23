@@ -129,9 +129,14 @@ static napi_value replace(napi_env e,napi_callback_info info) {
   if(!from||!to) { free(from);free(to);return fail(e,"path-invalid","Expected replacement paths"); }
   int ok;
 #ifdef _WIN32
-  DWORD attrs=GetFileAttributesW(to);
-  if(attrs==INVALID_FILE_ATTRIBUTES && GetLastError()==ERROR_FILE_NOT_FOUND) ok=MoveFileExW(from,to,MOVEFILE_WRITE_THROUGH);
-  else ok=ReplaceFileW(to,from,NULL,0,NULL,NULL); /* WRITE_THROUGH is unsupported for ReplaceFile. */
+  /* MoveFileEx supports WRITE_THROUGH for both first publication and replacement.
+     Never use unsupported REPLACEFILE_WRITE_THROUGH or copy across volumes. */
+  ok=MoveFileExW(from,to,MOVEFILE_REPLACE_EXISTING|MOVEFILE_WRITE_THROUGH);
+  if(ok) {
+    HANDLE published=CreateFileW(to,GENERIC_WRITE,FILE_SHARE_READ|FILE_SHARE_WRITE|FILE_SHARE_DELETE,NULL,OPEN_EXISTING,FILE_FLAG_OPEN_REPARSE_POINT,NULL);
+    ok=published!=INVALID_HANDLE_VALUE;
+    if(ok) { ok=FlushFileBuffers(published); CloseHandle(published); }
+  }
 #else
   ok=rename(from,to)==0;
 #endif

@@ -41,7 +41,7 @@ function reportProperty(file: string, name: string): ts.Expression {
 test('Build stages and specialized launcher gate policies survive wrapper integration', () => {
 	const stages = buildStages({ environment: () => process.env });
 	assert.deepEqual(stages.map(args => args[0].endsWith('npm-cli.js') ? args.slice(1).join(' ') : args.join(' ')), [
-		'scripts/clean-output.mjs', 'run build --workspace @insrc/project-memory', 'node_modules/typescript/bin/tsc --inlineSources', 'run typecheck:tools', 'scripts/forbidden-spawn-scan.mjs --fail', 'scripts/check-model-definitions.mjs', 'copy-assets.mjs', 'scripts/build-installer-control.mjs',
+		'scripts/clean-output.mjs', 'run build --workspace @insrc/project-memory', 'node_modules/typescript/bin/tsc --inlineSources', 'run typecheck:tools', 'scripts/forbidden-spawn-scan.mjs --fail', 'build-process-broker.mjs', 'build-shutdown-watchdog.mjs', 'scripts/check-model-definitions.mjs', 'copy-assets.mjs',
 	]);
 	const expression = reportProperty('scripts/connection-management-regression.mjs', 'ready');
 	const ready = new Function('build', 'sweep', 'sourceDrift', 'compiledDrift', `return (${expression.getText()});`);
@@ -50,7 +50,7 @@ test('Build stages and specialized launcher gate policies survive wrapper integr
 	const plugin = JSON.parse(readFileSync(join(ROOT, 'vscode-plugin/package.json'), 'utf8'));
 	assert.equal(plugin.scripts.pretest, undefined);
 	assert.equal(plugin.scripts.test, 'node ../scripts/test-harness/run.mjs --suite=vscode');
-	assert.equal(plugin.scripts['sync-assets'], 'node ../scripts/sync-client-runtime-assets.mjs vscode');
+	assert.match(plugin.scripts['sync-assets'], /INSRC_PACKAGED_INSTALLER/);
 	assert.deepEqual(parseArgs(ROOT, ['--suite=vscode', 'src/chat/__tests__/docs-review-panel.test.ts']).files, ['vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts']);
 });
 

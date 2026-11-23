@@ -32,7 +32,6 @@ import type { CliKind } from '../agent/providers/cli-provider.js';
 import { getModelRegistry, type ModelRegistry, type TierResolution, type TierSetting } from '../daemon/model-registry.js';
 import { SHIPPED_MODEL_DEFAULTS } from './model-defaults.js';
 import { reasoningRoleTaxonomy, roleDescriptor } from './role-taxonomy.js';
-import { applyCoreFloor } from './core-floor-guard.js';
 
 const log = getLogger('config:analyze');
 
@@ -401,26 +400,23 @@ export type SecurityModelCandidate =
 /** The 'security.review' role's effective tier: the SAME byRepo→global→role-default
  *  precedence and coreFloor clamp role-router.ts's resolveRole applies to every other
  *  role -- never the role's bare defaultTier alone (that skipped any models.tasks
- *  override and any coreFloor clamp). Duplicated locally (not value-imported from
- *  src/analyze/context/role-router.ts) to keep config/analyze.ts's layering within
- *  src/config/ only; it reuses core-floor-guard.ts's applyCoreFloor directly, the
- *  same transform the router itself calls. */
+ *  override and any coreFloor clamp). Inlines the rank comparison directly (rather
+ *  than calling core-floor-guard.ts's applyCoreFloor) so this stays zero-I/O, per
+ *  resolveSecurityModelCandidate's own contract -- applyCoreFloor logs on a clamp,
+ *  which that contract forbids here. 'security.review' is always registered
+ *  criticality:'critical' (role-taxonomy.ts), so the clamp always applies; there is
+ *  no peripheral/fail-safe branch to replicate. */
 function effectiveSecurityReviewTier(cfg: AnalyzeConfig, repoPath: string | undefined): TierName {
 	const descriptor = roleDescriptor('security.review');
 	const byRepo = repoPath !== undefined ? cfg.tiering.byRepo?.[repoPath] : undefined;
 	const assignedTier: TierName = byRepo?.roleTiers?.['security.review'] ?? cfg.tiering.roleTiers?.['security.review'] ?? descriptor?.defaultTier ?? 'mid';
-	if (descriptor === undefined) return assignedTier;
-	const mergedFloor = byRepo?.coreFloor ?? cfg.tiering.coreFloor;
-	return applyCoreFloor({ role: descriptor, resolvedTier: assignedTier, ...(mergedFloor !== undefined ? { configuredFloor: mergedFloor } : {}) }).effectiveTier;
+	const floorTier: TierName = byRepo?.coreFloor ?? cfg.tiering.coreFloor ?? 'mid';
+	const { rankOf } = reasoningRoleTaxonomy();
+	return rankOf[assignedTier] < rankOf[floorTier] ? floorTier : assignedTier;
 }
 
 /**
- * Resolve sc1's security-reviewer candidate (pure, synchronous; no network or
- * subprocess I/O). May log a clamp via effectiveSecurityReviewTier's own
- * applyCoreFloor call, matching resolveTierWith's and parseTieringOverride's
- * existing logging convention elsewhere in this file -- never a correctness
- * side effect, since the clamp decision itself is already reflected in the
- * returned candidate.
+ * Resolve sc1's security-reviewer candidate (pure, synchronous; zero I/O).
  * A malformed or below-floor/unlisted pin resolves to 'unavailable' immediately
  * and NEVER falls through to the 'security.review' role's tier-default model --
  * only a genuinely absent pin falls through to it, which is itself checked

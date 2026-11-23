@@ -116,7 +116,7 @@ test("SIGTERM during an indexing pass: workers stop, the queue drains, the main 
 	}
 });
 
-test('daemon.shutdown during maintenance is refused with the activity and reason; SIGTERM during maintenance waits for the compaction and then shuts down', { timeout: 120_000 }, async () => {
+test('SIGTERM during maintenance waits for compaction before disposing resources', { timeout: 120_000 }, async () => {
 	const home = mkdtempSync(join(tmpdir(), 'insrc-threads-maintenance-'));
 	try {
 		mkdirSync(join(home, '.insrc'), { recursive: true });

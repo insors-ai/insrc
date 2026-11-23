@@ -63,7 +63,7 @@ test("s4 ac1: routed requests leave the main thread's handler runtime unbuilt; a
 	assert.match(after.slice(0, 300), /method: "db\.listDriverKinds"/, 'built by the connection-management request, not by any routed one');
 });
 
-test("s4 ac3: SIGTERM and daemon.shutdown exit 0 after 'bye' with every worker, session-pool workers included, terminated", { timeout: 180_000 }, async () => {
+test("s4 ac3: SIGTERM exits 0 after 'bye' with every worker, session-pool workers included, terminated", { timeout: 180_000 }, async () => {
 	for (const how of ['SIGTERM'] as const) {
 		const d = await spawnDaemon(home(), CONFIG);
 		// Session-pool workers alive at the stop: two sessions and the unattributed worker, besides the shared-state one.

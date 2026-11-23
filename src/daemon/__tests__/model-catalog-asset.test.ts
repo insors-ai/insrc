@@ -40,7 +40,7 @@ function family(id: string): FamilyDefinition {
 	return f;
 }
 
-test('model-catalog-asset.test.ts: shipped asset validates, ships via copy-assets, lists today\'s models and aliases; its tier defaults equal DEFAULT_TIERS; the installer reads its defaults from the file; the summariser comes from summariserModel', () => {
+test('model-catalog-asset.test.ts: shipped asset validates, ships via copy-assets, lists today\'s models and aliases; its tier defaults equal DEFAULT_TIERS; the summariser comes from summariserModel', () => {
 	// Validates (no override, no env seam -> the shipped asset).
 	assert.equal(process.env['INSRC_MODEL_CATALOG_DIR'], undefined);
 	const file = validateModelCatalog();

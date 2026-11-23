@@ -195,7 +195,7 @@ test('model-tier-picker.test.ts: model-tier-picker.ts names no runner or model l
   assert.doesNotMatch(src, /CONFIG_CATALOG|PROVIDERS|providers\.listModels/);
 });
 
-test('model-tier-picker.test.ts: unknown model — check results shown; approve writes nothing; the tier is written only after a successful restart; reject writes nothing; runs:false offers no approve', async () => {
+test('model-tier-picker.test.ts: unknown model — check results shown; approve writes nothing; unserved approved models require a runtime reload before saving; reject writes nothing; runs:false offers no approve', async () => {
   const checks: unknown[] = [];
   const approves: unknown[] = [];
   const rejects: unknown[] = [];

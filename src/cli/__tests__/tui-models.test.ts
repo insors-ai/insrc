@@ -59,7 +59,7 @@ const press = async (stdin: { write(s: string): void }, ...keys: string[]): Prom
 	for (const k of keys) { stdin.write(k); await settle(); }
 };
 
-test("tui-models.test.ts: Model Tiers pane cycles the fake answer's families, models and efforts and writes whole tiers; unserved model has no effort edit; refusals and restart shown", async () => {
+test("tui-models.test.ts: Model Tiers pane cycles the fake answer's families, models and efforts and writes whole tiers; unserved model has no effort edit; refusals and deferred application shown", async () => {
 	const tiers: Record<string, unknown> = {
 		core:  { runner: 'cli-codex', model: 'x-a', effort: 'lo' },
 		cheap: { runner: 'cli-codex', model: 'x-unknown', effort: 'turbo' },
@@ -165,7 +165,7 @@ async function openCheck(svc: ReturnType<typeof fakeServices>, modelId = 'x-new'
 	return r;
 }
 
-test('tui-models.test.ts: unknown model check, approve then restart then save, reject, runs:false', async () => {
+test('tui-models.test.ts: unknown model check, approve then save only when served, reject, runs:false', async () => {
 	const a = checkServices({});
 	let r = await openCheck(a.svc);
 	const before = a.writes.length;
@@ -313,7 +313,7 @@ test('tui-models.test.ts: Model Tiers pane retries after the daemon starts, name
 	r.unmount();
 });
 
-test('tui-models.test.ts: check screen recovers from an expired check, offers an already-served id as a pick, reports the restart a save needs, and holds while restarting', async () => {
+test('tui-models.test.ts: check screen recovers from an expired check, offers an already-served id as a pick, reloads served definitions before saving', async () => {
 	// unknown-check on approve: the screen offers a fresh check, and c runs one.
 	const a = checkServices({ approve: [async () => ({ ok: false, reason: 'unknown-check', detail: 'no pending check c1; run models.check again' })] });
 	let r = await openCheck(a.svc);

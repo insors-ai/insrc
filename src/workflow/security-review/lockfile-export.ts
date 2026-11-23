@@ -21,11 +21,24 @@ import { join } from 'node:path';
 export interface LockfileExportResult {
 	readonly requirementsPath: string;
 	readonly unresolvedDependencies: readonly string[];
-	/** Exactly the package names actually written into requirementsPath --
-	 *  lets a caller reject/quarantine a pkg_audit response that names a
-	 *  package NOT in this set (e.g. a package excluded here, but somehow
-	 *  still returned by pip-audit) instead of accepting it as evidence. */
+	/** Exactly the package names actually written into requirementsPath,
+	 *  PEP-503-normalized (see normalizePythonPackageName) -- lets a caller
+	 *  reject/quarantine a pkg_audit response that names a package NOT in
+	 *  this set (e.g. a package excluded here, but somehow still returned
+	 *  by pip-audit) instead of accepting it as evidence, WITHOUT a false
+	 *  rejection merely because pip-audit returned the same package under a
+	 *  differently-spelled (but equivalent) name. */
 	readonly includedNames: ReadonlySet<string>;
+}
+
+/** PEP 503's own name-normalization rule (the one pip/PyPI/pip-audit
+ *  themselves use to decide two spellings name the SAME package): runs of
+ *  '-', '_', '.' collapse to a single '-', compared case-insensitively. So
+ *  'typing_extensions', 'typing.extensions' and 'Typing-Extensions' are all
+ *  the same package as 'typing-extensions'. Comparing raw, un-normalized
+ *  names would treat equivalent spellings as different packages. */
+export function normalizePythonPackageName(name: string): string {
+	return name.toLowerCase().replace(/[-_.]+/g, '-');
 }
 
 interface PoetryPackage {
@@ -199,7 +212,7 @@ export function generateLockfileExport(manager: 'pipenv' | 'poetry', manifestDir
 				continue;
 			}
 			lines.push(`${pkg.name}==${pkg.version}`);
-			includedNames.add(pkg.name);
+			includedNames.add(normalizePythonPackageName(pkg.name));
 		}
 	} else {
 		for (const pkg of parsePipfileLock(content)) {
@@ -208,7 +221,7 @@ export function generateLockfileExport(manager: 'pipenv' | 'poetry', manifestDir
 				continue;
 			}
 			lines.push(`${pkg.name}${pkg.spec}`);
-			includedNames.add(pkg.name);
+			includedNames.add(normalizePythonPackageName(pkg.name));
 		}
 	}
 

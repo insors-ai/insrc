@@ -550,3 +550,124 @@ test('collectDependencyAdvisories: a genuine manager ambiguity (two lockfiles of
 		cleanup(repo);
 	}
 });
+
+test("collectDependencyAdvisories: npm -- two advisories under the SAME package name cover DISJOINT version ranges; each applies only to the installed instance its own range actually covers", async () => {
+	const repo = initRepo();
+	treatAsRegistered(repo);
+	try {
+		writeFileSync(join(repo, 'package.json'), '{}\n');
+		writeFileSync(join(repo, 'package-lock.json'), JSON.stringify({
+			packages: {
+				'': {},
+				'node_modules/demo': { version: '1.0.0' },
+				'node_modules/other/node_modules/demo': { version: '2.0.0' },
+			},
+		}));
+		_setPkgAuditExecuteForTests(async () => okResult({
+			manager: 'npm', exitCode: 0,
+			parsed: { vulnerabilities: { demo: {
+				range: '<3.0.0',
+				nodes: ['node_modules/demo', 'node_modules/other/node_modules/demo'],
+				via: [
+					{ source: 1, severity: 'high', url: 'https://example.com/advisory-a', range: '<2.0.0' },
+					{ source: 2, severity: 'moderate', url: 'https://example.com/advisory-b', range: '>=2.0.0 <3.0.0' },
+				],
+			} } },
+		}));
+		const result = await collectDependencyAdvisories(repo, { entries: [{ path: 'app.ts' }, { path: 'package.json' }, { path: 'package-lock.json' }] });
+		// Exactly two findings, not four: advisory A only against 1.0.0, advisory B only against 2.0.0.
+		assert.equal(result.matches.length, 2, JSON.stringify(result.matches));
+		assert.ok(result.matches.some(m => m.coordinate === 'npm:demo@1.0.0' && m.advisoryId.includes('advisory-a')), JSON.stringify(result.matches));
+		assert.ok(result.matches.some(m => m.coordinate === 'npm:demo@2.0.0' && m.advisoryId.includes('advisory-b')), JSON.stringify(result.matches));
+		assert.ok(!result.matches.some(m => m.coordinate === 'npm:demo@1.0.0' && m.advisoryId.includes('advisory-b')), JSON.stringify(result.matches));
+		assert.ok(!result.matches.some(m => m.coordinate === 'npm:demo@2.0.0' && m.advisoryId.includes('advisory-a')), JSON.stringify(result.matches));
+	} finally {
+		cleanup(repo);
+	}
+});
+
+test("collectDependencyAdvisories: npm -- an advisory whose range (or the instance's own version) is not valid semver is reported as unresolved, never silently matched or silently clean", async () => {
+	const repo = initRepo();
+	treatAsRegistered(repo);
+	try {
+		writeFileSync(join(repo, 'package.json'), '{}\n');
+		writeFileSync(join(repo, 'package-lock.json'), JSON.stringify({
+			packages: { '': {}, 'node_modules/demo': { version: 'not-a-semver-version' } },
+		}));
+		_setPkgAuditExecuteForTests(async () => okResult({
+			manager: 'npm', exitCode: 0,
+			parsed: { vulnerabilities: { demo: { range: '<2.0.0', nodes: ['node_modules/demo'], via: [{ source: 1, severity: 'high', url: 'https://example.com/advisory' }] } } },
+		}));
+		const result = await collectDependencyAdvisories(repo, { entries: [{ path: 'app.ts' }, { path: 'package.json' }, { path: 'package-lock.json' }] });
+		assert.ok(!result.matches.some(m => m.coordinate.includes('demo')), JSON.stringify(result.matches));
+		assert.ok(!result.queriedCoordinates.some(c => c.includes('demo')), JSON.stringify(result.queriedCoordinates));
+		assert.ok(result.unresolvedDependencies.some(d => d.includes('demo')), JSON.stringify(result.unresolvedDependencies));
+	} finally {
+		cleanup(repo);
+	}
+});
+
+test("collectDependencyAdvisories: a pip-audit response naming a package under a DIFFERENT but PEP-503-equivalent spelling (typing_extensions vs typing-extensions) is NOT rejected as unexpected", async () => {
+	const repo = initRepo();
+	treatAsRegistered(repo);
+	try {
+		writeFileSync(join(repo, 'poetry.lock'), `
+[[package]]
+name = "typing_extensions"
+version = "4.0.0"
+`);
+		_setPkgAuditExecuteForTests(async () => okResult({
+			manager: 'poetry', exitCode: 0,
+			// pip-audit itself returns the PyPI-canonical spelling, which can
+			// differ from how the lockfile spells the same package.
+			parsed: { dependencies: [{ name: 'typing-extensions', version: '4.0.0', vulns: [] }] },
+		}));
+		const result = await collectDependencyAdvisories(repo, { entries: [{ path: 'app.ts' }, { path: 'poetry.lock' }] });
+		assert.ok(result.queriedCoordinates.includes('poetry:typing-extensions@4.0.0'), JSON.stringify(result.queriedCoordinates));
+		assert.ok(!result.unavailableSources.some(s => s.includes('typing')), JSON.stringify(result.unavailableSources));
+	} finally {
+		cleanup(repo);
+	}
+});
+
+test('collectDependencyAdvisories: npm v1 lockfile -- a nested dependency (a different version bundled under a parent) is still part of the clean inventory, not just the top-level one', async () => {
+	const repo = initRepo();
+	treatAsRegistered(repo);
+	try {
+		writeFileSync(join(repo, 'package.json'), '{}\n');
+		writeFileSync(join(repo, 'package-lock.json'), JSON.stringify({
+			dependencies: {
+				parent: { version: '1.0.0', dependencies: { child: { version: '2.0.0' } } },
+			},
+		}));
+		_setPkgAuditExecuteForTests(async () => okResult({ manager: 'npm', exitCode: 0, parsed: { vulnerabilities: {} } }));
+		const result = await collectDependencyAdvisories(repo, { entries: [{ path: 'app.ts' }, { path: 'package.json' }, { path: 'package-lock.json' }] });
+		assert.ok(result.queriedCoordinates.includes('npm:parent@1.0.0'), JSON.stringify(result.queriedCoordinates));
+		assert.ok(result.queriedCoordinates.includes('npm:child@2.0.0'), JSON.stringify(result.queriedCoordinates));
+	} finally {
+		cleanup(repo);
+	}
+});
+
+test("collectDependencyAdvisories: npm's configuredDestination prefers an NPM_CONFIG_REGISTRY/npm_config_registry environment override over .npmrc (npm's own precedence)", async () => {
+	const repo = initRepo();
+	treatAsRegistered(repo);
+	try {
+		writeFileSync(join(repo, 'package.json'), '{}\n');
+		writeFileSync(join(repo, 'package-lock.json'), '{}\n');
+		writeFileSync(join(repo, '.npmrc'), 'registry=https://registry.from-npmrc.invalid/\n');
+		const previous = process.env['npm_config_registry'];
+		process.env['npm_config_registry'] = 'https://registry.from-env.invalid/';
+		try {
+			_setPkgAuditExecuteForTests(async () => okResult({ manager: 'npm', exitCode: 0, parsed: { vulnerabilities: {} } }));
+			const result = await collectDependencyAdvisories(repo, { entries: [{ path: 'app.ts' }, { path: 'package.json' }, { path: 'package-lock.json' }, { path: '.npmrc' }] });
+			const npmEntry = result.perManagerMode.find(e => e.manager === 'npm');
+			assert.ok(npmEntry?.configuredDestination?.includes('registry.from-env.invalid'), JSON.stringify(npmEntry));
+			assert.ok(!npmEntry?.configuredDestination?.includes('registry.from-npmrc.invalid'), JSON.stringify(npmEntry));
+		} finally {
+			if (previous === undefined) { delete process.env['npm_config_registry']; } else { process.env['npm_config_registry'] = previous; }
+		}
+	} finally {
+		cleanup(repo);
+	}
+});

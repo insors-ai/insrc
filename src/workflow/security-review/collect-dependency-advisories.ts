@@ -18,13 +18,14 @@
 import { dirname, join } from 'node:path';
 import { readFileSync, rmSync } from 'node:fs';
 import { homedir } from 'node:os';
+import { satisfies as semverSatisfies, valid as semverValid, validRange as semverValidRange } from 'semver';
 
 import { pkgAuditTool, type Manager } from '../../daemon/tools/builtins/pkg/index.js';
 import type { ToolDeps, ToolInput, ToolResult } from '../../daemon/tools/types.js';
 import type { ReviewTargets } from '../artifact-core/types.js';
 import { computeContentIdentity } from './content-identity.js';
 import { enumerateManagers, verifyManagerClosureCoverage } from './dependency-advisories.js';
-import { findVersionUncertainPipRequirements, generateLockfileExport } from './lockfile-export.js';
+import { findVersionUncertainPipRequirements, generateLockfileExport, normalizePythonPackageName } from './lockfile-export.js';
 
 export interface SecurityAdvisoryMatch {
 	readonly coordinate: string;
@@ -81,14 +82,18 @@ const MANAGER_DESTINATION: Record<Manager, string> = {
 	go: 'https://vuln.go.dev (govulncheck)',
 };
 
-/** npm/pnpm/yarn's effective registry, resolved the same way npm itself
- *  does: a project-level `.npmrc` (in the manifest's own directory)
- *  overrides the user-level `~/.npmrc`, which overrides the documented
- *  default. Resolved per audit, not hardcoded, so an actually-configured
- *  private registry (`.npmrc`'s `registry=...`) is reported honestly
- *  instead of the public default every manager falls back to when nothing
- *  overrides it. */
+/** npm/pnpm/yarn's effective registry, resolved in npm's own precedence
+ *  order: an `npm_config_registry` (or `NPM_CONFIG_REGISTRY`) environment
+ *  override outranks EVERY `.npmrc` -- npm itself always prefers its env-var
+ *  config over any file -- then a project-level `.npmrc` (in the manifest's
+ *  own directory) overrides the user-level `~/.npmrc`, which overrides the
+ *  documented default. Resolved per audit, not hardcoded, so an
+ *  actually-configured private registry is reported honestly instead of
+ *  the public default every manager falls back to when nothing overrides
+ *  it. */
 function resolveNpmRegistry(manifestDir: string, auditLabel: string): string {
+	const envRegistry = process.env['npm_config_registry'] ?? process.env['NPM_CONFIG_REGISTRY'];
+	if (envRegistry !== undefined && envRegistry.length > 0) { return `${envRegistry} (${auditLabel})`; }
 	for (const configPath of [join(manifestDir, '.npmrc'), join(homedir(), '.npmrc')]) {
 		try {
 			const content = readFileSync(configPath, 'utf8');
@@ -109,6 +114,18 @@ function resolveConfiguredDestination(manager: Manager, manifestDir: string): st
 
 function isRecord(v: unknown): v is Record<string, unknown> {
 	return typeof v === 'object' && v !== null;
+}
+
+/** Whether `version` falls inside `range`, per node-semver's own grammar --
+ *  'unknown' (never silently treated as a match) when either side isn't a
+ *  valid semver version/range npm's own tooling would recognize. */
+function evaluateSemverRange(version: string, range: string): 'in' | 'out' | 'unknown' {
+	if (semverValid(version) === null || semverValidRange(range) === null) { return 'unknown'; }
+	try {
+		return semverSatisfies(version, range, { includePrerelease: true }) ? 'in' : 'out';
+	} catch {
+		return 'unknown';
+	}
 }
 
 /** pip-audit's JSON output: either a bare array of dependency entries, or
@@ -133,7 +150,11 @@ function mapPipAuditOutput(parsed: unknown, advisoryDestination: string, coordin
 		// --no-deps guarantee). Quarantined here rather than accepted as
 		// evidence about the deliberately excluded source: it must never
 		// become a false "clean" report or a fabricated "confirmed finding".
-		if (allowedNames !== undefined && !allowedNames.has(dep.name)) { rejectedNames.push(dep.name); continue; }
+		// Compare PEP-503-normalized names -- pip-audit can return a package
+		// under a different, but equivalent, spelling than the one the
+		// lockfile/export used (e.g. 'typing-extensions' vs 'typing_extensions'),
+		// which must not be mistaken for an unexpected/excluded package.
+		if (allowedNames !== undefined && !allowedNames.has(normalizePythonPackageName(dep.name))) { rejectedNames.push(dep.name); continue; }
 		const version = typeof dep.version === 'string' ? dep.version : '';
 		const coordinate = `${coordinatePrefix}${dep.name}@${version}`;
 		if (!Array.isArray(dep.vulns)) { unresolvedCoordinates.push(coordinate); continue; }
@@ -207,9 +228,22 @@ function readNpmLockfileInventory(manifestDir: string): LockfileInventory {
 				versionByPath.set(key, value.version);
 			}
 		} else if (isRecord(data.dependencies)) {
-			for (const [name, value] of Object.entries(data.dependencies)) {
-				if (isRecord(value) && typeof value.version === 'string') { addVersion(versionsByName, name, value.version); }
-			}
+			// v1's own nested shape: each dependency entry can carry its own
+			// 'dependencies' sub-object for packages it bundles a DIFFERENT
+			// version of than the top level -- walking only the top level
+			// misses every such nested instance entirely (both its version,
+			// for clean accounting, and its node_modules path, for resolving
+			// which instance an audit finding actually names).
+			const walk = (deps: Record<string, unknown>, parentPath: string): void => {
+				for (const [name, value] of Object.entries(deps)) {
+					if (!isRecord(value) || typeof value.version !== 'string') { continue; }
+					const path = `${parentPath}node_modules/${name}`;
+					addVersion(versionsByName, name, value.version);
+					versionByPath.set(path, value.version);
+					if (isRecord(value.dependencies)) { walk(value.dependencies, `${path}/`); }
+				}
+			};
+			walk(data.dependencies, '');
 		}
 	} catch { /* no lockfile, or not JSON -- an empty inventory just means no clean coordinates get added */ }
 	return { versionsByName, versionByPath };
@@ -248,6 +282,11 @@ function mapNpmAuditOutput(parsed: unknown, advisoryDestination: string, provena
 	if (!isRecord(parsed) || !isRecord(parsed.vulnerabilities)) { return undefined; }
 	const matches: SecurityAdvisoryMatch[] = [];
 	const unresolvedCoordinates: string[] = [];
+	// A (name, version) instance that audit reported SOMETHING about, but
+	// whose specific version falls outside every associated advisory's own
+	// range -- genuinely not affected, not merely "audit never mentioned
+	// it" (that latter case is handled below via the lockfile inventory).
+	const cleanCoordinatesFromAudit: string[] = [];
 	// Tracks every (name, version) INSTANCE audit actually reported on --
 	// not just the bare name -- so a different installed version of the
 	// same package name that audit never flagged still counts as clean.
@@ -275,15 +314,35 @@ function mapNpmAuditOutput(parsed: unknown, advisoryDestination: string, provena
 			if (via.length === 0) { continue; }
 			const coordinate = `${coordinatePrefix}${pkgName}@${version}`;
 			if (advisories.length === 0) { unresolvedCoordinates.push(coordinate); continue; }
+			// Each advisory names its OWN affected range (distinct advisories
+			// under one package name can cover disjoint version bands, e.g.
+			// one for <2.0.0 and another for >=2.0.0 <3.0.0) -- this instance's
+			// actual version must satisfy an advisory's own range before that
+			// advisory is reported against it; applying every advisory to every
+			// instance regardless of range would attribute a finding to a
+			// version it never actually affects.
+			let matchedAny = false;
+			let uncertainAny = false;
 			for (const advisory of advisories) {
+				const advisoryRange = typeof advisory.range === 'string' ? advisory.range : range;
+				const evaluation = evaluateSemverRange(version, advisoryRange);
+				if (evaluation === 'unknown') { uncertainAny = true; continue; }
+				if (evaluation === 'out') { continue; }
+				matchedAny = true;
 				matches.push({
 					coordinate,
 					advisoryId: typeof advisory.url === 'string' ? advisory.url : String(advisory.source ?? pkgName),
-					affectedVersions: typeof advisory.range === 'string' ? advisory.range : range,
+					affectedVersions: advisoryRange,
 					severity: typeof advisory.severity === 'string' ? advisory.severity : 'unknown',
 					provenance,
 					advisoryDestination,
 				});
+			}
+			if (!matchedAny) {
+				// Either every advisory's range excludes this specific instance
+				// (not actually affected -- clean) or at least one range/version
+				// could not be evaluated (uncertain -- never silently clean).
+				if (uncertainAny) { unresolvedCoordinates.push(coordinate); } else { cleanCoordinatesFromAudit.push(coordinate); }
 			}
 		}
 	}
@@ -292,7 +351,7 @@ function mapNpmAuditOutput(parsed: unknown, advisoryDestination: string, provena
 	// every (name, version) instance it carries that audit never flagged
 	// is the cleanly-checked set -- preserving every instance, not just one
 	// per name.
-	const cleanCoordinates: string[] = [];
+	const cleanCoordinates: string[] = [...cleanCoordinatesFromAudit];
 	for (const [name, versions] of lockfile.versionsByName) {
 		for (const version of versions) {
 			if (!accountedInstances.has(`${name}@${version}`)) { cleanCoordinates.push(`${coordinatePrefix}${name}@${version}`); }

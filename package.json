@@ -3,7 +3,7 @@
   "version": "0.2.1",
   "private": true,
   "type": "module",
-  "description": "insrc backend \u2014 daemon, agent, indexer, graph/vector DB",
+  "description": "insrc backend — daemon, agent, indexer, graph/vector DB",
   "engines": {
     "node": ">=22.13.0"
   },
@@ -72,6 +72,7 @@
     "pino-roll": "^4.0.0",
     "react": "^18.3.1",
     "saxes": "^5.0.1",
+    "semver": "^7.8.6",
     "tarn": "^3.0.2",
     "tedious": "^19.2.1",
     "tree-sitter": "^0.25.0",

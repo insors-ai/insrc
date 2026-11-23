@@ -66,6 +66,7 @@ function runSecurityReview(repoPath: string, targets: ReviewTargets, opts: { rea
 - ONE VerificationReceipt is persisted PER ROUND, corroborating that round's OWN CLI-dispatch EXECUTION only (pass: the round's code pass completed with schema-valid output and no execution-level failure; fail: a timeout, malformed output, or a content-identity divergence caught during that round) -- an EXECUTION-auditability receipt, matching the HLD's own observability framing ("a security review's execution is auditable independent of its findings"), NOT an independent reproduction/exploit-confirmation of any specific claim. A round that throws still persists its own 'fail' receipt via a per-round try/catch before the error propagates. A refusal BEFORE any round starts persists nothing.
 - receiptId is attached ONLY to the code findings a round's OWN execution actually produced: round-1 code findings get round 1's `receipt.id`, round-2 code findings get round 2's `receipt.id`. Dependency-advisory findings (s2's output, never produced by either round's CLI execution) get NO receiptId -- there is no round-execution receipt that corroborates them, and attaching one would misrepresent what was actually verified.
 - On success both receipts exist and the scratch folder is cleaned up via finalizeAndCleanup; on a pre-flight refusal, neither a receipt nor a checkpoint exists.
+- VerificationReceipt's scoped meaning for THIS Epic (CLI-dispatch execution auditability, never sandbox/mutation verification) is now also stated explicitly in the HLD itself (revision 8 amendment), which previously still named "s3 owns sandbox/mutation checkpoint execution" -- stale wording left over from driver.ts's own generic doc comment, never updated after HLD revision 5 ruled out sandboxing/mutation testing for this Epic entirely. This LLD and the HLD now agree.
 
 ### 2.2 `buildSecurityRoundHooks`
 
@@ -372,6 +373,7 @@ s3 implements its own async function that performs the same sequence runReviewRo
 - **[[c15]]** `code` `src/shared/step-context.ts:195`
 - **[[c16]]** `code` `src/workflow/review-round/receipt-record.ts:175`
 - **[[c17]]** `stakeholder` `External reviewer finding (revision 3 review, 2 HIGH + 1 MED): runInStepContext dropped the outer connectionExecution binding, VerificationReceipt corroboration was attached to findings it never verified, and fixed receipt ids collided across retries under the same reviewId. All three confirmed against real code this round and fixed in revision 4.`
+- **[[c18]]** `prior-artifact` `HLD-0765b3a578e43eec (revision 8)`
 
 ## Citations
 
@@ -392,3 +394,4 @@ s3 implements its own async function that performs the same sequence runReviewRo
 - **[[c15]]** `code` `src/shared/step-context.ts:195`
 - **[[c16]]** `code` `src/workflow/review-round/receipt-record.ts:175`
 - **[[c17]]** `stakeholder` `External reviewer finding (revision 3 review, 2 HIGH + 1 MED): runInStepContext dropped the outer connectionExecution binding, VerificationReceipt corroboration was attached to findings it never verified, and fixed receipt ids collided across retries under the same reviewId. All three confirmed against real code this round and fixed in revision 4.`
+- **[[c18]]** `prior-artifact` `HLD-0765b3a578e43eec (revision 8)`

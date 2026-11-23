@@ -29,9 +29,9 @@
   "lifecycle": {
    "status": "draft",
    "revision": {
-    "number": 4,
-    "contentHash": "833265ec4245f40d333a05b8c5861a93701323f574da934781e820aa9a319c23",
-    "at": "2026-11-23T05:50:32.669Z",
+    "number": 5,
+    "contentHash": "0e088961dc78caf27a05b3bfdc972ff86ed246580918b95347ec9d3ba80ca15f",
+    "at": "2026-11-23T06:00:56.580Z",
     "by": {
      "id": "insrc:system",
      "kind": "system",
@@ -40,7 +40,7 @@
    },
    "signoffs": []
   },
-  "revision": 4,
+  "revision": 5,
   "envelope": {
    "description": "",
    "references": [],
@@ -182,7 +182,8 @@
       "A fresh attemptId (randomBytes(8).toString('hex')) is generated ONCE per runSecurityReview call -- NOT derived from reviewId alone, which a caller may reuse across retries. Each round's receipt.id is `{reviewId}-{attemptId}-round-{round}`, so a failed attempt's receipt is never silently overwritten by a later retry's receipt under the same id (persistVerificationReceiptUnlocked replaces any PRIOR receipt sharing the exact same id -- confirmed by reading receipt-record.ts's own merge logic -- so reusing reviewId-round-N across attempts would erase the earlier failure's evidence).",
       "ONE VerificationReceipt is persisted PER ROUND, corroborating that round's OWN CLI-dispatch EXECUTION only (pass: the round's code pass completed with schema-valid output and no execution-level failure; fail: a timeout, malformed output, or a content-identity divergence caught during that round) -- an EXECUTION-auditability receipt, matching the HLD's own observability framing ('a security review's execution is auditable independent of its findings'), NOT an independent reproduction/exploit-confirmation of any specific claim. A round that throws still persists its own 'fail' receipt via a per-round try/catch before the error propagates. A refusal BEFORE any round starts persists nothing.",
       "receiptId is attached ONLY to the code findings a round's OWN execution actually produced: round-1 code findings get round 1's receipt.id, round-2 code findings get round 2's receipt.id. Dependency-advisory findings (s2's output, never produced by either round's CLI execution) get NO receiptId -- there is no round-execution receipt that corroborates them, and attaching one would misrepresent what was actually verified.",
-      "On success both receipts exist and the scratch folder is cleaned up via finalizeAndCleanup; on a pre-flight refusal, neither a receipt nor a checkpoint exists."
+      "On success both receipts exist and the scratch folder is cleaned up via finalizeAndCleanup; on a pre-flight refusal, neither a receipt nor a checkpoint exists.",
+      "VerificationReceipt's scoped meaning for THIS Epic (CLI-dispatch execution auditability, never sandbox/mutation verification) is now also stated explicitly in the HLD itself (revision 8 amendment), which previously still named 's3 owns sandbox/mutation checkpoint execution' -- stale wording left over from driver.ts's own generic doc comment, never updated after HLD revision 5 ruled out sandboxing/mutation testing for this Epic entirely. This LLD and the HLD now agree."
      ]
     },
     {
@@ -780,6 +781,11 @@
    "id": "c17",
    "kind": "stakeholder",
    "ref": "External reviewer finding (revision 3 review, 2 HIGH + 1 MED): runInStepContext dropped the outer connectionExecution binding, VerificationReceipt corroboration was attached to findings it never verified, and fixed receipt ids collided across retries under the same reviewId. All three confirmed against real code this round and fixed in revision 4."
+  },
+  {
+   "id": "c18",
+   "kind": "prior-artifact",
+   "ref": "HLD-0765b3a578e43eec (revision 8)"
   }
  ]
 }

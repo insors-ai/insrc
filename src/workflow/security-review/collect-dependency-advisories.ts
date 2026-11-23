@@ -17,10 +17,10 @@
 
 import { dirname, join } from 'node:path';
 import { readFileSync, rmSync } from 'node:fs';
-import { homedir } from 'node:os';
 import { satisfies as semverSatisfies, valid as semverValid, validRange as semverValidRange } from 'semver';
 
 import { pkgAuditTool, type Manager } from '../../daemon/tools/builtins/pkg/index.js';
+import { runShell, type ShellResult } from '../../daemon/tools/shell-helper.js';
 import type { ToolDeps, ToolInput, ToolResult } from '../../daemon/tools/types.js';
 import type { ReviewTargets } from '../artifact-core/types.js';
 import { computeContentIdentity } from './content-identity.js';
@@ -69,8 +69,8 @@ const MANAGER_MODE: Record<Manager, PerManagerMode> = {
 /** The manager's own CONFIGURED advisory destination -- explicitly a
  *  configured value, never claimed as independently observed (pkg_audit's
  *  own output carries no network trace to observe from). npm/pnpm/yarn's
- *  default here is overridden by resolveNpmRegistry whenever a project's
- *  own (or the user's) .npmrc sets a different `registry`. */
+ *  default here is used only as the fallback `resolveNpmRegistry` reports
+ *  when the manager's own config command itself cannot be run. */
 const MANAGER_DESTINATION: Record<Manager, string> = {
 	npm: 'https://registry.npmjs.org (npm audit)',
 	pnpm: 'https://registry.npmjs.org (pnpm audit)',
@@ -82,37 +82,43 @@ const MANAGER_DESTINATION: Record<Manager, string> = {
 	go: 'https://vuln.go.dev (govulncheck)',
 };
 
-/** npm/pnpm/yarn's effective registry, resolved in npm's own precedence
- *  order: an `npm_config_registry` (or `NPM_CONFIG_REGISTRY`) environment
- *  override outranks EVERY `.npmrc` -- npm itself always prefers its env-var
- *  config over any file -- then a project-level `.npmrc` (in the manifest's
- *  own directory) overrides the user-level `~/.npmrc`, which overrides the
- *  documented default. Resolved per audit, not hardcoded, so an
- *  actually-configured private registry is reported honestly instead of
- *  the public default every manager falls back to when nothing overrides
- *  it. */
-function resolveNpmRegistry(manifestDir: string, auditLabel: string): string {
-	const envRegistry = process.env['npm_config_registry'] ?? process.env['NPM_CONFIG_REGISTRY'];
-	if (envRegistry !== undefined && envRegistry.length > 0) { return `${envRegistry} (${auditLabel})`; }
-	// npm_config_userconfig/NPM_CONFIG_USERCONFIG relocates the user-level
-	// config file away from the default ~/.npmrc -- a hardcoded homedir()
-	// path misses it entirely whenever a project/CI sets this override.
-	const userConfigPath = process.env['npm_config_userconfig'] ?? process.env['NPM_CONFIG_USERCONFIG'] ?? join(homedir(), '.npmrc');
-	for (const configPath of [join(manifestDir, '.npmrc'), userConfigPath]) {
-		try {
-			const content = readFileSync(configPath, 'utf8');
-			for (const rawLine of content.split('\n')) {
-				const line = rawLine.replace(/\s*#.*$/, '').trim();
-				const m = /^registry\s*=\s*(\S+)/.exec(line);
-				if (m?.[1] !== undefined) { return `${m[1]} (${auditLabel})`; }
-			}
-		} catch { /* no .npmrc at this level -- fall through to the next, then the default */ }
-	}
-	return `https://registry.npmjs.org (${auditLabel})`;
+/** The actual subprocess call resolveNpmRegistry makes, overridable for unit
+ *  tests (so collectDependencyAdvisories' own orchestration can be
+ *  exercised without a real npm/pnpm/yarn binary). No argument resets to
+ *  the real runShell. */
+let runConfigGet: (argv: readonly string[], cwd: string) => Promise<ShellResult> = (argv, cwd) => runShell(argv, { cwd, timeoutMs: 10_000 });
+export function _setConfigGetForTests(fn?: (argv: readonly string[], cwd: string) => Promise<ShellResult>): void {
+	runConfigGet = fn ?? ((argv, cwd) => runShell(argv, { cwd, timeoutMs: 10_000 }));
 }
 
-function resolveConfiguredDestination(manager: Manager, manifestDir: string): string {
-	if (manager === 'npm' || manager === 'pnpm' || manager === 'yarn') { return resolveNpmRegistry(manifestDir, `${manager} audit`); }
+/** npm/pnpm/yarn's effective registry. A hand-rolled parse of `.npmrc` (and
+ *  of the environment variables that override it) can never faithfully
+ *  reproduce the manager's OWN config resolution -- variable interpolation
+ *  inside a `.npmrc` value (`${SOME_VAR}`), repeated-key precedence
+ *  (last-wins, not first), and the global/system config file's own
+ *  location are all behaviors the manager's own config loader implements
+ *  and a reimplementation kept missing, one review round at a time. The
+ *  manager's own `config get registry` IS that config loader, run for
+ *  real, in the manifest's own directory (so project-level config is
+ *  still in scope) -- never claimed as independently observed, same as
+ *  every other manager's own CONFIGURED destination, just resolved through
+ *  the manager instead of re-derived from its files. A failure to run it
+ *  (binary missing, non-zero exit, a timeout) is reported as `unknown`
+ *  rather than silently falling back to a guessed default that could be
+ *  wrong in exactly the ways this was reviewed for. */
+async function resolveNpmRegistry(manager: 'npm' | 'pnpm' | 'yarn', manifestDir: string, auditLabel: string): Promise<string> {
+	try {
+		const result = await runConfigGet([manager, 'config', 'get', 'registry'], manifestDir);
+		if (!result.spawnError && !result.timedOut && result.code === 0) {
+			const value = result.stdout.trim();
+			if (value.length > 0 && value.toLowerCase() !== 'undefined') { return `${value} (${auditLabel})`; }
+		}
+	} catch { /* fall through to unknown */ }
+	return `unknown (${auditLabel}) -- could not resolve ${manager}'s own effective registry configuration`;
+}
+
+async function resolveConfiguredDestination(manager: Manager, manifestDir: string): Promise<string> {
+	if (manager === 'npm' || manager === 'pnpm' || manager === 'yarn') { return resolveNpmRegistry(manager, manifestDir, `${manager} audit`); }
 	return MANAGER_DESTINATION[manager];
 }
 
@@ -507,7 +513,7 @@ export async function collectDependencyAdvisories(repoPath: string, targets: Rev
 
 	for (const { manager, manifestDir } of managers) {
 		const mode = MANAGER_MODE[manager];
-		const configuredDestination = resolveConfiguredDestination(manager, manifestDir);
+		const configuredDestination = await resolveConfiguredDestination(manager, manifestDir);
 
 		const preCoverage = await verifyManagerClosureCoverage(repoPath, targets, manager, manifestDir);
 		if (!preCoverage.covered) {

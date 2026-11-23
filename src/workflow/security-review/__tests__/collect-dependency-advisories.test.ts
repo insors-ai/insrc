@@ -15,9 +15,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 
-import { collectDependencyAdvisories, _setPkgAuditExecuteForTests } from '../collect-dependency-advisories.js';
+import { collectDependencyAdvisories, _setPkgAuditExecuteForTests, _setConfigGetForTests } from '../collect-dependency-advisories.js';
 import { _setContentIdentityDepsForTests } from '../content-identity.js';
 import type { ToolInput, ToolResult } from '../../../daemon/tools/types.js';
+import type { ShellResult } from '../../../daemon/tools/shell-helper.js';
 
 function initRepo(): string {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-collect-advisories-'));
@@ -42,8 +43,23 @@ function spawnErrorResult(message: string): ToolResult {
 	return { output: message, format: 'text', success: false, error: message };
 }
 
+function shellOk(stdout: string): ShellResult {
+	return { stdout, stderr: '', code: 0, spawnError: false, timedOut: false, stdoutTruncated: false };
+}
+
+// Every test in this file exercises collectDependencyAdvisories' own
+// orchestration, never the real npm/pnpm/yarn binary -- a fast, fixed
+// default stub keeps the suite hermetic and deterministic (this codebase
+// runs in environments that don't all guarantee npm on PATH); a test that
+// cares about the actual configuredDestination value overrides it itself.
+async function defaultConfigGetStub(): Promise<ShellResult> {
+	return shellOk('https://registry.npmjs.org/\n');
+}
+_setConfigGetForTests(defaultConfigGetStub);
+
 function cleanup(repo: string): void {
 	_setPkgAuditExecuteForTests();
+	_setConfigGetForTests(defaultConfigGetStub);
 	_setContentIdentityDepsForTests();
 	rmSync(repo, { recursive: true, force: true });
 }
@@ -425,6 +441,7 @@ test("collectDependencyAdvisories: every attempted manager's perManagerMode entr
 		writeFileSync(join(repo, 'package.json'), '{}\n');
 		writeFileSync(join(repo, 'package-lock.json'), '{}\n');
 		_setPkgAuditExecuteForTests(async () => okResult({ manager: 'npm', exitCode: 0, parsed: { vulnerabilities: {} } }));
+		_setConfigGetForTests(async () => shellOk('https://registry.npmjs.org/\n'));
 		const result = await collectDependencyAdvisories(repo, { entries: [{ path: 'app.ts' }, { path: 'package.json' }, { path: 'package-lock.json' }] });
 		assert.ok(result.perManagerMode.length > 0, 'expected at least one perManagerMode entry');
 		for (const entry of result.perManagerMode) {
@@ -517,17 +534,39 @@ url = "https://github.com/example/privatelib.git"
 	}
 });
 
-test("collectDependencyAdvisories: npm's configuredDestination reflects a project-level .npmrc's own 'registry' setting, not the hardcoded public default", async () => {
+test("collectDependencyAdvisories: npm's configuredDestination is resolved by shelling out to the manager's OWN 'config get registry' -- never a hand-parsed .npmrc", async () => {
 	const repo = initRepo();
 	treatAsRegistered(repo);
 	try {
 		writeFileSync(join(repo, 'package.json'), '{}\n');
 		writeFileSync(join(repo, 'package-lock.json'), '{}\n');
-		writeFileSync(join(repo, '.npmrc'), 'registry=https://registry.example.invalid/\n');
+		const captured: string[][] = [];
 		_setPkgAuditExecuteForTests(async () => okResult({ manager: 'npm', exitCode: 0, parsed: { vulnerabilities: {} } }));
-		const result = await collectDependencyAdvisories(repo, { entries: [{ path: 'app.ts' }, { path: 'package.json' }, { path: 'package-lock.json' }, { path: '.npmrc' }] });
+		_setConfigGetForTests(async (argv) => {
+			captured.push([...argv]);
+			return shellOk('https://registry.example.invalid/\n');
+		});
+		const result = await collectDependencyAdvisories(repo, { entries: [{ path: 'app.ts' }, { path: 'package.json' }, { path: 'package-lock.json' }] });
 		const npmEntry = result.perManagerMode.find(e => e.manager === 'npm');
 		assert.ok(npmEntry?.configuredDestination?.includes('registry.example.invalid'), JSON.stringify(npmEntry));
+		assert.ok(!npmEntry?.configuredDestination?.includes('registry.npmjs.org'), JSON.stringify(npmEntry));
+		assert.deepEqual(captured[0], ['npm', 'config', 'get', 'registry']);
+	} finally {
+		cleanup(repo);
+	}
+});
+
+test("collectDependencyAdvisories: npm's configuredDestination is reported 'unknown' (never silently the public default) when 'config get registry' itself fails to run", async () => {
+	const repo = initRepo();
+	treatAsRegistered(repo);
+	try {
+		writeFileSync(join(repo, 'package.json'), '{}\n');
+		writeFileSync(join(repo, 'package-lock.json'), '{}\n');
+		_setPkgAuditExecuteForTests(async () => okResult({ manager: 'npm', exitCode: 0, parsed: { vulnerabilities: {} } }));
+		_setConfigGetForTests(async () => ({ stdout: '', stderr: 'npm: command not found', code: null, spawnError: true, timedOut: false, stdoutTruncated: false }));
+		const result = await collectDependencyAdvisories(repo, { entries: [{ path: 'app.ts' }, { path: 'package.json' }, { path: 'package-lock.json' }] });
+		const npmEntry = result.perManagerMode.find(e => e.manager === 'npm');
+		assert.ok(npmEntry?.configuredDestination?.includes('unknown'), JSON.stringify(npmEntry));
 		assert.ok(!npmEntry?.configuredDestination?.includes('registry.npmjs.org'), JSON.stringify(npmEntry));
 	} finally {
 		cleanup(repo);
@@ -649,29 +688,6 @@ test('collectDependencyAdvisories: npm v1 lockfile -- a nested dependency (a dif
 	}
 });
 
-test("collectDependencyAdvisories: npm's configuredDestination prefers an NPM_CONFIG_REGISTRY/npm_config_registry environment override over .npmrc (npm's own precedence)", async () => {
-	const repo = initRepo();
-	treatAsRegistered(repo);
-	try {
-		writeFileSync(join(repo, 'package.json'), '{}\n');
-		writeFileSync(join(repo, 'package-lock.json'), '{}\n');
-		writeFileSync(join(repo, '.npmrc'), 'registry=https://registry.from-npmrc.invalid/\n');
-		const previous = process.env['npm_config_registry'];
-		process.env['npm_config_registry'] = 'https://registry.from-env.invalid/';
-		try {
-			_setPkgAuditExecuteForTests(async () => okResult({ manager: 'npm', exitCode: 0, parsed: { vulnerabilities: {} } }));
-			const result = await collectDependencyAdvisories(repo, { entries: [{ path: 'app.ts' }, { path: 'package.json' }, { path: 'package-lock.json' }, { path: '.npmrc' }] });
-			const npmEntry = result.perManagerMode.find(e => e.manager === 'npm');
-			assert.ok(npmEntry?.configuredDestination?.includes('registry.from-env.invalid'), JSON.stringify(npmEntry));
-			assert.ok(!npmEntry?.configuredDestination?.includes('registry.from-npmrc.invalid'), JSON.stringify(npmEntry));
-		} finally {
-			if (previous === undefined) { delete process.env['npm_config_registry']; } else { process.env['npm_config_registry'] = previous; }
-		}
-	} finally {
-		cleanup(repo);
-	}
-});
-
 test("collectDependencyAdvisories: npm -- an instance whose version is outside every advisory OBJECT's range, but whose 'via' ALSO carries an unexplained transitive STRING entry, is unresolved, never silently clean", async () => {
 	const repo = initRepo();
 	treatAsRegistered(repo);
@@ -710,28 +726,3 @@ test("collectDependencyAdvisories: npm -- an instance whose version is outside e
 	}
 });
 
-test("collectDependencyAdvisories: npm's configuredDestination resolves the user-level config file via npm_config_userconfig/NPM_CONFIG_USERCONFIG, not a hardcoded ~/.npmrc", async () => {
-	const repo = initRepo();
-	const altConfigDir = mkdtempSync(join(tmpdir(), 'insrc-npmrc-userconfig-'));
-	treatAsRegistered(repo);
-	try {
-		writeFileSync(join(repo, 'package.json'), '{}\n');
-		writeFileSync(join(repo, 'package-lock.json'), '{}\n');
-		const altConfigPath = join(altConfigDir, 'custom.npmrc');
-		writeFileSync(altConfigPath, 'registry=https://custom-user.example.invalid/\n');
-		const previous = process.env['npm_config_userconfig'];
-		process.env['npm_config_userconfig'] = altConfigPath;
-		try {
-			_setPkgAuditExecuteForTests(async () => okResult({ manager: 'npm', exitCode: 0, parsed: { vulnerabilities: {} } }));
-			const result = await collectDependencyAdvisories(repo, { entries: [{ path: 'app.ts' }, { path: 'package.json' }, { path: 'package-lock.json' }] });
-			const npmEntry = result.perManagerMode.find(e => e.manager === 'npm');
-			assert.ok(npmEntry?.configuredDestination?.includes('custom-user.example.invalid'), JSON.stringify(npmEntry));
-			assert.ok(!npmEntry?.configuredDestination?.includes('registry.npmjs.org'), JSON.stringify(npmEntry));
-		} finally {
-			if (previous === undefined) { delete process.env['npm_config_userconfig']; } else { process.env['npm_config_userconfig'] = previous; }
-		}
-	} finally {
-		cleanup(repo);
-		rmSync(altConfigDir, { recursive: true, force: true });
-	}
-});

@@ -12,10 +12,11 @@
       "reason": "Dedicated daemon installer/control/supervisor/process termination executable, native helper, build helper or packaged asset.",
       "lines": 68,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "2099def36a9d07f02bfba67d5b356cd027f470d8e0a3a7577be7b2f7a185fedf",
       "observedSourceSha256": "2099def36a9d07f02bfba67d5b356cd027f470d8e0a3a7577be7b2f7a185fedf",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": ".github/workflows/daemon-linux-candidate.yml",
@@ -24,10 +25,11 @@
       "reason": "Dedicated daemon installer/control/supervisor/process termination executable, native helper, build helper or packaged asset.",
       "lines": 77,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "9485772ec2898e7df951859d742ed2c2768f2ac80d342225a582518e20e1aa75",
       "observedSourceSha256": "9485772ec2898e7df951859d742ed2c2768f2ac80d342225a582518e20e1aa75",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": ".github/workflows/daemon-promotion.yml",
@@ -36,10 +38,11 @@
       "reason": "Dedicated daemon installer/control/supervisor/process termination executable, native helper, build helper or packaged asset.",
       "lines": 98,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "2be9818ed483546eb532507953562dbbc7767429cd842e2afab6987a32b20ae1",
       "observedSourceSha256": "2be9818ed483546eb532507953562dbbc7767429cd842e2afab6987a32b20ae1",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": ".github/workflows/daemon-qualification-sign.yml",
@@ -48,10 +51,11 @@
       "reason": "Dedicated daemon installer/control/supervisor/process termination executable, native helper, build helper or packaged asset.",
       "lines": 54,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "b34f810e9a2b7bcb973cb685c2b0418f2da9fe7104ad14b08ae139d1e4ba0ce4",
       "observedSourceSha256": "b34f810e9a2b7bcb973cb685c2b0418f2da9fe7104ad14b08ae139d1e4ba0ce4",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/cli/services/lifecycle.ts",
@@ -60,10 +64,11 @@
       "reason": "Dedicated daemon installer/control/supervisor/process termination executable, native helper, build helper or packaged asset.",
       "lines": 120,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "ad8068b067790a68a3065e998777420bc7e08fb53ca7a531f65673ca16815c26",
       "observedSourceSha256": "ad8068b067790a68a3065e998777420bc7e08fb53ca7a531f65673ca16815c26",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/cli/services/maintenance.ts",
@@ -72,10 +77,11 @@
       "reason": "Dedicated daemon installer/control/supervisor/process termination executable, native helper, build helper or packaged asset.",
       "lines": 333,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "6bc87dfe2e9cc6a5a0d4013054c6740b8e3f1dc44be79bf2b4a6d69ad7d851d5",
       "observedSourceSha256": "6bc87dfe2e9cc6a5a0d4013054c6740b8e3f1dc44be79bf2b4a6d69ad7d851d5",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/cli/services/managed-daemon-control.ts",
@@ -84,10 +90,11 @@
       "reason": "Dedicated daemon installer/control/supervisor/process termination executable, native helper, build helper or packaged asset.",
       "lines": 290,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "738c45af5381d643ecf59bc284be04725f28520a29ab414174563bde28fee68c",
       "observedSourceSha256": "738c45af5381d643ecf59bc284be04725f28520a29ab414174563bde28fee68c",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/cli/services/type-contracts/maintenance-result.ts",
@@ -96,10 +103,11 @@
       "reason": "Dedicated daemon installer/control/supervisor/process termination executable, native helper, build helper or packaged asset.",
       "lines": 52,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "e42f0af8271cf4ef97708a29fdee35b8fa38c180c4b7da2084a545c3c4ab16ab",
       "observedSourceSha256": "e42f0af8271cf4ef97708a29fdee35b8fa38c180c4b7da2084a545c3c4ab16ab",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/shared/update-source.ts",
@@ -108,10 +116,11 @@
       "reason": "Dedicated daemon installer/control/supervisor/process termination executable, native helper, build helper or packaged asset.",
       "lines": 83,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "457ce7c6b02f4c818b799b30bc8af43facfcf98c5d5b3b7cf321ac78f530dd34",
       "observedSourceSha256": "457ce7c6b02f4c818b799b30bc8af43facfcf98c5d5b3b7cf321ac78f530dd34",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/fatal.ts",
@@ -120,10 +129,11 @@
       "reason": "Dedicated daemon installer/control/supervisor/process termination executable, native helper, build helper or packaged asset.",
       "lines": 63,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "1c0ce24c8b2428adae95366bf6d1d8c214a79436df323c596cddb87172a98cd8",
       "observedSourceSha256": "1c0ce24c8b2428adae95366bf6d1d8c214a79436df323c596cddb87172a98cd8",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/installed-commit.ts",
@@ -132,10 +142,11 @@
       "reason": "Dedicated daemon installer/control/supervisor/process termination executable, native helper, build helper or packaged asset.",
       "lines": 50,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "23da21de4ba77f7071db157509001d521982c250d5dc221b5bd214a8f30c3adb",
       "observedSourceSha256": "23da21de4ba77f7071db157509001d521982c250d5dc221b5bd214a8f30c3adb",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/run-file-ownership.ts",
@@ -144,10 +155,11 @@
       "reason": "Dedicated daemon installer/control/supervisor/process termination executable, native helper, build helper or packaged asset.",
       "lines": 154,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "2f721b5ffef868b9f9cb16414f16dc688e65e19299aa299a0299edbe779ea6db",
       "observedSourceSha256": "2f721b5ffef868b9f9cb16414f16dc688e65e19299aa299a0299edbe779ea6db",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/shutdown-watchdog.ts",
@@ -156,10 +168,11 @@
       "reason": "Dedicated daemon installer/control/supervisor/process termination executable, native helper, build helper or packaged asset.",
       "lines": 48,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "e7859d8fa6cdd1a838e6e088197799865eda8e68363a887cb692e69b29d425ed",
       "observedSourceSha256": "e7859d8fa6cdd1a838e6e088197799865eda8e68363a887cb692e69b29d425ed",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/shutdown.ts",
@@ -168,10 +181,11 @@
       "reason": "Dedicated daemon installer/control/supervisor/process termination executable, native helper, build helper or packaged asset.",
       "lines": 213,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "e23df74286f32923b682d3df9463436dcdce161ffbb713cbc9c3bb3be67027c6",
       "observedSourceSha256": "e23df74286f32923b682d3df9463436dcdce161ffbb713cbc9c3bb3be67027c6",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/supervisor-run-files.ts",
@@ -180,10 +194,11 @@
       "reason": "Dedicated daemon installer/control/supervisor/process termination executable, native helper, build helper or packaged asset.",
       "lines": 234,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "10db87a41b6cf5d11e21ffcc343d0d8cd1993f9fa25d224a8cc971940b3a38a9",
       "observedSourceSha256": "10db87a41b6cf5d11e21ffcc343d0d8cd1993f9fa25d224a8cc971940b3a38a9",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/supervisor-socket.ts",
@@ -192,10 +207,11 @@
       "reason": "Dedicated daemon installer/control/supervisor/process termination executable, native helper, build helper or packaged asset.",
       "lines": 100,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "07211532d266c93ae92730a3a1d74433cded9743c5762200d6f0f28652bb9eab",
       "observedSourceSha256": "07211532d266c93ae92730a3a1d74433cded9743c5762200d6f0f28652bb9eab",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/supervisor.ts",
@@ -204,10 +220,11 @@
       "reason": "Dedicated daemon installer/control/supervisor/process termination executable, native helper, build helper or packaged asset.",
       "lines": 451,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "221a91a1aacbb36330f5200cf3b1f89ff46e9db7d4937b611748475d7666697c",
       "observedSourceSha256": "221a91a1aacbb36330f5200cf3b1f89ff46e9db7d4937b611748475d7666697c",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/update-runner.ts",
@@ -216,10 +233,11 @@
       "reason": "Dedicated daemon installer/control/supervisor/process termination executable, native helper, build helper or packaged asset.",
       "lines": 303,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "d879c5e709b1d3bb14cf5c6acaac8892e8962e3983f501621c672f6c32503111",
       "observedSourceSha256": "d879c5e709b1d3bb14cf5c6acaac8892e8962e3983f501621c672f6c32503111",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/shared/daemon-process-client.ts",
@@ -228,10 +246,11 @@
       "reason": "Dedicated daemon installer/control/supervisor/process termination executable, native helper, build helper or packaged asset.",
       "lines": 195,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "c4b3bf9f2395f954d0cfc2f5b9113166fb805c1a822fbab52eaa0ba767f88d24",
       "observedSourceSha256": "c4b3bf9f2395f954d0cfc2f5b9113166fb805c1a822fbab52eaa0ba767f88d24",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/shared/daemon-supervisor-protocol.ts",
@@ -240,10 +259,11 @@
       "reason": "Dedicated daemon installer/control/supervisor/process termination executable, native helper, build helper or packaged asset.",
       "lines": 291,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "d8e8f7d6a58f9121cf8f22053597d306d57e1b58b90ad2fad9b58780fa519e99",
       "observedSourceSha256": "d8e8f7d6a58f9121cf8f22053597d306d57e1b58b90ad2fad9b58780fa519e99",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/shared/darwin-lifecycle.ts",
@@ -252,10 +272,11 @@
       "reason": "Dedicated daemon installer/control/supervisor/process termination executable, native helper, build helper or packaged asset.",
       "lines": 281,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "d1d08f345f498712e1097b0f2d9896c62f47c1132eb8e66f08cae0d225d45ad2",
       "observedSourceSha256": "d1d08f345f498712e1097b0f2d9896c62f47c1132eb8e66f08cae0d225d45ad2",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/debug/OrphanProcessSeam.kt",
@@ -264,10 +285,11 @@
       "reason": "Dedicated IDE daemon provisioning/runtime/lifecycle/upgrade or daemon orphan termination support.",
       "lines": 191,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "5b3dd486991d80e5636544f9f3db8ca20c7a3b6e88a81ec4c9d22c30ccf633f9",
       "observedSourceSha256": "5b3dd486991d80e5636544f9f3db8ca20c7a3b6e88a81ec4c9d22c30ccf633f9",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/freshness/DaemonFreshnessFlow.kt",
@@ -276,10 +298,11 @@
       "reason": "Dedicated IDE daemon provisioning/runtime/lifecycle/upgrade or daemon orphan termination support.",
       "lines": 302,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "ca5fb494ef22e800d9c4b17c33957b14490524a9aa76cab914117c72d07a8f91",
       "observedSourceSha256": "ca5fb494ef22e800d9c4b17c33957b14490524a9aa76cab914117c72d07a8f91",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/freshness/InstalledCommitFreshnessConsumer.kt",
@@ -288,10 +311,11 @@
       "reason": "Dedicated IDE daemon provisioning/runtime/lifecycle/upgrade or daemon orphan termination support.",
       "lines": 194,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "f868c81c49788baae8bd36558d37f94f9666cc35b85687419da4fd0f38c7e0ac",
       "observedSourceSha256": "f868c81c49788baae8bd36558d37f94f9666cc35b85687419da4fd0f38c7e0ac",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/freshness/LastSeenPluginVersionStore.kt",
@@ -300,10 +324,11 @@
       "reason": "Dedicated IDE daemon provisioning/runtime/lifecycle/upgrade or daemon orphan termination support.",
       "lines": 46,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "a11afbf99099c6e30ead8bc58e7f11921b160c83d99c67aaf28496cf13fbb6da",
       "observedSourceSha256": "a11afbf99099c6e30ead8bc58e7f11921b160c83d99c67aaf28496cf13fbb6da",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleCommandRunner.kt",
@@ -312,10 +337,11 @@
       "reason": "Dedicated IDE daemon provisioning/runtime/lifecycle/upgrade or daemon orphan termination support.",
       "lines": 85,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "c6179de4fc1a5d03b3ddcf565da6da2491d86513c71d2f5b2833ae430cbe14b3",
       "observedSourceSha256": "c6179de4fc1a5d03b3ddcf565da6da2491d86513c71d2f5b2833ae430cbe14b3",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleContracts.kt",
@@ -324,10 +350,11 @@
       "reason": "Dedicated IDE daemon provisioning/runtime/lifecycle/upgrade or daemon orphan termination support.",
       "lines": 60,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "7f4eb9f77904fea17dfd01c99de5bf1bfc5d90083c5727d51f6b45f20eff40b5",
       "observedSourceSha256": "7f4eb9f77904fea17dfd01c99de5bf1bfc5d90083c5727d51f6b45f20eff40b5",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleModel.kt",
@@ -336,10 +363,11 @@
       "reason": "Dedicated IDE daemon provisioning/runtime/lifecycle/upgrade or daemon orphan termination support.",
       "lines": 83,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "bc96e037384cace9ca2e62bb29cd81b8445e3faed716943724627a625efc98d7",
       "observedSourceSha256": "bc96e037384cace9ca2e62bb29cd81b8445e3faed716943724627a625efc98d7",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleService.kt",
@@ -348,10 +376,11 @@
       "reason": "Dedicated IDE daemon provisioning/runtime/lifecycle/upgrade or daemon orphan termination support.",
       "lines": 265,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "c4d732c1eb8d8207fe1c409558e25623a896cd9b54864c8ab94c51d36803dc3f",
       "observedSourceSha256": "c4d732c1eb8d8207fe1c409558e25623a896cd9b54864c8ab94c51d36803dc3f",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/lifecycle/DefaultDaemonSetupPolicy.kt",
@@ -360,10 +389,11 @@
       "reason": "Dedicated IDE daemon provisioning/runtime/lifecycle/upgrade or daemon orphan termination support.",
       "lines": 28,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "69305a8d869774a765ece1b2e1c0e25c96a79743de17922d3274f8e2470b4733",
       "observedSourceSha256": "69305a8d869774a765ece1b2e1c0e25c96a79743de17922d3274f8e2470b4733",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/lifecycle/DefaultNodeRuntimeResolver.kt",
@@ -372,10 +402,11 @@
       "reason": "Dedicated IDE daemon provisioning/runtime/lifecycle/upgrade or daemon orphan termination support.",
       "lines": 13,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "07cede591da8adef4f28bdf75016a1606400eecb264c1cd316a03211dc0bd5d3",
       "observedSourceSha256": "07cede591da8adef4f28bdf75016a1606400eecb264c1cd316a03211dc0bd5d3",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/lifecycle/DefaultPrivateNodeProvisioner.kt",
@@ -384,10 +415,11 @@
       "reason": "Dedicated IDE daemon provisioning/runtime/lifecycle/upgrade or daemon orphan termination support.",
       "lines": 64,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "69a9e01ee9aba16b5aa0697669ba4175511b412a63b20938bb210506f52bf0d3",
       "observedSourceSha256": "69a9e01ee9aba16b5aa0697669ba4175511b412a63b20938bb210506f52bf0d3",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/lifecycle/NativeChildEnvironment.kt",
@@ -396,10 +428,11 @@
       "reason": "Dedicated IDE daemon provisioning/runtime/lifecycle/upgrade or daemon orphan termination support.",
       "lines": 32,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "4d02ddb847cb4f9f7ef754e4f31e2964a31c7550e40c89cd647a764d7814b24f",
       "observedSourceSha256": "4d02ddb847cb4f9f7ef754e4f31e2964a31c7550e40c89cd647a764d7814b24f",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/lifecycle/ScriptDaemonProvisioner.kt",
@@ -408,10 +441,11 @@
       "reason": "Dedicated IDE daemon provisioning/runtime/lifecycle/upgrade or daemon orphan termination support.",
       "lines": 112,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "61631747b4e615b78e8a0814090b4c62beaa6d8f9be5c19d30e152117420ae75",
       "observedSourceSha256": "61631747b4e615b78e8a0814090b4c62beaa6d8f9be5c19d30e152117420ae75",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/lifecycle/SetupConsentStoreService.kt",
@@ -420,10 +454,11 @@
       "reason": "Dedicated IDE daemon provisioning/runtime/lifecycle/upgrade or daemon orphan termination support.",
       "lines": 43,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "b87d10d967122cca16c61adcbce74549cc82f997bdf80d00d96dd5c7cf84c6e2",
       "observedSourceSha256": "b87d10d967122cca16c61adcbce74549cc82f997bdf80d00d96dd5c7cf84c6e2",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "jetbrains-plugin/src/main/resources/insrc/node-runtime-policy.json",
@@ -432,10 +467,11 @@
       "reason": "Dedicated IDE daemon provisioning/runtime/lifecycle/upgrade or daemon orphan termination support.",
       "lines": 40,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "c0295edcef14b47fc6d4606b1694df932a197b291e746328ec8adc8864ca79e5",
       "observedSourceSha256": "c0295edcef14b47fc6d4606b1694df932a197b291e746328ec8adc8864ca79e5",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/source-predecessor.ts",
@@ -444,10 +480,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 188,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "8bb0e97b4ef0a01c927f75794ca2f894334458997e6c78d3b3e08fa6b5bd2a6e",
       "observedSourceSha256": "8bb0e97b4ef0a01c927f75794ca2f894334458997e6c78d3b3e08fa6b5bd2a6e",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/source-release-qualification.ts",
@@ -456,10 +493,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 99,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "5f07ae4894dfb1233070e3ccc41b0eff67ff86cdce1adee9ff9def3b7aa18bba",
       "observedSourceSha256": "5f07ae4894dfb1233070e3ccc41b0eff67ff86cdce1adee9ff9def3b7aa18bba",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/source-store-inspection.ts",
@@ -468,10 +506,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 68,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "d42a0eb72ff3dc6168b1014fa7e893e289ff31b8b028ebf92b1242e63c9f9394",
       "observedSourceSha256": "d42a0eb72ff3dc6168b1014fa7e893e289ff31b8b028ebf92b1242e63c9f9394",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/source-store-probe.ts",
@@ -480,10 +519,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 69,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "12c05f615b7ebdac0175f2c313389027fea72c7ed029ceb4303c6973882f54e7",
       "observedSourceSha256": "12c05f615b7ebdac0175f2c313389027fea72c7ed029ceb4303c6973882f54e7",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/source-transaction-host.ts",
@@ -492,10 +532,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 208,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "18880c38ef551ac051c08adea0fc908e98c665db3812710361f118fd247cdf9a",
       "observedSourceSha256": "18880c38ef551ac051c08adea0fc908e98c665db3812710361f118fd247cdf9a",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/source-update-launch.ts",
@@ -504,10 +545,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 88,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "724d2e6ecc7f985db2bfed7c51151fd46b045738a01077dcf6a9c0c371023208",
       "observedSourceSha256": "724d2e6ecc7f985db2bfed7c51151fd46b045738a01077dcf6a9c0c371023208",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/source-update-transaction.ts",
@@ -516,10 +558,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 398,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "84a9efd5a8cef73ffc5dcaac16de6de7442d3ac512609a6e330a6ba3028bec99",
       "observedSourceSha256": "84a9efd5a8cef73ffc5dcaac16de6de7442d3ac512609a6e330a6ba3028bec99",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/shared/source-actor-client.ts",
@@ -528,10 +571,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 362,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "594a3f43de1006b27184acc04b387f0893000fe906dc595607d10d49bee1c990",
       "observedSourceSha256": "594a3f43de1006b27184acc04b387f0893000fe906dc595607d10d49bee1c990",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/shared/source-installation.ts",
@@ -540,10 +584,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 433,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "7c49a14fd65dc756a5fa9e1429a598a4ed80968760dc07f429ceb0f12b6456f1",
       "observedSourceSha256": "7c49a14fd65dc756a5fa9e1429a598a4ed80968760dc07f429ceb0f12b6456f1",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/shared/source-release-compatibility.ts",
@@ -552,10 +597,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 98,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "2d3a3a724c7661b885d859c7be9ba2c2655690f757712859943de6c4fb4e9e69",
       "observedSourceSha256": "2d3a3a724c7661b885d859c7be9ba2c2655690f757712859943de6c4fb4e9e69",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/shared/source-release-target.ts",
@@ -564,10 +610,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 15,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "a962e957bae51377d5a6b7cef235d6be4a91a3ffa5f65328ea3df9ca6b9185e7",
       "observedSourceSha256": "a962e957bae51377d5a6b7cef235d6be4a91a3ffa5f65328ea3df9ca6b9185e7",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/shared/source-routing.ts",
@@ -576,10 +623,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 110,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "b263a899582ddf6167c730e192813f4a3238255175afffcfd70a1df3b14db2c5",
       "observedSourceSha256": "b263a899582ddf6167c730e192813f4a3238255175afffcfd70a1df3b14db2c5",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/shared/source-update-outcomes.ts",
@@ -588,10 +636,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 131,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "4fe3377c6fd90d8f7636bd00952287aa01a1ab1513447a0e100c93a99f419165",
       "observedSourceSha256": "4fe3377c6fd90d8f7636bd00952287aa01a1ab1513447a0e100c93a99f419165",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "build-process-broker.mjs",
@@ -600,10 +649,11 @@
       "reason": "Dedicated daemon installer/control/supervisor/process termination executable, native helper, build helper or packaged asset.",
       "lines": 40,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "46666dbd74cca170d68beba73697b0f4936c3a99195a4138d6d4e237a7527ed5",
       "observedSourceSha256": "46666dbd74cca170d68beba73697b0f4936c3a99195a4138d6d4e237a7527ed5",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "build-shutdown-watchdog.mjs",
@@ -612,10 +662,11 @@
       "reason": "Dedicated daemon installer/control/supervisor/process termination executable, native helper, build helper or packaged asset.",
       "lines": 12,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "dfb1770d297567422d4f402c71f98fb5c7ff812df4ad4b4a84690b5833e2055d",
       "observedSourceSha256": "dfb1770d297567422d4f402c71f98fb5c7ff812df4ad4b4a84690b5833e2055d",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/native/darwin-lifecycle/identity.c",
@@ -624,10 +675,11 @@
       "reason": "Dedicated daemon installer/control/supervisor/process termination executable, native helper, build helper or packaged asset.",
       "lines": 218,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "24d1788bdedd17c2bf1f869385412509be806ae696e9ee2c2f9312286339d0b0",
       "observedSourceSha256": "24d1788bdedd17c2bf1f869385412509be806ae696e9ee2c2f9312286339d0b0",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/native/process-broker/broker.h",
@@ -636,10 +688,11 @@
       "reason": "Dedicated daemon installer/control/supervisor/process termination executable, native helper, build helper or packaged asset.",
       "lines": 21,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "df544e4c6a6103a07d66c0ca01176e38dd6ff53dd72887bfc9a2467f2ca98a45",
       "observedSourceSha256": "df544e4c6a6103a07d66c0ca01176e38dd6ff53dd72887bfc9a2467f2ca98a45",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/native/process-broker/darwin.c",
@@ -648,10 +701,11 @@
       "reason": "Dedicated daemon installer/control/supervisor/process termination executable, native helper, build helper or packaged asset.",
       "lines": 81,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "2e91cf219da9cb24eb870704ba686a5861044a82cde659b972f333144a29aa19",
       "observedSourceSha256": "2e91cf219da9cb24eb870704ba686a5861044a82cde659b972f333144a29aa19",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/native/process-broker/linux.c",
@@ -660,10 +714,11 @@
       "reason": "Dedicated daemon installer/control/supervisor/process termination executable, native helper, build helper or packaged asset.",
       "lines": 84,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "1bbe9795d6791756b8ace38347381e29a4a6a10c8d603ee8daa219ef359734c4",
       "observedSourceSha256": "1bbe9795d6791756b8ace38347381e29a4a6a10c8d603ee8daa219ef359734c4",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/native/process-broker/main.c",
@@ -672,10 +727,11 @@
       "reason": "Dedicated daemon installer/control/supervisor/process termination executable, native helper, build helper or packaged asset.",
       "lines": 69,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "9c545d3f9135a7228d74e698c4c916a07a9004b5b2ceb5c1b9d363b7a6f7a585",
       "observedSourceSha256": "9c545d3f9135a7228d74e698c4c916a07a9004b5b2ceb5c1b9d363b7a6f7a585",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/native/source-actor/main.c",
@@ -684,10 +740,11 @@
       "reason": "Dedicated daemon installer/control/supervisor/process termination executable, native helper, build helper or packaged asset.",
       "lines": 387,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "ec69c9408d3689be021a76f87ebdcf71b56551ca0e0881a92489709f8c76f916",
       "observedSourceSha256": "ec69c9408d3689be021a76f87ebdcf71b56551ca0e0881a92489709f8c76f916",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/node-runtime-archive.sh",
@@ -696,10 +753,11 @@
       "reason": "Dedicated installed daemon Node provisioning, source selection or owned runtime policy/support.",
       "lines": 56,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "90725a35e2dcc88f48e098d351ad884854980eb522be72cc2798d53cb3bfb94f",
       "observedSourceSha256": "90725a35e2dcc88f48e098d351ad884854980eb522be72cc2798d53cb3bfb94f",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/node-runtime-assets.mjs",
@@ -708,10 +766,11 @@
       "reason": "Dedicated installed daemon Node provisioning, source selection or owned runtime policy/support.",
       "lines": 69,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "1af831b159083e9816727d5f3a1a63565e5f81b1f6dfc44ceebfae55e5debcfa",
       "observedSourceSha256": "1af831b159083e9816727d5f3a1a63565e5f81b1f6dfc44ceebfae55e5debcfa",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/node-runtime-env.sh",
@@ -720,10 +779,11 @@
       "reason": "Dedicated installed daemon Node provisioning, source selection or owned runtime policy/support.",
       "lines": 42,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "71348a74826cb6a91ca9c3f4d2d6c4f090f6598d3701fc11f47959dbed32d3c6",
       "observedSourceSha256": "71348a74826cb6a91ca9c3f4d2d6c4f090f6598d3701fc11f47959dbed32d3c6",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/node-runtime-policy.mjs",
@@ -732,10 +792,11 @@
       "reason": "Dedicated installed daemon Node provisioning, source selection or owned runtime policy/support.",
       "lines": 62,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "514fc14def56061da66980d691b09eedcb1a75fe4b929a902388fa6d8aa4243d",
       "observedSourceSha256": "514fc14def56061da66980d691b09eedcb1a75fe4b929a902388fa6d8aa4243d",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/node-runtime-policy.sh",
@@ -744,10 +805,11 @@
       "reason": "Dedicated installed daemon Node provisioning, source selection or owned runtime policy/support.",
       "lines": 26,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "d93607ca8249fbe0120750e86870374054aef4b56077119bb6a3be5fa4eed979",
       "observedSourceSha256": "d93607ca8249fbe0120750e86870374054aef4b56077119bb6a3be5fa4eed979",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/node-runtime-store.mjs",
@@ -756,10 +818,11 @@
       "reason": "Dedicated installed daemon Node provisioning, source selection or owned runtime policy/support.",
       "lines": 125,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "5c354bff62c6d6794759ef28445cd1819c7687701b5855e0b89a51d25c09153c",
       "observedSourceSha256": "5c354bff62c6d6794759ef28445cd1819c7687701b5855e0b89a51d25c09153c",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/provision-node-runtime.sh",
@@ -768,10 +831,11 @@
       "reason": "Dedicated installed daemon Node provisioning, source selection or owned runtime policy/support.",
       "lines": 73,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "45f58c7ff4017128767e39255be393e51d654cdda0dc0e60c63c8172d7c3d56f",
       "observedSourceSha256": "45f58c7ff4017128767e39255be393e51d654cdda0dc0e60c63c8172d7c3d56f",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/source-selection-env.sh",
@@ -780,10 +844,11 @@
       "reason": "Dedicated installed daemon Node provisioning, source selection or owned runtime policy/support.",
       "lines": 37,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "0c6b01d5bdc690718f9f7ac01ff49748743d10bf3492815190877144d0ccd76f",
       "observedSourceSha256": "0c6b01d5bdc690718f9f7ac01ff49748743d10bf3492815190877144d0ccd76f",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/sync-node-runtime-policy.mjs",
@@ -792,10 +857,11 @@
       "reason": "Dedicated installed daemon Node provisioning, source selection or owned runtime policy/support.",
       "lines": 42,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "2085ebc66bf8f53b3df1cc4cf19a22dc36df48a716e0a474031dc898c94b9288",
       "observedSourceSha256": "2085ebc66bf8f53b3df1cc4cf19a22dc36df48a716e0a474031dc898c94b9288",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/assets/node-runtime-policy.json",
@@ -804,10 +870,11 @@
       "reason": "Dedicated installed daemon Node provisioning, source selection or owned runtime policy/support.",
       "lines": 40,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "c0295edcef14b47fc6d4606b1694df932a197b291e746328ec8adc8864ca79e5",
       "observedSourceSha256": "c0295edcef14b47fc6d4606b1694df932a197b291e746328ec8adc8864ca79e5",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/cli/services/owned-runtime.ts",
@@ -816,10 +883,11 @@
       "reason": "Dedicated installed daemon Node provisioning, source selection or owned runtime policy/support.",
       "lines": 2,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "f5b746cdad7c9e8a5a7884a7bee92c3939945b86ffd86234a8946550336b0d34",
       "observedSourceSha256": "f5b746cdad7c9e8a5a7884a7bee92c3939945b86ffd86234a8946550336b0d34",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/shared/owned-node-runtime.ts",
@@ -828,10 +896,11 @@
       "reason": "Dedicated installed daemon Node provisioning, source selection or owned runtime policy/support.",
       "lines": 59,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "5115229c35369886dd99fe25cdf54e25a5211807b18024ff7479104f2064bde1",
       "observedSourceSha256": "5115229c35369886dd99fe25cdf54e25a5211807b18024ff7479104f2064bde1",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/bundle-release-bootstrap.mjs",
@@ -840,10 +909,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 31,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "10c268244fea4eaa9adf1603df3e7f531c7d422d2facc4a940773480f6d935d8",
       "observedSourceSha256": "10c268244fea4eaa9adf1603df3e7f531c7d422d2facc4a940773480f6d935d8",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/check-daemon-release-policy.sh",
@@ -852,10 +922,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 27,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "01741946e7c76e037498db1e85928cc569533d200d3b4006463b67f7e3c775b3",
       "observedSourceSha256": "01741946e7c76e037498db1e85928cc569533d200d3b4006463b67f7e3c775b3",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/daemon-bundle-metadata.mjs",
@@ -864,10 +935,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 129,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "afc5f48fef8a2a3a9fa5a024c1533dcc9c2b003d1023ec3b9f73a6f80335ce8d",
       "observedSourceSha256": "afc5f48fef8a2a3a9fa5a024c1533dcc9c2b003d1023ec3b9f73a6f80335ce8d",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/daemon-development-metadata.mjs",
@@ -876,10 +948,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 144,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "c2f5151e8f9ec6fcfd3a47e23bc9f4282a3333b95c948ed06de761e2c71660cc",
       "observedSourceSha256": "c2f5151e8f9ec6fcfd3a47e23bc9f4282a3333b95c948ed06de761e2c71660cc",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/daemon-release-artifact.sh",
@@ -888,10 +961,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 48,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "1d72974a585017f58a98f4e7e1e08dbfcb255d587bbf7cb1d32b839420b3556b",
       "observedSourceSha256": "1d72974a585017f58a98f4e7e1e08dbfcb255d587bbf7cb1d32b839420b3556b",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/fetch-linux-daemon-candidate.mjs",
@@ -900,10 +974,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 167,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "394d3d5da5b423c7e0a9450341528da7e8993f8d53343ff79f3ad9fc35a48664",
       "observedSourceSha256": "394d3d5da5b423c7e0a9450341528da7e8993f8d53343ff79f3ad9fc35a48664",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/install-daemon-bundle.mjs",
@@ -912,10 +987,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 112,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "e0f873098ffdf2c3daf51b21ae1526f96db6a4326563361e5bdf03fce9096fe5",
       "observedSourceSha256": "e0f873098ffdf2c3daf51b21ae1526f96db6a4326563361e5bdf03fce9096fe5",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/install-daemon-development-bundle.mjs",
@@ -924,10 +1000,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 172,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "6ad8694afe01b03c52fda1d7afb33d6fa4711eb4e372d8602f7f0c1f95a8b037",
       "observedSourceSha256": "6ad8694afe01b03c52fda1d7afb33d6fa4711eb4e372d8602f7f0c1f95a8b037",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/linux-daemon-dispatch.mjs",
@@ -936,10 +1013,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 59,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "db0f42c63bbe1160074957c449366dcab63d8b25f72ab5524b53a464ebb83c24",
       "observedSourceSha256": "db0f42c63bbe1160074957c449366dcab63d8b25f72ab5524b53a464ebb83c24",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/linux-daemon-metadata.mjs",
@@ -948,10 +1026,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 123,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "0784d97a282b3f57695c78ff60a27851cec4b424af9144ef424881634e1466d9",
       "observedSourceSha256": "0784d97a282b3f57695c78ff60a27851cec4b424af9144ef424881634e1466d9",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/linux-daemon-qualification.mjs",
@@ -960,10 +1039,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 104,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "6bae06f8af371dd6bf119fc3b30260849396d5e0efccbf6c0fc339595b034722",
       "observedSourceSha256": "6bae06f8af371dd6bf119fc3b30260849396d5e0efccbf6c0fc339595b034722",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/linux-daemon-signing-ledger.mjs",
@@ -972,10 +1052,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 116,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "b6f585bc2ccd3d3bdd20e0cf6402baa18a7dcf1e8e99099f29932bcb6a122c48",
       "observedSourceSha256": "b6f585bc2ccd3d3bdd20e0cf6402baa18a7dcf1e8e99099f29932bcb6a122c48",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/package-daemon-bootstrap.mjs",
@@ -984,10 +1065,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 48,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "0245704b284abb67f6a504ad51e5bb115da5573d53d4892a9f7efbd7f280bbec",
       "observedSourceSha256": "0245704b284abb67f6a504ad51e5bb115da5573d53d4892a9f7efbd7f280bbec",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/package-daemon-candidate.mjs",
@@ -996,10 +1078,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 160,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "14ad88b634f402cdbcee60a3b345ff339bb541ce1f6145bbdc37dd312eb11a94",
       "observedSourceSha256": "14ad88b634f402cdbcee60a3b345ff339bb541ce1f6145bbdc37dd312eb11a94",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/package-daemon-development.mjs",
@@ -1008,10 +1091,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 169,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "2c3bc08a436e501b576dedcc58cb87c6aca8512311a406733aa25f9af1845f9e",
       "observedSourceSha256": "2c3bc08a436e501b576dedcc58cb87c6aca8512311a406733aa25f9af1845f9e",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/package-linux-daemon-candidate.mjs",
@@ -1020,10 +1104,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 192,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "ed67f129febf924e2773aeb66ee1d8832207df4daa0c0d116bc8cc337b2a4621",
       "observedSourceSha256": "ed67f129febf924e2773aeb66ee1d8832207df4daa0c0d116bc8cc337b2a4621",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/prepare-daemon-qualification.mjs",
@@ -1032,10 +1117,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 43,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "c3ceefab7974ad65201bc0fbc8c413a2c64be131e2d7d6c40015800fd32fbbc1",
       "observedSourceSha256": "c3ceefab7974ad65201bc0fbc8c413a2c64be131e2d7d6c40015800fd32fbbc1",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/prepare-source-release.mjs",
@@ -1044,10 +1130,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 89,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "d7fc47efdffbb24b08d82b1c6e9c437c74ee1dc6c6527fb6eae2de088a69d872",
       "observedSourceSha256": "d7fc47efdffbb24b08d82b1c6e9c437c74ee1dc6c6527fb6eae2de088a69d872",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/promote-daemon-candidate.mjs",
@@ -1056,10 +1143,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 63,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "f394a4c59f2e9069e0b0991d19c8ae5d814edd961c9062de24915edd5755cfa2",
       "observedSourceSha256": "f394a4c59f2e9069e0b0991d19c8ae5d814edd961c9062de24915edd5755cfa2",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/qualify-daemon-development.mjs",
@@ -1068,10 +1156,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 116,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "c3f7941c72024bf914661b0a7bcccc6315fcbaed6c5ad7800a359827f9bbd1c1",
       "observedSourceSha256": "c3f7941c72024bf914661b0a7bcccc6315fcbaed6c5ad7800a359827f9bbd1c1",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/record-daemon-qualification.mjs",
@@ -1080,10 +1169,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 25,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "8c6063ae72e23f5a8b37fffad0b062b19a8a026a9195adb92479754263fcc33a",
       "observedSourceSha256": "8c6063ae72e23f5a8b37fffad0b062b19a8a026a9195adb92479754263fcc33a",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/sign-daemon-development.mjs",
@@ -1092,10 +1182,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 206,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "8861cce3200109d3669256a21a52ed502be77019148ae87153941019e44a0cf2",
       "observedSourceSha256": "8861cce3200109d3669256a21a52ed502be77019148ae87153941019e44a0cf2",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/sign-linux-daemon-candidate.mjs",
@@ -1104,10 +1195,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 87,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "64c75b7fe3ebd3e0113a173c47582c140f3a56b6fc912b1f960284e6d897df8e",
       "observedSourceSha256": "64c75b7fe3ebd3e0113a173c47582c140f3a56b6fc912b1f960284e6d897df8e",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/stage-daemon-bundle.mjs",
@@ -1116,10 +1208,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 204,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "0668cb08b403b4a9e4fb91d3abcd397ab2b18c0a6bd0e5062900f94693a319b4",
       "observedSourceSha256": "0668cb08b403b4a9e4fb91d3abcd397ab2b18c0a6bd0e5062900f94693a319b4",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/verify-daemon-bootstrap.sh",
@@ -1128,10 +1221,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 15,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "51ff4a29cac303fa5504fb981b8e8764255698134c3ab7292d3a2a047aa19a2d",
       "observedSourceSha256": "51ff4a29cac303fa5504fb981b8e8764255698134c3ab7292d3a2a047aa19a2d",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/verify-daemon-bundle.mjs",
@@ -1140,10 +1234,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 61,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "afc0898ec23db0dfb0b3fc7a6f5793c51782b6f18afb770f3815a034c8d2f5d9",
       "observedSourceSha256": "afc0898ec23db0dfb0b3fc7a6f5793c51782b6f18afb770f3815a034c8d2f5d9",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/verify-installed-runtime.mjs",
@@ -1152,10 +1247,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 25,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "0eb460ed452a3f082d0085a94df41ed5d8392b275197fb779628a5fd654bcbb4",
       "observedSourceSha256": "0eb460ed452a3f082d0085a94df41ed5d8392b275197fb779628a5fd654bcbb4",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/daemon-ctl.sh",
@@ -1164,10 +1260,11 @@
       "reason": "Dedicated daemon installer/control/supervisor/process termination executable, native helper, build helper or packaged asset.",
       "lines": 455,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "28a978b1ce31fd9a74065e2cf2d1aaae14b3a686a8682e06ad450dcc84606504",
       "observedSourceSha256": "28a978b1ce31fd9a74065e2cf2d1aaae14b3a686a8682e06ad450dcc84606504",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/insrc-daemon-install.sh",
@@ -1176,10 +1273,11 @@
       "reason": "Dedicated daemon installer/control/supervisor/process termination executable, native helper, build helper or packaged asset.",
       "lines": 734,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "f268af2115b8f0ecd30f97764b279add74c4e3712cc99c18b966b468bc951938",
       "observedSourceSha256": "f268af2115b8f0ecd30f97764b279add74c4e3712cc99c18b966b468bc951938",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/bin/insrc-daemon-control.ts",
@@ -1188,10 +1286,11 @@
       "reason": "Dedicated daemon installer/control/supervisor/process termination executable, native helper, build helper or packaged asset.",
       "lines": 357,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "935748880d9fcd1383bbe9bff64e919cc488584a8d1cb5a87f34395600c03d3c",
       "observedSourceSha256": "935748880d9fcd1383bbe9bff64e919cc488584a8d1cb5a87f34395600c03d3c",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/bin/insrc-daemon-supervisor.ts",
@@ -1200,10 +1299,11 @@
       "reason": "Dedicated daemon installer/control/supervisor/process termination executable, native helper, build helper or packaged asset.",
       "lines": 106,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "bbc892a38e237562231725dcde153734bb9293de44882f1e455b21081df3ca41",
       "observedSourceSha256": "bbc892a38e237562231725dcde153734bb9293de44882f1e455b21081df3ca41",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/bin/insrc-daemon-update.ts",
@@ -1212,10 +1312,11 @@
       "reason": "Dedicated daemon installer/control/supervisor/process termination executable, native helper, build helper or packaged asset.",
       "lines": 15,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "f78687ad2d85753c3c59660e19859e13d6d8b0f228b5be8de3bc3e60645cf1ff",
       "observedSourceSha256": "f78687ad2d85753c3c59660e19859e13d6d8b0f228b5be8de3bc3e60645cf1ff",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/bin/insrc-legacy-rollback-preload.ts",
@@ -1224,10 +1325,11 @@
       "reason": "Dedicated daemon installer/control/supervisor/process termination executable, native helper, build helper or packaged asset.",
       "lines": 66,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "14a8ebc80d57cc750515d4a12f94f41991a809f6a11f8980c41990423558d86c",
       "observedSourceSha256": "14a8ebc80d57cc750515d4a12f94f41991a809f6a11f8980c41990423558d86c",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/bin/insrc-release-bootstrap.ts",
@@ -1236,10 +1338,11 @@
       "reason": "Dedicated daemon installer/control/supervisor/process termination executable, native helper, build helper or packaged asset.",
       "lines": 337,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "b362d499446c516db449783529bb2ed0876f34fdaa6c1d95e153335e6e6545fb",
       "observedSourceSha256": "b362d499446c516db449783529bb2ed0876f34fdaa6c1d95e153335e6e6545fb",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/bin/insrc-runtime-smoke.ts",
@@ -1248,10 +1351,11 @@
       "reason": "Dedicated daemon installer/control/supervisor/process termination executable, native helper, build helper or packaged asset.",
       "lines": 15,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "14151535a6b0be03a833468d099113759d954bc393d8ba4847dc3985a7689d4f",
       "observedSourceSha256": "14151535a6b0be03a833468d099113759d954bc393d8ba4847dc3985a7689d4f",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/bin/insrc-shutdown-watchdog.ts",
@@ -1260,10 +1364,11 @@
       "reason": "Dedicated daemon installer/control/supervisor/process termination executable, native helper, build helper or packaged asset.",
       "lines": 61,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "a1a4a8b18fb2a7120ea49a45e0df9d3e4230c3393fe278ada98fcb99fe728bb1",
       "observedSourceSha256": "a1a4a8b18fb2a7120ea49a45e0df9d3e4230c3393fe278ada98fcb99fe728bb1",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/bin/insrc-source-control.ts",
@@ -1272,10 +1377,11 @@
       "reason": "Dedicated daemon installer/control/supervisor/process termination executable, native helper, build helper or packaged asset.",
       "lines": 260,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "845f5448259eee63c5f06b313a2d842cb039f389e6d57b3a66d39ed5c987859e",
       "observedSourceSha256": "845f5448259eee63c5f06b313a2d842cb039f389e6d57b3a66d39ed5c987859e",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/bin/insrc-source-recovery.ts",
@@ -1284,10 +1390,11 @@
       "reason": "Dedicated daemon installer/control/supervisor/process termination executable, native helper, build helper or packaged asset.",
       "lines": 69,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "f29cf2fa947e4d1cfcccf299896ddc35953099ba47894e0b79fc44fa59620be9",
       "observedSourceSha256": "f29cf2fa947e4d1cfcccf299896ddc35953099ba47894e0b79fc44fa59620be9",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/bin/insrc-source-startup-barrier.ts",
@@ -1296,10 +1403,11 @@
       "reason": "Dedicated daemon installer/control/supervisor/process termination executable, native helper, build helper or packaged asset.",
       "lines": 39,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "76bae66f54125c2475247b3ccfbb874552a5f1cbdc69205bb9ae1298327d8038",
       "observedSourceSha256": "76bae66f54125c2475247b3ccfbb874552a5f1cbdc69205bb9ae1298327d8038",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/__tests__/fixtures/exempt/cli/services/maintenance.ts",
@@ -1308,10 +1416,11 @@
       "reason": "Fixture/helper dedicated to candidate daemon lifecycle/runtime/release tests; preserve current pending edits until deletion is explicitly carried out.",
       "lines": 2,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "309d19e2547af4d0d6426b6855449ec0346194df3f842f59ec7c881583898bc2",
       "observedSourceSha256": "309d19e2547af4d0d6426b6855449ec0346194df3f842f59ec7c881583898bc2",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/__tests__/fixtures/exempt/daemon/installed-commit.ts",
@@ -1320,10 +1429,11 @@
       "reason": "Fixture/helper dedicated to candidate daemon lifecycle/runtime/release tests; preserve current pending edits until deletion is explicitly carried out.",
       "lines": 2,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "309d19e2547af4d0d6426b6855449ec0346194df3f842f59ec7c881583898bc2",
       "observedSourceSha256": "309d19e2547af4d0d6426b6855449ec0346194df3f842f59ec7c881583898bc2",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/__tests__/fixtures/linux-daemon-release.ts",
@@ -1332,10 +1442,11 @@
       "reason": "Fixture/helper dedicated to candidate daemon lifecycle/runtime/release tests; preserve current pending edits until deletion is explicitly carried out.",
       "lines": 47,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "4b124a6f348aae92864ad9df6ceec9173ab1d4b11c0337ce95ed2cdcfc2c16fe",
       "observedSourceSha256": "4b124a6f348aae92864ad9df6ceec9173ab1d4b11c0337ce95ed2cdcfc2c16fe",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/__tests__/helpers/historical-daemon-qualification.mjs",
@@ -1344,10 +1455,11 @@
       "reason": "Fixture/helper dedicated to candidate daemon lifecycle/runtime/release tests; preserve current pending edits until deletion is explicitly carried out.",
       "lines": 102,
       "workingTreeStatus": "M",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "23909d1d847bb5946e9a94e0bacd7a79f732c576ddca58e8383eda0d78ab02e7",
       "observedSourceSha256": "23909d1d847bb5946e9a94e0bacd7a79f732c576ddca58e8383eda0d78ab02e7",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/__tests__/helpers/historical-linux-live.mjs",
@@ -1356,10 +1468,11 @@
       "reason": "Fixture/helper dedicated to candidate daemon lifecycle/runtime/release tests; preserve current pending edits until deletion is explicitly carried out.",
       "lines": 293,
       "workingTreeStatus": "??",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "08c9cecbde0a0da161e49906961812449981024724b957b63c96408512e41744",
       "observedSourceSha256": "08c9cecbde0a0da161e49906961812449981024724b957b63c96408512e41744",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/__tests__/helpers/historical-mac-live.mjs",
@@ -1368,10 +1481,11 @@
       "reason": "Fixture/helper dedicated to candidate daemon lifecycle/runtime/release tests; preserve current pending edits until deletion is explicitly carried out.",
       "lines": 291,
       "workingTreeStatus": "M",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "36d4e48fc04a0a92021e3de5602255e28d9bb1e9d20b71cee54bf1751ce4d213",
       "observedSourceSha256": "36d4e48fc04a0a92021e3de5602255e28d9bb1e9d20b71cee54bf1751ce4d213",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/__tests__/helpers/owned-source-fixture.ts",
@@ -1380,10 +1494,11 @@
       "reason": "Fixture/helper dedicated to candidate daemon lifecycle/runtime/release tests; preserve current pending edits until deletion is explicitly carried out.",
       "lines": 62,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "ed26a456b42e6788d04015fe2b112206ee33b6433c08343efa8c9cf3d7f6bd2b",
       "observedSourceSha256": "ed26a456b42e6788d04015fe2b112206ee33b6433c08343efa8c9cf3d7f6bd2b",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/__tests__/helpers/source-entrypoint-authority.ts",
@@ -1392,10 +1507,11 @@
       "reason": "Fixture/helper dedicated to candidate daemon lifecycle/runtime/release tests; preserve current pending edits until deletion is explicitly carried out.",
       "lines": 91,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "0416b12a2bb242e917e042c9824780f9365552a5ee075048e9880b3aff0b1f04",
       "observedSourceSha256": "0416b12a2bb242e917e042c9824780f9365552a5ee075048e9880b3aff0b1f04",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/__tests__/helpers/source-entrypoint-matrix.ts",
@@ -1404,10 +1520,11 @@
       "reason": "Fixture/helper dedicated to candidate daemon lifecycle/runtime/release tests; preserve current pending edits until deletion is explicitly carried out.",
       "lines": 185,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "713c3a1ed811d684f53107fe513744954cd37cb294c28382cb9ab8b84d8eb806",
       "observedSourceSha256": "713c3a1ed811d684f53107fe513744954cd37cb294c28382cb9ab8b84d8eb806",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/__tests__/fixtures/legacy-run-guard-crash.ts",
@@ -1416,10 +1533,11 @@
       "reason": "Fixture/helper dedicated to candidate daemon lifecycle/runtime/release tests; preserve current pending edits until deletion is explicitly carried out.",
       "lines": 34,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "63999002c258a128411cc8f17962fbb8943d8093566c0df02e6950cd4170b6ba",
       "observedSourceSha256": "63999002c258a128411cc8f17962fbb8943d8093566c0df02e6950cd4170b6ba",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/__tests__/fixtures/linux-installed-lifecycle.sh",
@@ -1428,10 +1546,11 @@
       "reason": "Fixture/helper dedicated to candidate daemon lifecycle/runtime/release tests; preserve current pending edits until deletion is explicitly carried out.",
       "lines": 85,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "079ab4c0c72972ddccfb3f90bf8b7af7c2092d40c4047005d4d45fe6940a9cb1",
       "observedSourceSha256": "079ab4c0c72972ddccfb3f90bf8b7af7c2092d40c4047005d4d45fe6940a9cb1",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/__tests__/fixtures/managed-update-ipc-detached.ts",
@@ -1440,10 +1559,11 @@
       "reason": "Fixture/helper dedicated to candidate daemon lifecycle/runtime/release tests; preserve current pending edits until deletion is explicitly carried out.",
       "lines": 74,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "c7d590a3f7739cdb1626cbbf7dbec2499c1518b0d86ef9d568855defa54c464a",
       "observedSourceSha256": "c7d590a3f7739cdb1626cbbf7dbec2499c1518b0d86ef9d568855defa54c464a",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/__tests__/fixtures/managed-update-launch-child.ts",
@@ -1452,10 +1572,11 @@
       "reason": "Fixture/helper dedicated to candidate daemon lifecycle/runtime/release tests; preserve current pending edits until deletion is explicitly carried out.",
       "lines": 33,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "c95463256545aaa3a2ef66215d00f6f813851eca4305ca1e83be3d9da784c8fc",
       "observedSourceSha256": "c95463256545aaa3a2ef66215d00f6f813851eca4305ca1e83be3d9da784c8fc",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/__tests__/fixtures/run-file-exit-child.ts",
@@ -1464,10 +1585,11 @@
       "reason": "Fixture/helper dedicated to candidate daemon lifecycle/runtime/release tests; preserve current pending edits until deletion is explicitly carried out.",
       "lines": 26,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "7afa81497744671a0343b45bc74bbb9fa37e084dd96d2beedfaa994eea15d63c",
       "observedSourceSha256": "7afa81497744671a0343b45bc74bbb9fa37e084dd96d2beedfaa994eea15d63c",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/__tests__/fixtures/run-file-owner-child.ts",
@@ -1476,10 +1598,11 @@
       "reason": "Fixture/helper dedicated to candidate daemon lifecycle/runtime/release tests; preserve current pending edits until deletion is explicitly carried out.",
       "lines": 11,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "0d77085539721a9a56946bd0a37391554259a237492403cdb44650aec0f8e44e",
       "observedSourceSha256": "0d77085539721a9a56946bd0a37391554259a237492403cdb44650aec0f8e44e",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/__tests__/helpers-update-fixture.ts",
@@ -1488,10 +1611,11 @@
       "reason": "Fixture/helper dedicated to candidate daemon lifecycle/runtime/release tests; preserve current pending edits until deletion is explicitly carried out.",
       "lines": 53,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "78c12bfb938a81deee4efe2a185c322f3814a533fb16f00b2b9829801bb014a9",
       "observedSourceSha256": "78c12bfb938a81deee4efe2a185c322f3814a533fb16f00b2b9829801bb014a9",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/__tests__/helpers/source-linux.ts",
@@ -1500,10 +1624,11 @@
       "reason": "Fixture/helper dedicated to candidate daemon lifecycle/runtime/release tests; preserve current pending edits until deletion is explicitly carried out.",
       "lines": 43,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "358efe77426c001e3ad4cc8f66ced1cfb31077158b3de69d9ac939e8a37cd6fe",
       "observedSourceSha256": "358efe77426c001e3ad4cc8f66ced1cfb31077158b3de69d9ac939e8a37cd6fe",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/__tests__/helpers/source-transaction-fixture.ts",
@@ -1512,10 +1637,11 @@
       "reason": "Fixture/helper dedicated to candidate daemon lifecycle/runtime/release tests; preserve current pending edits until deletion is explicitly carried out.",
       "lines": 219,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "a10312671a3fef72e00402eb2cd6a8f2301527c69204e8ceeb8eea2a46bfba8b",
       "observedSourceSha256": "a10312671a3fef72e00402eb2cd6a8f2301527c69204e8ceeb8eea2a46bfba8b",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/shared/__tests__/fixtures/control-runtime.ts",
@@ -1524,10 +1650,11 @@
       "reason": "Fixture/helper dedicated to candidate daemon lifecycle/runtime/release tests; preserve current pending edits until deletion is explicitly carried out.",
       "lines": 17,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "7bb1246c92bff5bbb1c88c2ab3144f947a725ae33488bef5d4254c849fcaa6ad",
       "observedSourceSha256": "7bb1246c92bff5bbb1c88c2ab3144f947a725ae33488bef5d4254c849fcaa6ad",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/shared/__tests__/fixtures/process-broker-fake-backend.c",
@@ -1536,10 +1663,11 @@
       "reason": "Fixture/helper dedicated to candidate daemon lifecycle/runtime/release tests; preserve current pending edits until deletion is explicitly carried out.",
       "lines": 18,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "173b2897dd684ba4610cac65d8fdb8982b91c6a3b9908a669f11fa737483939a",
       "observedSourceSha256": "173b2897dd684ba4610cac65d8fdb8982b91c6a3b9908a669f11fa737483939a",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "jetbrains-plugin/__tests__/managed-update-confirmation-gradle.test.ts",
@@ -1548,10 +1676,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 47,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "2050a0aa90613d4d004420abb76ad09fa201df2f9d3eb8e1b21206dc788ce629",
       "observedSourceSha256": "2050a0aa90613d4d004420abb76ad09fa201df2f9d3eb8e1b21206dc788ce629",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "jetbrains-plugin/__tests__/node-runtime-gradle.test.ts",
@@ -1560,10 +1689,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 32,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "839a99c7b1a4d0d4bc740edb353cd3c28f6be6aa9b63bed944576b0fc0ee3a30",
       "observedSourceSha256": "839a99c7b1a4d0d4bc740edb353cd3c28f6be6aa9b63bed944576b0fc0ee3a30",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "jetbrains-plugin/__tests__/source-bootstrap-gradle.test.ts",
@@ -1572,10 +1702,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 31,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "871937b6adad9ca36e20285ff011f5dd321dfafcde90b7c78169094826ca2369",
       "observedSourceSha256": "871937b6adad9ca36e20285ff011f5dd321dfafcde90b7c78169094826ca2369",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/debug/OrphanProcessSeamTest.kt",
@@ -1584,10 +1715,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 143,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "d7ddfd40b57eaace853209c9a8d434d16d833be674626c3dcfee2a765ef461a7",
       "observedSourceSha256": "d7ddfd40b57eaace853209c9a8d434d16d833be674626c3dcfee2a765ef461a7",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/freshness/DaemonFreshnessFlowTest.kt",
@@ -1596,10 +1728,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 388,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "bee9b661edffcdc1c055d4edb9abd49099819d9155a83ceec909f851d21d0b81",
       "observedSourceSha256": "bee9b661edffcdc1c055d4edb9abd49099819d9155a83ceec909f851d21d0b81",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/freshness/InstalledCommitFreshnessConsumerTest.kt",
@@ -1608,10 +1741,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 108,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "3441d182573d12a8b40d40a656445e4ad532ee0cb09d3971b77b87b6ad045192",
       "observedSourceSha256": "3441d182573d12a8b40d40a656445e4ad532ee0cb09d3971b77b87b6ad045192",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/freshness/LastSeenPluginVersionStoreTest.kt",
@@ -1620,10 +1754,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 41,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "b20ad8f8348c7c33aff3fa48a132daea2987074360fc8753534352b91e6b6fde",
       "observedSourceSha256": "b20ad8f8348c7c33aff3fa48a132daea2987074360fc8753534352b91e6b6fde",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleCommandRunnerTest.kt",
@@ -1632,10 +1767,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 120,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "240a54668fc1d36370e9154a971843cd1754973dc842eab2c7895208e8d5f0e4",
       "observedSourceSha256": "240a54668fc1d36370e9154a971843cd1754973dc842eab2c7895208e8d5f0e4",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleServiceTest.kt",
@@ -1644,10 +1780,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 250,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "bae384fabba1a9ff94e8fef56753ffc774e2a20ed0b62d58ae450bc2eae6b31f",
       "observedSourceSha256": "bae384fabba1a9ff94e8fef56753ffc774e2a20ed0b62d58ae450bc2eae6b31f",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonProvisionerTest.kt",
@@ -1656,10 +1793,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 104,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "ad0f5a6ece890f624fa8b0314d2153c231918b7fad351991d0ea00c22183155b",
       "observedSourceSha256": "ad0f5a6ece890f624fa8b0314d2153c231918b7fad351991d0ea00c22183155b",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DecidePolicyTest.kt",
@@ -1668,10 +1806,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 31,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "1685dbc74f38f137689f07687c4bc5db063cf56d33012819cad92d3c6302cf74",
       "observedSourceSha256": "1685dbc74f38f137689f07687c4bc5db063cf56d33012819cad92d3c6302cf74",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DefaultDaemonScriptLocatorTest.kt",
@@ -1680,10 +1819,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 54,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "cf8ef5eac4b5c5d81e8ae9fb707615da11656fb44ba7589f9e34b2297561e54d",
       "observedSourceSha256": "cf8ef5eac4b5c5d81e8ae9fb707615da11656fb44ba7589f9e34b2297561e54d",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/NodeRuntimeResolverTest.kt",
@@ -1692,10 +1832,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 22,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "854ea8e92d499edcf1360507940d084c9197c09c14b494ac7fe78f90bbb28d03",
       "observedSourceSha256": "854ea8e92d499edcf1360507940d084c9197c09c14b494ac7fe78f90bbb28d03",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/PrivateNodeProvisionerTest.kt",
@@ -1704,10 +1845,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 42,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "6c456a27f488a3736159f8b1dfd755686668d0efb9258fa20d99cb48c7ce5a03",
       "observedSourceSha256": "6c456a27f488a3736159f8b1dfd755686668d0efb9258fa20d99cb48c7ce5a03",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/S003TypesTest.kt",
@@ -1716,10 +1858,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 63,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "2a721cb7e7785bec09058ca01a90f69fe17296da5b0dd447ee984ba71fe8a811",
       "observedSourceSha256": "2a721cb7e7785bec09058ca01a90f69fe17296da5b0dd447ee984ba71fe8a811",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/SetupConsentStoreTest.kt",
@@ -1728,10 +1871,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 32,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "5d514647ed05d9af3eba62f359cd5a2945ec31164d25fe00680f56e4d85d93ac",
       "observedSourceSha256": "5d514647ed05d9af3eba62f359cd5a2945ec31164d25fe00680f56e4d85d93ac",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/SourceBootstrapIntegrationTest.kt",
@@ -1740,10 +1884,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 87,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "904f39d550994e33cb88c71995a2f968156d32f90c440ca6a50072133928aa29",
       "observedSourceSha256": "904f39d550994e33cb88c71995a2f968156d32f90c440ca6a50072133928aa29",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/__tests__/daemon-bundle-metadata.test.ts",
@@ -1752,10 +1897,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 152,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "8a3bf451ae4de0f8e97e326c435b989072a408a4781d2dbb3bc58ec419832937",
       "observedSourceSha256": "8a3bf451ae4de0f8e97e326c435b989072a408a4781d2dbb3bc58ec419832937",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/__tests__/daemon-development-metadata.test.ts",
@@ -1764,10 +1910,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 159,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "ad79b2ffadeccd0e3d73d354a3e3f9bf330cd1ddd79d5f9359d1cad3280975bc",
       "observedSourceSha256": "ad79b2ffadeccd0e3d73d354a3e3f9bf330cd1ddd79d5f9359d1cad3280975bc",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/__tests__/daemon-release-artifact.test.ts",
@@ -1776,10 +1923,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 70,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "cec373c535a0d9fe2975bbc836df6796bb025839cf4cdb7fc6f29bb4a89636ee",
       "observedSourceSha256": "cec373c535a0d9fe2975bbc836df6796bb025839cf4cdb7fc6f29bb4a89636ee",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/__tests__/daemon-release-policy.test.ts",
@@ -1788,10 +1936,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 87,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "d5f87ba1eedef20c9dc7f1a4626421c37a2cd220a72786849cf4314f0e9d32b6",
       "observedSourceSha256": "d5f87ba1eedef20c9dc7f1a4626421c37a2cd220a72786849cf4314f0e9d32b6",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/__tests__/fetch-linux-daemon-candidate.test.ts",
@@ -1800,10 +1949,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 171,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "38fa5e57618c03d01ad35e3786b35523044ebb5eba803119578e4624b0b7c5ae",
       "observedSourceSha256": "38fa5e57618c03d01ad35e3786b35523044ebb5eba803119578e4624b0b7c5ae",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/__tests__/historical-macos-upgrade-native.test.ts",
@@ -1812,10 +1962,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 64,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "664d144cfdd017daa49eb7bf3d15becf26c17c2829b07a1b49548408c56df1fd",
       "observedSourceSha256": "664d144cfdd017daa49eb7bf3d15becf26c17c2829b07a1b49548408c56df1fd",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/__tests__/ide-source-entrypoints-native.test.ts",
@@ -1824,10 +1975,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 5,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "8d28fdbe6bccc0a75e79a589b7797a342602d6ef57fe0a107900d6dd3a143d80",
       "observedSourceSha256": "8d28fdbe6bccc0a75e79a589b7797a342602d6ef57fe0a107900d6dd3a143d80",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/__tests__/linux-daemon-dispatch.test.ts",
@@ -1836,10 +1988,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 66,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "9cc2dc5dfc575c85d66a512916f118bc0d76274023743901fa69dbbed281e070",
       "observedSourceSha256": "9cc2dc5dfc575c85d66a512916f118bc0d76274023743901fa69dbbed281e070",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/__tests__/linux-daemon-final-signing.test.ts",
@@ -1848,10 +2001,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 277,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "d38f765e370a6bdb9734d9348652d701987c536749dd6ea0d122511ed9d8a8b5",
       "observedSourceSha256": "d38f765e370a6bdb9734d9348652d701987c536749dd6ea0d122511ed9d8a8b5",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/__tests__/linux-daemon-metadata.test.ts",
@@ -1860,10 +2014,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 64,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "e852b2c2ab7ff5a948a6f1cf22264280726f5836c515d74c9b21c03276af888c",
       "observedSourceSha256": "e852b2c2ab7ff5a948a6f1cf22264280726f5836c515d74c9b21c03276af888c",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/__tests__/linux-daemon-qualification.test.ts",
@@ -1872,10 +2027,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 41,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "b5dc1f5756e5ab179d16d3ac6d8bee406a445996f8a8cb2392a92eaececa6a74",
       "observedSourceSha256": "b5dc1f5756e5ab179d16d3ac6d8bee406a445996f8a8cb2392a92eaececa6a74",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/__tests__/node-runtime-bootstrap-native.test.ts",
@@ -1884,10 +2040,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 44,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "212924f911eeb7b60a92945b28c3af40e81400db20eb18fa66a29d4b5ad56b8c",
       "observedSourceSha256": "212924f911eeb7b60a92945b28c3af40e81400db20eb18fa66a29d4b5ad56b8c",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/__tests__/node-runtime-cli-native.test.ts",
@@ -1896,10 +2053,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 122,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "ddc6d66e5d2c5326c339525b00b6830b56b650f5b4981b7ecebe28c30e8be8b5",
       "observedSourceSha256": "ddc6d66e5d2c5326c339525b00b6830b56b650f5b4981b7ecebe28c30e8be8b5",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/__tests__/node-runtime-coordinator-native.test.ts",
@@ -1908,10 +2066,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 31,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "ade8dd79242813c43730c9e03473896eb89ba1d7b2cfb17b0adbda722e8028d1",
       "observedSourceSha256": "ade8dd79242813c43730c9e03473896eb89ba1d7b2cfb17b0adbda722e8028d1",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/__tests__/node-runtime-migration-native.test.ts",
@@ -1920,10 +2079,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 94,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "ca2c7355b5ed66b2565c1d7dafd0ea4b4f0ad956c837990dab690eae04e99797",
       "observedSourceSha256": "ca2c7355b5ed66b2565c1d7dafd0ea4b4f0ad956c837990dab690eae04e99797",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/__tests__/node-runtime-packaging.test.ts",
@@ -1932,10 +2092,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 77,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "1a0bfe467650bd43c3c58f0e4dddbaaf0ad5fecceca7cecf860219c61021f20c",
       "observedSourceSha256": "1a0bfe467650bd43c3c58f0e4dddbaaf0ad5fecceca7cecf860219c61021f20c",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/__tests__/node-runtime-policy.test.ts",
@@ -1944,10 +2105,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 61,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "644ce81efb4ec8486e865f3b78f900efb3851b7fbb624c9ee941cee899251914",
       "observedSourceSha256": "644ce81efb4ec8486e865f3b78f900efb3851b7fbb624c9ee941cee899251914",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/__tests__/node-runtime-python-native.test.ts",
@@ -1956,10 +2118,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 46,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "852cafa44640c419b85470bc4b3aeafa8374a13b704dda55f2e41c3950477f90",
       "observedSourceSha256": "852cafa44640c419b85470bc4b3aeafa8374a13b704dda55f2e41c3950477f90",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/__tests__/node-runtime-shell-native.test.ts",
@@ -1968,10 +2131,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 140,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "99e880208adfdb437b5f8933c7de06744031917ed94ce66d3fc37702117fb001",
       "observedSourceSha256": "99e880208adfdb437b5f8933c7de06744031917ed94ce66d3fc37702117fb001",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/__tests__/node-runtime-store.test.ts",
@@ -1980,10 +2144,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 200,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "a21f032e7629d01e1bc9d68336341013ea3f0149bf1cbce2b8c962bad9fbc25f",
       "observedSourceSha256": "a21f032e7629d01e1bc9d68336341013ea3f0149bf1cbce2b8c962bad9fbc25f",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/__tests__/package-daemon-candidate.test.ts",
@@ -1992,10 +2157,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 122,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "30a27d965524995638083a4b5e151d5e290487ff3158998d04a91ab52d712e98",
       "observedSourceSha256": "30a27d965524995638083a4b5e151d5e290487ff3158998d04a91ab52d712e98",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/__tests__/package-daemon-development.test.ts",
@@ -2004,10 +2170,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 125,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "7cd7686dcd4798a2ea01516fa4421cc30e84cf0b1acc775f24d746d4542146a1",
       "observedSourceSha256": "7cd7686dcd4798a2ea01516fa4421cc30e84cf0b1acc775f24d746d4542146a1",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/__tests__/package-linux-daemon-candidate.test.ts",
@@ -2016,10 +2183,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 99,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "b90c27d2371b7cd7a2305f96aa9cc886c3c2bed10c82da134924bbbc0d7fa68c",
       "observedSourceSha256": "b90c27d2371b7cd7a2305f96aa9cc886c3c2bed10c82da134924bbbc0d7fa68c",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/__tests__/promote-daemon-candidate.test.ts",
@@ -2028,10 +2196,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 88,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "8e51c779a235ad8eeeabb42debe48cdb629504ff3973be80fe3bb04eda033e18",
       "observedSourceSha256": "8e51c779a235ad8eeeabb42debe48cdb629504ff3973be80fe3bb04eda033e18",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/__tests__/sign-daemon-development.test.ts",
@@ -2040,10 +2209,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 199,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "41fba07d05856ef058edd93d9a76633fbbebff7dbe9d03ace1c62eb249d4089f",
       "observedSourceSha256": "41fba07d05856ef058edd93d9a76633fbbebff7dbe9d03ace1c62eb249d4089f",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/__tests__/source-bootstrap-inventory.test.ts",
@@ -2052,10 +2222,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 85,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "5dddea4a34dbb8123a3cae781a2ccaba5c475d5b792d5a48acad741931e3f203",
       "observedSourceSha256": "5dddea4a34dbb8123a3cae781a2ccaba5c475d5b792d5a48acad741931e3f203",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/__tests__/source-consumers-native.test.ts",
@@ -2064,10 +2235,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 175,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "d19eb8683316b07667526201b838d0986dcdd1855ac8778d4bc34c4baecf5488",
       "observedSourceSha256": "d19eb8683316b07667526201b838d0986dcdd1855ac8778d4bc34c4baecf5488",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/__tests__/source-entrypoints-native.test.ts",
@@ -2076,10 +2248,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 9,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "475f9db9466967ccf338eec5359754cb28ed12949137e60ede903fa282612efa",
       "observedSourceSha256": "475f9db9466967ccf338eec5359754cb28ed12949137e60ede903fa282612efa",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/__tests__/source-predecessor-native.test.ts",
@@ -2088,10 +2261,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 158,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "388c52079933117afa8ae80d7706fdf5c3c6337027684f4a0adb031385c465eb",
       "observedSourceSha256": "388c52079933117afa8ae80d7706fdf5c3c6337027684f4a0adb031385c465eb",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/__tests__/source-upgrade-qualification-native.test.ts",
@@ -2100,10 +2274,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 190,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "b0b3cf7b70b16f79e6fc507dff9cfab3e011fdb2fc331ee2aaafbebc649adc0d",
       "observedSourceSha256": "b0b3cf7b70b16f79e6fc507dff9cfab3e011fdb2fc331ee2aaafbebc649adc0d",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "scripts/__tests__/stage-daemon-bundle.test.ts",
@@ -2112,10 +2287,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 82,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "980a301edbf0d9fdd15ae7e6eedfcc8ec00d17dc9e91fd4e500dc8e7d87aa1f9",
       "observedSourceSha256": "980a301edbf0d9fdd15ae7e6eedfcc8ec00d17dc9e91fd4e500dc8e7d87aa1f9",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/cli/services/__tests__/daemon-ctl-forced-stop.test.ts",
@@ -2124,10 +2300,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 135,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "c4883af2fdc21b275eae6bb06b34377b529b3e1a11f2e50e92e35ff9e02ddc10",
       "observedSourceSha256": "c4883af2fdc21b275eae6bb06b34377b529b3e1a11f2e50e92e35ff9e02ddc10",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/cli/services/__tests__/daemon-ctl-install-marker.test.ts",
@@ -2136,10 +2313,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 175,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "97f898f6857f964f5369eec36963b2c9e5d53c8e833e60c47439ebb54934db81",
       "observedSourceSha256": "97f898f6857f964f5369eec36963b2c9e5d53c8e833e60c47439ebb54934db81",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/cli/services/__tests__/daemon-stop-forced.test.ts",
@@ -2148,10 +2326,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 284,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "9a6121b6924313e3f4a218577207dbac0e626aabbe73cc64fb7e0d72c6a49499",
       "observedSourceSha256": "9a6121b6924313e3f4a218577207dbac0e626aabbe73cc64fb7e0d72c6a49499",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/cli/services/__tests__/daemon-stop.test.ts",
@@ -2160,10 +2339,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 80,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "2febd7d27bada2d99e3c7144b18e513df743da6cac528a5ddaf9517c7324e057",
       "observedSourceSha256": "2febd7d27bada2d99e3c7144b18e513df743da6cac528a5ddaf9517c7324e057",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/cli/services/__tests__/debug-orphans.test.ts",
@@ -2172,10 +2352,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 163,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "bf6bef3a169b73aa24fca5700f832b3149a5b460f00387928a5c712ba17a81b5",
       "observedSourceSha256": "bf6bef3a169b73aa24fca5700f832b3149a5b460f00387928a5c712ba17a81b5",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/cli/services/__tests__/maintenance-install-marker.test.ts",
@@ -2184,10 +2365,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 34,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "67c5b1a6db789c1851f793cf8a004b5638f9c9251db8fdc92ac0199d2b410fb3",
       "observedSourceSha256": "67c5b1a6db789c1851f793cf8a004b5638f9c9251db8fdc92ac0199d2b410fb3",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/cli/services/__tests__/maintenance-reconcile.test.ts",
@@ -2196,10 +2378,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 180,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "5e8bc943fe23982320575d5d7f3e44a34168fa348ed7e7b56b44f83c9734b3cd",
       "observedSourceSha256": "5e8bc943fe23982320575d5d7f3e44a34168fa348ed7e7b56b44f83c9734b3cd",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/cli/services/__tests__/maintenance-steering-refresh.test.ts",
@@ -2208,10 +2391,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 104,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "63a9c341c2dd03a4ef8873e62fe6c614a6e6f9074666a3a65067980385d8d629",
       "observedSourceSha256": "63a9c341c2dd03a4ef8873e62fe6c614a6e6f9074666a3a65067980385d8d629",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/cli/services/__tests__/managed-daemon-control.test.ts",
@@ -2220,10 +2404,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 295,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "50746d9d11c32205593ea5db3c47728be3047112efc2051110d460aedcfdc7c7",
       "observedSourceSha256": "50746d9d11c32205593ea5db3c47728be3047112efc2051110d460aedcfdc7c7",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/cli/services/__tests__/owned-runtime.test.ts",
@@ -2232,10 +2417,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 42,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "10335fe521dfa3208d044955870142a8ca8c3373af0a293c46095b22e04e7415",
       "observedSourceSha256": "10335fe521dfa3208d044955870142a8ca8c3373af0a293c46095b22e04e7415",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/__tests__/daemon-ctl-node-path.test.ts",
@@ -2244,10 +2430,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 289,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "6c205f59817a38f220f1ab0af0fd8a7c66907cd996455f2fdc4c9728ab527285",
       "observedSourceSha256": "6c205f59817a38f220f1ab0af0fd8a7c66907cd996455f2fdc4c9728ab527285",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/__tests__/daemon-ctl-source.test.ts",
@@ -2256,10 +2443,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 104,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "25af2562c0e43e60e541b39bf49fc2f7147f8b743e304f1187b0217f99674667",
       "observedSourceSha256": "25af2562c0e43e60e541b39bf49fc2f7147f8b743e304f1187b0217f99674667",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/__tests__/daemon-supervisor.test.ts",
@@ -2268,10 +2456,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 301,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "73a8e5e83bfd97d586f29867834c457cf2458080ffa52062c036df8bb20ee971",
       "observedSourceSha256": "73a8e5e83bfd97d586f29867834c457cf2458080ffa52062c036df8bb20ee971",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/__tests__/fresh-managed-activation.test.ts",
@@ -2280,10 +2469,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 301,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "31aa46ff71e24773e82199beb0a929e544964fdc4117d261a5b752f64df5c554",
       "observedSourceSha256": "31aa46ff71e24773e82199beb0a929e544964fdc4117d261a5b752f64df5c554",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/__tests__/installed-commit.test.ts",
@@ -2292,10 +2482,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 56,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "f8c6fb993823954ed67f43ac0748c3592afcf27d1364e9b9836db252b5873d58",
       "observedSourceSha256": "f8c6fb993823954ed67f43ac0748c3592afcf27d1364e9b9836db252b5873d58",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/__tests__/legacy-admin-guard.test.ts",
@@ -2304,10 +2495,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 104,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "04d1ea7a2f53edaadd71688f2b0b6aeebbcc64d6802b97cd56827b5bda8581e1",
       "observedSourceSha256": "04d1ea7a2f53edaadd71688f2b0b6aeebbcc64d6802b97cd56827b5bda8581e1",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/__tests__/legacy-cutover-admission.test.ts",
@@ -2316,10 +2508,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 315,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "7bc842fa1bdd142020121764adb60bd464453fc7886ea31fae1a0ad217eaa3b4",
       "observedSourceSha256": "7bc842fa1bdd142020121764adb60bd464453fc7886ea31fae1a0ad217eaa3b4",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/__tests__/legacy-daemon-cutover.test.ts",
@@ -2328,10 +2521,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 83,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "081f4dafc21dd6bef1e2ab102bc8f80112991267270570f32362fc85ecebd812",
       "observedSourceSha256": "081f4dafc21dd6bef1e2ab102bc8f80112991267270570f32362fc85ecebd812",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/__tests__/legacy-private-drain.test.ts",
@@ -2340,10 +2534,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 99,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "acc41df8d3ae3dffd2d79d3fe0d8241f3e6bb31f93c0e4cbcbd4d27184b8b821",
       "observedSourceSha256": "acc41df8d3ae3dffd2d79d3fe0d8241f3e6bb31f93c0e4cbcbd4d27184b8b821",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/__tests__/legacy-run-guard.test.ts",
@@ -2352,10 +2547,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 131,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "adc6edbf5098c00e9055ee5e8cbe6d9512f16f254a1eb1b19bc18f0743e7ca6f",
       "observedSourceSha256": "adc6edbf5098c00e9055ee5e8cbe6d9512f16f254a1eb1b19bc18f0743e7ca6f",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/__tests__/legacy-runtime-record.test.ts",
@@ -2364,10 +2560,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 23,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "45f66ed7b22a2d85d528c3db8087815fb12aeb286d6ba5a5ed580ec25b480dae",
       "observedSourceSha256": "45f66ed7b22a2d85d528c3db8087815fb12aeb286d6ba5a5ed580ec25b480dae",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/__tests__/linux-installed-lifecycle.test.ts",
@@ -2376,10 +2573,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 23,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "adf1ea6f57a00dd6a95f61cccb7bb9a6269c97ad46f1277806b655a7455c80e6",
       "observedSourceSha256": "adf1ea6f57a00dd6a95f61cccb7bb9a6269c97ad46f1277806b655a7455c80e6",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/__tests__/macos-upgrade-routing.test.ts",
@@ -2388,10 +2586,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 130,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "617bc4c5dbf837fecf759b2bf3f0ba04437a1af5467379a52e5c1688f795bd00",
       "observedSourceSha256": "617bc4c5dbf837fecf759b2bf3f0ba04437a1af5467379a52e5c1688f795bd00",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/__tests__/managed-daemon-lifecycle.test.ts",
@@ -2400,10 +2599,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 301,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "fcdcc4fc33c50519a81087f14b1150c4f2984b9d7698c5746f547e7170c13331",
       "observedSourceSha256": "fcdcc4fc33c50519a81087f14b1150c4f2984b9d7698c5746f547e7170c13331",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/__tests__/managed-development-bundle-proof.test.ts",
@@ -2412,10 +2612,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 118,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "cb2ad430c328ab4997a92e91976011bb99a46b632808b48fd176d5c417ea06de",
       "observedSourceSha256": "cb2ad430c328ab4997a92e91976011bb99a46b632808b48fd176d5c417ea06de",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/__tests__/managed-release-bootstrap.test.ts",
@@ -2424,10 +2625,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 237,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "6af304658bd58cc82ccd9d94583f3691a22ce8122b0b02c2f5e71f2cd2951170",
       "observedSourceSha256": "6af304658bd58cc82ccd9d94583f3691a22ce8122b0b02c2f5e71f2cd2951170",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/__tests__/managed-release-inventory.test.ts",
@@ -2436,10 +2638,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 83,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "5ad66b995ab797f9a243c218e4eecb0ff482da47d46da2bb5690ed422dbc5499",
       "observedSourceSha256": "5ad66b995ab797f9a243c218e4eecb0ff482da47d46da2bb5690ed422dbc5499",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/__tests__/managed-release-mach-o.test.ts",
@@ -2448,10 +2651,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 206,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "ce66ba021dc744b6d201f07a8ff5ef9d2aba03257fe9d99384ff0a65ccbdafbe",
       "observedSourceSha256": "ce66ba021dc744b6d201f07a8ff5ef9d2aba03257fe9d99384ff0a65ccbdafbe",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/__tests__/managed-release-staging.test.ts",
@@ -2460,10 +2664,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 509,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "3e743ec260d484f9ccc1a5cdcda419278c1f4cf9b4efc64b80d7fcfb65d3a8d7",
       "observedSourceSha256": "3e743ec260d484f9ccc1a5cdcda419278c1f4cf9b4efc64b80d7fcfb65d3a8d7",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/__tests__/managed-release-trust.test.ts",
@@ -2472,10 +2677,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 120,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "a24a9a112281eab5b84816efb3d58d2d2fb44f35b5641877e351756aae89d5d7",
       "observedSourceSha256": "a24a9a112281eab5b84816efb3d58d2d2fb44f35b5641877e351756aae89d5d7",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/__tests__/managed-update-handoff.test.ts",
@@ -2484,10 +2690,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 243,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "23938d11e467a18c61610b44f3273e727ea5ffe01bc857a003032449c0195cb7",
       "observedSourceSha256": "23938d11e467a18c61610b44f3273e727ea5ffe01bc857a003032449c0195cb7",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/__tests__/managed-update-ipc.test.ts",
@@ -2496,10 +2703,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 210,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "e308beb433a6960e7af5bcc8bf4910fc0c93edaf17ef98a73275bf8058333469",
       "observedSourceSha256": "e308beb433a6960e7af5bcc8bf4910fc0c93edaf17ef98a73275bf8058333469",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/__tests__/managed-update-transaction.test.ts",
@@ -2508,10 +2716,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 693,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "35bbbb00a28c95c974026000103e5ed9c9932eff1f5c227b93c854897d946795",
       "observedSourceSha256": "35bbbb00a28c95c974026000103e5ed9c9932eff1f5c227b93c854897d946795",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/__tests__/release-compatibility.test.ts",
@@ -2520,10 +2729,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 125,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "a9ea08691498baf39f144ffb8e9a896f05de1320d94b24e5234de6192dc11843",
       "observedSourceSha256": "a9ea08691498baf39f144ffb8e9a896f05de1320d94b24e5234de6192dc11843",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/__tests__/run-file-ownership.test.ts",
@@ -2532,10 +2742,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 124,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "7d0e7adb12c5addb243775fcd05fad76e228130b0452101d30ce53b19a615996",
       "observedSourceSha256": "7d0e7adb12c5addb243775fcd05fad76e228130b0452101d30ce53b19a615996",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/__tests__/shutdown-bounded.test.ts",
@@ -2544,10 +2755,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 59,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "20c63dd41ec45b0ee514d3f4d265a98bad66f916af5f99f95bc5e139b90185bf",
       "observedSourceSha256": "20c63dd41ec45b0ee514d3f4d265a98bad66f916af5f99f95bc5e139b90185bf",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/__tests__/shutdown-lifecycle-evidence.test.ts",
@@ -2556,10 +2768,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 113,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "8233a27c216e5552d996a7ecc6b77a09639c582e164a6a467819617fdd5f909c",
       "observedSourceSha256": "8233a27c216e5552d996a7ecc6b77a09639c582e164a6a467819617fdd5f909c",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/__tests__/shutdown-watchdog.test.ts",
@@ -2568,10 +2781,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 118,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "086f7f25296b88b3cc6c76db39a7c889d766417a9d8d9a395cd8bf65dbe6fe9f",
       "observedSourceSha256": "086f7f25296b88b3cc6c76db39a7c889d766417a9d8d9a395cd8bf65dbe6fe9f",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/__tests__/source-interruption.test.ts",
@@ -2580,10 +2794,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 213,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "9acadc5eac56b977a4da265cc5ae634039cb3226a870d716b1a3924a07c558ed",
       "observedSourceSha256": "9acadc5eac56b977a4da265cc5ae634039cb3226a870d716b1a3924a07c558ed",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/__tests__/source-release-promotion.test.ts",
@@ -2592,10 +2807,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 124,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "17fd568dbb1b9af2ac07824bbff6f8aa9d03e18cf0a4d9867333054c4bd158a6",
       "observedSourceSha256": "17fd568dbb1b9af2ac07824bbff6f8aa9d03e18cf0a4d9867333054c4bd158a6",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/__tests__/source-transaction-host.test.ts",
@@ -2604,10 +2820,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 132,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "a99cd5744be28725ea08a9d4cee4196baf1a460b668f337a5c262d07ba43e96a",
       "observedSourceSha256": "a99cd5744be28725ea08a9d4cee4196baf1a460b668f337a5c262d07ba43e96a",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/__tests__/source-update-outcomes.test.ts",
@@ -2616,10 +2833,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 41,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "34eb7dd8a8c19c504e9a88997237b5a0719ae813db836d8f07587b5ce1996b03",
       "observedSourceSha256": "34eb7dd8a8c19c504e9a88997237b5a0719ae813db836d8f07587b5ce1996b03",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/__tests__/source-update-transaction.test.ts",
@@ -2628,10 +2846,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 117,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "9c08bab501c842ddc81fe281028063215179cf1a2aefab10e7c3b7db9f416577",
       "observedSourceSha256": "9c08bab501c842ddc81fe281028063215179cf1a2aefab10e7c3b7db9f416577",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/__tests__/supervisor-run-files.test.ts",
@@ -2640,10 +2859,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 242,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "401f612bd8c6c23412dc8cb87396a107fa0a25bc7bb1d0c71ddf0f4456e4c677",
       "observedSourceSha256": "401f612bd8c6c23412dc8cb87396a107fa0a25bc7bb1d0c71ddf0f4456e4c677",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/__tests__/update-handlers.test.ts",
@@ -2652,10 +2872,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 103,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "13b8b6b771e617c4338984e84754d4fa7dd3c13fd28483282b3333675bb2a16d",
       "observedSourceSha256": "13b8b6b771e617c4338984e84754d4fa7dd3c13fd28483282b3333675bb2a16d",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/__tests__/update-runner.test.ts",
@@ -2664,10 +2885,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 266,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "898c72370ab75841943fc5119acc47b9ffd33675ecdfbf8c5cd46005de9eee6b",
       "observedSourceSha256": "898c72370ab75841943fc5119acc47b9ffd33675ecdfbf8c5cd46005de9eee6b",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/threads/__tests__/daemon-ctl-smoke.test.ts",
@@ -2676,10 +2898,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 65,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "a3abc0df7f667fa89784f2c5b4eda5ba658702f997fba389df20df0e5228ee92",
       "observedSourceSha256": "a3abc0df7f667fa89784f2c5b4eda5ba658702f997fba389df20df0e5228ee92",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/shared/__tests__/daemon-bundle-release-floor.test.ts",
@@ -2688,10 +2911,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 20,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "029e9fcbad9557964f0773574814eabbc5a580dc3f0d672c30697e532b71f10a",
       "observedSourceSha256": "029e9fcbad9557964f0773574814eabbc5a580dc3f0d672c30697e532b71f10a",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/shared/__tests__/daemon-process-client.test.ts",
@@ -2700,10 +2924,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 158,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "b754fb0650311cb340dcbd9da89927ebb9adac3add2a497d1e7e25b1f7bd2b2f",
       "observedSourceSha256": "b754fb0650311cb340dcbd9da89927ebb9adac3add2a497d1e7e25b1f7bd2b2f",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/shared/__tests__/daemon-supervisor-protocol.test.ts",
@@ -2712,10 +2937,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 137,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "3687ef3921b209944c495ca7c7a0b22d274cb2cc42f32998619e119ec2aca1c6",
       "observedSourceSha256": "3687ef3921b209944c495ca7c7a0b22d274cb2cc42f32998619e119ec2aca1c6",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/shared/__tests__/darwin-lifecycle.test.ts",
@@ -2724,10 +2950,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 186,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "d47c04621f9887734767bc31970ba867fe02732aa99ee0114daccaa4470b338e",
       "observedSourceSha256": "d47c04621f9887734767bc31970ba867fe02732aa99ee0114daccaa4470b338e",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/shared/__tests__/installation-mutation-gate.test.ts",
@@ -2736,10 +2963,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 281,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "bcc75c03e433074490564e129ca75aa77739a7604837550532285f3e69d469b1",
       "observedSourceSha256": "bcc75c03e433074490564e129ca75aa77739a7604837550532285f3e69d469b1",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/shared/__tests__/process-broker-native.test.ts",
@@ -2748,10 +2976,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 125,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "acd5d85b623cb901110da374d895088cab0807e42e0a11a2b9bd3db269cd3e03",
       "observedSourceSha256": "acd5d85b623cb901110da374d895088cab0807e42e0a11a2b9bd3db269cd3e03",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/shared/__tests__/source-actor-boot.test.ts",
@@ -2760,10 +2989,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 84,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "b9ceb93a7175b9928d404ae28588d45fc014d054858387dd4a9a6ab041f632b2",
       "observedSourceSha256": "b9ceb93a7175b9928d404ae28588d45fc014d054858387dd4a9a6ab041f632b2",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/shared/__tests__/source-actor-native.test.ts",
@@ -2772,10 +3002,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 268,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "726d6c7278a20b8bd1de5d1342507860923b60aca03e0e4b1617aa4e126e005d",
       "observedSourceSha256": "726d6c7278a20b8bd1de5d1342507860923b60aca03e0e4b1617aa4e126e005d",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/shared/__tests__/source-installation.test.ts",
@@ -2784,10 +3015,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 183,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "5807feaaf5e830377e120bbbdcb533184a7d231fca38ab12374cd7be995ea4ac",
       "observedSourceSha256": "5807feaaf5e830377e120bbbdcb533184a7d231fca38ab12374cd7be995ea4ac",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/shared/__tests__/update-source.test.ts",
@@ -2796,10 +3028,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 56,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "6298bad7f3646de9122b1fb447749c3b67d36a599c02ce71e0974dfa75c509dd",
       "observedSourceSha256": "6298bad7f3646de9122b1fb447749c3b67d36a599c02ce71e0974dfa75c509dd",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "vscode-plugin/src/daemon/__tests__/bundle.test.ts",
@@ -2808,10 +3041,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 55,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "52f79aa0a430d1a7cc68aa1da63756adc0146b5e0b9f8e99d99211ce143246fd",
       "observedSourceSha256": "52f79aa0a430d1a7cc68aa1da63756adc0146b5e0b9f8e99d99211ce143246fd",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "vscode-plugin/src/daemon/__tests__/commands.test.ts",
@@ -2820,10 +3054,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 145,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "82810d74bee707caf26bfa9bfdaf335839022d12d36b6a0beb0e59bf3da1ab23",
       "observedSourceSha256": "82810d74bee707caf26bfa9bfdaf335839022d12d36b6a0beb0e59bf3da1ab23",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "vscode-plugin/src/daemon/__tests__/controller.test.ts",
@@ -2832,10 +3067,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 214,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "2baf98bfe8c61e7df08d33bab155c9b2e6a0bfae2d53563dc59d17f3a862db3d",
       "observedSourceSha256": "2baf98bfe8c61e7df08d33bab155c9b2e6a0bfae2d53563dc59d17f3a862db3d",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "vscode-plugin/src/daemon/__tests__/runtime-boundary.test.ts",
@@ -2844,10 +3080,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 10,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "6d01bc01ca0dd2b622b6ca370483baa6118d7da7e88f3a779a1aec69ad2218c1",
       "observedSourceSha256": "6d01bc01ca0dd2b622b6ca370483baa6118d7da7e88f3a779a1aec69ad2218c1",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "vscode-plugin/src/freshness/__tests__/daemon-freshness.test.ts",
@@ -2856,10 +3093,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 502,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "d80497cd302dbcd64db7f6611f75fca54909c33c74fc7b7d2a0ccd0e1c8dfb97",
       "observedSourceSha256": "d80497cd302dbcd64db7f6611f75fca54909c33c74fc7b7d2a0ccd0e1c8dfb97",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "vscode-plugin/src/freshness/__tests__/extension-wiring.test.ts",
@@ -2868,10 +3106,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 85,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "5c4b0eb46650aea6dfb82701b748726a98fe9dd6af2296009d7dcac3336fe7ca",
       "observedSourceSha256": "5c4b0eb46650aea6dfb82701b748726a98fe9dd6af2296009d7dcac3336fe7ca",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "vscode-plugin/src/panels/__tests__/orphan-kill.test.ts",
@@ -2880,10 +3119,11 @@
       "reason": "Dedicated install/upgrade/start/stop/restart, owned runtime, daemon freshness or associated release qualification test.",
       "lines": 125,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "936c6a41c9a9802420e37c82e99f1814f673f700fa2bd99dd57175fdc8798b27",
       "observedSourceSha256": "936c6a41c9a9802420e37c82e99f1814f673f700fa2bd99dd57175fdc8798b27",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "vscode-plugin/assets/insrc-daemon-install.sh",
@@ -2892,10 +3132,11 @@
       "reason": "Dedicated daemon installer/control/supervisor/process termination executable, native helper, build helper or packaged asset.",
       "lines": 734,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "54aa52341f748d8390e4289b124341c5b0767002e95f2f3247316df9c5c3e20e",
       "observedSourceSha256": "54aa52341f748d8390e4289b124341c5b0767002e95f2f3247316df9c5c3e20e",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "vscode-plugin/assets/node-runtime-policy.json",
@@ -2904,10 +3145,11 @@
       "reason": "Dedicated daemon installer/control/supervisor/process termination executable, native helper, build helper or packaged asset.",
       "lines": 40,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "c0295edcef14b47fc6d4606b1694df932a197b291e746328ec8adc8864ca79e5",
       "observedSourceSha256": "c0295edcef14b47fc6d4606b1694df932a197b291e746328ec8adc8864ca79e5",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "vscode-plugin/src/daemon/commands.ts",
@@ -2916,10 +3158,11 @@
       "reason": "Dedicated daemon installer/control/supervisor/process termination executable, native helper, build helper or packaged asset.",
       "lines": 89,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "30dc0f77891c6317d565aeff9c54aef04f7a07e8fc800cd2b1acd4b20036b908",
       "observedSourceSha256": "30dc0f77891c6317d565aeff9c54aef04f7a07e8fc800cd2b1acd4b20036b908",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "vscode-plugin/src/daemon/controller.ts",
@@ -2928,10 +3171,11 @@
       "reason": "Dedicated daemon installer/control/supervisor/process termination executable, native helper, build helper or packaged asset.",
       "lines": 108,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "1f6e880256e13dd7ba9d540aa638315f78f18bbb25f939138b593896a5495373",
       "observedSourceSha256": "1f6e880256e13dd7ba9d540aa638315f78f18bbb25f939138b593896a5495373",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "vscode-plugin/src/daemon/paths.ts",
@@ -2940,10 +3184,11 @@
       "reason": "Dedicated daemon installer/control/supervisor/process termination executable, native helper, build helper or packaged asset.",
       "lines": 83,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "8c608f73703b1e71f5b384ac96ced60b26a585ac82ca616025fe576524d34ea4",
       "observedSourceSha256": "8c608f73703b1e71f5b384ac96ced60b26a585ac82ca616025fe576524d34ea4",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "vscode-plugin/src/daemon/subprocess.ts",
@@ -2952,10 +3197,11 @@
       "reason": "Dedicated daemon installer/control/supervisor/process termination executable, native helper, build helper or packaged asset.",
       "lines": 56,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "2fa4355293fb47ad9c548d1ac898ddd62bc0729c0131c2f8bfad5549b03f1441",
       "observedSourceSha256": "2fa4355293fb47ad9c548d1ac898ddd62bc0729c0131c2f8bfad5549b03f1441",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "vscode-plugin/src/freshness/daemon-freshness.ts",
@@ -2964,10 +3210,11 @@
       "reason": "Dedicated daemon installer/control/supervisor/process termination executable, native helper, build helper or packaged asset.",
       "lines": 307,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "f521961bc35f432b3d4bc0b4c861c8f40707bd84c9963466a123a1ce358bae6a",
       "observedSourceSha256": "f521961bc35f432b3d4bc0b4c861c8f40707bd84c9963466a123a1ce358bae6a",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "vscode-plugin/src/panels/orphan-kill.ts",
@@ -2976,10 +3223,11 @@
       "reason": "Dedicated daemon installer/control/supervisor/process termination executable, native helper, build helper or packaged asset.",
       "lines": 118,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "16b996171f2d794b33c791e50c00d52f389cde8b93e3c612a83248584e2c442b",
       "observedSourceSha256": "16b996171f2d794b33c791e50c00d52f389cde8b93e3c612a83248584e2c442b",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/fresh-managed-activation.ts",
@@ -2988,10 +3236,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 220,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "7a1888a9012512a387ad5de18b53abf3f4cf6368e99872993c4e1bb93fe70852",
       "observedSourceSha256": "7a1888a9012512a387ad5de18b53abf3f4cf6368e99872993c4e1bb93fe70852",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/legacy-admin-guard.ts",
@@ -3000,10 +3249,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 59,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "52ec7b3475a0548c20123b82a49d1d5e90228f65c1318daeca68c219ef3119fa",
       "observedSourceSha256": "52ec7b3475a0548c20123b82a49d1d5e90228f65c1318daeca68c219ef3119fa",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/legacy-cutover-admission.ts",
@@ -3012,10 +3262,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 390,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "c28d9131ea9a7eeac82c4a9a6d63dc1b0e15e99af13a68ea08b43d7caee3a1bc",
       "observedSourceSha256": "c28d9131ea9a7eeac82c4a9a6d63dc1b0e15e99af13a68ea08b43d7caee3a1bc",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/legacy-daemon-cutover.ts",
@@ -3024,10 +3275,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 134,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "6744c6c2efd2fafa65d34d643cc032a4ebdbe1ccb09d39ca830b607be014d3d9",
       "observedSourceSha256": "6744c6c2efd2fafa65d34d643cc032a4ebdbe1ccb09d39ca830b607be014d3d9",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/legacy-drain-evidence.ts",
@@ -3036,10 +3288,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 71,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "ce825e667e5706fab04c40fd8c0b18d7668b758ea11bb3c79351af6b21c30e2a",
       "observedSourceSha256": "ce825e667e5706fab04c40fd8c0b18d7668b758ea11bb3c79351af6b21c30e2a",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/legacy-launch-job.ts",
@@ -3048,10 +3301,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 292,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "2fdfb1fa08e31aba75e20487b49a38960c8192299980d8234fb8dccc0144f98d",
       "observedSourceSha256": "2fdfb1fa08e31aba75e20487b49a38960c8192299980d8234fb8dccc0144f98d",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/legacy-private-drain.ts",
@@ -3060,10 +3314,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 106,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "99828e1b9b26153413f9bd9a25118a0b896fcba52bbe34a26e3ba76bba6b56e7",
       "observedSourceSha256": "99828e1b9b26153413f9bd9a25118a0b896fcba52bbe34a26e3ba76bba6b56e7",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/legacy-public-stop.ts",
@@ -3072,10 +3327,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 50,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "d55c9ca9de8486379da53689bcb150deba1fbd65f2da585bc1e59ee96e0ea2c4",
       "observedSourceSha256": "d55c9ca9de8486379da53689bcb150deba1fbd65f2da585bc1e59ee96e0ea2c4",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/legacy-run-guard.ts",
@@ -3084,10 +3340,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 191,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "9ccde471a1aa5fb128442a2095cedf0cb36caec13803e19eb715c62256965746",
       "observedSourceSha256": "9ccde471a1aa5fb128442a2095cedf0cb36caec13803e19eb715c62256965746",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/managed-bundle-proof.ts",
@@ -3096,10 +3353,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 108,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "1661a0dc428e8e487ad7c6c86d07ca5f5b32efe78f0240e28f0eb070d5991327",
       "observedSourceSha256": "1661a0dc428e8e487ad7c6c86d07ca5f5b32efe78f0240e28f0eb070d5991327",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/managed-daemon-lifecycle.ts",
@@ -3108,10 +3366,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 189,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "b24e4484c454cb360a05a1a5aa191a24e5e820b9b1433aa51e918b7f0465daf7",
       "observedSourceSha256": "b24e4484c454cb360a05a1a5aa191a24e5e820b9b1433aa51e918b7f0465daf7",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/managed-daemon-probation.ts",
@@ -3120,10 +3379,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 99,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "cd1183aa93f8d0d4a0be3590dab28e1e6fc9e8d256e836e36eafeb31cdbad610",
       "observedSourceSha256": "cd1183aa93f8d0d4a0be3590dab28e1e6fc9e8d256e836e36eafeb31cdbad610",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/managed-release-inventory.ts",
@@ -3132,10 +3392,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 141,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "d93d580f6080380930454ef5b3a4ba890a11824d39b2f0c6f45458df1c6b722b",
       "observedSourceSha256": "d93d580f6080380930454ef5b3a4ba890a11824d39b2f0c6f45458df1c6b722b",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/managed-release-mach-o.ts",
@@ -3144,10 +3405,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 207,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "5e690c0c7c769469a1e16e64661009596410b85fb48b4a6f0bee22cb4c852894",
       "observedSourceSha256": "5e690c0c7c769469a1e16e64661009596410b85fb48b4a6f0bee22cb4c852894",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/managed-release-staging.ts",
@@ -3156,10 +3418,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 273,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "b51c17babbbcc9597c6c9732bc401c3fdc6fc48834db75f9530c4b2518c75d84",
       "observedSourceSha256": "b51c17babbbcc9597c6c9732bc401c3fdc6fc48834db75f9530c4b2518c75d84",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/managed-update-handoff.ts",
@@ -3168,10 +3431,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 224,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "96aabe184b95f2e01ac124c978cd799a2585497b684880bd72b6f9c7c57c33a6",
       "observedSourceSha256": "96aabe184b95f2e01ac124c978cd799a2585497b684880bd72b6f9c7c57c33a6",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/managed-update-ipc.ts",
@@ -3180,10 +3444,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 57,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "6f96776ab8af3a9ac08590e1db406e58f21a7aaf2a8902d52c38fecd6240fc69",
       "observedSourceSha256": "6f96776ab8af3a9ac08590e1db406e58f21a7aaf2a8902d52c38fecd6240fc69",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/managed-update-launch.ts",
@@ -3192,10 +3457,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 115,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "64f126bd54fbde8735ec8b1aee3e477372dbef4c6dcbe63f2a54178d7089a662",
       "observedSourceSha256": "64f126bd54fbde8735ec8b1aee3e477372dbef4c6dcbe63f2a54178d7089a662",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/managed-update-preparation.ts",
@@ -3204,10 +3470,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 308,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "3b177a5bf44d1e889f9b36a75cb010be2c3276d1fd9c1d23339683eb06a264fa",
       "observedSourceSha256": "3b177a5bf44d1e889f9b36a75cb010be2c3276d1fd9c1d23339683eb06a264fa",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/managed-update-recovery.ts",
@@ -3216,10 +3483,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 477,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "7bf2cc16d94b833806d118f66d62f559045887f23e3822ca9f0fe1c02b3a8623",
       "observedSourceSha256": "7bf2cc16d94b833806d118f66d62f559045887f23e3822ca9f0fe1c02b3a8623",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/managed-update-transaction.ts",
@@ -3228,10 +3496,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 81,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "d1f860a964c9ce8eb3e8c58caaa6d3386d87528e795fcafed63ee467456d1aee",
       "observedSourceSha256": "d1f860a964c9ce8eb3e8c58caaa6d3386d87528e795fcafed63ee467456d1aee",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/release-compatibility.ts",
@@ -3240,10 +3509,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 60,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "2ce46241d18447e80aefda757b7ff6238334aa5cbb3b8b25627679dac4c03b68",
       "observedSourceSha256": "2ce46241d18447e80aefda757b7ff6238334aa5cbb3b8b25627679dac4c03b68",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/shared/daemon-bundle-release-floor.ts",
@@ -3252,10 +3522,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 52,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "da2a0ec89aa8e8280cae67757c8862eb04f1ba3facd7947e1e404dea7549540c",
       "observedSourceSha256": "da2a0ec89aa8e8280cae67757c8862eb04f1ba3facd7947e1e404dea7549540c",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/shared/installation-mutation-gate.ts",
@@ -3264,10 +3535,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 768,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "2f2b40c72017c021b9bdf3dba38532083904893e536bc66a211701d34e1bf282",
       "observedSourceSha256": "2f2b40c72017c021b9bdf3dba38532083904893e536bc66a211701d34e1bf282",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/shared/managed-daemon-installation.ts",
@@ -3276,10 +3548,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 476,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "c00d698caf45ebeafb0d7024d9a4f4253f1814437ca62b1d30bad47372dd86c8",
       "observedSourceSha256": "c00d698caf45ebeafb0d7024d9a4f4253f1814437ca62b1d30bad47372dd86c8",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/shared/managed-release-trust.ts",
@@ -3288,10 +3561,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 231,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "97233be6a6b6e093651491009a10a0089a50ed08f42e70be118364d104fb13bc",
       "observedSourceSha256": "97233be6a6b6e093651491009a10a0089a50ed08f42e70be118364d104fb13bc",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/shared/managed-source-release.ts",
@@ -3300,10 +3574,11 @@
       "reason": "Dedicated daemon installation/update/migration/recovery/release implementation.",
       "lines": 32,
       "workingTreeStatus": "clean",
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "3fe588333c6dcaa4bf9fa9c05e54855caf472195c97c2f827bdcbc77edff0d34",
       "observedSourceSha256": "3fe588333c6dcaa4bf9fa9c05e54855caf472195c97c2f827bdcbc77edff0d34",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/config/__tests__/installer-defs.test.ts",
@@ -3313,10 +3588,11 @@
       "lines": 184,
       "workingTreeStatus": "clean",
       "addedByRevalidation": true,
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "a77c592ac1273a966f0f76a6952c43592549372909f9b0d2e958f8d0822a81e1",
       "observedSourceSha256": "a77c592ac1273a966f0f76a6952c43592549372909f9b0d2e958f8d0822a81e1",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "src/daemon/__tests__/daemon-status-field.test.ts",
@@ -3326,10 +3602,11 @@
       "lines": 62,
       "workingTreeStatus": "clean",
       "addedByRevalidation": true,
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "5d230b0da39a48e11d89769cf1c4616428a78e987e227bd5160e770d35cdcfc2",
       "observedSourceSha256": "5d230b0da39a48e11d89769cf1c4616428a78e987e227bd5160e770d35cdcfc2",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     },
     {
       "path": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/daemon/Sc4GatewayBindingsTest.kt",
@@ -3339,10 +3616,11 @@
       "lines": 106,
       "workingTreeStatus": "clean",
       "addedByRevalidation": true,
-      "outcome": "pending",
+      "outcome": "deleted",
       "expectedSourceSha256": "af599aa0169356a45e6b7f1810c1cf1ecb9fb865d4df6be13d996615612c2514",
       "observedSourceSha256": "af599aa0169356a45e6b7f1810c1cf1ecb9fb865d4df6be13d996615612c2514",
-      "preflightVerified": true
+      "preflightVerified": true,
+      "task": "t2"
     }
   ],
   "members": [

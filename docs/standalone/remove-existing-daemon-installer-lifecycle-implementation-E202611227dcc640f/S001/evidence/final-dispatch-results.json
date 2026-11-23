@@ -1,0 +1,135 @@
+{
+  "runId": "518f5114-9733-46ed-84fa-e261852b6e71",
+  "runtime": {
+    "executable": "/opt/homebrew/Cellar/node@22/22.23.2/bin/node",
+    "version": "v22.23.2"
+  },
+  "budgets": {
+    "buildMs": 600000,
+    "fileMs": 180000,
+    "runMs": 600000,
+    "cleanupMs": 5000
+  },
+  "selectedFiles": [
+    "jetbrains-plugin/__tests__/installer-removal.test.ts",
+    "src/daemon/__tests__/handler-runtime.test.ts",
+    "src/daemon/__tests__/repo-call-audit.test.ts",
+    "src/daemon/threads/__tests__/admin-worker.test.ts",
+    "src/daemon/threads/__tests__/method-class.test.ts"
+  ],
+  "requestedConcurrency": 2,
+  "effectiveConcurrency": 2,
+  "diagnosticFlags": [
+    "DEBUG"
+  ],
+  "liveTests": "unset",
+  "results": [
+    {
+      "file": "src/daemon/__tests__/handler-runtime.test.ts",
+      "childId": "ed1e50fd-b339-4ac3-ae01-d3b5dc3f9497",
+      "log": ".insrc/tmp/test-harness/runs/518f5114-9733-46ed-84fa-e261852b6e71/0-src_daemon___tests___handler-runtime.test.ts.log",
+      "closeJournal": "/Users/subhagho/work/projects/insors/insrc/.insrc/tmp/test-harness/runs/518f5114-9733-46ed-84fa-e261852b6e71/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 12,
+          "pass": 12,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/daemon/__tests__/repo-call-audit.test.ts",
+      "childId": "a136afab-87e8-4d2d-8ce9-36222140ac8c",
+      "log": ".insrc/tmp/test-harness/runs/518f5114-9733-46ed-84fa-e261852b6e71/1-src_daemon___tests___repo-call-audit.test.ts.log",
+      "closeJournal": "/Users/subhagho/work/projects/insors/insrc/.insrc/tmp/test-harness/runs/518f5114-9733-46ed-84fa-e261852b6e71/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "jetbrains-plugin/__tests__/installer-removal.test.ts",
+      "childId": "665046d7-484e-4e90-8e66-fd44fe527d82",
+      "log": ".insrc/tmp/test-harness/runs/518f5114-9733-46ed-84fa-e261852b6e71/0-jetbrains-plugin___tests___installer-removal.test.ts.log",
+      "closeJournal": "/Users/subhagho/work/projects/insors/insrc/.insrc/tmp/test-harness/runs/518f5114-9733-46ed-84fa-e261852b6e71/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/daemon/threads/__tests__/method-class.test.ts",
+      "childId": "4db6e2ad-776d-45da-9c22-76feae283207",
+      "log": ".insrc/tmp/test-harness/runs/518f5114-9733-46ed-84fa-e261852b6e71/3-src_daemon_threads___tests___method-class.test.ts.log",
+      "closeJournal": "/Users/subhagho/work/projects/insors/insrc/.insrc/tmp/test-harness/runs/518f5114-9733-46ed-84fa-e261852b6e71/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 9,
+          "pass": 9,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/daemon/threads/__tests__/admin-worker.test.ts",
+      "childId": "b109c90a-fbb7-48b2-be5a-a0618fcd58c3",
+      "log": ".insrc/tmp/test-harness/runs/518f5114-9733-46ed-84fa-e261852b6e71/2-src_daemon_threads___tests___admin-worker.test.ts.log",
+      "closeJournal": "/Users/subhagho/work/projects/insors/insrc/.insrc/tmp/test-harness/runs/518f5114-9733-46ed-84fa-e261852b6e71/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 4,
+          "pass": 4,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    }
+  ],
+  "cleanupPath": ".insrc/tmp/test-harness/runs/518f5114-9733-46ed-84fa-e261852b6e71/cleanup.json",
+  "incomplete": false
+}

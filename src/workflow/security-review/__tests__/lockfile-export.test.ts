@@ -159,6 +159,40 @@ markers = "sys_platform == 'win32'"
 	}
 });
 
+test("generateLockfileExport(pipenv): an entry whose 'index' resolves (via _meta.sources) to the standard PyPI url is plain PyPI, NOT a private index", () => {
+	const dir = tmpDir();
+	try {
+		const pipfileLock = JSON.stringify({
+			_meta: { sources: [{ name: 'pypi', url: 'https://pypi.org/simple', verify_ssl: true }] },
+			default: { requests: { version: '==2.25.1', index: 'pypi', hashes: [] } },
+		});
+		writeFileSync(join(dir, 'Pipfile.lock'), pipfileLock);
+		const { requirementsPath, unresolvedDependencies } = generateLockfileExport('pipenv', dir);
+		const generated = readFileSync(requirementsPath, 'utf8');
+		assert.ok(generated.includes('requests==2.25.1'), generated);
+		assert.deepEqual(unresolvedDependencies, []);
+	} finally {
+		rmSync(dir, { recursive: true, force: true });
+	}
+});
+
+test("generateLockfileExport(pipenv): an entry whose 'index' resolves to a DIFFERENT (non-PyPI) url is still excluded as a secondary index", () => {
+	const dir = tmpDir();
+	try {
+		const pipfileLock = JSON.stringify({
+			_meta: { sources: [{ name: 'pypi', url: 'https://pypi.org/simple', verify_ssl: true }, { name: 'internal', url: 'https://pkg.example.internal/simple', verify_ssl: true }] },
+			default: { privatepkg: { version: '==1.0.0', index: 'internal', hashes: [] } },
+		});
+		writeFileSync(join(dir, 'Pipfile.lock'), pipfileLock);
+		const { requirementsPath, unresolvedDependencies } = generateLockfileExport('pipenv', dir);
+		const generated = readFileSync(requirementsPath, 'utf8');
+		assert.ok(!generated.includes('privatepkg'), generated);
+		assert.ok(unresolvedDependencies.some(d => d.includes('privatepkg')), JSON.stringify(unresolvedDependencies));
+	} finally {
+		rmSync(dir, { recursive: true, force: true });
+	}
+});
+
 test("generateLockfileExport(pipenv): a Pipfile.lock entry with both a 'url' and a 'version' is still excluded as a non-standard source", () => {
 	const dir = tmpDir();
 	try {

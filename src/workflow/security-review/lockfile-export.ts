@@ -118,14 +118,36 @@ interface PipenvPackage {
 	readonly excludedReason: string;
 }
 
+/** A Pipfile.lock-named index is the default PyPI source -- not a private
+ *  one -- when `_meta.sources` resolves that name to the standard PyPI
+ *  simple-index URL. Pipenv writes an explicit `index: "pypi"` on an
+ *  ordinary entry whenever the Pipfile names its source at all (a common,
+ *  normal shape -- not evidence of a private index on its own); only a name
+ *  resolving to a DIFFERENT url is actually non-default. */
+function resolvePypiSourceNames(data: Record<string, unknown>): ReadonlySet<string> {
+	const names = new Set<string>();
+	const meta = isRecord(data._meta) ? data._meta : undefined;
+	const sources = Array.isArray(meta?.sources) ? meta.sources : [];
+	for (const source of sources) {
+		if (!isRecord(source) || typeof source.name !== 'string' || typeof source.url !== 'string') { continue; }
+		if (/^https?:\/\/pypi\.org\/simple\/?$/i.test(source.url.trim())) { names.add(source.name); }
+	}
+	return names;
+}
+
+function isRecord(v: unknown): v is Record<string, unknown> {
+	return typeof v === 'object' && v !== null;
+}
+
 /** Pipfile.lock is plain JSON -- no custom parsing needed. An entry carrying
  *  'git' / 'path' / 'file' / 'url' is a non-default source regardless of
- *  whether it also carries a 'version'; an 'index' key means it was resolved
- *  from a secondary (private) package index, not plain PyPI; a 'markers' key
- *  (an environment-marker condition) is not faithfully representable as a
- *  bare pin either. */
+ *  whether it also carries a 'version'; an 'index' key names a secondary
+ *  (private) package index UNLESS it resolves, via `_meta.sources`, to the
+ *  standard PyPI url; a 'markers' key (an environment-marker condition) is
+ *  not faithfully representable as a bare pin either. */
 function parsePipfileLock(content: string): PipenvPackage[] {
 	const data = JSON.parse(content) as Record<string, unknown>;
+	const pypiSourceNames = resolvePypiSourceNames(data);
 	const packages: PipenvPackage[] = [];
 	for (const section of ['default', 'develop']) {
 		const group = data[section];
@@ -139,7 +161,7 @@ function parsePipfileLock(content: string): PipenvPackage[] {
 			if (typeof entry.git === 'string' || typeof entry.path === 'string' || typeof entry.file === 'string' || typeof entry.url === 'string') {
 				excluded = true;
 				excludedReason = 'non-standard source (not plain PyPI)';
-			} else if (typeof entry.index === 'string') {
+			} else if (typeof entry.index === 'string' && !pypiSourceNames.has(entry.index)) {
 				excluded = true;
 				excludedReason = 'resolved from a secondary package index (not plain PyPI)';
 			} else if (typeof entry.markers === 'string') {

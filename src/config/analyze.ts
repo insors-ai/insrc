@@ -30,7 +30,7 @@ import { PATHS } from '../shared/paths.js';
 import type { EffortLevel, FamilyId } from '../daemon/model-catalog.js';
 import { getModelRegistry, type ModelRegistry, type TierResolution, type TierSetting } from '../daemon/model-registry.js';
 import { SHIPPED_MODEL_DEFAULTS } from './model-defaults.js';
-import { reasoningRoleTaxonomy } from './role-taxonomy.js';
+import { reasoningRoleTaxonomy, roleDescriptor } from './role-taxonomy.js';
 
 const log = getLogger('config:analyze');
 
@@ -212,12 +212,12 @@ export function securityPinMeetsFloor(registry: ModelRegistry, familyId: FamilyI
  *  which case resolution is identical to the legacy single-provider path. */
 export interface AnalyzeTiering extends TieringOverride {
 	readonly byRepo?: Readonly<Record<string, RepoTiering>> | undefined;
-	/** The independently-selectable security-reviewer pin, present only when
-	 *  parseSecurityModelPin returns kind:'valid'. Both 'absent' and 'malformed'
-	 *  leave this undefined -- resolveSecurityModelCandidate (s1 t5) calls
-	 *  parseSecurityModelPin directly to tell those two apart, since this field
-	 *  alone cannot. */
-	readonly security?: SecurityModelPin | undefined;
+	/** parseSecurityModelPin's own tri-state result, always present (never
+	 *  collapsed to undefined): resolveSecurityModelCandidate (s1 t5) takes only
+	 *  AnalyzeConfig, with no access to the raw models.* object, so it reads this
+	 *  field to tell 'absent' apart from 'malformed' -- a single optional field
+	 *  holding just the valid case could not. */
+	readonly security: SecurityModelPinResult;
 }
 
 export interface AnalyzeConfig {
@@ -376,6 +376,52 @@ export function assembleConfig(
 	};
 }
 
+/** status:'candidate' with {runner, model, effort?} when a listed, floor-eligible
+ *  model was selected (an explicit models.security pin, or the 'security.review'
+ *  role's own tier-default model when no pin is configured); status:'unavailable'
+ *  with blockerReason when the configured pin is malformed, unlisted, or below
+ *  the role's required capability floor -- decided purely from cfg + registry
+ *  data, with no I/O and no substitution. */
+export type SecurityModelCandidate =
+	| ({ readonly status: 'candidate' } & SecurityModelPin)
+	| { readonly status: 'unavailable'; readonly blockerReason: string };
+
+/**
+ * Resolve sc1's security-reviewer candidate (pure, synchronous; zero I/O).
+ * A malformed or below-floor/unlisted pin resolves to 'unavailable' immediately
+ * and NEVER falls through to the 'security.review' role's tier-default model --
+ * only a genuinely absent pin falls through to it, which is itself checked
+ * against the floor the same way an explicit pin would be.
+ */
+export function resolveSecurityModelCandidate(cfg: AnalyzeConfig, registry: ModelRegistry): SecurityModelCandidate {
+	const floorTier: TierName = roleDescriptor('security.review')?.defaultTier ?? 'core';
+	const pin = cfg.tiering.security;
+
+	if (pin.kind === 'malformed') return { status: 'unavailable', blockerReason: pin.detail };
+
+	if (pin.kind === 'valid') {
+		if (registry.find(pin.runner, pin.model) === undefined) {
+			return { status: 'unavailable', blockerReason: `models.security: '${pin.model}' is not a listed model of ${pin.runner}` };
+		}
+		if (!securityPinMeetsFloor(registry, pin.runner, pin.model, floorTier)) {
+			return { status: 'unavailable', blockerReason: `models.security: '${pin.model}' does not meet the 'security.review' role's capability floor (${floorTier})` };
+		}
+		return { status: 'candidate', runner: pin.runner, model: pin.model, ...(pin.effort !== undefined ? { effort: pin.effort } : {}) };
+	}
+
+	// Absent: fall through to the role's own tier-default model -- the SAME
+	// listed + floor-eligibility checks a pin would get, never a further
+	// fallback to a different role, tier, or UNKNOWN_ROLE_TIER-style default.
+	const def = cfg.tiering.tiers?.[floorTier];
+	if (def === undefined || def.model === '' || registry.find(def.runner, def.model) === undefined) {
+		return { status: 'unavailable', blockerReason: `'security.review' role's ${floorTier}-tier default model is unavailable` };
+	}
+	if (!securityPinMeetsFloor(registry, def.runner, def.model, floorTier)) {
+		return { status: 'unavailable', blockerReason: `'security.review' role's ${floorTier}-tier default model does not meet its own capability floor (${floorTier})` };
+	}
+	return { status: 'candidate', runner: def.runner, model: def.model, ...(def.effort !== undefined ? { effort: def.effort } : {}) };
+}
+
 /**
  * The analyze config, with every global tier resolved through `registry`
  * (default: this daemon thread's registry, cached; an explicit registry — the
@@ -389,7 +435,7 @@ export function loadAnalyzeConfig(registry?: ModelRegistry): AnalyzeConfig {
 
 function readAnalyzeConfig(registry: ModelRegistry): AnalyzeConfig {
 	if (!existsSync(PATHS.config)) {
-		return assembleConfig({}, DEFAULT_SHAPER, DEFAULT_MAX_PLAN_DEPTH, registry);
+		return assembleConfig({ security: { kind: 'absent' } }, DEFAULT_SHAPER, DEFAULT_MAX_PLAN_DEPTH, registry);
 	}
 
 	try {
@@ -430,7 +476,7 @@ function readAnalyzeConfig(registry: ModelRegistry): AnalyzeConfig {
 			{ err: (err as Error).message },
 			'failed to parse config.json; using analyze defaults',
 		);
-		return assembleConfig({}, DEFAULT_SHAPER, DEFAULT_MAX_PLAN_DEPTH, registry);
+		return assembleConfig({ security: { kind: 'absent' } }, DEFAULT_SHAPER, DEFAULT_MAX_PLAN_DEPTH, registry);
 	}
 }
 
@@ -528,9 +574,8 @@ export function parseTiering(models: Record<string, unknown>): AnalyzeTiering {
 		}
 		if (Object.keys(acc).length > 0) byRepo = acc;
 	}
-	const pin = parseSecurityModelPin(models);
-	const security = pin.kind === 'valid' ? { runner: pin.runner, model: pin.model, ...(pin.effort !== undefined ? { effort: pin.effort } : {}) } : undefined;
-	return { ...global, ...(byRepo !== undefined ? { byRepo } : {}), ...(security !== undefined ? { security } : {}) };
+	const security = parseSecurityModelPin(models);
+	return { ...global, ...(byRepo !== undefined ? { byRepo } : {}), security };
 }
 
 /** Drop the cached config so the next read sees config.json as it is now.

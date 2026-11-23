@@ -17,7 +17,8 @@ import assert from 'node:assert/strict';
 
 import type { FamilyDefinition } from '../../daemon/model-catalog.js';
 import type { ModelRegistry, ResolvedModel } from '../../daemon/model-registry.js';
-import { parseSecurityModelPin, parseTiering, securityPinMeetsFloor } from '../analyze.js';
+import type { AnalyzeConfig, AnalyzeTiering, TierResolution } from '../analyze.js';
+import { parseSecurityModelPin, parseTiering, resolveSecurityModelCandidate, securityPinMeetsFloor } from '../analyze.js';
 
 test('a valid tier table parses to {runner, model} TierModels', () => {
 	const t = parseTiering({ tiers: { core: { runner: 'cli-claude', model: 'opus' }, cheap: { runner: 'ollama', model: 'qwen3.6:35b-a3b' } } });
@@ -53,10 +54,10 @@ test('byRepo tiering overrides are parsed per repo path (tasks key)', () => {
 	assert.deepEqual(t.byRepo?.['/work/afm']?.roleTiers, { review: 'core' });
 });
 
-test('absent tiering keys → {} (legacy single-provider path)', () => {
-	assert.deepEqual(parseTiering({}), {});
-	// legacy keys present but no tiering keys → still {}
-	assert.deepEqual(parseTiering({ shaperProvider: 'ollama', shaperModel: 'qwen3.6:35b-a3b' }), {});
+test('absent tiering keys → {} (legacy single-provider path), aside from the always-present security tri-state', () => {
+	assert.deepEqual(parseTiering({}), { security: { kind: 'absent' } });
+	// legacy keys present but no tiering keys → still {} (+ security)
+	assert.deepEqual(parseTiering({ shaperProvider: 'ollama', shaperModel: 'qwen3.6:35b-a3b' }), { security: { kind: 'absent' } });
 });
 
 test('empty tiers:{} / tasks:{} are treated as absent, not an error', () => {
@@ -146,13 +147,14 @@ test('parseSecurityModelPin: a valid pin with effort carries it through; an empt
 	assert.deepEqual(parseSecurityModelPin({ security: {} }), { kind: 'absent' });
 });
 
-test('parseTiering threads a valid security pin onto AnalyzeTiering.security; an absent or malformed pin leaves it undefined; parseTieringOverride\'s own tiers parsing is unaffected', () => {
+test("parseTiering threads parseSecurityModelPin's own tri-state result onto AnalyzeTiering.security, always present (never collapsed to undefined); parseTieringOverride's own tiers parsing is unaffected", () => {
 	const valid = parseTiering({ security: { runner: 'cli-claude', model: 'x' }, tiers: { core: { runner: 'cli-codex', model: 'gpt-6.1-sol' } } });
-	assert.deepEqual(valid.security, { runner: 'cli-claude', model: 'x' });
+	assert.deepEqual(valid.security, { kind: 'valid', runner: 'cli-claude', model: 'x' });
 	assert.deepEqual(valid.tiers?.core, { runner: 'cli-codex', model: 'gpt-6.1-sol' });
 
-	assert.equal(parseTiering({}).security, undefined);
-	assert.equal(parseTiering({ security: { model: 'x' } }).security, undefined);
+	assert.deepEqual(parseTiering({}).security, { kind: 'absent' });
+	const malformed = parseTiering({ security: { model: 'x' } }).security;
+	assert.equal(malformed.kind, 'malformed');
 });
 
 // ── securityPinMeetsFloor (Epic add-dedicated-security-reviews, s1 t4) ──
@@ -230,4 +232,62 @@ test("securityPinMeetsFloor: a pin matching no family's tierDefaults at any tier
 	};
 	const registry = fakeRegistry([family]);
 	assert.equal(securityPinMeetsFloor(registry, 'cli-claude', 'some-other-model', 'cheap'), false);
+});
+
+// ── resolveSecurityModelCandidate (Epic add-dedicated-security-reviews, s1 t5) ──
+// Pure, synchronous selection: a malformed or below-floor/unlisted pin resolves
+// to 'unavailable' immediately and never falls through to the role's tier-
+// default model; only a genuinely absent pin falls through to it.
+
+function fakeAnalyzeConfig(tiering: AnalyzeTiering): AnalyzeConfig {
+	return {
+		shaperProvider: 'cli-claude',
+		shaperProviderExplicit: false,
+		shaperModel: '',
+		shaperModelExplicit: false,
+		summariserProvider: 'cli-claude',
+		summariserModel: '',
+		shaper: { maxToolTurns: 40, structuredOutputRetries: 3, ollamaNumPredict: 20_480 },
+		maxPlanDepth: { XS: 2, S: 3, M: 4, L: 5, XL: 6 },
+		tiering,
+		tierResolutions: {} as Record<string, TierResolution> as never,
+	};
+}
+
+test("resolveSecurityModelCandidate: a valid, floor-eligible pin -> status:'candidate' with that (runner, model)", () => {
+	const registry = fakeRegistry([CLAUDE_FAMILY]);
+	const cfg = fakeAnalyzeConfig({ security: { kind: 'valid', runner: 'cli-claude', model: 'opus' } });
+	assert.deepEqual(resolveSecurityModelCandidate(cfg, registry), { status: 'candidate', runner: 'cli-claude', model: 'opus' });
+});
+
+test("resolveSecurityModelCandidate: a malformed pin -> status:'unavailable' immediately, never falling through to the tier-default model", () => {
+	const registry = fakeRegistry([CLAUDE_FAMILY]);
+	const cfg = fakeAnalyzeConfig({ security: { kind: 'malformed', detail: 'bad pin' }, tiers: { core: { runner: 'cli-claude', model: 'opus' } } });
+	assert.deepEqual(resolveSecurityModelCandidate(cfg, registry), { status: 'unavailable', blockerReason: 'bad pin' });
+});
+
+test("resolveSecurityModelCandidate: a valid but below-floor/unclassifiable pin -> status:'unavailable', never substituted", () => {
+	const registry = fakeRegistry([CLAUDE_FAMILY]);
+	// haiku is only cli-claude's cheap-tier default; the role's floor is core.
+	const cfg = fakeAnalyzeConfig({ security: { kind: 'valid', runner: 'cli-claude', model: 'haiku' }, tiers: { core: { runner: 'cli-claude', model: 'opus' } } });
+	const result = resolveSecurityModelCandidate(cfg, registry);
+	assert.equal(result.status, 'unavailable');
+});
+
+test("resolveSecurityModelCandidate: an absent pin falls through to the 'security.review' role's tier-default model as a normal candidate", () => {
+	const registry = fakeRegistry([CLAUDE_FAMILY]);
+	const cfg = fakeAnalyzeConfig({ security: { kind: 'absent' }, tiers: { core: { runner: 'cli-claude', model: 'opus' } } });
+	assert.deepEqual(resolveSecurityModelCandidate(cfg, registry), { status: 'candidate', runner: 'cli-claude', model: 'opus' });
+});
+
+test("resolveSecurityModelCandidate: an absent pin whose tier-default model is itself unlisted/below-floor -> status:'unavailable'", () => {
+	const registry = fakeRegistry([CLAUDE_FAMILY]);
+	// 'haiku' is only cli-claude's cheap-tier default; as the (misconfigured) core-tier model it is below the role's core floor.
+	const cfg = fakeAnalyzeConfig({ security: { kind: 'absent' }, tiers: { core: { runner: 'cli-claude', model: 'haiku' } } });
+	const result = resolveSecurityModelCandidate(cfg, registry);
+	assert.equal(result.status, 'unavailable');
+
+	// Also unlisted: the core-tier model is not even a model of the family at all.
+	const cfgUnlisted = fakeAnalyzeConfig({ security: { kind: 'absent' }, tiers: { core: { runner: 'cli-claude', model: 'nonexistent' } } });
+	assert.equal(resolveSecurityModelCandidate(cfgUnlisted, registry).status, 'unavailable');
 });

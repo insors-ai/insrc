@@ -37,7 +37,7 @@ Insrc's general review flow does not give developers a dedicated assessment of v
 | ID | Type | Text | Source |
 | :--- | :--- | :--- | :--- |
 | `k1` | invariant | Cloud inference uses the installed CLI provider. Embeddings and repository stores follow the existing local-first rules. | [[c2]] |
-| `k2` | stakeholder | Use an explicitly selected security model alongside existing model selections. The reviewer runs with the SAME host access as the controller itself -- no sandboxing or egress/filesystem restriction is imposed, since constraining the reviewer would degrade review accuracy (explicit user direction). Lookups are correctly targeted at the repository's own resolved dependencies (never an ambient/mismatched environment), and the destination and disclosure of each lookup are recorded for the final report, not restricted. | [[c1]], [[c5]] |
+| `k2` | stakeholder | Use an explicitly selected security model alongside existing model selections. The reviewer runs with the SAME host access as the controller itself -- no sandboxing or egress/filesystem restriction is imposed, since constraining the reviewer would degrade review accuracy (explicit user direction). Lookups are correctly targeted at the repository's own resolved dependencies (never an ambient/mismatched environment), and the destination and disclosure of each lookup are recorded for the final report, not restricted. | [[c1]] |
 
 ## 5. Stories
 

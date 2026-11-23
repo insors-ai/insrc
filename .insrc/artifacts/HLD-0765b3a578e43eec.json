@@ -22,7 +22,7 @@
     "epicSlug": "add-dedicated-security-reviews",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 6,
         "contentHash": "05ef148b959e9d65ccca6596cdbd701461110d0a692c303e752a8223d7d3421f",
@@ -33,7 +33,19 @@
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 6,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-23T04:23:21.692Z",
+        "override": {
+          "reason": "Automated design review is retired. Revision 6 is a small, additive-only amendment (two new sc2 fields: contentStable, perManagerMode[].configuredDestination) surfaced while correcting the s2 LLD. Approved by explicit user instruction."
+        }
+      }
     },
     "revision": 6,
     "envelope": {

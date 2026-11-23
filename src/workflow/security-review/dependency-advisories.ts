@@ -166,7 +166,7 @@ function resolveRequirementsClosure(file: string, seen: Set<string>): string[] {
 	// follows it before parsing -- a '-r' directive split across lines with a
 	// line-continuation backslash names one logical reference, not a literal
 	// path ending in '\'.
-	const logicalLines = content.split('\n').reduce<string[]>((lines, raw) => {
+	const logicalLines = content.split('\n').map(line => line.endsWith('\r') ? line.slice(0, -1) : line).reduce<string[]>((lines, raw) => {
 		const prev = lines.at(-1);
 		if (prev !== undefined && prev.endsWith('\\')) {
 			lines[lines.length - 1] = prev.slice(0, -1) + raw;

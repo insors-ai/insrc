@@ -108,6 +108,19 @@ test("verifyManagerClosureCoverage: a '-r' directive split across a trailing-bac
 	}
 });
 
+test("verifyManagerClosureCoverage: a '-r' line continuation still resolves correctly when the file uses CRLF line endings", async () => {
+	const repo = tmpRepo();
+	try {
+		writeFileSync(join(repo, 'requirements.txt'), '-r \\\r\nmore.txt\r\nflask==2.0.0\r\n');
+		writeFileSync(join(repo, 'more.txt'), 'pytest==7.0.0\r\n');
+		const missing = await verifyManagerClosureCoverage(repo, { entries: [{ path: 'requirements.txt' }] }, 'pip', repo);
+		assert.equal(missing.covered, false);
+		assert.ok(!missing.covered && missing.missing.includes('more.txt'), JSON.stringify(missing));
+	} finally {
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
 test("verifyManagerClosureCoverage: a compact '-rfile' (glued, no space) reference is still resolved, not just the spaced '-r file' form", async () => {
 	const repo = tmpRepo();
 	try {

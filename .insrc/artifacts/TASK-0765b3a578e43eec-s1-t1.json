@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-97051a2f-cf3a-4a04-b646-54b6c461ee77",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-23T06:30:42.992Z",
+    "epicCreatedAt": "2026-11-10T05:58:05.294Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "0765b3a578e43eec",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Register the 'security.review' role in role-taxonomy.ts",
+      "parent": {
+        "entityId": "STORY-0765b3a578e43eec-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-0765b3a578e43eec-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#229",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "52ccb5fd466b388841cd13e1e2439909791bdf553a1bfbbaa7a52c525b7e33cd",
+        "at": "2026-11-23T06:30:42.992Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-23T06:30:42.994Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Register the 'security.review' role in role-taxonomy.ts",
+    "summary": "Add one new RoleDescriptor entry {id:'security.review', criticality:'critical', defaultTier:'core'} to the closed ROLES array in src/config/role-taxonomy.ts, so the role participates in coreFloor protection and is exposed by settings-catalog.ts like every other critical role. Pure data addition -- no accessor logic changes.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "roleDescriptor('security.review') returns the registered descriptor with criticality:'critical' and defaultTier:'core'",
+      "Every existing role-taxonomy.test.ts assertion (e.g. 'critical role must default to core') still passes for the new entry",
+      "settings-catalog.ts's generic 'every critical role appears' assertion covers the new entry without any settings-catalog.ts code change"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "role-taxonomy.ts ROLES: the 'security.review' entry is criticality:'critical' with defaultTier:'core' (mirrors role-taxonomy.test.ts:49's existing 'critical role must default to core' assertion)"
+      },
+      {
+        "level": "unit",
+        "name": "roleDescriptor('security.review') returns the registered descriptor"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

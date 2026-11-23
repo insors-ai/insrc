@@ -27,9 +27,9 @@
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 1,
+        "number": 2,
         "contentHash": "eea98737b50a749a03b047461942e14b40548177bd72dd885f981119e95cc571",
-        "at": "2026-11-23T06:28:09.061Z",
+        "at": "2026-11-23T09:36:20.856Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
@@ -47,7 +47,7 @@
         "at": "2026-11-23T06:30:40.491Z"
       }
     },
-    "revision": 1,
+    "revision": 2,
     "envelope": {
       "description": "",
       "references": [],

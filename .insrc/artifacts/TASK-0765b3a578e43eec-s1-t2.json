@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d449ff51-ee37-443d-a1fd-8e34cd2e50d9",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-23T06:30:42.995Z",
+    "epicCreatedAt": "2026-11-10T05:58:05.294Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "0765b3a578e43eec",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add models.security.{runner,model,effort} global-only config-catalog rows",
+      "parent": {
+        "entityId": "STORY-0765b3a578e43eec-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-0765b3a578e43eec-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#230",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "5f3cc01f0ed8465462951dcafad8ed788b7a130815feaac6e71d09ce5be34c7c",
+        "at": "2026-11-23T06:30:42.995Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-23T06:30:42.996Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add models.security.{runner,model,effort} global-only config-catalog rows",
+    "summary": "Add three new GLOBAL-ONLY scalar rows to config-catalog.ts, mirroring the existing models.tiers.<tier>.{runner,model,effort} row shape exactly (same {path, type, default, desc, enumValues?, group} shape as buildConfigCatalog's tierRows/effortRow pattern), under a new group label (e.g. 'Models -- security'). No byRepo variant -- per-repo config only ever picks a TIER for a role, never the model behind it.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "config-catalog.ts exposes models.security.runner (enum of FamilyId), models.security.model (string), models.security.effort (enum, optional) as global-only rows",
+      "No byRepo.* variant exists for these three keys",
+      "settings-catalog.ts surfaces the new rows the same way it surfaces models.tiers.* rows, with no changes to how models.tiers.* itself is rendered"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "CONFIG_CATALOG includes models.security.runner/model/effort as global-only rows with no byRepo variant"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

@@ -1,0 +1,162 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 20,
+        "contentHash": "54c0116ce382bca5abe3efcbafb9243846b7412352b22e22531c06e22c5fe823",
+        "at": "2026-11-23T09:32:40.433Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 20,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-23T09:34:10.288Z",
+        "override": {
+          "reason": "Automated code review is unavailable while being rewritten (per project policy). All 6 Tasks (t1-t6) validated passed:true by the build gate (typecheck clean, 44/44 tests passing). Three external review rounds (1 P1 + 5 P2 + 1 P2 + 3 gate re-validation findings) were each independently verified and fixed. User (Subho) reviewed each round in chat and gave explicit approval."
+        }
+      }
+    },
+    "workflow": "build",
+    "runId": "store-dcae298d-ab46-40fe-acf3-b8e086137e26",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-23T06:36:06.784Z",
+    "epicCreatedAt": "2026-11-10T05:58:05.294Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "0765b3a578e43eec",
+    "storyId": "s1",
+    "revision": 20,
+    "updatedAt": "2026-11-23T09:31:46.665Z",
+    "authoredBy": "controller",
+    "epicSlug": "add-dedicated-security-reviews"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      }
+    ],
+    "summary": "Re-validation after also correcting the PLAN record's and PLAN.md's own embedded copy of t3's summary text (the gate was reading the stale \"optional\" wording from there, not just the Task record).",
+    "testRecord": {
+      "md": "docs/epics/add-dedicated-security-reviews-E202611100765b3a5/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/config/__tests__/role-taxonomy.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-23T09:31:46.665Z"
+      },
+      {
+        "target": {
+          "file": "src/config/role-taxonomy.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-23T09:31:46.665Z"
+      },
+      {
+        "target": {
+          "file": "src/config/__tests__/config-catalog-contract.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-23T09:31:46.665Z"
+      },
+      {
+        "target": {
+          "file": "src/config/__tests__/config-catalog-defs.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-23T09:31:46.665Z"
+      },
+      {
+        "target": {
+          "file": "src/config/config-catalog.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-23T09:31:46.665Z"
+      },
+      {
+        "target": {
+          "file": "src/config/__tests__/analyze-tiering.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-23T09:31:46.665Z"
+      },
+      {
+        "target": {
+          "file": "src/config/analyze.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-23T09:31:46.665Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/add-dedicated-security-reviews-E202611100765b3a5/S001/live-test-t6-evidence.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-23T09:31:46.665Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-0765b3a578e43eec-s1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-23T09:31:46.665Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-0765b3a578e43eec-s1-t3.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-23T09:31:46.665Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/add-dedicated-security-reviews-E202611100765b3a5/S001/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-23T09:31:46.665Z"
+      }
+    ],
+    "commit": "e73f58256"
+  },
+  "citations": []
+}

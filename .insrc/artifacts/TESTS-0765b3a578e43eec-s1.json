@@ -1,0 +1,1110 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 20,
+        "contentHash": "a5a20dc6e8a3d4379536b2244120f6069ff3fbf96393cf86568085d575859451",
+        "at": "2026-11-23T09:31:47.178Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "0765b3a578e43eec",
+    "storyId": "s1",
+    "createdAt": "2026-11-23T06:36:06.784Z",
+    "updatedAt": "2026-11-23T09:31:46.665Z",
+    "epicCreatedAt": "2026-11-10T05:58:05.294Z",
+    "epicSlug": "add-dedicated-security-reviews",
+    "revision": 20
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "54c98e80f",
+        "ranAt": "2026-11-23T06:36:06.784Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "role-taxonomy.ts ROLES: the 'security.review' entry is criticality:'critical' with defaultTier:'core' (mirrors role-taxonomy.test.ts:49's existing 'critical role must default to core' assertion)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/config/__tests__/role-taxonomy.test.ts",
+                "title": "the 'security.review' entry is criticality:'critical' with defaultTier:'core'",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "roleDescriptor('security.review') returns the registered descriptor",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/config/__tests__/role-taxonomy.test.ts",
+                "title": "roleDescriptor('security.review') returns the registered descriptor",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/config/__tests__/role-taxonomy.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 677,
+            "titles": [
+              {
+                "title": "rankOf orders cheap < mid < core and is total over the three tiers",
+                "result": "pass"
+              },
+              {
+                "title": "covers the analyze-pipeline reasoning sites (the ~11-caller scope finding)",
+                "result": "pass"
+              },
+              {
+                "title": "covers the critical workflow reasoning roles",
+                "result": "pass"
+              },
+              {
+                "title": "every critical role defaults to the core tier (floor-protected)",
+                "result": "pass"
+              },
+              {
+                "title": "peripheral defaults: synthesize → mid, tracker/summaries/probes → cheap",
+                "result": "pass"
+              },
+              {
+                "title": "an unknown role id resolves to undefined (downstream gap-fallback, never throws)",
+                "result": "pass"
+              },
+              {
+                "title": "every role id is unique",
+                "result": "pass"
+              },
+              {
+                "title": "every descriptor carries a valid tier + criticality",
+                "result": "pass"
+              },
+              {
+                "title": "the 'security.review' entry is criticality:'critical' with defaultTier:'core'",
+                "result": "pass"
+              },
+              {
+                "title": "roleDescriptor('security.review') returns the registered descriptor",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "84ae8300a",
+        "ranAt": "2026-11-23T06:39:33.998Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CONFIG_CATALOG includes models.security.runner/model/effort as global-only rows with no byRepo variant",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/config/__tests__/config-catalog-defs.test.ts",
+                "title": "CONFIG_CATALOG includes models.security.runner/model/effort as global-only rows with no byRepo variant",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/config/__tests__/config-catalog-defs.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1206,
+            "titles": [
+              {
+                "title": "config-catalog-defs.test.ts: buildConfigCatalog(fixture) takes runner/model/effort defaults, effort enums and coreModel default from the fixture; CONFIG_CATALOG equals buildConfigCatalog(shipped); no ollamaNumCtx row; loadBuiltCatalog accepts the built catalog",
+                "result": "pass"
+              },
+              {
+                "title": "config-catalog-defs.test.ts: model-defaults and config-catalog import no logger, registry or file-I/O module and derive without throwing from a fixture missing fields",
+                "result": "pass"
+              },
+              {
+                "title": "config-catalog-defs.test.ts: deriveModelDefaults lists five familyIds, keeps the default family's tier defaults and 'ollama' as the local family",
+                "result": "pass"
+              },
+              {
+                "title": "CONFIG_CATALOG includes models.security.runner/model/effort as global-only rows with no byRepo variant",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "e73f58256",
+        "ranAt": "2026-11-23T09:31:46.665Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "parseSecurityModelPin: no models.security key at all -> { kind: 'absent' }",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/config/__tests__/analyze-tiering.test.ts",
+                "title": "parseSecurityModelPin: no models.security key at all -> { kind: 'absent' }",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "parseSecurityModelPin: a complete, well-typed { runner, model } -> { kind: 'valid', ... }",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/config/__tests__/analyze-tiering.test.ts",
+                "title": "parseSecurityModelPin: a complete, well-typed { runner, model } -> { kind: 'valid', ... }",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "parseSecurityModelPin: runner set with no model -> { kind: 'malformed', detail }",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/config/__tests__/analyze-tiering.test.ts",
+                "title": "parseSecurityModelPin: runner set with no model -> { kind: 'malformed', detail }",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "parseSecurityModelPin: runner is not a recognized FamilyId -> { kind: 'malformed', detail }",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/config/__tests__/analyze-tiering.test.ts",
+                "title": "parseSecurityModelPin: runner is not a recognized FamilyId -> { kind: 'malformed', detail }",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/config/__tests__/analyze-tiering.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 636,
+            "titles": [
+              {
+                "title": "a valid tier table parses to {runner, model} TierModels",
+                "result": "pass"
+              },
+              {
+                "title": "a tier with a non-k1 runner is dropped (no direct-REST backend admitted)",
+                "result": "pass"
+              },
+              {
+                "title": "an unknown tier name is dropped",
+                "result": "pass"
+              },
+              {
+                "title": "coreFloor accepts only a TierName; other strings are dropped",
+                "result": "pass"
+              },
+              {
+                "title": "models.tasks parses valid RoleId→TierName entries and drops non-tier values",
+                "result": "pass"
+              },
+              {
+                "title": "byRepo tiering overrides are parsed per repo path (tasks key)",
+                "result": "pass"
+              },
+              {
+                "title": "absent tiering keys → {} (legacy single-provider path), aside from the always-present security tri-state",
+                "result": "pass"
+              },
+              {
+                "title": "empty tiers:{} / tasks:{} are treated as absent, not an error",
+                "result": "pass"
+              },
+              {
+                "title": "a byRepo entry with no valid tiering keys is not retained",
+                "result": "pass"
+              },
+              {
+                "title": "parseTiering reads effort on the global core/mid/cheap tiers; models.byRepo[repo].tiers is ignored (tiers are global only); '' is an explicit CLI default and absent gives no effort",
+                "result": "pass"
+              },
+              {
+                "title": "a non-string effort is dropped with a warning while the tier keeps its runner and model; any level name is parsed (the registry decides acceptance per model)",
+                "result": "pass"
+              },
+              {
+                "title": "parseSecurityModelPin: no models.security key at all -> { kind: 'absent' }",
+                "result": "pass"
+              },
+              {
+                "title": "parseSecurityModelPin: a complete, well-typed { runner, model } -> { kind: 'valid', ... }",
+                "result": "pass"
+              },
+              {
+                "title": "parseSecurityModelPin: runner set with no model -> { kind: 'malformed', detail }",
+                "result": "pass"
+              },
+              {
+                "title": "parseSecurityModelPin: model set with no runner -> { kind: 'malformed', detail }",
+                "result": "pass"
+              },
+              {
+                "title": "parseSecurityModelPin: runner is not a recognized FamilyId -> { kind: 'malformed', detail }",
+                "result": "pass"
+              },
+              {
+                "title": "parseSecurityModelPin: a valid pin with effort carries it through; an empty security object is absent, not malformed",
+                "result": "pass"
+              },
+              {
+                "title": "parseSecurityModelPin: the catalog's own persisted unset sentinel (runner:'', model:'') -> { kind: 'absent' }, not malformed",
+                "result": "pass"
+              },
+              {
+                "title": "parseSecurityModelPin: a valid pin never carries a literal '' effort (the CLI's own default, not a flag value)",
+                "result": "pass"
+              },
+              {
+                "title": "parseSecurityModelPin: models.security present but the wrong shape (null/string/array/number) -> malformed, not absent",
+                "result": "pass"
+              },
+              {
+                "title": "parseTiering threads parseSecurityModelPin's own tri-state result onto AnalyzeTiering.security, always present (never collapsed to undefined); parseTieringOverride's own tiers parsing is unaffected",
+                "result": "pass"
+              },
+              {
+                "title": "securityPinMeetsFloor: a pin matching its own family's tierDefaults at a tier at/above the floor -> true",
+                "result": "pass"
+              },
+              {
+                "title": "securityPinMeetsFloor: a pin matching a DIFFERENT family's tierDefaults at a tier at/above the floor -> true",
+                "result": "pass"
+              },
+              {
+                "title": "securityPinMeetsFloor: a pin matching a tierDefaults entry BELOW the floor rank -> false",
+                "result": "pass"
+              },
+              {
+                "title": "securityPinMeetsFloor: a pin matching no family's tierDefaults at any tier (unclassifiable) -> false",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModelCandidate: a valid, floor-eligible pin -> status:'candidate' with that (runner, model)",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModelCandidate: a malformed pin -> status:'unavailable' immediately, never falling through to the tier-default model",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModelCandidate: a valid but below-floor/unclassifiable pin -> status:'unavailable', never substituted",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModelCandidate: an absent pin falls through to the 'security.review' role's tier-default model as a normal candidate",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModelCandidate: an absent pin whose tier-default model is itself unlisted/below-floor -> status:'unavailable'",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModelCandidate: models.tasks['security.review'] (roleTiers) is honored for an absent pin, not just the role's bare defaultTier",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModelCandidate: a byRepo roleTiers override takes precedence over the global one, for the given repoPath",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModelCandidate: a critical role's tier is clamped up to coreFloor even when roleTiers assigns it lower",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModelCandidate: an absent pin refuses (never silently falls through) when the floor tier's own configured model was itself rejected/substituted",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModel: candidate already 'unavailable' -> resolves immediately, no probe attempted",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModel: probe resolves successfully within the deadline -> status:'configured'",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModel: probe rejects (simulated ENOENT/auth failure) -> status:'unavailable' with a backend-failure blockerReason",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModel: probe neither resolves nor rejects before opts.deadlineMs -> status:'unavailable' with a timeout blockerReason",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModel: opts.signal is aborted while the probe is outstanding -> status:'unavailable' with a cancellation blockerReason",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModel: an opts.signal that is ALREADY aborted before the call short-circuits immediately, with no probe dispatched",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModel: a timeout aborts the internal signal threaded into the probe, so the underlying call is actually cancelled",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModel: the caller's own cancellation also aborts the internal signal threaded into the probe",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModel: opts.repoPath is forwarded to resolveSecurityModelCandidate -- an absent pin probes the REPO's own roleTiers-assigned tier-default model, not the global one",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModel: opts.repoPath is forwarded to resolveSecurityModelCandidate -- an explicit pin eligible under the global role tier is refused without ever probing once the REPO's own roleTiers assignment raises the floor",
+                "result": "pass"
+              },
+              {
+                "title": "live: resolveSecurityModel reports a genuinely unreachable CLI backend via ENOENT, within the deadline, never a hang or substitution",
+                "result": "skipped"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "45b4168dd",
+        "ranAt": "2026-11-23T06:52:52.009Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "securityPinMeetsFloor: a pin matching its own family's tierDefaults at a tier at/above the floor -> true",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/config/__tests__/analyze-tiering.test.ts",
+                "title": "securityPinMeetsFloor: a pin matching its own family's tierDefaults at a tier at/above the floor -> true",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "securityPinMeetsFloor: a pin matching a DIFFERENT family's tierDefaults at a tier at/above the floor -> true",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/config/__tests__/analyze-tiering.test.ts",
+                "title": "securityPinMeetsFloor: a pin matching a DIFFERENT family's tierDefaults at a tier at/above the floor -> true",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "securityPinMeetsFloor: a pin matching a tierDefaults entry BELOW the floor rank -> false",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/config/__tests__/analyze-tiering.test.ts",
+                "title": "securityPinMeetsFloor: a pin matching a tierDefaults entry BELOW the floor rank -> false",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "securityPinMeetsFloor: a pin matching no family's tierDefaults at any tier (unclassifiable) -> false",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/config/__tests__/analyze-tiering.test.ts",
+                "title": "securityPinMeetsFloor: a pin matching no family's tierDefaults at any tier (unclassifiable) -> false",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/config/__tests__/analyze-tiering.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 771,
+            "titles": [
+              {
+                "title": "a valid tier table parses to {runner, model} TierModels",
+                "result": "pass"
+              },
+              {
+                "title": "a tier with a non-k1 runner is dropped (no direct-REST backend admitted)",
+                "result": "pass"
+              },
+              {
+                "title": "an unknown tier name is dropped",
+                "result": "pass"
+              },
+              {
+                "title": "coreFloor accepts only a TierName; other strings are dropped",
+                "result": "pass"
+              },
+              {
+                "title": "models.tasks parses valid RoleId→TierName entries and drops non-tier values",
+                "result": "pass"
+              },
+              {
+                "title": "byRepo tiering overrides are parsed per repo path (tasks key)",
+                "result": "pass"
+              },
+              {
+                "title": "absent tiering keys → {} (legacy single-provider path)",
+                "result": "pass"
+              },
+              {
+                "title": "empty tiers:{} / tasks:{} are treated as absent, not an error",
+                "result": "pass"
+              },
+              {
+                "title": "a byRepo entry with no valid tiering keys is not retained",
+                "result": "pass"
+              },
+              {
+                "title": "parseTiering reads effort on the global core/mid/cheap tiers; models.byRepo[repo].tiers is ignored (tiers are global only); '' is an explicit CLI default and absent gives no effort",
+                "result": "pass"
+              },
+              {
+                "title": "a non-string effort is dropped with a warning while the tier keeps its runner and model; any level name is parsed (the registry decides acceptance per model)",
+                "result": "pass"
+              },
+              {
+                "title": "parseSecurityModelPin: no models.security key at all -> { kind: 'absent' }",
+                "result": "pass"
+              },
+              {
+                "title": "parseSecurityModelPin: a complete, well-typed { runner, model } -> { kind: 'valid', ... }",
+                "result": "pass"
+              },
+              {
+                "title": "parseSecurityModelPin: runner set with no model -> { kind: 'malformed', detail }",
+                "result": "pass"
+              },
+              {
+                "title": "parseSecurityModelPin: model set with no runner -> { kind: 'malformed', detail }",
+                "result": "pass"
+              },
+              {
+                "title": "parseSecurityModelPin: runner is not a recognized FamilyId -> { kind: 'malformed', detail }",
+                "result": "pass"
+              },
+              {
+                "title": "parseSecurityModelPin: a valid pin with effort carries it through; an empty security object is absent, not malformed",
+                "result": "pass"
+              },
+              {
+                "title": "parseTiering threads a valid security pin onto AnalyzeTiering.security; an absent or malformed pin leaves it undefined; parseTieringOverride's own tiers parsing is unaffected",
+                "result": "pass"
+              },
+              {
+                "title": "securityPinMeetsFloor: a pin matching its own family's tierDefaults at a tier at/above the floor -> true",
+                "result": "pass"
+              },
+              {
+                "title": "securityPinMeetsFloor: a pin matching a DIFFERENT family's tierDefaults at a tier at/above the floor -> true",
+                "result": "pass"
+              },
+              {
+                "title": "securityPinMeetsFloor: a pin matching a tierDefaults entry BELOW the floor rank -> false",
+                "result": "pass"
+              },
+              {
+                "title": "securityPinMeetsFloor: a pin matching no family's tierDefaults at any tier (unclassifiable) -> false",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "c6a1126d3",
+        "ranAt": "2026-11-23T08:58:04.098Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "resolveSecurityModelCandidate: a valid, floor-eligible pin -> status:'candidate' with that (runner, model)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/config/__tests__/analyze-tiering.test.ts",
+                "title": "resolveSecurityModelCandidate: a valid, floor-eligible pin -> status:'candidate' with that (runner, model)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "resolveSecurityModelCandidate: a malformed pin -> status:'unavailable' immediately, never falling through to the tier-default model",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/config/__tests__/analyze-tiering.test.ts",
+                "title": "resolveSecurityModelCandidate: a malformed pin -> status:'unavailable' immediately, never falling through to the tier-default model",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "resolveSecurityModelCandidate: a valid but below-floor/unclassifiable pin -> status:'unavailable', never substituted",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/config/__tests__/analyze-tiering.test.ts",
+                "title": "resolveSecurityModelCandidate: a valid but below-floor/unclassifiable pin -> status:'unavailable', never substituted",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "resolveSecurityModelCandidate: an absent pin falls through to the 'security.review' role's tier-default model as a normal candidate",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/config/__tests__/analyze-tiering.test.ts",
+                "title": "resolveSecurityModelCandidate: an absent pin falls through to the 'security.review' role's tier-default model as a normal candidate",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "resolveSecurityModelCandidate: an absent pin whose tier-default model is itself unlisted/below-floor -> status:'unavailable'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/config/__tests__/analyze-tiering.test.ts",
+                "title": "resolveSecurityModelCandidate: an absent pin whose tier-default model is itself unlisted/below-floor -> status:'unavailable'",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/config/__tests__/analyze-tiering.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 749,
+            "titles": [
+              {
+                "title": "a valid tier table parses to {runner, model} TierModels",
+                "result": "pass"
+              },
+              {
+                "title": "a tier with a non-k1 runner is dropped (no direct-REST backend admitted)",
+                "result": "pass"
+              },
+              {
+                "title": "an unknown tier name is dropped",
+                "result": "pass"
+              },
+              {
+                "title": "coreFloor accepts only a TierName; other strings are dropped",
+                "result": "pass"
+              },
+              {
+                "title": "models.tasks parses valid RoleId→TierName entries and drops non-tier values",
+                "result": "pass"
+              },
+              {
+                "title": "byRepo tiering overrides are parsed per repo path (tasks key)",
+                "result": "pass"
+              },
+              {
+                "title": "absent tiering keys → {} (legacy single-provider path), aside from the always-present security tri-state",
+                "result": "pass"
+              },
+              {
+                "title": "empty tiers:{} / tasks:{} are treated as absent, not an error",
+                "result": "pass"
+              },
+              {
+                "title": "a byRepo entry with no valid tiering keys is not retained",
+                "result": "pass"
+              },
+              {
+                "title": "parseTiering reads effort on the global core/mid/cheap tiers; models.byRepo[repo].tiers is ignored (tiers are global only); '' is an explicit CLI default and absent gives no effort",
+                "result": "pass"
+              },
+              {
+                "title": "a non-string effort is dropped with a warning while the tier keeps its runner and model; any level name is parsed (the registry decides acceptance per model)",
+                "result": "pass"
+              },
+              {
+                "title": "parseSecurityModelPin: no models.security key at all -> { kind: 'absent' }",
+                "result": "pass"
+              },
+              {
+                "title": "parseSecurityModelPin: a complete, well-typed { runner, model } -> { kind: 'valid', ... }",
+                "result": "pass"
+              },
+              {
+                "title": "parseSecurityModelPin: runner set with no model -> { kind: 'malformed', detail }",
+                "result": "pass"
+              },
+              {
+                "title": "parseSecurityModelPin: model set with no runner -> { kind: 'malformed', detail }",
+                "result": "pass"
+              },
+              {
+                "title": "parseSecurityModelPin: runner is not a recognized FamilyId -> { kind: 'malformed', detail }",
+                "result": "pass"
+              },
+              {
+                "title": "parseSecurityModelPin: a valid pin with effort carries it through; an empty security object is absent, not malformed",
+                "result": "pass"
+              },
+              {
+                "title": "parseSecurityModelPin: the catalog's own persisted unset sentinel (runner:'', model:'') -> { kind: 'absent' }, not malformed",
+                "result": "pass"
+              },
+              {
+                "title": "parseSecurityModelPin: a valid pin never carries a literal '' effort (the CLI's own default, not a flag value)",
+                "result": "pass"
+              },
+              {
+                "title": "parseSecurityModelPin: models.security present but the wrong shape (null/string/array/number) -> malformed, not absent",
+                "result": "pass"
+              },
+              {
+                "title": "parseTiering threads parseSecurityModelPin's own tri-state result onto AnalyzeTiering.security, always present (never collapsed to undefined); parseTieringOverride's own tiers parsing is unaffected",
+                "result": "pass"
+              },
+              {
+                "title": "securityPinMeetsFloor: a pin matching its own family's tierDefaults at a tier at/above the floor -> true",
+                "result": "pass"
+              },
+              {
+                "title": "securityPinMeetsFloor: a pin matching a DIFFERENT family's tierDefaults at a tier at/above the floor -> true",
+                "result": "pass"
+              },
+              {
+                "title": "securityPinMeetsFloor: a pin matching a tierDefaults entry BELOW the floor rank -> false",
+                "result": "pass"
+              },
+              {
+                "title": "securityPinMeetsFloor: a pin matching no family's tierDefaults at any tier (unclassifiable) -> false",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModelCandidate: a valid, floor-eligible pin -> status:'candidate' with that (runner, model)",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModelCandidate: a malformed pin -> status:'unavailable' immediately, never falling through to the tier-default model",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModelCandidate: a valid but below-floor/unclassifiable pin -> status:'unavailable', never substituted",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModelCandidate: an absent pin falls through to the 'security.review' role's tier-default model as a normal candidate",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModelCandidate: an absent pin whose tier-default model is itself unlisted/below-floor -> status:'unavailable'",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModelCandidate: models.tasks['security.review'] (roleTiers) is honored for an absent pin, not just the role's bare defaultTier",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModelCandidate: a byRepo roleTiers override takes precedence over the global one, for the given repoPath",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModelCandidate: a critical role's tier is clamped up to coreFloor even when roleTiers assigns it lower",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModelCandidate: an absent pin refuses (never silently falls through) when the floor tier's own configured model was itself rejected/substituted",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModel: candidate already 'unavailable' -> resolves immediately, no probe attempted",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModel: probe resolves successfully within the deadline -> status:'configured'",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModel: probe rejects (simulated ENOENT/auth failure) -> status:'unavailable' with a backend-failure blockerReason",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModel: probe neither resolves nor rejects before opts.deadlineMs -> status:'unavailable' with a timeout blockerReason",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModel: opts.signal is aborted while the probe is outstanding -> status:'unavailable' with a cancellation blockerReason",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModel: an opts.signal that is ALREADY aborted before the call short-circuits immediately, with no probe dispatched",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModel: a timeout aborts the internal signal threaded into the probe, so the underlying call is actually cancelled",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModel: the caller's own cancellation also aborts the internal signal threaded into the probe",
+                "result": "pass"
+              },
+              {
+                "title": "live: resolveSecurityModel reports a genuinely unreachable CLI backend via ENOENT, within the deadline, never a hang or substitution",
+                "result": "skipped"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "4a27a1553",
+        "ranAt": "2026-11-23T09:07:04.397Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "resolveSecurityModel: candidate already 'unavailable' -> resolves immediately, no probe attempted",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/config/__tests__/analyze-tiering.test.ts",
+                "title": "resolveSecurityModel: candidate already 'unavailable' -> resolves immediately, no probe attempted",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "resolveSecurityModel: probe resolves successfully within the deadline -> status:'configured'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/config/__tests__/analyze-tiering.test.ts",
+                "title": "resolveSecurityModel: probe resolves successfully within the deadline -> status:'configured'",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "resolveSecurityModel: probe rejects (simulated ENOENT/auth failure) -> status:'unavailable' with a backend-failure blockerReason",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/config/__tests__/analyze-tiering.test.ts",
+                "title": "resolveSecurityModel: probe rejects (simulated ENOENT/auth failure) -> status:'unavailable' with a backend-failure blockerReason",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "resolveSecurityModel: probe neither resolves nor rejects before opts.deadlineMs -> status:'unavailable' with a timeout blockerReason",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/config/__tests__/analyze-tiering.test.ts",
+                "title": "resolveSecurityModel: probe neither resolves nor rejects before opts.deadlineMs -> status:'unavailable' with a timeout blockerReason",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "resolveSecurityModel: opts.signal is aborted while the probe is outstanding -> status:'unavailable' with a cancellation blockerReason",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/config/__tests__/analyze-tiering.test.ts",
+                "title": "resolveSecurityModel: opts.signal is aborted while the probe is outstanding -> status:'unavailable' with a cancellation blockerReason",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "resolveSecurityModel against a real CliProvider probe for a valid, floor-eligible pin whose backend is deliberately unreachable, asserting status:'unavailable' with a populated blockerReason within the configured deadline, rather than a hang or a silent substitute model",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "See the committed file docs/epics/add-dedicated-security-reviews-E202611100765b3a5/S001/live-test-t6-evidence.txt (commit 0ef8136ef) -- the raw, unedited stdout+stderr of running INSRC_LIVE_TESTS=1 npx tsx --test src/config/__tests__/analyze-tiering.test.ts, timestamped 2026-11-23T07:15:14Z, ending in 'tests 33 / pass 33 / fail 0 / skipped 0', confirming the live test executed (not skipped) and passed."
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "src/config/__tests__/analyze-tiering.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 677,
+            "titles": [
+              {
+                "title": "a valid tier table parses to {runner, model} TierModels",
+                "result": "pass"
+              },
+              {
+                "title": "a tier with a non-k1 runner is dropped (no direct-REST backend admitted)",
+                "result": "pass"
+              },
+              {
+                "title": "an unknown tier name is dropped",
+                "result": "pass"
+              },
+              {
+                "title": "coreFloor accepts only a TierName; other strings are dropped",
+                "result": "pass"
+              },
+              {
+                "title": "models.tasks parses valid RoleId→TierName entries and drops non-tier values",
+                "result": "pass"
+              },
+              {
+                "title": "byRepo tiering overrides are parsed per repo path (tasks key)",
+                "result": "pass"
+              },
+              {
+                "title": "absent tiering keys → {} (legacy single-provider path), aside from the always-present security tri-state",
+                "result": "pass"
+              },
+              {
+                "title": "empty tiers:{} / tasks:{} are treated as absent, not an error",
+                "result": "pass"
+              },
+              {
+                "title": "a byRepo entry with no valid tiering keys is not retained",
+                "result": "pass"
+              },
+              {
+                "title": "parseTiering reads effort on the global core/mid/cheap tiers; models.byRepo[repo].tiers is ignored (tiers are global only); '' is an explicit CLI default and absent gives no effort",
+                "result": "pass"
+              },
+              {
+                "title": "a non-string effort is dropped with a warning while the tier keeps its runner and model; any level name is parsed (the registry decides acceptance per model)",
+                "result": "pass"
+              },
+              {
+                "title": "parseSecurityModelPin: no models.security key at all -> { kind: 'absent' }",
+                "result": "pass"
+              },
+              {
+                "title": "parseSecurityModelPin: a complete, well-typed { runner, model } -> { kind: 'valid', ... }",
+                "result": "pass"
+              },
+              {
+                "title": "parseSecurityModelPin: runner set with no model -> { kind: 'malformed', detail }",
+                "result": "pass"
+              },
+              {
+                "title": "parseSecurityModelPin: model set with no runner -> { kind: 'malformed', detail }",
+                "result": "pass"
+              },
+              {
+                "title": "parseSecurityModelPin: runner is not a recognized FamilyId -> { kind: 'malformed', detail }",
+                "result": "pass"
+              },
+              {
+                "title": "parseSecurityModelPin: a valid pin with effort carries it through; an empty security object is absent, not malformed",
+                "result": "pass"
+              },
+              {
+                "title": "parseSecurityModelPin: the catalog's own persisted unset sentinel (runner:'', model:'') -> { kind: 'absent' }, not malformed",
+                "result": "pass"
+              },
+              {
+                "title": "parseSecurityModelPin: a valid pin never carries a literal '' effort (the CLI's own default, not a flag value)",
+                "result": "pass"
+              },
+              {
+                "title": "parseSecurityModelPin: models.security present but the wrong shape (null/string/array/number) -> malformed, not absent",
+                "result": "pass"
+              },
+              {
+                "title": "parseTiering threads parseSecurityModelPin's own tri-state result onto AnalyzeTiering.security, always present (never collapsed to undefined); parseTieringOverride's own tiers parsing is unaffected",
+                "result": "pass"
+              },
+              {
+                "title": "securityPinMeetsFloor: a pin matching its own family's tierDefaults at a tier at/above the floor -> true",
+                "result": "pass"
+              },
+              {
+                "title": "securityPinMeetsFloor: a pin matching a DIFFERENT family's tierDefaults at a tier at/above the floor -> true",
+                "result": "pass"
+              },
+              {
+                "title": "securityPinMeetsFloor: a pin matching a tierDefaults entry BELOW the floor rank -> false",
+                "result": "pass"
+              },
+              {
+                "title": "securityPinMeetsFloor: a pin matching no family's tierDefaults at any tier (unclassifiable) -> false",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModelCandidate: a valid, floor-eligible pin -> status:'candidate' with that (runner, model)",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModelCandidate: a malformed pin -> status:'unavailable' immediately, never falling through to the tier-default model",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModelCandidate: a valid but below-floor/unclassifiable pin -> status:'unavailable', never substituted",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModelCandidate: an absent pin falls through to the 'security.review' role's tier-default model as a normal candidate",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModelCandidate: an absent pin whose tier-default model is itself unlisted/below-floor -> status:'unavailable'",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModelCandidate: models.tasks['security.review'] (roleTiers) is honored for an absent pin, not just the role's bare defaultTier",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModelCandidate: a byRepo roleTiers override takes precedence over the global one, for the given repoPath",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModelCandidate: a critical role's tier is clamped up to coreFloor even when roleTiers assigns it lower",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModelCandidate: an absent pin refuses (never silently falls through) when the floor tier's own configured model was itself rejected/substituted",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModel: candidate already 'unavailable' -> resolves immediately, no probe attempted",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModel: probe resolves successfully within the deadline -> status:'configured'",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModel: probe rejects (simulated ENOENT/auth failure) -> status:'unavailable' with a backend-failure blockerReason",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModel: probe neither resolves nor rejects before opts.deadlineMs -> status:'unavailable' with a timeout blockerReason",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModel: opts.signal is aborted while the probe is outstanding -> status:'unavailable' with a cancellation blockerReason",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModel: an opts.signal that is ALREADY aborted before the call short-circuits immediately, with no probe dispatched",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModel: a timeout aborts the internal signal threaded into the probe, so the underlying call is actually cancelled",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModel: the caller's own cancellation also aborts the internal signal threaded into the probe",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModel: opts.repoPath is forwarded to resolveSecurityModelCandidate -- an absent pin probes the REPO's own roleTiers-assigned tier-default model, not the global one",
+                "result": "pass"
+              },
+              {
+                "title": "resolveSecurityModel: opts.repoPath is forwarded to resolveSecurityModelCandidate -- an explicit pin eligible under the global role tier is refused without ever probing once the REPO's own roleTiers assignment raises the floor",
+                "result": "pass"
+              },
+              {
+                "title": "live: resolveSecurityModel reports a genuinely unreachable CLI backend via ENOENT, within the deadline, never a hang or substitution",
+                "result": "skipped"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

@@ -1,0 +1,111 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-13a255ca-1daa-46f9-b551-eb7244ed0138",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-23T06:30:43.004Z",
+    "epicCreatedAt": "2026-11-10T05:58:05.294Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "0765b3a578e43eec",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Implement resolveSecurityModel (bounded async availability probe)",
+      "parent": {
+        "entityId": "STORY-0765b3a578e43eec-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-0765b3a578e43eec-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-0765b3a578e43eec-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#234",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "77770d25b5651b652426175afb504f71f5b5a2dfb36dfed0a01aafe5251c7bbc",
+        "at": "2026-11-23T06:30:43.004Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-23T06:30:43.005Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement resolveSecurityModel (bounded async availability probe)",
+    "summary": "function resolveSecurityModel(cfg, registry, opts: {deadlineMs, signal?}): Promise<SecurityModelSelection>. Calls resolveSecurityModelCandidate first; if already 'unavailable', returns immediately with no probe. Otherwise awaits exactly one bounded probe (a minimal CliProvider call) against the candidate, racing it against opts.deadlineMs and opts.signal; maps rejection/non-zero/ENOENT, timeout, and cancellation to distinct blockerReasons. Never rejects; always settles within opts.deadlineMs.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "Candidate already 'unavailable' -> resolves immediately, no probe attempted",
+      "Probe resolves successfully within the deadline -> status:'configured'",
+      "Probe rejects (simulated ENOENT/auth failure) -> status:'unavailable' with a backend-failure blockerReason",
+      "Probe neither resolves nor rejects before opts.deadlineMs -> status:'unavailable' with a timeout blockerReason",
+      "opts.signal aborted while the probe is outstanding -> status:'unavailable' with a cancellation blockerReason",
+      "Live (INSRC_LIVE_TESTS=1): a valid, listed, floor-eligible pin whose backend is deliberately unreachable resolves 'unavailable' with a populated blockerReason within the deadline, never a hang or silent substitution"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "resolveSecurityModel: candidate already 'unavailable' -> resolves immediately, no probe attempted"
+      },
+      {
+        "level": "unit",
+        "name": "resolveSecurityModel: probe resolves successfully within the deadline -> status:'configured'"
+      },
+      {
+        "level": "unit",
+        "name": "resolveSecurityModel: probe rejects (simulated ENOENT/auth failure) -> status:'unavailable' with a backend-failure blockerReason"
+      },
+      {
+        "level": "unit",
+        "name": "resolveSecurityModel: probe neither resolves nor rejects before opts.deadlineMs -> status:'unavailable' with a timeout blockerReason"
+      },
+      {
+        "level": "unit",
+        "name": "resolveSecurityModel: opts.signal is aborted while the probe is outstanding -> status:'unavailable' with a cancellation blockerReason"
+      },
+      {
+        "level": "live",
+        "name": "resolveSecurityModel against a real CliProvider probe for a valid, floor-eligible pin whose backend is deliberately unreachable, asserting status:'unavailable' with a populated blockerReason within the configured deadline, rather than a hang or a silent substitute model"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

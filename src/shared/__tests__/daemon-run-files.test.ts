@@ -32,29 +32,23 @@ afterEach(async () => {
 	rmSync(dir, { recursive: true, force: true });
 });
 
-test('managed guard serializes cooperating ownership and preserves observed replacement run files', () => {
-	const path = join(dir, 'guard'), pid = join(dir, 'daemon.pid'), socket = join(dir, 'daemon.sock');
-	writeFileSync(pid, '123');
-	const expected = runFileIdentity(pid);
+test('guard serializes cooperating owners and release invalidates its authority', () => {
+	const path = join(dir, 'guard');
 	const guard = acquireRunFileGuard(path);
 	assert.throws(() => acquireRunFileGuard(path), /ownership conflict/);
-	writeFileSync(socket, 'replacement');
-	assert.equal(readFileSync(socket, 'utf8'), 'replacement');
 	guard.release();
 	assert.equal(runFileGuardConflict(path), undefined);
 	assert.throws(() => guard.assertOwned(), /ownership changed/);
 });
 
-test('replaced or rewritten files and changed guard nonces are preserved', () => {
-	const path = join(dir, 'guard'), pid = join(dir, 'daemon.pid');
-	writeFileSync(pid, 'original');
-	const expected = runFileIdentity(pid), guard = acquireRunFileGuard(path);
-	writeFileSync(pid, 'replacement owner');
+test('changed guard nonce prevents the previous owner from releasing the replacement', () => {
+	const path = join(dir, 'guard');
+	const guard = acquireRunFileGuard(path);
 	const owner = JSON.parse(readFileSync(join(path, 'owner.json'), 'utf8'));
 	writeFileSync(join(path, 'owner.json'), JSON.stringify({ ...owner, nonce: 'replacement' }));
 	assert.throws(() => guard.release(), /ownership changed/);
 	assert.equal(existsSync(path), true);
-	assert.equal(readFileSync(pid, 'utf8'), 'replacement owner');
+	assert.equal(JSON.parse(readFileSync(join(path, 'owner.json'), 'utf8')).nonce, 'replacement');
 });
 
 test('unverifiable guard records and symlinks fail closed without automatic reclamation', () => {

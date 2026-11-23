@@ -350,6 +350,21 @@ test("collectDependencyAdvisories: duplicate raw entries for the SAME coordinate
 	}
 });
 
+test("collectDependencyAdvisories: a pip-audit dependency entry with a non-empty but entirely malformed 'vulns' array (e.g. [null]) is unresolved, never silently dropped from every bucket", async () => {
+	const repo = initRepo();
+	treatAsRegistered(repo);
+	try {
+		writeFileSync(join(repo, 'requirements.txt'), 'flask==2.0.0\n');
+		_setPkgAuditExecuteForTests(async () => okResult({ manager: 'pip', exitCode: 0, parsed: { dependencies: [{ name: 'flask', version: '2.0.0', vulns: [null] }] } }));
+		const result = await collectDependencyAdvisories(repo, { entries: [{ path: 'app.ts' }, { path: 'requirements.txt' }] });
+		assert.ok(!result.queriedCoordinates.some(c => c.includes('flask')), JSON.stringify(result.queriedCoordinates));
+		assert.ok(!result.matches.some(m => m.coordinate.includes('flask')), JSON.stringify(result.matches));
+		assert.ok(result.unresolvedDependencies.some(d => d.includes('pip:flask@2.0.0')), JSON.stringify(result.unresolvedDependencies));
+	} finally {
+		cleanup(repo);
+	}
+});
+
 test("collectDependencyAdvisories: a pip-audit dependency entry with no 'vulns' key at all is unresolved, never reported as cleanly audited", async () => {
 	const repo = initRepo();
 	treatAsRegistered(repo);

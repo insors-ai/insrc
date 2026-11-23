@@ -100,8 +100,15 @@ function mapPipAuditOutput(parsed: unknown, advisoryDestination: string, coordin
 		const coordinate = `${coordinatePrefix}${dep.name}@${version}`;
 		if (!Array.isArray(dep.vulns)) { unresolvedCoordinates.push(coordinate); continue; }
 		if (dep.vulns.length === 0) { cleanCoordinates.push(coordinate); continue; }
+		// A non-empty vulns array whose entries are all malformed (not an
+		// object -- e.g. [null]) carries no usable advisory data; it is NOT
+		// a clean report (pip-audit reported something) and must not be
+		// silently dropped -- route it to unresolved like any other
+		// not-definitely-resolved coordinate.
+		let matchedAny = false;
 		for (const vuln of dep.vulns) {
 			if (!isRecord(vuln)) { continue; }
+			matchedAny = true;
 			matches.push({
 				coordinate,
 				advisoryId: typeof vuln.id === 'string' ? vuln.id : 'unknown',
@@ -111,6 +118,7 @@ function mapPipAuditOutput(parsed: unknown, advisoryDestination: string, coordin
 				advisoryDestination,
 			});
 		}
+		if (!matchedAny) { unresolvedCoordinates.push(coordinate); }
 	}
 	return { matches, cleanCoordinates, unresolvedCoordinates };
 }

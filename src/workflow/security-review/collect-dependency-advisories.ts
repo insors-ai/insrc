@@ -333,9 +333,15 @@ function mapNpmAuditOutput(parsed: unknown, advisoryDestination: string, provena
 		const hasUnexplainedTransitiveVia = via.some(v => typeof v === 'string');
 		for (const version of versionsToReport) {
 			accountedInstances.add(`${pkgName}@${version}`);
-			if (via.length === 0) { continue; }
 			const coordinate = `${coordinatePrefix}${pkgName}@${version}`;
-			if (advisories.length === 0) { unresolvedCoordinates.push(coordinate); continue; }
+			// npm audit named this package in `vulnerabilities` at all, so it is
+			// never treated as cleanly checked merely because this particular
+			// entry's own `via` is empty -- that is audit reporting SOMETHING
+			// with no explanation this mapper can evaluate, not audit reporting
+			// nothing. Falling through to the lockfile-based clean sweep below
+			// (by `continue`ing without recording an outcome) would silently
+			// drop the instance from every bucket.
+			if (via.length === 0 || advisories.length === 0) { unresolvedCoordinates.push(coordinate); continue; }
 			// Each advisory names its OWN affected range (distinct advisories
 			// under one package name can cover disjoint version bands, e.g.
 			// one for <2.0.0 and another for >=2.0.0 <3.0.0) -- this instance's

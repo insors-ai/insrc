@@ -652,6 +652,27 @@ test("collectDependencyAdvisories: npm -- an advisory whose range (or the instan
 	}
 });
 
+test("collectDependencyAdvisories: npm -- a vulnerabilities entry with an entirely EMPTY 'via' array is unresolved, never silently dropped from every bucket (regression: it must not vanish from matches, queriedCoordinates AND unresolvedDependencies all at once)", async () => {
+	const repo = initRepo();
+	treatAsRegistered(repo);
+	try {
+		writeFileSync(join(repo, 'package.json'), '{}\n');
+		writeFileSync(join(repo, 'package-lock.json'), JSON.stringify({
+			packages: { '': {}, 'node_modules/demo': { version: '1.0.0' } },
+		}));
+		_setPkgAuditExecuteForTests(async () => okResult({
+			manager: 'npm', exitCode: 0,
+			parsed: { vulnerabilities: { demo: { range: '<2.0.0', nodes: ['node_modules/demo'], via: [] } } },
+		}));
+		const result = await collectDependencyAdvisories(repo, { entries: [{ path: 'app.ts' }, { path: 'package.json' }, { path: 'package-lock.json' }] });
+		assert.ok(!result.matches.some(m => m.coordinate.includes('demo')), JSON.stringify(result.matches));
+		assert.ok(!result.queriedCoordinates.some(c => c.includes('demo')), JSON.stringify(result.queriedCoordinates));
+		assert.ok(result.unresolvedDependencies.some(d => d.includes('demo')), JSON.stringify(result.unresolvedDependencies));
+	} finally {
+		cleanup(repo);
+	}
+});
+
 test("collectDependencyAdvisories: a pip-audit response naming a package under a DIFFERENT but PEP-503-equivalent spelling (typing_extensions vs typing-extensions) is NOT rejected as unexpected", async () => {
 	const repo = initRepo();
 	treatAsRegistered(repo);

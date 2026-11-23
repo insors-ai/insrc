@@ -671,3 +671,67 @@ test("collectDependencyAdvisories: npm's configuredDestination prefers an NPM_CO
 		cleanup(repo);
 	}
 });
+
+test("collectDependencyAdvisories: npm -- an instance whose version is outside every advisory OBJECT's range, but whose 'via' ALSO carries an unexplained transitive STRING entry, is unresolved, never silently clean", async () => {
+	const repo = initRepo();
+	treatAsRegistered(repo);
+	try {
+		writeFileSync(join(repo, 'package.json'), '{}\n');
+		writeFileSync(join(repo, 'package-lock.json'), JSON.stringify({
+			packages: {
+				'': {},
+				'node_modules/demo': { version: '1.0.0' },
+				'node_modules/other/node_modules/demo': { version: '2.0.0' },
+			},
+		}));
+		_setPkgAuditExecuteForTests(async () => okResult({
+			manager: 'npm', exitCode: 0,
+			// npm's own mixed shape: a direct advisory object (affecting only
+			// 1.0.0) PLUS a bare string naming a transitive chain that carries
+			// no range of its own at all -- 2.0.0 is listed in 'nodes' (so npm
+			// itself considers it affected, via that chain) but no advisory
+			// object's range covers it.
+			parsed: { vulnerabilities: { demo: {
+				range: '<3.0.0',
+				nodes: ['node_modules/demo', 'node_modules/other/node_modules/demo'],
+				via: [
+					{ source: 1, severity: 'high', url: 'https://example.com/advisory-direct', range: '<2.0.0' },
+					'child',
+				],
+			} } },
+		}));
+		const result = await collectDependencyAdvisories(repo, { entries: [{ path: 'app.ts' }, { path: 'package.json' }, { path: 'package-lock.json' }] });
+		assert.ok(result.matches.some(m => m.coordinate === 'npm:demo@1.0.0'), JSON.stringify(result.matches));
+		assert.ok(!result.queriedCoordinates.includes('npm:demo@2.0.0'), JSON.stringify(result.queriedCoordinates));
+		assert.ok(!result.matches.some(m => m.coordinate === 'npm:demo@2.0.0'), JSON.stringify(result.matches));
+		assert.ok(result.unresolvedDependencies.some(d => d.includes('npm:demo@2.0.0')), JSON.stringify(result.unresolvedDependencies));
+	} finally {
+		cleanup(repo);
+	}
+});
+
+test("collectDependencyAdvisories: npm's configuredDestination resolves the user-level config file via npm_config_userconfig/NPM_CONFIG_USERCONFIG, not a hardcoded ~/.npmrc", async () => {
+	const repo = initRepo();
+	const altConfigDir = mkdtempSync(join(tmpdir(), 'insrc-npmrc-userconfig-'));
+	treatAsRegistered(repo);
+	try {
+		writeFileSync(join(repo, 'package.json'), '{}\n');
+		writeFileSync(join(repo, 'package-lock.json'), '{}\n');
+		const altConfigPath = join(altConfigDir, 'custom.npmrc');
+		writeFileSync(altConfigPath, 'registry=https://custom-user.example.invalid/\n');
+		const previous = process.env['npm_config_userconfig'];
+		process.env['npm_config_userconfig'] = altConfigPath;
+		try {
+			_setPkgAuditExecuteForTests(async () => okResult({ manager: 'npm', exitCode: 0, parsed: { vulnerabilities: {} } }));
+			const result = await collectDependencyAdvisories(repo, { entries: [{ path: 'app.ts' }, { path: 'package.json' }, { path: 'package-lock.json' }] });
+			const npmEntry = result.perManagerMode.find(e => e.manager === 'npm');
+			assert.ok(npmEntry?.configuredDestination?.includes('custom-user.example.invalid'), JSON.stringify(npmEntry));
+			assert.ok(!npmEntry?.configuredDestination?.includes('registry.npmjs.org'), JSON.stringify(npmEntry));
+		} finally {
+			if (previous === undefined) { delete process.env['npm_config_userconfig']; } else { process.env['npm_config_userconfig'] = previous; }
+		}
+	} finally {
+		cleanup(repo);
+		rmSync(altConfigDir, { recursive: true, force: true });
+	}
+});

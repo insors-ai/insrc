@@ -94,7 +94,11 @@ const MANAGER_DESTINATION: Record<Manager, string> = {
 function resolveNpmRegistry(manifestDir: string, auditLabel: string): string {
 	const envRegistry = process.env['npm_config_registry'] ?? process.env['NPM_CONFIG_REGISTRY'];
 	if (envRegistry !== undefined && envRegistry.length > 0) { return `${envRegistry} (${auditLabel})`; }
-	for (const configPath of [join(manifestDir, '.npmrc'), join(homedir(), '.npmrc')]) {
+	// npm_config_userconfig/NPM_CONFIG_USERCONFIG relocates the user-level
+	// config file away from the default ~/.npmrc -- a hardcoded homedir()
+	// path misses it entirely whenever a project/CI sets this override.
+	const userConfigPath = process.env['npm_config_userconfig'] ?? process.env['NPM_CONFIG_USERCONFIG'] ?? join(homedir(), '.npmrc');
+	for (const configPath of [join(manifestDir, '.npmrc'), userConfigPath]) {
 		try {
 			const content = readFileSync(configPath, 'utf8');
 			for (const rawLine of content.split('\n')) {
@@ -309,6 +313,17 @@ function mapNpmAuditOutput(parsed: unknown, advisoryDestination: string, provena
 		const versionsToReport = instanceVersions.length > 0 ? instanceVersions : [range];
 		const via = Array.isArray(rawInfo.via) ? rawInfo.via : [];
 		const advisories = via.filter(isRecord);
+		// A bare STRING entry in `via` names another vulnerable package this
+		// one depends on -- npm's own "vulnerable via a dependency" chain,
+		// carrying no range of its own at all. A real audit entry mixes both
+		// forms: one or more advisory OBJECTS (each with its own range) plus
+		// string entries for the transitive chain. When an instance's version
+		// falls outside every object advisory's range, that does NOT mean the
+		// instance is clean if an unexplained string entry is also present --
+		// npm's own `nodes` array can include an instance affected ONLY via
+		// that unreferenced transitive chain, which this mapper has no range
+		// to evaluate at all.
+		const hasUnexplainedTransitiveVia = via.some(v => typeof v === 'string');
 		for (const version of versionsToReport) {
 			accountedInstances.add(`${pkgName}@${version}`);
 			if (via.length === 0) { continue; }
@@ -339,10 +354,13 @@ function mapNpmAuditOutput(parsed: unknown, advisoryDestination: string, provena
 				});
 			}
 			if (!matchedAny) {
-				// Either every advisory's range excludes this specific instance
-				// (not actually affected -- clean) or at least one range/version
-				// could not be evaluated (uncertain -- never silently clean).
-				if (uncertainAny) { unresolvedCoordinates.push(coordinate); } else { cleanCoordinatesFromAudit.push(coordinate); }
+				// Clean only when every advisory's range genuinely excludes this
+				// instance AND there is no unexplained transitive chain left
+				// unaccounted for; uncertain (never silently clean) when a
+				// range/version couldn't be evaluated OR a string via entry
+				// could mean this instance is vulnerable via a chain this
+				// mapper cannot itself verify.
+				if (uncertainAny || hasUnexplainedTransitiveVia) { unresolvedCoordinates.push(coordinate); } else { cleanCoordinatesFromAudit.push(coordinate); }
 			}
 		}
 	}

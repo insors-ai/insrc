@@ -7014,6 +7014,15 @@
         "src/daemon/threads/__tests__/fixtures/fail-listen.mjs"
       ],
       "reason": "Preserve partial-start application cleanup and direct queue/health/resource-close assertions. Captured failed-start child exits naturally; no retired PID/watchdog/update control is restored."
+    },
+    {
+      "task": "t8",
+      "paths": [
+        "src/cli/services/connection-maintenance.ts",
+        "src/daemon/db/__tests__/connection-maintenance-control.test.ts",
+        "src/cli/__tests__/entry-scripts.test.ts"
+      ],
+      "reason": "Replace impossible live-after-stop observations with independently supplied protected evidence; retain offline registration/store guards. Exercise real development launch scripts in isolated fixture roots."
     }
   ]
 }

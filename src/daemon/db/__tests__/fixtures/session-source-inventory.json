@@ -7391,15 +7391,19 @@
       "sites": [
         [
           "serialization",
+          "(await readProtected(proofPath)).bytes.toString"
+        ],
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
           "JSON.stringify"
         ],
         [
           "filesystem-open",
           "mkdtemp"
-        ],
-        [
-          "filesystem-read",
-          "readFile"
         ],
         [
           "filesystem-read",
@@ -7414,9 +7418,9 @@
           "writeProtected"
         ]
       ],
-      "siteCount": 6,
-      "sitesDigest": "3e2a9e570583125528ac2697c43eac95bba997a9e21544849d00dbd377ac946d",
-      "sourceDigest": "8097fd6149cc11bcdcb0e3ea2e7e81467ecd04e5867bf260769a090f420eb97a"
+      "siteCount": 7,
+      "sitesDigest": "298dfac19c66ed6e42c41ba94d4696fde68538247e92291e57ff538f7ce1dae2",
+      "sourceDigest": "a1954105fddd8ffa9047f487ab987d571a9fe81d12a83129f496577e294a9130"
     },
     "src/cli/services/daemon.ts": {
       "classification": "client-process-boundary",

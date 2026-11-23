@@ -32,6 +32,7 @@ import type { CliKind } from '../agent/providers/cli-provider.js';
 import { getModelRegistry, type ModelRegistry, type TierResolution, type TierSetting } from '../daemon/model-registry.js';
 import { SHIPPED_MODEL_DEFAULTS } from './model-defaults.js';
 import { reasoningRoleTaxonomy, roleDescriptor } from './role-taxonomy.js';
+import { applyCoreFloor } from './core-floor-guard.js';
 
 const log = getLogger('config:analyze');
 
@@ -164,10 +165,17 @@ export type SecurityModelPinResult =
  *  with an absent one. */
 export function parseSecurityModelPin(models: Record<string, unknown>): SecurityModelPinResult {
 	const sec = models['security'];
-	if (!isObject(sec)) return { kind: 'absent' };
+	if (sec === undefined) return { kind: 'absent' };
+	if (!isObject(sec)) {
+		return { kind: 'malformed', detail: `models.security: expected an object, got ${JSON.stringify(sec)}` };
+	}
 	const runner = sec['runner'];
 	const model  = sec['model'];
-	if (runner === undefined && model === undefined) return { kind: 'absent' };
+	// The catalog's own persisted "unset" default is runner:'' + model:'' (config-catalog.ts),
+	// written by reconcileConfig on every ordinary install -- '' is equivalent to absent, not malformed.
+	const runnerAbsent = runner === undefined || runner === '';
+	const modelAbsent  = model === undefined || model === '';
+	if (runnerAbsent && modelAbsent) return { kind: 'absent' };
 	if (!isRunner(runner)) {
 		return { kind: 'malformed', detail: `models.security.runner: expected one of ${SHIPPED_MODEL_DEFAULTS.familyIds.join('|')}, got ${JSON.stringify(runner)}` };
 	}
@@ -178,7 +186,10 @@ export function parseSecurityModelPin(models: Record<string, unknown>): Security
 	if (effort !== undefined && typeof effort !== 'string') {
 		return { kind: 'malformed', detail: 'models.security.effort: expected a string' };
 	}
-	return { kind: 'valid', runner, model, ...(effort !== undefined ? { effort } : {}) };
+	// '' means "the CLI's own default" (config-catalog.ts's own documented convention for this
+	// row) -- strip it so a valid pin never forwards a literal --effort '' to the CLI.
+	const cleanEffort = effort === '' ? undefined : effort;
+	return { kind: 'valid', runner, model, ...(cleanEffort !== undefined ? { effort: cleanEffort } : {}) };
 }
 
 /** Whether a pinned (familyId, modelId) pair meets a coreFloor-style capability
@@ -387,15 +398,33 @@ export type SecurityModelCandidate =
 	| ({ readonly status: 'candidate' } & SecurityModelPin)
 	| { readonly status: 'unavailable'; readonly blockerReason: string };
 
+/** The 'security.review' role's effective tier: the SAME byRepo→global→role-default
+ *  precedence and coreFloor clamp role-router.ts's resolveRole applies to every other
+ *  role -- never the role's bare defaultTier alone (that skipped any models.tasks
+ *  override and any coreFloor clamp). Duplicated locally (not value-imported from
+ *  src/analyze/context/role-router.ts) to keep config/analyze.ts's layering within
+ *  src/config/ only; it reuses core-floor-guard.ts's applyCoreFloor directly, the
+ *  same transform the router itself calls. */
+function effectiveSecurityReviewTier(cfg: AnalyzeConfig, repoPath: string | undefined): TierName {
+	const descriptor = roleDescriptor('security.review');
+	const byRepo = repoPath !== undefined ? cfg.tiering.byRepo?.[repoPath] : undefined;
+	const assignedTier: TierName = byRepo?.roleTiers?.['security.review'] ?? cfg.tiering.roleTiers?.['security.review'] ?? descriptor?.defaultTier ?? 'mid';
+	if (descriptor === undefined) return assignedTier;
+	const mergedFloor = byRepo?.coreFloor ?? cfg.tiering.coreFloor;
+	return applyCoreFloor({ role: descriptor, resolvedTier: assignedTier, ...(mergedFloor !== undefined ? { configuredFloor: mergedFloor } : {}) }).effectiveTier;
+}
+
 /**
  * Resolve sc1's security-reviewer candidate (pure, synchronous; zero I/O).
  * A malformed or below-floor/unlisted pin resolves to 'unavailable' immediately
  * and NEVER falls through to the 'security.review' role's tier-default model --
  * only a genuinely absent pin falls through to it, which is itself checked
- * against the floor the same way an explicit pin would be.
+ * against the floor the same way an explicit pin would be. `repoPath` (optional)
+ * threads the role's byRepo override into the precedence, matching every other
+ * role's resolution.
  */
-export function resolveSecurityModelCandidate(cfg: AnalyzeConfig, registry: ModelRegistry): SecurityModelCandidate {
-	const floorTier: TierName = roleDescriptor('security.review')?.defaultTier ?? 'core';
+export function resolveSecurityModelCandidate(cfg: AnalyzeConfig, registry: ModelRegistry, repoPath?: string): SecurityModelCandidate {
+	const floorTier: TierName = effectiveSecurityReviewTier(cfg, repoPath);
 	const pin = cfg.tiering.security;
 
 	if (pin.kind === 'malformed') return { status: 'unavailable', blockerReason: pin.detail };
@@ -413,6 +442,13 @@ export function resolveSecurityModelCandidate(cfg: AnalyzeConfig, registry: Mode
 	// Absent: fall through to the role's own tier-default model -- the SAME
 	// listed + floor-eligibility checks a pin would get, never a further
 	// fallback to a different role, tier, or UNKNOWN_ROLE_TIER-style default.
+	// A tier whose configured model was itself silently substituted is refused,
+	// not quietly accepted, mirroring this Epic's own "never silently substitute"
+	// principle for the security-review backend specifically.
+	const fallback = cfg.tierResolutions[floorTier]?.fallback;
+	if (fallback !== undefined) {
+		return { status: 'unavailable', blockerReason: `'security.review' role's ${floorTier}-tier configured model was rejected (${fallback.reason}: '${fallback.requested}') -- refusing rather than silently using the registry's own substitute` };
+	}
 	const def = cfg.tiering.tiers?.[floorTier];
 	if (def === undefined || def.model === '' || registry.find(def.runner, def.model) === undefined) {
 		return { status: 'unavailable', blockerReason: `'security.review' role's ${floorTier}-tier default model is unavailable` };
@@ -441,15 +477,15 @@ export type SecurityModelSelection =
  *  convention (e.g. review-round/checkpoint.ts). No argument resets to the
  *  real probe. */
 export interface SecurityProbeDeps {
-	readonly probe?: ((kind: CliKind, model: string, effort: EffortLevel | undefined) => Promise<void>) | undefined;
+	readonly probe?: ((kind: CliKind, model: string, effort: EffortLevel | undefined, signal?: AbortSignal | undefined) => Promise<void>) | undefined;
 }
 let securityProbeDeps: SecurityProbeDeps = {};
 export function _setSecurityProbeDepsForTests(deps: SecurityProbeDeps = {}): void { securityProbeDeps = deps; }
 
-async function defaultSecurityProbe(kind: CliKind, model: string, effort: EffortLevel | undefined, deadlineMs: number): Promise<void> {
+async function defaultSecurityProbe(kind: CliKind, model: string, effort: EffortLevel | undefined, deadlineMs: number, signal: AbortSignal | undefined): Promise<void> {
 	const { CliProvider } = await import('../agent/providers/cli-provider.js');
 	const provider = new CliProvider({ kind, model, effort, timeoutMs: deadlineMs });
-	await provider.complete([{ role: 'user', content: 'ping' }]);
+	await provider.complete([{ role: 'user', content: 'ping' }], { signal });
 }
 
 /**
@@ -457,11 +493,22 @@ async function defaultSecurityProbe(kind: CliKind, model: string, effort: Effort
  * first (pure, sync); a candidate already 'unavailable' resolves immediately
  * with no probe attempted. Otherwise awaits exactly ONE bounded probe against
  * the candidate, racing it against opts.deadlineMs and opts.signal -- never
- * rejects; always settles within opts.deadlineMs of starting the probe.
+ * rejects; always settles within opts.deadlineMs of starting the probe. An
+ * already-aborted opts.signal is checked BEFORE any dispatch (an 'abort' event
+ * that already fired is never seen by a listener attached after the fact). A
+ * timeout or the caller's own cancellation aborts an internal AbortController
+ * threaded into the probe itself, so the underlying CLI subprocess is actually
+ * killed and withTransientRetry's own isAbortError exemption stops it from
+ * retrying -- cancellation genuinely stops the call, not just this function's
+ * returned promise.
  */
 export async function resolveSecurityModel(
 	cfg: AnalyzeConfig, registry: ModelRegistry, opts: { readonly deadlineMs: number; readonly signal?: AbortSignal | undefined },
 ): Promise<SecurityModelSelection> {
+	if (opts.signal?.aborted === true) {
+		return { status: 'unavailable', blockerReason: 'security model probe cancelled' };
+	}
+
 	const candidate = resolveSecurityModelCandidate(cfg, registry);
 	if (candidate.status === 'unavailable') return candidate;
 
@@ -470,7 +517,8 @@ export async function resolveSecurityModel(
 		return { status: 'unavailable', blockerReason: `${candidate.runner} is not a CLI-backed family; a security review requires a CLI provider (k1)` };
 	}
 
-	const probe = securityProbeDeps.probe ?? ((k, model, effort) => defaultSecurityProbe(k, model, effort, opts.deadlineMs));
+	const probe = securityProbeDeps.probe ?? ((k, model, effort, signal) => defaultSecurityProbe(k, model, effort, opts.deadlineMs, signal));
+	const internalController = new AbortController();
 	let settled = false;
 	const outcome = await new Promise<'ok' | { blockerReason: string }>(resolve => {
 		const finish = (result: 'ok' | { blockerReason: string }): void => {
@@ -478,10 +526,16 @@ export async function resolveSecurityModel(
 			settled = true;
 			resolve(result);
 		};
-		const timer = setTimeout(() => finish({ blockerReason: `security model probe timed out after ${opts.deadlineMs}ms` }), opts.deadlineMs);
-		const onAbort = (): void => finish({ blockerReason: 'security model probe cancelled' });
+		const timer = setTimeout(() => {
+			internalController.abort();
+			finish({ blockerReason: `security model probe timed out after ${opts.deadlineMs}ms` });
+		}, opts.deadlineMs);
+		const onAbort = (): void => {
+			internalController.abort();
+			finish({ blockerReason: 'security model probe cancelled' });
+		};
 		opts.signal?.addEventListener('abort', onAbort, { once: true });
-		probe(kind, candidate.model, candidate.effort).then(
+		probe(kind, candidate.model, candidate.effort, internalController.signal).then(
 			() => { clearTimeout(timer); opts.signal?.removeEventListener('abort', onAbort); finish('ok'); },
 			(err: unknown) => { clearTimeout(timer); opts.signal?.removeEventListener('abort', onAbort); finish({ blockerReason: `security model backend unreachable: ${err instanceof Error ? err.message : String(err)}` }); },
 		);

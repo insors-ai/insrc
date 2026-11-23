@@ -148,6 +148,27 @@ test('parseSecurityModelPin: a valid pin with effort carries it through; an empt
 	assert.deepEqual(parseSecurityModelPin({ security: {} }), { kind: 'absent' });
 });
 
+test("parseSecurityModelPin: the catalog's own persisted unset sentinel (runner:'', model:'') -> { kind: 'absent' }, not malformed", () => {
+	// config-catalog.ts's models.security.{runner,model} rows default to '' and
+	// reconcileConfig persists that default on every ordinary install -- this
+	// must read the same as the key being absent entirely.
+	assert.deepEqual(parseSecurityModelPin({ security: { runner: '', model: '' } }), { kind: 'absent' });
+});
+
+test("parseSecurityModelPin: a valid pin never carries a literal '' effort (the CLI's own default, not a flag value)", () => {
+	assert.deepEqual(
+		parseSecurityModelPin({ security: { runner: 'cli-claude', model: 'x', effort: '' } }),
+		{ kind: 'valid', runner: 'cli-claude', model: 'x' },
+	);
+});
+
+test('parseSecurityModelPin: models.security present but the wrong shape (null/string/array/number) -> malformed, not absent', () => {
+	for (const bad of [null, 'typo', [], 42]) {
+		const r = parseSecurityModelPin({ security: bad });
+		assert.equal(r.kind, 'malformed', `security: ${JSON.stringify(bad)}`);
+	}
+});
+
 test("parseTiering threads parseSecurityModelPin's own tri-state result onto AnalyzeTiering.security, always present (never collapsed to undefined); parseTieringOverride's own tiers parsing is unaffected", () => {
 	const valid = parseTiering({ security: { runner: 'cli-claude', model: 'x' }, tiers: { core: { runner: 'cli-codex', model: 'gpt-6.1-sol' } } });
 	assert.deepEqual(valid.security, { kind: 'valid', runner: 'cli-claude', model: 'x' });
@@ -293,6 +314,61 @@ test("resolveSecurityModelCandidate: an absent pin whose tier-default model is i
 	assert.equal(resolveSecurityModelCandidate(cfgUnlisted, registry).status, 'unavailable');
 });
 
+const DISTINCT_TIER_FAMILY: FamilyDefinition = {
+	id: 'cli-claude', displayName: 'Claude',
+	models: [{ id: 'opus', efforts: [] }, { id: 'sonnet', efforts: [] }, { id: 'haiku', efforts: [] }],
+	tierDefaults: { core: { model: 'opus' }, mid: { model: 'sonnet' }, cheap: { model: 'haiku' } },
+};
+
+test("resolveSecurityModelCandidate: models.tasks['security.review'] (roleTiers) is honored for an absent pin, not just the role's bare defaultTier", () => {
+	const registry = fakeRegistry([DISTINCT_TIER_FAMILY]);
+	const cfg = fakeAnalyzeConfig({
+		security: { kind: 'absent' },
+		roleTiers: { 'security.review': 'mid' },
+		tiers: { mid: { runner: 'cli-claude', model: 'sonnet' } },
+	});
+	assert.deepEqual(resolveSecurityModelCandidate(cfg, registry), { status: 'candidate', runner: 'cli-claude', model: 'sonnet' });
+});
+
+test("resolveSecurityModelCandidate: a byRepo roleTiers override takes precedence over the global one, for the given repoPath", () => {
+	const registry = fakeRegistry([DISTINCT_TIER_FAMILY]);
+	const cfg = fakeAnalyzeConfig({
+		security: { kind: 'absent' },
+		coreFloor: 'cheap', // so the global 'cheap' assignment below is not itself clamped up
+		roleTiers: { 'security.review': 'cheap' },
+		byRepo: { '/work/repo': { roleTiers: { 'security.review': 'mid' } } },
+		tiers: { mid: { runner: 'cli-claude', model: 'sonnet' }, cheap: { runner: 'cli-claude', model: 'haiku' } },
+	});
+	assert.deepEqual(resolveSecurityModelCandidate(cfg, registry, '/work/repo'), { status: 'candidate', runner: 'cli-claude', model: 'sonnet' });
+	// No repoPath given -> the global roleTiers assignment ('cheap') applies instead.
+	assert.deepEqual(resolveSecurityModelCandidate(cfg, registry), { status: 'candidate', runner: 'cli-claude', model: 'haiku' });
+});
+
+test("resolveSecurityModelCandidate: a critical role's tier is clamped up to coreFloor even when roleTiers assigns it lower", () => {
+	const registry = fakeRegistry([DISTINCT_TIER_FAMILY]);
+	const cfg = fakeAnalyzeConfig({
+		security: { kind: 'absent' },
+		roleTiers: { 'security.review': 'cheap' },
+		coreFloor: 'core',
+		tiers: { core: { runner: 'cli-claude', model: 'opus' }, cheap: { runner: 'cli-claude', model: 'haiku' } },
+	});
+	// 'cheap' is clamped up to the 'core' coreFloor -- the cheap-tier model is never used.
+	assert.deepEqual(resolveSecurityModelCandidate(cfg, registry), { status: 'candidate', runner: 'cli-claude', model: 'opus' });
+});
+
+test("resolveSecurityModelCandidate: an absent pin refuses (never silently falls through) when the floor tier's own configured model was itself rejected/substituted", () => {
+	const registry = fakeRegistry([CLAUDE_FAMILY]);
+	const cfg = fakeAnalyzeConfig({ security: { kind: 'absent' }, tiers: { core: { runner: 'cli-claude', model: 'opus' } } });
+	(cfg.tierResolutions as Record<string, TierResolution>)['core'] = {
+		family: 'cli-claude',
+		model: { id: 'opus', efforts: [], family: 'cli-claude', source: 'shipped' } as unknown as ResolvedModel,
+		fallback: { reason: 'unlisted-model', requested: 'gpt-nonexistent' },
+	};
+	const result = resolveSecurityModelCandidate(cfg, registry);
+	assert.equal(result.status, 'unavailable');
+	assert.ok(result.status === 'unavailable' && result.blockerReason.includes('unlisted-model') && result.blockerReason.includes('gpt-nonexistent'));
+});
+
 // ── resolveSecurityModel (Epic add-dedicated-security-reviews, s1 t6) ──
 // A bounded, async availability probe layered over resolveSecurityModelCandidate.
 // Never rejects; always settles within opts.deadlineMs. Uses the injectable
@@ -362,6 +438,52 @@ test("resolveSecurityModel: opts.signal is aborted while the probe is outstandin
 		const result = await resultPromise;
 		assert.equal(result.status, 'unavailable');
 		assert.ok(result.status === 'unavailable' && result.blockerReason.includes('cancelled'));
+	} finally {
+		_setSecurityProbeDepsForTests();
+	}
+});
+
+test("resolveSecurityModel: an opts.signal that is ALREADY aborted before the call short-circuits immediately, with no probe dispatched", async () => {
+	let probeCalled = false;
+	_setSecurityProbeDepsForTests({ probe: async () => { probeCalled = true; } });
+	try {
+		const registry = fakeRegistry([CLAUDE_FAMILY]);
+		const cfg = fakeAnalyzeConfig({ security: { kind: 'valid', runner: 'cli-claude', model: 'opus' } });
+		const controller = new AbortController();
+		controller.abort();
+		const result = await resolveSecurityModel(cfg, registry, { deadlineMs: 1000, signal: controller.signal });
+		assert.equal(result.status, 'unavailable');
+		assert.ok(result.status === 'unavailable' && result.blockerReason.includes('cancelled'));
+		assert.equal(probeCalled, false);
+	} finally {
+		_setSecurityProbeDepsForTests();
+	}
+});
+
+test('resolveSecurityModel: a timeout aborts the internal signal threaded into the probe, so the underlying call is actually cancelled', async () => {
+	let capturedSignal: AbortSignal | undefined;
+	_setSecurityProbeDepsForTests({ probe: (_k, _m, _e, signal) => { capturedSignal = signal; return new Promise(() => {}); } });
+	try {
+		const registry = fakeRegistry([CLAUDE_FAMILY]);
+		const cfg = fakeAnalyzeConfig({ security: { kind: 'valid', runner: 'cli-claude', model: 'opus' } });
+		await resolveSecurityModel(cfg, registry, { deadlineMs: 20 });
+		assert.equal(capturedSignal?.aborted, true);
+	} finally {
+		_setSecurityProbeDepsForTests();
+	}
+});
+
+test("resolveSecurityModel: the caller's own cancellation also aborts the internal signal threaded into the probe", async () => {
+	let capturedSignal: AbortSignal | undefined;
+	_setSecurityProbeDepsForTests({ probe: (_k, _m, _e, signal) => { capturedSignal = signal; return new Promise(() => {}); } });
+	try {
+		const registry = fakeRegistry([CLAUDE_FAMILY]);
+		const cfg = fakeAnalyzeConfig({ security: { kind: 'valid', runner: 'cli-claude', model: 'opus' } });
+		const controller = new AbortController();
+		const resultPromise = resolveSecurityModel(cfg, registry, { deadlineMs: 5000, signal: controller.signal });
+		controller.abort();
+		await resultPromise;
+		assert.equal(capturedSignal?.aborted, true);
 	} finally {
 		_setSecurityProbeDepsForTests();
 	}

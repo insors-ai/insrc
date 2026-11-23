@@ -350,6 +350,31 @@ test("collectDependencyAdvisories: duplicate raw entries for the SAME coordinate
 	}
 });
 
+test("collectDependencyAdvisories: npm audit only reports VULNERABLE packages -- a package in package-lock.json's own inventory that audit never flagged is still accounted for in queriedCoordinates", async () => {
+	const repo = initRepo();
+	treatAsRegistered(repo);
+	try {
+		writeFileSync(join(repo, 'package.json'), '{}\n');
+		writeFileSync(join(repo, 'package-lock.json'), JSON.stringify({
+			packages: {
+				'': {},
+				'node_modules/lodash': { version: '4.17.21' },
+				'node_modules/leftpad': { version: '1.3.0' },
+			},
+		}));
+		_setPkgAuditExecuteForTests(async () => okResult({
+			manager: 'npm', exitCode: 0,
+			parsed: { vulnerabilities: { leftpad: { range: '1.3.0', via: [{ source: 1, severity: 'high', url: 'https://example.com/advisory' }] } } },
+		}));
+		const result = await collectDependencyAdvisories(repo, { entries: [{ path: 'app.ts' }, { path: 'package.json' }, { path: 'package-lock.json' }] });
+		assert.ok(result.matches.some(m => m.coordinate === 'npm:leftpad@1.3.0'), JSON.stringify(result.matches));
+		assert.ok(result.queriedCoordinates.includes('npm:lodash@4.17.21'), JSON.stringify(result.queriedCoordinates));
+		assert.ok(!result.queriedCoordinates.some(c => c.startsWith('npm:leftpad@')), JSON.stringify(result.queriedCoordinates));
+	} finally {
+		cleanup(repo);
+	}
+});
+
 test("collectDependencyAdvisories: a pip-audit dependency entry with a non-empty but entirely malformed 'vulns' array (e.g. [null]) is unresolved, never silently dropped from every bucket", async () => {
 	const repo = initRepo();
 	treatAsRegistered(repo);

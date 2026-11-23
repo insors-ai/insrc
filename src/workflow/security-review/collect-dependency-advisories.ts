@@ -15,8 +15,8 @@
  * is involved (HLD s2).
  */
 
-import { dirname } from 'node:path';
-import { rmSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { readFileSync, rmSync } from 'node:fs';
 
 import { pkgAuditTool, type Manager } from '../../daemon/tools/builtins/pkg/index.js';
 import type { ToolDeps, ToolInput, ToolResult } from '../../daemon/tools/types.js';
@@ -123,24 +123,73 @@ function mapPipAuditOutput(parsed: unknown, advisoryDestination: string, coordin
 	return { matches, cleanCoordinates, unresolvedCoordinates };
 }
 
+/** npm/pnpm's own lockfile (package-lock.json/pnpm's own npm-shaped lock, when
+ *  present) only lists what's INSTALLED, v2/v3 under `packages` (key
+ *  `node_modules/<name>`, value `{ version }`), v1 under `dependencies` (key
+ *  `<name>`, value `{ version }`). `npm audit --json` itself only reports
+ *  VULNERABLE packages -- it never lists a clean one -- so the full
+ *  installed-package inventory has to come from the lockfile to let a
+ *  cleanly-audited (not vulnerable) package still be accounted for. */
+function readNpmLockfileVersions(manifestDir: string): Map<string, string> {
+	const versions = new Map<string, string>();
+	try {
+		const data: unknown = JSON.parse(readFileSync(join(manifestDir, 'package-lock.json'), 'utf8'));
+		if (!isRecord(data)) { return versions; }
+		if (isRecord(data.packages)) {
+			for (const [key, value] of Object.entries(data.packages)) {
+				if (key === '' || !isRecord(value) || typeof value.version !== 'string') { continue; }
+				const name = key.replace(/^.*node_modules\//, '');
+				if (name.length > 0) { versions.set(name, value.version); }
+			}
+		} else if (isRecord(data.dependencies)) {
+			for (const [name, value] of Object.entries(data.dependencies)) {
+				if (isRecord(value) && typeof value.version === 'string') { versions.set(name, value.version); }
+			}
+		}
+	} catch { /* no lockfile, or not JSON -- an empty inventory just means no clean coordinates get added */ }
+	return versions;
+}
+
+/** Cargo.lock's own `[[package]]` blocks (name/version) -- the full,
+ *  resolved dependency inventory; `cargo audit --json` itself only reports
+ *  vulnerable packages, so this is the only source for a clean one. */
+function readCargoLockVersions(manifestDir: string): Map<string, string> {
+	const versions = new Map<string, string>();
+	try {
+		const content = readFileSync(join(manifestDir, 'Cargo.lock'), 'utf8');
+		let name: string | undefined;
+		let version: string | undefined;
+		const flush = (): void => { if (name !== undefined && version !== undefined) { versions.set(name, version); } };
+		for (const rawLine of content.split('\n')) {
+			const line = rawLine.trim();
+			if (line === '[[package]]') { flush(); name = undefined; version = undefined; continue; }
+			const m = /^(name|version)\s*=\s*"([^"]*)"/.exec(line);
+			if (m?.[1] === 'name') { name = m[2]; } else if (m?.[1] === 'version') { version = m[2]; }
+		}
+		flush();
+	} catch { /* no lockfile -- an empty inventory just means no clean coordinates get added */ }
+	return versions;
+}
+
 /** npm/pnpm's `audit --json` output: `{ vulnerabilities: { <pkgName>: { range, severity, via: [...] } } }`.
  *  Each `via` entry is EITHER an advisory object OR a bare string naming another
  *  vulnerable package this one depends on (npm's own "vulnerable via a dependency"
  *  chain notation) -- a `via` array that is non-empty but contains only strings
  *  still means this package IS vulnerable (transitively), just with no advisory
  *  details of its own in this entry; it must never be reported as cleanly audited. */
-function mapNpmAuditOutput(parsed: unknown, advisoryDestination: string, provenance: string, coordinatePrefix: string): { matches: SecurityAdvisoryMatch[]; cleanCoordinates: string[]; unresolvedCoordinates: string[] } | undefined {
+function mapNpmAuditOutput(parsed: unknown, advisoryDestination: string, provenance: string, coordinatePrefix: string, lockfileVersions: Map<string, string>): { matches: SecurityAdvisoryMatch[]; cleanCoordinates: string[]; unresolvedCoordinates: string[] } | undefined {
 	if (!isRecord(parsed) || !isRecord(parsed.vulnerabilities)) { return undefined; }
 	const matches: SecurityAdvisoryMatch[] = [];
-	const cleanCoordinates: string[] = [];
 	const unresolvedCoordinates: string[] = [];
+	const accountedNames = new Set<string>();
 	for (const [pkgName, rawInfo] of Object.entries(parsed.vulnerabilities)) {
 		if (!isRecord(rawInfo)) { continue; }
+		accountedNames.add(pkgName);
 		const range = typeof rawInfo.range === 'string' ? rawInfo.range : '';
-		const coordinate = `${coordinatePrefix}${pkgName}@${range}`;
+		const coordinate = `${coordinatePrefix}${pkgName}@${lockfileVersions.get(pkgName) ?? range}`;
 		const via = Array.isArray(rawInfo.via) ? rawInfo.via : [];
 		const advisories = via.filter(isRecord);
-		if (via.length === 0) { cleanCoordinates.push(coordinate); continue; }
+		if (via.length === 0) { continue; }
 		if (advisories.length === 0) { unresolvedCoordinates.push(coordinate); continue; }
 		for (const advisory of advisories) {
 			matches.push({
@@ -153,20 +202,31 @@ function mapNpmAuditOutput(parsed: unknown, advisoryDestination: string, provena
 			});
 		}
 	}
+	// npm/pnpm's own audit output lists ONLY vulnerable packages -- the
+	// lockfile is the only source for the full installed inventory, so any
+	// name it carries that audit never flagged is the cleanly-checked set.
+	const cleanCoordinates: string[] = [];
+	for (const [name, version] of lockfileVersions) {
+		if (!accountedNames.has(name)) { cleanCoordinates.push(`${coordinatePrefix}${name}@${version}`); }
+	}
 	return { matches, cleanCoordinates, unresolvedCoordinates };
 }
 
-/** cargo-audit's `--json` output: `{ vulnerabilities: { list: [ { package, advisory } ] } }`. cargo-audit does
- *  not list clean dependencies, only vulnerable ones -- no cleanCoordinates here. */
-function mapCargoAuditOutput(parsed: unknown, advisoryDestination: string, coordinatePrefix: string): { matches: SecurityAdvisoryMatch[]; cleanCoordinates: string[]; unresolvedCoordinates: string[] } | undefined {
+/** cargo-audit's `--json` output: `{ vulnerabilities: { list: [ { package, advisory } ] } }`. Like npm audit,
+ *  cargo-audit itself only reports vulnerable packages; Cargo.lock is the
+ *  source for the clean (not-flagged) part of the inventory. */
+function mapCargoAuditOutput(parsed: unknown, advisoryDestination: string, coordinatePrefix: string, lockfileVersions: Map<string, string>): { matches: SecurityAdvisoryMatch[]; cleanCoordinates: string[]; unresolvedCoordinates: string[] } | undefined {
 	if (!isRecord(parsed) || !isRecord(parsed.vulnerabilities) || !Array.isArray(parsed.vulnerabilities.list)) { return undefined; }
 	const matches: SecurityAdvisoryMatch[] = [];
+	const accountedNames = new Set<string>();
 	for (const entry of parsed.vulnerabilities.list) {
 		if (!isRecord(entry)) { continue; }
 		const pkg = isRecord(entry.package) ? entry.package : {};
 		const advisory = isRecord(entry.advisory) ? entry.advisory : {};
+		const name = typeof pkg.name === 'string' ? pkg.name : 'unknown';
+		accountedNames.add(name);
 		matches.push({
-			coordinate: `${coordinatePrefix}${typeof pkg.name === 'string' ? pkg.name : 'unknown'}@${typeof pkg.version === 'string' ? pkg.version : ''}`,
+			coordinate: `${coordinatePrefix}${name}@${lockfileVersions.get(name) ?? (typeof pkg.version === 'string' ? pkg.version : '')}`,
 			advisoryId: typeof advisory.id === 'string' ? advisory.id : 'unknown',
 			affectedVersions: typeof pkg.version === 'string' ? pkg.version : '',
 			severity: typeof advisory.severity === 'string' ? advisory.severity : 'unknown',
@@ -174,7 +234,11 @@ function mapCargoAuditOutput(parsed: unknown, advisoryDestination: string, coord
 			advisoryDestination,
 		});
 	}
-	return { matches, cleanCoordinates: [], unresolvedCoordinates: [] };
+	const cleanCoordinates: string[] = [];
+	for (const [name, version] of lockfileVersions) {
+		if (!accountedNames.has(name)) { cleanCoordinates.push(`${coordinatePrefix}${name}@${version}`); }
+	}
+	return { matches, cleanCoordinates, unresolvedCoordinates: [] };
 }
 
 /** Maps one manager's raw pkg_audit output into SecurityAdvisoryMatch[] plus the
@@ -182,7 +246,7 @@ function mapCargoAuditOutput(parsed: unknown, advisoryDestination: string, coord
  *  the output cannot be structurally mapped (yarn's NDJSON, go's plain-text
  *  govulncheck output) -- an execution gap, recorded in unavailableSources by
  *  the caller, never a thrown error. */
-function mapAuditOutput(manager: Manager, parsed: unknown, advisoryDestination: string): { matches: SecurityAdvisoryMatch[]; cleanCoordinates: string[]; unresolvedCoordinates: string[] } | undefined {
+function mapAuditOutput(manager: Manager, manifestDir: string, parsed: unknown, advisoryDestination: string): { matches: SecurityAdvisoryMatch[]; cleanCoordinates: string[]; unresolvedCoordinates: string[] } | undefined {
 	// Every coordinate is prefixed with its own manager: different ecosystems
 	// can share a bare package name (npm's and PyPI's own "flask" are
 	// different packages) without being the same coordinate, so the prefix
@@ -191,8 +255,8 @@ function mapAuditOutput(manager: Manager, parsed: unknown, advisoryDestination: 
 	// exclusivity reconciliation in collectDependencyAdvisories.
 	const coordinatePrefix = `${manager}:`;
 	if (manager === 'pip' || manager === 'pipenv' || manager === 'poetry') { return mapPipAuditOutput(parsed, advisoryDestination, coordinatePrefix); }
-	if (manager === 'npm' || manager === 'pnpm') { return mapNpmAuditOutput(parsed, advisoryDestination, `${manager} audit`, coordinatePrefix); }
-	if (manager === 'cargo') { return mapCargoAuditOutput(parsed, advisoryDestination, coordinatePrefix); }
+	if (manager === 'npm' || manager === 'pnpm') { return mapNpmAuditOutput(parsed, advisoryDestination, `${manager} audit`, coordinatePrefix, readNpmLockfileVersions(manifestDir)); }
+	if (manager === 'cargo') { return mapCargoAuditOutput(parsed, advisoryDestination, coordinatePrefix, readCargoLockVersions(manifestDir)); }
 	return undefined;
 }
 
@@ -300,7 +364,7 @@ export async function collectDependencyAdvisories(repoPath: string, targets: Rev
 			if (data === undefined) {
 				unavailableSources.push(`${manager}: ${result.error ?? 'audit execution failed'}`);
 			} else {
-				const mapped = mapAuditOutput(manager, data.parsed, configuredDestination);
+				const mapped = mapAuditOutput(manager, manifestDir, data.parsed, configuredDestination);
 				if (mapped === undefined) {
 					unavailableSources.push(`${manager}: unparseable audit output`);
 				} else {

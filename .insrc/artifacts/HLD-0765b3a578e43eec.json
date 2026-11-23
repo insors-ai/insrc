@@ -56,9 +56,10 @@
     "questionResolutions": {
       "q860d1b4e": {
         "question": "(s3 LLD) The epicHash/storyId mapping persistVerificationReceipt requires has no documented derivation from the Epic's pinned content identity; the s3 LLD must specify it explicitly before the persistence call can be implemented.",
-        "status": "deferred",
-        "rationale": "Tagged s3 LLD; persistVerificationReceipt mapping is s3's own receipt-persistence boundary, out of s2's scope (s2 produces SecurityAdvisoryEvidence only, no receipt persistence).",
-        "resolvedAt": "2026-11-22T09:43:13.533Z"
+        "status": "resolved",
+        "choice": "Derive identifiers deterministically",
+        "rationale": "A security review is requested standalone (not necessarily tied to an in-progress insrc Epic/Story), so there is no natural existing epicHash/storyId to reuse, and persisting a NEW mapping table would be new persistent storage the HLD's own durability section explicitly rules out for this Epic. epicHash/storyId are instead derived purely as a function of the review's own pinned contentIdentity (sha256(\"security-review:\" + contentIdentity) truncated for epicHash; a fixed storyId sentinel), so the same contentIdentity always re-derives the identical pair -- idempotent, no new storage, directly satisfying persistVerificationReceipt's required fields.",
+        "resolvedAt": "2026-11-23T04:35:19.745Z"
       },
       "qfab24fea": {
         "question": "(s3 LLD) The supplemental report structure carrying FR003's exploit-prerequisite/remediation/advisory-provenance content has no persistence mechanism specified yet -- the s3 LLD must decide whether it is a new stored artifact type or an in-memory assembly over the existing SecurityFinding/VerificationReceipt records.",

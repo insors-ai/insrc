@@ -45,6 +45,17 @@
           "revision": 6,
           "at": "2026-11-23T04:24:30.946Z",
           "externalId": "7091555700"
+        },
+        {
+          "target": {
+            "entityId": "HLD-0765b3a578e43eec",
+            "type": "HLD",
+            "relation": "documents",
+            "fragment": "docs/epics/add-dedicated-security-reviews-E202611100765b3a5/HLD.md"
+          },
+          "revision": 7,
+          "at": "2026-11-23T05:21:23.651Z",
+          "externalId": "7092335068"
         }
       ],
       "binding": {

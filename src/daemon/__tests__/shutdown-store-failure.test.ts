@@ -115,7 +115,7 @@ test('application disposal coalesces, drains before closing resources and skips 
     let health = 'ok';
     const record = (name: string) => async () => { acts.push(name); };
     const context = {
-      closing: undefined, stopBackgroundWork: () => { acts.push('stop'); },
+      closing: undefined, workerStarts: [Promise.resolve()], stopBackgroundWork: () => { acts.push('stop'); },
       queueDone: new Promise<void>(r => { release = r; }),
       connectionTestSupervisor: { shutdown: record('tests') },
       server: { flushPendingWrites: record('flush'), disconnectClients: () => { acts.push('disconnect'); } },
@@ -133,6 +133,7 @@ test('application disposal coalesces, drains before closing resources and skips 
     const dispose = runInNewContext(`(${applicationCallback('closeApplication').trim().replace(/;$/, '')})`, { ...context, closeStores }) as (reason: string) => Promise<void>;
     const first = dispose('SIGTERM');
     assert.equal(dispose('SIGINT'), first, 'concurrent disposal shares the same drain');
+    await new Promise(resolve => setImmediate(resolve));
     assert.deepEqual(acts, ['stop'], 'stores remain open while work drains');
     if (loseLocks) health = 'locks-lost';
     release(); await first;

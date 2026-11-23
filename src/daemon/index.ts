@@ -99,9 +99,11 @@ import * as todosRpc from './todos-rpc.js';
 
 async function main(): Promise<void> {
 	// Resources acquired before boot completes must also be released if boot fails.
+	const workerStarts: Promise<void>[] = [];
 	const startupDisposers: (() => void | Promise<void>)[] = [];
 	let startupFailure: Error | undefined;
 	let closeApplication = async (_reason: string): Promise<void> => {
+		await Promise.allSettled(workerStarts);
 		while (startupDisposers.length > 0) {
 			try { await startupDisposers.pop()!(); }
 			catch (error) { log.error({ error }, 'startup resource disposal failed'); }
@@ -363,6 +365,7 @@ async function main(): Promise<void> {
 		startupDisposers.push(() => controller.stop());
 		// Code indexing and document summaries, each on a worker of its own.
 		const indexingWorkers = startIndexingWorkers(workers, threadServices.indexingBlock, threadServices.board);
+		workerStarts.push(indexingWorkers.ready);
 		// The queue lives on the code-indexing worker: "done" is the current one's
 		// report that it drained after the stop (or its exit).
 		let drained: () => void = () => {};
@@ -564,10 +567,10 @@ async function main(): Promise<void> {
 		// ready is held for it (at most 30 s). A first start that fails is replaced
 		// like an exit (rate-limited; past the limit the daemon shuts down).
 		routed.add('admin');
-		void supervisor!.startOrReplace({
+		workerStarts.push(supervisor!.startOrReplace({
 			name: 'admin', cls: 'admin', script: 'admin-worker',
 			started: w => log.info({ threadId: w.threadId }, 'admin worker ready'),
-		});
+		}));
 		// Session work (s3): each client session on a worker of its own, requests with no client
 		// identity on the unattributed worker, chat/todos/understanding on the shared-state worker.
 		routed.add('session');
@@ -675,6 +678,7 @@ async function main(): Promise<void> {
 		};
 	closeApplication = (reason: string): Promise<void> => closing ??= (async () => {
 		log.info({ reason }, 'closing application resources');
+		await Promise.allSettled(workerStarts);
 		stopBackgroundWork();
 		await queueDone;
 		await closeStores();

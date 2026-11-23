@@ -93,7 +93,7 @@ test("SIGTERM during an indexing pass: workers stop, the queue drains, the main 
 			}
 			process.kill(daemon.pid, 'SIGTERM');
 			const killer = setTimeout(() => { if (alive(daemon.pid)) process.kill(daemon.pid, 'SIGKILL'); }, 30_000);
-			try { assert.equal(await daemon.exited, 0, 'the daemon exited cleanly after SIGTERM'); }
+			try { assert.equal(await daemon.exited, 0, `the daemon exited cleanly after SIGTERM: ${daemon.stderr().slice(-5000)}`); }
 			finally { clearTimeout(killer); }
 		} finally {
 			if (alive(daemon.pid)) process.kill(daemon.pid, 'SIGKILL');
@@ -234,7 +234,7 @@ test('failed startup disposes workers and open stores when socket listen throws'
   try {
     const code = await new Promise<number | null>(resolve => child.once('close', resolve));
     assert.equal(timedOut, false, stderr.slice(-4000));
-    assert.equal(code, 1, stderr.slice(-4000));
+    assert.equal(code, 1, `signal=${child.signalCode}: ${stderr.slice(-5000)}`);
     assert.match(stderr, /database ready/);
     assert.match(stderr, /daemon threads enabled/);
     assert.match(stderr, /injected startup listen failure/);

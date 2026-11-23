@@ -6870,14 +6870,6 @@
       "task": "t8",
       "reason": "Retained test fakes and status DTOs narrowed; captured test children use SIGTERM; worker dispatch tables, writer-inventory retired entries, guard acquisition and model read-back assertions updated. No installed daemon or data mutations.",
       "paths": [
-        ".insrc/artifacts/DEF-03f4fd3b9102aab8.json",
-        ".insrc/artifacts/DEF-0765b3a578e43eec.json",
-        ".insrc/artifacts/DEF-206db3426ffd4428.json",
-        ".insrc/artifacts/DEF-2846f076fd5f785f.json",
-        ".insrc/artifacts/DEF-50cde239426d6e2a.json",
-        ".insrc/artifacts/DEF-56343cf2a9c3b509.json",
-        ".insrc/artifacts/DEF-9b04adb36cac716d.json",
-        ".insrc/artifacts/DEF-b9d5c5c40df5a574.json",
         "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/UnixSocketDaemonRpc.kt",
         "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonActionGatewayTest.kt",
         "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGatewayServiceTest.kt",
@@ -6945,14 +6937,6 @@
       "task": "t8",
       "reason": "Retained test fakes and status DTOs narrowed; captured test children use SIGTERM; worker dispatch tables, writer-inventory retired entries, guard acquisition and model read-back assertions updated. No installed daemon or data mutations.",
       "paths": [
-        ".insrc/artifacts/DEF-03f4fd3b9102aab8.json",
-        ".insrc/artifacts/DEF-0765b3a578e43eec.json",
-        ".insrc/artifacts/DEF-206db3426ffd4428.json",
-        ".insrc/artifacts/DEF-2846f076fd5f785f.json",
-        ".insrc/artifacts/DEF-50cde239426d6e2a.json",
-        ".insrc/artifacts/DEF-56343cf2a9c3b509.json",
-        ".insrc/artifacts/DEF-9b04adb36cac716d.json",
-        ".insrc/artifacts/DEF-b9d5c5c40df5a574.json",
         "README.md",
         "docs/standalone/remove-existing-daemon-installer-lifecycle-implementation-E202611227dcc640f/S001/evidence/removal-accounting.json",
         "jetbrains-plugin/__tests__/s7-gradle.test.ts",
@@ -7020,6 +7004,16 @@
         "vscode-plugin/src/panels/__tests__/repo-config.test.ts",
         "vscode-plugin/src/panels/debug-renderer.ts"
       ]
+    },
+    {
+      "task": "t8",
+      "paths": [
+        "src/daemon/index.ts",
+        "src/daemon/__tests__/shutdown-store-failure.test.ts",
+        "src/daemon/threads/__tests__/threads-boot.test.ts",
+        "src/daemon/threads/__tests__/fixtures/fail-listen.mjs"
+      ],
+      "reason": "Preserve partial-start application cleanup and direct queue/health/resource-close assertions. Captured failed-start child exits naturally; no retired PID/watchdog/update control is restored."
     }
   ]
 }

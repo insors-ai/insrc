@@ -14769,7 +14769,7 @@
       ],
       "siteCount": 82,
       "sitesDigest": "737a9d49973e9e3543defb2f2dfe38ce081a450ee2fb748344ec79f7e24660dd",
-      "sourceDigest": "cf127bab0f89ac79f16d83d6c4ab7eb67d7a88308090b1a01af66a4e8eac4a21"
+      "sourceDigest": "d1b348a25b2b77b41757f5b99485d89d90a71c5b5b9f098fa823cc5709a7f234"
     },
     "src/daemon/lifecycle-registry.ts": {
       "classification": "daemon-admission-boundary",

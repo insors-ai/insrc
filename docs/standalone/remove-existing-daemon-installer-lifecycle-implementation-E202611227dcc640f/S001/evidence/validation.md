@@ -11,3 +11,5 @@
 - No full repository sweep, live provider test, native platform matrix, installer execution or current-user daemon restart/upgrade was performed. Only captured test daemons with temporary HOME and standard build-tool caches were used.
 
 Task validation and final human BUILD approval are recorded by the insrc framework separately.
+
+Validation follow-up: partial-start resource disposers now release resources acquired before boot completion, including worker failures before the final close callback is installed. A real isolated threaded child with an injected socket-listen failure exits naturally with code 1. The surviving production close callbacks are exercised directly with instrumented ports: concurrent requests coalesce, no stores close before the queue drains, workers close before stores, and lock loss during drain suppresses graph/Lance native close calls. No PID, watchdog, deadline, restart or installer engine was restored.

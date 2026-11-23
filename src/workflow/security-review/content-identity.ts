@@ -18,7 +18,16 @@ import { readFile, realpath } from 'node:fs/promises';
 import { relative, resolve, sep } from 'node:path';
 
 import { runShell } from '../../daemon/tools/shell-helper.js';
+import { listRepos } from '../../db/repos.js';
 import type { ReviewTargets } from '../artifact-core/types.js';
+
+/** The repo-registration check, overridable for unit tests (so a test does not
+ *  need a real, running daemon graph store to register a fixture repo in).
+ *  No argument resets to the real listRepos(null). */
+let isRepoRegistered: (repoPath: string) => Promise<boolean> = async repoPath => (await listRepos(null)).some(r => r.path === repoPath);
+export function _setContentIdentityDepsForTests(fn?: (repoPath: string) => Promise<boolean>): void {
+	isRepoRegistered = fn ?? (async repoPath => (await listRepos(null)).some(r => r.path === repoPath));
+}
 
 /**
  * A deterministic digest over the repo's HEAD commit sha plus a sha256 of
@@ -28,9 +37,13 @@ import type { ReviewTargets } from '../artifact-core/types.js';
  * can miss a tracked file marked assume-unchanged.
  */
 export async function computeContentIdentity(repoPath: string, targets: ReviewTargets): Promise<string> {
+	if (!(await isRepoRegistered(repoPath))) {
+		throw new Error(`computeContentIdentity: '${repoPath}' is not a registered repo`);
+	}
+
 	const head = await runShell(['git', 'rev-parse', 'HEAD'], { cwd: repoPath });
 	if (head.spawnError || head.code !== 0) {
-		throw new Error(`computeContentIdentity: '${repoPath}' is not a registered git repository, or its HEAD cannot be resolved: ${head.stderr.trim()}`);
+		throw new Error(`computeContentIdentity: '${repoPath}' is a registered repo, but its HEAD cannot be resolved: ${head.stderr.trim()}`);
 	}
 
 	const realRepoPath = await realpath(repoPath);

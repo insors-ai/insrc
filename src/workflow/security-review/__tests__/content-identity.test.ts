@@ -10,12 +10,12 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, rmSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 
-import { computeContentIdentity } from '../content-identity.js';
+import { computeContentIdentity, _setContentIdentityDepsForTests } from '../content-identity.js';
 
 function initRepo(): string {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-content-identity-'));
@@ -29,8 +29,17 @@ function initRepo(): string {
 	return repo;
 }
 
+/** Every test below exercises computeContentIdentity's own git/filesystem
+ *  logic, not the daemon's real repo registry (which would need a running
+ *  graph store) -- a fixture repo is treated as registered via the injectable
+ *  seam, mirroring this codebase's own _set*DepsForTests convention. */
+function treatAsRegistered(repoPath: string): void {
+	_setContentIdentityDepsForTests(async candidate => candidate === repoPath);
+}
+
 test('computeContentIdentity: an application-source file in targets.entries is edited, manifests/lockfiles unchanged -> digest changes', async () => {
 	const repo = initRepo();
+	treatAsRegistered(repo);
 	try {
 		const targets = { entries: [{ path: 'app.ts' }] };
 		const before = await computeContentIdentity(repo, targets);
@@ -38,12 +47,14 @@ test('computeContentIdentity: an application-source file in targets.entries is e
 		const after = await computeContentIdentity(repo, targets);
 		assert.notEqual(before, after);
 	} finally {
+		_setContentIdentityDepsForTests();
 		rmSync(repo, { recursive: true, force: true });
 	}
 });
 
 test('computeContentIdentity: a file NOT in targets.entries is edited -> no change', async () => {
 	const repo = initRepo();
+	treatAsRegistered(repo);
 	try {
 		const targets = { entries: [{ path: 'app.ts' }] };
 		const before = await computeContentIdentity(repo, targets);
@@ -51,59 +62,80 @@ test('computeContentIdentity: a file NOT in targets.entries is edited -> no chan
 		const after = await computeContentIdentity(repo, targets);
 		assert.equal(before, after);
 	} finally {
+		_setContentIdentityDepsForTests();
 		rmSync(repo, { recursive: true, force: true });
 	}
 });
 
 test('computeContentIdentity: identical targets.entries bytes -> identical string on repeated calls', async () => {
 	const repo = initRepo();
+	treatAsRegistered(repo);
 	try {
 		const targets = { entries: [{ path: 'app.ts' }, { path: 'other.ts' }] };
 		const a = await computeContentIdentity(repo, targets);
 		const b = await computeContentIdentity(repo, targets);
 		assert.equal(a, b);
 	} finally {
+		_setContentIdentityDepsForTests();
 		rmSync(repo, { recursive: true, force: true });
 	}
 });
 
 test('computeContentIdentity: a targets.entries path outside repoPath throws', async () => {
 	const repo = initRepo();
+	treatAsRegistered(repo);
 	try {
 		await assert.rejects(() => computeContentIdentity(repo, { entries: [{ path: '../outside.ts' }] }));
 	} finally {
+		_setContentIdentityDepsForTests();
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
+test('computeContentIdentity: repoPath that is not a registered repo throws', async () => {
+	const repo = initRepo();
+	_setContentIdentityDepsForTests(async () => false);
+	try {
+		await assert.rejects(() => computeContentIdentity(repo, { entries: [] }));
+	} finally {
+		_setContentIdentityDepsForTests();
 		rmSync(repo, { recursive: true, force: true });
 	}
 });
 
 test('computeContentIdentity: repoPath that is not a git repository at all throws', async () => {
 	const notRepo = mkdtempSync(join(tmpdir(), 'insrc-not-a-repo-'));
+	treatAsRegistered(notRepo);
 	try {
 		await assert.rejects(() => computeContentIdentity(notRepo, { entries: [] }));
 	} finally {
+		_setContentIdentityDepsForTests();
 		rmSync(notRepo, { recursive: true, force: true });
 	}
 });
 
 test('computeContentIdentity: a git repository with no commits yet (HEAD unresolvable) throws', async () => {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-no-commits-'));
+	treatAsRegistered(repo);
 	try {
 		execFileSync('git', ['init', '-q'], { cwd: repo });
 		await assert.rejects(() => computeContentIdentity(repo, { entries: [] }));
 	} finally {
+		_setContentIdentityDepsForTests();
 		rmSync(repo, { recursive: true, force: true });
 	}
 });
 
 test('computeContentIdentity: a targets.entries path that is a SYMLINK pointing outside repoPath throws', async () => {
 	const repo = initRepo();
+	treatAsRegistered(repo);
 	const outsideDir = mkdtempSync(join(tmpdir(), 'insrc-outside-'));
 	try {
 		writeFileSync(join(outsideDir, 'secret.ts'), 'export const secret = 1;\n');
-		const { symlinkSync } = await import('node:fs');
 		symlinkSync(join(outsideDir, 'secret.ts'), join(repo, 'linked.ts'));
 		await assert.rejects(() => computeContentIdentity(repo, { entries: [{ path: 'linked.ts' }] }));
 	} finally {
+		_setContentIdentityDepsForTests();
 		rmSync(repo, { recursive: true, force: true });
 		rmSync(outsideDir, { recursive: true, force: true });
 	}

@@ -77,3 +77,15 @@ test('enumerateManagers: a directory with no recognizable manifest yields no man
 		rmSync(repo, { recursive: true, force: true });
 	}
 });
+
+test('enumerateManagers: a SUBDIRECTORY named like a manifest file (e.g. package.json/) is never mistaken for the file', () => {
+	const repo = tmpRepo();
+	try {
+		mkdirSync(join(repo, 'package.json'));
+		const { managers, ambiguities } = enumerateManagers(repo, EMPTY_TARGETS);
+		assert.deepEqual(managers, []);
+		assert.deepEqual(ambiguities, []);
+	} finally {
+		rmSync(repo, { recursive: true, force: true });
+	}
+});

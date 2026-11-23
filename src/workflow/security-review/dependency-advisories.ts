@@ -12,7 +12,7 @@
  * SecurityFinding/EvidenceProvider shapes without redefining them.
  */
 
-import { readdirSync, statSync } from 'node:fs';
+import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 import type { Manager } from '../../daemon/tools/builtins/pkg/index.js';
@@ -108,13 +108,14 @@ export function enumerateManagers(repoPath: string, _targets: ReviewTargets): Ma
 	const ambiguities: ManagerAmbiguity[] = [];
 
 	const walk = (dir: string): void => {
-		let entryNames: string[];
+		let entries: import('node:fs').Dirent[];
 		try {
-			entryNames = readdirSync(dir);
+			entries = readdirSync(dir, { withFileTypes: true });
 		} catch {
 			return;
 		}
-		const detected = managersInDir(dir, entryNames);
+		const fileNames = entries.filter(e => e.isFile()).map(e => e.name);
+		const detected = managersInDir(dir, fileNames);
 		const byFamily = new Map<readonly Manager[], Manager[]>();
 		for (const manager of detected) {
 			const family = familyOf(manager);
@@ -129,16 +130,9 @@ export function enumerateManagers(repoPath: string, _targets: ReviewTargets): Ma
 				managers.push({ manager: familyManagers[0] as Manager, manifestDir: dir });
 			}
 		}
-		for (const name of entryNames) {
-			if (SKIP_DIRS.has(name)) { continue; }
-			const full = join(dir, name);
-			let isDir = false;
-			try {
-				isDir = statSync(full).isDirectory();
-			} catch {
-				continue;
-			}
-			if (isDir) { walk(full); }
+		for (const entry of entries) {
+			if (!entry.isDirectory() || SKIP_DIRS.has(entry.name)) { continue; }
+			walk(join(dir, entry.name));
 		}
 	};
 

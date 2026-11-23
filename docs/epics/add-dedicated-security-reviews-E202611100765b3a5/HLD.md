@@ -96,6 +96,27 @@ interface SecurityAdvisoryEvidence {
 
 **Assumptions cited:** [[k2]]
 
+### 4.3 sc3: SecurityReviewEntryPoint
+
+**Owner Story:** `s3`
+**Consumed by:** (none — this is the external trigger surface, not a cross-story contract)
+
+**Purpose:** The daemon IPC method + MCP tool (`insrc_security_review_step`) that is the actual trigger for a security review -- mirroring `insrc_code_review_step`'s phase-driven shape and its confirm_wait-on-stale-index pattern, since nothing in this Epic previously assigned any Story the entry point a caller actually invokes (this HLD's own a1-alternative text named the gap -- "a daemon RPC/MCP entry point supplies it when a caller asks for a security-only review" -- but never assigned it to a Story until this amendment, revision 7). Unlike `insrc_code_review_step`'s two branches (who authored the code under review), a security review has exactly one path: the pinned security model always performs the actual assessment, never the controller, so `phase:'start'` runs `runSecurityReview` synchronously end-to-end and returns `next:'done'` in the same call -- the same shape as code-review's "you wrote the code" branch, which asks the daemon to review and waits. `epicHash`/`storyId` are OPTIONAL on the request: when the caller supplies them (reviewing inside an existing tracked Epic/Story), `persistVerificationReceipt`'s `ident` uses them directly with `standalone` left unset; when omitted, s3 derives them deterministically from `contentIdentity` (per `q860d1b4e`'s resolution) and sets `standalone:true` -- matching `receipt-record.ts`'s own `ident.standalone?` field, which exists for exactly this distinction.
+
+**Interface sketch (type-level):**
+
+```
+type SecurityReviewStepRequest =
+	| { readonly phase: 'start'; readonly repo?: string; readonly targets: ReviewTargets; readonly epicHash?: string; readonly storyId?: string }
+	| { readonly phase: 'start'; readonly state: string; readonly proceed: boolean };
+
+type SecurityReviewStepResponse =
+	| { readonly next: 'confirm_wait'; readonly state: string; readonly guidance: string }
+	| { readonly next: 'done'; readonly report: SecurityReviewReport; readonly markdown: string };
+```
+
+**Assumptions cited:** [[k2]]
+
 ## 5. Story boundaries
 
 ### 5.1 Story STORY-0765b3a578e43eec-s1
@@ -112,9 +133,10 @@ pkg_audit's package-manager resolution; s2 runs with the SAME host access as the
 
 ### 5.3 Story STORY-0765b3a578e43eec-s3
 
+**Owns:** `sc3`
 **Depends on:** `sc1`, `sc2`
 
-The RoundDriverHooks.security adapter function; the CliProvider.runReadOnlySession dispatch of the code-vulnerability pass against the SAME pinned contentIdentity s2 collected against (recomputed/verified by s3, refusing on a content MISMATCH only -- never on an access/enforcement question), using s1's resolved model, with the SAME host access every other CLI-backed session in this codebase already has (no additional credential/out-of-scope/MCP denial gate; explicit user direction, applied across the Epic's design). The call into runReviewRound and the separate ownership of everything runReviewRound itself does NOT do (sandbox/mutation checkpoint execution, round reconciliation, VerificationReceipt persistence, and checkpoint cleanup); the mapping from the review's pinned contentIdentity onto the epicHash/storyId identity persistVerificationReceipt requires; and the assembly of SecurityFinding/SecurityEvidence plus a supplemental report structure stay private to s3. It consumes s1's SecurityModelSelection and s2's SecurityAdvisoryEvidence to produce that report.
+The RoundDriverHooks.security adapter function; the CliProvider.runReadOnlySession dispatch of the code-vulnerability pass against the SAME pinned contentIdentity s2 collected against (recomputed/verified by s3, refusing on a content MISMATCH only -- never on an access/enforcement question), using s1's resolved model, with the SAME host access every other CLI-backed session in this codebase already has (no additional credential/out-of-scope/MCP denial gate; explicit user direction, applied across the Epic's design). The call into runReviewRound and the separate ownership of everything runReviewRound itself does NOT do (sandbox/mutation checkpoint execution, round reconciliation, VerificationReceipt persistence, and checkpoint cleanup); the mapping from the review's pinned contentIdentity onto the epicHash/storyId identity persistVerificationReceipt requires; and the assembly of SecurityFinding/SecurityEvidence plus a supplemental report structure stay private to s3. It consumes s1's SecurityModelSelection and s2's SecurityAdvisoryEvidence to produce that report. s3 also owns `sc3`, the daemon IPC method + MCP tool (`insrc_security_review_step`) that a caller actually invokes to trigger a review -- the entry point this HLD previously left unassigned (amendment, revision 7). It mirrors `insrc_code_review_step`'s phase-driven shape, including its confirm_wait-on-stale-index resumption pattern, collapsed to its single always-daemon-reviews branch since a security review's assessment is always performed by the pinned model, never the controller.
 
 ## 6. Non-functional targets
 
@@ -233,6 +255,8 @@ This avoids any coupling to the shared round-driver Epic (03f4fd3b9102aab8) at t
 - **[[c15]]** `code` `src/daemon/tools/builtins/pkg/index.ts` — "auditArgv's pip case runs ['pip-audit', '-f', 'json'] -- no -r/--path argument naming the repository's own requirements file; pip-audit audits the active Python environment by default."
 - **[[c16]]** `stakeholder` `Reviewer finding (HLD revision-3 review): govulncheck's and pip-audit's documented behavior` — "govulncheck normally queries vuln.go.dev [and requires source analysis], rather than a package registry. pip-audit audits the active Python environment by default; it does not select the repository's "
 - **[[c17]]** `stakeholder` `User direction (this session, after 3 external review rounds on s2 LLD all finding the enforced-boundary/negative-access-test invariants unachievable without new sandbox infrastructure): the reviewer must have the same access privileges as the controller; sandboxing or constraining it would degrade review accuracy. Applied across the Epic design (s2 and s3).`
+- **[[c18]]** `code` `src/mcp/server.ts` — "insrc_code_review_step / insrc_review_step are registered but stubbed: description 'Code/Design review functionality is being rewritten. This compatibility endpoint always returns an error without starting work.' -- confirmed no real caller of runReviewRound exists anywhere in the codebase today (grep, this session)."
+- **[[c19]]** `stakeholder` `User direction (this session): the security review needs its own new entry point (daemon IPC + MCP tool) mirroring insrc_code_review_step's phase-driven shape, since the general review orchestration this Epic could otherwise have embedded into does not exist yet.`
 
 ## 10. Open questions
 
@@ -271,3 +295,5 @@ This avoids any coupling to the shared round-driver Epic (03f4fd3b9102aab8) at t
 - **[[c15]]** `code` `src/daemon/tools/builtins/pkg/index.ts` — "auditArgv's pip case runs ['pip-audit', '-f', 'json'] -- no -r/--path argument naming the repository's own requirements file; pip-audit audits the active Python environment by default."
 - **[[c16]]** `stakeholder` `Reviewer finding (HLD revision-3 review): govulncheck's and pip-audit's documented behavior` — "govulncheck normally queries vuln.go.dev [and requires source analysis], rather than a package registry. pip-audit audits the active Python environment by default; it does not select the repository's "
 - **[[c17]]** `stakeholder` `User direction (this session, after 3 external review rounds on s2 LLD all finding the enforced-boundary/negative-access-test invariants unachievable without new sandbox infrastructure): the reviewer must have the same access privileges as the controller; sandboxing or constraining it would degrade review accuracy. Applied across the Epic design (s2 and s3).`
+- **[[c18]]** `code` `src/mcp/server.ts` — "insrc_code_review_step / insrc_review_step are registered but stubbed: description 'Code/Design review functionality is being rewritten. This compatibility endpoint always returns an error without starting work.' -- confirmed no real caller of runReviewRound exists anywhere in the codebase today (grep, this session)."
+- **[[c19]]** `stakeholder` `User direction (this session): the security review needs its own new entry point (daemon IPC + MCP tool) mirroring insrc_code_review_step's phase-driven shape, since the general review orchestration this Epic could otherwise have embedded into does not exist yet.`

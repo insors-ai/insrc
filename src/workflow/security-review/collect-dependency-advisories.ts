@@ -1,0 +1,288 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Procix Software India. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+/**
+ * collectDependencyAdvisories (s2/t6), Epic add-dedicated-security-reviews.
+ *
+ * Orchestrates sc2's full dependency-advisory collection: pins contentIdentity
+ * before any manager runs, enumerates every manager, audits each one (gated
+ * by its required-input closure, checked both before and after its audit),
+ * maps raw pkg_audit output into SecurityAdvisoryMatch[], and re-verifies
+ * contentIdentity once more after the last manager completes. Entirely
+ * controller-side, deterministic code -- no model, tool-loop or CLI session
+ * is involved (HLD s2).
+ */
+
+import { dirname } from 'node:path';
+import { rmSync } from 'node:fs';
+
+import { pkgAuditTool, type Manager } from '../../daemon/tools/builtins/pkg/index.js';
+import type { ToolDeps, ToolInput, ToolResult } from '../../daemon/tools/types.js';
+import type { ReviewTargets } from '../artifact-core/types.js';
+import { computeContentIdentity } from './content-identity.js';
+import { enumerateManagers, verifyManagerClosureCoverage } from './dependency-advisories.js';
+import { findVersionUncertainPipRequirements, generateLockfileExport } from './lockfile-export.js';
+
+export interface SecurityAdvisoryMatch {
+	readonly coordinate: string;
+	readonly advisoryId: string;
+	readonly affectedVersions: string;
+	readonly severity: string;
+	readonly provenance: string;
+	readonly advisoryDestination: string;
+}
+
+export type PerManagerMode = 'manifest-scoped' | 'isolated-environment' | 'confined-source-copy' | 'unsupported';
+
+export interface PerManagerModeEntry {
+	readonly manager: string;
+	readonly mode: PerManagerMode;
+	readonly configuredDestination?: string;
+}
+
+export interface SecurityAdvisoryEvidence {
+	readonly contentIdentity: string;
+	readonly contentStable: boolean;
+	readonly readOnly: true;
+	readonly queriedCoordinates: readonly string[];
+	readonly matches: readonly SecurityAdvisoryMatch[];
+	readonly perManagerMode: readonly PerManagerModeEntry[];
+	readonly unresolvedDependencies: readonly string[];
+	readonly unavailableSources: readonly string[];
+}
+
+/** The per-manager input/mode mapping (HLD s2, a correctness/targeting
+ *  concern, not an isolation one): npm/pnpm/yarn/cargo read their own
+ *  manifest+lockfile; pip/pipenv/poetry are pointed at the repository's own
+ *  resolved environment (never the ambient active one pip-audit defaults
+ *  to); go analyzes the module's own source directly. */
+const MANAGER_MODE: Record<Manager, PerManagerMode> = {
+	npm: 'manifest-scoped', pnpm: 'manifest-scoped', yarn: 'manifest-scoped', cargo: 'manifest-scoped',
+	pip: 'isolated-environment', pipenv: 'isolated-environment', poetry: 'isolated-environment',
+	go: 'confined-source-copy',
+};
+
+/** The manager's own CONFIGURED advisory destination -- explicitly a
+ *  configured value, never claimed as independently observed (pkg_audit's
+ *  own output carries no network trace to observe from). */
+const MANAGER_DESTINATION: Record<Manager, string> = {
+	npm: 'https://registry.npmjs.org (npm audit)',
+	pnpm: 'https://registry.npmjs.org (pnpm audit)',
+	yarn: 'https://registry.npmjs.org (yarn audit)',
+	cargo: 'https://rustsec.org (cargo-audit advisory database)',
+	pip: 'PyPI Advisory Database (pip-audit)',
+	pipenv: 'PyPI Advisory Database (pip-audit)',
+	poetry: 'PyPI Advisory Database (pip-audit)',
+	go: 'https://vuln.go.dev (govulncheck)',
+};
+
+function isRecord(v: unknown): v is Record<string, unknown> {
+	return typeof v === 'object' && v !== null;
+}
+
+/** pip-audit's JSON output: either a bare array of dependency entries, or
+ *  `{ dependencies: [...] }`, each `{ name, version, vulns: [...] }`. A
+ *  dependency with an empty vulns array is a cleanly-checked coordinate. */
+function mapPipAuditOutput(parsed: unknown, advisoryDestination: string): { matches: SecurityAdvisoryMatch[]; cleanCoordinates: string[] } | undefined {
+	const deps = Array.isArray(parsed) ? parsed : (isRecord(parsed) && Array.isArray(parsed.dependencies) ? parsed.dependencies : undefined);
+	if (deps === undefined) { return undefined; }
+	const matches: SecurityAdvisoryMatch[] = [];
+	const cleanCoordinates: string[] = [];
+	for (const dep of deps) {
+		if (!isRecord(dep) || typeof dep.name !== 'string') { continue; }
+		const version = typeof dep.version === 'string' ? dep.version : '';
+		const coordinate = `${dep.name}@${version}`;
+		const vulns = Array.isArray(dep.vulns) ? dep.vulns : [];
+		if (vulns.length === 0) { cleanCoordinates.push(coordinate); continue; }
+		for (const vuln of vulns) {
+			if (!isRecord(vuln)) { continue; }
+			matches.push({
+				coordinate,
+				advisoryId: typeof vuln.id === 'string' ? vuln.id : 'unknown',
+				affectedVersions: Array.isArray(vuln.fix_versions) && vuln.fix_versions.length > 0 ? `fixed in ${(vuln.fix_versions as unknown[]).join(', ')}` : version,
+				severity: 'unknown',
+				provenance: 'pip-audit',
+				advisoryDestination,
+			});
+		}
+	}
+	return { matches, cleanCoordinates };
+}
+
+/** npm/pnpm's `audit --json` output: `{ vulnerabilities: { <pkgName>: { range, severity, via: [...] } } }`. */
+function mapNpmAuditOutput(parsed: unknown, advisoryDestination: string, provenance: string): { matches: SecurityAdvisoryMatch[]; cleanCoordinates: string[] } | undefined {
+	if (!isRecord(parsed) || !isRecord(parsed.vulnerabilities)) { return undefined; }
+	const matches: SecurityAdvisoryMatch[] = [];
+	const cleanCoordinates: string[] = [];
+	for (const [pkgName, rawInfo] of Object.entries(parsed.vulnerabilities)) {
+		if (!isRecord(rawInfo)) { continue; }
+		const range = typeof rawInfo.range === 'string' ? rawInfo.range : '';
+		const coordinate = `${pkgName}@${range}`;
+		const advisories = (Array.isArray(rawInfo.via) ? rawInfo.via : []).filter(isRecord);
+		if (advisories.length === 0) { cleanCoordinates.push(coordinate); continue; }
+		for (const advisory of advisories) {
+			matches.push({
+				coordinate,
+				advisoryId: typeof advisory.url === 'string' ? advisory.url : String(advisory.source ?? pkgName),
+				affectedVersions: typeof advisory.range === 'string' ? advisory.range : range,
+				severity: typeof advisory.severity === 'string' ? advisory.severity : 'unknown',
+				provenance,
+				advisoryDestination,
+			});
+		}
+	}
+	return { matches, cleanCoordinates };
+}
+
+/** cargo-audit's `--json` output: `{ vulnerabilities: { list: [ { package, advisory } ] } }`. cargo-audit does
+ *  not list clean dependencies, only vulnerable ones -- no cleanCoordinates here. */
+function mapCargoAuditOutput(parsed: unknown, advisoryDestination: string): { matches: SecurityAdvisoryMatch[]; cleanCoordinates: string[] } | undefined {
+	if (!isRecord(parsed) || !isRecord(parsed.vulnerabilities) || !Array.isArray(parsed.vulnerabilities.list)) { return undefined; }
+	const matches: SecurityAdvisoryMatch[] = [];
+	for (const entry of parsed.vulnerabilities.list) {
+		if (!isRecord(entry)) { continue; }
+		const pkg = isRecord(entry.package) ? entry.package : {};
+		const advisory = isRecord(entry.advisory) ? entry.advisory : {};
+		matches.push({
+			coordinate: `${typeof pkg.name === 'string' ? pkg.name : 'unknown'}@${typeof pkg.version === 'string' ? pkg.version : ''}`,
+			advisoryId: typeof advisory.id === 'string' ? advisory.id : 'unknown',
+			affectedVersions: typeof pkg.version === 'string' ? pkg.version : '',
+			severity: typeof advisory.severity === 'string' ? advisory.severity : 'unknown',
+			provenance: 'cargo audit',
+			advisoryDestination,
+		});
+	}
+	return { matches, cleanCoordinates: [] };
+}
+
+/** Maps one manager's raw pkg_audit output into SecurityAdvisoryMatch[] plus the
+ *  coordinates that were cleanly checked with no match. Returns undefined when
+ *  the output cannot be structurally mapped (yarn's NDJSON, go's plain-text
+ *  govulncheck output) -- an execution gap, recorded in unavailableSources by
+ *  the caller, never a thrown error. */
+function mapAuditOutput(manager: Manager, parsed: unknown, advisoryDestination: string): { matches: SecurityAdvisoryMatch[]; cleanCoordinates: string[] } | undefined {
+	if (manager === 'pip' || manager === 'pipenv' || manager === 'poetry') { return mapPipAuditOutput(parsed, advisoryDestination); }
+	if (manager === 'npm' || manager === 'pnpm') { return mapNpmAuditOutput(parsed, advisoryDestination, `${manager} audit`); }
+	if (manager === 'cargo') { return mapCargoAuditOutput(parsed, advisoryDestination); }
+	return undefined;
+}
+
+interface PkgAuditResultData {
+	readonly manager: string;
+	readonly exitCode: number | null;
+	readonly parsed: unknown;
+	readonly stdout: string;
+	readonly stderr: string;
+}
+
+function makeToolDeps(repoPath: string): ToolDeps {
+	return { sessionId: 'security-review-s2', repoPath, send: () => undefined, requestId: 0, caller: 'workflow' };
+}
+
+/** The pkg_audit invocation, overridable for unit tests (so collectDependencyAdvisories'
+ *  own orchestration logic can be exercised without a real subprocess). No argument
+ *  resets to the real pkgAuditTool.execute. */
+let runPkgAudit: (input: ToolInput, deps: ToolDeps) => Promise<ToolResult> = (input, deps) => pkgAuditTool.execute(input, deps);
+export function _setPkgAuditExecuteForTests(fn?: (input: ToolInput, deps: ToolDeps) => Promise<ToolResult>): void {
+	runPkgAudit = fn ?? ((input, deps) => pkgAuditTool.execute(input, deps));
+}
+
+/**
+ * Orchestrates sc2's dependency-advisory collection for `repoPath` scoped to
+ * `targets`. The FIRST computeContentIdentity call's own precondition
+ * failure (e.g. repoPath not registered) propagates -- nothing has run yet,
+ * so there is nothing to report gaps against. Every later failure (a
+ * manager-level audit, closure-coverage check, or the post-collection
+ * re-read) becomes an explicit perManagerMode entry, an unavailableSources
+ * entry, or contentStable:false -- never an exception.
+ */
+export async function collectDependencyAdvisories(repoPath: string, targets: ReviewTargets): Promise<SecurityAdvisoryEvidence> {
+	const contentIdentity = await computeContentIdentity(repoPath, targets);
+
+	const { managers } = enumerateManagers(repoPath, targets);
+
+	const matches: SecurityAdvisoryMatch[] = [];
+	const queriedCoordinates: string[] = [];
+	const unresolvedDependencies: string[] = [];
+	const unavailableSources: string[] = [];
+	const perManagerMode: PerManagerModeEntry[] = [];
+	let closureRegressed = false;
+
+	for (const { manager, manifestDir } of managers) {
+		const mode = MANAGER_MODE[manager];
+		const configuredDestination = MANAGER_DESTINATION[manager];
+
+		const preCoverage = await verifyManagerClosureCoverage(repoPath, targets, manager, manifestDir);
+		if (!preCoverage.covered) {
+			perManagerMode.push({ manager, mode: 'unsupported', configuredDestination });
+			continue;
+		}
+
+		let requirementsPath: string | undefined;
+		let noDeps = false;
+		let cleanupDir: string | undefined;
+		if (manager === 'pipenv' || manager === 'poetry') {
+			try {
+				const exported = generateLockfileExport(manager, manifestDir);
+				requirementsPath = exported.requirementsPath;
+				cleanupDir = dirname(exported.requirementsPath);
+				noDeps = true;
+				unresolvedDependencies.push(...exported.unresolvedDependencies);
+			} catch (err) {
+				perManagerMode.push({ manager, mode: 'unsupported', configuredDestination });
+				unavailableSources.push(`${manager}: could not generate requirementsPath from its lockfile (${err instanceof Error ? err.message : String(err)})`);
+				continue;
+			}
+		} else if (manager === 'pip') {
+			requirementsPath = `${manifestDir}/requirements.txt`;
+			unresolvedDependencies.push(...findVersionUncertainPipRequirements(requirementsPath));
+		}
+
+		try {
+			const result = await runPkgAudit(
+				{ cwd: manifestDir, manager, ...(requirementsPath !== undefined ? { requirementsPath } : {}), ...(noDeps ? { noDeps: true } : {}) },
+				makeToolDeps(repoPath),
+			);
+			const data = result.data as PkgAuditResultData | undefined;
+			if (data === undefined) {
+				unavailableSources.push(`${manager}: ${result.error ?? 'audit execution failed'}`);
+				perManagerMode.push({ manager, mode, configuredDestination });
+				continue;
+			}
+			const mapped = mapAuditOutput(manager, data.parsed, configuredDestination);
+			if (mapped === undefined) {
+				unavailableSources.push(`${manager}: unparseable audit output`);
+			} else {
+				matches.push(...mapped.matches);
+				queriedCoordinates.push(...mapped.cleanCoordinates);
+			}
+			perManagerMode.push({ manager, mode, configuredDestination });
+		} finally {
+			if (cleanupDir !== undefined) { rmSync(cleanupDir, { recursive: true, force: true }); }
+		}
+
+		const postCoverage = await verifyManagerClosureCoverage(repoPath, targets, manager, manifestDir);
+		if (!postCoverage.covered) { closureRegressed = true; }
+	}
+
+	let contentStable: boolean;
+	try {
+		const after = await computeContentIdentity(repoPath, targets);
+		contentStable = after === contentIdentity && !closureRegressed;
+	} catch {
+		contentStable = false;
+	}
+
+	return {
+		contentIdentity,
+		contentStable,
+		readOnly: true,
+		queriedCoordinates,
+		matches,
+		perManagerMode,
+		unresolvedDependencies,
+		unavailableSources,
+	};
+}

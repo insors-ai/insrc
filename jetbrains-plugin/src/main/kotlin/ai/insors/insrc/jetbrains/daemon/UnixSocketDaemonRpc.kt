@@ -12,8 +12,6 @@ import java.net.UnixDomainSocketAddress
 import java.net.SocketAddress
 import java.nio.ByteBuffer
 import java.nio.channels.SocketChannel
-import java.nio.channels.SelectionKey
-import java.nio.channels.Selector
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicLong
@@ -99,7 +97,7 @@ class UnixSocketDaemonRpc(
         while (true) {
             buf.clear()
             val n = channel.read(buf)
-            if (n < 0) break
+            if (n < 0) throw java.io.EOFException("daemon closed before completing its reply")
             buf.flip()
             val chunk = StandardCharsets.UTF_8.decode(buf).toString()
             val newline = chunk.indexOf('\n')

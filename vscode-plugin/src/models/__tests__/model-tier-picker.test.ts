@@ -153,10 +153,9 @@ test("model-tier-picker.test.ts: the family, model and effort steps offer exactl
   r = await run({ picks: ['core', 'cli-codex', 'x-b', 'lo'], write: async () => ({ ok: false, reason: 'rejected-model', detail: "model 'x-b' is rejected in cli-codex" }) });
   assert.match(r.messages.at(-1)!, /the core tier was not saved: rejected-model — model 'x-b' is rejected in cli-codex/);
   r = await run({ picks: ['core', 'cli-codex', 'x-b', 'lo'], write: async () => ({ ok: true, restartRequired: true }), actions: ['Restart daemon'] });
-  assert.match(r.messages[0]!, /restart the daemon to apply/);
-  assert.equal(r.restarts(), 1);
-  r = await run({ picks: ['core', 'cli-codex', 'x-b', 'lo'], write: async () => ({ ok: true, restartRequired: true }), actions: ['Restart daemon'], restart: async () => false });
-  assert.match(r.messages.at(-1)!, /the daemon did not restart/);
+  assert.match(r.messages[0]!, /applies on the next daemon launch/);
+  assert.equal(r.restarts(), 0);
+
 
   // Request failures: four distinct messages, nothing written.
   const failures: Array<[Error, RegExp]> = [
@@ -223,9 +222,9 @@ test('model-tier-picker.test.ts: unknown model — check results shown; approve 
   assert.deepEqual(verdicts.filter((x) => x.kind !== 'verdict').map((x) => x.label), ['Approve x-new…', 'Reject x-new']);
   // Approve: the chosen non-rejected levels; nothing saved; a failed restart saves nothing and never re-approves; the next restart saves.
   assert.deepEqual(approves, [{ checkId: 'c1', efforts: ['lo', 'max'] }]);
-  assert.equal(r.restarts(), 2);
-  assert.deepEqual(r.writes, [{ segments: ['models', 'tiers', 'core'], value: { runner: 'cli-codex', model: 'x-new', effort: 'lo' } }]);
-  assert.match(r.messages.join('\n'), /approval of x-new is recorded, but the daemon did not restart — the core tier was not saved/);
+  assert.equal(r.restarts(), 0);
+  assert.deepEqual(r.writes, []);
+  assert.match(r.messages.join('\n'), /runtime must load it/);
   assert.equal(approves.length, 1, 'never approved twice');
 
   // Only the non-rejected levels are offered for approval.

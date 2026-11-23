@@ -128,7 +128,6 @@ export const RPC_AUDIT: Readonly<Record<string, AuditEntry>> = {
 	"understanding.requestOverride": {"kind": "daemon-store", "evidence": "understanding-rpc.ts invokes the assessment service, whose storage.ts writes daemon-owned assessment records; captured worktree content is read-only"} ,
 	"understanding.resume": {"kind": "daemon-store", "evidence": "understanding-rpc.ts invokes the assessment service, whose storage.ts writes daemon-owned assessment records; captured worktree content is read-only"} ,
 	"understanding.watch": {"kind": "read-only", "evidence": "understanding-rpc.ts reads or subscribes to daemon-owned assessment records after owner/scope validation"} ,
-	'daemon.qualificationState': { kind: 'read-only', evidence: 'handler-runtime.ts reads the rollback journal, managed release and graph qualification fixture without repository mutation' },
  'designReview.cancel': { kind: 'read-only', evidence: 'Unavailable design review boundary' },
  'codeReview.task.cancel': { kind: 'read-only', evidence: 'Unavailable code review boundary' },
 	'progress.origin.open': { kind: 'daemon-store', evidence: 'task-progress/rpc.ts opens a daemon-owned observation origin' },

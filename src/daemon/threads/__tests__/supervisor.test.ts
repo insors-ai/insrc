@@ -46,7 +46,7 @@ import type { Worker } from 'node:worker_threads';
 
 const DOCS = 30;
 const REPO = realpathSync(mkdtempSync(join(tmpdir(), 'insrc-supervisor-repo-')));
-const services = new ThreadServices(() => ({ startedAt: 0, modelState: { status: 'ready' }, installedCommit: '' }));
+const services = new ThreadServices(() => ({ startedAt: 0, modelState: { status: 'ready' }, }));
 const router = new Router({ classOf: methodClasses.classOf, registry: services.registry, routed: new Set(['admin', 'indexing']), local: directDispatch({}), board: services.board });
 const shutdowns: string[] = [];
 const supervisor = new Supervisor({ services, router, shutdown: reason => { shutdowns.push(reason); } });

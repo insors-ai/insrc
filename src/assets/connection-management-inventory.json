@@ -5911,7 +5911,7 @@
       ],
       "siteCount": 1,
       "sitesDigest": "e11e0946fd8703dd24ee3e0e0e40852ce11b20e738ee08d17780bb37c26178ee",
-      "sourceDigest": "4565cedb07cd518948c485d4e1bd993618ebaa0513dab4f2c9768e6389226f8b",
+      "sourceDigest": "352dbb9abdd75be54e5c6f75a9d33c9c88bd41adfec7cca376d1b13916d3a64f",
       "boundaries": [
         "serialization"
       ]
@@ -36989,7 +36989,7 @@
     "src/daemon/threads/method-class.ts": {
       "classification": "no-boundary-sites",
       "rationale": "The complete TypeScript-resolved scan found no provider/resolver/factory/serialization/storage/diagnostic/file-write submission in this production file; retain its exact code hash for complete deployment coverage.",
-      "sourceDigest": "7eea120b0981e9ad1ff4ead3243664beeffabc9ddf94f59304553dc29676e179",
+      "sourceDigest": "d292aa813480f2824c5017979d5b72e2a1df49870d6cef0da8194c72c2dbf39d",
       "sites": [],
       "siteCount": 0,
       "sitesDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"

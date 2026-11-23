@@ -1,0 +1,333 @@
+{
+  "runId": "14f0a7b7-b01e-475d-a5b4-afc2e874807e",
+  "runtime": {
+    "executable": "/opt/homebrew/Cellar/node@22/22.23.2/bin/node",
+    "version": "v22.23.2"
+  },
+  "budgets": {
+    "buildMs": 600000,
+    "fileMs": 180000,
+    "runMs": 600000,
+    "cleanupMs": 5000
+  },
+  "selectedFiles": [
+    "src/cli/__tests__/tui-models.test.ts",
+    "src/cli/panes/__tests__/DaemonSection.test.ts",
+    "src/config/__tests__/config-catalog-contract.test.ts",
+    "src/config/__tests__/tier-defaults.test.ts",
+    "src/daemon/__tests__/model-catalog-asset.test.ts",
+    "src/daemon/db/__tests__/connection-maintenance-control.test.ts",
+    "src/daemon/threads/__tests__/review-retirement-runtime.test.ts",
+    "src/daemon/threads/__tests__/s4-acceptance.test.ts",
+    "src/daemon/threads/__tests__/threads-boot.test.ts",
+    "src/shared/__tests__/daemon-process.test.ts",
+    "src/shared/__tests__/daemon-run-files.test.ts",
+    "src/shared/__tests__/ipc-client-close-aware.test.ts",
+    "src/shared/__tests__/ipc-client.test.ts",
+    "src/workflow/__tests__/artifact-write-inventory.test.ts"
+  ],
+  "requestedConcurrency": 2,
+  "effectiveConcurrency": 2,
+  "diagnosticFlags": [
+    "DEBUG"
+  ],
+  "liveTests": "unset",
+  "results": [
+    {
+      "file": "src/cli/panes/__tests__/DaemonSection.test.ts",
+      "childId": "825e3fd8-4ecb-4019-bd8b-c9664ad65541",
+      "log": ".insrc/tmp/test-harness/runs/14f0a7b7-b01e-475d-a5b4-afc2e874807e/0-src_cli_panes___tests___DaemonSection.test.ts.log",
+      "closeJournal": "/Users/subhagho/work/projects/insors/insrc/.insrc/tmp/test-harness/runs/14f0a7b7-b01e-475d-a5b4-afc2e874807e/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 4,
+          "pass": 4,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/config/__tests__/config-catalog-contract.test.ts",
+      "childId": "23a97300-4490-4b46-8287-d128bc520109",
+      "log": ".insrc/tmp/test-harness/runs/14f0a7b7-b01e-475d-a5b4-afc2e874807e/1-src_config___tests___config-catalog-contract.test.ts.log",
+      "closeJournal": "/Users/subhagho/work/projects/insors/insrc/.insrc/tmp/test-harness/runs/14f0a7b7-b01e-475d-a5b4-afc2e874807e/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 13,
+          "pass": 13,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/config/__tests__/tier-defaults.test.ts",
+      "childId": "345d3aa1-c464-4766-a40c-7f9fe63bd0a3",
+      "log": ".insrc/tmp/test-harness/runs/14f0a7b7-b01e-475d-a5b4-afc2e874807e/2-src_config___tests___tier-defaults.test.ts.log",
+      "closeJournal": "/Users/subhagho/work/projects/insors/insrc/.insrc/tmp/test-harness/runs/14f0a7b7-b01e-475d-a5b4-afc2e874807e/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 3,
+          "pass": 3,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/daemon/__tests__/model-catalog-asset.test.ts",
+      "childId": "d812550d-358c-4ef5-9181-c769c73ac2c8",
+      "log": ".insrc/tmp/test-harness/runs/14f0a7b7-b01e-475d-a5b4-afc2e874807e/3-src_daemon___tests___model-catalog-asset.test.ts.log",
+      "closeJournal": "/Users/subhagho/work/projects/insors/insrc/.insrc/tmp/test-harness/runs/14f0a7b7-b01e-475d-a5b4-afc2e874807e/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 6,
+          "pass": 6,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/daemon/db/__tests__/connection-maintenance-control.test.ts",
+      "childId": "dd4d81ec-afc9-40fe-959b-36ffa5c7c6b1",
+      "log": ".insrc/tmp/test-harness/runs/14f0a7b7-b01e-475d-a5b4-afc2e874807e/4-src_daemon_db___tests___connection-maintenance-control.test.ts.log",
+      "closeJournal": "/Users/subhagho/work/projects/insors/insrc/.insrc/tmp/test-harness/runs/14f0a7b7-b01e-475d-a5b4-afc2e874807e/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/daemon/threads/__tests__/review-retirement-runtime.test.ts",
+      "childId": "26176afc-b613-447c-8e87-eb5bcaa8eb52",
+      "log": ".insrc/tmp/test-harness/runs/14f0a7b7-b01e-475d-a5b4-afc2e874807e/5-src_daemon_threads___tests___review-retirement-runtime.test.ts.log",
+      "closeJournal": "/Users/subhagho/work/projects/insors/insrc/.insrc/tmp/test-harness/runs/14f0a7b7-b01e-475d-a5b4-afc2e874807e/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/cli/__tests__/tui-models.test.ts",
+      "childId": "68401cea-1334-4bbb-9c41-faea282b9b2f",
+      "log": ".insrc/tmp/test-harness/runs/14f0a7b7-b01e-475d-a5b4-afc2e874807e/0-src_cli___tests___tui-models.test.ts.log",
+      "closeJournal": "/Users/subhagho/work/projects/insors/insrc/.insrc/tmp/test-harness/runs/14f0a7b7-b01e-475d-a5b4-afc2e874807e/child-results.jsonl",
+      "code": 1,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 13,
+          "pass": 10,
+          "fail": 3,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/daemon/threads/__tests__/s4-acceptance.test.ts",
+      "childId": "24e96db8-7b6d-43e6-9a4f-05c31b259116",
+      "log": ".insrc/tmp/test-harness/runs/14f0a7b7-b01e-475d-a5b4-afc2e874807e/6-src_daemon_threads___tests___s4-acceptance.test.ts.log",
+      "closeJournal": "/Users/subhagho/work/projects/insors/insrc/.insrc/tmp/test-harness/runs/14f0a7b7-b01e-475d-a5b4-afc2e874807e/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 5,
+          "pass": 5,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/shared/__tests__/daemon-process.test.ts",
+      "childId": "4db6a72b-6d48-401c-b245-898e6b694a67",
+      "log": ".insrc/tmp/test-harness/runs/14f0a7b7-b01e-475d-a5b4-afc2e874807e/8-src_shared___tests___daemon-process.test.ts.log",
+      "closeJournal": "/Users/subhagho/work/projects/insors/insrc/.insrc/tmp/test-harness/runs/14f0a7b7-b01e-475d-a5b4-afc2e874807e/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 3,
+          "pass": 3,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/shared/__tests__/daemon-run-files.test.ts",
+      "childId": "036ecf13-7a85-40c5-808d-112020e7475f",
+      "log": ".insrc/tmp/test-harness/runs/14f0a7b7-b01e-475d-a5b4-afc2e874807e/9-src_shared___tests___daemon-run-files.test.ts.log",
+      "closeJournal": "/Users/subhagho/work/projects/insors/insrc/.insrc/tmp/test-harness/runs/14f0a7b7-b01e-475d-a5b4-afc2e874807e/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 17,
+          "pass": 17,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/shared/__tests__/ipc-client-close-aware.test.ts",
+      "childId": "60d4110c-3d2d-458d-b216-32d743a12ec9",
+      "log": ".insrc/tmp/test-harness/runs/14f0a7b7-b01e-475d-a5b4-afc2e874807e/10-src_shared___tests___ipc-client-close-aware.test.ts.log",
+      "closeJournal": "/Users/subhagho/work/projects/insors/insrc/.insrc/tmp/test-harness/runs/14f0a7b7-b01e-475d-a5b4-afc2e874807e/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/shared/__tests__/ipc-client.test.ts",
+      "childId": "f4f8383b-5cc2-489d-8d04-cda525108558",
+      "log": ".insrc/tmp/test-harness/runs/14f0a7b7-b01e-475d-a5b4-afc2e874807e/11-src_shared___tests___ipc-client.test.ts.log",
+      "closeJournal": "/Users/subhagho/work/projects/insors/insrc/.insrc/tmp/test-harness/runs/14f0a7b7-b01e-475d-a5b4-afc2e874807e/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 11,
+          "pass": 11,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/daemon/threads/__tests__/threads-boot.test.ts",
+      "childId": "2cff6af7-6c2b-47ef-b030-36c6fe01c05f",
+      "log": ".insrc/tmp/test-harness/runs/14f0a7b7-b01e-475d-a5b4-afc2e874807e/7-src_daemon_threads___tests___threads-boot.test.ts.log",
+      "closeJournal": "/Users/subhagho/work/projects/insors/insrc/.insrc/tmp/test-harness/runs/14f0a7b7-b01e-475d-a5b4-afc2e874807e/child-results.jsonl",
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 5,
+          "pass": 5,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/workflow/__tests__/artifact-write-inventory.test.ts",
+      "childId": "60861885-6ee7-4428-a882-75a14a991152",
+      "log": ".insrc/tmp/test-harness/runs/14f0a7b7-b01e-475d-a5b4-afc2e874807e/12-src_workflow___tests___artifact-write-inventory.test.ts.log",
+      "closeJournal": "/Users/subhagho/work/projects/insors/insrc/.insrc/tmp/test-harness/runs/14f0a7b7-b01e-475d-a5b4-afc2e874807e/child-results.jsonl",
+      "code": 1,
+      "signal": null,
+      "timedOut": false,
+      "coverageIncomplete": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 10,
+          "pass": 8,
+          "fail": 2,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    }
+  ],
+  "cleanupPath": ".insrc/tmp/test-harness/runs/14f0a7b7-b01e-475d-a5b4-afc2e874807e/cleanup.json",
+  "incomplete": false
+}

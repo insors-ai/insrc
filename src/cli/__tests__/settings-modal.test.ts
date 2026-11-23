@@ -51,7 +51,7 @@ const SUGGESTION = { typecheckCommand: 'mypy .', testCommand: 'pytest', resultFo
 const NO_COMMANDS: RepoSettingsPayload = { ...PAYLOAD, buildSetup: { projectType: 'python', commandsSource: 'none', suggestion: SUGGESTION } };
 
 function status(): DaemonStatus {
-	return { uptime: 1, repos: [{ path: REPO, name: 'repoA', addedAt: '', status: 'ready' }], queueDepth: 0, embeddingsPending: 0, installedCommit: '' };
+	return { uptime: 1, repos: [{ path: REPO, name: 'repoA', addedAt: '', status: 'ready' }], queueDepth: 0, embeddingsPending: 0, };
 }
 
 interface Fixture {

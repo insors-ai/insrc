@@ -35,7 +35,6 @@ const { IpcServer, directDispatch } = await import('../../server.js');
 const { buildHandlerRuntime } = await import('../../handler-runtime.js');
 const { IndexQueue } = await import('../../queue.js');
 const { getModelState } = await import('../../lifecycle.js');
-const { readInstalledCommit } = await import('../../installed-commit.js');
 const { unattributedUnwritable, withCompleteness } = await import('../../repo-completeness.js');
 const { currentLmdbFileSizeMb, ThreadServices } = await import('../main-services.js');
 const { methodClasses } = await import('../method-class.js');
@@ -67,14 +66,13 @@ async function setup(): Promise<{
 	shutdowns: string[];
 }> {
 	const services = new ThreadServices(() => ({
-		startedAt: STARTED, modelState: getModelState(), installedCommit: readInstalledCommit(), lmdbFileSizeMb: currentLmdbFileSizeMb(),
+		startedAt: STARTED, modelState: getModelState(), lmdbFileSizeMb: currentLmdbFileSizeMb(),
 	}));
 	const shutdowns: string[] = [];
-	services.onShutdown(reason => { shutdowns.push(reason); });
 	const db = await getDb();
 	const single = buildHandlerRuntime({
 		db, configStore: {} as never, queue: new IndexQueue(), indexer: { summarySweepProgress: () => undefined } as never, startedAt: STARTED,
-		shutdown: () => {}, attachedClients: () => ipc.attachedClients(), understandingService: () => undefined,
+		attachedClients: () => ipc.attachedClients(), understandingService: () => undefined,
 	});
 	const router = new Router({ classOf: methodClasses.classOf, registry: services.registry, routed: new Set(['admin']), local: directDispatch(single.rpcHandlers) });
 	// Record each request the router sends on the admin worker's channel.
@@ -120,7 +118,7 @@ after(async () => {
 const ADMIN_READS: [string, unknown][] = [
 	['mcp.status', {}],
 	['daemon.status', undefined], ['daemon.debug-status', undefined], ['repo.list', undefined], ['config.show', undefined],
-	['config.catalog', undefined], ['guide.list', undefined], ['guide.get', { workflow: 'build' }], ['daemon.updateOutcome', undefined],
+	['config.catalog', undefined], ['guide.list', undefined], ['guide.get', { workflow: 'build' }],
 ];
 
 test("each admin-class method runs on the admin worker's thread id", async () => {
@@ -135,12 +133,10 @@ test("each admin-class method runs on the admin worker's thread id", async () =>
 		const reply = await t.ask(method, params);
 		assert.equal(reply.error, undefined, `${method}: ${reply.error}`);
 	}
-	assert.deepEqual((await t.ask('daemon.shutdown')).result, { ok: true });
-	assert.deepEqual(t.shutdowns, ['daemon.shutdown RPC'], 'daemon.shutdown on the worker reached the main thread\'s shutdown');
-	assert.deepEqual(t.sent, [...ADMIN_READS.map(([m]) => m), 'daemon.shutdown'], 'every admin method went to the admin worker\'s channel and was answered from it');
+	assert.deepEqual(t.sent, ADMIN_READS.map(([m]) => m), 'every admin method went to the admin worker\'s channel and was answered from it');
 	// Every admin-class method is one of these, or daemon.update (not called: it launches an update).
 	const adminMethods = methodClasses.entries().filter(e => e.cls === 'admin').map(e => e.method).sort();
-	assert.deepEqual(adminMethods, [...ADMIN_READS.map(([m]) => m), 'daemon.shutdown', 'daemon.update'].sort());
+	assert.deepEqual(adminMethods, [...ADMIN_READS.map(([m]) => m)].sort());
 });
 
 test("recorded responses of daemon.status, daemon.debug-status, repo.list, config.show, config.catalog, guide.list and guide.get equal the single-thread daemon's", async () => {

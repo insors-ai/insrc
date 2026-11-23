@@ -30,7 +30,6 @@ function sources(over: Partial<DaemonStatusSources> = {}): DaemonStatusSources {
 		listRepos: async () => [REPO],
 		queueDepth: 3,
 		modelState: { status: 'ready' },
-		installedCommit: 'abc123',
 		lmdbFileSizeMb: 9,
 		...over,
 	};
@@ -49,7 +48,7 @@ test('daemon status payload: no storeFailure when healthy; kind, time, operation
 	const healthy = await buildDaemonStatus(sources({ modelState: { status: 'pulling', pct: 40 } }));
 	assert.deepEqual(healthy, {
 		uptime: 61, repos: [REPO], queueDepth: 3, embeddingsPending: 3,
-		modelPullStatus: 'pulling', modelPullPct: 40, installedCommit: 'abc123', lmdbFileSizeMb: 9,
+		modelPullStatus: 'pulling', modelPullPct: 40, lmdbFileSizeMb: 9,
 		features: ['analyze-request'],
 	});
 	assert.equal('storeFailure' in healthy, false);
@@ -80,7 +79,6 @@ test('status handler with the store failed returns an empty repository list and 
 	// The other fields are still answered.
 	assert.equal(known.uptime, 61);
 	assert.equal(known.queueDepth, 3);
-	assert.equal(known.installedCommit, 'abc123');
 
 	// 2. The status request is the FIRST call to meet the failure: its own read
 	//    throws the library's raw error, in either of its two forms.

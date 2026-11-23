@@ -20,7 +20,6 @@ const sources = (extra: Partial<DaemonStatusSources> = {}): DaemonStatusSources 
 	listRepos: async () => [],
 	queueDepth: 5,
 	modelState: { status: 'ready' },
-	installedCommit: 'abc',
 	storeHealth: () => ({ state: 'ok' }),
 	...extra,
 });

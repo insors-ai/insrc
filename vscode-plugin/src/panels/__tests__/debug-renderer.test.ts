@@ -11,9 +11,8 @@ import { dirname, join } from 'node:path';
 import {
   renderDebugTab,
   createDebugTabController,
-  createDebugActionHandler,
 } from '../debug-renderer.js';
-import { GatewayReadError, type DaemonDataGateway, type OrphanProcess } from '../types.js';
+import { GatewayReadError, type DaemonDataGateway } from '../types.js';
 import type { LogTail } from '../log-tail.js';
 import type { ConsentGate, ConsentOutcome } from '../surfaces/consent-gate.js';
 import type { StatusSurface } from '../surfaces/status-surface.js';
@@ -26,7 +25,6 @@ function fakeGateway(overrides: Partial<DaemonDataGateway> = {}): DaemonDataGate
     workflowChain: async () => ({ rows: [] }),
     mcpClients: async () => [],
     registeredRepos: async () => [],
-    scanOrphans: async () => [],
     ...overrides,
   };
 }
@@ -34,7 +32,7 @@ function fakeGateway(overrides: Partial<DaemonDataGateway> = {}): DaemonDataGate
 // ---- renderDebugTab -------------------------------------------------------
 
 test('renderDebugTab: lists gateway.mcpClients() host/wired rows; empty client list renders an explicit empty-state (ac1)', async () => {
-  const withClients = await renderDebugTab({ managedPid: () => undefined })(
+  const withClients = await renderDebugTab()(
     fakeGateway({ mcpClients: async () => [{ host: 'claude', wired: true }, { host: 'codex', wired: false }] }),
   );
   assert.match(withClients, /claude/);
@@ -42,45 +40,23 @@ test('renderDebugTab: lists gateway.mcpClients() host/wired rows; empty client l
   assert.match(withClients, /codex/);
   assert.match(withClients, /not wired/);
 
-  const noClients = await renderDebugTab({ managedPid: () => undefined })(fakeGateway());
+  const noClients = await renderDebugTab()(fakeGateway());
   assert.match(noClients, /No MCP clients attached/, 'an empty client list is an explicit empty-state');
 });
 
-test('renderDebugTab: orphan list EXCLUDES the managed pid; managed-only scan -> empty orphan list, no Clean-up button', async () => {
-  const orphans: OrphanProcess[] = [
-    { pid: 999, command: 'node out/daemon/index.js' }, // the managed daemon
-  ];
-  const html = await renderDebugTab({ managedPid: () => 999 })(fakeGateway({ scanOrphans: async () => orphans }));
-  assert.match(html, /No orphaned processes/, 'the managed daemon is excluded -> empty orphan list');
-  assert.doesNotMatch(html, /insrc-cleanup/, 'no Clean-up button when only the managed daemon is present');
-});
-
-test("renderDebugTab: the Clean-up button shows ONLY with >=1 non-managed orphan and posts {type:'action',action:'cleanupOrphans'}", async () => {
-  const orphans: OrphanProcess[] = [
-    { pid: 999, command: 'managed' },
-    { pid: 1234, command: 'node out/bin/insrc-mcp.js' },
-  ];
-  const html = await renderDebugTab({ managedPid: () => 999 })(fakeGateway({ scanOrphans: async () => orphans }));
-  assert.match(html, /1234/, 'the non-managed orphan is listed');
-  assert.doesNotMatch(html, /999/, 'the managed pid is excluded from the list');
-  assert.match(html, /id="insrc-cleanup"[^>]*data-action="cleanupOrphans"/, 'the Clean-up button posts the cleanupOrphans action');
-});
-
 test('renderDebugTab: body includes an empty <pre id="insrc-log">; every mcp/orphan value escaped; a gateway rejection propagates', async () => {
-  const html = await renderDebugTab({ managedPid: () => undefined })(
+  const html = await renderDebugTab()(
     fakeGateway({
       mcpClients: async () => [{ host: '<script>x</script>', wired: true }],
-      scanOrphans: async () => [{ pid: 77, command: 'node & <evil>' }],
-    }),
+      }),
   );
   assert.match(html, /<pre id="insrc-log"[^>]*><\/pre>/, 'an empty live-log region is present');
   assert.doesNotMatch(html, /<script>x<\/script>/, 'the mcp host is HTML-escaped');
   assert.match(html, /&lt;script&gt;/, 'escaped entities are emitted');
-  assert.match(html, /node &amp; &lt;evil&gt;/, 'the orphan command is HTML-escaped');
 
   // A gateway rejection PROPAGATES (the host degrades the tab, not the renderer).
   await assert.rejects(
-    () => renderDebugTab({ managedPid: () => undefined })(fakeGateway({ mcpClients: async () => { throw new GatewayReadError('debug-status failed'); } })),
+    () => renderDebugTab()(fakeGateway({ mcpClients: async () => { throw new GatewayReadError('debug-status failed'); } })),
     /debug-status failed/,
   );
 });
@@ -180,98 +156,6 @@ function fakeStatus(): StatusSurface {
     current: () => snap,
   };
 }
-
-test("action handler: >=1 non-managed orphan -> consent.ask; kill on 'accepted' with exactly those pids; kill NEVER on 'declined'/'dismissed' (k4)", async () => {
-  const orphans: OrphanProcess[] = [
-    { pid: 999, command: 'managed' },
-    { pid: 111, command: 'orphan-a' },
-    { pid: 222, command: 'orphan-b' },
-  ];
-  const killed: number[][] = [];
-  const kill = async (pids: readonly number[]): Promise<KillOutcome[]> => {
-    killed.push([...pids]);
-    return pids.map((pid) => ({ pid, result: 'terminated' as const }));
-  };
-
-  // accepted -> kills exactly the non-managed pids.
-  const accept = fakeConsent('accepted');
-  const status = fakeStatus();
-  const handleAccept = createDebugActionHandler({
-    scanOrphans: async () => orphans,
-    managedPid: () => 999,
-    consent: accept.gate,
-    kill,
-    status,
-    logger: { warn: () => {} },
-  });
-  handleAccept('cleanupOrphans');
-  await new Promise((r) => setTimeout(r, 0));
-  assert.equal(accept.asked, 1, 'consent was requested');
-  assert.deepEqual(killed[0], [111, 222], 'exactly the non-managed orphans were killed');
-  assert.match(status.current().detail ?? '', /cleaned up 2\/2/, 'the outcome surfaced via sc2');
-
-  // declined -> no kill.
-  killed.length = 0;
-  const decline = fakeConsent('declined');
-  const handleDecline = createDebugActionHandler({
-    scanOrphans: async () => orphans,
-    managedPid: () => 999,
-    consent: decline.gate,
-    kill,
-    status: fakeStatus(),
-    logger: { warn: () => {} },
-  });
-  handleDecline('cleanupOrphans');
-  await new Promise((r) => setTimeout(r, 0));
-  assert.equal(decline.asked, 1, 'consent was requested');
-  assert.equal(killed.length, 0, 'a declined consent kills NOTHING (k4)');
-
-  // dismissed -> no kill.
-  const dismiss = fakeConsent('dismissed');
-  const handleDismiss = createDebugActionHandler({
-    scanOrphans: async () => orphans,
-    managedPid: () => 999,
-    consent: dismiss.gate,
-    kill,
-    status: fakeStatus(),
-    logger: { warn: () => {} },
-  });
-  handleDismiss('cleanupOrphans');
-  await new Promise((r) => setTimeout(r, 0));
-  assert.equal(killed.length, 0, 'a dismissed consent kills NOTHING (k4)');
-});
-
-test('action handler: managed pid filtered before prompting; zero non-managed orphans -> NO prompt, NO kill', async () => {
-  const asked = { n: 0 };
-  const killed = { n: 0 };
-  const handle = createDebugActionHandler({
-    scanOrphans: async () => [{ pid: 999, command: 'managed' }], // only the managed daemon
-    managedPid: () => 999,
-    consent: { ask: async () => { asked.n += 1; return 'accepted'; } },
-    kill: async () => { killed.n += 1; return []; },
-    status: fakeStatus(),
-    logger: { warn: () => {} },
-  });
-  handle('cleanupOrphans');
-  await new Promise((r) => setTimeout(r, 0));
-  assert.equal(asked.n, 0, 'no consent prompt when there is nothing to clean (no empty modal)');
-  assert.equal(killed.n, 0, 'no kill when there is nothing to clean');
-});
-
-test("action handler: any action !== 'cleanupOrphans' is a no-op (no scan, no consent, no kill)", async () => {
-  const touched = { n: 0 };
-  const handle = createDebugActionHandler({
-    scanOrphans: async () => { touched.n += 1; return []; },
-    managedPid: () => undefined,
-    consent: { ask: async () => { touched.n += 1; return 'accepted'; } },
-    kill: async () => { touched.n += 1; return []; },
-    status: fakeStatus(),
-    logger: { warn: () => {} },
-  });
-  handle('somethingElse');
-  await new Promise((r) => setTimeout(r, 0));
-  assert.equal(touched.n, 0, 'an unknown action touches nothing');
-});
 
 test('source-scan: debug-renderer.ts imports no vscode, no cloud', () => {
   const src = readFileSync(join(HERE, '..', 'debug-renderer.ts'), 'utf8');

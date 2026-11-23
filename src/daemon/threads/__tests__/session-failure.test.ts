@@ -36,7 +36,7 @@ import type { MethodClass, SessionId } from '../channel.js';
 import type { SessionPool } from '../session-pool.js';
 
 const classOf = (m: string): MethodClass | undefined => m.startsWith('test.') ? 'session' : methodClasses.classOf(m);
-const services = new ThreadServices(() => ({ startedAt: 0, modelState: { status: 'ready' }, installedCommit: '' }));
+const services = new ThreadServices(() => ({ startedAt: 0, modelState: { status: 'ready' }, }));
 const router = new Router({ classOf, registry: services.registry, routed: new Set<MethodClass>(['session']), local: directDispatch({}), board: services.board });
 let pool: SessionPool | undefined;
 // The session pool's workers are supervised for errors and shutdown (s4).

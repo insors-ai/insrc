@@ -84,7 +84,7 @@ class S7LiveRenderTest {
 
         // A live check of a model no family lists: it runs the family's CLI; nothing is decided.
         val family = defs.families.first { it.cliKind != null }
-        val flow = ModelCheckFlow(gateway, defs, DaemonRestart({ throw AssertionError("no restart in the live test") }, gateway))
+        val flow = ModelCheckFlow(gateway, defs)
         flow.runCheck(family.id, "s7-live-check-unlisted-model")
         val check = flow.check
         assertNotNull(check, "the daemon ran the check: ${flow.message}")

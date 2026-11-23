@@ -70,8 +70,8 @@ test('ModelTiersWiringSourceScanTest: no PROVIDERS, no listModels use, no family
 	junitCase('settings.ModelTiersWiringSourceScanTest', 'the section and the pure model import no cloud or HTTP client and reach the daemon only via the gateway');
 });
 
-test("ModelCheckFlowTest: approve disabled when not run, reject with the check's id, only ticked non-rejected efforts sent, unknown-check offers check again, no tier write, restart confirmed then definitions re-read", LONG, () => {
-	junitCase('settings.ModelCheckFlowTest', "approve disabled when not run, reject with the check's id, only ticked non-rejected efforts sent, unknown-check offers check again, no tier write, restart confirmed then definitions re-read");
+test("ModelCheckFlowTest: approve disabled when not run, reject with the check's id, only ticked non-rejected efforts sent, unknown-check offers check again, no tier write, definitions re-read without process control", LONG, () => {
+	junitCase('settings.ModelCheckFlowTest', "approve disabled when not run, reject with the check's id, only ticked non-rejected efforts sent, unknown-check offers check again, no tier write, definitions re-read without process control");
 });
 
 test('InsrcSettingsConfigurableRestartTest: one prompt when any write needed a restart, also with a failure, none otherwise', LONG, () => {

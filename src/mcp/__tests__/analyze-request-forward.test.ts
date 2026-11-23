@@ -37,7 +37,7 @@ test('both analyze tools accept request-only, prompt-only and mixed calls, forwa
 		return { content: [{ type: 'text' as const, text: JSON.stringify({ next: 'done' }) }] };
 	};
 	const ipc = new IpcServer(directDispatch(
-		{ 'daemon.status': async () => ({ uptime: 1, repos: [], queueDepth: 0, embeddingsPending: 0, installedCommit: '', features: ['analyze-request'] }) },
+		{ 'daemon.status': async () => ({ uptime: 1, repos: [], queueDepth: 0, embeddingsPending: 0, features: ['analyze-request'] }) },
 		{ 'step.call': createStepCallHandler({ insrc_analyze_step: spy('insrc_analyze_step'), insrc_analyze: spy('insrc_analyze') }) },
 	));
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-analyze-request-'));

@@ -8,7 +8,6 @@ import ai.insors.insrc.jetbrains.daemon.DaemonStatusResult
 import ai.insors.insrc.jetbrains.daemon.DefinedFamilyDto
 import ai.insors.insrc.jetbrains.daemon.DefinedModelDto
 import ai.insors.insrc.jetbrains.daemon.EffortCheckDto
-import ai.insors.insrc.jetbrains.daemon.LifecycleCommand
 import ai.insors.insrc.jetbrains.daemon.ModelCheckDto
 import ai.insors.insrc.jetbrains.daemon.ModelCheckOutcome
 import ai.insors.insrc.jetbrains.daemon.ModelDecisionResult
@@ -69,12 +68,10 @@ class ModelCheckFlowTest {
     )
 
     @Test
-    fun `approve disabled when not run, reject with the check's id, only ticked non-rejected efforts sent, unknown-check offers check again, no tier write, restart confirmed then definitions re-read`() {
+    fun `approve disabled when not run, reject with the check's id, only ticked non-rejected efforts sent, unknown-check offers check again, no tier write, definitions re-read without process control`() {
         val r = Recorder()
-        val restarts = mutableListOf<LifecycleCommand>()
-        var restartResult: DaemonActionResult = DaemonActionResult.Ok("daemon restarted")
         val gw = gateway(r)
-        val flow = ModelCheckFlow(gw, defs, DaemonRestart({ restarts += it; restartResult }, gw))
+        val flow = ModelCheckFlow(gw, defs)
 
         // Only CLI families can be checked; the claimed efforts are the family's served ones.
         assertEquals(listOf("fam-x"), flow.families().map { it.id })
@@ -124,31 +121,15 @@ class ModelCheckFlowTest {
         assertNull(flow.check)
         assertEquals("could not check the model — x-a is already a model or alias of fam-x", flow.message)
 
-        // Restart: a failed restart re-reads nothing.
         r.check = checked(runs = true)
-        r.decision = ModelDecisionResult.Recorded
         flow.runCheck("fam-x", "x-new")
-        flow.approve(listOf("lo"))
-        restartResult = DaemonActionResult.Failed("the daemon install is missing")
-        assertNull(flow.restartAndReload())
-        assertEquals("the daemon did not restart — the daemon install is missing", flow.message)
-        assertTrue(r.calls.none { it.first == "modelDefinitions" })
-        // A restart whose status read finds no daemon is not confirmed.
-        restartResult = DaemonActionResult.Ok("daemon restarted")
-        r.status = DaemonStatusResult.Stopped
-        assertNull(flow.restartAndReload())
-        assertEquals("the daemon is not running after the restart", flow.message)
-        assertTrue(r.calls.none { it.first == "modelDefinitions" })
-        // A confirmed restart re-reads the definitions; the approved model is now offered.
-        r.status = DaemonStatusResult.Loaded(statusDto())
         val withNew = defs.copy(families = defs.families.map { f -> if (f.id == "fam-x") f.copy(models = f.models + m("x-new", listOf("lo"))) else f })
         r.definitions = ModelDefinitionsResult.Loaded(withNew)
-        val fresh = flow.restartAndReload()
+        val fresh = flow.reloadDefinitions()
         assertNotNull(fresh)
         assertTrue(fresh!!.families.first { it.id == "fam-x" }.models.any { it.id == "x-new" })
-        assertEquals("The daemon restarted; x-new can now be picked for a tier", flow.message)
+        assertEquals("Definitions refreshed; x-new can now be picked for a tier", flow.message)
         assertFalse(flow.restartPending)
-        assertEquals(List(3) { LifecycleCommand.RESTART }, restarts)
 
         // The flow never writes a tier.
         assertTrue(r.calls.none { it.first == "writeSetting" || it.first == "clearSetting" })
@@ -167,12 +148,12 @@ class ModelCheckFlowTest {
             DefinedFamilyDto("fam-y", "claude", "FakeY", emptyMap(), null, listOf(m("y-a", listOf("lo")))),
         ))
         val gw = gateway(Recorder())
-        val flow = ModelCheckFlow(gw, hosted, DaemonRestart({ DaemonActionResult.Ok() }, gw))
+        val flow = ModelCheckFlow(gw, hosted)
         assertEquals(listOf("fam-x", "fam-y"), flow.families().map { it.id }, "vendor CLI families only, in order")
 
         // An older daemon answers without host: the same family is a vendor CLI family again.
         val older = hosted.copy(families = hosted.families.map { it.copy(host = null) })
-        val oldFlow = ModelCheckFlow(gw, older, DaemonRestart({ DaemonActionResult.Ok() }, gw))
+        val oldFlow = ModelCheckFlow(gw, older)
         assertEquals(listOf("fam-x", "fam-hosted", "fam-y"), oldFlow.families().map { it.id })
     }
 }

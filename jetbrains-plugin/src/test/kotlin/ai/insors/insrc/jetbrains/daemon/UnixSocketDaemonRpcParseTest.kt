@@ -29,7 +29,7 @@ class UnixSocketDaemonRpcParseTest {
     private val rpc = UnixSocketDaemonRpc()
 
     @Test
-    fun `update connection loss after writing the request preserves uncertainty`() {
+    fun `generic request connection loss after writing the request preserves uncertainty`() {
         val directory = Files.createTempDirectory(Path.of("/tmp"), "insrc-ack-")
         val socket = directory.resolve("daemon.sock")
         try {
@@ -38,21 +38,23 @@ class UnixSocketDaemonRpcParseTest {
                 val daemon = CompletableFuture.runAsync {
                     listener.accept().use { channel ->
                         val line = Channels.newInputStream(channel).bufferedReader().readLine()
-                        assertTrue(line.contains("\"method\":\"daemon.update\""))
+                        assertTrue(line.contains("\"method\":\"fixture.write\""))
                     }
                 }
-                val failure = assertInstanceOf(DaemonActionResult.Failed::class.java, DaemonGatewayImpl(UnixSocketDaemonRpc(socket)).update())
-                assertTrue(failure.acknowledgementLost)
+                val failure = org.junit.jupiter.api.Assertions.assertThrows(DaemonUnavailableException::class.java) { UnixSocketDaemonRpc(socket).call("fixture.write", emptyMap()) }
+                assertTrue(failure.requestWritten)
                 daemon.get(2, TimeUnit.SECONDS)
             }
             Files.deleteIfExists(socket)
-            val refusal = assertInstanceOf(DaemonActionResult.Failed::class.java, DaemonGatewayImpl(UnixSocketDaemonRpc(socket)).update())
-            assertFalse(refusal.acknowledgementLost)
+            val refusal = org.junit.jupiter.api.Assertions.assertThrows(DaemonUnavailableException::class.java) { UnixSocketDaemonRpc(socket).call("fixture.write", emptyMap()) }
+            assertFalse(refusal.requestWritten)
         } finally {
             Files.deleteIfExists(socket)
             Files.deleteIfExists(directory)
         }
     }
+
+
 
     @Test
     fun `a normal result object parses to ok=true with its data`() {

@@ -50,7 +50,7 @@ const FIXTURE = realpathSync(mkdtempSync(join(tmpdir(), 'insrc-summary-fixture-'
 /** The threaded daemon's copy of the fixture, and the single-thread baseline's copy. */
 const THREADED = join(FIXTURE, 'threaded');
 const BASELINE = join(FIXTURE, 'baseline');
-const services = new ThreadServices(() => ({ startedAt: 0, modelState: { status: 'ready' }, installedCommit: '' }));
+const services = new ThreadServices(() => ({ startedAt: 0, modelState: { status: 'ready' }, }));
 const router = new Router({ classOf: methodClasses.classOf, registry: services.registry, routed: new Set(['indexing']), local: directDispatch({}) });
 const block = new IndexingBlock(services.indexingBlock);
 let codeWorker: Worker;

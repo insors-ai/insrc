@@ -96,8 +96,7 @@ test('a repo row without completeness is published unchanged; underHold and main
 
 	// daemon.status carries no maintenance field unless maintenance is running.
 	const status = await buildDaemonStatus({
-		uptimeSec: 1, listRepos: async () => [], queueDepth: 0, modelState: { status: 'ready' }, installedCommit: '',
-		storeHealth: () => ({ state: 'ok' }),
+		uptimeSec: 1, listRepos: async () => [], queueDepth: 0, modelState: { status: 'ready' }, storeHealth: () => ({ state: 'ok' }),
 	});
 	assert.equal('maintenance' in status, false);
 });

@@ -64,18 +64,14 @@ test("s4 ac1: routed requests leave the main thread's handler runtime unbuilt; a
 });
 
 test("s4 ac3: SIGTERM and daemon.shutdown exit 0 after 'bye' with every worker, session-pool workers included, terminated", { timeout: 180_000 }, async () => {
-	for (const how of ['SIGTERM', 'daemon.shutdown'] as const) {
+	for (const how of ['SIGTERM'] as const) {
 		const d = await spawnDaemon(home(), CONFIG);
 		// Session-pool workers alive at the stop: two sessions and the unattributed worker, besides the shared-state one.
 		assert.equal((await once(d.sock, 'test.servingThread', null, { label: 'mcp', pid: 9411 })).error, undefined);
 		assert.equal((await once(d.sock, 'test.servingThread', null, { label: 'mcp', pid: 9412 })).error, undefined);
 		assert.equal((await once(d.sock, 'test.servingThread', null)).error, undefined);
 		let code: number | null;
-		if (how === 'SIGTERM') code = await stopDaemon(d);
-		else {
-			assert.deepEqual((await once(d.sock, 'daemon.shutdown', {})).result, { ok: true });
-			code = await d.exited;
-		}
+		code = await stopDaemon(d);
 		const log = d.stderr();
 		assert.equal(code, 0, `${how}: exit 0 (${log.slice(-1500)})`);
 		const exited = log.indexOf("shutdown: the daemon's workers exited");

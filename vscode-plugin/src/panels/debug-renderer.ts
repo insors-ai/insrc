@@ -4,14 +4,8 @@
  * The S006-owned Debug tab, plugged into the sc9 host via the detailRenderers map
  * (the body) + the tabControllers map (the live log ticker). Both are VS-Code-free.
  *
- * `renderDebugTab` is a pure fn over the read-only DaemonDataGateway + a managedPid
- * resolver: it awaits gateway.mcpClients() (the attached MCP/socket clients, ac1)
- * and gateway.scanOrphans() (EXCLUDING the managed daemon), renders the escaped
- * lists + the empty live-log region, and shows a 'Clean up orphaned processes'
- * button ONLY when >=1 non-managed orphan exists. The button posts a
- * {type:'action',action:'cleanupOrphans'} message (the host forwards it to
- * onDetailAction, which owns the consent-gated kill). A gateway rejection
- * PROPAGATES (the host's never-throw wrapper degrades the tab).
+ * `renderDebugTab` reads attached MCP clients and renders escaped values plus
+ * the live-log region. Gateway failures propagate to the host.
  *
  * `createDebugTabController` is the tabControllers.debug entry: onActivate arms the
  * injected LogTail's follow, pushing each batch of appended lines to the webview as
@@ -23,8 +17,6 @@
 import { escapeHtml } from './html.js';
 import type { DaemonDataGateway, TabActivationCtx, TabController, TabRenderer } from './types.js';
 import type { LogTail } from './log-tail.js';
-import type { ConsentGate } from '../surfaces/consent-gate.js';
-import type { StatusSurface } from '../surfaces/status-surface.js';
 
 /** Injected inputs for the Debug tab controller (the live log tail + a degrade logger). */
 export interface DebugControllerDeps {

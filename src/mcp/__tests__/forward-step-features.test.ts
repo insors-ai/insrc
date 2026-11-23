@@ -41,7 +41,7 @@ test('a request call to a daemon lacking analyze-request is refused with DaemonT
 	const spy = (tool: string) => async (args: unknown) => { seen.push({ tool, args }); return { content: [{ type: 'text', text: JSON.stringify({ next: 'done' }) }] }; };
 	const daemon = await standInDaemon(
 		{ 'step.call': createStepCallHandler({ insrc_analyze_step: spy('insrc_analyze_step'), insrc_analyze: spy('insrc_analyze') }) },
-		{ 'daemon.status': async () => { statusCalls += 1; return { uptime: 1, repos: [], queueDepth: 0, embeddingsPending: 0, installedCommit: '', ...(features !== undefined ? { features } : {}) }; } },
+		{ 'daemon.status': async () => { statusCalls += 1; return { uptime: 1, repos: [], queueDepth: 0, embeddingsPending: 0, ...(features !== undefined ? { features } : {}) }; } },
 	);
 	try {
 		const call = (tool: 'insrc_analyze_step' | 'insrc_analyze', args: unknown) => forwardStep(tool, args, {}, { connect: daemon.connect });

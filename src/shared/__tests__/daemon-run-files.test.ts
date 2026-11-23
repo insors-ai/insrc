@@ -8,7 +8,7 @@ import type { ChildProcess } from 'node:child_process';
 import { Worker } from 'node:worker_threads';
 import { once } from 'node:events';
 import { randomUUID } from 'node:crypto';
-import { acquireRunFileGuard, removeOwnedRunFile, runFileGuardConflict, runFileIdentity } from '../daemon-run-files.js';
+import { acquireRunFileGuard, runFileGuardConflict, runFileIdentity } from '../daemon-run-files.js';
 import type { ReclaimProbe, RunFileGuard } from '../daemon-run-files.js';
 import { readProcessIdentity, requireProcessIdentity } from '../daemon-process.js';
 import type { ProcessIdentity, ProcessIdentityReader } from '../daemon-process.js';
@@ -38,11 +38,7 @@ test('managed guard serializes cooperating ownership and preserves observed repl
 	const expected = runFileIdentity(pid);
 	const guard = acquireRunFileGuard(path);
 	assert.throws(() => acquireRunFileGuard(path), /ownership conflict/);
-	removeOwnedRunFile(pid, expected, guard);
-	assert.equal(existsSync(pid), false);
-	removeOwnedRunFile(pid, expected, guard);
 	writeFileSync(socket, 'replacement');
-	assert.throws(() => removeOwnedRunFile(socket, undefined, guard), /replacement preserved/);
 	assert.equal(readFileSync(socket, 'utf8'), 'replacement');
 	guard.release();
 	assert.equal(runFileGuardConflict(path), undefined);
@@ -54,7 +50,6 @@ test('replaced or rewritten files and changed guard nonces are preserved', () =>
 	writeFileSync(pid, 'original');
 	const expected = runFileIdentity(pid), guard = acquireRunFileGuard(path);
 	writeFileSync(pid, 'replacement owner');
-	assert.throws(() => removeOwnedRunFile(pid, expected, guard), /replacement preserved/);
 	const owner = JSON.parse(readFileSync(join(path, 'owner.json'), 'utf8'));
 	writeFileSync(join(path, 'owner.json'), JSON.stringify({ ...owner, nonce: 'replacement' }));
 	assert.throws(() => guard.release(), /ownership changed/);

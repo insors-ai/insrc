@@ -24,15 +24,6 @@ function fakeStatus(): StatusSurface {
   let snap: StatusSnapshot = { state: 'unknown' };
   return { set: (n) => { snap = n; }, current: () => snap };
 }
-function fakeController(installed: boolean): DaemonLifecycleController & { installs: number } {
-  const c = {
-    installs: 0,
-    async isInstalled(): Promise<boolean> { return installed; },
-    async install() { c.installs += 1; return { ok: true as const, state: 'running' as const }; },
-    async run() { return { ok: true as const, state: 'running' as const }; },
-  };
-  return c;
-}
 function fakeRegistrar(registered: boolean, opts: { registerThrows?: boolean } = {}): WorkspaceRegistrar & { registers: number } {
   let reg = registered; // state() reflects a successful register()
   const r = {
@@ -59,32 +50,30 @@ function fakeRegistry(hostPresent: boolean): AiHostRegistry & { wires: number } 
   return { adapters: () => present, detectPresent: async () => present, get wires() { return wires.n; } } as AiHostRegistry & { wires: number };
 }
 function deps(over: Partial<OnboardingDeps> & { installed?: boolean; registered?: boolean; registerThrows?: boolean; host?: boolean; decide?: (t: string) => ConsentOutcome; root?: string }): {
-  d: OnboardingDeps; asked: ConsentRequest[]; controller: ReturnType<typeof fakeController>; registrar: ReturnType<typeof fakeRegistrar>; registry: ReturnType<typeof fakeRegistry>;
+  d: OnboardingDeps; asked: ConsentRequest[]; registrar: ReturnType<typeof fakeRegistrar>; registry: ReturnType<typeof fakeRegistry>;
 } {
-  const controller = fakeController(over.installed ?? false);
   const registrar = fakeRegistrar(over.registered ?? false, { ...(over.registerThrows !== undefined ? { registerThrows: over.registerThrows } : {}) });
   const registry = fakeRegistry(over.host ?? true);
   const consent = fakeConsent(over.decide ?? (() => 'accepted'));
   const rootVal = over.root === undefined ? ROOT : over.root;
   const d: OnboardingDeps = {
-    controller, registrar, registry,
+    registrar, registry,
     consent: consent.gate,
     status: fakeStatus(),
     folders: () => (rootVal === '' ? [] : [rootVal]),
     prompts: over.prompts ?? createInMemoryPromptStore(),
     onboarded: over.onboarded ?? createInMemoryOnboardingStore(),
   };
-  return { d, asked: consent.asked, controller, registrar, registry };
+  return { d, asked: consent.asked, registrar, registry };
 }
 
 const kind = (t: string): string => (/install/i.test(t) ? 'install' : /register/i.test(t) ? 'register' : /wire/i.test(t) ? 'wire' : t);
 
-test('runOnboarding awaits the three offers IN ORDER install->register->wire, then markOnboarded(root)', async () => {
+test('runOnboarding awaits registration and host wiring IN ORDER, then markOnboarded(root)', async () => {
   const onboarded = createInMemoryOnboardingStore();
-  const { d, asked, controller, registrar, registry } = deps({ installed: false, registered: false, host: true, onboarded });
+  const { d, asked, registrar, registry } = deps({ installed: false, registered: false, host: true, onboarded });
   await runOnboarding(d);
-  assert.deepEqual(asked.map((r) => kind(r.title)), ['install', 'register', 'wire'], 'coherent ordered sequence, not concurrent');
-  assert.equal(controller.installs, 1);
+  assert.deepEqual(asked.map((r) => kind(r.title)), ['register', 'wire'], 'coherent ordered sequence, not concurrent');
   assert.equal(registrar.registers, 1);
   assert.equal(registry.wires, 1);
   assert.equal(onboarded.wasOnboarded(ROOT), true, 'markOnboarded after a rooted run');
@@ -93,10 +82,9 @@ test('runOnboarding awaits the three offers IN ORDER install->register->wire, th
 test('runOnboarding no-ops (no offer runs, no prompt) when the workspace is already onboarded', async () => {
   const onboarded = createInMemoryOnboardingStore();
   onboarded.markOnboarded(ROOT);
-  const { d, asked, controller, registrar, registry } = deps({ onboarded });
+  const { d, asked, registrar, registry } = deps({ onboarded });
   await runOnboarding(d);
   assert.equal(asked.length, 0, 'no prompts');
-  assert.equal(controller.installs + registrar.registers + registry.wires, 0);
 });
 
 test('a step that internally no-ops is silently skipped while the needed steps still run', async () => {
@@ -108,24 +96,23 @@ test('a step that internally no-ops is silently skipped while the needed steps s
 
 test('one step throwing does NOT abort the sequence; the later steps still run; runOnboarding never throws', async () => {
   // consent.ask throws for the INSTALL prompt only; register + wire still fire.
-  const decide = (t: string): ConsentOutcome => { if (/install/i.test(t)) throw new Error('boom in install'); return 'accepted'; };
+  const decide = (t: string): ConsentOutcome => { if (/register/i.test(t)) throw new Error('boom in registration'); return 'accepted'; };
   const { d, asked, registrar, registry } = deps({ installed: false, registered: false, host: true, decide });
   await runOnboarding(d); // must not throw
   const kinds = asked.map((r) => kind(r.title));
   assert.ok(kinds.includes('register') && kinds.includes('wire'), 'later steps ran despite the install step throwing');
-  assert.equal(registrar.registers, 1);
+  assert.equal(registrar.registers, 0);
   assert.equal(registry.wires, 1);
 });
 
 test('no workspace folder open -> register is skipped and markOnboarded is NOT set, while global install/wire still run', async () => {
   const onboarded = createInMemoryOnboardingStore();
-  const { d, asked, controller, registrar, registry } = deps({ root: '', installed: false, host: true, onboarded });
+  const { d, asked, registrar, registry } = deps({ root: '', installed: false, host: true, onboarded });
   await runOnboarding(d);
   const kinds = asked.map((r) => kind(r.title));
-  assert.ok(kinds.includes('install') && kinds.includes('wire'), 'global steps run with no folder open');
+  assert.ok(kinds.includes('wire'), 'global steps run with no folder open');
   assert.equal(kinds.includes('register'), false, 'register skipped with no root');
   assert.equal(registrar.registers, 0);
-  assert.equal(controller.installs, 1);
   assert.equal(registry.wires, 1);
   assert.equal(onboarded.wasOnboarded(''), false, 'no per-root onboarded flag when no folder open');
 });
@@ -147,12 +134,11 @@ test('a DECLINED register (persisted dismissal) DOES settle the workspace as onb
   assert.equal(onboarded.wasOnboarded(ROOT), true, 'a declined (dismissed) register settles onboarding — the register step self-suppresses thereafter');
 });
 
-test('each step keeps its OWN sc4 consent (no mega-consent): declining install still offers register + wire (k4)', async () => {
-  const decide = (t: string): ConsentOutcome => (/install/i.test(t) ? 'declined' : 'accepted');
-  const { d, asked, controller, registrar, registry } = deps({ installed: false, registered: false, host: true, decide });
+test('each step keeps its OWN sc4 consent (no mega-consent): declining registration still offers host wiring (k4)', async () => {
+  const decide = (t: string): ConsentOutcome => (/register/i.test(t) ? 'declined' : 'accepted');
+  const { d, asked, registrar, registry } = deps({ installed: false, registered: false, host: true, decide });
   await runOnboarding(d);
-  assert.deepEqual(asked.map((r) => kind(r.title)), ['install', 'register', 'wire'], 'all three prompted independently');
-  assert.equal(controller.installs, 0, 'declined install did NOT install');
-  assert.equal(registrar.registers, 1, 'register still offered + accepted after install was declined');
+  assert.deepEqual(asked.map((r) => kind(r.title)), ['register', 'wire'], 'all three prompted independently');
+  assert.equal(registrar.registers, 0, 'declined registration does not register');
   assert.equal(registry.wires, 1);
 });

@@ -36,21 +36,7 @@ class DebugPageTest {
         assertTrue(page.contains("class DebugConfigurable : InsrcOpsConfigurable(), DebugPageHost"), "consumes sc1 + implements sc3")
         assertTrue(page.contains("override fun sections(): List<DebugSection>"), "seeds the sc3 section list")
         assertTrue(page.contains("DebugStatusCardReader"), "reads the status card via DebugStatusCardReader")
-        assertTrue(page.contains("OrphanProcessSeam"), "scans orphans via OrphanProcessSeam")
         assertTrue(page.contains("InsrcCollapsible.collapsiblePanel"), "renders each section in a collapsible panel")
-    }
-
-    @Test
-    fun `ac2 - k3 - the orphan Kill is the ONLY mutation, confirm-gated and run off the EDT`() {
-        assertTrue(page.contains("Messages.showYesNoDialog"), "the Kill is confirm-gated")
-        assertTrue(page.contains("runProcessWithProgressSynchronously"), "the Kill runs off the EDT under ProgressManager")
-        assertTrue(page.contains("orphanSeam.kill("), "the confirmed action calls the seam kill")
-        // nothing selected -> no-op before any confirm/kill (ac2)
-        assertTrue(page.contains("if (selected.isEmpty()) return@addActionListener"), "an empty selection kills nothing")
-        // the single mutating control: exactly one action button + one action listener on the page
-        assertTrue(page.contains("JButton(\"Kill selected"), "the sole mutating control is the Kill button")
-        assertFalse(page.contains("gateway.shutdown") || page.contains("gateway.backup") || page.contains("gateway.compact"),
-            "the Debug page performs no daemon-mutating IPC — the kill is a local process signal only (k3)")
     }
 
     // ---- S005: the appended MCP section (read-only, sc3-additive) ------------
@@ -62,7 +48,7 @@ class DebugPageTest {
         // The MCP section is present after Status/Orphans (S006 later appends the Logs section too).
         assertTrue(page.contains("mcpSection()"), "sections() includes the MCP section")
         assertTrue(
-            page.contains("statusSection(), orphansSection(), mcpSection()"),
+            page.contains("statusSection(), mcpSection()"),
             "the MCP section follows Status + Orphans; S004's two sections are unchanged",
         )
         assertTrue(page.contains("McpDebugSection()"), "the appended section is the S005 McpDebugSection")
@@ -97,13 +83,12 @@ class DebugPageTest {
     @Test
     fun `s6 - sections() appends the Logs section after Status, Orphans and Mcp`() {
         assertTrue(
-            page.contains("listOf(statusSection(), orphansSection(), mcpSection(), logSection())"),
+            page.contains("listOf(statusSection(), mcpSection(), logSection())"),
             "the Logs section is appended last; S004's + S005's sections are unchanged",
         )
         assertTrue(page.contains("LogEditorSection()"), "the appended section is the S006 LogEditorSection")
         // the log-open button lives in LogEditorSection.kt, NOT here — DebugConfigurable's sole
         // mutating control stays S004's Kill button (the ac2 assertion above still holds).
-        assertTrue(page.contains("JButton(\"Kill selected"), "the sole mutating control on DebugConfigurable stays the Kill button")
     }
 
     @Test

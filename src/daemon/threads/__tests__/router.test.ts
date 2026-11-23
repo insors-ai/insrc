@@ -32,7 +32,7 @@ const { serveRequests } = await import('../worker-requests.js');
 import type { MethodClass } from '../channel.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const services = new ThreadServices(() => ({ startedAt: 0, modelState: { status: 'ready' }, installedCommit: '' }));
+const services = new ThreadServices(() => ({ startedAt: 0, modelState: { status: 'ready' }, }));
 const workers: Worker[] = [];
 after(async () => {
 	for (const w of workers) await w.terminate();

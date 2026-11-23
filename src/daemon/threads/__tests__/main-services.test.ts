@@ -31,7 +31,7 @@ const { SERVING_THREAD_METHOD } = await import('../worker-requests.js');
 import type { FrameEnvelope, ReplyEnvelope } from '../channel.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const INFO = { startedAt: 1_000, modelState: { status: 'ready' }, installedCommit: 'abc123', lmdbFileSizeMb: 7 };
+const INFO = { startedAt: 1_000, modelState: { status: 'ready' }, lmdbFileSizeMb: 7 };
 const services = new ThreadServices(() => INFO);
 const workers: Worker[] = [];
 

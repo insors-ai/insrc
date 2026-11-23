@@ -36,7 +36,7 @@ const RECORDED_RPC = [
 	'config.catalog', 'config.enqueue', 'config.list', 'config.reindex', 'config.reload', 'config.resolveTemplate',
 	'config.search', 'config.show', 'config.write', 'conversation.compact', 'conversation.saveSession',
 	'conversation.saveTurn', 'conversation.stats', 'daemon.backup', 'daemon.compact', 'daemon.debug-status',
-	'daemon.shutdown', 'daemon.status', 'daemon.update', 'daemon.updateOutcome', 'dataAnalyzer.clearCache',
+	'daemon.status', 'dataAnalyzer.clearCache',
 	'dataAnalyzer.diffRuns', 'db.connections.v2.activate', 'db.connections.v2.cancelTest', 'db.connections.v2.capabilities', 'db.connections.v2.drivers',
 	'db.connections.v2.list', 'db.connections.v2.mutate', 'db.connections.v2.read', 'db.connections.v2.removalState', 'db.connections.v2.retryRemovalCleanup',
 	'db.connections.v2.session.attach', 'db.connections.v2.session.delegate', 'db.connections.v2.session.end',
@@ -79,7 +79,6 @@ const ADDED_RPC = [
 	'workflow.reviewArtifact', 'workflow.resolveFinding',
 	'codeReview.task.activity', 'codeReview.task.assignment', 'codeReview.task.cancel', 'codeReview.task.cleanup', 'codeReview.task.progress', 'codeReview.task.publish',
 	'codeReview.task.result', 'codeReview.task.scope', 'codeReview.task.start',
-	'daemon.qualificationState',
 	'designReview.activity', 'designReview.assignment', 'designReview.cancel', 'designReview.failure', 'designReview.impact', 'designReview.plan', 'designReview.progress', 'designReview.recover',
 	'designReview.result', 'designReview.start',
 	'progress.attach', 'progress.control', 'progress.detach', 'progress.origin.bind',
@@ -297,21 +296,6 @@ test('tools.call preserves malformed request errors before repository authority 
  const frames: unknown[] = [];
  await runtime.streamHandlers['tools.call']!({}, frame => frames.push(frame), new AbortController().signal);
  assert.deepEqual(frames, [{ id: 0, stream: 'error', data: { code: 'invalid-params', message: 'tools.call: toolId must be a non-empty string', recoverable: true } }]);
-});
-
-
-test('qualificationState dispatch reaches the existing unqualified diagnostic in an isolated home', async () => {
- mkdirSync(join(HOME, '.insrc'), { recursive: true, mode: 0o700 });
- const none = {} as never;
- const runtime = buildHandlerRuntime({ db: none, configStore: none, queue: none, indexer: none,
-  startedAt: 0, shutdown: () => {}, attachedClients: () => [], understandingService: () => undefined });
- assert.equal(methodClasses.classOf('daemon.qualificationState'), 'session');
- try {
-  await assert.rejects(async () => runtime.rpcHandlers['daemon.qualificationState']!({}),
-   process.platform === 'darwin' && (process.getuid?.() ?? 0) > 0
-    ? { message: 'no completed development qualification on this daemon' }
-    : /managed lifecycle requires a macOS user/);
- } finally { rmSync(HOME, { recursive: true, force: true }); }
 });
 
 test('src/daemon/__tests__/handler-runtime.test.ts: the handler tables hold repo.buildDefaults.migrate beside the recorded methods and repo.buildDefaults.migrate answers through the runtime', async () => {

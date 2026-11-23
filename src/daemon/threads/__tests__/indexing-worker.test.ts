@@ -48,7 +48,7 @@ import { stopWorker } from './helpers/stop-worker.js';
 const REPO = realpathSync(mkdtempSync(join(tmpdir(), 'insrc-indexing-worker-repo-')));
 const SECOND = realpathSync(mkdtempSync(join(tmpdir(), 'insrc-indexing-worker-second-')));
 const workers: Worker[] = [];
-const services = new ThreadServices(() => ({ startedAt: 0, modelState: { status: 'ready' }, installedCommit: '' }));
+const services = new ThreadServices(() => ({ startedAt: 0, modelState: { status: 'ready' }, }));
 let router: InstanceType<typeof Router>;
 const sent: string[] = [];
 let indexingPort: MessagePort;

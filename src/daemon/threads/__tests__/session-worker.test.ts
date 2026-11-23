@@ -35,7 +35,7 @@ const { startWorker } = await import('../workers.js');
 import type { MethodClass } from '../channel.js';
 import type { StartedWorker } from '../workers.js';
 
-const services = new ThreadServices(() => ({ startedAt: 0, modelState: { status: 'ready' }, installedCommit: '' }));
+const services = new ThreadServices(() => ({ startedAt: 0, modelState: { status: 'ready' }, }));
 const router = new Router({ classOf: methodClasses.classOf, registry: services.registry, routed: new Set<MethodClass>(['session']), local: directDispatch({}) });
 /** Every nested call a worker sends to another thread through the main thread's router. */
 const routed: string[] = [];

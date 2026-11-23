@@ -41,12 +41,7 @@ const notFaked = (what: string) => (): never => { throw new Error(`${what} is no
 export function fakeServices(): Services {
 	return {
 		daemon: {
-			isRunning:   () => true,
 			getStatus:   async () => status(),
-			startDaemon: async () => ({ started: true, logPath: '/tmp/.insrc/daemon.log', alreadyRunning: false }),
-			stopDaemon:  async () => ({ stopped: true as const, forced: false }),
-			restart:     async () => ({ ok: true, steps: ['stop', 'start'] }),
-			update:      async () => ({ ok: true, steps: ['sync', 'build'] }),
 			backup:      async () => ({ targetDir: '/b', lmdbBytes: 0, lanceBytes: 0, elapsedMs: 0 }),
 			compact:     async () => ({ beforeBytes: 0, afterBytes: 0, savedBytes: 0, elapsedMs: 0 }),
 		},

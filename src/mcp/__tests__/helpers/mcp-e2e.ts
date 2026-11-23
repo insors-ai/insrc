@@ -94,7 +94,7 @@ export async function startDaemon(home: string, options: { readonly preload?: st
 		sock,
 		stop: async () => {
 			if (child.exitCode !== null) return;
-			try { await rpc(sock, 'daemon.shutdown'); } catch { /* already going */ }
+			child.kill('SIGTERM');
 			const killer = setTimeout(() => child.kill('SIGKILL'), 15_000);
 			await exited;
 			clearTimeout(killer);

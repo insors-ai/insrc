@@ -40,5 +40,5 @@ test('audit coverage detects missing and stale registrations independently', () 
  const missing = registered.filter(name => !audited.filter(n => n !== 'repo.list').includes(name));
  assert.deepEqual(missing, ['repo.list']);
  assert.deepEqual([...audited, 'brand.newMethod'].filter(name => !registered.includes(name)), ['brand.newMethod']);
- assert.ok(registered.includes('daemon.update') && registered.includes('progress.subscribe'), 'spread unary and stream registrations are covered');
+ assert.ok(registered.includes('daemon.status') && registered.includes('progress.subscribe'), 'spread unary and stream registrations are covered');
 });

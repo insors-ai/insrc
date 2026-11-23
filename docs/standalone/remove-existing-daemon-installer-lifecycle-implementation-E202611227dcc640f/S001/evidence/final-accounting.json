@@ -1,0 +1,54 @@
+{
+  "baseline": "728c31abc",
+  "wholeFilesAbsent": 278,
+  "memberEntriesAccounted": 176,
+  "allAbsent": true,
+  "unchangedInventoryFailureSources": [
+    {
+      "path": "src/daemon/git-hooks/hook-block.ts",
+      "sameAsBaseline": true,
+      "sha256": "47263b4d6eda87c1c5755410903a4d1bb0cc58e12e152e2e3d2a2cfebfc66a71"
+    },
+    {
+      "path": "src/daemon/mcp-register.ts",
+      "sameAsBaseline": true,
+      "sha256": "b463ea8d13b35fcc038d0985e9661156a57e5b8cd3ecf2142236a7a16cb7fa1c"
+    },
+    {
+      "path": "src/daemon/model-check.ts",
+      "sameAsBaseline": true,
+      "sha256": "f2dc16709b6bd35332fa858fc2c818ca547bf6336b263a279fac56906ee7be18"
+    },
+    {
+      "path": "src/indexer/file-filter.ts",
+      "sameAsBaseline": true,
+      "sha256": "34f627911990725109f9b5eb3f09558c7c9b995cc346b69fe181949d8f9f7305"
+    },
+    {
+      "path": "src/workflow/convert/backfill-issue.ts",
+      "sameAsBaseline": true,
+      "sha256": "37f665a9fc15a552ff43ee23fe3e5b6f3c3aa7d523b925f5e48e2c84fd71203a"
+    },
+    {
+      "path": "src/workflow/convert/repair-amendments.ts",
+      "sameAsBaseline": true,
+      "sha256": "9b700aabc9f5c9842e1d27f28234740863c1498327443004e8d657410c716116"
+    },
+    {
+      "path": "src/workflow/review-round/checkpoint.ts",
+      "sameAsBaseline": true,
+      "sha256": "ae3bdfc5395ccecf58e184ed22a72ab50d3ac43272250a13699c914659a53c65"
+    },
+    {
+      "path": "src/workflow/review-round/receipt-record.ts",
+      "sameAsBaseline": true,
+      "sha256": "ea2faceb266b6cb15e60e832849e91183454f44aa4cded284f842ca0d7f6715c"
+    },
+    {
+      "path": "src/workflow/review-round/review-report.ts",
+      "sameAsBaseline": true,
+      "sha256": "95c4ccf83d88eeb6db35eb436f8f78d33c4ac8e7a8c3b454c3e575857a24867b"
+    }
+  ],
+  "limits": "Full repository test sweep and real installer/platform qualification intentionally not run. Existing inventory suite has unrelated stale entries; no integrity gate readiness changed."
+}

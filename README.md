@@ -65,7 +65,7 @@ semantic queries through a single background daemon. On top of that store:
 | **⊘ Bugfix triage** | a defect fix is first-class: an `issue` stage captures reproduction + root cause, a tiered locator attaches it to the code it corrects, then it's scope-routed to build. |
 | **⚒ ~110 built-in tools** | capability wrappers spanning file · git · shell · http · web · gh · k8s · pkg · ssh · test · notify · search · graph · db · data · code · cloud. |
 | **▮ Interactive CLI** | a full-screen ink (React) TUI with Daemon / Repos / Workflows / Setup / Tiers / Debug panes. |
-| **◱ IDE plugins** | thin VS Code & JetBrains orchestrators that install/manage the daemon, wire insrc's MCP tools into your IDE's AI assistant, and scope every call to the open project — [see below](#ide-plugins). |
+| **◱ IDE plugins** | thin VS Code & JetBrains orchestrators that wire insrc's MCP tools into your IDE's AI assistant, and scope every call to the open project — [see below](#ide-plugins). |
 
 These capabilities are exposed as MCP tools (`insrc_analyze`, `insrc_analyze_step`,
 `insrc_triage`, `insrc_workflow_step`, `insrc_docgen`, …) so they drive Claude
@@ -128,27 +128,9 @@ the daemon is the single owner of the graph, the vectors, and the tool registry.
 
 ## Getting started
 
-You need Git and Node.js **≥22.13.0** for a source installation. Choose local
-Ollama embeddings or the embedded ONNX alternative. Reasoning can use a local
-Ollama model or an authenticated `claude` / `codex` / `vibe` CLI. Model downloads and
-cloud reasoning require network access.
+This branch removes the previous installer and daemon lifecycle controls. No replacement installer is included. Use an already available daemon for CLI/IDE integration. See [removal status](docs/plans/installer-removal-status.md).
 
-```bash
-# users — one-line release installer: clones + builds the daemon into ~/.insrc/daemon and starts it
-curl -fsSL https://github.com/insors-ai/insrc/releases/latest/download/insrc-daemon-install.sh | bash
-# options after `bash -s --`, e.g. --target <path> · --branch main · --no-start · --embedder auto|ollama|onnx
-
-# launch the dashboard — add a repo from Repos (press 'a'), then wait for indexing
-"$HOME/.insrc/daemon/scripts/insrc"
-
-# then register insrc as an MCP server (see below) and ask grounded questions
-# from your claude / codex session, e.g. via the insrc_analyze tool:
-#   "where is the repo registry contract enforced?"
-```
-
-See [`docs/installation.md`](docs/installation.md) or the
-[getting-started guide](https://insrc.insors.io/getting-started.html) for the
-full walk-through.
+Development builds require Node **22.22.1 or newer within Node 22**. Embeddings use Ollama or ONNX; reasoning uses local models or an authenticated `claude` / `codex` / `vibe` CLI.
 
 ## Build & test (from source)
 
@@ -216,10 +198,7 @@ scripts/insrc                 # or `npm run insrc`
 
 Six panes (switch with `1`–`6`/`Tab`, `r` refresh, `q` quit):
 
-- **Daemon** — live health (uptime, queue, model-pull, LMDB size) + the full
-  maintenance lifecycle: `s` start · `x` stop · `R` restart · `u` update
-  (git fast-forward → `npm install` unless the last install of this lockfile succeeded → build) · `b`
-  backup · `c` compact.
+- **Daemon** — live health (uptime, queue, model-pull, LMDB size), `b` backup and `c` compact.
 - **Repos** — registered repositories with indexing status; `a` add · `d` remove
   · `i` reindex. The highlighted repo is what the Workflows pane targets.
 - **Workflows** — the Epic chain for the selected repo; open an Epic to approve /
@@ -282,19 +261,15 @@ for the full lifecycle.
 
 Prefer to stay in your editor? Two companion plugins bring insrc to the IDE. Both
 are **thin orchestrators that own no reasoning** — all reasoning still runs
-through the insrc MCP server your assistant invokes. Each one installs and keeps
-the daemon current, wires insrc's MCP tools + the tracked-workflow steering into
+through the insrc MCP server your assistant invokes. Each one wires insrc's MCP tools + the tracked-workflow steering into
 your AI host, and scopes every call to the open project. Consent-gated,
 marker-delimited and reversed on uninstall; cloud LLM authentication stays with
 your existing CLI / OAuth sessions.
 
 - **VS Code** — [`insors.insrc-vscode`](https://marketplace.visualstudio.com/items?itemName=insors.insrc-vscode)
-  on the Marketplace (search **insrc**). Coalesced first-run onboarding (install
-  daemon → register workspace → wire your AI host: Claude Code, Cursor, …), every
+  on the Marketplace (search **insrc**). Coalesced first-run onboarding (register workspace → wire your AI host: Claude Code, Cursor, …), every
   action also a Command-Palette command, and the daemon's full configuration
-  editable from **native VS Code Settings** (`insrc.*`, machine-scoped). After a
-  daemon self-update it nudges you to **Reload Window** so the MCP connection
-  reconnects. It also includes an **in-editor chat preview** over your Claude /
+  editable from **native VS Code Settings** (`insrc.*`, machine-scoped). It also includes an **in-editor chat preview** over your Claude /
   Codex CLI, **pending-document review**, and a **delivery board** for tracked
   work. Open these through the insrc commands in the Command Palette.
 - **JetBrains** — one plugin for **IntelliJ IDEA, PyCharm, GoLand & WebStorm**

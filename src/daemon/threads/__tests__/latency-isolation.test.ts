@@ -47,7 +47,7 @@ const ADMIN_METHODS: readonly [string, unknown][] = [
 	['daemon.status', {}], ['repo.list', {}], ['daemon.debug-status', {}], ['config.show', {}], ['config.catalog', {}], ['guide.list', {}],
 ];
 const REPO = realpathSync(mkdtempSync(join(tmpdir(), 'insrc-latency-repo-')));
-const services = new ThreadServices(() => ({ startedAt: 0, modelState: { status: 'ready' }, installedCommit: '' }));
+const services = new ThreadServices(() => ({ startedAt: 0, modelState: { status: 'ready' }, }));
 let local: ReturnType<typeof directDispatch> | undefined;
 const router = new Router({ classOf: methodClasses.classOf, registry: services.registry, routed: new Set(['admin', 'indexing']), local: (r, d) => local!(r, d) });
 const supervisor = new Supervisor({ services, router, shutdown: () => assert.fail('no restart limit in this test') });

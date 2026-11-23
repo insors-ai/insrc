@@ -63,22 +63,6 @@ class DaemonActionGatewayTest {
         assertEquals(busy, (result as DaemonActionResult.Failed).reason)
     }
 
-    // ---- shutdown ------------------------------------------------------------
-
-    @Test
-    fun `shutdown sends METHOD_SHUTDOWN and maps ok to Ok`() {
-        val rpc = RecordingRpc { _, _ -> DaemonResult(ok = true) }
-        val result = DaemonGatewayImpl(rpc).shutdown()
-        assertEquals(DaemonGatewayImpl.METHOD_SHUTDOWN, rpc.lastMethod)
-        assertTrue(result is DaemonActionResult.Ok)
-    }
-
-    @Test
-    fun `shutdown treats an unreachable daemon as already-stopped Ok (never throws)`() {
-        val rpc = RecordingRpc { _, _ -> throw DaemonUnavailableException("socket down") }
-        assertTrue(DaemonGatewayImpl(rpc).shutdown() is DaemonActionResult.Ok)
-    }
-
     // ---- never-throws contract ----------------------------------------------
 
     @Test

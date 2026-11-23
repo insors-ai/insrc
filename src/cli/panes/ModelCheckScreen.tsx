@@ -183,7 +183,7 @@ export function ModelCheckScreen(props: {
 				const f = familyOf(d, target.family);
 				const approved = f?.models.some(m => m.id === target.modelId && m.source === 'user-approved') === true;
 				const rejected = f?.rejectedModels?.includes(target.modelId) === true;
-				setStep({ kind: 'unknown', action, status: approved ? 'recorded: approved — restart the daemon to use it'
+				setStep({ kind: 'unknown', action, status: approved ? 'recorded: approved — applies when the runtime loads it'
 					: rejected ? 'recorded: rejected'
 					: 'not visible yet: a decision applies after a daemon restart; restart and reload, or check again' });
 			})
@@ -247,7 +247,7 @@ export function ModelCheckScreen(props: {
 			)}
 			{step.kind === 'approved' && (
 				<Box flexDirection="column">
-					<Text bold>Approved {target.modelId} (levels: {step.efforts.length > 0 ? step.efforts.join(', ') : 'none'}) — restart the daemon to use it</Text>
+					<Text bold>Approved {target.modelId} (levels: {step.efforts.length > 0 ? step.efforts.join(', ') : 'none'}) — applies when the runtime loads it</Text>
 					{step.problem !== undefined && <Text {...(step.busy ? { dimColor: true } : { color: 'red' })}>{step.problem}</Text>}
 				</Box>
 			)}

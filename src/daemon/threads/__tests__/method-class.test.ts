@@ -27,7 +27,7 @@ const { buildHandlerRuntime } = await import('../../handler-runtime.js');
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
-const ADMIN = ['daemon.status', 'daemon.debug-status', 'daemon.shutdown', 'daemon.update', 'daemon.updateOutcome',
+const ADMIN = ['daemon.status', 'daemon.debug-status',
 	'repo.list', 'mcp.status', 'config.show', 'config.catalog', 'guide.list', 'guide.get'];
 const INDEXING = ['repo.add', 'mcp.register', 'repo.remove', 'repo.reindex', 'repo.stats', 'index.file', 'index.languages', 'index.subsystems',
 	'config.enqueue', 'config.reindex', 'daemon.compact', 'daemon.backup', 'docSummary.restoreFromBackup', 'docRelations.measure'];
@@ -75,7 +75,7 @@ test('tools.call is classed session and stream, and equals the handler table', (
 test('coverage: the method set equals the keys of the constructed rpcHandlers and streamHandlers after all merges, failing on a missing or a stale entry', () => {
 	try {
 		const tables = servedTables();
-		assert.ok(tables.rpc.includes('daemon.update') && tables.rpc.includes('understanding.list') && tables.stream.includes('understanding.watch'),
+		assert.ok(tables.rpc.includes('daemon.status') && tables.rpc.includes('understanding.list') && tables.stream.includes('understanding.watch'),
 			'the tables include the update-handler spread and the understanding routes');
 		assert.deepEqual(differences(tables), { missing: [], stale: [] });
 		// The comparison catches both kinds of drift.
@@ -194,13 +194,4 @@ test('retired review router precedence rejects through actual local handlers bef
    assert.match(JSON.stringify(await reply), /review functionality is being rewritten/);
   } finally { cancel(); }
  }
-});
-
-
-test('qualificationState is unary ordinary session work without admin shared or FIFO routing', () => {
- assert.deepEqual(methodClasses.entries().find(e => e.method === 'daemon.qualificationState'),
-  { method: 'daemon.qualificationState', cls: 'session', stream: false });
- assert.equal(SHARED_STATE_METHODS.has('daemon.qualificationState'), false);
- assert.equal(FIFO_EXEMPT_METHODS.has('daemon.qualificationState'), false);
- assert.equal(inDaemonTarget('daemon.qualificationState', { routed: new Set(['admin', 'indexing', 'session']), onSharedWorker: false }), undefined);
 });

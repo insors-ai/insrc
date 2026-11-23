@@ -23,8 +23,7 @@ const IDLE: IndexingStatus = { index: { depth: 0, processing: false }, summary: 
 test('buildDaemonStatus includes analyze-request and both the threaded admin handler and the single-threaded handler return it', async () => {
 	// the shared builder
 	const built = await buildDaemonStatus({
-		uptimeSec: 1, listRepos: async () => [], queueDepth: 0, modelState: { status: 'ready' }, installedCommit: 'abc',
-	});
+		uptimeSec: 1, listRepos: async () => [], queueDepth: 0, modelState: { status: 'ready' }, });
 	assert.deepEqual(built.features, ['analyze-request']);
 	assert.equal(DAEMON_FEATURES.includes('analyze-request'), true);
 
@@ -32,7 +31,7 @@ test('buildDaemonStatus includes analyze-request and both the threaded admin han
 	const snapshot = (): StatusSnapshot => ({ threads: [], clients: [], runs: [], indexing: IDLE, store: { repos: [], publishedAt: 1 } });
 	const threaded = await createAdminStatus({
 		snapshot: async () => snapshot(),
-		info: async () => ({ startedAt: 0, modelState: { status: 'ready' }, installedCommit: 'abc' }),
+		info: async () => ({ startedAt: 0, modelState: { status: 'ready' }, }),
 		readRepos: async () => [], readUnattributed: async () => undefined,
 	}).daemonStatus() as DaemonStatus;
 	assert.deepEqual(threaded.features, ['analyze-request']);
@@ -56,6 +55,6 @@ test('buildDaemonStatus includes analyze-request and both the threaded admin han
 	}
 
 	// a status from a daemon that predates the field has none: a consumer reads that as no feature
-	const old: DaemonStatus = { uptime: 1, repos: [], queueDepth: 0, embeddingsPending: 0, installedCommit: '' };
+	const old: DaemonStatus = { uptime: 1, repos: [], queueDepth: 0, embeddingsPending: 0, };
 	assert.equal(old.features?.includes('analyze-request') ?? false, false);
 });

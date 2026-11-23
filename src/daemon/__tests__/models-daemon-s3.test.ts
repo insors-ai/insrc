@@ -62,7 +62,7 @@ async function start(home: string, env: Record<string, string> = {}): Promise<Ru
 		stderr: () => stderr,
 		stop: async () => {
 			if (child.exitCode !== null) return;
-			try { await rpc(sock, 'daemon.shutdown'); } catch { /* going */ }
+			child.kill('SIGTERM');
 			const killer = setTimeout(() => child.kill('SIGKILL'), 15_000);
 			await exited;
 			clearTimeout(killer);

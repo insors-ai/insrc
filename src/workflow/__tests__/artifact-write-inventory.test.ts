@@ -168,7 +168,7 @@ test('the detector reports appendFileSync in every form, an unlisted appendSidec
 
 	// every file that now holds an appendFileSync has an entry
 	for (const f of [
-		'src/daemon/fatal.ts', 'src/daemon/shutdown.ts', 'src/daemon/steps/analyze-step/handler.ts', 'src/daemon/steps/build-step/handler.ts',
+		'src/daemon/steps/analyze-step/handler.ts', 'src/daemon/steps/build-step/handler.ts',
 		'src/daemon/steps/workflow-step/handler.ts', 'src/config/feedback.ts', 'src/workflow/storage.ts',
 	]) {
 		assert.ok(byFile.has(f), `${f} has an inventory entry`);

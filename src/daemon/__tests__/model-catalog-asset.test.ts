@@ -74,12 +74,6 @@ test('model-catalog-asset.test.ts: shipped asset validates, ships via copy-asset
 		assert.equal(SHIPPED_MODEL_DEFAULTS.tiers[tier].runner, 'cli-claude');
 		assert.deepEqual(claude.tierDefaults?.[tier], { model: SHIPPED_MODEL_DEFAULTS.tiers[tier].model });
 	}
-	// The installer reads the tier defaults and the tool-loop model from this file (installer-defs.test.ts runs it).
-	const installer = readFileSync(join(repoRoot, 'scripts', 'insrc-daemon-install.sh'), 'utf8');
-	assert.match(installer, /src\/assets\/models\/cloud-model-catalog\.json/);
-	for (const tier of ['core', 'mid', 'cheap'] as const) {
-		assert.equal(installer.includes(`"${codex.tierDefaults![tier].model}"`), false, `no ${tier} Codex literal in the installer`);
-	}
 
 	// The summariser: a CLI family's summariser model is the file's summariserModel.
 	const registry = buildModelRegistry(validateModelCatalog(), []);

@@ -287,7 +287,7 @@ describe('unit', () => {
 
 const REPO = realpathSync(mkdtempSync(join(tmpdir(), 'insrc-maintenance-repo-')));
 let controller: InstanceType<typeof MaintenanceController> | undefined;
-const services = new ThreadServices(() => ({ startedAt: 0, modelState: { status: 'ready' }, installedCommit: '', maintenance: controller?.status() }));
+const services = new ThreadServices(() => ({ startedAt: 0, modelState: { status: 'ready' }, maintenance: controller?.status() }));
 let slowGate: Promise<void> = Promise.resolve();
 let slowEntered = false;
 const rpc: RpcHandlers = {

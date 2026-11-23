@@ -43,7 +43,7 @@ import { stopWorker } from './helpers/stop-worker.js';
 import type { DaemonStatus } from '../../../shared/types.js';
 
 const REPO = realpathSync(mkdtempSync(join(tmpdir(), 'insrc-indexing-port-repo-')));
-const services = new ThreadServices(() => ({ startedAt: 0, modelState: { status: 'ready' }, installedCommit: '' }));
+const services = new ThreadServices(() => ({ startedAt: 0, modelState: { status: 'ready' }, }));
 const routed = new Set<MethodClass>(['indexing']);
 let router: InstanceType<typeof Router>;
 let worker: Worker;

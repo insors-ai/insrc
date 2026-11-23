@@ -32,14 +32,9 @@ class DaemonPageTest {
     }
 
     @Test
-    fun `ac2 - all six actions are wired (runner for start-restart-update, gateway for stop-backup-compact)`() {
-        assertTrue(src.contains("LifecycleCommand.START"), "Start via the runner")
-        assertTrue(src.contains("LifecycleCommand.RESTART"), "Restart via the runner")
-        assertTrue(src.contains("LifecycleCommand.UPDATE"), "Update via the runner")
-        assertTrue(src.contains("gateway.shutdown()"), "Stop via the gateway shutdown IPC")
+    fun `ac2 - backup and compact actions remain wired`() {
         assertTrue(src.contains("gateway.backup("), "Backup via the gateway backup IPC")
         assertTrue(src.contains("gateway.compact()"), "Compact via the gateway compact IPC")
-        assertTrue(src.contains("DaemonLifecycleCommandRunner"), "Start/Restart/Update go through the lifecycle-command runner")
     }
 
     @Test

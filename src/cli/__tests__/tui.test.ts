@@ -331,25 +331,6 @@ test('bottom box: a failing daemon op surfaces its error line; pane body untouch
 	unmount();
 });
 
-test('bottom box: a multi-line op is bounded (oldest lines scroll off, no layout growth)', async () => {
-	const svc = fakeServices();
-	svc.daemon.getStatus = async () => status({ repos: [repo('/work/repoA')] });
-	svc.daemon.update = async (_opts, push) => {
-		for (let i = 0; i < 12; i++) push?.(`line ${i}`);
-		return { ok: true, steps: ['sync', 'build'] };
-	};
-	const { lastFrame, stdin, unmount } = render(createElement(App, { services: svc, pollMs: 0 }));
-	await settle();
-	stdin.write('u');                     // update streams 12 push lines + a done line
-	await settle();
-	const frame = lastFrame() ?? '';
-	assert.match(frame, /update complete/);       // terminal line kept
-	assert.match(frame, /line 11/);               // newest streamed line kept
-	assert.doesNotMatch(frame, /line 0\b/);       // oldest scrolled off the bounded window
-	assert.doesNotMatch(frame, /updating daemon/);// even the title scrolled off (bounded to N)
-	unmount();
-});
-
 test('bottom box: ui.toast (r refresh) lands in the message box', async () => {
 	const svc = fakeServices();
 	const { lastFrame, stdin, unmount } = render(createElement(App, { services: svc, pollMs: 0 }));

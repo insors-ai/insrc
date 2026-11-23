@@ -83,7 +83,7 @@
     "src/daemon/threads/method-class.ts": {
       "classification": "removal-admission-routing",
       "rationale": "S004: additive exact endpoint classifications and main-daemon method-set membership keep removal/state/retry with existing owners. No process-local driver/authority crosses worker envelopes; all-consumer Saved affinity remains release-blocking. The new progress routes have main-thread state ownership and the approval FIFO exemptions affect scheduling only. The removal methods still use their existing process-local owner routing.",
-      "sourceDigest": "7eea120b0981e9ad1ff4ead3243664beeffabc9ddf94f59304553dc29676e179"
+      "sourceDigest": "d292aa813480f2824c5017979d5b72e2a1df49870d6cef0da8194c72c2dbf39d"
     },
     "src/daemon/db/management-enablement.ts": {
       "classification": "deployment-code-evidence",
@@ -7357,7 +7357,7 @@
       ],
       "siteCount": 1,
       "sitesDigest": "e11e0946fd8703dd24ee3e0e0e40852ce11b20e738ee08d17780bb37c26178ee",
-      "sourceDigest": "4565cedb07cd518948c485d4e1bd993618ebaa0513dab4f2c9768e6389226f8b"
+      "sourceDigest": "352dbb9abdd75be54e5c6f75a9d33c9c88bd41adfec7cca376d1b13916d3a64f"
     },
     "src/cli/panes/ModelTiersPane.tsx": {
       "classification": "client-process-boundary",

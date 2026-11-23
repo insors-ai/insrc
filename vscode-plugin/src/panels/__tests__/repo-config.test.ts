@@ -306,8 +306,7 @@ test('repo-config.test.ts: the form has role tier selects and a coreFloor select
   const restart = makeWriteDeps({ outcome: 'accepted', writeResult: { ok: true, restartRequired: true }, offerRestart: (m) => offers.push(m) });
   createRepoConfigWriteHandler(restart.deps)({ repoPath: REPOS[0]!.path, segments: ['coreFloor'], value: 'mid' });
   await new Promise((r) => setTimeout(r, 0));
-  assert.equal(offers.length, 1);
-  assert.match(offers[0]!, /updated coreFloor for .* — restart the daemon to apply/);
+  assert.equal(offers.length, 0);
 });
 
 // ---- Providers section (post-setup mcp.register) -----------------------------

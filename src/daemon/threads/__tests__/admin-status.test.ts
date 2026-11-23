@@ -22,7 +22,7 @@ test('daemon.status that waited for the first publish reports the queue as it is
 	setTimeout(() => { published = true; }, 150);
 	const status = createAdminStatus({
 		snapshot: async () => snap(),
-		info: async () => ({ startedAt: Date.now(), modelState: { status: 'ready' }, installedCommit: '' }),
+		info: async () => ({ startedAt: Date.now(), modelState: { status: 'ready' }, }),
 		readRepos: async () => assert.fail('the published list is used'),
 		readUnattributed: async () => undefined,
 		firstPublishMs: 5_000,
@@ -34,7 +34,7 @@ test('daemon.status that waited for the first publish reports the queue as it is
 const RUN = { model: 'm', frames: [], startedAt: 1 };
 const statusOver = (snapshot: () => StatusSnapshot, now: () => number) => createAdminStatus({
 	snapshot: async () => snapshot(),
-	info: async () => ({ startedAt: 0, modelState: { status: 'ready' }, installedCommit: 'abc' }),
+	info: async () => ({ startedAt: 0, modelState: { status: 'ready' }, }),
 	readRepos: async () => [],
 	readUnattributed: async () => undefined,
 	now,

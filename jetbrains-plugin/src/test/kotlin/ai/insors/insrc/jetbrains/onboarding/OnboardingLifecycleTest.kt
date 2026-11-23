@@ -13,7 +13,6 @@ import ai.insors.insrc.jetbrains.daemon.RepoStatsResult
 import ai.insors.insrc.jetbrains.daemon.DaemonStatusResult
 import ai.insors.insrc.jetbrains.daemon.DebugStatusResult
 import ai.insors.insrc.jetbrains.daemon.DaemonActionResult
-import ai.insors.insrc.jetbrains.daemon.DaemonUpdateOutcomeResult
 import ai.insors.insrc.jetbrains.daemon.ApproveResult
 import ai.insors.insrc.jetbrains.daemon.SaveResult
 import ai.insors.insrc.jetbrains.daemon.PerRoleOverridesResult
@@ -103,13 +102,13 @@ class OnboardingLifecycleTest {
             ModelDecisionResult.Failed(DaemonFailure.Other("not used in this test"))
         override fun daemonStatus(): DaemonStatusResult = DaemonStatusResult.Unavailable("not used in this test")
         override fun debugStatus(): DebugStatusResult = DebugStatusResult.Unavailable("not used in this test")
-        override fun shutdown(): DaemonActionResult = DaemonActionResult.Failed("not used in this test")
+
         override fun backup(targetDir: String): DaemonActionResult = DaemonActionResult.Failed("not used in this test")
         override fun compact(): DaemonActionResult = DaemonActionResult.Failed("not used in this test")
-        override fun update(): DaemonActionResult = DaemonActionResult.Failed("not used in this test")
+
         override fun readRepoSettings(repoPath: String): ai.insors.insrc.jetbrains.daemon.RepoSettingsResult = ai.insors.insrc.jetbrains.daemon.RepoSettingsResult.Unavailable("not used in this test")
         override fun writeRepoSetting(repoPath: String, key: String, value: Any?): ai.insors.insrc.jetbrains.daemon.SaveResult = ai.insors.insrc.jetbrains.daemon.SaveResult.Unavailable("not used in this test")
-        override fun updateOutcome(): DaemonUpdateOutcomeResult = DaemonUpdateOutcomeResult.Unavailable("not used in this test")
+
     }
 
     /** Recording sc3 adapter: scripts detectPresent; records removals; asserts writes never happen. */

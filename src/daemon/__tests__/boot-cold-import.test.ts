@@ -101,7 +101,7 @@ async function runDaemon(home: string, dir: string): Promise<{ code: number | nu
 		if (existsSync(sockOf(home))) {
 			try {
 				await rpc(sockOf(home), 'daemon.status');
-				try { await rpc(sockOf(home), 'daemon.shutdown'); } catch { /* going */ }
+				child.kill('SIGTERM');
 				const killer = setTimeout(() => child.kill('SIGKILL'), 15_000);
 				const code = await exited;
 				clearTimeout(killer);

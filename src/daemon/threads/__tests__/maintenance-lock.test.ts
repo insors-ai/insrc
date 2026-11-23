@@ -65,7 +65,7 @@ import { stopWorker } from './helpers/stop-worker.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = realpathSync(mkdtempSync(join(tmpdir(), 'insrc-maintenance-lock-repo-')));
-const services = new ThreadServices(() => ({ startedAt: 0, modelState: { status: 'ready' }, installedCommit: '' }));
+const services = new ThreadServices(() => ({ startedAt: 0, modelState: { status: 'ready' }, }));
 const REASON = '31 min idle, 40% / 300 MB reclaimable';
 let codeWorker: { worker: Worker; port: MessagePort } | undefined;
 

@@ -32,12 +32,7 @@ function ctxWith(overrides: Partial<Services> = {}): { ctx: CommandCtx; spies: S
 	const spies: Spies = { repoAdd: [], repoAddSteering: [], configWrite: [], teamInit: [], teamRefresh: [], panes: [], exited: false };
 	const base: Services = {
 		daemon: {
-			isRunning: () => true,
-			getStatus: async () => ({ uptime: 61, repos: [], queueDepth: 3, embeddingsPending: 0, modelPullStatus: 'ready', installedCommit: '' }),
-			startDaemon: async () => ({ started: true, logPath: '', alreadyRunning: false, pid: 42 }),
-			stopDaemon: async () => ({ stopped: true as const, forced: false }),
-			restart: async () => ({ ok: true, steps: [] }),
-			update: async () => ({ ok: true, steps: ['sync', 'build'] }),
+			getStatus: async () => ({ uptime: 61, repos: [], queueDepth: 3, embeddingsPending: 0, modelPullStatus: 'ready', }),
 			backup: async () => ({ targetDir: '/b', lmdbBytes: 0, lanceBytes: 0, elapsedMs: 0 }),
 			compact: async () => ({ beforeBytes: 0, afterBytes: 0, savedBytes: 1024, elapsedMs: 500 }),
 		},
@@ -337,8 +332,7 @@ test('daemon status adds the store failure line when the status carries it', asy
 	const { ctx } = ctxWith();
 	const cause = 'Another process opened and closed the graph store. Restart the daemon.';
 	ctx.services.daemon.getStatus = async () => ({
-		uptime: 61, repos: [], queueDepth: 3, embeddingsPending: 0, modelPullStatus: 'ready', installedCommit: '',
-		storeFailure: { kind: 'locks-lost', at: '2026-10-11T10:00:00.000Z', operation: 'request search', cause },
+		uptime: 61, repos: [], queueDepth: 3, embeddingsPending: 0, modelPullStatus: 'ready', storeFailure: { kind: 'locks-lost', at: '2026-10-11T10:00:00.000Z', operation: 'request search', cause },
 	});
 	const out = await runCommand('daemon status', ctx);
 	assert.equal(out.length, 2);

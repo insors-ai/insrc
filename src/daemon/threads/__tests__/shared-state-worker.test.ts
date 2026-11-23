@@ -32,7 +32,7 @@ const { startWorker } = await import('../workers.js');
 import type { MethodClass } from '../channel.js';
 import type { StartedWorker } from '../workers.js';
 
-const services = new ThreadServices(() => ({ startedAt: 0, modelState: { status: 'ready' }, installedCommit: '' }));
+const services = new ThreadServices(() => ({ startedAt: 0, modelState: { status: 'ready' }, }));
 const router = new Router({ classOf: methodClasses.classOf, registry: services.registry, routed: new Set<MethodClass>(['session']), local: directDispatch({}) });
 services.onRoute(r => router.request(r.cls, r.method, r.params, { underHold: r.underHold, shared: r.shared }));
 let started: StartedWorker | undefined;

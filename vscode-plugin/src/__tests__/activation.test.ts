@@ -8,7 +8,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
-import { activateExtension, runReachabilityProbe, startDaemonIfStopped } from '../activation.js';
+import { activateExtension, runReachabilityProbe } from '../activation.js';
 import type { StatusSnapshot, StatusSurface } from '../surfaces/status-surface.js';
 import type { IpcClient, DaemonReachability, DaemonStatus } from '../../../src/shared/ipc-client.js';
 
@@ -35,8 +35,6 @@ function clientReturning(reachability: DaemonReachability | (() => Promise<Daemo
     rpc: async () => undefined as never,
     status: async () => ({ uptime: 0, repos: [], queueDepth: 0, embeddingsPending: 0 } as DaemonStatus),
     reachability: typeof reachability === 'function' ? reachability : async () => reachability,
-    update: async () => ({ launched: false }),
-    updateOutcome: async () => null,
   };
 }
 
@@ -116,28 +114,6 @@ test('only extension.ts imports vscode, and it reaches the daemon only via the s
     }
   }
 });
-
-// ---- Story E202610160e1265ed:S001: start an installed daemon the probe finds stopped ----
-
-/** A controller that records its calls; `run` answers the next queued result. */
-function fakeController(o: { installed?: boolean; results?: Array<LifecycleResult | Error> } = {}) {
-  const calls: Array<{ action: string; options: LifecycleRunOptions | undefined }> = [];
-  let installedAsked = 0;
-  const results = [...(o.results ?? [{ ok: true, state: 'running' } as LifecycleResult])];
-  const controller: Pick<DaemonLifecycleController, 'isInstalled' | 'run'> = {
-    isInstalled: async () => {
-      installedAsked += 1;
-      return o.installed ?? true;
-    },
-    run: async (action, options) => {
-      calls.push({ action, options });
-      const next = results.shift() ?? { ok: true, state: 'running' };
-      if (next instanceof Error) throw next;
-      return next;
-    },
-  };
-  return { controller, calls, installedAsked: () => installedAsked };
-}
 /** A client whose reachability answers one value per call, the last one repeating. */
 const sequenced = (...answers: DaemonReachability[]): IpcClient => {
   let n = 0;
@@ -157,69 +133,18 @@ test('runReachabilityProbe answers the state it pushed into the status surface',
   assert.equal(hung.current().state, 'errored');
 });
 
-test('the extension entry passes the daemon lifecycle controller into the activation', () => {
-  const src = readFileSync(join(PKG, 'extension.ts'), 'utf8');
-  assert.match(src, /activateExtension\(\{ client, status, controller, onSettled: /);
-  // It is the very controller the daemon commands use.
-  assert.match(src, /const controller = createDaemonLifecycleController\(/);
-  assert.match(src, /registerDaemonCommands\(\{ commands, consent, status, controller \}\)/);
+test('activation settles once after reachable, stopped, rejected and timed out probes', async () => {
+ for (const answer of ['running','stopped','errored'] as const) {
+  let calls=0;const status=new FakeStatus();activateExtension({client:clientReturning(answer),status,onSettled:()=>{calls++;}});
+  await settle();assert.equal(calls,1);assert.equal(status.current().state,answer);
+ }
+ let calls=0;activateExtension({client:clientReturning(async()=>{throw new Error('probe');}),status:new FakeStatus(),onSettled:()=>{calls++;}});await settle();assert.equal(calls,1);
+ let timedOut=0;activateExtension({client:clientReturning(()=>new Promise(()=>{})),status:new FakeStatus(),probeTimeoutMs:10,onSettled:()=>{timedOut++;}});await new Promise(r=>setTimeout(r,40));assert.equal(timedOut,1);
+ const status=new FakeStatus();activateExtension({client:clientReturning('running'),status,onSettled:()=>{throw new Error('callback');}});await settle();assert.equal(status.current().state,'running');
 });
-
-test('activation calls onSettled once after the probe and any start have finished, also when the probe or the start fails or throws', async () => {
-  // After a successful automatic start: once, and only after the start has run.
-  const order: string[] = [];
-  const status = new FakeStatus();
-  const started = fakeController();
-  const spyRun = started.controller.run;
-  started.controller.run = async (a, o) => {
-    order.push('start');
-    return spyRun(a, o);
-  };
-  activateExtension({ client: sequenced('stopped', 'stopped'), status, controller: started.controller, onSettled: () => order.push('settled') });
-  assert.deepEqual(order, [], 'not called synchronously');
-  await settle();
-  assert.deepEqual(order, ['start', 'settled']);
-
-  // A running daemon, an errored probe and a daemon that is not installed: still settled, once, with no start.
-  for (const [client, ctl] of [
-    [sequenced('running'), fakeController()],
-    [sequenced('errored'), fakeController()],
-    [sequenced('stopped'), fakeController({ installed: false })],
-  ] as const) {
-    let n = 0;
-    activateExtension({ client, status: new FakeStatus(), controller: ctl.controller, onSettled: () => void (n += 1) });
-    await settle();
-    assert.equal(n, 1);
-    assert.deepEqual(ctl.calls, []);
-  }
-
-  // A start that throws, a probe that rejects and a hung probe: settled once each.
-  let thrown = 0;
-  activateExtension({ client: sequenced('stopped', 'stopped'), status: new FakeStatus(), controller: fakeController({ results: [new Error('boom')] }).controller, onSettled: () => void (thrown += 1) });
-  let rejected = 0;
-  activateExtension({ client: clientReturning(async () => { throw new Error('probe'); }), status: new FakeStatus(), onSettled: () => void (rejected += 1) });
-  let hung = 0;
-  activateExtension({ client: clientReturning(() => new Promise<DaemonReachability>(() => {})), status: new FakeStatus(), probeTimeoutMs: 10, onSettled: () => void (hung += 1) });
-  await new Promise((r) => setTimeout(r, 40));
-  assert.deepEqual([thrown, rejected, hung], [1, 1, 1]);
-
-  // A throwing onSettled is contained: nothing is thrown into activation and the status is kept.
-  const kept = new FakeStatus();
-  assert.doesNotThrow(() => activateExtension({ client: sequenced('running'), status: kept, onSettled: () => { throw new Error('callback'); } }));
-  await settle();
-  assert.equal(kept.current().state, 'running');
-});
-
-test('the extension entry runs the settings pull, the update check and onboarding only after activation has settled', () => {
-  const src = readFileSync(join(PKG, 'extension.ts'), 'utf8');
-  // The signal is made before activation is started, and activation resolves it.
-  const made = src.indexOf('const activationSettled = new Promise<void>');
-  const started = src.indexOf('activateExtension({ client, status, controller, onSettled: () => resolveActivationSettled() })');
-  assert.ok(made > 0 && started > made, 'the settled signal exists before activation starts');
-  // Each of the three waits for it, and none runs bare.
-  assert.match(src, /void activationSettled\.then\(\(\) => runDaemonFreshnessCheck\(\{/);
-  assert.doesNotMatch(src, /void runDaemonFreshnessCheck\(/);
-  assert.match(src, /void activationSettled\.then\(async \(\) => \{\s*await configSync\.pullFromDaemon\(\);\s*await migrateLegacyKeys\(/);
-  assert.doesNotMatch(src, /void configSync\.pullFromDaemon\(\)/);
-  assert.match(src, /void \(async \(\) => \{\s*await activationSettled;\s*try \{\s*await runOnboarding\(/);
+test('settings pull and onboarding wait for activation to settle', () => {
+ const src=readFileSync(join(PKG,'extension.ts'),'utf8');
+ assert.match(src,/activateExtension\(\{ client, status, onSettled:/);
+ assert.match(src,/void activationSettled\.then\(async \(\) =>/);
+ assert.match(src,/await activationSettled;[\s\S]*await runOnboarding/);
 });

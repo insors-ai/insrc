@@ -32,7 +32,6 @@ import { tmpdir } from 'node:os';
 
 import { CONFIG_CATALOG, type ConfigOption } from '../config-catalog.js';
 import { reconcileConfigFile } from '../reconcile-io.js';
-import { runUpdateReconcile } from '../../cli/services/maintenance.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const FIXTURES = join(HERE, 'fixtures');

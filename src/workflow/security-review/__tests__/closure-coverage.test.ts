@@ -95,6 +95,31 @@ test("verifyManagerClosureCoverage: a '-r' line with a trailing inline comment s
 	}
 });
 
+test("verifyManagerClosureCoverage: a compact '-rfile' (glued, no space) reference is still resolved, not just the spaced '-r file' form", async () => {
+	const repo = tmpRepo();
+	try {
+		writeFileSync(join(repo, 'requirements.txt'), '-rmore.txt\nflask==2.0.0\n');
+		writeFileSync(join(repo, 'more.txt'), 'pytest==7.0.0\n');
+		const missing = await verifyManagerClosureCoverage(repo, { entries: [{ path: 'requirements.txt' }] }, 'pip', repo);
+		assert.equal(missing.covered, false);
+		assert.ok(!missing.covered && missing.missing.includes('more.txt'), JSON.stringify(missing));
+	} finally {
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
+test('verifyManagerClosureCoverage: a -r reference to a file that does not exist on disk is still reported missing, never silently dropped from the closure', async () => {
+	const repo = tmpRepo();
+	try {
+		writeFileSync(join(repo, 'requirements.txt'), '-r does-not-exist.txt\nflask==2.0.0\n');
+		const result = await verifyManagerClosureCoverage(repo, { entries: [{ path: 'requirements.txt' }] }, 'pip', repo);
+		assert.equal(result.covered, false);
+		assert.ok(!result.covered && result.missing.includes('does-not-exist.txt'), JSON.stringify(result));
+	} finally {
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
 test("verifyManagerClosureCoverage: a go package directory literally named 'build' or 'dist' is still part of the closure (those are not reserved Go names)", async () => {
 	const repo = tmpRepo();
 	try {

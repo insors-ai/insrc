@@ -163,7 +163,8 @@ function resolveRequirementsClosure(file: string, seen: Set<string>): string[] {
 		return result;
 	}
 	for (const line of content.split('\n')) {
-		const m = /^\s*-(?:r|c)\s+(\S.*)$/.exec(line);
+		// pip accepts both `-r file` and the glued `-rfile` form for -r/-c.
+		const m = /^\s*-(?:r|c)\s*(\S.*)$/.exec(line);
 		if (m?.[1] !== undefined) {
 			// requirements.txt allows a trailing inline comment on any line
 			// (` # note`); strip it before treating the remainder as the path,
@@ -220,13 +221,21 @@ const DEFAULT_CLOSURE_FILES: Partial<Record<Manager, readonly string[]>> = {
 
 /** This manager's own required-input closure, re-resolved fresh (never cached)
  *  on every call: nested -r/-c references for pip-family, the full source
- *  tree for go, the manifest+lockfile pair for the rest. */
+ *  tree for go, the manifest+lockfile pair for the rest.
+ *
+ *  Only the GUESSED default names (npm/pnpm/yarn/cargo's own manifest+lockfile
+ *  pair, which this function does not know for certain both exist) are
+ *  filtered by existsSync. pip/go's own closures are actually DISCOVERED (a
+ *  real -r/-c reference the manifest names, or a file readdirSync found) --
+ *  filtering those by existence would silently drop a genuinely-referenced
+ *  but missing file from the closure instead of correctly reporting it as
+ *  missing from targets.entries. */
 function resolveClosure(manager: Manager, manifestDir: string): string[] {
 	if (manager === 'go') { return resolveGoClosure(manifestDir); }
 	if (manager === 'pip') { return resolveRequirementsClosure(join(manifestDir, 'requirements.txt'), new Set()); }
 	if (manager === 'pipenv') { return [join(manifestDir, 'Pipfile.lock')]; }
 	if (manager === 'poetry') { return [join(manifestDir, 'poetry.lock')]; }
-	return (DEFAULT_CLOSURE_FILES[manager] ?? []).map(name => join(manifestDir, name));
+	return (DEFAULT_CLOSURE_FILES[manager] ?? []).map(name => join(manifestDir, name)).filter(existsSync);
 }
 
 /**
@@ -236,7 +245,7 @@ function resolveClosure(manager: Manager, manifestDir: string): string[] {
  * input -- purely a read-only coverage check.
  */
 export async function verifyManagerClosureCoverage(repoPath: string, targets: ReviewTargets, manager: Manager, manifestDir: string): Promise<ClosureCoverage> {
-	const closure = resolveClosure(manager, manifestDir).filter(existsSync);
+	const closure = resolveClosure(manager, manifestDir);
 	const scoped = new Set(targets.entries.map(e => resolve(repoPath, e.path)));
 	const missing = closure.filter(f => !scoped.has(resolve(f))).map(f => relative(repoPath, f));
 	return missing.length === 0 ? { covered: true } : { covered: false, missing };

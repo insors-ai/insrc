@@ -12,7 +12,7 @@
  * SecurityFinding/EvidenceProvider shapes without redefining them.
  */
 
-import { existsSync, globSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 
 import type { Manager } from '../../daemon/tools/builtins/pkg/index.js';
@@ -187,77 +187,17 @@ function resolveRequirementsClosure(file: string, seen: Set<string>): string[] {
  *  in the closure). */
 const GO_CLOSURE_SKIP_DIRS = new Set(['.git', 'vendor']);
 
-/** Extensions the go build system itself compiles as part of a package, beyond
- *  plain *.go: assembly (.s/.S) and cgo's own C/C++ sources and headers --
- *  real build inputs, not merely documentation/config that happens to sit
- *  alongside the Go files. */
-const GO_SOURCE_EXTENSIONS = ['.go', '.s', '.S', '.c', '.h', '.cc', '.cpp', '.hpp'];
-const GO_MODULE_FILES = new Set(['go.mod', 'go.sum', 'go.work', 'go.work.sum']);
-
-/** A `.go` file's own `//go:embed <pattern>...` directives (immediately above
- *  a var declaration, per Go's own syntax), each pattern resolved as a glob
- *  relative to the file's own directory -- the files Go's build embeds into
- *  the binary are as much a required input as the .go source naming them. */
-function resolveEmbeddedFiles(goFile: string): string[] {
-	let content: string;
-	try {
-		content = readFileSync(goFile, 'utf8');
-	} catch {
-		return [];
-	}
-	const dir = dirname(goFile);
-	const files: string[] = [];
-	for (const line of content.split('\n')) {
-		const m = /^\/\/go:embed\s+(.+)$/.exec(line.trim());
-		if (m?.[1] === undefined) { continue; }
-		const patterns = m[1].match(/"[^"]*"|\S+/g) ?? [];
-		for (const raw of patterns) {
-			// Go's own `all:` prefix includes dotfiles/underscore-prefixed names
-			// that a bare directory embed otherwise skips.
-			const all = raw.startsWith('"all:') || raw.startsWith('all:');
-			const pattern = raw.replace(/^"|"$/g, '').replace(/^all:/, '');
-			try {
-				for (const match of globSync(pattern, { cwd: dir })) {
-					const matchPath = resolve(dir, match);
-					let isDir = false;
-					try {
-						isDir = statSync(matchPath).isDirectory();
-					} catch { /* a glob match that vanished before the stat names nothing further */ }
-					// Embedding a directory embeds every file under it, recursively
-					// (Go's own semantics) -- a bare match is never just the directory
-					// entry itself.
-					files.push(...(isDir ? expandEmbeddedDir(matchPath, all) : [matchPath]));
-				}
-			} catch { /* a malformed pattern names nothing; never throw the whole closure over it */ }
-		}
-	}
-	return files;
-}
-
-/** Every file under `dir`, recursively -- Go's own default directory-embed
- *  behavior skips a name starting with `.` or `_` unless the directive used
- *  the `all:` prefix. */
-function expandEmbeddedDir(dir: string, all: boolean): string[] {
-	const files: string[] = [];
-	let entries: import('node:fs').Dirent[];
-	try {
-		entries = readdirSync(dir, { withFileTypes: true });
-	} catch {
-		return files;
-	}
-	for (const entry of entries) {
-		if (!all && (entry.name.startsWith('.') || entry.name.startsWith('_'))) { continue; }
-		const full = join(dir, entry.name);
-		if (entry.isDirectory()) { files.push(...expandEmbeddedDir(full, all)); }
-		else { files.push(full); }
-	}
-	return files;
-}
-
-/** A go module's full source tree under manifestDir: every source file the
- *  go build system itself compiles (see GO_SOURCE_EXTENSIONS), every file a
- *  //go:embed directive in one of those .go files names, plus its module
- *  files -- re-walked fresh on every call. */
+/**
+ * A go module's full source tree under manifestDir: EVERY regular file,
+ * recursively, except .git/vendor. Deliberately not an extension allowlist
+ * (.go/.s/.c/.h/... can never be exhaustive -- Go/cgo also link .S, .cc,
+ * .m, .f90 and others; go:embed can name any file at all) -- any such list
+ * is always one more real extension away from an incomplete closure. A full
+ * walk also trivially includes every //go:embed-referenced file: Go itself
+ * forbids an embed pattern from reaching outside the package's own directory
+ * ('..' and a leading '/' are rejected), so an embedded file is always
+ * already somewhere under manifestDir.
+ */
 function resolveGoClosure(manifestDir: string): string[] {
 	const files: string[] = [];
 	const walk = (dir: string): void => {
@@ -272,15 +212,11 @@ function resolveGoClosure(manifestDir: string): string[] {
 				if (!GO_CLOSURE_SKIP_DIRS.has(entry.name)) { walk(join(dir, entry.name)); }
 				continue;
 			}
-			if (GO_MODULE_FILES.has(entry.name) || GO_SOURCE_EXTENSIONS.some(ext => entry.name.endsWith(ext))) {
-				const full = join(dir, entry.name);
-				files.push(full);
-				if (entry.name.endsWith('.go')) { files.push(...resolveEmbeddedFiles(full)); }
-			}
+			files.push(join(dir, entry.name));
 		}
 	};
 	walk(manifestDir);
-	return [...new Set(files)];
+	return files;
 }
 
 const DEFAULT_CLOSURE_FILES: Partial<Record<Manager, readonly string[]>> = {

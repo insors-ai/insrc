@@ -220,6 +220,20 @@ test("verifyManagerClosureCoverage: a '//go:embed <directory>' directive (no wil
 	}
 });
 
+test("verifyManagerClosureCoverage: a go module's closure covers ANY file extension, not just a fixed cgo/embed allowlist (e.g. an Objective-C .m file)", async () => {
+	const repo = tmpRepo();
+	try {
+		writeFileSync(join(repo, 'go.mod'), 'module example.com/x\n');
+		writeFileSync(join(repo, 'go.sum'), '');
+		writeFileSync(join(repo, 'bridge.m'), '// objective-c\n');
+		const result = await verifyManagerClosureCoverage(repo, { entries: [{ path: 'go.mod' }, { path: 'go.sum' }] }, 'go', repo);
+		assert.equal(result.covered, false);
+		assert.ok(!result.covered && result.missing.includes('bridge.m'), JSON.stringify(result));
+	} finally {
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
 test('verifyManagerClosureCoverage: a go module closure covers every .go source file under manifestDir', async () => {
 	const repo = tmpRepo();
 	try {

@@ -10,7 +10,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync, writeFileSync, appendFileSync, unlinkSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync, appendFileSync, unlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
@@ -48,7 +48,7 @@ function cleanup(repo: string): void {
 	rmSync(repo, { recursive: true, force: true });
 }
 
-test('collectDependencyAdvisories: a generated requirementsPath (pipenv/poetry) is ALWAYS invoked with noDeps:true', async () => {
+test('collectDependencyAdvisories: a generated requirementsPath (poetry) is ALWAYS invoked with noDeps:true, using the actual generated file', async () => {
 	const repo = initRepo();
 	treatAsRegistered(repo);
 	try {
@@ -61,6 +61,30 @@ test('collectDependencyAdvisories: a generated requirementsPath (pipenv/poetry) 
 		await collectDependencyAdvisories(repo, { entries: [{ path: 'app.ts' }, { path: 'poetry.lock' }] });
 		assert.equal(captured.length, 1);
 		assert.equal(captured[0]?.noDeps, true);
+		const requirementsPath = captured[0]?.requirementsPath;
+		assert.equal(typeof requirementsPath, 'string');
+		assert.ok(String(requirementsPath).endsWith('requirements.txt'), String(requirementsPath));
+	} finally {
+		cleanup(repo);
+	}
+});
+
+test('collectDependencyAdvisories: a generated requirementsPath (pipenv) is ALWAYS invoked with noDeps:true, using the actual generated file', async () => {
+	const repo = initRepo();
+	treatAsRegistered(repo);
+	try {
+		writeFileSync(join(repo, 'Pipfile.lock'), JSON.stringify({ default: { requests: { version: '==2.25.1', hashes: [] } } }));
+		const captured: ToolInput[] = [];
+		_setPkgAuditExecuteForTests(async (input: ToolInput) => {
+			captured.push(input);
+			return okResult({ manager: 'pipenv', exitCode: 0, parsed: { dependencies: [] } });
+		});
+		await collectDependencyAdvisories(repo, { entries: [{ path: 'app.ts' }, { path: 'Pipfile.lock' }] });
+		assert.equal(captured.length, 1);
+		assert.equal(captured[0]?.noDeps, true);
+		const requirementsPath = captured[0]?.requirementsPath;
+		assert.equal(typeof requirementsPath, 'string');
+		assert.ok(String(requirementsPath).endsWith('requirements.txt'), String(requirementsPath));
 	} finally {
 		cleanup(repo);
 	}
@@ -79,6 +103,7 @@ test("collectDependencyAdvisories: plain pip's own requirements.txt is NEVER inv
 		await collectDependencyAdvisories(repo, { entries: [{ path: 'app.ts' }, { path: 'requirements.txt' }] });
 		assert.equal(captured.length, 1);
 		assert.equal(captured[0]?.noDeps, undefined);
+		assert.equal(captured[0]?.requirementsPath, join(repo, 'requirements.txt'));
 	} finally {
 		cleanup(repo);
 	}
@@ -190,6 +215,35 @@ test('collectDependencyAdvisories: a version-uncertain pip pin that is also clea
 		assert.ok(result.unresolvedDependencies.some(d => d.toLowerCase().includes('flask')), JSON.stringify(result.unresolvedDependencies));
 		assert.ok(!result.queriedCoordinates.some(c => c.toLowerCase().includes('flask')), JSON.stringify(result.queriedCoordinates));
 		assert.ok(!result.matches.some(m => m.coordinate.toLowerCase().includes('flask')), JSON.stringify(result.matches));
+	} finally {
+		cleanup(repo);
+	}
+});
+
+test('collectDependencyAdvisories: a coordinate reported clean by an EARLIER-audited manager is still excluded from queriedCoordinates if a LATER manager marks the same package name unresolved', async () => {
+	const repo = initRepo();
+	treatAsRegistered(repo);
+	try {
+		// npm (at the repo root, audited first since enumerateManagers processes
+		// a directory's own managers before descending into subdirectories)
+		// reports 'flask' clean; a pip requirements.txt in a subdirectory uses a
+		// version range for 'flask', recording it unresolved. The two managers'
+		// outcomes for the same package name must not disagree in the final result.
+		writeFileSync(join(repo, 'package.json'), '{}\n');
+		writeFileSync(join(repo, 'package-lock.json'), '{}\n');
+		mkdirSync(join(repo, 'sub'));
+		writeFileSync(join(repo, 'sub', 'requirements.txt'), 'flask>=2.0.0\n');
+		execFileSync('git', ['add', '.'], { cwd: repo });
+		execFileSync('git', ['commit', '-q', '-m', 'add managers'], { cwd: repo });
+		_setPkgAuditExecuteForTests(async (input: ToolInput) => {
+			if (input['manager'] === 'npm') {
+				return okResult({ manager: 'npm', exitCode: 0, parsed: { vulnerabilities: { flask: { range: '2.0.0', via: [] } } } });
+			}
+			return okResult({ manager: 'pip', exitCode: 0, parsed: { dependencies: [] } });
+		});
+		const result = await collectDependencyAdvisories(repo, { entries: [{ path: 'app.ts' }, { path: 'package.json' }, { path: 'package-lock.json' }, { path: 'sub/requirements.txt' }] });
+		assert.ok(!result.queriedCoordinates.some(c => c.toLowerCase().startsWith('flask')), JSON.stringify(result.queriedCoordinates));
+		assert.ok(result.unresolvedDependencies.some(d => d.toLowerCase().includes('flask')), JSON.stringify(result.unresolvedDependencies));
 	} finally {
 		cleanup(repo);
 	}

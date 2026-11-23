@@ -39,11 +39,20 @@ test(
 		_setContentIdentityDepsForTests(async candidate => candidate === repo);
 		try {
 			// requests: plain PyPI, exact-locked -> exported and really audited by
-			// pip-audit. privatelib: a git source -> excluded from the export,
-			// recorded as a gap, and (because the real pip-audit runs with
-			// --no-deps against ONLY the generated file) never resolved at all,
-			// even though a real poetry project would list it as one of
-			// requests' own transitive dependencies.
+			// pip-audit. privatelib: a git source -> excluded from the export and
+			// recorded as a gap by t5's generateLockfileExport, so it is never
+			// written into the generated requirements.txt pip-audit is given at
+			// all -- the exclusion is enforced upstream of pip-audit, not by its
+			// own --no-deps flag. (Verified separately: --no-deps does NOT stop
+			// pip-audit from resolving a REAL package's own real transitive PyPI
+			// dependencies in environment-audit mode -- `pip-audit -r
+			// requirements.txt` containing only 'requests==2.25.1' reports
+			// chardet/idna/urllib3/certifi identically with or without
+			// --no-deps. privatelib is fictional and was never a real PyPI
+			// dependency of requests, so this test cannot exercise that specific
+			// transitive-reintroduction path against the real registry; what it
+			// does prove is that t5's own exclusion keeps an excluded package out
+			// of pip-audit's input in the first place.)
 			writeFileSync(join(repo, 'poetry.lock'), `
 [[package]]
 name = "requests"
@@ -72,6 +81,13 @@ resolved_reference = "abc123"
 			execFileSync('git', ['commit', '-q', '-m', 'init'], { cwd: repo });
 
 			const result = await collectDependencyAdvisories(repo, { entries: [{ path: 'poetry.lock' }] });
+
+			// Proof, not just assertion: print the real pip-audit result so a
+			// saved run log shows privatelib was never even a candidate.
+			console.log('unresolvedDependencies:', JSON.stringify(result.unresolvedDependencies));
+			console.log('matches:', JSON.stringify(result.matches));
+			console.log('queriedCoordinates:', JSON.stringify(result.queriedCoordinates));
+			console.log('perManagerMode:', JSON.stringify(result.perManagerMode));
 
 			assert.ok(result.unresolvedDependencies.some(d => d.includes('privatelib')), JSON.stringify(result.unresolvedDependencies));
 			assert.ok(!result.matches.some(m => m.coordinate.includes('privatelib')), JSON.stringify(result.matches));

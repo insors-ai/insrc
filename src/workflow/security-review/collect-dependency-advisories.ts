@@ -207,15 +207,17 @@ export async function collectDependencyAdvisories(repoPath: string, targets: Rev
 
 	const { managers } = enumerateManagers(repoPath, targets);
 
-	const matches: SecurityAdvisoryMatch[] = [];
-	const queriedCoordinates: string[] = [];
+	// Buffered raw per-manager outcomes; reconciled into the exclusive
+	// matches/queriedCoordinates/unresolvedDependencies buckets only AFTER
+	// every manager has run (see the reconciliation below). Reconciling
+	// per-manager, as the audit loop runs, would miss a name that becomes
+	// unresolved in a LATER manager's directory after an EARLIER manager's
+	// directory already reported that same name as clean.
+	const rawMatches: SecurityAdvisoryMatch[] = [];
+	const rawQueriedCoordinates: string[] = [];
 	const unresolvedDependencies: string[] = [];
 	const unavailableSources: string[] = [];
 	const perManagerMode: PerManagerModeEntry[] = [];
-	// A package name already recorded in unresolvedDependencies (a lockfile-export
-	// gap or a version-uncertain pip pin) must never ALSO land in matches or
-	// queriedCoordinates for the same coordinate -- each coordinate's outcome is
-	// exactly one of the three accounting buckets, never more than one.
 	const unresolvedNames = new Set<string>();
 	const recordUnresolved = (entry: string): void => {
 		unresolvedDependencies.push(entry);
@@ -267,9 +269,8 @@ export async function collectDependencyAdvisories(repoPath: string, targets: Rev
 				if (mapped === undefined) {
 					unavailableSources.push(`${manager}: unparseable audit output`);
 				} else {
-					const nameOf = (coordinate: string): string => (coordinate.split('@')[0] ?? coordinate).toLowerCase();
-					for (const match of mapped.matches) { if (!unresolvedNames.has(nameOf(match.coordinate))) { matches.push(match); } }
-					for (const coordinate of mapped.cleanCoordinates) { if (!unresolvedNames.has(nameOf(coordinate))) { queriedCoordinates.push(coordinate); } }
+					rawMatches.push(...mapped.matches);
+					rawQueriedCoordinates.push(...mapped.cleanCoordinates);
 					for (const coordinate of mapped.unresolvedCoordinates) { recordUnresolved(`${coordinate}: pip-audit did not report a result for this dependency`); }
 				}
 			}
@@ -289,6 +290,14 @@ export async function collectDependencyAdvisories(repoPath: string, targets: Rev
 	} catch {
 		contentStable = false;
 	}
+
+	// Reconcile now that every manager has run and unresolvedNames is
+	// complete: a name unresolved in ANY manager's directory is excluded from
+	// matches/queriedCoordinates everywhere, regardless of which manager ran
+	// first.
+	const nameOf = (coordinate: string): string => (coordinate.split('@')[0] ?? coordinate).toLowerCase();
+	const matches = rawMatches.filter(m => !unresolvedNames.has(nameOf(m.coordinate)));
+	const queriedCoordinates = rawQueriedCoordinates.filter(c => !unresolvedNames.has(nameOf(c)));
 
 	return {
 		contentIdentity,

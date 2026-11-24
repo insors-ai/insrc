@@ -13,7 +13,7 @@ import type { PreparedCandidate, PreparationLease } from './bundle.js';
 import { devCandidateFromReceipt, devPreparationPaths, parseDevDelivery, parseDevHooks, parseDevPreparation, parseDevSourceOffer } from './dev.js';
 import type { DevPreparationRecord, DevReleaseReceipt, DevSourceOffer, PreparationContext } from './dev.js';
 import { inspectLocalDevSource, inspectManagedDevCheckout, ownedDevGit, resolveDevSource } from './dev-git.js';
-import { devWorkerPaths, launchDevWorker, readVerifiedDevResult } from './dev-worker.js';
+import { devWorkerPaths, launchDevWorker, readClosedDevFailure, readVerifiedDevResult, readVerifiedDevSourceResult } from './dev-worker.js';
 import { devBuildEnvironment, verifyDevToolchain } from './dev-toolchain.js';
 import { verifyDevPayload } from './dev-payload.js';
 import { assertToken } from './location.js';
@@ -55,21 +55,24 @@ export async function openPreparedDev(location: InstallationLocation, releaseId:
 }
 async function finalStage(store: PreparationLease, record: DevPreparationRecord, target: Target, runtimeDirectory: string, context: PreparationContext): Promise<PreparedCandidate> {
   store.assertHeld(); context.signal?.throwIfAborted();
-  const result = await readVerifiedDevResult(store.location.home, record);
+  const current = context.readCheckpoint();
+  if (!current || !['building', 'prepared'].includes(current.stage) || canonicalJson({ ...current, stage: record.stage }) !== canonicalJson(record)) throw uncertain('Finalization lacks its matching admitted attempt');
+  const destination = join(store.location.home, 'releases', record.sourceOffer.releaseId), published = existsSync(destination);
+  const proof = published ? readVerifiedDevSourceResult : readVerifiedDevResult;
+  const result = await proof(store.location.home, record);
   if (result.outcome !== 'prepared') throw new InstallerError(result.outcome === 'cancelled' ? 'source-cancelled' : 'source-build-failed', 'Private source preparation did not complete; inspect its retained diagnostic');
   const paths = devWorkerPaths(store.location.home, record);
-  const { receipt } = await verifyDevPayload(paths.stage, target, runtimeDirectory, { ...(context.signal ? { signal: context.signal } : {}) });
+  const { receipt } = await verifyDevPayload(published ? destination : paths.stage, target, runtimeDirectory, { ...(context.signal ? { signal: context.signal } : {}) });
   const pkg = JSON.parse((await readBoundedFile(join(paths.checkout, 'package.json'), MAX_CONTROL_BYTES)).toString('utf8')) as { insrcInstaller?: unknown };
   if (canonicalJson(receipt.sourceOffer) !== canonicalJson(record.sourceOffer) || receipt.checkoutRelativePath !== record.checkoutRelativePath
     || receipt.inventorySha256 !== result.inventorySha256 || canonicalJson(receipt.manifest.migrations) !== canonicalJson(parseDevHooks(pkg.insrcInstaller))
     || canonicalJson(receipt.manifest.compatiblePredecessors) !== canonicalJson(record.predecessorId ? [record.predecessorId] : [])
     || receipt.manifest.daemonEntry !== 'out/daemon/index.js' || receipt.manifest.tuiEntry !== 'out/cli/index.js') throw new InstallerError('candidate-conflict', 'Final receipt differs from closed accepted-source preparation');
   // Recheck the positive closure/source/output evidence after reading the stage.
-  await readVerifiedDevResult(store.location.home, record);
+  await proof(store.location.home, record);
   store.assertHeld(); context.signal?.throwIfAborted();
   context.checkpoint({ ...record, stage: 'prepared' });
-  const destination = join(store.location.home, 'releases', record.sourceOffer.releaseId);
-  if (existsSync(destination)) {
+  if (published) {
     try {
       await verifyDevPayload(destination, target, runtimeDirectory, { expectedReceipt: receipt, ...(context.signal ? { signal: context.signal } : {}) });
     } catch (cause) { throw new InstallerError('candidate-conflict', 'Immutable dev release ID already has different or invalid bytes', { cause }); }
@@ -83,56 +86,86 @@ export function devDelivery(target: Target, options: DevDeliveryOptions): Delive
   const runtime: RuntimeIdentity = { version: PRIVATE_NODE_VERSION, target, sha256: runtimeArchive(target).sha256,
     relativeExecutable: target.os === 'win32' ? 'node.exe' : 'bin/node' };
   const inherited = () => options.environment?.() ?? process.env;
+  const prepare: DeliveryPort['prepare'] = (store, input, context) => prepareCandidate(store, input, context);
+  async function prepareCandidate(store: PreparationLease, input: Parameters<DeliveryPort['prepare']>[1], context: PreparationContext, retry?: DevPreparationRecord): Promise<PreparedCandidate> {
+    store.assertHeld(); context.signal?.throwIfAborted();
+    if (input.kind !== 'dev-source') throw new InstallerError('delivery-invalid', 'Dev preparation requires an accepted dev source offer');
+    const offer: DevSourceOffer = parseDevSourceOffer(input), inspected = store.inspect();
+    if (inspected.kind !== 'present' || inspected.snapshot.operation?.operationId !== context.operationId || inspected.snapshot.operation.phase !== 'preparing'
+      || canonicalJson(parseDevDelivery(inspected.snapshot.installation.delivery)) !== canonicalJson(offer.delivery) || canonicalJson(target) !== canonicalJson(offer.target)) throw uncertain('Preparation lacks the matching manager operation');
+    const previous = context.readCheckpoint();
+    if (previous && (!retry || canonicalJson(previous) !== canonicalJson(retry) || !['failed', 'cancelled'].includes(previous.stage))) throw uncertain('An existing attempt requires explicit reconciliation');
+    if (retry && (!previous || canonicalJson(retry.sourceOffer) !== canonicalJson(offer))) throw uncertain('Retry source or prior attempt differs');
+    const predecessorId = inspected.snapshot.installation.activeReleaseId;
+    let predecessor: DevReleaseReceipt | undefined;
+    if (predecessorId) {
+      // No implicit bundle/legacy adoption. Selected source preflight is done
+      // by the fresh worker, or below when reusing an existing payload.
+      predecessor = (await verifyDevPayload(join(store.location.home, 'releases', predecessorId), target, options.runtimeDirectory)).receipt;
+      const prior = predecessor.sourceOffer;
+      if (canonicalJson(prior.delivery) !== canonicalJson(offer.delivery) || canonicalJson(prior.target) !== canonicalJson(offer.target)
+        || canonicalJson(prior.runtime) !== canonicalJson(offer.runtime) || prior.recipeVersion !== offer.recipeVersion) throw new InstallerError('source-incompatible', 'Selected dev provenance differs from the accepted source recipe');
+    }
+    const toolchain = verifyDevToolchain(options.runtimeDirectory, target), environment = devBuildEnvironment(toolchain, inherited());
+    const destination = join(store.location.home, 'releases', offer.releaseId);
+    if (existsSync(destination)) {
+      let receipt: DevReleaseReceipt;
+      try { receipt = (await verifyDevPayload(destination, target, options.runtimeDirectory)).receipt; }
+      catch (cause) { throw new InstallerError('candidate-conflict', 'Existing immutable dev release is invalid; retain it for inspection', { cause }); }
+      if (canonicalJson(receipt.sourceOffer) !== canonicalJson(offer)) throw new InstallerError('candidate-conflict', 'Existing dev release ID names another source');
+      parseReleaseManifest(receipt.manifest, { target, ...(offer.releaseId !== predecessorId ? { predecessorId } : {}) });
+      await ownedScope(environment, async (run, scope) => {
+        const git = ownedDevGit(run, scope, context.signal);
+        await inspectLocalDevSource(offer.delivery, git);
+        if (predecessor) await inspectManagedDevCheckout(store.location, predecessor, git);
+        await inspectManagedDevCheckout(store.location, receipt, git);
+      });
+      store.assertHeld(); context.signal?.throwIfAborted();
+      return openPreparedDev(store.location, offer.releaseId, target, options.runtimeDirectory);
+    }
+    const attemptId = randomUUID(), operationId = context.operationId;
+    const record = parseDevPreparation({ schemaVersion: 1, installationId: store.location.installationId, operationId, sourceOffer: offer,
+      ...(predecessorId ? { predecessorId } : {}), attemptId, workerNonce: randomBytes(32).toString('hex'), ...devPreparationPaths(operationId, attemptId),
+      coordinatorRunId: randomUUID(), stage: 'accepted' });
+    context.checkpoint(record); // Durable acceptance precedes every worker admission.
+    context.checkpoint({ ...record, stage: 'building' });
+    const result = await ownedScope(environment, (_run, scope) => launchDevWorker(scope, store.location, record, {
+      entrypoint: options.workerEntrypoint, environment, ...(context.signal ? { signal: context.signal } : {}),
+    }));
+    if (result.outcome !== 'prepared') {
+      context.checkpoint({ ...record, stage: result.outcome });
+      throw new InstallerError(result.outcome === 'cancelled' ? 'source-cancelled' : 'source-build-failed', 'Private source preparation failed; inspect its retained diagnostic');
+    }
+    return finalStage(store, record, target, options.runtimeDirectory, context);
+  }
   return {
     resolve: delivery => resolveDevSource(delivery, target, runtime, { environment: inherited() }),
-    async prepare(store, input, context) {
+    prepare,
+    async resumePreparation(store, context) {
       store.assertHeld(); context.signal?.throwIfAborted();
-      if (input.kind !== 'dev-source') throw new InstallerError('delivery-invalid', 'Dev preparation requires an accepted dev source offer');
-      const offer: DevSourceOffer = parseDevSourceOffer(input), inspected = store.inspect();
-      if (inspected.kind !== 'present' || inspected.snapshot.operation?.operationId !== context.operationId || inspected.snapshot.operation.phase !== 'preparing'
-        || canonicalJson(parseDevDelivery(inspected.snapshot.installation.delivery)) !== canonicalJson(offer.delivery) || canonicalJson(target) !== canonicalJson(offer.target)) throw uncertain('Preparation lacks the matching manager operation');
-      if (context.readCheckpoint()) throw uncertain('An existing attempt requires explicit reconciliation');
-      const predecessorId = inspected.snapshot.installation.activeReleaseId;
-      let predecessor: DevReleaseReceipt | undefined;
-      if (predecessorId) {
-        // No implicit bundle/legacy adoption. Selected source preflight is done
-        // by the fresh worker, or below when reusing an existing payload.
-        predecessor = (await verifyDevPayload(join(store.location.home, 'releases', predecessorId), target, options.runtimeDirectory)).receipt;
-        const prior = predecessor.sourceOffer;
-        if (canonicalJson(prior.delivery) !== canonicalJson(offer.delivery) || canonicalJson(prior.target) !== canonicalJson(offer.target)
-          || canonicalJson(prior.runtime) !== canonicalJson(offer.runtime) || prior.recipeVersion !== offer.recipeVersion) throw new InstallerError('source-incompatible', 'Selected dev provenance differs from the accepted source recipe');
+      const record = context.readCheckpoint();
+      const inspected = store.inspect();
+      if (!record || inspected.kind !== 'present' || inspected.snapshot.operation?.operationId !== context.operationId
+        || inspected.snapshot.operation.phase !== 'preparing' || record.operationId !== context.operationId || record.installationId !== store.location.installationId
+        || record.predecessorId !== inspected.snapshot.installation.activeReleaseId
+        || canonicalJson(record.sourceOffer.delivery) !== canonicalJson(parseDevDelivery(inspected.snapshot.installation.delivery))) throw uncertain('Recovery lacks its original preparing source/checkpoint');
+      // Source-only proof also works after native publication moved the stage.
+      // A failed attempt may retain edited source, so retry separately proves
+      // its actor closure without granting cleanup/deletion of those edits.
+      let result;
+      try { result = await readClosedDevFailure(store.location.home, record); }
+      catch (cause) {
+        try {
+          const prepared = await readVerifiedDevSourceResult(store.location.home, record);
+          if (prepared.outcome !== 'prepared' || !['building', 'prepared'].includes(record.stage)) throw cause;
+          return await finalStage(store, record, target, options.runtimeDirectory, context);
+        } catch (error) { throw uncertain('Retained preparation cannot be reconciled; keep its evidence and source', error); }
       }
-      const toolchain = verifyDevToolchain(options.runtimeDirectory, target), environment = devBuildEnvironment(toolchain, inherited());
-      const destination = join(store.location.home, 'releases', offer.releaseId);
-      if (existsSync(destination)) {
-        let receipt: DevReleaseReceipt;
-        try { receipt = (await verifyDevPayload(destination, target, options.runtimeDirectory)).receipt; }
-        catch (cause) { throw new InstallerError('candidate-conflict', 'Existing immutable dev release is invalid; retain it for inspection', { cause }); }
-        if (canonicalJson(receipt.sourceOffer) !== canonicalJson(offer)) throw new InstallerError('candidate-conflict', 'Existing dev release ID names another source');
-        parseReleaseManifest(receipt.manifest, { target, ...(offer.releaseId !== predecessorId ? { predecessorId } : {}) });
-        await ownedScope(environment, async (run, scope) => {
-          const git = ownedDevGit(run, scope, context.signal);
-          await inspectLocalDevSource(offer.delivery, git);
-          if (predecessor) await inspectManagedDevCheckout(store.location, predecessor, git);
-          await inspectManagedDevCheckout(store.location, receipt, git);
-        });
-        store.assertHeld(); context.signal?.throwIfAborted();
-        return openPreparedDev(store.location, offer.releaseId, target, options.runtimeDirectory);
-      }
-      const attemptId = randomUUID(), operationId = context.operationId;
-      const record = parseDevPreparation({ schemaVersion: 1, installationId: store.location.installationId, operationId, sourceOffer: offer,
-        ...(predecessorId ? { predecessorId } : {}), attemptId, workerNonce: randomBytes(32).toString('hex'), ...devPreparationPaths(operationId, attemptId),
-        coordinatorRunId: randomUUID(), stage: 'accepted' });
-      context.checkpoint(record); // Durable acceptance precedes every worker admission.
-      context.checkpoint({ ...record, stage: 'building' });
-      const result = await ownedScope(environment, (_run, scope) => launchDevWorker(scope, store.location, record, {
-        entrypoint: options.workerEntrypoint, environment, ...(context.signal ? { signal: context.signal } : {}),
-      }));
-      if (result.outcome !== 'prepared') {
-        context.checkpoint({ ...record, stage: result.outcome });
-        throw new InstallerError(result.outcome === 'cancelled' ? 'source-cancelled' : 'source-build-failed', 'Private source preparation failed; inspect its retained diagnostic');
-      }
-      return finalStage(store, record, target, options.runtimeDirectory, context);
+      if (!['building', result.outcome].includes(record.stage)) throw uncertain('Recorded preparation stage contradicts its closed outcome');
+      const failed: DevPreparationRecord = { ...record, stage: result.outcome };
+      context.checkpoint(failed);
+      context.signal?.throwIfAborted();
+      return prepareCandidate(store, record.sourceOffer, context, failed);
     },
     open: (location, releaseId) => openPreparedDev(location, releaseId, target, options.runtimeDirectory),
     async verify(candidate, location) {

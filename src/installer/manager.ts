@@ -6,7 +6,7 @@ import { ControllerStore, inspectController } from './controller-store.js';
 import type { ControllerInspection } from './controller-store.js';
 import { parseInstaller, parseManagerRequest, parseReleaseManifest } from './schemas.js';
 import { canonicalJson, digest } from './release-descriptor.js';
-import type { PreparedCandidate } from './bundle.js';
+import type { PreparedCandidate, PreparationLease } from './bundle.js';
 import type { DeliveryPort, LaunchAdmission, ManagerPeers, MigrationEvidence, PreparedReleaseOffer, ReadyEvidence, ShutdownCompletion, ShutdownRequest } from './peer-contracts.js';
 import { acceptResolvedDevSource, devUpgradeOfferId, parseDevDelivery, parseDevPreparation, parseDevReleaseReceipt, parseDevSourceOffer } from './dev.js';
 import type { DevPreparationRecord, DevSourceOffer, PreparationContext } from './dev.js';
@@ -116,6 +116,24 @@ export class InstallerManager {
     if (candidate.directory !== join(this.location.home, 'releases', candidate.releaseId) || candidate.releaseId !== candidate.manifest.releaseId || candidate.payloadSha256 !== candidate.manifest.payloadSha256 || !hash(candidate.descriptorSha256) || !hash(candidate.inventorySha256)) fail('candidate-conflict', 'Candidate identity or immutable location differs');
     await this.#delivery(active.snapshot.installation.delivery).verify(candidate, this.location); active.store.assertHeld();
   }
+  #lease(active: Active, signal?: AbortSignal): PreparationLease {
+    const assertHeld = () => {
+      this.#assertCurrent(active);
+      if (active.snapshot.operation?.phase !== 'preparing') fail('preparation-uncertain', 'Preparation publication requires its preparing owner');
+      if (signal?.aborted) fail('cancelled', 'Preparation owner cancelled');
+    };
+    return { location: active.store.location, assertHeld, inspect: () => { assertHeld(); return active.store.inspect(); },
+      publishCandidate: (directory, releaseId) => { assertHeld(); return active.store.publishCandidate(directory, releaseId); } };
+  }
+  #acceptedSource(active: Active): DevSourceOffer {
+    try {
+      const value = active.store.readOperationData(active.request.operationId, 'dev-source') as { schemaVersion?: unknown; sourceOffer?: unknown } | undefined;
+      if (!value || value.schemaVersion !== 1 || Object.keys(value).sort().join(',') !== 'schemaVersion,sourceOffer') throw new Error('missing source');
+      const offer = this.#offer(parseDevSourceOffer(value.sourceOffer), active.snapshot.installation.delivery);
+      if (offer.kind !== 'dev-source') throw new Error('wrong source mode');
+      return offer;
+    } catch (cause) { throw new InstallerError('preparation-uncertain', 'Original accepted source cannot be recovered', { cause }); }
+  }
   /** Typed metadata capability bound to this exact live manager lease/revision.
    * Peers never receive the controller writer or an arbitrary metadata filename. */
   #preparation(active: Active, source: DevSourceOffer | undefined, signal?: AbortSignal): PreparationContext {
@@ -140,7 +158,9 @@ export class InstallerManager {
       const transitions: Record<DevPreparationRecord['stage'], DevPreparationRecord['stage'][]> = {
         accepted: ['accepted', 'building'], building: ['building', 'prepared', 'failed', 'cancelled'], prepared: ['prepared'], failed: ['failed'], cancelled: ['cancelled'],
       };
-      if ((!previous && record.stage !== 'accepted') || (previous && (canonicalJson({ ...previous, stage: record.stage }) !== canonicalJson(record)
+      const serialRetry = active.request.action === 'retry-migration' && previous && ['failed', 'cancelled'].includes(previous.stage) && record.stage === 'accepted'
+        && record.attemptId !== previous.attemptId && record.workerNonce !== previous.workerNonce && record.coordinatorRunId !== previous.coordinatorRunId;
+      if ((!previous && record.stage !== 'accepted') || (previous && !serialRetry && (canonicalJson({ ...previous, stage: record.stage }) !== canonicalJson(record)
         || !transitions[previous.stage].includes(record.stage)))) fail('preparation-uncertain', 'Preparation attempt identity or stage transition differs');
       if (signal?.aborted && !['failed', 'cancelled'].includes(record.stage)) fail('cancelled', 'Preparation owner cancelled');
       active.store.writeOperationData(active.request.operationId, 'dev-preparation', record, previous !== undefined);
@@ -300,28 +320,48 @@ export class InstallerManager {
       let migrate = request.action === 'upgrade' || request.action === 'install';
       if (request.action === 'retry-migration') {
         const stored = store.readOperationData(request.operationId, 'candidate') as { releaseId?: unknown; descriptorSha256?: unknown; payloadSha256?: unknown; inventorySha256?: unknown } | undefined;
-        if (!stored || Object.keys(stored).sort().join(',') !== 'descriptorSha256,inventorySha256,payloadSha256,releaseId' || typeof stored.releaseId !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(stored.releaseId)) fail('recovery-uncertain', 'Missing candidate identity');
-        active.candidate = await delivery.open(this.location, stored.releaseId); await this.#verify(active, active.candidate);
-        if (stored.releaseId !== active.candidate.releaseId || ['descriptorSha256', 'payloadSha256', 'inventorySha256'].some(key => (stored as Record<string, unknown>)[key] !== (active!.candidate as unknown as Record<string, unknown>)[key]) || active.snapshot.operation?.candidateId !== active.candidate.releaseId) fail('candidate-conflict', 'Recovery candidate differs');
-        const admissionData = store.readOperationData(request.operationId, 'admission');
-        if (admissionData !== undefined) {
-          const admission = this.#checkAdmission(admissionData, active);
-          if (admission.purpose === 'activation') { const ready = await this.peers.lifecycle!.reconcileActivation(active.candidate, admission); if (!ready) fail('recovery-uncertain', 'Candidate activation is uncertain'); if (!await this.peers.migrations!.verifyInstalled(active.candidate, this.#context(active))) fail('migration-unvalidated', 'Recovered activation lacks migration validation'); this.#ready(active, admission, ready); return this.#finish(active, { ...active.snapshot.operation!, phase: 'ready', errorCode: undefined, message: undefined }, true); }
-          const exitedSuccessfully = await this.#migrationExit(active, admission, false);
-          const journal = await this.peers.migrations!.reconcileJournal(active.candidate, admission);
-          if (!journal || journal.installationId !== admission.installationId || journal.operationId !== admission.operationId || journal.candidateReleaseId !== admission.candidateReleaseId || journal.candidateInventorySha256 !== admission.candidateInventorySha256 || journal.sessionId !== admission.sessionId) fail('recovery-uncertain', 'Journal belongs to another admitted runner');
-          if (exitedSuccessfully && journal.validated) { this.#journal(active, admission, journal); migrate = false; }
-          else if (await this.peers.migrations!.allowRetry(active.candidate, admission) === true) migrate = true;
-          else fail('migration-unvalidated', 'Hook policy did not authorize retry');
+        if (stored === undefined && initial.installation.delivery.mode === 'dev') {
+          if (active.interruptedPhase !== 'preparing' || !['install', 'upgrade'].includes(intent!.action)
+            || active.snapshot.operation?.candidateId !== undefined || store.readOperationData(request.operationId, 'admission') !== undefined
+            || store.readOperationData(request.operationId, 'shutdown') !== undefined
+            || active.snapshot.operation?.predecessorId !== initial.installation.activeReleaseId || !delivery.resumePreparation) fail('preparation-uncertain', 'Recovery is not a pre-publication dev preparation');
+          const source = this.#acceptedSource(active);
+          if (intent!.action === 'upgrade' && intent!.acceptedOfferId !== this.#offerId(source, initial.installation.delivery, initial.installation.activeReleaseId)) fail('preparation-uncertain', 'Original source consent differs from the interrupted operation');
+          // No candidate, shutdown or launch admission existed: data/lifecycle
+          // disruption has not begun. Unknown preparation still blocks below.
+          active.disrupted = false;
+          this.#update(active, 'preparing', { errorCode: undefined, message: undefined });
+          active.candidate = await delivery.resumePreparation(this.#lease(active, signal), this.#preparation(active, source, signal));
+          await this.#verify(active, active.candidate); checkCancellation();
+          await this.#acceptedCandidate(active, source);
+          store.writeOperationData(request.operationId, 'candidate', { releaseId: active.candidate.releaseId, descriptorSha256: active.candidate.descriptorSha256, payloadSha256: active.candidate.payloadSha256, inventorySha256: active.candidate.inventorySha256 });
+          this.#update(active, 'preparing', { candidateId: active.candidate.releaseId });
+          await this.#quiesce(active, intent!.shutdownMode);
+          migrate = true;
         } else {
-          if (!['preparing', 'quiescing'].includes(active.interruptedPhase ?? '')) fail('recovery-uncertain', 'Interrupted launch admission is missing');
-          if (!await this.#reconcileShutdown(active)) {
-            if (active.interruptedPhase !== 'preparing') fail('recovery-uncertain', 'Interrupted launch phase lacks exact ownership evidence');
-            if (intent!.action === 'start') {
-              if (await this.#startObserved(active)) return this.#finish(active, { ...active.snapshot.operation!, phase: 'ready', errorCode: undefined, message: undefined });
-            } else await this.#quiesce(active, intent!.shutdownMode);
+          if (!stored || Object.keys(stored).sort().join(',') !== 'descriptorSha256,inventorySha256,payloadSha256,releaseId' || typeof stored.releaseId !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(stored.releaseId)) fail('recovery-uncertain', 'Missing candidate identity');
+          active.candidate = await delivery.open(this.location, stored.releaseId); await this.#verify(active, active.candidate);
+          if (stored.releaseId !== active.candidate.releaseId || ['descriptorSha256', 'payloadSha256', 'inventorySha256'].some(key => (stored as Record<string, unknown>)[key] !== (active!.candidate as unknown as Record<string, unknown>)[key]) || active.snapshot.operation?.candidateId !== active.candidate.releaseId) fail('candidate-conflict', 'Recovery candidate differs');
+          const admissionData = store.readOperationData(request.operationId, 'admission');
+          if (admissionData !== undefined) {
+            const admission = this.#checkAdmission(admissionData, active);
+            if (admission.purpose === 'activation') { const ready = await this.peers.lifecycle!.reconcileActivation(active.candidate, admission); if (!ready) fail('recovery-uncertain', 'Candidate activation is uncertain'); if (!await this.peers.migrations!.verifyInstalled(active.candidate, this.#context(active))) fail('migration-unvalidated', 'Recovered activation lacks migration validation'); this.#ready(active, admission, ready); return this.#finish(active, { ...active.snapshot.operation!, phase: 'ready', errorCode: undefined, message: undefined }, true); }
+            const exitedSuccessfully = await this.#migrationExit(active, admission, false);
+            const journal = await this.peers.migrations!.reconcileJournal(active.candidate, admission);
+            if (!journal || journal.installationId !== admission.installationId || journal.operationId !== admission.operationId || journal.candidateReleaseId !== admission.candidateReleaseId || journal.candidateInventorySha256 !== admission.candidateInventorySha256 || journal.sessionId !== admission.sessionId) fail('recovery-uncertain', 'Journal belongs to another admitted runner');
+            if (exitedSuccessfully && journal.validated) { this.#journal(active, admission, journal); migrate = false; }
+            else if (await this.peers.migrations!.allowRetry(active.candidate, admission) === true) migrate = true;
+            else fail('migration-unvalidated', 'Hook policy did not authorize retry');
+          } else {
+            if (!['preparing', 'quiescing'].includes(active.interruptedPhase ?? '')) fail('recovery-uncertain', 'Interrupted launch admission is missing');
+            if (!await this.#reconcileShutdown(active)) {
+              if (active.interruptedPhase !== 'preparing') fail('recovery-uncertain', 'Interrupted launch phase lacks exact ownership evidence');
+              if (intent!.action === 'start') {
+                if (await this.#startObserved(active)) return this.#finish(active, { ...active.snapshot.operation!, phase: 'ready', errorCode: undefined, message: undefined });
+              } else await this.#quiesce(active, intent!.shutdownMode);
+            }
+            migrate = intent!.action === 'install' || intent!.action === 'upgrade';
           }
-          migrate = intent!.action === 'install' || intent!.action === 'upgrade';
         }
       } else {
         let offer;
@@ -337,7 +377,7 @@ export class InstallerManager {
         store.writeOperationData(request.operationId, 'intent', request);
         this.#update(active, 'preparing', { predecessorId: initial.installation.activeReleaseId });
         if (offer?.kind === 'dev-source') store.writeOperationData(request.operationId, 'dev-source', { schemaVersion: 1, sourceOffer: offer });
-        active.candidate = offer ? await delivery.prepare({ location: store.location, assertHeld: () => store.assertHeld(), inspect: () => store.inspect(), publishCandidate: (directory, releaseId) => { checkCancellation(); this.#assertCurrent(active!); return store.publishCandidate(directory, releaseId); } }, offer, this.#preparation(active, offer.kind === 'dev-source' ? offer : undefined, signal)) : await delivery.open(this.location, initial.installation.activeReleaseId ?? fail('install-required', 'No selected release'));
+        active.candidate = offer ? await delivery.prepare(this.#lease(active, signal), offer, this.#preparation(active, offer.kind === 'dev-source' ? offer : undefined, signal)) : await delivery.open(this.location, initial.installation.activeReleaseId ?? fail('install-required', 'No selected release'));
         await this.#verify(active, active.candidate);
         checkCancellation();
         if (offer) await this.#acceptedCandidate(active, offer);

@@ -230,7 +230,7 @@ export async function executeDevWorker(home: string, input: DevWorkerLaunch, opt
   } finally { controlBinding().close(handle); }
 }
 
-async function readDevResult(home: string, record: DevPreparationRecord, verifyStage: boolean): Promise<DevPreparationResult> {
+async function readDevResult(home: string, record: DevPreparationRecord, verifyStage: boolean, verifyInputs = true): Promise<DevPreparationResult> {
   const expected = parseDevPreparation(record), paths = devWorkerPaths(home, expected);
   try {
     assertLocalControlRoot(paths.home, process.platform === 'win32' ? path => controlBinding().localVolume(path) : undefined);
@@ -242,7 +242,7 @@ async function readDevResult(home: string, record: DevPreparationRecord, verifyS
       const result = parseDevPreparationResult(JSON.parse(bytes(paths.result)), { ...expected, stage: 'building' });
       const closure = closureEvidence(expected, paths), closureBytes = bytes(paths.closure);
       if (canonicalJson(closure) !== closureBytes || digest(closureBytes) !== result.cleanupSha256) throw uncertain('Worker cleanup digest differs');
-      if (inputFingerprint(paths.checkout) !== result.inputFingerprint) throw uncertain('Prepared source inputs changed after worker completion');
+      if (verifyInputs && inputFingerprint(paths.checkout) !== result.inputFingerprint) throw uncertain('Prepared source inputs changed after worker completion');
       if (result.outcome === 'prepared') {
         if (!closure.commandsSucceeded || closure.admittedCommands === 0) throw uncertain('Prepared command evidence differs');
         if (verifyStage) {
@@ -260,6 +260,13 @@ export function readVerifiedDevResult(home: string, record: DevPreparationRecord
  * ignored build outputs or a stage already moved to releases. The caller must
  * verify the selected immutable release independently through delivery.open. */
 export function readVerifiedDevSourceResult(home: string, record: DevPreparationRecord): Promise<DevPreparationResult> { return readDevResult(home, record, false); }
+/** Explicit retry may retain edited failed/cancelled source and clone afresh.
+ * This proves only actor closure, never payload validity or cleanup permission. */
+export async function readClosedDevFailure(home: string, record: DevPreparationRecord): Promise<DevPreparationResult> {
+  const result = await readDevResult(home, record, false, false);
+  if (result.outcome === 'prepared') throw uncertain('Prepared work must be finalized, not retried as failed work');
+  return result;
+}
 
 /** Required closure guard for later retry/cleanup callers. Cleanup also needs
  * its separate pristine-data/path checks; this grants no deletion capability. */

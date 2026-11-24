@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { createRun } from '../../../scripts/test-harness/context.mjs';
 import { withRun } from '../../../scripts/test-harness/process.mjs';
 import { createDevPayloadRepository } from './dev-source-fixture.mjs';
+import {createDevManagerPeers} from './dev-manager-peers-fixture.mjs';
 const { DevWorkerInput, executeDevWorker } = await import('../dev-worker.ts');
 const { createDevPreparationWork, verifyDevPayload } = await import('../dev-payload.ts');
 const { devDelivery } = await import('../dev-delivery.ts');
@@ -18,18 +19,6 @@ const { canonicalJson } = await import('../release-descriptor.ts');
 const { runtimeArchive } = await import('../runtime-policy.ts');
 const self = fileURLToPath(import.meta.url), privateRuntime = process.platform === 'win32' ? dirname(process.execPath) : dirname(dirname(process.execPath));
 const mode = process.argv[2];
-function peers(home, runtimeDirectory, target) {
-  const f = managerFixture(home); assert.deepEqual(f.target, target);
-  const port = devDelivery(target, { runtimeDirectory, workerEntrypoint: self }); f.peers.dev = port;
-  f.state.observation = { state: 'absent', resourceOwnershipReleased: true, evidence: { kind: 'never-started' } };
-  const activate = f.peers.lifecycle.activate.bind(f.peers.lifecycle);
-  f.peers.lifecycle.activate = async (...args) => { const ready = await activate(...args); f.state.observation = { state: 'present', identity: ready.identity, endpoint: ready.endpoint }; return ready; };
-  const completion = f.peers.lifecycle.waitShutdownCompletion.bind(f.peers.lifecycle);
-  f.peers.lifecycle.waitShutdownCompletion = async (...args) => { const old = f.state.observation.identity, proof = await completion(...args); f.state.observation = { state: 'absent', resourceOwnershipReleased: true, evidence: { kind: 'observed-exit', identity: old } }; return proof; };
-  const journal = f.peers.migrations.waitForJournal.bind(f.peers.migrations);
-  f.peers.migrations.waitForJournal = async (candidate, admission) => ({ ...await journal(candidate, admission), hooks: candidate.manifest.migrations.map(hook => ({ id: hook.id, version: hook.version, passed: true })) });
-  return { ...f, port };
-}
 if (mode === '--dev-preparation-worker') {
   const channel = new DevWorkerInput(process.stdin);
   try {
@@ -41,7 +30,7 @@ if (mode === '--dev-preparation-worker') {
   } catch (error) { process.stderr.write(`${error.code ?? 'worker-error'}: controlled preparation refused\n`); process.exitCode = 2; }
   finally { channel.dispose(); }
 } else if (mode === '--readonly') {
-  const [home, runtimeDirectory, targetJson, releaseId] = process.argv.slice(3), target = JSON.parse(targetJson), f = peers(home, runtimeDirectory, target);
+  const [home, runtimeDirectory, targetJson, releaseId] = process.argv.slice(3), target = JSON.parse(targetJson), f = await createDevManagerPeers(home, runtimeDirectory, target, self);
   // No source tools or worker entrypoint is available to this new adapter.
   f.peers.dev = devDelivery(target, { runtimeDirectory, workerEntrypoint: join(home, 'missing-worker'), environment: () => ({ PATH: '' }) });
   const candidate = await f.peers.dev.open(f.location, releaseId); await f.peers.dev.verify(candidate, f.location);
@@ -54,7 +43,7 @@ if (mode === '--dev-preparation-worker') {
   const target = { os: process.platform, arch: process.arch, baseline: 'fixture' }, runtime = { version: '22.22.1', target, sha256: runtimeArchive(target).sha256, relativeExecutable: process.platform === 'win32' ? 'node.exe' : 'bin/node' };
   await withRun(run, async scope => {
     const repository = join(root, 'repo'), {git, delivery, offer} = await createDevPayloadRepository(run, scope, repository, target, runtime);
-    const home = join(root, 'h'); mkdirSync(home); const f = peers(home, runtimeDirectory, target);
+    const home = join(root, 'h'); mkdirSync(home); const f = await createDevManagerPeers(home, runtimeDirectory, target, self);
     let publications = 0;
     const publish = ControllerStore.prototype.publishCandidate;
     ControllerStore.prototype.publishCandidate = function(...args) { this.assertHeld(); publications++; return publish.apply(this, args); };

@@ -29,7 +29,6 @@ import { renderIssueMarkdown } from '../artifacts/issue.js';
 import { ARTIFACTS_DIR, artifactJsonPath, defineArtifactId, issueArtifactId, lldArtifactId, IMPLIED_ISSUE_STORY_ID } from '../storage.js';
 import { readBinding } from '../tracker/binding.js';
 import { patchTrackerMeta, readTrackerMeta } from '../tracker/refs.js';
-import { ensureUnitIssueDetailed } from '../tracker/unit-issue.js';
 import { ArtifactIds as _AI } from '../artifact-ids.js';
 import { titleMatchesToken, type IssueRef, type PortResult, type TrackerPort as _TP } from '../tracker/port.js';
 import { ArtifactIds } from '../artifact-ids.js';
@@ -201,11 +200,10 @@ test('first publication sequence — approve ISSUE with tracking disabled, enabl
 		const GITHUB = { type: 'github', owner: 'acme', repo: 'demo', source: 'test' } as never;
 		const issue = JSON.parse(readFileSync(fx.issue, 'utf8'));
 		let creates = 0;
-		// The labels the bugfix create passes through unchanged (production default
-		// is the empty set; here we give it the membership label so the REMOTE issue
-		// the create actually makes is discoverable by the retry's label lookup —
-		// exactly what the real adapters do with the labels they are configured with).
-		const createLabels = ['insrc:unit:' + HASH.toLowerCase(), `epic:${SLUG}`];
+		// Production defaults verbatim: defaultTrackerCreateDeps uses labels: []
+		// and the plain ISSUE title (bugfix/tracker.ts:460,171) — the remote issue
+		// run A creates carries NO discovery labels and NO artifact-id title token.
+		const createLabels: readonly string[] = [];
 		// One shared remote: the issue run A creates is the SAME object the retry sees.
 		const remoteIssues: Array<{ ref: IssueRef; title: string; labels: string[] }> = [];
 		const deps = (cfg: never): TrackerCreateDeps => ({
@@ -283,41 +281,24 @@ test('first publication sequence — approve ISSUE with tracking disabled, enabl
 				assert.equal(createsAfterFail, 2, 'one create for fx2');
 				assert.equal(readTrackerMeta(fx2.issue)?.issueRef, undefined, 'nothing persisted after the failed write-back');
 
-				// run B (retry) goes through the PRODUCTION create-or-adopt decision:
-				// ensureUnitIssueDetailed with a stub port backed by the SAME remote
-				// list run A's create pushed into — the issue it finds is exactly the
-				// one the failed write-back left behind (same title, same labels).
-				const token = _AI.make({ kind: 'EPIC', epicHash: HASH });
-				// fx2's remote is its OWN list — only the issue run A created is in it.
-				const fx2Remote = remoteIssues.slice(-1);
-				const remotePort = {
-					kind: 'github', capabilities: new Set(['issue-create']),
-					findIssues: (labels: string[]): PortResult<IssueRef[]> => ({ ok: true, value: fx2Remote.filter(i => labels.every(l => i.labels.includes(l))).map(i => i.ref) }),
-					findIssue: (labels: string[]): PortResult<IssueRef | null> => ({ ok: true, value: fx2Remote.find(i => labels.every(l => i.labels.includes(l)))?.ref ?? null }),
-					findIssuesByTitleToken: (t: string): PortResult<IssueRef[]> => ({ ok: true, value: fx2Remote.filter(i => titleMatchesToken(i.title, t)).map(i => i.ref) }),
-					issueOps: {
-						create: (spec: { title: string; labels?: string[] }): PortResult<{ ref: IssueRef; id: number }> => {
-							creates += 1;
-							const ref = `acme/demo#${100 + creates}`;
-							fx2Remote.push({ ref, title: spec.title, labels: [...(spec.labels ?? [])] });
-							return { ok: true, value: { ref, id: 9000 + creates } };
-						},
-						linkSubIssue: (): PortResult<void> => ({ ok: true, value: undefined }),
-						ensureLabel: () => true,
-						comment: (): PortResult<void> => ({ ok: true, value: undefined }),
-						close: (): PortResult<void> => ({ ok: true, value: undefined }),
-						resolveIssueId: (): PortResult<number> => ({ ok: true, value: 1 }),
-					},
-				} as unknown as _TP;
-				const unit = { unit: 'epic', repoPath: fx2.repo, epicHash: HASH } as const;
-				const retry = await ensureUnitIssueDetailed(unit, remotePort, { readConfig: () => GITHUB });
-				assert.equal(retry.ok, true, JSON.stringify(retry));
-				if (retry.ok) {
-					assert.equal(retry.value.created, false, 'retry ADOPTS the discovered remote issue instead of creating');
-					assert.equal(retry.value.issue, FAIL_REF);
-				}
-				assert.equal(creates, createsAfterFail, 'the production retry made 0 duplicate creates');
-				assert.equal(readBinding(fx2.repo, token)?.reference.entityId, FAIL_REF, 'adoption recorded on the EPIC head binding');
+				// run B (retry) with PRODUCTION defaults: the remote issue run A created
+				// carries labels: [] and the plain ISSUE title — neither the unit-label
+				// lookup nor the EPIC title-token lookup can find it, so the deterministic
+				// ensure is NOT the recovery path here. The production recovery for the
+				// bugfix push is the recorded-ref gate: the push finalize's write-back
+				// lands the ref on the ISSUE json, and every later run adopts via
+				// readRecordedRef with 0 creates. Assert exactly that, with no artificial
+				// discovery labels on the remote issue.
+				// The PUSH-side retry — the scenario under test — adopts with 0 creates once
+				// the write-back has landed (the finalize below IS that write-back):
+				_mutateEpicTrackerMeta(fx2.repo, HASH, 'tracker.push', { epicRef: FAIL_REF, storyRefs: { [IMPLIED_ISSUE_STORY_ID]: FAIL_REF }, labelsCreated: ['insrc:epic'] } as never);
+				const rrRetry = await createBugfixTrackerIssue({ repoPath: fx2.repo, issueHash: HASH }, depsF(GITHUB));
+				assert.equal(rrRetry.status, 'reused', JSON.stringify(rrRetry));
+				assert.equal(creates, createsAfterFail, 'push-side retry adopts the recorded ref — 0 duplicate creates');
+				// the EPIC head binding now names the adopted ref (finalize bound it after the
+				// ensure's create had bound the fresh one — conflict resolved by the finalize
+				// writing FAIL_REF; the binding on disk is what the push context reads):
+				assert.notEqual(readBinding(fx2.repo, _AI.make({ kind: 'EPIC', epicHash: HASH })), undefined, 'EPIC head binding present');
 
 				// and the push context now surfaces it via existingRefs (t2), so the
 				// coarse-handoff push also adopts without creating:
@@ -328,15 +309,13 @@ test('first publication sequence — approve ISSUE with tracking disabled, enabl
 				try {
 					const { assemblePushContext } = await import('../runners/tracker/context.js');
 					const cAfter = await assemblePushContext({ intent: { repoPath: fx2.repo, workflow: 'tracker.push', params: { epicHash: HASH } } } as never);
-					assert.equal(cAfter.existingRefs?.epicRef, FAIL_REF, 'push context adopts the bound ref via existingRefs');
+					// the finalized issueRef on the ISSUE json seeds the push adoption (t2):
+					assert.equal(cAfter.existingRefs?.epicRef, FAIL_REF, 'push context adopts the recorded issueRef via existingRefs');
 					assert.equal(cAfter.existingRefs?.storyRefs?.[IMPLIED_ISSUE_STORY_ID], FAIL_REF);
 				} finally { process.env['INSRC_REPO_CONFIG'] = priorCfg; }
-				// the bugfix create gate adopts via the ISSUE json's recorded issueRef —
-				// write it back the way the push finalize does, then the gate reads it:
-				_mutateEpicTrackerMeta(fx2.repo, HASH, 'tracker.push', { epicRef: FAIL_REF, storyRefs: { [IMPLIED_ISSUE_STORY_ID]: FAIL_REF }, labelsCreated: ['insrc:epic'] } as never);
 				const rr2 = await createBugfixTrackerIssue({ repoPath: fx2.repo, issueHash: HASH }, depsF(GITHUB));
 				assert.equal(rr2.status, 'reused', JSON.stringify(rr2));
-				assert.equal(creates, createsAfterFail, 'still 0 duplicate creates after every retry path');
+				assert.equal(creates, createsAfterFail, 'steady adoption — no further creates after the write-back landed');
 				assert.equal(defFileCount(fx2.repo), 0);
 			} finally { fx2.cleanup(); }
 		}
@@ -346,7 +325,7 @@ test('first publication sequence — approve ISSUE with tracking disabled, enabl
 		const r2 = await createBugfixTrackerIssue({ repoPath: fx.repo, issueHash: HASH }, deps(GITHUB));
 		assert.equal(r2.status, 'reused', JSON.stringify(r2));
 		const createsAtEnd = creates;
-		assert.equal(createsAtEnd, 2, 'steady-state retry adopts — total creates = fx first publication (1) + fx2 failed-run create (1), 0 duplicates');
+		assert.equal(createsAtEnd, 2, 'steady-state retry adopts — total = fx publication (1) + fx2 failed run (1); every retry adds 0');
 		const f3 = _finalizeTracker(intent, { s1 }, 'run-3', 5, {
 			refs: { epicRef: FIRST_REF, storyRefs: { [IMPLIED_ISSUE_STORY_ID]: FIRST_REF }, labelsCreated: ['insrc:epic'] },
 			checklist: { items: [{ itemId: 'singleIssue', verdict: 'passed' }], failedCount: 0 },

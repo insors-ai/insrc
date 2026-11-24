@@ -557,9 +557,12 @@ test('definitionHeadJsonPath: DEF wins when both parse; corrupt DEF falls throug
 		// parseable but shape-invalid DEF (no meta/body): still falls through to the ISSUE
 		writeFileSync(join(repo, '.insrc', 'artifacts', `DEF-${HEAD_HASH}.json`), '{"noMeta":true}');
 		assert.equal(definitionHeadJsonPath(repo, HEAD_HASH), join(repo, '.insrc', 'artifacts', `ISSUE-${HEAD_HASH}.json`));
-		// parseable AND shape-valid but with NO usable core field (empty meta): readArtifactCore skips it -> ISSUE wins
-		writeFileSync(join(repo, '.insrc', 'artifacts', `DEF-${HEAD_HASH}.json`), JSON.stringify({ meta: {}, body: {} }));
+		// parseable but with NO usable core field (empty meta strings absent): readArtifactCore yields {} -> not readable -> ISSUE wins
+		writeFileSync(join(repo, '.insrc', 'artifacts', `DEF-${HEAD_HASH}.json`), JSON.stringify({ meta: { createdAt: undefined }, body: {} }));
 		assert.equal(definitionHeadJsonPath(repo, HEAD_HASH), join(repo, '.insrc', 'artifacts', `ISSUE-${HEAD_HASH}.json`));
+		// BUT an EMPTY-STRING createdAt still counts as usable under readArtifactCore (string field present) -> DEF wins
+		writeFileSync(join(repo, '.insrc', 'artifacts', `DEF-${HEAD_HASH}.json`), JSON.stringify({ meta: { createdAt: '' }, body: {} }));
+		assert.equal(definitionHeadJsonPath(repo, HEAD_HASH), join(repo, '.insrc', 'artifacts', `DEF-${HEAD_HASH}.json`));
 	} finally { cleanup(); }
 });
 

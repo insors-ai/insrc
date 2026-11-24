@@ -262,24 +262,26 @@ export type DefinitionHead =
 	| { readonly kind: 'def';   readonly artifact: DefineArtifact }
 	| { readonly kind: 'issue'; readonly artifact: IssueArtifact };
 
-/** Read one head file if it is READABLE in the `readArtifactCore` sense — it
- *  parses into a decodable artifact head (meta+body shape via the shared
- *  decoder) AND carries at least one usable core field (`meta.createdAt`,
- *  `meta.epicSlug`, or `meta.standalone`) like `hasUsableField` in storage.ts.
- *  Returns the decoded head, or null when absent/unparseable/empty — a
- *  parseable-but-empty head does NOT win selection. Never throws. */
-function readReadableHead(id: string, jsonPath: string): Record<string, unknown> | null {
+/** Read one head file if it is READABLE in the exact `readArtifactCore`
+ *  (storage.ts) sense: it parses AND its `meta` carries at least one usable
+ *  core field — `createdAt` or `epicSlug` present as strings (even empty) or
+ *  `standalone` a boolean — same as `hasUsableField`. A decodable head with an
+ *  empty meta yields `{}` there and is NOT readable. Returns the parsed head
+ *  or null; never throws. This is the shared first-READABLE-wins primitive
+ *  behind {@link definitionHeadJsonPath} and {@link requireApprovedDefinition}. */
+function readReadableHead(jsonPath: string): Record<string, unknown> | null {
 	try {
-		const raw = readFileSync(jsonPath, 'utf8');
-		const head = decodeArtifactHead(id, raw).head as unknown as Record<string, unknown>;
-		const meta = (head['meta'] !== null && typeof head['meta'] === 'object') ? (head['meta'] as Record<string, unknown>) : undefined;
-		const usable = meta !== undefined && (
-			(typeof meta['createdAt'] === 'string' && meta['createdAt'].length > 0) ||
-			(typeof meta['epicSlug'] === 'string' && (meta['epicSlug'] as string).length > 0) ||
-			typeof meta['standalone'] === 'boolean'
-		);
+		const parsed = JSON.parse(readFileSync(jsonPath, 'utf8')) as {
+			meta?: { createdAt?: unknown; epicSlug?: unknown; standalone?: unknown };
+		};
+		const meta = parsed.meta;
+		if (meta === null || typeof meta !== 'object') return null;
+		const usable =
+			typeof meta.createdAt === 'string' ||
+			typeof meta.epicSlug === 'string' ||
+			typeof meta.standalone === 'boolean';
 		if (!usable) return null;
-		return head;
+		return parsed as Record<string, unknown>;
 	} catch {
 		return null;
 	}
@@ -294,7 +296,7 @@ function readReadableHead(id: string, jsonPath: string): Record<string, unknown>
 export function definitionHeadJsonPath(repoPath: string, epicHash: string): string {
 	for (const id of [defineArtifactId(epicHash), issueArtifactId(epicHash)] as const) {
 		const jsonPath = artifactJsonPath(repoPath, id);
-		if (readReadableHead(id, jsonPath) !== null) return jsonPath;
+		if (readReadableHead(jsonPath) !== null) return jsonPath;
 	}
 	throw new ArtifactMissingError(
 		`No readable definition head for ${epicHash} (neither DEF-${epicHash}.json nor ` +
@@ -309,8 +311,9 @@ export function definitionHeadJsonPath(repoPath: string, epicHash: string): stri
 export function readDefinitionHead(repoPath: string, epicHash: string): DefinitionHead | undefined {
 	for (const [kind, id] of [['def', defineArtifactId(epicHash)], ['issue', issueArtifactId(epicHash)]] as const) {
 		const jsonPath = artifactJsonPath(repoPath, id);
-		if (readReadableHead(id, jsonPath) === null) continue;
-		const head = decodeArtifactHead(id, readFileSync(jsonPath, 'utf8')).head;
+		const raw = readReadableHead(jsonPath);
+		if (raw === null) continue;
+		const head = decodeArtifactHead(id, JSON.stringify(raw)).head;
 		if (kind === 'def') return { kind, artifact: head as unknown as DefineArtifact };
 		return { kind, artifact: head as unknown as IssueArtifact };
 	}

@@ -104,22 +104,26 @@ test('crash recovery — SIGKILL holder inside critical section; guard remains; 
 	try {
 		const a = claimCreateIntent(fx.repo, HASH, 'run-A', input);
 		assert.equal(a.claimed, true);
-		// holder takes the guard dir (as the mutex would), then "dies"
+		// holder takes the guard dir (as the mutex would), then "dies": its
+		// recorded owner pid is gone -> the reader reports undefined (state 'gone')
 		const guardDir = join(fx.repo, ARTIFACTS_DIR, `.pending-create-${HASH}.lock`);
 		mkdirSync(guardDir, { mode: 0o700 });
-		writeFileSync(join(guardDir, 'owner.json'), JSON.stringify({ owner: { pid: 999999, startedAt: 'x', bootId: 'y' }, nonce: 'n' }), { flag: 'wx' });
-		// naive acquire fails (EEXIST), guard remains — then a fresh run with a
-		// dead-pid probe reclaims via quarantine:
-		const deadProbe = (pid: number) => pid !== 999999;
-		const recovered = quarantineDeadClaim(fx.repo, HASH, deadProbe);
-		assert.ok(recovered !== undefined, 'dead holder\'s claim recovered');
+		writeFileSync(join(guardDir, 'owner.json'), JSON.stringify({ owner: { pid: 999999, startedAt: 'linux:bootA:1', commandLine: 'node x' }, nonce: 'n' }), { flag: 'wx' });
+		// naive acquire fails (EEXIST), guard remains
+		assert.ok(existsSync(guardDir), 'guard remains after the crash');
+		// a fresh run whose process-identity reader reports the owner as GONE
+		// reclaims through the real quarantineDeadGuard (inside acquireRunFileGuard):
+		const deadReader = (_pid: number) => undefined;   // owner pid 999999 is gone
+		const recovered = quarantineDeadClaim(fx.repo, HASH, deadReader);
+		assert.ok(recovered !== undefined, 'dead holder\'s claim reclaimed via quarantineDeadGuard');
 		assert.equal(recovered!.runId, 'run-A', 'recovers the ORIGINAL claim');
-		assert.equal(existsSync(guardDir), false, 'dead guard quarantined');
-		// a LIVE holder is undisturbed
+		assert.equal(existsSync(guardDir), false, 'dead guard quarantined by the daemon path');
+		// a LIVE holder is undisturbed: reader reports the pid alive
 		const guardDir2 = join(fx.repo, ARTIFACTS_DIR, `.pending-create-${HASH}.lock`);
 		mkdirSync(guardDir2, { mode: 0o700 });
-		writeFileSync(join(guardDir2, 'owner.json'), JSON.stringify({ owner: { pid: process.pid, startedAt: 'x', bootId: 'y' }, nonce: 'n' }), { flag: 'wx' });
-		assert.equal(quarantineDeadClaim(fx.repo, HASH, () => true), undefined, 'live holder undisturbed');
+		writeFileSync(join(guardDir2, 'owner.json'), JSON.stringify({ owner: { pid: process.pid, startedAt: 'linux:bootB:2', commandLine: 'node x' }, nonce: 'n2' }), { flag: 'wx' });
+		const liveReader = (pid: number) => ({ pid, startedAt: 'linux:bootB:2', commandLine: 'node x' });   // same identity as recorded -> 'same'
+		assert.equal(quarantineDeadClaim(fx.repo, HASH, liveReader), undefined, 'live holder undisturbed');
 		assert.equal(existsSync(guardDir2), true, 'live guard remains');
 	} finally { fx.cleanup(); }
 });

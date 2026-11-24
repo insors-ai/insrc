@@ -310,29 +310,33 @@ export async function takeoverAbandonedClaim(
 // Crash recovery — quarantine a dead holder's claim, reclaim with 0 creates
 // ---------------------------------------------------------------------------
 
-/** Reclaim a claim whose holder process is dead: quarantine the guard dir
- *  (dead-owner probe) and return the original claim. A LIVE holder is left
- *  undisturbed (returns undefined). `probePid` defaults to the real
- *  process-liveness probe. */
+/** Reclaim a claim whose holder process is dead, THROUGH the daemon's own
+ *  quarantineDeadGuard (via acquireRunFileGuard's EEXIST path): the guard dir
+ *  is quarantined only when its recorded owner is conclusively dead, and the
+ *  fresh acquire then succeeds. A LIVE holder is undisturbed (acquire throws
+ *  the conflict and the claim is returned untouched). `read`/`probe` are
+ *  injectable for tests; by default the real process-identity reader + a
+ *  ReclaimProbe are used. Returns the original claim when reclaimed. */
 export function quarantineDeadClaim(
 	repoPath: string,
 	epicHash: string,
-	probePid: (pid: number) => boolean = (pid) => { try { process.kill(pid, 0); return true; } catch { return false; } },
+	read?: (pid: number) => ProcessIdentity | undefined,
+	probe?: (phase: 'after-verdict' | 'before-revalidation' | 'before-quarantine') => void,
+	owner: ProcessIdentity = requireProcessIdentity(process.pid),
 ): PendingCreateClaim | undefined {
 	const claim = readClaim(repoPath, epicHash);
 	if (claim === undefined) return undefined;
 	const guardDir = claimGuardDir(repoPath, epicHash);
 	if (!existsSync(guardDir)) return claim;   // no guard held: nothing to quarantine
-	// read the owner record's pid
-	const recordPath = join(guardDir, 'owner.json');
-	if (!existsSync(recordPath)) return undefined;
-	let pid: number | undefined;
-	try { pid = (JSON.parse(readFileSync(recordPath, 'utf8')) as { owner?: { pid?: number } }).owner?.pid; } catch { return undefined; }
-	if (pid === undefined || probePid(pid)) return undefined;   // live holder: undisturbed
-	// dead holder: quarantine the guard dir and return the original claim
-	const quarantine = `${guardDir}.quarantined-${Date.now()}`;
-	renameSync(guardDir, quarantine);
-	rmSync(quarantine, { recursive: true, force: true });
+	let guard: RunFileGuard;
+	try {
+		guard = acquireRunFileGuard(guardDir, owner, read, probe);   // throws on a live holder; reclaims a dead one via quarantineDeadGuard
+	} catch {
+		return undefined;   // live holder or withheld conflict: undisturbed
+	}
+	// reclaimed: the dead guard was quarantined and our fresh guard now holds the
+	// dir; release it immediately — the claim FILE is the record, not the guard
+	try { guard.release(); } catch { /* best effort */ }
 	return claim;
 }
 

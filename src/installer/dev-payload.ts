@@ -21,6 +21,7 @@ import { controlBinding } from './native.js';
 import { BUNDLE_LIMITS, canonicalJson, digest, parseInventory } from './release-descriptor.js';
 import type { InventoryFile, PayloadInventory } from './release-descriptor.js';
 import { readBoundedFile, verifyPayloadInventory } from './safe-zip.js';
+import { flushDirectoryTree, flushParents } from './durability.js';
 
 type PayloadFiles = Map<string, { bytes: Buffer; mode: number }>;
 interface PackagingHelpers {
@@ -89,7 +90,7 @@ export async function verifyDevPayload(directory: string, target: Target, runtim
 }
 
 async function assemble(run: BuildRun, scope: CommandScope, record: DevPreparationRecord, stage: string,
-  runtimeDirectory: string, source: DevGitPreparation, signal: AbortSignal): Promise<{ inventorySha256: string }> {
+  runtimeDirectory: string, source: DevGitPreparation, signal: AbortSignal, home: string): Promise<{ inventorySha256: string }> {
   const { helpers, inventoryFor } = await packaging(run), offer = record.sourceOffer;
   const scratch = join(run.workspace, 'dev-payload'); mkdirSync(scratch, { mode: 0o700 });
   const bootstrap = join(scratch, 'bootstrap.mjs'), manager = join(scratch, 'manager.mjs');
@@ -139,6 +140,8 @@ async function assemble(run: BuildRun, scope: CommandScope, record: DevPreparati
   // never signed/qualified publication or actual installation qualification.
   await helpers.probePayload(run, scope, stage, offer.target);
   await verifyDevPayload(stage, offer.target, runtimeDirectory, { expectedReceipt: receipt, signal });
+  await flushDirectoryTree(stage, signal);
+  flushParents(dirname(stage), home);
   return { inventorySha256 };
 }
 
@@ -172,7 +175,7 @@ export function createDevPreparationWork(location: InstallationLocation, input: 
       || prepared['runtimeExecutable'] !== realpathSync(toolchain.node) || prepared['buildExitCode'] !== 0
       || prepared['inputFingerprint'] !== inputDigest || prepared['outputFingerprint'] !== outputDigest) throw new InstallerError('source-build-failed', 'Canonical build evidence differs from accepted source/output');
     return build.withWriter(run, scope, async () => {
-      const result = await assemble(run, scope, record, stage, toolchain.directory, source, signal);
+      const result = await assemble(run, scope, record, stage, toolchain.directory, source, signal, paths.home);
       if (inputFingerprint(run.root) !== inputDigest || fingerprint(run.root, ['out', 'packages/project-memory/dist']) !== outputDigest) throw new InstallerError('source-build-failed', 'Build inputs or compiled outputs changed during packaging');
       signal.throwIfAborted(); run.assertOwner(); return result;
     });

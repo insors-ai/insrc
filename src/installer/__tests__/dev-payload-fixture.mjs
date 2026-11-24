@@ -9,6 +9,7 @@ import { randomUUID } from 'node:crypto';
 import {createDevPayloadRepository} from './dev-source-fixture.mjs';
 import { createRun } from '../../../scripts/test-harness/context.mjs';
 import { withRun } from '../../../scripts/test-harness/process.mjs';
+import { traceFlushes } from './_flush-fixture.mjs';
 import { fingerprint } from '../../../scripts/test-harness/build.mjs';
 const { createDevPreparationWork, verifyDevPayload } = await import('../dev-payload.ts');
 const { executeDevWorker, devWorkerPaths, readVerifiedDevResult } = await import('../dev-worker.ts');
@@ -42,10 +43,11 @@ await withRun(run, async scope => {
     const cancellation = new AbortController();
     const timer = kind === 'cancel' ? setInterval(() => { if (existsSync(paths.stage)) cancellation.abort(); }, 10) : undefined;
     let result;
+    const trace=kind==='durability'||kind==='flush-stage'?traceFlushes(event=>kind==='flush-stage'&&event.directory&&event.path===join(paths.stage,'out/assets')):undefined;
     try { result = await executeDevWorker(home, { schemaVersion: 1, kind: 'prepare', checkpoint: record }, {
       environment: { ...process.env, INSRC_DEV_PAYLOAD_CASE: kind, ONNXRUNTIME_NODE_INSTALL_CUDA: '' },
       signal: cancellation.signal, work: createDevPreparationWork(location, record, { runtimeDirectory }) }); }
-    finally { clearInterval(timer); }
+    finally { clearInterval(timer); trace?.restore(); }
     assert.equal(fingerprint(join(home, 'incumbent'), ['keep']), before);
     assert.equal(existsSync(join(home, 'install/controller.json')), false); assert.equal(existsSync(join(home, 'releases')), false);
     assert.equal(existsSync(join(paths.checkout, '.insrc/tmp/test-harness/active')), false);
@@ -56,6 +58,11 @@ await withRun(run, async scope => {
     if (kind === 'cancel') assert.equal(existsSync(join(paths.stage, '.dev-release.json')), false);
     if (kind !== 'fetch') assert.equal(JSON.parse(readFileSync(join(paths.workspace, 'dev-build-policy.json'), 'utf8')).cuda, '');
     if (kind === 'existing') assert.equal(readFileSync(join(paths.stage, 'retain'), 'utf8'), 'do not overwrite');
+    if(kind==='durability') {
+      const events=trace.events,resultFlush=events.findIndex(event=>event.path.startsWith(paths.result+'.')&&!event.directory);
+      if(process.platform!=='win32')for(const directory of [join(paths.stage,'out/assets'),paths.stage,dirname(paths.stage)])
+        assert.ok(events.findIndex(event=>event.path===directory&&event.directory)>=0&&events.findIndex(event=>event.path===directory&&event.directory)<resultFlush,'stage namespace must be durable before result');
+    }
     return { location, record, paths, result };
   }
   if (scenario === 'complete') {
@@ -73,6 +80,9 @@ await withRun(run, async scope => {
     await build('cancel','cancelled');
   } else if (scenario === 'failures') {
     for(const kind of ['npm','build','fetch','probe','input-drift'])await build(kind,kind==='fetch'?'source-fetch-failed':'source-build-failed');
+  } else if(scenario==='durability') {
+    await build('durability');
+    if(process.platform!=='win32')await build('flush-stage','source-build-failed');
   } else {
     const {paths,location}=await build('immutable'), expected=JSON.parse(readFileSync(join(paths.stage,'.dev-release.json'),'utf8'));
     mkdirSync(join(location.home,'releases'));const published=join(location.home,'releases',offer.releaseId);renameSync(paths.stage,published);

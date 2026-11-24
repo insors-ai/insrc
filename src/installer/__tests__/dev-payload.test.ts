@@ -32,3 +32,4 @@ async function scenario(name: string): Promise<void> {
 test('staged-dev-payload-requires-all-control-runtime-assets-and-clean-worker-result', async () => { await scenario('complete'); });
 test('npm-build-fetch-and-native-probe-failure-preserve-incumbent', async () => { await scenario('failures'); });
 test('immutable-dev-payload-tamper-or-existing-id-conflict-refuses-before-shutdown', async () => { await scenario('immutable'); });
+test('dev payload flushes its directory tree before prepared and fails closed on fsync error', async () => { await scenario('durability'); });

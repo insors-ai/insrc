@@ -7,6 +7,7 @@ import { randomUUID } from 'node:crypto';
 import { PassThrough } from 'node:stream';
 import { createRun, participantContext } from '../../../scripts/test-harness/context.mjs';
 import { processScope, withRun } from '../../../scripts/test-harness/process.mjs';
+import { traceFlushes } from './_flush-fixture.mjs';
 const { DevWorkerInput, devWorkerPaths, executeDevWorker, launchDevWorker, readVerifiedDevResult, requireClosedDevAttempt } = await import('../dev-worker.ts');
 const { createDevSourceOffer, devPreparationPaths } = await import('../dev.ts');
 const { canonicalJson, digest } = await import('../release-descriptor.ts');
@@ -79,7 +80,15 @@ if (process.argv[2] === '--nested') {
       if (scenario === 'extra-file') writeFileSync(join(stage, 'extra.txt'), 'unexpected');
       return output;
     };
-    await executeDevWorker(home, launch, { work, signal: channel.controller.signal, environment: process.env });
+    const paths = devWorkerPaths(home, launch.checkpoint);
+    const trace = ['durable-proof','flush-failure','directory-failure'].includes(scenario) ? traceFlushes(event =>
+      scenario==='flush-failure' && event.path.startsWith(paths.result+'.') && !event.directory
+      || scenario==='directory-failure' && event.directory && event.path===paths.privateRoot && existsSync(paths.result)) : undefined;
+    try {
+      await executeDevWorker(home, launch, { work, signal: channel.controller.signal, environment: process.env });
+    } finally {
+      trace?.restore(); if(trace)writeFileSync(join(paths.privateRoot,'flush-events.json'),JSON.stringify(trace.events));
+    }
   } catch (error) { process.stderr.write(`${error.code ?? 'fixture-worker-error'}: preparation refused\n`); process.exitCode = 2; }
   finally { channel.dispose(); }
 } else {
@@ -115,6 +124,22 @@ if (process.argv[2] === '--nested') {
       rmSync(join(paths.workspace,'actors','unconfirmed.fixture.json'));
       return;
     }
+    if (scenario === 'flush-failure') {
+      await assert.rejects(pending,{code:'preparation-uncertain'});
+      assert.equal(existsSync(paths.result),false);assert.equal(existsSync(paths.active),false);
+      const events=JSON.parse(readFileSync(join(paths.privateRoot,'flush-events.json'),'utf8'));
+      assert.ok(events.some(event=>event.path.startsWith(paths.result+'.')));
+      await assert.rejects(readVerifiedDevResult(home,record),{code:'preparation-uncertain'});
+      return;
+    }
+    if (scenario === 'directory-failure') {
+      await assert.rejects(pending,{code:'preparation-uncertain'});
+      assert.equal(existsSync(paths.result),true);assert.equal(existsSync(paths.active),false);
+      const trace=traceFlushes(event=>event.directory&&event.path===paths.privateRoot);
+      try {await assert.rejects(readVerifiedDevResult(home,record),{code:'preparation-uncertain'});} finally{trace.restore();}
+      assert.equal((await readVerifiedDevResult(home,record)).outcome,'prepared','explicit reconciliation must durably flush the observed result');
+      return;
+    }
     const result = await pending;
     assert.equal(result.outcome, ['abort', 'eof'].includes(scenario) ? 'cancelled' : ['empty', 'missing', 'missing-file', 'tampered-file', 'wrong-size', 'extra-file'].includes(scenario) ? 'failed' : 'prepared');
     assert.equal(existsSync(paths.active), false);
@@ -122,6 +147,17 @@ if (process.argv[2] === '--nested') {
     const admissionFile = join(paths.workspace, 'child-admissions.jsonl');
     const admissions = existsSync(admissionFile) ? readFileSync(admissionFile, 'utf8').trim().split('\n') : [];
     if (scenario === 'nested') assert.equal(admissions.length, 2);
+    if (scenario === 'durable-proof') {
+      const events=JSON.parse(readFileSync(join(paths.privateRoot,'flush-events.json'),'utf8'));
+      const resultFlush=events.findIndex(event=>event.path.startsWith(paths.result+'.')&&!event.directory);
+      assert.ok(resultFlush>=0);
+      for(const name of ['cleanup.json','child-admissions.jsonl','child-results.jsonl','child-disposals.jsonl'])
+        assert.ok(events.findIndex(event=>event.path===join(paths.workspace,name)&&!event.directory)<resultFlush && events.some(event=>event.path===join(paths.workspace,name)),name+' must precede result publication');
+      if(process.platform!=='win32') {
+        assert.ok(events.slice(0,resultFlush).some(event=>event.path===paths.workspace&&event.directory));
+        assert.ok(events.slice(resultFlush+1).some(event=>event.path===paths.privateRoot&&event.directory));
+      }
+    }
     if (scenario === 'unregistered-detached') {
       assert.equal(admissions.length, 1);
       assert.equal(existsSync(join(paths.privateRoot, 'fixture-detached-ready')), true);

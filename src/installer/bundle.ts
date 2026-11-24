@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { createReadStream, constants } from 'node:fs';
+import { createReadStream } from 'node:fs';
 import { lstat, mkdir, mkdtemp, open, readdir, rm, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { InstallerError, PRIVATE_NODE_VERSION } from './contracts.js';
@@ -14,6 +14,7 @@ import { downloadJson, downloadVerifiedAsset } from './download.js';
 import type { DownloadTransport } from './download.js';
 import { extractSafeZip, readBoundedFile, verifyPublishedPayload } from './safe-zip.js';
 import type { ExtractionLimits } from './safe-zip.js';
+import { flushDirectoryTree } from './durability.js';
 export interface PreparedCandidate {
   releaseId: string; directory: string; manifest: ReleaseManifest; descriptorSha256: string; payloadSha256: string; inventorySha256: string;
 }
@@ -58,11 +59,6 @@ function currentRuntime(target: Target): string {
   if (process.version !== `v${PRIVATE_NODE_VERSION}` || process.platform !== target.os || process.arch !== target.arch) throw new InstallerError('runtime-invalid', 'Candidate preparation requires its exact verified private runtime');
   return target.os === 'win32' ? dirname(process.execPath) : dirname(dirname(process.execPath));
 }
-async function flushTree(directory: string): Promise<void> {
-  if (process.platform === 'win32') return; // Native exclusive write-through publication owns Windows namespace durability.
-  for (const name of await readdir(directory)) { const path = join(directory, name); if ((await lstat(path)).isDirectory()) await flushTree(path); }
-  const fd = await open(directory, constants.O_RDONLY | constants.O_DIRECTORY); try { await fd.sync(); } finally { await fd.close(); }
-}
 /** No selection/daemon/migration/application-data mutation occurs here. */
 export async function prepareBundle(store: PreparationLease, input: unknown, options: PrepareOptions): Promise<PreparedCandidate> {
   store.assertHeld(); options.signal?.throwIfAborted();
@@ -91,7 +87,7 @@ export async function prepareBundle(store: PreparationLease, input: unknown, opt
     await verifyPayloadRuntime(inventory, descriptor.manifest.target, runtime, options.signal); options.signal?.throwIfAborted(); store.assertHeld();
     await writeFile(join(payload, '.release.json'), descriptorBytes, { flag: 'wx', mode: 0o600 });
     const receipt = await open(join(payload, '.release.json'), 'r+'); try { await receipt.sync(); } finally { await receipt.close(); }
-    await flushTree(payload); store.assertHeld(); options.signal?.throwIfAborted();
+    await flushDirectoryTree(payload, options.signal); store.assertHeld(); options.signal?.throwIfAborted();
     return candidate(store.publishCandidate(payload, releaseId));
   } finally { await rm(stage, { recursive: true, force: true }); }
 }

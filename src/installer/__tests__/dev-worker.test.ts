@@ -28,6 +28,7 @@ test('worker-protocol-rejects-foreign-checkpoint-and-empty-prepared-result', asy
   for (const name of ['nested', 'foreign', 'empty', 'missing', 'missing-file', 'tampered-file', 'wrong-size', 'extra-file']) await scenario(name);
 });
 test('owned-process evidence excludes unregistered detached descendants', async () => { await scenario('unregistered-detached'); });
+test('worker completion durably flushes proof and refuses a failed result flush', async () => { await scenario('durable-proof'); await scenario('flush-failure'); await scenario('directory-failure'); });
 test('worker input rejects oversized launch and foreign cancellation frames', async () => {
   const target = { os: 'linux' as const, arch: 'arm64' as const, baseline: 'protocol' };
   const sourceOffer = createDevSourceOffer({ kind: 'dev-source', delivery: { mode: 'dev', repository: 'https://example.test/repo.git', branch: 'installer' },

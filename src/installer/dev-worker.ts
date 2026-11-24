@@ -1,7 +1,7 @@
 /** Private preparation protocol and owned worker. No controller/publication authority. */
 import { Ajv } from 'ajv';
 import { randomUUID } from 'node:crypto';
-import { closeSync, constants, existsSync, fstatSync, lstatSync, mkdirSync, openSync, readdirSync, readSync, writeFileSync } from 'node:fs';
+import { closeSync, constants, existsSync, fstatSync, fsyncSync, lstatSync, mkdirSync, openSync, readdirSync, readSync, writeFileSync } from 'node:fs';
 import { join, dirname, isAbsolute } from 'node:path';
 import type { Readable } from 'node:stream';
 import { createRun } from '../../scripts/test-harness/context.mjs';
@@ -18,6 +18,7 @@ import { normalizeHome, assertLocalControlRoot } from './location.js';
 import { canonicalJson, digest, parseInventory } from './release-descriptor.js';
 import { controlBinding } from './native.js';
 import { verifyPayloadInventory } from './safe-zip.js';
+import { flushDirectory, flushFile, flushParents } from './durability.js';
 
 export interface DevPreparationResult {
   schemaVersion: 1; installationId: string; operationId: string; attemptId: string; workerNonce: string;
@@ -86,10 +87,12 @@ function realParents(home: string, file: string): void {
 function containedDirectories(home: string, relative: string): string {
   let current = home;
   for (const part of relative.split('/')) {
+    const parent = current;
     current = join(current, part);
     try { mkdirSync(current, { mode: 0o700 }); } catch (cause) { if ((cause as NodeJS.ErrnoException).code !== 'EEXIST') throw cause; }
     const stat = lstatSync(current);
     if (!stat.isDirectory() || stat.isSymbolicLink()) throw new InstallerError('path-invalid', 'Preparation parents must be real owned directories');
+    flushDirectory(current); flushDirectory(parent);
   }
   return current;
 }
@@ -111,8 +114,10 @@ function atomicWorkerFile(handle: object, file: string, value: unknown): void {
   const encoded = canonicalJson(value);
   if (Buffer.byteLength(encoded) > EVIDENCE_LIMIT) throw uncertain('Preparation output exceeds its bound');
   const temp = `${file}.${randomUUID()}.tmp`;
-  writeFileSync(temp, encoded, { flag: 'wx', mode: 0o600 });
+  const fd = openSync(temp, constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | constants.O_NOFOLLOW, 0o600);
+  try { writeFileSync(fd, encoded); fsyncSync(fd); } finally { closeSync(fd); }
   controlBinding().replace(handle, temp, file);
+  flushDirectory(dirname(file));
 }
 function journal(workspace: string, name: string): { raw: string; rows: Array<Record<string, unknown>> } {
   const file = join(workspace, name), raw = existsSync(file) ? bytes(file) : '';
@@ -218,6 +223,13 @@ export async function executeDevWorker(home: string, input: DevWorkerLaunch, opt
       });
     } catch (cause) { failure = cause; }
     const closure = closureEvidence(record, paths);
+    // Final results reference these exact closed journals. Persist their bytes
+    // and namespace (including active-lease removal) before publishing proof.
+    for (const name of ['cleanup.json', 'child-admissions.jsonl', 'child-results.jsonl', 'child-disposals.jsonl']) {
+      const file = join(paths.workspace, name); if (existsSync(file)) flushFile(file);
+    }
+    if (existsSync(join(paths.workspace, 'actors'))) flushDirectory(join(paths.workspace, 'actors'));
+    flushParents(paths.workspace, paths.checkout);
     if (inventorySha256 && closure.admittedCommands === 0) throw uncertain('Prepared work has no admitted command evidence');
     if (!closure.commandsSucceeded) failure ??= new InstallerError('source-build-failed', 'An admitted preparation command did not succeed');
     const outcome = options.signal?.aborted ? 'cancelled' : failure ? 'failed' : 'prepared';
@@ -250,6 +262,10 @@ async function readDevResult(home: string, record: DevPreparationRecord, verifyS
           await verifyStagedMetadata(expected, paths, result.inventorySha256!);
         }
       }
+      // Reconcile a result whose rename completed before a directory-flush
+      // failure. Its file data was flushed before replacement; persist the
+      // observed namespace before returning it as usable recovery evidence.
+      flushDirectory(paths.privateRoot);
       return result;
     } finally { controlBinding().close(handle); }
   } catch (cause) { throw uncertain('Preparation result/ownership could not be confirmed; retain this attempt', cause); }

@@ -195,7 +195,7 @@ test('runReadOnlySession() restricts tools to read_file + the insrc MCP tools an
 			assert.deepEqual(c.args, [
 				'-p', '--output', 'json',
 				'--enabled-tools', 'read_file', '--enabled-tools', 'grep',
-				'--enabled-tools', 'insrc_insrc_analyze', '--enabled-tools', 'insrc_insrc_analyze_step',
+				'--enabled-tools', 'mcp_insrc.insrc_analyze', '--enabled-tools', 'mcp_insrc.insrc_analyze_step',
 			]);
 		} finally { rmSync(dir, { recursive: true, force: true }); }
 	} finally { f.cleanup(); }
@@ -252,7 +252,12 @@ createInterface({ input: process.stdin }).on('line', line => {
 		case 'runtime/read':
 			reply(id, { runtime: {
 				config: { activeModel, models: [model] },
-				tools: (mode === 'unsafe' ? ['write_file'] : mode === 'missing-analyze' ? ['read_file', 'grep'] : mode === 'empty-tools' ? [] : ['read_file', 'grep', 'insrc_insrc_analyze', 'insrc_insrc_analyze_step']).map(name => ({ name })),
+				tools: (mode === 'unsafe' ? ['write_file']
+					: mode === 'missing-both-analyze' ? ['read_file', 'grep']
+					: mode === 'missing-analyze-step' ? ['read_file', 'grep', 'mcp_insrc.insrc_analyze']
+					: mode === 'missing-analyze' ? ['read_file', 'grep', 'mcp_insrc.insrc_analyze_step']
+					: mode === 'empty-tools' ? []
+					: ['read_file', 'grep', 'mcp_insrc.insrc_analyze', 'mcp_insrc.insrc_analyze_step']).map(name => ({ name })),
 				bypassToolPermissions: policy.autoApprove,
 			} });
 			return;
@@ -325,7 +330,7 @@ test('explicit Vibe selections do not replay an uncertain turn through any daemo
 				assert.equal(fixture.calls().length, index + 1);
 			}
 			assert.equal(fixture.calls()[2]?.policy.autoApprove, true);
-			assert.deepEqual(fixture.calls()[3]?.policy.enabledTools, ['read_file', 'grep', 'insrc_insrc_analyze', 'insrc_insrc_analyze_step']);
+			assert.deepEqual(fixture.calls()[3]?.policy.enabledTools, ['read_file', 'grep', 'mcp_insrc.insrc_analyze', 'mcp_insrc.insrc_analyze_step']);
 		} finally { fixture.cleanup(); }
 	}
 });
@@ -354,7 +359,7 @@ test('explicit Vibe review refuses unverified tool policy before dispatch', asyn
 });
 
 test('explicit Vibe review refuses when a required analyze tool is missing, including an empty tools array', async () => {
-	for (const mode of ['missing-analyze', 'empty-tools']) {
+	for (const mode of ['missing-both-analyze', 'missing-analyze', 'missing-analyze-step', 'empty-tools']) {
 		const fixture = fakeAppServer(mode);
 		try {
 			await assert.rejects(fixture.provider.runReadOnlySession('review', SCHEMA, { cwd: fixture.cwd, deadlineMs: 10_000 }), /did not verify the read-only tool policy/);

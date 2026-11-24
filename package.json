@@ -73,6 +73,7 @@
     "react": "^18.3.1",
     "saxes": "^5.0.1",
     "semver": "^7.8.6",
+    "smol-toml": "1.9.1",
     "tarn": "^3.0.2",
     "tedious": "^19.2.1",
     "tree-sitter": "^0.25.0",

@@ -49,8 +49,10 @@ import { serialiseMessages } from './cli-wire.js';
 import { execFileSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { mkdirSync, mkdtempSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { readFile } from 'node:fs/promises';
+import { homedir, tmpdir } from 'node:os';
+import { dirname, join } from 'node:path';
+import { parse as parseToml } from 'smol-toml';
 
 import type {
 	CompletionOpts,
@@ -112,10 +114,13 @@ export const READ_ONLY_SESSION_READ_TOOLS: readonly string[] = ['Read', 'Grep', 
 export const READ_ONLY_SESSION_ANALYZE_TOOLS: readonly string[] = ['mcp__insrc__insrc_analyze', 'mcp__insrc__insrc_analyze_step'];
 
 /** The vibe-native tool names a read-only session may use: reading (vibe's
- *  own `read_file` and `grep`) plus the insrc analyze tools, under the
- *  `<server>_<remote tool>` display-name convention vibe's own MCP naming
- *  harness computes (`mistralai_vibe_local_harness/vibe/_mcp_naming.py`). */
-export const READ_ONLY_SESSION_VIBE_TOOL_NAMES: readonly string[] = ['read_file', 'grep', 'insrc_insrc_analyze', 'insrc_insrc_analyze_step'];
+ *  own `read_file` and `grep`) plus the insrc analyze tools, addressed as
+ *  `<group>.<remote tool>` -- vibe groups an MCP server's tools under
+ *  `mcp_<server name>` (`mistralai_vibe_local_harness/vibe/_mcp_naming.py`'s
+ *  `_group_names()`), so the insrc server's tools are `mcp_insrc.insrc_analyze`
+ *  / `mcp_insrc.insrc_analyze_step` -- confirmed live against the real `vibe`
+ *  CLI (2026-11-24). */
+export const READ_ONLY_SESSION_VIBE_TOOL_NAMES: readonly string[] = ['read_file', 'grep', 'mcp_insrc.insrc_analyze', 'mcp_insrc.insrc_analyze_step'];
 
 /** Read-only sessions expose file reads and analysis tools only. */
 export function claudeReadOnlySessionArgs(schema: StructuredSchema, modelArgs: readonly string[]): string[] {
@@ -148,6 +153,54 @@ function codexReply<T>(schema: StructuredSchema, parsed: unknown, what: string):
 /** codex arguments for a read-only session: a read-only sandbox, never `--full-auto`. */
 export function codexReadOnlySessionArgs(schemaPath: string, cwd: string, modelArgs: readonly string[]): string[] {
 	return ['exec', '--output-schema', schemaPath, '--json', '--sandbox', 'read-only', '-C', cwd, ...modelArgs];
+}
+
+/**
+ * Whether `cwd` or any ancestor directory up to the filesystem root declares
+ * its own non-empty `mcp_servers` table in a `.codex/config.toml`, other than
+ * the ONE layer whose own config.toml path is, by exact string identity, the
+ * real global config codex itself reads (`$CODEX_HOME/config.toml`, default
+ * `~/.codex/config.toml`) -- that one layer is already fully handled by
+ * `discoverCodexMcpServers`'s native enabled_tools/disable overrides, so it is
+ * skipped WITHOUT being read. Every other layer is parsed with a real TOML
+ * parser (codex's project config supports several forms -- a dotted table
+ * header, a bare header with nested/dotted keys, an inline-table assignment,
+ * and a top-level dotted key-value -- all of which land on the same
+ * `mcp_servers` object shape once parsed). Such a server cannot be enumerated
+ * or excluded by this module's discovery mechanism, so a codex read-only
+ * session refuses to start rather than silently leaving it reachable.
+ *
+ * An exact-path comparison, not a directory-containment boundary: a
+ * directory-containment rule would wrongly exclude a genuine project root
+ * whenever `CODEX_HOME` is configured inside the project tree (confirmed by
+ * trace against the layout `CODEX_HOME=/work/repo/codex-state`,
+ * `cwd=/work/repo/src`, where the project root `/work/repo` must still be
+ * checked). When `CODEX_HOME` lies entirely outside `cwd`'s ancestor chain,
+ * the comparison simply never matches and every real layer is checked.
+ */
+export async function walkProjectMcpConfigLayers(cwd: string): Promise<boolean> {
+	const globalConfigPath = join(process.env['CODEX_HOME'] ?? join(homedir(), '.codex'), 'config.toml');
+	let dir = cwd;
+	for (;;) {
+		const candidatePath = join(dir, '.codex', 'config.toml');
+		if (candidatePath !== globalConfigPath && await directoryDeclaresMcpServers(candidatePath)) return true;
+		const parent = dirname(dir);
+		if (parent === dir) return false;
+		dir = parent;
+	}
+}
+
+/** Whether `configPath` exists and its parsed `mcp_servers` value is a non-empty object. */
+async function directoryDeclaresMcpServers(configPath: string): Promise<boolean> {
+	let text: string;
+	try {
+		text = await readFile(configPath, 'utf8');
+	} catch (err) {
+		if ((err as NodeJS.ErrnoException).code === 'ENOENT') return false;
+		throw err;
+	}
+	const mcpServers = (parseToml(text) as Record<string, unknown>)['mcp_servers'];
+	return typeof mcpServers === 'object' && mcpServers !== null && Object.keys(mcpServers).length > 0;
 }
 
 /** Where an Ollama-hosted family's claude runs (Epic b220bb61, Story s2):
@@ -700,7 +753,7 @@ export class CliProvider implements LLMProvider {
 					if (names.some(name => typeof name !== 'string' || !READ_ONLY_SESSION_VIBE_TOOL_NAMES.includes(name))) {
 						throw new Error('Vibe app server did not verify the read-only tool policy');
 					}
-					const requiredAnalyzeTools = READ_ONLY_SESSION_VIBE_TOOL_NAMES.filter(name => name.startsWith('insrc_'));
+					const requiredAnalyzeTools = READ_ONLY_SESSION_VIBE_TOOL_NAMES.filter(name => name.startsWith('mcp_insrc.'));
 					if (requiredAnalyzeTools.some(required => !names.includes(required))) {
 						throw new Error('Vibe app server did not verify the read-only tool policy');
 					}

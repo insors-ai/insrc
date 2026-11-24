@@ -61,8 +61,20 @@ test('duplicate stale wrong phase and dead owner escalation preserve exact compl
   try {
     await assert.rejects(forwardImmediate(f.location, immediate()), { code: 'escalation-unavailable' });
     const owner = spawnFixture(process.execPath, ['--import', 'tsx/esm', program, 'owner', f.home], { stdio: ['pipe', 'pipe', 'pipe'] }); children.push(owner);
-    const draining = JSON.parse(await childLine(owner)) as { request: ShutdownRequest };
+    assert.deepEqual(JSON.parse(await childLine(owner)), { kind: 'preparing' });
+    const preparing = snapshot(f.home);
+    assert.equal(JSON.parse(preparing).operation.phase, 'preparing');
+    await assert.rejects(forwardImmediate(f.location, immediate()), { code: 'escalation-unavailable' });
+    assert.equal(snapshot(f.home), preparing, 'an active operation in the wrong phase cannot be escalated');
+    const ready = childLine(owner); owner.stdin!.write('drain\n');
+    const draining = JSON.parse(await ready) as { request: ShutdownRequest };
     const before = snapshot(f.home), path = discoveryFile(f.home), original = readFileSync(path, 'utf8');
+    const duplicates = await Promise.all([forward(f.home, children), forward(f.home, children)]);
+    assert.ok(duplicates.every(result => result.code === 0));
+    const observed = JSON.parse(readFileSync(join(f.home, 'shutdown-observations.json'), 'utf8')) as ShutdownRequest[];
+    assert.equal(observed.length, 2, 'successful duplicate escalation coalesces in this owner too');
+    assert.equal(observed[1]!.mode, 'immediate');
+    for (const key of ['operationId', 'expectedInstanceId', 'completionEndpoint', 'completionNonce'] as const) assert.equal(observed[1]![key], draining.request[key]);
     await assert.rejects(forwardImmediate(f.location, immediate('wrong-operation')), { code: 'escalation-unavailable' });
     await assert.rejects(forwardImmediate(f.location, { ...immediate(), installationId: 'wrong-installation' }), { code: 'escalation-unavailable' });
     writeFileSync(path, JSON.stringify({ ...JSON.parse(original), ownerNonce: '0'.repeat(64) }));

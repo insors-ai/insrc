@@ -32,6 +32,7 @@
  */
 
 import { artifactIdMarker, issueArtifactId } from '../storage.js';
+import { trackerRefLine } from '../tracker/refs.js';
 import type { Citation, WorkflowArtifact } from '../types.js';
 
 // ---------------------------------------------------------------------------
@@ -82,6 +83,21 @@ export function renderIssueMarkdown(artifact: IssueArtifact): string {
 	}
 
 	return lines.join('\n');
+}
+
+/** ISSUE-5f9d4ab4c90c0b4c s1/t7: renderIssueMarkdown verbatim PLUS one
+ *  `**Tracker:** [owner/repo#N](url)` line right after the artifact-id
+ *  marker (docs-local link only — the remote GitHub body stays
+ *  renderIssueMarkdown). With no ref, byte-identical to renderIssueMarkdown. */
+export function renderIssueMarkdownWithTracker(artifact: IssueArtifact, ref?: string | undefined): string {
+	const base = renderIssueMarkdown(artifact);
+	if (typeof ref !== 'string' || !ref.includes('#')) return base;
+	const marker = artifactIdMarker(issueArtifactId(artifact.meta.issueHash ?? ''));
+	if (base.startsWith(marker)) {
+		const rest = base.slice(marker.length);
+		return marker + '\n' + trackerRefLine(ref) + rest;
+	}
+	return trackerRefLine(ref) + '\n' + base;
 }
 
 // ---------------------------------------------------------------------------

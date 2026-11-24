@@ -21,7 +21,7 @@ import { readLldArtifact } from '../artifacts/lld-io.js';
 import { renderDefineMarkdown } from '../artifacts/define.js';
 import { renderHldMarkdown } from '../artifacts/hld.js';
 import { renderLldMarkdown } from '../artifacts/lld.js';
-import { renderIssueMarkdown, type IssueArtifact } from '../artifacts/issue.js';
+import { renderIssueMarkdown, renderIssueMarkdownWithTracker, type IssueArtifact } from '../artifacts/issue.js';
 import { defineArtifactPaths, hldArtifactPaths, issueArtifactPaths, lldArtifactPaths, requireEpicAnchor, workItemAnchorCreatedAt, workItemKindOf, writeAtomic } from '../storage.js';
 import { bindArtifact } from './binding.js';
 import { trackerRefLine, type UnitRef } from './refs.js';
@@ -58,9 +58,8 @@ export function linkDocsToIssues(repoPath: string, epicHash: string, epicSlug: s
 			bindUnitIssue({ unit: 'epic', repoPath, epicHash }, refs.epicRef);
 			const paths = issueArtifactPaths(repoPath, epicHash, workItemAnchorCreatedAt(issue.meta), kind, epicSlug);
 			relinkDoc(paths, () => {
-				const body = renderIssueMarkdown(issue);
 				const ref = unitIssueOf(repoPath, epicHash) ?? refs.epicRef;
-				return ref !== undefined ? trackerRefLine(ref) + '\n' + body : body;
+				return renderIssueMarkdownWithTracker(issue, ref);
 			});
 		}
 		for (const [storyId, storyRef] of Object.entries(refs.storyRefs ?? {})) {

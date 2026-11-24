@@ -452,7 +452,57 @@
     "t3": "passed after corrections; source tree preserved during task commit split",
     "t5": "passed after correcting task commit scope",
     "t6": "passed after corrections",
-    "t9": "not started after corrections: daemon-unreachable (ECONNREFUSED daemon.sock); earlier ledger pass predates this combined run"
+    "t9": {
+      "commit": "a3fcced89",
+      "ranAt": "2026-11-24T17:49:45.924Z",
+      "testsPassed": true,
+      "typecheckClean": true,
+      "taskPassed": false,
+      "reason": "The required tests pass and scoped regression evidence is substantive, but complete final story BUILD presentation remains blocked and unverified.",
+      "files": [
+        {
+          "file": "scripts/__tests__/installer-s2-qualification.test.ts",
+          "exitCode": 0,
+          "timedOut": false,
+          "durationMs": 1574,
+          "titles": [
+            {
+              "title": "combined-s1-s2-installer-regression-has-complete-coverage-and-confirmed-cleanup",
+              "result": "pass"
+            }
+          ],
+          "otherFailures": []
+        },
+        {
+          "file": "src/installer/__tests__/dev-complete-payload.test.ts",
+          "exitCode": 0,
+          "timedOut": false,
+          "durationMs": 550203,
+          "titles": [
+            {
+              "title": "dev-complete-payload-native-probe-and-fresh-installed-manager-inspect",
+              "result": "pass"
+            }
+          ],
+          "otherFailures": []
+        }
+      ],
+      "buildRevision": 19,
+      "presentation": "notPending for both artifact id and document path; BUILD lifecycle remains draft",
+      "transport": "Original MCP request timed out at 300 seconds; the same daemon-side attempt continued and persisted TESTS/BUILD revision 19. No duplicate request."
+    }
   },
-  "humanBuildApproval": "not obtained; BUILD lifecycle draft was already preventing presentation"
+  "humanBuildApproval": "not obtained; BUILD lifecycle draft was already preventing presentation",
+  "hostDaemonStart": {
+    "authorizedBy": "user in chat: start it",
+    "pid": 5026,
+    "runtimeVersion": "v22.22.1",
+    "runtimeExecutable": "/Users/subhagho/.insrc/runtimes/node-v22.22.1-darwin-arm64/679ad4966339e4ef4900f57996714864e4211b898825bb840c3086c419fbcef2/distribution/bin/node",
+    "sourceBranch": "v2",
+    "entry": "/Users/subhagho/.insrc/daemon/out/daemon/index.js",
+    "rebuiltOrSynced": false,
+    "verifiedIpc": true,
+    "uptimeAtFinalCheckSeconds": 730,
+    "modelPullStatus": "ready"
+  }
 }

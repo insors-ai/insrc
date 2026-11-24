@@ -6,8 +6,8 @@ This is evidence for the task being developed, not a separate defect or approval
 ## Status
 
 S2's plan is approved. Tasks t1 and t2 passed the registered build validator.
-Tasks t3–t8 passed formal validation after approval of LLD revision 4. After five critical-review corrections, the composed native smoke and 114-case/24-file combined installer regression passed. Registered t3/t5/t6 revalidation passed. Final t9 revalidation could not start because the daemon socket refused connections; its earlier formal pass predates these corrections. See [final local evidence](s2-dev-preparation-validation-2026-11-24.md). No S2 BUILD approval is requested yet.
-The current host daemon and its v2 installation have not been changed.
+Tasks t3–t8 passed formal validation after approval of LLD revision 4. After five critical-review corrections, the composed native smoke and 114-case/24-file combined installer regression passed. Registered t3/t5/t6 revalidation passed. After the user authorized starting the existing v2 daemon with Node 22.22.1, t9 revalidation passed its typecheck and both tests, but its final task verdict rejected completion because BUILD remains draft and cannot be presented. This workflow-state blocker still prevents human BUILD approval. See [final local evidence](s2-dev-preparation-validation-2026-11-24.md). No S2 BUILD approval is requested yet.
+The host v2 installation was not synced, rebuilt or updated. Its existing daemon was started only after explicit user authorization.
 
 The first t3 validation passed its typecheck and four worker tests but rejected:
 

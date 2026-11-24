@@ -276,7 +276,7 @@ Run at 2026-11-24T12:38:55.314Z on commit `a9a918172`. Tests check: **passed**. 
 
 ## t9
 
-Run at 2026-11-24T14:13:56.711Z on commit `ed16099c1`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-24T17:49:45.924Z on commit `a3fcced89`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **smoke: dev-complete-payload-native-probe-and-fresh-installed-manager-inspect**
 
@@ -295,4 +295,4 @@ Run at 2026-11-24T14:13:56.711Z on commit `ed16099c1`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `scripts/__tests__/installer-s2-qualification.test.ts` | 0 | 1 | 1.6 s |  |
-| `src/installer/__tests__/dev-complete-payload.test.ts` | 0 | 1 | 503.5 s |  |
+| `src/installer/__tests__/dev-complete-payload.test.ts` | 0 | 1 | 550.2 s |  |

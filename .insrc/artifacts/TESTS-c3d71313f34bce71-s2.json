@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 18,
-        "contentHash": "33079f91e7d87cf123ab85962a0e9421ac6c8d5ecbdd4c92b527b905dd72f4d7",
-        "at": "2026-11-24T16:32:16.305Z",
+        "number": 19,
+        "contentHash": "932fb02f4ee4a7982ccd630496b51087e2fb4febd19bd455cfebcfa94fc7b9b6",
+        "at": "2026-11-24T17:49:46.041Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,10 +23,10 @@
     "epicHash": "c3d71313f34bce71",
     "storyId": "s2",
     "createdAt": "2026-11-24T09:44:29.197Z",
-    "updatedAt": "2026-11-24T16:32:16.288Z",
+    "updatedAt": "2026-11-24T17:49:45.924Z",
     "epicCreatedAt": "2026-11-23T13:27:35.399Z",
     "epicSlug": "reliable-cross-platform-daemon-installation-lifecycle",
-    "revision": 18
+    "revision": 19
   },
   "body": {
     "tasks": [
@@ -1061,8 +1061,8 @@
       },
       {
         "taskId": "t9",
-        "commit": "ed16099c1",
-        "ranAt": "2026-11-24T14:13:56.711Z",
+        "commit": "a3fcced89",
+        "ranAt": "2026-11-24T17:49:45.924Z",
         "testsPassed": true,
         "tests": [
           {
@@ -1097,7 +1097,7 @@
             "file": "scripts/__tests__/installer-s2-qualification.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1587,
+            "durationMs": 1574,
             "titles": [
               {
                 "title": "combined-s1-s2-installer-regression-has-complete-coverage-and-confirmed-cleanup",
@@ -1110,7 +1110,7 @@
             "file": "src/installer/__tests__/dev-complete-payload.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 503532,
+            "durationMs": 550203,
             "titles": [
               {
                 "title": "dev-complete-payload-native-probe-and-fresh-installed-manager-inspect",

@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 18,
-        "contentHash": "97d329db95afacd5c710d66d0dc53a2727b71133b732a88c646ca5cd4f702b32",
-        "at": "2026-11-24T16:33:21.070Z",
+        "number": 19,
+        "contentHash": "366f6243848be90b792c4fc575479bdd9257e6d277b0d82b818783281014a52c",
+        "at": "2026-11-24T17:50:48.602Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -29,8 +29,8 @@
     "schemaVersion": 1,
     "epicHash": "c3d71313f34bce71",
     "storyId": "s2",
-    "revision": 18,
-    "updatedAt": "2026-11-24T16:32:16.288Z",
+    "revision": 19,
+    "updatedAt": "2026-11-24T17:49:45.924Z",
     "authoredBy": "controller",
     "epicSlug": "reliable-cross-platform-daemon-installation-lifecycle"
   },
@@ -70,10 +70,10 @@
       },
       {
         "id": "t9",
-        "passed": true
+        "passed": false
       }
     ],
-    "summary": "Implemented S2 dev delivery with exact accepted Git commits, verified private Node 22.22.1/npm, owned/cooperating preparation actors, complete inventory-bound payload receipts, durable publication/recovery and installed manager/terminal dispatch. Final scoped local qualification passed 100 cases across 23 installer/installation-home/scanner files plus the separate post-run audit; the actual 59,910-file dev payload loaded native modules and a fresh installed manager with empty PATH. Evidence and limits: docs/plans/s2-dev-preparation-validation-2026-11-24.md; production S3/S4/S5 adapters and VM/Windows/IDE/live migration qualification remain outside S2.",
+    "summary": "Corrected five S2 critical-review findings within tasks t3/t5/t6 and extended t9 qualification. Combined Node 22 installer regression passed 114 cases across 24 files with exact source/output fingerprints and confirmed owned-group cleanup. Registered t3/t5/t6 revalidation passed; final native payload smoke and report audit supply local macOS ARM64 evidence.",
     "testRecord": {
       "md": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S002/TESTS.md"
     },
@@ -83,430 +83,507 @@
           "file": "src/installer/__tests__/dev-metadata.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "src/installer/dev-worker.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "src/installer/dev.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "scripts/package-installer.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "scripts/test-harness/build.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/dev-toolchain-fixture.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/dev-toolchain.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "src/installer/dev-toolchain.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "scripts/test-harness/build.d.mts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "scripts/test-harness/context.d.mts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "scripts/test-harness/context.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "scripts/test-harness/process.d.mts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "scripts/test-harness/process.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/dev-worker-fixture.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/dev-worker.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "docs/plans/s2-dev-preparation-ownership-blocker-2026-11-24.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "src/installer/safe-zip.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S002/er-model.html"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S002/sequence-diagram.html"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/dev-git-fixture.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/dev-git.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "src/installer/dev-git.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/dev-payload-fixture.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/dev-payload.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/publisher-bundle-fixture.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "src/installer/bundle.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "src/installer/dev-payload.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/_manager-fixture.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/dev-manager-fixture.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/dev-manager.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/dev-source-fixture.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "src/installer/bundle-delivery.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "src/installer/dev-delivery.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "src/installer/manager.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "src/installer/peer-contracts.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/dev-manager-peers-fixture.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/dev-recovery-fixture.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/dev-recovery.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/installed-dev-fixture.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/installed-dev.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "src/installer/installed-receipt.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "src/installer/manager-entry.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "src/installer/production-peers.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "src/installer/terminal-entry.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "scripts/__tests__/build-script.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "scripts/__tests__/fixtures/exempt/installer/dev-git.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "scripts/__tests__/forbidden-spawn-scan.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "scripts/forbidden-spawn-scan.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/_runtime-fixture.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/dev-complete-payload-fixture.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/dev-complete-payload.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/dev-final-regression.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/foundation-payload-fixture.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "scripts/__tests__/installer-s2-qualification.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "docs/plans/s2-dev-preparation-validation-2026-11-24.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "docs/plans/s2-dev-preparation-validation-2026-11-24.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "scripts/__tests__/test-harness-coordinator.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/_flush-fixture.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "src/installer/durability.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "src/installer/controller-store.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
       },
       {
         "target": {
           "file": "src/installer/__tests__/manager.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-24T16:32:16.288Z"
+        "timestamp": "2026-11-24T17:49:45.924Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-c3d71313f34bce71-s2-t1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T17:49:45.924Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-c3d71313f34bce71-s2-t2.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T17:49:45.924Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-c3d71313f34bce71-s2-t3.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T17:49:45.924Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-c3d71313f34bce71-s2-t4.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T17:49:45.924Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-c3d71313f34bce71-s2-t5.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T17:49:45.924Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-c3d71313f34bce71-s2-t6.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T17:49:45.924Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-c3d71313f34bce71-s2-t7.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T17:49:45.924Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-c3d71313f34bce71-s2-t8.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T17:49:45.924Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-c3d71313f34bce71-s2-t9.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T17:49:45.924Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASKS-c3d71313f34bce71-s2.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T17:49:45.924Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASKS-c3d71313f34bce71-s2.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T17:49:45.924Z"
       }
     ],
-    "commit": "168b622f6"
+    "commit": "a3fcced89"
   },
   "citations": []
 }

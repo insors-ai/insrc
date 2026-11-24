@@ -6,7 +6,7 @@ The final combined installer run passed **114 cases across 24 files**, with zero
 
 ## Critical self-review corrections
 
-The five findings below are corrections to the existing approved S2 tasks, not separate issues. The combined qualification below was repeated after all five corrections. Registered task revalidation passed for t3, t5 and t6; final t9 validation could not start because the daemon became unreachable.
+The five findings below are corrections to the existing approved S2 tasks, not separate issues. The combined qualification below was repeated after all five corrections. Registered task revalidation passed for t3, t5 and t6. After the user authorized starting the host daemon, t9's typecheck and both tests passed; its final task verdict rejected completion because BUILD presentation remains blocked.
 
 | Finding | Correction and regression evidence |
 | :--- | :--- |
@@ -35,7 +35,7 @@ The shared durability helper performs filesystem operations only. Worker/control
 
 ## Scope and fixes discovered by qualification
 
-The actual source checkout, locked npm installation, canonical full build, payload collection, native loading and fresh installed control are real. Dependency/lifecycle/migration owning peers are test fixtures. S3/S4/S5 production ports remain explicitly absent; this does not certify a complete production installation or old-daemon migration. The existing v2 daemon was untouched.
+The actual source checkout, locked npm installation, canonical full build, payload collection, native loading and fresh installed control are real. Dependency/lifecycle/migration owning peers are test fixtures. S3/S4/S5 production ports remain explicitly absent; this does not certify a complete production installation or old-daemon migration. The v2 daemon installation was not synced, rebuilt or updated. After the initial validation request found it unreachable, the user authorized starting its existing compiled entry under verified local Node 22.22.1; IPC remained healthy at the final 730-second uptime check.
 
 The guarantee covers admitted actors, retained owned groups and cooperating registered descendants. Arbitrary unregistered detached processes remain outside it. Missing or unsupported closure evidence blocks publication/retry; this is ownership qualification, not arbitrary-descendant isolation.
 
@@ -57,13 +57,13 @@ After the coordinator closes, write its actual returned run UUID to the ignored 
 node --import tsx --test scripts/__tests__/installer-s2-qualification.test.ts
 ```
 
-The audit requires the exact complete file selection, understood TAP counts, current source/output fingerprints, successful build, positive cleanup and matching admission/close/disposal journals. It refuses stale or partial reports. Its case is a separate post-run check, so ordinary backend discovery has no circular dependency on an earlier local report. Formal t9 validation normally runs its mapped native smoke and this audit. The post-fix request returned `daemon-unreachable` / `ECONNREFUSED` before running either case; its prior ledger pass is historical. The host daemon was not restarted or changed.
+The audit requires the exact complete file selection, understood TAP counts, current source/output fingerprints, successful build, positive cleanup and matching admission/close/disposal journals. It refuses stale or partial reports. Its case is a separate post-run check, so ordinary backend discovery has no circular dependency on an earlier local report. Formal t9 validation normally runs its mapped native smoke and this audit. The first post-fix request returned `daemon-unreachable` / `ECONNREFUSED`. After the user authorized a start, one resumed request ran both cases successfully against `a3fcced89`; the smoke took 550,203 ms including its test runner. Its MCP connection timed out after 300 seconds, but the same daemon-side request continued and persisted TESTS revision 19. No duplicate validation was started.
 
 ## Registered validation and remaining gate
 
 T3, t5 and t6 passed their registered post-fix validation with clean typechecks. T5 initially passed all tests but failed scope because one commit mixed private preparation with publication/reuse changes. That unpublished commit was split between t5 and t6 without changing the final tree; t5 and t6 then passed. The corrected t3 wrapper explicitly clears inherited node:test context and verifies both coordinator cases actually execute under private Node 22.
 
-The final direct audit passed after the combined run. Final registered t9 validation could not start: `insrc_build_step` returned `daemon-unreachable` (`ECONNREFUSED` on `~/.insrc/daemon.sock`). No replacement success was written to the ledger and no host daemon lifecycle operation was attempted. Resume that registered validation when the daemon is available. The pre-existing BUILD lifecycle/presentation blocker and human BUILD approval also remain unresolved; this evidence does not imply approval.
+The final direct audit passed after the combined run. The first registered t9 request could not start because the daemon was unreachable. After the authorized daemon start, the resumed request passed its typecheck, combined-report audit and complete native smoke, recorded at `2026-11-24T17:49:45.924Z` on `a3fcced89`. BUILD revision 19 nevertheless records t9 failed: "The required tests pass and scoped regression evidence is substantive, but complete final story BUILD presentation remains blocked and unverified." T1–t8 remain passed. Both `insrc_present` attempts (BUILD ID and document path) returned `notPending`; BUILD remains `draft`. The repo requires successful presentation before human approval, so no approval was attempted. Resolve that workflow-state blocker before claiming story completion.
 
 ## Selected files
 

@@ -67,6 +67,13 @@
         "choice": "Confirm the stated check",
         "rationale": "The user approved the LLD in chat, which listed this as its open confirmation.",
         "resolvedAt": "2026-11-24T09:22:24.987Z"
+      },
+      "qd6efc0c1": {
+        "question": "Confirm the citation mapping, extended by one entry for the approval-path bundle: c1 is the steering-delivery bundle, c2 the first-step and implement-prompt bundle, c3 the built-state records bundle, c4 the approval-path bundle, c5 the sibling-read search bundle, c6 the tests bundle (invariant sources use these).",
+        "status": "resolved",
+        "choice": "Confirm the six-entry mapping",
+        "rationale": "The user approved the LLD in chat, which listed this as its open confirmation.",
+        "resolvedAt": "2026-11-24T09:22:47.383Z"
       }
     }
   },

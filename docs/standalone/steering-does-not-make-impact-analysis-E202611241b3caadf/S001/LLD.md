@@ -383,6 +383,8 @@ Add an EpicImpact artifact kind written by a new first step (epic.impact) that d
 
 - `q95d78df8` — Confirm the BUILD check's form: it requires the last validate call's summary to contain a paragraph that starts with 'Epic impact:', is at least a minimum length (a constant the build sets and documents) and names each Story the LLD's analysis covered as a whole token; it checks presence and the named Stories, not the quality of the paragraph, and an explicit overrideReview passes it. A thin paragraph that names the Stories passes.
   - **resolved**: Confirm the stated check — The user approved the LLD in chat, which listed this as its open confirmation. _(2026-11-24T09:22:24.987Z)_
+- `qd6efc0c1` — Confirm the citation mapping, extended by one entry for the approval-path bundle: c1 is the steering-delivery bundle, c2 the first-step and implement-prompt bundle, c3 the built-state records bundle, c4 the approval-path bundle, c5 the sibling-read search bundle, c6 the tests bundle (invariant sources use these).
+  - **resolved**: Confirm the six-entry mapping — The user approved the LLD in chat, which listed this as its open confirmation. _(2026-11-24T09:22:47.383Z)_
 
 ## Citations
 

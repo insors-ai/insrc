@@ -322,6 +322,17 @@ test('first publication sequence — approve ISSUE with tracking disabled, enabl
 				}
 				assert.equal(creates, createsAfterA, 'the production retry made 0 duplicate creates');
 				assert.equal(readBinding(fx2.repo, token)?.reference.entityId, FAIL_REF, 'adoption recorded on the EPIC head binding');
+				// the ISSUE-side write-back + STORY-s1 binding: run the push finalize
+				// (the production tracker.push writer) on the adopted ref:
+				const intent2 = { workflow: 'tracker.push', focus: 'push', repoPath: fx2.repo, repoIndexedAt: null, params: { epicHash: HASH } } as never;
+				const s1b = { gh: { owner: 'acme', repo: 'demo' }, epicHash: HASH, epicSlug: SLUG, headKind: 'issue' };
+				const fB = _finalizeTracker(intent2, { s1: s1b }, 'run-f2', 5, {
+					refs: { epicRef: FAIL_REF, storyRefs: { [IMPLIED_ISSUE_STORY_ID]: FAIL_REF }, labelsCreated: ['insrc:epic'] },
+					checklist: { items: [{ itemId: 'singleIssue', verdict: 'passed' }], failedCount: 0 },
+				}, 'm');
+				assert.equal(fB.ok, true, JSON.stringify(fB));
+				assert.equal(readTrackerMeta(fx2.issue)?.issueRef, FAIL_REF, 'ISSUE issueRef written back on the retry push');
+				assert.equal(readBinding(fx2.repo, _AI.make({ kind: 'STORY', epicHash: HASH, story: IMPLIED_ISSUE_STORY_ID }))?.reference.entityId, FAIL_REF, 'STORY-s1 head bound to the same issue');
 				assert.equal(defFileCount(fx2.repo), 0);
 			} finally { fx2.cleanup(); }
 		}

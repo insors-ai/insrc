@@ -22,10 +22,9 @@
           "entityId": "PLAN-c3d71313f34bce71-s1",
           "type": "PLAN",
           "relation": "derived-from",
-          "fragment": "revision 1"
+          "fragment": "revision 2"
         }
       ],
-      "attachments": [],
       "binding": {
         "reference": {
           "entityId": "insors-ai/insrc#251",
@@ -34,7 +33,8 @@
         },
         "createdAtRevision": 1,
         "posted": []
-      }
+      },
+      "attachments": []
     },
     "lifecycle": {
       "status": "approved",

@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 12,
-        "contentHash": "b17b54291ba2179de1c0f2a377372902de0df910365ad2db3181c6ed7307e08c",
-        "at": "2026-11-24T05:03:49.843Z",
+        "number": 13,
+        "contentHash": "c5ff4bb5bab2745491d27bbd336bfd98af2cfecb84282a38a2688e4edbfe6c4d",
+        "at": "2026-11-24T07:02:30.122Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,10 +23,10 @@
     "epicHash": "c3d71313f34bce71",
     "storyId": "s1",
     "createdAt": "2026-11-23T18:39:45.419Z",
-    "updatedAt": "2026-11-24T05:03:49.828Z",
+    "updatedAt": "2026-11-24T07:02:30.105Z",
     "epicCreatedAt": "2026-11-23T13:27:35.399Z",
     "epicSlug": "reliable-cross-platform-daemon-installation-lifecycle",
-    "revision": 12
+    "revision": 13
   },
   "body": {
     "tasks": [
@@ -743,6 +743,210 @@
               },
               {
                 "title": "duplicate stale wrong phase and dead owner escalation preserve exact completion nonce",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "27c5053c2",
+        "ranAt": "2026-11-24T07:02:30.105Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "terminal installer requires all TTY streams and absent dev adapter fails explicitly",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/terminal-install.test.ts",
+                "title": "terminal installer requires all TTY streams and absent dev adapter fails explicitly",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/terminal-install.test.ts",
+                "title": "terminal consent binds exact dependency offer and never installs coding CLIs",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/terminal-install.test.ts",
+                "title": "terminal upgrade retains delivery and rejects stale dependency consent before disruption",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "ready commit and lock release precede same terminal installed TUI",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/terminal-install.test.ts",
+                "title": "ready commit and lock release precede same terminal installed TUI",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/installation-home.test.ts",
+                "title": "installed explicit home scopes socket config and daemon-owned data together",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "cancel install failure and post install TUI error preserve correct outcome",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/terminal-install.test.ts",
+                "title": "cancel install failure and post install TUI error preserve correct outcome",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/terminal-install.test.ts",
+                "title": "terminal cancellation settles owned work and suppresses later TUI handoff",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "assemble actual complete foundation payload only after all entrypoints exist",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/foundation-payload.test.ts",
+                "title": "assemble actual complete foundation payload only after all entrypoints exist",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "successor upgrade replaces its owned launcher and preserves ready selection",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/terminal-install.test.ts",
+                "title": "successor upgrade replaces its owned launcher and preserves ready selection",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "canonical POSIX terminal script preserves I O and fixture TUI handoff and PowerShell source preserves invocation contract",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/bootstrap.test.ts",
+                "title": "POSIX script preserves real terminal I O through private runtime fixture TUI handoff",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/installer/__tests__/bootstrap.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 20697,
+            "titles": [
+              {
+                "title": "bootstrap rejects corrupt wrong target runtime and missing extraction prerequisites",
+                "result": "pass"
+              },
+              {
+                "title": "bootstrap works with missing or wrong host Node and clears Node injection",
+                "result": "pass"
+              },
+              {
+                "title": "private runtime policy matches native headers and preserves explicit CUDA setting",
+                "result": "pass"
+              },
+              {
+                "title": "bootstrap reuses identical runtime and refuses changed immutable runtime",
+                "result": "pass"
+              },
+              {
+                "title": "POSIX script preserves real terminal I O through private runtime fixture TUI handoff",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/foundation-payload.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 279085,
+            "titles": [
+              {
+                "title": "assemble actual complete foundation payload only after all entrypoints exist",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/terminal-install.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2770,
+            "titles": [
+              {
+                "title": "terminal installer requires all TTY streams and absent dev adapter fails explicitly",
+                "result": "pass"
+              },
+              {
+                "title": "ready commit and lock release precede same terminal installed TUI",
+                "result": "pass"
+              },
+              {
+                "title": "cancel install failure and post install TUI error preserve correct outcome",
+                "result": "pass"
+              },
+              {
+                "title": "terminal consent binds exact dependency offer and never installs coding CLIs",
+                "result": "pass"
+              },
+              {
+                "title": "installed launcher preserves existing files and quotes exact private-runtime retry",
+                "result": "pass"
+              },
+              {
+                "title": "terminal cancellation settles owned work and suppresses later TUI handoff",
+                "result": "pass"
+              },
+              {
+                "title": "terminal upgrade retains delivery and rejects stale dependency consent before disruption",
+                "result": "pass"
+              },
+              {
+                "title": "successor upgrade replaces its owned launcher and preserves ready selection",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/shared/__tests__/installation-home.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 469,
+            "titles": [
+              {
+                "title": "installed explicit home scopes socket config and daemon-owned data together",
                 "result": "pass"
               }
             ],

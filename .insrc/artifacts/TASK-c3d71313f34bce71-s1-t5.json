@@ -22,7 +22,7 @@
           "entityId": "PLAN-c3d71313f34bce71-s1",
           "type": "PLAN",
           "relation": "derived-from",
-          "fragment": "revision 1"
+          "fragment": "revision 2"
         },
         {
           "entityId": "TASK-c3d71313f34bce71-s1-t1",
@@ -45,7 +45,6 @@
           "relation": "depends-on"
         }
       ],
-      "attachments": [],
       "binding": {
         "reference": {
           "entityId": "insors-ai/insrc#255",
@@ -54,7 +53,8 @@
         },
         "createdAtRevision": 1,
         "posted": []
-      }
+      },
+      "attachments": []
     },
     "lifecycle": {
       "status": "approved",

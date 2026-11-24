@@ -22,7 +22,7 @@
           "entityId": "PLAN-c3d71313f34bce71-s1",
           "type": "PLAN",
           "relation": "derived-from",
-          "fragment": "revision 1"
+          "fragment": "revision 2"
         },
         {
           "entityId": "TASK-c3d71313f34bce71-s1-t3",
@@ -50,7 +50,6 @@
           "relation": "depends-on"
         }
       ],
-      "attachments": [],
       "binding": {
         "reference": {
           "entityId": "insors-ai/insrc#258",
@@ -59,14 +58,15 @@
         },
         "createdAtRevision": 1,
         "posted": []
-      }
+      },
+      "attachments": []
     },
     "lifecycle": {
-      "status": "approved",
+      "status": "draft",
       "revision": {
-        "number": 1,
-        "contentHash": "0b8e40cf007092c5b1fdb43102765a738533ebd8c52fa75785a78fae01ba4562",
-        "at": "2026-11-23T18:26:40.079Z",
+        "number": 2,
+        "contentHash": "70dd578991d2a4c2e0d3befb7d0d1291c057ea69899fbf8bee1acc8ecc1ab68c",
+        "at": "2026-11-24T06:55:10.669Z",
         "by": {
           "id": "insrc:approval",
           "kind": "system",
@@ -84,7 +84,7 @@
         "at": "2026-11-23T18:26:40.082Z"
       }
     },
-    "revision": 1
+    "revision": 2
   },
   "body": {
     "title": "Complete terminal-owned installation and installed TUI handoff",
@@ -117,16 +117,12 @@
         "name": "assemble actual complete foundation payload only after all entrypoints exist"
       },
       {
+        "level": "integration",
+        "name": "successor upgrade replaces its owned launcher and preserves ready selection"
+      },
+      {
         "level": "smoke",
-        "name": "canonical POSIX and PowerShell terminal scripts preserve I O and success handoff"
-      },
-      {
-        "level": "live",
-        "name": "enabled target clean install and successor upgrade use real peers and exact IPC readiness"
-      },
-      {
-        "level": "live",
-        "name": "real migration failure blocks startup and successful installed TUI exit leaves daemon running"
+        "name": "canonical POSIX terminal script preserves I O and fixture TUI handoff and PowerShell source preserves invocation contract"
       }
     ],
     "planTaskId": "t8"

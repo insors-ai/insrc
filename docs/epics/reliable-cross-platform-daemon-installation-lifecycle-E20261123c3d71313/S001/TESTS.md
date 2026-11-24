@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 36 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+**Totals:** 46 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -224,3 +224,56 @@ Run at 2026-11-24T05:03:49.828Z on commit `5b92b40d6`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/installer/__tests__/operation-control.test.ts` | 0 | 2 | 4.6 s |  |
+
+## t8
+
+Run at 2026-11-24T07:02:30.105Z on commit `27c5053c2`. Tests check: **passed**. 10 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: terminal installer requires all TTY streams and absent dev adapter fails explicitly**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | terminal installer requires all TTY streams and absent dev adapter fails explicitly | `src/installer/__tests__/terminal-install.test.ts` |
+| pass | terminal consent binds exact dependency offer and never installs coding CLIs | `src/installer/__tests__/terminal-install.test.ts` |
+| pass | terminal upgrade retains delivery and rejects stale dependency consent before disruption | `src/installer/__tests__/terminal-install.test.ts` |
+
+**integration: ready commit and lock release precede same terminal installed TUI**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | ready commit and lock release precede same terminal installed TUI | `src/installer/__tests__/terminal-install.test.ts` |
+| pass | installed explicit home scopes socket config and daemon-owned data together | `src/shared/__tests__/installation-home.test.ts` |
+
+**integration: cancel install failure and post install TUI error preserve correct outcome**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | cancel install failure and post install TUI error preserve correct outcome | `src/installer/__tests__/terminal-install.test.ts` |
+| pass | terminal cancellation settles owned work and suppresses later TUI handoff | `src/installer/__tests__/terminal-install.test.ts` |
+
+**integration: assemble actual complete foundation payload only after all entrypoints exist**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | assemble actual complete foundation payload only after all entrypoints exist | `src/installer/__tests__/foundation-payload.test.ts` |
+
+**integration: successor upgrade replaces its owned launcher and preserves ready selection**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | successor upgrade replaces its owned launcher and preserves ready selection | `src/installer/__tests__/terminal-install.test.ts` |
+
+**smoke: canonical POSIX terminal script preserves I O and fixture TUI handoff and PowerShell source preserves invocation contract**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | POSIX script preserves real terminal I O through private runtime fixture TUI handoff | `src/installer/__tests__/bootstrap.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/installer/__tests__/bootstrap.test.ts` | 0 | 5 | 20.7 s |  |
+| `src/installer/__tests__/foundation-payload.test.ts` | 0 | 1 | 279.1 s |  |
+| `src/installer/__tests__/terminal-install.test.ts` | 0 | 8 | 2.8 s |  |
+| `src/shared/__tests__/installation-home.test.ts` | 0 | 1 | 0.5 s |  |

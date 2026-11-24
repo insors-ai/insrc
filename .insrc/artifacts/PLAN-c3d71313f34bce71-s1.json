@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "plan",
-    "runId": "wf-1795457949348-71l7oh",
+    "runId": "wf-1795502699397-z2kk91",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-11-23T18:22:42.730Z",
+    "createdAt": "2026-11-24T06:47:04.521Z",
     "epicCreatedAt": "2026-11-23T13:27:35.399Z",
     "attribution": {
       "outputs": [
@@ -15,7 +15,7 @@
         }
       ]
     },
-    "elapsedMs": 213069,
+    "elapsedMs": 124822,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "c3d71313f34bce71",
@@ -25,40 +25,28 @@
     "lldEffectiveHash": "acb12724c31638094f715440e8d7679ed70268700c5e10e1d06197fb93ace475",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "approved",
+      "status": "draft",
       "revision": {
-        "number": 1,
-        "contentHash": "1c25b34b03ed293a6a9776bbccabe10152d7e10819ec490ab7e1c5f693dd98b2",
-        "at": "2026-11-23T18:22:42.832Z",
+        "number": 2,
+        "contentHash": "b76063f7406d98c2db13bae9c9554ce25018e906bbfa53a0fee86c2f2cca09ea",
+        "at": "2026-11-24T06:47:04.616Z",
         "by": {
           "id": "insrc:system",
           "kind": "system",
           "properties": {}
         }
       },
-      "signoffs": [],
-      "approval": {
-        "revision": 1,
-        "by": {
-          "id": "insrc:approval",
-          "kind": "system",
-          "properties": {}
-        },
-        "at": "2026-11-23T18:26:38.334Z"
-      }
+      "signoffs": []
     },
-    "revision": 1,
     "envelope": {
-      "description": "",
-      "references": [],
       "attachments": []
     },
-    "rangeBase": "5cbe4102752c4c262e86623f42dd6bb0db993f22"
+    "revision": 2
   },
   "body": {
     "summary": {
       "audience": "technical",
-      "prose": "Build the shared bundle-installer foundation around a pinned private runtime, strict release validation and one durable operation controller. Eight ordered tasks add native locking, release publishing, safe candidate preparation and terminal-owned setup that hands off to the installed TUI only after readiness and lock release. Dependency, lifecycle and migration execution remain required sibling ports; fixture coverage cannot certify a production install. Final live acceptance remains contingent on those sibling implementations and per-target qualification, and the existing host v2 daemon stays untouched."
+      "prose": "Build the shared terminal installer foundation: exact private runtime/bootstrap assets, immutable bounded bundle delivery, one OS-locked controller, explicit owning-peer contracts and readiness-gated installed TUI handoff. Revision 2 preserves all eight task identities, dependencies, implementation scope, acceptance checks and t1-t7 tests; only t8 test requirements and this explanation change, adding the actual successor launcher regression. Per approved LLD sections 3.5 and 7, S1 validates deterministic peer/TUI fixtures, actual produced ZIP/native-load probes and host POSIX PTY smoke with PowerShell source checks; the three live-strategy coverage rows identify prerequisite S1 tasks rather than completed live qualification. Actual enabled-target clean install/successor upgrade with exact IPC readiness, real migration-failure startup blocking/TUI exit behavior, and native Windows PowerShell terminal execution remain mandatory after s3/s4/s5 integration in S8 before their targets are enabled; no fixture result qualifies a production release or platform."
     },
     "tasks": [
       {
@@ -366,16 +354,12 @@
             "name": "assemble actual complete foundation payload only after all entrypoints exist"
           },
           {
+            "level": "integration",
+            "name": "successor upgrade replaces its owned launcher and preserves ready selection"
+          },
+          {
             "level": "smoke",
-            "name": "canonical POSIX and PowerShell terminal scripts preserve I O and success handoff"
-          },
-          {
-            "level": "live",
-            "name": "enabled target clean install and successor upgrade use real peers and exact IPC readiness"
-          },
-          {
-            "level": "live",
-            "name": "real migration failure blocks startup and successful installed TUI exit leaves daemon running"
+            "name": "canonical POSIX terminal script preserves I O and fixture TUI handoff and PowerShell source preserves invocation contract"
           }
         ]
       }

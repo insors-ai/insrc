@@ -1,0 +1,135 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-82b8d258-4888-4eab-b698-3900c8b08b7b",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-23T18:26:40.079Z",
+    "epicCreatedAt": "2026-11-23T13:27:35.399Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c3d71313f34bce71",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Complete terminal-owned installation and installed TUI handoff",
+      "parent": {
+        "entityId": "STORY-c3d71313f34bce71-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c3d71313f34bce71-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s1-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#258",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0b8e40cf007092c5b1fdb43102765a738533ebd8c52fa75785a78fae01ba4562",
+        "at": "2026-11-23T18:26:40.079Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-23T18:26:40.082Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Complete terminal-owned installation and installed TUI handoff",
+    "summary": "Compose canonical scripts, private runtime, bundle preparation and required peer ports into the interactive terminal installer. Publish the installed launcher selecting a complete immutable manager/runtime pair and perform the ready-to-TUI foreground handoff.",
+    "size": "L",
+    "order": 8,
+    "acceptanceChecks": [
+      "TTY stdin/stdout/stderr own mode/source selection, exact dependency consent, progress/errors and recommendations; never accept IDE-filled consent or a direct IDE install request.",
+      "Only validated exact-ready completion may commit ready, release mutation lock and start installed TUI in the same terminal using private runtime; TUI exit leaves daemon running and returns shell.",
+      "Failure/cancel never launches TUI; post-success TUI launch error retains completed install and prints the exact retry command without reinstall/rollback.",
+      "Cross-window busy/duplicate/terminal-close cases preserve one operation and no automatic relaunch. Keep source scripts/insrc distinct from the installed launcher and keep the host v2 daemon untouched.",
+      "Dev selection only captures validated delivery and requires the s2 adapter; absent dev/dependency/lifecycle/migration capability fails explicitly without invented sibling behavior.",
+      "After all s1 entrypoints land, assemble/probe the actual complete payload through t4 tooling. Fixture results remain labeled and no production E2E/install or unqualified-platform success is inferred."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "terminal installer requires all TTY streams and absent dev adapter fails explicitly"
+      },
+      {
+        "level": "integration",
+        "name": "ready commit and lock release precede same terminal installed TUI"
+      },
+      {
+        "level": "integration",
+        "name": "cancel install failure and post install TUI error preserve correct outcome"
+      },
+      {
+        "level": "integration",
+        "name": "assemble actual complete foundation payload only after all entrypoints exist"
+      },
+      {
+        "level": "smoke",
+        "name": "canonical POSIX and PowerShell terminal scripts preserve I O and success handoff"
+      },
+      {
+        "level": "live",
+        "name": "enabled target clean install and successor upgrade use real peers and exact IPC readiness"
+      },
+      {
+        "level": "live",
+        "name": "real migration failure blocks startup and successful installed TUI exit leaves daemon running"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

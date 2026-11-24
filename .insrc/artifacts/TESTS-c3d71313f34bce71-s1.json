@@ -1,0 +1,756 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 12,
+        "contentHash": "b17b54291ba2179de1c0f2a377372902de0df910365ad2db3181c6ed7307e08c",
+        "at": "2026-11-24T05:03:49.843Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "c3d71313f34bce71",
+    "storyId": "s1",
+    "createdAt": "2026-11-23T18:39:45.419Z",
+    "updatedAt": "2026-11-24T05:03:49.828Z",
+    "epicCreatedAt": "2026-11-23T13:27:35.399Z",
+    "epicSlug": "reliable-cross-platform-daemon-installation-lifecycle",
+    "revision": 12
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "a8716f1cb",
+        "ranAt": "2026-11-23T18:41:22.697Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "strict installer schemas reject invalid target runtime entrypoint hook and bridge records",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/contracts.test.ts",
+                "title": "strict installer schemas reject invalid target runtime entrypoint hook and bridge records",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/contracts.test.ts",
+                "title": "install is rejected even with a forged source/bootstrap marker",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/contracts.test.ts",
+                "title": "foundation reports and snapshots validate identity without inventing readiness",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "explicit home endpoint and terminal launch identity remain consistent",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/location.test.ts",
+                "title": "explicit home endpoint and terminal launch identity remain consistent",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/location.test.ts",
+                "title": "control-root inspection rejects symlinks and files and never creates missing homes",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/location.test.ts",
+                "title": "unknown and network filesystem families fail closed until qualified",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/contracts.test.ts",
+                "title": "terminal launch preserves explicit home and successful handoff contract",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "correlated bridge send cancel write outcomes preserve uncertainty",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/bridge-protocol.test.ts",
+                "title": "correlated bridge send cancel write outcomes preserve uncertainty",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "bridge hello ready requires exact nonce within three seconds before dispatch",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/bridge-protocol.test.ts",
+                "title": "bridge hello ready requires exact nonce within three seconds before dispatch",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/installer/__tests__/bridge-protocol.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 465,
+            "titles": [
+              {
+                "title": "correlated bridge send cancel write outcomes preserve uncertainty",
+                "result": "pass"
+              },
+              {
+                "title": "bridge hello ready requires exact nonce within three seconds before dispatch",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/contracts.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 354,
+            "titles": [
+              {
+                "title": "strict installer schemas reject invalid target runtime entrypoint hook and bridge records",
+                "result": "pass"
+              },
+              {
+                "title": "install is rejected even with a forged source/bootstrap marker",
+                "result": "pass"
+              },
+              {
+                "title": "foundation reports and snapshots validate identity without inventing readiness",
+                "result": "pass"
+              },
+              {
+                "title": "terminal launch preserves explicit home and successful handoff contract",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/location.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 391,
+            "titles": [
+              {
+                "title": "explicit home endpoint and terminal launch identity remain consistent",
+                "result": "pass"
+              },
+              {
+                "title": "control-root inspection rejects symlinks and files and never creates missing homes",
+                "result": "pass"
+              },
+              {
+                "title": "unknown and network filesystem families fail closed until qualified",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "cce66a2be",
+        "ranAt": "2026-11-23T18:57:27.348Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "OS lock excludes another writer and releases on owned fixture self exit",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/controller-store.test.ts",
+                "title": "OS lock excludes another writer and releases on owned fixture self exit",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/controller-store.test.ts",
+                "title": "controller rejects lock replacement and unsafe records or control roots",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "atomic replacement crash points preserve one valid snapshot",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/controller-store.test.ts",
+                "title": "atomic replacement crash points preserve one valid snapshot",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/controller-store.test.ts",
+                "title": "controller inspection and revision failures never silently enroll or overwrite",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/controller-store.test.ts",
+                "title": "native publication remains gated without exact target runtime and live qualification",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/controller-store.test.ts",
+                "title": "native publisher denies unqualified output before publishing target artifacts",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "target private runtime loads qualified native lock and atomic adapters",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S001/evidence/t2.md — exact Node 22.22.1 darwin-arm64 lock and atomic smoke; Linux/Windows/other targets explicitly unqualified."
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "src/installer/__tests__/controller-store.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 906,
+            "titles": [
+              {
+                "title": "OS lock excludes another writer and releases on owned fixture self exit",
+                "result": "pass"
+              },
+              {
+                "title": "atomic replacement crash points preserve one valid snapshot",
+                "result": "pass"
+              },
+              {
+                "title": "controller inspection and revision failures never silently enroll or overwrite",
+                "result": "pass"
+              },
+              {
+                "title": "controller rejects lock replacement and unsafe records or control roots",
+                "result": "pass"
+              },
+              {
+                "title": "native publication remains gated without exact target runtime and live qualification",
+                "result": "pass"
+              },
+              {
+                "title": "native publisher denies unqualified output before publishing target artifacts",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "e4008df4b",
+        "ranAt": "2026-11-23T19:06:41.785Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "bootstrap rejects corrupt wrong target runtime and missing extraction prerequisites",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/bootstrap.test.ts",
+                "title": "bootstrap rejects corrupt wrong target runtime and missing extraction prerequisites",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/bootstrap.test.ts",
+                "title": "bootstrap reuses identical runtime and refuses changed immutable runtime",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "bootstrap works with missing or wrong host Node and clears Node injection",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/bootstrap.test.ts",
+                "title": "bootstrap works with missing or wrong host Node and clears Node injection",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "private runtime policy matches native headers and preserves explicit CUDA setting",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/bootstrap.test.ts",
+                "title": "private runtime policy matches native headers and preserves explicit CUDA setting",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/installer/__tests__/bootstrap.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 17629,
+            "titles": [
+              {
+                "title": "bootstrap rejects corrupt wrong target runtime and missing extraction prerequisites",
+                "result": "pass"
+              },
+              {
+                "title": "bootstrap works with missing or wrong host Node and clears Node injection",
+                "result": "pass"
+              },
+              {
+                "title": "private runtime policy matches native headers and preserves explicit CUDA setting",
+                "result": "pass"
+              },
+              {
+                "title": "bootstrap reuses identical runtime and refuses changed immutable runtime",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "8a572dc6d",
+        "ranAt": "2026-11-23T19:29:59.021Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "publisher binds exact source target runtime inventory and independent archive digest",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/publisher.test.ts",
+                "title": "publisher binds exact source target runtime inventory and independent archive digest",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/publisher.test.ts",
+                "title": "publisher rejects uncommitted compiler inputs despite unchanged source revision",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "production payload closure rejects missing entrypoints and escaping workspace links",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/publisher.test.ts",
+                "title": "production payload closure rejects missing entrypoints and escaping workspace links",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "bundled manager excludes DB indexer model imports and consumer npm build",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/publisher.test.ts",
+                "title": "bundled manager excludes DB indexer model imports and consumer npm build",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/publisher.test.ts",
+                "title": "real bundler produces one dependency-minimal control fixture under owned build scope",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "published manual and both IDE installer script assets have exact byte parity",
+            "level": "live",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/publisher.test.ts",
+                "title": "published manual and both IDE installer script assets have exact byte parity",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/client-assets-retirement.test.ts",
+                "title": "client resource sync removes stale installer assets and retains steering and unrelated resources",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "scripts/__tests__/client-assets-retirement.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 381,
+            "titles": [
+              {
+                "title": "client resource sync removes stale installer assets and retains steering and unrelated resources",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/publisher.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2785,
+            "titles": [
+              {
+                "title": "publisher binds exact source target runtime inventory and independent archive digest",
+                "result": "pass"
+              },
+              {
+                "title": "production payload closure rejects missing entrypoints and escaping workspace links",
+                "result": "pass"
+              },
+              {
+                "title": "bundled manager excludes DB indexer model imports and consumer npm build",
+                "result": "pass"
+              },
+              {
+                "title": "published manual and both IDE installer script assets have exact byte parity",
+                "result": "pass"
+              },
+              {
+                "title": "real bundler produces one dependency-minimal control fixture under owned build scope",
+                "result": "pass"
+              },
+              {
+                "title": "publisher rejects uncommitted compiler inputs despite unchanged source revision",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "5f300d660",
+        "ranAt": "2026-11-23T20:03:20.007Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "hostile ZIP corpus cannot escape staging or exceed bounded extraction",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/bundle.test.ts",
+                "title": "hostile ZIP corpus cannot escape staging or exceed bounded extraction",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/controller-store.test.ts",
+                "title": "candidate publication is exclusive and requires retained location and lock",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "download digest target runtime cancellation and retry preserve incumbent",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/bundle.test.ts",
+                "title": "download digest target runtime cancellation and retry preserve incumbent",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/bundle.test.ts",
+                "title": "release discovery rejects insecure redirects and never falls back to dev",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/installer/__tests__/bundle.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 49716,
+            "titles": [
+              {
+                "title": "hostile ZIP corpus cannot escape staging or exceed bounded extraction",
+                "result": "pass"
+              },
+              {
+                "title": "download digest target runtime cancellation and retry preserve incumbent",
+                "result": "pass"
+              },
+              {
+                "title": "release discovery rejects insecure redirects and never falls back to dev",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/controller-store.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1291,
+            "titles": [
+              {
+                "title": "OS lock excludes another writer and releases on owned fixture self exit",
+                "result": "pass"
+              },
+              {
+                "title": "atomic replacement crash points preserve one valid snapshot",
+                "result": "pass"
+              },
+              {
+                "title": "controller inspection and revision failures never silently enroll or overwrite",
+                "result": "pass"
+              },
+              {
+                "title": "controller rejects lock replacement and unsafe records or control roots",
+                "result": "pass"
+              },
+              {
+                "title": "native publication remains gated without exact target runtime and live qualification",
+                "result": "pass"
+              },
+              {
+                "title": "native publisher denies unqualified output before publishing target artifacts",
+                "result": "pass"
+              },
+              {
+                "title": "candidate publication is exclusive and requires retained location and lock",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "719687c0f",
+        "ranAt": "2026-11-24T04:51:06.326Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "install is rejected even with a forged source/bootstrap marker",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/manager.test.ts",
+                "title": "install is rejected even with a forged source/bootstrap marker",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "required peer admission and exact offer state transitions fail closed",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/manager.test.ts",
+                "title": "required peer admission and exact offer state transitions fail closed",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "manager death and candidate journal receipt projections cannot start duplicate runner",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/manager.test.ts",
+                "title": "manager death and candidate journal receipt projections cannot start duplicate runner",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "corrupt controller revisions and immutable candidate mismatches fail closed",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/manager.test.ts",
+                "title": "corrupt controller revisions and immutable candidate mismatches fail closed",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/installer/__tests__/manager.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1763,
+            "titles": [
+              {
+                "title": "install is rejected even with a forged source/bootstrap marker",
+                "result": "pass"
+              },
+              {
+                "title": "required peer admission and exact offer state transitions fail closed",
+                "result": "pass"
+              },
+              {
+                "title": "manager death and candidate journal receipt projections cannot start duplicate runner",
+                "result": "pass"
+              },
+              {
+                "title": "corrupt controller revisions and immutable candidate mismatches fail closed",
+                "result": "pass"
+              },
+              {
+                "title": "owned manager self exit leaves candidate running and recovery needs actual wrapper exit receipt",
+                "result": "pass"
+              },
+              {
+                "title": "ordinary manager executable rejects forged install and terminal entry rejects redirected streams",
+                "result": "pass"
+              },
+              {
+                "title": "preparation receives no controller writer and post-drain tampering blocks migration",
+                "result": "pass"
+              },
+              {
+                "title": "free lease or unreachable endpoint alone cannot authorize ordinary startup",
+                "result": "pass"
+              },
+              {
+                "title": "explicit failed-hook recovery requires real prior exit and owning hook retry policy",
+                "result": "pass"
+              },
+              {
+                "title": "late foreign revision cannot be overwritten by readiness or error persistence",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "5b92b40d6",
+        "ranAt": "2026-11-24T05:03:49.828Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "cross window immediate forwards while owner lock remains held",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/operation-control.test.ts",
+                "title": "cross window immediate forwards while owner lock remains held",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "duplicate stale wrong phase and dead owner escalation preserve exact completion nonce",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/operation-control.test.ts",
+                "title": "duplicate stale wrong phase and dead owner escalation preserve exact completion nonce",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/installer/__tests__/operation-control.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4632,
+            "titles": [
+              {
+                "title": "cross window immediate forwards while owner lock remains held",
+                "result": "pass"
+              },
+              {
+                "title": "duplicate stale wrong phase and dead owner escalation preserve exact completion nonce",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

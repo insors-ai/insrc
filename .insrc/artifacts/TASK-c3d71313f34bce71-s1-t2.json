@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-93a576f5-23bc-470d-b6e5-f6b300abf690",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-23T18:26:40.057Z",
+    "epicCreatedAt": "2026-11-23T13:27:35.399Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c3d71313f34bce71",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Implement native operation locking and atomic controller storage",
+      "parent": {
+        "entityId": "STORY-c3d71313f34bce71-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c3d71313f34bce71-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#252",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "fe9bf594aec5ce48ac982ccbe69be15e820165e3a56b13d07b00766c97c3a9c5",
+        "at": "2026-11-23T18:26:40.057Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-23T18:26:40.059Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement native operation locking and atomic controller storage",
+    "summary": "Add the minimal release-built Node-API v8 platform binding for non-inheritable flock/LockFileEx handles, platform atomic replacement and user-SID lookup. Implement versioned single-writer controller snapshots and read-only missing/corrupt inspection.",
+    "size": "L",
+    "order": 2,
+    "acceptanceChecks": [
+      "Mutations require one OS-held lock; never rename/unlink operation.lock, inspect PIDs, steal by age or create a heartbeat ownership protocol.",
+      "Atomically replace and durably flush snapshots through qualified platform adapters; active release and operation publish together with revision checks.",
+      "Native addons are built on release/development machines, packaged per target and never compiled on a bundle consumer; unavailable target qualification remains explicit.",
+      "Implement each declared platform adapter; execute host-native exclusion/self-exit/atomic-replace crash checks and record other-target smoke as qualified or unavailable. Enforce per-target publication gating while s8 retains live E2E evidence ownership."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "OS lock excludes another writer and releases on owned fixture self exit"
+      },
+      {
+        "level": "integration",
+        "name": "atomic replacement crash points preserve one valid snapshot"
+      },
+      {
+        "level": "smoke",
+        "name": "target private runtime loads qualified native lock and atomic adapters"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

@@ -1,0 +1,95 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-34a50ef2-0f29-44fe-9bbe-867002686e1c",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-23T18:26:40.054Z",
+    "epicCreatedAt": "2026-11-23T13:27:35.399Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c3d71313f34bce71",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Define installer contracts and installation location resolution",
+      "parent": {
+        "entityId": "STORY-c3d71313f34bce71-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c3d71313f34bce71-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#251",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ebb2f9ebb60f7eca1e0587c62697337b4abad664986e4d19a804da9913c37f49",
+        "at": "2026-11-23T18:26:40.054Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-23T18:26:40.056Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Define installer contracts and installation location resolution",
+    "summary": "Create foundation-owned strict schemas/types for sc1/sc2/sc3/sc5/sc6/sc7, including approved escalation and bridge handshake/control envelopes. Implement the pure explicit-home/endpoint resolver and release-policy validation; do not wire daemon boot or IDE transports.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "Validate untrusted manifests, entrypoint/module containment, unique ordered hook identities, version/target/predecessor identity and bounded protocol records; reject unknown/incompatible input before execution.",
+      "Resolve one stable installation/user-scoped endpoint from default or explicit absolute home; reject unsupported/network/symlinked controller roots and overlong socket paths without truncation.",
+      "Keep current application IPC payloads intact; define dependency/bridge/hook contracts without implementing s3/s4/s5/s7 behavior."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "strict installer schemas reject invalid target runtime entrypoint hook and bridge records"
+      },
+      {
+        "level": "unit",
+        "name": "explicit home endpoint and terminal launch identity remain consistent"
+      },
+      {
+        "level": "integration",
+        "name": "correlated bridge send cancel write outcomes preserve uncertainty"
+      },
+      {
+        "level": "integration",
+        "name": "bridge hello ready requires exact nonce within three seconds before dispatch"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

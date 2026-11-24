@@ -1,0 +1,101 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-42f9e99f-003f-47e0-8daa-6f20b1a0b114",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-23T18:26:40.060Z",
+    "epicCreatedAt": "2026-11-23T13:27:35.399Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c3d71313f34bce71",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Publish pinned private-runtime bootstrap assets",
+      "parent": {
+        "entityId": "STORY-c3d71313f34bce71-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c3d71313f34bce71-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#253",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "210d50b1599f20c372cc2262b8f854f7adcce95cf11d4f3fdb2d09bba028d25c",
+        "at": "2026-11-23T18:26:40.060Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-23T18:26:40.062Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Publish pinned private-runtime bootstrap assets",
+    "summary": "Create canonical scripts/install.sh and scripts/install.ps1 plus release-owned Node 22.22.1/matching npm policy. Implement download/hash/staged extraction of exact official runtime assets and separately digest-bound bootstrap/native control assets without host Node.",
+    "size": "L",
+    "order": 3,
+    "acceptanceChecks": [
+      "Use independently verified official per-target archive hashes and absolute private executables; reject missing prerequisites, corrupt/wrong-target runtime and Node injection variables without elevation or PATH-runtime fallback.",
+      "Stage/publish runtime and control assets without overwriting running operation code; use matching npm-cli.js through private Node only on build/dev machines.",
+      "No global PATH edit, system service, execution-policy bypass, signing claim or end-user npm/compiler requirement; preserve explicit CUDA-install environment value and default skip only when absent."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "bootstrap rejects corrupt wrong target runtime and missing extraction prerequisites"
+      },
+      {
+        "level": "integration",
+        "name": "bootstrap works with missing or wrong host Node and clears Node injection"
+      },
+      {
+        "level": "unit",
+        "name": "private runtime policy matches native headers and preserves explicit CUDA setting"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

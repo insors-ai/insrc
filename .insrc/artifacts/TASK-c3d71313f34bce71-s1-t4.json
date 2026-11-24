@@ -1,0 +1,112 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-f867c5e0-fc9a-4327-849c-7d7c92b05128",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-23T18:26:40.063Z",
+    "epicCreatedAt": "2026-11-23T13:27:35.399Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c3d71313f34bce71",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Build target-specific bundle and canonical installer release assets",
+      "parent": {
+        "entityId": "STORY-c3d71313f34bce71-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c3d71313f34bce71-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#254",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "075da9e250224d6bd601701bd4e7edceaca1b25a391f7d6eadc0c80f9a486eb0",
+        "at": "2026-11-23T18:26:40.063Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-23T18:26:40.065Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Build target-specific bundle and canonical installer release assets",
+    "summary": "Create scripts/package-installer.mjs and coordinated publishing integration. Emit release.json sidecar, immutable inventory/ZIP, production dependency closure, built daemon/TUI/assets, release-built native lock binding, official runtime archive and single-file dependency-minimal manager/installer bootstrap.",
+    "size": "L",
+    "order": 4,
+    "acceptanceChecks": [
+      "Exact source revision/target/runtime/protocol/compatibility and file inventory are bound to independent sidecar archive digests; no hash contains its own bytes.",
+      "Use pinned explicit ZIP-reader/bundling dependencies and existing build coordination; preserve native optional dependency closure, safely dereference only verified in-root links and retain daemon/TUI resources.",
+      "Emit identical manual/VS Code/JetBrains script version/hash/bytes via existing resource-copy boundary without implementing native IDE terminal APIs or restoring retired names.",
+      "Run representative native/runtime payload probes before advertising a target; unavailable targets remain unqualified and cannot be published as supported.",
+      "Early publisher tests use explicitly labeled controlled payload fixtures only. Production packaging rejects absent real manager/installer/daemon/TUI entrypoints; final actual payload assembly occurs after t6/t8 implementation."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "publisher binds exact source target runtime inventory and independent archive digest"
+      },
+      {
+        "level": "integration",
+        "name": "production payload closure rejects missing entrypoints and escaping workspace links"
+      },
+      {
+        "level": "integration",
+        "name": "bundled manager excludes DB indexer model imports and consumer npm build"
+      },
+      {
+        "level": "live",
+        "name": "published manual and both IDE installer script assets have exact byte parity"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

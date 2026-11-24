@@ -1,0 +1,490 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 12,
+        "contentHash": "49e53d4c42ef5caf1423fb6715cefd98744ad02edc83a6b53509e2cedf554b51",
+        "at": "2026-11-24T05:04:29.431Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-1bade65a-9cd9-46f5-89a1-707ac5c7c3ec",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-23T18:39:45.419Z",
+    "epicCreatedAt": "2026-11-23T13:27:35.399Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c3d71313f34bce71",
+    "storyId": "s1",
+    "revision": 12,
+    "updatedAt": "2026-11-24T05:03:49.828Z",
+    "authoredBy": "controller",
+    "epicSlug": "reliable-cross-platform-daemon-installation-lifecycle"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
+      }
+    ],
+    "summary": "Protected owner forwarding with native-lock retention and exact original shutdown completion identity. Both task-named integration cases now directly cover their stated scenarios, including simultaneous duplicate success and an active preparing-phase refusal; surrounding tests passed. Full suite remains deferred until all S1 tasks are built.",
+    "testRecord": {
+      "md": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S001/evidence/t1.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/bridge-protocol.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/contracts.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/location.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/bridge-protocol.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/contracts.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/location.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/schemas.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S001/evidence/t2.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "scripts/__tests__/build-script.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "scripts/__tests__/test-harness-commands.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "scripts/build-installer-control.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "scripts/test-harness/build.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/control-fixture.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/controller-store.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/controller-store.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/native-qualification.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/native.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/native/control.c"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "scripts/package-installer-control.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S001/evidence/t3.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "scripts/bootstrap-publish.cjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "scripts/install.ps1"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "scripts/install.sh"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "scripts/render-installer-bootstrap.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/bootstrap.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/runtime-policy.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/runtime-policy.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S001/evidence/t4.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "package-lock.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "package.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "scripts/installer-payload.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "scripts/package-installer.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "scripts/sync-client-runtime-assets.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/publisher.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/_runtime-fixture.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/publisher-bundle-fixture.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "scripts/__tests__/test-harness-coordinator.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S001/evidence/t5.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/bundle.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/bundle.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/download.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/release-descriptor.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/safe-zip.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S001/evidence/t6.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/_manager-fixture.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/manager-death-fixture.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/manager.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/bundle-delivery.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/manager-entry.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/manager.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/peer-contracts.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/production-peers.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/terminal-admission.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/terminal-entry.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S001/evidence/t7.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/operation-control-fixture.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/__tests__/operation-control.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      },
+      {
+        "target": {
+          "file": "src/installer/operation-control.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T05:03:49.828Z"
+      }
+    ],
+    "commit": "5b92b40d6"
+  },
+  "citations": []
+}

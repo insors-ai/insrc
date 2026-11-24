@@ -1,0 +1,111 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-20ffb2f7-3d99-41f0-8dde-0b0e56ebc706",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-23T18:26:40.071Z",
+    "epicCreatedAt": "2026-11-23T13:27:35.399Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c3d71313f34bce71",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Implement the manager operation controller and required peer admission",
+      "parent": {
+        "entityId": "STORY-c3d71313f34bce71-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c3d71313f34bce71-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#256",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "5959c44fb8ed11425989db9b4bec5b8c4d101c0126a0245a57c15892cae91c75",
+        "at": "2026-11-23T18:26:40.071Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-23T18:26:40.073Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement the manager operation controller and required peer admission",
+    "summary": "Implement inspect/check-upgrade and serialized mutation state transitions over the controller snapshot. Define required sibling capability ports and durable candidate/admission metadata; use deterministic peers to exercise handoffs without implementing their owned behavior.",
+    "size": "L",
+    "order": 6,
+    "acceptanceChecks": [
+      "Ordinary manager rejects install even with a forged source/bootstrap marker; interactive installation has a separate TTY-only entrypoint.",
+      "Before disruption require actual dependency, lifecycle/readiness and migration ports; missing capability is capability-unavailable, never fixture/no-op production success.",
+      "Own controller.json exclusively; candidate owns hook journal and wrapper owns migration receipt. Persist operation/session/nonce/receipt-path admission before spawn and consume s4/s5 evidence through ports.",
+      "Keep uncertain quiescing/migration/activation blocked; exact-offer acceptance, candidate compatibility, revision checks and explicit same-candidate recovery prohibit automatic predecessor restart, guessed exit or duplicate runners."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "install is rejected even with a forged source/bootstrap marker"
+      },
+      {
+        "level": "integration",
+        "name": "required peer admission and exact offer state transitions fail closed"
+      },
+      {
+        "level": "integration",
+        "name": "manager death and candidate journal receipt projections cannot start duplicate runner"
+      },
+      {
+        "level": "integration",
+        "name": "corrupt controller revisions and immutable candidate mismatches fail closed"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

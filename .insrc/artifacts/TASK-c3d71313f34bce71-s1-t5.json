@@ -1,0 +1,107 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-f13b04a5-caab-4b94-8d4b-08fa71e8269c",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-23T18:26:40.067Z",
+    "epicCreatedAt": "2026-11-23T13:27:35.399Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c3d71313f34bce71",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Prepare immutable bundle candidates with bounded safe extraction",
+      "parent": {
+        "entityId": "STORY-c3d71313f34bce71-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c3d71313f34bce71-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#255",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "72b89d92d1396f894296e28250e225fe9a355949b043dc0360444d62d4608cea",
+        "at": "2026-11-23T18:26:40.067Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-23T18:26:40.069Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Prepare immutable bundle candidates with bounded safe extraction",
+    "summary": "Implement bundle delivery resolution/download, sidecar/schema/inventory checks and streaming bounded ZIP staging/publication using the approved yauzl reader. Return the common prepared candidate without selecting or starting it.",
+    "size": "L",
+    "order": 5,
+    "acceptanceChecks": [
+      "Reject traversal/drive/UNC/ADS/backslash ambiguities, symlinks/special files, duplicates/case collisions, encryption/unsupported entries and entry/byte/ratio/size violations before unsafe execution/publication.",
+      "Check all runtime/target/predecessor/entrypoint and inventory identities; never run npm/build on consumers or silently switch bundle to dev.",
+      "Download/cancel/build-input failures clean only owned staging and preserve incumbent selection/data/running intent; retry revalidates the exact immutable candidate."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "hostile ZIP corpus cannot escape staging or exceed bounded extraction"
+      },
+      {
+        "level": "integration",
+        "name": "download digest target runtime cancellation and retry preserve incumbent"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

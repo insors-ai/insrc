@@ -1,0 +1,102 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-294aad70-345e-4fab-977a-fe20edfd5aa1",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-23T18:26:40.075Z",
+    "epicCreatedAt": "2026-11-23T13:27:35.399Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c3d71313f34bce71",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Route same-operation immediate escalation to the lock owner",
+      "parent": {
+        "entityId": "STORY-c3d71313f34bce71-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c3d71313f34bce71-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#257",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9c73d6ea1709b36037d8a060e74e6ffc66787025e62167c40e2229567e175fc1",
+        "at": "2026-11-23T18:26:40.075Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-23T18:26:40.077Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Route same-operation immediate escalation to the lock owner",
+    "summary": "Implement the approved sc2 escalation forwarding/control lane within the short-lived manager. Preserve ordinary mutation exclusion while allowing an explicit same-operation immediate message to reach the live lock owner during drain.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "Use protected installation/operation/owner-session-bound endpoint discovery and same-user authorization; stale/wrong-phase/wrong-identity requests fail.",
+      "Owner remains responsive while waiting; duplicate/cross-window immediate intent coalesces and uses the original s4 instance/completion endpoint/nonce. Forwarder never mutates snapshots or steals/releases the owner lock.",
+      "Absent owner returns escalation-unavailable/uncertain and requires explicit reconciled recovery; never use PID/kill/signal fallback, timer-based escalation or competing replacement."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "cross window immediate forwards while owner lock remains held"
+      },
+      {
+        "level": "integration",
+        "name": "duplicate stale wrong phase and dead owner escalation preserve exact completion nonce"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

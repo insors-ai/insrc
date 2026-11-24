@@ -30,7 +30,7 @@ import type { StepRunner, WorkflowName } from '../../types.js';
 import { readDefinitionHead } from '../../gates.js';
 import type { IssueArtifact } from '../../artifacts/issue.js';
 import { issueArtifactId } from '../../storage.js';
-import { claimCreateIntent, heartbeatClaim, quarantineDeadClaim, readClaim, takeoverAbandonedClaim } from '../../tracker/pending-create-claim.js';
+import { claimCreateIntent, heartbeatClaim, markClaimCreated, quarantineDeadClaim, readClaim, reconcileClaim, releaseClaim, takeoverAbandonedClaim } from '../../tracker/pending-create-claim.js';
 
 import {
 	assemblePostContext,
@@ -79,15 +79,29 @@ const pushExecuteRunner: StepRunner = {
 					marker,
 				});
 				if (!claim.claimed) {
-					// loser: reconcile the winner's claim — takeover if abandoned,
-					// reclaim if the holder is dead, verify by marker+target
+					// loser: reconcile the winner's claim — reclaim if the holder is
+					// dead (guard quarantine), take over if abandoned (fence++ under
+					// the mutex), and verify the remote candidate by marker+target
+					// before adopting. 0 duplicate creates.
 					const reclaimed = quarantineDeadClaim(ctx.intent.repoPath, c.epicHash);
 					const took = await takeoverAbandonedClaim(ctx.intent.repoPath, c.epicHash, ctx.runId, Date.now());
 					const active = took ?? reclaimed ?? claim.claim;
+					const reconciled = reconcileClaim(active, c.remoteCandidates ?? []);
+					if (!reconciled.ok) {
+						return {
+							type: 'output',
+							output: { refused: true, reason: reconciled.reason },
+							summary: `tracker.push: unresolved pending-create claim — ${reconciled.reason}`,
+						};
+					}
+					// mark the claim created under the mutex (fence-checked) and
+					// persist the issueRef the way finalize does
+					await markClaimCreated(ctx.intent.repoPath, c.epicHash, active.fence, reconciled.ref);
+					await releaseClaim(ctx.intent.repoPath, c.epicHash, (readClaim(ctx.intent.repoPath, c.epicHash)?.fence ?? active.fence));
 					return {
 						type: 'output',
-						output: { adopted: true, existingClaim: active },
-						summary: `tracker.push: pending-create claim held by ${active.runId} (fence ${active.fence}); this run reconciles and dispatches no create`,
+						output: { adopted: true, existingClaim: active, issueRef: reconciled.ref },
+						summary: `tracker.push: reconciled pending-create claim via marker-verified candidate ${reconciled.ref}; this run dispatches no create`,
 					};
 				}
 				// winner: heartbeat under the mutex, then dispatch

@@ -152,6 +152,15 @@ export interface PushContext {
 		readonly storyRefs?: Readonly<Record<string, string>>;
 		readonly taskRefs?:  Readonly<Record<string, Readonly<Record<string, string>>>>;
 	};
+	/** ISSUE-5f9d4ab4c90c0b4c s1/t6: remote issues matching the claim's
+	 *  title, surfaced for marker+target reconciliation when a pending-create
+	 *  claim already exists (the loser adopts, never creates). */
+	readonly remoteCandidates?: readonly {
+		readonly title:  string;
+		readonly body:   string;
+		readonly target: string;
+		readonly ref:    string;
+	}[];
 }
 
 export interface SyncContext {

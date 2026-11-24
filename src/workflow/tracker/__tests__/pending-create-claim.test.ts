@@ -206,6 +206,8 @@ test('authority boundary — claim mutex acquired with key ISSUE-<hash> through 
 		// ISSUE-<hash>, then acquire the claim mutex — the claim op must wait
 		const perKey2 = new Map<string, Promise<unknown>>();
 		installArtifactWriteAuthority(async (_repo, id) => {
+			// the daemon's real shape: the authority borrow IS the store queue entry
+			if (ArtifactIds.parse(id) === undefined) throw new Error(`authority rejects ${id}`);
 			const prev = perKey2.get(id) ?? Promise.resolve();
 			let release!: () => void;
 			const held2 = new Promise<void>(r => { release = r; });

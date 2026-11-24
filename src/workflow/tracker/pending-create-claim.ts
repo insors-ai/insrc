@@ -39,6 +39,7 @@ import { ARTIFACTS_DIR, issueArtifactId } from '../storage.js';
 import { acquireRunFileGuard, type RunFileGuard } from '../../shared/daemon-run-files.js';
 import type { ProcessIdentity } from '../../shared/daemon-process.js';
 import { requireProcessIdentity } from '../../shared/daemon-process.js';
+import { withArtifactWriteAuthority } from '../artifact-core/write-authority.js';
 
 // ---------------------------------------------------------------------------
 // Types + errors
@@ -198,12 +199,14 @@ export async function acquireClaimMutex(
 	const started = new Promise<void>(resolve => { chainStarted = resolve; });
 	const held = new Promise<void>(resolve => { releaseQueue = resolve; });
 	const next = previous.then(async () => {
-		chainStarted();
 		// cross-process half: guard dir (atomic mkdir; dead owners quarantined)
 		const guard = acquireRunFileGuard(claimGuardDir(repoPath, epicHash), owner);
 		releaseGuard = () => { try { guard.release(); } catch { /* best effort */ } };
-		if (authority !== undefined) await authority(repoPath, key, async () => { /* queue entry marks the key busy */ });
-		await held;
+		// in-process half through the REAL withArtifactWriteAuthority on the
+		// ISSUE-<hash> key (the daemon-installed handler when present): the
+		// authority hold spans the entire critical section (until `held` resolves)
+		const run = authority ?? withArtifactWriteAuthority;
+		await run(repoPath, key, async () => { chainStarted(); await held; });
 	});
 	const tail = next.catch(() => undefined);
 	CLAIM_MUTEXES.set(lockKey, tail);

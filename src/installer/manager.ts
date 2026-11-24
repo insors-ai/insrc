@@ -10,6 +10,7 @@ import type { PreparedCandidate } from './bundle.js';
 import type { DeliveryPort, LaunchAdmission, ManagerPeers, MigrationEvidence, ReadyEvidence, ShutdownCompletion, ShutdownRequest } from './peer-contracts.js';
 import { assertTerminalAdmission } from './terminal-admission.js';
 import type { TerminalAdmission } from './terminal-admission.js';
+import { forwardImmediate, openOperationControl } from './operation-control.js';
 
 function fail(code: string, message: string): never { throw new InstallerError(code, message); }
 const hash = (value: unknown): value is string => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
@@ -55,7 +56,12 @@ export class InstallerManager {
       const state: OperationRecord = { operationId: request.operationId, phase: inspected.kind === 'present' ? inspected.snapshot.operation?.phase ?? inspected.snapshot.lastResult?.phase ?? 'stopped' : inspected.kind === 'missing' ? 'stopped' : 'blocked', message: request.action === 'check-upgrade' ? canonicalJson({ offer: offer ?? null }) : canonicalJson(inspected.kind === 'present' ? { revision: inspected.snapshot.revision, installationId: this.location.installationId, activeReleaseId: inspected.snapshot.installation.activeReleaseId, operationId: inspected.snapshot.operation?.operationId } : inspected) };
       return parseInstaller('managerEvent', { protocolVersion: 1, operationId: request.operationId, kind: 'result', state, retryable: false });
     }
+    if (request.action === 'stop' && request.shutdownMode === 'immediate') return this.escalateShutdown(request);
     return this.#mutate(request);
+  }
+  /** Immediate intent joins its existing owner; it is never a new mutation. */
+  async escalateShutdown(input: unknown): Promise<ManagerEvent> {
+    return this.#active ? this.requestImmediate(input) : forwardImmediate(this.location, input);
   }
   /** Separate capability-based API, never reached by ordinary manager input. */
   async install(admission: TerminalAdmission, operationId: string, delivery: Delivery, decision?: DependencyDecision): Promise<ManagerEvent> {
@@ -141,15 +147,19 @@ export class InstallerManager {
     const request: ShutdownRequest = { operationId: active.request.operationId, expectedInstanceId: observed.identity.instanceId, mode: active.request.shutdownMode ?? 'graceful', completionNonce: nonce, completionEndpoint: this.location.daemonEndpoint.kind === 'unix' ? join(this.location.home, 's' + randomBytes(7).toString('base64url').slice(0, 10)) : this.location.daemonEndpoint.address + '-' + nonce.slice(0, 16) };
     active.store.writeOperationData(active.request.operationId, 'shutdown', request); active.shutdown = request;
     this.#update(active, 'quiescing'); active.disrupted = true;
-    const ack = await this.peers.lifecycle!.shutdown(this.location, request);
-    if (ack?.accepted !== true || ack.operationId !== request.operationId || ack.instanceId !== request.expectedInstanceId || ack.mode !== request.mode) fail('shutdown-uncertain', 'Shutdown acknowledgement differs');
-    this.#completion(request, await this.peers.lifecycle!.waitShutdownCompletion(this.location, request)); active.store.assertHeld();
+    const control = await openOperationControl(this.location, active.store, request.operationId, active.ownerNonce, input => this.requestImmediate(input));
+    try {
+      const ack = await this.peers.lifecycle!.shutdown(this.location, request);
+      if (ack?.accepted !== true || ack.operationId !== request.operationId || ack.instanceId !== request.expectedInstanceId || ack.mode !== request.mode) fail('shutdown-uncertain', 'Shutdown acknowledgement differs');
+      this.#completion(request, await this.peers.lifecycle!.waitShutdownCompletion(this.location, request));
+      await active.immediate; active.store.assertHeld();
+    } finally { await control.close(); }
   }
   /** t7 forwards to this live owner; no second snapshot writer is exposed. */
   async requestImmediate(input: unknown): Promise<ManagerEvent> {
     const request = parseManagerRequest(input), active = this.#active;
     if (!active || !active.shutdown || active.snapshot.operation?.phase !== 'quiescing' || request.action !== 'stop' || request.shutdownMode !== 'immediate' || request.operationId !== active.request.operationId || request.installationId !== this.location.installationId) fail('escalation-unavailable', 'No matching live draining operation');
-    active.store.assertHeld();
+    this.#assertCurrent(active);
     active.immediate ??= (async () => { const sent = { ...active.shutdown!, mode: 'immediate' as const }; const ack = await this.peers.lifecycle!.shutdown(this.location, sent); if (ack?.accepted !== true || ack.operationId !== sent.operationId || ack.instanceId !== sent.expectedInstanceId || ack.mode !== 'immediate') fail('shutdown-uncertain', 'Immediate acknowledgement differs'); active.store.assertHeld(); })();
     await active.immediate; return this.#event(active, active.snapshot.operation!, 'progress');
   }

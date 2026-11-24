@@ -28,6 +28,8 @@ function readRecord(file: string): unknown {
     return JSON.parse(bytes.subarray(0, count).toString('utf8')) as unknown;
   } finally { closeSync(fd); }
 }
+/** Read-only control-lane discovery uses the same private, bounded record checks. */
+export { readRecord as readPrivateControlRecord };
 function present(path: string): boolean {
   try { lstatSync(path); return true; } catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return false; throw error; }
 }

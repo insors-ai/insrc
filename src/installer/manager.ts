@@ -20,6 +20,7 @@ function fail(code: string, message: string): never { throw new InstallerError(c
 const hash = (value: unknown): value is string => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
 interface Active {
   store: ControllerStore; snapshot: ControllerSnapshot; request: ManagerRequest; ownerNonce: string;
+  checkCancellation(): void;
   candidate?: PreparedCandidate | undefined; admission?: LaunchAdmission | undefined; shutdown?: ShutdownRequest | undefined;
   previousResult?: OperationRecord | undefined; started: boolean; disrupted: boolean; interruptedPhase?: OperationRecord['phase'] | undefined; immediate?: Promise<void> | undefined;
 }
@@ -244,7 +245,9 @@ export class InstallerManager {
     return false;
   }
   async #quiesce(active: Active, mode: ShutdownRequest['mode'] = active.request.shutdownMode ?? 'graceful'): Promise<void> {
+    active.checkCancellation();
     const observed = await this.peers.lifecycle!.observe(this.location); active.store.assertHeld();
+    active.checkCancellation();
     if (this.#absent(active, observed)) return;
     if (observed.state !== 'present' || observed.identity.installationId !== this.location.installationId || observed.identity.releaseId !== active.snapshot.installation.activeReleaseId || observed.identity.protocolVersion !== 1 || observed.identity.state === 'migration-blocked' || canonicalJson(observed.endpoint) !== canonicalJson(this.location.daemonEndpoint)) { active.disrupted = true; fail('shutdown-uncertain', 'Incumbent identity or ownership is uncertain'); }
     const nonce = randomBytes(32).toString('hex');
@@ -253,6 +256,7 @@ export class InstallerManager {
     this.#update(active, 'quiescing'); active.disrupted = true;
     const control = await openOperationControl(this.location, active.store, request.operationId, active.ownerNonce, input => this.requestImmediate(input));
     try {
+      active.checkCancellation();
       const ack = await this.peers.lifecycle!.shutdown(this.location, request);
       if (ack?.accepted !== true || ack.operationId !== request.operationId || ack.instanceId !== request.expectedInstanceId || ack.mode !== request.mode) fail('shutdown-uncertain', 'Shutdown acknowledgement differs');
       this.#completion(request, await this.peers.lifecycle!.waitShutdownCompletion(this.location, request));
@@ -294,7 +298,7 @@ export class InstallerManager {
         const interruption = store.readOperationData(request.operationId, 'interruption') as { phase?: OperationRecord['phase'] } | undefined;
         interruptedPhase = interruption && Object.keys(interruption).join(',') === 'phase' && ['preparing', 'quiescing', 'migrating', 'activating'].includes(interruption.phase ?? '') ? interruption.phase : undefined;
       }
-      active = { store, snapshot: initial, request, ownerNonce: randomBytes(32).toString('hex'), previousResult: initial.lastResult, started: false, disrupted: recovering,
+      active = { store, snapshot: initial, request, checkCancellation, ownerNonce: randomBytes(32).toString('hex'), previousResult: initial.lastResult, started: false, disrupted: recovering,
         interruptedPhase }; this.#active = active;
       if (stopping) {
         if (recovering) {

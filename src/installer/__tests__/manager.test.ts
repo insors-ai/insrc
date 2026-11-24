@@ -16,6 +16,31 @@ const request = (action: ManagerRequest['action'], operationId = 'operation'): M
 async function upgrade(f: ReturnType<typeof managerFixture>, operationId = 'operation') {
   const manager = f.manager(), offer = await manager.checkUpgrade(); return manager.execute({ ...request('upgrade', operationId), acceptedOfferId: offer!.offerId });
 }
+test('cancellation at pre-shutdown observation and control admission sends no shutdown', async () => {
+  for (const boundary of ['candidate', 'observation', 'quiescing'] as const) {
+    const f = managerFixture(), abort = new AbortController();
+    try {
+      const manager = f.manager(event => {
+        if (boundary === 'candidate' && event.state.phase === 'preparing' && event.state.candidateId
+          || boundary === 'quiescing' && event.state.phase === 'quiescing') abort.abort();
+      });
+      const offer = await manager.checkUpgrade();
+      if (boundary === 'observation') f.peers.lifecycle!.observe = async () => { abort.abort(); return f.state.observation; };
+      const result = await manager.upgradeFromTerminal(requireTerminal({ stdin: { isTTY: true }, stdout: { isTTY: true }, stderr: { isTTY: true } }),
+        { ...request('upgrade', `cancel-${boundary}`), acceptedOfferId: offer!.offerId }, undefined, abort.signal);
+      assert.equal(result.state.errorCode, 'cancelled', boundary);
+      assert.equal(f.state.shutdowns.length, 0, boundary);
+      assert.equal(f.state.migrations.length, 0); assert.equal(f.state.activations.length, 0);
+      const snapshot = manager.inspect(); assert.equal(snapshot.kind, 'present');
+      if (snapshot.kind === 'present') {
+        assert.equal(snapshot.snapshot.installation.activeReleaseId, 'old');
+        assert.equal(snapshot.snapshot.lastResult?.phase, 'ready');
+        assert.equal(snapshot.snapshot.operation?.phase, boundary === 'quiescing' ? 'blocked' : undefined);
+      }
+      const store = ControllerStore.acquire(f.location); store.close();
+    } finally { f.cleanup(); }
+  }
+});
 test('install is rejected even with a forged source/bootstrap marker', async () => {
   const f = managerFixture();
   try {

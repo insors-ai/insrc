@@ -378,3 +378,17 @@ Add an EpicImpact artifact kind written by a new first step (epic.impact) that d
 
 - Confirm the BUILD check's form: it requires the last validate call's summary to contain a paragraph that starts with 'Epic impact:', is at least a minimum length (a constant the build sets and documents) and names each Story the LLD's analysis covered as a whole token; it checks presence and the named Stories, not the quality of the paragraph, and an explicit overrideReview passes it. A thin paragraph that names the Stories passes.
 - Confirm the citation mapping, extended by one entry for the approval-path bundle: c1 is the steering-delivery bundle, c2 the first-step and implement-prompt bundle, c3 the built-state records bundle, c4 the approval-path bundle, c5 the sibling-read search bundle, c6 the tests bundle (invariant sources use these).
+
+## Resolved questions
+
+- `q95d78df8` — Confirm the BUILD check's form: it requires the last validate call's summary to contain a paragraph that starts with 'Epic impact:', is at least a minimum length (a constant the build sets and documents) and names each Story the LLD's analysis covered as a whole token; it checks presence and the named Stories, not the quality of the paragraph, and an explicit overrideReview passes it. A thin paragraph that names the Stories passes.
+  - **resolved**: Confirm the stated check — The user approved the LLD in chat, which listed this as its open confirmation. _(2026-11-24T09:22:24.987Z)_
+
+## Citations
+
+- **[[c1]]** `code` `src/prompts/steering-block.md:294-353` — "s1 bundle 1: the steering block and its design.story, plan and build guide sections (also src/daemon/guide-sections.ts and src/daemon/steering-inject.ts)"
+- **[[c2]]** `code` `src/workflow/runners/design-story/index.ts:136-175` — "s1 bundle 2: the first steps of design.story and plan and the build implement prompt (also src/workflow/runners/plan/index.ts:83-125 and src/prompts/build/implement-task.md)"
+- **[[c3]]** `code` `src/workflow/runners/build/story-commits.ts` — "s1 bundle 3: what records a built Story and where the BUILD summary is written (also src/workflow/storage.ts:406, src/workflow/gates.ts:373-389 and src/daemon/steps/build-step/phases/validate.ts:575-6"
+- **[[c4]]** `code` `src/workflow/gates.ts:956-1060` — "s1 bundle 4: approveWorkflowTarget and approveOne, where a BUILD approval is withheld (also gates.ts:882 and gates.ts:965-969)"
+- **[[c5]]** `code` `src/workflow/runners/design-story/index.ts:377` — "s1 bundle 5: the only sibling-related wording in the stages (adjacentBoundaries at index.ts:538 too)"
+- **[[c6]]** `code` `src/daemon/__tests__/guide-sections.test.ts` — "s1 bundle 6: the tests the change would extend (also steering-inject.test.ts, build-step render.test.ts and the workflow approval tests)"

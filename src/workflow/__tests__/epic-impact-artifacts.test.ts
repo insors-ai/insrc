@@ -20,7 +20,7 @@ import Ajv from 'ajv';
 
 import { renderLldMarkdown } from '../artifacts/lld.js';
 import { renderPlanMarkdown } from '../artifacts/plan.js';
-import { epicImpactBodyLines, isEpicImpactAnalysis } from '../artifacts/epic-impact.js';
+import { epicImpactBodyLines, epicImpactProblem, isEpicImpactAnalysis } from '../artifacts/epic-impact.js';
 import type { EpicImpactAnalysis } from '../artifacts/epic-impact.js';
 import { lldContextSchema } from '../runners/design-story/schemas.js';
 import { planContextSchema } from '../runners/plan/schemas.js';
@@ -63,6 +63,16 @@ test('epic-impact-artifacts.test.ts: an LLD and a PLAN with an epicImpact render
 	assert.ok(lldMd.indexOf('Epic impact analysis') < lldMd.indexOf('HLD context'), 'LLD: before the HLD context');
 	const planMd = renderPlanMarkdown({ ...planFixture(), body: { ...planFixture().body, epicImpact: ANALYSIS } });
 	assert.ok(planMd.indexOf('Epic impact analysis') < planMd.indexOf('## 2. Tasks') || planMd.indexOf('Epic impact analysis') < planMd.indexOf('Tasks\n'), 'PLAN: before the Tasks');
+
+	// the rule synthesize applies: a non-null digest needs an analysis that applies, names its Stories, has findings and cites sources
+	assert.equal(epicImpactProblem(false, undefined), undefined, 'no digest: no analysis needed');
+	assert.equal(epicImpactProblem(false, none), undefined, 'no digest: applies:false is fine');
+	assert.equal(epicImpactProblem(true, ANALYSIS), undefined, 'a digest and a complete analysis');
+	assert.match(epicImpactProblem(true, undefined) ?? '', /is required and is missing/);
+	assert.match(epicImpactProblem(true, none) ?? '', /must apply/);
+	assert.match(epicImpactProblem(true, { ...ANALYSIS, storiesCovered: [] }) ?? '', /names no Story/);
+	assert.match(epicImpactProblem(true, { ...ANALYSIS, findings: '   ' }) ?? '', /no findings/);
+	assert.match(epicImpactProblem(true, { ...ANALYSIS, sources: [] }) ?? '', /cites no source/);
 
 	// the shape guard
 	assert.equal(isEpicImpactAnalysis(ANALYSIS), true);

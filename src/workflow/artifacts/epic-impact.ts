@@ -46,3 +46,18 @@ export function isEpicImpactAnalysis(v: unknown): v is EpicImpactAnalysis {
 		&& Array.isArray(r['sources']) && r['sources'].every(s => typeof s === 'string')
 		&& (r['reason'] === undefined || typeof r['reason'] === 'string');
 }
+
+/**
+ * Why a later Story's carried analysis is not acceptable, or undefined when it is. A Story with a non-null digest (an Epic with an
+ * earlier built Story) must carry an analysis that applies, names the Stories it covered, has findings and cites what it read; a
+ * Story with no digest may carry none, or one that says it does not apply. design.story and plan reject a synthesize with the reason.
+ */
+export function epicImpactProblem(digestPresent: boolean, analysis: EpicImpactAnalysis | undefined): string | undefined {
+	if (!digestPresent) return undefined;
+	if (analysis === undefined) return 'the Epic has already-built Stories, so the Epic impact analysis (epicImpact) is required and is missing';
+	if (!analysis.applies) return 'the Epic has already-built Stories, so the analysis must apply (applies: true), not say it does not';
+	if (analysis.storiesCovered.length === 0) return 'the Epic impact analysis names no Story it covered (storiesCovered is empty)';
+	if (analysis.findings.trim().length === 0) return 'the Epic impact analysis has no findings';
+	if (analysis.sources.length === 0) return 'the Epic impact analysis cites no source it read (sources is empty)';
+	return undefined;
+}

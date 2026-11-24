@@ -1,0 +1,104 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-dd7cb879-cff9-421a-a55a-cd5b1d761320",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-24T09:36:35.760Z",
+    "epicCreatedAt": "2026-11-23T13:27:35.399Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c3d71313f34bce71",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Implement owned preparation worker protocol and closure evidence",
+      "parent": {
+        "entityId": "STORY-c3d71313f34bce71-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c3d71313f34bce71-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s2-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#267",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "05643dcd66f2567fda4f157c9c93fbdc41ce4178ddc870c9be77e849871f0d6d",
+        "at": "2026-11-24T09:36:35.760Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-24T09:36:35.761Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement owned preparation worker protocol and closure evidence",
+    "summary": "Implement bounded private worker launch/cancel/result validation and lifetime ownership using the existing coordinator/process machinery. Establish the reusable source-command runner before composing the complete worker workload.",
+    "size": "L",
+    "order": 3,
+    "acceptanceChecks": [
+      "Bind launch, cancel, result, cleanup digest and child-close evidence to installation/operation/attempt/source/nonce/run and derive all paths from the validated owned checkpoint.",
+      "Propagate AbortSignal and terminal/owner EOF into the retained preparation actor scope, bound drain and return explicit uncertainty when closure cannot be established.",
+      "Finalize outcomes only after all admitted command actors close and cleanup/ownership evidence agrees; a log line, PID/age, free lock or status projection alone never authorizes success or cleanup.",
+      "Worker code has no controller commit, candidate-publication or daemon/application-data capability. It can finish/dispose private work after manager self-exit but cannot select or activate.",
+      "Missing work or an incomplete staged result cannot emit prepared. Full production worker workload is composed only after the Git and payload components are implemented.",
+      "A command-parent close is not proof that all admitted work closed: reconcile nested coordinator actors/close journals and cleanup digests, and retain uncertainty for unconfirmed descendants or unsupported target closure evidence before publication or retry."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "cancel-or-terminal-eof-drains-owned-preparation-actors-before-return"
+      },
+      {
+        "level": "integration",
+        "name": "held-unknown-or-mismatched-preparation-result-blocks-retry-and-cleanup"
+      },
+      {
+        "level": "integration",
+        "name": "worker-protocol-rejects-foreign-checkpoint-and-empty-prepared-result"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

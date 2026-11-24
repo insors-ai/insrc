@@ -1,7 +1,7 @@
 {
   "kind": "s2-local-installer-qualification",
-  "runId": "05a58ba6-7f5d-4f37-b589-06a08c4015e5",
-  "sourceCommit": "8a3b62b0e625f3573ce790cd4fa2304186efed05",
+  "runId": "b64693a8-ae69-4489-a8c3-454e0ee7b014",
+  "sourceCommit": "168b622f6582d173c8d37d7e50e33256f2bc1d20",
   "runtimeVersion": "v22.22.1",
   "budgets": {
     "buildMs": 600000,
@@ -16,11 +16,11 @@
     "DEBUG"
   ],
   "liveTests": "unset",
-  "inputFingerprint": "16526e34b9cb3153969df332d78d9a104cd61600f03e358a71ef72168a4549b4",
-  "outputFingerprint": "2f2a332a4ce62dad97c0d1d06fff3cac27b985a060f0788440b47ff35a5a22bf",
+  "inputFingerprint": "e93ebd0c8d45aaf65c73ab3271c5aacf091fd0ff01f87a02c83ab98c21226547",
+  "outputFingerprint": "c5e1717deb59c0baecada3fd52cf192c472d22e09bc25a178271ab538fdbc15d",
   "counts": {
-    "tests": 100,
-    "pass": 100,
+    "tests": 114,
+    "pass": 114,
     "fail": 0,
     "cancelled": 0,
     "skipped": 0,
@@ -52,6 +52,22 @@
         "counts": {
           "tests": 6,
           "pass": 6,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "scripts/__tests__/test-harness-coordinator.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 10,
+          "pass": 10,
           "fail": 0,
           "cancelled": 0,
           "skipped": 0,
@@ -210,8 +226,8 @@
       "coverage": {
         "status": "reported",
         "counts": {
-          "tests": 3,
-          "pass": 3,
+          "tests": 4,
+          "pass": 4,
           "fail": 0,
           "cancelled": 0,
           "skipped": 0,
@@ -258,8 +274,8 @@
       "coverage": {
         "status": "reported",
         "counts": {
-          "tests": 5,
-          "pass": 5,
+          "tests": 7,
+          "pass": 7,
           "fail": 0,
           "cancelled": 0,
           "skipped": 0,
@@ -322,8 +338,8 @@
       "coverage": {
         "status": "reported",
         "counts": {
-          "tests": 13,
-          "pass": 13,
+          "tests": 14,
+          "pass": 14,
           "fail": 0,
           "cancelled": 0,
           "skipped": 0,
@@ -404,17 +420,22 @@
     "childCloseJournal": "child-results.jsonl",
     "closureMode": "owned-groups"
   },
+  "journalCounts": {
+    "child-admissions.jsonl": 33,
+    "child-results.jsonl": 33,
+    "child-disposals.jsonl": 33
+  },
   "nativeSmoke": {
     "kind": "local-dev-native-smoke",
     "mode": "dev",
-    "sourceCommit": "8a3b62b0e625f3573ce790cd4fa2304186efed05",
-    "acceptedCommit": "8a3b62b0e625f3573ce790cd4fa2304186efed05",
-    "releaseId": "dev-d56ba2094889a9a54462123ae474c03e45dd812bd1f2107f",
+    "sourceCommit": "168b622f6582d173c8d37d7e50e33256f2bc1d20",
+    "acceptedCommit": "168b622f6582d173c8d37d7e50e33256f2bc1d20",
+    "releaseId": "dev-05515cca87eedc4dfa4c4571125ab5861bf195c55603be5b",
     "nodeVersion": "v22.22.1",
     "npmVersion": "10.9.4",
     "cuda": "skip",
-    "files": 59910,
-    "payloadBytes": 1924931743,
+    "files": 59914,
+    "payloadBytes": 1924949606,
     "nativeProbe": "passed",
     "freshManagerInspect": "passed",
     "target": {
@@ -425,6 +446,13 @@
     "qualification": "Local native/fixture evidence only; no VM, Windows, IDE or live migration qualification",
     "confirmedClosed": true
   },
-  "nativeDurationMs": 507318.965292,
-  "qualificationLimits": "Local native/fixture evidence only; no VM, Windows, IDE or live migration qualification"
+  "nativeDurationMs": 527428.258625,
+  "qualificationLimits": "Local native/fixture evidence only; no VM, Windows, IDE or live migration qualification",
+  "formalValidation": {
+    "t3": "passed after corrections; source tree preserved during task commit split",
+    "t5": "passed after correcting task commit scope",
+    "t6": "passed after corrections",
+    "t9": "not started after corrections: daemon-unreachable (ECONNREFUSED daemon.sock); earlier ledger pass predates this combined run"
+  },
+  "humanBuildApproval": "not obtained; BUILD lifecycle draft was already preventing presentation"
 }

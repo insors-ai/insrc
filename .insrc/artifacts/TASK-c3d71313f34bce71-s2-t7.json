@@ -1,0 +1,107 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-f272bb72-d490-403e-b02b-fa4d90228bcc",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-24T09:36:35.773Z",
+    "epicCreatedAt": "2026-11-23T13:27:35.399Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c3d71313f34bce71",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Recover interrupted dev preparation without duplicate workers",
+      "parent": {
+        "entityId": "STORY-c3d71313f34bce71-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c3d71313f34bce71-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s2-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s2-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#271",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8925c4f90031a5d91eb0b9f2a843db38bfb86aa6db8619b61d07d8a8ff533520",
+        "at": "2026-11-24T09:36:35.773Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-24T09:36:35.775Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Recover interrupted dev preparation without duplicate workers",
+    "summary": "Add the approved explicit pre-publication retry path to the existing manager and connect cancellation end to end. Use the same operation/source checkpoint and S1 post-publication recovery after candidate reconciliation.",
+    "size": "L",
+    "order": 7,
+    "acceptanceChecks": [
+      "Existing retry-migration can reconcile preparing dev operations without candidate metadata by validating original intent/source/attempt/run/nonce and positive actor cleanup/ownership evidence; never re-resolve the branch during recovery.",
+      "Finalize a fully verified prepared/published candidate once, or start one fresh serial attempt for the same accepted source only after the prior failed/cancelled attempt is confirmed closed.",
+      "Missing, foreign, held or unknown evidence remains preparation-uncertain with retained checkpoint/diagnostics and refusal of independent mutation; no PID/age/endpoint inference, duplicate worker or automatic retry loop.",
+      "Confirmed pre-disruption failure/cancellation preserves prior selection and ready/stopped result; edited/uncertain source is retained. Abort/EOF prevents later publication or TUI handoff.",
+      "Once candidate metadata exists, use S1 exact-candidate migration/activation recovery unchanged; no daemon lifecycle, migration-hook or application DB implementation is added."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "manager-self-exit-before-candidate-recovers-same-source-with-no-duplicate-worker"
+      },
+      {
+        "level": "integration",
+        "name": "held-unknown-or-mismatched-preparation-result-blocks-retry-and-cleanup"
+      },
+      {
+        "level": "integration",
+        "name": "published-release-before-candidate-record-reconciles-without-rebuild"
+      },
+      {
+        "level": "integration",
+        "name": "cancel-or-terminal-eof-drains-owned-preparation-actors-before-return"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

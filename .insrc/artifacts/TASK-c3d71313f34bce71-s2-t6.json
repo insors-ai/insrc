@@ -1,0 +1,112 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-bb8dc879-9770-45d4-b7cc-f4bf0bc7157d",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-24T09:36:35.769Z",
+    "epicCreatedAt": "2026-11-23T13:27:35.399Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c3d71313f34bce71",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Integrate dev offers and publication with the S1 manager",
+      "parent": {
+        "entityId": "STORY-c3d71313f34bce71-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c3d71313f34bce71-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s2-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s2-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#270",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ffbf0626cd9d547a0d85d5bcde789ed5654e4c996bf03496d51e7a96852e3c44",
+        "at": "2026-11-24T09:36:35.770Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-24T09:36:35.771Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Integrate dev offers and publication with the S1 manager",
+    "summary": "Implement the dev DeliveryPort and switch private offer/context types together with all manager, bundle-adapter and fixture consumers. Preserve public protocol shapes and the common final candidate contract.",
+    "size": "L",
+    "order": 6,
+    "acceptanceChecks": [
+      "Use a real private bundle/dev-source offer discriminant. Keep bundle descriptor checks unchanged while dev offer IDs bind source digest plus installation/location/predecessor/delivery without a fabricated payload manifest.",
+      "Re-resolve at locked acceptance, reject stale offers and persist accepted source/checkpoint before worker admission through bounded same-operation manager callbacks; expose no unrestricted metadata/controller writer to the adapter.",
+      "After verified worker closure, publish only through the original restricted manager-held lease, fully verify the final receipt/source/payload identity, and persist the ordinary candidate record before existing lifecycle/migration handoff.",
+      "Dev open/verify use persisted receipt/inventory/runtime only, require no adapter memory, Git, npm or build, and reuse an existing same-source release only after complete validation; conflicting bytes never overwrite an immutable ID.",
+      "Retain all actual sibling-port admission and S1 terminal/offer/stop/escalation/selection safeguards. Unconfirmed cleanup retains blocked preparation instead of taking the ordinary error path that clears an operation."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "dev-manager-separates-accepted-source-offer-from-final-artifact-and-publishes-once"
+      },
+      {
+        "level": "integration",
+        "name": "offer-moves-before-acceptance-is-stale-after-acceptance-remains-pinned"
+      },
+      {
+        "level": "integration",
+        "name": "dev-open-verify-and-fresh-manager-reopen-never-fetch-or-build"
+      },
+      {
+        "level": "integration",
+        "name": "bundle-offer-receipt-and-required-sibling-admission-regressions-preserved"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-628ce3b1-d90c-4aed-b680-6c0a0a0f3123",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-24T09:36:35.757Z",
+    "epicCreatedAt": "2026-11-23T13:27:35.399Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c3d71313f34bce71",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Use explicit verified private npm throughout source builds",
+      "parent": {
+        "entityId": "STORY-c3d71313f34bce71-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c3d71313f34bce71-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#266",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "640326fbaa3ddb54081825f94926af386b37f4b3b93c1c9a037c893a59551281",
+        "at": "2026-11-24T09:36:35.757Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-24T09:36:35.758Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Use explicit verified private npm throughout source builds",
+    "summary": "Extend the existing canonical build stages with the approved explicit npmCli option and add the private source-build environment composition. Reuse runtime policy and coordinator ownership rather than introduce another build pipeline.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "Run npm ci and every coordinated stage through absolute verified Node 22.22.1 and matching npm 10.9.4 CLI, including when bin/npm is absent. Existing ordinary coordinator defaults remain unchanged.",
+      "Prepend private Node for child scripts, clear Node injection and inherited foreign coordinator identity, pin native runtime/header settings and fail concretely on missing verified prerequisites without host/elevated fallback.",
+      "Preserve explicit CUDA-install values including empty; default skip only when absent. Preserve delegated Git/registry credentials without capturing them or changing global config, HOME or PATH.",
+      "Resolve accepted-checkout helpers/dev dependencies from that checkout; any necessary packaging root/npm override stays minimal and retains the existing writer, fingerprint and native-probe gates."
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "dev-private-node-and-explicit-npm-cli-work-with-no-host-npm-wrapper"
+      },
+      {
+        "level": "smoke",
+        "name": "dev-build-children-ignore-host-node-npm-and-preserve-explicit-cuda-setting"
+      },
+      {
+        "level": "integration",
+        "name": "missing-or-mismatched-private-toolchain-headers-and-prerequisites-refuse-without-elevation"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

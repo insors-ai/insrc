@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e911860e-d32d-4437-9387-88d917267833",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-24T09:36:35.754Z",
+    "epicCreatedAt": "2026-11-23T13:27:35.399Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c3d71313f34bce71",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Define strict dev source, preparation and receipt metadata",
+      "parent": {
+        "entityId": "STORY-c3d71313f34bce71-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c3d71313f34bce71-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#265",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "484e110a7369143a311a4939a2e8a189cc49a1293956f732e24da0183cccb64b",
+        "at": "2026-11-24T09:36:35.754Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-24T09:36:35.755Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Define strict dev source, preparation and receipt metadata",
+    "summary": "Add the approved source-offer, checkpoint/result/cancel and dev receipt types/parsers in the proposed dev modules. Reuse S1 canonical hashing, bounds, path and target/runtime validators; keep public wire records and current bundle consumers compiling until the coordinated integration task.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "Validate unknown fields, versions, IDs, source/ref forms, target/runtime/recipe, portable checkout/stage paths, nonce/run identity and record-size bounds; preserve shared Windows drive canonicalization.",
+      "Compute the approved noncircular source digest/prospective release ID separately from final receipt/inventory digests; define full PreparedCandidate reconstruction and reject same-ID/different-source or mixed receipt modes.",
+      "Validate commit-bound optional package.json insrcInstaller hook references in order, without executing hooks or importing application services.",
+      "Do not switch existing PreparedReleaseOffer consumers to a partially wired union or alter public Delivery/Installation/ReleaseManifest/ManagerRequest/UpgradeOffer/Phase schemas."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "dev-source-offer-binds-repo-branch-commit-target-runtime-recipe-without-payload-hash"
+      },
+      {
+        "level": "unit",
+        "name": "dev-receipt-binds-final-manifest-inventory-and-contained-checkout-without-self-hash"
+      },
+      {
+        "level": "unit",
+        "name": "invalid-option-like-ref-source-and-ambiguous-receipts-rejected"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

@@ -1,0 +1,1127 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 18,
+        "contentHash": "33079f91e7d87cf123ab85962a0e9421ac6c8d5ecbdd4c92b527b905dd72f4d7",
+        "at": "2026-11-24T16:32:16.305Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "c3d71313f34bce71",
+    "storyId": "s2",
+    "createdAt": "2026-11-24T09:44:29.197Z",
+    "updatedAt": "2026-11-24T16:32:16.288Z",
+    "epicCreatedAt": "2026-11-23T13:27:35.399Z",
+    "epicSlug": "reliable-cross-platform-daemon-installation-lifecycle",
+    "revision": 18
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "b36684ab1",
+        "ranAt": "2026-11-24T09:49:02.763Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "dev-source-offer-binds-repo-branch-commit-target-runtime-recipe-without-payload-hash",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dev-metadata.test.ts",
+                "title": "dev-source-offer-binds-repo-branch-commit-target-runtime-recipe-without-payload-hash",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/dev-metadata.test.ts",
+                "title": "preparation protocol binds paths source nonce run and bounded complete results",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/dev-metadata.test.ts",
+                "title": "commit migration metadata preserves order and rejects malformed or duplicate hooks",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "dev-receipt-binds-final-manifest-inventory-and-contained-checkout-without-self-hash",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dev-metadata.test.ts",
+                "title": "dev-receipt-binds-final-manifest-inventory-and-contained-checkout-without-self-hash",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "invalid-option-like-ref-source-and-ambiguous-receipts-rejected",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dev-metadata.test.ts",
+                "title": "invalid-option-like-ref-source-and-ambiguous-receipts-rejected",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/installer/__tests__/dev-metadata.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 615,
+            "titles": [
+              {
+                "title": "dev-source-offer-binds-repo-branch-commit-target-runtime-recipe-without-payload-hash",
+                "result": "pass"
+              },
+              {
+                "title": "dev-receipt-binds-final-manifest-inventory-and-contained-checkout-without-self-hash",
+                "result": "pass"
+              },
+              {
+                "title": "invalid-option-like-ref-source-and-ambiguous-receipts-rejected",
+                "result": "pass"
+              },
+              {
+                "title": "preparation protocol binds paths source nonce run and bounded complete results",
+                "result": "pass"
+              },
+              {
+                "title": "commit migration metadata preserves order and rejects malformed or duplicate hooks",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "da2cc200c",
+        "ranAt": "2026-11-24T10:02:29.272Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "dev-private-node-and-explicit-npm-cli-work-with-no-host-npm-wrapper",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dev-toolchain.test.ts",
+                "title": "dev-private-node-and-explicit-npm-cli-work-with-no-host-npm-wrapper",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "dev-build-children-ignore-host-node-npm-and-preserve-explicit-cuda-setting",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dev-toolchain.test.ts",
+                "title": "dev-build-children-ignore-host-node-npm-and-preserve-explicit-cuda-setting",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "missing-or-mismatched-private-toolchain-headers-and-prerequisites-refuse-without-elevation",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dev-toolchain.test.ts",
+                "title": "missing-or-mismatched-private-toolchain-headers-and-prerequisites-refuse-without-elevation",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/installer/__tests__/dev-toolchain.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 18479,
+            "titles": [
+              {
+                "title": "dev-private-node-and-explicit-npm-cli-work-with-no-host-npm-wrapper",
+                "result": "pass"
+              },
+              {
+                "title": "dev-build-children-ignore-host-node-npm-and-preserve-explicit-cuda-setting",
+                "result": "pass"
+              },
+              {
+                "title": "missing-or-mismatched-private-toolchain-headers-and-prerequisites-refuse-without-elevation",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "6b91c78e8",
+        "ranAt": "2026-11-24T16:16:44.229Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "cancel-or-terminal-eof-drains-owned-preparation-actors-before-return",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dev-worker.test.ts",
+                "title": "cancel-or-terminal-eof-drains-owned-preparation-actors-before-return",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "held-unknown-or-mismatched-preparation-result-blocks-retry-and-cleanup",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dev-worker.test.ts",
+                "title": "held-unknown-or-mismatched-preparation-result-blocks-retry-and-cleanup",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/dev-worker.test.ts",
+                "title": "owned-process evidence excludes unregistered detached descendants",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "worker-protocol-rejects-foreign-checkpoint-and-empty-prepared-result",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dev-worker.test.ts",
+                "title": "worker-protocol-rejects-foreign-checkpoint-and-empty-prepared-result",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/dev-worker.test.ts",
+                "title": "worker input rejects oversized launch and foreign cancellation frames",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/dev-worker.test.ts",
+                "title": "worker framing preserves fragmented UTF-8 and rejects malformed byte frames",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/dev-worker.test.ts",
+                "title": "worker completion durably flushes proof and refuses a failed result flush",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/installer/__tests__/dev-worker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 14795,
+            "titles": [
+              {
+                "title": "cancel-or-terminal-eof-drains-owned-preparation-actors-before-return",
+                "result": "pass"
+              },
+              {
+                "title": "held-unknown-or-mismatched-preparation-result-blocks-retry-and-cleanup",
+                "result": "pass"
+              },
+              {
+                "title": "worker-protocol-rejects-foreign-checkpoint-and-empty-prepared-result",
+                "result": "pass"
+              },
+              {
+                "title": "owned-process evidence excludes unregistered detached descendants",
+                "result": "pass"
+              },
+              {
+                "title": "worker completion durably flushes proof and refuses a failed result flush",
+                "result": "pass"
+              },
+              {
+                "title": "worker input rejects oversized launch and foreign cancellation frames",
+                "result": "pass"
+              },
+              {
+                "title": "worker framing preserves fragmented UTF-8 and rejects malformed byte frames",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "525f0498c",
+        "ranAt": "2026-11-24T11:11:07.640Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "selected-repo-branch-exact-commit-and-unrelated-branch-never-selected",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dev-git.test.ts",
+                "title": "selected-repo-branch-exact-commit-and-unrelated-branch-never-selected",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "dirty-conflicting-missing-or-foreign-selected-checkout-preserved",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dev-git.test.ts",
+                "title": "dirty-conflicting-missing-or-foreign-selected-checkout-preserved",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "read-only-dev-check-never-fetches-builds-or-writes-install-state",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dev-git.test.ts",
+                "title": "read-only-dev-check-never-fetches-builds-or-writes-install-state",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "offer-moves-before-acceptance-is-stale-after-acceptance-remains-pinned",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dev-git.test.ts",
+                "title": "offer-moves-before-acceptance-is-stale-after-acceptance-remains-pinned",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/installer/__tests__/dev-git.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3817,
+            "titles": [
+              {
+                "title": "selected-repo-branch-exact-commit-and-unrelated-branch-never-selected",
+                "result": "pass"
+              },
+              {
+                "title": "dirty-conflicting-missing-or-foreign-selected-checkout-preserved",
+                "result": "pass"
+              },
+              {
+                "title": "read-only-dev-check-never-fetches-builds-or-writes-install-state",
+                "result": "pass"
+              },
+              {
+                "title": "offer-moves-before-acceptance-is-stale-after-acceptance-remains-pinned",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "168b622f6",
+        "ranAt": "2026-11-24T16:27:27.551Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "staged-dev-payload-requires-all-control-runtime-assets-and-clean-worker-result",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dev-payload.test.ts",
+                "title": "staged-dev-payload-requires-all-control-runtime-assets-and-clean-worker-result",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/dev-payload.test.ts",
+                "title": "dev payload flushes its directory tree before prepared and fails closed on fsync error",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/dev-worker.test.ts",
+                "title": "worker completion durably flushes proof and refuses a failed result flush",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "npm-build-fetch-and-native-probe-failure-preserve-incumbent",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dev-payload.test.ts",
+                "title": "npm-build-fetch-and-native-probe-failure-preserve-incumbent",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "immutable-dev-payload-tamper-or-existing-id-conflict-refuses-before-shutdown",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dev-payload.test.ts",
+                "title": "immutable-dev-payload-tamper-or-existing-id-conflict-refuses-before-shutdown",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/installer/__tests__/dev-payload.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 202765,
+            "titles": [
+              {
+                "title": "staged-dev-payload-requires-all-control-runtime-assets-and-clean-worker-result",
+                "result": "pass"
+              },
+              {
+                "title": "npm-build-fetch-and-native-probe-failure-preserve-incumbent",
+                "result": "pass"
+              },
+              {
+                "title": "immutable-dev-payload-tamper-or-existing-id-conflict-refuses-before-shutdown",
+                "result": "pass"
+              },
+              {
+                "title": "dev payload flushes its directory tree before prepared and fails closed on fsync error",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/dev-worker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 14996,
+            "titles": [
+              {
+                "title": "cancel-or-terminal-eof-drains-owned-preparation-actors-before-return",
+                "result": "pass"
+              },
+              {
+                "title": "held-unknown-or-mismatched-preparation-result-blocks-retry-and-cleanup",
+                "result": "pass"
+              },
+              {
+                "title": "worker-protocol-rejects-foreign-checkpoint-and-empty-prepared-result",
+                "result": "pass"
+              },
+              {
+                "title": "owned-process evidence excludes unregistered detached descendants",
+                "result": "pass"
+              },
+              {
+                "title": "worker completion durably flushes proof and refuses a failed result flush",
+                "result": "pass"
+              },
+              {
+                "title": "worker input rejects oversized launch and foreign cancellation frames",
+                "result": "pass"
+              },
+              {
+                "title": "worker framing preserves fragmented UTF-8 and rejects malformed byte frames",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "168b622f6",
+        "ranAt": "2026-11-24T16:32:16.288Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "dev-manager-separates-accepted-source-offer-from-final-artifact-and-publishes-once",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dev-manager.test.ts",
+                "title": "dev-manager-separates-accepted-source-offer-from-final-artifact-and-publishes-once",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/dev-manager.test.ts",
+                "title": "manager checkpoint rejects source mutation after durable acceptance",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "offer-moves-before-acceptance-is-stale-after-acceptance-remains-pinned",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dev-manager.test.ts",
+                "title": "offer-moves-before-acceptance-is-stale-after-acceptance-remains-pinned",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "dev-open-verify-and-fresh-manager-reopen-never-fetch-or-build",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dev-manager.test.ts",
+                "title": "dev-open-verify-and-fresh-manager-reopen-never-fetch-or-build",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "bundle-offer-receipt-and-required-sibling-admission-regressions-preserved",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dev-manager.test.ts",
+                "title": "bundle-offer-receipt-and-required-sibling-admission-regressions-preserved",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/dev-manager.test.ts",
+                "title": "bundled manager metadata does not start source preparation",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/manager.test.ts",
+                "title": "required peer admission and exact offer state transitions fail closed",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/manager.test.ts",
+                "title": "install is rejected even with a forged source/bootstrap marker",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/manager.test.ts",
+                "title": "preparation receives no controller writer and post-drain tampering blocks migration",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/manager.test.ts",
+                "title": "stop and interrupted stop recovery bypass dependency health and payload checks",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/manager.test.ts",
+                "title": "cancellation at pre-shutdown observation and control admission sends no shutdown",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/installer/__tests__/dev-manager.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 188690,
+            "titles": [
+              {
+                "title": "dev-manager-separates-accepted-source-offer-from-final-artifact-and-publishes-once",
+                "result": "pass"
+              },
+              {
+                "title": "offer-moves-before-acceptance-is-stale-after-acceptance-remains-pinned",
+                "result": "pass"
+              },
+              {
+                "title": "dev-open-verify-and-fresh-manager-reopen-never-fetch-or-build",
+                "result": "pass"
+              },
+              {
+                "title": "bundle-offer-receipt-and-required-sibling-admission-regressions-preserved",
+                "result": "pass"
+              },
+              {
+                "title": "manager checkpoint rejects source mutation after durable acceptance",
+                "result": "pass"
+              },
+              {
+                "title": "bundled manager metadata does not start source preparation",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/manager.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3812,
+            "titles": [
+              {
+                "title": "cancellation at pre-shutdown observation and control admission sends no shutdown",
+                "result": "pass"
+              },
+              {
+                "title": "install is rejected even with a forged source/bootstrap marker",
+                "result": "pass"
+              },
+              {
+                "title": "required peer admission and exact offer state transitions fail closed",
+                "result": "pass"
+              },
+              {
+                "title": "manager death and candidate journal receipt projections cannot start duplicate runner",
+                "result": "pass"
+              },
+              {
+                "title": "corrupt controller revisions and immutable candidate mismatches fail closed",
+                "result": "pass"
+              },
+              {
+                "title": "owned manager self exit leaves candidate running and recovery needs actual wrapper exit receipt",
+                "result": "pass"
+              },
+              {
+                "title": "ordinary manager executable rejects forged install and terminal entry rejects redirected streams",
+                "result": "pass"
+              },
+              {
+                "title": "preparation receives no controller writer and post-drain tampering blocks migration",
+                "result": "pass"
+              },
+              {
+                "title": "free lease or unreachable endpoint alone cannot authorize ordinary startup",
+                "result": "pass"
+              },
+              {
+                "title": "explicit failed-hook recovery requires real prior exit and owning hook retry policy",
+                "result": "pass"
+              },
+              {
+                "title": "late foreign revision cannot be overwritten by readiness or error persistence",
+                "result": "pass"
+              },
+              {
+                "title": "stop and interrupted stop recovery bypass dependency health and payload checks",
+                "result": "pass"
+              },
+              {
+                "title": "pre-admission manager self exit recovers install and upgrade without duplicate hooks",
+                "result": "pass"
+              },
+              {
+                "title": "missing launch metadata in a later phase cannot masquerade as preparation recovery",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "9efe4891b",
+        "ranAt": "2026-11-24T12:18:30.276Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "manager-self-exit-before-candidate-recovers-same-source-with-no-duplicate-worker",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dev-recovery.test.ts",
+                "title": "manager-self-exit-before-candidate-recovers-same-source-with-no-duplicate-worker",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "held-unknown-or-mismatched-preparation-result-blocks-retry-and-cleanup",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dev-recovery.test.ts",
+                "title": "held-unknown-or-mismatched-preparation-result-blocks-retry-and-cleanup",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/dev-worker.test.ts",
+                "title": "held-unknown-or-mismatched-preparation-result-blocks-retry-and-cleanup",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "published-release-before-candidate-record-reconciles-without-rebuild",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dev-recovery.test.ts",
+                "title": "published-release-before-candidate-record-reconciles-without-rebuild",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "cancel-or-terminal-eof-drains-owned-preparation-actors-before-return",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dev-recovery.test.ts",
+                "title": "cancel-or-terminal-eof-drains-owned-preparation-actors-before-return",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/dev-worker.test.ts",
+                "title": "cancel-or-terminal-eof-drains-owned-preparation-actors-before-return",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/terminal-install.test.ts",
+                "title": "terminal cancellation settles owned work and suppresses later TUI handoff",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/installer/__tests__/dev-recovery.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 237604,
+            "titles": [
+              {
+                "title": "manager-self-exit-before-candidate-recovers-same-source-with-no-duplicate-worker",
+                "result": "pass"
+              },
+              {
+                "title": "held-unknown-or-mismatched-preparation-result-blocks-retry-and-cleanup",
+                "result": "pass"
+              },
+              {
+                "title": "published-release-before-candidate-record-reconciles-without-rebuild",
+                "result": "pass"
+              },
+              {
+                "title": "cancel-or-terminal-eof-drains-owned-preparation-actors-before-return",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/dev-worker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 13373,
+            "titles": [
+              {
+                "title": "cancel-or-terminal-eof-drains-owned-preparation-actors-before-return",
+                "result": "pass"
+              },
+              {
+                "title": "held-unknown-or-mismatched-preparation-result-blocks-retry-and-cleanup",
+                "result": "pass"
+              },
+              {
+                "title": "worker-protocol-rejects-foreign-checkpoint-and-empty-prepared-result",
+                "result": "pass"
+              },
+              {
+                "title": "owned-process evidence excludes unregistered detached descendants",
+                "result": "pass"
+              },
+              {
+                "title": "worker input rejects oversized launch and foreign cancellation frames",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/terminal-install.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3645,
+            "titles": [
+              {
+                "title": "terminal installer requires all TTY streams and absent dev adapter fails explicitly",
+                "result": "pass"
+              },
+              {
+                "title": "ready commit and lock release precede same terminal installed TUI",
+                "result": "pass"
+              },
+              {
+                "title": "cancel install failure and post install TUI error preserve correct outcome",
+                "result": "pass"
+              },
+              {
+                "title": "terminal consent binds exact dependency offer and never installs coding CLIs",
+                "result": "pass"
+              },
+              {
+                "title": "installed launcher preserves existing files and quotes exact private-runtime retry",
+                "result": "pass"
+              },
+              {
+                "title": "terminal cancellation settles owned work and suppresses later TUI handoff",
+                "result": "pass"
+              },
+              {
+                "title": "terminal upgrade retains delivery and rejects stale dependency consent before disruption",
+                "result": "pass"
+              },
+              {
+                "title": "successor upgrade replaces its owned launcher and preserves ready selection",
+                "result": "pass"
+              },
+              {
+                "title": "saved installer selects candidate control runtime and exact post-install retry",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "a9a918172",
+        "ranAt": "2026-11-24T12:38:55.314Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "dev-open-verify-and-fresh-manager-reopen-never-fetch-or-build",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/installed-dev.test.ts",
+                "title": "dev-open-verify-and-fresh-manager-reopen-never-fetch-or-build",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "dev-common-handoff-selects-candidate-bootstrap-runtime-and-retains-mode",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/installed-dev.test.ts",
+                "title": "dev-common-handoff-selects-candidate-bootstrap-runtime-and-retains-mode",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "bundle-offer-receipt-and-required-sibling-admission-regressions-preserved",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/installed-dev.test.ts",
+                "title": "bundle-offer-receipt-and-required-sibling-admission-regressions-preserved",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/manager.test.ts",
+                "title": "install is rejected even with a forged source/bootstrap marker",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/terminal-install.test.ts",
+                "title": "terminal cancellation settles owned work and suppresses later TUI handoff",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/installer/__tests__/installed-dev.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 32066,
+            "titles": [
+              {
+                "title": "dev-open-verify-and-fresh-manager-reopen-never-fetch-or-build",
+                "result": "pass"
+              },
+              {
+                "title": "dev-common-handoff-selects-candidate-bootstrap-runtime-and-retains-mode",
+                "result": "pass"
+              },
+              {
+                "title": "bundle-offer-receipt-and-required-sibling-admission-regressions-preserved",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/manager.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3525,
+            "titles": [
+              {
+                "title": "install is rejected even with a forged source/bootstrap marker",
+                "result": "pass"
+              },
+              {
+                "title": "required peer admission and exact offer state transitions fail closed",
+                "result": "pass"
+              },
+              {
+                "title": "manager death and candidate journal receipt projections cannot start duplicate runner",
+                "result": "pass"
+              },
+              {
+                "title": "corrupt controller revisions and immutable candidate mismatches fail closed",
+                "result": "pass"
+              },
+              {
+                "title": "owned manager self exit leaves candidate running and recovery needs actual wrapper exit receipt",
+                "result": "pass"
+              },
+              {
+                "title": "ordinary manager executable rejects forged install and terminal entry rejects redirected streams",
+                "result": "pass"
+              },
+              {
+                "title": "preparation receives no controller writer and post-drain tampering blocks migration",
+                "result": "pass"
+              },
+              {
+                "title": "free lease or unreachable endpoint alone cannot authorize ordinary startup",
+                "result": "pass"
+              },
+              {
+                "title": "explicit failed-hook recovery requires real prior exit and owning hook retry policy",
+                "result": "pass"
+              },
+              {
+                "title": "late foreign revision cannot be overwritten by readiness or error persistence",
+                "result": "pass"
+              },
+              {
+                "title": "stop and interrupted stop recovery bypass dependency health and payload checks",
+                "result": "pass"
+              },
+              {
+                "title": "pre-admission manager self exit recovers install and upgrade without duplicate hooks",
+                "result": "pass"
+              },
+              {
+                "title": "missing launch metadata in a later phase cannot masquerade as preparation recovery",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/terminal-install.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3184,
+            "titles": [
+              {
+                "title": "terminal installer requires all TTY streams and absent dev adapter fails explicitly",
+                "result": "pass"
+              },
+              {
+                "title": "ready commit and lock release precede same terminal installed TUI",
+                "result": "pass"
+              },
+              {
+                "title": "cancel install failure and post install TUI error preserve correct outcome",
+                "result": "pass"
+              },
+              {
+                "title": "terminal consent binds exact dependency offer and never installs coding CLIs",
+                "result": "pass"
+              },
+              {
+                "title": "installed launcher preserves existing files and quotes exact private-runtime retry",
+                "result": "pass"
+              },
+              {
+                "title": "terminal cancellation settles owned work and suppresses later TUI handoff",
+                "result": "pass"
+              },
+              {
+                "title": "terminal upgrade retains delivery and rejects stale dependency consent before disruption",
+                "result": "pass"
+              },
+              {
+                "title": "successor upgrade replaces its owned launcher and preserves ready selection",
+                "result": "pass"
+              },
+              {
+                "title": "saved installer selects candidate control runtime and exact post-install retry",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "ed16099c1",
+        "ranAt": "2026-11-24T14:13:56.711Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "dev-complete-payload-native-probe-and-fresh-installed-manager-inspect",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/installer/__tests__/dev-complete-payload.test.ts",
+                "title": "dev-complete-payload-native-probe-and-fresh-installed-manager-inspect",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "combined-s1-s2-installer-regression-has-complete-coverage-and-confirmed-cleanup",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/installer-s2-qualification.test.ts",
+                "title": "combined-s1-s2-installer-regression-has-complete-coverage-and-confirmed-cleanup",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "scripts/__tests__/installer-s2-qualification.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1587,
+            "titles": [
+              {
+                "title": "combined-s1-s2-installer-regression-has-complete-coverage-and-confirmed-cleanup",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/dev-complete-payload.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 503532,
+            "titles": [
+              {
+                "title": "dev-complete-payload-native-probe-and-fresh-installed-manager-inspect",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

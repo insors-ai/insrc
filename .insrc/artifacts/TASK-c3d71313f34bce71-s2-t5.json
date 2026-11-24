@@ -1,0 +1,113 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-269f9c9c-cad9-4328-b2f3-0c4dd9def2ea",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-24T09:36:35.766Z",
+    "epicCreatedAt": "2026-11-23T13:27:35.399Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c3d71313f34bce71",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Assemble complete dev payloads and compose the preparation workload",
+      "parent": {
+        "entityId": "STORY-c3d71313f34bce71-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c3d71313f34bce71-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s2-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s2-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s2-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#269",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a799267e69cde8a85a64b1f9d3fcb265941462e8b1d5ff9f534765686c1cc824",
+        "at": "2026-11-24T09:36:35.766Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-24T09:36:35.768Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Assemble complete dev payloads and compose the preparation workload",
+    "summary": "Compose the source worker's real Git/private npm/build/packaging workload. Reuse S1 bundling, production-closure/inventory and native/runtime probes to leave a verified private stage plus dev receipt/result for the manager.",
+    "size": "L",
+    "order": 5,
+    "acceptanceChecks": [
+      "Build only the accepted isolated checkout under canonical ownership, preserve build-input/output fingerprints, and retain its managed source separately from the runtime inventory.",
+      "Stage bootstrap.mjs, manager.mjs, native/control.node, tools/node, compiled daemon/TUI/MCP/assets and the full production/workspace/native dependency closure using the existing helpers and bounded contained inventory rules.",
+      "Write canonical inventory/dev receipt with the approved digest semantics and exact source/runtime/target/predecessor/hook identity; probe before returning prepared and reject incomplete, linked, escaped, colliding or changed payload files.",
+      "Emit a nonce/run/source-bound worker result only after confirmed child cleanup; do not publish/select a release or fabricate qualified bundle/native/live evidence.",
+      "Use controlled payload fixtures for task-level failure coverage; the actual complete dev payload and fresh installed-manager smoke belong to the final composed regression task."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "staged-dev-payload-requires-all-control-runtime-assets-and-clean-worker-result"
+      },
+      {
+        "level": "integration",
+        "name": "npm-build-fetch-and-native-probe-failure-preserve-incumbent"
+      },
+      {
+        "level": "integration",
+        "name": "immutable-dev-payload-tamper-or-existing-id-conflict-refuses-before-shutdown"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

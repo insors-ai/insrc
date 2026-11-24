@@ -1,0 +1,107 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-61f1c5e5-fa7e-465d-baaa-f05f2f1c9562",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-24T09:36:35.763Z",
+    "epicCreatedAt": "2026-11-23T13:27:35.399Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c3d71313f34bce71",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Resolve exact Git sources and preserve retained checkouts",
+      "parent": {
+        "entityId": "STORY-c3d71313f34bce71-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c3d71313f34bce71-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s2-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#268",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b44b466e526e3debf2384a9e711e3d2978c792f0133182d0fa1bb0367d8c1102",
+        "at": "2026-11-24T09:36:35.763Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-24T09:36:35.764Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Resolve exact Git sources and preserve retained checkouts",
+    "summary": "Implement read-only dev source discovery and the isolated accepted-commit Git preparation/preflight component in the proposed dev boundary, using the owned runner for all commands and retaining source outside immutable payloads.",
+    "size": "L",
+    "order": 4,
+    "acceptanceChecks": [
+      "Resolve only the configured refs/heads branch with bounded argument-array Git; check-upgrade performs no fetch, clone, npm/build or mutation of controller/selected source/preparation records.",
+      "Create a new private attempt checkout, fetch only the configured source and detach at the accepted commit. Branch movement cannot substitute another commit; unavailable exact objects fail before disruption.",
+      "Inspect the selected receipt's exact managed checkout for expected origin/HEAD, tracked/untracked edits, conflicts and build-input fingerprint; inspect an explicitly selected local source working tree as required. Preserve dirty/missing/foreign trees with actionable diagnostics.",
+      "Use contained checkout and staging roots, disable untrusted Git hooks/fsmonitor where applicable, and never reset/clean/switch the selected checkout or alter global Git settings.",
+      "Verify supported same-source/target/protocol/recipe predecessor provenance and forward ancestry; carry accepted commit hook metadata for final manifest preparation without implementing migration policy."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "selected-repo-branch-exact-commit-and-unrelated-branch-never-selected"
+      },
+      {
+        "level": "integration",
+        "name": "dirty-conflicting-missing-or-foreign-selected-checkout-preserved"
+      },
+      {
+        "level": "integration",
+        "name": "read-only-dev-check-never-fetches-builds-or-writes-install-state"
+      },
+      {
+        "level": "integration",
+        "name": "offer-moves-before-acceptance-is-stale-after-acceptance-remains-pinned"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

@@ -1,0 +1,130 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-151057ab-b009-4c65-a416-7db1c8fe39f0",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-24T09:36:35.782Z",
+    "epicCreatedAt": "2026-11-23T13:27:35.399Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c3d71313f34bce71",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Validate composed dev installation and preserve installer regressions",
+      "parent": {
+        "entityId": "STORY-c3d71313f34bce71-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c3d71313f34bce71-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s2-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s2-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s2-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s2-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s2-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s2-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c3d71313f34bce71-s2-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#273",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "4df7ee4c96482c383257e9cfab31d5658db2b9098463defad5e06b1f5a003e64",
+        "at": "2026-11-24T09:36:35.782Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-24T09:36:35.785Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Validate composed dev installation and preserve installer regressions",
+    "summary": "Run the final combined S1/S2 installer regression after implementation tasks, add the actual complete dev payload/native-host/fresh-manager smoke and record scoped evidence and qualification limits for the story BUILD gate.",
+    "size": "M",
+    "order": 9,
+    "acceptanceChecks": [
+      "Exercise real local Git source selection/private-tooling preparation plus fixture owning-peer handoff; verify exact accepted commit, delivery mode, incumbent preservation, recovery and selected bootstrap/runtime behavior together.",
+      "Build and verify the actual complete dev payload under canonical ownership, load/probe native/runtime components, then run the installed manager inspect in a fresh process with no host Node/npm dependency.",
+      "Run the combined installer/installation-home regression including S1 bundle, controller, escalation, terminal and payload boundaries after all source changes; record actual case counts, typecheck, timeouts/skips and confirmed actor cleanup truthfully.",
+      "Keep per-task iteration limited to surrounding tests, avoid an unrelated legacy/backend sweep, and do not represent local/fixture evidence as actual UTM/OrbStack/Windows or live migration/IDE qualification.",
+      "Preserve generated ownership/sequence definitions if implementation changes documented boundaries and present the complete story BUILD only after all tasks and required tests pass.",
+      "Keep expensive actual payload/native-host smoke in a separate final integration test file so parser/Git/ownership task selectors remain surrounding-only; required formal validation is still run, with local/fixture/live evidence distinguished."
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "dev-complete-payload-native-probe-and-fresh-installed-manager-inspect"
+      },
+      {
+        "level": "integration",
+        "name": "combined-s1-s2-installer-regression-has-complete-coverage-and-confirmed-cleanup"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

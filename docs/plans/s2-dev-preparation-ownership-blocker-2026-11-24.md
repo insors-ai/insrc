@@ -6,7 +6,7 @@ This is evidence for the task being developed, not a separate defect or approval
 ## Status
 
 S2's plan is approved. Tasks t1 and t2 passed the registered build validator.
-Tasks t3–t8 passed formal validation after approval of LLD revision 4. Task t9 passed its final local composed native smoke and 100-case combined installer regression; formal task validation follows. See [final local evidence](s2-dev-preparation-validation-2026-11-24.md). No S2 BUILD approval is requested yet.
+Tasks t3–t8 passed formal validation after approval of LLD revision 4. After five critical-review corrections, the composed native smoke and 114-case/24-file combined installer regression passed. Registered t3/t5/t6 revalidation passed. Final t9 revalidation could not start because the daemon socket refused connections; its earlier formal pass predates these corrections. See [final local evidence](s2-dev-preparation-validation-2026-11-24.md). No S2 BUILD approval is requested yet.
 The current host daemon and its v2 installation have not been changed.
 
 The first t3 validation passed its typecheck and four worker tests but rejected:

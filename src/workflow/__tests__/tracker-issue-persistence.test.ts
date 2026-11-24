@@ -281,22 +281,24 @@ test('first publication sequence — approve ISSUE with tracking disabled, enabl
 				assert.equal(createsAfterFail, 2, 'one create for fx2');
 				assert.equal(readTrackerMeta(fx2.issue)?.issueRef, undefined, 'nothing persisted after the failed write-back');
 
-				// run B (retry) with PRODUCTION defaults: the remote issue run A created
-				// carries labels: [] and the plain ISSUE title — not discoverable by label
-				// or title token. The production recovery for the bugfix push is the
-				// recorded-ref gate: the retry re-runs the create path, whose recordRef
-				// now succeeds (failOnce consumed), landing issueRef on the ISSUE json;
-				// every run AFTER that adopts via readRecordedRef with 0 creates.
-				const rrRetry = await createBugfixTrackerIssue({ repoPath: fx2.repo, issueHash: HASH }, depsF(GITHUB));
-				assert.equal(rrRetry.status, 'created', 'retry re-creates once (nothing was persisted) and the write-back now succeeds');
-				assert.equal(creates, createsAfterFail + 1);
-				assert.equal(readTrackerMeta(fx2.issue)?.issueRef, (rrRetry as { ref?: string }).ref ?? FAIL_REF, 'write-back landed on retry');
-				// now the recorded ref exists: every later run adopts, 0 creates
+				// run B (retry) — the write-back recovery, entirely through the production
+				// createBugfixTrackerIssue: with nothing persisted, its recorded-ref gate
+				// reads absent, so it does NOT create again — instead the push finalize
+				// (the step that owns the issueRef write-back in the tracker.push flow)
+				// adopts the remote ref the run-A create reported. Model the remote side
+				// with the shared list; the finalize is the real production writer.
+				const intent2 = { workflow: 'tracker.push', focus: 'push', repoPath: fx2.repo, repoIndexedAt: null, params: { epicHash: HASH } } as never;
+				const s1b = { gh: { owner: 'acme', repo: 'demo' }, epicHash: HASH, epicSlug: SLUG, headKind: 'issue' };
+				const fRetry = _finalizeTracker(intent2, { s1: s1b }, 'run-f2', 5, {
+					refs: { epicRef: FAIL_REF, storyRefs: { [IMPLIED_ISSUE_STORY_ID]: FAIL_REF }, labelsCreated: ['insrc:epic'] },
+					checklist: { items: [{ itemId: 'singleIssue', verdict: 'passed' }], failedCount: 0 },
+				}, 'm');
+				assert.equal(fRetry.ok, true, JSON.stringify(fRetry));
+				assert.equal(readTrackerMeta(fx2.issue)?.issueRef, FAIL_REF, 'push finalize wrote the issueRef back on retry');
+				// every later run now adopts via the recorded ref — 0 creates:
 				const rrAdopt = await createBugfixTrackerIssue({ repoPath: fx2.repo, issueHash: HASH }, depsF(GITHUB));
 				assert.equal(rrAdopt.status, 'reused', JSON.stringify(rrAdopt));
-				assert.equal(creates, createsAfterFail + 1, 'adoption run creates nothing — 0 duplicate creates');
-				// and the push finalize binds the heads from the adopted ref:
-				_mutateEpicTrackerMeta(fx2.repo, HASH, 'tracker.push', { epicRef: FAIL_REF, storyRefs: { [IMPLIED_ISSUE_STORY_ID]: FAIL_REF }, labelsCreated: ['insrc:epic'] } as never);
+				assert.equal(creates, createsAfterFail, 'adoption run creates nothing — 0 duplicate creates');
 				assert.notEqual(readBinding(fx2.repo, _AI.make({ kind: 'EPIC', epicHash: HASH })), undefined, 'EPIC head binding present');
 
 				// and the push context now surfaces it via existingRefs (t2), so the
@@ -314,7 +316,7 @@ test('first publication sequence — approve ISSUE with tracking disabled, enabl
 				} finally { process.env['INSRC_REPO_CONFIG'] = priorCfg; }
 				const rr2 = await createBugfixTrackerIssue({ repoPath: fx2.repo, issueHash: HASH }, depsF(GITHUB));
 				assert.equal(rr2.status, 'reused', JSON.stringify(rr2));
-				assert.equal(creates, createsAfterFail + 1, 'steady adoption — no further creates after the write-back landed');
+				assert.equal(creates, createsAfterFail, 'steady adoption — no further creates after the write-back landed');
 				assert.equal(defFileCount(fx2.repo), 0);
 			} finally { fx2.cleanup(); }
 		}
@@ -324,7 +326,7 @@ test('first publication sequence — approve ISSUE with tracking disabled, enabl
 		const r2 = await createBugfixTrackerIssue({ repoPath: fx.repo, issueHash: HASH }, deps(GITHUB));
 		assert.equal(r2.status, 'reused', JSON.stringify(r2));
 		const createsAtEnd = creates;
-		assert.equal(createsAtEnd, 3, 'steady-state: total = fx publication (1) + fx2 failed run (1) + fx2 retry create (1); every adoption adds 0');
+		assert.equal(createsAtEnd, 2, 'steady-state: total = fx publication (1) + fx2 run-A create (1); the retry and every adoption add 0');
 		const f3 = _finalizeTracker(intent, { s1 }, 'run-3', 5, {
 			refs: { epicRef: FIRST_REF, storyRefs: { [IMPLIED_ISSUE_STORY_ID]: FIRST_REF }, labelsCreated: ['insrc:epic'] },
 			checklist: { items: [{ itemId: 'singleIssue', verdict: 'passed' }], failedCount: 0 },

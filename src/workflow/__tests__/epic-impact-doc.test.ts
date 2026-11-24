@@ -33,6 +33,10 @@ test('epic-impact-doc.test.ts: docs/workflow.md describes the Epic impact analys
 	assert.ok(text.includes(`${EPIC_DIGEST_DEFAULTS.perStoryChars} characters`), 'the per-Story cap');
 	assert.ok(text.includes(`${EPIC_DIGEST_DEFAULTS.totalChars} characters`), 'the total cap');
 	assert.ok(text.includes(`at least ${EPIC_IMPACT_MIN_PARAGRAPH_CHARS} characters`), 'the minimum paragraph length');
+	// the caps as rules, not just numbers
+	assert.ok(text.includes(`each at most ${EPIC_DIGEST_DEFAULTS.perStoryChars} characters`), 'each full Story is at most the per-Story cap');
+	assert.ok(text.includes(`the whole digest at most ${EPIC_DIGEST_DEFAULTS.totalChars} characters`), 'the whole digest is at most the total cap');
+	assert.ok(text.includes(`the newest ${EPIC_DIGEST_DEFAULTS.fullStories} Stories are shown in full`), 'the newest Stories are in full');
 	// the rule it states
 	for (const piece of ['`epicImpact`', 'storiesCovered', 'overrideReview', 'skipped[]', 'standalone Story', 'first', 'refuses a later Story\'s LLD or PLAN', 'does not apply']) {
 		assert.ok(text.includes(piece), `states: ${piece}`);

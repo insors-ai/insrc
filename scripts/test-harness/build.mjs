@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, realpathSync, rmdirSync, writeFileSync } from 'node:fs';
-import { delimiter, join, relative, resolve } from 'node:path';
+import { delimiter, isAbsolute, join, relative, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createRun, harnessError, participantContext } from './context.mjs';
 import { processScope, withRun } from './process.mjs';
@@ -36,8 +36,9 @@ export function npmEntrypoint(env) {
 	throw harnessError('compiler-unavailable', 'npm is required on the selected Node runtime PATH.');
 }
 
-export function buildStages(run) {
-	const npm = npmEntrypoint(run.environment());
+export function buildStages(run, { npmCli } = {}) {
+	if (npmCli !== undefined && (!isAbsolute(npmCli) || !existsSync(npmCli) || !lstatSync(npmCli).isFile() || lstatSync(npmCli).isSymbolicLink())) throw harnessError('compiler-unavailable', 'Explicit npm CLI must be an absolute regular file.');
+	const npm = npmCli ?? npmEntrypoint(run.environment());
 	return [
 		['scripts/clean-output.mjs'],
 		[npm, 'run', 'build', '--workspace', '@insrc/project-memory'],
@@ -85,14 +86,14 @@ export async function withWriter(run, scope, work) {
 	}
 }
 
-export async function prepareBuild(run, scope, { stages = buildStages(run), requiredArtifacts = REQUIRED } = {}) {
+export async function prepareBuild(run, scope, { npmCli, stages = buildStages(run, { npmCli }), requiredArtifacts = REQUIRED } = {}) {
 	return withWriter(run, scope, async () => {
 		const before = fingerprint(run.root, INPUTS);
 		const started = performance.now();
 		for (const args of stages) {
 			const remaining = run.budgets.buildMs - (performance.now() - started);
 			if (remaining <= 0) throw harnessError('child-timeout', 'Build ceiling exceeded.');
-			const result = await scope.start(run.runtime.executable, args, { budgetMs: remaining });
+			const result = await scope.start(run.runtime.executable, args, { budgetMs: remaining, env: run.environment() });
 			if (result.code !== 0 || result.timedOut || result.interrupted || result.launchError) throw harnessError('build-failed', `Build stage failed: ${relative(run.root, resolve(run.root, args[0]))}; ${JSON.stringify(result)}`);
 		}
 		if (before !== fingerprint(run.root, INPUTS)) throw harnessError('build-drift', 'Build input changed during preparation.');

@@ -31,7 +31,7 @@ export function assertManagerBoundary(metafile) {
 export async function bundleControlEntrypoint(run, scope, entry, output, target) {
   run.assertOwner();
   const meta = `${output}.meta.json`;
-  const binary = join(ROOT, 'node_modules/@esbuild', `${process.platform}-${process.arch}`, process.platform === 'win32' ? 'esbuild.exe' : 'bin/esbuild');
+  const binary = join(run.root, 'node_modules/@esbuild', `${process.platform}-${process.arch}`, process.platform === 'win32' ? 'esbuild.exe' : 'bin/esbuild');
   const result = await scope.start(binary, [entry, '--bundle', '--platform=node', '--format=esm', '--target=node22', `--outfile=${output}`, `--metafile=${meta}`, ...(target ? [`--define:__INSRC_INSTALLER_TARGET__=${JSON.stringify(target)}`] : []), '--banner:js=import {createRequire as __insrcCreateRequire} from "node:module"; const require=__insrcCreateRequire(import.meta.url);'], { budgetMs: run.budgets.buildMs });
   if (result.code !== 0 || result.timedOut) throw new Error('Control bootstrap bundle failed');
   const metadata = JSON.parse(readFileSync(meta, 'utf8')); assertManagerBoundary(metadata); rmSync(meta); return metadata;

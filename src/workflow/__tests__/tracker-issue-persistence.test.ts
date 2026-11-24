@@ -31,6 +31,7 @@ import { readBinding } from '../tracker/binding.js';
 import { patchTrackerMeta, readTrackerMeta } from '../tracker/refs.js';
 import { ArtifactIds as _AI } from '../artifact-ids.js';
 import { titleMatchesToken, type IssueRef, type PortResult, type TrackerPort as _TP } from '../tracker/port.js';
+import { ensureUnitIssueDetailed } from '../tracker/unit-issue.js';
 import { ArtifactIds } from '../artifact-ids.js';
 import { approvedMeta } from './lifecycle-fixtures.js';
 import { installExecStandIn } from './helpers/exec-stand-in.js';
@@ -264,61 +265,63 @@ test('first publication sequence — approve ISSUE with tracking disabled, enabl
 		//          push finalize (the production write-back) and then assert the
 		//          adoption reads — never patching the ref by hand.
 		{
+			// fx2: the deterministic push path (tracker.push via ensureUnitIssueDetailed)
+			// with the EPIC artifact-id title + unit/membership labels — the exact
+			// discoverability the production title-token guard uses.
 			const fx2 = seedIssueOnly();
 			try {
-				let attempts = 0;
-				const seenLost: string[] = [];
-				const depsF = (cfg: never): TrackerCreateDeps => ({ ...deps(cfg),
-					recordRef: (repoPath: string, issueHash: string, ref: string) => {
-						attempts += 1;
-						if (attempts === 1) throw new Error('simulated write-back failure');
-						patchTrackerMeta(artifactJsonPath(repoPath, issueArtifactId(issueHash)), { issueRef: ref });
+				const token = _AI.make({ kind: 'EPIC', epicHash: HASH });
+				const fx2Remote: Array<{ ref: IssueRef; title: string; labels: string[] }> = [];
+				const remotePort = {
+					kind: 'github', capabilities: new Set(['issue-create']),
+					findIssues: (labels: string[]): PortResult<IssueRef[]> => ({ ok: true, value: fx2Remote.filter(i => labels.every(l => i.labels.includes(l))).map(i => i.ref) }),
+					findIssue: (labels: string[]): PortResult<IssueRef | null> => ({ ok: true, value: fx2Remote.find(i => labels.every(l => i.labels.includes(l)))?.ref ?? null }),
+					findIssuesByTitleToken: (t: string): PortResult<IssueRef[]> => ({ ok: true, value: fx2Remote.filter(i => titleMatchesToken(i.title, t)).map(i => i.ref) }),
+					issueOps: {
+						create: (spec: { title: string; labels?: string[] }): PortResult<{ ref: IssueRef; id: number }> => {
+							creates += 1;
+							const ref = `acme/demo#${100 + creates}`;
+							fx2Remote.push({ ref, title: spec.title, labels: [...(spec.labels ?? [])] });
+							return { ok: true, value: { ref, id: 9000 + creates } };
+						},
+						linkSubIssue: (): PortResult<void> => ({ ok: true, value: undefined }),
+						ensureLabel: () => true,
+						comment: (): PortResult<void> => ({ ok: true, value: undefined }),
+						close: (): PortResult<void> => ({ ok: true, value: undefined }),
+						resolveIssueId: (): PortResult<number> => ({ ok: true, value: 1 }),
 					},
-					promptOnLostRef: (ctx) => { seenLost.push(ctx.createdRef ?? ''); return { action: 'retry-record' }; },
-				});
-				// run A + recovery in ONE production call: create happens (counted), the
-				// first recordRef throws, the production promptOnLostRef branch retries
-				// the record with the created ref — the lost-ref recovery path itself.
-				const rf = await createBugfixTrackerIssue({ repoPath: fx2.repo, issueHash: HASH }, depsF(GITHUB));
-				assert.equal(rf.status, 'created');
-				assert.equal((rf as { reason?: string }).reason, undefined, 'retry-record succeeded: no residual ref-unrecorded');
-				const createsAfterFail = creates;
-				const FAIL_REF = (rf as { ref?: string }).ref!;
-				assert.equal(createsAfterFail, 2, 'exactly one create for fx2');
-				assert.deepEqual(seenLost, [FAIL_REF], 'the lost-ref prompt was handed the created ref');
-				assert.equal(attempts, 2, 'recordRef retried once');
-				assert.equal(readTrackerMeta(fx2.issue)?.issueRef, FAIL_REF, 'write-back landed via the production retry-record');
+				} as unknown as _TP;
+				const unit = { unit: 'epic', repoPath: fx2.repo, epicHash: HASH } as const;
 
-				// every later run adopts via the recorded ref — 0 creates:
-				const rrAdopt = await createBugfixTrackerIssue({ repoPath: fx2.repo, issueHash: HASH }, depsF(GITHUB));
-				assert.equal(rrAdopt.status, 'reused', JSON.stringify(rrAdopt));
-				assert.equal(creates, createsAfterFail, 'adoption run creates nothing — 0 duplicate creates');
-				// push finalize binds the heads from the recorded ref (production writer):
-				const intent2 = { workflow: 'tracker.push', focus: 'push', repoPath: fx2.repo, repoIndexedAt: null, params: { epicHash: HASH } } as never;
-				const s1b = { gh: { owner: 'acme', repo: 'demo' }, epicHash: HASH, epicSlug: SLUG, headKind: 'issue' };
-				const fRetry = _finalizeTracker(intent2, { s1: s1b }, 'run-f2', 5, {
-					refs: { epicRef: FAIL_REF, storyRefs: { [IMPLIED_ISSUE_STORY_ID]: FAIL_REF }, labelsCreated: ['insrc:epic'] },
-					checklist: { items: [{ itemId: 'singleIssue', verdict: 'passed' }], failedCount: 0 },
-				}, 'm');
-				assert.equal(fRetry.ok, true, JSON.stringify(fRetry));
-				assert.notEqual(readBinding(fx2.repo, _AI.make({ kind: 'EPIC', epicHash: HASH })), undefined, 'EPIC head binding present');
+				// run A: the deterministic push creates ONE issue (EPIC-token title +
+				// unit/membership labels) and records it:
+				const runA = await ensureUnitIssueDetailed(unit, remotePort, { readConfig: () => GITHUB });
+				assert.equal(runA.ok, true, JSON.stringify(runA));
+				if (runA.ok) assert.equal(runA.value.created, true);
+				const createsAfterA = creates;
+				const FAIL_REF = runA.ok ? runA.value.issue : '';
+				assert.ok(FAIL_REF.length > 0);
+				// simulate the lost write-back: remove the EPIC head binding (the local record)
+				{
+					const headPath = artifactJsonPath(fx2.repo, token);
+					const head = JSON.parse(readFileSync(headPath, 'utf8')) as { meta: { envelope?: { binding?: unknown } } };
+					if (head.meta.envelope !== undefined) delete head.meta.envelope.binding;
+					writeFileSync(headPath, JSON.stringify(head, null, 2) + '\n');
+				}
+				assert.equal(readBinding(fx2.repo, token), undefined, 'write-back lost: no local binding');
+				assert.equal(readTrackerMeta(fx2.issue)?.issueRef, undefined, 'no issueRef persisted');
 
-				// and the push context now surfaces it via existingRefs (t2), so the
-				// coarse-handoff push also adopts without creating:
-				const cfgPath = join(fx2.repo, 'repo-config.json');
-				writeFileSync(cfgPath, JSON.stringify({ repos: { [fx2.repo]: { type: 'github', owner: 'acme', repo: 'demo' } } }));
-				const priorCfg = process.env['INSRC_REPO_CONFIG'];
-				process.env['INSRC_REPO_CONFIG'] = cfgPath;
-				try {
-					const { assemblePushContext } = await import('../runners/tracker/context.js');
-					const cAfter = await assemblePushContext({ intent: { repoPath: fx2.repo, workflow: 'tracker.push', params: { epicHash: HASH } } } as never);
-					// the finalized issueRef on the ISSUE json seeds the push adoption (t2):
-					assert.equal(cAfter.existingRefs?.epicRef, FAIL_REF, 'push context adopts the recorded issueRef via existingRefs');
-					assert.equal(cAfter.existingRefs?.storyRefs?.[IMPLIED_ISSUE_STORY_ID], FAIL_REF);
-				} finally { process.env['INSRC_REPO_CONFIG'] = priorCfg; }
-				const rr2 = await createBugfixTrackerIssue({ repoPath: fx2.repo, issueHash: HASH }, depsF(GITHUB));
-				assert.equal(rr2.status, 'reused', JSON.stringify(rr2));
-				assert.equal(creates, createsAfterFail, 'steady adoption — no further creates after the write-back landed');
+				// run B (retry): the SAME production ensure — the local record is absent,
+				// so it falls through to the remote lookups and the title-token guard finds
+				// the issue run A created (EPIC-token title), adopting it with created:false:
+				const runB = await ensureUnitIssueDetailed(unit, remotePort, { readConfig: () => GITHUB });
+				assert.equal(runB.ok, true, JSON.stringify(runB));
+				if (runB.ok) {
+					assert.equal(runB.value.created, false, 'retry ADOPTS the remote issue — no duplicate create');
+					assert.equal(runB.value.issue, FAIL_REF, 'adopts exactly the issue run A created');
+				}
+				assert.equal(creates, createsAfterA, 'the production retry made 0 duplicate creates');
+				assert.equal(readBinding(fx2.repo, token)?.reference.entityId, FAIL_REF, 'adoption recorded on the EPIC head binding');
 				assert.equal(defFileCount(fx2.repo), 0);
 			} finally { fx2.cleanup(); }
 		}
@@ -328,7 +331,7 @@ test('first publication sequence — approve ISSUE with tracking disabled, enabl
 		const r2 = await createBugfixTrackerIssue({ repoPath: fx.repo, issueHash: HASH }, deps(GITHUB));
 		assert.equal(r2.status, 'reused', JSON.stringify(r2));
 		const createsAtEnd = creates;
-		assert.equal(createsAtEnd, 2, 'steady-state: total = fx publication (1) + fx2 create (1); the lost-ref retry-record and every adoption add 0');
+		assert.equal(createsAtEnd, 2, 'steady-state: fx publication (1) + fx2 deterministic run-A create (1); run B adopted with 0 more');
 		const f3 = _finalizeTracker(intent, { s1 }, 'run-3', 5, {
 			refs: { epicRef: FIRST_REF, storyRefs: { [IMPLIED_ISSUE_STORY_ID]: FIRST_REF }, labelsCreated: ['insrc:epic'] },
 			checklist: { items: [{ itemId: 'singleIssue', verdict: 'passed' }], failedCount: 0 },

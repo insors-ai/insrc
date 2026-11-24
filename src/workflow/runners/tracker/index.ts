@@ -32,7 +32,7 @@ import { readTrackerMeta } from '../../tracker/refs.js';
 import { unitIssueOf } from '../../tracker/unit-head.js';
 import type { IssueArtifact } from '../../artifacts/issue.js';
 import { IMPLIED_ISSUE_STORY_ID, issueArtifactId } from '../../storage.js';
-import { claimCreateIntent, heartbeatClaim, markClaimCreatedFence, quarantineDeadClaim, readClaim, reconcileClaim, takeoverAbandonedClaim } from '../../tracker/pending-create-claim.js';
+import { acquireClaimMutex, claimCreateIntent, heartbeatClaim, markClaimCreatedFence, quarantineDeadClaim, readClaim, reconcileClaim, takeoverAbandonedClaim } from '../../tracker/pending-create-claim.js';
 
 import {
 	assemblePostContext,
@@ -59,7 +59,7 @@ const pushContextRunner: StepRunner = {
 	},
 };
 
-const pushExecuteRunner: StepRunner = {
+export const pushExecuteRunner: StepRunner = {
 	id:       'execute',
 	workflow: 'tracker.push',
 	async run(ctx) {
@@ -74,33 +74,54 @@ const pushExecuteRunner: StepRunner = {
 		if (c.headKind === 'issue') {
 			const head = readDefinitionHead(ctx.intent.repoPath, c.epicHash);
 			const issue = head?.kind === 'issue' ? (head.artifact as IssueArtifact) : undefined;
-			// REVIEW round-3 HIGH-1: re-read the DURABLE ref right before the create
-			// decision — a run whose context was assembled earlier must adopt the
-			// publication another run already completed instead of creating a duplicate.
-			const durableRef = unitIssueOf(ctx.intent.repoPath, c.epicHash)
-				?? (head?.kind === 'issue' ? readTrackerMeta(definitionHeadJsonPath(ctx.intent.repoPath, c.epicHash))?.issueRef : undefined);
+			// REVIEW round-4 HIGH-1: the durable-ref recheck and the create-if-absent
+			// claim decision are ONE critical section under the claim mutex — the
+			// same serialization boundary finalization uses — so another process
+			// cannot complete publication between our recheck and our wx write.
+			const mutex = await acquireClaimMutex(ctx.intent.repoPath, c.epicHash);
+			let durableRef: string | undefined;
+			let claim: ReturnType<typeof claimCreateIntent> | undefined;
+			try {
+				durableRef = unitIssueOf(ctx.intent.repoPath, c.epicHash)
+					?? (head?.kind === 'issue' ? readTrackerMeta(definitionHeadJsonPath(ctx.intent.repoPath, c.epicHash))?.issueRef : undefined);
+				if (issue !== undefined && durableRef === undefined && c.existingRefs?.epicRef === undefined) {
+					const marker = `<!-- insrc:artifact ${issueArtifactId(c.epicHash)} -->`;
+					claim = claimCreateIntent(ctx.intent.repoPath, c.epicHash, ctx.runId, {
+						title: issue.body.title,
+						marker,
+					});
+				}
+			} finally {
+				mutex.release();
+			}
 			if (issue !== undefined && durableRef !== undefined) {
-				// already durably published: adopt it, no create. Carry a fence when a
-				// retained claim exists (round-3 MED-3 recovery path).
+				// already durably published under the mutex: adopt (round-4 MED: run
+				// the adoption prompt so labels/milestone/force-body still happen).
+				// Carry a fence when a retained claim exists (round-3 MED-3).
 				const existing = readClaim(ctx.intent.repoPath, c.epicHash);
 				if (existing !== undefined) {
 					const took = await takeoverAbandonedClaim(ctx.intent.repoPath, c.epicHash, ctx.runId, Date.now());
 					const active = took ?? existing;
 					(ctx.stepOutputs['s1'] as Record<string, unknown>)['claimFence'] = active.fence;
 				}
+				const adopted = { ...c, existingRefs: { ...c.existingRefs, epicRef: durableRef, storyRefs: { ...c.existingRefs?.storyRefs, [IMPLIED_ISSUE_STORY_ID]: durableRef } } };
 				return {
-					type: 'output',
-					output: { epicRef: durableRef, storyRefs: { [IMPLIED_ISSUE_STORY_ID]: durableRef }, labelsCreated: [] },
-					summary: `tracker.push: adopted the already-persisted issue ${durableRef}; no create dispatched`,
+					type: 'llm-pause',
+					prompt: pushPrompt(adopted),
+					userTurn: [
+						`ADOPT the already-persisted issue \`${durableRef}\` (do NOT create a duplicate).`,
+						`Perform the required non-create mutations (labels, milestone, ${c.force ? 'forced body overwrite' : 'no body edit'}), then return the refs JSON.`,
+					].join('\n'),
+					schema: trackerPushExecuteSchema,
+					preparedBlob: { stepId: 'execute' },
 				};
 			}
-			if (issue !== undefined && c.existingRefs?.epicRef === undefined) {
-				const marker = `<!-- insrc:artifact ${issueArtifactId(c.epicHash)} -->`;
-				const claim = claimCreateIntent(ctx.intent.repoPath, c.epicHash, ctx.runId, {
-					title: issue.body.title,
-					marker,
-				});
+			if (issue !== undefined && claim !== undefined) {
 				if (!claim.claimed) {
+					// loser: after reconciling to a marker-verified candidate, run the
+					// ADOPTION prompt (round-4 MED: labels/milestone/force-body are
+					// required remote work even when no create happens) instead of
+					// returning refs directly.
 					// loser: reconcile the winner's claim — reclaim if the holder is
 					// dead (guard quarantine), take over if abandoned (fence++ under
 					// the mutex), and verify the remote candidate by marker+target
@@ -125,17 +146,20 @@ const pushExecuteRunner: StepRunner = {
 					// carry the COMMITTED fence for finalization (round-2 HIGH-1)
 					const markedFence = await markClaimCreatedFence(ctx.intent.repoPath, c.epicHash, active.fence, reconciled.ref);
 					(ctx.stepOutputs['s1'] as Record<string, unknown>)['claimFence'] = markedFence;
-					// REVIEW round-2 HIGH-2: the synthesizer passes the s2 execute
-					// output verbatim as `refs`, so the execute output IS the refs —
-					// return TrackerPushRefs directly, no envelope.
+					// round-4 MED: adoption is the no-create CHOICE within the push op,
+					// not its completion — run the adoption prompt so required labels /
+					// milestone / force-body mutations still happen, then the execute
+					// output (refs) flows through synthesis as usual.
+					const adopted = { ...c, existingRefs: { ...c.existingRefs, epicRef: reconciled.ref, storyRefs: { ...c.existingRefs?.storyRefs, [IMPLIED_ISSUE_STORY_ID]: reconciled.ref } } };
 					return {
-						type: 'output',
-						output: {
-							epicRef: reconciled.ref,
-							storyRefs: { [IMPLIED_ISSUE_STORY_ID]: reconciled.ref },
-							labelsCreated: [],
-						},
-						summary: `tracker.push: reconciled pending-create claim via marker-verified candidate ${reconciled.ref}; no create dispatched`,
+						type: 'llm-pause',
+						prompt: pushPrompt(adopted),
+						userTurn: [
+							`ADOPT the marker-verified issue \`${reconciled.ref}\` from the pending-create claim (do NOT create a duplicate).`,
+							`Perform the required non-create mutations (labels, milestone, ${c.force ? 'forced body overwrite' : 'no body edit'}), then return the refs JSON.`,
+						].join('\n'),
+						schema: trackerPushExecuteSchema,
+						preparedBlob: { stepId: 'execute' },
 					};
 				}
 				// winner: heartbeat under the mutex, then dispatch. The COMMITTED

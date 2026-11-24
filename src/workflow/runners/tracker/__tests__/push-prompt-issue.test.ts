@@ -178,3 +178,54 @@ test('src/workflow/runners/tracker/index.ts pushPrompt/pushVerifyPrompt — head
 	assert.ok(unforced.includes('Do NOT edit the body') && unforced.includes('preserve it as-is'), 'force:false preserves the body');
 	assert.notEqual(forced, unforced, 'the two prompts differ');
 });
+
+test('REVIEW round-4 — HIGH-1: durable-ref recheck + claim create are one mutex hold; MED: adoption runs the adoption prompt (llm-pause), not a bare refs output', async () => {
+	const { pushExecuteRunner } = await import('../index.js');
+	const { readClaim } = await import('../../../tracker/pending-create-claim.js');
+	const { artifactJsonPath, issueArtifactId } = await import('../../../storage.js');
+	const { bindUnitIssue } = await import('../../../tracker/link.js');
+	const { patchTrackerMeta } = await import('../../../tracker/refs.js');
+	const { markApprovedSync } = await import('../../../__tests__/lifecycle-fixtures.js');
+	const { mkdirSync, mkdtempSync, rmSync, writeFileSync } = await import('node:fs');
+	const { tmpdir } = await import('node:os');
+	const { join } = await import('node:path');
+
+	const H = '5f9d4ab4c90c0b4c';
+	const mk = () => {
+		const repo = mkdtempSync(join(tmpdir(), 'insrc-r4-'));
+		mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
+		writeFileSync(join(repo, 'repo-config.json'), JSON.stringify({ repos: { [repo]: { type: 'github', owner: 'acme', repo: 'demo' } } }));
+		process.env['INSRC_REPO_CONFIG'] = join(repo, 'repo-config.json');
+		const issue = artifactJsonPath(repo, issueArtifactId(H));
+		writeFileSync(issue, JSON.stringify({ meta: { workflow: 'issue', runId: 'i', schemaVersion: 1, issueHash: H, epicHash: H, epicSlug: 's', createdAt: '2026-11-16T07:14:04.399Z', epicCreatedAt: '2026-11-16T07:14:04.399Z', standalone: true }, body: { title: 'T', reproduction: 'r', rootCause: 'c', fixIntent: 'f' }, citations: [] }));
+		markApprovedSync(issue);
+		return { repo, issue, cleanup: () => rmSync(repo, { recursive: true, force: true }) };
+	};
+	const ctxOf = (repo: string) => ({
+		intent: { repoPath: repo, workflow: 'tracker.push', params: { epicHash: H } },
+		runId: 'run-T',
+		stepOutputs: { s1: { kind: 'push', epicHash: H, epicSlug: 's', headKind: 'issue', gh: { owner: 'acme', repo: 'demo', epicLabel: 'insrc:epic', storyLabel: 'insrc:story', taskLabel: 'insrc:task', useMilestones: true, pushTasks: false, taskIssueType: 'Task' }, epicTitle: 'T', epicBodyMd: '# T', stories: [{ id: 's1', title: 'T', bodyMd: '' }], force: false } },
+	}) as never;
+
+	{
+		const fx = mk();
+		try {
+			bindUnitIssue({ unit: 'epic', repoPath: fx.repo, epicHash: H }, 'acme/demo#42');
+			patchTrackerMeta(fx.issue, { issueRef: 'acme/demo#42' });
+			const out = await pushExecuteRunner.run(ctxOf(fx.repo) as never) as { type: string; prompt?: string };
+			assert.equal(readClaim(fx.repo, H), undefined, 'no claim created when a durable ref exists (mutex-held recheck)');
+			assert.equal(out.type, 'llm-pause', 'MED: adoption goes through the adoption prompt, not a bare refs output');
+			assert.ok(out.prompt!.includes('ADOPT the existing issue acme/demo#42'), out.prompt!.slice(0, 200));
+		} finally { fx.cleanup(); }
+	}
+	{
+		const fx = mk();
+		try {
+			const out = await pushExecuteRunner.run(ctxOf(fx.repo) as never) as { type: string; prompt?: string };
+			const claim = readClaim(fx.repo, H);
+			assert.ok(claim !== undefined && claim.runId === 'run-T', 'winner claimed under the mutex-held decision');
+			assert.equal(out.type, 'llm-pause');
+			assert.ok(out.prompt!.includes('Create exactly ONE issue'), out.prompt!.slice(0, 200));
+		} finally { fx.cleanup(); }
+	}
+});

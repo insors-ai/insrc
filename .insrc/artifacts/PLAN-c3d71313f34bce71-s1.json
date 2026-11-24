@@ -25,7 +25,7 @@
     "lldEffectiveHash": "acb12724c31638094f715440e8d7679ed70268700c5e10e1d06197fb93ace475",
     "authoredBy": "controller",
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 2,
         "contentHash": "b76063f7406d98c2db13bae9c9554ce25018e906bbfa53a0fee86c2f2cca09ea",
@@ -36,12 +36,24 @@
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-24T06:55:08.907Z"
+      }
     },
     "envelope": {
+      "description": "",
+      "references": [],
       "attachments": []
     },
-    "revision": 2
+    "revision": 2,
+    "rangeBase": "9f4ac389a34adcc2102d4f9a7b3c7ae619f6e297"
   },
   "body": {
     "summary": {

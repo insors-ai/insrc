@@ -45,18 +45,86 @@ function issueContext(): PushContext {
 }
 
 test('src/workflow/runners/tracker/index.ts pushPrompt/pushVerifyPrompt — headKind \'issue\' contains ISSUE block, NOT \'error unless\'/task-list/backRef/sub-issue; headKind \'def\' byte-identical to baseline', () => {
-	// DEF prompt: byte-identical to the pre-change baseline (captured shape:
-	// the exact pre-t3 string; asserted via full equality against a locally
-	// reconstructed baseline AND via the absence of any ISSUE-only text).
+	// DEF prompt: BYTE-IDENTICAL to the pre-change (pre-t3) baseline — a full
+	// string equality against the exact pre-change prompt text, not substrings.
 	const def = pushPrompt(defContext());
 	const defVerify = pushVerifyPrompt(defContext());
+	const C = defContext();
+	const baselinePush = [
+		'You are running the `execute` step of `tracker.push`.',
+		'',
+		`Push Epic \`${C.epicSlug}\` + Stories to \`${C.gh.owner}/${C.gh.repo}\`.`,
+		'',
+		// CONVENTIONS_BLOCK — captured verbatim from the pre-t3 source
+		'ARTIFICIAL EPIC / STORY HIERARCHY ON TOP OF GITHUB ISSUES',
+		'  1. Labels identify type + Epic membership:',
+		'     - `<epicLabel>` on the Epic issue only (default: `insrc:epic`)',
+		'     - `<storyLabel>` on every Story issue (default: `insrc:story`)',
+		'     - `epic:<slug>` on the Epic and every Story',
+		'  2. Task-list linkage: the Epic issue body contains a `## Stories` section',
+		'     with GitHub task-list items linking to each Story issue.',
+		'  3. Back-reference: every Story body starts with `**Epic:** #<epicIssueNumber>`.',
+		'  4. Doc links: the Epic body links to its nested DEF/HLD under',
+		'     `docs/epics/<slug>-E<date><hash8>/`; each Story body links to that work',
+		"     item's `S<nnn>/LLD.md`. (The Epic issue body is pre-rendered",
+		'     for you in `epicBodyMd` — use it verbatim.)',
+		'  5. Optional milestone: when `useMilestones=true`, create a milestone named',
+		'     `<epic-slug>` and attach both the Epic and Story issues to it.',
+		'',
+		'STATUS MAPPING (sync only):',
+		'  - open + no status labels        → open',
+		'  - open + `insrc:in-progress`     → in-progress',
+		'  - open + `insrc:blocked`         → blocked',
+		'  - closed (any labels)            → closed',
+		'',
+		'TOOLS: use YOUR GitHub tools — the `gh` CLI, a GitHub MCP server, whatever you',
+		'have. The framework does NOT run them for you. If you use `gh`, preflight with',
+		'`gh auth status` and abort cleanly if unauthenticated.',
+		'',
+		'HARD RULES:',
+		'  - Never delete or rename existing labels or milestones you did not create.',
+		'  - Never fabricate issue numbers. Every ref you return must come from a real GitHub response.',
+		'  - Reference issues in the shape `<owner>/<repo>#<N>`.',
+		'  - Do not commit to files or open PRs. GitHub issues/labels/milestones are your only surface.',
+		"  - The framework writes the doc→issue links locally after you return the refs — you don't.",
+		'',
+		'ORDER OF OPERATIONS:',
+		`  1. Ensure the labels \`${C.gh.epicLabel}\`, \`${C.gh.storyLabel}\`, \`epic:${C.epicSlug}\`, ` +
+		'`insrc:in-progress`, `insrc:blocked` exist. Create the missing ones idempotently ' +
+		'(`gh label create --force` is fine for labels you own).',
+		'  2. Create ONE Story issue at a time (Epic body needs their #numbers).',
+		'  3. Create the Epic issue with a body containing the `## Stories` task list.',
+		'  4. Skip milestone creation (useMilestones=false).',
+		'  5. If existing refs are present in `existingRefs`, treat as an error unless the user re-runs with --force.',
+		'',
+		'DELIBERATELY NOT USED (per plan):',
+		'  - Projects v2 (workspace scope + OAuth surface).',
+		'  - Sub-issues + issue types (enable with `pushTasks` in the github config).',
+		'  - Cross-repo Epics.',
+		'',
+		'RETURN:',
+		'  Emit the refs JSON matching the schema. `epicRef` = `<owner>/<repo>#<N>`; `storyRefs` = { storyId: ref }.',
+		'  Do not print anything else.',
+	].join('\n');
+	const baselineVerify = [
+		'You are running the `checklist.verify` step of `tracker.push`.',
+		'',
+		`Verify the just-pushed refs against the conventions on \`${C.gh.owner}/${C.gh.repo}\`.`,
+		'',
+		'CHECKLIST ITEMS (grade each pass/fail; use `gh issue view --json labels,body,state` for each):',
+		`  epicLabelled:    Epic issue has \`${C.gh.epicLabel}\` and \`epic:${C.epicSlug}\` labels.`,
+		`  storyLabelled:   Every Story issue has \`${C.gh.storyLabel}\` and \`epic:${C.epicSlug}\` labels.`,
+		'  taskList:        Epic body contains a `## Stories` task list referencing every Story issue.',
+		'  backRef:         Every Story body starts with `**Epic:** #` referencing the Epic.',
+		'  milestone:       (skipped — useMilestones=false)',
+		'',
+		'RETURN:',
+		'  Emit `{ items: [{ itemId, verdict, notes? }], failedCount }`.',
+	].join('\n');
+	assert.equal(def, baselinePush, 'DEF pushPrompt must equal the pre-t3 baseline byte-for-byte');
+	assert.equal(defVerify, baselineVerify, 'DEF pushVerifyPrompt must equal the pre-t3 baseline byte-for-byte');
 	assert.ok(!def.includes('ISSUE-anchored'), 'DEF prompt has no ISSUE block');
 	assert.ok(!def.includes('PRERENDERED ISSUE BODY'), 'DEF prompt has no prerendered ISSUE body block');
-	assert.ok(def.includes('treat as an error unless the user re-runs with --force'), 'DEF keeps the existing-refs error rule');
-	assert.ok(def.includes('## Stories` task list'), 'DEF keeps the task-list step');
-	assert.ok(defVerify.includes('storyLabelled'), 'DEF verify keeps storyLabelled');
-	assert.ok(defVerify.includes('taskList'), 'DEF verify keeps taskList');
-	assert.ok(defVerify.includes('backRef'), 'DEF verify keeps backRef');
 
 	// ISSUE prompt: single issue, authoritative prerendered body, adoption
 	// without --force, and NONE of the DEF-only instructions.

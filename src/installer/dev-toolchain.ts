@@ -6,7 +6,7 @@ import { InstallerError, PRIVATE_NODE_VERSION } from './contracts.js';
 import type { Target } from './contracts.js';
 import { privateRuntimeEnvironment, runtimeArchive, runtimePolicy } from './runtime-policy.js';
 
-export interface DevToolchain { readonly directory: string; readonly node: string; readonly npmCli: string; readonly npxCli: string; readonly nodeGyp: string; readonly headers: string; readonly target: Target }
+export interface DevToolchain { readonly directory: string; readonly node: string; readonly npmCli: string; readonly npxCli: string; readonly nodeGyp: string; readonly headers: string; readonly nodeLib?: string | undefined; readonly target: Target }
 export interface DevBuildOwner {
   root: string; active: string; workspace: string; runId: string; runtime: { executable: string };
   record: { phase: string }; budgets: { fileMs: number }; assertOwner(): void;
@@ -48,7 +48,9 @@ export function verifyDevToolchain(directory: string, target: Target): DevToolch
   const version = ['MAJOR', 'MINOR', 'PATCH'].map(key => new RegExp(`^#define NODE_${key}_VERSION\\s+(\\d+)`, 'm').exec(header)?.[1]).join('.');
   if (version !== runtimePolicy.headersVersion) throw new InstallerError('runtime-invalid', 'Private native headers differ from release policy');
   regular(root, 'include/node/common.gypi'); regular(root, 'include/node/config.gypi');
-  const value = Object.freeze({ directory: root, node, npmCli, npxCli, nodeGyp, headers: root, target: Object.freeze({ ...target }) });
+  regular(root, 'include/node/node_api.h');
+  const nodeLib = target.os === 'win32' ? regular(root, `${target.arch}/node.lib`) : undefined;
+  const value = Object.freeze({ directory: root, node, npmCli, npxCli, nodeGyp, headers: root, nodeLib, target: Object.freeze({ ...target }) });
   verified.add(value); return value;
 }
 function assertToolchain(toolchain: DevToolchain): void {
@@ -58,7 +60,7 @@ function assertToolchain(toolchain: DevToolchain): void {
 export function devBuildEnvironment(toolchain: DevToolchain, inherited: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
   assertToolchain(toolchain);
   const env = privateRuntimeEnvironment(inherited);
-  const controlled = new Set(['node_options', 'node_path', 'node_test_context', 'insrc_test_run_id', 'insrc_test_root',
+  const controlled = new Set(['node_options', 'node_path', 'node_test_context', 'insrc_test_run_id', 'insrc_test_root', 'insrc_node_headers', 'insrc_node_lib', 'insrc_native_cc',
     'npm_config_target', 'npm_config_runtime', 'npm_config_arch', 'npm_config_platform', 'npm_config_nodedir', 'npm_config_disturl',
     'npm_config_node_options', 'npm_config_node_gyp', 'npm_config_node_version', 'npm_config_ignore_scripts', 'npm_config_omit',
     'npm_config_optional', 'npm_config_include', 'npm_config_global', 'npm_config_prefix', 'npm_config_script_shell',
@@ -71,6 +73,8 @@ export function devBuildEnvironment(toolchain: DevToolchain, inherited: NodeJS.P
     npm_config_node_options: '', npm_config_node_gyp: toolchain.nodeGyp, npm_config_ignore_scripts: 'false', npm_config_omit: '', npm_config_include: 'optional',
     npm_config_global: 'false', npm_node_execpath: toolchain.node, npm_execpath: toolchain.npmCli });
   env['PATH'] = [dirname(toolchain.node), env['PATH'] ?? ''].join(delimiter);
+  env['INSRC_NODE_HEADERS'] = join(toolchain.headers, 'include/node');
+  if (toolchain.nodeLib !== undefined) env['INSRC_NODE_LIB'] = toolchain.nodeLib;
   return env;
 }
 

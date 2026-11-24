@@ -32,6 +32,9 @@ async function fixture(scenarios: string[], corrupt?: 'headers' | 'npm' | 'missi
       writeFileSync(join(checkout, 'probe.cjs'), `const fs=require('node:fs'),cp=require('node:child_process');const npm=cp.execSync('npm --version',{encoding:'utf8'}).trim();fs.writeFileSync('observed.json',JSON.stringify({node:process.execPath,version:process.version,npm,cuda:process.env.ONNXRUNTIME_NODE_INSTALL_CUDA,nodeOptions:process.env.NODE_OPTIONS??null,nodePath:process.env.NODE_PATH??null}));`);
       mkdirSync(join(checkout, 'scripts/test-harness'), { recursive: true });
       for (const name of ['build.mjs', 'context.mjs', 'process.mjs']) copyFileSync(`scripts/test-harness/${name}`, join(checkout, 'scripts/test-harness', name === 'build.mjs' ? 'owner.mjs' : name));
+      copyFileSync('scripts/build-installer-control.mjs', join(checkout, 'scripts/build-installer-control.mjs'));
+      mkdirSync(join(checkout, 'src/installer/native'), { recursive: true });
+      copyFileSync('src/installer/native/control.c', join(checkout, 'src/installer/native/control.c'));
       writeFileSync(join(checkout, 'scripts/test-harness/build.mjs'), "export {withWriter,prepareBuild} from './owner.mjs'; export const buildStages=(run,{npmCli})=>[['accepted-checkout-helper',npmCli]];");
       const tsx = realpathSync('node_modules/tsx/dist/loader.mjs'), file = realpathSync('src/installer/__tests__/dev-toolchain-fixture.mjs');
       const child = spawnFixture(node, ['--import', tsx, file, checkout, runtime, scenario], { env: { ...process.env, NODE_OPTIONS: '', NODE_PATH: '' }, stdio: ['ignore', 'pipe', 'pipe'] }); children.push(child);

@@ -72,6 +72,7 @@ import { ensureBuildRecordOnCompletion } from './runners/build/completion-record
 import { authorizeApproval } from './team/approval-gate.js';
 import { TeamGateRefusedError } from './team/gate.js';
 import { signoffHoldsCompletion } from './team/signoff.js';
+import { checkBuildEpicImpact } from './epic-impact-build-check.js';
 
 // ---------------------------------------------------------------------------
 // Read + require-approved helpers
@@ -879,7 +880,7 @@ export interface FollowOnOutcome {
 export interface WorkflowApproveResult {
 	readonly approved: readonly { readonly path: string; readonly result: ApprovalResult }[];
 	/** `kind` says why an approval was withheld when the cause has a name the terminal prints in its own words (Story s10). */
-	readonly skipped:  readonly { readonly path: string; readonly reason: string; readonly kind?: 'review-blocked' | 'team-refused' }[];
+	readonly skipped:  readonly { readonly path: string; readonly reason: string; readonly kind?: 'review-blocked' | 'team-refused' | 'epic-impact-missing' }[];
 	readonly codeReview: readonly CodeReviewApprovalOutcome[];
 	readonly followOn?: readonly FollowOnOutcome[];
 }
@@ -958,7 +959,7 @@ export async function approveWorkflowTarget(
 ): Promise<WorkflowApproveResult> {
 	const approveOpts = req.overrideReview !== undefined ? { overrideReview: req.overrideReview } : undefined;
 	const approved:   { path: string; result: ApprovalResult }[] = [];
-	const skipped:    { path: string; reason: string; kind?: 'review-blocked' | 'team-refused' }[] = [];
+	const skipped:    { path: string; reason: string; kind?: 'review-blocked' | 'team-refused' | 'epic-impact-missing' }[] = [];
 	const codeReview: CodeReviewApprovalOutcome[] = [];
 	const followOn: FollowOnOutcome[] = [];
 
@@ -1041,6 +1042,14 @@ export async function approveWorkflowTarget(
 			const outcome = await completeThroughService(jsonPath);
 			if (outcome !== undefined) followOn.push(outcome);
 			return;
+		}
+		// ISSUE-1b3caadf04023d33: a later Story's BUILD needs its "Epic impact:" paragraph; only an explicit overrideReview passes it.
+		if (req.overrideReview === undefined) {
+			const impact = checkBuildEpicImpact(req.repoPath, jsonPath);
+			if (impact.applies && !impact.ok) {
+				skipped.push({ path: jsonPath, reason: impact.reason, ...(req.skipKinds === true ? { kind: 'epic-impact-missing' as const } : {}) });
+				return;
+			}
 		}
 		// No automated review or cleanup is performed during approval.
 		let completeAfter = false;

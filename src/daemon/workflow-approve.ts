@@ -67,7 +67,7 @@ export async function handleApprovePipeline(
 	params: unknown,
 	followOnFor: (withTracker: boolean) => NonNullable<WorkflowApproveDeps['followOn']>,
 	deps: Omit<WorkflowApproveDeps, 'followOn'> = {},
-): Promise<{ readonly approval: WorkflowApproveResult['approved'][number]['result']; readonly followOn: NonNullable<WorkflowApproveResult['followOn']>; readonly codeReview: WorkflowApproveResult['codeReview'] } | { error: string; refusal?: { kind: 'review-blocked' | 'team-refused'; text: string } }> {
+): Promise<{ readonly approval: WorkflowApproveResult['approved'][number]['result']; readonly followOn: NonNullable<WorkflowApproveResult['followOn']>; readonly codeReview: WorkflowApproveResult['codeReview'] } | { error: string; refusal?: { kind: 'review-blocked' | 'team-refused' | 'epic-impact-missing'; text: string } }> {
 	const p = (params ?? {}) as { artifactPath?: unknown; withTracker?: unknown };
 	if (typeof p.artifactPath !== 'string' || p.artifactPath.length === 0) return { error: 'workflow.approvePipeline: `artifactPath` is required' };
 	if (p.withTracker !== undefined && typeof p.withTracker !== 'boolean') return { error: 'workflow.approvePipeline: `withTracker` must be a boolean' };

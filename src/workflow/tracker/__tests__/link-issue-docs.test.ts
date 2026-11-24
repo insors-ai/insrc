@@ -23,7 +23,7 @@ import { join } from 'node:path';
 
 import { linkDocsToIssues } from '../link.js';
 import { renderIssueMarkdown, renderIssueMarkdownWithTracker } from '../../artifacts/issue.js';
-import { artifactJsonPath, issueArtifactId, lldArtifactId, issueArtifactPaths, workItemAnchorCreatedAt, workItemKindOf, IMPLIED_ISSUE_STORY_ID } from '../../storage.js';
+import { artifactJsonPath, issueArtifactId, lldArtifactId, issueArtifactPaths, lldArtifactPaths, workItemAnchorCreatedAt, workItemKindOf, IMPLIED_ISSUE_STORY_ID } from '../../storage.js';
 import { writeAtomic } from '../../storage.js';
 import { bindUnitIssue } from '../link.js';
 import { assemblePostContext } from '../../runners/tracker/context.js';
@@ -44,8 +44,18 @@ function seed(): { repo: string; issue: ReturnType<typeof JSON.parse> & { meta: 
 	}, null, 2));
 	markApprovedSync(json);
 	writeAtomic(artifactJsonPath(repo, lldArtifactId(HASH, IMPLIED_ISSUE_STORY_ID)), JSON.stringify({
-		meta: { workflow: 'design.story', runId: 'l1', schemaVersion: 1, epicHash: HASH, epicSlug: SLUG, storyId: IMPLIED_ISSUE_STORY_ID, createdAt: CREATED, epicCreatedAt: CREATED, standalone: true, hldEffectiveHash: 'deadbeefcafe0000' },
-		body: { chosenAlternative: 'a1', contractDetails: { surfaceLevel: 'internal', api: [] }, testStrategy: { testFramework: 'node:test', testLevels: [] }, migration: undefined },
+		meta: { workflow: 'design.story', runId: 'l1', schemaVersion: 1, repoPath: repo, epicHash: HASH, epicSlug: SLUG, storyId: IMPLIED_ISSUE_STORY_ID, createdAt: CREATED, epicCreatedAt: CREATED, standalone: true, hldEffectiveHash: 'deadbeefcafe0000' },
+		body: {
+			chosenAlternative: 'a1',
+			alternativesConsidered: [{ id: 'a1', reasonRejected: 'n/a' }],
+			openQuestions: [],
+			dataModelChanges: [],
+			interactionWithShared: [],
+			errorPaths: { errorCases: [], edgeCases: [], invariantsToPreserve: [] },
+			contractDetails: { surfaceLevel: 'internal', api: [] },
+			testStrategy: { testFramework: 'node:test', testLevels: [], acceptanceMapping: [] },
+			hldContextSlice: { frameworkSummary: 's', ownedContracts: [], consumedContracts: [], boundary: { storyId: IMPLIED_ISSUE_STORY_ID, owns: [], consumes: [] }, adjacentBoundaries: [], rolloutPhase: 'p1' },
+		},
 		citations: [],
 	}, null, 2));
 	markApprovedSync(artifactJsonPath(repo, lldArtifactId(HASH, IMPLIED_ISSUE_STORY_ID)));
@@ -92,6 +102,9 @@ test('src/workflow/tracker/link.ts linkDocsToIssues — docs/standalone ISSUE.md
 			const base = renderIssueMarkdown(fx.issue as never);
 			assert.ok(md.includes(base.slice(marker.length).trimStart()), 'canonical body bytes byte-identical');
 			assert.ok(!existsSync(join(fx.repo, 'docs', 'epics')), 'still no docs/epics entry');
+			// S001/LLD.md relinked and carries the story tracker link
+			const lldMd = readFileSync(lldArtifactPaths(fx.repo, HASH, IMPLIED_ISSUE_STORY_ID, workItemAnchorCreatedAt(JSON.parse(readFileSync(artifactJsonPath(fx.repo, issueArtifactId(HASH)), 'utf8')).meta), workItemKindOf(JSON.parse(readFileSync(artifactJsonPath(fx.repo, issueArtifactId(HASH)), 'utf8')).meta), SLUG).md, 'utf8');
+			assert.ok(lldMd.includes('**Tracker:** [acme/demo#42](https://github.com/acme/demo/issues/42)'), 'S001/LLD.md relinked with the story tracker line: ' + lldMd.slice(0, 200));
 		} finally { fx.cleanup(); }
 	}
 });

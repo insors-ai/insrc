@@ -74,6 +74,22 @@ test('T3b codex: when every server registered alongside insrc accepts its overri
 	assert.equal(res.res.ok, true);
 });
 
+// --- bounded one-retry recovery when a disabled server is unexcludable (LLD amendment) ----
+
+test("T5 codex: a real session whose discovered servers include exactly one unexcludable server succeeds via the one-time retry, instead of throwing CodexMcpServerOverrideUnsafeError", { skip: !GATE }, async (t) => {
+	const servers = await discoverCodexMcpServers('codex', REPO, 20_000);
+	const others = servers.filter(s => s.name !== 'insrc');
+	const res = await new CliProvider({ kind: 'codex' })
+		.runReadOnlySession<{ ok: boolean }>('answer {"ok":true}', { type: 'object', required: ['ok'], properties: { ok: { type: 'boolean' } } }, { cwd: REPO, deadlineMs: 60_000, internalRetry: false })
+		.then(ok => ({ ok: true as const, res: ok }), (e: unknown) => ({ ok: false as const, err: e }));
+	if (res.ok) { assert.equal(res.res.ok, true); return; }
+	if (res.err instanceof CodexMcpServerOverrideUnsafeError) {
+		t.skip(`the retry also failed (naming '${res.err.serverName}') -- this machine has more than one unexcludable server among its ${others.length} other registration(s), so the single-retry-succeeds scenario is unreachable here (covered synthetically instead by the unit tests in cli-readonly-session.test.ts)`);
+		return;
+	}
+	throw res.err;
+});
+
 for (const kind of ['claude', 'codex', 'vibe'] as const) {
 	test(`T14 a ${kind} read-only session reads, calls insrc analyze, cannot write, and answers to the schema`, { skip: !GATE }, async () => {
 		const scratch = mkdtempSync(join(tmpdir(), 'insrc-review-live-'));

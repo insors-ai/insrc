@@ -759,13 +759,25 @@ export class CliProvider implements LLMProvider {
 			const remainingMs = exec.timeoutMs - (Date.now() - discoveryStartedAt);
 			if (remainingMs <= 0) throw new ReadOnlySessionTimeoutError(exec.timeoutMs);
 			let text: string | undefined;
-			try {
-				({ agentText: text } = await this.runCodex(codexReadOnlySessionArgs(schemaPath, exec.cwd, this.modelArgs(), servers), prompt, { ...exec, timeoutMs: remainingMs }));
-			} catch (err) {
-				const said = err instanceof CliExitError ? err.said : (err as Error).message;
-				const match = CODEX_MCP_SERVER_OVERRIDE_UNSAFE.exec(said);
-				if (match?.[1] !== undefined) throw new CodexMcpServerOverrideUnsafeError(match[1]);
-				throw err;
+			let attemptServers = servers;
+			let attemptTimeoutMs = remainingMs;
+			for (let attempt = 1; attempt <= 2; attempt++) {
+				const attemptStartedAt = Date.now();
+				try {
+					({ agentText: text } = await this.runCodex(codexReadOnlySessionArgs(schemaPath, exec.cwd, this.modelArgs(), attemptServers), prompt, { ...exec, timeoutMs: attemptTimeoutMs }));
+					break;
+				} catch (err) {
+					const said = err instanceof CliExitError ? err.said : (err as Error).message;
+					const match = CODEX_MCP_SERVER_OVERRIDE_UNSAFE.exec(said);
+					if (match?.[1] === undefined) throw err;
+					// codex's bootstrap cannot accept a partial disable override for this one
+					// server; it was never excludable anyway, so retry once without it rather
+					// than fail the whole session outright.
+					if (attempt === 2) throw new CodexMcpServerOverrideUnsafeError(match[1]);
+					attemptServers = attemptServers.filter(s => s.name !== match[1]);
+					attemptTimeoutMs -= Date.now() - attemptStartedAt;
+					if (attemptTimeoutMs <= 0) throw new ReadOnlySessionTimeoutError(exec.timeoutMs);
+				}
 			}
 			if (text === undefined) throw new Error('codex read-only session emitted no agent_message item');
 			let parsed: unknown;

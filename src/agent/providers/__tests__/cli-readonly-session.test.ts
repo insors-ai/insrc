@@ -262,6 +262,85 @@ test("readOnlySessionOnce re-throws the original, unmodified error when runCodex
 	} finally { noText.cleanup(); }
 });
 
+// --- bounded one-retry recovery when a disabled server is unexcludable (LLD amendment) ----
+
+test("readOnlySessionOnce retries once with the offending server removed from the disable list, and succeeds, when the first attempt throws CodexMcpServerOverrideUnsafeError and the servers list has another, safe server remaining", async () => {
+	const f = fakeCli([
+		{ fail: 'Error loading config.toml: invalid transport in `mcp_servers.unsafe-x`', code: 1 },
+		{ out: codexOk('{"ok":true}') },
+	]);
+	process.env['INSRC_FAKE_DISCOVERY_SERVERS'] = JSON.stringify([{ name: 'insrc', enabled: true }, { name: 'unsafe-x', enabled: false }, { name: 'safe-y', enabled: false }]);
+	try {
+		const p = new CliProvider({ kind: 'codex', binPath: f.bin });
+		assert.deepEqual(await p.runReadOnlySession('P', SCHEMA, { cwd: f.dir, deadlineMs: 20_000, internalRetry: false }), { ok: true });
+		assert.equal(f.calls().length, 2, 'the first attempt and exactly one retry');
+		assert.ok(!f.calls()[1]!.argv.includes('mcp_servers.unsafe-x.enabled=false'), 'the retry drops the offending server from the disable list');
+		assert.ok(f.calls()[1]!.argv.includes('mcp_servers.safe-y.enabled=false'), 'the retry still disables the other, safe server');
+	} finally { delete process.env['INSRC_FAKE_DISCOVERY_SERVERS']; f.cleanup(); }
+});
+
+test("readOnlySessionOnce retries once with no non-insrc disable overrides at all, and succeeds, when the first attempt's unsafe server was the only non-insrc entry", async () => {
+	const f = fakeCli([
+		{ fail: 'Error loading config.toml: invalid transport in `mcp_servers.unsafe-x`', code: 1 },
+		{ out: codexOk('{"ok":true}') },
+	]);
+	process.env['INSRC_FAKE_DISCOVERY_SERVERS'] = JSON.stringify([{ name: 'insrc', enabled: true }, { name: 'unsafe-x', enabled: false }]);
+	try {
+		const p = new CliProvider({ kind: 'codex', binPath: f.bin });
+		assert.deepEqual(await p.runReadOnlySession('P', SCHEMA, { cwd: f.dir, deadlineMs: 20_000, internalRetry: false }), { ok: true });
+		assert.equal(f.calls().length, 2, 'the first attempt and exactly one retry');
+		assert.ok(!f.calls()[1]!.argv.some(a => a.startsWith('mcp_servers.') && a.includes('.enabled=false')), 'the retry emits no disable overrides at all');
+	} finally { delete process.env['INSRC_FAKE_DISCOVERY_SERVERS']; f.cleanup(); }
+});
+
+test('readOnlySessionOnce throws CodexMcpServerOverrideUnsafeError naming the SECOND server when the retry also fails with a bootstrap-rejection match for a different server -- never more than one retry', async () => {
+	const f = fakeCli([
+		{ fail: 'Error loading config.toml: invalid transport in `mcp_servers.unsafe-x`', code: 1 },
+		{ fail: 'Error loading config.toml: invalid transport in `mcp_servers.unsafe-z`', code: 1 },
+	]);
+	process.env['INSRC_FAKE_DISCOVERY_SERVERS'] = JSON.stringify([{ name: 'insrc', enabled: true }, { name: 'unsafe-x', enabled: false }, { name: 'unsafe-z', enabled: false }]);
+	try {
+		const p = new CliProvider({ kind: 'codex', binPath: f.bin });
+		await assert.rejects(
+			p.runReadOnlySession('P', SCHEMA, { cwd: f.dir, deadlineMs: 20_000, internalRetry: false }),
+			(e: unknown) => e instanceof CodexMcpServerOverrideUnsafeError && e.serverName === 'unsafe-z',
+		);
+		assert.equal(f.calls().length, 2, 'exactly one retry attempted, never a second');
+	} finally { delete process.env['INSRC_FAKE_DISCOVERY_SERVERS']; f.cleanup(); }
+});
+
+test("readOnlySessionOnce re-throws the original, unmodified error (no retry attempted) when the first attempt's failure does not match the bootstrap-rejection pattern", async () => {
+	const f = fakeCli([{ fail: 'unknown option --sandbox', code: 1 }]);
+	try {
+		const p = new CliProvider({ kind: 'codex', binPath: f.bin });
+		const err = await p.runReadOnlySession('P', SCHEMA, { cwd: f.dir, deadlineMs: 20_000, internalRetry: false }).then(() => null, (e: unknown) => e);
+		assert.ok(!(err instanceof CodexMcpServerOverrideUnsafeError));
+		assert.equal((err as Error).message, 'codex exited with 1. stderr=unknown option --sandbox stdout=');
+		assert.equal(f.calls().length, 1, 'no retry attempted for a non-matching failure');
+	} finally { f.cleanup(); }
+});
+
+test("readOnlySessionOnce's retry uses the recomputed remaining budget, not a fresh one, and still throws ReadOnlySessionTimeoutError if the combined attempts exhaust it", async () => {
+	const f = fakeCli([
+		{ sleepMs: 1_000, fail: 'Error loading config.toml: invalid transport in `mcp_servers.unsafe-x`', code: 1 },
+		{ sleepMs: 30_000, out: codexOk('{"ok":true}') },
+	]);
+	process.env['INSRC_FAKE_DISCOVERY_SERVERS'] = JSON.stringify([{ name: 'insrc', enabled: true }, { name: 'unsafe-x', enabled: false }]);
+	try {
+		const p = new CliProvider({ kind: 'codex', binPath: f.bin });
+		const t0 = Date.now();
+		await assert.rejects(
+			p.runReadOnlySession('P', SCHEMA, { cwd: f.dir, deadlineMs: 3_000, internalRetry: false }),
+			ReadOnlySessionTimeoutError,
+		);
+		const took = Date.now() - t0;
+		// A fresh budget for the retry would let its 30s sleep run far past this; the
+		// recomputed remaining budget (~2s left after the first attempt's 1s) cuts it short.
+		assert.ok(took < 4_500, `stopped within the one shared deadline, not a fresh budget for the retry (took ${took}ms)`);
+		assert.equal(f.calls().length, 2, 'the first attempt and the one retry, both counted');
+	} finally { delete process.env['INSRC_FAKE_DISCOVERY_SERVERS']; f.cleanup(); }
+});
+
 // --- retry and deadline --------------------------------------------------------
 
 test('a transient CLI error is retried once', async () => {

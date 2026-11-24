@@ -1,0 +1,1236 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1795498420280-h8ye0z",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-24T05:36:29.116Z",
+    "epicCreatedAt": "2026-11-16T07:14:04.399Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 163925,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "5f9d4ab4c90c0b4c",
+    "epicSlug": "make-tracker-push-sync-post-stages",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1795498420280-h8ye0z",
+    "hldEffectiveHash": "3759c9a350cfdbede377fcaef9a55a3ee77fec2ba1feb1a3a1ab590740e929a8",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "Make the tracker push, sync and post stages handle an ISSUE-anchored work item",
+    "standalone": true,
+    "sizeClass": "bugfix",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 2,
+        "contentHash": "28d8dfa2dcc957142d12a2a6ce347363e93509a355941cff40b1a5ba20be18ba",
+        "at": "2026-11-24T05:36:31.030Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-24T08:39:42.210Z"
+      }
+    },
+    "revision": 2,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "4a07d8a0b4f588d6f28b0d6f49e4b48028364eb9"
+  },
+  "body": {
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Kind-aware head end to end (context + persistence + chain + adoption + linkage)",
+        "oneLineSummary": "One definitionHeadJsonPath/requireApprovedDefinition rule at all five layers; integration tests per finding; DEF byte-identical.",
+        "approach": "Carry the DEF-then-ISSUE head kind end to end through all five layers with one head-path helper. gates.ts gains requireApprovedDefinition (approved-gated, { kind, artifact, jsonPath }) and definitionHeadJsonPath (DEF json if existsSync else ISSUE json — the storage.ts readEpicDefinitionCore order). Layers: (1) context assemblers branch on kind (DEF byte-identical; ISSUE via impliedIssueStories + issue title + new renderIssueEpicBody); (2) persistence: mutateEpicTrackerMeta (orchestrator.ts:2972) and sync.ts (:59, :106, :164) use definitionHeadJsonPath/impliedIssueStories so meta.tracker lands on ISSUE-<hash>.json with zero DEF fabricated; (3) chain computeNextAction ISSUE branch (chain.ts:325-360) falls through to the DEF tracker steps after the story loop; (4) adoption: push seeds PushContext.existingRefs.epicRef + storyRefs[s1] from ISSUE.meta.tracker.issueRef and finalize binds EPIC-<hash> + STORY-<hash>-s1 heads to it via bindUnitIssue (idempotent same-ref, conflict different-ref) — retries create 0 new remote issues; (5) linkDocsToIssues takes headKind, placement from workItemKindOf + anchor from requireEpicAnchor, ISSUE heads relink ISSUE.md + standalone s1 LLD.md and skip HLD/Define, never create docs/epics. Tests per layer incl. finalize on ISSUE-only fixture (readdir zero DEF), four-state chain sequence, adoption create-count 0 + conflict, linkage no-duplicate-folder.",
+        "pros": [
+          "Closes all four review findings in one coherent change.",
+          "Reuses patchTrackerMeta (path-agnostic), bindArtifact (idempotent/conflict), PushContext.existingRefs adopt semantics, impliedIssueStories, workItemKindOf, issueArtifactPaths.",
+          "Single head-order rule, no drift.",
+          "No synthetic DEF/upstream documents."
+        ],
+        "cons": [
+          "Touches shared finalize/sync/link paths — mitigated by DEF parity tests (existing tests unedited pass).",
+          "Adoption identity (root issue = s1 story issue) must be stated explicitly."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Persistence + chain only",
+        "oneLineSummary": "Findings 1-2 fixed; 3-4 deferred.",
+        "approach": "Fix only persistence + chain (findings 1-2); defer adoption + linkage to a follow-up.",
+        "pros": [
+          "Smaller diff."
+        ],
+        "cons": [
+          "Leaves HIGH finding 3 (duplicate remote issue via invisible issueRef) and MED finding 4 (docs/epics duplicate) open — the review blocks on all four."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Leaves HIGH finding 3 (duplicate remote issue via invisible issueRef) and MED finding 4 (docs/epics duplicate) open — the review blocks on all four"
+      },
+      {
+        "id": "a3",
+        "name": "Backfill bindings at approval",
+        "oneLineSummary": "Approval writes EPIC/STORY-s1 bindings.",
+        "approach": "Backfill EPIC/STORY bindings at ISSUE approval time so unitIssueOf-based readers see the issue without per-layer kind branches, plus the linkDocsToIssues placement fix.",
+        "pros": [
+          "unitIssueOf works unchanged afterwards."
+        ],
+        "cons": [
+          "Mutates the approval path (out of scope); changes when bindings appear; still needs the chain branch and persistence head-path fix; risks double-binding against bugfix/tracker.ts recordRefToDisk."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Mutates the approval path (out of scope), still needs the chain branch and persistence head-path fix, and risks double-binding against bugfix/tracker.ts recordRefToDisk"
+      },
+      {
+        "id": "a4",
+        "name": "Declare tracker stages DEF-only for bugs",
+        "oneLineSummary": "Chain-complete after LLD for ISSUE heads.",
+        "approach": "Keep generic tracker stages DEF-only for bugs: chain stays chain-complete after LLD for ISSUE heads; bugs use only bugfix/tracker.ts create/close.",
+        "pros": [
+          "No shared-path changes."
+        ],
+        "cons": [
+          "Is exactly the bug the ISSUE and finding 2 describe (unpushed ISSUE reports chain-complete)."
+        ],
+        "costEstimate": "XS",
+        "reasonRejected": "Is exactly the bug the ISSUE and finding 2 describe: unpushed ISSUE items reporting chain-complete"
+      }
+    ],
+    "chosenAlternative": "a1",
+    "contractDetails": {
+      "api": [
+        {
+          "errors": [
+            {
+              "condition": "no readable DEF or ISSUE head json",
+              "type": "ArtifactMissingError"
+            },
+            {
+              "condition": "head approval state 'rejected'",
+              "type": "ArtifactNotApprovedError"
+            },
+            {
+              "condition": "head exists but not approved",
+              "type": "ArtifactNotApprovedError"
+            }
+          ],
+          "name": "requireApprovedDefinition",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "optional": false,
+              "purpose": "Repo root",
+              "type": "string"
+            },
+            {
+              "name": "epicHash",
+              "optional": false,
+              "purpose": "Work-item hash",
+              "type": "string"
+            }
+          ],
+          "postconditions": [
+            "First readable head in DEF-then-ISSUE order with kind + jsonPath; head approved"
+          ],
+          "preconditions": [
+            "registered repo"
+          ],
+          "returns": {
+            "meaning": "Approved head + kind + its JSON path for one consistent read/persist",
+            "type": "{ kind: 'def' | 'issue'; artifact: DefineArtifact | IssueArtifact; jsonPath: string }"
+          },
+          "signature": "export function requireApprovedDefinition(repoPath: string, epicHash: string): { kind: 'def' | 'issue'; artifact: DefineArtifact | IssueArtifact; jsonPath: string }"
+        },
+        {
+          "errors": [
+            {
+              "condition": "neither head json exists",
+              "type": "ArtifactMissingError"
+            }
+          ],
+          "name": "definitionHeadJsonPath",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "optional": false,
+              "purpose": "Repo root",
+              "type": "string"
+            },
+            {
+              "name": "epicHash",
+              "optional": false,
+              "purpose": "Work-item hash",
+              "type": "string"
+            }
+          ],
+          "postconditions": [
+            "DEF json when it exists (DEF wins), else ISSUE json — storage.ts readEpicDefinitionCore order"
+          ],
+          "preconditions": [],
+          "returns": {
+            "meaning": "JSON path of the head that exists, for kind-aware persistence sites",
+            "type": "string"
+          },
+          "signature": "export function definitionHeadJsonPath(repoPath: string, epicHash: string): string"
+        },
+        {
+          "errors": [],
+          "name": "mutateEpicTrackerMeta (kind-aware)",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "optional": false,
+              "purpose": "Repo root",
+              "type": "string"
+            },
+            {
+              "name": "epicHash",
+              "optional": false,
+              "purpose": "Work item",
+              "type": "string"
+            },
+            {
+              "name": "workflow",
+              "optional": false,
+              "purpose": "'tracker.push' | 'tracker.sync' | 'tracker.post'",
+              "type": "string"
+            },
+            {
+              "name": "refs",
+              "optional": false,
+              "purpose": "Typed tracker refs",
+              "type": "TrackerPushRefs | TrackerSyncRefs | TrackerPostRefs"
+            }
+          ],
+          "postconditions": [
+            "DEF head: byte-identical to today",
+            "ISSUE head: patchTrackerMeta lands on ISSUE-<hash>.json; linkDocsToIssues called with head kind; zero DEF files created; post no-op at head level"
+          ],
+          "preconditions": [
+            "finalizeTracker context validated"
+          ],
+          "returns": {
+            "meaning": "void",
+            "type": "void"
+          },
+          "signature": "function mutateEpicTrackerMeta(repoPath: string, epicHash: string, workflow: string, refs: TrackerPushRefs | TrackerSyncRefs | TrackerPostRefs): void"
+        },
+        {
+          "errors": [],
+          "name": "syncEpicStatus (sync.ts kind-aware)",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "optional": false,
+              "purpose": "Repo root",
+              "type": "string"
+            },
+            {
+              "name": "epicHash",
+              "optional": false,
+              "purpose": "Work item",
+              "type": "string"
+            }
+          ],
+          "postconditions": [
+            "defineJson := definitionHeadJsonPath; storiesOf uses impliedIssueStories for ISSUE heads; patchTrackerMeta writes epicStatus/storyStatus/lastSyncedAt onto the head that exists"
+          ],
+          "preconditions": [
+            "epicRef bound via unitIssueOf"
+          ],
+          "returns": {
+            "meaning": "SyncResult as today",
+            "type": "SyncResult"
+          },
+          "signature": "async function syncEpicStatus(repoPath: string, epicHash: string, opts?: SyncOpts): Promise<SyncResult>"
+        },
+        {
+          "errors": [],
+          "name": "computeNextAction (chain.ts ISSUE branch)",
+          "parameters": [
+            {
+              "name": "epicHash",
+              "optional": false,
+              "purpose": "Work-item hash",
+              "type": "string"
+            },
+            {
+              "name": "s",
+              "optional": false,
+              "purpose": "Chain states incl. tracker",
+              "type": "NextActionInput"
+            }
+          ],
+          "postconditions": [
+            "ISSUE branch: after all story LLDs approved, consults s.tracker like DEF — !pushed -> push-tracker; lastSyncedAt undefined -> sync-tracker; else chain-complete; never hld/amendment/stale for ISSUE heads"
+          ],
+          "preconditions": [
+            "head exists and approved"
+          ],
+          "returns": {
+            "meaning": "NextAction incl. tracker kinds for ISSUE heads",
+            "type": "NextAction"
+          },
+          "signature": "function computeNextAction(epicHash: string, s: NextActionInput): NextAction"
+        },
+        {
+          "errors": [
+            {
+              "condition": "adopted issueRef conflicts with an existing head binding to a different issue",
+              "type": "BindResult kind 'conflict'"
+            }
+          ],
+          "name": "adoptApprovalCreatedIssue",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "optional": false,
+              "purpose": "Repo root",
+              "type": "string"
+            },
+            {
+              "name": "epicHash",
+              "optional": false,
+              "purpose": "ISSUE hash",
+              "type": "string"
+            }
+          ],
+          "postconditions": [
+            "assemblePushContext for ISSUE heads seeds existingRefs.epicRef AND existingRefs.storyRefs[IMPLIED_ISSUE_STORY_ID] from ISSUE meta.tracker.issueRef when set — execute adopts, 0 new remote issues on retry",
+            "finalize push binds EPIC-<hash> and STORY-<hash>-s1 heads to that ref via bindUnitIssue (idempotent same-ref; conflict refuses different-ref)",
+            "completion = both head bindings present + meta.tracker written on the ISSUE head"
+          ],
+          "preconditions": [
+            "ISSUE head approved",
+            "gh config github"
+          ],
+          "returns": {
+            "meaning": "Adopted ref surfaced via PushContext.existingRefs and persisted as unit bindings",
+            "type": "string | undefined"
+          },
+          "signature": "function adoptApprovalCreatedIssue(repoPath: string, epicHash: string): string | undefined"
+        },
+        {
+          "errors": [
+            {
+              "condition": "head has no creation anchor",
+              "type": "MissingAnchorError"
+            }
+          ],
+          "name": "linkDocsToIssues (kind-aware)",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "optional": false,
+              "purpose": "Repo root",
+              "type": "string"
+            },
+            {
+              "name": "epicHash",
+              "optional": false,
+              "purpose": "Work item",
+              "type": "string"
+            },
+            {
+              "name": "epicSlug",
+              "optional": false,
+              "purpose": "Slug",
+              "type": "string"
+            },
+            {
+              "name": "refs",
+              "optional": false,
+              "purpose": "epicRef + storyRefs",
+              "type": "EpicRefs"
+            },
+            {
+              "name": "headKind",
+              "optional": true,
+              "purpose": "'def' | 'issue'; defaults to the read head",
+              "type": "'def' | 'issue'"
+            }
+          ],
+          "postconditions": [
+            "DEF head: byte-identical (HLD.md+Define.md+LLDs under docs/epics, DEF.md tracker line via unitIssueOf as today)",
+            "ISSUE head: placement = workItemKindOf(head.meta) ('standalone'), anchor = requireEpicAnchor; relinks ISSUE.md via issueArtifactPaths with renderIssueMarkdownWithTracker (adds the **Tracker:** line from the head binding / meta.tracker.issueRef; body bytes otherwise identical to renderIssueMarkdown) + implied story LLD.md (lldArtifactPaths 'standalone'); HLD/Define skipped; no docs/epics entry created"
+          ],
+          "preconditions": [
+            "head exists with anchor"
+          ],
+          "returns": {
+            "meaning": "void; per-doc failures warn as today",
+            "type": "void"
+          },
+          "signature": "export function linkDocsToIssues(repoPath: string, epicHash: string, epicSlug: string, refs: EpicRefs, headKind?: 'def' | 'issue'): void"
+        },
+        {
+          "name": "PushContext / SyncContext / PostContext schemas (headKind)",
+          "signature": "interface PushContext { ...; headKind?: 'def' | 'issue' }  // same on SyncContext, PostContext (src/workflow/runners/tracker/schemas.ts)",
+          "parameters": [
+            {
+              "name": "headKind",
+              "type": "'def' | 'issue'",
+              "purpose": "Drives the ISSUE prompt block; 'def' (default) is byte-identical to today",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "PushContext | SyncContext | PostContext",
+            "meaning": "Tracker context schemas extended additively"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "headKind 'issue' carries the prerendered single-issue body (epicBodyMd) and adopted existingRefs",
+            "DEF default keeps every field and prompt byte-identical (byte-equality test)"
+          ]
+        },
+        {
+          "name": "pushPrompt / pushVerifyPrompt (ISSUE block)",
+          "signature": "function pushPrompt(c: PushContext): string  // pushVerifyPrompt(c) likewise; both branch on c.headKind (src/workflow/runners/tracker/index.ts)",
+          "parameters": [
+            {
+              "name": "c",
+              "type": "PushContext",
+              "purpose": "PushContext; headKind 'issue' gets the ISSUE block",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "Execute/verify prompt strings"
+          },
+          "errors": [],
+          "preconditions": [
+            "kind-aware context from assemblePushContext"
+          ],
+          "postconditions": [
+            "ISSUE context: ONE issue; authoritative body = epicBodyMd verbatim; labels epicLabel + epic:<slug>; adopt existingRefs.epicRef WITHOUT --force — when adopting, add the required labels idempotently using the SUPPORTED singular flag `gh issue edit <N> --add-label \"epicLabel,epic:<slug>\"` (the daemon tool gh_issue_edit maps addLabels -> `--add-label`, src/daemon/tools/builtins/gh/issue.ts:234,273; the plural --add-labels is rejected by the CLI) via ensureLabel first; only body edits need --force; no sub-issues, no ## Stories task list, no **Epic:** back-reference (self-references)",
+            "verify prompt for ISSUE: issueLabelled + bodyMatches + singleIssue; taskList/backRef absent or pass-by-construction; adoption complete only when the issue carries epicLabel AND epic:<slug>",
+            "DEF context: byte-identical to today"
+          ]
+        },
+        {
+          "name": "adoptOrPublishIssue (push context + finalize)",
+          "signature": "function adoptOrPublishIssue(repoPath: string, epicHash: string): string | undefined",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "Repo root",
+              "optional": false
+            },
+            {
+              "name": "epicHash",
+              "type": "string",
+              "purpose": "ISSUE hash",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string | undefined",
+            "meaning": "The adopted or freshly published ref"
+          },
+          "errors": [
+            {
+              "type": "BindResult kind 'conflict'",
+              "condition": "adopted issueRef conflicts with an existing head binding to a different issue"
+            }
+          ],
+          "preconditions": [
+            "ISSUE head approved",
+            "gh config github"
+          ],
+          "postconditions": [
+            "If ISSUE.meta.tracker.issueRef (readTrackerMeta) is set: seed existingRefs.epicRef + storyRefs[IMPLIED_ISSUE_STORY_ID]; ISSUE prompt adopts WITHOUT --force, labels added idempotently via singular --add-label (2.6a); finalize binds EPIC-<hash> + STORY-<hash>-s1 heads via bindUnitIssue (idempotent same-ref, conflict refuses); 0 new remote issues",
+            "If absent: the push path uses an ATOMIC CREATE-IF-ABSENT CLAIM, not a plain intent write",
+            "CLAIM (HIGH fix): BEFORE dispatching the mutating execute step, claimCreateIntent(repoPath, epicHash, runId) does writeFileSync(path, payload, { flag: 'wx', mode: 0o600 }) on .insrc/artifacts/PENDING-CREATE-<epicHash>.json (the same exclusive-create primitive the daemon uses for run files, src/daemon/run-file-ownership.ts:101 / managed-update-preparation.ts:46 — writeAtomic's tmp+rename would overwrite, 'wx' fails with EEXIST). Payload: { epicHash, runId (owner), owner, repo, title: issue.body.title, marker: '<!-- insrc:artifact ISSUE-<epicHash> -->', state: 'pending', createdAt, heartbeatAt }. On EEXIST the run reads the existing claim: if the owner's heartbeat is fresh (still executing) and state is 'pending'/'created', this run REFUSES to dispatch a create and instead adopts/reconciles per the claim; if the claim is abandoned (stale heartbeat, no persisted issueRef/head bindings), it may be displaced only by an ownership-verified replace.",
+            "RECONCILIATION RULE (ownership-safe): unresolved 'pending' claim (abandoned, or after a lost execute response) -> no create; candidates by persisted title via ghListIssuesByTitleTokenStrict (registry-table.ts:331), each body-verified by verifyRecoveryCandidate (2.6c: exact ISSUE-<hash> marker + owner/repo target); exactly one verified candidate -> adopt (update claim to 'created' under ownership check, persist issueRef + head bindings), 0 creates; zero or >1 verified -> explicit refusal naming the claim, human resolves. 'created' claims adopt their durable refs with 0 creates.",
+            "ALL claim ops (create, heartbeat, pending->created, takeover, delete) run inside the claim mutex and carry the fencing token; a displaced owner is rejected with ClaimOwnershipError and fenced from ALL subsequent persistence (issueRef write-back, head bindings, claim delete), closing the check-then-write race"
+          ]
+        },
+        {
+          "name": "renderIssueMarkdownWithTracker (local ISSUE.md renderer)",
+          "signature": "export function renderIssueMarkdownWithTracker(artifact: IssueArtifact, repoPath: string): string  // src/workflow/artifacts/issue.ts",
+          "parameters": [
+            {
+              "name": "artifact",
+              "type": "IssueArtifact",
+              "purpose": "The ISSUE artifact; body bytes are the canonical remote body",
+              "optional": false
+            },
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "Repo root used to read the unit binding (unitIssueOf) or meta.tracker.issueRef",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "renderIssueMarkdown(artifact) bytes PLUS a tracker line in the Summary area when a ref exists — remote body unchanged"
+          },
+          "errors": [],
+          "preconditions": [
+            "artifact.body has title/reproduction/rootCause/fixIntent"
+          ],
+          "postconditions": [
+            "Returns renderIssueMarkdown(artifact) verbatim with ONE added line `**Tracker:** [owner/repo#N](https://github.com/owner/repo/issues/N)` (trackerRefLine, refs.ts:94) inserted after the artifact-id marker when unitIssueOf(repoPath, issueHash) or readTrackerMeta resolves meta.tracker.issueRef",
+            "The remote GH issue body remains renderIssueMarkdown(artifact) with NO tracker line (tracker link is local-doc-only, same as DEF.md's Summary envelope which uses unitIssueOf, define.ts:115-116)",
+            "No ref -> output byte-identical to renderIssueMarkdown(artifact)"
+          ]
+        },
+        {
+          "name": "verifyRecoveryCandidate (identity proof before adopt/mutate)",
+          "signature": "async function verifyRecoveryCandidate(port: TrackerPort, repoPath: string, epicHash: string, candidateRef: string): Promise<{ ok: true; ref: string } | { ok: false; reason: string }>",
+          "parameters": [
+            {
+              "name": "port",
+              "type": "TrackerPort",
+              "purpose": "Tracker port for readBody (ghGetIssueBody) / state reads",
+              "optional": false
+            },
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "Repo root (marker check needs the expected artifact id)",
+              "optional": false
+            },
+            {
+              "name": "epicHash",
+              "type": "string",
+              "purpose": "Work-item hash; expected marker is ISSUE-<epicHash>",
+              "optional": false
+            },
+            {
+              "name": "candidateRef",
+              "type": "string",
+              "purpose": "Candidate issue ref from the recovery record or title lookup",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "{ ok: true; ref } | { ok: false; reason }",
+            "meaning": "ok only when the candidate's remote body contains the canonical `<!-- insrc:artifact ISSUE-<epicHash> -->` marker AND its owner/repo match the configured tracker target"
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "candidate set is empty after verification, more than one distinct ref survives, or any candidate's body lacks the marker / targets a different repo — refuse: no adoption, no label adds, no create"
+            }
+          ],
+          "preconditions": [
+            "recovery record or title lookup produced >=1 candidate",
+            "artifactIdMarker format: `<!-- insrc:artifact <ID> -->` (storage.ts:873)"
+          ],
+          "postconditions": [
+            "Reads the candidate body via ghGetIssueBody (registry-table.ts:270); requires the exact line `<!-- insrc:artifact ISSUE-<epicHash> -->` (the same marker renderIssueMarkdown emits at the top of the remote body) and owner/repo == configured target",
+            "Title matches are candidate generators only (ghListIssuesByTitleTokenStrict, registry-table.ts:331 — 'strict' covers lookup failure, not uniqueness); identity comes from the marker + target check",
+            "Ambiguous or mismatched -> refuse with a clear error before any adoption, label mutation, or create"
+          ]
+        },
+        {
+          "name": "claimCreateIntent + withClaimLock (mutex + fencing token on every claim op)",
+          "signature": "function claimCreateIntent(repoPath: string, epicHash: string, runId: string): { claimed: true } | { claimed: false; existing }  // create-if-absent under the claim mutex; ALL claim ops go through withClaimLock(repoPath, epicHash, runId, expectedFence, op)",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "Repo root; claim at repo .insrc/artifacts/PENDING-CREATE-<epicHash>.json (storage.ts:59/865)",
+              "optional": false
+            },
+            {
+              "name": "epicHash",
+              "type": "string",
+              "purpose": "Work-item hash; claim file name and mutex key",
+              "optional": false
+            },
+            {
+              "name": "runId",
+              "type": "string",
+              "purpose": "Owning run id",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "{ claimed: true } | { claimed: false; existing }",
+            "meaning": "claimed:true only when the 'wx' create succeeded while holding the claim mutex"
+          },
+          "errors": [
+            {
+              "type": "ClaimOwnershipError",
+              "condition": "any update/delete/takeover whose expectedFence does not equal the current claim's fence token — the op is rejected and the caller is fenced"
+            },
+            {
+              "type": "EEXIST surfaced as claimed:false",
+              "condition": "claim file exists at create time"
+            },
+            {
+              "type": "Error (guard conflict evidence)",
+              "condition": "acquisition hits EEXIST against a live guard owner — fail closed with the conflict evidence, never reclaim a live holder"
+            }
+          ],
+          "preconditions": [
+            "called BEFORE the tracker.push execute step is dispatched; all later claim ops hold the same mutex"
+          ],
+          "postconditions": [
+            "Exactly one run holds the claim at a time: the claim file is created under the claim mutex with flag 'wx' (EEXIST -> claimed:false).",
+            "MUTEX LIFECYCLE (MED fix): the lock is a DIRECTORY guard, not a bare lock file — acquireRunFileGuard (src/shared/daemon-run-files.ts) pattern: mkdirSync(path, 0o700) + owner.json written with flag 'wx' inside, carrying ProcessIdentity { pid, startedAt, commandLine } + nonce. RELEASE: the holder removes its own guard on exit (recursive rm of its own pinned directory only, assertOwned first). CRASH RECOVERY: a newcomer that gets EEXIST runs quarantineDeadGuard (daemon-run-files.ts:269) — if owner.json's recorded pid is conclusively dead (pid liveness probe), the dead guard is quarantined (renamed aside under a reclaim claim) and re-acquired; a LIVE holder is never touched (the verdict withholds and the newcomer waits/fails closed with the conflict evidence). This is exactly the daemon guard's ownership/reclamation logic, not just O_EXCL.",
+            "So a crashed mutex holder never permanently blocks claim recovery; a fresh push reaches reconciliation after the crash, and a live holder is never broken.",
+            "FENCE token as before: every claim op under the mutex requires expectedFence === current and writes fence+1 in the same critical section; displaced owners are fenced from all later persistence with ClaimOwnershipError before any write.",
+            "TAKEOVER only for abandoned claims (stale heartbeat AND no persisted issueRef/head bindings), inside the mutex."
+          ]
+        },
+        {
+          "name": "claimQueueKey (claim mutex mapped onto the artifact write-authority queue) + lock ordering",
+          "signature": "const claimQueueKey = ArtifactIds.make({ kind: 'ISSUE', epicHash })  // 'ISSUE-<hash>' is a valid artifact id (SHAPES, artifact-ids.ts:70-95), so FileArtifactStore.exclusive / the daemon authority handler accept it; the on-disk claim file stays .insrc/artifacts/PENDING-CREATE-<epicHash>.json",
+          "parameters": [
+            {
+              "name": "epicHash",
+              "type": "string",
+              "purpose": "ISSUE-<hash> IS a valid queue key; PENDING-CREATE-<hash> is not (ArtifactIds.parse rejects unknown kinds) — the claim mutex uses the former, the claim file the latter",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string (artifact id)",
+            "meaning": "the authority-accepted key for the claim's critical section"
+          },
+          "errors": [],
+          "preconditions": [
+            "all claim ops go through withArtifactWriteAuthority(repoPath, 'ISSUE-<hash>', op)"
+          ],
+          "postconditions": [
+            "LOCK ORDERING: claim mutex (key ISSUE-<hash>) is always acquired BEFORE any artifact write on ISSUE-<hash>, EPIC-<hash>, STORY-<hash>-s1, PENDING-CREATE file; nested artifact writes inside a claim op run under the same authority so ordering is consistent (claim lock -> artifact write). Never the reverse: an artifact write in progress never blocks claim acquisition for longer than the current op because the claim key is distinct from the artifact key.",
+            "Cross-process correctness comes from the lock-directory guard (dead-owner quarantine); the authority queue serializes in-process work on the same key.",
+            "Test crosses the REAL worker/authority boundary: a daemon worker calls the authority handler with key ISSUE-<hash> and the claim op runs inside it (not a local mutex mock)."
+          ]
+        }
+      ],
+      "surfaceLevel": "internal"
+    },
+    "dataModelChanges": [
+      {
+        "entity": "DefinitionHead resolution (readable-wins, one rule)",
+        "change": "invariant-change",
+        "details": "One readable-head rule (readArtifactCore first-READABLE-wins via tryParse, DEF then ISSUE — identical to storage.ts readEpicDefinitionCore and resolve.ts readEpicDefinition) backs requireApprovedDefinition, definitionHeadJsonPath, and through them every persistence site (mutateEpicTrackerMeta, sync.ts), so a corrupt DEF can never be persisted into while context reads the ISSUE.",
+        "callSites": [
+          "src/workflow/storage.ts:644-700",
+          "src/workflow/tracker/resolve.ts:216-227",
+          "src/workflow/gates.ts:153-261"
+        ]
+      },
+      {
+        "callSites": [
+          "src/workflow/orchestrator.ts:2919",
+          "src/workflow/orchestrator.ts:2972-3026"
+        ],
+        "change": "invariant-change",
+        "details": "mutateEpicTrackerMeta switches defineJson to definitionHeadJsonPath and passes head kind to linkDocsToIssues; push binds EPIC/STORY-s1 heads from the adopted issueRef for ISSUE heads.",
+        "entity": "Finalize persistence target (head JSON)"
+      },
+      {
+        "callSites": [
+          "src/workflow/tracker/sync.ts:59",
+          "src/workflow/tracker/sync.ts:106",
+          "src/workflow/tracker/sync.ts:164"
+        ],
+        "change": "invariant-change",
+        "details": "sync.ts defineJson := definitionHeadJsonPath; storiesOf branches DEF -> readDefineArtifact ids, ISSUE -> impliedIssueStories; patchTrackerMeta target likewise.",
+        "entity": "Sync persistence + story list source"
+      },
+      {
+        "callSites": [
+          "src/workflow/chain.ts:325-360",
+          "src/workflow/chain.ts:425-441"
+        ],
+        "change": "field-modify",
+        "details": "computeNextAction ISSUE branch falls through to the DEF tracker steps after the story loop; HLD/amendment/stale remain skipped for ISSUE heads.",
+        "entity": "ChainReport.nextAction for ISSUE-anchored items"
+      },
+      {
+        "callSites": [
+          "src/workflow/runners/tracker/context.ts:62-67",
+          "src/workflow/bugfix/tracker.ts:382-392",
+          "src/workflow/tracker/unit-head.ts:36",
+          "src/workflow/tracker/binding.ts:126-145"
+        ],
+        "change": "invariant-change",
+        "details": "Adoption contract: ISSUE.meta.tracker.issueRef (bugfix approval) is the work-item root issue AND the single s1 story issue; push seeds existingRefs from it; finalize binds EPIC-<hash> + STORY-<hash>-s1 heads idempotently; conflicts refuse; no duplicate creates on retry.",
+        "entity": "TrackerBinding identity for an ISSUE-anchored work item"
+      },
+      {
+        "callSites": [
+          "src/workflow/tracker/link.ts:46-70",
+          "src/workflow/storage.ts:466",
+          "src/workflow/storage.ts:550-567",
+          "src/workflow/storage.ts:937-960",
+          "src/workflow/artifacts/issue.ts",
+          "src/workflow/tracker/refs.ts:94"
+        ],
+        "change": "invariant-change",
+        "details": "linkDocsToIssues takes headKind; placement from workItemKindOf, anchor from requireEpicAnchor; ISSUE heads relink ISSUE.md via issueArtifactPaths + renderIssueMarkdownWithTracker (tracker link line from the binding, body bytes canonical) + standalone LLD.md; skip HLD/Define docs.",
+        "entity": "Doc-issue linkage placement"
+      },
+      {
+        "entity": "Tracker execute/verify prompt contract per head kind",
+        "change": "field-add",
+        "details": "Context schemas gain optional headKind; pushPrompt/pushVerifyPrompt branch on it — ISSUE block: single issue, authoritative prerendered body, labels epicLabel+epic:<slug>, adopt without --force, no task-list/back-ref/sub-issues; verify = issueLabelled+bodyMatches+singleIssue; DEF byte-identical (byte-equality test).",
+        "callSites": [
+          "src/workflow/runners/tracker/index.ts:228-352",
+          "src/workflow/runners/tracker/schemas.ts:119-160"
+        ]
+      },
+      {
+        "entity": "Finalize persistence target + issueRef write-back",
+        "change": "invariant-change",
+        "details": "mutateEpicTrackerMeta persists to definitionHeadJsonPath (readable-head rule); ISSUE push writes meta.tracker.issueRef back on first publication and binds EPIC/STORY-s1 heads so closeBugfixTrackerIssue can close; partial-run retry adopts via onLostRefAfterCreate.",
+        "callSites": [
+          "src/workflow/orchestrator.ts:2919-3027",
+          "src/workflow/bugfix/tracker.ts:268-300"
+        ]
+      },
+      {
+        "entity": "Pending-create claim (PENDING-CREATE-<epicHash>.json, atomic create-if-absent via flag wx, owning runId)",
+        "change": "new",
+        "details": "Claim mutex key = ArtifactIds.make({ kind: 'ISSUE', epicHash }) (valid authority key, SHAPES artifact-ids.ts:70); on-disk claim file stays .insrc/artifacts/PENDING-CREATE-<epicHash>.json (not an artifact id — only the queue key must be one). Mutex is a lock DIRECTORY via acquireRunFileGuard pattern (mkdir + owner.json 'wx', daemon-run-files.ts): release = holder removes its own pinned guard; crash recovery = quarantineDeadGuard (:269) reclaims only conclusively dead owners, live holders fail closed. Lock ordering: claim mutex before any artifact write on ISSUE/EPIC/STORY-s1 keys. Fence token increments per op inside the mutex.",
+        "callSites": [
+          "src/workflow/storage.ts:341",
+          "src/workflow/storage.ts:1261",
+          "src/workflow/runners/tracker/context.ts:41-108",
+          "src/workflow/tracker/registry-table.ts:331",
+          "src/daemon/run-file-ownership.ts:101",
+          "src/daemon/managed-update-preparation.ts:46",
+          "src/shared/daemon-run-files.ts:112",
+          "src/daemon/source-store-probe.ts:59",
+          "src/workflow/artifact-core/write-authority.ts",
+          "src/workflow/artifact-core/store.ts:258",
+          "src/workflow/artifact-ids.ts:70-95",
+          "src/shared/daemon-run-files.ts:269",
+          "src/workflow/artifact-core/store.ts:249-262"
+        ]
+      },
+      {
+        "entity": "Pending-create claim (PENDING-CREATE-<epicHash>.json, atomic create-if-absent via flag wx, owning runId)",
+        "change": "new",
+        "details": "Claim mutex key = ArtifactIds.make({ kind: 'ISSUE', epicHash }) (valid authority key, SHAPES artifact-ids.ts:70); on-disk claim file stays .insrc/artifacts/PENDING-CREATE-<epicHash>.json (not an artifact id — only the queue key must be one). Mutex is a lock DIRECTORY via acquireRunFileGuard pattern (mkdir + owner.json 'wx', daemon-run-files.ts): release = holder removes its own pinned guard; crash recovery = quarantineDeadGuard (:269) reclaims only conclusively dead owners, live holders fail closed. Lock ordering: claim mutex before any artifact write on ISSUE/EPIC/STORY-s1 keys. Fence token increments per op inside the mutex.",
+        "callSites": [
+          "src/workflow/storage.ts:59",
+          "src/workflow/storage.ts:83",
+          "src/workflow/storage.ts:865",
+          "src/workflow/storage.ts:873",
+          "src/workflow/runners/tracker/context.ts:41-108",
+          "src/workflow/runners/tracker/index.ts",
+          "src/daemon/run-file-ownership.ts:101",
+          "src/daemon/managed-update-preparation.ts:46",
+          "src/shared/daemon-run-files.ts:112",
+          "src/daemon/source-store-probe.ts:59",
+          "src/workflow/artifact-core/write-authority.ts",
+          "src/workflow/artifact-core/store.ts:258",
+          "src/workflow/artifact-ids.ts:70-95",
+          "src/shared/daemon-run-files.ts:269",
+          "src/workflow/artifact-core/store.ts:249-262"
+        ]
+      },
+      {
+        "entity": "Recovery candidate identity verification (ISSUE-<hash> marker + tracker target)",
+        "change": "new",
+        "details": "verifyRecoveryCandidate reads the candidate remote body (ghGetIssueBody registry-table.ts:270) and requires the exact artifact marker line (artifactIdMarker storage.ts:873) and matching owner/repo; title lookup is only a candidate generator (ghListIssuesByTitleTokenStrict registry-table.ts:331); ambiguous/mismatched -> refuse before adopt/mutate/create.",
+        "callSites": [
+          "src/workflow/tracker/registry-table.ts:270",
+          "src/workflow/tracker/registry-table.ts:331",
+          "src/workflow/storage.ts:873",
+          "src/daemon/tools/builtins/gh/issue.ts:234",
+          "src/daemon/tools/builtins/gh/issue.ts:273"
+        ]
+      },
+      {
+        "entity": "Unresolved-intent reconciliation gate",
+        "change": "new",
+        "details": "assemblePushContext first checks PENDING-CREATE-<epicHash>.json: state 'pending' -> no create permitted, reconcile via candidate discovery + marker/target verification; state 'created' -> adopt refs from the intent (no create); absent + no persisted issueRef -> normal first-publication create (after writing the intent).",
+        "callSites": [
+          "src/workflow/runners/tracker/context.ts:41-108",
+          "src/workflow/runners/tracker/index.ts",
+          "src/workflow/storage.ts:59",
+          "src/workflow/storage.ts:83",
+          "src/workflow/storage.ts:865",
+          "src/workflow/tracker/registry-table.ts:331"
+        ]
+      },
+      {
+        "entity": "Claim liveness (heartbeat + abandoned detection)",
+        "change": "new",
+        "details": "Owner refreshes heartbeatAt while execute is in flight (ownership-checked). Abandoned iff heartbeat older than claimStaleAfterMs (default 10 min) AND no persisted issueRef/head bindings — live-executing vs abandoned distinguished by heartbeat.",
+        "callSites": [
+          "src/workflow/runners/tracker/index.ts",
+          "src/workflow/runners/tracker/context.ts:41-108",
+          "src/workflow/storage.ts:59",
+          "src/workflow/storage.ts:83",
+          "src/workflow/storage.ts:865"
+        ]
+      },
+      {
+        "entity": "Claim mutex (guard-directory lock, key ISSUE-<hash>) + fencing token",
+        "change": "new",
+        "details": "Mutex = lock-directory guard (acquireRunFileGuard/quarantineDeadGuard, daemon-run-files.ts) keyed to the authority-accepted id ISSUE-<hash> via withArtifactWriteAuthority (write-authority.ts, store.ts:249-262); lock ordering claim-before-artifact-writes. Fence token in the claim payload increments per op under the mutex; stale-fence ops rejected with ClaimOwnershipError before any write and fenced from later persistence.",
+        "callSites": [
+          "src/shared/daemon-run-files.ts:269",
+          "src/workflow/artifact-ids.ts:70-95",
+          "src/workflow/artifact-core/write-authority.ts",
+          "src/workflow/artifact-core/store.ts:249-262"
+        ]
+      }
+    ],
+    "errorPaths": {
+      "edgeCases": [
+        {
+          "input": "DEF-<hash>.json unparseable, ISSUE-<hash>.json valid+approved; tracker.push finalize",
+          "expected": "BOTH helpers resolve the ISSUE (kind 'issue', ISSUE json path); finalize writes meta.tracker onto the ISSUE json, never the corrupt DEF; zero DEF files created"
+        },
+        {
+          "expected": "definitionHeadJsonPath returns the DEF json; kind 'def'; all layers behave exactly as today",
+          "input": "Both DEF-<hash>.json and ISSUE-<hash>.json exist (DEF wins, readEpicDefinitionCore order)"
+        },
+        {
+          "expected": "Falls through to the ISSUE json when the DEF is corrupt (first-readable-wins)",
+          "input": "DEF malformed, ISSUE parses"
+        },
+        {
+          "expected": "Finalize push on an ISSUE-only fixture writes meta.tracker onto ISSUE-<hash>.json, binds EPIC-<hash> + STORY-<hash>-s1 heads, readdir(.insrc/artifacts) has zero DEF-*.json; finalize sync writes epicStatus/storyStatus/lastSyncedAt onto the ISSUE json",
+          "input": "tracker.push then tracker.sync finalize on a seeded ISSUE-anchored repo with a stubbed tracker port"
+        },
+        {
+          "expected": "Chain on an ISSUE fixture: unpushed+LLD approved -> push-tracker; bound refs, no lastSyncedAt -> sync-tracker; lastSyncedAt set -> chain-complete; never hld/amendment/stale for ISSUE heads",
+          "input": "buildChainReport across four states of the ISSUE-anchored fixture"
+        },
+        {
+          "expected": "Push with ISSUE.meta.tracker.issueRef pre-set: existingRefs.epicRef and storyRefs.s1 are that ref; stubbed port createIssue count == 0; finalize binds both heads to it; a pre-existing head binding to a different issue refuses with kind 'conflict'",
+          "input": "tracker.push on an ISSUE fixture whose approval recorded issueRef"
+        },
+        {
+          "expected": "linkDocsToIssues on an ISSUE head rewrites docs/standalone/<slug>-E<anchor>/ISSUE.md and S001/LLD.md with the tracker link, docs/ has no epics entry for the hash, HLD/Define relinks skipped",
+          "input": "push finalize on the ISSUE-anchored fixture, then inspect the docs tree"
+        },
+        {
+          "expected": "tracker.post lld+s1 posts to the adopted story ref; hld/amendment targets and non-s1 storyIds refuse with clear errors",
+          "input": "tracker.post variants on the pushed ISSUE fixture"
+        },
+        {
+          "input": "tracker.push retry after simulated issueRef write-back failure on an ISSUE fixture",
+          "expected": "Next run re-reads, adopts via existingRefs re-read / onLostRefAfterCreate; 0 duplicate creates; run completes"
+        },
+        {
+          "input": "approve ISSUE with cfg type 'none' -> enable tracking -> push -> retry (simulated write-back failure) -> bugfix completion",
+          "expected": "First push creates exactly ONE remote issue; finalize writes issueRef to ISSUE json AND binds EPIC/STORY-s1 heads; closeBugfixTrackerIssue closes via readRecordedRef"
+        },
+        {
+          "input": "pushPrompt(c)/pushVerifyPrompt(c) with c.headKind='issue' — string assertions",
+          "expected": "ISSUE block present (ONE issue, body=epicBodyMd, labels epicLabel+epic:<slug>, adopt epicRef without --force) and 'error unless'/task-list/backRef/sub-issue text absent"
+        },
+        {
+          "input": "pushPrompt(c) with c.headKind undefined — byte-equality assertion",
+          "expected": "DEF-context prompt byte-identical to captured baseline; ISSUE block absent"
+        },
+        {
+          "input": "adoption of an issue created with defaultTrackerCreateDeps (labels: []) and no epicLabel/epic:<slug>",
+          "expected": "ISSUE push adds epicLabel + epic:<slug> idempotently (ensureLabel + gh issue edit --add-labels) WITHOUT --force and without body edit; verify checklist issueLabelled passes; 0 creates"
+        },
+        {
+          "input": "ISSUE.md relink after push on an ISSUE-anchored fixture",
+          "expected": "docs/standalone/<slug>-E<anchor>/ISSUE.md contains the artifact marker, the canonical body headings (Reproduction/Root cause/Fix intent) byte-identical to renderIssueMarkdown, AND a `**Tracker:** [owner/repo#N](...)` line; with no ref the md is byte-identical to renderIssueMarkdown"
+        },
+        {
+          "input": "recovery-record write itself fails",
+          "expected": "run aborts with an explicit error before any further mutation; no create in that run; next run re-attempts the record write"
+        },
+        {
+          "input": "two remote issues share the ISSUE body.title (duplicate titles)",
+          "expected": "title lookup yields 2 candidates; body-marker verification leaves 0 or filters to the one carrying ISSUE-<hash>; if more than one distinct ref survives -> refuse, no adoption, no label mutation, no create"
+        },
+        {
+          "input": "a single remote issue with a matching title but no ISSUE-<hash> marker (unrelated work item)",
+          "expected": "verification fails (marker absent / wrong target repo); refuse; no labels added to the unrelated issue"
+        },
+        {
+          "input": "remote create succeeded, then the intent/recovery record write fails",
+          "expected": "run fails closed (no further mutation), but PENDING-CREATE-<epicHash>.json already exists with state 'pending'; a FRESH next invocation (nothing injected) sees the unresolved intent, reconciles via title+marker verification, adopts the one verified candidate with createIssue count == 0, updates intent to 'created', persists issueRef + head bindings"
+        },
+        {
+          "input": "remote create succeeded, then the execute response is lost before the framework receives refs",
+          "expected": "intent still state 'pending'; fresh invocation reconciles exactly as above; 0 additional creates"
+        },
+        {
+          "input": "intent state 'created' but meta/binding persistence failed",
+          "expected": "fresh invocation reads refs from the intent file itself (durable, written by the failed run), adopts, 0 creates, persists issueRef + bindings"
+        },
+        {
+          "input": "unresolved intent with 0 or >1 marker-verified candidates",
+          "expected": "explicit refusal error naming PENDING-CREATE-<epicHash>.json; no create, no adoption; human resolves"
+        },
+        {
+          "input": "two tracker.push runs paused after context assembly, then both released toward dispatch",
+          "expected": "first run's claimCreateIntent 'wx' write succeeds; second gets EEXIST -> claimed:false -> refuses to dispatch a create and reconciles; exactly 1 create total; claim runId preserved; loser never updates or deletes the claim"
+        },
+        {
+          "input": "fresh heartbeat (owner executing) vs stale heartbeat > claimStaleAfterMs with no persisted refs",
+          "expected": "live claim -> competing run refuses; abandoned claim -> reconciled under ownership verification or explicit refusal"
+        },
+        {
+          "input": "Run A reads its own runId/fence for a heartbeat, pauses; Run B observes stale heartbeat, takes over under the mutex (fence++); Run A resumes and writes its prepared update",
+          "expected": "A's op enters the mutex, sees current fence = B's (A's expected fence is stale) -> ClaimOwnershipError before any write; A cannot overwrite or delete B's claim and is fenced from issueRef/head-binding persistence"
+        },
+        {
+          "input": "two simultaneous reconcilers of an abandoned claim",
+          "expected": "serialized on the claim mutex; first takes over (fence++); second sees fence mismatch / fresh owner and refuses — exactly one takeover"
+        },
+        {
+          "input": "mutex holder is killed (SIGKILL) inside the critical section; fresh run starts",
+          "expected": "owner.json records a conclusively dead pid -> quarantineDeadGuard reclaims the guard; fresh run acquires, recovers the original claim (adopt/reconcile, 0 new creates); a LIVE holder is never quarantined (conflict fails closed with evidence)"
+        }
+      ],
+      "errorCases": [
+        {
+          "detection": "definitionHeadJsonPath's existsSync misses both head jsons",
+          "recoverable": true,
+          "response": "ArtifactMissingError naming the ISSUE id and advising the issue stage (not define) — no raw ENOENT after remote issues exist",
+          "scenario": "tracker finalize/sync for a hash with no head",
+          "userImpact": "Accurate refusal, no partial remote state hidden"
+        },
+        {
+          "detection": "readFileSync/writeArtifact on the head json throws during mutateEpicTrackerMeta",
+          "recoverable": false,
+          "response": "finalizeTracker returns schemaFailure naming the actual head path (ISSUE for bugfix items); refs remain in the run output so a retry adopts them and creates no duplicates",
+          "scenario": "persistence write fails mid-finalize",
+          "userImpact": "No silent success after remote creates"
+        },
+        {
+          "detection": "bindArtifact finds the head bound to a different issue than the adopted issueRef",
+          "recoverable": true,
+          "response": "BindResult kind 'conflict'; push refuses to rebind (a unit has exactly one issue) and reports both refs",
+          "scenario": "ISSUE.meta.tracker.issueRef disagrees with an existing EPIC/STORY head binding",
+          "userImpact": "No duplicate or stolen issue"
+        },
+        {
+          "detection": "requireEpicAnchor finds no creation time on the head (storage.ts:562)",
+          "recoverable": true,
+          "response": "MissingAnchorError before any doc is touched — linkDocsToIssues fails closed, no wrong-folder write",
+          "scenario": "linkDocsToIssues on an ISSUE head lacking epicCreatedAt",
+          "userImpact": "No docs/epics duplicate"
+        },
+        {
+          "detection": "unitIssueOf undefined for an ISSUE head in sync/post",
+          "recoverable": true,
+          "response": "Existing 'no tracker refs ... Run tracker.push first' refusal, now reachable because the context read succeeds",
+          "scenario": "sync/post before push on an ISSUE item",
+          "userImpact": "Accurate guidance"
+        },
+        {
+          "detection": "resolveGithubConfig type 'none'",
+          "recoverable": true,
+          "response": "requireGithubAdapter throws the existing disabled-tracker error",
+          "scenario": "tracker disabled via repo config",
+          "userImpact": "Unchanged"
+        },
+        {
+          "scenario": "remote issue created but issueRef persistence failed; next push runs",
+          "detection": "assemblePushContext finds the prior run artifact with an execute-returned epicRef while ISSUE json has no issueRef and no head bindings",
+          "response": "load the prior epicRef into existingRefs as adopt-only (or re-discover by unique title via ghListIssuesByTitleTokenStrict); NO create permitted; retry persists issueRef + head bindings",
+          "userImpact": "No duplicate remote issues across attempts; recovery survives a fresh workflow invocation",
+          "recoverable": true
+        },
+        {
+          "scenario": "adopted issue lacks the labels the verify checklist requires",
+          "detection": "pushVerifyPrompt sees missing epicLabel / epic:<slug> on the adopted issue",
+          "response": "adoption itself adds the labels idempotently (ensureLabel + add-labels) without --force and without touching the body; only body edits need --force",
+          "userImpact": "Adoption converges without violating the no-edit rule",
+          "recoverable": true
+        },
+        {
+          "scenario": "candidate identity cannot be proven",
+          "detection": "verifyRecoveryCandidate: marker line missing, owner/repo mismatch, or >1 distinct candidate after filtering",
+          "response": "refuse with a clear error before any adoption, label add, or create",
+          "userImpact": "No labels ever added to an unrelated issue",
+          "recoverable": true
+        },
+        {
+          "scenario": "unresolved pending-create intent at next push",
+          "detection": "PENDING-CREATE-<epicHash>.json exists with state 'pending'",
+          "response": "no create; reconcile by title (ghListIssuesByTitleTokenStrict) + body marker (verifyRecoveryCandidate); one verified candidate -> adopt with 0 creates; otherwise explicit refusal",
+          "userImpact": "Fresh retries are safe without an injected ref; duplicates impossible",
+          "recoverable": true
+        },
+        {
+          "scenario": "second concurrent tracker.push on the same epicHash",
+          "detection": "claimCreateIntent gets EEXIST on PENDING-CREATE-<epicHash>.json",
+          "response": "claimed:false; the competing run does not dispatch a create, does not overwrite, does not delete; it reconciles from the live claim or refuses on a fresh heartbeat",
+          "userImpact": "Exactly one remote issue across concurrent runs",
+          "recoverable": true
+        },
+        {
+          "scenario": "claim update/delete by a non-owner run",
+          "detection": "re-read shows claim.runId !== this runId",
+          "response": "abort without touching the file",
+          "userImpact": "Intent ownership preserved",
+          "recoverable": false
+        },
+        {
+          "scenario": "claim op with a stale fencing token (displaced owner)",
+          "detection": "inside the claim mutex, expectedFence !== current fence",
+          "response": "ClaimOwnershipError before any write; the run is fenced from all subsequent persistence",
+          "userImpact": "No check-then-write overwrite is possible",
+          "recoverable": false
+        },
+        {
+          "scenario": "lock file left behind by a crashed holder",
+          "detection": "mkdir EEXIST, owner.json pid probe returns dead",
+          "response": "quarantineDeadGuard renames the dead guard aside under a reclaim claim and re-acquires; live owners are never reclaimed",
+          "userImpact": "Crash never permanently blocks claim recovery",
+          "recoverable": true
+        },
+        {
+          "scenario": "claim op through a key the artifact authority rejects",
+          "detection": "ArtifactIds.parse('PENDING-CREATE-<hash>') === undefined (unknown kind)",
+          "response": "use ISSUE-<hash> as the authority queue key (valid SHAPES kind); the claim FILE may keep the PENDING-CREATE name since it bypasses the artifact store",
+          "userImpact": "Claim mutex works through the real worker/authority boundary",
+          "recoverable": true
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "source": "c1",
+          "text": "DEF-head behavior byte-identical at every layer: context assemblers (context.ts:41-199), mutateEpicTrackerMeta bytes (orchestrator.ts:2972-3026), sync patch target DEF json (sync.ts:59-164), chain DEF branch (chain.ts:425-441), linkDocsToIssues docs/epics placement (link.ts:46-70)."
+        },
+        {
+          "source": "c2",
+          "text": "Head order DEF -> ISSUE matches storage.ts readEpicDefinitionCore and resolve.ts readEpicDefinition; definitionHeadJsonPath and requireApprovedDefinition reuse that order."
+        },
+        {
+          "source": "c3",
+          "text": "Approval gating unchanged: rejected/not-approved heads refuse with ArtifactNotApprovedError naming the head's real md path (gates.ts:237-261)."
+        },
+        {
+          "source": "c4",
+          "text": "A unit has exactly one issue: bindArtifact idempotent same-ref, conflict different-ref (binding.ts:126-145); adoption never rebinds."
+        },
+        {
+          "source": "c5",
+          "text": "chain readTrackerMeta keeps (define?, issue?) + impliedIssueStories for ISSUE heads; the ISSUE branch adds tracker steps but never HLD/amendment/stale (chain.ts:277-301, 325-360)."
+        },
+        {
+          "source": "c6",
+          "text": "patchTrackerMeta merges meta.tracker key-wise on any artifact json (refs.ts:111-125) — ISSUE heads already carry meta.tracker (issueRef from bugfix approval); no format change."
+        }
+      ]
+    },
+    "hldContextSlice": {
+      "adjacentBoundaries": [],
+      "boundary": {
+        "depends": [],
+        "internal": "Make the tracker push, sync and post stages handle an ISSUE-anchored work item",
+        "owns": [],
+        "storyId": "s1"
+      },
+      "consumedContracts": [],
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "nonFunctional": {},
+      "ownedContracts": [],
+      "rolloutPhase": "standalone"
+    },
+    "interactionWithShared": [],
+    "migration": {
+      "backwardCompat": "Fully backward compatible: every change branches on the head kind (def | issue); DEF-headed work items take byte-identical code paths at context, persistence, chain and linkage (existing tracker/chain/link tests must pass unedited). New exports requireApprovedDefinition, definitionHeadJsonPath, renderIssueEpicBody are additive; linkDocsToIssues's headKind is optional and defaults to the read head. No artifact format changes — ISSUE artifacts already carry meta.tracker (issueRef from bugfix approval) and EPIC/STORY heads already carry meta.envelope.binding.",
+      "dataRewriteRequired": false,
+      "migrationSteps": [
+        {
+          "action": "No migration/backfill: in-process behavior fix. stateBefore: tracker stages throw at context read (requireApprovedEpic DEF-only) and ENOENT at finalize persistence (mutateEpicTrackerMeta/sync.ts DEF json) for ISSUE-headed items; chain reports chain-complete for unpushed ISSUE items; the approval-created issueRef is invisible to push; linkDocsToIssues would duplicate docs under docs/epics. stateAfter: all five layers kind-aware; existing ISSUE-anchored items adopt their approval-created ref automatically on the next tracker run (existingRefs seeded from ISSUE.meta.tracker.issueRef). No stored data rewritten.",
+          "order": 1,
+          "rollbackable": true
+        }
+      ],
+      "stateAfter": "tracker.push/sync/post accept, persist and link ISSUE-anchored work items end to end: meta.tracker lands on ISSUE-<hash>.json with EPIC/STORY-s1 unit bindings (zero DEF files fabricated); the chain offers push-tracker -> sync-tracker -> chain-complete for approved ISSUE items; the approval-created GitHub issue is adopted with zero duplicate creates and conflict refusal; docs relink under docs/standalone with ISSUE.md refreshed and no docs/epics duplicate.",
+      "stateBefore": "Every tracker layer was DEF-only: context assemblers via requireApprovedEpic, persistence via DEF json paths in mutateEpicTrackerMeta (orchestrator.ts:2972) and sync.ts:59/106, storiesOf via readDefineArtifact (sync.ts:164); chain computeNextAction ISSUE branch skipped tracker steps (chain.ts:325-360); unitIssueOf reads only EPIC/STORY head bindings so ISSUE.meta.tracker.issueRef was invisible; linkDocsToIssues hardcoded 'epic' placement (link.ts:46-57).",
+      "zeroDowntime": true
+    },
+    "openQuestions": [],
+    "summary": {
+      "audience": "technical",
+      "prose": "Final LLD (closing the rev-3 review's 1 HIGH + 2 MED on top of the pass-3 five-layer design): tracker.push/sync/post fully support ISSUE-anchored work items. (HIGH) Context schemas gain optional headKind; pushPrompt/pushVerifyPrompt (src/workflow/runners/tracker/index.ts) emit an ISSUE block for headKind 'issue' — ONE issue, the prerendered ISSUE markdown as the single authoritative body, labels epicLabel + epic:<slug> only, no task-list/back-reference/sub-issues (self-references), and adoption of an existing epicRef WITHOUT --force (the 'existingRefs error unless --force' rule does not apply to adopted ISSUE refs); the ISSUE verify checklist is issueLabelled + bodyMatches + singleIssue. Prompt-text unit tests pin both kinds; DEF is byte-identical at code and prompt level. (MED) One readable-head rule — readArtifactCore first-READABLE-wins, DEF then ISSUE, same as storage.ts readEpicDefinitionCore — backs requireApprovedDefinition, definitionHeadJsonPath and every persistence site (mutateEpicTrackerMeta, sync.ts), so a corrupt DEF can never be persisted into while context reads the ISSUE; corrupt-DEF/valid-ISSUE finalize test proves it. (MED) First publication with no issueRef (approved while tracking disabled): the ISSUE prompt creates exactly ONE remote issue, finalize writes the ref back to ISSUE.meta.tracker.issueRef AND binds EPIC/STORY-s1 heads so closeBugfixTrackerIssue can close at completion; a partial run adopts on retry with zero duplicate creates. Pass-3 layers unchanged: persistence via the resolved head, chain ISSUE branch (push-tracker -> sync-tracker -> chain-complete, no HLD/amendment/stale), adoption of ISSUE.meta.tracker.issueRef as the single root+s1 issue, kind-aware linkDocsToIssues placement under docs/standalone."
+    },
+    "testStrategy": {
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "unit: definitionHeadJsonPath DEF-wins / ISSUE-fallback / missing -> ArtifactMissingError",
+            "unit: requireApprovedDefinition kind + approval gating + head md path in refuse messages",
+            "integration: finalize tracker.push on an ISSUE-only seed repo writes meta.tracker onto ISSUE-<hash>.json, binds EPIC-<hash> and STORY-<hash>-s1 heads, readdir shows zero DEF-*.json",
+            "integration: finalize tracker.sync on the same fixture writes epicStatus/storyStatus/lastSyncedAt onto the ISSUE json via a stubbed port",
+            "unit: pushPrompt/pushVerifyPrompt with headKind 'issue' contain the ISSUE block (ONE issue, body=epicBodyMd, labels epicLabel+epic:<slug>, adopt epicRef without --force) and NOT 'error unless'/task-list/backRef/sub-issue text",
+            "unit: pushPrompt/pushVerifyPrompt with headKind 'def'/undefined byte-identical to captured baseline",
+            "unit: requireApprovedDefinition + definitionHeadJsonPath both use readArtifactCore first-READABLE-wins (corrupt DEF -> ISSUE)"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "integration: all existing DEF-headed tracker/chain/link tests pass unedited",
+            "integration: assemblePushContext on a DEF-headed seed repo returns the exact pre-change context shape",
+            "integration: corrupt-DEF + valid-approved-ISSUE finalize — meta.tracker lands on the ISSUE json (never the corrupt DEF), readdir shows zero DEF-*.json created"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "integration: chain four-state sequence on an ISSUE fixture — unpushed+LLD approved -> push-tracker; bound refs + no lastSyncedAt -> sync-tracker; lastSyncedAt set -> chain-complete; never hld/amendment/stale for ISSUE heads",
+            "integration: adoption — push with ISSUE.meta.tracker.issueRef pre-set: existingRefs.epicRef + storyRefs.s1 seeded from it, stubbed port createIssue count == 0, finalize binds both heads; conflicting pre-existing head binding -> kind 'conflict'",
+            "integration: fresh-push retry recovery — simulate issueRef write-back failure, start a NEW tracker.push invocation with no injected ref: prior run artifact's epicRef is loaded from .insrc/<removed>/<epicHash>/..., createIssue count == 0, issueRef + head bindings persisted",
+            "integration: identity refusal — duplicate titles (2 remote issues sharing the ISSUE body.title): verification filters by the ISSUE-<hash> marker; >1 distinct survivor or 0 survivors -> refuse, no adoption, no label mutation, no create; single unrelated title match (no marker) -> refuse before any label add",
+            "integration: label command boundary — the ISSUE prompt and runner use the supported singular `--add-label \"l1,l2\"` (gh_issue_edit tool maps addLabels, issue.ts:234/273); assert via the tool-input boundary (run gh_issue_edit through the typed tool executor with a stubbed gh), not just prompt strings",
+            "integration: create succeeds, intent/recovery write fails — assert PENDING-CREATE-<epicHash>.json exists with state 'pending'; fresh invocation (nothing injected) reconciles via title+marker, adopts, createIssue count == 0, intent updated to 'created', issueRef + head bindings persisted",
+            "integration: create succeeds, execute response lost before framework receives refs — intent still 'pending'; fresh invocation reconciles identically; 0 additional creates",
+            "integration: intent 'created' + meta persistence failed — fresh invocation reads refs from the intent file; 0 creates; persists issueRef + bindings",
+            "integration: unresolved intent with 0 or >1 verified candidates -> explicit refusal, no create, no adoption",
+            "integration: identity refusal — duplicate titles / unrelated title match refuse without label mutation (marker-verified)",
+            "integration: label command boundary — gh_issue_edit through the typed executor asserts singular --add-label argv (issue.ts:234/273)",
+            "integration: deterministic two-run race — barrier pauses both tracker.push runs after context assembly, then releases both toward claimCreateIntent; assert exactly one createIssue call, claim runId == winner, loser got claimed:false and never updated/deleted the claim",
+            "integration: create succeeds + execute response lost -> claim stays 'pending' with owner runId; fresh invocation (nothing injected) reconciles, 0 additional creates",
+            "integration: heartbeat liveness — fresh heartbeat -> competing run refuses; stale heartbeat + no persisted refs -> abandoned, reconciled under ownership check",
+            "integration: interleaving takeover race — pause run A after its ownership read (inside its would-be heartbeat op), let run B take over the abandoned claim under the mutex (fence++), resume A; assert A gets ClaimOwnershipError and cannot overwrite or delete B's claim, and A's issueRef/head-binding persistence is fenced",
+            "integration: two simultaneous abandoned-claim reconcilers — both pass the abandoned read only one at a time under the mutex; assert exactly one takeover (fence increments once) and the second refuses",
+            "integration: crash recovery — spawn a holder child, kill it with SIGKILL inside the critical section; assert the guard file remains (EEXIST on naive acquire), then a fresh run reclaims via dead-owner quarantine and recovers the original claim with 0 new creates and without disturbing a separately-running live holder",
+            "integration: authority-boundary acquisition — a worker thread acquires the claim mutex with key ArtifactIds.make({kind:'ISSUE',epicHash}) through the real withArtifactWriteAuthority/daemon handler (not a local mock); assert PENDING-CREATE-<hash> alone is rejected by ArtifactIds.parse and the ISSUE-<hash> key is accepted; assert lock ordering claim-mutex before artifact writes"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "integration: linkDocsToIssues on an ISSUE head rewrites docs/standalone/<slug>-E<anchor>/ISSUE.md and S001/LLD.md with the tracker link, docs/ has no epics entry for the hash",
+            "integration: tracker.post on the pushed ISSUE fixture: lld+s1 posts to the adopted story ref; hld/amendment/non-s1 refuse with clear errors",
+            "integration: first publication — approve ISSUE with tracking disabled (no issueRef), enable, push: exactly 1 create, issueRef written back to ISSUE json + EPIC/STORY-s1 heads bound; simulated write-back failure -> retry adopts with 0 creates; closeBugfixTrackerIssue closes via readRecordedRef (stubbed close deps)",
+            "integration: adoption labels — issue created with defaultTrackerCreateDeps (labels: []), then push: epicLabel + epic:<slug> added idempotently without --force and without body edit; issueLabelled verify passes; 0 creates",
+            "integration: ISSUE.md content — after push, docs/standalone/<slug>-E<anchor>/ISSUE.md contains the artifact marker + canonical body bytes (renderIssueMarkdown) + `**Tracker:**` link line; without a ref, byte-identical to renderIssueMarkdown"
+          ]
+        }
+      ],
+      "testFramework": "node:test via npx tsx --test (repo convention); fixtures = seeded temp .insrc/artifacts dirs following seedIssueRepo in src/workflow/__tests__/issue-anchored-route.test.ts + a stubbed tracker port counting createIssue calls",
+      "testLevels": [
+        {
+          "fixturesNeeded": [
+            "temp repo with .insrc/artifacts: approved ISSUE-<hash>.json (epicCreatedAt stamp, optional meta.tracker.issueRef) + marked ISSUE.md + LLD/PLAN jsons; DEF+ISSUE both-present fixture for DEF-wins parity",
+            "captured DEF prompt baseline string",
+            "corrupt-DEF + valid-ISSUE fixture"
+          ],
+          "level": "unit",
+          "purpose": "definitionHeadJsonPath + requireApprovedDefinition head order/kind/gating/refuse paths; renderIssueEpicBody shape",
+          "subjects": [
+            "src/workflow/gates.ts new helpers",
+            "src/workflow/tracker/conventions.ts renderIssueEpicBody",
+            "src/workflow/runners/tracker/index.ts pushPrompt/pushVerifyPrompt"
+          ]
+        },
+        {
+          "fixturesNeeded": [
+            "seedIssueRepo-style ISSUE-anchored repo + stubbed github port (createIssue counter, canned refs) wired through orchestrator finalizeTracker and tracker/sync.ts; seed DEF repo for parity; four-state chain fixture",
+            "prior tracker.push run artifact (.insrc/<removed>/<epicHash>/tracker.push-<runId>.json + .jsonl) simulating a write-back failure",
+            "issue pre-created with defaultTrackerCreateDeps labels: []",
+            "stubbed port that fails recordRef after create (real failure path; recovery record written by the run itself)",
+            "two remote issues sharing the ISSUE body.title (duplicate-title fixture)",
+            "one unrelated remote issue with a matching title but no ISSUE marker",
+            "typed-tool executor stub for gh_issue_edit proving --add-label (singular) argument mapping",
+            "stubbed port that succeeds at create then fails the intent write (case 1)",
+            "stubbed port that succeeds at create then drops the execute response (case 2)",
+            "intent 'created' with meta persistence failed (case 3)",
+            "duplicate-title and unrelated-title fixtures",
+            "two-run harness with a barrier pausing both runs after context assembly, released toward claimCreateIntent",
+            "heartbeat clock stub for fresh vs stale claim states",
+            "interleaving harness: pause A after its ownership read, run B's takeover, resume A",
+            "two-reconciler barrier on the abandoned claim",
+            "child process killed with SIGKILL inside the critical section (guard-left-behind fixture)",
+            "live-holder co-resident during recovery",
+            "real daemon authority handler (worker thread) for the ISSUE-<hash> queue key"
+          ],
+          "level": "integration",
+          "purpose": "Finalize push+sync on an ISSUE-only fixture (ISSUE meta written, EPIC/STORY-s1 bindings present, zero DEF files); four-state chain sequence; adoption create-count == 0 + conflict; kind-aware linkage (canonical standalone docs updated, no docs/epics duplicate)",
+          "subjects": [
+            "src/workflow/orchestrator.ts mutateEpicTrackerMeta + finalizeTracker",
+            "src/workflow/tracker/sync.ts",
+            "src/workflow/chain.ts computeNextAction + readTrackerMeta",
+            "src/workflow/tracker/link.ts linkDocsToIssues",
+            "src/workflow/runners/tracker/context.ts assemblers"
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "npx tsc --noEmit clean; workflow+MCP test subsets show no new failures vs the recorded pre-story baseline (workflow chunks 36/10/11/16, MCP 6/26, gates 4 — pre-existing at HEAD)",
+          "subjects": [
+            "npx tsc --noEmit",
+            "npx tsx --test 'src/workflow/**/*.test.ts' 'src/mcp/**/*.test.ts'"
+          ]
+        }
+      ]
+    }
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "quotedText": "finalizeTracker -> mutateEpicTrackerMeta reads/writes DEF-<hash>.json only (orchestrator.ts:2919, 2972-3026) — push+sync finalize ENOENT on an ISSUE-only fixture; sync.ts defineJson/patch :59/:106, storiesOf :164; patchTrackerMeta (refs.ts:111) is path-agnostic.",
+      "ref": "src/workflow/orchestrator.ts:2919-3027"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "quotedText": "computeNextAction ISSUE branch (chain.ts:325-360) returns chain-complete at :360 without consulting s.tracker; DEF branch does push-tracker/sync-tracker/chain-complete (:425-441); readTrackerMeta (:277) already computes pushed/lastSyncedAt for ISSUE heads.",
+      "ref": "src/workflow/chain.ts:325-360"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "quotedText": "bugfix approval records the GH ref in ISSUE meta.tracker.issueRef (recordRefToDisk bugfix/tracker.ts:389); unitIssueOf reads EPIC/STORY head bindings (unit-head.ts:36, binding.ts:85); bindArtifact idempotent same-ref / conflict different-ref (binding.ts:126).",
+      "ref": "src/workflow/bugfix/tracker.ts:382-392"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "quotedText": "linkDocsToIssues builds all doc paths with placement 'epic' (link.ts:46-57); workItemKindOf (storage.ts:466), requireEpicAnchor (storage.ts:562), issueArtifactPaths (storage.ts:942).",
+      "ref": "src/workflow/tracker/link.ts:46-70"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "quotedText": "Assemblers (context.ts:41-199) call requireApprovedEpic (gates.ts:237); readDefineArtifact (gates.ts:153) is DEF-only; impliedIssueStories (storage.ts:707).",
+      "ref": "src/workflow/runners/tracker/context.ts:41-199"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "quotedText": "PushContext.existingRefs (schemas.ts:145) with adopt-don't-duplicate semantics (index.ts:290,319); seedIssueRepo fixture pattern (issue-anchored-route.test.ts).",
+      "ref": "src/workflow/runners/tracker/schemas.ts:145"
+    }
+  ]
+}

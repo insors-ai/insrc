@@ -105,7 +105,7 @@ import { assertMayReviseDraft } from './team/author-gate.js';
 import { TeamGateRefusedError } from './team/gate.js';
 import { isToolDenied } from './tracker/tool-denied.js';
 import { appendStoryToDefine, definitionHeadJsonPath, nextStoryId, readBaseHld, readDefinitionHead, readDefineArtifact, requireApprovedEpic, requireApprovedHld, requireApprovedLld, requireApprovedPlan } from './gates.js';
-import { ClaimOwnershipError, readClaim, releaseClaim } from './tracker/pending-create-claim.js';
+import { acquireClaimMutex, pendingCreatePath, readClaim, withOwnedFence } from './tracker/pending-create-claim.js';
 import {
 	isTrackerChecklistResult,
 	isTrackerPostRefs,
@@ -137,7 +137,7 @@ import { ADHERENCE_PROPERTY_SCHEMA } from './artifacts/companion/adherence.js';
 import { linkDocsToIssues } from './tracker/link.js';
 import { bindArtifact } from './tracker/binding.js';
 import { taskHeadIdOf } from './tasks/lookup.js';
-import { readFileSync } from 'node:fs';
+import { readFileSync, unlinkSync } from 'node:fs';
 import {
 	AmendmentApplyError,
 	applyAmendments,
@@ -451,7 +451,7 @@ async function finalizeByWorkflow(
 			case 'tracker.push':
 			case 'tracker.sync':
 			case 'tracker.post':
-				return finalizeTracker(intent, stepOutputs, runId, elapsedMs, llmResponse, model, attribution);
+				return await finalizeTracker(intent, stepOutputs, runId, elapsedMs, llmResponse, model, attribution);
 			default:
 				throw new Error(`finalizeArtifact: workflow '${intent.workflow}' not yet supported`);
 		}
@@ -2886,7 +2886,7 @@ function trackerSynthesizer(
 	return { systemPrompt, userTurn, schema: schema as unknown as Record<string, unknown> };
 }
 
-function finalizeTracker(
+async function finalizeTracker(
 	intent:      WorkflowIntent,
 	stepOutputs: Readonly<Record<string, unknown>>,
 	runId:       string,
@@ -2894,7 +2894,7 @@ function finalizeTracker(
 	llmResponse: Record<string, unknown>,
 	model:       string,
 	attribution?: ArtifactModelAttribution,
-): FinalizeResult {
+): Promise<FinalizeResult> {
 	if (typeof llmResponse !== 'object' || llmResponse === null) {
 		return { ok: false, failure: schemaFailure(`synthesizer response is not an object`) };
 	}
@@ -2931,27 +2931,43 @@ function finalizeTracker(
 	const epicSlug = typeof s1.epicSlug === 'string' ? s1.epicSlug : epicHash;
 
 	// Mutate the Epic artifact's meta.tracker for push + sync.
-	// REVIEW-5f9d4ab4c90c0b4c HIGH-3: fence the WHOLE persistence op — tracker
-	// meta plus head bindings — on the claim's fence when a pending-create claim
-	// is present, so a displaced owner cannot persist after a takeover.
+	// REVIEW round-2 HIGH-3/HIGH-4: when a pending-create claim exists, the
+	// carried fence from the winning execute step is REQUIRED and is validated
+	// under the claim mutex ATOMICALLY with the metadata write, the head bindings
+	// and the claim release — one ownership boundary across the whole op. A
+	// stale or missing fence refuses before any write; cleanup is awaited.
+	const carried = (s1 as { claimFence?: unknown }).claimFence;
+	const expectedFence = typeof carried === 'number' ? carried : undefined;
+	const existingClaim = readClaim(intent.repoPath, epicHash);
+	if (existingClaim !== undefined && expectedFence === undefined) {
+		return { ok: false, failure: schemaFailure(`pending-create claim exists for ${epicHash} but no fence was carried — refusing unverifiable persistence`) };
+	}
 	try {
-		const claim = readClaim(intent.repoPath, epicHash);
-		// REVIEW HIGH-3: prefer the fence the winning execute step carried in the
-		// s1 bundle; fall back to the claim's own fence when it is already 'created'.
-		const carried = (s1 as { claimFence?: unknown }).claimFence;
-		const expectedFence = typeof carried === 'number' ? carried : (claim?.state === 'created' ? claim.fence : undefined);
-		mutateEpicTrackerMeta(intent.repoPath, epicHash, intent.workflow, typedRefs, expectedFence);
+		if (existingClaim !== undefined) {
+			// claim present: the carried fence is mandatory; one mutex hold spans
+			// fence validation + metadata write + head bindings + claim release
+			// (round-2 HIGH-3: atomic ownership boundary; HIGH-4: awaited cleanup).
+			const mutex = await acquireClaimMutex(intent.repoPath, epicHash);
+			try {
+				await withOwnedFence(intent.repoPath, epicHash, expectedFence ?? -1, async () => {
+					mutateEpicTrackerMeta(intent.repoPath, epicHash, intent.workflow, typedRefs);
+					// Only AFTER the refs are durably persisted and the heads bound
+					// is the claim released (HIGH-2) — unlink directly, we already
+					// hold the mutex (releaseClaim would re-acquire and deadlock).
+					if (intent.workflow === 'tracker.push') {
+						unlinkSync(pendingCreatePath(intent.repoPath, epicHash));
+					}
+				});
+			} finally {
+				mutex.release();
+			}
+		} else {
+			// no claim: plain persistence (DEF heads, sync, tests)
+			mutateEpicTrackerMeta(intent.repoPath, epicHash, intent.workflow, typedRefs);
+		}
 	} catch (err) {
 		const msg = err instanceof Error ? err.message : String(err);
 		return { ok: false, failure: schemaFailure(`failed to patch Epic tracker meta: ${msg}`) };
-	}
-	// Only AFTER the refs are durably persisted and the heads bound is the
-	// pending-create claim released (HIGH-2: never delete before adoption lands).
-	if (intent.workflow === 'tracker.push') {
-		try {
-			const claim = readClaim(intent.repoPath, epicHash);
-			if (claim !== undefined) void releaseClaim(intent.repoPath, epicHash, claim.fence);
-		} catch { /* claim release is best-effort after durable persistence */ }
 	}
 
 	const artifact: TrackerArtifact = {
@@ -3010,16 +3026,10 @@ function mutateEpicTrackerMeta(
 	epicHash:   string,
 	workflow:   string,
 	refs:       TrackerPushRefs | TrackerSyncRefs | TrackerPostRefs,
-	expectedFence?: number | undefined,
 ): void {
 	if (workflow === 'tracker.post') return;   // no-op for post
-	// REVIEW-5f9d4ab4c90c0b4c HIGH-3: when a pending-create claim names an
-	// expected fence, verify it BEFORE the first write — a displaced owner's
-	// fence is stale and the whole persistence op is rejected up front.
-	const existingClaim = readClaim(repoPath, epicHash);
-	if (expectedFence !== undefined && existingClaim !== undefined && existingClaim.fence !== expectedFence) {
-		throw new ClaimOwnershipError(`stale claim fence ${existingClaim.fence} (expected ${expectedFence}) — displaced owner cannot persist tracker refs for ${epicHash}`);
-	}
+	// REVIEW round-2 HIGH-3: fence validation now happens in withOwnedFence,
+	// atomically with these writes (orchestrator finalize) — not here.
 	// ISSUE-5f9d4ab4c90c0b4c s1/t4: kind-aware head — the same first-readable-wins
 	// rule the context assemblers use, so persistence and reads never diverge.
 	const head = readDefinitionHead(repoPath, epicHash);

@@ -278,18 +278,32 @@ export async function withClaim<T>(
 }
 
 /** Heartbeat: refresh heartbeatAt WITH the claim mutex held (fence-checked).
- *  A displaced owner's heartbeat throws ClaimOwnershipError before any write. */
-export async function heartbeatClaim(repoPath: string, epicHash: string, expectedFence: number, now: () => string = () => new Date().toISOString()): Promise<void> {
+ *  A displaced owner's heartbeat throws ClaimOwnershipError before any write.
+ *  Returns the COMMITTED fence (expectedFence + 1) — the ownership token the
+ *  caller must carry into finalization (REVIEW round-2 HIGH-1). */
+export async function heartbeatClaim(repoPath: string, epicHash: string, expectedFence: number, now: () => string = () => new Date().toISOString()): Promise<number> {
+	let committed = expectedFence;
 	await withClaim(repoPath, epicHash, expectedFence, (claim, commit) => {
 		commit({ ...claim, heartbeatAt: now() });
+		committed = claim.fence + 1;
 	});
+	return committed;
 }
 
-/** Mark the claim 'created' with the remote ref (fence-checked, under mutex). */
-export async function markClaimCreated(repoPath: string, epicHash: string, expectedFence: number, issueRef: string, authority?: ((repo: string, id: string, run: () => Promise<unknown>) => Promise<unknown>) | undefined): Promise<void> {
+/** Mark the claim 'created' with the remote ref (fence-checked, under mutex).
+ *  Returns the COMMITTED fence (expectedFence + 1). */
+export async function markClaimCreated(repoPath: string, epicHash: string, expectedFence: number, issueRef: string, authority?: ((repo: string, id: string, run: () => Promise<unknown>) => Promise<unknown>) | undefined): Promise<number> {
+	let committed = expectedFence;
 	await withClaim(repoPath, epicHash, expectedFence, (claim, commit) => {
 		commit({ ...claim, state: 'created', issueRef });
+		committed = claim.fence + 1;
 	}, authority);
+	return committed;
+}
+
+/** Same, with the conventional name for callers that want the fence back. */
+export async function markClaimCreatedFence(repoPath: string, epicHash: string, expectedFence: number, issueRef: string, authority?: ((repo: string, id: string, run: () => Promise<unknown>) => Promise<unknown>) | undefined): Promise<number> {
+	return markClaimCreated(repoPath, epicHash, expectedFence, issueRef, authority);
 }
 
 /** Delete the claim after successful persistence (under the mutex,
@@ -299,6 +313,32 @@ export async function releaseClaim(repoPath: string, epicHash: string, expectedF
 		void commit;
 		unlinkSync(pendingCreatePath(repoPath, epicHash));
 	});
+}
+
+/** Run `work` with the claim mutex ALREADY HELD by the caller, fence-verified
+ *  atomically with the work — the check and the writes cannot be separated by a
+ *  takeover (REVIEW round-2 HIGH-3). `expectedFence` is required — a missing
+ *  fence never borrows current ownership. Throws ClaimOwnershipError on
+ *  stale/absent claim. The caller owns the mutex (acquire via acquireClaimMutex
+ *  / withClaim) and releases it, so nested claim ops do not deadlock. */
+export async function withOwnedFence<T>(
+	repoPath: string,
+	epicHash: string,
+	expectedFence: number,
+	work: (claim: PendingCreateClaim) => T | Promise<T>,
+): Promise<T> {
+	if (!Number.isSafeInteger(expectedFence) || expectedFence < 1) {
+		throw new ClaimOwnershipError(`no carried fence for ${epicHash} — refusing to persist without verified claim ownership`);
+	}
+	const path = pendingCreatePath(repoPath, epicHash);
+	const claim = readClaim(repoPath, epicHash);
+	if (claim === undefined) {
+		throw new ClaimOwnershipError(`no claim at ${path} — cannot verify ownership of fence ${expectedFence}`);
+	}
+	if (claim.fence !== expectedFence) {
+		throw new ClaimOwnershipError(`stale fence: expected ${expectedFence}, current ${claim.fence} at ${path}`);
+	}
+	return await work(claim);
 }
 
 // ---------------------------------------------------------------------------

@@ -36,7 +36,7 @@ import { ArtifactIds } from '../artifact-ids.js';
 import { approvedMeta } from './lifecycle-fixtures.js';
 import { installExecStandIn } from './helpers/exec-stand-in.js';
 import type { PortResult, TrackerPort } from '../tracker/port.js';
-import { claimCreateIntent } from '../tracker/pending-create-claim.js';
+import { claimCreateIntent, readClaim } from '../tracker/pending-create-claim.js';
 
 const HASH = '5f9d4ab4c90c0b4c';
 const SLUG = 'issue-anchored-item';
@@ -74,7 +74,7 @@ function defFileCount(repo: string): number {
 	return readdirSync(join(repo, ARTIFACTS_DIR)).filter(f => f.startsWith('DEF-')).length;
 }
 
-test('src/workflow/orchestrator.ts mutateEpicTrackerMeta + finalizeTracker — finalize push+sync on ISSUE-only seed repo: ISSUE meta.tracker written, EPIC/STORY-s1 heads bound, readdir zero DEF-*.json; corrupt-DEF/valid-ISSUE finalize lands on ISSUE json; issueRef write-back on first publication', () => {
+test('src/workflow/orchestrator.ts mutateEpicTrackerMeta + finalizeTracker — finalize push+sync on ISSUE-only seed repo: ISSUE meta.tracker written, EPIC/STORY-s1 heads bound, readdir zero DEF-*.json; corrupt-DEF/valid-ISSUE finalize lands on ISSUE json; issueRef write-back on first publication', async () => {
 	// push finalize on an ISSUE-only fixture, driven through finalizeTracker
 	// (the real finalize path: checklist gate -> refs narrow -> mutateEpicTrackerMeta)
 	{
@@ -82,7 +82,7 @@ test('src/workflow/orchestrator.ts mutateEpicTrackerMeta + finalizeTracker — f
 		try {
 			const intent = { workflow: 'tracker.push', focus: 'push', repoPath: fx.repo, repoIndexedAt: null, params: { epicHash: HASH } } as never;
 			const s1 = { gh: { owner: 'acme', repo: 'demo' }, epicHash: HASH, epicSlug: SLUG, headKind: 'issue' };
-			const res = _finalizeTracker(intent, { s1 }, 'run-1', 5, {
+			const res = await _finalizeTracker(intent, { s1 }, 'run-1', 5, {
 				refs: { epicRef: 'acme/demo#42', storyRefs: { [IMPLIED_ISSUE_STORY_ID]: 'acme/demo#42' }, labelsCreated: ['insrc:epic'] },
 				checklist: { items: [{ itemId: 'singleIssue', verdict: 'passed' }], failedCount: 0 },
 			}, 'm');
@@ -97,7 +97,7 @@ test('src/workflow/orchestrator.ts mutateEpicTrackerMeta + finalizeTracker — f
 			assert.equal(readBinding(fx.repo, ArtifactIds.make({ kind: 'STORY', epicHash: HASH, story: IMPLIED_ISSUE_STORY_ID }))?.reference.entityId, 'acme/demo#42', 'STORY-s1 head bound to the same issue');
 			// sync finalize lands on the ISSUE json too (through finalizeTracker)
 			const syncIntent = { workflow: 'tracker.sync', focus: 'sync', repoPath: fx.repo, repoIndexedAt: null, params: { epicHash: HASH } } as never;
-			const fSync = _finalizeTracker(syncIntent, { s1 }, 'run-s', 5, {
+			const fSync = await _finalizeTracker(syncIntent, { s1 }, 'run-s', 5, {
 				refs: { epicStatus: 'open', storyStatus: { [IMPLIED_ISSUE_STORY_ID]: 'open' }, syncedAt: '2026-11-24T00:00:00.000Z' },
 				checklist: { items: [{ itemId: 'epicMapping', verdict: 'passed' }], failedCount: 0 },
 			}, 'm');
@@ -115,7 +115,7 @@ test('src/workflow/orchestrator.ts mutateEpicTrackerMeta + finalizeTracker — f
 		try {
 			const before = readFileSync(fx.def, 'utf8');
 			const intent = { workflow: 'tracker.push', focus: 'push', repoPath: fx.repo, repoIndexedAt: null, params: { epicHash: HASH } } as never;
-			const f = _finalizeTracker(intent, { s1: { gh: { owner: 'acme', repo: 'demo' }, epicHash: HASH, epicSlug: SLUG, headKind: 'issue' } }, 'run-c', 5, {
+			const f = await _finalizeTracker(intent, { s1: { gh: { owner: 'acme', repo: 'demo' }, epicHash: HASH, epicSlug: SLUG, headKind: 'issue' } }, 'run-c', 5, {
 				refs: { epicRef: 'acme/demo#9', storyRefs: {}, labelsCreated: [] },
 				checklist: { items: [{ itemId: 'singleIssue', verdict: 'passed' }], failedCount: 0 },
 			}, 'm');
@@ -244,7 +244,7 @@ test('first publication sequence — approve ISSUE with tracking disabled, enabl
 		assert.equal(creates, 1, 'first publication creates exactly one issue');
 		const FIRST_REF = remoteIssues[0]!.ref;
 		assert.equal(readTrackerMeta(fx.issue)?.issueRef, FIRST_REF, 'issueRef written back');
-		const f1 = _finalizeTracker(intent, { s1 }, 'run-1', 5, {
+		const f1 = await _finalizeTracker(intent, { s1 }, 'run-1', 5, {
 			refs: { epicRef: FIRST_REF, storyRefs: { [IMPLIED_ISSUE_STORY_ID]: FIRST_REF }, labelsCreated: ['insrc:epic'] },
 			checklist: { items: [{ itemId: 'singleIssue', verdict: 'passed' }], failedCount: 0 },
 		}, 'm');
@@ -327,7 +327,7 @@ test('first publication sequence — approve ISSUE with tracking disabled, enabl
 				// (the production tracker.push writer) on the adopted ref:
 				const intent2 = { workflow: 'tracker.push', focus: 'push', repoPath: fx2.repo, repoIndexedAt: null, params: { epicHash: HASH } } as never;
 				const s1b = { gh: { owner: 'acme', repo: 'demo' }, epicHash: HASH, epicSlug: SLUG, headKind: 'issue' };
-				const fB = _finalizeTracker(intent2, { s1: s1b }, 'run-f2', 5, {
+				const fB = await _finalizeTracker(intent2, { s1: s1b }, 'run-f2', 5, {
 					refs: { epicRef: FAIL_REF, storyRefs: { [IMPLIED_ISSUE_STORY_ID]: FAIL_REF }, labelsCreated: ['insrc:epic'] },
 					checklist: { items: [{ itemId: 'singleIssue', verdict: 'passed' }], failedCount: 0 },
 				}, 'm');
@@ -344,7 +344,7 @@ test('first publication sequence — approve ISSUE with tracking disabled, enabl
 		assert.equal(r2.status, 'reused', JSON.stringify(r2));
 		const createsAtEnd = creates;
 		assert.equal(createsAtEnd, 2, 'steady-state: fx publication (1) + fx2 deterministic run-A create (1); run B adopted with 0 more');
-		const f3 = _finalizeTracker(intent, { s1 }, 'run-3', 5, {
+		const f3 = await _finalizeTracker(intent, { s1 }, 'run-3', 5, {
 			refs: { epicRef: FIRST_REF, storyRefs: { [IMPLIED_ISSUE_STORY_ID]: FIRST_REF }, labelsCreated: ['insrc:epic'] },
 			checklist: { items: [{ itemId: 'singleIssue', verdict: 'passed' }], failedCount: 0 },
 		}, 'm');
@@ -355,7 +355,7 @@ test('first publication sequence — approve ISSUE with tracking disabled, enabl
 	} finally { fx.cleanup(); }
 });
 
-test('REVIEW HIGH-2/HIGH-3 — reconciled adoption returns TrackerPushRefs shape and finalize persists; a stale-fence finalize is rejected before any write', () => {
+test('REVIEW HIGH-2/HIGH-3 — reconciled adoption returns TrackerPushRefs shape and finalize persists; a stale-fence finalize is rejected before any write', async () => {
 	const fx = seedIssueOnly();
 	try {
 		const intent = { workflow: 'tracker.push', focus: 'push', repoPath: fx.repo, repoIndexedAt: null, params: { epicHash: HASH } } as never;
@@ -363,9 +363,10 @@ test('REVIEW HIGH-2/HIGH-3 — reconciled adoption returns TrackerPushRefs shape
 		assert.equal(c.claimed, true);
 		const refs = { epicRef: 'acme/demo#42', storyRefs: { [IMPLIED_ISSUE_STORY_ID]: 'acme/demo#42' }, labelsCreated: [] };
 		const s1 = { gh: { owner: 'acme', repo: 'demo' }, epicHash: HASH, epicSlug: SLUG, headKind: 'issue', claimFence: c.claim.fence };
-		const fr = _finalizeTracker(intent, { s1 }, 'run-x', 5, { refs, checklist: { items: [{ itemId: 'singleIssue', verdict: 'passed' }], failedCount: 0 } }, 'm');
+		const fr = await _finalizeTracker(intent, { s1 }, 'run-x', 5, { refs, checklist: { items: [{ itemId: 'singleIssue', verdict: 'passed' }], failedCount: 0 } }, 'm');
 		assert.equal(fr.ok, true, `finalize accepts the adopted refs shape: ${JSON.stringify(fr)}`);
 		assert.equal(readTrackerMeta(fx.issue)?.issueRef, 'acme/demo#42', 'issueRef persisted by finalize');
+		assert.equal(readClaim(fx.repo, HASH), undefined, 'claim released inside the finalize mutex after persistence');
 	} finally { fx.cleanup(); }
 
 	const fx2 = seedIssueOnly();
@@ -377,9 +378,9 @@ test('REVIEW HIGH-2/HIGH-3 — reconciled adoption returns TrackerPushRefs shape
 		const before = readFileSync(fx2.issue, 'utf8');
 		const staleS1 = { gh: { owner: 'acme', repo: 'demo' }, epicHash: HASH, epicSlug: SLUG, headKind: 'issue', claimFence: 1 };
 		const intent2 = { workflow: 'tracker.push', focus: 'push', repoPath: fx2.repo, repoIndexedAt: null, params: { epicHash: HASH } } as never;
-		const fr2 = _finalizeTracker(intent2, { s1: staleS1 }, 'run-stale', 5, { refs: { epicRef: 'acme/demo#9', storyRefs: { s1: 'acme/demo#9' }, labelsCreated: [] }, checklist: { items: [{ itemId: 'singleIssue', verdict: 'passed' }], failedCount: 0 } }, 'm');
+		const fr2 = await _finalizeTracker(intent2, { s1: staleS1 }, 'run-stale', 5, { refs: { epicRef: 'acme/demo#9', storyRefs: { s1: 'acme/demo#9' }, labelsCreated: [] }, checklist: { items: [{ itemId: 'singleIssue', verdict: 'passed' }], failedCount: 0 } }, 'm');
 		assert.equal(fr2.ok, false, 'stale-fence finalize rejected');
-		assert.match(JSON.stringify(fr2), /stale claim fence/i);
+		assert.match(JSON.stringify(fr2), /stale fence/i);
 		assert.equal(readFileSync(fx2.issue, 'utf8'), before, 'no write happened — displaced owner fenced before its first write');
 	} finally { fx2.cleanup(); }
 });

@@ -30,7 +30,7 @@ import type { StepRunner, WorkflowName } from '../../types.js';
 import { readDefinitionHead } from '../../gates.js';
 import type { IssueArtifact } from '../../artifacts/issue.js';
 import { IMPLIED_ISSUE_STORY_ID, issueArtifactId } from '../../storage.js';
-import { claimCreateIntent, heartbeatClaim, markClaimCreated, quarantineDeadClaim, readClaim, reconcileClaim, releaseClaim, takeoverAbandonedClaim } from '../../tracker/pending-create-claim.js';
+import { claimCreateIntent, heartbeatClaim, markClaimCreatedFence, quarantineDeadClaim, readClaim, reconcileClaim, takeoverAbandonedClaim } from '../../tracker/pending-create-claim.js';
 
 import {
 	assemblePostContext,
@@ -99,26 +99,29 @@ const pushExecuteRunner: StepRunner = {
 					// RETAIN the claim until the ref is durably persisted and the heads
 					// are bound — the finalize step below releases it. The claim is
 					// marked 'created' under the mutex (fence-checked), NOT deleted here.
-					await markClaimCreated(ctx.intent.repoPath, c.epicHash, active.fence, reconciled.ref);
+					// mark the claim created under the mutex (fence-checked), and
+					// carry the COMMITTED fence for finalization (round-2 HIGH-1)
+					const markedFence = await markClaimCreatedFence(ctx.intent.repoPath, c.epicHash, active.fence, reconciled.ref);
+					(ctx.stepOutputs['s1'] as Record<string, unknown>)['claimFence'] = markedFence;
+					// REVIEW round-2 HIGH-2: the synthesizer passes the s2 execute
+					// output verbatim as `refs`, so the execute output IS the refs —
+					// return TrackerPushRefs directly, no envelope.
 					return {
 						type: 'output',
 						output: {
-							refs: {
-								epicRef: reconciled.ref,
-								storyRefs: { [IMPLIED_ISSUE_STORY_ID]: reconciled.ref },
-								labelsCreated: [],
-							},
-							adopted: true,
-							existingClaim: active,
+							epicRef: reconciled.ref,
+							storyRefs: { [IMPLIED_ISSUE_STORY_ID]: reconciled.ref },
+							labelsCreated: [],
 						},
 						summary: `tracker.push: reconciled pending-create claim via marker-verified candidate ${reconciled.ref}; no create dispatched`,
 					};
 				}
-				// winner: heartbeat under the mutex, then dispatch. The fence rides
-				// in the context so finalization can fence the whole persistence op
-				// (REVIEW HIGH-3).
-				await heartbeatClaim(ctx.intent.repoPath, c.epicHash, claim.claim.fence);
-				(ctx.stepOutputs['s1'] as Record<string, unknown>)['claimFence'] = claim.claim.fence;
+				// winner: heartbeat under the mutex, then dispatch. The COMMITTED
+				// fence (post-heartbeat) rides in the context so finalization can
+				// fence the whole persistence op (REVIEW round-2 HIGH-1: carry the
+				// token the heartbeat actually committed, not the pre-heartbeat one).
+				const committedFence = await heartbeatClaim(ctx.intent.repoPath, c.epicHash, claim.claim.fence);
+				(ctx.stepOutputs['s1'] as Record<string, unknown>)['claimFence'] = committedFence;
 			} else if (issue !== undefined) {
 				// already persisted ref: read any claim and reconcile toward adoption
 				const existing = readClaim(ctx.intent.repoPath, c.epicHash);

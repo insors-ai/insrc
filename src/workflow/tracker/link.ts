@@ -43,8 +43,21 @@ export function bindUnitIssue(unit: UnitRef, issue: string): boolean {
 	return bound.ok;
 }
 
+/** The result of linking docs to issues: required head BINDINGS are enforced
+ *  (a false return means the binding did not land — staged write, conflict, or
+ *  write failure), while markdown relinking stays best-effort. REVIEW round-3
+ *  MED-4: finalization must not report success while a required binding failed. */
+export interface LinkResult {
+	readonly ok: boolean;
+	readonly failedBindings: readonly string[];
+}
+
 /** Link the Epic's docs to their issues: bind the Epic's issue and each Story's, then re-render HLD.md + Define.md (the Epic's) and each LLD.md (its Story's). */
-export function linkDocsToIssues(repoPath: string, epicHash: string, epicSlug: string, refs: EpicRefs): void {
+export function linkDocsToIssues(repoPath: string, epicHash: string, epicSlug: string, refs: EpicRefs): LinkResult {
+	const failed: string[] = [];
+	const bind = (unit: UnitRef, issue: string): void => {
+		if (!bindUnitIssue(unit, issue)) failed.push(unitHeadId(unit) ?? unit.unit);
+	};
 	// Epic docs — keyed on the Epic's anchor (sc2), all 'epic'. A work item with none fails here, before any doc is touched.
 	const anchor = requireEpicAnchor(repoPath, epicHash);
 	// ISSUE-5f9d4ab4c90c0b4c s1/t4+t7: an ISSUE-anchored work item has no DEF/HLD;
@@ -55,7 +68,7 @@ export function linkDocsToIssues(repoPath: string, epicHash: string, epicSlug: s
 		const issue = head.artifact as IssueArtifact;
 		const kind = workItemKindOf(issue.meta);
 		if (typeof refs.epicRef === 'string' && refs.epicRef.length > 0) {
-			bindUnitIssue({ unit: 'epic', repoPath, epicHash }, refs.epicRef);
+			bind({ unit: 'epic', repoPath, epicHash }, refs.epicRef);
 			const paths = issueArtifactPaths(repoPath, epicHash, workItemAnchorCreatedAt(issue.meta), kind, epicSlug);
 			relinkDoc(paths, () => {
 				const ref = unitIssueOf(repoPath, epicHash) ?? refs.epicRef;
@@ -64,25 +77,26 @@ export function linkDocsToIssues(repoPath: string, epicHash: string, epicSlug: s
 		}
 		for (const [storyId, storyRef] of Object.entries(refs.storyRefs ?? {})) {
 			if (typeof storyRef !== 'string' || storyRef.length === 0) continue;
-			bindUnitIssue({ unit: 'story', repoPath, epicHash, storyId }, storyRef);
+			bind({ unit: 'story', repoPath, epicHash, storyId }, storyRef);
 			try {
 				relinkDoc(lldArtifactPaths(repoPath, epicHash, storyId, anchor, kind, epicSlug), () => renderLldMarkdown(readLldArtifact(repoPath, epicHash, storyId)));
 			} catch (err) {
 				log.warn({ storyId, err: (err as Error).message }, 'ISSUE work item: LLD relink skipped');
 			}
 		}
-		return;
+		return { ok: failed.length === 0, failedBindings: failed };
 	}
 	if (typeof refs.epicRef === 'string' && refs.epicRef.length > 0) {
-		bindUnitIssue({ unit: 'epic', repoPath, epicHash }, refs.epicRef);
+		bind({ unit: 'epic', repoPath, epicHash }, refs.epicRef);
 		relinkDoc(hldArtifactPaths(repoPath, epicHash, anchor, 'epic', epicSlug), () => renderHldMarkdown(readHldArtifact(repoPath, epicHash)));
 		relinkDoc(defineArtifactPaths(repoPath, epicHash, anchor, 'epic', epicSlug), () => renderDefineMarkdown(readDefineArtifact(repoPath, epicHash)));
 	}
 	for (const [storyId, storyRef] of Object.entries(refs.storyRefs ?? {})) {
 		if (typeof storyRef !== 'string' || storyRef.length === 0) continue;
-		bindUnitIssue({ unit: 'story', repoPath, epicHash, storyId }, storyRef);
+		bind({ unit: 'story', repoPath, epicHash, storyId }, storyRef);
 		relinkDoc(lldArtifactPaths(repoPath, epicHash, storyId, anchor, 'epic', epicSlug), () => renderLldMarkdown(readLldArtifact(repoPath, epicHash, storyId)));
 	}
+	return { ok: failed.length === 0, failedBindings: failed };
 }
 
 function relinkDoc(paths: { json: string; md: string }, render: () => string): void {

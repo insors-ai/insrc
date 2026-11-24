@@ -27,7 +27,9 @@
 
 import { registerRunner } from '../../executor.js';
 import type { StepRunner, WorkflowName } from '../../types.js';
-import { readDefinitionHead } from '../../gates.js';
+import { definitionHeadJsonPath, readDefinitionHead } from '../../gates.js';
+import { readTrackerMeta } from '../../tracker/refs.js';
+import { unitIssueOf } from '../../tracker/unit-head.js';
 import type { IssueArtifact } from '../../artifacts/issue.js';
 import { IMPLIED_ISSUE_STORY_ID, issueArtifactId } from '../../storage.js';
 import { claimCreateIntent, heartbeatClaim, markClaimCreatedFence, quarantineDeadClaim, readClaim, reconcileClaim, takeoverAbandonedClaim } from '../../tracker/pending-create-claim.js';
@@ -72,6 +74,26 @@ const pushExecuteRunner: StepRunner = {
 		if (c.headKind === 'issue') {
 			const head = readDefinitionHead(ctx.intent.repoPath, c.epicHash);
 			const issue = head?.kind === 'issue' ? (head.artifact as IssueArtifact) : undefined;
+			// REVIEW round-3 HIGH-1: re-read the DURABLE ref right before the create
+			// decision — a run whose context was assembled earlier must adopt the
+			// publication another run already completed instead of creating a duplicate.
+			const durableRef = unitIssueOf(ctx.intent.repoPath, c.epicHash)
+				?? (head?.kind === 'issue' ? readTrackerMeta(definitionHeadJsonPath(ctx.intent.repoPath, c.epicHash))?.issueRef : undefined);
+			if (issue !== undefined && durableRef !== undefined) {
+				// already durably published: adopt it, no create. Carry a fence when a
+				// retained claim exists (round-3 MED-3 recovery path).
+				const existing = readClaim(ctx.intent.repoPath, c.epicHash);
+				if (existing !== undefined) {
+					const took = await takeoverAbandonedClaim(ctx.intent.repoPath, c.epicHash, ctx.runId, Date.now());
+					const active = took ?? existing;
+					(ctx.stepOutputs['s1'] as Record<string, unknown>)['claimFence'] = active.fence;
+				}
+				return {
+					type: 'output',
+					output: { epicRef: durableRef, storyRefs: { [IMPLIED_ISSUE_STORY_ID]: durableRef }, labelsCreated: [] },
+					summary: `tracker.push: adopted the already-persisted issue ${durableRef}; no create dispatched`,
+				};
+			}
 			if (issue !== undefined && c.existingRefs?.epicRef === undefined) {
 				const marker = `<!-- insrc:artifact ${issueArtifactId(c.epicHash)} -->`;
 				const claim = claimCreateIntent(ctx.intent.repoPath, c.epicHash, ctx.runId, {

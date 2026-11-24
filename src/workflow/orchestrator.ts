@@ -136,6 +136,7 @@ import { COMPONENT_DEFINITION_PROPERTY_SCHEMA, COMPONENT_CONTENT_GATE_RULE } fro
 import { ADHERENCE_PROPERTY_SCHEMA } from './artifacts/companion/adherence.js';
 import { linkDocsToIssues } from './tracker/link.js';
 import { bindArtifact } from './tracker/binding.js';
+import { unitIssueOf } from './tracker/unit-head.js';
 import { taskHeadIdOf } from './tasks/lookup.js';
 import { readFileSync, unlinkSync } from 'node:fs';
 import {
@@ -2942,32 +2943,49 @@ async function finalizeTracker(
 	if (existingClaim !== undefined && expectedFence === undefined) {
 		return { ok: false, failure: schemaFailure(`pending-create claim exists for ${epicHash} but no fence was carried — refusing unverifiable persistence`) };
 	}
-	try {
-		if (existingClaim !== undefined) {
-			// claim present: the carried fence is mandatory; one mutex hold spans
-			// fence validation + metadata write + head bindings + claim release
-			// (round-2 HIGH-3: atomic ownership boundary; HIGH-4: awaited cleanup).
-			const mutex = await acquireClaimMutex(intent.repoPath, epicHash);
-			try {
-				await withOwnedFence(intent.repoPath, epicHash, expectedFence ?? -1, async () => {
-					mutateEpicTrackerMeta(intent.repoPath, epicHash, intent.workflow, typedRefs);
-					// Only AFTER the refs are durably persisted and the heads bound
-					// is the claim released (HIGH-2) — unlink directly, we already
-					// hold the mutex (releaseClaim would re-acquire and deadlock).
-					if (intent.workflow === 'tracker.push') {
-						unlinkSync(pendingCreatePath(intent.repoPath, epicHash));
-					}
-				});
-			} finally {
-				mutex.release();
-			}
-		} else {
-			// no claim: plain persistence (DEF heads, sync, tests)
+	// REVIEW round-3 HIGH-2: a run that CARRIED claim ownership must not downgrade
+	// to unfenced persistence when its claim disappeared (another run completed and
+	// deleted it). If the carried fence is stale/absent-claim AND the durable refs
+	// already equal what this run is about to persist, that is an idempotent
+	// completion — allowed. Otherwise refuse: never replace a completed
+	// publication with a different ref.
+	if (existingClaim === undefined && expectedFence !== undefined && intent.workflow === 'tracker.push') {
+		const durableEpic = unitIssueOf(intent.repoPath, epicHash);
+		const pushRefs = typedRefs as TrackerPushRefs;
+		if (durableEpic !== undefined && durableEpic === pushRefs.epicRef) {
+			// idempotent completion: the publication this run carried already landed
 			mutateEpicTrackerMeta(intent.repoPath, epicHash, intent.workflow, typedRefs);
+		} else {
+			return { ok: false, failure: schemaFailure(`carried claim fence ${expectedFence} has no claim and durable ref ${durableEpic ?? '(none)'} != ${pushRefs.epicRef} — displaced/completed owner refused`) };
 		}
-	} catch (err) {
-		const msg = err instanceof Error ? err.message : String(err);
-		return { ok: false, failure: schemaFailure(`failed to patch Epic tracker meta: ${msg}`) };
+	} else {
+		try {
+			if (existingClaim !== undefined) {
+				// claim present: the carried fence is mandatory; one mutex hold spans
+				// fence validation + metadata write + head bindings + claim release
+				// (round-2 HIGH-3: atomic ownership boundary; HIGH-4: awaited cleanup).
+				const mutex = await acquireClaimMutex(intent.repoPath, epicHash);
+				try {
+					await withOwnedFence(intent.repoPath, epicHash, expectedFence ?? -1, async () => {
+						mutateEpicTrackerMeta(intent.repoPath, epicHash, intent.workflow, typedRefs);
+						// Only AFTER the refs are durably persisted and the heads bound
+						// is the claim released (HIGH-2) — unlink directly, we already
+						// hold the mutex (releaseClaim would re-acquire and deadlock).
+						if (intent.workflow === 'tracker.push') {
+							unlinkSync(pendingCreatePath(intent.repoPath, epicHash));
+						}
+					});
+				} finally {
+					mutex.release();
+				}
+			} else {
+				// no claim and no carried fence: plain persistence (DEF heads, sync, tests)
+				mutateEpicTrackerMeta(intent.repoPath, epicHash, intent.workflow, typedRefs);
+			}
+		} catch (err) {
+			const msg = err instanceof Error ? err.message : String(err);
+			return { ok: false, failure: schemaFailure(`failed to patch Epic tracker meta: ${msg}`) };
+		}
 	}
 
 	const artifact: TrackerArtifact = {
@@ -3058,9 +3076,15 @@ function mutateEpicTrackerMeta(
 		// ISSUE head: the single ref is bound on BOTH the EPIC and the implied
 		// STORY-s1 head (the work-item root IS the story issue); linkDocsToIssues
 		// is given the implied story so the binding lands without a DEF.
-		linkDocsToIssues(repoPath, epicHash, epicSlug, headKind === 'issue'
+		// REVIEW round-3 MED-4: required head bindings must land before success —
+		// linkDocsToIssues now reports failed bindings; a failure throws so the
+		// finalize op reports failed/retryable and retains the claim.
+		const linkResult = linkDocsToIssues(repoPath, epicHash, epicSlug, headKind === 'issue'
 			? { epicRef: push.epicRef, storyRefs: { [IMPLIED_ISSUE_STORY_ID]: push.epicRef, ...push.storyRefs } }
 			: { epicRef: push.epicRef, storyRefs: push.storyRefs });
+		if (!linkResult.ok) {
+			throw new Error(`required head bindings failed: ${linkResult.failedBindings.join(', ')}`);
+		}
 		// Task tier: bind each Task issue to its Task artifact, so a re-push adopts it (and downstream `build` can find its
 		// issues). A Task with no artifact has nowhere to be recorded: the approval of its plan makes them.
 		if (push.taskRefs !== undefined) {

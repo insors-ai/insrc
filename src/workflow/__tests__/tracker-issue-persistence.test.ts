@@ -36,7 +36,10 @@ import { ArtifactIds } from '../artifact-ids.js';
 import { approvedMeta } from './lifecycle-fixtures.js';
 import { installExecStandIn } from './helpers/exec-stand-in.js';
 import type { PortResult, TrackerPort } from '../tracker/port.js';
-import { claimCreateIntent, readClaim } from '../tracker/pending-create-claim.js';
+import { claimCreateIntent, heartbeatClaim, readClaim } from '../tracker/pending-create-claim.js';
+import { bindUnitIssue } from '../tracker/link.js';
+import { unitIssueOf } from '../tracker/unit-head.js';
+import { readDefinitionHead } from '../gates.js';
 
 const HASH = '5f9d4ab4c90c0b4c';
 const SLUG = 'issue-anchored-item';
@@ -383,4 +386,67 @@ test('REVIEW HIGH-2/HIGH-3 — reconciled adoption returns TrackerPushRefs shape
 		assert.match(JSON.stringify(fr2), /stale fence/i);
 		assert.equal(readFileSync(fx2.issue, 'utf8'), before, 'no write happened — displaced owner fenced before its first write');
 	} finally { fx2.cleanup(); }
+});
+
+test('REVIEW round-3 — stale-context run adopts the durable ref (HIGH-1); carried-fence run with a deleted claim and a DIFFERENT ref is refused (HIGH-2); retained claim + persisted ref completes idempotently (MED-3); failed STORY binding fails finalization and retains the claim (MED-4)', async () => {
+	{
+		const fx = seedIssueOnly();
+		try {
+			const intent = { workflow: 'tracker.push', focus: 'push', repoPath: fx.repo, repoIndexedAt: null, params: { epicHash: HASH } } as never;
+			const c = claimCreateIntent(fx.repo, HASH, 'run-A', { title: 'ISSUE title', marker: `<!-- insrc:artifact ISSUE-${HASH} -->` });
+			const committed = await heartbeatClaim(fx.repo, HASH, c.claim.fence);
+			const refs = { epicRef: 'acme/demo#42', storyRefs: { [IMPLIED_ISSUE_STORY_ID]: 'acme/demo#42' }, labelsCreated: [] };
+			const s1 = { gh: { owner: 'acme', repo: 'demo' }, epicHash: HASH, epicSlug: SLUG, headKind: 'issue', claimFence: committed };
+			const fr = await _finalizeTracker(intent, { s1 }, 'run-A', 5, { refs, checklist: { items: [{ itemId: 'singleIssue', verdict: 'passed' }], failedCount: 0 } }, 'm');
+			assert.equal(fr.ok, true, JSON.stringify(fr));
+			assert.equal(readClaim(fx.repo, HASH), undefined, 'A completed: claim released');
+			const head = readDefinitionHead(fx.repo, HASH);
+			const durableRef = unitIssueOf(fx.repo, HASH) ?? (head?.kind === 'issue' ? readTrackerMeta(artifactJsonPath(fx.repo, issueArtifactId(HASH)))?.issueRef : undefined);
+			assert.equal(durableRef, 'acme/demo#42', 'HIGH-1: durable re-read picks up A\'s publication for a stale-context run');
+		} finally { fx.cleanup(); }
+	}
+	{
+		const fx = seedIssueOnly();
+		try {
+			bindUnitIssue({ unit: 'epic', repoPath: fx.repo, epicHash: HASH }, 'acme/demo#42');
+			patchTrackerMeta(fx.issue, { issueRef: 'acme/demo#42' });
+			const staleS1 = { gh: { owner: 'acme', repo: 'demo' }, epicHash: HASH, epicSlug: SLUG, headKind: 'issue', claimFence: 2 };
+			const intent = { workflow: 'tracker.push', focus: 'push', repoPath: fx.repo, repoIndexedAt: null, params: { epicHash: HASH } } as never;
+			const fr = await _finalizeTracker(intent, { s1: staleS1 }, 'run-A-stale', 5, { refs: { epicRef: 'acme/demo#99', storyRefs: { s1: 'acme/demo#99' }, labelsCreated: [] }, checklist: { items: [{ itemId: 'singleIssue', verdict: 'passed' }], failedCount: 0 } }, 'm');
+			assert.equal(fr.ok, false, 'HIGH-2: stale owner with a different ref is refused');
+			assert.match(JSON.stringify(fr), /displaced\/completed owner refused/i);
+			assert.equal(readTrackerMeta(fx.issue)?.issueRef, 'acme/demo#42', 'completed publication not replaced');
+			const fr2 = await _finalizeTracker(intent, { s1: staleS1 }, 'run-A-idem', 5, { refs: { epicRef: 'acme/demo#42', storyRefs: { s1: 'acme/demo#42' }, labelsCreated: [] }, checklist: { items: [{ itemId: 'singleIssue', verdict: 'passed' }], failedCount: 0 } }, 'm');
+			assert.equal(fr2.ok, true, 'HIGH-2: idempotent completion with the same durable ref is allowed: ' + JSON.stringify(fr2));
+		} finally { fx.cleanup(); }
+	}
+	{
+		const fx = seedIssueOnly();
+		try {
+			claimCreateIntent(fx.repo, HASH, 'run-A', { title: 'ISSUE title', marker: `<!-- insrc:artifact ISSUE-${HASH} -->` });
+			bindUnitIssue({ unit: 'epic', repoPath: fx.repo, epicHash: HASH }, 'acme/demo#42');
+			patchTrackerMeta(fx.issue, { issueRef: 'acme/demo#42' });
+			const claim = readClaim(fx.repo, HASH);
+			const s1 = { gh: { owner: 'acme', repo: 'demo' }, epicHash: HASH, epicSlug: SLUG, headKind: 'issue', claimFence: claim!.fence };
+			const intent = { workflow: 'tracker.push', focus: 'push', repoPath: fx.repo, repoIndexedAt: null, params: { epicHash: HASH } } as never;
+			const fr = await _finalizeTracker(intent, { s1 }, 'run-recover', 5, { refs: { epicRef: 'acme/demo#42', storyRefs: { s1: 'acme/demo#42' }, labelsCreated: [] }, checklist: { items: [{ itemId: 'singleIssue', verdict: 'passed' }], failedCount: 0 } }, 'm');
+			assert.equal(fr.ok, true, 'MED-3: retained-claim recovery with the verified fence completes: ' + JSON.stringify(fr));
+			assert.equal(readClaim(fx.repo, HASH), undefined, 'cleanup completed inside the mutex');
+		} finally { fx.cleanup(); }
+	}
+	{
+		const fx = seedIssueOnly();
+		try {
+			const c = claimCreateIntent(fx.repo, HASH, 'run-A', { title: 'ISSUE title', marker: `<!-- insrc:artifact ISSUE-${HASH} -->` });
+			mkdirSync(join(fx.repo, '.insrc', 'journal'), { recursive: true });
+			writeFileSync(join(fx.repo, '.insrc', 'journal', `STORY-${HASH}-s1.json`), '{}');
+			const s1 = { gh: { owner: 'acme', repo: 'demo' }, epicHash: HASH, epicSlug: SLUG, headKind: 'issue', claimFence: c.claim.fence };
+			const intent = { workflow: 'tracker.push', focus: 'push', repoPath: fx.repo, repoIndexedAt: null, params: { epicHash: HASH } } as never;
+			const fr = await _finalizeTracker(intent, { s1 }, 'run-bindfail', 5, { refs: { epicRef: 'acme/demo#42', storyRefs: { s1: 'acme/demo#42' }, labelsCreated: [] }, checklist: { items: [{ itemId: 'singleIssue', verdict: 'passed' }], failedCount: 0 } }, 'm');
+			assert.equal(fr.ok, false, 'MED-4: failed required binding fails finalization');
+			assert.match(JSON.stringify(fr), /required head bindings failed/i);
+			assert.ok(readClaim(fx.repo, HASH) !== undefined, 'claim retained as recovery evidence');
+			assert.equal(readBinding(fx.repo, ArtifactIds.make({ kind: 'STORY', epicHash: HASH, story: 's1' })), undefined, 'STORY-s1 binding absent (staged)');
+		} finally { fx.cleanup(); }
+	}
 });

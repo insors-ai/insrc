@@ -1,0 +1,77 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 2,
+        "contentHash": "9bdf87735e417d6d794fe439f3964d6e6ecf92679672d4f67efdc036db287b65",
+        "at": "2026-11-24T16:28:54.049Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-24T16:52:53.766Z",
+        "override": {
+          "reason": "Automated code review is unavailable (being rewritten per project policy); self-reviewed twice (once producing the fix, once re-checking the final diff line-by-line after validate passed clean) and presented in chat instead."
+        }
+      }
+    },
+    "workflow": "build",
+    "runId": "store-338b802b-42f8-47f7-94ac-c2a3ed988894",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-24T16:25:49.174Z",
+    "epicCreatedAt": "2026-11-24T16:18:40.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c85fa770c2cedefb",
+    "storyId": "s1",
+    "revision": 2,
+    "standalone": true,
+    "sizeClass": "trivial",
+    "authoredBy": "controller",
+    "triageRationale": "A single-file, already-implemented and tested fix to codexReadOnlySessionArgs and readOnlySessionOnce in src/agent/providers/cli-provider.ts (commit 71de28e05).",
+    "epicSlug": "codex-per-server-allowlist-breaks-dotted",
+    "updatedAt": "2026-11-24T16:28:10.102Z"
+  },
+  "body": {
+    "focus": "Build the per-server allowlist as ONE combined `-c mcp_servers={...}` TOML inline-table assignment, with every server name written as a quoted TOML string key, instead of as separate dotted-path `-c` flags. Check the discovered insrc entry's own `enabled` field in addition to its presence, and refuse up front with a new, distinctly-named error when it is globally disabled, rather than proceeding silently. Move the budget clock to start before the project-config walk (not after it) and thread the caller's AbortSignal through the walk's own file reads.",
+    "producesLld": false,
+    "commit": "42c0f8448",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "Fixed 3 MED + 1 LOW findings against the codex per-server allowlist: codexReadOnlySessionArgs now emits one combined `-c mcp_servers={...}` TOML inline-table assignment with every server name as a quoted key (fixes dotted-name breakage and the later-whole-table-clobber hazard), checks the insrc entry's own `enabled` field and throws CodexMcpServerDisabledError when false, readOnlySessionOnce's project-config walk now starts the budget clock before the walk (not after) and threads AbortSignal through its reads, and the retry now logs a warning each time it fires.",
+    "testRecord": {
+      "md": "docs/standalone/codex-per-server-allowlist-breaks-dotted-E20261124c85fa770/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/agent/providers/cli-provider.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T16:28:10.102Z"
+      }
+    ]
+  },
+  "citations": []
+}

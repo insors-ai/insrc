@@ -1,0 +1,21 @@
+<!-- insrc:artifact ISSUE-c85fa770c2cedefb -->
+
+# Codex per-server allowlist breaks on dotted server names, silently proceeds with a globally-disabled insrc, and leaves the project-config walk outside the session deadline
+
+## Reproduction
+
+1. Register a codex MCP server globally whose name contains a literal dot (e.g. `review.server`). Call `CliProvider.runReadOnlySession` with kind 'codex'. The disable override `-c mcp_servers.review.server.enabled=false` is parsed by codex's own dotted-path `-c` syntax as the nested path `mcp_servers.review.server.enabled`, not the single key `mcp_servers["review.server"].enabled` -- confirmed live: codex's bootstrap crashes with `invalid transport in \`mcp_servers.review\``, and the existing retry's own name-based filter can never remove a server named plain `review` (it isn't in the discovered list), so recovery is impossible for this server. 2. Register the insrc MCP server globally but set `enabled = false` on it. Call `runReadOnlySession` with kind 'codex'. The preflight only checks that an `insrc` entry is present, not that it is enabled; the session proceeds, setting `enabled_tools` on an already-disabled server does not re-enable it (confirmed live via `codex mcp list --json`), so the session silently runs with no insrc analyze tools reachable at all, and no error is raised. 3. Give `runReadOnlySession` a short `deadlineMs` in a cwd whose ancestor directories include a slow-to-read filesystem path. `walkProjectMcpConfigLayers`'s own file reads run BEFORE the budget clock (`discoveryStartedAt`) starts, so the walk's own elapsed time is invisible to the deadline and the call can run well past `deadlineMs` before the first budget check ever fires.
+
+## Root cause
+
+codexReadOnlySessionArgs (src/agent/providers/cli-provider.ts, pre-fix lines 246-260 of commit 16bbb6800) built one separate `-c mcp_servers.<name>.<field>=<value>` dotted-path flag per server. codex's own `-c` option (confirmed live via `codex exec --help`: "Use a dotted path (foo.bar.baz) to override nested values") splits strictly on literal '.' characters with no key-quoting support, so a server name containing a dot is silently misinterpreted as multiple nested path segments rather than one key. The same function's registration check (`servers.some(server => server.name === CODEX_INSRC_SERVER_NAME)`) tested only presence, never `server.enabled`, so a globally-disabled insrc entry passed silently. Separately, in readOnlySessionOnce's codex branch, `const discoveryStartedAt = Date.now();` was placed AFTER `await walkProjectMcpConfigLayers(exec.cwd)` rather than before it, so the walk's own `fs.readFile` calls (one per ancestor directory up to the filesystem root) ran with no deadline accounting and no AbortSignal at all.
+
+## Fix intent
+
+Build the per-server allowlist as ONE combined `-c mcp_servers={...}` TOML inline-table assignment, with every server name written as a quoted TOML string key, instead of as separate dotted-path `-c` flags -- this removes the dotted-name ambiguity entirely (a quoted key cannot be split on '.') and avoids a second, related hazard where a later whole-table assignment would clobber earlier per-server flags in the same invocation. Check the discovered insrc entry's own `enabled` field in addition to its presence, and refuse up front with a new, distinctly-named error when it is globally disabled, rather than proceeding silently. Move the budget clock to start before the project-config walk (not after it) and thread the caller's AbortSignal through the walk's own file reads, so the walk's elapsed time counts against the same deadline discovery and the retry attempts already respect.
+
+## Citations
+
+- **[[c1]]** `code` `src/agent/providers/cli-provider.ts:246-260`
+- **[[c2]]** `code` `src/agent/providers/cli-provider.ts:785-793`
+- **[[c3]]** `code` `src/agent/providers/cli-provider.ts:303-326`

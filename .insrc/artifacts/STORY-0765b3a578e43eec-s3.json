@@ -40,6 +40,17 @@
           "revision": 5,
           "at": "2026-11-23T06:11:19.550Z",
           "externalId": "7093088787"
+        },
+        {
+          "target": {
+            "entityId": "PLAN-0765b3a578e43eec-s3",
+            "type": "PLAN",
+            "relation": "documents",
+            "fragment": "docs/epics/add-dedicated-security-reviews-E202611100765b3a5/S003/PLAN.md"
+          },
+          "revision": 1,
+          "at": "2026-11-24T04:20:06.527Z",
+          "externalId": "7121922721"
         }
       ],
       "binding": {

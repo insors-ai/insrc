@@ -1,0 +1,430 @@
+{
+  "kind": "s2-local-installer-qualification",
+  "runId": "05a58ba6-7f5d-4f37-b589-06a08c4015e5",
+  "sourceCommit": "8a3b62b0e625f3573ce790cd4fa2304186efed05",
+  "runtimeVersion": "v22.22.1",
+  "budgets": {
+    "buildMs": 600000,
+    "fileMs": 600000,
+    "runMs": 5400000,
+    "cleanupMs": 5000
+  },
+  "requestedConcurrency": 1,
+  "effectiveConcurrency": 1,
+  "incomplete": false,
+  "inheritedDiagnosticFlags": [
+    "DEBUG"
+  ],
+  "liveTests": "unset",
+  "inputFingerprint": "16526e34b9cb3153969df332d78d9a104cd61600f03e358a71ef72168a4549b4",
+  "outputFingerprint": "2f2a332a4ce62dad97c0d1d06fff3cac27b985a060f0788440b47ff35a5a22bf",
+  "counts": {
+    "tests": 100,
+    "pass": 100,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "files": [
+    {
+      "file": "scripts/__tests__/build-script.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "scripts/__tests__/forbidden-spawn-scan.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 6,
+          "pass": 6,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/installer/__tests__/bootstrap.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 5,
+          "pass": 5,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/installer/__tests__/bridge-protocol.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/installer/__tests__/bundle.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 4,
+          "pass": 4,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/installer/__tests__/contracts.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 5,
+          "pass": 5,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/installer/__tests__/controller-store.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 7,
+          "pass": 7,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/installer/__tests__/dev-complete-payload.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/installer/__tests__/dev-git.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 4,
+          "pass": 4,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/installer/__tests__/dev-manager.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 6,
+          "pass": 6,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/installer/__tests__/dev-metadata.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 5,
+          "pass": 5,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/installer/__tests__/dev-payload.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 3,
+          "pass": 3,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/installer/__tests__/dev-recovery.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 4,
+          "pass": 4,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/installer/__tests__/dev-toolchain.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 3,
+          "pass": 3,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/installer/__tests__/dev-worker.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 5,
+          "pass": 5,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/installer/__tests__/foundation-payload.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/installer/__tests__/installed-dev.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 3,
+          "pass": 3,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/installer/__tests__/location.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 4,
+          "pass": 4,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/installer/__tests__/manager.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 13,
+          "pass": 13,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/installer/__tests__/operation-control.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 2,
+          "pass": 2,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/installer/__tests__/publisher.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 6,
+          "pass": 6,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/installer/__tests__/terminal-install.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 9,
+          "pass": 9,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    },
+    {
+      "file": "src/shared/__tests__/installation-home.test.ts",
+      "code": 0,
+      "timedOut": false,
+      "coverage": {
+        "status": "reported",
+        "counts": {
+          "tests": 1,
+          "pass": 1,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      }
+    }
+  ],
+  "cleanup": {
+    "confirmedClosed": true,
+    "interrupted": false,
+    "cancellationErrors": [],
+    "evidenceErrors": [],
+    "childCloseJournal": "child-results.jsonl",
+    "closureMode": "owned-groups"
+  },
+  "nativeSmoke": {
+    "kind": "local-dev-native-smoke",
+    "mode": "dev",
+    "sourceCommit": "8a3b62b0e625f3573ce790cd4fa2304186efed05",
+    "acceptedCommit": "8a3b62b0e625f3573ce790cd4fa2304186efed05",
+    "releaseId": "dev-d56ba2094889a9a54462123ae474c03e45dd812bd1f2107f",
+    "nodeVersion": "v22.22.1",
+    "npmVersion": "10.9.4",
+    "cuda": "skip",
+    "files": 59910,
+    "payloadBytes": 1924931743,
+    "nativeProbe": "passed",
+    "freshManagerInspect": "passed",
+    "target": {
+      "os": "darwin",
+      "arch": "arm64",
+      "baseline": "fixture"
+    },
+    "qualification": "Local native/fixture evidence only; no VM, Windows, IDE or live migration qualification",
+    "confirmedClosed": true
+  },
+  "nativeDurationMs": 507318.965292,
+  "qualificationLimits": "Local native/fixture evidence only; no VM, Windows, IDE or live migration qualification"
+}

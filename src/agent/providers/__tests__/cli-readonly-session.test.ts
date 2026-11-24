@@ -221,6 +221,47 @@ test("readOnlySessionOnce throws CodexMcpServerOverrideUnsafeError('codex_app') 
 	} finally { delete process.env['INSRC_FAKE_DISCOVERY_SERVERS']; f.cleanup(); }
 });
 
+test("readOnlySessionOnce throws CodexMcpServerOverrideUnsafeError('cua_repl') when runCodex's failure message matches the same wording naming cua_repl", async () => {
+	const f = fakeCli([{ fail: 'Error loading config.toml: invalid transport in `mcp_servers.cua_repl`', code: 1 }]);
+	process.env['INSRC_FAKE_DISCOVERY_SERVERS'] = JSON.stringify([{ name: 'insrc', enabled: true }, { name: 'cua_repl', enabled: false }]);
+	try {
+		const p = new CliProvider({ kind: 'codex', binPath: f.bin });
+		await assert.rejects(
+			p.runReadOnlySession('P', SCHEMA, { cwd: f.dir, deadlineMs: 20_000, internalRetry: false }),
+			(e: unknown) => e instanceof CodexMcpServerOverrideUnsafeError && e.serverName === 'cua_repl',
+		);
+	} finally { delete process.env['INSRC_FAKE_DISCOVERY_SERVERS']; f.cleanup(); }
+});
+
+test('readOnlySessionOnce proceeds normally (no new error) when the servers list includes node_repl and runCodex succeeds, exactly as today', async () => {
+	const f = fakeCli([{ out: codexOk('{"ok":true}') }]);
+	process.env['INSRC_FAKE_DISCOVERY_SERVERS'] = JSON.stringify([{ name: 'insrc', enabled: true }, { name: 'node_repl', enabled: false }]);
+	try {
+		const p = new CliProvider({ kind: 'codex', binPath: f.bin });
+		assert.deepEqual(await p.runReadOnlySession('P', SCHEMA, { cwd: f.dir, deadlineMs: 20_000 }), { ok: true });
+	} finally { delete process.env['INSRC_FAKE_DISCOVERY_SERVERS']; f.cleanup(); }
+});
+
+test("readOnlySessionOnce re-throws the original, unmodified error when runCodex fails for a reason that does NOT match the bootstrap-rejection wording (e.g. a generic non-zero exit, or the existing 'no agent_message item' case)", async () => {
+	const f = fakeCli([{ fail: 'unknown option --sandbox', code: 1 }]);
+	try {
+		const p = new CliProvider({ kind: 'codex', binPath: f.bin });
+		await assert.rejects(
+			p.runReadOnlySession('P', SCHEMA, { cwd: f.dir, deadlineMs: 20_000, internalRetry: false }),
+			(e: unknown) => !(e instanceof CodexMcpServerOverrideUnsafeError) && e instanceof Error && /unknown option --sandbox/.test(e.message),
+		);
+	} finally { f.cleanup(); }
+	// The existing "no agent_message item" case also keeps re-throwing unchanged.
+	const noText = fakeCli([{ out: '' }]);
+	try {
+		const p = new CliProvider({ kind: 'codex', binPath: noText.bin });
+		await assert.rejects(
+			p.runReadOnlySession('P', SCHEMA, { cwd: noText.dir, deadlineMs: 20_000, internalRetry: false }),
+			(e: unknown) => !(e instanceof CodexMcpServerOverrideUnsafeError) && e instanceof Error && /no agent_message item/.test(e.message),
+		);
+	} finally { noText.cleanup(); }
+});
+
 // --- retry and deadline --------------------------------------------------------
 
 test('a transient CLI error is retried once', async () => {

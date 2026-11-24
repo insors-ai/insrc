@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-02bf7b11-d679-46dc-8e94-ade953bd0988",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-23T12:50:09.932Z",
+    "epicCreatedAt": "2026-11-10T05:58:05.294Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "0765b3a578e43eec",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Implement lockfile export (requirementsPath generation) with faithful-export and version-uncertain gap detection",
+      "parent": {
+        "entityId": "STORY-0765b3a578e43eec-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-0765b3a578e43eec-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-0765b3a578e43eec-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#239",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "e6bd4107f9163f3aaf8b9d0345d2361f44fe89c4cb0879767fe0fbf6e91ffbb3",
+        "at": "2026-11-23T12:50:09.932Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-23T12:50:09.933Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement lockfile export (requirementsPath generation) with faithful-export and version-uncertain gap detection",
+    "summary": "For pipenv/poetry, generate a requirementsPath from Pipfile.lock/poetry.lock containing only plain-PyPI-sourced, faithfully-representable entries; a git/path/url-sourced or unfaithfully-representable entry is excluded and recorded as a non-standard-source gap (added to unresolvedDependencies). For plain pip, use the project's own requirements.txt directly; an entry that is not an exact pin is recorded as version-uncertain (also added to unresolvedDependencies), but the file itself is never rewritten. Every requirementsPath this step generates itself (pipenv/poetry only, never plain pip) is always paired with noDeps:true when later passed to pkgAuditTool (t1's fields).",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "a poetry.lock entry with a git/path/url source is excluded from the generated file and recorded in unresolvedDependencies with a non-standard-source note",
+      "a poetry.lock entry with a plain PyPI source and exact version is included in the generated file (confirming the exact-locked version is preferred over a fresh resolution)",
+      "a plain pip requirements.txt entry using a version range (not an exact pin) is recorded in unresolvedDependencies as version-uncertain, while requirements.txt itself is left untouched",
+      "the generation step itself never sets noDeps -- that pairing happens at the collectDependencyAdvisories call site (t6)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "a poetry.lock entry with a git/path/url source -> excluded, added to unresolvedDependencies"
+      },
+      {
+        "level": "unit",
+        "name": "a plain pip requirements.txt entry with a version range -> recorded in unresolvedDependencies as version-uncertain"
+      },
+      {
+        "level": "unit",
+        "name": "a poetry.lock entry with an exact PyPI pin is included in the generated requirementsPath"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

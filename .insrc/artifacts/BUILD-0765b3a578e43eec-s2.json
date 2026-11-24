@@ -1,0 +1,208 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 40,
+        "contentHash": "b82276fd795153543b7d25b7f8ab9af24c115448d39627ffa3892755174a6f12",
+        "at": "2026-11-23T20:07:05.377Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 40,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-24T03:58:27.913Z",
+        "override": {
+          "reason": "Story s2's own code-review tooling is unavailable (being rewritten, per CLAUDE.md). t6's one build-gate check (\"the excluded package is NOT resolved or reported on\") fails only because the approved LLD's --no-deps premise does not hold against the real pip-audit binary -- a confirmed design-assumption gap, not an implementation defect, documented and tracked as ISSUE-1bb9d1058e6546f3 (approved). t6's own code never produces a false clean/confirmed-finding result in this scenario; it correctly quarantines the excluded dependency into unresolvedDependencies/unavailableSources. All 7 Tasks (t1-t7) independently gate-validated across 7 external review rounds (16 real findings, all fixed and regression-tested); t6 passes every accounting/orchestration check except this one disputed, ISSUE-covered live-test wording. User explicitly approved the BUILD in chat (\"build approved\") after reviewing the full review packet."
+        }
+      }
+    },
+    "workflow": "build",
+    "runId": "store-f9d24cb4-3d83-4969-827d-08608797449f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-23T13:28:18.924Z",
+    "epicCreatedAt": "2026-11-10T05:58:05.294Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "0765b3a578e43eec",
+    "storyId": "s2",
+    "revision": 40,
+    "updatedAt": "2026-11-23T20:06:15.659Z",
+    "authoredBy": "controller",
+    "epicSlug": "add-dedicated-security-reviews"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": false
+      },
+      {
+        "id": "t7",
+        "passed": true
+      }
+    ],
+    "testRecord": {
+      "md": "docs/epics/add-dedicated-security-reviews-E202611100765b3a5/S002/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/pkg/__tests__/pkg-audit.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-23T20:06:15.659Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/pkg/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-23T20:06:15.659Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/security-review/__tests__/dependency-advisories.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-23T20:06:15.659Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/security-review/dependency-advisories.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-23T20:06:15.659Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/security-review/__tests__/content-identity.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-23T20:06:15.659Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/security-review/content-identity.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-23T20:06:15.659Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/security-review/__tests__/closure-coverage.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-23T20:06:15.659Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/security-review/__tests__/lockfile-export.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-23T20:06:15.659Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/security-review/lockfile-export.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-23T20:06:15.659Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/security-review/__tests__/collect-dependency-advisories.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-23T20:06:15.659Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/security-review/collect-dependency-advisories.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-23T20:06:15.659Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/security-review/__tests__/collect-dependency-advisories.live.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-23T20:06:15.659Z"
+      },
+      {
+        "target": {
+          "file": "package-lock.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-23T20:06:15.659Z"
+      },
+      {
+        "target": {
+          "file": "package.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-23T20:06:15.659Z"
+      },
+      {
+        "target": {
+          "file": "src/types/semver.d.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-23T20:06:15.659Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/security-review/__tests__/dependency-sbom-evidence-provider.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-23T20:06:15.659Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/security-review/dependency-sbom-evidence-provider.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-23T20:06:15.659Z"
+      }
+    ],
+    "commit": "3eb949660",
+    "summary": "Re-validated after collectDependencyAdvisories' upstream fix (threading the trusted connection-execution context through executeTool); t7's own provider code is unchanged."
+  },
+  "citations": []
+}

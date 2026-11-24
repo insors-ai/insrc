@@ -1,0 +1,96 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-30a18aef-3abc-41f1-8278-779e9f7d0077",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-23T12:50:09.923Z",
+    "epicCreatedAt": "2026-11-10T05:58:05.294Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "0765b3a578e43eec",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Add requirementsPath + noDeps fields to pkgAuditTool's inputSchema and auditArgv",
+      "parent": {
+        "entityId": "STORY-0765b3a578e43eec-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-0765b3a578e43eec-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#235",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "bba7d2a5e8a5403b0c3cd13e3c4965ddd5e9feea24bba53d22fb205776ba790c",
+        "at": "2026-11-23T12:50:09.923Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-23T12:50:09.924Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add requirementsPath + noDeps fields to pkgAuditTool's inputSchema and auditArgv",
+    "summary": "Add two optional inputSchema fields to pkgAuditTool (src/daemon/tools/builtins/pkg/index.ts): requirementsPath?: string and noDeps?: boolean. auditArgv gains the same two parameters: appends `-r <requirementsPath>` for pip/pipenv/poetry when provided, and `--no-deps` when noDeps is true. Both additive; omitted, every existing caller's behavior and argv is byte-for-byte unchanged.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "auditArgv('pip', {requirementsPath:'/tmp/x.txt'}) includes '-r /tmp/x.txt' in argv",
+      "auditArgv('pip', {noDeps:true}) includes '--no-deps' in argv",
+      "auditArgv('npm') with no new params produces the identical argv as today (no requirementsPath/noDeps leakage into unrelated managers)",
+      "pkgAuditTool's inputSchema declares both new fields as optional"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "pkgAuditTool.execute: noDeps:true -> argv includes --no-deps"
+      },
+      {
+        "level": "unit",
+        "name": "pkgAuditTool.execute: noDeps omitted/false -> argv is identical to today"
+      },
+      {
+        "level": "unit",
+        "name": "auditArgv('pip', {requirementsPath}) appends -r <requirementsPath>"
+      },
+      {
+        "level": "unit",
+        "name": "auditArgv('npm') with no new params is unchanged from today"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-707d4bde-02f6-464b-912e-ce845ecec01d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-23T12:50:09.937Z",
+    "epicCreatedAt": "2026-11-10T05:58:05.294Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "0765b3a578e43eec",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Implement createDependencySbomEvidenceProvider",
+      "parent": {
+        "entityId": "STORY-0765b3a578e43eec-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-0765b3a578e43eec-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-0765b3a578e43eec-s2-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#241",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "718c445f71fe0cd20dfbb9e582abfbb6b4df95ced04a96d2bea67370f55762e3",
+        "at": "2026-11-23T12:50:09.937Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-23T12:50:09.938Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement createDependencySbomEvidenceProvider",
+    "summary": "createDependencySbomEvidenceProvider(repoPath) returns an EvidenceProvider with category:'dependency-sbom' whose run(input) calls collectDependencyAdvisories(repoPath, input.targets) and maps its matches into the thin EvidenceProviderOutput.evidence, satisfying the EvidenceProvider interface exactly.",
+    "size": "S",
+    "order": 7,
+    "acceptanceChecks": [
+      "the returned object's category is 'dependency-sbom'",
+      "run(input) calls collectDependencyAdvisories with the provider's captured repoPath and input.targets",
+      "the returned EvidenceProviderOutput.evidence reflects collectDependencyAdvisories' matches, satisfying SecurityEvidence's shape"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "createDependencySbomEvidenceProvider: category is 'dependency-sbom' and run() delegates to collectDependencyAdvisories with the captured repoPath"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

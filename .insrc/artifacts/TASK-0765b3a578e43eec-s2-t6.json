@@ -1,0 +1,148 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-0e628388-aa3a-45f9-8490-afc2c0bf02b9",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-23T12:50:09.934Z",
+    "epicCreatedAt": "2026-11-10T05:58:05.294Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "0765b3a578e43eec",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Implement collectDependencyAdvisories",
+      "parent": {
+        "entityId": "STORY-0765b3a578e43eec-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-0765b3a578e43eec-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-0765b3a578e43eec-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-0765b3a578e43eec-s2-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-0765b3a578e43eec-s2-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-0765b3a578e43eec-s2-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-0765b3a578e43eec-s2-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#240",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "3e3421afe43c08154622b9ac9ab5869c8e7f76b05711729be511280b1ab096dc",
+        "at": "2026-11-23T12:50:09.934Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-23T12:50:09.936Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement collectDependencyAdvisories",
+    "summary": "collectDependencyAdvisories(repoPath, targets) orchestrates the full sc2 collection: computes contentIdentity once before any manager runs (propagating a failure here) and once after the last manager's audit completes (catching a failure here as contentStable:false, never propagating); for each manager enumerateManagers finds, calls verifyManagerClosureCoverage before (gating whether it is audited at all, 'unsupported' if not covered) and after (a post-audit regression also sets contentStable:false) its audit; invokes pkgAuditTool per manager with the t5-generated requirementsPath + noDeps:true for pipenv/poetry, or the project's own requirements.txt with no noDeps for plain pip; maps each manager's raw output into SecurityAdvisoryMatch[]; records every manager's configuredDestination and perManagerMode, and accounts every queried coordinate into exactly one of matches/unresolvedDependencies/queriedCoordinates-only.",
+    "size": "L",
+    "order": 6,
+    "acceptanceChecks": [
+      "a manager's closure is covered:true pre-audit but covered:false post-audit (a new file appeared during the audit) -> contentStable:false, that manager's own results are still returned",
+      "a targets.entries file deleted between the pre- and post-collection computeContentIdentity calls -> contentStable:false, no exception escapes collectDependencyAdvisories",
+      "the FIRST computeContentIdentity call's own repoPath-level precondition failure DOES propagate (distinct from the second-call case)",
+      "a generated requirementsPath (pipenv/poetry) is ALWAYS invoked with noDeps:true; plain pip's own requirements.txt is NEVER invoked with noDeps:true",
+      "pkg_audit spawnError for a manager -> recorded in unavailableSources, never thrown",
+      "every attempted manager's perManagerMode entry carries a configuredDestination",
+      "a cleanly-checked coordinate with no advisory match appears in queriedCoordinates only; a coordinate with a confirmed finding appears in matches; an unresolved/unavailable coordinate appears in unresolvedDependencies/unavailableSources -- never more than one of these three"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "collectDependencyAdvisories: a generated requirementsPath (pipenv/poetry) is ALWAYS invoked with noDeps:true"
+      },
+      {
+        "level": "unit",
+        "name": "collectDependencyAdvisories: plain pip's own requirements.txt is NEVER invoked with noDeps:true"
+      },
+      {
+        "level": "unit",
+        "name": "collectDependencyAdvisories: a manager's closure is covered:true pre-audit and covered:true post-audit -> no effect on contentStable"
+      },
+      {
+        "level": "unit",
+        "name": "collectDependencyAdvisories: a manager's closure is covered:true pre-audit but covered:false post-audit (a new file appeared during the audit and was never removed) -> contentStable:false, the manager's own results are still returned"
+      },
+      {
+        "level": "unit",
+        "name": "collectDependencyAdvisories: a targets.entries file is deleted between the pre- and post-collection computeContentIdentity calls -> contentStable:false, no exception escapes collectDependencyAdvisories"
+      },
+      {
+        "level": "unit",
+        "name": "collectDependencyAdvisories: the FIRST computeContentIdentity call fails its own repoPath-level precondition -> the error DOES propagate (distinct from the second-call case)"
+      },
+      {
+        "level": "unit",
+        "name": "a cleanly-audited coordinate with no advisory match -> appears in queriedCoordinates only"
+      },
+      {
+        "level": "unit",
+        "name": "collectDependencyAdvisories: pkg_audit spawnError for a manager -> recorded in unavailableSources"
+      },
+      {
+        "level": "unit",
+        "name": "collectDependencyAdvisories: every attempted manager's perManagerMode entry carries a configuredDestination"
+      },
+      {
+        "level": "live",
+        "name": "collectDependencyAdvisories against a real poetry project with an excluded private dependency that is also a transitive dependency of an exported package: the excluded package is NOT resolved or reported on"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

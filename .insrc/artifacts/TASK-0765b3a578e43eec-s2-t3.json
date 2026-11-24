@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-353dc70d-b14c-41c9-9bf1-d9c4ba439fbf",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-23T12:50:09.927Z",
+    "epicCreatedAt": "2026-11-10T05:58:05.294Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "0765b3a578e43eec",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Implement computeContentIdentity",
+      "parent": {
+        "entityId": "STORY-0765b3a578e43eec-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-0765b3a578e43eec-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#237",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      },
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "4b4a7fa5e3f694a692b50e2313505d708dfafc2bf62e9a8a9d8f943ff26d9dc4",
+        "at": "2026-11-23T12:50:09.928Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-23T12:50:09.929Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement computeContentIdentity",
+    "summary": "computeContentIdentity(repoPath, targets) returns a deterministic digest over the repo's HEAD commit sha plus a sha256 of every file named in targets.entries' actual, current raw bytes -- a simple, shared, non-manager-aware hash (the same function s3 will also call over the same targets).",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "editing an application-source file listed in targets.entries changes the digest",
+      "editing a file NOT in targets.entries leaves the digest unchanged",
+      "two calls with no intervening change to targets.entries' files yield the identical string",
+      "a targets.entries path resolving outside repoPath throws",
+      "repoPath that is not a registered git repository, or whose HEAD cannot be resolved, throws"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "computeContentIdentity: an application-source file in targets.entries is edited, manifests/lockfiles unchanged -> digest changes"
+      },
+      {
+        "level": "unit",
+        "name": "computeContentIdentity: a file NOT in targets.entries is edited -> no change"
+      },
+      {
+        "level": "unit",
+        "name": "computeContentIdentity: identical targets.entries bytes -> identical string on repeated calls"
+      },
+      {
+        "level": "unit",
+        "name": "computeContentIdentity: a targets.entries path outside repoPath throws"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

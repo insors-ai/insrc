@@ -1,0 +1,950 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 40,
+        "contentHash": "679ef2f16a8a7e12064d14dea28026585dac128035ea5f3f93e0dedcbdbb6c06",
+        "at": "2026-11-23T20:06:15.820Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "0765b3a578e43eec",
+    "storyId": "s2",
+    "createdAt": "2026-11-23T13:28:18.924Z",
+    "updatedAt": "2026-11-23T20:06:15.659Z",
+    "epicCreatedAt": "2026-11-10T05:58:05.294Z",
+    "epicSlug": "add-dedicated-security-reviews",
+    "revision": 40
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "8675aa958",
+        "ranAt": "2026-11-23T13:30:21.340Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "pkgAuditTool.execute: noDeps:true -> argv includes --no-deps",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/pkg/__tests__/pkg-audit.test.ts",
+                "title": "pkgAuditTool.execute: noDeps:true -> argv includes --no-deps",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "pkgAuditTool.execute: noDeps omitted/false -> argv is identical to today",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/pkg/__tests__/pkg-audit.test.ts",
+                "title": "pkgAuditTool.execute: noDeps omitted/false -> argv is identical to today",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "auditArgv('pip', {requirementsPath}) appends -r <requirementsPath>",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/pkg/__tests__/pkg-audit.test.ts",
+                "title": "auditArgv('pip', {requirementsPath}) appends -r <requirementsPath>",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "auditArgv('npm') with no new params is unchanged from today",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/pkg/__tests__/pkg-audit.test.ts",
+                "title": "auditArgv('npm') with no new params is unchanged from today",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/builtins/pkg/__tests__/pkg-audit.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 495,
+            "titles": [
+              {
+                "title": "pkgAuditTool.execute: noDeps:true -> argv includes --no-deps",
+                "result": "pass"
+              },
+              {
+                "title": "pkgAuditTool.execute: noDeps omitted/false -> argv is identical to today",
+                "result": "pass"
+              },
+              {
+                "title": "auditArgv('pip', {requirementsPath}) appends -r <requirementsPath>",
+                "result": "pass"
+              },
+              {
+                "title": "auditArgv('npm') with no new params is unchanged from today",
+                "result": "pass"
+              },
+              {
+                "title": "auditArgv: pipenv/poetry stay on their own native audit command when requirementsPath is omitted",
+                "result": "pass"
+              },
+              {
+                "title": "auditArgv: pipenv/poetry switch to pip-audit -r <requirementsPath> when a requirementsPath is given",
+                "result": "pass"
+              },
+              {
+                "title": "pkgAuditTool's inputSchema declares requirementsPath and noDeps as optional (not in `required`)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "eb4aeb4b2",
+        "ranAt": "2026-11-23T13:36:03.435Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "enumerateManagers finds a manager for each of the 8 supported manifest/lockfile shapes",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/security-review/__tests__/dependency-advisories.test.ts",
+                "title": "enumerateManagers finds a manager for each of the 8 supported manifest/lockfile shapes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "enumerateManagers: two manifests for the same manager family -> unresolved ambiguity",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/security-review/__tests__/dependency-advisories.test.ts",
+                "title": "enumerateManagers: two manifests for the same manager family -> unresolved ambiguity",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "enumerateManagers: a directory with no recognizable manifest yields no manager",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/security-review/__tests__/dependency-advisories.test.ts",
+                "title": "enumerateManagers: a directory with no recognizable manifest yields no manager",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/security-review/__tests__/dependency-advisories.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 376,
+            "titles": [
+              {
+                "title": "enumerateManagers finds a manager for each of the 8 supported manifest/lockfile shapes",
+                "result": "pass"
+              },
+              {
+                "title": "enumerateManagers: two manifests for the same manager family -> unresolved ambiguity",
+                "result": "pass"
+              },
+              {
+                "title": "enumerateManagers: a directory with no recognizable manifest yields no manager",
+                "result": "pass"
+              },
+              {
+                "title": "enumerateManagers: a SUBDIRECTORY named like a manifest file (e.g. package.json/) is never mistaken for the file",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "3eb949660",
+        "ranAt": "2026-11-23T20:03:02.086Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "computeContentIdentity: an application-source file in targets.entries is edited, manifests/lockfiles unchanged -> digest changes",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/security-review/__tests__/content-identity.test.ts",
+                "title": "computeContentIdentity: an application-source file in targets.entries is edited, manifests/lockfiles unchanged -> digest changes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "computeContentIdentity: a file NOT in targets.entries is edited -> no change",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/security-review/__tests__/content-identity.test.ts",
+                "title": "computeContentIdentity: a file NOT in targets.entries is edited -> no change",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "computeContentIdentity: identical targets.entries bytes -> identical string on repeated calls",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/security-review/__tests__/content-identity.test.ts",
+                "title": "computeContentIdentity: identical targets.entries bytes -> identical string on repeated calls",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "computeContentIdentity: a targets.entries path outside repoPath throws",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/security-review/__tests__/content-identity.test.ts",
+                "title": "computeContentIdentity: a targets.entries path outside repoPath throws",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/security-review/__tests__/content-identity.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 856,
+            "titles": [
+              {
+                "title": "computeContentIdentity: succeeds under a BOUND saved connection-execution context, not just unbound (regression: the dispatcher call must carry the exact trusted execution through, not omit it)",
+                "result": "pass"
+              },
+              {
+                "title": "computeContentIdentity: an application-source file in targets.entries is edited, manifests/lockfiles unchanged -> digest changes",
+                "result": "pass"
+              },
+              {
+                "title": "computeContentIdentity: a file NOT in targets.entries is edited -> no change",
+                "result": "pass"
+              },
+              {
+                "title": "computeContentIdentity: identical targets.entries bytes -> identical string on repeated calls",
+                "result": "pass"
+              },
+              {
+                "title": "computeContentIdentity: a targets.entries path outside repoPath throws",
+                "result": "pass"
+              },
+              {
+                "title": "computeContentIdentity: repoPath that is not a registered repo throws",
+                "result": "pass"
+              },
+              {
+                "title": "computeContentIdentity: repoPath that is not a git repository at all throws",
+                "result": "pass"
+              },
+              {
+                "title": "computeContentIdentity: a git repository with no commits yet (HEAD unresolvable) throws",
+                "result": "pass"
+              },
+              {
+                "title": "computeContentIdentity: two DIFFERENT (path, content) pairs never hash to the same identity merely because their concatenation would coincide (e.g. path 'a' content 'bc' vs path 'ab' content 'c')",
+                "result": "pass"
+              },
+              {
+                "title": "computeContentIdentity: a targets.entries path that is a SYMLINK pointing outside repoPath throws",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "17015eab0",
+        "ranAt": "2026-11-23T14:09:04.477Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "verifyManagerClosureCoverage: re-resolves the closure fresh on each call -- two calls in a row after a file is added return different results",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/security-review/__tests__/closure-coverage.test.ts",
+                "title": "verifyManagerClosureCoverage: re-resolves the closure fresh on each call -- two calls in a row after a file is added return different results",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "verifyManagerClosureCoverage: a closure fully contained in targets.entries -> covered:true",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/security-review/__tests__/closure-coverage.test.ts",
+                "title": "verifyManagerClosureCoverage: a closure fully contained in targets.entries -> covered:true",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "verifyManagerClosureCoverage: a closure referencing a file outside targets.entries -> covered:false with missing listed",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/security-review/__tests__/closure-coverage.test.ts",
+                "title": "verifyManagerClosureCoverage: a closure referencing a file outside targets.entries -> covered:false with missing listed",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/security-review/__tests__/closure-coverage.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 405,
+            "titles": [
+              {
+                "title": "verifyManagerClosureCoverage: a closure fully contained in targets.entries -> covered:true",
+                "result": "pass"
+              },
+              {
+                "title": "verifyManagerClosureCoverage: a closure referencing a file outside targets.entries -> covered:false with missing listed",
+                "result": "pass"
+              },
+              {
+                "title": "verifyManagerClosureCoverage: re-resolves the closure fresh on each call -- two calls in a row after a file is added return different results",
+                "result": "pass"
+              },
+              {
+                "title": "verifyManagerClosureCoverage: never mutates targets.entries",
+                "result": "pass"
+              },
+              {
+                "title": "verifyManagerClosureCoverage: a '-r' line with a trailing inline comment still resolves to the real referenced file, not the comment text",
+                "result": "pass"
+              },
+              {
+                "title": "verifyManagerClosureCoverage: a '-r' directive split across a trailing-backslash line continuation still resolves to the real referenced file, not a literal backslash path",
+                "result": "pass"
+              },
+              {
+                "title": "verifyManagerClosureCoverage: a '-r' line continuation still resolves correctly when the file uses CRLF line endings",
+                "result": "pass"
+              },
+              {
+                "title": "verifyManagerClosureCoverage: a compact '-rfile' (glued, no space) reference is still resolved, not just the spaced '-r file' form",
+                "result": "pass"
+              },
+              {
+                "title": "verifyManagerClosureCoverage: a -r reference to a file that does not exist on disk is still reported missing, never silently dropped from the closure",
+                "result": "pass"
+              },
+              {
+                "title": "verifyManagerClosureCoverage: a go package directory literally named 'build' or 'dist' is still part of the closure (those are not reserved Go names)",
+                "result": "pass"
+              },
+              {
+                "title": "verifyManagerClosureCoverage: a go module's closure also covers assembly (.s) and cgo (.c/.h) source files, not just .go",
+                "result": "pass"
+              },
+              {
+                "title": "verifyManagerClosureCoverage: a go module's closure also covers //go:embed-referenced files",
+                "result": "pass"
+              },
+              {
+                "title": "verifyManagerClosureCoverage: a '//go:embed <directory>' directive (no wildcard) embeds every file under that directory recursively, not the directory entry itself",
+                "result": "pass"
+              },
+              {
+                "title": "verifyManagerClosureCoverage: a go module's closure covers ANY file extension, not just a fixed cgo/embed allowlist (e.g. an Objective-C .m file)",
+                "result": "pass"
+              },
+              {
+                "title": "verifyManagerClosureCoverage: a go module's closure covers files under 'vendor/' too (go build compiles a vendored dependency when present)",
+                "result": "pass"
+              },
+              {
+                "title": "verifyManagerClosureCoverage: a go module closure covers every .go source file under manifestDir",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "2eb9c6de7",
+        "ranAt": "2026-11-23T14:20:25.227Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a poetry.lock entry with a git/path/url source -> excluded, added to unresolvedDependencies",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/security-review/__tests__/lockfile-export.test.ts",
+                "title": "generateLockfileExport(poetry): a poetry.lock entry with a git/path/url source -> excluded, added to unresolvedDependencies",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a plain pip requirements.txt entry with a version range -> recorded in unresolvedDependencies as version-uncertain",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/security-review/__tests__/lockfile-export.test.ts",
+                "title": "findVersionUncertainPipRequirements: a plain pip requirements.txt entry with a version range -> recorded in unresolvedDependencies as version-uncertain",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a poetry.lock entry with an exact PyPI pin is included in the generated requirementsPath",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/security-review/__tests__/lockfile-export.test.ts",
+                "title": "generateLockfileExport(poetry): a poetry.lock entry with an exact PyPI pin is included in the generated requirementsPath",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/security-review/__tests__/lockfile-export.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 425,
+            "titles": [
+              {
+                "title": "generateLockfileExport(poetry): a poetry.lock entry with a git/path/url source -> excluded, added to unresolvedDependencies",
+                "result": "pass"
+              },
+              {
+                "title": "generateLockfileExport(poetry): a poetry.lock entry with an exact PyPI pin is included in the generated requirementsPath",
+                "result": "pass"
+              },
+              {
+                "title": "findVersionUncertainPipRequirements: a plain pip requirements.txt entry with a version range -> recorded in unresolvedDependencies as version-uncertain",
+                "result": "pass"
+              },
+              {
+                "title": "generateLockfileExport(poetry): a poetry.lock '[package.source]' using single-quoted TOML strings (type = 'git') is still excluded, not just double-quoted",
+                "result": "pass"
+              },
+              {
+                "title": "generateLockfileExport(poetry): a '[package.source]' header with a trailing inline TOML comment is still recognized, not treated as an unknown section",
+                "result": "pass"
+              },
+              {
+                "title": "generateLockfileExport(poetry): a poetry.lock entry with a 'markers' (environment-marker) condition is excluded, not exported as an unconditional pin",
+                "result": "pass"
+              },
+              {
+                "title": "generateLockfileExport(pipenv): a Pipfile.lock entry with both a 'url' and a 'version' is still excluded as a non-standard source",
+                "result": "pass"
+              },
+              {
+                "title": "findVersionUncertainPipRequirements: a pip 'wildcard match' pin (e.g. '==2.*') is a range, not an exact pin -- also recorded as version-uncertain",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "3eb949660",
+        "ranAt": "2026-11-23T20:04:28.166Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "collectDependencyAdvisories: a generated requirementsPath (pipenv/poetry) is ALWAYS invoked with noDeps:true",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/security-review/__tests__/collect-dependency-advisories.test.ts",
+                "title": "collectDependencyAdvisories: a generated requirementsPath (poetry) is ALWAYS invoked with noDeps:true, using the actual generated file",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/security-review/__tests__/collect-dependency-advisories.test.ts",
+                "title": "collectDependencyAdvisories: a generated requirementsPath (pipenv) is ALWAYS invoked with noDeps:true, using the actual generated file",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "collectDependencyAdvisories: plain pip's own requirements.txt is NEVER invoked with noDeps:true",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/security-review/__tests__/collect-dependency-advisories.test.ts",
+                "title": "collectDependencyAdvisories: plain pip's own requirements.txt is NEVER invoked with noDeps:true",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "collectDependencyAdvisories: a manager's closure is covered:true pre-audit and covered:true post-audit -> no effect on contentStable",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/security-review/__tests__/collect-dependency-advisories.test.ts",
+                "title": "collectDependencyAdvisories: a manager's closure is covered:true pre-audit and covered:true post-audit -> no effect on contentStable",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "collectDependencyAdvisories: a manager's closure is covered:true pre-audit but covered:false post-audit (a new file appeared during the audit and was never removed) -> contentStable:false, the manager's own results are still returned",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/security-review/__tests__/collect-dependency-advisories.test.ts",
+                "title": "collectDependencyAdvisories: a manager's closure is covered:true pre-audit but covered:false post-audit (a new file appeared during the audit and was never removed) -> contentStable:false, the manager's own results are still returned",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "collectDependencyAdvisories: a targets.entries file is deleted between the pre- and post-collection computeContentIdentity calls -> contentStable:false, no exception escapes collectDependencyAdvisories",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/security-review/__tests__/collect-dependency-advisories.test.ts",
+                "title": "collectDependencyAdvisories: a targets.entries file is deleted between the pre- and post-collection computeContentIdentity calls -> contentStable:false, no exception escapes collectDependencyAdvisories",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "collectDependencyAdvisories: the FIRST computeContentIdentity call fails its own repoPath-level precondition -> the error DOES propagate (distinct from the second-call case)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/security-review/__tests__/collect-dependency-advisories.test.ts",
+                "title": "collectDependencyAdvisories: the FIRST computeContentIdentity call fails its own repoPath-level precondition -> the error DOES propagate (distinct from the second-call case)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a cleanly-audited coordinate with no advisory match -> appears in queriedCoordinates only",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/security-review/__tests__/collect-dependency-advisories.test.ts",
+                "title": "collectDependencyAdvisories: a cleanly-audited coordinate with no advisory match -> appears in queriedCoordinates only",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/security-review/__tests__/collect-dependency-advisories.test.ts",
+                "title": "collectDependencyAdvisories: the exact same coordinate reported BOTH clean and as a match (duplicate/conflicting entries) is kept only in matches, never also in queriedCoordinates",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/security-review/__tests__/collect-dependency-advisories.test.ts",
+                "title": "collectDependencyAdvisories: duplicate raw entries for the SAME coordinate -- one with no 'vulns' key (unresolved) and one with a confirmed vuln (match) -- reconcile to the match, never also unresolved",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/security-review/__tests__/collect-dependency-advisories.test.ts",
+                "title": "collectDependencyAdvisories: duplicate raw entries for the SAME coordinate -- one with no 'vulns' key (unresolved) and one cleanly audited -- reconcile to clean, never also unresolved",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/security-review/__tests__/collect-dependency-advisories.test.ts",
+                "title": "collectDependencyAdvisories: a confirmed match is NEVER suppressed because an UNRELATED manager's directory recorded an unresolved gap for the same bare package name (different ecosystems can share a name without being the same coordinate)",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/security-review/__tests__/collect-dependency-advisories.test.ts",
+                "title": "collectDependencyAdvisories: a pip-audit dependency entry with a non-empty but entirely malformed 'vulns' array (e.g. [null]) is unresolved, never silently dropped from every bucket",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/security-review/__tests__/collect-dependency-advisories.test.ts",
+                "title": "collectDependencyAdvisories: npm -- two advisories under the SAME package name cover DISJOINT version ranges; each applies only to the installed instance its own range actually covers",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/security-review/__tests__/collect-dependency-advisories.test.ts",
+                "title": "collectDependencyAdvisories: npm -- an advisory whose range (or the instance's own version) is not valid semver is reported as unresolved, never silently matched or silently clean",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/security-review/__tests__/collect-dependency-advisories.test.ts",
+                "title": "collectDependencyAdvisories: a pip-audit response naming a package under a DIFFERENT but PEP-503-equivalent spelling (typing_extensions vs typing-extensions) is NOT rejected as unexpected",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/security-review/__tests__/collect-dependency-advisories.test.ts",
+                "title": "collectDependencyAdvisories: npm v1 lockfile -- a nested dependency (a different version bundled under a parent) is still part of the clean inventory, not just the top-level one",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/security-review/__tests__/collect-dependency-advisories.test.ts",
+                "title": "collectDependencyAdvisories: npm -- an instance whose version is outside every advisory OBJECT's range, but whose 'via' ALSO carries an unexplained transitive STRING entry, is unresolved, never silently clean",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "collectDependencyAdvisories: pkg_audit spawnError for a manager -> recorded in unavailableSources",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/security-review/__tests__/collect-dependency-advisories.test.ts",
+                "title": "collectDependencyAdvisories: pkg_audit spawnError for a manager -> recorded in unavailableSources",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/security-review/__tests__/collect-dependency-advisories.test.ts",
+                "title": "collectDependencyAdvisories: pkg_audit spawnError for a manager still checks post-audit closure coverage, not just pre-audit",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "collectDependencyAdvisories: every attempted manager's perManagerMode entry carries a configuredDestination",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/security-review/__tests__/collect-dependency-advisories.test.ts",
+                "title": "collectDependencyAdvisories: every attempted manager's perManagerMode entry carries a configuredDestination",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/security-review/__tests__/collect-dependency-advisories.test.ts",
+                "title": "collectDependencyAdvisories: npm's configuredDestination is resolved by shelling out to the manager's OWN 'config get registry' -- never a hand-parsed .npmrc",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/security-review/__tests__/collect-dependency-advisories.test.ts",
+                "title": "collectDependencyAdvisories: npm's configuredDestination is reported 'unknown' (never silently the public default) when 'config get registry' itself fails to run",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/security-review/__tests__/collect-dependency-advisories.test.ts",
+                "title": "collectDependencyAdvisories: a genuine manager ambiguity (two lockfiles of the same family in one directory) is recorded as a coverage gap, never silently dropped from the evidence",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/security-review/__tests__/collect-dependency-advisories.test.ts",
+                "title": "collectDependencyAdvisories: a pip-audit response naming a package EXCLUDED from the generated poetry export (not in includedNames) is rejected, never accepted as a clean coordinate",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/security-review/__tests__/collect-dependency-advisories.test.ts",
+                "title": "collectDependencyAdvisories: npm -- a vulnerable package name with TWO different locked instances only reports the affected node path, and the OTHER instance stays in queriedCoordinates as clean",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/security-review/__tests__/collect-dependency-advisories.test.ts",
+                "title": "collectDependencyAdvisories: cargo -- two locked versions of the same crate, only one reported vulnerable by cargo-audit -- the match uses the REPORTED version, the other stays clean",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/security-review/__tests__/collect-dependency-advisories.test.ts",
+                "title": "collectDependencyAdvisories: an npm audit entry whose 'via' names only OTHER vulnerable packages (no advisory objects of its own) is unresolved, never reported as cleanly audited",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "collectDependencyAdvisories against a real poetry project with an excluded private dependency that is also a transitive dependency of an exported package: the excluded package is NOT resolved or reported on",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "Unchanged from the prior round: /tmp/insrc-live-test-logs/t6-collect-dependency-advisories-live.log, both scenarios re-run and passing after every external-review fix (5 rounds, 14 findings total). Scenario A: privatelib unresolvable anywhere -> pip-audit's install fails outright, recorded as an execution gap. Scenario B: privatelib IS resolvable via a local index -> confirmed directly that pip-audit's real output includes it anyway (identically with/without --no-deps), but collectDependencyAdvisories' own mapping keeps it out of matches/queriedCoordinates, surfacing it only in unresolvedDependencies/unavailableSources via the quarantine fix. This remains the one confirmed, real design-assumption gap in the approved LLD (pip-audit's --no-deps does not prevent transitive resolution as the LLD assumed) -- not an implementation defect in t6, and not addressed by any of the five review rounds, which were all independent accounting/config-resolution bugs. Awaiting the user's decision on how to resolve this open item (follow-up Issue + override-approve, or an LLD amendment) before the Story can complete."
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/security-review/__tests__/collect-dependency-advisories.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1512,
+            "titles": [
+              {
+                "title": "collectDependencyAdvisories: succeeds (and threads the exact trusted execution through) under a BOUND saved connection-execution context, not just unbound -- regression: both dispatcher calls (git_rev_parse via computeContentIdentity, pkg_audit) must carry it explicitly, never omit it",
+                "result": "pass"
+              },
+              {
+                "title": "collectDependencyAdvisories: a generated requirementsPath (poetry) is ALWAYS invoked with noDeps:true, using the actual generated file",
+                "result": "pass"
+              },
+              {
+                "title": "collectDependencyAdvisories: a generated requirementsPath (pipenv) is ALWAYS invoked with noDeps:true, using the actual generated file",
+                "result": "pass"
+              },
+              {
+                "title": "collectDependencyAdvisories: plain pip's own requirements.txt is NEVER invoked with noDeps:true",
+                "result": "pass"
+              },
+              {
+                "title": "collectDependencyAdvisories: a manager's closure is covered:true pre-audit and covered:true post-audit -> no effect on contentStable",
+                "result": "pass"
+              },
+              {
+                "title": "collectDependencyAdvisories: a manager's closure is covered:true pre-audit but covered:false post-audit (a new file appeared during the audit and was never removed) -> contentStable:false, the manager's own results are still returned",
+                "result": "pass"
+              },
+              {
+                "title": "collectDependencyAdvisories: a targets.entries file is deleted between the pre- and post-collection computeContentIdentity calls -> contentStable:false, no exception escapes collectDependencyAdvisories",
+                "result": "pass"
+              },
+              {
+                "title": "collectDependencyAdvisories: the FIRST computeContentIdentity call fails its own repoPath-level precondition -> the error DOES propagate (distinct from the second-call case)",
+                "result": "pass"
+              },
+              {
+                "title": "collectDependencyAdvisories: a cleanly-audited coordinate with no advisory match -> appears in queriedCoordinates only",
+                "result": "pass"
+              },
+              {
+                "title": "collectDependencyAdvisories: pkg_audit spawnError for a manager still checks post-audit closure coverage, not just pre-audit",
+                "result": "pass"
+              },
+              {
+                "title": "collectDependencyAdvisories: a version-uncertain pip pin is recorded in unresolvedDependencies as an input-fidelity gap, alongside (not instead of) the actually-audited coordinate in queriedCoordinates",
+                "result": "pass"
+              },
+              {
+                "title": "collectDependencyAdvisories: a confirmed match is NEVER suppressed because an UNRELATED manager's directory recorded an unresolved gap for the same bare package name (different ecosystems can share a name without being the same coordinate)",
+                "result": "pass"
+              },
+              {
+                "title": "collectDependencyAdvisories: a pip-audit dependency entry with no 'vulns' key at all, alongside one with an exact-pin match, both reconcile correctly (regression for unresolvedCoordinates carrying the full coordinate instead of a bare name)",
+                "result": "pass"
+              },
+              {
+                "title": "collectDependencyAdvisories: the exact same coordinate reported BOTH clean and as a match (duplicate/conflicting entries) is kept only in matches, never also in queriedCoordinates",
+                "result": "pass"
+              },
+              {
+                "title": "collectDependencyAdvisories: an npm audit entry whose 'via' names only OTHER vulnerable packages (no advisory objects of its own) is unresolved, never reported as cleanly audited",
+                "result": "pass"
+              },
+              {
+                "title": "collectDependencyAdvisories: duplicate raw entries for the SAME coordinate -- one with no 'vulns' key (unresolved) and one with a confirmed vuln (match) -- reconcile to the match, never also unresolved",
+                "result": "pass"
+              },
+              {
+                "title": "collectDependencyAdvisories: duplicate raw entries for the SAME coordinate -- one with no 'vulns' key (unresolved) and one cleanly audited -- reconcile to clean, never also unresolved",
+                "result": "pass"
+              },
+              {
+                "title": "collectDependencyAdvisories: npm audit only reports VULNERABLE packages -- a package in package-lock.json's own inventory that audit never flagged is still accounted for in queriedCoordinates",
+                "result": "pass"
+              },
+              {
+                "title": "collectDependencyAdvisories: a pip-audit dependency entry with a non-empty but entirely malformed 'vulns' array (e.g. [null]) is unresolved, never silently dropped from every bucket",
+                "result": "pass"
+              },
+              {
+                "title": "collectDependencyAdvisories: a pip-audit dependency entry with no 'vulns' key at all is unresolved, never reported as cleanly audited",
+                "result": "pass"
+              },
+              {
+                "title": "collectDependencyAdvisories: pkg_audit spawnError for a manager -> recorded in unavailableSources",
+                "result": "pass"
+              },
+              {
+                "title": "collectDependencyAdvisories: every attempted manager's perManagerMode entry carries a configuredDestination",
+                "result": "pass"
+              },
+              {
+                "title": "collectDependencyAdvisories: npm -- a vulnerable package name with TWO different locked instances only reports the affected node path, and the OTHER instance stays in queriedCoordinates as clean",
+                "result": "pass"
+              },
+              {
+                "title": "collectDependencyAdvisories: cargo -- two locked versions of the same crate, only one reported vulnerable by cargo-audit -- the match uses the REPORTED version, the other stays clean",
+                "result": "pass"
+              },
+              {
+                "title": "collectDependencyAdvisories: a pip-audit response naming a package EXCLUDED from the generated poetry export (not in includedNames) is rejected, never accepted as a clean coordinate",
+                "result": "pass"
+              },
+              {
+                "title": "collectDependencyAdvisories: npm's configuredDestination is resolved by shelling out to the manager's OWN 'config get registry' -- never a hand-parsed .npmrc",
+                "result": "pass"
+              },
+              {
+                "title": "collectDependencyAdvisories: npm's configuredDestination is reported 'unknown' (never silently the public default) when 'config get registry' itself fails to run",
+                "result": "pass"
+              },
+              {
+                "title": "collectDependencyAdvisories: a genuine manager ambiguity (two lockfiles of the same family in one directory) is recorded as a coverage gap, never silently dropped from the evidence",
+                "result": "pass"
+              },
+              {
+                "title": "collectDependencyAdvisories: npm -- two advisories under the SAME package name cover DISJOINT version ranges; each applies only to the installed instance its own range actually covers",
+                "result": "pass"
+              },
+              {
+                "title": "collectDependencyAdvisories: npm -- an advisory whose range (or the instance's own version) is not valid semver is reported as unresolved, never silently matched or silently clean",
+                "result": "pass"
+              },
+              {
+                "title": "collectDependencyAdvisories: npm -- a vulnerabilities entry with an entirely EMPTY 'via' array is unresolved, never silently dropped from every bucket (regression: it must not vanish from matches, queriedCoordinates AND unresolvedDependencies all at once)",
+                "result": "pass"
+              },
+              {
+                "title": "collectDependencyAdvisories: a pip-audit response naming a package under a DIFFERENT but PEP-503-equivalent spelling (typing_extensions vs typing-extensions) is NOT rejected as unexpected",
+                "result": "pass"
+              },
+              {
+                "title": "collectDependencyAdvisories: npm v1 lockfile -- a nested dependency (a different version bundled under a parent) is still part of the clean inventory, not just the top-level one",
+                "result": "pass"
+              },
+              {
+                "title": "collectDependencyAdvisories: npm -- an instance whose version is outside every advisory OBJECT's range, but whose 'via' ALSO carries an unexplained transitive STRING entry, is unresolved, never silently clean",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "3eb949660",
+        "ranAt": "2026-11-23T20:06:15.659Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "createDependencySbomEvidenceProvider: category is 'dependency-sbom' and run() delegates to collectDependencyAdvisories with the captured repoPath",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/security-review/__tests__/dependency-sbom-evidence-provider.test.ts",
+                "title": "createDependencySbomEvidenceProvider: category is 'dependency-sbom' and run() delegates to collectDependencyAdvisories with the captured repoPath",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/security-review/__tests__/dependency-sbom-evidence-provider.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 706,
+            "titles": [
+              {
+                "title": "createDependencySbomEvidenceProvider: run() rejects rather than emitting evidence when the collection is contentStable:false",
+                "result": "pass"
+              },
+              {
+                "title": "createDependencySbomEvidenceProvider: category is 'dependency-sbom' and run() delegates to collectDependencyAdvisories with the captured repoPath",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

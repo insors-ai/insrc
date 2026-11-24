@@ -216,7 +216,15 @@ function maskMultilineStringNewlines(text: string): string {
 					// `\"""` is an escaped quote plus two quotes, NOT a closing
 					// fence — a false close would unmask the rest of the string
 					// and expose its lines to the analysis as structure.
-					if (basic && chars[j] === '\\') { j += 2; continue; }
+					if (basic && chars[j] === '\\') {
+						// A trailing backslash continues the string across the line
+						// ending — the next line is string content, so the skipped
+						// newline must be masked too (it must not re-anchor a line).
+						if (chars[j + 1] === '\n') { chars[j + 1] = ' '; j += 2; continue; }
+						if (chars[j + 1] === '\r' && chars[j + 2] === '\n') { chars[j + 1] = ' '; chars[j + 2] = ' '; j += 3; continue; }
+						j += 2;
+						continue;
+					}
 					if (text.startsWith(fence, j)) { j += 3; break; }
 					if (chars[j] === '\n') chars[j] = ' ';
 					j++;

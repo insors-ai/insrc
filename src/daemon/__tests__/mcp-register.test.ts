@@ -721,6 +721,22 @@ test('removeVibeProjectServer does not close a multiline basic string at an esca
 	assert.equal(removed.length, 0);
 });
 
+test('removeVibeProjectServer ignores a line-continuation backslash inside a multiline basic string', async () => {
+	const { removeVibeProjectServer, vibeConfigHasServer } = await import('../mcp-register.js');
+	// A trailing backslash continues the string across the line ending — the
+	// `name = "insrc"` line that follows is string CONTENT, not a key line.
+	const input = '[[mcp_servers]]\nname = "docs"\ncommand = "node"\nargs = ["""x\\\nname = "insrc"\n"""]\n';
+	const files = new Map([['/r', input]]);
+	let wrote = 0;
+	const removed: string[] = [];
+	const deps = { vibeProjectConfigText: (p: string) => files.get(p), writeVibeProjectConfig: (_p: string, t: string) => { wrote++; files.set('/r', t); }, removeVibeProjectConfig: (p: string) => { removed.push(p); } };
+	assert.ok(vibeConfigHasServer(input, 'insrc'), 'the pre-check heuristic does see the fake name line');
+	assert.equal(removeVibeProjectServer('/r', deps), 'absent', 'the continuation line is string content — nothing removed');
+	assert.equal(wrote, 0);
+	assert.equal(removed.length, 0);
+	assert.equal(files.get('/r'), input, 'the config is untouched');
+});
+
 test('removeVibeProjectServer leaves a config it cannot normalize untouched and reports the failure', async () => {
 	const { removeVibeProjectServer } = await import('../mcp-register.js');
 	let wrote = false;

@@ -281,12 +281,23 @@ test('first publication sequence — approve ISSUE with tracking disabled, enabl
 				assert.equal(createsAfterFail, 2, 'one create for fx2');
 				assert.equal(readTrackerMeta(fx2.issue)?.issueRef, undefined, 'nothing persisted after the failed write-back');
 
-				// run B (retry) — the write-back recovery, entirely through the production
-				// createBugfixTrackerIssue: with nothing persisted, its recorded-ref gate
-				// reads absent, so it does NOT create again — instead the push finalize
-				// (the step that owns the issueRef write-back in the tracker.push flow)
-				// adopts the remote ref the run-A create reported. Model the remote side
-				// with the shared list; the finalize is the real production writer.
+				// run B (retry): the push context is assembled FIRST (production order —
+				// s1 context.assemble runs before execute/finalize). With the failed
+				// write-back there is nothing local to adopt yet:
+				const cfgPath0 = join(fx2.repo, 'repo-config.json');
+				writeFileSync(cfgPath0, JSON.stringify({ repos: { [fx2.repo]: { type: 'github', owner: 'acme', repo: 'demo' } } }));
+				const priorCfg0 = process.env['INSRC_REPO_CONFIG'];
+				process.env['INSRC_REPO_CONFIG'] = cfgPath0;
+				let cBefore;
+				try {
+					const { assemblePushContext } = await import('../runners/tracker/context.js');
+					cBefore = await assemblePushContext({ intent: { repoPath: fx2.repo, workflow: 'tracker.push', params: { epicHash: HASH } } } as never);
+				} finally { process.env['INSRC_REPO_CONFIG'] = priorCfg0; }
+				assert.equal(cBefore.headKind, 'issue');
+				assert.equal(cBefore.existingRefs?.epicRef, undefined, 'failed write-back left nothing to adopt');
+
+				// the retry's execute step finds the remote issue (run A's create) and the
+				// finalize writes it back — the production write-back is _finalizeTracker:
 				const intent2 = { workflow: 'tracker.push', focus: 'push', repoPath: fx2.repo, repoIndexedAt: null, params: { epicHash: HASH } } as never;
 				const s1b = { gh: { owner: 'acme', repo: 'demo' }, epicHash: HASH, epicSlug: SLUG, headKind: 'issue' };
 				const fRetry = _finalizeTracker(intent2, { s1: s1b }, 'run-f2', 5, {

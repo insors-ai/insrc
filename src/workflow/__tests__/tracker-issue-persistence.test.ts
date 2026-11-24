@@ -29,6 +29,9 @@ import { renderIssueMarkdown } from '../artifacts/issue.js';
 import { ARTIFACTS_DIR, artifactJsonPath, defineArtifactId, issueArtifactId, lldArtifactId, IMPLIED_ISSUE_STORY_ID } from '../storage.js';
 import { readBinding } from '../tracker/binding.js';
 import { patchTrackerMeta, readTrackerMeta } from '../tracker/refs.js';
+import { findExistingUnitIssue } from '../tracker/unit-issue.js';
+import { ArtifactIds as _AI } from '../artifact-ids.js';
+import { titleMatchesToken, type IssueRef, type PortResult, type TrackerPort as _TP } from '../tracker/port.js';
 import { ArtifactIds } from '../artifact-ids.js';
 import { approvedMeta } from './lifecycle-fixtures.js';
 import { installExecStandIn } from './helpers/exec-stand-in.js';
@@ -265,26 +268,41 @@ test('first publication sequence — approve ISSUE with tracking disabled, enabl
 				assert.equal(createsAfterFail, 2, 'one create for fx2');
 				assert.equal(readTrackerMeta(fx2.issue)?.issueRef, undefined, 'nothing persisted after the failed write-back');
 
+				// run B (retry) discovers the REMOTE issue itself, via the production
+				// title-token lookup (findExistingUnitIssue) against a stub port that
+				// holds the one issue run A created — no local ref is consulted:
+				const token = _AI.make({ kind: 'ISSUE', epicHash: HASH });
+				const remotePort = {
+					kind: 'github', capabilities: new Set(['issue-create']),
+					findIssues: (labels: string[]): PortResult<IssueRef[]> => ({ ok: true, value: labels.includes('insrc:epic') && labels.includes('epic:' + SLUG) ? [] : [] }),
+					findIssue: (): PortResult<IssueRef | null> => ({ ok: true, value: null }),
+					findIssuesByTitleToken: (t: string): PortResult<IssueRef[]> => ({ ok: true, value: titleMatchesToken(`${token} — ISSUE title`, t) ? ['acme/demo#42'] : [] }),
+				} as unknown as _TP;
+				const discovered = await findExistingUnitIssue(remotePort, `epic:${SLUG}`, 'insrc:epic', token);
+				assert.equal(discovered.ok, true, JSON.stringify(discovered));
+				if (discovered.ok) assert.equal(discovered.issue, 'acme/demo#42', 'retry discovers the remote issue by title token');
+				assert.equal(creates, createsAfterFail, 'discovery creates nothing');
+
 				const cfgPath = join(fx2.repo, 'repo-config.json');
 				writeFileSync(cfgPath, JSON.stringify({ repos: { [fx2.repo]: { type: 'github', owner: 'acme', repo: 'demo' } } }));
 				const priorCfg = process.env['INSRC_REPO_CONFIG'];
 				process.env['INSRC_REPO_CONFIG'] = cfgPath;
 				try {
 					const { assemblePushContext } = await import('../runners/tracker/context.js');
-					// run B context assembly, before any repair: nothing to adopt yet
+					// before any local repair: nothing to adopt
 					const cBefore = await assemblePushContext({ intent: { repoPath: fx2.repo, workflow: 'tracker.push', params: { epicHash: HASH } } } as never);
 					assert.equal(cBefore.headKind, 'issue');
-					assert.equal(cBefore.existingRefs?.epicRef, undefined, 'failed write-back left nothing to adopt');
-					// run B: the push finalize runs (production path) and persists the
-					// ref + binds heads — this IS the write-back retry
+					assert.equal(cBefore.existingRefs?.epicRef, undefined, 'failed write-back left nothing local to adopt');
+					// run B: the push finalize adopts the DISCOVERED ref (production path)
+					// and persists issueRef + binds heads — the write-back retry
 					const intent2 = { workflow: 'tracker.push', focus: 'push', repoPath: fx2.repo, repoIndexedAt: null, params: { epicHash: HASH } } as never;
 					const fRetry = _finalizeTracker(intent2, { s1 }, 'run-f2', 5, {
-						refs: { epicRef: 'acme/demo#42', storyRefs: { [IMPLIED_ISSUE_STORY_ID]: 'acme/demo#42' }, labelsCreated: ['insrc:epic'] },
+						refs: { epicRef: discovered.ok ? discovered.issue! : 'acme/demo#42', storyRefs: { [IMPLIED_ISSUE_STORY_ID]: 'acme/demo#42' }, labelsCreated: ['insrc:epic'] },
 						checklist: { items: [{ itemId: 'singleIssue', verdict: 'passed' }], failedCount: 0 },
 					}, 'm');
 					assert.equal(fRetry.ok, true, JSON.stringify(fRetry));
-					assert.equal(readTrackerMeta(fx2.issue)?.issueRef, 'acme/demo#42', 'push finalize retry persisted the issueRef');
-					// run C context: now the production adoption read fires
+					assert.equal(readTrackerMeta(fx2.issue)?.issueRef, 'acme/demo#42', 'push finalize retry persisted the discovered issueRef');
+					// run C context: the production adoption read now fires
 					const cAfter = await assemblePushContext({ intent: { repoPath: fx2.repo, workflow: 'tracker.push', params: { epicHash: HASH } } } as never);
 					assert.equal(cAfter.existingRefs?.epicRef, 'acme/demo#42', 'retry push context adopts the persisted ref via existingRefs');
 					assert.equal(cAfter.existingRefs?.storyRefs?.[IMPLIED_ISSUE_STORY_ID], 'acme/demo#42');

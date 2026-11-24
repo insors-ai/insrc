@@ -168,7 +168,8 @@ export class CodexMcpServerNotRegisteredError extends Error {
 /** The insrc MCP server is registered but globally disabled
  *  (`enabled: false` in `codex mcp list --json`); setting its `enabled_tools`
  *  override does not re-enable it, so a session built from it would silently
- *  run with no insrc analyze tools reachable at all. Refused up front instead. */
+ *  run with no insrc analyze tools reachable at all (see ISSUE-c85fa770c2cedefb
+ *  for the live evidence). Refused up front instead. */
 export class CodexMcpServerDisabledError extends Error {
 	constructor(readonly serverName: string) {
 		super(`codex: the '${serverName}' MCP server is registered but disabled globally; enable it (\`codex mcp enable ${serverName}\`) before a read-only session can use it`);
@@ -241,7 +242,8 @@ export async function discoverCodexMcpServers(binPath: string, cwd: string, time
  *  on every `.` with no quoting support at all (confirmed live: a server
  *  literally named `review.server` turns `-c mcp_servers.review.server.enabled=false`
  *  into the nested path `mcp_servers.review.server.enabled`, silently
- *  targeting the wrong, nonexistent entry `mcp_servers.review` instead) --
+ *  targeting the wrong, nonexistent entry `mcp_servers.review` instead -- see
+ *  ISSUE-c85fa770c2cedefb for the live evidence) --
  *  so every server name here is instead written as a quoted key inside ONE
  *  combined `mcp_servers={...}` inline-table assignment, never as a dotted
  *  `-c` path. A control character in a name is rejected rather than
@@ -302,7 +304,9 @@ export function codexReadOnlySessionArgs(schemaPath: string, cwd: string, modelA
  *
  * `signal`, when given, aborts an in-flight read of one layer immediately
  * (the caller is responsible for the overall deadline -- this walk's own
- * elapsed time counts against it, same as discovery and exec already do).
+ * elapsed time counts against it, same as discovery and exec already do;
+ * see ISSUE-c85fa770c2cedefb for the live reproduction of the gap before
+ * the caller started its clock ahead of this call).
  */
 export async function walkProjectMcpConfigLayers(cwd: string, signal?: AbortSignal): Promise<boolean> {
 	const globalConfigPath = join(process.env['CODEX_HOME'] ?? join(homedir(), '.codex'), 'config.toml');

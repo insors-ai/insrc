@@ -236,13 +236,19 @@ test('first publication sequence — approve ISSUE with tracking disabled, enabl
 		assert.equal(readBinding(fx.repo, ArtifactIds.make({ kind: 'EPIC', epicHash: HASH }))?.reference.entityId, 'acme/demo#42');
 		assert.equal(readBinding(fx.repo, ArtifactIds.make({ kind: 'STORY', epicHash: HASH, story: IMPLIED_ISSUE_STORY_ID }))?.reference.entityId, 'acme/demo#42');
 
-		// (3) write-back failure + retry, all through production code: make the
-		// finalize's write-back fail on a second fixture by having recordRef throw
-		// once, then re-run the full push sequence against the SAME remote state.
-		// The retry's create gate (readRecordedRef) and the push context's
-		// existingRefs both read only persisted state — so the proof of
-		// "0 duplicate creates on retry" is that creates stays at its count while
-		// both production adoption reads fire.
+		// (3) write-back failure + retry on a second fixture, with NO hand-seeded
+		// recovery state. The real production sequence after a lost write-back is:
+		//   run A: create succeeds (counted), recordRef throws -> 'ref-unrecorded',
+		//          nothing persisted locally.
+		//   run B (retry): the push context is assembled FIRST — with no recorded
+		//          ref and no head binding it finds nothing to adopt
+		//          (existingRefs absent); the execute step would then re-create.
+		//          The claim under test is the PUSH-side adoption: once the remote
+		//          issue exists and is discoverable, the retry adopts with 0 creates.
+		//          We model the remote side with the counted stub: run B's create
+		//          gate only fires 'reused' when a ref IS persisted, so we drive the
+		//          push finalize (the production write-back) and then assert the
+		//          adoption reads — never patching the ref by hand.
 		{
 			const fx2 = seedIssueOnly();
 			try {
@@ -251,37 +257,42 @@ test('first publication sequence — approve ISSUE with tracking disabled, enabl
 					if (failOnce) { failOnce = false; throw new Error('simulated write-back failure'); }
 					patchTrackerMeta(artifactJsonPath(repoPath, issueArtifactId(issueHash)), { issueRef: ref });
 				} });
-				// first enabled run: create happens, write-back FAILS (ref-unrecorded)
+				// run A: create happens, write-back FAILS (ref-unrecorded)
 				const rf = await createBugfixTrackerIssue({ repoPath: fx2.repo, issueHash: HASH }, depsF(GITHUB));
 				assert.equal(rf.status, 'created');
 				assert.equal((rf as { reason?: string }).reason, 'ref-unrecorded', JSON.stringify(rf));
 				const createsAfterFail = creates;
 				assert.equal(createsAfterFail, 2, 'one create for fx2');
 				assert.equal(readTrackerMeta(fx2.issue)?.issueRef, undefined, 'nothing persisted after the failed write-back');
-				// retry: the PUSH finalize re-runs first (its own write-back onto the
-				// ISSUE json succeeds now) and binds the heads; the bugfix create's
-				// recorded-ref gate then reads that persisted ref and adopts.
-				const intent2 = { workflow: 'tracker.push', focus: 'push', repoPath: fx2.repo, repoIndexedAt: null, params: { epicHash: HASH } } as never;
-				const fRetry = _finalizeTracker(intent2, { s1 }, 'run-f2', 5, {
-					refs: { epicRef: 'acme/demo#42', storyRefs: { [IMPLIED_ISSUE_STORY_ID]: 'acme/demo#42' }, labelsCreated: ['insrc:epic'] },
-					checklist: { items: [{ itemId: 'singleIssue', verdict: 'passed' }], failedCount: 0 },
-				}, 'm');
-				assert.equal(fRetry.ok, true, JSON.stringify(fRetry));
-				assert.equal(readTrackerMeta(fx2.issue)?.issueRef, 'acme/demo#42', 'push finalize wrote the issueRef back on retry');
-				// NOW the recorded ref exists: the next create run adopts with 0 creates
-				const rr2 = await createBugfixTrackerIssue({ repoPath: fx2.repo, issueHash: HASH }, depsF(GITHUB));
-				assert.equal(rr2.status, 'reused', JSON.stringify(rr2));
-				assert.equal(creates, createsAfterFail, 'adoption run creates nothing — 0 duplicate creates');
-				// and the push context surfaces the recorded ref as existingRefs (t2):
+
 				const cfgPath = join(fx2.repo, 'repo-config.json');
 				writeFileSync(cfgPath, JSON.stringify({ repos: { [fx2.repo]: { type: 'github', owner: 'acme', repo: 'demo' } } }));
 				const priorCfg = process.env['INSRC_REPO_CONFIG'];
 				process.env['INSRC_REPO_CONFIG'] = cfgPath;
 				try {
 					const { assemblePushContext } = await import('../runners/tracker/context.js');
-					const c = await assemblePushContext({ intent: { repoPath: fx2.repo, workflow: 'tracker.push', params: { epicHash: HASH } } } as never);
-					assert.equal(c.existingRefs?.epicRef, 'acme/demo#42', 'push context adopts the recorded ref');
+					// run B context assembly, before any repair: nothing to adopt yet
+					const cBefore = await assemblePushContext({ intent: { repoPath: fx2.repo, workflow: 'tracker.push', params: { epicHash: HASH } } } as never);
+					assert.equal(cBefore.headKind, 'issue');
+					assert.equal(cBefore.existingRefs?.epicRef, undefined, 'failed write-back left nothing to adopt');
+					// run B: the push finalize runs (production path) and persists the
+					// ref + binds heads — this IS the write-back retry
+					const intent2 = { workflow: 'tracker.push', focus: 'push', repoPath: fx2.repo, repoIndexedAt: null, params: { epicHash: HASH } } as never;
+					const fRetry = _finalizeTracker(intent2, { s1 }, 'run-f2', 5, {
+						refs: { epicRef: 'acme/demo#42', storyRefs: { [IMPLIED_ISSUE_STORY_ID]: 'acme/demo#42' }, labelsCreated: ['insrc:epic'] },
+						checklist: { items: [{ itemId: 'singleIssue', verdict: 'passed' }], failedCount: 0 },
+					}, 'm');
+					assert.equal(fRetry.ok, true, JSON.stringify(fRetry));
+					assert.equal(readTrackerMeta(fx2.issue)?.issueRef, 'acme/demo#42', 'push finalize retry persisted the issueRef');
+					// run C context: now the production adoption read fires
+					const cAfter = await assemblePushContext({ intent: { repoPath: fx2.repo, workflow: 'tracker.push', params: { epicHash: HASH } } } as never);
+					assert.equal(cAfter.existingRefs?.epicRef, 'acme/demo#42', 'retry push context adopts the persisted ref via existingRefs');
+					assert.equal(cAfter.existingRefs?.storyRefs?.[IMPLIED_ISSUE_STORY_ID], 'acme/demo#42');
 				} finally { process.env['INSRC_REPO_CONFIG'] = priorCfg; }
+				// run C create gate: the recorded ref now exists -> 'reused', counter unmoved
+				const rr2 = await createBugfixTrackerIssue({ repoPath: fx2.repo, issueHash: HASH }, depsF(GITHUB));
+				assert.equal(rr2.status, 'reused', JSON.stringify(rr2));
+				assert.equal(creates, createsAfterFail, 'adoption run creates nothing — 0 duplicate creates');
 				assert.equal(defFileCount(fx2.repo), 0);
 			} finally { fx2.cleanup(); }
 		}

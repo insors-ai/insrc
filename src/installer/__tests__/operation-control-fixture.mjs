@@ -8,11 +8,11 @@ if (role === 'forward') {
   catch (error) { process.stdout.write(JSON.stringify({ error: error.code ?? 'failed' }) + '\n'); process.exitCode = 1; }
 } else if (role === 'owner') {
   let complete, proceed;
-  const open = fixture.peers.bundle.open, shutdown = fixture.peers.lifecycle.shutdown;
-  fixture.peers.bundle.open = async (...args) => {
+  const observe = fixture.peers.lifecycle.observe, shutdown = fixture.peers.lifecycle.shutdown;
+  fixture.peers.lifecycle.observe = async (...args) => {
     process.stdout.write(JSON.stringify({ kind: 'preparing' }) + '\n');
     await new Promise(resolve => { proceed = resolve; });
-    return open(...args);
+    return observe(...args);
   };
   fixture.peers.lifecycle.shutdown = async (...args) => {
     const ack = await shutdown(...args);

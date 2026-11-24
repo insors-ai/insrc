@@ -17,7 +17,7 @@ const hash = (value: unknown): value is string => typeof value === 'string' && /
 interface Active {
   store: ControllerStore; snapshot: ControllerSnapshot; request: ManagerRequest; ownerNonce: string;
   candidate?: PreparedCandidate | undefined; admission?: LaunchAdmission | undefined; shutdown?: ShutdownRequest | undefined;
-  previousResult?: OperationRecord | undefined; started: boolean; disrupted: boolean; immediate?: Promise<void> | undefined;
+  previousResult?: OperationRecord | undefined; started: boolean; disrupted: boolean; interruptedPhase?: OperationRecord['phase'] | undefined; immediate?: Promise<void> | undefined;
 }
 export class InstallerManager {
   #active: Active | undefined;
@@ -32,9 +32,14 @@ export class InstallerManager {
     for (const name of ['resolve', 'prepare', 'open', 'verify'] as const) if (typeof port[name] !== 'function') fail('capability-unavailable', `Required delivery capability ${name} is unavailable`);
     return port;
   }
-  #ports(): void {
-    if (!this.peers.dependencies || !this.peers.lifecycle || !this.peers.migrations) fail('capability-unavailable', 'Dependency, lifecycle/readiness and migration capabilities are required');
-    for (const [port, methods] of [[this.peers.dependencies, ['inspect', 'decide']], [this.peers.lifecycle, ['observe', 'shutdown', 'waitShutdownCompletion', 'reconcileShutdown', 'launchMigration', 'readMigrationExitReceipt', 'migrationOwnership', 'activate', 'reconcileActivation']], [this.peers.migrations, ['waitForJournal', 'reconcileJournal', 'allowRetry', 'verifyInstalled']]] as const) {
+  #ports(stopping = false): void {
+    if (!this.peers.lifecycle) fail('capability-unavailable', 'Lifecycle shutdown capability is required');
+    for (const method of ['observe', 'shutdown', 'waitShutdownCompletion', 'reconcileShutdown'] as const) {
+      if (typeof this.peers.lifecycle[method] !== 'function') fail('capability-unavailable', `Required lifecycle capability ${method} is unavailable`);
+    }
+    if (stopping) return;
+    if (!this.peers.dependencies || !this.peers.migrations) fail('capability-unavailable', 'Dependency and migration capabilities are required');
+    for (const [port, methods] of [[this.peers.dependencies, ['inspect', 'decide']], [this.peers.lifecycle, ['launchMigration', 'readMigrationExitReceipt', 'migrationOwnership', 'activate', 'reconcileActivation']], [this.peers.migrations, ['waitForJournal', 'reconcileJournal', 'allowRetry', 'verifyInstalled']]] as const) {
       for (const method of methods) if (typeof (port as unknown as Record<string, unknown>)[method] !== 'function') fail('capability-unavailable', `Required capability ${method} is unavailable`);
     }
   }
@@ -144,12 +149,26 @@ export class InstallerManager {
     if (!active.snapshot.installation.activeReleaseId) return observed.evidence?.kind === 'never-started';
     return observed.evidence?.kind === 'observed-exit' && observed.evidence.identity.installationId === this.location.installationId && observed.evidence.identity.releaseId === active.snapshot.installation.activeReleaseId && observed.evidence.identity.protocolVersion === 1;
   }
-  async #quiesce(active: Active): Promise<void> {
+  async #reconcileShutdown(active: Active): Promise<boolean> {
+    const shutdown = active.store.readOperationData(active.request.operationId, 'shutdown') as ShutdownRequest | undefined;
+    if (shutdown === undefined) return false;
+    if (!shutdown || Object.keys(shutdown).sort().join(',') !== 'completionEndpoint,completionNonce,expectedInstanceId,mode,operationId' || shutdown.operationId !== active.request.operationId || !hash(shutdown.completionNonce) || !['graceful', 'immediate'].includes(shutdown.mode) || typeof shutdown.expectedInstanceId !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(shutdown.expectedInstanceId) || typeof shutdown.completionEndpoint !== 'string' || (this.location.daemonEndpoint.kind === 'unix' ? !shutdown.completionEndpoint.startsWith(join(this.location.home, 's')) || !/^s[A-Za-z0-9_-]{10}$/.test(shutdown.completionEndpoint.slice(this.location.home.length + 1)) : shutdown.completionEndpoint !== this.location.daemonEndpoint.address + '-' + shutdown.completionNonce.slice(0, 16))) fail('recovery-uncertain', 'No exact interrupted instance evidence');
+    active.shutdown = shutdown;
+    this.#completion(shutdown, await this.peers.lifecycle!.reconcileShutdown(this.location, shutdown));
+    active.store.assertHeld(); return true;
+  }
+  async #startObserved(active: Active): Promise<boolean> {
+    const running = await this.peers.lifecycle!.observe(this.location); active.store.assertHeld();
+    if (running.state === 'present' && running.identity.protocolVersion === 1 && running.identity.state === 'ready' && running.identity.installationId === this.location.installationId && running.identity.releaseId === active.candidate!.releaseId && canonicalJson(running.endpoint) === canonicalJson(this.location.daemonEndpoint)) return true;
+    if (!this.#absent(active, running)) { active.disrupted = true; fail('readiness-uncertain', 'Existing daemon ownership is uncertain'); }
+    return false;
+  }
+  async #quiesce(active: Active, mode: ShutdownRequest['mode'] = active.request.shutdownMode ?? 'graceful'): Promise<void> {
     const observed = await this.peers.lifecycle!.observe(this.location); active.store.assertHeld();
     if (this.#absent(active, observed)) return;
     if (observed.state !== 'present' || observed.identity.installationId !== this.location.installationId || observed.identity.releaseId !== active.snapshot.installation.activeReleaseId || observed.identity.protocolVersion !== 1 || observed.identity.state === 'migration-blocked' || canonicalJson(observed.endpoint) !== canonicalJson(this.location.daemonEndpoint)) { active.disrupted = true; fail('shutdown-uncertain', 'Incumbent identity or ownership is uncertain'); }
     const nonce = randomBytes(32).toString('hex');
-    const request: ShutdownRequest = { operationId: active.request.operationId, expectedInstanceId: observed.identity.instanceId, mode: active.request.shutdownMode ?? 'graceful', completionNonce: nonce, completionEndpoint: this.location.daemonEndpoint.kind === 'unix' ? join(this.location.home, 's' + randomBytes(7).toString('base64url').slice(0, 10)) : this.location.daemonEndpoint.address + '-' + nonce.slice(0, 16) };
+    const request: ShutdownRequest = { operationId: active.request.operationId, expectedInstanceId: observed.identity.instanceId, mode, completionNonce: nonce, completionEndpoint: this.location.daemonEndpoint.kind === 'unix' ? join(this.location.home, 's' + randomBytes(7).toString('base64url').slice(0, 10)) : this.location.daemonEndpoint.address + '-' + nonce.slice(0, 16) };
     active.store.writeOperationData(active.request.operationId, 'shutdown', request); active.shutdown = request;
     this.#update(active, 'quiescing'); active.disrupted = true;
     const control = await openOperationControl(this.location, active.store, request.operationId, active.ownerNonce, input => this.requestImmediate(input));
@@ -170,7 +189,7 @@ export class InstallerManager {
   }
   async #mutate(request: ManagerRequest, installDelivery?: Delivery, decision?: DependencyDecision, signal?: AbortSignal): Promise<ManagerEvent> {
     const checkCancellation = () => { if (signal?.aborted) fail('cancelled', 'Installation cancelled at a safe boundary'); };
-    checkCancellation(); this.#ports(); if (this.#active) fail('busy', 'Manager already owns an operation');
+    checkCancellation(); if (this.#active) fail('busy', 'Manager already owns an operation');
     const store = ControllerStore.acquire(this.location);
     let active: Active | undefined;
     try {
@@ -179,7 +198,6 @@ export class InstallerManager {
       if (inspected.kind === 'present' && inspected.snapshot.installation.activeReleaseId && request.action === 'install') fail('already-installed', 'Installation already exists; use upgrade');
       let initial: ControllerSnapshot = inspected.kind === 'present' ? inspected.snapshot : { schemaVersion: 1, revision: 0, installation: { schemaVersion: 1, installationId: this.location.installationId, dataHome: this.location.home, delivery: installDelivery! } };
       if (request.action === 'install' && installDelivery && !initial.installation.activeReleaseId) initial = { ...initial, installation: { ...initial.installation, delivery: installDelivery } };
-      const delivery = this.#delivery(initial.installation.delivery);
       const rawIntent = store.readOperationData(request.operationId, 'intent');
       const intent = rawIntent === undefined ? undefined : parseInstaller('managerRequest', rawIntent);
       if (intent && (intent.operationId !== request.operationId || intent.installationId !== this.location.installationId || !['install', 'upgrade', 'start', 'stop', 'restart'].includes(intent.action) || intent.installOllama !== undefined || (intent.action === 'upgrade' && !hash(intent.acceptedOfferId)))) fail('controller-corrupt', 'Stored operation intent is malformed or belongs to another operation');
@@ -187,7 +205,33 @@ export class InstallerManager {
       if (initial.operation && request.action !== 'retry-migration') fail('phase-conflict', 'Unfinished operation requires explicit same-candidate recovery');
       if (request.action === 'retry-migration' && (!initial.operation || initial.operation.operationId !== request.operationId)) fail('phase-conflict', 'Recovery must name the interrupted operation');
       if (intent && request.action !== 'retry-migration') fail('operation-conflict', 'Operation identity was already used');
-      active = { store, snapshot: initial, request, ownerNonce: randomBytes(32).toString('hex'), previousResult: initial.lastResult, started: false, disrupted: request.action === 'retry-migration' }; this.#active = active;
+      const recovering = request.action === 'retry-migration';
+      if (recovering && !intent) fail('recovery-uncertain', 'Recovery requires the original operation intent');
+      const stopping = (recovering ? intent!.action : request.action) === 'stop';
+      this.#ports(stopping);
+      let interruptedPhase = initial.operation?.phase;
+      if (recovering && interruptedPhase === 'blocked') {
+        const interruption = store.readOperationData(request.operationId, 'interruption') as { phase?: OperationRecord['phase'] } | undefined;
+        interruptedPhase = interruption && Object.keys(interruption).join(',') === 'phase' && ['preparing', 'quiescing', 'migrating', 'activating'].includes(interruption.phase ?? '') ? interruption.phase : undefined;
+      }
+      active = { store, snapshot: initial, request, ownerNonce: randomBytes(32).toString('hex'), previousResult: initial.lastResult, started: false, disrupted: recovering,
+        interruptedPhase }; this.#active = active;
+      if (stopping) {
+        if (recovering) {
+          if (!['preparing', 'quiescing'].includes(active.interruptedPhase ?? '')) fail('recovery-uncertain', 'Interrupted stop phase is uncertain');
+          if (store.readOperationData(request.operationId, 'admission') !== undefined) fail('recovery-uncertain', 'Stop cannot own a launch admission');
+          if (!await this.#reconcileShutdown(active)) {
+            if (active.interruptedPhase !== 'preparing') fail('recovery-uncertain', 'Interrupted shutdown lacks exact completion evidence');
+            await this.#quiesce(active, intent!.shutdownMode);
+          }
+        } else {
+          store.writeOperationData(request.operationId, 'intent', request);
+          this.#update(active, 'preparing', { predecessorId: initial.installation.activeReleaseId });
+          await this.#quiesce(active);
+        }
+        return this.#finish(active, { ...active.snapshot.operation!, phase: 'stopped', errorCode: undefined, message: undefined });
+      }
+      const delivery = this.#delivery(initial.installation.delivery);
       let report = parseInstaller('dependencyReport', await this.peers.dependencies!.inspect(this.location));
       checkCancellation();
       if (decision) { parseInstaller('dependencyDecision', decision); if (!['install', 'upgrade'].includes(request.action) || report.ollamaInstallOffer?.id !== decision.offerId) fail('dependency-offer-stale', 'Dependency consent does not match the terminal offer'); report = parseInstaller('dependencyReport', await this.peers.dependencies!.decide(this.location, decision)); }
@@ -200,7 +244,7 @@ export class InstallerManager {
         active.candidate = await delivery.open(this.location, stored.releaseId); await this.#verify(active, active.candidate);
         if (stored.releaseId !== active.candidate.releaseId || ['descriptorSha256', 'payloadSha256', 'inventorySha256'].some(key => (stored as Record<string, unknown>)[key] !== (active!.candidate as unknown as Record<string, unknown>)[key]) || active.snapshot.operation?.candidateId !== active.candidate.releaseId) fail('candidate-conflict', 'Recovery candidate differs');
         const admissionData = store.readOperationData(request.operationId, 'admission');
-        if (admissionData) {
+        if (admissionData !== undefined) {
           const admission = this.#checkAdmission(admissionData, active);
           if (admission.purpose === 'activation') { const ready = await this.peers.lifecycle!.reconcileActivation(active.candidate, admission); if (!ready) fail('recovery-uncertain', 'Candidate activation is uncertain'); if (!await this.peers.migrations!.verifyInstalled(active.candidate, this.#context(active))) fail('migration-unvalidated', 'Recovered activation lacks migration validation'); this.#ready(active, admission, ready); return this.#finish(active, { ...active.snapshot.operation!, phase: 'ready', errorCode: undefined, message: undefined }, true); }
           const exitedSuccessfully = await this.#migrationExit(active, admission, false);
@@ -210,11 +254,14 @@ export class InstallerManager {
           else if (await this.peers.migrations!.allowRetry(active.candidate, admission) === true) migrate = true;
           else fail('migration-unvalidated', 'Hook policy did not authorize retry');
         } else {
-          const shutdown = store.readOperationData(request.operationId, 'shutdown') as ShutdownRequest | undefined;
-          if (!shutdown || Object.keys(shutdown).sort().join(',') !== 'completionEndpoint,completionNonce,expectedInstanceId,mode,operationId' || shutdown.operationId !== request.operationId || !hash(shutdown.completionNonce) || !['graceful', 'immediate'].includes(shutdown.mode) || typeof shutdown.expectedInstanceId !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(shutdown.expectedInstanceId) || typeof shutdown.completionEndpoint !== 'string' || (this.location.daemonEndpoint.kind === 'unix' ? !shutdown.completionEndpoint.startsWith(join(this.location.home, 's')) || !/^s[A-Za-z0-9_-]{10}$/.test(shutdown.completionEndpoint.slice(this.location.home.length + 1)) : shutdown.completionEndpoint !== this.location.daemonEndpoint.address + '-' + shutdown.completionNonce.slice(0, 16))) fail('recovery-uncertain', 'No exact interrupted instance evidence');
-          this.#completion(shutdown, await this.peers.lifecycle!.reconcileShutdown(this.location, shutdown));
-          migrate = (intent as ManagerRequest | undefined)?.action === 'upgrade';
-          if ((intent as ManagerRequest | undefined)?.action === 'stop') return this.#finish(active, { ...active.snapshot.operation!, phase: 'stopped', errorCode: undefined, message: undefined });
+          if (!['preparing', 'quiescing'].includes(active.interruptedPhase ?? '')) fail('recovery-uncertain', 'Interrupted launch admission is missing');
+          if (!await this.#reconcileShutdown(active)) {
+            if (active.interruptedPhase !== 'preparing') fail('recovery-uncertain', 'Interrupted launch phase lacks exact ownership evidence');
+            if (intent!.action === 'start') {
+              if (await this.#startObserved(active)) return this.#finish(active, { ...active.snapshot.operation!, phase: 'ready', errorCode: undefined, message: undefined });
+            } else await this.#quiesce(active, intent!.shutdownMode);
+          }
+          migrate = intent!.action === 'install' || intent!.action === 'upgrade';
         }
       } else {
         let offer;
@@ -235,12 +282,7 @@ export class InstallerManager {
         store.writeOperationData(request.operationId, 'candidate', { releaseId: active.candidate.releaseId, descriptorSha256: active.candidate.descriptorSha256, payloadSha256: active.candidate.payloadSha256, inventorySha256: active.candidate.inventorySha256 });
         this.#update(active, 'preparing', { candidateId: active.candidate.releaseId });
         if (request.action !== 'start') await this.#quiesce(active);
-        else {
-          const running = await this.peers.lifecycle!.observe(this.location);
-          if (running.state === 'present' && running.identity.protocolVersion === 1 && running.identity.state === 'ready' && running.identity.installationId === this.location.installationId && running.identity.releaseId === active.candidate.releaseId && canonicalJson(running.endpoint) === canonicalJson(this.location.daemonEndpoint)) return this.#finish(active, { ...active.snapshot.operation!, phase: 'ready' });
-          if (!this.#absent(active, running)) { active.disrupted = true; fail('readiness-uncertain', 'Existing daemon ownership is uncertain'); }
-        }
-        if (request.action === 'stop') return this.#finish(active, { ...active.snapshot.operation!, phase: 'stopped' });
+        else if (await this.#startObserved(active)) return this.#finish(active, { ...active.snapshot.operation!, phase: 'ready' });
       }
       checkCancellation();
       if (migrate) {
@@ -260,7 +302,14 @@ export class InstallerManager {
       if (active?.started || (active && request.action === 'retry-migration')) {
         const detail = error instanceof Error ? error.message.replace(/[\x00-\x1f\x7f]/g, ' ').slice(0, 3500) || 'Operation failed' : 'Operation failed', code = error instanceof InstallerError ? error.code : 'operation-failed';
         const failed: OperationRecord = { ...active.snapshot.operation, operationId: request.operationId, phase: active.disrupted ? 'blocked' : 'preparing', errorCode: code, message: detail };
-        if (active.disrupted) { this.#update(active, 'blocked', failed); return this.#event(active, active.snapshot.operation!, 'result'); }
+        if (active.disrupted) {
+          // Preserve the interrupted phase before publishing blocked; later retries
+          // cannot mistake a lost launch admission for pre-launch preparation.
+          const phase = active.snapshot.operation?.phase === 'blocked' ? active.interruptedPhase : active.snapshot.operation?.phase;
+          this.#assertCurrent(active);
+          if (phase) active.store.writeOperationData(request.operationId, 'interruption', { phase }, true);
+          this.#update(active, 'blocked', failed); return this.#event(active, active.snapshot.operation!, 'result');
+        }
         return this.#finish(active, failed, false, true);
       }
       throw error;

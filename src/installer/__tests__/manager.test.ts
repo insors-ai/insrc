@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { writeFileSync, readFileSync } from 'node:fs';
+import { writeFileSync, readFileSync, unlinkSync } from 'node:fs';
 import { once } from 'node:events';
 import { fileURLToPath } from 'node:url';
 import { spawnFixture, stopOwnedChildren, childLine } from '../../daemon/tools/__tests__/_proc.js';
@@ -159,5 +159,84 @@ test('late foreign revision cannot be overwritten by readiness or error persiste
     await assert.rejects(upgrade(f), { code: 'revision-conflict' });
     const current = inspectController(f.location); assert.equal(current.kind, 'present');
     if (current.kind === 'present') { assert.equal(current.snapshot.revision, foreignRevision); assert.equal(current.snapshot.installation.activeReleaseId, 'old'); assert.equal(current.snapshot.operation?.phase, 'activating'); }
+  } finally { f.cleanup(); }
+});
+
+
+test('stop and interrupted stop recovery need only exact lifecycle evidence', async () => {
+  const f = managerFixture();
+  try {
+    // Both dependency failure and damaged selected files must be irrelevant.
+    writeFileSync(join(f.old.directory, 'marker'), 'damaged');
+    f.peers.dependencies!.inspect = async () => ({ runtimeReady: false, ollama: 'unavailable', agents: { claude: false, codex: false, vibe: false }, recommendations: [], blockers: ['Ollama is unavailable'] });
+    const stopOnly = () => new InstallerManager(f.location, f.target, { lifecycle: f.peers.lifecycle });
+    const completion = f.peers.lifecycle!.waitShutdownCompletion;
+    f.peers.lifecycle!.waitShutdownCompletion = async (location, shutdown) => ({ ...await completion(location, shutdown), completionNonce: '0'.repeat(64) });
+    const interrupted = await stopOnly().execute(request('stop'));
+    assert.equal(interrupted.state.phase, 'blocked'); assert.equal(interrupted.state.errorCode, 'shutdown-uncertain');
+    assert.equal(f.state.shutdowns.length, 1); assert.equal(f.state.migrations.length, 0); assert.equal(f.state.activations.length, 0);
+    const shutdown = f.state.shutdowns[0]!;
+    f.peers.lifecycle!.reconcileShutdown = async () => undefined;
+    assert.equal((await stopOnly().execute(request('retry-migration'))).state.phase, 'blocked');
+    f.peers.lifecycle!.reconcileShutdown = (location, expected) => { assert.deepEqual(expected, shutdown); return completion(location, expected); };
+    const stopped = await stopOnly().execute(request('retry-migration'));
+    assert.equal(stopped.state.phase, 'stopped'); assert.equal(stopped.state.errorCode, undefined);
+    assert.equal(f.state.shutdowns.length, 1, 'recovery consumes the original exact completion instead of sending another shutdown');
+    const current = inspectController(f.location); assert.equal(current.kind, 'present');
+    if (current.kind === 'present') { assert.equal(current.snapshot.installation.activeReleaseId, 'old'); assert.equal(current.snapshot.operation, undefined); }
+    f.peers.lifecycle!.reconcileShutdown = completion;
+    assert.equal((await stopOnly().execute(request('stop', 'another-stop'))).state.phase, 'blocked', 'a forged completion is still rejected for an ordinary stop');
+    f.peers.lifecycle!.waitShutdownCompletion = completion;
+    assert.equal((await stopOnly().execute(request('retry-migration', 'another-stop'))).state.phase, 'stopped');
+    assert.equal((await stopOnly().execute(request('stop', 'new-stop'))).state.phase, 'stopped');
+  } finally { f.cleanup(); }
+});
+
+test('pre-admission manager self exit recovers install and upgrade without duplicate hooks', { timeout: 90_000 }, async () => {
+  for (const fresh of [true, false]) {
+    const f = managerFixture(), children: ChildProcess[] = [];
+    try {
+      if (fresh) {
+        const store = ControllerStore.acquire(f.location), inspected = store.inspect();
+        try {
+          if (inspected.kind !== 'present') throw Error('Missing fixture');
+          store.commit({ ...inspected.snapshot, revision: inspected.snapshot.revision + 1, installation: { ...inspected.snapshot.installation, activeReleaseId: undefined }, lastResult: undefined }, inspected.snapshot.revision);
+        } finally { store.close(); }
+      }
+      const program = fileURLToPath(new URL('./manager-death-fixture.mjs', import.meta.url));
+      const owner = spawnFixture(process.execPath, ['--import', 'tsx/esm', program, 'preparing', f.home], { stdio: ['pipe', 'pipe', 'pipe'] }); children.push(owner);
+      assert.equal((await childLine(owner)).trim(), 'prepared');
+      assert.throws(() => ControllerStore.acquire(f.location), { code: 'busy' });
+      const closed = once(owner, 'close'); owner.stdin!.end('exit\n'); assert.deepEqual(await closed, [0, null]);
+      const interrupted = inspectController(f.location); assert.equal(interrupted.kind, 'present');
+      if (interrupted.kind === 'present') { assert.equal(interrupted.snapshot.operation?.phase, 'preparing'); assert.equal(interrupted.snapshot.operation.candidateId, 'next'); }
+      const lease = ControllerStore.acquire(f.location);
+      try { assert.equal(lease.readOperationData('operation', 'admission'), undefined); assert.equal(lease.readOperationData('operation', 'shutdown'), undefined); } finally { lease.close(); }
+      await assert.rejects(f.manager().execute(request('start', 'other')), { code: 'phase-conflict' });
+      f.state.observation = { state: 'uncertain' };
+      const uncertain = await f.manager().execute(request('retry-migration'));
+      assert.equal(uncertain.state.phase, 'blocked'); assert.equal(f.state.migrations.length, 0); assert.equal(f.state.activations.length, 0);
+      f.state.observation = fresh ? { state: 'absent', resourceOwnershipReleased: true, evidence: { kind: 'never-started' } } : { state: 'present', identity: { protocolVersion: 1, installationId: 'fixture', instanceId: 'incumbent', releaseId: 'old', state: 'ready' }, endpoint: f.location.daemonEndpoint };
+      const ready = await f.manager().execute(request('retry-migration'));
+      assert.equal(ready.state.phase, 'ready'); assert.equal(ready.state.errorCode, undefined);
+      assert.equal(f.state.shutdowns.length, fresh ? 0 : 1); assert.equal(f.state.migrations.length, 1); assert.equal(f.state.activations.length, 1);
+      assert.equal(f.state.migrations[0]!.candidateReleaseId, 'next');
+    } finally { await stopOwnedChildren(children); f.cleanup(); }
+  }
+});
+
+test('missing launch metadata in a later phase cannot masquerade as preparation recovery', async () => {
+  const f = managerFixture();
+  try {
+    f.state.missingReceipt = true;
+    assert.equal((await upgrade(f)).state.phase, 'blocked');
+    const admission = join(f.home, 'install/operations/operation/admission.json');
+    // Corrupt evidence is not permission to reuse a preparation-only recovery path.
+    writeFileSync(admission, 'null');
+    for (let retry = 0; retry < 4; retry++) {
+      if (retry === 2) unlinkSync(admission);
+      const blocked = await f.manager().execute(request('retry-migration'));
+      assert.equal(blocked.state.phase, 'blocked'); assert.equal(f.state.migrations.length, 1); assert.equal(f.state.activations.length, 0);
+    }
   } finally { f.cleanup(); }
 });

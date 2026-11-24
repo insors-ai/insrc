@@ -761,7 +761,11 @@ export class CliProvider implements LLMProvider {
 			let text: string | undefined;
 			let attemptServers = servers;
 			let attemptTimeoutMs = remainingMs;
-			for (let attempt = 1; attempt <= 2; attempt++) {
+			// Bounded by the number of non-insrc servers plus one: in the worst case every
+			// one of them is unexcludable, each attempt clears exactly one, and the final
+			// attempt runs with none of them disabled at all -- never an unbounded loop.
+			const maxAttempts = attemptServers.filter(s => s.name !== 'insrc').length + 1;
+			for (let attempt = 1; attempt <= maxAttempts; attempt++) {
 				const attemptStartedAt = Date.now();
 				try {
 					({ agentText: text } = await this.runCodex(codexReadOnlySessionArgs(schemaPath, exec.cwd, this.modelArgs(), attemptServers), prompt, { ...exec, timeoutMs: attemptTimeoutMs }));
@@ -771,9 +775,10 @@ export class CliProvider implements LLMProvider {
 					const match = CODEX_MCP_SERVER_OVERRIDE_UNSAFE.exec(said);
 					if (match?.[1] === undefined) throw err;
 					// codex's bootstrap cannot accept a partial disable override for this one
-					// server; it was never excludable anyway, so retry once without it rather
-					// than fail the whole session outright.
-					if (attempt === 2) throw new CodexMcpServerOverrideUnsafeError(match[1]);
+					// server; it was never excludable anyway, so retry without it rather than
+					// fail the whole session outright. Repeat until every unsafe server found
+					// so far is cleared, bounded above by maxAttempts.
+					if (attempt === maxAttempts) throw new CodexMcpServerOverrideUnsafeError(match[1]);
 					attemptServers = attemptServers.filter(s => s.name !== match[1]);
 					attemptTimeoutMs -= Date.now() - attemptStartedAt;
 					if (attemptTimeoutMs <= 0) throw new ReadOnlySessionTimeoutError(exec.timeoutMs);

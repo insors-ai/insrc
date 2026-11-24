@@ -293,19 +293,34 @@ test("readOnlySessionOnce retries once with no non-insrc disable overrides at al
 	} finally { delete process.env['INSRC_FAKE_DISCOVERY_SERVERS']; f.cleanup(); }
 });
 
-test('readOnlySessionOnce throws CodexMcpServerOverrideUnsafeError naming the SECOND server when the retry also fails with a bootstrap-rejection match for a different server -- never more than one retry', async () => {
+test('readOnlySessionOnce clears every unexcludable server it encounters in turn, and succeeds once none are left to disable', async () => {
 	const f = fakeCli([
 		{ fail: 'Error loading config.toml: invalid transport in `mcp_servers.unsafe-x`', code: 1 },
 		{ fail: 'Error loading config.toml: invalid transport in `mcp_servers.unsafe-z`', code: 1 },
+		{ out: codexOk('{"ok":true}') },
 	]);
 	process.env['INSRC_FAKE_DISCOVERY_SERVERS'] = JSON.stringify([{ name: 'insrc', enabled: true }, { name: 'unsafe-x', enabled: false }, { name: 'unsafe-z', enabled: false }]);
 	try {
 		const p = new CliProvider({ kind: 'codex', binPath: f.bin });
+		assert.deepEqual(await p.runReadOnlySession('P', SCHEMA, { cwd: f.dir, deadlineMs: 20_000, internalRetry: false }), { ok: true });
+		assert.equal(f.calls().length, 3, 'one attempt per unsafe server plus the final, override-free attempt');
+		assert.ok(!f.calls()[2]!.argv.some(a => a.startsWith('mcp_servers.') && a.includes('.enabled=false')), 'the final attempt disables nothing: both unsafe servers were cleared');
+	} finally { delete process.env['INSRC_FAKE_DISCOVERY_SERVERS']; f.cleanup(); }
+});
+
+test('readOnlySessionOnce throws CodexMcpServerOverrideUnsafeError at the bound (never an unbounded loop) when every attempt, including the last override-free one, still reports a bootstrap-rejection match', async () => {
+	const f = fakeCli([
+		{ fail: 'Error loading config.toml: invalid transport in `mcp_servers.unsafe-x`', code: 1 },
+		{ fail: 'Error loading config.toml: invalid transport in `mcp_servers.unsafe-ghost`', code: 1 },
+	]);
+	process.env['INSRC_FAKE_DISCOVERY_SERVERS'] = JSON.stringify([{ name: 'insrc', enabled: true }, { name: 'unsafe-x', enabled: false }]);
+	try {
+		const p = new CliProvider({ kind: 'codex', binPath: f.bin });
 		await assert.rejects(
 			p.runReadOnlySession('P', SCHEMA, { cwd: f.dir, deadlineMs: 20_000, internalRetry: false }),
-			(e: unknown) => e instanceof CodexMcpServerOverrideUnsafeError && e.serverName === 'unsafe-z',
+			(e: unknown) => e instanceof CodexMcpServerOverrideUnsafeError && e.serverName === 'unsafe-ghost',
 		);
-		assert.equal(f.calls().length, 2, 'exactly one retry attempted, never a second');
+		assert.equal(f.calls().length, 2, 'bounded by the one non-insrc server discovered (maxAttempts = 1 + 1), never a third');
 	} finally { delete process.env['INSRC_FAKE_DISCOVERY_SERVERS']; f.cleanup(); }
 });
 

@@ -91,6 +91,11 @@ test('epic-impact-prompts.test.ts: the design.story and plan context.assemble pr
 			assert.ok(p.userTurn.includes(EPIC_IMPACT_NOT_APPLICABLE), `${w}: the one-line does-not-apply`);
 			assert.equal(p.userTurn.includes('Epic built-state digest'), false, `${w}: no digest`);
 		}
+		// a standalone Story (no Epic Define of its own)
+		const standaloneCtx = { intent: { workflow: 'design.story', repoPath: first, focus: 'a bugfix', params: { standalone: true, epicHash: 'f1e2d3c4b5a69788', storyId: 's1' } } } as unknown as StepRunnerContext;
+		const sa = await getRunner('design.story', 'context.assemble').run(standaloneCtx) as unknown as { prompt: string; userTurn: string };
+		assert.equal(sa.prompt.includes(EPIC_IMPACT_FIRST_ACTION), false, 'standalone: no first action');
+		assert.ok(sa.userTurn.includes(EPIC_IMPACT_NOT_APPLICABLE), 'standalone: the one-line does-not-apply');
 		// the Epic's first Story, even with a later Story built
 		const own = await prompts('design.story', later, 's1');
 		assert.ok(own.userTurn.includes(EPIC_IMPACT_NOT_APPLICABLE));

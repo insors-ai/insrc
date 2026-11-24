@@ -152,6 +152,13 @@ test('epic-impact-artifacts.test.ts: design.story and plan synthesize reject a l
 			assert.doesNotMatch(messageOf(free), /Epic impact analysis/, `${workflow}: not asked when nothing is built`);
 		}
 
+		// the LLD carries the first step's analysis, not a retyped one (a standalone run, so no Epic or HLD is needed to reach the carry)
+		const none: EpicImpactAnalysis = { applies: false, reason: 'standalone', storiesCovered: [], findings: '', sources: [] };
+		const standaloneLld = { ...intentFor('design.story', later), params: { standalone: true, epicHash: EH, storyId: 's1' } } as unknown as WorkflowIntent;
+		const lldCarried = await finalizeArtifact(standaloneLld, { s1: { epicImpact: none } }, 'run', 1, { ...lldEmit, body: { ...lldEmit.body, epicImpact: { ...none, reason: 'retyped' } } }, 'client');
+		const lldBody = lldCarried.ok ? (lldCarried.finalized.artifact as { body: { epicImpact?: unknown } }).body : undefined;
+		assert.deepEqual(lldBody?.epicImpact, none, lldCarried.ok ? '' : messageOf(lldCarried));
+
 		// the PLAN carries the first step's analysis, not a retyped one
 		const carried = await finalizeArtifact(intentFor('plan', later), { s1: { epicImpact: ANALYSIS } }, 'run', 1, { ...planEmit, body: { ...planEmit.body, epicImpact: { ...ANALYSIS, findings: 'retyped' } } }, 'client');
 		assert.equal(carried.ok, true, messageOf(carried));

@@ -270,12 +270,14 @@ test('first publication sequence — approve ISSUE with tracking disabled, enabl
 
 				// run B (retry) goes through the PRODUCTION create-or-adopt decision:
 				// ensureUnitIssueDetailed with a stub port holding the one remote issue
-				// run A created. Local record is absent (write-back failed), the label
-				// lookup misses, the title-token lookup HITS -> adopt with created:false
-				// and the counted create stub is NOT called.
+				// run A created. The title is whatever the remote actually carries —
+				// for this bugfix path that is the ISSUE's own title (ISSUE title),
+				// persisted verbatim by createBugfixTrackerIssue — so the stub seeds
+				// exactly that, and the EPIC-token lookup the deterministic path uses
+				// is exercised through the label lookup below instead.
 				const token = _AI.make({ kind: 'EPIC', epicHash: HASH });
 				const remoteIssues: Array<{ ref: IssueRef; title: string; labels: string[] }> = [
-					{ ref: 'acme/demo#42', title: `${token} — ISSUE title`, labels: [] },
+					{ ref: 'acme/demo#42', title: 'ISSUE title', labels: ['insrc:unit:' + HASH, `epic:${SLUG}`] },
 				];
 				const remotePort = {
 					kind: 'github', capabilities: new Set(['issue-create']),
@@ -283,14 +285,17 @@ test('first publication sequence — approve ISSUE with tracking disabled, enabl
 					findIssue: (labels: string[]): PortResult<IssueRef | null> => ({ ok: true, value: remoteIssues.find(i => labels.every(l => i.labels.includes(l)))?.ref ?? null }),
 					findIssuesByTitleToken: (t: string): PortResult<IssueRef[]> => ({ ok: true, value: remoteIssues.filter(i => titleMatchesToken(i.title, t)).map(i => i.ref) }),
 					issueOps: {
-						create: (spec: { title: string }): PortResult<{ ref: IssueRef; id: number }> => {
+						create: (spec: { title: string; labels?: string[] }): PortResult<{ ref: IssueRef; id: number }> => {
 							creates += 1;
 							const ref = `acme/demo#${100 + creates}`;
-							remoteIssues.push({ ref, title: spec.title, labels: [] });
+							remoteIssues.push({ ref, title: spec.title, labels: [...(spec.labels ?? [])] });
 							return { ok: true, value: { ref, id: 9000 + creates } };
 						},
 						linkSubIssue: (): PortResult<void> => ({ ok: true, value: undefined }),
 						ensureLabel: () => true,
+						comment: (): PortResult<void> => ({ ok: true, value: undefined }),
+						close: (): PortResult<void> => ({ ok: true, value: undefined }),
+						resolveIssueId: (): PortResult<number> => ({ ok: true, value: 1 }),
 					},
 				} as unknown as _TP;
 				const unit = { unit: 'epic', repoPath: fx2.repo, epicHash: HASH } as const;

@@ -104,7 +104,7 @@ import {
 import { assertMayReviseDraft } from './team/author-gate.js';
 import { TeamGateRefusedError } from './team/gate.js';
 import { isToolDenied } from './tracker/tool-denied.js';
-import { appendStoryToDefine, nextStoryId, readBaseHld, readDefineArtifact, requireApprovedEpic, requireApprovedHld, requireApprovedLld, requireApprovedPlan } from './gates.js';
+import { appendStoryToDefine, definitionHeadJsonPath, nextStoryId, readBaseHld, readDefinitionHead, readDefineArtifact, requireApprovedEpic, requireApprovedHld, requireApprovedLld, requireApprovedPlan } from './gates.js';
 import {
 	isTrackerChecklistResult,
 	isTrackerPostRefs,
@@ -119,7 +119,7 @@ import {
 	type TrackerSyncRefs,
 } from './artifacts/tracker.js';
 import { MissingAnchorError } from './artifact-ids.js';
-import { artifactJsonPath, defineArtifactId, defineArtifactPaths, hldArtifactId, hldArtifactPaths, inheritedEpicSlug, inheritedStandalone, lldArtifactId, lldArtifactPaths, planArtifactId, planArtifactPaths, requireEpicAnchor, resolveEpicAnchor, scopeAnalyzeCachePath, stampRootAnchor, workItemAnchorCreatedAt, workItemKindOf, writeArtifact, writeAtomic } from './storage.js';
+import { artifactJsonPath, defineArtifactId, defineArtifactPaths, hldArtifactId, hldArtifactPaths, IMPLIED_ISSUE_STORY_ID, inheritedEpicSlug, inheritedStandalone, lldArtifactId, lldArtifactPaths, planArtifactId, planArtifactPaths, requireEpicAnchor, resolveEpicAnchor, scopeAnalyzeCachePath, stampRootAnchor, workItemAnchorCreatedAt, workItemKindOf, writeArtifact, writeAtomic } from './storage.js';
 import { basename, dirname, join as joinPath } from 'node:path';
 import { validateErDefinition, type ErDefinition } from './artifacts/companion/er.js';
 import { validateUxDefinition, type UxDefinition } from './artifacts/companion/ux.js';
@@ -2963,12 +2963,16 @@ function finalizeTracker(
 	};
 }
 
-/** Merge tracker refs into the Epic artifact's meta.tracker. Push
- *  binds the epic and story issues on their heads and writes milestoneRef + labelsCreated; sync
- *  writes storyStatus + epicStatus + lastSyncedAt; post is a no-op
- *  at the Epic level (comment ids attach to the target artifact by
- *  the caller if needed — Phase F doesn't record commentIds in the
- *  design artifact meta since that would fragment the surface). */
+/** Merge tracker refs into the work item's head artifact's meta.tracker.
+ *  ISSUE-5f9d4ab4c90c0b4c s1/t4: the head is resolved by the readable-head
+ *  rule (DEF-then-ISSUE first-readable-wins, {@link definitionHeadJsonPath}),
+ *  so a corrupt DEF can never be persisted into while context reads the
+ *  ISSUE; zero DEF files are fabricated for an ISSUE-anchored work item.
+ *  Push binds the epic and story issues on their heads and writes
+ *  milestoneRef + labelsCreated; for an ISSUE head it ALSO writes the
+ *  `issueRef` back (the single work-item issue) so `closeBugfixTrackerIssue`
+ *  (readRecordedRef) can close at completion. Sync writes storyStatus +
+ *  epicStatus + lastSyncedAt; post is a no-op at the head level. */
 function mutateEpicTrackerMeta(
 	repoPath:   string,
 	epicHash:   string,
@@ -2976,8 +2980,12 @@ function mutateEpicTrackerMeta(
 	refs:       TrackerPushRefs | TrackerSyncRefs | TrackerPostRefs,
 ): void {
 	if (workflow === 'tracker.post') return;   // no-op for post
-	const defineJson = artifactJsonPath(repoPath, defineArtifactId(epicHash));
-	const raw = readFileSync(defineJson, 'utf8');
+	// ISSUE-5f9d4ab4c90c0b4c s1/t4: kind-aware head — the same first-readable-wins
+	// rule the context assemblers use, so persistence and reads never diverge.
+	const head = readDefinitionHead(repoPath, epicHash);
+	const headKind = head?.kind ?? 'def';
+	const headJson = head !== undefined ? definitionHeadJsonPath(repoPath, epicHash) : artifactJsonPath(repoPath, defineArtifactId(epicHash));
+	const raw = readFileSync(headJson, 'utf8');
 	const artifact = JSON.parse(raw) as { meta?: { epicSlug?: string; tracker?: Record<string, unknown> } };
 	if (artifact.meta === undefined) artifact.meta = {};
 	if (artifact.meta.tracker === undefined) artifact.meta.tracker = {};
@@ -2989,12 +2997,20 @@ function mutateEpicTrackerMeta(
 			adapter:   'github',
 			...(push.milestoneRef !== undefined ? { milestoneRef: push.milestoneRef } : {}),
 			labelsCreated: push.labelsCreated,
+			// ISSUE head: the work-item root issue doubles as the implied story's
+			// issue; record it as issueRef for closeBugfixTrackerIssue.
+			...(headKind === 'issue' ? { issueRef: push.epicRef } : {}),
 		};
-		writeArtifact(defineJson, artifact, 'meta-only');
+		writeArtifact(headJson, artifact, 'meta-only');
 		// Framework-owned doc↔issue linkage (same as the deterministic path):
 		// bind the Epic's and each Story's issue on its head, then re-render each
 		// doc's markdown with a `**Tracker:**` link read from it.
-		linkDocsToIssues(repoPath, epicHash, epicSlug, { epicRef: push.epicRef, storyRefs: push.storyRefs });
+		// ISSUE head: the single ref is bound on BOTH the EPIC and the implied
+		// STORY-s1 head (the work-item root IS the story issue); linkDocsToIssues
+		// is given the implied story so the binding lands without a DEF.
+		linkDocsToIssues(repoPath, epicHash, epicSlug, headKind === 'issue'
+			? { epicRef: push.epicRef, storyRefs: { [IMPLIED_ISSUE_STORY_ID]: push.epicRef, ...push.storyRefs } }
+			: { epicRef: push.epicRef, storyRefs: push.storyRefs });
 		// Task tier: bind each Task issue to its Task artifact, so a re-push adopts it (and downstream `build` can find its
 		// issues). A Task with no artifact has nowhere to be recorded: the approval of its plan makes them.
 		if (push.taskRefs !== undefined) {
@@ -3018,7 +3034,7 @@ function mutateEpicTrackerMeta(
 			lastSyncedAt: sync.syncedAt,
 		};
 	}
-	writeArtifact(defineJson, artifact, 'meta-only');
+	writeArtifact(headJson, artifact, 'meta-only');
 }
 
 // Kept as silences — referenced above for JSDoc navigation.

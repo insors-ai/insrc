@@ -15,7 +15,7 @@ import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { getLogger } from '../../shared/logger.js';
 import { GithubConfigError, resolveGithubConfig } from '../config/github.js';
-import { ARTIFACTS_DIR, artifactJsonPath, defineArtifactId } from '../storage.js';
+import { ARTIFACTS_DIR, impliedIssueStories } from '../storage.js';
 import { createDeadline } from '../team/sighting-store.js';
 import type { Deadline } from '../team/sighting-store.js';
 import { createGithubTracker } from './github-adapter.js';
@@ -25,9 +25,10 @@ import { isToolDenied } from './tool-denied.js';
 import { mapIssueStatus, type TrackerStatus } from './conventions.js';
 import { missingCapabilities } from './port.js';
 import type { TrackerPort } from './port.js';
-import { patchTrackerMeta } from './refs.js';
+import { patchTrackerMeta, readTrackerMeta } from './refs.js';
 import { unitIssueOf } from './unit-head.js';
-import { readDefineArtifact } from '../gates.js';
+import { definitionHeadJsonPath, readDefineArtifact, readDefinitionHead } from '../gates.js';
+import type { IssueArtifact } from '../artifacts/issue.js';
 
 const log = getLogger('tracker-sync');
 
@@ -56,8 +57,11 @@ export interface SyncOptions {
  */
 export async function syncTracker(repoPath: string, epicHash: string, table?: RegistryTable, opts: SyncOptions = {}): Promise<SyncResult> {
 	const { deadline } = opts;
-	const defineJson = artifactJsonPath(repoPath, defineArtifactId(epicHash));
-	const epicRef = unitIssueOf(repoPath, epicHash);
+	// ISSUE-5f9d4ab4c90c0b4c s1/t4: persist to the resolved head (DEF-then-ISSUE
+	// first-readable-wins), never to a DEF path the context did not read.
+	const headJson = definitionHeadJsonPath(repoPath, epicHash);
+	const headKind = readDefinitionHead(repoPath, epicHash)?.kind ?? 'def';
+	const epicRef = unitIssueOf(repoPath, epicHash) ?? (headKind === 'issue' ? readTrackerMeta(headJson)?.issueRef : undefined);
 	if (typeof epicRef !== 'string' || epicRef.length === 0) {
 		return { status: 'skipped', reason: 'Epic not pushed yet (its head is not bound to an issue)' };
 	}
@@ -103,7 +107,7 @@ export async function syncTracker(repoPath: string, epicHash: string, table?: Re
 			if (s.status === 'skipped' || s.status === 'failed') return s as SyncResult;
 			storyStatus[story] = s.status as TrackerStatus;
 		}
-		patchTrackerMeta(defineJson, { epicStatus, storyStatus, lastSyncedAt: new Date().toISOString() });
+		patchTrackerMeta(headJson, { epicStatus, storyStatus, lastSyncedAt: new Date().toISOString() });
 		return { status: 'synced', epicStatus, storyStatus };
 	} catch (err) {
 		if (isToolDenied(err)) throw err;   // a denied call stops the sync; it is not a failed one
@@ -123,11 +127,17 @@ export interface TrackerRefreshReport {
 	readonly warnings: readonly string[];
 }
 
-/** The hashes of the Epics that have a Define in the repo, in name order. */
+/** The hashes of the work items that have a readable head (DEF or ISSUE) in
+ *  the repo, in name order. ISSUE-5f9d4ab4c90c0b4c s1/t4: an ISSUE-anchored
+ *  work item has no DEF, so the sweep must key on ISSUE heads too. */
 function epicHashesOf(repoPath: string): string[] {
 	let files: string[];
 	try { files = readdirSync(join(repoPath, ARTIFACTS_DIR)); } catch { return []; }
-	return files.map(f => /^DEF-([0-9a-f]+)\.json$/.exec(f)?.[1]).filter((h): h is string => h !== undefined).sort();
+	return files
+		.map(f => /^(?:DEF|ISSUE)-([0-9a-f]+)\.json$/.exec(f)?.[1])
+		.filter((h): h is string => h !== undefined)
+		.filter((h, i, all) => all.indexOf(h) === i)
+		.sort();
 }
 
 /**
@@ -159,7 +169,11 @@ export async function refreshTrackerStatus(repoPath: string, opts: { readonly ep
 	}
 }
 
-/** The ids of the Stories the Epic's Define lists; none when it cannot be read. */
+/** The ids of the Stories the work item's head lists; for an ISSUE head the
+ *  single implied story (IMPLIED_ISSUE_STORY_ID); else the Define's; none
+ *  when the head cannot be read. */
 function storiesOf(repoPath: string, epicHash: string): string[] {
+	const head = readDefinitionHead(repoPath, epicHash);
+	if (head?.kind === 'issue') return impliedIssueStories(head.artifact as IssueArtifact).map(s => s.id);
 	try { return readDefineArtifact(repoPath, epicHash).body.stories.map(s => s.id); } catch { return []; }
 }

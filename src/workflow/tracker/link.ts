@@ -16,15 +16,16 @@
  */
 
 import { getLogger } from '../../shared/logger.js';
-import { readDefineArtifact, readHldArtifact } from '../gates.js';
+import { readDefineArtifact, readDefinitionHead, readHldArtifact } from '../gates.js';
 import { readLldArtifact } from '../artifacts/lld-io.js';
 import { renderDefineMarkdown } from '../artifacts/define.js';
 import { renderHldMarkdown } from '../artifacts/hld.js';
 import { renderLldMarkdown } from '../artifacts/lld.js';
-import { defineArtifactPaths, hldArtifactPaths, lldArtifactPaths, requireEpicAnchor, writeAtomic } from '../storage.js';
+import { renderIssueMarkdown, type IssueArtifact } from '../artifacts/issue.js';
+import { defineArtifactPaths, hldArtifactPaths, issueArtifactPaths, lldArtifactPaths, requireEpicAnchor, workItemAnchorCreatedAt, workItemKindOf, writeAtomic } from '../storage.js';
 import { bindArtifact } from './binding.js';
-import type { UnitRef } from './refs.js';
-import { ensureUnitHead, unitHeadId } from './unit-head.js';
+import { trackerRefLine, type UnitRef } from './refs.js';
+import { ensureUnitHead, unitHeadId, unitIssueOf } from './unit-head.js';
 
 const log = getLogger('workflow:tracker-link');
 
@@ -46,6 +47,33 @@ export function bindUnitIssue(unit: UnitRef, issue: string): boolean {
 export function linkDocsToIssues(repoPath: string, epicHash: string, epicSlug: string, refs: EpicRefs): void {
 	// Epic docs — keyed on the Epic's anchor (sc2), all 'epic'. A work item with none fails here, before any doc is touched.
 	const anchor = requireEpicAnchor(repoPath, epicHash);
+	// ISSUE-5f9d4ab4c90c0b4c s1/t4+t7: an ISSUE-anchored work item has no DEF/HLD;
+	// its root doc is ISSUE.md under docs/standalone. Bind the EPIC head and
+	// re-render ISSUE.md with the tracker line; HLD/Define relinks are skipped.
+	const head = readDefinitionHead(repoPath, epicHash);
+	if (head?.kind === 'issue') {
+		const issue = head.artifact as IssueArtifact;
+		const kind = workItemKindOf(issue.meta);
+		if (typeof refs.epicRef === 'string' && refs.epicRef.length > 0) {
+			bindUnitIssue({ unit: 'epic', repoPath, epicHash }, refs.epicRef);
+			const paths = issueArtifactPaths(repoPath, epicHash, workItemAnchorCreatedAt(issue.meta), kind, epicSlug);
+			relinkDoc(paths, () => {
+				const body = renderIssueMarkdown(issue);
+				const ref = unitIssueOf(repoPath, epicHash) ?? refs.epicRef;
+				return ref !== undefined ? trackerRefLine(ref) + '\n' + body : body;
+			});
+		}
+		for (const [storyId, storyRef] of Object.entries(refs.storyRefs ?? {})) {
+			if (typeof storyRef !== 'string' || storyRef.length === 0) continue;
+			bindUnitIssue({ unit: 'story', repoPath, epicHash, storyId }, storyRef);
+			try {
+				relinkDoc(lldArtifactPaths(repoPath, epicHash, storyId, anchor, kind, epicSlug), () => renderLldMarkdown(readLldArtifact(repoPath, epicHash, storyId)));
+			} catch (err) {
+				log.warn({ storyId, err: (err as Error).message }, 'ISSUE work item: LLD relink skipped');
+			}
+		}
+		return;
+	}
 	if (typeof refs.epicRef === 'string' && refs.epicRef.length > 0) {
 		bindUnitIssue({ unit: 'epic', repoPath, epicHash }, refs.epicRef);
 		relinkDoc(hldArtifactPaths(repoPath, epicHash, anchor, 'epic', epicSlug), () => renderHldMarkdown(readHldArtifact(repoPath, epicHash)));

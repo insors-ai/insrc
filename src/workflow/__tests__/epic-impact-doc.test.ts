@@ -43,6 +43,7 @@ test('epic-impact-doc.test.ts: docs/workflow.md describes the Epic impact analys
 	}
 	assert.match(text, /each Story the LLD's analysis covered/);
 	// the rule itself, sentence by sentence: a doc that states the opposite fails
+	assert.ok(text.includes(`must open a paragraph with \`${EPIC_IMPACT_LABEL}\``), 'the paragraph must open the summary paragraph, as the check requires');
 	assert.match(text, /Approving a later Story's BUILD without it is refused/);
 	assert.match(text, /An explicit `overrideReview` passes it\./);
 	assert.match(text, /does not apply when the Story has no approved LLD, its LLD has no `epicImpact`, or the analysis says it does not apply/);

@@ -1,0 +1,276 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 10,
+        "contentHash": "c0a349484ec307a6178ec529f9b86cd96ecee454b8baa0181d51afc38eb8c2d9",
+        "at": "2026-11-24T11:59:31.245Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "767aef145a1b22ef",
+    "storyId": "s1",
+    "createdAt": "2026-11-24T11:40:58.460Z",
+    "updatedAt": "2026-11-24T11:59:31.026Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-24T11:36:33.387Z",
+    "epicSlug": "register-insrc-mcp-server-vibe-s",
+    "revision": 10
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "cbcc99193",
+        "ranAt": "2026-11-24T11:59:31.026Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/__tests__/mcp-register.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/daemon/__tests__/mcp-register.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/mcp-register.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 778,
+            "titles": [
+              {
+                "title": "unselected clients are always emitted as skipped, never omitted",
+                "result": "pass"
+              },
+              {
+                "title": "{claude:true} registers claude (mcp add --scope user); codex is skipped",
+                "result": "pass"
+              },
+              {
+                "title": "{agents:true} maps to the codex client (agents flag → codex, --scope omitted)",
+                "result": "pass"
+              },
+              {
+                "title": "{vibe:true} registers vibe via `vibe mcp add insrc --transport stdio`; no `mcp list` is spawned",
+                "result": "pass"
+              },
+              {
+                "title": "vibe already present in config.toml [[mcp_servers]] → unchanged, no add spawned",
+                "result": "pass"
+              },
+              {
+                "title": "vibe add failure → failed carrying the CLI stderr; other clients unaffected",
+                "result": "pass"
+              },
+              {
+                "title": "upsertVibeAgentsSteering: creates AGENTS.md with the marked steering block when absent, idempotent on second call",
+                "result": "pass"
+              },
+              {
+                "title": "upsertVibeAgentsSteering: replaces only the marked span on re-registration (future release updates content in place), preserves surrounding user content",
+                "result": "pass"
+              },
+              {
+                "title": "upsertVibeAgentsSteering: malformed markers (open without close) are a guarded no-op — file untouched, never clobbered",
+                "result": "pass"
+              },
+              {
+                "title": "registerMcpClients with {vibe:true} also upserts the AGENTS.md steering block (in-memory seam), and registration still succeeds",
+                "result": "pass"
+              },
+              {
+                "title": "vibeConfigHasServer: matches an [[mcp_servers]] name line only, not other tables or values",
+                "result": "pass"
+              },
+              {
+                "title": "an existing `insrc` entry in `mcp list` → unchanged, no add spawned",
+                "result": "pass"
+              },
+              {
+                "title": "an `insrc` substring only inside a path (not a line-start name) does NOT count as registered",
+                "result": "pass"
+              },
+              {
+                "title": "an indeterminate `mcp list` (non-zero exit) → failed, and deliberately does NOT add",
+                "result": "pass"
+              },
+              {
+                "title": "a missing CLI binary (ENOENT spawn) → failed with a not-found note, no throw",
+                "result": "pass"
+              },
+              {
+                "title": "a non-zero `mcp add` exit → failed carrying the CLI stderr",
+                "result": "pass"
+              },
+              {
+                "title": "per-client isolation: claude add fails, codex still registers independently",
+                "result": "pass"
+              },
+              {
+                "title": "mixed idempotency: claude already present, codex absent → unchanged + registered",
+                "result": "pass"
+              },
+              {
+                "title": "a missing out/bin/insrc-mcp.js → failed for each selected client, no subprocess",
+                "result": "pass"
+              },
+              {
+                "title": "registerMcpClients never rejects even if the injected run throws",
+                "result": "pass"
+              },
+              {
+                "title": "probeMcpClients: per-client availability + registration from the same pre-checks registration uses; never throws",
+                "result": "pass"
+              },
+              {
+                "title": "probeMcpClients: an unreachable CLI resolves available:false, registered:false; a vibe without config text is registered:false",
+                "result": "pass"
+              },
+              {
+                "title": "vibe + repoPath registers in the USER-GLOBAL config via `vibe mcp add`, never writes the repo's .vibe/config.toml",
+                "result": "pass"
+              },
+              {
+                "title": "vibe + repoPath: a legacy project-layer insrc entry is removed; the file is deleted when nothing else remains",
+                "result": "pass"
+              },
+              {
+                "title": "vibe + repoPath: a legacy insrc chunk is removed while other servers and settings are preserved",
+                "result": "pass"
+              },
+              {
+                "title": "vibe + repoPath: legacy cleanup runs even when the user-global entry already exists (action unchanged)",
+                "result": "pass"
+              },
+              {
+                "title": "vibe + repoPath: a project config without an insrc entry is left untouched",
+                "result": "pass"
+              },
+              {
+                "title": "vibe + repoPath: a cleanup failure never fails the registration",
+                "result": "pass"
+              },
+              {
+                "title": "vibe + repoPath: an unfixable project config (mcp_servers not a list) never fails the registration",
+                "result": "pass"
+              },
+              {
+                "title": "vibe without repoPath keeps the user-global `vibe mcp add` path (unchanged behavior)",
+                "result": "pass"
+              },
+              {
+                "title": "probeMcpClients reads the USER-GLOBAL config for vibe; a project-layer entry no longer counts (ISSUE-767aef145a1b22ef)",
+                "result": "pass"
+              },
+              {
+                "title": "removeVibeProjectServer on a real temp dir: deletes a config that held only the insrc entry; preserves one with more content",
+                "result": "pass"
+              },
+              {
+                "title": "removeVibeProjectServer moves an inline mcp_servers list to tables and drops only the insrc entry",
+                "result": "pass"
+              },
+              {
+                "title": "removeVibeProjectServer deletes a config whose only content was an inline insrc entry with a quoted name key",
+                "result": "pass"
+              },
+              {
+                "title": "removeVibeProjectServer drops a config holding both forms (empty inline list + insrc table) entirely",
+                "result": "pass"
+              },
+              {
+                "title": "removeVibeProjectServer keeps an unrelated single-table section that follows the insrc entry",
+                "result": "pass"
+              },
+              {
+                "title": "removeVibeProjectServer keeps later [[mcp_servers]] tables when a single-table section follows the removed entry",
+                "result": "pass"
+              },
+              {
+                "title": "removeVibeProjectServer does not mistake a `name = \"insrc\"` field inside a later table for the server entry",
+                "result": "pass"
+              },
+              {
+                "title": "removeVibeProjectServer drops a real insrc entry even when a later table also carries `name = \"insrc\"`",
+                "result": "pass"
+              },
+              {
+                "title": "removeVibeProjectServer drops the entry's own [mcp_servers.env] sub-table with it, leaving a preceding server intact",
+                "result": "pass"
+              },
+              {
+                "title": "removeVibeProjectServer keeps an unrelated table between the entry and its sub-table",
+                "result": "pass"
+              },
+              {
+                "title": "removeVibeProjectServer keeps sub-table-free unrelated tables after a mixed chunk",
+                "result": "pass"
+              },
+              {
+                "title": "removeVibeProjectServer keeps a quoted root table whose name merely contains a dot",
+                "result": "pass"
+              },
+              {
+                "title": "removeVibeProjectServer drops the entry's sub-table when its first component is quoted",
+                "result": "pass"
+              },
+              {
+                "title": "removeVibeProjectServer keeps a quoted table name containing #",
+                "result": "pass"
+              },
+              {
+                "title": "removeVibeProjectServer ignores a `name = \"insrc\"` line inside a multiline string value",
+                "result": "pass"
+              },
+              {
+                "title": "removeVibeProjectServer byte-preserves multiline strings in kept entries while dropping a genuine insrc entry",
+                "result": "pass"
+              },
+              {
+                "title": "removeVibeProjectServer ignores a fake [[table]] line inside a multiline string when finding chunk boundaries",
+                "result": "pass"
+              },
+              {
+                "title": "removeVibeProjectServer treats quotes inside comments as plain text",
+                "result": "pass"
+              },
+              {
+                "title": "removeVibeProjectServer does not close a multiline basic string at an escaped quote before a fence run",
+                "result": "pass"
+              },
+              {
+                "title": "removeVibeProjectServer ignores a line-continuation backslash inside a multiline basic string",
+                "result": "pass"
+              },
+              {
+                "title": "removeVibeProjectServer keeps an indented [[mcp_servers]] element inside the removed chunk, sub-tables included",
+                "result": "pass"
+              },
+              {
+                "title": "removeVibeProjectServer leaves a config it cannot normalize untouched and reports the failure",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

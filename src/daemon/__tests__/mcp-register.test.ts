@@ -556,6 +556,35 @@ test('removeVibeProjectServer keeps later [[mcp_servers]] tables when a single-t
 	assert.equal(removed.length, 0);
 });
 
+test('removeVibeProjectServer does not mistake a `name = "insrc"` field inside a later table for the server entry', async () => {
+	const { removeVibeProjectServer, vibeConfigHasServer } = await import('../mcp-register.js');
+	const input = '[[mcp_servers]]\nname = "docs"\ncommand = "d"\n[tools]\nname = "insrc"\n';
+	// The chunk-level pre-check heuristic does see the name — so removal is
+	// attempted — but the name lives in a later [tools] table, not in an
+	// mcp_servers entry: nothing may be removed and the file stays untouched.
+	const files = new Map([['/r', input]]);
+	let wrote = 0;
+	const removed: string[] = [];
+	const deps = { vibeProjectConfigText: (p: string) => files.get(p), writeVibeProjectConfig: (_p: string, t: string) => { wrote++; files.set('/r', t); }, removeVibeProjectConfig: (p: string) => { removed.push(p); } };
+	assert.ok(vibeConfigHasServer(input, 'insrc'), 'the pre-check heuristic does see the name');
+	assert.equal(removeVibeProjectServer('/r', deps), 'absent', 'no insrc mcp_servers entry exists — nothing removed');
+	assert.equal(wrote, 0);
+	assert.equal(removed.length, 0);
+	assert.equal(files.get('/r'), input, 'the config is untouched');
+});
+
+test('removeVibeProjectServer drops a real insrc entry even when a later table also carries `name = "insrc"`', async () => {
+	const { removeVibeProjectServer, vibeConfigHasServer: has } = await import('../mcp-register.js');
+	const files = new Map([['/r', '[[mcp_servers]]\nname = "insrc"\ncommand = "node"\nargs = ["/mac/path"]\n[tools]\nname = "insrc"\n']]);
+	const removed: string[] = [];
+	const deps = { vibeProjectConfigText: (p: string) => files.get(p), writeVibeProjectConfig: (p: string, t: string) => { files.set(p, t); }, removeVibeProjectConfig: (p: string) => { removed.push(p); } };
+	assert.equal(removeVibeProjectServer('/r', deps), 'removed');
+	const text = files.get('/r') ?? '';
+	assert.equal(text, '[tools]\nname = "insrc"\n', 'the entry is dropped, the tools table (with its own name field) kept');
+	assert.ok(!has(text, 'insrc'));
+	assert.equal(removed.length, 0);
+});
+
 test('removeVibeProjectServer leaves a config it cannot normalize untouched and reports the failure', async () => {
 	const { removeVibeProjectServer } = await import('../mcp-register.js');
 	let wrote = false;

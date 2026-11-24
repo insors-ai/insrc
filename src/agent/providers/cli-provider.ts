@@ -191,7 +191,7 @@ export class CodexMcpServerOverrideUnsafeError extends Error {
 /** codex's own bootstrap-rejection wording for an unacceptable per-server
  *  override, live-confirmed this session for codex_app and cua_repl. Captures
  *  the rejected server name. */
-const CODEX_MCP_SERVER_OVERRIDE_UNSAFE = /invalid transport in `mcp_servers\.([^`]+)`/;
+const CODEX_MCP_SERVER_OVERRIDE_UNSAFE = /invalid transport\s+in `mcp_servers\.([^`]+)`/;
 
 /** The insrc analyze tools the codex MCP server exposes, by their own remote names. */
 const CODEX_INSRC_SERVER_NAME = 'insrc';

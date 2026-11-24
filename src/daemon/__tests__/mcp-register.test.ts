@@ -654,6 +654,46 @@ test('removeVibeProjectServer keeps a quoted table name containing #', async () 
 	assert.equal(removed.length, 0, 'the file is rewritten, not deleted');
 });
 
+test('removeVibeProjectServer ignores a `name = "insrc"` line inside a multiline string value', async () => {
+	const { removeVibeProjectServer, vibeConfigHasServer } = await import('../mcp-register.js');
+	// The docs entry's ''' argument holds a line that looks like the insrc
+	// server name — string content, not a key. The chunk-level pre-check
+	// heuristic sees it, so removal is attempted; the masked name match must
+	// not, and nothing may be removed.
+	const input = '[[mcp_servers]]\nname = "docs"\ncommand = "node"\nargs = [\'\'\'\nname = "insrc"\n\'\'\']\n';
+	const files = new Map([['/r', input]]);
+	let wrote = 0;
+	const removed: string[] = [];
+	const deps = { vibeProjectConfigText: (p: string) => files.get(p), writeVibeProjectConfig: (_p: string, t: string) => { wrote++; files.set('/r', t); }, removeVibeProjectConfig: (p: string) => { removed.push(p); } };
+	assert.ok(vibeConfigHasServer(input, 'insrc'), 'the pre-check heuristic does see the fake name line');
+	assert.equal(removeVibeProjectServer('/r', deps), 'absent', 'the name lives inside a string value — nothing removed');
+	assert.equal(wrote, 0);
+	assert.equal(removed.length, 0);
+	assert.equal(files.get('/r'), input, 'the config is untouched');
+});
+
+test('removeVibeProjectServer byte-preserves multiline strings in kept entries while dropping a genuine insrc entry', async () => {
+	const { removeVibeProjectServer } = await import('../mcp-register.js');
+	const input = '[[mcp_servers]]\nname = "docs"\ncommand = "node"\nargs = [\'\'\'\nkeep\nme\n\'\'\']\n\n[[mcp_servers]]\nname = "insrc"\ncommand = "node"\n';
+	const files = new Map([['/r', input]]);
+	const removed: string[] = [];
+	const deps = { vibeProjectConfigText: (p: string) => files.get(p), writeVibeProjectConfig: (p: string, t: string) => { files.set(p, t); }, removeVibeProjectConfig: (p: string) => { removed.push(p); } };
+	assert.equal(removeVibeProjectServer('/r', deps), 'removed');
+	assert.equal(files.get('/r'), '[[mcp_servers]]\nname = "docs"\ncommand = "node"\nargs = [\'\'\'\nkeep\nme\n\'\'\']\n\n', 'the docs entry survives with its multiline string intact, newlines included');
+	assert.equal(removed.length, 0);
+});
+
+test('removeVibeProjectServer ignores a fake [[table]] line inside a multiline string when finding chunk boundaries', async () => {
+	const { removeVibeProjectServer } = await import('../mcp-register.js');
+	const input = '[[mcp_servers]]\nname = "docs"\ncommand = "node"\nargs = [\'\'\'\n[[tools]]\n\'\'\']\n\n[[mcp_servers]]\nname = "insrc"\ncommand = "node"\n';
+	const files = new Map([['/r', input]]);
+	const removed: string[] = [];
+	const deps = { vibeProjectConfigText: (p: string) => files.get(p), writeVibeProjectConfig: (p: string, t: string) => { files.set(p, t); }, removeVibeProjectConfig: (p: string) => { removed.push(p); } };
+	assert.equal(removeVibeProjectServer('/r', deps), 'removed');
+	assert.equal(files.get('/r'), '[[mcp_servers]]\nname = "docs"\ncommand = "node"\nargs = [\'\'\'\n[[tools]]\n\'\'\']\n\n', 'the fake header inside the string does not split the docs entry');
+	assert.equal(removed.length, 0);
+});
+
 test('removeVibeProjectServer leaves a config it cannot normalize untouched and reports the failure', async () => {
 	const { removeVibeProjectServer } = await import('../mcp-register.js');
 	let wrote = false;

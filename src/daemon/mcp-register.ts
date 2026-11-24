@@ -186,6 +186,47 @@ function isMcpServersSubtable(brackets: string, name: string): boolean {
 }
 
 /**
+ * Newlines inside TOML multiline strings (basic `"""` and literal `'''`),
+ * each replaced by a space: index-preserving (same length), so the removal
+ * can run every line-anchored match on the masked text while slicing content
+ * from the original. A line that only exists inside a string value (e.g. a
+ * `name = "insrc"` line within a `'''...'''` argument) can then never fake a
+ * server name or a table header. An unterminated multiline string masks to
+ * the end of the file — conservative.
+ */
+function maskMultilineStringNewlines(text: string): string {
+	const chars = text.split('');
+	let i = 0;
+	while (i < chars.length) {
+		const c = chars[i]!;
+		if (c === '"' || c === "'") {
+			const fence = c.repeat(3);
+			if (text.startsWith(fence, i)) {
+				let j = i + 3;
+				while (j < chars.length) {
+					if (text.startsWith(fence, j)) { j += 3; break; }
+					if (chars[j] === '\n') chars[j] = ' ';
+					j++;
+				}
+				i = j;
+				continue;
+			}
+			// A single-line string holds no newline by definition — skip it so an
+			// escaped or unmatched quote cannot open a fake multiline string.
+			let j = i + 1;
+			while (j < chars.length && chars[j] !== c && chars[j] !== '\n') {
+				if (c === '"' && chars[j] === '\\') j++;
+				j++;
+			}
+			i = j + 1;
+			continue;
+		}
+		i++;
+	}
+	return chars.join('');
+}
+
+/**
  * Remove a legacy insrc [[mcp_servers]] entry from the repo's own
  * .vibe/config.toml. Returns 'absent' when the file has no such entry (or
  * cannot be read), 'removed' after rewriting the file without it — deleting
@@ -203,35 +244,44 @@ export function removeVibeProjectServer(
 	if (found === undefined) return 'absent';
 	const text = moveInlineListToTables(found, 'mcp_servers');
 	if (!vibeConfigHasServer(text, 'insrc')) return 'absent';
-	const chunks = text.split(/^\[\[/m);
 	const nameLine = new RegExp(`^\\s*(?:name|"name"|'name')\\s*=\\s*["']insrc["']`, 'm');
+	// All analysis runs on the newline-masked text (a table header or a server
+	// name can never live inside a string value); all content slices come from
+	// the original, byte for byte.
+	const masked = maskMultilineStringNewlines(text);
+	const starts = [...masked.matchAll(/^\[\[/gm)].map(m => m.index!);
 	// A table header of ANY kind (single [t] or double [[t]]): the insrc entry's
 	// own fields end at the next one — the name match must not read past it
 	// (a `name = "insrc"` inside a later table belongs to that table, not to
 	// the mcp_servers entry), and whatever follows inside the chunk is a table
 	// that must survive the removal unless it is the entry's own sub-table.
 	let cleaned = '';
-	chunks.forEach((chunk, i) => {
-		if (i === 0) { cleaned += chunk; return; }
-		const nextHeader = chunk.search(TABLE_HEADER);
-		const fields = nextHeader > 0 ? chunk.slice(0, nextHeader) : chunk;
-		if (!(chunk.startsWith('mcp_servers]]') && nameLine.test(fields))) {
-			cleaned += '[[' + chunk;
-			return;
+	cleaned += text.slice(0, starts.length > 0 ? starts[0]! : text.length); // the preamble before the first [[
+	for (let i = 0; i < starts.length; i++) {
+		const chunkStart = starts[i]! + 2; // just past the '[[' the split-style bound removed
+		const chunkEnd = i + 1 < starts.length ? starts[i + 1]! : text.length;
+		const maskedChunk = masked.slice(chunkStart, chunkEnd);
+		const origChunk = text.slice(chunkStart, chunkEnd);
+		const nextHeader = maskedChunk.search(TABLE_HEADER);
+		const fields = nextHeader > 0 ? maskedChunk.slice(0, nextHeader) : maskedChunk;
+		if (!(maskedChunk.startsWith('mcp_servers]]') && nameLine.test(fields))) {
+			cleaned += '[[' + origChunk;
+			continue;
 		}
 		// An insrc [[mcp_servers]] chunk: drop the entry's own fields and its
 		// `[mcp_servers.<sub>]` sub-tables (they belong to the removed entry —
 		// kept, they would re-attach to a preceding server), preserving any
 		// unrelated table that follows it in the same chunk.
 		if (nextHeader > 0) {
-			const rest = chunk.slice(nextHeader);
-			const headers = [...rest.matchAll(TABLE_HEADER)];
+			const restM = maskedChunk.slice(nextHeader);
+			const restO = origChunk.slice(nextHeader);
+			const headers = [...restM.matchAll(TABLE_HEADER)];
 			for (let s = 0; s < headers.length; s++) {
 				if (isMcpServersSubtable(headers[s]![1]!, headers[s]![2]!)) continue;
-				cleaned += rest.slice(headers[s]!.index!, s + 1 < headers.length ? headers[s + 1]!.index! : rest.length);
+				cleaned += restO.slice(headers[s]!.index!, s + 1 < headers.length ? headers[s + 1]!.index! : restO.length);
 			}
 		}
-	});
+	}
 	if (cleaned === text) return 'absent'; // the name matched only inside a later table — no entry removed
 	if (cleaned.trim() === '') {
 		const removeFile = deps.removeVibeProjectConfig ?? ((p: string) => rmSync(vibeProjectConfigPath(p)));

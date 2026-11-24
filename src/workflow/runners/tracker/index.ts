@@ -264,7 +264,55 @@ const CONVENTIONS_BLOCK = [
 	'  - The framework writes the doc→issue links locally after you return the refs — you don\'t.',
 ].join('\n');
 
-function pushPrompt(c: Awaited<ReturnType<typeof assemblePushContext>>): string {
+/** ISSUE-5f9d4ab4c90c0b4c s1/t3: the single-issue push prompt for an
+ *  ISSUE-anchored work item (headKind 'issue'). ONE issue, the prerendered
+ *  ISSUE markdown as the single authoritative body, labels epicLabel +
+ *  `epic:<slug>` only — no story label, no sub-issues, no `## Stories`
+ *  task-list rewrite, no `**Epic:**` back-reference (those are DEF-only and
+ *  would self-reference the single issue). Adoption of an existing
+ *  `existingRefs.epicRef` is allowed WITHOUT --force: labels are additive via
+ *  the singular `--add-label` (gh_issue_edit maps addLabels to it), only body
+ *  edits need --force. */
+function pushPromptIssue(c: Awaited<ReturnType<typeof assemblePushContext>>): string {
+	return [
+		'You are running the `execute` step of `tracker.push` for an ISSUE-anchored work item.',
+		'',
+		`Push the SINGLE issue \`${c.epicSlug}\` (${c.epicHash}) to \`${c.gh.owner}/${c.gh.repo}\`.`,
+		'',
+		CONVENTIONS_BLOCK,
+		'',
+		'ORDER OF OPERATIONS:',
+		`  1. Ensure the labels \`${c.gh.epicLabel}\` and \`epic:${c.epicSlug}\` exist (create missing ones idempotently, e.g. \`gh label create --force\`).`,
+		...(c.existingRefs?.epicRef !== undefined ? [
+			`  2. ADOPT the existing issue ${c.existingRefs.epicRef} — do NOT create a duplicate.`,
+			`     Add the labels idempotently WITHOUT --force: \`gh issue edit <N> --add-label "${c.gh.epicLabel},epic:${c.epicSlug}"\` (the singular --add-label flag; the plural --add-labels is rejected by gh).`,
+			'     Do NOT edit the body unless --force was given; the body is already the authoritative markdown below.',
+		] : [
+			'  2. Create exactly ONE issue for this work item.',
+			`     Title: ${JSON.stringify(c.epicTitle)}`,
+			'     Body: the prerendered markdown below, VERBATIM (it is the single authoritative body).',
+			`     Labels on create: \`${c.gh.epicLabel}\`, \`epic:${c.epicSlug}\`.`,
+		]),
+		`  ${c.existingRefs?.epicRef !== undefined ? '3' : '3'}. ${c.gh.useMilestones ? `Create milestone \`${c.epicSlug}\` and attach the issue.` : 'Skip milestone creation (useMilestones=false).'}`,
+		'',
+		'PRERENDERED ISSUE BODY (use verbatim):',
+		'```markdown',
+		c.epicBodyMd,
+		'```',
+		'',
+		'DELIBERATELY NOT USED for an ISSUE work item:',
+		'  - Story sub-issues, story labels, the `## Stories` task list, `**Epic:**` back-references (this item has no Epic/Story split; the single issue IS both).',
+		'  - Task sub-issues + issue types.',
+		'  - Projects v2, cross-repo Epics.',
+		'',
+		'RETURN:',
+		'  Emit the refs JSON matching the schema: `epicRef` = the single issue `<owner>/<repo>#<N>`; `storyRefs` = { s1: <the SAME ref> } (the implied story shares the work-item issue).',
+		'  Do not print anything else.',
+	].join('\n');
+}
+
+export function pushPrompt(c: Awaited<ReturnType<typeof assemblePushContext>>): string {
+	if (c.headKind === 'issue') return pushPromptIssue(c);
 	const tasksOn = c.gh.pushTasks && c.plans !== undefined && c.plans.length > 0;
 	const notUsed = [
 		'DELIBERATELY NOT USED (per plan):',
@@ -325,7 +373,29 @@ function taskPushBlock(c: Awaited<ReturnType<typeof assemblePushContext>>): stri
 	return lines.join('\n');
 }
 
-function pushVerifyPrompt(c: Awaited<ReturnType<typeof assemblePushContext>>): string {
+/** ISSUE-5f9d4ab4c90c0b4c s1/t3: the verify checklist for an ISSUE-anchored
+ *  push — issueLabelled + bodyMatches + singleIssue. The DEF-only items
+ *  (storyLabelled, taskList, backRef, task*, subIssue, taskCoverage) pass by
+ *  construction: there are no stories/tasks/back-references to check. */
+function pushVerifyPromptIssue(c: Awaited<ReturnType<typeof assemblePushContext>>): string {
+	return [
+		'You are running the `checklist.verify` step of `tracker.push` for an ISSUE-anchored work item.',
+		'',
+		`Verify the single issue on \`${c.gh.owner}/${c.gh.repo}\` (use \`gh issue view --json labels,body,state\`).`,
+		'',
+		'CHECKLIST ITEMS (grade each pass/fail):',
+		`  issueLabelled: The issue has \`${c.gh.epicLabel}\` and \`epic:${c.epicSlug}\` labels.`,
+		'  bodyMatches:   The issue body matches the prerendered markdown given in the execute step VERBATIM (or was left untouched on adoption).',
+		'  singleIssue:   Exactly ONE issue exists for this work item — no duplicates were created (the returned epicRef and storyRefs.s1 are the same ref).',
+		...(c.gh.useMilestones ? [`  milestone:     Milestone \`${c.epicSlug}\` exists and the issue is attached.`] : ['  milestone:     (skipped — useMilestones=false)']),
+		'',
+		'RETURN:',
+		'  Emit `{ items: [{ itemId, verdict, notes? }], failedCount }`.',
+	].join('\n');
+}
+
+export function pushVerifyPrompt(c: Awaited<ReturnType<typeof assemblePushContext>>): string {
+	if (c.headKind === 'issue') return pushVerifyPromptIssue(c);
 	const tasksOn = c.gh.pushTasks && c.plans !== undefined && c.plans.length > 0;
 	return [
 		'You are running the `checklist.verify` step of `tracker.push`.',

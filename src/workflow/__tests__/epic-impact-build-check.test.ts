@@ -20,7 +20,7 @@ import { EPIC_IMPACT_LABEL } from '../epic-built-state.js';
 import { approvalStateOf } from '../artifact-core/approval-view.js';
 import { ARTIFACTS_DIR, artifactJsonPath, buildArtifactId, lldArtifactId } from '../storage.js';
 import { approveTarget } from './helpers/approve.js';
-import { approvedMeta, draftMeta, writeHead } from './lifecycle-fixtures.js';
+import { approvedMeta, draftMeta, lifecycleMeta, writeHead } from './lifecycle-fixtures.js';
 import type { EpicImpactAnalysis } from '../artifacts/epic-impact.js';
 
 const HASH = 'c1d2e3f4a5b6c7d8';
@@ -114,6 +114,23 @@ test("epic-impact-build-check.test.ts: approveWorkflowTarget over a later Story'
 		assert.equal((await approveTarget({ repoPath: first, artifactPath: buildPath(first), skipKinds: true })).approved.length, 1);
 		const noLld = repoWith(undefined, 'Did the thing.'); repos.push(noLld);
 		assert.equal((await approveTarget({ repoPath: noLld, artifactPath: buildPath(noLld), skipKinds: true })).approved.length, 1);
+
+		// a standalone Story whose LLD carries an applies:true analysis is checked the same way
+		const alone = repoWith({ epicImpact: ANALYSIS }, 'Did the thing.'); repos.push(alone);
+		const lldFile = artifactJsonPath(alone, lldArtifactId(HASH, 's3'));
+		const lldJson = JSON.parse(readFileSync(lldFile, 'utf8')) as { meta: Record<string, unknown> };
+		lldJson.meta['standalone'] = true;
+		writeFileSync(lldFile, JSON.stringify(lldJson));
+		const aloneOut = await approveTarget({ repoPath: alone, artifactPath: buildPath(alone), skipKinds: true });
+		assert.equal(aloneOut.skipped[0]?.kind, 'epic-impact-missing', 'a standalone Story is checked too');
+
+		// a BUILD already completed and awaiting its roll-up retry is not stopped by it, and an existing refusal (a test record) keeps its own reason
+		const retry = repoWith({ epicImpact: ANALYSIS }, 'Did the thing.'); repos.push(retry);
+		writeHead(retry, buildArtifactId(HASH, 's3'), { meta: { workflow: 'build', storyId: 's3', epicHash: HASH, createdAt: AT, ...lifecycleMeta({ status: 'completed', approval: true }) }, body: { summary: 'Did the thing.', tasks: [], changeLog: [] }, citations: [] });
+		writeHead(retry, `STORY-${HASH}-s3`, { meta: { workflow: 'build', storyId: 's3', epicHash: HASH, createdAt: AT, ...draftMeta() }, body: {}, citations: [] });
+		const retryOut = await approveTarget({ repoPath: retry, artifactPath: buildPath(retry), skipKinds: true });
+		assert.equal(retryOut.skipped.some(k => k.kind === 'epic-impact-missing'), false, 'the roll-up retry shortcut comes first');
+		assert.equal(retryOut.followOn?.length, 1, 'the retry ran');
 
 		// a test record is still refused by kind, not by this check
 		const records = repoWith({ epicImpact: ANALYSIS }, 'Did the thing.'); repos.push(records);

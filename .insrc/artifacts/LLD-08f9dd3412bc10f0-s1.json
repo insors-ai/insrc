@@ -1,0 +1,360 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1795518818139-voj048",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-24T11:20:20.569Z",
+    "epicCreatedAt": "2026-11-24T10:27:23.098Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 394910,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "08f9dd3412bc10f0",
+    "epicSlug": "codexreadonlysessionargs-blanket-per-server-disable-override",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1795518818139-voj048",
+    "hldEffectiveHash": "c0d16c8b6b76a4352bbb1d0b8da422c967a89cc284c274cbb7302766dc503454",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "Verify per-server exclusion safety before disabling a globally-registered codex MCP server in a read-only session",
+    "standalone": true,
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "766f8d5283111dcf4e50ec3deec213438e068c76cd3df564ed8778acc0824bbf",
+        "at": "2026-11-24T11:20:23.193Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-24T11:21:11.053Z",
+        "override": {
+          "reason": "Automated design review is unavailable (being rewritten per project policy); approved on the user's explicit human review and approval instead."
+        }
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "7453bdd916e796683d0974d007e9b5ede4ce6027"
+  },
+  "body": {
+    "summary": {
+      "prose": "This Story makes a codex read-only session fail cleanly, with a clear named error, when one of the OTHER globally-registered MCP servers it tries to disable turns out to be one codex itself cannot accept a partial override for (confirmed live: codex's own built-in plugin servers codex_app and cua_repl crash codex's bootstrap, while node_repl's identical override succeeds). It recognizes codex's own specific bootstrap-failure wording and translates it into a precise refusal naming the unexcludable server, instead of letting an opaque, generic CLI-exit error surface -- with no extra subprocess calls and no change to the safe, already-working case.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Verify per-server exclusion safety before disabling a globally-registered codex MCP server in a read-only session"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "CodexMcpServerOverrideUnsafeError (new error class)",
+          "signature": "export class CodexMcpServerOverrideUnsafeError extends Error { constructor(readonly serverName: string) }",
+          "parameters": [
+            {
+              "name": "serverName",
+              "type": "string",
+              "purpose": "the globally-registered server name codex's own bootstrap refused to accept a partial enabled=false override for",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Error instance",
+            "meaning": "a named, explicit refusal identifying exactly which server's disable override codex's bootstrap rejected"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "thrown by readOnlySessionOnce's codex branch in place of letting the underlying CliExitError (or a plain Error from runCodex) surface unexplained, when that failure's own message matches codex's live-confirmed bootstrap-rejection wording"
+          ]
+        },
+        {
+          "name": "readOnlySessionOnce (private, codex branch -- modifies the existing flow at src/agent/providers/cli-provider.ts:699-753)",
+          "signature": "private async readOnlySessionOnce<T>(prompt: string, schema: StructuredSchema, exec: ExecOverride & { cwd: string; timeoutMs: number; watchStall: boolean }): Promise<T>",
+          "parameters": [
+            {
+              "name": "prompt",
+              "type": "string",
+              "purpose": "the task prompt",
+              "optional": false
+            },
+            {
+              "name": "schema",
+              "type": "StructuredSchema",
+              "purpose": "the output schema",
+              "optional": false
+            },
+            {
+              "name": "exec",
+              "type": "ExecOverride & { cwd: string; timeoutMs: number; watchStall: boolean }",
+              "purpose": "per-call overrides including the required cwd and the remaining deadline budget",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<T>",
+            "meaning": "the parsed, schema-checked structured reply"
+          },
+          "errors": [
+            {
+              "type": "CodexProjectMcpServersUnexcludableError",
+              "condition": "unchanged -- walkProjectMcpConfigLayers(exec.cwd) returns true"
+            },
+            {
+              "type": "ReadOnlySessionTimeoutError",
+              "condition": "unchanged -- discovery exhausts the remaining budget"
+            },
+            {
+              "type": "CodexMcpServerOverrideUnsafeError",
+              "condition": "NEW -- runCodex's call fails and its failure message matches codex's live-confirmed bootstrap-rejection wording naming one of the servers codexReadOnlySessionArgs tried to disable (confirmed live this session: codex_app, cua_repl); the server name is read from that same message"
+            },
+            {
+              "type": "Error",
+              "condition": "unchanged -- any other codex exec failure keeps surfacing as today (e.g. codex read-only session emitted no agent_message item, unparseable JSON)"
+            }
+          ],
+          "preconditions": [
+            "this.kind === 'codex' branch"
+          ],
+          "postconditions": [
+            "ordering is otherwise unchanged: walkProjectMcpConfigLayers, schema temp file, discoverCodexMcpServers, budget recompute, codexReadOnlySessionArgs, runCodex (unmodified), reply parsing -- the ONLY change is that a failure from the runCodex call is inspected for the bootstrap-rejection wording before being re-thrown as-is"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "codex per-server override failure handling",
+        "change": "new",
+        "details": "When runCodex's call in readOnlySessionOnce's codex branch fails, its message (CliExitError.said, the same field the existing failure-classification logic already reads) is checked against the live-confirmed pattern for codex's own 'invalid transport' bootstrap rejection naming a specific mcp_servers.<name> override; a match throws CodexMcpServerOverrideUnsafeError(name) instead of the original error. No match re-throws the original error unchanged.",
+        "callSites": [
+          "src/agent/providers/cli-provider.ts:699-753"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "codexReadOnlySessionArgs emits a disable override for codex_app or cua_repl (globally registered, enabled or disabled, same live profile as node_repl), and runCodex's codex invocation fails because codex's own bootstrap cannot accept a partial override for that server",
+          "detection": "runCodex's failure message (the same `said` field the existing CliExitError classification already reads) matches the live-confirmed pattern for codex's own bootstrap rejection, 'Error loading config.toml: invalid transport' naming a specific `mcp_servers.<name>` entry",
+          "response": "readOnlySessionOnce throws CodexMcpServerOverrideUnsafeError(name) instead of letting the original CliExitError surface unexplained; the server name is read directly from the matched message",
+          "userImpact": "the codex read-only session fails with a clear, named reason identifying exactly which globally-registered server could not be safely excluded, instead of an opaque CLI exit message; no tool from any server (including insrc's own) was ever reachable, since codex's own bootstrap crashed before starting any session",
+          "recoverable": true
+        },
+        {
+          "scenario": "codexReadOnlySessionArgs emits a disable override for node_repl (or any other server whose override codex accepts, confirmed live), and runCodex succeeds normally",
+          "detection": "runCodex returns normally (no non-zero exit)",
+          "response": "readOnlySessionOnce proceeds exactly as today -- no new error path is exercised at all",
+          "userImpact": "none: the session starts restricted as designed, unaffected by this Story",
+          "recoverable": true
+        },
+        {
+          "scenario": "runCodex fails for a reason unrelated to a per-server override (e.g. the existing 'no agent_message item' / unparseable-JSON / other codex exec failures already handled today)",
+          "detection": "the failure message does not match the live-confirmed bootstrap-rejection pattern",
+          "response": "the original error is re-thrown exactly as today, unmodified -- this Story's new check only recognizes its own specific pattern and otherwise is a no-op",
+          "userImpact": "no behavior change for any failure this Story does not target",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "codex's failure message happens to match the bootstrap-rejection pattern but names a server NOT in the `servers` list codexReadOnlySessionArgs was given (should not occur given this Story's own argv construction, but the match is purely textual)",
+          "expected": "CodexMcpServerOverrideUnsafeError is still thrown with whatever name the message itself contains -- the error names the server codex itself blamed, not a server this code independently re-validates against its own servers list"
+        },
+        {
+          "input": "more than one other globally-registered server is unexcludable (e.g. both codex_app and cua_repl are present); codex's own bootstrap reports only the FIRST one it encountered applying overrides",
+          "expected": "CodexMcpServerOverrideUnsafeError names only the one server codex's own message identifies; the session still refuses correctly, it simply does not enumerate every unsafe server in one error -- consistent with codex's own bootstrap failing on the first bad override it processes, not all of them"
+        },
+        {
+          "input": "the insrc server itself is somehow the one named in a bootstrap-rejection message (not expected, since insrc's own override is enabled_tools, not enabled=false, and insrc's own registration is confirmed working live throughout this session)",
+          "expected": "CodexMcpServerOverrideUnsafeError still fires and names 'insrc' -- the check is purely textual on codex's own message, with no special-casing that would hide a genuine insrc-side failure"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "codexReadOnlySessionArgs, given insrc plus other servers, still returns the existing base argv plus the enabled_tools override and one disable override per other server, excluding insrc's own name -- this Story changes ONLY how readOnlySessionOnce reacts to a resulting codex failure, never the argv-construction logic itself.",
+          "source": "c1"
+        },
+        {
+          "text": "readOnlySessionOnce's existing ordering (walkProjectMcpConfigLayers, schema temp file, discoverCodexMcpServers, budget recompute, codexReadOnlySessionArgs, runCodex, reply parsing) and its claude/vibe branches are unaffected -- this Story's new check is a single inspection of runCodex's own failure, added without reordering any existing step.",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "verify readOnlySessionOnce's new failure-translation logic against a fake codex binary, without spawning the real codex binary",
+          "subjects": [
+            "readOnlySessionOnce throws CodexMcpServerOverrideUnsafeError('codex_app') when runCodex's failure message matches codex's live-confirmed bootstrap-rejection wording naming codex_app",
+            "readOnlySessionOnce throws CodexMcpServerOverrideUnsafeError('cua_repl') when runCodex's failure message matches the same wording naming cua_repl",
+            "readOnlySessionOnce proceeds normally (no new error) when the servers list includes node_repl and runCodex succeeds, exactly as today",
+            "readOnlySessionOnce re-throws the original, unmodified error when runCodex fails for a reason that does NOT match the bootstrap-rejection wording (e.g. a generic non-zero exit, or the existing 'no agent_message item' case)"
+          ],
+          "fixturesNeeded": [
+            "a fake codex binary that can be scripted to exit non-zero with the exact live-confirmed 'Error loading config.toml: invalid transport in `mcp_servers.<name>`' stderr text for a given server name, alongside the existing script-stepping fake already used in cli-readonly-session.test.ts"
+          ]
+        },
+        {
+          "level": "live",
+          "purpose": "prove, against the real installed codex binary (gated INSRC_LIVE_TESTS=1), that codex_app and cua_repl are refused cleanly and node_repl starts a restricted session successfully, without exposing any server's tools",
+          "subjects": [
+            "codex: a real runReadOnlySession call whose discovered servers include codex_app or cua_repl throws CodexMcpServerOverrideUnsafeError naming that server, and no tool from any server was reachable (the session never started)",
+            "codex: a real runReadOnlySession call whose discovered servers include only node_repl (and insrc) succeeds and starts a restricted session as today",
+            "codex: the previously-covered misregistration, budget/cancellation, and project-config-refusal tests remain unaffected by this Story's change"
+          ],
+          "fixturesNeeded": [
+            "real codex CLI binary installed and authenticated, gated by INSRC_LIVE_TESTS=1",
+            "this environment's own real codex_app and cua_repl registrations (already present, confirmed live this session) to exercise the refusal path, and node_repl to exercise the success path"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "unit: readOnlySessionOnce throws CodexMcpServerOverrideUnsafeError('codex_app') on the matching bootstrap-rejection message",
+            "unit: readOnlySessionOnce throws CodexMcpServerOverrideUnsafeError('cua_repl') on the matching bootstrap-rejection message",
+            "live: a real session whose discovered servers include codex_app or cua_repl throws CodexMcpServerOverrideUnsafeError and never starts, exposing no tool"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "unit: readOnlySessionOnce proceeds normally when the servers list includes node_repl and runCodex succeeds",
+            "live: a real session whose discovered servers include node_repl succeeds and starts a restricted session"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "unit: readOnlySessionOnce re-throws the original, unmodified error when the failure does not match the bootstrap-rejection wording",
+            "live: the previously-covered misregistration, budget/cancellation, and project-config-refusal tests remain unaffected"
+          ]
+        }
+      ],
+      "testFramework": "node:test (npx tsx --test), matching this repo's existing cli-provider/cli-readonly-session test suites"
+    },
+    "migration": {
+      "stateBefore": "Per s1: codexReadOnlySessionArgs (src/agent/providers/cli-provider.ts:215-225) builds one '-c mcp_servers.<name>.enabled=false' override for every globally-registered server other than insrc, with no check of whether codex itself can accept a partial override for that server. readOnlySessionOnce's codex branch (src/agent/providers/cli-provider.ts:699-753) calls runCodex with that argv; a failure propagates as whatever generic error runCodex already produces (a plain CliExitError or similar), with no special handling. Confirmed live this session: when the discovered servers list includes codex_app or cua_repl, the resulting codex invocation crashes codex's entire bootstrap ('Error loading config.toml: invalid transport'), and that crash surfaces today as an opaque, unexplained CliExitError.",
+      "stateAfter": "readOnlySessionOnce's codex branch inspects a runCodex failure's own message for the live-confirmed bootstrap-rejection wording naming a specific mcp_servers.<name> override; a match throws the new, named CodexMcpServerOverrideUnsafeError(name) instead of the generic error. Every other failure mode, and the already-working success case (e.g. node_repl), is unchanged.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "add the new CodexMcpServerOverrideUnsafeError class",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "in readOnlySessionOnce's codex branch, catch a runCodex failure, check its message against the live-confirmed bootstrap-rejection pattern, and re-throw as CodexMcpServerOverrideUnsafeError(name) on a match, else re-throw the original error unchanged",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "add unit tests covering the new error path (codex_app, cua_repl) and the unchanged paths (node_repl success, a non-matching failure re-thrown as-is)",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "readOnlySessionOnce's public call surface (runReadOnlySession) and its claude/vibe branches are unaffected. For the codex branch, every existing failure mode that does NOT match the new bootstrap-rejection pattern is re-thrown exactly as before -- callers that already catch a generic Error/CliExitError from a codex read-only session continue to work unchanged. A caller that wants to distinguish this specific failure can now catch CodexMcpServerOverrideUnsafeError, a capability that did not exist before; nothing that worked before stops working.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Catch codex's own refusal and translate it into a clear, named error",
+        "oneLineSummary": "Keep emitting one disable override per other server as today, but recognize codex's specific 'invalid transport in `mcp_servers.<name>`' bootstrap failure and convert it into a new, named CodexMcpServerOverrideUnsafeError(serverName) instead of letting an opaque CliExitError bubble up.",
+        "approach": "codexReadOnlySessionArgs keeps building the full argv exactly as it does today (one enabled_tools override for insrc, one enabled=false override per other server). The caller (readOnlySessionOnce) runs codex exactly once as today; if codex exits non-zero and its stderr matches the specific pattern confirmed live this session ('Error loading config.toml: invalid transport in `mcp_servers.<name>`'), the server name is extracted from the match and a new, named error is thrown identifying exactly which server's override codex refused, instead of a generic CliExitError. Codex's own bootstrap never starts a session in this failure case (confirmed live: exit 1 before any MCP server, including insrc's own tools, is reachable), so no tool from any server is ever exposed. No extra subprocess call is added.",
+        "pros": [
+          "Zero extra cost: no additional codex invocation per server, reuses the single call the session already makes.",
+          "Reuses a live-confirmed, specific failure signature rather than guessing at a predictive heuristic that live evidence (node_repl vs codex_app/cua_repl sharing an outwardly identical profile) already disproved.",
+          "The refusal is clean and explicit (a named error citing the exact unexcludable server) rather than an opaque CliExitError, satisfying the Task's 'explicit preflight refusal, without exposing their tools' requirement even though the check fires on first failure rather than before any attempt."
+        ],
+        "cons": [
+          "Detects the problem reactively, on the FIRST real session attempt, rather than before any codex subprocess is spawned at all -- a session that happens to need a byte of codex's actual process startup time before failing, rather than failing instantly.",
+          "If codex ever changes its own error wording for this failure mode, the pattern match stops recognizing it and the error degrades back to a generic CliExitError (though the session still refuses correctly, just with a less specific message)."
+        ],
+        "costEstimate": "S"
+      },
+      {
+        "id": "a2",
+        "name": "Proactively probe each other server's override safety before building the real session argv",
+        "oneLineSummary": "Before constructing the real session argv, run one extra, cheap codex invocation per OTHER globally-registered server to test whether its disable override is safe, then build the real argv only from servers that passed.",
+        "approach": "Add a new per-server preflight: for each server other than insrc, run a minimal codex invocation (e.g. a schema-less exec with no prompt work) carrying ONLY that one server's '-c mcp_servers.<name>.enabled=false' override, and classify it as safe or unsafe by its exit code. Servers that fail the preflight make the whole read-only session refuse immediately (via a named error identifying them), before the real session argv is ever built or a real codex session is attempted.",
+        "pros": [
+          "Detects the problem before the real session attempt, not reactively on its first real invocation.",
+          "Names every unsafe server up front in one pass, if more than one is unsafe, rather than discovering them one crash at a time."
+        ],
+        "cons": [
+          "Costs one EXTRA codex subprocess invocation per other globally-registered server on every single read-only session, on top of the existing discovery call -- in this environment alone that is 2 extra invocations (codex_app, cua_repl) for a capability (insrc analyze) that is supposed to be fast and cheap.",
+          "A preflight probe succeeding is not proof the SAME override succeeds when combined with several others in the real session argv in one invocation -- codex's own cross-override interaction is not established live, so this could still miss a combination-specific failure the simpler reactive catch in a1 would still catch regardless."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Detects the problem earlier but at real added cost per session (one extra codex invocation per other globally-registered server), and does not actually remove the need for a1's reactive catch as a backstop against combined-override interactions -- strictly more expensive for no proven additional safety."
+      },
+      {
+        "id": "a3",
+        "name": "Stop disabling other servers at all; rely solely on insrc's own enabled_tools scoping",
+        "oneLineSummary": "Drop the 'one enabled=false override per other server' mechanism entirely and depend only on the insrc server's own enabled_tools allowlist to restrict the session.",
+        "approach": "codexReadOnlySessionArgs would emit only the insrc enabled_tools override and no disable overrides for any other server, relying on codex's own enabled_tools semantics to implicitly exclude every other server's tools from the session.",
+        "pros": [
+          "Removes the failure mode entirely: no override ever names another server, so codex's bootstrap can never crash on one.",
+          "No extra subprocess calls of any kind."
+        ],
+        "cons": [
+          "Reopens the exact gap this Story's parent epic was built to close: codex's own enabled_tools scopes only the named server, it does not implicitly disable every OTHER globally-registered server's tools (the reason the per-server disable mechanism was added by this epic's own t3 in the first place). Every other server -- including codex_app, cua_repl, node_repl and any future registration -- would stay fully reachable in a 'read-only' session, which is a functional regression on the Story this whole epic exists to deliver, not an acceptable simplification."
+        ],
+        "costEstimate": "XS",
+        "reasonRejected": "Removes the failure mode by reintroducing the exact tool-exposure gap this epic was built to close; rejected outright, not merely more expensive."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/agent/providers/cli-provider.ts:699-753",
+      "quotedText": "s1 how-does-it-work analyze bundle: current signatures, callers, and existing tests of codexReadOnlySessionArgs and discoverCodexMcpServers, also citing src/agent/providers/cli-provider.ts:187-206 and :215-225"
+    }
+  ]
+}

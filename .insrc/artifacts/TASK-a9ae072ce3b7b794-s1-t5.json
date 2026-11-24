@@ -1,0 +1,101 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-f19e69d0-0e1a-4448-bdee-33c0a65efc63",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-24T14:02:19.920Z",
+    "epicCreatedAt": "2026-11-24T05:10:09.065Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a9ae072ce3b7b794",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add a bounded one-retry recovery to readOnlySessionOnce's codex branch when a disabled server is unexcludable",
+      "parent": {
+        "entityId": "STORY-a9ae072ce3b7b794-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a9ae072ce3b7b794-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 1,
+        "contentHash": "9375eb9bdd973b41879151213339819194ddb59ed8c47050535d7525a6d286ce",
+        "at": "2026-11-24T14:02:19.920Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-24T14:02:19.922Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add a bounded one-retry recovery to readOnlySessionOnce's codex branch when a disabled server is unexcludable",
+    "summary": "Wrap the existing runCodex call (and its existing CodexMcpServerOverrideUnsafeError catch) in readOnlySessionOnce's codex branch with a bounded retry: on catching CodexMcpServerOverrideUnsafeError(name) from the first attempt, filter name out of the servers list, rebuild codexReadOnlySessionArgs from the filtered list, and call runCodex exactly one more time with the same recomputed remaining budget. A second failure of any kind (including another CodexMcpServerOverrideUnsafeError) re-throws unchanged -- never more than one retry. A non-matching first-attempt failure is unaffected and re-throws immediately as today.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "readOnlySessionOnce retries once with the offending server removed, and succeeds, when a safe server remains after filtering",
+      "readOnlySessionOnce retries once with no non-insrc disable overrides at all, and succeeds, when the unsafe server was the only non-insrc entry",
+      "readOnlySessionOnce throws CodexMcpServerOverrideUnsafeError naming the SECOND server when the retry also fails with a bootstrap-rejection match -- never more than one retry",
+      "readOnlySessionOnce re-throws the original, unmodified error (no retry attempted) when the first attempt's failure does not match the bootstrap-rejection pattern",
+      "the retry uses the recomputed remaining budget, not a fresh one, and still throws ReadOnlySessionTimeoutError if combined attempts exhaust it",
+      "insrc_build_step validate's own judge session (which resolves to codex for the 'build' role tier on this machine) completes successfully end to end, where it previously failed with verdict-session-failed"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "readOnlySessionOnce retries once with the offending server removed from the disable list, and succeeds, when the first attempt throws CodexMcpServerOverrideUnsafeError and the servers list has another, safe server remaining"
+      },
+      {
+        "level": "unit",
+        "name": "readOnlySessionOnce retries once with no non-insrc disable overrides at all, and succeeds, when the first attempt's unsafe server was the only non-insrc entry"
+      },
+      {
+        "level": "unit",
+        "name": "readOnlySessionOnce throws CodexMcpServerOverrideUnsafeError naming the SECOND server when the retry also fails with a bootstrap-rejection match for a different server -- never more than one retry"
+      },
+      {
+        "level": "unit",
+        "name": "readOnlySessionOnce re-throws the original, unmodified error (no retry attempted) when the first attempt's failure does not match the bootstrap-rejection pattern"
+      },
+      {
+        "level": "unit",
+        "name": "readOnlySessionOnce's retry uses the recomputed remaining budget, not a fresh one, and still throws ReadOnlySessionTimeoutError if the combined attempts exhaust it"
+      },
+      {
+        "level": "live",
+        "name": "codex: a real runReadOnlySession call whose discovered servers include an unexcludable server (this machine's own live registrations) succeeds via the one-time retry, instead of throwing CodexMcpServerOverrideUnsafeError"
+      },
+      {
+        "level": "live",
+        "name": "codex: insrc_build_step validate's own judge session (which resolves to codex for the 'build' role tier on this machine) completes successfully end to end, where it previously failed with verdict-session-failed"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

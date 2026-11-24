@@ -1,0 +1,101 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a583c2e2-e2d5-43e2-82ea-893afd04c289",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-24T08:52:29.255Z",
+    "epicCreatedAt": "2026-11-24T05:10:09.065Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a9ae072ce3b7b794",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Rewire readOnlySessionOnce's codex branch to orchestrate the new checks",
+      "parent": {
+        "entityId": "STORY-a9ae072ce3b7b794-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a9ae072ce3b7b794-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-a9ae072ce3b7b794-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a9ae072ce3b7b794-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "withdrawn",
+      "revision": {
+        "number": 1,
+        "contentHash": "170a04ed6ba3d635808451931c6c761fb19f4c72b7beb25e0f325e1a2b1dac7a",
+        "at": "2026-11-24T08:52:29.255Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-24T08:52:29.256Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Rewire readOnlySessionOnce's codex branch to orchestrate the new checks",
+    "summary": "Rewrite readOnlySessionOnce's codex branch (cli-provider.ts:604-619) to, in order: call walkProjectMcpConfigLayers(exec.cwd) and throw CodexProjectMcpServersUnexcludableError if true; write the schema temp file as today; call discoverCodexMcpServers(this.binPath, exec.cwd, exec.timeoutMs, exec.signal); recompute the remaining budget and throw ReadOnlySessionTimeoutError if exhausted; call the new codexReadOnlySessionArgs with the discovery result; call runCodex (unmodified) with the recomputed timeoutMs; parse the reply exactly as today.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "readOnlySessionOnce throws CodexProjectMcpServersUnexcludableError and calls neither discoverCodexMcpServers nor runCodex when walkProjectMcpConfigLayers returns true",
+      "readOnlySessionOnce calls runCodex with the recomputed remaining timeoutMs, not the original, after discovery consumes part of the budget",
+      "readOnlySessionOnce throws ReadOnlySessionTimeoutError and never calls runCodex when discovery consumes the entire remaining budget",
+      "readOnlySessionOnce's existing claude/vibe branches and its post-exec reply-parsing logic are unchanged"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "readOnlySessionOnce throws CodexProjectMcpServersUnexcludableError and calls neither discoverCodexMcpServers nor runCodex when walkProjectMcpConfigLayers returns true"
+      },
+      {
+        "level": "unit",
+        "name": "readOnlySessionOnce throws ReadOnlySessionTimeoutError and never calls runCodex when discovery consumes the entire remaining budget"
+      },
+      {
+        "level": "live",
+        "name": "codex: a real runReadOnlySession call against THIS environment's own repo succeeds and is NOT refused by CodexProjectMcpServersUnexcludableError, run against the real global config rather than a mock"
+      },
+      {
+        "level": "live",
+        "name": "codex: the prior round's nested-working-directory mutation-sentinel test still results in CodexProjectMcpServersUnexcludableError"
+      },
+      {
+        "level": "live",
+        "name": "codex: the same refusal for a sentinel declared at the exact cwd via each of the four valid TOML forms"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

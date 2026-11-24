@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-22286d02-c4a5-4001-9816-e607b8099844",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-24T08:52:29.251Z",
+    "epicCreatedAt": "2026-11-24T05:10:09.065Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a9ae072ce3b7b794",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add a TOML-parsing dependency and walkProjectMcpConfigLayers",
+      "parent": {
+        "entityId": "STORY-a9ae072ce3b7b794-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a9ae072ce3b7b794-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "withdrawn",
+      "revision": {
+        "number": 1,
+        "contentHash": "42d4ee1fd270ce50a482b7c2ae3d86e8335c8c06f8eecab867a5cb7657ddd09c",
+        "at": "2026-11-24T08:52:29.251Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-24T08:52:29.252Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add a TOML-parsing dependency and walkProjectMcpConfigLayers",
+    "summary": "Add a minimal, pure-ESM TOML-parsing dependency (this repo has none today); implement walkProjectMcpConfigLayers(cwd), which resolves the global config's exact file path once and walks cwd to the filesystem root, skipping only the one layer whose own .codex/config.toml path exactly equals that resolved global path, parsing every other layer's config.toml and checking whether its mcp_servers value is non-empty.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "walkProjectMcpConfigLayers returns false for the default case (home directory's own config.toml is the global config, declaring mcp_servers.insrc)",
+      "walkProjectMcpConfigLayers returns true when a genuine ancestor layer (CODEX_HOME nested inside the project tree, project root distinct from CODEX_HOME) declares its own mcp_servers table, and false for the same layout with no such declaration",
+      "walkProjectMcpConfigLayers returns false when CODEX_HOME lies entirely outside cwd's ancestor chain",
+      "walkProjectMcpConfigLayers returns true for each of the four valid TOML forms (dotted header, bare header with dotted/nested keys, inline-table assignment, top-level dotted key-value)",
+      "walkProjectMcpConfigLayers propagates a plain Error (not false) on a non-ENOENT read/parse failure at a non-excluded layer"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "walkProjectMcpConfigLayers returns false for a cwd beneath a mocked home directory whose .codex/config.toml (the mocked global config) declares mcp_servers.insrc -- the default-case positive regression test"
+      },
+      {
+        "level": "unit",
+        "name": "THE REGRESSION TEST FOR THIS ROUND'S FINDING, using the exact cited layout: mocked CODEX_HOME=/work/repo/codex-state (declaring mcp_servers.insrc), mocked cwd=/work/repo/src, and a mocked /work/repo/.codex/config.toml declaring a mutation-sentinel server -- walkProjectMcpConfigLayers must return TRUE (the sentinel at the project root is still detected and refused) while the SEPARATE case of the same layout with NO sentinel at /work/repo must return false (global insrc remains allowed)"
+      },
+      {
+        "level": "unit",
+        "name": "walkProjectMcpConfigLayers returns false when a mocked CODEX_HOME lies entirely outside cwd's own ancestor chain -- the exclusion comparison never matches, and the walk otherwise behaves exactly as the unbounded design would"
+      },
+      {
+        "level": "unit",
+        "name": "walkProjectMcpConfigLayers returns true when a genuine ancestor project layer (distinct from the global config by path) declares its own mcp_servers table, for each of the four valid TOML forms"
+      },
+      {
+        "level": "unit",
+        "name": "walkProjectMcpConfigLayers returns false for a cwd chain with no non-excluded .codex/config.toml at all"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

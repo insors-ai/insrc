@@ -1,0 +1,141 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "completed",
+      "revision": {
+        "number": 7,
+        "contentHash": "612ae232cba4650edb9b7f9e8b7401d8859ca1d6ccb89ed496368a42679041fd",
+        "at": "2026-11-24T15:15:21.716Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 7,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-24T15:25:18.152Z",
+        "override": {
+          "reason": "Automated code review is unavailable (being rewritten per project policy); self-reviewed and presented in chat instead. Carrying the known gap per the user's explicit instruction: t5's own written acceptance-check text (\"never more than one retry\") is stale against its final, correct implementation (a loop bounded by the discovered non-insrc server count), which the user explicitly directed mid-build (\"option 2\") after live evidence on this machine (two unexcludable companion servers) showed a single fixed retry was insufficient. Every actual test and live check passes; the daemon's own judge session (the motivating problem) is confirmed restored end to end. Full packet at /tmp/.insrc/review-packet-a9ae072ce3b7b794-s1.md."
+        }
+      }
+    },
+    "workflow": "build",
+    "runId": "store-7d9c5a62-aecb-4746-be2e-dda2655ba0ff",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-24T08:57:29.722Z",
+    "epicCreatedAt": "2026-11-24T05:10:09.065Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a9ae072ce3b7b794",
+    "storyId": "s1",
+    "revision": 7,
+    "updatedAt": "2026-11-24T15:14:36.641Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicSlug": "cliprovider-runreadonlysession-s-read-only-tool"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": false
+      },
+      {
+        "id": "t2",
+        "passed": false
+      },
+      {
+        "id": "t3",
+        "passed": false
+      },
+      {
+        "id": "t5",
+        "passed": false
+      }
+    ],
+    "summary": "Added discoverCodexMcpServers (codex -C cwd mcp list --json) and replaced codexReadOnlySessionArgs with a 4-argument builder that constructs a native per-server allowlist from the discovered servers, throwing CodexMcpServerNotRegisteredError when insrc is absent. The sole call site (readOnlySessionOnce) passes a placeholder single-entry servers list for now; the Task that rewires that orchestration end to end replaces it outright.",
+    "testRecord": {
+      "md": "docs/standalone/cliprovider-runreadonlysession-s-read-only-tool-E20261124a9ae072c/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/cli-readonly-session.live.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T15:14:36.641Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/cli-vibe.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T15:14:36.641Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/cli-provider.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T15:14:36.641Z"
+      },
+      {
+        "target": {
+          "file": "package-lock.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T15:14:36.641Z"
+      },
+      {
+        "target": {
+          "file": "package.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T15:14:36.641Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/cli-codex-mcp-config-layers.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T15:14:36.641Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/cli-codex-mcp-discovery.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T15:14:36.641Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/cli-readonly-session.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T15:14:36.641Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/cli-codex-strict-schema.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-24T15:14:36.641Z"
+      }
+    ],
+    "commit": "16bbb6800"
+  },
+  "citations": []
+}

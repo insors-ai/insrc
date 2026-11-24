@@ -1,0 +1,25 @@
+<!-- insrc:artifact ISSUE-a9ae072ce3b7b794 -->
+
+# CliProvider.runReadOnlySession's read-only tool restriction is inconsistent across claude, codex and vibe
+
+## Reproduction
+
+1. Call CliProvider.runReadOnlySession with kind:'claude': the real argv includes --tools Read,Grep,Glob --allowedTools Read,Grep,Glob,mcp__insrc__insrc_analyze,mcp__insrc__insrc_analyze_step (claudeReadOnlySessionArgs). 2. Call it with kind:'vibe': the real agent-server config enables exactly ['read_file', 'mcp_insrc_*'] -- 'mcp_insrc_*' is a wildcard that permits EVERY insrc MCP tool, not just the two analyze tools, and there is no vibe equivalent enabled for Grep/Glob. 3. Call it with kind:'codex': the real argv is only ['exec','--output-schema',schemaPath,'--json','--sandbox','read-only','-C',cwd,...modelArgs] -- no tool-allowlist flag of any kind is passed; restriction relies entirely on codex's own OS-level read-only sandbox. Observed: three different, non-equivalent restriction mechanisms and tool sets depending on which CLI kind happens to run the session, even though every caller of runReadOnlySession (and its own public contract, the READ_ONLY_SESSION_READ_TOOLS/READ_ONLY_SESSION_ANALYZE_TOOLS exported constants) implies one uniform restriction. Expected: the same declared tool set is enforced (as closely as each CLI's own mechanism allows) regardless of which CLI kind actually answers the call.
+
+## Root cause
+
+readOnlySessionOnce (src/agent/providers/cli-provider.ts:565-610) dispatches to three independently-written branches, each hand-rolling its own restriction mechanism instead of deriving it from the shared READ_ONLY_SESSION_READ_TOOLS/READ_ONLY_SESSION_ANALYZE_TOOLS constants (cli-provider.ts:109-112): the claude branch alone derives its --tools/--allowedTools argv directly from those two constants via claudeReadOnlySessionArgs (cli-provider.ts:115-118). The vibe branch instead passes a separately hand-written, hardcoded allowlist ['read_file', 'mcp_insrc_*'] (cli-provider.ts:573-577), duplicated a second time in runVibe's own verifyRuntime check (cli-provider.ts:669-670,691-692) -- 'mcp_insrc_*' is a wildcard, not the two specific tool ids the constants name, so a vibe session's actual permitted tool surface is broader than what the exported constants document. The codex branch (codexReadOnlySessionArgs, cli-provider.ts:143-145) passes no tool-allowlist argument at all -- codex's own CLI has no such flag in this call -- relying solely on '--sandbox read-only', a different KIND of restriction (process/filesystem sandboxing) than an explicit tool allowlist, so it cannot be compared to the other two branches' tool sets at all.
+
+## Fix intent
+
+Make vibe's and codex's restriction mechanisms enforce, as closely as each CLI's own real capabilities allow, the SAME declared tool set that READ_ONLY_SESSION_READ_TOOLS and READ_ONLY_SESSION_ANALYZE_TOOLS already name and that the claude branch already enforces exactly -- so every caller of runReadOnlySession gets one uniform, documented restriction regardless of which CLI kind answers the call, instead of three divergent ones. For vibe, this means deriving its allowlist (both the --enabled-tools construction and the paired verifyRuntime check, which must stay in sync with each other) from the same two exported constants rather than a separately hand-written wildcard. For codex, this means adding whatever enforcement codex's own CLI genuinely supports for matching that tool set (an allowlist flag if one exists, or another verifiable mechanism); if codex's CLI has no way to express an equivalent tool-level restriction at all, that gap is documented explicitly as a known limitation of the codex branch specifically, never silently treated as equivalent to the other two branches' guarantee.
+
+## Citations
+
+- **[[c1]]** `code` `src/agent/providers/cli-provider.ts:109-112`
+- **[[c2]]** `code` `src/agent/providers/cli-provider.ts:115-118`
+- **[[c3]]** `code` `src/agent/providers/cli-provider.ts:143-145`
+- **[[c4]]** `code` `src/agent/providers/cli-provider.ts:565-610`
+- **[[c5]]** `code` `src/agent/providers/cli-provider.ts:573-577`
+- **[[c6]]** `code` `src/agent/providers/cli-provider.ts:665-696`
+- **[[c7]]** `code` `src/daemon/steps/build-step/phases/validate.ts:64-69`

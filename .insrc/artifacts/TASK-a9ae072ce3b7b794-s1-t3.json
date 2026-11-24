@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-f96065c8-dfeb-41da-83c5-05ff50dad2db",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-24T08:52:29.253Z",
+    "epicCreatedAt": "2026-11-24T05:10:09.065Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a9ae072ce3b7b794",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add discoverCodexMcpServers and replace codexReadOnlySessionArgs",
+      "parent": {
+        "entityId": "STORY-a9ae072ce3b7b794-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a9ae072ce3b7b794-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "withdrawn",
+      "revision": {
+        "number": 1,
+        "contentHash": "1f643cf240a0f8e36b05ce24b65fd9839ced89c6dff51d5303f57240a2aa1d9e",
+        "at": "2026-11-24T08:52:29.253Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-24T08:52:29.254Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add discoverCodexMcpServers and replace codexReadOnlySessionArgs",
+    "summary": "Implement discoverCodexMcpServers(binPath, cwd, timeoutMs, signal) with the corrected '-C cwd mcp list --json' argv; replace the current 3-argument, unrestricted codexReadOnlySessionArgs with the new 4-argument, pure/synchronous builder that takes the discovered servers list, throws CodexMcpServerNotRegisteredError when insrc is absent, and otherwise emits the existing base argv plus the insrc enabled_tools override and one disable override per other server.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "discoverCodexMcpServers' subprocess argv places '-C', cwd before 'mcp', 'list', '--json'",
+      "discoverCodexMcpServers propagates a plain Error on non-zero exit, timeout, abort, or unparseable JSON",
+      "codexReadOnlySessionArgs, given insrc plus other servers, returns the existing base argv plus the enabled_tools override and one disable override per other server, excluding insrc's own name",
+      "codexReadOnlySessionArgs throws CodexMcpServerNotRegisteredError synchronously, with no argv constructed, when insrc is absent from the servers list"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "discoverCodexMcpServers' subprocess invocation places '-C', cwd BEFORE 'mcp', 'list', '--json'"
+      },
+      {
+        "level": "unit",
+        "name": "codexReadOnlySessionArgs, given insrc plus two other servers, returns the enabled_tools override and one disable override per other server"
+      },
+      {
+        "level": "unit",
+        "name": "codexReadOnlySessionArgs throws CodexMcpServerNotRegisteredError synchronously, with no argv constructed, when insrc is absent from the servers list"
+      },
+      {
+        "level": "live",
+        "name": "codex: the previously-covered misregistration, budget/cancellation, and functional-proof tests, unaffected by this round's exact-path-exclusion fix"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-5f6f0ba0-7e80-495e-b545-ab212bcebe08",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-24T08:52:29.249Z",
+    "epicCreatedAt": "2026-11-24T05:10:09.065Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a9ae072ce3b7b794",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Fix vibe's read-only tool allowlist and add verifyRuntime's required-tool check",
+      "parent": {
+        "entityId": "STORY-a9ae072ce3b7b794-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a9ae072ce3b7b794-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "withdrawn",
+      "revision": {
+        "number": 1,
+        "contentHash": "061e5177a732df1769b7d309aa20e6e360df8e27810bc998d9128d3e682a14ec",
+        "at": "2026-11-24T08:52:29.249Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-24T08:52:29.250Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Fix vibe's read-only tool allowlist and add verifyRuntime's required-tool check",
+    "summary": "Add the READ_ONLY_SESSION_VIBE_TOOL_NAMES constant and replace the three independently-hardcoded ['read_file','mcp_insrc_*'] literals at cli-provider.ts:577/670/688-693 with it; add a required-tools-present condition to verifyRuntime alongside its existing unexpected-tool rejection.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "READ_ONLY_SESSION_VIBE_TOOL_NAMES is the single source of truth read by all three call sites",
+      "verifyRuntime throws when an unexpected tool is reported (existing behavior, unchanged)",
+      "verifyRuntime throws when either of the two analyze-tool names is absent from the reported tools, including an empty tools array"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "verifyRuntime throws when an unexpected tool is reported (existing behavior, unchanged)"
+      },
+      {
+        "level": "unit",
+        "name": "verifyRuntime throws on an empty tools array or a tools array missing one or both analyze tools"
+      },
+      {
+        "level": "live",
+        "name": "claude: unchanged behavior re-confirmed as a regression guard"
+      },
+      {
+        "level": "live",
+        "name": "vibe: functional proofs unaffected by this round's change"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

@@ -19,6 +19,7 @@ import { fileURLToPath } from 'node:url';
 
 import { hldMdRel, lldMdRel, planMdRel } from '../../../workflow/storage.js';
 import { SMALLEST_CHANGE_RULE } from '../../../workflow/runners/scope-prompts.js';
+import { epicImpactBuildText } from '../../../workflow/epic-built-state.js';
 import { resolveWorkflowRef, type ResolvedRef } from '../../../workflow/tracker/resolve.js';
 import type { PlanTask } from '../../../workflow/artifacts/plan.js';
 import { commandProfileOf, defaultCommandProfile, namesOwnTestFiles, PROJECT_TYPE_GUIDANCE, type CommandProfile } from './validation-checks.js';
@@ -262,6 +263,7 @@ export function renderImplementPrompt(repoPath: string, ref: ResolvedTask, resol
 	return fill(template, {
 		...baseVars(ref, profile), resolvedDecisions: decisions, mergeRule: MERGE_RULE, smallestChangeRule: SMALLEST_CHANGE_RULE,
 		storyTrailerRule: storyTrailerRule(ref.epicHash, ref.storyId),
+		epicImpact: epicImpactBuildText(repoPath, ref.epicHash, ref.storyId),   // ISSUE-1b3caadf04023d33
 	});
 }
 
@@ -291,6 +293,8 @@ export interface StandaloneBuildSpec {
 	readonly resolvedDecisions: string;
 	/** The project's command profile, for the checks the prompt names; the Node default when absent. */
 	readonly profile?:    CommandProfile | undefined;
+	/** The repository, to build the Epic built-state digest from; absent reads as a Story with no Epic. */
+	readonly repoPath?:   string | undefined;
 }
 
 /** Render the implement prompt for a triage-routed no-plan build. There is no
@@ -312,6 +316,10 @@ export function renderStandaloneImplementPrompt(spec: StandaloneBuildSpec): stri
 			: `Implement this trivial change directly. It is mechanical and needs no design ` +
 			  `artifact — make the smallest correct edit that satisfies the scope, with a ` +
 			  `test if one is warranted.`,
+		'',
+		'## Epic impact analysis',
+		'',
+		epicImpactBuildText(spec.repoPath, spec.epicHash, spec.storyId),
 		'',
 		'## Scope',
 		'',

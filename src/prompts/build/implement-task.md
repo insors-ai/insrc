@@ -24,6 +24,7 @@ this Task — do not exceed its scope.**
 {{smallestChangeRule}}
 
 ## Process
+0. {{epicImpact}}
 1. For design context, read the Story LLD (`{{lldPath}}`) and HLD (`{{hldPath}}`);
    for conventions, read `CLAUDE.md`. Stay within this Task's stated surface.
 2. Implement the Task until every acceptance check holds.

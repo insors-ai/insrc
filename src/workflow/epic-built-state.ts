@@ -276,3 +276,19 @@ export function epicImpactPromptParts(repoPath: string, epicHash: string, storyI
 		? { first: [], digest: [renderEpicBuiltStateDigest(null), ''] }
 		: { first: [EPIC_IMPACT_FIRST_ACTION, ''], digest: [renderEpicBuiltStateDigest(digest), ''] };
 }
+
+/**
+ * What the build implement prompts carry for a Story: for a later Story of an Epic, the analysis instruction, the digest and what the
+ * BUILD summary must open with; for a first or standalone Story only the one-line "does not apply". `repoPath` absent reads as no Epic.
+ */
+export function epicImpactBuildText(repoPath: string | undefined, epicHash: string, storyId: string): string {
+	const digest = repoPath === undefined ? null : buildEpicBuiltStateDigest(repoPath, epicHash, storyId);
+	if (digest === null) return EPIC_IMPACT_NOT_APPLICABLE;
+	return [
+		EPIC_IMPACT_FIRST_ACTION,
+		'',
+		renderEpicBuiltStateDigest(digest),
+		'',
+		`Your BUILD summary (the \`summary\` of your final validate call, repeated there) must open with a paragraph that starts with "${EPIC_IMPACT_LABEL}" and names each Story the LLD's Epic impact analysis covered. BUILD approval is refused without it.`,
+	].join('\n');
+}

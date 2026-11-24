@@ -16,6 +16,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, test } from 'node:test';
 
+import { EPIC_IMPACT_FIRST_ACTION, EPIC_IMPACT_LABEL, EPIC_IMPACT_NOT_APPLICABLE } from '../../../../workflow/epic-built-state.js';
+import { buildArtifactId, defineArtifactId } from '../../../../workflow/storage.js';
+import { approvedMeta, writeHead } from '../../../../workflow/__tests__/lifecycle-fixtures.js';
 import { SMALLEST_CHANGE_RULE } from '../../../../workflow/runners/scope-prompts.js';
 
 import { defaultCommandProfile } from '../validation-checks.js';
@@ -376,4 +379,49 @@ test("the mapping instructions follow the project's profile: native test files a
 	assert.ok(none.includes('so it runs nothing') && none.includes('repo.settings.set'));
 	assert.equal(none.includes('is skipped, or is not found'), false);
 	for (const prompt of [renderImplementPrompt(repo, TASK, '', py('tap')), standalone(py('exit-code'))]) assert.equal(prompt.includes('{{'), false, 'no placeholder is left unfilled');
+});
+
+/** A Node repository holding an Epic of s1 and s2 (TASK's Epic) whose s1 has an approved BUILD. */
+function epicRepoWithBuiltS1(): string {
+	const dir = markerDir('package.json');
+	const at = '2026-01-01T00:00:00.000Z';
+	writeHead(dir, defineArtifactId(TASK.epicHash), {
+		meta: { workflow: 'define', epicHash: TASK.epicHash, epicSlug: TASK.epicSlug, createdAt: at, epicCreatedAt: at, ...approvedMeta() },
+		body: { flavor: 'new-capability', problem: 'p', nonGoals: [], assumptions: [], constraints: [], openQuestions: [],
+			stories: ['s1', 's2'].map(id => ({ id, title: `Title ${id}`, userValue: 'v', acceptanceCriteria: [], dependsOn: [] })) },
+		citations: [],
+	});
+	writeHead(dir, buildArtifactId(TASK.epicHash, 's1'), {
+		meta: { workflow: 'build', epicHash: TASK.epicHash, createdAt: at, ...approvedMeta() },
+		body: { summary: 'built the s1 thing', tasks: [{ id: 't1', passed: true }], changeLog: [{ target: { file: 'src/s1.ts' } }] },
+		citations: [],
+	});
+	return dir;
+}
+
+test("render.test.ts: the build implement prompt for a later Story begins its Process with the Epic impact analysis and the digest and tells the builder to open its BUILD summary with a paragraph labelled EPIC_IMPACT_LABEL naming each covered Story and that BUILD approval is refused without it, and for a first or standalone Story gains only the one-line 'does not apply'", () => {
+	const repo = epicRepoWithBuiltS1();
+	const later: ResolvedTask = { ...TASK, storyId: 's2' };
+
+	const task = renderImplementPrompt(repo, later, '');
+	const process = task.slice(task.indexOf('## Process'));
+	assert.ok(process.startsWith(`## Process\n0. ${EPIC_IMPACT_FIRST_ACTION}`), 'the Process begins with the Epic impact analysis');
+	assert.match(process, /Epic built-state digest[\s\S]*built the s1 thing/, 'the digest follows');
+	assert.ok(process.indexOf('Epic built-state digest') < process.indexOf('1. For design context'), 'the digest precedes step 1');
+	assert.ok(process.includes(`starts with "${EPIC_IMPACT_LABEL}"`) && process.includes('names each Story the LLD\'s Epic impact analysis covered'), 'the labelled paragraph is asked for');
+	assert.ok(process.includes('final validate call') && process.includes('BUILD approval is refused without it'), 'the final validate call and the approval refusal are named');
+
+	const standalone = renderStandaloneImplementPrompt({ epicHash: TASK.epicHash, storyId: 's2', sizeClass: 'small', producesLld: true, focus: 'f', lldMdRel: 'docs/x/LLD.md', resolvedDecisions: '', repoPath: repo });
+	assert.ok(standalone.indexOf('## Epic impact analysis') < standalone.indexOf('## Scope'), 'the standalone prompt leads with it');
+	assert.ok(standalone.includes(EPIC_IMPACT_FIRST_ACTION) && standalone.includes('Epic built-state digest'));
+
+	// a first Story, and a Story with no Epic: only the one line, and nothing of the analysis
+	const first = renderImplementPrompt(repo, { ...TASK, storyId: 's1' }, '');
+	const noEpic = renderStandaloneImplementPrompt({ epicHash: TASK.epicHash, storyId: 's1', sizeClass: 'trivial', producesLld: false, focus: 'f', resolvedDecisions: '' });
+	for (const prompt of [first, noEpic]) {
+		assert.ok(prompt.includes(EPIC_IMPACT_NOT_APPLICABLE), 'the one-line does-not-apply');
+		assert.equal(prompt.includes(EPIC_IMPACT_FIRST_ACTION), false);
+		assert.equal(prompt.includes('Epic built-state digest'), false);
+		assert.equal(prompt.includes(`starts with "${EPIC_IMPACT_LABEL}"`), false);
+	}
 });

@@ -199,7 +199,7 @@ async function handleStandaloneImplement(
 
 	const prompt = renderStandaloneImplementPrompt({
 		epicHash, storyId, sizeClass, producesLld, focus: specFocus,
-		lldMdRel: lldMdRelPath, resolvedDecisions, profile,
+		lldMdRel: lldMdRelPath, resolvedDecisions, profile, repoPath,
 	});
 	log.info({ storyId, sizeClass, standalone: true, producesLld }, 'insrc_build_step[implement]: emitting standalone prompt');
 	return { next: 'implement', taskId: storyId, workflowId: epicHash, issueRef: undefined, prompt };

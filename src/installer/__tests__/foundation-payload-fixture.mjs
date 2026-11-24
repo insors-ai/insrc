@@ -2,10 +2,12 @@ import { createRun } from '../../../scripts/test-harness/context.mjs';
 import { withRun } from '../../../scripts/test-harness/process.mjs';
 import { assembleFixtureRelease, bundleControlEntrypoint, collectProductionPayload, extractOfficialRuntime, probePayload } from '../../../scripts/package-installer.mjs';
 import { validateEntrypoints, sha256 } from '../../../scripts/installer-payload.mjs';
-import { mkdirSync, readFileSync, writeFileSync, statSync } from 'node:fs';
+import { copyFileSync, mkdirSync, readFileSync, writeFileSync, statSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { pathToFileURL } from 'node:url';
 const [source, root, archive] = process.argv.slice(2);
+const esbuild = `node_modules/@esbuild/${process.platform}-${process.arch}/${process.platform === 'win32' ? 'esbuild.exe' : 'bin/esbuild'}`;
+mkdirSync(dirname(join(root, esbuild)), { recursive: true }); copyFileSync(join(source, esbuild), join(root, esbuild));
 const target = { os: process.platform, arch: process.arch, baseline: 'foundation-fixture' };
 const run = createRun(root, { mode: 'build' });
 await withRun(run, async scope => {

@@ -145,7 +145,7 @@ export async function prepareDevGit(run: BuildRun, scope: CommandScope, input: D
   const noHooks = join(run.workspace, 'no-git-hooks');
   await git(['init', '--quiet', `--template=${noHooks}`, `--object-format=${offer.sourceCommit.length === 64 ? 'sha256' : 'sha1'}`]);
   await git(['remote', 'add', 'origin', offer.delivery.repository]);
-  await git(['fetch', '--quiet', '--no-tags', '--no-recurse-submodules', 'origin', `+refs/heads/${offer.delivery.branch}:refs/insrc/accepted`]);
+  await git(['fetch', '--quiet', '--update-shallow', '--no-tags', '--no-recurse-submodules', 'origin', `+refs/heads/${offer.delivery.branch}:refs/insrc/accepted`]);
   if ((await git(['rev-parse', '--verify', `${offer.sourceCommit}^{commit}`])).text.trim() !== offer.sourceCommit) throw new InstallerError('source-fetch-failed', 'Accepted commit is unavailable; do not substitute the new branch tip');
   const tree = (await git(['ls-tree', '-r', '-z', '--full-tree', offer.sourceCommit])).text;
   for (const entry of tree.split('\0').filter(Boolean)) {

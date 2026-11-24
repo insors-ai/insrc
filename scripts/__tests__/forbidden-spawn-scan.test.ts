@@ -52,11 +52,11 @@ test('forbidden-spawn-scan.test.ts: a command that is not git, gh or acli is not
 	assert.equal(code, 0);
 });
 
-test('forbidden-spawn-scan.test.ts: the three exemptions are listed with their reasons and are not violations', () => {
+test('forbidden-spawn-scan.test.ts: the exact installer and indexer exemptions are listed with their reasons and are not violations', () => {
 	const { report, code, stdout } = scan(join(FIXTURES, 'exempt'), '--fail');
 	assert.deepEqual(report.violations, []);
 	assert.equal(code, 0, 'exempt sites do not fail failing mode');
-	assert.deepEqual(report.exempt.map(e => e.file).sort(), ['cli/services/maintenance.ts', 'daemon/installed-commit.ts', 'indexer/file-filter.ts']);
+	assert.deepEqual(report.exempt.map(e => e.file).sort(), ['indexer/file-filter.ts', 'installer/dev-git.ts']);
 	assert.ok(report.exempt.every(e => e.reason.length > 20 && e.sites === 1));
 	assert.match(stdout, /exempt indexer\/file-filter\.ts/);
 });
@@ -79,14 +79,10 @@ test('forbidden-spawn-scan.test.ts: an unparseable file is listed as unscanned a
 	assert.match(r.stderr, /UNSCANNED bad\.ts/);
 });
 
-test('forbidden-spawn-scan.test.ts: a run over src lists the direct gitDiffTool.execute calls in grounding.ts and changed-files.ts and parses every file', () => {
-	const { report, code } = scan(join(ROOT, 'src'));
-	assert.equal(code, 0, 'report mode');
+test('forbidden-spawn-scan.test.ts: current src has no forbidden sites outside the exact active exemptions', () => {
+	const { report, code } = scan(join(ROOT, 'src'), '--fail');
+	assert.equal(code, 0);
 	assert.deepEqual(report.unscanned, []);
-	const execs = report.violations.filter(v => v.form === 'builtin-execute').map(v => v.file).sort();
-	assert.ok(execs.includes('workflow/code-review/grounding.ts'), execs.join(', '));
-	assert.ok(execs.includes('workflow/runners/build/changed-files.ts'), execs.join(', '));
-	assert.ok(report.violations.some(v => v.text.includes('gitDiffTool.execute')));
-	assert.ok(report.violations.every(v => !v.file.startsWith('daemon/tools/')), 'src/daemon/tools is not read');
-	assert.deepEqual(report.exempt.map(e => e.file).sort(), ['cli/services/maintenance.ts', 'daemon/installed-commit.ts', 'indexer/file-filter.ts']);
+	assert.deepEqual(report.violations, []);
+	assert.deepEqual(report.exempt.map(e => e.file).sort(), ['indexer/file-filter.ts', 'installer/dev-git.ts']);
 });

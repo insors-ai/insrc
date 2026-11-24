@@ -93,6 +93,13 @@ await withRun(run, async scope => {
     assert.equal(readFileSync(join(first.paths.checkout, 'src/main.ts'), 'utf8'), 'base\n');
     publish(location, second);
     await build(location, offer, 'backward', second.receipt, 'source-incompatible');
+    // A configured shallow source still has an obtainable exact tip. Preserve
+    // its boundary in the new checkout instead of requiring missing parents.
+    const shallow=join(root,'shallow.git');await git(['init','--quiet','--bare',shallow]);
+    await git(['--git-dir',shallow,'fetch','--quiet','--depth=1','--no-tags',repository,'refs/heads/installer:refs/heads/installer']);
+    const shallowOffer=await resolveDevSource({...delivery,repository:shallow},target,runtime);
+    const shallowBuild=await build(installation('shallow'),shallowOffer,'shallow');
+    assert.equal(shallowBuild.receipt.manifest.sourceCommit,next.sourceCommit);assert.equal(existsSync(join(shallowBuild.paths.checkout,'.git/shallow')),true);
   } else if (scenario === 'preserve') {
     for (const kind of ['tracked', 'untracked', 'conflict', 'origin', 'head', 'fingerprint', 'missing', 'linked']) {
       const location = installation(`home-${kind}`), selected = await build(location, offer, `selected-${kind}`); publish(location, selected);

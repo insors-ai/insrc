@@ -45,9 +45,7 @@ const BUILTIN_MODULE = /tools\/builtins\//;
 
 /** Relative to the root, with '/' separators: files that may spawn git themselves, each with its reason. */
 const EXEMPT = new Map([
-	['cli/services/maintenance.ts', 'the daemon self-update pulls and builds its own install directory, outside any repository the registry serves'],
-	['daemon/installed-commit.ts', 'it reads the installed daemon\'s own commit at start-up, before the tool registry exists'],
-	['daemon/managed-release-staging.ts', 'the macOS updater clones its own qualified daemon release outside registered user repositories before the tool registry is available'],
+	['installer/dev-git.ts', 'the standalone installer resolves configured source refs and builds a fresh attempt checkout before or without a daemon/tool registry; all Git commands use its owned preparation scope, outside registered application repositories'],
 	['indexer/file-filter.ts', 'the FileFilter lists the tracked files of a repository with git ls-files and reads core.excludesFile for the indexer\'s own file walk, not on behalf of a caller; it is built synchronously, so it stays exempt until it is converted to the typed git tools (GitHub issue, see docs/plans/main-sync-conflicts.md)'],
 ]);
 

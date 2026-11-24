@@ -31,7 +31,7 @@ export async function archiveFixture(): Promise<string> {
 /** Validator may run under a foreign host Node. Provision a verified fixture Node
  * before creating any coordinator; never relax its runtime admission. */
 export async function node22Fixture(): Promise<{ executable: string; cleanup: () => void }> {
-  try { assertSupportedVersion(process.version); return { executable: process.execPath, cleanup() {} }; }
+  try { assertSupportedVersion(process.version); if (process.version === 'v22.22.1') return { executable: process.execPath, cleanup() {} }; }
   catch (error) { if ((error as NodeJS.ErrnoException).code !== 'harness-runtime-unsupported') throw error; }
   const archive = await archiveFixture();
   const root = mkdtempSync(join(realpathSync(tmpdir()), 'insrc-fixture-node-')), children: ChildProcess[] = [];
@@ -43,6 +43,24 @@ export async function node22Fixture(): Promise<{ executable: string; cleanup: ()
       : spawnFixture('tar', ['-xzf', archive, '-C', root, `${identity.root}/bin/node`], { stdio: 'ignore' });
     children.push(child); const [code] = await once(child, 'close'); assert.equal(code, 0);
     return { executable: join(root, identity.root, process.platform === 'win32' ? 'node.exe' : 'bin/node'), cleanup: () => rmSync(root, { recursive: true, force: true }) };
+  } catch (error) { rmSync(root, { recursive: true, force: true }); throw error; }
+  finally { await stopOwnedChildren(children); }
+}
+
+/** Complete release-owned tooling for real dev preparation, independent of the
+ * invoking test runner's Node/npm installation. */
+export async function completeNode22Fixture(): Promise<{ directory: string; executable: string; cleanup: () => void }> {
+  const archive = await archiveFixture(), root = mkdtempSync(join(realpathSync(tmpdir()), 'idn-')), children: ChildProcess[] = [];
+  const identity = runtimeArchive({ os: process.platform as 'darwin' | 'linux' | 'win32', arch: process.arch as 'arm64' | 'x64' });
+  const quote = (value: string) => "'" + value.replaceAll("'", "''") + "'";
+  try {
+    const child = process.platform === 'win32'
+      ? spawnFixture('powershell.exe', ['-NoProfile', '-Command', `Expand-Archive -LiteralPath ${quote(archive)} -DestinationPath ${quote(root)}`], { stdio: 'ignore' })
+      : spawnFixture('tar', ['-xzf', archive, '-C', root, `${identity.root}/bin/node`, `${identity.root}/lib/node_modules/npm`, `${identity.root}/include/node`, `${identity.root}/LICENSE`], { stdio: 'ignore' });
+    children.push(child); assert.equal((await once(child, 'close'))[0], 0);
+    const directory = join(root, identity.root);
+    if (process.platform === 'win32') for (const alias of ['npm', 'npm.cmd', 'npm.ps1', 'npx', 'npx.cmd', 'npx.ps1', 'corepack', 'corepack.cmd', 'corepack.ps1']) rmSync(join(directory, alias), { force: true });
+    return { directory, executable: join(directory, process.platform === 'win32' ? 'node.exe' : 'bin/node'), cleanup: () => rmSync(root, { recursive: true, force: true }) };
   } catch (error) { rmSync(root, { recursive: true, force: true }); throw error; }
   finally { await stopOwnedChildren(children); }
 }

@@ -177,10 +177,11 @@ export class CodexProjectMcpServersUnexcludableError extends Error {
 }
 
 /** codex's own bootstrap rejects a partial `mcp_servers.<name>.enabled=false`
- *  override for some globally-registered servers (confirmed live: codex_app,
- *  cua_repl), crashing before any session -- including insrc's own -- starts.
- *  readOnlySessionOnce recognizes codex's own rejection wording and throws
- *  this named error instead of letting an opaque CliExitError surface. */
+ *  override for some globally-registered servers (see ISSUE-08f9dd3412bc10f0
+ *  for the servers observed), crashing before any session -- including
+ *  insrc's own -- starts. readOnlySessionOnce recognizes codex's own
+ *  rejection wording and throws this named error instead of letting an
+ *  opaque CliExitError surface. */
 export class CodexMcpServerOverrideUnsafeError extends Error {
 	constructor(readonly serverName: string) {
 		super(`codex: cannot safely exclude the '${serverName}' MCP server from a read-only session -- codex's own bootstrap rejects a partial override for it`);
@@ -189,8 +190,10 @@ export class CodexMcpServerOverrideUnsafeError extends Error {
 }
 
 /** codex's own bootstrap-rejection wording for an unacceptable per-server
- *  override, live-confirmed this session for codex_app and cua_repl. Captures
- *  the rejected server name. */
+ *  override (see ISSUE-08f9dd3412bc10f0 for the live evidence). Captures the
+ *  rejected server name -- the name itself is never insrc's to know ahead of
+ *  time, since it names whichever third-party server codex's own bootstrap
+ *  blamed. */
 const CODEX_MCP_SERVER_OVERRIDE_UNSAFE = /invalid transport\s+in `mcp_servers\.([^`]+)`/;
 
 /** The insrc analyze tools the codex MCP server exposes, by their own remote names. */

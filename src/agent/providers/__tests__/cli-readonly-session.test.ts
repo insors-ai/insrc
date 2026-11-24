@@ -209,33 +209,33 @@ test('readOnlySessionOnce calls runCodex with the recomputed remaining timeoutMs
 	} finally { delete process.env['INSRC_FAKE_DISCOVERY_SLEEP_MS']; f.cleanup(); }
 });
 
-test("readOnlySessionOnce throws CodexMcpServerOverrideUnsafeError('codex_app') when runCodex's failure message matches codex's live-confirmed bootstrap-rejection wording naming codex_app", async () => {
-	const f = fakeCli([{ fail: 'Error loading config.toml: invalid transport in `mcp_servers.codex_app`', code: 1 }]);
-	process.env['INSRC_FAKE_DISCOVERY_SERVERS'] = JSON.stringify([{ name: 'insrc', enabled: true }, { name: 'codex_app', enabled: false }]);
+test("readOnlySessionOnce throws CodexMcpServerOverrideUnsafeError naming the server codex's own bootstrap-rejection message names (case 1 of 2 unsafe servers)", async () => {
+	const f = fakeCli([{ fail: 'Error loading config.toml: invalid transport in `mcp_servers.unsafe-plugin-a`', code: 1 }]);
+	process.env['INSRC_FAKE_DISCOVERY_SERVERS'] = JSON.stringify([{ name: 'insrc', enabled: true }, { name: 'unsafe-plugin-a', enabled: false }]);
 	try {
 		const p = new CliProvider({ kind: 'codex', binPath: f.bin });
 		await assert.rejects(
 			p.runReadOnlySession('P', SCHEMA, { cwd: f.dir, deadlineMs: 20_000, internalRetry: false }),
-			(e: unknown) => e instanceof CodexMcpServerOverrideUnsafeError && e.serverName === 'codex_app',
+			(e: unknown) => e instanceof CodexMcpServerOverrideUnsafeError && e.serverName === 'unsafe-plugin-a',
 		);
 	} finally { delete process.env['INSRC_FAKE_DISCOVERY_SERVERS']; f.cleanup(); }
 });
 
-test("readOnlySessionOnce throws CodexMcpServerOverrideUnsafeError('cua_repl') when runCodex's failure message matches the same wording naming cua_repl", async () => {
-	const f = fakeCli([{ fail: 'Error loading config.toml: invalid transport in `mcp_servers.cua_repl`', code: 1 }]);
-	process.env['INSRC_FAKE_DISCOVERY_SERVERS'] = JSON.stringify([{ name: 'insrc', enabled: true }, { name: 'cua_repl', enabled: false }]);
+test("readOnlySessionOnce throws CodexMcpServerOverrideUnsafeError naming the server codex's own bootstrap-rejection message names (case 2 of 2 unsafe servers)", async () => {
+	const f = fakeCli([{ fail: 'Error loading config.toml: invalid transport in `mcp_servers.unsafe-plugin-b`', code: 1 }]);
+	process.env['INSRC_FAKE_DISCOVERY_SERVERS'] = JSON.stringify([{ name: 'insrc', enabled: true }, { name: 'unsafe-plugin-b', enabled: false }]);
 	try {
 		const p = new CliProvider({ kind: 'codex', binPath: f.bin });
 		await assert.rejects(
 			p.runReadOnlySession('P', SCHEMA, { cwd: f.dir, deadlineMs: 20_000, internalRetry: false }),
-			(e: unknown) => e instanceof CodexMcpServerOverrideUnsafeError && e.serverName === 'cua_repl',
+			(e: unknown) => e instanceof CodexMcpServerOverrideUnsafeError && e.serverName === 'unsafe-plugin-b',
 		);
 	} finally { delete process.env['INSRC_FAKE_DISCOVERY_SERVERS']; f.cleanup(); }
 });
 
-test('readOnlySessionOnce proceeds normally (no new error) when the servers list includes node_repl and runCodex succeeds, exactly as today', async () => {
+test('readOnlySessionOnce proceeds normally (no new error) when the servers list includes an ordinary server whose override codex accepts, and runCodex succeeds, exactly as today', async () => {
 	const f = fakeCli([{ out: codexOk('{"ok":true}') }]);
-	process.env['INSRC_FAKE_DISCOVERY_SERVERS'] = JSON.stringify([{ name: 'insrc', enabled: true }, { name: 'node_repl', enabled: false }]);
+	process.env['INSRC_FAKE_DISCOVERY_SERVERS'] = JSON.stringify([{ name: 'insrc', enabled: true }, { name: 'an-ordinary-server', enabled: false }]);
 	try {
 		const p = new CliProvider({ kind: 'codex', binPath: f.bin });
 		assert.deepEqual(await p.runReadOnlySession('P', SCHEMA, { cwd: f.dir, deadlineMs: 20_000 }), { ok: true });

@@ -1,22 +1,26 @@
 import { randomUUID } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { closeSync, constants, fstatSync, lstatSync, mkdirSync, openSync, readFileSync, unlinkSync, writeFileSync, fsyncSync, existsSync } from 'node:fs';
-import { join, isAbsolute } from 'node:path';
+import { join, posix, win32 } from 'node:path';
 import { InstallerError } from './contracts.js';
 import type { InstallationLocation, ManagerEvent, Target } from './contracts.js';
 import { ControllerStore, inspectController } from './controller-store.js';
-import { assertLocalControlRoot } from './location.js';
+import { assertLocalControlRoot, assertToken } from './location.js';
 import { controlBinding } from './native.js';
 import type { ManagerPeers } from './peer-contracts.js';
-import { privateRuntimeEnvironment, privateRuntimePaths } from './runtime-policy.js';
+import { privateRuntimeEnvironment } from './runtime-policy.js';
 import { parseReleaseManifest } from './schemas.js';
 import { readBoundedFile } from './safe-zip.js';
 
 export interface TuiSelection { node: string; entry: string; managerEntry: string; releaseId: string; location: InstallationLocation }
 export interface TuiExit { code: number | null; signal: NodeJS.Signals | null }
-export function retryCommand(location: InstallationLocation, target: Target, bootstrap: string): string {
+export function retryCommand(location: InstallationLocation, target: Target, releaseId: string): string {
+  assertToken(releaseId);
+  const paths = target.os === 'win32' ? win32 : posix, root = paths.join(location.home, 'releases', releaseId);
+  const node = paths.join(root, 'tools/node', target.os === 'win32' ? 'node.exe' : 'bin/node');
+  const bootstrap = paths.join(root, 'bootstrap.mjs');
   const quote = target.os === 'win32' ? (value: string) => `'${value.replaceAll("'", "''")}'` : (value: string) => `'${value.replaceAll("'", "'\\''")}'`;
-  return (target.os === 'win32' ? '& ' : '') + [privateRuntimePaths(location.home, target).node, bootstrap, '--launch-tui', '--home', location.home, '--installation-id', location.installationId].map(quote).join(' ');
+  return (target.os === 'win32' ? '& ' : '') + [node, bootstrap, '--launch-tui', '--home', location.home, '--installation-id', location.installationId].map(quote).join(' ');
 }
 
 function readySnapshot(location: InstallationLocation, event: ManagerEvent) {
@@ -43,28 +47,29 @@ export async function selectInstalledTui(location: InstallationLocation, target:
   const selection = { node: join(candidate.directory, 'tools/node', manifest.runtime.relativeExecutable), entry: join(candidate.directory, manifest.tuiEntry), managerEntry: join(candidate.directory, manifest.managerEntry), releaseId: id, location };
   // The delivery adapter verifies the complete inventory; also require both
   // selected JS entrypoints to be present before publishing/launching anything.
+  await readBoundedFile(join(candidate.directory, 'bootstrap.mjs'), 32 * 1024 * 1024);
   await readBoundedFile(selection.entry, 32 * 1024 * 1024); await readBoundedFile(selection.managerEntry, 32 * 1024 * 1024);
   return selection;
 }
 
-const launcherMarker = '# insrc-installed-launcher-v1 ';
-function launcherContents(location: InstallationLocation, target: Target, bootstrap: string): string {
-  const marker = launcherMarker + JSON.stringify(bootstrap) + '\n', command = retryCommand(location, target, bootstrap);
+const launcherMarker = '# insrc-installed-launcher-v2 ';
+function launcherContents(location: InstallationLocation, target: Target, releaseId: string): string {
+  const marker = launcherMarker + JSON.stringify(releaseId) + '\n', command = retryCommand(location, target, releaseId);
   return target.os === 'win32'
     ? `${marker}$ErrorActionPreference = 'Stop'\nRemove-Item Env:NODE_OPTIONS -ErrorAction SilentlyContinue\nRemove-Item Env:NODE_PATH -ErrorAction SilentlyContinue\n${command}\nexit $LASTEXITCODE\n`
     : `#!/bin/sh\n${marker}unset NODE_OPTIONS NODE_PATH\nexec ${command}\n`;
 }
 /** Replace only an exact installer-owned template under the existing native lease. */
-export function publishInstalledLauncher(location: InstallationLocation, target: Target, bootstrap: string, event: ManagerEvent): string {
+export function publishInstalledLauncher(location: InstallationLocation, target: Target, releaseId: string, event: ManagerEvent): string {
   const store = ControllerStore.acquire(location);
   let temporary: string | undefined;
   try {
-    readySnapshot(location, event);
+    if (readySnapshot(location, event).installation.activeReleaseId !== releaseId) throw new InstallerError('readiness-uncertain', 'Launcher release differs from ready selection');
     const directory = join(location.home, 'bin');
     assertLocalControlRoot(directory, process.platform === 'win32' ? path => controlBinding().localVolume(path) : undefined);
     mkdirSync(directory, { recursive: true, mode: 0o700 }); controlBinding().protect(directory);
     const name = target.os === 'win32' ? 'insrc.ps1' : 'insrc', file = join(directory, name);
-    const contents = launcherContents(location, target, bootstrap);
+    const contents = launcherContents(location, target, releaseId);
     let present = false;
     try {
       const stat = lstatSync(file); present = true;
@@ -79,8 +84,10 @@ export function publishInstalledLauncher(location: InstallationLocation, target:
       const line = existing.split('\n')[target.os === 'win32' ? 0 : 1];
       if (!line?.startsWith(launcherMarker)) throw new Error('Missing launcher ownership marker');
       const previous: unknown = JSON.parse(line.slice(launcherMarker.length));
-      if (typeof previous !== 'string' || !isAbsolute(previous) || existing !== launcherContents(location, target, previous)) throw new Error('Launcher template differs');
-      if (existing === contents) return retryCommand(location, target, bootstrap);
+      if (typeof previous !== 'string') throw new Error('Launcher release is missing');
+      assertToken(previous);
+      if (existing !== launcherContents(location, target, previous)) throw new Error('Launcher template differs');
+      if (existing === contents) return retryCommand(location, target, releaseId);
     } catch (cause) {
       if (present || (cause as NodeJS.ErrnoException).code !== 'ENOENT') throw new InstallerError('launcher-conflict', 'Existing launcher is not owned by this installation', { cause });
     }
@@ -88,7 +95,7 @@ export function publishInstalledLauncher(location: InstallationLocation, target:
     const fd = openSync(temporary, 'wx', 0o700);
     try { writeFileSync(fd, contents); fsyncSync(fd); } finally { closeSync(fd); }
     store.replaceLauncher(temporary, name);
-    return retryCommand(location, target, bootstrap);
+    return retryCommand(location, target, releaseId);
   } finally {
     try { if (temporary && existsSync(temporary)) unlinkSync(temporary); } finally { store.close(); }
   }

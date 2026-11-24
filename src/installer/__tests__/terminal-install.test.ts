@@ -31,7 +31,7 @@ function ui(answers: string[]): TerminalUI & { output: string[]; closed: boolean
     write(message) { output.push(message); }, close() { this.closed = true; } };
 }
 function options(f: ReturnType<typeof setup>, terminal: ReturnType<typeof ui>): TerminalInstallOptions {
-  return { location: f.location, target: f.target, peers: f.peers, ui: terminal, bootstrap: join(f.home, 'bootstrap.mjs'), operationId: 'terminal-operation' };
+  return { location: f.location, target: f.target, peers: f.peers, ui: terminal, operationId: 'terminal-operation' };
 }
 
 function priorReady(f: ReturnType<typeof setup>): ManagerEvent {
@@ -67,6 +67,7 @@ test('ready commit and lock release precede same terminal installed TUI', { time
     const storeModule = new URL('../../../out/installer/controller-store.js', import.meta.url).href;
     writeFileSync(entry, `import fs from 'node:fs';import net from 'node:net';import {PATHS} from ${JSON.stringify(paths)};import {ControllerStore} from ${JSON.stringify(storeModule)};const location=${JSON.stringify(f.location)};const s=JSON.parse(fs.readFileSync(location.home+'/install/controller.json'));if(s.operation||s.lastResult.phase!=='ready')throw Error('not committed');const lock=ControllerStore.acquire(location);lock.close();const socket=net.createConnection(PATHS.sockFile);socket.on('error',e=>{throw e});socket.on('connect',()=>socket.write('{}\\n'));socket.on('data',d=>{const r=JSON.parse(String(d));if(r.result.releaseId!=='next')throw Error('wrong daemon');socket.end();fs.writeFileSync(location.home+'/tui-observed.json',JSON.stringify({node:process.execPath,home:PATHS.insrc,socket:PATHS.sockFile,nodeOptions:process.env.NODE_OPTIONS??null}));});`);
     writeFileSync(join(f.next.directory, f.next.manifest.managerEntry), '// fixture manager entry\n');
+    writeFileSync(join(f.next.directory, 'bootstrap.mjs'), '// selected bootstrap fixture\n');
     const activate = f.peers.lifecycle!.activate;
     f.peers.lifecycle!.activate = async (...args) => {
       const ready = await activate(...args);
@@ -136,11 +137,11 @@ test('terminal consent binds exact dependency offer and never installs coding CL
 test('installed launcher preserves existing files and quotes exact private-runtime retry', () => {
   const f = setup(false), event = priorReady(f);
   try {
-    const bootstrap = join(f.home, "control's bootstrap.mjs"), command = publishInstalledLauncher(f.location, f.target, bootstrap, event);
-    assert.equal(publishInstalledLauncher(f.location, f.target, bootstrap, event), command);
-    assert.match(command, /runtimes\/22\.22\.1/); assert.match(command, /--home/); assert.equal(command, retryCommand(f.location, f.target, bootstrap));
+    const releaseId = 'old', command = publishInstalledLauncher(f.location, f.target, releaseId, event);
+    assert.equal(publishInstalledLauncher(f.location, f.target, releaseId, event), command);
+    assert.match(command, /releases\/old\/tools\/node/); assert.match(command, /--home/); assert.equal(command, retryCommand(f.location, f.target, releaseId));
     const file = join(f.home, 'bin/insrc'); writeFileSync(file, '# foreign launcher\n');
-    assert.throws(() => publishInstalledLauncher(f.location, f.target, bootstrap, event), { code: 'launcher-conflict' }); assert.equal(readFileSync(file, 'utf8'), '# foreign launcher\n');
+    assert.throws(() => publishInstalledLauncher(f.location, f.target, releaseId, event), { code: 'launcher-conflict' }); assert.equal(readFileSync(file, 'utf8'), '# foreign launcher\n');
   } finally { f.cleanup(); }
 });
 
@@ -197,29 +198,57 @@ test('terminal upgrade retains delivery and rejects stale dependency consent bef
 test('successor upgrade replaces its owned launcher and preserves ready selection', async () => {
   const f = setup(false), terminal = ui(['yes', 'yes']); let launches = 0;
   try {
-    const previous = priorReady(f), oldBootstrap = join(f.home, 'install/bootstrap/old/bootstrap.mjs');
+    const previous = priorReady(f), oldRelease = 'old';
     const before = JSON.stringify(f.manager().inspect());
-    publishInstalledLauncher(f.location, f.target, oldBootstrap, previous);
+    publishInstalledLauncher(f.location, f.target, oldRelease, previous);
     assert.equal(JSON.stringify(f.manager().inspect()), before, 'launcher does not mutate controller state');
-    const file = join(f.home, 'bin/insrc'); assert.match(readFileSync(file, 'utf8'), /bootstrap\/old/);
-    const next = { ...options(f, terminal), bootstrap: join(f.home, 'install/bootstrap/next/bootstrap.mjs') };
+    const file = join(f.home, 'bin/insrc'); assert.match(readFileSync(file, 'utf8'), /releases\/old\/bootstrap\.mjs/);
+    const next = options(f, terminal);
     const outcome = await runTerminalInstall({ ...next,
       select: async () => ({ node: 'fixture', entry: 'fixture', managerEntry: 'fixture', releaseId: 'next', location: f.location }),
       launch: async () => {
-        launches++; assert.match(readFileSync(file, 'utf8'), /bootstrap\/next/);
+        launches++; assert.match(readFileSync(file, 'utf8'), /releases\/next\/bootstrap\.mjs/);
         const lease = ControllerStore.acquire(f.location); lease.close();
         return { code: 0, signal: null };
       } });
     assert.equal(outcome.kind, 'completed', terminal.output.join('')); assert.equal(launches, 1);
     const after = readFileSync(file, 'utf8');
-    assert.throws(() => publishInstalledLauncher(f.location, f.target, oldBootstrap, previous), { code: 'readiness-uncertain' });
+    assert.throws(() => publishInstalledLauncher(f.location, f.target, oldRelease, previous), { code: 'readiness-uncertain' });
     assert.equal(readFileSync(file, 'utf8'), after, 'stale publisher cannot restore old bootstrap');
     const lease = ControllerStore.acquire(f.location);
-    try { assert.throws(() => publishInstalledLauncher(f.location, f.target, next.bootstrap, outcome.event!), { code: 'busy' }); }
+    try { assert.throws(() => publishInstalledLauncher(f.location, f.target, 'next', outcome.event!), { code: 'busy' }); }
     finally { lease.close(); }
     assert.equal(readFileSync(file, 'utf8'), after);
     writeFileSync(file, after + '# user modification\n');
-    assert.throws(() => publishInstalledLauncher(f.location, f.target, next.bootstrap, outcome.event!), { code: 'launcher-conflict' });
+    assert.throws(() => publishInstalledLauncher(f.location, f.target, 'next', outcome.event!), { code: 'launcher-conflict' });
     assert.equal(readFileSync(file, 'utf8'), after + '# user modification\n');
   } finally { f.cleanup(); }
+});
+
+test('saved installer selects candidate control runtime and exact post-install retry', async () => {
+  for (const mode of ['success', 'tui-error', 'missing-control'] as const) {
+    const f = setup(false), terminal = ui(['yes', 'yes']); let launches = 0;
+    try {
+      publishInstalledLauncher(f.location, f.target, 'old', priorReady(f));
+      for (const entry of [f.next.manifest.tuiEntry, f.next.manifest.managerEntry, 'bootstrap.mjs']) {
+        if (mode === 'missing-control' && entry === 'bootstrap.mjs') continue;
+        const path = join(f.next.directory, entry); mkdirSync(dirname(path), { recursive: true }); writeFileSync(path, '// selected fixture asset\n');
+      }
+      const result = await runTerminalInstall({ ...options(f, terminal), launch: async selection => {
+        launches++; assert.equal(selection.node, join(f.next.directory, 'tools/node/bin/node'));
+        if (mode === 'tui-error') throw new Error('fixture TUI launch failure');
+        return { code: 0, signal: null };
+      } });
+      assert.equal(result.kind, mode === 'success' ? 'completed' : 'post-install-tui-error', terminal.output.join(''));
+      assert.equal(launches, mode === 'missing-control' ? 0 : 1);
+      const command = retryCommand(f.location, f.target, 'next');
+      assert.match(command, /releases\/next\/tools\/node/); assert.match(command, /releases\/next\/bootstrap\.mjs/);
+      if (mode === 'tui-error' || mode === 'missing-control') assert.ok(terminal.output.join('').includes(command));
+      if (mode !== 'missing-control') assert.match(readFileSync(join(f.home, 'bin/insrc'), 'utf8'), /releases\/next\/bootstrap\.mjs/);
+      const duplicate = ui([]); assert.equal((await runTerminalInstall(options(f, duplicate))).kind, 'already-completed');
+      assert.ok(duplicate.output.join('').includes(command), 'duplicate completion uses the selected release too');
+      const current = f.manager().inspect(); assert.equal(current.kind, 'present');
+      if (current.kind === 'present') assert.equal(current.snapshot.installation.activeReleaseId, 'next');
+    } finally { f.cleanup(); }
+  }
 });

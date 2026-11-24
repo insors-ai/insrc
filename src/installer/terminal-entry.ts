@@ -40,7 +40,7 @@ export async function terminalMain(args = process.argv.slice(2)): Promise<void> 
   const terminal = createInterface({ input: process.stdin, output: process.stdout, terminal: true });
   let closing = false;
   const abort = new AbortController(); terminal.on('close', () => { if (!closing) abort.abort(); }); terminal.on('SIGINT', () => { abort.abort(); terminal.close(); });
-  const result = await runTerminalInstall({ location, target, peers, operationId, signal: abort.signal, bootstrap: fileURLToPath(import.meta.url), ui: {
+  const result = await runTerminalInstall({ location, target, peers, operationId, signal: abort.signal, ui: {
     streams: process, ask: question => terminal.question(question, { signal: abort.signal }),
     write: message => { process.stdout.write(message); }, close: () => { closing = true; terminal.close(); },
   } });

@@ -15,7 +15,7 @@ export interface TerminalUI {
   close(): void;
 }
 export interface TerminalInstallOptions {
-  location: InstallationLocation; target: Target; peers: ManagerPeers; ui: TerminalUI; bootstrap: string;
+  location: InstallationLocation; target: Target; peers: ManagerPeers; ui: TerminalUI;
   operationId?: string | undefined;
   signal?: AbortSignal | undefined;
   select?: typeof selectInstalledTui | undefined;
@@ -45,7 +45,8 @@ export async function runTerminalInstall(options: TerminalInstallOptions): Promi
     if (inspected.kind === 'corrupt') throw new InstallerError('controller-corrupt', inspected.reason);
     if (inspected.kind === 'present' && inspected.snapshot.operation) throw new InstallerError('busy', 'An unfinished operation requires explicit reconciliation');
     if (inspected.kind === 'present' && inspected.snapshot.lastResult?.operationId === operationId) {
-      ui.write(`This operation already completed. Open the installed TUI with:\n${retryCommand(location, target, options.bootstrap)}\n`);
+      const releaseId = inspected.snapshot.installation.activeReleaseId;
+      ui.write(releaseId ? `This operation already completed. Open the installed TUI with:\n${retryCommand(location, target, releaseId)}\n` : 'This operation already completed.\n');
       return { kind: 'already-completed', code: 0 };
     }
     let delivery: Delivery, acceptedOfferId: string | undefined;
@@ -80,7 +81,7 @@ export async function runTerminalInstall(options: TerminalInstallOptions): Promi
       ? await manager.upgradeFromTerminal(admission, { protocolVersion: 1, operationId, installationId: location.installationId, action: 'upgrade', acceptedOfferId: acceptedOfferId! }, decision, options.signal)
       : await manager.install(admission, operationId, delivery, decision, options.signal);
     checkCancellation();
-    if (ready.state.phase !== 'ready' || ready.state.errorCode) throw new InstallerError(ready.state.errorCode ?? 'installation-blocked', ready.state.message ?? 'Installation did not reach verified readiness');
+    if (ready.state.phase !== 'ready' || ready.state.errorCode || !ready.state.candidateId) throw new InstallerError(ready.state.errorCode ?? 'installation-blocked', ready.state.message ?? 'Installation did not reach verified readiness');
   } catch (error) {
     const cancelled = error instanceof Error && (error.name === 'AbortError' || error.name === 'TerminalClosedError' || error instanceof InstallerError && error.code === 'cancelled');
     try { ui.write(cancelled ? 'Installation cancelled.\n' : `${error instanceof InstallerError ? error.code : 'install-failed'}: ${error instanceof Error ? error.message : 'Installation failed'}\n`); } catch { /* The terminal may already be closed; never retry the operation. */ }
@@ -92,13 +93,13 @@ export async function runTerminalInstall(options: TerminalInstallOptions): Promi
     checkCancellation();
     const selected = await (options.select ?? selectInstalledTui)(location, target, peers, ready);
     checkCancellation();
-    (options.publish ?? publishInstalledLauncher)(location, target, options.bootstrap, ready);
+    (options.publish ?? publishInstalledLauncher)(location, target, ready.state.candidateId!, ready);
     const exit = await (options.launch ?? launchInstalledTui)(selected);
     if (exit.code !== 0 || exit.signal) throw new InstallerError('post-install-tui-error', 'The TUI ended unsuccessfully');
     return { kind: 'completed', code: 0, event: ready };
   } catch (error) {
     if (error instanceof InstallerError && error.code === 'cancelled') return { kind: 'cancelled', code: 130, event: ready, errorCode: error.code };
-    try { ui.write(`Installation completed; the TUI could not open. Retry without reinstalling:\n${retryCommand(location, target, options.bootstrap)}\n`); } catch { /* Completed selection survives terminal loss too. */ }
+    try { ui.write(`Installation completed; the TUI could not open. Retry without reinstalling:\n${retryCommand(location, target, ready.state.candidateId!)}\n`); } catch { /* Completed selection survives terminal loss too. */ }
     return { kind: 'post-install-tui-error', code: 1, event: ready, errorCode: error instanceof InstallerError ? error.code : 'post-install-tui-error' };
   }
 }

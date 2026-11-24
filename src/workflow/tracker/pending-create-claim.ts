@@ -255,13 +255,12 @@ export async function withClaim<T>(
 	}
 }
 
-/** Heartbeat: refresh heartbeatAt under the mutex (fence-checked). */
-export function heartbeatClaim(repoPath: string, epicHash: string, expectedFence: number, now: () => string = () => new Date().toISOString()): void {
-	const path = pendingCreatePath(repoPath, epicHash);
-	const claim = readClaim(repoPath, epicHash);
-	if (claim === undefined) return;
-	if (claim.fence !== expectedFence) throw new ClaimOwnershipError(`stale fence on heartbeat at ${path}`);
-	writeClaim(path, { ...claim, heartbeatAt: now() });
+/** Heartbeat: refresh heartbeatAt WITH the claim mutex held (fence-checked).
+ *  A displaced owner's heartbeat throws ClaimOwnershipError before any write. */
+export async function heartbeatClaim(repoPath: string, epicHash: string, expectedFence: number, now: () => string = () => new Date().toISOString()): Promise<void> {
+	await withClaim(repoPath, epicHash, expectedFence, (claim, commit) => {
+		commit({ ...claim, heartbeatAt: now() });
+	});
 }
 
 /** Mark the claim 'created' with the remote ref (fence-checked, under mutex). */
@@ -271,13 +270,13 @@ export async function markClaimCreated(repoPath: string, epicHash: string, expec
 	}, authority);
 }
 
-/** Delete the claim after successful persistence (fence-checked). */
-export function releaseClaim(repoPath: string, epicHash: string, expectedFence: number): void {
-	const path = pendingCreatePath(repoPath, epicHash);
-	const claim = readClaim(repoPath, epicHash);
-	if (claim === undefined) return;
-	if (claim.fence !== expectedFence) throw new ClaimOwnershipError(`stale fence on release at ${path}`);
-	unlinkSync(path);
+/** Delete the claim after successful persistence (under the mutex,
+ *  fence-checked — a displaced owner cannot delete the new owner's claim). */
+export async function releaseClaim(repoPath: string, epicHash: string, expectedFence: number): Promise<void> {
+	await withClaim(repoPath, epicHash, expectedFence, (claim, commit) => {
+		void commit;
+		unlinkSync(pendingCreatePath(repoPath, epicHash));
+	});
 }
 
 // ---------------------------------------------------------------------------

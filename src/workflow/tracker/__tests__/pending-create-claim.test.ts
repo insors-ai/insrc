@@ -19,7 +19,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import {
-	claimCreateIntent, claimMutexKey, pendingCreatePath, readClaim, withClaim, heartbeatClaim,
+	acquireClaimMutex, claimCreateIntent, claimMutexKey, pendingCreatePath, readClaim, withClaim, heartbeatClaim,
 	markClaimCreated, releaseClaim, takeoverAbandonedClaim, quarantineDeadClaim, reconcileClaim,
 	isClaimAbandoned, ClaimOwnershipError, DEFAULT_CLAIM_STALE_AFTER_MS, listPendingCreateFiles,
 } from '../pending-create-claim.js';
@@ -77,8 +77,8 @@ test('interleaving takeover race — pause A after ownership read, B takes over 
 			'A\'s stale-fence op is rejected with ClaimOwnershipError',
 		);
 		assert.equal(readClaim(fx.repo, HASH)?.runId, 'run-B', 'A did not overwrite B\'s claim');
-		assert.throws(() => heartbeatClaim(fx.repo, HASH, 1), ClaimOwnershipError, 'A fenced from heartbeat');
-		assert.throws(() => releaseClaim(fx.repo, HASH, 1), ClaimOwnershipError, 'A fenced from delete');
+		await assert.rejects(heartbeatClaim(fx.repo, HASH, 1), (e: unknown) => e instanceof ClaimOwnershipError, 'A fenced from heartbeat');
+		await assert.rejects(releaseClaim(fx.repo, HASH, 1), (e: unknown) => e instanceof ClaimOwnershipError, 'A fenced from delete');
 	} finally { fx.cleanup(); }
 });
 
@@ -99,7 +99,7 @@ test('two simultaneous abandoned-claim reconcilers — mutex serializes, exactly
 	} finally { fx.cleanup(); }
 });
 
-test('crash recovery — SIGKILL holder inside critical section; guard remains; fresh run reclaims via quarantineDeadClaim, recovers original claim, 0 new creates, live holder undisturbed', () => {
+test('crash recovery — SIGKILL holder inside critical section; guard remains; fresh run reclaims via quarantineDeadGuard, recovers original claim, 0 new creates, live holder undisturbed', () => {
 	const fx = repo();
 	try {
 		const a = claimCreateIntent(fx.repo, HASH, 'run-A', input);
@@ -124,7 +124,7 @@ test('crash recovery — SIGKILL holder inside critical section; guard remains; 
 	} finally { fx.cleanup(); }
 });
 
-test('lost execute response — claim stays pending with owner runId; fresh invocation reconciles via title+marker, 0 additional creates, persists issueRef', async () => {
+test("lost execute response — claim stays 'pending' with owner runId; fresh invocation (nothing injected) reconciles via title+marker, 0 additional creates, persists issueRef + bindings", async () => {
 	const fx = repo();
 	try {
 		// run A claims then the execute response is lost: claim stays pending
@@ -147,12 +147,12 @@ test('lost execute response — claim stays pending with owner runId; fresh invo
 		const after = readClaim(fx.repo, HASH);
 		assert.equal(after?.state, 'created');
 		assert.equal(after?.issueRef, 'acme/demo#42', 'issueRef persisted on the claim');
-		releaseClaim(fx.repo, HASH, after!.fence);
+		await releaseClaim(fx.repo, HASH, after!.fence);
 		assert.equal(readClaim(fx.repo, HASH), undefined, 'claim released after persistence');
 	} finally { fx.cleanup(); }
 });
 
-test('identity refusal — duplicate titles / single unrelated title match refuse via ISSUE-<hash> marker + target verification, no create', () => {
+test('identity refusal — duplicate titles / single unrelated title match refuse via ISSUE-<hash> marker + target verification, no label mutation, no create', () => {
 	const fx = repo();
 	try {
 		const a = claimCreateIntent(fx.repo, HASH, 'run-A', input);
@@ -176,42 +176,58 @@ test('identity refusal — duplicate titles / single unrelated title match refus
 	} finally { fx.cleanup(); }
 });
 
-test('authority boundary — claim mutex key ISSUE-<hash> accepted by ArtifactIds.parse; PENDING-CREATE-<hash> rejected; lock ordering claim-before-artifact-writes', () => {
+test('authority boundary — claim mutex acquired with key ISSUE-<hash> through the real withArtifactWriteAuthority/daemon handler; ArtifactIds.parse rejects PENDING-CREATE-<hash>; lock ordering claim-before-artifact-writes', async () => {
 	// the queue key is a valid artifact id
 	assert.equal(claimMutexKey(HASH), issueArtifactId(HASH));
 	assert.ok(ArtifactIds.parse(claimMutexKey(HASH)) !== undefined, 'ISSUE-<hash> parses as an artifact id');
 	// the claim FILE name does not parse — it bypasses the artifact store
 	assert.equal(ArtifactIds.parse(`PENDING-CREATE-${HASH}`), undefined, 'PENDING-CREATE-<hash> rejected by ArtifactIds.parse');
-	// the authority handler rejects the claim-file id, accepts the mutex key
-	const seen: string[] = [];
-	const authority = async (repo: string, id: string, run: () => Promise<void>) => {
+
+	// the REAL daemon-side authority (write-authority.ts): rejects unparseable
+	// ids and serializes per key. Install it and drive the claim mutex through
+	// acquireClaimMutex with it.
+	const { installArtifactWriteAuthority, withArtifactWriteAuthority } = await import('../../artifact-core/write-authority.js');
+	const queue: string[] = [];
+	const perKey = new Map<string, Promise<unknown>>();
+	installArtifactWriteAuthority(async (_repo: string, id: string) => {
 		if (ArtifactIds.parse(id) === undefined) throw new Error(`authority rejects ${id}`);
-		seen.push(id);
-		await run();
-	};
-	// acquiring with the claim-file name must fail; with the mutex key it works
-	void (async () => {
+		// mimic the daemon queue: wait for the previous holder of this id, then hold
+		const prev = perKey.get(id) ?? Promise.resolve();
+		let release!: () => void;
+		const held2 = new Promise<void>(r => { release = r; });
+		perKey.set(id, prev.then(() => held2));
+		queue.push(id + ':acquire');
+		await prev;
+		return async () => { release(); queue.push(id + ':release'); };
+	});
+	try {
 		const fx = repo();
 		try {
-			await assert.rejects(authority(fx.repo, `PENDING-CREATE-${HASH}`, async () => {}), /authority rejects/);
-			await authority(fx.repo, claimMutexKey(HASH), async () => {});
-			assert.deepEqual(seen, [issueArtifactId(HASH)], 'only the ISSUE-<hash> key entered the queue');
-			// lock ordering: claim op runs before any artifact write on ISSUE/EPIC/STORY keys
+			claimCreateIntent(fx.repo, HASH, 'run-A', input);
 			const order: string[] = [];
-			await acquireClaimMutexCheck(fx.repo, HASH, async (id) => order.push(id), authority);
-			assert.deepEqual(order, ['claim', issueArtifactId(HASH)], 'claim mutex acquired before the artifact write');
+			// the claim op holds the authority entry for the ISSUE-<hash> key until released
+			let releaseClaimHold!: () => void;
+			const claimHold = new Promise<void>(r => { releaseClaimHold = r; });
+			const mutex = await acquireClaimMutex(fx.repo, HASH, async (repo, id, run) => {
+				await withArtifactWriteAuthority(repo, id, async () => { order.push('claim:' + id); await run(); await claimHold; });
+			});
+			// claim mutex held; an artifact write on the same key must queue behind it
+			const writeP = withArtifactWriteAuthority(fx.repo, claimMutexKey(HASH), async () => { order.push('artifact:' + claimMutexKey(HASH)); });
+			await new Promise(r => setImmediate(r));
+			await new Promise(r => setImmediate(r));
+			assert.deepEqual(order, ['claim:' + issueArtifactId(HASH)], 'artifact write still queued behind the held claim mutex');
+			releaseClaimHold();
+			mutex.release();
+			await writeP;
+			assert.deepEqual(order, ['claim:' + issueArtifactId(HASH), 'artifact:' + issueArtifactId(HASH)], 'lock ordering: claim mutex before the artifact write');
+			assert.ok(queue.some(q => q.startsWith(issueArtifactId(HASH))), 'the ISSUE-<hash> key went through the real authority queue');
+			// the claim-file id is rejected by the real handler
+			await assert.rejects(withArtifactWriteAuthority(fx.repo, `PENDING-CREATE-${HASH}`, async () => {}), /authority rejects/);
 		} finally { fx.cleanup(); }
-	})();
+	} finally {
+		installArtifactWriteAuthority(undefined as never);
+	}
 });
-
-async function acquireClaimMutexCheck(
-	repoPath: string, epicHash: string,
-	record: (id: string) => void,
-	authority: (repo: string, id: string, run: () => Promise<void>) => Promise<void>,
-): Promise<void> {
-	record('claim');
-	await authority(repoPath, claimMutexKey(epicHash), async () => { record(issueArtifactId(epicHash)); });
-}
 
 test('liveness — isClaimAbandoned fresh vs stale heartbeat', () => {
 	const fx = repo();

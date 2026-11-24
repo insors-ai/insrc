@@ -17,6 +17,7 @@ import { devPreparationPaths, parseDevReleaseReceipt } from './dev.js';
 import { normalizeHome, assertLocalControlRoot } from './location.js';
 import { canonicalJson, digest, parseInventory } from './release-descriptor.js';
 import { controlBinding } from './native.js';
+import { verifyPayloadInventory } from './safe-zip.js';
 
 export interface DevPreparationResult {
   schemaVersion: 1; installationId: string; operationId: string; attemptId: string; workerNonce: string;
@@ -144,7 +145,7 @@ function closureEvidence(record: DevPreparationRecord, paths: ReturnType<typeof 
     closesSha256: digest(closes.raw), disposalsSha256: digest(disposals.raw), admittedCommands: ids.size,
     commandsSucceeded: closes.rows.every(row => row['code'] === 0 && row['signal'] === null && row['timedOut'] === false && row['launchError'] === null) };
 }
-function verifyStagedMetadata(record: DevPreparationRecord, paths: ReturnType<typeof devWorkerPaths>, inventorySha256: string): void {
+async function verifyStagedMetadata(record: DevPreparationRecord, paths: ReturnType<typeof devWorkerPaths>, inventorySha256: string): Promise<void> {
   realParents(paths.home, join(paths.stage, '.dev-release.json'));
   const receiptBytes = bytes(join(paths.stage, '.dev-release.json')), receipt = parseDevReleaseReceipt(JSON.parse(receiptBytes));
   const inventoryBytes = bytes(join(paths.stage, 'inventory.json'), 32 * 1024 * 1024), inventory = parseInventory(JSON.parse(inventoryBytes));
@@ -158,6 +159,7 @@ function verifyStagedMetadata(record: DevPreparationRecord, paths: ReturnType<ty
     const stat = lstatSync(join(paths.stage, name));
     if (!stat.isFile() || stat.isSymbolicLink()) throw uncertain('Worker stage has missing or linked control entries');
   }
+  await verifyPayloadInventory(paths.stage, inventory, { receipt: '.dev-release.json' });
 }
 
 export class DevWorkerInput {
@@ -209,7 +211,7 @@ export async function executeDevWorker(home: string, input: DevWorkerLaunch, opt
           const output = await options.work(run, scope, options.signal ?? new AbortController().signal, paths.stage);
           options.signal?.throwIfAborted();
           if (!output || !/^[a-f0-9]{64}$/.test(output.inventorySha256)) throw uncertain('Preparation workload returned no complete stage');
-          verifyStagedMetadata(record, paths, output.inventorySha256); inventorySha256 = output.inventorySha256;
+          await verifyStagedMetadata(record, paths, output.inventorySha256); inventorySha256 = output.inventorySha256;
         } finally { options.signal?.removeEventListener('abort', cancel); }
       });
     } catch (cause) { failure = cause; }
@@ -226,7 +228,7 @@ export async function executeDevWorker(home: string, input: DevWorkerLaunch, opt
   } finally { controlBinding().close(handle); }
 }
 
-export function readVerifiedDevResult(home: string, record: DevPreparationRecord): DevPreparationResult {
+export async function readVerifiedDevResult(home: string, record: DevPreparationRecord): Promise<DevPreparationResult> {
   const expected = parseDevPreparation(record), paths = devWorkerPaths(home, expected);
   try {
     assertLocalControlRoot(paths.home, process.platform === 'win32' ? path => controlBinding().localVolume(path) : undefined);
@@ -241,11 +243,20 @@ export function readVerifiedDevResult(home: string, record: DevPreparationRecord
       if (inputFingerprint(paths.checkout) !== result.inputFingerprint) throw uncertain('Prepared source inputs changed after worker completion');
       if (result.outcome === 'prepared') {
         if (!closure.commandsSucceeded || closure.admittedCommands === 0 || fingerprint(paths.checkout, ['out', 'packages/project-memory/dist']) !== result.outputFingerprint) throw uncertain('Prepared output/command evidence differs');
-        verifyStagedMetadata(expected, paths, result.inventorySha256!);
+        await verifyStagedMetadata(expected, paths, result.inventorySha256!);
       }
       return result;
     } finally { controlBinding().close(handle); }
   } catch (cause) { throw uncertain('Preparation result/ownership could not be confirmed; retain this attempt', cause); }
+}
+
+/** Required closure guard for later retry/cleanup callers. Cleanup also needs
+ * its separate pristine-data/path checks; this grants no deletion capability. */
+export async function requireClosedDevAttempt(home: string, record: DevPreparationRecord, purpose: 'retry' | 'cleanup'): Promise<DevPreparationResult> {
+  if (!['retry', 'cleanup'].includes(purpose)) throw new InstallerError('schema-invalid', 'Unknown attempt disposition');
+  const result = await readVerifiedDevResult(home, record);
+  if (result.outcome === 'prepared') throw uncertain('Prepared work must be finalized, not rebuilt or removed');
+  return result;
 }
 
 export async function launchDevWorker(scope: CommandScope, location: InstallationLocation, record: DevPreparationRecord, options: {
@@ -269,7 +280,7 @@ export async function launchDevWorker(scope: CommandScope, location: Installatio
     } },
   });
   if (!await scope.drain() || result.code !== 0 || result.timedOut || result.interrupted || result.launchError) throw uncertain('Worker process closure is unconfirmed');
-  const outcome = readVerifiedDevResult(location.home, record);
+  const outcome = await readVerifiedDevResult(location.home, record);
   if (outcome.outcome === 'prepared' && (options.signal?.aborted || options.ownerInput?.readableEnded || options.ownerInput?.destroyed)) throw new InstallerError('source-cancelled', 'Owner cancelled before prepared handoff');
   return outcome;
 }

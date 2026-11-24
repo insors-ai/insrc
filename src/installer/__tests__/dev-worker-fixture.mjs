@@ -7,7 +7,7 @@ import { randomUUID } from 'node:crypto';
 import { PassThrough } from 'node:stream';
 import { createRun, participantContext } from '../../../scripts/test-harness/context.mjs';
 import { processScope, withRun } from '../../../scripts/test-harness/process.mjs';
-const { DevWorkerInput, devWorkerPaths, executeDevWorker, launchDevWorker, readVerifiedDevResult } = await import('../dev-worker.ts');
+const { DevWorkerInput, devWorkerPaths, executeDevWorker, launchDevWorker, readVerifiedDevResult, requireClosedDevAttempt } = await import('../dev-worker.ts');
 const { createDevSourceOffer, devPreparationPaths } = await import('../dev.ts');
 const { canonicalJson, digest } = await import('../release-descriptor.ts');
 const { runtimeArchive } = await import('../runtime-policy.ts');
@@ -22,7 +22,7 @@ async function until(predicate, ms = 10000) {
 function stageFixture(stage, checkpoint) {
   mkdirSync(stage, { recursive: true });
   const names = ['bootstrap.mjs', 'manager.mjs', 'native/control.node', `tools/node/${checkpoint.sourceOffer.runtime.relativeExecutable}`,
-    'out/daemon/index.js', 'out/cli/index.js'];
+    'out/daemon/index.js', 'out/cli/index.js', 'data/required.txt'];
   const files = names.map(path => {
     const value = Buffer.from('controlled protocol fixture');
     mkdirSync(dirname(join(stage, path)), { recursive: true }); writeFileSync(join(stage, path), value);
@@ -61,7 +61,12 @@ if (process.argv[2] === '--nested') {
         assert.equal((await scope.start(process.execPath, ['-e', '0'])).code, 0);
       }
       if (scenario === 'empty') return undefined;
-      return stageFixture(stage, launch.checkpoint);
+      const output = stageFixture(stage, launch.checkpoint);
+      if (scenario === 'missing-file') rmSync(join(stage, 'data/required.txt'));
+      if (scenario === 'tampered-file') writeFileSync(join(stage, 'data/required.txt'), 'x'.repeat(Buffer.byteLength('controlled protocol fixture')));
+      if (scenario === 'wrong-size') writeFileSync(join(stage, 'data/required.txt'), 'too short');
+      if (scenario === 'extra-file') writeFileSync(join(stage, 'extra.txt'), 'unexpected');
+      return output;
     };
     await executeDevWorker(home, launch, { work, signal: channel.controller.signal, environment: process.env });
   } catch (error) { process.stderr.write(`${error.code ?? 'fixture-worker-error'}: preparation refused\n`); process.exitCode = 2; }
@@ -79,6 +84,12 @@ if (process.argv[2] === '--nested') {
   const env = { ...parent.environment(), INSRC_BUILD_CONFIRM_CLOSURE: '1', INSRC_DEV_WORKER_FIXTURE_MODE: ['abort', 'eof'].includes(scenario) ? 'wait' : scenario };
   const owned = { ...parent, environment: () => env };
   await withRun(owned, async scope => {
+    const launchOptions = { entrypoint: process.argv[1], signal: controller.signal, ownerInput: input, environment: env };
+    if (scenario === 'foreign') {
+      await assert.rejects(launchDevWorker(scope, location, { ...record, installationId: 'foreign' }, launchOptions), { code: 'preparation-uncertain' });
+      await assert.rejects(launchDevWorker(scope, location, { ...record, sourceOffer: { ...record.sourceOffer, sourceSha256: 'f'.repeat(64) } }, launchOptions));
+      assert.equal(existsSync(paths.identity), false);
+    }
     const pending = launchDevWorker(scope, location, record, { entrypoint: process.argv[1], signal: controller.signal, ownerInput: input, environment: env });
     if (['abort', 'eof'].includes(scenario)) {
       await until(() => existsSync(join(paths.checkout, 'ready')));
@@ -87,33 +98,43 @@ if (process.argv[2] === '--nested') {
     if (scenario === 'held') {
       await assert.rejects(pending, { code: 'preparation-uncertain' });
       assert.equal(existsSync(paths.result), false); assert.equal(existsSync(paths.active), true);
+      await assert.rejects(launchDevWorker(scope, location, record, launchOptions), { code: 'preparation-uncertain' });
+      await assert.rejects(requireClosedDevAttempt(home, record, 'cleanup'), { code: 'preparation-uncertain' });
+      assert.equal(existsSync(paths.active), true); assert.equal(existsSync(paths.checkout), true);
       await until(() => existsSync(join(paths.checkout, 'descendant-closed')));
       return;
     }
     const result = await pending;
-    assert.equal(result.outcome, ['abort', 'eof'].includes(scenario) ? 'cancelled' : ['empty', 'missing'].includes(scenario) ? 'failed' : 'prepared');
+    assert.equal(result.outcome, ['abort', 'eof'].includes(scenario) ? 'cancelled' : ['empty', 'missing', 'missing-file', 'tampered-file', 'wrong-size', 'extra-file'].includes(scenario) ? 'failed' : 'prepared');
     assert.equal(existsSync(paths.active), false);
-    assert.deepEqual(readVerifiedDevResult(home, record), result);
+    assert.deepEqual(await readVerifiedDevResult(home, record), result);
     const admissionFile = join(paths.workspace, 'child-admissions.jsonl');
     const admissions = existsSync(admissionFile) ? readFileSync(admissionFile, 'utf8').trim().split('\n') : [];
     if (scenario === 'nested') assert.equal(admissions.length, 2);
     if (scenario === 'tamper') {
       const handle = controlBinding().acquire(paths.lock);
-      try { assert.throws(() => readVerifiedDevResult(home, record), { code: 'preparation-uncertain' }); }
+      try {
+        await assert.rejects(requireClosedDevAttempt(home, record, 'retry'), { code: 'preparation-uncertain' });
+        await assert.rejects(requireClosedDevAttempt(home, record, 'cleanup'), { code: 'preparation-uncertain' });
+        await assert.rejects(launchDevWorker(scope, location, record, launchOptions), { code: 'preparation-uncertain' });
+      }
       finally { controlBinding().close(handle); }
       const original = readFileSync(paths.closure, 'utf8'); writeFileSync(paths.closure, original + ' ');
-      assert.throws(() => readVerifiedDevResult(home, record), { code: 'preparation-uncertain' }); writeFileSync(paths.closure, original);
-      assert.throws(() => readVerifiedDevResult(home, { ...record, workerNonce: 'x'.repeat(32) }), { code: 'preparation-uncertain' });
+      await assert.rejects(requireClosedDevAttempt(home, record, 'retry'), { code: 'preparation-uncertain' });
+      await assert.rejects(requireClosedDevAttempt(home, record, 'cleanup'), { code: 'preparation-uncertain' }); writeFileSync(paths.closure, original);
+      await assert.rejects(readVerifiedDevResult(home, { ...record, workerNonce: 'x'.repeat(32) }), { code: 'preparation-uncertain' });
       const journal = join(paths.workspace, 'child-results.jsonl'), saved = readFileSync(journal); writeFileSync(journal, '');
-      assert.throws(() => readVerifiedDevResult(home, record), { code: 'preparation-uncertain' }); writeFileSync(journal, saved);
+      await assert.rejects(requireClosedDevAttempt(home, record, 'retry'), { code: 'preparation-uncertain' });
+      await assert.rejects(requireClosedDevAttempt(home, record, 'cleanup'), { code: 'preparation-uncertain' }); writeFileSync(journal, saved);
       const cleanup = join(paths.workspace, 'cleanup.json'), savedCleanup = readFileSync(cleanup); writeFileSync(cleanup, JSON.stringify({ confirmedClosed: true, closureMode: 'legacy' }));
-      assert.throws(() => readVerifiedDevResult(home, record), { code: 'preparation-uncertain' }); writeFileSync(cleanup, savedCleanup);
+      await assert.rejects(requireClosedDevAttempt(home, record, 'retry'), { code: 'preparation-uncertain' });
+      await assert.rejects(requireClosedDevAttempt(home, record, 'cleanup'), { code: 'preparation-uncertain' }); writeFileSync(cleanup, savedCleanup);
       for (const folder of ['src', 'out']) {
         mkdirSync(join(paths.checkout, folder)); writeFileSync(join(paths.checkout, folder, 'changed.js'), 'changed');
-        assert.throws(() => readVerifiedDevResult(home, record), { code: 'preparation-uncertain' });
+        await assert.rejects(readVerifiedDevResult(home, record), { code: 'preparation-uncertain' });
         rmSync(join(paths.checkout, folder), { recursive: true });
       }
-      assert.deepEqual(readVerifiedDevResult(home, record), result);
+      assert.deepEqual(await readVerifiedDevResult(home, record), result);
     }
     assert.ok(readdirSync(home).every(name => ['dev', 'install'].includes(name)));
     assert.equal(existsSync(join(home, 'install/controller.json')), false);

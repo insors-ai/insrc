@@ -24,7 +24,9 @@ async function scenario(name: string): Promise<void> {
 }
 test('cancel-or-terminal-eof-drains-owned-preparation-actors-before-return', async () => { await scenario('abort'); await scenario('eof'); });
 test('held-unknown-or-mismatched-preparation-result-blocks-retry-and-cleanup', async () => { await scenario('tamper'); await scenario('held'); });
-test('worker-protocol-rejects-foreign-checkpoint-and-empty-prepared-result', async () => { await scenario('nested'); await scenario('empty'); await scenario('missing'); });
+test('worker-protocol-rejects-foreign-checkpoint-and-empty-prepared-result', async () => {
+  for (const name of ['nested', 'foreign', 'empty', 'missing', 'missing-file', 'tampered-file', 'wrong-size', 'extra-file']) await scenario(name);
+});
 test('worker input rejects oversized launch and foreign cancellation frames', async () => {
   const target = { os: 'linux' as const, arch: 'arm64' as const, baseline: 'protocol' };
   const sourceOffer = createDevSourceOffer({ kind: 'dev-source', delivery: { mode: 'dev', repository: 'https://example.test/repo.git', branch: 'installer' },

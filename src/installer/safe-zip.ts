@@ -118,16 +118,30 @@ export async function verifyPublishedPayload(directory: string, descriptor: Rele
   const root = await lstat(directory); if (!root.isDirectory() || root.isSymbolicLink()) throw unsafe('Unsafe immutable release root');
   const inventoryBytes = await readBoundedFile(join(directory, 'inventory.json'), BUNDLE_LIMITS.inventoryBytes);
   if (inventoryBytes.length > BUNDLE_LIMITS.inventoryBytes || digest(inventoryBytes) !== descriptor.inventorySha256) throw unsafe('Immutable inventory differs');
-  const inventory = parseInventory(JSON.parse(inventoryBytes.toString('utf8')) as unknown), expected = new Map(inventory.files.map(file => [file.path, file]));
+  const inventory = parseInventory(JSON.parse(inventoryBytes.toString('utf8')) as unknown);
+  await verifyPayloadInventory(directory, inventory, { receipt: '.release.json', signal });
+  validatePayloadEntries(inventory, descriptor); return inventory;
+}
+/** Shared complete tree verification; receipt mode is explicit and never inferred. */
+export async function verifyPayloadInventory(directory: string, input: PayloadInventory, options: { receipt: '.release.json' | '.dev-release.json'; signal?: AbortSignal | undefined }): Promise<void> {
+  const inventory = parseInventory(input), { signal } = options;
+  const root = await lstat(directory); if (!root.isDirectory() || root.isSymbolicLink()) throw unsafe('Unsafe payload root');
+  const expected = new Map(inventory.files.map(file => [file.path, file]));
+  if (expected.has('.dev-release.json')) throw unsafe('Inventory cannot include a receipt');
+  const components = new Map<string, string>();
   let count = 0;
   async function visit(path: string, prefix = ''): Promise<void> {
     for (const name of await readdir(path)) {
       signal?.throwIfAborted();
       const relative = prefix ? `${prefix}/${name}` : name, file = join(path, name), stat = await lstat(file);
+      assertRelativeFile(relative);
+      const folded = relative.normalize('NFC').toLowerCase(), prior = components.get(folded);
+      if (prior !== undefined && prior !== relative) throw unsafe('Payload path components collide');
+      components.set(folded, relative);
       if (++count > BUNDLE_LIMITS.entries * 2 + 1) throw unsafe('Immutable payload has excessive entries');
       if (stat.isSymbolicLink() || (!stat.isDirectory() && !stat.isFile()) || (stat.isFile() && stat.nlink !== 1)) throw unsafe('Immutable payload has special entries');
       if (stat.isDirectory()) { await visit(file, relative); continue; }
-      if (relative === 'inventory.json' || relative === '.release.json') continue;
+      if (relative === 'inventory.json' || relative === options.receipt) continue;
       const record = expected.get(relative);
       if (!record || stat.size !== record.bytes || (process.platform !== 'win32' && ((stat.mode & 0o111) ? 0o755 : 0o644) !== record.mode)) throw unsafe('Immutable payload membership differs');
       const { createReadStream } = await import('node:fs'); const hash = createHash('sha256'); let bytes = 0;
@@ -136,5 +150,5 @@ export async function verifyPublishedPayload(directory: string, descriptor: Rele
       expected.delete(relative);
     }
   }
-  await visit(directory); if (expected.size) throw unsafe('Immutable payload file missing'); validatePayloadEntries(inventory, descriptor); return inventory;
+  await visit(directory); if (expected.size) throw unsafe('Immutable payload file missing');
 }

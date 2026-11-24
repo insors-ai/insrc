@@ -163,18 +163,21 @@ test('late foreign revision cannot be overwritten by readiness or error persiste
 });
 
 
-test('stop and interrupted stop recovery need only exact lifecycle evidence', async () => {
+test('stop and interrupted stop recovery bypass dependency health and payload checks', async () => {
   const f = managerFixture();
   try {
     // Both dependency failure and damaged selected files must be irrelevant.
     writeFileSync(join(f.old.directory, 'marker'), 'damaged');
-    f.peers.dependencies!.inspect = async () => ({ runtimeReady: false, ollama: 'unavailable', agents: { claude: false, codex: false, vibe: false }, recommendations: [], blockers: ['Ollama is unavailable'] });
-    const stopOnly = () => new InstallerManager(f.location, f.target, { lifecycle: f.peers.lifecycle });
+    let inspections = 0;
+    f.peers.dependencies!.inspect = async () => { inspections++; return { runtimeReady: false, ollama: 'unavailable', agents: { claude: false, codex: false, vibe: false }, recommendations: [], blockers: ['Ollama is unavailable'] }; };
+    f.peers.migrations!.verifyInstalled = async () => { throw Error('Stop must not check installed migrations'); };
+    const stopOnly = () => new InstallerManager(f.location, f.target, { ...f.peers, bundle: undefined });
+    await assert.rejects(new InstallerManager(f.location, f.target, { lifecycle: f.peers.lifecycle }).execute(request('stop', 'missing-peers')), { code: 'capability-unavailable' });
     const completion = f.peers.lifecycle!.waitShutdownCompletion;
     f.peers.lifecycle!.waitShutdownCompletion = async (location, shutdown) => ({ ...await completion(location, shutdown), completionNonce: '0'.repeat(64) });
     const interrupted = await stopOnly().execute(request('stop'));
     assert.equal(interrupted.state.phase, 'blocked'); assert.equal(interrupted.state.errorCode, 'shutdown-uncertain');
-    assert.equal(f.state.shutdowns.length, 1); assert.equal(f.state.migrations.length, 0); assert.equal(f.state.activations.length, 0);
+    assert.equal(f.state.shutdowns.length, 1); assert.equal(f.state.migrations.length, 0); assert.equal(f.state.activations.length, 0); assert.equal(inspections, 0);
     const shutdown = f.state.shutdowns[0]!;
     f.peers.lifecycle!.reconcileShutdown = async () => undefined;
     assert.equal((await stopOnly().execute(request('retry-migration'))).state.phase, 'blocked');
@@ -189,6 +192,7 @@ test('stop and interrupted stop recovery need only exact lifecycle evidence', as
     f.peers.lifecycle!.waitShutdownCompletion = completion;
     assert.equal((await stopOnly().execute(request('retry-migration', 'another-stop'))).state.phase, 'stopped');
     assert.equal((await stopOnly().execute(request('stop', 'new-stop'))).state.phase, 'stopped');
+    assert.equal(inspections, 0, 'neither ordinary stop nor recovery checks dependency health');
   } finally { f.cleanup(); }
 });
 

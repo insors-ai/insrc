@@ -32,14 +32,9 @@ export class InstallerManager {
     for (const name of ['resolve', 'prepare', 'open', 'verify'] as const) if (typeof port[name] !== 'function') fail('capability-unavailable', `Required delivery capability ${name} is unavailable`);
     return port;
   }
-  #ports(stopping = false): void {
-    if (!this.peers.lifecycle) fail('capability-unavailable', 'Lifecycle shutdown capability is required');
-    for (const method of ['observe', 'shutdown', 'waitShutdownCompletion', 'reconcileShutdown'] as const) {
-      if (typeof this.peers.lifecycle[method] !== 'function') fail('capability-unavailable', `Required lifecycle capability ${method} is unavailable`);
-    }
-    if (stopping) return;
-    if (!this.peers.dependencies || !this.peers.migrations) fail('capability-unavailable', 'Dependency and migration capabilities are required');
-    for (const [port, methods] of [[this.peers.dependencies, ['inspect', 'decide']], [this.peers.lifecycle, ['launchMigration', 'readMigrationExitReceipt', 'migrationOwnership', 'activate', 'reconcileActivation']], [this.peers.migrations, ['waitForJournal', 'reconcileJournal', 'allowRetry', 'verifyInstalled']]] as const) {
+  #ports(): void {
+    if (!this.peers.dependencies || !this.peers.lifecycle || !this.peers.migrations) fail('capability-unavailable', 'Dependency, lifecycle/readiness and migration capabilities are required');
+    for (const [port, methods] of [[this.peers.dependencies, ['inspect', 'decide']], [this.peers.lifecycle, ['observe', 'shutdown', 'waitShutdownCompletion', 'reconcileShutdown', 'launchMigration', 'readMigrationExitReceipt', 'migrationOwnership', 'activate', 'reconcileActivation']], [this.peers.migrations, ['waitForJournal', 'reconcileJournal', 'allowRetry', 'verifyInstalled']]] as const) {
       for (const method of methods) if (typeof (port as unknown as Record<string, unknown>)[method] !== 'function') fail('capability-unavailable', `Required capability ${method} is unavailable`);
     }
   }
@@ -208,7 +203,7 @@ export class InstallerManager {
       const recovering = request.action === 'retry-migration';
       if (recovering && !intent) fail('recovery-uncertain', 'Recovery requires the original operation intent');
       const stopping = (recovering ? intent!.action : request.action) === 'stop';
-      this.#ports(stopping);
+      this.#ports();
       let interruptedPhase = initial.operation?.phase;
       if (recovering && interruptedPhase === 'blocked') {
         const interruption = store.readOperationData(request.operationId, 'interruption') as { phase?: OperationRecord['phase'] } | undefined;

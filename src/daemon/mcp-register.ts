@@ -147,44 +147,42 @@ function defaultVibeProjectConfigText(repoPath: string): string | undefined {
 	catch { return undefined; }
 }
 
-/**
- * The dot-separated components of a TOML table name, quotes stripped: a dot
- * inside a quoted component does not split (`["mcp_servers.env"]` is ONE root
- * component named `mcp_servers.env`, while `["mcp_servers".env]` is the
- * two-component sub-table form).
- */
-function headerComponents(name: string): string[] {
-	const parts: string[] = [];
-	let cur = '';
-	let quote: string | undefined;
-	for (const ch of name) {
-		if (quote !== undefined) {
-			if (ch === quote) quote = undefined;
-			else cur += ch;
-		} else if (ch === '"' || ch === "'") {
-			quote = ch;
-		} else if (ch === '.') {
-			parts.push(cur.trim());
-			cur = '';
-		} else {
-			cur += ch;
-		}
-	}
-	parts.push(cur.trim());
-	return parts;
-}
+/** One TOML key component: a quoted basic string, a quoted literal string, or
+ *  a bare key. Quoted components may hold '.', ']' and '#' — bare keys cannot. */
+const KEY_COMPONENT = /"(?:[^"\\\n]|\\.)*"|'[^'\n]*'|[A-Za-z0-9_-]+/g;
 
 /**
- * Is this header line a `[mcp_servers.<sub>]` table — a sub-table of an
- * [[mcp_servers]] entry? The removed entry owns its sub-tables (TOML attaches
- * them to the last array element), so they are dropped with the entry; kept,
- * they would re-attach to a preceding server and change its configuration.
+ * The dot-separated components of a TOML table name, quotes resolved: a dot
+ * inside a quoted component does not split (`["mcp_servers.env"]` is ONE root
+ * component named `mcp_servers.env`, while `["mcp_servers".env]` and
+ * `[mcp_servers.env]` are the two-component sub-table form).
  */
-function isMcpServersSubtable(headerLine: string): boolean {
-	const h = headerLine.replace(/\r$/, '').replace(/#.*$/, '').trim();
-	if (!h.startsWith('[') || h.startsWith('[[') || !h.endsWith(']')) return false;
-	const components = headerComponents(h.slice(1, -1).trim());
-	return components.length > 1 && components[0] === 'mcp_servers';
+function headerComponents(name: string): string[] {
+	return [...name.matchAll(KEY_COMPONENT)].map(m => {
+		const raw = m[0]!;
+		if (raw.startsWith("'")) return raw.slice(1, -1);
+		if (!raw.startsWith('"')) return raw;
+		try { return JSON.parse(raw) as string; } catch { return raw; }
+	});
+}
+
+/** A TOML table header line — single `[t]` or double `[[t]]`. Group 1 is the
+ *  opening brackets (single or double), group 2 the table name, which may mix
+ *  quoted and bare components (a quoted component may hold '.', ']' or '#',
+ *  so a plain `[^]#]`-style name match would misread `["user#prefs"]` as a
+ *  non-header and delete it with the removed entry's chunk). */
+const TABLE_HEADER = /^[ \t]*(\[\[?)[ \t]*((?:"(?:[^"\\\n]|\\.)*"|'[^'\n]*'|[A-Za-z0-9_-]+)(?:[ \t]*\.[ \t]*(?:"(?:[^"\\\n]|\\.)*"|'[^'\n]*'|[A-Za-z0-9_-]+))*)[ \t]*\]\]?[ \t]*(?:#.*)?\r?$/gm;
+
+/**
+ * Is this single-bracket header a `[mcp_servers.<sub>]` table — a sub-table of
+ * an [[mcp_servers]] entry? The removed entry owns its sub-tables (TOML
+ * attaches them to the last array element), so they are dropped with the
+ * entry; kept, they would re-attach to a preceding server and change its
+ * configuration.
+ */
+function isMcpServersSubtable(brackets: string, name: string): boolean {
+	return brackets === '[' && headerComponents(name).length > 1
+		&& headerComponents(name)[0] === 'mcp_servers';
 }
 
 /**
@@ -212,11 +210,10 @@ export function removeVibeProjectServer(
 	// (a `name = "insrc"` inside a later table belongs to that table, not to
 	// the mcp_servers entry), and whatever follows inside the chunk is a table
 	// that must survive the removal unless it is the entry's own sub-table.
-	const anyHeader = /^[ \t]*\[\[?[ \t]*[^\]\n#]+?[ \t]*\]\]?[ \t]*(?:#.*)?\r?$/gm;
 	let cleaned = '';
 	chunks.forEach((chunk, i) => {
 		if (i === 0) { cleaned += chunk; return; }
-		const nextHeader = chunk.search(anyHeader);
+		const nextHeader = chunk.search(TABLE_HEADER);
 		const fields = nextHeader > 0 ? chunk.slice(0, nextHeader) : chunk;
 		if (!(chunk.startsWith('mcp_servers]]') && nameLine.test(fields))) {
 			cleaned += '[[' + chunk;
@@ -228,9 +225,9 @@ export function removeVibeProjectServer(
 		// unrelated table that follows it in the same chunk.
 		if (nextHeader > 0) {
 			const rest = chunk.slice(nextHeader);
-			const headers = [...rest.matchAll(anyHeader)];
+			const headers = [...rest.matchAll(TABLE_HEADER)];
 			for (let s = 0; s < headers.length; s++) {
-				if (isMcpServersSubtable(headers[s]![0])) continue;
+				if (isMcpServersSubtable(headers[s]![1]!, headers[s]![2]!)) continue;
 				cleaned += rest.slice(headers[s]!.index!, s + 1 < headers.length ? headers[s + 1]!.index! : rest.length);
 			}
 		}

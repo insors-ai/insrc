@@ -641,6 +641,19 @@ test('removeVibeProjectServer drops the entry\'s sub-table when its first compon
 	assert.deepEqual(removed, ['/r'], 'the file held only the entry and its quoted sub-table — deleted');
 });
 
+test('removeVibeProjectServer keeps a quoted table name containing #', async () => {
+	const { removeVibeProjectServer } = await import('../mcp-register.js');
+	// ["user#prefs"] is a valid quoted root table — '#' inside the quotes is
+	// part of the name, not a comment. A naive [^]#] header match misses it and
+	// deletes it with the removed entry's chunk (file included).
+	const files = new Map([['/r', '[[mcp_servers]]\nname = "insrc"\ncommand = "node"\nargs = ["/mac/path"]\n["user#prefs"]\nfoo = 1\n']]);
+	const removed: string[] = [];
+	const deps = { vibeProjectConfigText: (p: string) => files.get(p), writeVibeProjectConfig: (p: string, t: string) => { files.set(p, t); }, removeVibeProjectConfig: (p: string) => { removed.push(p); } };
+	assert.equal(removeVibeProjectServer('/r', deps), 'removed');
+	assert.equal(files.get('/r'), '["user#prefs"]\nfoo = 1\n', 'the quoted table survives; the entry is dropped');
+	assert.equal(removed.length, 0, 'the file is rewritten, not deleted');
+});
+
 test('removeVibeProjectServer leaves a config it cannot normalize untouched and reports the failure', async () => {
 	const { removeVibeProjectServer } = await import('../mcp-register.js');
 	let wrote = false;

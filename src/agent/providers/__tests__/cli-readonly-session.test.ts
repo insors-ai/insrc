@@ -89,11 +89,12 @@ test('claude reviewer-session arguments allow reading and insrc analyze only', (
 });
 
 test('codex reviewer-session arguments use a read-only sandbox and a native per-server allowlist', () => {
-	const args = codexReadOnlySessionArgs('/tmp/s.json', '/repo', [], [{ name: 'insrc', enabled: true }, { name: 'other', enabled: true }]);
+	const args = codexReadOnlySessionArgs('/tmp/s.json', '/repo', [], [{ name: 'insrc', enabled: true }, { name: 'alpha', enabled: true }, { name: 'beta', enabled: false }]);
 	assert.deepEqual(args, [
 		'exec', '--output-schema', '/tmp/s.json', '--json', '--sandbox', 'read-only', '-C', '/repo',
 		'-c', 'mcp_servers.insrc.enabled_tools=["insrc_analyze","insrc_analyze_step"]',
-		'-c', 'mcp_servers.other.enabled=false',
+		'-c', 'mcp_servers.alpha.enabled=false',
+		'-c', 'mcp_servers.beta.enabled=false',
 	]);
 	assert.ok(!args.includes('--full-auto'));
 });

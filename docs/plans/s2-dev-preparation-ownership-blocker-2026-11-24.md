@@ -39,11 +39,11 @@ Invocation: Node 22.22.1 with that script from the repository root.
 
 The implementation reconciles admitted command IDs, nested coordinator close/disposal journals, cleanup hashes, worker lock ownership and source/output fingerprints. Those checks cannot discover an arbitrary descendant that starts another session/group and never registers. Consequently the existing implementation cannot substantiate the broader whole-descendant interpretation of the approved LLD/plan.
 
-## Design decision needed
+## User decision: owned/cooperating actor guarantee
 
-Recommended clarification: the guarantee covers installer-admitted command actors, retained process groups and cooperating registered descendants. Known unresolved ownership still blocks publication/retry/cleanup. Arbitrary unregistered detached processes are explicitly outside that guarantee; this is process ownership, not execution isolation.
+The user explicitly selected the first guarantee in chat: "limit it to the first as guranteed". The guarantee covers installer-admitted command actors, retained owned process groups and cooperating registered descendants. Known unresolved owned-actor evidence still blocks publication/retry/cleanup. Arbitrary unregistered detached processes are explicitly outside that guarantee; this is process ownership, not execution isolation.
 
-Alternative: retain arbitrary-descendant containment and design a suitable isolation/platform ownership boundary before continuing. No existing native API in this repository provides that boundary. Do not silently weaken the approved contract or certify the current process-group evidence as universal containment.
+The rejected alternative was arbitrary-descendant containment requiring a suitable isolation/platform ownership boundary. No existing native API in this repository provides that boundary. The explicit user choice authorizes the narrowed design; current process-group evidence must still never be described as universal containment.
 
 This is a cross-platform design question. Linux documents subreaper adoption of orphan descendants, and Windows documents job-object inheritance and breakaway controls; neither mechanism is implemented or qualified here. These are research candidates, not completed designs. [Linux documentation](https://www.man7.org/linux/man-pages/man2/PR_SET_CHILD_SUBREAPER.2const.html), [Windows job objects](https://learn.microsoft.com/en-us/windows/win32/procthread/job-objects).
 
@@ -58,4 +58,4 @@ For macOS, Apple's kernel header states that automatic `NOTE_TRACK`/`NOTE_CHILD`
 - T2's toolchain and coordinator checks passed 11 cases. Three additional legacy command assertions still expect removed broker/watchdog stages, removed spawn exemptions or the removed daemon-process-client test. Those expectations predate the t2 changes and remain outside this task.
 - Fixture/native-host evidence is not UTM, OrbStack or Windows release qualification. Unsupported descendant-disposal evidence must remain uncertain.
 
-The user was asked to choose the ownership guarantee before any dependent contract change. Until that decision and any necessary tracked design revision, t3 remains unvalidated and t4 is not admitted.
+The decision is resolved. A tracked S2 LLD revision records the explicit boundary, preserves all public contracts and requires full staged-file inventory verification. Its human artifact approval remains pending; t3 stays unvalidated and t4 is not admitted until the applicable design/build gates are satisfied. The nine-task plan remains coherent: its existing references to admitted actors and descendants use this explicit boundary.

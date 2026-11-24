@@ -10,7 +10,7 @@ import type { CommandScope } from '../../scripts/test-harness/process.mjs';
 import { inputFingerprint, withWriter } from '../../scripts/test-harness/build.mjs';
 import { InstallerError, MAX_CONTROL_BYTES } from './contracts.js';
 import type { Delivery, HookReference, InstallationLocation, RuntimeIdentity, Target } from './contracts.js';
-import { canonicalJson } from './release-descriptor.js';
+import { canonicalJson, digest } from './release-descriptor.js';
 import { createDevSourceOffer, devHashSchema, devNonceSchema, devObjectSchema, devPreparationPaths, devTokenSchema,
   parseDevDelivery, parseDevHooks, parseDevPreparation, parseDevRecord, parseDevReleaseReceipt, parseDevSourceOffer } from './dev.js';
 import type { DevPreparationRecord, DevReleaseReceipt, DevSourceOffer } from './dev.js';
@@ -21,6 +21,19 @@ import { readBoundedFile } from './safe-zip.js';
 const OUTPUT_LIMIT = 4 * 1024 * 1024;
 export interface DevGit {
   (args: string[], cwd?: string, allowedCodes?: number[]): Promise<{ code: number; text: string }>;
+}
+/** Public consent binds the installation, predecessor and exact resolved source,
+ * not the later receipt/inventory digest. The manager re-resolves under its lease
+ * before calling the acceptance guard; the worker consumes only its saved result. */
+export function devUpgradeOfferId(location: InstallationLocation, predecessorId: string | undefined, input: DevSourceOffer): string {
+  const offer = parseDevSourceOffer(input);
+  return digest(canonicalJson({ location, current: predecessorId, delivery: offer.delivery, source: offer.sourceSha256 }));
+}
+export function acceptResolvedDevSource(location: InstallationLocation, predecessorId: string | undefined,
+  input: DevSourceOffer, acceptedOfferId: string): DevSourceOffer {
+  const offer = parseDevSourceOffer(input);
+  if (acceptedOfferId !== devUpgradeOfferId(location, predecessorId, offer)) throw new InstallerError('offer-stale', 'Upgrade acceptance differs from the exact current source offer');
+  return offer;
 }
 /** Preserve ordinary credential delegation; clear inherited repository redirection
  * and trace settings before Git can touch a selected or new checkout. */

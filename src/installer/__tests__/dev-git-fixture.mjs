@@ -7,7 +7,7 @@ import { randomUUID } from 'node:crypto';
 import { createRun } from '../../../scripts/test-harness/context.mjs';
 import { withRun } from '../../../scripts/test-harness/process.mjs';
 import { fingerprint } from '../../../scripts/test-harness/build.mjs';
-const { resolveDevSource, prepareDevGit, ownedDevGit, inspectManagedDevCheckout, inspectLocalDevSource } = await import('../dev-git.ts');
+const { resolveDevSource, prepareDevGit, ownedDevGit, inspectManagedDevCheckout, inspectLocalDevSource, devUpgradeOfferId, acceptResolvedDevSource } = await import('../dev-git.ts');
 const { executeDevWorker, devWorkerPaths } = await import('../dev-worker.ts');
 const { devPreparationPaths, parseDevReleaseReceipt } = await import('../dev.ts');
 const { resolveInstallationLocation } = await import('../location.ts');
@@ -126,8 +126,18 @@ await withRun(run, async scope => {
     const response = await scope.start(process.execPath, ['-e', "process.stdout.write('x'.repeat(100000))"], { outputLimitBytes: 1024 });
     assert.equal(response.launchError, 'command-output-limit'); assert.ok(readFileSync(response.log).length <= 1024);
   } else if (scenario === 'pinned') {
+    const location = installation('home'), consent = devUpgradeOfferId(location, undefined, offer);
+    // Accept and retain one exact source before the remote moves. The worker
+    // later uses this saved offer without branch re-resolution or substitution.
+    const saved = acceptResolvedDevSource(location, undefined, offer, consent);
     const moved = await advance(); assert.notEqual(moved.sourceSha256, offer.sourceSha256); assert.notEqual(moved.releaseId, offer.releaseId);
-    const location = installation('home'), accepted = await build(location, offer, 'accepted');
+    const before = fingerprint(location.home, readdirSync(location.home));
+    assert.throws(() => acceptResolvedDevSource(location, undefined, moved, consent), { code: 'offer-stale' });
+    assert.equal(fingerprint(location.home, readdirSync(location.home)), before);
+    assert.throws(() => acceptResolvedDevSource(location, 'another-predecessor', offer, consent), { code: 'offer-stale' });
+    assert.throws(() => acceptResolvedDevSource(installation('other-home'), undefined, offer, consent), { code: 'offer-stale' });
+    assert.deepEqual(acceptResolvedDevSource(location, undefined, moved, devUpgradeOfferId(location, undefined, moved)), moved);
+    const accepted = await build(location, saved, 'accepted');
     assert.equal(readFileSync(join(accepted.paths.checkout, 'src/main.ts'), 'utf8'), 'base\n');
     assert.equal(accepted.receipt.manifest.sourceCommit, initialCommit);
     await git(['checkout', '--quiet', '--orphan', 'replacement'], repository);

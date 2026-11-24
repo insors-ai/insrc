@@ -165,6 +165,17 @@ export class CodexMcpServerNotRegisteredError extends Error {
 	}
 }
 
+/** The insrc MCP server is registered but globally disabled
+ *  (`enabled: false` in `codex mcp list --json`); setting its `enabled_tools`
+ *  override does not re-enable it, so a session built from it would silently
+ *  run with no insrc analyze tools reachable at all. Refused up front instead. */
+export class CodexMcpServerDisabledError extends Error {
+	constructor(readonly serverName: string) {
+		super(`codex: the '${serverName}' MCP server is registered but disabled globally; enable it (\`codex mcp enable ${serverName}\`) before a read-only session can use it`);
+		this.name = 'CodexMcpServerDisabledError';
+	}
+}
+
 /** A project-local .codex/config.toml between a codex read-only session's cwd
  *  and the filesystem root declares its own `mcp_servers` table that this
  *  module's discovery/allowlist mechanism cannot enumerate or exclude. The
@@ -225,22 +236,44 @@ export async function discoverCodexMcpServers(binPath: string, cwd: string, time
 	});
 }
 
+/** Quote `name` as a TOML basic-string key (double-quoted, with `\` and `"`
+ *  escaped). codex's own `-c key.path=value` override syntax splits its key
+ *  on every `.` with no quoting support at all (confirmed live: a server
+ *  literally named `review.server` turns `-c mcp_servers.review.server.enabled=false`
+ *  into the nested path `mcp_servers.review.server.enabled`, silently
+ *  targeting the wrong, nonexistent entry `mcp_servers.review` instead) --
+ *  so every server name here is instead written as a quoted key inside ONE
+ *  combined `mcp_servers={...}` inline-table assignment, never as a dotted
+ *  `-c` path. A control character in a name is rejected rather than
+ *  mis-encoded (real server names are config keys, never control text). */
+function tomlQuotedKey(name: string): string {
+	if (/[\u0000-\u001f\u007f]/.test(name)) throw new Error(`codex: MCP server name '${name}' contains a control character and cannot be safely encoded`);
+	return `"${name.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+}
+
 /**
  * codex arguments for a read-only session: a read-only sandbox, never
  * `--full-auto`, plus a native per-server allowlist built from the globally-
  * registered `servers` (discoverCodexMcpServers) -- the insrc server's own
  * enabled_tools override, and one `enabled=false` override per other
- * registered server, so no MCP server but insrc is reachable.
+ * registered server, so no MCP server but insrc is reachable. The whole
+ * allowlist is ONE combined `-c mcp_servers={...}` inline-table assignment
+ * (never separate per-server `-c mcp_servers.<name>.<field>=...` dotted-path
+ * flags, which break on a dotted server name and which a later whole-table
+ * `-c` assignment would clobber anyway -- confirmed live).
  */
 export function codexReadOnlySessionArgs(schemaPath: string, cwd: string, modelArgs: readonly string[], servers: readonly CodexMcpServerStatus[]): string[] {
-	if (!servers.some(server => server.name === CODEX_INSRC_SERVER_NAME)) throw new CodexMcpServerNotRegisteredError(CODEX_INSRC_SERVER_NAME);
-	const overrides: string[] = [
-		'-c', `mcp_servers.${CODEX_INSRC_SERVER_NAME}.enabled_tools=${JSON.stringify(CODEX_INSRC_TOOL_NAMES)}`,
+	const insrcServer = servers.find(server => server.name === CODEX_INSRC_SERVER_NAME);
+	if (insrcServer === undefined) throw new CodexMcpServerNotRegisteredError(CODEX_INSRC_SERVER_NAME);
+	if (!insrcServer.enabled) throw new CodexMcpServerDisabledError(CODEX_INSRC_SERVER_NAME);
+	const entries: string[] = [
+		`${tomlQuotedKey(CODEX_INSRC_SERVER_NAME)} = { enabled_tools = ${JSON.stringify(CODEX_INSRC_TOOL_NAMES)} }`,
 	];
 	for (const server of servers) {
 		if (server.name === CODEX_INSRC_SERVER_NAME) continue;
-		overrides.push('-c', `mcp_servers.${server.name}.enabled=false`);
+		entries.push(`${tomlQuotedKey(server.name)} = { enabled = false }`);
 	}
+	const overrides = ['-c', `mcp_servers={ ${entries.join(', ')} }`];
 	return ['exec', '--output-schema', schemaPath, '--json', '--sandbox', 'read-only', '-C', cwd, ...overrides, ...modelArgs];
 }
 
@@ -266,13 +299,17 @@ export function codexReadOnlySessionArgs(schemaPath: string, cwd: string, modelA
  * `cwd=/work/repo/src`, where the project root `/work/repo` must still be
  * checked). When `CODEX_HOME` lies entirely outside `cwd`'s ancestor chain,
  * the comparison simply never matches and every real layer is checked.
+ *
+ * `signal`, when given, aborts an in-flight read of one layer immediately
+ * (the caller is responsible for the overall deadline -- this walk's own
+ * elapsed time counts against it, same as discovery and exec already do).
  */
-export async function walkProjectMcpConfigLayers(cwd: string): Promise<boolean> {
+export async function walkProjectMcpConfigLayers(cwd: string, signal?: AbortSignal): Promise<boolean> {
 	const globalConfigPath = join(process.env['CODEX_HOME'] ?? join(homedir(), '.codex'), 'config.toml');
 	let dir = cwd;
 	for (;;) {
 		const candidatePath = join(dir, '.codex', 'config.toml');
-		if (candidatePath !== globalConfigPath && await directoryDeclaresMcpServers(candidatePath)) return true;
+		if (candidatePath !== globalConfigPath && await directoryDeclaresMcpServers(candidatePath, signal)) return true;
 		const parent = dirname(dir);
 		if (parent === dir) return false;
 		dir = parent;
@@ -280,10 +317,10 @@ export async function walkProjectMcpConfigLayers(cwd: string): Promise<boolean> 
 }
 
 /** Whether `configPath` exists and its parsed `mcp_servers` value is a non-empty object. */
-async function directoryDeclaresMcpServers(configPath: string): Promise<boolean> {
+async function directoryDeclaresMcpServers(configPath: string, signal?: AbortSignal): Promise<boolean> {
 	let text: string;
 	try {
-		text = await readFile(configPath, 'utf8');
+		text = await readFile(configPath, { encoding: 'utf8', ...(signal !== undefined ? { signal } : {}) });
 	} catch (err) {
 		if ((err as NodeJS.ErrnoException).code === 'ENOENT') return false;
 		throw err;
@@ -749,13 +786,15 @@ export class CliProvider implements LLMProvider {
 			}
 			return envelope.structured_output as T;
 		}
-		if (await walkProjectMcpConfigLayers(exec.cwd)) throw new CodexProjectMcpServersUnexcludableError(exec.cwd);
 		const discoveryStartedAt = Date.now();
+		if (await walkProjectMcpConfigLayers(exec.cwd, exec.signal)) throw new CodexProjectMcpServersUnexcludableError(exec.cwd);
+		const preDiscoveryRemainingMs = exec.timeoutMs - (Date.now() - discoveryStartedAt);
+		if (preDiscoveryRemainingMs <= 0) throw new ReadOnlySessionTimeoutError(exec.timeoutMs);
 		const tmpDir = mkdtempSync(join(tmpdir(), 'codex-readonly-schema-'));
 		try {
 			const schemaPath = join(tmpDir, 'schema.json');
 			writeFileSync(schemaPath, codexSchemaJson(schema));
-			const servers = await discoverCodexMcpServers(this.binPath, exec.cwd, exec.timeoutMs, exec.signal);
+			const servers = await discoverCodexMcpServers(this.binPath, exec.cwd, preDiscoveryRemainingMs, exec.signal);
 			const remainingMs = exec.timeoutMs - (Date.now() - discoveryStartedAt);
 			if (remainingMs <= 0) throw new ReadOnlySessionTimeoutError(exec.timeoutMs);
 			let text: string | undefined;
@@ -781,6 +820,8 @@ export class CliProvider implements LLMProvider {
 					if (attempt === maxAttempts) throw new CodexMcpServerOverrideUnsafeError(match[1]);
 					attemptServers = attemptServers.filter(s => s.name !== match[1]);
 					attemptTimeoutMs -= Date.now() - attemptStartedAt;
+					log.warn({ serverName: match[1], attempt, maxAttempts, remainingMs: attemptTimeoutMs },
+						"readOnlySessionOnce: codex's bootstrap rejected a disable override for this server; retrying without it inside the remaining time");
 					if (attemptTimeoutMs <= 0) throw new ReadOnlySessionTimeoutError(exec.timeoutMs);
 				}
 			}

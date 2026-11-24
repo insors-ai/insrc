@@ -16,7 +16,7 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 
 import {
-	claudeReadOnlySessionArgs, CliProvider, codexReadOnlySessionArgs, CodexMcpServerNotRegisteredError,
+	claudeReadOnlySessionArgs, CliProvider, codexReadOnlySessionArgs, CodexMcpServerDisabledError, CodexMcpServerNotRegisteredError,
 	CodexMcpServerOverrideUnsafeError, CodexProjectMcpServersUnexcludableError, READ_ONLY_SESSION_ANALYZE_TOOLS,
 	READ_ONLY_SESSION_READ_TOOLS, ReadOnlySessionTimeoutError, CliStallError, CODEX_FIRST_OUTPUT_MS, InputTooLargeError,
 } from '../cli-provider.js';
@@ -103,13 +103,11 @@ test('claude reviewer-session arguments allow reading and insrc analyze only', (
 	assert.deepEqual([...READ_ONLY_SESSION_ANALYZE_TOOLS], ['mcp__insrc__insrc_analyze', 'mcp__insrc__insrc_analyze_step']);
 });
 
-test('codex reviewer-session arguments use a read-only sandbox and a native per-server allowlist', () => {
+test('codex reviewer-session arguments use a read-only sandbox and ONE combined native per-server allowlist', () => {
 	const args = codexReadOnlySessionArgs('/tmp/s.json', '/repo', [], [{ name: 'insrc', enabled: true }, { name: 'alpha', enabled: true }, { name: 'beta', enabled: false }]);
 	assert.deepEqual(args, [
 		'exec', '--output-schema', '/tmp/s.json', '--json', '--sandbox', 'read-only', '-C', '/repo',
-		'-c', 'mcp_servers.insrc.enabled_tools=["insrc_analyze","insrc_analyze_step"]',
-		'-c', 'mcp_servers.alpha.enabled=false',
-		'-c', 'mcp_servers.beta.enabled=false',
+		'-c', 'mcp_servers={ "insrc" = { enabled_tools = ["insrc_analyze","insrc_analyze_step"] }, "alpha" = { enabled = false }, "beta" = { enabled = false } }',
 	]);
 	assert.ok(!args.includes('--full-auto'));
 });
@@ -119,6 +117,21 @@ test('codex reviewer-session arguments throw when insrc is not registered, with 
 		() => codexReadOnlySessionArgs('/tmp/s.json', '/repo', [], [{ name: 'other', enabled: true }]),
 		(e: unknown) => e instanceof CodexMcpServerNotRegisteredError && e.serverName === 'insrc',
 	);
+});
+
+test('codex reviewer-session arguments throw when insrc is registered but globally disabled, with no argv constructed', () => {
+	assert.throws(
+		() => codexReadOnlySessionArgs('/tmp/s.json', '/repo', [], [{ name: 'insrc', enabled: false }]),
+		(e: unknown) => e instanceof CodexMcpServerDisabledError && e.serverName === 'insrc',
+	);
+});
+
+test('codex reviewer-session arguments quote a dotted (or otherwise special) server name as a TOML key, not as a dotted -c path', () => {
+	const args = codexReadOnlySessionArgs('/tmp/s.json', '/repo', [], [{ name: 'insrc', enabled: true }, { name: 'review.server', enabled: true }, { name: 'has"quote', enabled: true }]);
+	assert.deepEqual(args, [
+		'exec', '--output-schema', '/tmp/s.json', '--json', '--sandbox', 'read-only', '-C', '/repo',
+		'-c', 'mcp_servers={ "insrc" = { enabled_tools = ["insrc_analyze","insrc_analyze_step"] }, "review.server" = { enabled = false }, "has\\"quote" = { enabled = false } }',
+	]);
 });
 
 // --- a session -----------------------------------------------------------------
@@ -274,8 +287,9 @@ test("readOnlySessionOnce retries once with the offending server removed from th
 		const p = new CliProvider({ kind: 'codex', binPath: f.bin });
 		assert.deepEqual(await p.runReadOnlySession('P', SCHEMA, { cwd: f.dir, deadlineMs: 20_000, internalRetry: false }), { ok: true });
 		assert.equal(f.calls().length, 2, 'the first attempt and exactly one retry');
-		assert.ok(!f.calls()[1]!.argv.includes('mcp_servers.unsafe-x.enabled=false'), 'the retry drops the offending server from the disable list');
-		assert.ok(f.calls()[1]!.argv.includes('mcp_servers.safe-y.enabled=false'), 'the retry still disables the other, safe server');
+		const retryOverride = f.calls()[1]!.argv[f.calls()[1]!.argv.indexOf('-c') + 1]!;
+		assert.ok(!retryOverride.includes('"unsafe-x"'), 'the retry drops the offending server from the disable list');
+		assert.ok(retryOverride.includes('"safe-y" = { enabled = false }'), 'the retry still disables the other, safe server');
 	} finally { delete process.env['INSRC_FAKE_DISCOVERY_SERVERS']; f.cleanup(); }
 });
 
@@ -289,7 +303,8 @@ test("readOnlySessionOnce retries once with no non-insrc disable overrides at al
 		const p = new CliProvider({ kind: 'codex', binPath: f.bin });
 		assert.deepEqual(await p.runReadOnlySession('P', SCHEMA, { cwd: f.dir, deadlineMs: 20_000, internalRetry: false }), { ok: true });
 		assert.equal(f.calls().length, 2, 'the first attempt and exactly one retry');
-		assert.ok(!f.calls()[1]!.argv.some(a => a.startsWith('mcp_servers.') && a.includes('.enabled=false')), 'the retry emits no disable overrides at all');
+		const retryOverride = f.calls()[1]!.argv[f.calls()[1]!.argv.indexOf('-c') + 1]!;
+		assert.ok(!retryOverride.includes('enabled = false'), 'the retry emits no disable overrides at all');
 	} finally { delete process.env['INSRC_FAKE_DISCOVERY_SERVERS']; f.cleanup(); }
 });
 
@@ -304,7 +319,8 @@ test('readOnlySessionOnce clears every unexcludable server it encounters in turn
 		const p = new CliProvider({ kind: 'codex', binPath: f.bin });
 		assert.deepEqual(await p.runReadOnlySession('P', SCHEMA, { cwd: f.dir, deadlineMs: 20_000, internalRetry: false }), { ok: true });
 		assert.equal(f.calls().length, 3, 'one attempt per unsafe server plus the final, override-free attempt');
-		assert.ok(!f.calls()[2]!.argv.some(a => a.startsWith('mcp_servers.') && a.includes('.enabled=false')), 'the final attempt disables nothing: both unsafe servers were cleared');
+		const finalOverride = f.calls()[2]!.argv[f.calls()[2]!.argv.indexOf('-c') + 1]!;
+		assert.ok(!finalOverride.includes('enabled = false'), 'the final attempt disables nothing: both unsafe servers were cleared');
 	} finally { delete process.env['INSRC_FAKE_DISCOVERY_SERVERS']; f.cleanup(); }
 });
 

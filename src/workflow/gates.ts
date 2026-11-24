@@ -262,16 +262,24 @@ export type DefinitionHead =
 	| { readonly kind: 'def';   readonly artifact: DefineArtifact }
 	| { readonly kind: 'issue'; readonly artifact: IssueArtifact };
 
-/** Read one head file if it PARSES into a decodable artifact head (meta+body
- *  shape checked via the shared decoder); null when absent, unparseable, or
- *  shape-invalid — the first-READABLE-wins primitive behind
- *  {@link definitionHeadJsonPath} and {@link requireApprovedDefinition}. A
- *  parseable-but-malformed head does NOT win selection; selection falls
- *  through to the next candidate. Never throws. */
+/** Read one head file if it is READABLE in the `readArtifactCore` sense — it
+ *  parses into a decodable artifact head (meta+body shape via the shared
+ *  decoder) AND carries at least one usable core field (`meta.createdAt`,
+ *  `meta.epicSlug`, or `meta.standalone`) like `hasUsableField` in storage.ts.
+ *  Returns the decoded head, or null when absent/unparseable/empty — a
+ *  parseable-but-empty head does NOT win selection. Never throws. */
 function readReadableHead(id: string, jsonPath: string): Record<string, unknown> | null {
 	try {
-		decodeArtifactHead(id, readFileSync(jsonPath, 'utf8'));
-		return JSON.parse(readFileSync(jsonPath, 'utf8')) as Record<string, unknown>;
+		const raw = readFileSync(jsonPath, 'utf8');
+		const head = decodeArtifactHead(id, raw).head as unknown as Record<string, unknown>;
+		const meta = (head['meta'] !== null && typeof head['meta'] === 'object') ? (head['meta'] as Record<string, unknown>) : undefined;
+		const usable = meta !== undefined && (
+			(typeof meta['createdAt'] === 'string' && meta['createdAt'].length > 0) ||
+			(typeof meta['epicSlug'] === 'string' && (meta['epicSlug'] as string).length > 0) ||
+			typeof meta['standalone'] === 'boolean'
+		);
+		if (!usable) return null;
+		return head;
 	} catch {
 		return null;
 	}

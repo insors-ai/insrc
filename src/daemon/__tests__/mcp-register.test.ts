@@ -360,47 +360,93 @@ test('probeMcpClients: an unreachable CLI resolves available:false, registered:f
 });
 
 // ---------------------------------------------------------------------------
-// vibe project-layer registration (<repo>/.vibe/config.toml)
+// vibe registration layer (ISSUE-767aef145a1b22ef): user-global only, plus
+// cleanup of legacy project-layer entries (<repo>/.vibe/config.toml)
 // ---------------------------------------------------------------------------
 
-test('vibe + repoPath: writes [[mcp_servers]] insrc into the repo\'s own .vibe/config.toml, never spawns `vibe mcp add`, note says restart vibe', async () => {
+test('vibe + repoPath registers in the USER-GLOBAL config via `vibe mcp add`, never writes the repo\'s .vibe/config.toml', async () => {
 	const { deps, calls } = stub(() => ok(), () => undefined);
-	const writes: { repo: string; text: string }[] = [];
+	const writes: string[] = [];
+	const removed: string[] = [];
 	deps.vibeProjectConfigText = () => undefined;
-	deps.ensureVibeProjectDir = () => {};
-	deps.writeVibeProjectConfig = (repo, text) => { writes.push({ repo, text }); };
+	deps.writeVibeProjectConfig = () => { writes.push('write'); };
+	deps.removeVibeProjectConfig = () => { removed.push('remove'); };
 	const r = await registerMcpClients(ROOT, { vibe: true }, deps, '/repo/a');
-	const v = byClient(r, 'vibe');
-	assert.equal(v.action, 'registered');
-	assert.match(v.note ?? '', /\.vibe\/config\.toml/);
-	assert.match(v.note ?? '', /restart vibe/);
-	assert.equal(writes.length, 1);
-	assert.equal(writes[0]!.repo, '/repo/a');
-	assert.match(writes[0]!.text, /\[\[mcp_servers\]\]\nname = "insrc"\ntransport = "stdio"\ncommand = "node"/);
-	assert.match(writes[0]!.text, /"\/opt\/insrc\/daemon\/out\/bin\/insrc-mcp\.js"/);
-	assert.ok(!calls.some(c => c.bin === 'vibe' && isAdd(c.args)), 'no user-global `vibe mcp add` when a repo path is given');
+	assert.equal(byClient(r, 'vibe').action, 'registered');
+	const add = calls.find(c => c.bin === 'vibe' && isAdd(c.args));
+	assert.ok(add, 'user-global `vibe mcp add` runs even with a repo path');
+	assert.deepEqual(add?.args, ['mcp', 'add', 'insrc', '--transport', 'stdio', '--command', 'node', '--arg', `${ROOT}/out/bin/insrc-mcp.js`]);
+	assert.equal(writes.length, 0, 'the repo\'s .vibe/config.toml is never written');
+	assert.equal(removed.length, 0, 'no project file to delete');
 });
 
-test('vibe + repoPath: existing project entry → unchanged, nothing written; existing unrelated content is preserved on write', async () => {
+test('vibe + repoPath: a legacy project-layer insrc entry is removed; the file is deleted when nothing else remains', async () => {
+	const { deps, calls } = stub(() => ok(), () => undefined);
+	let projectText = '[[mcp_servers]]\nname = "insrc"\ntransport = "stdio"\ncommand = "node"\nargs = [\n    "/Users/alice/.insrc/daemon/out/bin/insrc-mcp.js",\n]\n';
+	const writes: string[] = [];
+	const removed: string[] = [];
+	deps.vibeProjectConfigText = () => projectText;
+	deps.writeVibeProjectConfig = (_repo, text) => { writes.push(text); };
+	deps.removeVibeProjectConfig = (repo) => { removed.push(repo); };
+	const r = await registerMcpClients(ROOT, { vibe: true }, deps, '/repo/a');
+	assert.equal(byClient(r, 'vibe').action, 'registered');
+	assert.equal(writes.length, 0, 'nothing to rewrite — the file held only the legacy insrc entry');
+	assert.deepEqual(removed, ['/repo/a'], 'the stale machine-specific project config is deleted');
+	assert.ok(calls.some(c => c.bin === 'vibe' && isAdd(c.args)), 'global registration still runs');
+});
+
+test('vibe + repoPath: a legacy insrc chunk is removed while other servers and settings are preserved', async () => {
 	const { deps } = stub(() => ok(), () => undefined);
-	deps.vibeProjectConfigText = () => '[[mcp_servers]]\nname = "insrc"\ncommand = "node"\n';
-	let wrote = 0;
-	deps.writeVibeProjectConfig = () => { wrote++; };
+	const writes: string[] = [];
+	const removed: string[] = [];
+	deps.vibeProjectConfigText = () => 'theme = "x"\n\n[[mcp_servers]]\nname = "docs"\ncommand = "d"\n\n[[mcp_servers]]\nname = "insrc"\ntransport = "stdio"\ncommand = "node"\nargs = [\n    "/Users/alice/.insrc/daemon/out/bin/insrc-mcp.js",\n]\n';
+	deps.writeVibeProjectConfig = (_repo, text) => { writes.push(text); };
+	deps.removeVibeProjectConfig = () => { removed.push('remove'); };
+	const r = await registerMcpClients(ROOT, { vibe: true }, deps, '/repo/a');
+	assert.equal(byClient(r, 'vibe').action, 'registered');
+	assert.equal(writes.length, 1);
+	assert.equal(writes[0], 'theme = "x"\n\n[[mcp_servers]]\nname = "docs"\ncommand = "d"\n\n');
+	assert.ok(!vibeConfigHasServer(writes[0] ?? '', 'insrc'), 'no insrc entry remains');
+	assert.equal(removed.length, 0, 'the file keeps the docs server — rewritten, not deleted');
+});
+
+test('vibe + repoPath: legacy cleanup runs even when the user-global entry already exists (action unchanged)', async () => {
+	const { deps, calls } = stub(() => ok(), () => '[[mcp_servers]]\nname = "insrc"\n');
+	const removed: string[] = [];
+	deps.vibeProjectConfigText = () => '[[mcp_servers]]\nname = "insrc"\n';
+	deps.removeVibeProjectConfig = (repo) => { removed.push(repo); };
 	const r = await registerMcpClients(ROOT, { vibe: true }, deps, '/repo/a');
 	assert.equal(byClient(r, 'vibe').action, 'unchanged');
-	assert.equal(wrote, 0, 'idempotent: no rewrite when the project file already has insrc');
+	assert.deepEqual(removed, ['/repo/a'], 'the stale project entry is removed even when globally registered');
+	assert.ok(!calls.some(c => c.bin === 'vibe' && isAdd(c.args)), 'no duplicate global add');
+});
 
-	// When absent, the write appends after existing content (TOML-safe: new
-	// array-of-tables header at EOF) and keeps the existing text.
-	const { deps: deps2 } = stub(() => ok(), () => undefined);
-	deps2.vibeProjectConfigText = () => '[tools]\nfoo = 1\n';
-	deps2.ensureVibeProjectDir = () => {};
-	const writes2: string[] = [];
-	deps2.writeVibeProjectConfig = (_repo, text) => { writes2.push(text); };
-	const r2 = await registerMcpClients(ROOT, { vibe: true }, deps2, '/repo/b');
-	assert.equal(byClient(r2, 'vibe').action, 'registered');
-	assert.ok(writes2[0]!.startsWith('[tools]\nfoo = 1\n'), 'existing content preserved');
-	assert.match(writes2[0]!, /\[tools\]\nfoo = 1\n\n\[\[mcp_servers\]\]/);
+test('vibe + repoPath: a project config without an insrc entry is left untouched', async () => {
+	const { deps } = stub(() => ok(), () => undefined);
+	let wrote = 0;
+	let removed = 0;
+	deps.vibeProjectConfigText = () => '[[mcp_servers]]\nname = "docs"\ncommand = "d"\n';
+	deps.writeVibeProjectConfig = () => { wrote++; };
+	deps.removeVibeProjectConfig = () => { removed++; };
+	const r = await registerMcpClients(ROOT, { vibe: true }, deps, '/repo/a');
+	assert.equal(byClient(r, 'vibe').action, 'registered');
+	assert.equal(wrote, 0);
+	assert.equal(removed, 0);
+});
+
+test('vibe + repoPath: a cleanup failure never fails the registration', async () => {
+	const { deps, calls } = stub(() => ok(), () => undefined);
+	deps.vibeProjectConfigText = () => { throw new Error('boom'); };
+	const r = await registerMcpClients(ROOT, { vibe: true }, deps, '/repo/a');
+	assert.equal(byClient(r, 'vibe').action, 'registered');
+	assert.ok(calls.some(c => c.bin === 'vibe' && isAdd(c.args)), 'the global add still ran');
+});
+
+test('vibe + repoPath: an unfixable project config (mcp_servers not a list) never fails the registration', async () => {
+	const { deps } = stub(() => ok(), () => undefined);
+	deps.vibeProjectConfigText = () => 'mcp_servers = "x"\n';
+	const r = await registerMcpClients(ROOT, { vibe: true }, deps, '/repo/a');
+	assert.equal(byClient(r, 'vibe').action, 'registered');
 });
 
 test('vibe without repoPath keeps the user-global `vibe mcp add` path (unchanged behavior)', async () => {
@@ -410,7 +456,7 @@ test('vibe without repoPath keeps the user-global `vibe mcp add` path (unchanged
 	assert.ok(calls.some(c => c.bin === 'vibe' && isAdd(c.args)), 'user-global add still runs without a repo path');
 });
 
-test('probeMcpClients with a repoPath counts the repo\'s project .vibe/config.toml as registered for vibe', async () => {
+test('probeMcpClients reads the USER-GLOBAL config for vibe; a project-layer entry no longer counts (ISSUE-767aef145a1b22ef)', async () => {
 	const { probeMcpClients } = await import('../mcp-register.js');
 	const run = async (_bin: string, _args: readonly string[]) => ok('vibe 1.0');
 	const deps: McpRegisterDeps = {
@@ -419,67 +465,76 @@ test('probeMcpClients with a repoPath counts the repo\'s project .vibe/config.to
 		vibeProjectConfigText: (repo) => (repo === '/repo/a' ? '[[mcp_servers]]\nname = "insrc"\n' : undefined),
 	};
 	const withRepo = await probeMcpClients(deps, '/repo/a');
-	assert.equal(withRepo.clients.find(c => c.client === 'vibe')!.registered, true, 'project-layer entry counts');
-	const withoutRepo = await probeMcpClients(deps, '/repo/b');
-	assert.equal(withoutRepo.clients.find(c => c.client === 'vibe')!.registered, false, 'other repo without the entry stays unregistered');
-	const noPath = await probeMcpClients(deps);
-	assert.equal(noPath.clients.find(c => c.client === 'vibe')!.registered, false, 'no path → user-global only');
+	assert.equal(withRepo.clients.find(c => c.client === 'vibe')!.registered, false, 'a legacy project-layer entry does not count as registered');
+	const depsGlobal: McpRegisterDeps = {
+		run,
+		vibeConfigText: () => '[[mcp_servers]]\nname = "insrc"\n',
+	};
+	const global = await probeMcpClients(depsGlobal);
+	assert.equal(global.clients.find(c => c.client === 'vibe')!.registered, true, 'the user-global entry counts');
 });
 
-test('upsertVibeProjectServer on a real temp dir: creates .vibe/config.toml, idempotent, valid entry', async () => {
-	const { mkdtempSync, readFileSync, existsSync } = await import('node:fs');
+test('removeVibeProjectServer on a real temp dir: deletes a config that held only the insrc entry; preserves one with more content', async () => {
+	const { mkdtempSync, mkdirSync, readFileSync, writeFileSync, existsSync } = await import('node:fs');
 	const { tmpdir } = await import('node:os');
 	const { join } = await import('node:path');
-	const { upsertVibeProjectServer, vibeProjectConfigPath, vibeConfigHasServer: has } = await import('../mcp-register.js');
-	const repo = mkdtempSync(join(tmpdir(), 'insrc-vibe-proj-'));
-	assert.equal(upsertVibeProjectServer(repo, '/x/insrc-mcp.js'), 'registered');
-	const cfg = vibeProjectConfigPath(repo);
-	assert.ok(existsSync(cfg));
-	const text = readFileSync(cfg, 'utf8');
-	assert.ok(has(text, 'insrc'));
-	assert.match(text, /args = \[\n {4}"\/x\/insrc-mcp\.js",\n\]/);
-	assert.equal(upsertVibeProjectServer(repo, '/x/insrc-mcp.js'), 'unchanged', 'second call is a no-op');
+	const { removeVibeProjectServer, vibeProjectConfigPath, vibeConfigHasServer: has } = await import('../mcp-register.js');
+
+	const solo = mkdtempSync(join(tmpdir(), 'insrc-vibe-rm-'));
+	mkdirSync(join(solo, '.vibe'), { recursive: true });
+	writeFileSync(vibeProjectConfigPath(solo), '[[mcp_servers]]\nname = "insrc"\ntransport = "stdio"\ncommand = "node"\nargs = [\n    "/Users/alice/.insrc/daemon/out/bin/insrc-mcp.js",\n]\n', 'utf8');
+	assert.equal(removeVibeProjectServer(solo), 'removed');
+	assert.ok(!existsSync(vibeProjectConfigPath(solo)), 'the file held only the legacy entry — deleted');
+
+	const shared = mkdtempSync(join(tmpdir(), 'insrc-vibe-rm-'));
+	mkdirSync(join(shared, '.vibe'), { recursive: true });
+	writeFileSync(vibeProjectConfigPath(shared), 'theme = "x"\n\n[[mcp_servers]]\nname = "insrc"\ncommand = "node"\nargs = ["/mac/path"]\n\n[[mcp_servers]]\nname = "docs"\ncommand = "d"\n', 'utf8');
+	assert.equal(removeVibeProjectServer(shared), 'removed');
+	const text = readFileSync(vibeProjectConfigPath(shared), 'utf8');
+	assert.ok(!has(text, 'insrc'), 'the insrc entry is gone');
+	assert.ok(has(text, 'docs'), 'other servers preserved');
+	assert.ok(text.startsWith('theme = "x"\n'), 'settings preserved');
+	assert.equal(removeVibeProjectServer(shared), 'absent', 'second call is a no-op');
+
+	const none = mkdtempSync(join(tmpdir(), 'insrc-vibe-rm-'));
+	assert.equal(removeVibeProjectServer(none), 'absent', 'no .vibe/config.toml → absent, no throw');
 });
 
-test('upsertVibeProjectServer moves an inline mcp_servers list to tables, keeping its servers', async () => {
-	const { upsertVibeProjectServer, vibeServerTomlBlock } = await import('../mcp-register.js');
-	const files = new Map([['/r', 'theme = "x"\nmcp_servers = [\n    { name = "docs", command = "d" },\n]\n']]);
-	const deps = { vibeProjectConfigText: (p: string) => files.get(p), ensureVibeProjectDir: () => {}, writeVibeProjectConfig: (p: string, t: string) => { files.set(p, t); } };
-	assert.equal(upsertVibeProjectServer('/r', '/x/m.js', deps), 'registered');
-	assert.equal(files.get('/r'), 'theme = "x"\n\n[[mcp_servers]]\nname = "docs"\ncommand = "d"\n' + vibeServerTomlBlock('/x/m.js'));
-	assert.equal(upsertVibeProjectServer('/r', '/x/m.js', deps), 'unchanged', 'second call is a no-op');
+test('removeVibeProjectServer moves an inline mcp_servers list to tables and drops only the insrc entry', async () => {
+	const { removeVibeProjectServer, vibeConfigHasServer: has } = await import('../mcp-register.js');
+	const files = new Map([['/r', 'theme = "x"\nmcp_servers = [\n    { name = "docs", command = "d" },\n    { name = "insrc", command = "node" },\n]\n']]);
+	const removed: string[] = [];
+	const deps = { vibeProjectConfigText: (p: string) => files.get(p), writeVibeProjectConfig: (p: string, t: string) => { files.set(p, t); }, removeVibeProjectConfig: (p: string) => { removed.push(p); } };
+	assert.equal(removeVibeProjectServer('/r', deps), 'removed');
+	const text = files.get('/r') ?? '';
+	assert.equal(text, 'theme = "x"\n\n[[mcp_servers]]\nname = "docs"\ncommand = "d"\n\n');
+	assert.ok(!has(text, 'insrc'), 'the inline insrc entry is removed');
+	assert.ok(has(text, 'docs'), 'the inline docs entry survives as a table');
+	assert.equal(removed.length, 0);
 });
 
-test('upsertVibeProjectServer removes an empty inline list before adding the server', async () => {
-	const { upsertVibeProjectServer, vibeServerTomlBlock } = await import('../mcp-register.js');
-	const files = new Map([['/r', 'mcp_servers = []\ntheme = "x"\n']]);
-	const deps = { vibeProjectConfigText: (p: string) => files.get(p), ensureVibeProjectDir: () => {}, writeVibeProjectConfig: (p: string, t: string) => { files.set(p, t); } };
-	assert.equal(upsertVibeProjectServer('/r', '/x/m.js', deps), 'registered');
-	assert.equal(files.get('/r'), 'theme = "x"\n' + vibeServerTomlBlock('/x/m.js'));
-});
-
-test('upsertVibeProjectServer repairs a config holding both forms, and adds no second insrc entry', async () => {
-	const { upsertVibeProjectServer } = await import('../mcp-register.js');
-	const files = new Map([['/r', 'mcp_servers = []\n\n[[mcp_servers]]\nname = "insrc"\n']]);
-	const deps = { vibeProjectConfigText: (p: string) => files.get(p), ensureVibeProjectDir: () => {}, writeVibeProjectConfig: (p: string, t: string) => { files.set(p, t); } };
-	assert.equal(upsertVibeProjectServer('/r', '/x/m.js', deps), 'registered');
-	assert.equal(files.get('/r'), '\n[[mcp_servers]]\nname = "insrc"\n');
-	assert.equal(upsertVibeProjectServer('/r', '/x/m.js', deps), 'unchanged');
-});
-
-test('upsertVibeProjectServer recognises an inline insrc entry with a quoted name key and adds no second one', async () => {
-	const { upsertVibeProjectServer } = await import('../mcp-register.js');
+test('removeVibeProjectServer deletes a config whose only content was an inline insrc entry with a quoted name key', async () => {
+	const { removeVibeProjectServer } = await import('../mcp-register.js');
 	const files = new Map([['/r', 'mcp_servers = [{ "name" = "insrc", command = "node" }]\n']]);
-	const deps = { vibeProjectConfigText: (p: string) => files.get(p), ensureVibeProjectDir: () => {}, writeVibeProjectConfig: (p: string, t: string) => { files.set(p, t); } };
-	assert.equal(upsertVibeProjectServer('/r', '/x/m.js', deps), 'registered');
-	assert.equal(files.get('/r'), '[[mcp_servers]]\n"name" = "insrc"\ncommand = "node"\n');
-	assert.equal(upsertVibeProjectServer('/r', '/x/m.js', deps), 'unchanged');
+	const removed: string[] = [];
+	const deps = { vibeProjectConfigText: (p: string) => files.get(p), writeVibeProjectConfig: (p: string, t: string) => { files.set(p, t); }, removeVibeProjectConfig: (p: string) => { removed.push(p); } };
+	assert.equal(removeVibeProjectServer('/r', deps), 'removed');
+	assert.deepEqual(removed, ['/r'], 'quoted-key inline entry removed → nothing remains → file deleted');
 });
 
-test('upsertVibeProjectServer leaves a config it cannot fix untouched and reports the failure', async () => {
-	const { upsertVibeProjectServer } = await import('../mcp-register.js');
+test('removeVibeProjectServer drops a config holding both forms (empty inline list + insrc table) entirely', async () => {
+	const { removeVibeProjectServer } = await import('../mcp-register.js');
+	const files = new Map([['/r', 'mcp_servers = []\n\n[[mcp_servers]]\nname = "insrc"\n']]);
+	const removed: string[] = [];
+	const deps = { vibeProjectConfigText: (p: string) => files.get(p), writeVibeProjectConfig: (p: string, t: string) => { files.set(p, t); }, removeVibeProjectConfig: (p: string) => { removed.push(p); } };
+	assert.equal(removeVibeProjectServer('/r', deps), 'removed');
+	assert.deepEqual(removed, ['/r'], 'only the insrc entry remained after normalizing → file deleted');
+});
+
+test('removeVibeProjectServer leaves a config it cannot normalize untouched and reports the failure', async () => {
+	const { removeVibeProjectServer } = await import('../mcp-register.js');
 	let wrote = false;
-	const deps = { vibeProjectConfigText: () => 'mcp_servers = "x"\n', ensureVibeProjectDir: () => {}, writeVibeProjectConfig: () => { wrote = true; } };
-	assert.throws(() => upsertVibeProjectServer('/r', '/x/m.js', deps), /is not a list/);
+	const deps = { vibeProjectConfigText: () => 'mcp_servers = "x"\n', writeVibeProjectConfig: () => { wrote = true; } };
+	assert.throws(() => removeVibeProjectServer('/r', deps), /is not a list/);
 	assert.equal(wrote, false);
 });

@@ -1,8 +1,0 @@
-
-[[mcp_servers]]
-name = "insrc"
-transport = "stdio"
-command = "node"
-args = [
-    "/Users/subhagho/.insrc/daemon/out/bin/insrc-mcp.js",
-]

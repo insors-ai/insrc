@@ -25,7 +25,7 @@
  */
 
 import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -79,11 +79,12 @@ export interface McpRegisterDeps {
 	/** vibe's pre-check seam: the text of vibe's user config.toml, or undefined
 	 *  when it cannot be read (default: $VIBE_HOME/config.toml, ~/.vibe fallback). */
 	readonly vibeConfigText?: () => string | undefined;
-	/** vibe project-layer seams: read the repo's own .vibe/config.toml (undefined
-	 *  when absent/unreadable), create the .vibe dir, and write the file. */
+	/** vibe project-layer cleanup seams (ISSUE-767aef145a1b22ef): read the repo's
+	 *  own .vibe/config.toml (undefined when absent/unreadable), rewrite it
+	 *  without a legacy insrc entry, and delete it when nothing remains. */
 	readonly vibeProjectConfigText?: (repoPath: string) => string | undefined;
-	readonly ensureVibeProjectDir?: (repoPath: string) => void;
 	readonly writeVibeProjectConfig?: (repoPath: string, text: string) => void;
+	readonly removeVibeProjectConfig?: (repoPath: string) => void;
 	/** vibe user-level AGENTS.md seams (LLD-866873cab2dedcc7): the vibe home dir,
 	 *  read of $VIBE_HOME|~/.vibe/AGENTS.md (undefined when absent/unreadable), its
 	 *  write, and the steering block text. */
@@ -124,36 +125,21 @@ function defaultVibeAgentsMdText(home: string): string | undefined {
 }
 
 // ---------------------------------------------------------------------------
-// vibe PROJECT-layer registration (<repo>/.vibe/config.toml)
+// vibe project-layer cleanup (<repo>/.vibe/config.toml)
 // ---------------------------------------------------------------------------
-// vibe discovers a project config by walking up from the cwd to a trusted
-// `.vibe/config.toml` (core/config/layers/project.py) and merges `mcp_servers`
-// across layers BY NAME (WithUnionMerge(merge_key="name")), so a project-level
-// `insrc` entry overrides the user-global one without double-spawning. Writing
-// the entry into the repo's own .vibe/config.toml therefore makes the repo
-// self-contained: anyone opening it gets the insrc MCP on the next vibe start.
-// NOTE: vibe reads config once at session start and never hot-reloads MCP
-// discovery, so a restart is required — the outcome note says so.
+// ISSUE-767aef145a1b22ef: the insrc server is registered ONLY in vibe's
+// user-global config ($VIBE_HOME|~/.vibe/config.toml) — the same destination
+// `vibe mcp add` uses. The entrypoint path (daemonInstallRoot()/out/bin/
+// insrc-mcp.js) is machine-global, so a project-local copy can never be valid
+// on any other machine, and a repo-committed .vibe/config.toml would hold a
+// dead path everywhere else. Older builds DID write the project layer, so
+// registering a repo's vibe client also removes any legacy insrc entry left in
+// the repo's own .vibe/config.toml — best-effort and never failing the
+// registration (the same convention as the AGENTS.md steering upsert).
 
 /** The project-layer vibe config path for a repo. */
 export function vibeProjectConfigPath(repoPath: string): string {
 	return join(repoPath, '.vibe', 'config.toml');
-}
-
-/** The `[[mcp_servers]]` block for the insrc server, appended at EOF (always
- *  valid TOML: a new array-of-tables header ends any open table). */
-export function vibeServerTomlBlock(mcpJs: string): string {
-	return [
-		'',
-		'[[mcp_servers]]',
-		'name = "insrc"',
-		'transport = "stdio"',
-		'command = "node"',
-		'args = [',
-		`    ${JSON.stringify(mcpJs)},`,
-		']',
-		'',
-	].join('\n');
 }
 
 function defaultVibeProjectConfigText(repoPath: string): string | undefined {
@@ -162,31 +148,35 @@ function defaultVibeProjectConfigText(repoPath: string): string | undefined {
 }
 
 /**
- * Idempotently ensure the repo's own .vibe/config.toml declares the insrc MCP
- * server. Returns 'unchanged' when the entry is already there, else appends the
- * block and writes (creating .vibe/). An inline `mcp_servers` list is first moved
- * to tables, because TOML cannot hold both forms. IO errors, and a config that
- * cannot be brought to a valid form (left untouched), propagate — the caller guards.
+ * Remove a legacy insrc [[mcp_servers]] entry from the repo's own
+ * .vibe/config.toml. Returns 'absent' when the file has no such entry (or
+ * cannot be read), 'removed' after rewriting the file without it — deleting
+ * the file when nothing but the entry remains. An inline `mcp_servers` list
+ * is first moved to tables, because TOML cannot hold both forms. IO errors,
+ * and a config that cannot be brought to a valid form, propagate — the caller
+ * guards and never fails the MCP registration on a cleanup write.
  */
-export function upsertVibeProjectServer(
+export function removeVibeProjectServer(
 	repoPath: string,
-	mcpJs: string,
 	deps: McpRegisterDeps = {},
-): 'unchanged' | 'registered' {
+): 'absent' | 'removed' {
 	const readText = deps.vibeProjectConfigText ?? defaultVibeProjectConfigText;
 	const found = readText(repoPath);
-	const text = found === undefined ? undefined : moveInlineListToTables(found, 'mcp_servers');
-	const writeText = deps.writeVibeProjectConfig ?? ((p: string, t: string) => writeFileSync(vibeProjectConfigPath(p), t, 'utf8'));
-	if (text !== undefined && vibeConfigHasServer(text, 'insrc')) {
-		if (text === found) return 'unchanged';
-		writeText(repoPath, text); // repairs a config that held both forms
-		return 'registered';
+	if (found === undefined) return 'absent';
+	const text = moveInlineListToTables(found, 'mcp_servers');
+	if (!vibeConfigHasServer(text, 'insrc')) return 'absent';
+	const chunks = text.split(/^\[\[/m);
+	const nameLine = new RegExp(`^\\s*(?:name|"name"|'name')\\s*=\\s*["']insrc["']`, 'm');
+	const kept = chunks.filter((chunk, i) => i === 0 || !(chunk.startsWith('mcp_servers]]') && nameLine.test(chunk)));
+	const cleaned = kept[0] + kept.slice(1).map(c => '[[' + c).join('');
+	if (cleaned.trim() === '') {
+		const removeFile = deps.removeVibeProjectConfig ?? ((p: string) => rmSync(vibeProjectConfigPath(p)));
+		removeFile(repoPath);
+		return 'removed';
 	}
-	const ensureDir = deps.ensureVibeProjectDir ?? ((p: string) => mkdirSync(join(p, '.vibe'), { recursive: true }));
-	ensureDir(repoPath);
-	const base = text === undefined || text.trim() === '' ? '' : text.endsWith('\n') ? text : text + '\n';
-	writeText(repoPath, base + vibeServerTomlBlock(mcpJs));
-	return 'registered';
+	const writeText = deps.writeVibeProjectConfig ?? ((p: string, t: string) => writeFileSync(vibeProjectConfigPath(p), t, 'utf8'));
+	writeText(repoPath, cleaned);
+	return 'removed';
 }
 
 /** Does vibe's config.toml text already declare an [[mcp_servers]] table named
@@ -288,14 +278,16 @@ export interface McpProbeResult {
 /**
  * Probe every known client's registration state WITHOUT writing anything: the
  * same pre-check registration itself uses (`<cli> mcp list` for claude/codex,
- * `--version` + the config.toml scan for vibe). Never throws — an
+ * `--version` + the user-global config.toml scan for vibe). Never throws — an
  * unanswerable/unreachable client resolves to available:false. Used by the
  * `mcp.status` IPC so a settings UI can show what is already registered.
+ * `repoPath` is accepted for the mcp.status IPC payload shape but no longer
+ * read: the project layer stopped declaring the insrc server
+ * (ISSUE-767aef145a1b22ef) and legacy entries are removed at registration.
  */
-export async function probeMcpClients(deps: McpRegisterDeps = {}, repoPath?: string): Promise<{ clients: McpProbeResult[] }> {
+export async function probeMcpClients(deps: McpRegisterDeps = {}, _repoPath?: string): Promise<{ clients: McpProbeResult[] }> {
 	const run = deps.run ?? runCli;
 	const vibeConfigText = deps.vibeConfigText ?? defaultVibeConfigText;
-	const vibeProjectConfigText = deps.vibeProjectConfigText ?? defaultVibeProjectConfigText;
 	const out: McpProbeResult[] = [];
 	for (const p of clientPlans()) {
 		try {
@@ -308,19 +300,17 @@ export async function probeMcpClients(deps: McpRegisterDeps = {}, repoPath?: str
 				out.push({ client: p.client, available: true, registered: alreadyRegistered(list.stdout) });
 			} else {
 				// vibe: no `mcp list`; availability = the binary answers --version,
-				// registered = an [[mcp_servers]] insrc table in its config.toml —
-				// the user-global one OR the repo's own project-layer .vibe/config.toml.
+				// registered = an [[mcp_servers]] insrc table in its USER-GLOBAL
+				// config.toml — the same pre-check registration itself uses
+				// (ISSUE-767aef145a1b22ef: the project layer no longer declares
+				// the server; legacy entries are removed at registration).
 				const version = await run(p.bin, ['--version']);
 				if (version.spawnError !== undefined || version.code !== 0) {
 					out.push({ client: p.client, available: false, registered: false });
 					continue;
 				}
 				const text = vibeConfigText();
-				const projectText = repoPath !== undefined ? vibeProjectConfigText(repoPath) : undefined;
-				const registered =
-					(text !== undefined && vibeConfigHasServer(text, 'insrc')) ||
-					(projectText !== undefined && vibeConfigHasServer(projectText, 'insrc'));
-				out.push({ client: p.client, available: true, registered });
+				out.push({ client: p.client, available: true, registered: text !== undefined && vibeConfigHasServer(text, 'insrc') });
 			}
 		} catch {
 			out.push({ client: p.client, available: false, registered: false });
@@ -352,10 +342,22 @@ async function registerOne(
 			} catch (err) {
 				log.warn({ err: err instanceof Error ? err.message : String(err) }, 'vibe AGENTS.md steering upsert failed (registration unaffected)');
 			}
+			// ISSUE-767aef145a1b22ef: registration is user-global only, so also
+			// remove any legacy project-layer insrc entry an older build wrote
+			// into the repo's own .vibe/config.toml (a machine-specific absolute
+			// path that is dead on every other machine). Best-effort — a cleanup
+			// failure never fails the registration.
+			if (repoPath !== undefined) {
+				try {
+					const cleaned = removeVibeProjectServer(repoPath, deps);
+					if (cleaned === 'removed') log.info({ repoPath }, 'removed a legacy project-layer insrc entry from .vibe/config.toml');
+				} catch (err) {
+					log.warn({ err: err instanceof Error ? err.message : String(err) }, 'vibe project-layer insrc cleanup failed (registration unaffected)');
+				}
+			}
 		}
 		// Idempotency pre-check: `<cli> mcp list` where the CLI has one, else
-		// (vibe) vibe's config.toml — the repo's own project-layer file when a
-		// repoPath is given, else the user-global one.
+		// (vibe) vibe's user-global config.toml.
 		if (p.listArgs !== undefined) {
 			const list = await run(p.bin, p.listArgs);
 			if (list.spawnError !== undefined) {
@@ -368,18 +370,6 @@ async function registerOne(
 			if (alreadyRegistered(list.stdout)) {
 				return { client: p.client, action: 'unchanged' };
 			}
-		} else if (repoPath !== undefined) {
-			// vibe + repo: write the entry into the repo's OWN .vibe/config.toml
-			// (project layer; vibe discovers it by walking up from the cwd and
-			// merges mcp_servers by name, so it overrides — never duplicates —
-			// the user-global entry). Idempotent within that file.
-			const outcome = upsertVibeProjectServer(repoPath, mcpJs, deps);
-			if (outcome === 'unchanged') return { client: p.client, action: 'unchanged' };
-			return {
-				client: p.client,
-				action: 'registered',
-				note: `project config .vibe/config.toml — restart vibe (in this repo) to load the MCP server; config is read once at session start`,
-			};
 		} else {
 			const text = vibeConfigText();
 			if (text !== undefined && vibeConfigHasServer(text, 'insrc')) {

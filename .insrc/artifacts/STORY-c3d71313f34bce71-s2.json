@@ -73,6 +73,28 @@
           "revision": 4,
           "at": "2026-11-24T10:46:33.293Z",
           "externalId": "7129228513"
+        },
+        {
+          "target": {
+            "entityId": "LLD-c3d71313f34bce71-s2",
+            "type": "LLD",
+            "relation": "documents",
+            "fragment": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S002/er-model.html"
+          },
+          "revision": 4,
+          "at": "2026-11-24T10:48:41.093Z",
+          "externalId": "7129274928"
+        },
+        {
+          "target": {
+            "entityId": "LLD-c3d71313f34bce71-s2",
+            "type": "LLD",
+            "relation": "documents",
+            "fragment": "docs/epics/reliable-cross-platform-daemon-installation-lifecycle-E20261123c3d71313/S002/sequence-diagram.html"
+          },
+          "revision": 4,
+          "at": "2026-11-24T10:48:42.420Z",
+          "externalId": "7129275461"
         }
       ],
       "binding": {

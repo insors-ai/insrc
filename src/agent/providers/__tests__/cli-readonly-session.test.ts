@@ -16,7 +16,7 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 
 import {
-	claudeReadOnlySessionArgs, CliProvider, codexReadOnlySessionArgs, READ_ONLY_SESSION_ANALYZE_TOOLS,
+	claudeReadOnlySessionArgs, CliProvider, codexReadOnlySessionArgs, CodexMcpServerNotRegisteredError, READ_ONLY_SESSION_ANALYZE_TOOLS,
 	READ_ONLY_SESSION_READ_TOOLS, ReadOnlySessionTimeoutError, CliStallError, CODEX_FIRST_OUTPUT_MS, InputTooLargeError,
 } from '../cli-provider.js';
 
@@ -88,10 +88,21 @@ test('claude reviewer-session arguments allow reading and insrc analyze only', (
 	assert.deepEqual([...READ_ONLY_SESSION_ANALYZE_TOOLS], ['mcp__insrc__insrc_analyze', 'mcp__insrc__insrc_analyze_step']);
 });
 
-test('codex reviewer-session arguments use a read-only sandbox', () => {
-	const args = codexReadOnlySessionArgs('/tmp/s.json', '/repo', []);
-	assert.deepEqual(args, ['exec', '--output-schema', '/tmp/s.json', '--json', '--sandbox', 'read-only', '-C', '/repo']);
+test('codex reviewer-session arguments use a read-only sandbox and a native per-server allowlist', () => {
+	const args = codexReadOnlySessionArgs('/tmp/s.json', '/repo', [], [{ name: 'insrc', enabled: true }, { name: 'other', enabled: true }]);
+	assert.deepEqual(args, [
+		'exec', '--output-schema', '/tmp/s.json', '--json', '--sandbox', 'read-only', '-C', '/repo',
+		'-c', 'mcp_servers.insrc.enabled_tools=["insrc_analyze","insrc_analyze_step"]',
+		'-c', 'mcp_servers.other.enabled=false',
+	]);
 	assert.ok(!args.includes('--full-auto'));
+});
+
+test('codex reviewer-session arguments throw when insrc is not registered, with no argv constructed', () => {
+	assert.throws(
+		() => codexReadOnlySessionArgs('/tmp/s.json', '/repo', [], [{ name: 'other', enabled: true }]),
+		(e: unknown) => e instanceof CodexMcpServerNotRegisteredError && e.serverName === 'insrc',
+	);
 });
 
 // --- a session -----------------------------------------------------------------

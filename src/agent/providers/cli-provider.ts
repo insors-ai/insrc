@@ -150,9 +150,67 @@ function codexReply<T>(schema: StructuredSchema, parsed: unknown, what: string):
 	return checked.value;
 }
 
-/** codex arguments for a read-only session: a read-only sandbox, never `--full-auto`. */
-export function codexReadOnlySessionArgs(schemaPath: string, cwd: string, modelArgs: readonly string[]): string[] {
-	return ['exec', '--output-schema', schemaPath, '--json', '--sandbox', 'read-only', '-C', cwd, ...modelArgs];
+/** One globally-registered codex MCP server, as `codex mcp list --json` reports it. */
+export interface CodexMcpServerStatus {
+	readonly name: string;
+	readonly enabled: boolean;
+}
+
+/** The insrc MCP server is not among codex's globally-registered servers, so
+ *  a read-only session's native per-server allowlist cannot be built. */
+export class CodexMcpServerNotRegisteredError extends Error {
+	constructor(readonly serverName: string) {
+		super(`codex: the '${serverName}' MCP server is not registered globally (run \`codex mcp list\` to check)`);
+		this.name = 'CodexMcpServerNotRegisteredError';
+	}
+}
+
+/** The insrc analyze tools the codex MCP server exposes, by their own remote names. */
+const CODEX_INSRC_SERVER_NAME = 'insrc';
+const CODEX_INSRC_TOOL_NAMES: readonly string[] = ['insrc_analyze', 'insrc_analyze_step'];
+
+/** `codex -C cwd mcp list --json`: every globally-registered MCP server, by
+ *  name and whether it is enabled. Used to build a read-only session's native
+ *  per-server allowlist (codexReadOnlySessionArgs) without guessing at what
+ *  else is registered. */
+export async function discoverCodexMcpServers(binPath: string, cwd: string, timeoutMs: number, signal?: AbortSignal): Promise<readonly CodexMcpServerStatus[]> {
+	const out = await runSubprocess(binPath, ['-C', cwd, 'mcp', 'list', '--json'], '', timeoutMs, cwd, undefined, signal);
+	if (out.exitCode !== 0) {
+		throw new Error(`codex mcp list exited with ${out.exitCode}. stderr=${out.stderr} stdout=${out.stdout}`);
+	}
+	let parsed: unknown;
+	try {
+		parsed = JSON.parse(out.stdout);
+	} catch (err) {
+		throw new Error(`codex mcp list printed unparseable JSON: ${(err as Error).message}. stdout=${out.stdout.slice(0, 300)}`);
+	}
+	if (!Array.isArray(parsed)) {
+		throw new Error(`codex mcp list did not print a JSON array. stdout=${out.stdout.slice(0, 300)}`);
+	}
+	return parsed.map((entry): CodexMcpServerStatus => {
+		const name = (entry as Record<string, unknown>)['name'];
+		if (typeof name !== 'string') throw new Error(`codex mcp list entry had no string name: ${JSON.stringify(entry)}`);
+		return { name, enabled: (entry as Record<string, unknown>)['enabled'] !== false };
+	});
+}
+
+/**
+ * codex arguments for a read-only session: a read-only sandbox, never
+ * `--full-auto`, plus a native per-server allowlist built from the globally-
+ * registered `servers` (discoverCodexMcpServers) -- the insrc server's own
+ * enabled_tools override, and one `enabled=false` override per other
+ * registered server, so no MCP server but insrc is reachable.
+ */
+export function codexReadOnlySessionArgs(schemaPath: string, cwd: string, modelArgs: readonly string[], servers: readonly CodexMcpServerStatus[]): string[] {
+	if (!servers.some(server => server.name === CODEX_INSRC_SERVER_NAME)) throw new CodexMcpServerNotRegisteredError(CODEX_INSRC_SERVER_NAME);
+	const overrides: string[] = [
+		'-c', `mcp_servers.${CODEX_INSRC_SERVER_NAME}.enabled_tools=${JSON.stringify(CODEX_INSRC_TOOL_NAMES)}`,
+	];
+	for (const server of servers) {
+		if (server.name === CODEX_INSRC_SERVER_NAME) continue;
+		overrides.push('-c', `mcp_servers.${server.name}.enabled=false`);
+	}
+	return ['exec', '--output-schema', schemaPath, '--json', '--sandbox', 'read-only', '-C', cwd, ...overrides, ...modelArgs];
 }
 
 /**
@@ -664,7 +722,11 @@ export class CliProvider implements LLMProvider {
 		try {
 			const schemaPath = join(tmpDir, 'schema.json');
 			writeFileSync(schemaPath, codexSchemaJson(schema));
-			const { agentText: text } = await this.runCodex(codexReadOnlySessionArgs(schemaPath, exec.cwd, this.modelArgs()), prompt, exec);
+			// Discovery + the project-config refusal are wired in by the Task that
+			// rewrites this orchestration end to end; until then, insrc is the only
+			// server this allowlist knows about.
+			const servers: readonly CodexMcpServerStatus[] = [{ name: 'insrc', enabled: true }];
+			const { agentText: text } = await this.runCodex(codexReadOnlySessionArgs(schemaPath, exec.cwd, this.modelArgs(), servers), prompt, exec);
 			if (text === undefined) throw new Error('codex read-only session emitted no agent_message item');
 			let parsed: unknown;
 			try {

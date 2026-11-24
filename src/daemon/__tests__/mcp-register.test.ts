@@ -585,6 +585,39 @@ test('removeVibeProjectServer drops a real insrc entry even when a later table a
 	assert.equal(removed.length, 0);
 });
 
+test('removeVibeProjectServer drops the entry\'s own [mcp_servers.env] sub-table with it, leaving a preceding server intact', async () => {
+	const { removeVibeProjectServer, vibeConfigHasServer: has } = await import('../mcp-register.js');
+	const files = new Map([['/r', '[[mcp_servers]]\nname = "docs"\ncommand = "d"\n\n[[mcp_servers]]\nname = "insrc"\ncommand = "node"\nargs = ["/mac/path"]\n[mcp_servers.env]\nFOO = "bar"\n']]);
+	const removed: string[] = [];
+	const deps = { vibeProjectConfigText: (p: string) => files.get(p), writeVibeProjectConfig: (p: string, t: string) => { files.set(p, t); }, removeVibeProjectConfig: (p: string) => { removed.push(p); } };
+	assert.equal(removeVibeProjectServer('/r', deps), 'removed');
+	const text = files.get('/r') ?? '';
+	assert.equal(text, '[[mcp_servers]]\nname = "docs"\ncommand = "d"\n\n', 'the docs server is intact and the env sub-table went with the insrc entry');
+	assert.ok(!has(text, 'insrc'));
+	assert.ok(has(text, 'docs'));
+	assert.equal(removed.length, 0);
+});
+
+test('removeVibeProjectServer keeps an unrelated table between the entry and its sub-table', async () => {
+	const { removeVibeProjectServer } = await import('../mcp-register.js');
+	const files = new Map([['/r', '[[mcp_servers]]\nname = "insrc"\ncommand = "node"\n[tools]\nfoo = 1\n[mcp_servers.env]\nX = "1"\n']]);
+	const removed: string[] = [];
+	const deps = { vibeProjectConfigText: (p: string) => files.get(p), writeVibeProjectConfig: (p: string, t: string) => { files.set(p, t); }, removeVibeProjectConfig: (p: string) => { removed.push(p); } };
+	assert.equal(removeVibeProjectServer('/r', deps), 'removed');
+	assert.equal(files.get('/r'), '[tools]\nfoo = 1\n', 'the unrelated [tools] table survives; the env sub-table (which still belonged to the removed entry) goes with it');
+	assert.equal(removed.length, 0);
+});
+
+test('removeVibeProjectServer keeps sub-table-free unrelated tables after a mixed chunk', async () => {
+	const { removeVibeProjectServer } = await import('../mcp-register.js');
+	const files = new Map([['/r', '[[mcp_servers]]\nname = "insrc"\ncommand = "node"\n[mcp_servers.env]\nX = "1"\n[tools]\nfoo = 1\n']]);
+	const removed: string[] = [];
+	const deps = { vibeProjectConfigText: (p: string) => files.get(p), writeVibeProjectConfig: (p: string, t: string) => { files.set(p, t); }, removeVibeProjectConfig: (p: string) => { removed.push(p); } };
+	assert.equal(removeVibeProjectServer('/r', deps), 'removed');
+	assert.equal(files.get('/r'), '[tools]\nfoo = 1\n');
+	assert.equal(removed.length, 0);
+});
+
 test('removeVibeProjectServer leaves a config it cannot normalize untouched and reports the failure', async () => {
 	const { removeVibeProjectServer } = await import('../mcp-register.js');
 	let wrote = false;

@@ -148,6 +148,20 @@ function defaultVibeProjectConfigText(repoPath: string): string | undefined {
 }
 
 /**
+ * Is this header line a `[mcp_servers.<sub>]` table — a sub-table of an
+ * [[mcp_servers]] entry? The removed entry owns its sub-tables (TOML attaches
+ * them to the last array element), so they are dropped with the entry; kept,
+ * they would re-attach to a preceding server and change its configuration.
+ */
+function isMcpServersSubtable(headerLine: string): boolean {
+	const h = headerLine.replace(/\r$/, '').replace(/#.*$/, '').trim();
+	if (!h.startsWith('[') || h.startsWith('[[') || !h.endsWith(']')) return false;
+	const name = h.slice(1, -1).trim();
+	const first = name.split('.')[0]!.trim().replace(/^["']|["']$/g, '');
+	return name.includes('.') && first === 'mcp_servers';
+}
+
+/**
  * Remove a legacy insrc [[mcp_servers]] entry from the repo's own
  * .vibe/config.toml. Returns 'absent' when the file has no such entry (or
  * cannot be read), 'removed' after rewriting the file without it — deleting
@@ -170,9 +184,9 @@ export function removeVibeProjectServer(
 	// A table header of ANY kind (single [t] or double [[t]]): the insrc entry's
 	// own fields end at the next one — the name match must not read past it
 	// (a `name = "insrc"` inside a later table belongs to that table, not to
-	// the mcp_servers entry), and whatever follows inside the chunk is an
-	// unrelated table that must survive the removal.
-	const anyHeader = /^[ \t]*\[\[?[ \t]*[^\]\n#]+?[ \t]*\]\]?[ \t]*(?:#.*)?\r?$/m;
+	// the mcp_servers entry), and whatever follows inside the chunk is a table
+	// that must survive the removal unless it is the entry's own sub-table.
+	const anyHeader = /^[ \t]*\[\[?[ \t]*[^\]\n#]+?[ \t]*\]\]?[ \t]*(?:#.*)?\r?$/gm;
 	let cleaned = '';
 	chunks.forEach((chunk, i) => {
 		if (i === 0) { cleaned += chunk; return; }
@@ -182,9 +196,18 @@ export function removeVibeProjectServer(
 			cleaned += '[[' + chunk;
 			return;
 		}
-		// An insrc [[mcp_servers]] chunk: drop only the entry's own fields,
-		// keeping any unrelated table that follows it in the same chunk.
-		if (nextHeader > 0) cleaned += chunk.slice(nextHeader);
+		// An insrc [[mcp_servers]] chunk: drop the entry's own fields and its
+		// `[mcp_servers.<sub>]` sub-tables (they belong to the removed entry —
+		// kept, they would re-attach to a preceding server), preserving any
+		// unrelated table that follows it in the same chunk.
+		if (nextHeader > 0) {
+			const rest = chunk.slice(nextHeader);
+			const headers = [...rest.matchAll(anyHeader)];
+			for (let s = 0; s < headers.length; s++) {
+				if (isMcpServersSubtable(headers[s]![0])) continue;
+				cleaned += rest.slice(headers[s]!.index!, s + 1 < headers.length ? headers[s + 1]!.index! : rest.length);
+			}
+		}
 	});
 	if (cleaned === text) return 'absent'; // the name matched only inside a later table — no entry removed
 	if (cleaned.trim() === '') {

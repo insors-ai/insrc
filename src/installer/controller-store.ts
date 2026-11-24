@@ -3,7 +3,7 @@ import { closeSync, constants, existsSync, fstatSync, fsyncSync, lstatSync, mkdi
 import { join, relative, isAbsolute, sep } from 'node:path';
 import { InstallerError, MAX_CONTROL_BYTES } from './contracts.js';
 import type { ControllerSnapshot, InstallationLocation } from './contracts.js';
-import { assertLocalControlRoot, assertToken } from './location.js';
+import { assertLocalControlRoot, assertToken, sameInstallationHome } from './location.js';
 import { controlBinding } from './native.js';
 import { parseInstaller } from './schemas.js';
 
@@ -60,9 +60,9 @@ export function inspectController(location: InstallationLocation): ControllerIns
     if (!hasController || !hasEnrollment) throw new Error('Incomplete enrollment; explicit recovery required');
     const identity = readRecord(enrolled) as Record<string, unknown>;
     if (!identity || Object.keys(identity).sort().join(',') !== 'dataHome,installationId,schemaVersion' || identity['schemaVersion'] !== 1
-      || identity['installationId'] !== location.installationId || identity['dataHome'] !== location.home) throw new Error('Enrollment identity mismatch');
+      || identity['installationId'] !== location.installationId || typeof identity['dataHome'] !== 'string' || !sameInstallationHome(identity['dataHome'], location.home, location.daemonEndpoint.kind === 'named-pipe' ? 'win32' : 'linux')) throw new Error('Enrollment identity mismatch');
     const snapshot = parseInstaller('snapshot', readRecord(controller));
-    if (snapshot.installation.installationId !== location.installationId || snapshot.installation.dataHome !== location.home) throw new Error('Controller identity mismatch');
+    if (snapshot.installation.installationId !== location.installationId || !sameInstallationHome(snapshot.installation.dataHome, location.home, location.daemonEndpoint.kind === 'named-pipe' ? 'win32' : 'linux')) throw new Error('Controller identity mismatch');
     return { kind: 'present', snapshot };
   } catch (error) { return { kind: 'corrupt', reason: error instanceof Error ? error.message : 'Unreadable controller' }; }
 }
@@ -99,7 +99,7 @@ export class ControllerStore {
     this.assertHeld();
     const value = parseInstaller('snapshot', next), current = this.inspect();
     if (current.kind === 'corrupt') throw new InstallerError('controller-corrupt', current.reason);
-    if (value.installation.installationId !== this.location.installationId || value.installation.dataHome !== this.location.home) throw new InstallerError('identity-invalid', 'Snapshot belongs to another installation');
+    if (value.installation.installationId !== this.location.installationId || !sameInstallationHome(value.installation.dataHome, this.location.home, this.location.daemonEndpoint.kind === 'named-pipe' ? 'win32' : 'linux')) throw new InstallerError('identity-invalid', 'Snapshot belongs to another installation');
     if (current.kind === 'missing') {
       if (expectedRevision !== null || value.revision !== 0) throw new InstallerError('revision-conflict', 'First enrollment must explicitly start at revision zero');
       // Immutable enrollment sentinel is not a selected-release record. If interrupted

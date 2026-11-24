@@ -22,6 +22,7 @@ import { runtimeArchive } from './runtime-policy.js';
 import { parseInstaller, parseReleaseManifest } from './schemas.js';
 import { readBoundedFile } from './safe-zip.js';
 import type { DeliveryPort } from './peer-contracts.js';
+import { flushDirectoryTree, flushParents } from './durability.js';
 
 export interface DevDeliveryOptions {
   /** Internal verified bootstrap trust and executable; never wire settings. */
@@ -75,6 +76,7 @@ async function finalStage(store: PreparationLease, record: DevPreparationRecord,
   if (published) {
     try {
       await verifyDevPayload(destination, target, runtimeDirectory, { expectedReceipt: receipt, ...(context.signal ? { signal: context.signal } : {}) });
+      await flushDirectoryTree(destination, context.signal); flushParents(destination, store.location.home);
     } catch (cause) { throw new InstallerError('candidate-conflict', 'Immutable dev release ID already has different or invalid bytes', { cause }); }
   } else {
     context.signal?.throwIfAborted(); store.assertHeld(); store.publishCandidate(paths.stage, receipt.manifest.releaseId);
@@ -121,6 +123,7 @@ export function devDelivery(target: Target, options: DevDeliveryOptions): Delive
         await inspectManagedDevCheckout(store.location, receipt, git);
       });
       store.assertHeld(); context.signal?.throwIfAborted();
+      await flushDirectoryTree(destination, context.signal); flushParents(destination, store.location.home);
       return openPreparedDev(store.location, offer.releaseId, target, options.runtimeDirectory);
     }
     const attemptId = randomUUID(), operationId = context.operationId;

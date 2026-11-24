@@ -1,11 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import { closeSync, constants, existsSync, fstatSync, fsyncSync, lstatSync, mkdirSync, openSync, readSync, unlinkSync, writeFileSync } from 'node:fs';
-import { join, relative, isAbsolute, sep } from 'node:path';
+import { dirname, join, relative, isAbsolute, sep } from 'node:path';
 import { InstallerError, MAX_CONTROL_BYTES } from './contracts.js';
 import type { ControllerSnapshot, InstallationLocation } from './contracts.js';
 import { assertLocalControlRoot, assertToken, sameInstallationHome } from './location.js';
 import { controlBinding } from './native.js';
 import { parseInstaller } from './schemas.js';
+import { flushDirectory } from './durability.js';
 
 export type ControllerInspection = { kind: 'missing' } | { kind: 'present'; snapshot: ControllerSnapshot } | { kind: 'corrupt'; reason: string };
 export type CommitPoint = 'temp-flushed' | 'replaced' | 'directory-flushed';
@@ -42,14 +43,6 @@ function safeRoot(location: InstallationLocation): void {
     if (process.platform !== 'win32' && (s.uid !== process.getuid?.() || (s.mode & 0o077) !== 0)) throw new InstallerError('permissions-invalid', 'Installer control directory must be private');
   }
 }
-function flushDirectory(root: string): void {
-  // Windows does not expose a portable directory fsync. File contents are flushed;
-  // ReplaceFile failure remains uncertain and requires inspection, never reinit.
-  if (process.platform === 'win32') return;
-  const fd = openSync(root, constants.O_RDONLY | constants.O_DIRECTORY);
-  try { fsyncSync(fd); } finally { closeSync(fd); }
-}
-
 /** Read-only inspection: no identity allocation, mkdir, application DB or lock. */
 export function inspectController(location: InstallationLocation): ControllerInspection {
   try {
@@ -171,7 +164,7 @@ export class ControllerStore {
     mkdirSync(releases, { recursive: true, mode: 0o700 }); controlBinding().protect(releases);
     const destination = join(releases, releaseId);
     controlBinding().publishDirectory(this.#handle, stagedDirectory, destination);
-    flushDirectory(releases); return destination;
+    flushDirectory(releases); flushDirectory(dirname(stagedDirectory)); flushDirectory(this.location.home); return destination;
   }
   close(): void { if (!this.#closed) { controlBinding().close(this.#handle); this.#closed = true; } }
 }

@@ -1025,6 +1025,15 @@ export async function approveWorkflowTarget(
 		}
 	};
 
+	/** ISSUE-1b3caadf04023d33: a later Story's BUILD needs its "Epic impact:" paragraph; only an explicit overrideReview passes it. */
+	const refuseEpicImpact = (jsonPath: string): boolean => {
+		if (req.overrideReview !== undefined) return false;
+		const impact = checkBuildEpicImpact(req.repoPath, jsonPath);
+		if (!impact.applies || impact.ok) return false;
+		skipped.push({ path: jsonPath, reason: impact.reason, ...(req.skipKinds === true ? { kind: EPIC_IMPACT_MISSING_KIND } : {}) });
+		return true;
+	};
+
 	const approveOne = async (jsonPath: string): Promise<void> => {
 		// A test record carries an Epic and a Story in its meta, so without this it
 		// would be put through the code-review gate below and come back with that
@@ -1043,14 +1052,7 @@ export async function approveWorkflowTarget(
 			if (outcome !== undefined) followOn.push(outcome);
 			return;
 		}
-		// ISSUE-1b3caadf04023d33: a later Story's BUILD needs its "Epic impact:" paragraph; only an explicit overrideReview passes it.
-		if (req.overrideReview === undefined) {
-			const impact = checkBuildEpicImpact(req.repoPath, jsonPath);
-			if (impact.applies && !impact.ok) {
-				skipped.push({ path: jsonPath, reason: impact.reason, ...(req.skipKinds === true ? { kind: EPIC_IMPACT_MISSING_KIND } : {}) });
-				return;
-			}
-		}
+		if (refuseEpicImpact(jsonPath)) return;
 		// No automated review or cleanup is performed during approval.
 		let completeAfter = false;
 		try {
@@ -1083,6 +1085,8 @@ export async function approveWorkflowTarget(
 			// Authorize BEFORE the record is created or merged: a refused target changes nothing.
 			if (await refuseBeforeRecord(jsonPath)) return { approved, skipped, codeReview };
 			if (await refuseLogConflict(jsonPath)) return { approved, skipped, codeReview };
+			// A BUILD with no record yet is refused here, before the hook creates its record and log: a refusal writes nothing.
+			if (!existsSync(jsonPath) && refuseEpicImpact(jsonPath)) return { approved, skipped, codeReview };
 			await runBuildHook(jsonPath);
 		}
 		if (!existsSync(jsonPath)) throw new ArtifactMissingError(`No artifact at ${jsonPath}`);

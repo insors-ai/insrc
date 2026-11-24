@@ -26,8 +26,18 @@ export function resolveEpicImpact(
 ): EpicImpactResolution {
 	const s1 = stepOutputs['s1'];
 	const fromStep = typeof s1 === 'object' && s1 !== null ? (s1 as Record<string, unknown>)['epicImpact'] : undefined;
-	const analysis = isEpicImpactAnalysis(fromStep) ? fromStep : isEpicImpactAnalysis(authored) ? authored : undefined;
+	const stepAnalysis = isEpicImpactAnalysis(fromStep) ? fromStep : undefined;
+	const authoredAnalysis = isEpicImpactAnalysis(authored) ? authored : undefined;
 	const digestPresent = typeof epicHash === 'string' && typeof storyId === 'string' && buildEpicBuiltStateDigest(repoPath, epicHash, storyId) !== null;
-	const problem = epicImpactProblem(digestPresent, analysis);
-	return problem === undefined ? { ok: true, epicImpact: analysis } : { ok: false, reason: problem };
+	// The first step's analysis is carried verbatim when it is acceptable now. Applicability is decided at synthesize against the current
+	// records, so an analysis made before a sibling Story's BUILD was approved (applies:false) can have become stale: then a current one
+	// supplied in the synthesized body takes over, so the run is never stranded.
+	const stepProblem = epicImpactProblem(digestPresent, stepAnalysis);
+	if (stepProblem === undefined) return { ok: true, epicImpact: stepAnalysis ?? authoredAnalysis };
+	const authoredProblem = epicImpactProblem(digestPresent, authoredAnalysis);
+	if (authoredProblem === undefined && authoredAnalysis !== undefined) return { ok: true, epicImpact: authoredAnalysis };
+	const stale = stepAnalysis !== undefined && !stepAnalysis.applies
+		? ' The first step recorded that the analysis does not apply, but the Epic has a built Story now: supply a current analysis in body.epicImpact.'
+		: '';
+	return { ok: false, reason: `${authoredAnalysis !== undefined ? authoredProblem : stepProblem}${stale}` };
 }

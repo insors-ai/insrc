@@ -150,6 +150,16 @@ export class ControllerStore {
       this.assertHeld(); controlBinding().replace(this.#handle, temp, target); flushDirectory(directory);
     } finally { try { unlinkSync(temp); } catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; } }
   }
+  /** Launcher publication shares operation ownership; never exposes the native handle. */
+  replaceLauncher(stagedFile: string, name: 'insrc' | 'insrc.ps1'): void {
+    this.assertHeld();
+    const directory = join(this.location.home, 'bin'), part = relative(directory, stagedFile);
+    if (isAbsolute(part) || !/^\.launcher-[a-f0-9-]{36}$/.test(part)) throw new InstallerError('path-invalid', 'Launcher stage must be in the installation bin directory');
+    assertLocalControlRoot(directory, process.platform === 'win32' ? path => controlBinding().localVolume(path) : undefined);
+    privateFile(stagedFile);
+    controlBinding().replace(this.#handle, stagedFile, join(directory, name));
+    flushDirectory(directory);
+  }
   /** Publish only a caller-owned candidate stage; never replace an existing release. */
   publishCandidate(stagedDirectory: string, releaseId: string): string {
     this.assertHeld(); assertToken(releaseId);

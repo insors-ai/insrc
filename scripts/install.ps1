@@ -1,5 +1,6 @@
 # Release template; no execution-policy changes or elevation.
-param([string]$HomeDirectory = (Join-Path $env:USERPROFILE '.insrc'), [string]$InstallationId = 'default')
+[CmdletBinding()]
+param([string]$HomeDirectory = (Join-Path $env:USERPROFILE '.insrc'), [string]$InstallationId = 'default', [string]$OperationId = '')
 $ErrorActionPreference = 'Stop'
 Remove-Item Env:NODE_OPTIONS -ErrorAction SilentlyContinue
 Remove-Item Env:NODE_PATH -ErrorAction SilentlyContinue
@@ -86,6 +87,9 @@ try {
     Fetch-Verified $nativeUrl (Join-Path $controlStage 'native/control.node') $nativeSha
     $control = Join-Path $install "bootstrap/$bootstrapSha-$nativeSha"
     # @@PUBLISH_CONTROL@@
-    & $node (Join-Path $control 'bootstrap.mjs') --home $HomeDirectory --installation-id $InstallationId
-    if ($LASTEXITCODE -ne 0) { throw "installer failed: $LASTEXITCODE" }
+    $installArgs = @('--home', $HomeDirectory, '--installation-id', $InstallationId)
+    if ($OperationId) { $installArgs += @('--operation-id', $OperationId) }
+    & $node (Join-Path $control 'bootstrap.mjs') @installArgs
+    $installerExit = $LASTEXITCODE
 } finally { Remove-Item -LiteralPath $stage -Recurse -Force -ErrorAction SilentlyContinue }
+exit $installerExit

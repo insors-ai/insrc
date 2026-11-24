@@ -1,7 +1,12 @@
 import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { isAbsolute, join, resolve } from 'node:path';
 
-const INSRC_DIR = join(homedir(), '.insrc');
+// Installed launchers pass the validated InstallationLocation.home to every
+// child. Keep socket, config and daemon-owned data rooted in that same home.
+const explicitHome = process.env['INSRC_HOME'];
+if (explicitHome !== undefined && (!isAbsolute(explicitHome) || /[\x00-\x1f]/.test(explicitHome) || /^[\\/]{2}/.test(explicitHome)
+  || /(?:^|[\\/])\.{1,2}(?:[\\/]|$)/.test(explicitHome))) throw new Error('INSRC_HOME must be an absolute local installation path without traversal');
+const INSRC_DIR = explicitHome === undefined ? join(homedir(), '.insrc') : resolve(explicitHome);
 const LOG_DIR   = join('/tmp', '.insrc');
 
 export const PATHS = {

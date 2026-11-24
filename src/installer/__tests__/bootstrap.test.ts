@@ -12,14 +12,15 @@ import { renderInstallerBootstrap } from '../../../scripts/render-installer-boot
 import { spawnFixture, stopOwnedChildren } from '../../daemon/tools/__tests__/_proc.js';
 const sha = (bytes: string | Buffer): string => createHash('sha256').update(bytes).digest('hex');
 const q = (text: string): string => "'" + text.replaceAll("'", "'\\''") + "'";
-async function runBootstrap(options: { corrupt?: boolean; wrongTarget?: boolean; missingTar?: boolean; trapNode?: boolean; cuda?: string; repeat?: boolean; tamper?: boolean } = {}) {
+async function runBootstrap(options: { corrupt?: boolean; wrongTarget?: boolean; missingTar?: boolean; trapNode?: boolean; cuda?: string; repeat?: boolean; tamper?: boolean; tty?: boolean } = {}) {
   const archive = await archiveFixture();
   const root = mkdtempSync(join(realpathSync(tmpdir()), 'insrc-bootstrap-')), children: ChildProcess[] = [];
   try {
     const tools = join(root, 'tools'), home = join(root, 'data home Ω'); mkdirSync(tools);
     const native = join(root, 'control.node'); writeFileSync(native, 'digest-bound-native-fixture');
     const bootstrap = join(root, 'bootstrap.mjs');
-    writeFileSync(bootstrap, `import fs from 'node:fs'; if(process.version!=='v22.22.1')throw Error('wrong runtime'); fs.writeFileSync(${JSON.stringify(join(root, 'result.json'))},JSON.stringify({version:process.version,argv:process.argv.slice(2),options:process.env.NODE_OPTIONS??null,nodePath:process.env.NODE_PATH??null,cuda:process.env.ONNXRUNTIME_NODE_INSTALL_CUDA}));`);
+    const tui = `require('node:fs').writeFileSync(${JSON.stringify(join(root, 'tui.json'))},JSON.stringify({node:process.execPath,tty:[!!process.stdin.isTTY,!!process.stdout.isTTY,!!process.stderr.isTTY]}));`;
+    writeFileSync(bootstrap, `import fs from 'node:fs';import {spawnSync} from 'node:child_process'; if(process.version!=='v22.22.1')throw Error('wrong runtime'); fs.writeFileSync(${JSON.stringify(join(root, 'result.json'))},JSON.stringify({version:process.version,argv:process.argv.slice(2),options:process.env.NODE_OPTIONS??null,nodePath:process.env.NODE_PATH??null,cuda:process.env.ONNXRUNTIME_NODE_INSTALL_CUDA,tty:[!!process.stdin.isTTY,!!process.stdout.isTTY,!!process.stderr.isTTY]}));${options.tty ? `const ui=spawnSync(process.execPath,['-e',${JSON.stringify(tui)}],{stdio:'inherit'});if(ui.error)throw ui.error;process.exitCode=ui.status??1;` : ''}`);
     const assets = { bootstrap: { url: 'https://fixture.invalid/bootstrap', sha256: sha(readFileSync(bootstrap)) }, native: { url: 'https://fixture.invalid/native', sha256: sha(readFileSync(native)) } };
     const script = renderInstallerBootstrap('posix', { [`${process.platform}-arm64`]: assets, [`${process.platform}-x64`]: assets });
     const path = join(root, 'install.sh'); writeFileSync(path, script, { mode: 0o700 });
@@ -34,7 +35,10 @@ async function runBootstrap(options: { corrupt?: boolean; wrongTarget?: boolean;
     writeFileSync(join(tools, 'curl'), `#!/bin/sh\nurl=; out=;\nwhile [ "$#" -gt 0 ]; do case "$1" in https://*) url=$1;; -o) shift; out=$1;; esac; shift; done\ncase "$url" in https://nodejs.org/*) /bin/cp ${q(official)} "$out";; https://fixture.invalid/bootstrap) /bin/cp ${q(bootstrap)} "$out";; https://fixture.invalid/native) /bin/cp ${q(native)} "$out";; *) exit 89;; esac\n`, { mode: 0o700 });
     if (options.trapNode) writeFileSync(join(tools, 'node'), `#!/bin/sh\necho called > ${q(join(root, 'host-node-called'))}\nexit 88\n`, { mode: 0o700 });
     async function invoke() {
-      const child = spawnFixture('/bin/sh', [path, '--home', home, '--installation-id', 'fixture'], { env: { ...process.env, PATH: tools, NODE_OPTIONS: '--require=/must-not-be-loaded', NODE_PATH: '/must-not-be-used', ...(options.cuda === undefined ? {} : { ONNXRUNTIME_NODE_INSTALL_CUDA: options.cuda }) }, stdio: ['ignore', 'pipe', 'pipe'] }); children.push(child);
+      const args = [path, '--home', home, '--installation-id', 'fixture', '--operation-id', 'terminal-smoke'];
+      const command = options.tty ? '/usr/bin/script' : '/bin/sh';
+      const arguments_ = !options.tty ? args : process.platform === 'darwin' ? ['-q', '/dev/null', '/bin/sh', ...args] : ['-q', '-e', '-c', ['/bin/sh', ...args].map(q).join(' '), '/dev/null'];
+      const child = spawnFixture(command, arguments_, { env: { ...process.env, PATH: tools, NODE_OPTIONS: '--require=/must-not-be-loaded', NODE_PATH: '/must-not-be-used', ...(options.cuda === undefined ? {} : { ONNXRUNTIME_NODE_INSTALL_CUDA: options.cuda }) }, stdio: ['ignore', 'pipe', 'pipe'] }); children.push(child);
       let output = ''; child.stdout!.on('data', (b: Buffer) => { output += b; }); child.stderr!.on('data', (b: Buffer) => { output += b; });
       const [code] = await once(child, 'close'); return { code, output };
     }
@@ -48,7 +52,8 @@ async function runBootstrap(options: { corrupt?: boolean; wrongTarget?: boolean;
       assert.equal(lstatSync(publishedNode).ino, inode, 'existing runtime must never be replaced');
     }
     const result = existsSync(join(root, 'result.json')) ? JSON.parse(readFileSync(join(root, 'result.json'), 'utf8')) : undefined;
-    return { code, output, result, hostNodeCalled: existsSync(join(root, 'host-node-called')) };
+    const tuiResult = existsSync(join(root, 'tui.json')) ? JSON.parse(readFileSync(join(root, 'tui.json'), 'utf8')) : undefined;
+    return { code, output, result, tuiResult, hostNodeCalled: existsSync(join(root, 'host-node-called')) };
   } finally { await stopOwnedChildren(children); rmSync(root, { recursive: true, force: true }); }
 }
 
@@ -86,4 +91,13 @@ test('bootstrap reuses identical runtime and refuses changed immutable runtime',
   const repeated = await runBootstrap({ repeat: true }); assert.equal(repeated.code, 0, repeated.output);
   const changed = await runBootstrap({ tamper: true }); assert.notEqual(changed.code, 0);
   assert.match(changed.output, /immutable publication differs/); assert.equal(changed.result, undefined);
+});
+
+test('POSIX script preserves real terminal I O through private runtime fixture TUI handoff', { timeout: 120_000 }, async () => {
+  const result = await runBootstrap({ tty: true, trapNode: true });
+  assert.equal(result.code, 0, result.output); assert.deepEqual(result.result.tty, [true, true, true]); assert.deepEqual(result.tuiResult.tty, [true, true, true]);
+  assert.ok(result.result.argv.includes('terminal-smoke')); assert.match(result.tuiResult.node, /runtimes\/22\.22\.1/); assert.equal(result.hostNodeCalled, false);
+  // This checks the PowerShell source contract, not Windows execution.
+  const powershell = readFileSync(new URL('../../../scripts/install.ps1', import.meta.url), 'utf8');
+  assert.match(powershell, /@installArgs/); assert.match(powershell, /exit \$installerExit/); assert.doesNotMatch(powershell, /RedirectStandard|ExecutionPolicy|RunAs/);
 });

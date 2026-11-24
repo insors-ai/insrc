@@ -28,11 +28,11 @@ export function assertManagerBoundary(metafile) {
     if (dependency.external && !isBuiltin(dependency.path)) throw new Error(`Installer requires unbundled dependency: ${dependency.path}`);
   }
 }
-export async function bundleControlEntrypoint(run, scope, entry, output) {
+export async function bundleControlEntrypoint(run, scope, entry, output, target) {
   run.assertOwner();
   const meta = `${output}.meta.json`;
   const binary = join(ROOT, 'node_modules/@esbuild', `${process.platform}-${process.arch}`, process.platform === 'win32' ? 'esbuild.exe' : 'bin/esbuild');
-  const result = await scope.start(binary, [entry, '--bundle', '--platform=node', '--format=esm', '--target=node22', `--outfile=${output}`, `--metafile=${meta}`, '--banner:js=import {createRequire as __insrcCreateRequire} from "node:module"; const require=__insrcCreateRequire(import.meta.url);'], { budgetMs: run.budgets.buildMs });
+  const result = await scope.start(binary, [entry, '--bundle', '--platform=node', '--format=esm', '--target=node22', `--outfile=${output}`, `--metafile=${meta}`, ...(target ? [`--define:__INSRC_INSTALLER_TARGET__=${JSON.stringify(target)}`] : []), '--banner:js=import {createRequire as __insrcCreateRequire} from "node:module"; const require=__insrcCreateRequire(import.meta.url);'], { budgetMs: run.budgets.buildMs });
   if (result.code !== 0 || result.timedOut) throw new Error('Control bootstrap bundle failed');
   const metadata = JSON.parse(readFileSync(meta, 'utf8')); assertManagerBoundary(metadata); rmSync(meta); return metadata;
 }
@@ -47,12 +47,16 @@ async function zipFiles(files, output) {
 async function assembleRelease({ files, directory, manifest, baseUrl, bootstrap, native, runtimeArchive, fixture = false }) {
   if (!/^https:\/\//.test(baseUrl) || /[\r\n\0]/.test(baseUrl)) throw new Error('HTTPS release base URL required');
   const { parseReleaseManifest } = await import('../out/installer/schemas.js');
+  const { parseInventory, BUNDLE_LIMITS } = await import('../out/installer/release-descriptor.js');
   if (files.has('inventory.json')) throw new Error('Inventory cannot contain its own bytes');
   const inventory = { schemaVersion: 1, files: inventoryFor(files) };
   const inventoryBytes = Buffer.from(JSON.stringify(inventory));
+  parseInventory(inventory);
+  if (inventoryBytes.length > BUNDLE_LIMITS.inventoryBytes || inventory.files.reduce((total, file) => total + file.bytes, inventoryBytes.length) > BUNDLE_LIMITS.expanded) throw new Error('Release exceeds consumer inventory/expanded bounds');
   const payloadFiles = new Map(files); payloadFiles.set('inventory.json', { bytes: inventoryBytes, mode: 0o644 });
   mkdirSync(directory, { recursive: false, mode: 0o700 });
   const payload = join(directory, 'payload.zip'); await zipFiles(payloadFiles, payload);
+  if (statSync(payload).size > BUNDLE_LIMITS.compressed) throw new Error('Release exceeds consumer compressed bound');
   const digest = sha256(readFileSync(payload));
   const completeManifest = { ...manifest, payloadSha256: digest }; parseReleaseManifest(completeManifest);
   for (const entry of [manifest.daemonEntry, manifest.managerEntry, manifest.tuiEntry, `tools/node/${manifest.runtime.relativeExecutable}`, ...manifest.migrations.map(hook => hook.module)]) if (!files.has(entry)) throw new Error(`Release inventory lacks entrypoint: ${entry}`);
@@ -106,7 +110,7 @@ export async function extractOfficialRuntime(run, scope, archive, directory, tar
   if (JSON.parse(readFileSync(npm, 'utf8')).version !== policy.npmVersion) throw new Error('Runtime npm version differs from policy');
   return runtime;
 }
-async function probePayload(run, scope, directory, target) {
+export async function probePayload(run, scope, directory, target) {
   const node = join(directory, target.os === 'win32' ? 'tools/node/node.exe' : 'tools/node/bin/node');
   const program = `const{createRequire}=require('node:module');const r=createRequire(process.cwd()+'/package.json');if(process.version!=='v22.22.1'||process.platform!==${JSON.stringify(target.os)}||process.arch!==${JSON.stringify(target.arch)})throw Error('runtime target');for(const n of ['lmdb','@lancedb/lancedb','@duckdb/node-api','tree-sitter','onnxruntime-node','@parcel/watcher'])r(n);const c=r('./native/control.node');const h=c.acquire(process.cwd()+'/probe.lock');if(!c.held(h))throw Error('lock');c.close(h);`;
   const probe = await scope.start(node, ['-e', program], { cwd: directory, env: { ...run.environment(), NODE_OPTIONS: '', NODE_PATH: '' }, budgetMs: run.budgets.fileMs });
@@ -142,8 +146,8 @@ export async function packageInstaller(run, scope, config) {
   const stage = join(parent, `.release-${randomUUID()}`); mkdirSync(stage, { mode: 0o700 });
   try {
     const bootstrapFile = join(stage, 'bootstrap.mjs'), managerFile = join(stage, 'manager.mjs');
-    await bundleControlEntrypoint(run, scope, join(root, 'out/installer/terminal-entry.js'), bootstrapFile);
-    await bundleControlEntrypoint(run, scope, join(root, 'out/installer/manager-entry.js'), managerFile);
+    await bundleControlEntrypoint(run, scope, join(root, 'out/installer/terminal-entry.js'), bootstrapFile, target);
+    await bundleControlEntrypoint(run, scope, join(root, 'out/installer/manager-entry.js'), managerFile, target);
     const runtimeDirectory = await extractOfficialRuntime(run, scope, runtimeArchive, join(stage, 'runtime'), target);
     const bootstrapBytes = readFileSync(bootstrapFile), files = collectProductionPayload(root, runtimeDirectory);
     files.set('bootstrap.mjs', { bytes: bootstrapBytes, mode: 0o644 }); files.set('manager.mjs', { bytes: readFileSync(managerFile), mode: 0o644 });

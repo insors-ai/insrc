@@ -1,0 +1,28 @@
+import { createRun } from '../../../scripts/test-harness/context.mjs';
+import { withRun } from '../../../scripts/test-harness/process.mjs';
+import { assembleFixtureRelease, bundleControlEntrypoint, collectProductionPayload, extractOfficialRuntime, probePayload } from '../../../scripts/package-installer.mjs';
+import { validateEntrypoints, sha256 } from '../../../scripts/installer-payload.mjs';
+import { mkdirSync, readFileSync, writeFileSync, statSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+import { pathToFileURL } from 'node:url';
+const [source, root, archive] = process.argv.slice(2);
+const target = { os: process.platform, arch: process.arch, baseline: 'foundation-fixture' };
+const run = createRun(root, { mode: 'build' });
+await withRun(run, async scope => {
+  validateEntrypoints(source, ['out/daemon/index.js', 'out/cli/index.js', 'out/installer/manager-entry.js', 'out/installer/terminal-entry.js']);
+  const bootstrap = join(root, 'bootstrap.mjs'), manager = join(root, 'manager.mjs');
+  await bundleControlEntrypoint(run, scope, join(source, 'out/installer/terminal-entry.js'), bootstrap, target);
+  await bundleControlEntrypoint(run, scope, join(source, 'out/installer/manager-entry.js'), manager, target);
+  const runtime = await extractOfficialRuntime(run, scope, archive, join(root, 'runtime'), target);
+  const files = collectProductionPayload(source, runtime), archivePath = `runtime/${process.platform === 'win32' ? 'node.zip' : 'node.tar.gz'}`;
+  const native = readFileSync(join(source, 'out/installer/native/control.node'));
+  files.set('bootstrap.mjs', { bytes: readFileSync(bootstrap), mode: 0o644 }); files.set('manager.mjs', { bytes: readFileSync(manager), mode: 0o644 });
+  files.set('native/control.node', { bytes: native, mode: 0o755 }); files.set(archivePath, { bytes: readFileSync(archive), mode: 0o644 });
+  const manifest = { schemaVersion: 1, releaseId: 'complete-foundation-fixture', sourceCommit: 'a'.repeat(40), target, runtime: { version: '22.22.1', target, sha256: sha256(readFileSync(archive)), relativeExecutable: process.platform === 'win32' ? 'node.exe' : 'bin/node' }, daemonEntry: 'out/daemon/index.js', managerEntry: 'manager.mjs', tuiEntry: 'out/cli/index.js', protocolVersion: 1, compatiblePredecessors: [], migrations: [] };
+  const descriptor = await assembleFixtureRelease({ files, directory: join(root, 'release'), manifest, baseUrl: 'https://example.invalid/complete-foundation-fixture', bootstrap: readFileSync(bootstrap), native, runtimeArchive: { path: archivePath, sha256: manifest.runtime.sha256, bytes: statSync(archive).size } });
+  const { extractSafeZip } = await import(pathToFileURL(join(source, 'out/installer/safe-zip.js')).href);
+  const probe = join(root, 'probe'); mkdirSync(probe);
+  await extractSafeZip(join(root, 'release/payload.zip'), probe, descriptor);
+  await probePayload(run, scope, probe, target);
+  writeFileSync(join(root, 'result.json'), JSON.stringify({ publication: descriptor.publication, files: files.size, payloadBytes: descriptor.payload.bytes, consumerExtraction: 'passed', nativeProbe: 'passed', managerAndTerminalBundled: true }));
+});

@@ -13,14 +13,16 @@ export interface ReleaseDescriptor {
   payload: ReleaseAsset; bootstrap: ReleaseAsset; native: ReleaseAsset;
   runtimeArchive: { path: string; sha256: string; bytes: number };
 }
-export const BUNDLE_LIMITS = Object.freeze({ compressed: 2 * 1024 ** 3, expanded: 4 * 1024 ** 3, entryBytes: 1024 ** 3, entries: 50_000, ratio: 2_000, inventoryBytes: 32 * 1024 ** 2, descriptorBytes: 2 * 1024 ** 2 });
+// The measured complete production closure is about 60k files. Keep a finite
+// archive cap including inventory.json, shared by publication and extraction.
+export const BUNDLE_LIMITS = Object.freeze({ compressed: 2 * 1024 ** 3, expanded: 4 * 1024 ** 3, entryBytes: 1024 ** 3, entries: 65_536, ratio: 2_000, inventoryBytes: 32 * 1024 ** 2, descriptorBytes: 2 * 1024 ** 2 });
 const hash = { type: 'string', pattern: '^[a-f0-9]{64}$' }, bytes = { type: 'integer', minimum: 0, maximum: BUNDLE_LIMITS.compressed };
 const object = (properties: Record<string, object>) => ({ type: 'object', properties, required: Object.keys(properties), additionalProperties: false });
 const path = { type: 'string', minLength: 1, maxLength: 1024 };
 const asset = object({ url: { type: 'string', minLength: 1, maxLength: 4096 }, bytes: { ...bytes, minimum: 1 }, sha256: hash });
 const ajv = new Ajv({ strict: true, coerceTypes: false, useDefaults: false, removeAdditional: false });
 const descriptorValidator = ajv.compile<ReleaseDescriptor>(object({ schemaVersion: { const: 1 }, publication: { const: 'qualified' }, manifest: installerSchemas.manifest, inventorySha256: hash, payload: asset, bootstrap: asset, native: asset, runtimeArchive: object({ path, sha256: hash, bytes }) }));
-const inventoryValidator = ajv.compile<PayloadInventory>(object({ schemaVersion: { const: 1 }, files: { type: 'array', maxItems: BUNDLE_LIMITS.entries, items: object({ path, bytes: { type: 'integer', minimum: 0, maximum: BUNDLE_LIMITS.entryBytes }, sha256: hash, mode: { enum: [0o644, 0o755] } }) } }));
+const inventoryValidator = ajv.compile<PayloadInventory>(object({ schemaVersion: { const: 1 }, files: { type: 'array', maxItems: BUNDLE_LIMITS.entries - 1, items: object({ path, bytes: { type: 'integer', minimum: 0, maximum: BUNDLE_LIMITS.entryBytes }, sha256: hash, mode: { enum: [0o644, 0o755] } }) } }));
 export function httpsUrl(value: string): URL {
   let url: URL;
   try { url = new URL(value); } catch { throw new InstallerError('download-invalid', 'Invalid release URL'); }

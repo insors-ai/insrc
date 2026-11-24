@@ -12,7 +12,7 @@ import type { ChildProcess } from 'node:child_process';
 import { ControllerStore } from '../controller-store.js';
 import { resolveInstallationLocation } from '../location.js';
 import { prepareBundle, resolveBundleDelivery } from '../bundle.js';
-import { digest, canonicalJson, BUNDLE_LIMITS } from '../release-descriptor.js';
+import { digest, canonicalJson, parseInventory, BUNDLE_LIMITS } from '../release-descriptor.js';
 import { runtimeArchive } from '../runtime-policy.js';
 import { downloadJson } from '../download.js';
 import type { DownloadTransport } from '../download.js';
@@ -134,5 +134,13 @@ test('release discovery rejects insecure redirects and never falls back to dev',
   await assert.rejects(downloadJson('https://fixture.invalid', { transport: async () => ({ status: 302, location: 'http://fixture.invalid/insecure', body: Readable.from([]) }) }), /HTTPS/);
   let count = 0;
   await assert.rejects(downloadJson('https://fixture.invalid', { transport: async () => { count++; return { status: 302, location: '/again', body: Readable.from([]) }; } }), /Too many/); assert.equal(count, 9);
-  assert.equal(BUNDLE_LIMITS.entries, 50_000);
+  assert.equal(BUNDLE_LIMITS.entries, 65_536);
+});
+
+
+test('inventory bound reserves the archive inventory entry', () => {
+  const files = Array.from({ length: BUNDLE_LIMITS.entries - 1 }, (_, index) => ({ path: `files/${index}`, bytes: 0, sha256: digest(''), mode: 0o644 }));
+  assert.equal(parseInventory({ schemaVersion: 1, files }).files.length, BUNDLE_LIMITS.entries - 1);
+  files.push({ ...files[0]!, path: 'files/overflow' });
+  assert.throws(() => parseInventory({ schemaVersion: 1, files }), /inventory/i);
 });

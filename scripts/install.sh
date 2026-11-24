@@ -14,11 +14,12 @@ case "$(uname -m)" in arm64|aarch64) arch=arm64;; x86_64|amd64) arch=x64;; *) fa
 target="$os-$arch"
 # @@TARGETS@@
 [ -n "${runtime_url-}" ] || fail 'this source template has no qualified release assets; use a published installer'
-home="${HOME:?}/.insrc"; identity=default
+home="${HOME:?}/.insrc"; identity=default; operation=
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --home) [ "$#" -ge 2 ] || fail '--home requires value'; home=$2; shift 2;;
     --installation-id) [ "$#" -ge 2 ] || fail '--installation-id requires value'; identity=$2; shift 2;;
+    --operation-id) [ "$#" -ge 2 ] || fail '--operation-id requires value'; operation=$2; shift 2;;
     *) fail "unsupported argument: $1";;
   esac
 done
@@ -53,4 +54,6 @@ fetch "$native_url" "$stage/control/native/control.node"; verify "$stage/control
 control="$home/install/bootstrap/$bootstrap_sha-$native_sha"
 # @@PUBLISH_CONTROL@@
 # Keep terminal I/O and status. Selected runtime/control code is immutable.
-"$node" "$control/bootstrap.mjs" --home "$home" --installation-id "$identity"
+set -- --home "$home" --installation-id "$identity"
+if [ -n "$operation" ]; then set -- "$@" --operation-id "$operation"; fi
+"$node" "$control/bootstrap.mjs" "$@"

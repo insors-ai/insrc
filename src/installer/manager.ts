@@ -64,10 +64,15 @@ export class InstallerManager {
     return this.#active ? this.requestImmediate(input) : forwardImmediate(this.location, input);
   }
   /** Separate capability-based API, never reached by ordinary manager input. */
-  async install(admission: TerminalAdmission, operationId: string, delivery: Delivery, decision?: DependencyDecision): Promise<ManagerEvent> {
+  async install(admission: TerminalAdmission, operationId: string, delivery: Delivery, decision?: DependencyDecision, signal?: AbortSignal): Promise<ManagerEvent> {
     assertTerminalAdmission(admission); parseInstaller('delivery', delivery);
     const request: ManagerRequest = { protocolVersion: 1, operationId, installationId: this.location.installationId, action: 'install' };
-    parseInstaller('managerRequest', request); return this.#mutate(request, delivery, decision);
+    parseInstaller('managerRequest', request); return this.#mutate(request, delivery, decision, signal);
+  }
+  async upgradeFromTerminal(admission: TerminalAdmission, input: unknown, decision?: DependencyDecision, signal?: AbortSignal): Promise<ManagerEvent> {
+    assertTerminalAdmission(admission); const request = parseManagerRequest(input);
+    if (request.action !== 'upgrade' || request.installationId !== this.location.installationId) fail('identity-mismatch', 'Terminal upgrade targets another operation');
+    return this.#mutate(request, undefined, decision, signal);
   }
   #assertCurrent(active: Active): void {
     active.store.assertHeld(); const inspected = active.store.inspect();
@@ -163,8 +168,9 @@ export class InstallerManager {
     active.immediate ??= (async () => { const sent = { ...active.shutdown!, mode: 'immediate' as const }; const ack = await this.peers.lifecycle!.shutdown(this.location, sent); if (ack?.accepted !== true || ack.operationId !== sent.operationId || ack.instanceId !== sent.expectedInstanceId || ack.mode !== 'immediate') fail('shutdown-uncertain', 'Immediate acknowledgement differs'); active.store.assertHeld(); })();
     await active.immediate; return this.#event(active, active.snapshot.operation!, 'progress');
   }
-  async #mutate(request: ManagerRequest, installDelivery?: Delivery, decision?: DependencyDecision): Promise<ManagerEvent> {
-    this.#ports(); if (this.#active) fail('busy', 'Manager already owns an operation');
+  async #mutate(request: ManagerRequest, installDelivery?: Delivery, decision?: DependencyDecision, signal?: AbortSignal): Promise<ManagerEvent> {
+    const checkCancellation = () => { if (signal?.aborted) fail('cancelled', 'Installation cancelled at a safe boundary'); };
+    checkCancellation(); this.#ports(); if (this.#active) fail('busy', 'Manager already owns an operation');
     const store = ControllerStore.acquire(this.location);
     let active: Active | undefined;
     try {
@@ -183,7 +189,9 @@ export class InstallerManager {
       if (intent && request.action !== 'retry-migration') fail('operation-conflict', 'Operation identity was already used');
       active = { store, snapshot: initial, request, ownerNonce: randomBytes(32).toString('hex'), previousResult: initial.lastResult, started: false, disrupted: request.action === 'retry-migration' }; this.#active = active;
       let report = parseInstaller('dependencyReport', await this.peers.dependencies!.inspect(this.location));
-      if (decision) { parseInstaller('dependencyDecision', decision); if (request.action !== 'install' || report.ollamaInstallOffer?.id !== decision.offerId) fail('dependency-offer-stale', 'Dependency consent does not match the terminal offer'); report = parseInstaller('dependencyReport', await this.peers.dependencies!.decide(this.location, decision)); }
+      checkCancellation();
+      if (decision) { parseInstaller('dependencyDecision', decision); if (!['install', 'upgrade'].includes(request.action) || report.ollamaInstallOffer?.id !== decision.offerId) fail('dependency-offer-stale', 'Dependency consent does not match the terminal offer'); report = parseInstaller('dependencyReport', await this.peers.dependencies!.decide(this.location, decision)); }
+      checkCancellation();
       if (!report.runtimeReady || report.blockers.length) fail('dependency-blocked', report.blockers.join('; ') || 'Private runtime is unavailable');
       let migrate = request.action === 'upgrade' || request.action === 'install';
       if (request.action === 'retry-migration') {
@@ -216,11 +224,13 @@ export class InstallerManager {
           const offerId = digest(canonicalJson({ location: this.location, current: initial.installation.activeReleaseId, delivery: initial.installation.delivery, descriptor: offer.descriptorSha256 }));
           if (request.action === 'upgrade' && request.acceptedOfferId !== offerId) fail('offer-stale', 'Upgrade acceptance differs from the exact current offer');
         }
+        checkCancellation();
         if (inspected.kind === 'missing') store.commit(initial, null);
         store.writeOperationData(request.operationId, 'intent', request);
         this.#update(active, 'preparing', { predecessorId: initial.installation.activeReleaseId });
         active.candidate = offer ? await delivery.prepare({ location: store.location, assertHeld: () => store.assertHeld(), inspect: () => store.inspect(), publishCandidate: (directory, releaseId) => store.publishCandidate(directory, releaseId) }, offer) : await delivery.open(this.location, initial.installation.activeReleaseId ?? fail('install-required', 'No selected release'));
         await this.#verify(active, active.candidate);
+        checkCancellation();
         if (offer && (active.candidate.releaseId !== offer.manifest.releaseId || active.candidate.descriptorSha256 !== offer.descriptorSha256)) fail('candidate-conflict', 'Prepared candidate differs from accepted offer');
         store.writeOperationData(request.operationId, 'candidate', { releaseId: active.candidate.releaseId, descriptorSha256: active.candidate.descriptorSha256, payloadSha256: active.candidate.payloadSha256, inventorySha256: active.candidate.inventorySha256 });
         this.#update(active, 'preparing', { candidateId: active.candidate.releaseId });
@@ -232,20 +242,23 @@ export class InstallerManager {
         }
         if (request.action === 'stop') return this.#finish(active, { ...active.snapshot.operation!, phase: 'stopped' });
       }
+      checkCancellation();
       if (migrate) {
         await this.#verify(active, active.candidate!);
+        checkCancellation();
         const admission = this.#admit(active, 'migration'); active.disrupted = true;
         await this.peers.lifecycle!.launchMigration(active.candidate!, admission, () => this.assertLiveAdmission(admission));
         const journal = await this.peers.migrations!.waitForJournal(active.candidate!, admission);
         await this.#migrationExit(active, admission); this.#journal(active, admission, journal);
       } else if (!await this.peers.migrations!.verifyInstalled(active.candidate!, this.#context(active))) fail('migration-unvalidated', 'Installed migration state is unvalidated');
       await this.#verify(active, active.candidate!);
+      checkCancellation();
       const activation = this.#admit(active, 'activation'); active.disrupted = true;
       const ready = await this.peers.lifecycle!.activate(active.candidate!, activation, () => this.assertLiveAdmission(activation)); this.#ready(active, activation, ready);
       return this.#finish(active, { ...active.snapshot.operation!, phase: 'ready', errorCode: undefined, message: undefined }, true);
     } catch (error) {
       if (active?.started || (active && request.action === 'retry-migration')) {
-        const detail = error instanceof Error ? error.message.slice(0, 3500) : 'Operation failed', code = error instanceof InstallerError ? error.code : 'operation-failed';
+        const detail = error instanceof Error ? error.message.replace(/[\x00-\x1f\x7f]/g, ' ').slice(0, 3500) || 'Operation failed' : 'Operation failed', code = error instanceof InstallerError ? error.code : 'operation-failed';
         const failed: OperationRecord = { ...active.snapshot.operation, operationId: request.operationId, phase: active.disrupted ? 'blocked' : 'preparing', errorCode: code, message: detail };
         if (active.disrupted) { this.#update(active, 'blocked', failed); return this.#event(active, active.snapshot.operation!, 'result'); }
         return this.#finish(active, failed, false, true);

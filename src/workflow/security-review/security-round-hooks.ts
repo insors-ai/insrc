@@ -16,6 +16,7 @@ import { familyProvider } from '../../analyze/context/shaper-provider.js';
 import type { CliProvider } from '../../agent/providers/cli-provider.js';
 import { READ_ONLY_SESSION_READ_TOOLS, READ_ONLY_SESSION_ANALYZE_TOOLS } from '../../agent/providers/cli-provider.js';
 import { getModelRegistry } from '../../daemon/model-registry.js';
+import { getLogger } from '../../shared/logger.js';
 import { securityFindingSchemaFor, parseSecurityFindingReply } from '../review-round/security-schema.js';
 import type { SecurityFinding } from '../review-round/security-finding.js';
 import type { RoundDriverHooks } from '../review-round/types.js';
@@ -23,6 +24,8 @@ import type { ReviewTargets } from '../artifact-core/types.js';
 import { currentStepContext } from '../../shared/step-context.js';
 import type { SecurityModelSelection } from '../../config/analyze.js';
 import type { StructuredSchema } from '../../shared/types.js';
+
+const log = getLogger('workflow:security-round-hooks');
 
 interface SecurityCodePassReply {
 	readonly findings: readonly unknown[];
@@ -64,15 +67,19 @@ export async function runSecurityCodePass(repoPath: string, targets: ReviewTarge
 	const kind = registry.cliKind(modelSelection.provider);
 	if (kind === undefined) { throw new Error(`runSecurityCodePass: '${modelSelection.provider}' is not a CLI-backed family`); }
 	const model = registry.find(modelSelection.provider, modelSelection.modelId);
+	// s1 already resolved and probed this exact model; silently falling through to
+	// familyProvider's own CLI-default-model behavior here would dispatch a DIFFERENT
+	// model than the one s1 pinned and the caller was told is in use -- refuse instead.
+	if (model === undefined) { throw new Error(`runSecurityCodePass: '${modelSelection.modelId}' is no longer a listed model of ${modelSelection.provider}`); }
 	const connectionExecution = currentStepContext()?.connectionExecution;
 	const provider = familyProvider(registry, modelSelection.provider, model, { effort: modelSelection.effort }, connectionExecution) as CliProvider;
 
+	log.info({ repoPath, round, modelId: modelSelection.modelId, provider: modelSelection.provider }, 'runSecurityCodePass: dispatching the code-vulnerability pass');
 	const reply = await provider.runReadOnlySession<SecurityCodePassReply>(
 		codePassPrompt(targets),
 		replySchemaFor(kind),
 		{ cwd: repoPath, deadlineMs: 10 * 60_000, ...(connectionExecution !== undefined ? { connectionExecution } : {}) },
 	);
-	void round;
 	return reply.findings.map(raw => parseSecurityFindingReply(kind, raw));
 }
 
@@ -89,14 +96,18 @@ export function _setRunSecurityCodePassForTests(fn?: typeof runSecurityCodePass)
  * a true no-op (a security-only review has no general code-quality pass);
  * security delegates to runSecurityCodePass with the factory's own closed-over
  * args, ignoring the targets/round runReviewRound itself would otherwise pass
- * (it always matches what this review was started with).
+ * (it always matches what this review was started with). reviewId is logging
+ * context only (runSecurityCodePass's own LLD signature carries no reviewId
+ * parameter) -- used here so it is never silently dropped.
  */
 export function buildSecurityRoundHooks(repoPath: string, targets: ReviewTargets, modelSelection: SecurityModelSelection & { readonly status: 'configured' }, reviewId: string): RoundDriverHooks<SecurityFinding> {
-	void reviewId;
 	return {
 		reviewKind: 'code',
 		checkpointGranularity: 'round',
 		ground: async () => [],
-		security: (_targets, round) => dispatchCodePass(repoPath, targets, modelSelection, round),
+		security: (_targets, round) => {
+			log.info({ reviewId, round }, 'buildSecurityRoundHooks: security hook invoked');
+			return dispatchCodePass(repoPath, targets, modelSelection, round);
+		},
 	};
 }

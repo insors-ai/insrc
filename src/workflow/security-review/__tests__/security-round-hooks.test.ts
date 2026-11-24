@@ -17,14 +17,18 @@ import type { SecurityModelSelection } from '../../../config/analyze.js';
 const modelSelection: SecurityModelSelection & { status: 'configured' } = { status: 'configured', modelId: 'test-model', provider: 'claude' };
 
 test("buildSecurityRoundHooks: hooks.ground always resolves to [] without I/O; hooks.security delegates to the injected code-pass function", async () => {
-	const targets = { entries: [{ path: 'app.ts' }] };
+	// repoPath/targets name files that do not exist anywhere on disk; if ground
+	// ever touched the filesystem (or anything else needing repoPath/targets to
+	// be real), this would throw ENOENT or hang rather than resolve to [].
+	const bogusRepoPath = '/does/not/exist/' + Math.random().toString(36).slice(2);
+	const targets = { entries: [{ path: 'this-file-does-not-exist.ts' }] };
 	let captured: unknown;
 	_setRunSecurityCodePassForTests(async (repoPath, calledTargets, calledModelSelection, round) => {
 		captured = { repoPath, calledTargets, calledModelSelection, round };
 		return [];
 	});
 	try {
-		const hooks = buildSecurityRoundHooks('/repo', targets, modelSelection, 'review-1');
+		const hooks = buildSecurityRoundHooks(bogusRepoPath, targets, modelSelection, 'review-1');
 		assert.equal(hooks.reviewKind, 'code');
 		assert.equal(hooks.checkpointGranularity, 'round');
 
@@ -33,7 +37,7 @@ test("buildSecurityRoundHooks: hooks.ground always resolves to [] without I/O; h
 
 		assert.ok(hooks.security);
 		await hooks.security(targets, 2);
-		assert.deepEqual(captured, { repoPath: '/repo', calledTargets: targets, calledModelSelection: modelSelection, round: 2 });
+		assert.deepEqual(captured, { repoPath: bogusRepoPath, calledTargets: targets, calledModelSelection: modelSelection, round: 2 });
 	} finally {
 		_setRunSecurityCodePassForTests();
 	}

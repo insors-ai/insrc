@@ -1,0 +1,366 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1795512174553-qgy2eg",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-24T09:26:09.607Z",
+    "epicCreatedAt": "2026-11-24T08:44:39.235Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "claude-sonnet-5-5"
+        }
+      ]
+    },
+    "elapsedMs": 187320,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1b3caadf04023d33",
+    "epicSlug": "steering-does-not-make-impact-analysis",
+    "storyId": "s1",
+    "lldRunId": "wf-1795511637857-wm1qcn",
+    "lldEffectiveHash": "85cae4635eea2438f391ecb86c9ac371507b50e94c443de3819628df74008619",
+    "authoredBy": "controller",
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e15d4900d5efdb99a972ffcc7c26833b339fb341f0cfdbbd5d823f15391da231",
+        "at": "2026-11-24T09:26:12.096Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-24T09:33:05.664Z"
+      }
+    },
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "rangeBase": "100f2f8ef1da383cbda72fbaaf6ebd8864087c6d"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "The build is seven tasks in dependency order: the LLD and PLAN gain an optional Epic impact analysis (type, field, markdown section, first-step schema); a read-only digest of what the Epic's other Stories built is added with the shared label and first action; design.story's and plan's first prompts and synthesize check, and the build implement prompts, are wired to it; the BUILD approval refuses a later Story's BUILD whose summary lacks the labelled paragraph; then the steering text and docs/workflow.md say so. Existing artifacts, the approval refusals and every first or standalone Story are unchanged."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "EpicImpactAnalysis on the LLD and PLAN: type, optional field, sections and first-step schemas",
+        "summary": "Add the EpicImpactAnalysis type ({ applies, reason?, storiesCovered, findings, sources }) and the optional epicImpact field to LldBody (src/workflow/artifacts/lld.ts) and PlanBody (src/workflow/artifacts/plan.ts), each with a section builder that renders an 'Epic impact analysis' section only when the field is present (so existing artifacts and their markdown are byte-for-byte unchanged); add the optional epicImpact to the design.story and plan first-step context schemas (src/workflow/runners/design-story/schemas.ts, src/workflow/runners/plan/schemas.ts). Refresh the module-state and session-source inventory fixtures only for the files this task changes. Tests in epic-impact-artifacts.test.ts (the render part).",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "an LLD and a PLAN with an epicImpact render an 'Epic impact analysis' section and one without it renders exactly as before (a golden comparison with an existing artifact)",
+          "the first-step schemas accept an epicImpact and still accept a context without one",
+          "no inventory test case fails beyond the four that already fail on a clean checkout"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "epic-impact-artifacts.test.ts: an LLD and a PLAN with an epicImpact render an 'Epic impact analysis' section, one without it renders exactly as before, and a synthesize with a non-null digest and no analysis (or an empty one) is rejected with the reason"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "The built-state digest, its renderer and the shared label and first action",
+        "summary": "Add src/workflow/epic-built-state.ts with buildEpicBuiltStateDigest (reads the Epic's Define, each other Story's BUILD and TESTS records, storyChangeSet files and the LLD's contract names through four injectable reads; bounded by perStoryChars, totalChars and fullStories; null for a standalone or first Story or when no other Story has an approved BUILD; unreadable records noted, never thrown), renderEpicBuiltStateDigest (deterministic text; one line for null), EPIC_IMPACT_LABEL ('Epic impact:') and EPIC_IMPACT_FIRST_ACTION. Refresh inventory fixtures only for what this task adds. Tests in epic-built-state-digest.test.ts over temporary Epic records.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "buildEpicBuiltStateDigest returns null for a standalone Story, for an Epic's first Story and for an Epic with no other Story that has an approved BUILD, and otherwise lists the other Stories in the Define's order without the Story at hand",
+          "a Story whose BUILD or TESTS record is missing or malformed, or whose commits cannot be listed, is listed with a note naming what was unreadable, the other Stories are still digested, and the builder never throws",
+          "the newest Stories are in full and older ones are a summary line and a path, the rendered text never exceeds the total cap, and truncated says how many Stories were reduced",
+          "renderEpicBuiltStateDigest renders the same digest to the same text and a null digest to one line saying the analysis does not apply and why",
+          "the module reads only and writes nothing, creates no ref and leaves the working tree unchanged",
+          "no inventory test case fails beyond the four that already fail on a clean checkout"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "epic-built-state-digest.test.ts: buildEpicBuiltStateDigest returns null for a standalone Story, for an Epic's first Story and for an Epic with no other Story that has an approved BUILD, and otherwise lists the other Stories in the Define's order without the Story at hand"
+          },
+          {
+            "level": "unit",
+            "name": "epic-built-state-digest.test.ts: a Story whose BUILD or TESTS record is missing or malformed, or whose commits cannot be listed, is listed with a note naming what was unreadable, the other Stories are still digested, and the builder never throws"
+          },
+          {
+            "level": "unit",
+            "name": "epic-built-state-digest.test.ts: the newest Stories are in full and older ones are a summary line and a path, the rendered text never exceeds the total cap, and truncated says how many Stories were reduced"
+          },
+          {
+            "level": "unit",
+            "name": "epic-built-state-digest.test.ts: renderEpicBuiltStateDigest renders the same digest to the same text and a null digest to one line that says the analysis does not apply and why"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "The design.story and plan first prompts and the synthesize requirement",
+        "summary": "Render the digest above the Story detail or the LLD handoff and make EPIC_IMPACT_FIRST_ACTION the first action in design.story's and plan's context.assemble prompts (src/workflow/runners/design-story/index.ts, src/workflow/runners/plan/index.ts); a first or standalone Story gets only the one-line 'does not apply'; at synthesize design.story and plan reject a later Story's LLD or PLAN without a non-empty analysis (applies:true, findings, at least one source) and carry epicImpact verbatim from the first step into the LLD and the PLAN. Refresh inventory fixtures only for what this task changes. Tests in epic-impact-prompts.test.ts and the synthesize check in epic-impact-artifacts.test.ts.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "the design.story and plan context.assemble prompts for a later Story lead with EPIC_IMPACT_FIRST_ACTION and carry the rendered digest above the Story detail or the LLD handoff, and the prompts for a first or standalone Story carry only the one-line 'does not apply'",
+          "a synthesize with a non-null digest and no analysis, or an empty one, is rejected with the reason, and one with an analysis carries it into the LLD and the PLAN",
+          "the existing prompt and synthesize tests still pass and no inventory test case fails beyond the four that already fail on a clean checkout"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "epic-impact-prompts.test.ts: the design.story and plan context.assemble prompts for a later Story of an Epic lead with EPIC_IMPACT_FIRST_ACTION and carry the rendered digest above the Story detail or the LLD handoff, and the prompts for a first or standalone Story carry only the one-line 'does not apply'"
+          },
+          {
+            "level": "unit",
+            "name": "epic-impact-artifacts.test.ts: an LLD and a PLAN with an epicImpact render an 'Epic impact analysis' section, one without it renders exactly as before, and a synthesize with a non-null digest and no analysis (or an empty one) is rejected with the reason"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "The build implement prompts",
+        "summary": "Add the digest and the first action to both build implement renderers (renderImplementPrompt and renderStandaloneImplementPrompt in src/daemon/steps/build-step/render.ts) through a new placeholder in src/prompts/build/implement-task.md that begins the Process with the Epic impact analysis and tells the builder the BUILD summary must open with a paragraph labelled EPIC_IMPACT_LABEL naming each Story the LLD's analysis covered, repeated in its final validate call, and that BUILD approval is refused without it; a first or standalone Story gets only the one-line 'does not apply'. Refresh inventory fixtures only for what this task changes. Tests in render.test.ts.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "the task implement prompt and the standalone implement prompt for a later Story begin their Process with the Epic impact analysis and the digest and tell the builder about the labelled paragraph, the final validate call and the approval refusal",
+          "for a first or standalone Story the prompts gain only the one-line 'does not apply'",
+          "the existing render tests still pass and no inventory test case fails beyond the four that already fail on a clean checkout"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "render.test.ts: the build implement prompt for a later Story begins its Process with the Epic impact analysis and the digest and tells the builder to open its BUILD summary with a paragraph labelled EPIC_IMPACT_LABEL naming each covered Story and that BUILD approval is refused without it, and for a first or standalone Story gains only the one-line 'does not apply'"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "The BUILD approval check",
+        "summary": "Add checkBuildEpicImpact (a pure read in the workflow layer: the BUILD summary's 'Epic impact:' paragraph, the minimum length constant, each id in the LLD's epicImpact.storiesCovered as a whole token inside it; not applicable for a Story with no approved LLD, no epicImpact or applies:false; unreadable records make it not apply and are logged) and call it from approveOne in approveWorkflowTarget (src/workflow/gates.ts) after the log-conflict refusal and the roll-up retry shortcut and before approveArtifactByJsonPath, skipped when req.overrideReview is set; a refusal is a skipped[] entry with the reason and the new kind 'epic-impact-missing' (added to the kind union and set only when req.skipKinds is true). Refresh inventory fixtures only for what this task changes. Tests in epic-impact-build-check.test.ts.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "checkBuildEpicImpact does not apply to a Story with no approved LLD, whose LLD has no epicImpact or whose epicImpact says it does not apply, and for a later Story refuses a summary with no 'Epic impact:' paragraph, one under the minimum length, or one that does not name each covered Story as a whole token inside that paragraph, passes one that does, and never throws on an unreadable record",
+          "approveWorkflowTarget over a later Story's BUILD without the paragraph returns it in skipped[] with the reason and the kind 'epic-impact-missing' (when skipKinds is set) and creates no record, approves it with an explicit overrideReview, approves one with the paragraph, and leaves a first Story's BUILD, a standalone Story's BUILD whose LLD carries an applies:true analysis checked the same way, a test record, a BUILD awaiting a roll-up retry and every existing refusal as they were",
+          "the existing approval tests still pass and no inventory test case fails beyond the four that already fail on a clean checkout"
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "epic-impact-build-check.test.ts: checkBuildEpicImpact does not apply to a Story with no approved LLD, whose LLD has no epicImpact or whose epicImpact says it does not apply, and for a later Story refuses a BUILD summary with no 'Epic impact:' paragraph, one that is under the minimum length, or one that does not name each Story the LLD's analysis covered as a whole token inside that paragraph, and passes one that does, and never throws on an unreadable record"
+          },
+          {
+            "level": "integration",
+            "name": "epic-impact-build-check.test.ts: approveWorkflowTarget over a later Story's BUILD without the paragraph returns it in skipped[] with the reason and the kind 'epic-impact-missing' (when skipKinds is set) and creates no record, approves it with an explicit overrideReview, approves one with the paragraph, and leaves a first Story's BUILD, a test record and every existing refusal as they were"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "The steering text",
+        "summary": "State the rule inside the existing design.story, plan and build guide sections of src/prompts/steering-block.md (the build section also states the labelled paragraph, the check and that approval is refused without it) and add one line to the skeleton's 'Build / add / implement a feature' route; no marker pair is added or removed; the wording uses EPIC_IMPACT_LABEL. A steering test reads the shipped block (steering-epic-impact.test.ts) and the existing guide-section and injection tests still pass.",
+        "size": "S",
+        "order": 6,
+        "dependsOn": [
+          "t3",
+          "t4",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "the design.story, plan and build guide sections each state the rule, the build section states the labelled paragraph and the approval refusal, and the skeleton's feature route points at it",
+          "no new marker pair was added and the existing sections are still addressable by name",
+          "the existing guide-section, steering-injection and boot-refresh tests still pass"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "steering-epic-impact.test.ts: the design.story, plan and build guide sections of the shipped steering block each state the rule, the build section states that the BUILD summary must carry the labelled paragraph and that approval is refused without it, the skeleton's feature route points at it, no new marker pair was added, and the existing sections are still addressable by name"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "docs/workflow.md and the documentation test",
+        "summary": "Describe the Epic impact analysis, the digest and its caps, the epicImpact section of the LLD and PLAN, the BUILD paragraph and the approval check (the refusal, the override, when it does not apply) in docs/workflow.md, and add a docs test that reads the label, the kind and the caps from the code and fails when the doc names a different one.",
+        "size": "S",
+        "order": 7,
+        "dependsOn": [
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "docs/workflow.md describes the Epic impact analysis, the digest and its caps and the BUILD approval check in line with the code",
+          "the docs test passes and fails when the doc names a different label, kind or cap, or states a wrong rule"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "build-commands-doc.test.ts or a docs test: docs/workflow.md describes the Epic impact analysis, the digest and its caps and the BUILD approval check in line with the code"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "epic-built-state-digest.test.ts: buildEpicBuiltStateDigest returns null for a standalone Story, for an Epic's first Story and for an Epic with no other Story that has an approved BUILD, and otherwise lists the other Stories in the Define's order without the Story at hand",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "epic-built-state-digest.test.ts: a Story whose BUILD or TESTS record is missing or malformed, or whose commits cannot be listed, is listed with a note naming what was unreadable, the other Stories are still digested, and the builder never throws",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "epic-built-state-digest.test.ts: the newest Stories are in full and older ones are a summary line and a path, the rendered text never exceeds the total cap, and truncated says how many Stories were reduced",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "epic-built-state-digest.test.ts: renderEpicBuiltStateDigest renders the same digest to the same text and a null digest to one line that says the analysis does not apply and why",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "epic-impact-artifacts.test.ts: an LLD and a PLAN with an epicImpact render an 'Epic impact analysis' section, one without it renders exactly as before, and a synthesize with a non-null digest and no analysis (or an empty one) is rejected with the reason",
+        "coveredByTaskIds": [
+          "t1",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "epic-impact-build-check.test.ts: checkBuildEpicImpact does not apply to a Story with no approved LLD, whose LLD has no epicImpact or whose epicImpact says it does not apply, and for a later Story refuses a BUILD summary with no 'Epic impact:' paragraph, one that is under the minimum length, or one that does not name each Story the LLD's analysis covered as a whole token inside that paragraph, and passes one that does, and never throws on an unreadable record",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "epic-impact-prompts.test.ts: the design.story and plan context.assemble prompts for a later Story of an Epic lead with EPIC_IMPACT_FIRST_ACTION and carry the rendered digest above the Story detail or the LLD handoff, and the prompts for a first or standalone Story carry only the one-line 'does not apply'",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "render.test.ts: the build implement prompt for a later Story begins its Process with the Epic impact analysis and the digest and tells the builder to open its BUILD summary with a paragraph labelled EPIC_IMPACT_LABEL naming each covered Story and that BUILD approval is refused without it, and for a first or standalone Story gains only the one-line 'does not apply'",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "epic-impact-build-check.test.ts: approveWorkflowTarget over a later Story's BUILD without the paragraph returns it in skipped[] with the reason and the kind 'epic-impact-missing' (when skipKinds is set) and creates no record, approves it with an explicit overrideReview, approves one with the paragraph, and leaves a first Story's BUILD, a test record and every existing refusal as they were",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "steering-epic-impact.test.ts: the design.story, plan and build guide sections of the shipped steering block each state the rule, the build section states that the BUILD summary must carry the labelled paragraph and that approval is refused without it, the skeleton's feature route points at it, no new marker pair was added, and the existing sections are still addressable by name",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "build-commands-doc.test.ts or a docs test: docs/workflow.md describes the Epic impact analysis, the digest and its caps and the BUILD approval check in line with the code",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD-1b3caadf04023d33-s1 the steering block and its design.story, plan and build guide sections (src/prompts/steering-block.md:294-353)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD-1b3caadf04023d33-s1 the first steps of design.story and plan and the build implement prompt (src/workflow/runners/design-story/index.ts:136-175)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD-1b3caadf04023d33-s1 what records a built Story and where the BUILD summary is written (src/workflow/runners/build/story-commits.ts)"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD-1b3caadf04023d33-s1 approveWorkflowTarget and approveOne, where a BUILD approval is withheld (src/workflow/gates.ts:956-1060)"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD-1b3caadf04023d33-s1 the only sibling-related wording in the stages (src/workflow/runners/design-story/index.ts:377)"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD-1b3caadf04023d33-s1 the tests the change would extend (src/daemon/__tests__/guide-sections.test.ts)"
+    }
+  ]
+}

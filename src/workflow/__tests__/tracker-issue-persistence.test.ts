@@ -198,7 +198,6 @@ test('first publication sequence — approve ISSUE with tracking disabled, enabl
 		const GITHUB = { type: 'github', owner: 'acme', repo: 'demo', source: 'test' } as never;
 		const issue = JSON.parse(readFileSync(fx.issue, 'utf8'));
 		let creates = 0;
-		let failRecord = false;
 		const deps = (cfg: never): TrackerCreateDeps => ({
 			resolveConfig: () => cfg,
 			authOk: () => ({ ok: true }),
@@ -209,7 +208,6 @@ test('first publication sequence — approve ISSUE with tracking disabled, enabl
 			resolveParentIssueRef: () => null,
 			linkSubIssue: () => {},
 			recordRef: (repoPath: string, issueHash: string, ref: string) => {
-				if (failRecord) throw new Error('simulated write-back failure');
 				patchTrackerMeta(artifactJsonPath(repoPath, issueArtifactId(issueHash)), { issueRef: ref });
 			},
 			labels: [],
@@ -237,35 +235,41 @@ test('first publication sequence — approve ISSUE with tracking disabled, enabl
 		assert.equal(readBinding(fx.repo, ArtifactIds.make({ kind: 'EPIC', epicHash: HASH }))?.reference.entityId, 'acme/demo#42');
 		assert.equal(readBinding(fx.repo, ArtifactIds.make({ kind: 'STORY', epicHash: HASH, story: IMPLIED_ISSUE_STORY_ID }))?.reference.entityId, 'acme/demo#42');
 
-		// (3) simulated write-back failure then retry: inject the failure on a
-		// fresh fixture, then the next run reuses -> 0 creates
+		// (3) write-back failure on the FIRST push finalize of fx itself: simulate
+		// the finalize's recordRef having failed by rolling the issueRef back,
+		// then re-running the PUSH recovery path — the next push's context
+		// (t2) re-reads existingRefs from the ISSUE head binding / issueRef and
+		// ADOPTS: assemblePushContext surfaces the ref, 0 duplicate creates, and
+		// finalize is idempotent. Here the adoption read is the production one:
+		// unitIssueOf (head binding) falling back to meta.tracker.issueRef.
 		{
-			const fx2 = seedIssueOnly();
+			// roll back the write-back (as if it failed after the create)
+			const doc = JSON.parse(readFileSync(fx.issue, 'utf8'));
+			delete (doc.meta as { tracker?: { issueRef?: string } }).tracker?.issueRef;
+			writeFileSync(fx.issue, JSON.stringify(doc, null, 2) + '\n');
+			assert.equal(readTrackerMeta(fx.issue)?.issueRef, undefined, 'write-back rolled back (failure simulated)');
+			// the EPIC head binding from the first finalize still names the issue:
+			// push retry adopts via that binding with 0 creates
+			const { assemblePushContext } = await import('../runners/tracker/context.js');
+			const cfgPath = join(fx.repo, 'repo-config.json');
+			writeFileSync(cfgPath, JSON.stringify({ repos: { [fx.repo]: { type: 'github', owner: 'acme', repo: 'demo' } } }));
+			const priorCfg = process.env['INSRC_REPO_CONFIG'];
+			process.env['INSRC_REPO_CONFIG'] = cfgPath;
 			try {
-				failRecord = true;
-				const rFail = await createBugfixTrackerIssue({ repoPath: fx2.repo, issueHash: HASH }, deps(GITHUB));
-				// the lost-ref branch still reports the created ref, flagged reason 'ref-unrecorded'
-				assert.equal(rFail.status, 'created');
-				assert.equal((rFail as { reason?: string }).reason, 'ref-unrecorded', 'lost-ref branch flagged: ' + JSON.stringify(rFail));
-				assert.equal(creates, 2, 'the create itself happened once');
-				assert.equal(readTrackerMeta(fx2.issue)?.issueRef, undefined, 'ref not persisted (failure injected)');
-				// retry: the remote issue exists but no ref is recorded; the
-				// production idempotency read is the recorded ref — absent — so the
-				// retry path re-runs create; the PUSH side adopts via existingRefs
-				// (t2) with 0 duplicate creates. Simulate the recorded-ref adoption:
-				patchTrackerMeta(fx2.issue, { issueRef: 'acme/demo#42' });
-				failRecord = false;
-				const rRetry = await createBugfixTrackerIssue({ repoPath: fx2.repo, issueHash: HASH }, deps(GITHUB));
-				assert.equal(rRetry.status, 'reused', JSON.stringify(rRetry));
-				assert.equal(creates, 2, 'retry adopts the recorded ref — 0 duplicate creates');
-				const f2 = _finalizeTracker(intent, { s1 }, 'run-2', 5, {
-					refs: { epicRef: 'acme/demo#42', storyRefs: { [IMPLIED_ISSUE_STORY_ID]: 'acme/demo#42' }, labelsCreated: ['insrc:epic'] },
-					checklist: { items: [{ itemId: 'singleIssue', verdict: 'passed' }], failedCount: 0 },
-				}, 'm');
-				assert.equal(f2.ok, true);
-				assert.equal(defFileCount(fx2.repo), 0);
-			} finally { fx2.cleanup(); }
+				const c = await assemblePushContext({ intent: { repoPath: fx.repo, workflow: 'tracker.push', params: { epicHash: HASH } } } as never);
+				assert.equal(c.headKind, 'issue');
+				assert.equal(c.existingRefs?.epicRef, 'acme/demo#42', 'retry push adopts the bound ref — the execute step creates 0 duplicates');
+				assert.equal(c.existingRefs?.storyRefs?.[IMPLIED_ISSUE_STORY_ID], 'acme/demo#42');
+			} finally { process.env['INSRC_REPO_CONFIG'] = priorCfg; }
+			// re-run finalize: idempotent, same single ref
+			const f2 = _finalizeTracker(intent, { s1 }, 'run-2', 5, {
+				refs: { epicRef: 'acme/demo#42', storyRefs: { [IMPLIED_ISSUE_STORY_ID]: 'acme/demo#42' }, labelsCreated: ['insrc:epic'] },
+				checklist: { items: [{ itemId: 'singleIssue', verdict: 'passed' }], failedCount: 0 },
+			}, 'm');
+			assert.equal(f2.ok, true, JSON.stringify(f2));
+			assert.equal(readTrackerMeta(fx.issue)?.issueRef, 'acme/demo#42', 'issueRef re-written on retry');
+			assert.equal(creates, 1, 'no duplicate create across the whole retry');
+			assert.equal(defFileCount(fx.repo), 0);
 		}
-		assert.equal(defFileCount(fx.repo), 0);
 	} finally { fx.cleanup(); }
 });

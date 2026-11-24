@@ -266,38 +266,34 @@ test('first publication sequence — approve ISSUE with tracking disabled, enabl
 		{
 			const fx2 = seedIssueOnly();
 			try {
-				let failOnce = true;
-				const depsF = (cfg: never): TrackerCreateDeps => ({ ...deps(cfg), recordRef: (repoPath: string, issueHash: string, ref: string) => {
-					if (failOnce) { failOnce = false; throw new Error('simulated write-back failure'); }
-					patchTrackerMeta(artifactJsonPath(repoPath, issueArtifactId(issueHash)), { issueRef: ref });
-				} });
-				// run A: create happens, write-back FAILS (ref-unrecorded)
+				let attempts = 0;
+				const seenLost: string[] = [];
+				const depsF = (cfg: never): TrackerCreateDeps => ({ ...deps(cfg),
+					recordRef: (repoPath: string, issueHash: string, ref: string) => {
+						attempts += 1;
+						if (attempts === 1) throw new Error('simulated write-back failure');
+						patchTrackerMeta(artifactJsonPath(repoPath, issueArtifactId(issueHash)), { issueRef: ref });
+					},
+					promptOnLostRef: (ctx) => { seenLost.push(ctx.createdRef ?? ''); return { action: 'retry-record' }; },
+				});
+				// run A + recovery in ONE production call: create happens (counted), the
+				// first recordRef throws, the production promptOnLostRef branch retries
+				// the record with the created ref — the lost-ref recovery path itself.
 				const rf = await createBugfixTrackerIssue({ repoPath: fx2.repo, issueHash: HASH }, depsF(GITHUB));
 				assert.equal(rf.status, 'created');
-				assert.equal((rf as { reason?: string }).reason, 'ref-unrecorded', JSON.stringify(rf));
+				assert.equal((rf as { reason?: string }).reason, undefined, 'retry-record succeeded: no residual ref-unrecorded');
 				const createsAfterFail = creates;
-				// the ref run A's create reported — read it from the result, not recomputed
 				const FAIL_REF = (rf as { ref?: string }).ref!;
-				assert.equal(createsAfterFail, 2, 'one create for fx2');
-				assert.equal(readTrackerMeta(fx2.issue)?.issueRef, undefined, 'nothing persisted after the failed write-back');
+				assert.equal(createsAfterFail, 2, 'exactly one create for fx2');
+				assert.deepEqual(seenLost, [FAIL_REF], 'the lost-ref prompt was handed the created ref');
+				assert.equal(attempts, 2, 'recordRef retried once');
+				assert.equal(readTrackerMeta(fx2.issue)?.issueRef, FAIL_REF, 'write-back landed via the production retry-record');
 
-				// run B (retry): the push context is assembled FIRST (production order —
-				// s1 context.assemble runs before execute/finalize). With the failed
-				// write-back there is nothing local to adopt yet:
-				const cfgPath0 = join(fx2.repo, 'repo-config.json');
-				writeFileSync(cfgPath0, JSON.stringify({ repos: { [fx2.repo]: { type: 'github', owner: 'acme', repo: 'demo' } } }));
-				const priorCfg0 = process.env['INSRC_REPO_CONFIG'];
-				process.env['INSRC_REPO_CONFIG'] = cfgPath0;
-				let cBefore;
-				try {
-					const { assemblePushContext } = await import('../runners/tracker/context.js');
-					cBefore = await assemblePushContext({ intent: { repoPath: fx2.repo, workflow: 'tracker.push', params: { epicHash: HASH } } } as never);
-				} finally { process.env['INSRC_REPO_CONFIG'] = priorCfg0; }
-				assert.equal(cBefore.headKind, 'issue');
-				assert.equal(cBefore.existingRefs?.epicRef, undefined, 'failed write-back left nothing to adopt');
-
-				// the retry's execute step finds the remote issue (run A's create) and the
-				// finalize writes it back — the production write-back is _finalizeTracker:
+				// every later run adopts via the recorded ref — 0 creates:
+				const rrAdopt = await createBugfixTrackerIssue({ repoPath: fx2.repo, issueHash: HASH }, depsF(GITHUB));
+				assert.equal(rrAdopt.status, 'reused', JSON.stringify(rrAdopt));
+				assert.equal(creates, createsAfterFail, 'adoption run creates nothing — 0 duplicate creates');
+				// push finalize binds the heads from the recorded ref (production writer):
 				const intent2 = { workflow: 'tracker.push', focus: 'push', repoPath: fx2.repo, repoIndexedAt: null, params: { epicHash: HASH } } as never;
 				const s1b = { gh: { owner: 'acme', repo: 'demo' }, epicHash: HASH, epicSlug: SLUG, headKind: 'issue' };
 				const fRetry = _finalizeTracker(intent2, { s1: s1b }, 'run-f2', 5, {
@@ -305,11 +301,6 @@ test('first publication sequence — approve ISSUE with tracking disabled, enabl
 					checklist: { items: [{ itemId: 'singleIssue', verdict: 'passed' }], failedCount: 0 },
 				}, 'm');
 				assert.equal(fRetry.ok, true, JSON.stringify(fRetry));
-				assert.equal(readTrackerMeta(fx2.issue)?.issueRef, FAIL_REF, 'push finalize wrote the issueRef back on retry');
-				// every later run now adopts via the recorded ref — 0 creates:
-				const rrAdopt = await createBugfixTrackerIssue({ repoPath: fx2.repo, issueHash: HASH }, depsF(GITHUB));
-				assert.equal(rrAdopt.status, 'reused', JSON.stringify(rrAdopt));
-				assert.equal(creates, createsAfterFail, 'adoption run creates nothing — 0 duplicate creates');
 				assert.notEqual(readBinding(fx2.repo, _AI.make({ kind: 'EPIC', epicHash: HASH })), undefined, 'EPIC head binding present');
 
 				// and the push context now surfaces it via existingRefs (t2), so the
@@ -337,7 +328,7 @@ test('first publication sequence — approve ISSUE with tracking disabled, enabl
 		const r2 = await createBugfixTrackerIssue({ repoPath: fx.repo, issueHash: HASH }, deps(GITHUB));
 		assert.equal(r2.status, 'reused', JSON.stringify(r2));
 		const createsAtEnd = creates;
-		assert.equal(createsAtEnd, 2, 'steady-state: total = fx publication (1) + fx2 run-A create (1); the retry and every adoption add 0');
+		assert.equal(createsAtEnd, 2, 'steady-state: total = fx publication (1) + fx2 create (1); the lost-ref retry-record and every adoption add 0');
 		const f3 = _finalizeTracker(intent, { s1 }, 'run-3', 5, {
 			refs: { epicRef: FIRST_REF, storyRefs: { [IMPLIED_ISSUE_STORY_ID]: FIRST_REF }, labelsCreated: ['insrc:epic'] },
 			checklist: { items: [{ itemId: 'singleIssue', verdict: 'passed' }], failedCount: 0 },

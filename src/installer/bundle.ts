@@ -9,7 +9,7 @@ import { assertToken, assertLocalControlRoot } from './location.js';
 import { controlBinding } from './native.js';
 import { ControllerStore } from './controller-store.js';
 import { BUNDLE_LIMITS, canonicalJson, digest, parseReleaseDescriptor } from './release-descriptor.js';
-import type { PayloadInventory, ReleaseDescriptor } from './release-descriptor.js';
+import type { PayloadInventory } from './release-descriptor.js';
 import { downloadJson, downloadVerifiedAsset } from './download.js';
 import type { DownloadTransport } from './download.js';
 import { extractSafeZip, readBoundedFile, verifyPublishedPayload } from './safe-zip.js';
@@ -32,7 +32,9 @@ async function fileDigest(file: string, expectedBytes: number, signal?: AbortSig
   for await (const chunk of createReadStream(file)) { signal?.throwIfAborted(); const data = chunk as Buffer; bytes += data.length; if (bytes > expectedBytes) throw new InstallerError('runtime-invalid', 'Runtime file grew'); hash.update(data); }
   if (bytes !== expectedBytes) throw new InstallerError('runtime-invalid', 'Runtime file size differs'); return hash.digest('hex');
 }
-async function verifyRuntime(inventory: PayloadInventory, descriptor: ReleaseDescriptor, trustedRoot: string, signal?: AbortSignal): Promise<void> {
+/** Compare an inventory-bound expanded runtime with the verified bootstrap tree.
+ * Shared by qualified bundle and local dev receipts; neither mode changes trust. */
+export async function verifyPayloadRuntime(inventory: PayloadInventory, target: Target, trustedRoot: string, signal?: AbortSignal): Promise<void> {
   const expected = new Map(inventory.files.filter(file => file.path.startsWith('tools/node/')).map(file => [file.path.slice(11), file]));
   let count = 0;
   async function visit(directory: string, prefix = ''): Promise<void> {
@@ -48,7 +50,7 @@ async function verifyRuntime(inventory: PayloadInventory, descriptor: ReleaseDes
     }
   }
   await visit(trustedRoot); if (expected.size) throw new InstallerError('runtime-invalid', 'Candidate runtime has extra files');
-  const npm = descriptor.manifest.target.os === 'win32' ? 'node_modules/npm/package.json' : 'lib/node_modules/npm/package.json';
+  const npm = target.os === 'win32' ? 'node_modules/npm/package.json' : 'lib/node_modules/npm/package.json';
   const manifest = JSON.parse((await readBoundedFile(join(trustedRoot, npm), 128 * 1024)).toString('utf8')) as { version?: string };
   if (manifest.version !== '10.9.4') throw new InstallerError('runtime-invalid', 'Verified runtime npm differs');
 }
@@ -77,7 +79,7 @@ export async function prepareBundle(store: PreparationLease, input: unknown, opt
     local(destination);
     const receipt = await readBoundedFile(join(destination, '.release.json'), BUNDLE_LIMITS.descriptorBytes);
     if (receipt.toString('utf8') !== descriptorBytes) throw new InstallerError('candidate-conflict', 'Release identity already names different immutable bytes');
-    const inventory = await verifyPublishedPayload(destination, descriptor, options.signal); await verifyRuntime(inventory, descriptor, runtime, options.signal); store.assertHeld(); options.signal?.throwIfAborted(); return candidate(destination);
+    const inventory = await verifyPublishedPayload(destination, descriptor, options.signal); await verifyPayloadRuntime(inventory, descriptor.manifest.target, runtime, options.signal); store.assertHeld(); options.signal?.throwIfAborted(); return candidate(destination);
   }
   const stagingRoot = join(store.location.home, 'install/staging'); local(stagingRoot);
   await mkdir(stagingRoot, { recursive: true, mode: 0o700 }); controlBinding().protect(stagingRoot);
@@ -86,7 +88,7 @@ export async function prepareBundle(store: PreparationLease, input: unknown, opt
     const archive = join(stage, 'payload.zip'), payload = join(stage, 'payload'); await mkdir(payload, { mode: 0o700 });
     await downloadVerifiedAsset(descriptor.payload, archive, { signal: options.signal, transport: options.transport }); store.assertHeld();
     const inventory = await extractSafeZip(archive, payload, descriptor, { signal: options.signal, limits: options.limits });
-    await verifyRuntime(inventory, descriptor, runtime, options.signal); options.signal?.throwIfAborted(); store.assertHeld();
+    await verifyPayloadRuntime(inventory, descriptor.manifest.target, runtime, options.signal); options.signal?.throwIfAborted(); store.assertHeld();
     await writeFile(join(payload, '.release.json'), descriptorBytes, { flag: 'wx', mode: 0o600 });
     const receipt = await open(join(payload, '.release.json'), 'r+'); try { await receipt.sync(); } finally { await receipt.close(); }
     await flushTree(payload); store.assertHeld(); options.signal?.throwIfAborted();
@@ -115,6 +117,6 @@ export async function openPreparedBundle(location: import('./contracts.js').Inst
   const descriptor = parseReleaseDescriptor(JSON.parse(raw.toString('utf8')) as unknown, { target });
   if (descriptor.manifest.releaseId !== releaseId || canonicalJson(descriptor) !== raw.toString('utf8')) throw new InstallerError('candidate-conflict', 'Stored release identity differs');
   const inventory = await verifyPublishedPayload(directory, descriptor, options.signal);
-  await verifyRuntime(inventory, descriptor, options.runtimeDirectory ?? currentRuntime(target), options.signal);
+  await verifyPayloadRuntime(inventory, descriptor.manifest.target, options.runtimeDirectory ?? currentRuntime(target), options.signal);
   return Object.freeze({ releaseId, directory, manifest: descriptor.manifest, descriptorSha256: digest(raw), payloadSha256: descriptor.payload.sha256, inventorySha256: descriptor.inventorySha256 });
 }

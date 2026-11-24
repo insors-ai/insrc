@@ -1,11 +1,19 @@
 import { createRun } from '../../../scripts/test-harness/context.mjs';
 import { withRun } from '../../../scripts/test-harness/process.mjs';
 import { bundleControlEntrypoint, assertCommittedSource } from '../../../scripts/package-installer.mjs';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 import { devNull } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 const [root, entry, output, mode] = process.argv.slice(2);
+// Packaging resolves dev tools from its accepted root. Give this controlled
+// fixture its own real esbuild binary, just as npm ci supplies in production.
+if (mode !== 'source') {
+  const relative = `node_modules/@esbuild/${process.platform}-${process.arch}/${process.platform === 'win32' ? 'esbuild.exe' : 'bin/esbuild'}`;
+  const binary = join(root, relative); mkdirSync(dirname(binary), { recursive: true });
+  copyFileSync(fileURLToPath(new URL(`../../../${relative}`, import.meta.url)), binary);
+}
 const run = createRun(root, { mode: 'build' });
 await withRun(run, async scope => {
   if (mode === 'source') {

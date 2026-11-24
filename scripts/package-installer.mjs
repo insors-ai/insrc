@@ -32,8 +32,8 @@ export async function bundleControlEntrypoint(run, scope, entry, output, target)
   run.assertOwner();
   const meta = `${output}.meta.json`;
   const binary = join(run.root, 'node_modules/@esbuild', `${process.platform}-${process.arch}`, process.platform === 'win32' ? 'esbuild.exe' : 'bin/esbuild');
-  const result = await scope.start(binary, [entry, '--bundle', '--platform=node', '--format=esm', '--target=node22', `--outfile=${output}`, `--metafile=${meta}`, ...(target ? [`--define:__INSRC_INSTALLER_TARGET__=${JSON.stringify(target)}`] : []), '--banner:js=import {createRequire as __insrcCreateRequire} from "node:module"; const require=__insrcCreateRequire(import.meta.url);'], { budgetMs: run.budgets.buildMs });
-  if (result.code !== 0 || result.timedOut) throw new Error('Control bootstrap bundle failed');
+  const result = await scope.start(binary, [entry, '--bundle', '--platform=node', '--format=esm', '--target=node22', `--outfile=${output}`, `--metafile=${meta}`, ...(target ? [`--define:__INSRC_INSTALLER_TARGET__=${JSON.stringify(target)}`] : []), '--banner:js=import {createRequire as __insrcCreateRequire} from "node:module"; const require=__insrcCreateRequire(import.meta.url);'], { cwd: run.root, env: run.environment(), budgetMs: run.budgets.buildMs });
+  if (result.code !== 0 || result.timedOut || result.interrupted || result.launchError) throw new Error('Control bootstrap bundle failed');
   const metadata = JSON.parse(readFileSync(meta, 'utf8')); assertManagerBoundary(metadata); rmSync(meta); return metadata;
 }
 async function zipFiles(files, output) {
@@ -115,7 +115,7 @@ export async function probePayload(run, scope, directory, target) {
   const program = `const{createRequire}=require('node:module');const r=createRequire(process.cwd()+'/package.json');if(process.version!=='v22.22.1'||process.platform!==${JSON.stringify(target.os)}||process.arch!==${JSON.stringify(target.arch)})throw Error('runtime target');for(const n of ['lmdb','@lancedb/lancedb','@duckdb/node-api','tree-sitter','onnxruntime-node','@parcel/watcher'])r(n);const c=r('./native/control.node');const h=c.acquire(process.cwd()+'/probe.lock');if(!c.held(h))throw Error('lock');c.close(h);`;
   const probe = await scope.start(node, ['-e', program], { cwd: directory, env: { ...run.environment(), NODE_OPTIONS: '', NODE_PATH: '' }, budgetMs: run.budgets.fileMs });
   rmSync(join(directory, 'probe.lock'), { force: true });
-  if (probe.code !== 0 || probe.timedOut) throw new Error(`Target native/runtime payload probe failed: ${probe.log}`);
+  if (probe.code !== 0 || probe.timedOut || probe.interrupted || probe.launchError) throw new Error(`Target native/runtime payload probe failed: ${probe.log}`);
 }
 export async function assertCommittedSource(run, scope, sourceCommit) {
   run.assertOwner();

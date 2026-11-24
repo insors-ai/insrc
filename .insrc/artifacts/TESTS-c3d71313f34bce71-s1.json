@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 13,
-        "contentHash": "c5ff4bb5bab2745491d27bbd336bfd98af2cfecb84282a38a2688e4edbfe6c4d",
-        "at": "2026-11-24T07:02:30.122Z",
+        "number": 19,
+        "contentHash": "ea46ec3c465cbcf57ef1ca5724054aa9ea2fb8a28ae4d2fd4389d923e2d7f3e8",
+        "at": "2026-11-24T08:22:41.803Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,17 +23,17 @@
     "epicHash": "c3d71313f34bce71",
     "storyId": "s1",
     "createdAt": "2026-11-23T18:39:45.419Z",
-    "updatedAt": "2026-11-24T07:02:30.105Z",
+    "updatedAt": "2026-11-24T08:22:41.761Z",
     "epicCreatedAt": "2026-11-23T13:27:35.399Z",
     "epicSlug": "reliable-cross-platform-daemon-installation-lifecycle",
-    "revision": 13
+    "revision": 19
   },
   "body": {
     "tasks": [
       {
         "taskId": "t1",
-        "commit": "a8716f1cb",
-        "ranAt": "2026-11-23T18:41:22.697Z",
+        "commit": "da6255072",
+        "ranAt": "2026-11-24T08:10:14.616Z",
         "testsPassed": true,
         "tests": [
           {
@@ -83,6 +83,16 @@
                 "file": "src/installer/__tests__/contracts.test.ts",
                 "title": "terminal launch preserves explicit home and successful handoff contract",
                 "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/contracts.test.ts",
+                "title": "terminal invocation binds actual arguments to metadata and Windows drive aliases",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/location.test.ts",
+                "title": "canonical drive-letter comparison preserves stored spelling and Unix identity",
+                "result": "pass"
               }
             ],
             "files": []
@@ -119,7 +129,7 @@
             "file": "src/installer/__tests__/bridge-protocol.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 465,
+            "durationMs": 463,
             "titles": [
               {
                 "title": "correlated bridge send cancel write outcomes preserve uncertainty",
@@ -136,7 +146,7 @@
             "file": "src/installer/__tests__/contracts.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 354,
+            "durationMs": 379,
             "titles": [
               {
                 "title": "strict installer schemas reject invalid target runtime entrypoint hook and bridge records",
@@ -153,6 +163,10 @@
               {
                 "title": "terminal launch preserves explicit home and successful handoff contract",
                 "result": "pass"
+              },
+              {
+                "title": "terminal invocation binds actual arguments to metadata and Windows drive aliases",
+                "result": "pass"
               }
             ],
             "otherFailures": []
@@ -161,7 +175,7 @@
             "file": "src/installer/__tests__/location.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 391,
+            "durationMs": 377,
             "titles": [
               {
                 "title": "explicit home endpoint and terminal launch identity remain consistent",
@@ -174,6 +188,10 @@
               {
                 "title": "unknown and network filesystem families fail closed until qualified",
                 "result": "pass"
+              },
+              {
+                "title": "canonical drive-letter comparison preserves stored spelling and Unix identity",
+                "result": "pass"
               }
             ],
             "otherFailures": []
@@ -182,8 +200,8 @@
       },
       {
         "taskId": "t2",
-        "commit": "cce66a2be",
-        "ranAt": "2026-11-23T18:57:27.348Z",
+        "commit": "da6255072",
+        "ranAt": "2026-11-24T08:11:18.607Z",
         "testsPassed": true,
         "tests": [
           {
@@ -228,6 +246,11 @@
                 "file": "src/installer/__tests__/controller-store.test.ts",
                 "title": "native publisher denies unqualified output before publishing target artifacts",
                 "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/location.test.ts",
+                "title": "canonical drive-letter comparison preserves stored spelling and Unix identity",
+                "result": "pass"
               }
             ],
             "files": []
@@ -249,7 +272,7 @@
             "file": "src/installer/__tests__/controller-store.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 906,
+            "durationMs": 1173,
             "titles": [
               {
                 "title": "OS lock excludes another writer and releases on owned fixture self exit",
@@ -273,6 +296,35 @@
               },
               {
                 "title": "native publisher denies unqualified output before publishing target artifacts",
+                "result": "pass"
+              },
+              {
+                "title": "candidate publication is exclusive and requires retained location and lock",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/installer/__tests__/location.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 380,
+            "titles": [
+              {
+                "title": "explicit home endpoint and terminal launch identity remain consistent",
+                "result": "pass"
+              },
+              {
+                "title": "control-root inspection rejects symlinks and files and never creates missing homes",
+                "result": "pass"
+              },
+              {
+                "title": "unknown and network filesystem families fail closed until qualified",
+                "result": "pass"
+              },
+              {
+                "title": "canonical drive-letter comparison preserves stored spelling and Unix identity",
                 "result": "pass"
               }
             ],
@@ -588,8 +640,8 @@
       },
       {
         "taskId": "t6",
-        "commit": "719687c0f",
-        "ranAt": "2026-11-24T04:51:06.326Z",
+        "commit": "13d5db970",
+        "ranAt": "2026-11-24T08:15:31.351Z",
         "testsPassed": true,
         "tests": [
           {
@@ -614,6 +666,11 @@
                 "file": "src/installer/__tests__/manager.test.ts",
                 "title": "required peer admission and exact offer state transitions fail closed",
                 "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/manager.test.ts",
+                "title": "stop and interrupted stop recovery bypass dependency health and payload checks",
+                "result": "pass"
               }
             ],
             "files": []
@@ -626,6 +683,21 @@
               {
                 "file": "src/installer/__tests__/manager.test.ts",
                 "title": "manager death and candidate journal receipt projections cannot start duplicate runner",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/manager.test.ts",
+                "title": "pre-admission manager self exit recovers install and upgrade without duplicate hooks",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/manager.test.ts",
+                "title": "missing launch metadata in a later phase cannot masquerade as preparation recovery",
+                "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/manager.test.ts",
+                "title": "owned manager self exit leaves candidate running and recovery needs actual wrapper exit receipt",
                 "result": "pass"
               }
             ],
@@ -650,7 +722,7 @@
             "file": "src/installer/__tests__/manager.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1763,
+            "durationMs": 3204,
             "titles": [
               {
                 "title": "install is rejected even with a forged source/bootstrap marker",
@@ -690,6 +762,18 @@
               },
               {
                 "title": "late foreign revision cannot be overwritten by readiness or error persistence",
+                "result": "pass"
+              },
+              {
+                "title": "stop and interrupted stop recovery bypass dependency health and payload checks",
+                "result": "pass"
+              },
+              {
+                "title": "pre-admission manager self exit recovers install and upgrade without duplicate hooks",
+                "result": "pass"
+              },
+              {
+                "title": "missing launch metadata in a later phase cannot masquerade as preparation recovery",
                 "result": "pass"
               }
             ],
@@ -752,8 +836,8 @@
       },
       {
         "taskId": "t8",
-        "commit": "27c5053c2",
-        "ranAt": "2026-11-24T07:02:30.105Z",
+        "commit": "13d5db970",
+        "ranAt": "2026-11-24T08:22:41.761Z",
         "testsPassed": true,
         "tests": [
           {
@@ -837,6 +921,11 @@
                 "file": "src/installer/__tests__/terminal-install.test.ts",
                 "title": "successor upgrade replaces its owned launcher and preserves ready selection",
                 "result": "pass"
+              },
+              {
+                "file": "src/installer/__tests__/terminal-install.test.ts",
+                "title": "saved installer selects candidate control runtime and exact post-install retry",
+                "result": "pass"
               }
             ],
             "files": []
@@ -860,7 +949,7 @@
             "file": "src/installer/__tests__/bootstrap.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 20697,
+            "durationMs": 21781,
             "titles": [
               {
                 "title": "bootstrap rejects corrupt wrong target runtime and missing extraction prerequisites",
@@ -889,7 +978,7 @@
             "file": "src/installer/__tests__/foundation-payload.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 279085,
+            "durationMs": 341470,
             "titles": [
               {
                 "title": "assemble actual complete foundation payload only after all entrypoints exist",
@@ -902,7 +991,7 @@
             "file": "src/installer/__tests__/terminal-install.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 2770,
+            "durationMs": 3749,
             "titles": [
               {
                 "title": "terminal installer requires all TTY streams and absent dev adapter fails explicitly",
@@ -935,6 +1024,10 @@
               {
                 "title": "successor upgrade replaces its owned launcher and preserves ready selection",
                 "result": "pass"
+              },
+              {
+                "title": "saved installer selects candidate control runtime and exact post-install retry",
+                "result": "pass"
               }
             ],
             "otherFailures": []
@@ -943,7 +1036,7 @@
             "file": "src/shared/__tests__/installation-home.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 469,
+            "durationMs": 489,
             "titles": [
               {
                 "title": "installed explicit home scopes socket config and daemon-owned data together",

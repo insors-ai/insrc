@@ -4,11 +4,11 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 46 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+**Totals:** 54 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
-Run at 2026-11-23T18:41:22.697Z on commit `a8716f1cb`. Tests check: **passed**. 9 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-24T08:10:14.616Z on commit `da6255072`. Tests check: **passed**. 11 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: strict installer schemas reject invalid target runtime entrypoint hook and bridge records**
 
@@ -26,6 +26,8 @@ Run at 2026-11-23T18:41:22.697Z on commit `a8716f1cb`. Tests check: **passed**. 
 | pass | control-root inspection rejects symlinks and files and never creates missing homes | `src/installer/__tests__/location.test.ts` |
 | pass | unknown and network filesystem families fail closed until qualified | `src/installer/__tests__/location.test.ts` |
 | pass | terminal launch preserves explicit home and successful handoff contract | `src/installer/__tests__/contracts.test.ts` |
+| pass | terminal invocation binds actual arguments to metadata and Windows drive aliases | `src/installer/__tests__/contracts.test.ts` |
+| pass | canonical drive-letter comparison preserves stored spelling and Unix identity | `src/installer/__tests__/location.test.ts` |
 
 **integration: correlated bridge send cancel write outcomes preserve uncertainty**
 
@@ -44,12 +46,12 @@ Run at 2026-11-23T18:41:22.697Z on commit `a8716f1cb`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/installer/__tests__/bridge-protocol.test.ts` | 0 | 2 | 0.5 s |  |
-| `src/installer/__tests__/contracts.test.ts` | 0 | 4 | 0.4 s |  |
-| `src/installer/__tests__/location.test.ts` | 0 | 3 | 0.4 s |  |
+| `src/installer/__tests__/contracts.test.ts` | 0 | 5 | 0.4 s |  |
+| `src/installer/__tests__/location.test.ts` | 0 | 4 | 0.4 s |  |
 
 ## t2
 
-Run at 2026-11-23T18:57:27.348Z on commit `cce66a2be`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+Run at 2026-11-24T08:11:18.607Z on commit `da6255072`. Tests check: **passed**. 7 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 **integration: OS lock excludes another writer and releases on owned fixture self exit**
 
@@ -66,6 +68,7 @@ Run at 2026-11-23T18:57:27.348Z on commit `cce66a2be`. Tests check: **passed**. 
 | pass | controller inspection and revision failures never silently enroll or overwrite | `src/installer/__tests__/controller-store.test.ts` |
 | pass | native publication remains gated without exact target runtime and live qualification | `src/installer/__tests__/controller-store.test.ts` |
 | pass | native publisher denies unqualified output before publishing target artifacts | `src/installer/__tests__/controller-store.test.ts` |
+| pass | canonical drive-letter comparison preserves stored spelling and Unix identity | `src/installer/__tests__/location.test.ts` |
 
 **smoke: target private runtime loads qualified native lock and atomic adapters**
 
@@ -75,7 +78,8 @@ Reported by the builder, not run by the gate: **pass**. Evidence: docs/epics/rel
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/installer/__tests__/controller-store.test.ts` | 0 | 6 | 0.9 s |  |
+| `src/installer/__tests__/controller-store.test.ts` | 0 | 7 | 1.2 s |  |
+| `src/installer/__tests__/location.test.ts` | 0 | 4 | 0.4 s |  |
 
 ## t3
 
@@ -171,7 +175,7 @@ Run at 2026-11-23T20:03:20.007Z on commit `5f300d660`. Tests check: **passed**. 
 
 ## t6
 
-Run at 2026-11-24T04:51:06.326Z on commit `719687c0f`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-24T08:15:31.351Z on commit `13d5db970`. Tests check: **passed**. 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: install is rejected even with a forged source/bootstrap marker**
 
@@ -184,12 +188,16 @@ Run at 2026-11-24T04:51:06.326Z on commit `719687c0f`. Tests check: **passed**. 
 | Result | Test | File |
 | :--- | :--- | :--- |
 | pass | required peer admission and exact offer state transitions fail closed | `src/installer/__tests__/manager.test.ts` |
+| pass | stop and interrupted stop recovery bypass dependency health and payload checks | `src/installer/__tests__/manager.test.ts` |
 
 **integration: manager death and candidate journal receipt projections cannot start duplicate runner**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
 | pass | manager death and candidate journal receipt projections cannot start duplicate runner | `src/installer/__tests__/manager.test.ts` |
+| pass | pre-admission manager self exit recovers install and upgrade without duplicate hooks | `src/installer/__tests__/manager.test.ts` |
+| pass | missing launch metadata in a later phase cannot masquerade as preparation recovery | `src/installer/__tests__/manager.test.ts` |
+| pass | owned manager self exit leaves candidate running and recovery needs actual wrapper exit receipt | `src/installer/__tests__/manager.test.ts` |
 
 **integration: corrupt controller revisions and immutable candidate mismatches fail closed**
 
@@ -201,7 +209,7 @@ Run at 2026-11-24T04:51:06.326Z on commit `719687c0f`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/installer/__tests__/manager.test.ts` | 0 | 10 | 1.8 s |  |
+| `src/installer/__tests__/manager.test.ts` | 0 | 13 | 3.2 s |  |
 
 ## t7
 
@@ -227,7 +235,7 @@ Run at 2026-11-24T05:03:49.828Z on commit `5b92b40d6`. Tests check: **passed**. 
 
 ## t8
 
-Run at 2026-11-24T07:02:30.105Z on commit `27c5053c2`. Tests check: **passed**. 10 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-24T08:22:41.761Z on commit `13d5db970`. Tests check: **passed**. 11 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: terminal installer requires all TTY streams and absent dev adapter fails explicitly**
 
@@ -262,6 +270,7 @@ Run at 2026-11-24T07:02:30.105Z on commit `27c5053c2`. Tests check: **passed**. 
 | Result | Test | File |
 | :--- | :--- | :--- |
 | pass | successor upgrade replaces its owned launcher and preserves ready selection | `src/installer/__tests__/terminal-install.test.ts` |
+| pass | saved installer selects candidate control runtime and exact post-install retry | `src/installer/__tests__/terminal-install.test.ts` |
 
 **smoke: canonical POSIX terminal script preserves I O and fixture TUI handoff and PowerShell source preserves invocation contract**
 
@@ -273,7 +282,7 @@ Run at 2026-11-24T07:02:30.105Z on commit `27c5053c2`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/installer/__tests__/bootstrap.test.ts` | 0 | 5 | 20.7 s |  |
-| `src/installer/__tests__/foundation-payload.test.ts` | 0 | 1 | 279.1 s |  |
-| `src/installer/__tests__/terminal-install.test.ts` | 0 | 8 | 2.8 s |  |
+| `src/installer/__tests__/bootstrap.test.ts` | 0 | 5 | 21.8 s |  |
+| `src/installer/__tests__/foundation-payload.test.ts` | 0 | 1 | 341.5 s |  |
+| `src/installer/__tests__/terminal-install.test.ts` | 0 | 9 | 3.7 s |  |
 | `src/shared/__tests__/installation-home.test.ts` | 0 | 1 | 0.5 s |  |

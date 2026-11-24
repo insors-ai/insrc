@@ -123,6 +123,33 @@ test('tracker.post on pushed ISSUE fixture — lld+s1 posts to adopted story ref
 			const ok = await assemblePostContext(ctx({ kind: 'lld', storyId: 's1' }));
 			assert.equal(ok.headKind, 'issue');
 			assert.equal(ok.target.issueRef, 'acme/demo#42', 'lld+s1 posts to the adopted story ref (same as root)');
+			// execute the post through the runner against a stubbed port: the
+			// comment lands on the adopted ref with the summary body verbatim
+			const posted: Array<[string, string]> = [];
+			const port = {
+				kind: 'github', capabilities: new Set(['issue-comment']),
+				issueOps: { comment: (ref: string, body: string) => { posted.push([ref, body]); return { ok: true, value: undefined }; } },
+			} as never;
+			void port;
+			// drive the comment through the real adapter + a registry table whose
+			// run() records the gh_issue_comment tool invocation
+			const { createGithubTracker } = await import('../github-adapter.js');
+			const calls: Array<{ number: number; body: string }> = [];
+			const table = {
+				run: async (tool: { id: string }, input: Record<string, unknown>) => {
+					if (tool.id === 'gh_issue_comment') calls.push({ number: Number(input['number']), body: String(input['body'] ?? '') });
+					return { success: true, output: 'https://github.com/acme/demo/issues/42#issuecomment-1', format: 'text' };
+				},
+			} as never;
+			// the table stand-in must expose the RegistryTable shape the adapter calls:
+			// ghComment(owner, repo, ref, body) — record that directly
+			const table2 = { ghComment: async (_o: string, _r: string, ref: string, body: string) => { calls.push({ number: Number(ref.split('#')[1]), body }); } } as never;
+			const tracker = createGithubTracker('acme', 'demo', { repoPath: fx.repo, table: table2 });
+			await tracker.issueOps.comment(ok.target.issueRef, ok.target.summaryMd);
+			assert.equal(calls.length, 1, 'exactly one comment posted');
+			assert.equal(calls[0]!.number, 42, 'posted to the adopted story ref #42');
+			assert.equal(calls[0]!.body, ok.target.summaryMd, 'summary body verbatim');
+			void table; void posted;
 			await assert.rejects(() => assemblePostContext(ctx({ kind: 'hld' })), /not supported for an ISSUE-anchored/);
 			await assert.rejects(() => assemblePostContext(ctx({ kind: 'amendment', amendmentId: 'AMD-1' })), /not supported for an ISSUE-anchored/);
 			await assert.rejects(() => assemblePostContext(ctx({ kind: 'lld', storyId: 's9' })), /only the implied story/);

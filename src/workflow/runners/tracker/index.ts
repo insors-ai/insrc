@@ -27,6 +27,10 @@
 
 import { registerRunner } from '../../executor.js';
 import type { StepRunner, WorkflowName } from '../../types.js';
+import { readDefinitionHead } from '../../gates.js';
+import type { IssueArtifact } from '../../artifacts/issue.js';
+import { issueArtifactId } from '../../storage.js';
+import { claimCreateIntent } from '../../tracker/pending-create-claim.js';
 
 import {
 	assemblePostContext,
@@ -58,6 +62,26 @@ const pushExecuteRunner: StepRunner = {
 	workflow: 'tracker.push',
 	async run(ctx) {
 		const c = ctx.stepOutputs['s1'] as Awaited<ReturnType<typeof assemblePushContext>>;
+		// ISSUE-5f9d4ab4c90c0b4c s1/t6: for an ISSUE head, claim the create intent
+		// atomically BEFORE dispatching the mutating execute step. Only the run
+		// that got claimed:true dispatches; a claimed:false run refuses to create.
+		if (c.headKind === 'issue') {
+			const head = readDefinitionHead(ctx.intent.repoPath, c.epicHash);
+			const issue = head?.kind === 'issue' ? (head.artifact as IssueArtifact) : undefined;
+			if (issue !== undefined && c.existingRefs?.epicRef === undefined) {
+				const claim = claimCreateIntent(ctx.intent.repoPath, c.epicHash, ctx.runId, {
+					title: issue.body.title,
+					marker: `<!-- insrc:artifact ${issueArtifactId(c.epicHash)} -->`,
+				});
+				if (!claim.claimed) {
+					return {
+						type: 'output',
+						output: { adopted: true, existingClaim: claim.claim },
+						summary: `tracker.push: a pending-create claim already exists (owner ${claim.claim.runId}); this run adopts it and dispatches no create`,
+					};
+				};
+			}
+		}
 		return {
 			type: 'llm-pause',
 			prompt: pushPrompt(c),

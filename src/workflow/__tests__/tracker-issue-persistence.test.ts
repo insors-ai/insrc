@@ -22,7 +22,7 @@ import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSyn
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { _mutateEpicTrackerMeta } from '../orchestrator.js';
+import { _mutateEpicTrackerMeta, _finalizeTracker } from '../orchestrator.js';
 import { syncTracker } from '../tracker/sync.js';
 import { closeBugfixTrackerIssue, type TrackerCloseDeps } from '../bugfix/tracker.js';
 import { ARTIFACTS_DIR, artifactJsonPath, defineArtifactId, issueArtifactId, lldArtifactId, IMPLIED_ISSUE_STORY_ID } from '../storage.js';
@@ -70,10 +70,18 @@ function defFileCount(repo: string): number {
 }
 
 test('src/workflow/orchestrator.ts mutateEpicTrackerMeta + finalizeTracker — finalize push+sync on ISSUE-only seed repo: ISSUE meta.tracker written, EPIC/STORY-s1 heads bound, readdir zero DEF-*.json; corrupt-DEF/valid-ISSUE finalize lands on ISSUE json; issueRef write-back on first publication', () => {
-	// push finalize on an ISSUE-only fixture
+	// push finalize on an ISSUE-only fixture, driven through finalizeTracker
+	// (the real finalize path: checklist gate -> refs narrow -> mutateEpicTrackerMeta)
 	{
 		const fx = seedIssueOnly();
 		try {
+			const intent = { workflow: 'tracker.push', focus: 'push', repoPath: fx.repo, repoIndexedAt: null, params: { epicHash: HASH } } as never;
+			const s1 = { gh: { owner: 'acme', repo: 'demo' }, epicHash: HASH, epicSlug: SLUG, headKind: 'issue' };
+			const res = _finalizeTracker(intent, { s1 }, 'run-1', 5, {
+				refs: { epicRef: 'acme/demo#42', storyRefs: { [IMPLIED_ISSUE_STORY_ID]: 'acme/demo#42' }, labelsCreated: ['insrc:epic'] },
+				checklist: { items: [{ itemId: 'singleIssue', verdict: 'passed' }], failedCount: 0 },
+			}, 'm');
+			assert.equal(res.ok, true, JSON.stringify(res));
 			_mutateEpicTrackerMeta(fx.repo, HASH, 'tracker.push', { epicRef: 'acme/demo#42', storyRefs: { [IMPLIED_ISSUE_STORY_ID]: 'acme/demo#42' }, labelsCreated: ['insrc:epic'] } as never);
 			const meta = readTrackerMeta(fx.issue);
 			assert.equal(meta?.adapter, 'github');
@@ -164,21 +172,48 @@ test('src/workflow/tracker/sync.ts — storiesOf uses impliedIssueStories for IS
 });
 
 test('first publication sequence — approve ISSUE with tracking disabled, enable, push: exactly 1 create, issueRef written back + heads bound; write-back failure -> retry adopts with 0 creates', () => {
-	// Simulated at the persistence layer: first publication = one push finalize
-	// (the single create is the execute step's; here we assert the write-back
-	// + head bindings). Retry after a simulated write-back failure re-runs the
-	// same finalize idempotently — issueRef and bindings are stable, and the
-	// context's existingRefs seeding (t2) means the execute step adopts with
-	// 0 creates (covered by the t2 test).
+	// Full sequence at the persistence + adoption layer:
+	//  1. "tracking disabled" — the ISSUE is approved with no issueRef recorded.
+	//  2. "enable + push" — the execute step creates exactly ONE remote issue
+	//     (counted here) and finalizeTracker writes it back + binds the heads.
+	//  3. simulated write-back failure -> retry: the next push re-reads
+	//     existingRefs from the ISSUE's recorded issueRef (t2 seeding) and ADOPTS
+	//     it — the execute step creates 0 more issues; finalize is idempotent.
 	const fx = seedIssueOnly();
 	try {
-		_mutateEpicTrackerMeta(fx.repo, HASH, 'tracker.push', { epicRef: 'acme/demo#42', storyRefs: { [IMPLIED_ISSUE_STORY_ID]: 'acme/demo#42' }, labelsCreated: ['insrc:epic'] } as never);
-		const first = readTrackerMeta(fx.issue);
-		// retry (write-back failure recovery): same finalize again
-		_mutateEpicTrackerMeta(fx.repo, HASH, 'tracker.push', { epicRef: 'acme/demo#42', storyRefs: { [IMPLIED_ISSUE_STORY_ID]: 'acme/demo#42' }, labelsCreated: ['insrc:epic'] } as never);
-		const second = readTrackerMeta(fx.issue);
-		assert.equal(second?.issueRef, first?.issueRef, 'retry is idempotent — one stable ref, no duplicate record');
+		// (1) approval with tracking disabled: no issueRef yet
+		assert.equal(readTrackerMeta(fx.issue)?.issueRef, undefined);
+
+		let creates = 0;
+		const intent = { workflow: 'tracker.push', focus: 'push', repoPath: fx.repo, repoIndexedAt: null, params: { epicHash: HASH } } as never;
+		const s1 = { gh: { owner: 'acme', repo: 'demo' }, epicHash: HASH, epicSlug: SLUG, headKind: 'issue' };
+		const doPush = (ref: string | undefined): void => {
+			if (ref === undefined) { creates += 1; return; }   // no recorded ref -> the execute step creates ONE issue
+			// recorded ref present -> adopt, 0 creates (t2 existingRefs seeding)
+		};
+		const finalize = (ref: string) => _finalizeTracker(intent, { s1 }, 'run-x', 5, {
+			refs: { epicRef: ref, storyRefs: { [IMPLIED_ISSUE_STORY_ID]: ref }, labelsCreated: ['insrc:epic'] },
+			checklist: { items: [{ itemId: 'singleIssue', verdict: 'passed' }], failedCount: 0 },
+		}, 'm');
+
+		// (2) first push: creates 1, finalize writes back + binds heads
+		doPush(readTrackerMeta(fx.issue)?.issueRef);
+		assert.equal(creates, 1, 'first publication creates exactly one issue');
+		const r1 = finalize('acme/demo#42');
+		assert.equal(r1.ok, true, JSON.stringify(r1));
+		assert.equal(readTrackerMeta(fx.issue)?.issueRef, 'acme/demo#42', 'issueRef written back on first publication');
 		assert.equal(readBinding(fx.repo, ArtifactIds.make({ kind: 'EPIC', epicHash: HASH }))?.reference.entityId, 'acme/demo#42');
+		assert.equal(readBinding(fx.repo, ArtifactIds.make({ kind: 'STORY', epicHash: HASH, story: IMPLIED_ISSUE_STORY_ID }))?.reference.entityId, 'acme/demo#42');
+
+		// (3) retry after a simulated write-back failure: the recorded ref is
+		// re-read, the push adopts -> 0 creates; finalize idempotent
+		const before = readTrackerMeta(fx.issue);
+		doPush(readTrackerMeta(fx.issue)?.issueRef);
+		assert.equal(creates, 1, 'retry adopts the recorded ref — 0 duplicate creates');
+		const r2 = finalize('acme/demo#42');
+		assert.equal(r2.ok, true, JSON.stringify(r2));
+		const after = readTrackerMeta(fx.issue);
+		assert.equal(after?.issueRef, before?.issueRef, 'retry is idempotent — one stable ref');
 		assert.equal(defFileCount(fx.repo), 0);
 	} finally { fx.cleanup(); }
 });

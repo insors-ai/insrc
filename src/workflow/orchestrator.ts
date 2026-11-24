@@ -3041,3 +3041,5 @@ function mutateEpicTrackerMeta(
 export { readDefineArtifact as _readDefineArtifact };
 // Test seam: the Epic tracker-meta patch (push / sync) is meta-only.
 export { mutateEpicTrackerMeta as _mutateEpicTrackerMeta };
+// Test seam: the tracker finalize (push/sync/post) — ISSUE-5f9d4ab4c90c0b4c s1/t4 integration tests drive it directly.
+export { finalizeTracker as _finalizeTracker };

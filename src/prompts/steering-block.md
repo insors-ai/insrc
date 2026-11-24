@@ -81,7 +81,9 @@ a call from memory when the contract is one lookup away.
   just start editing. Route it: `brainstorm` (if the idea is rough) →
   `insrc_triage` (sizes + routes) → the routed workflow → present → approve →
   build → validate → human approval → complete. Every feature, big or small, is tracked. See
-  `insrc_guide({ workflow: 'triage' })` for the routing table.
+  `insrc_guide({ workflow: 'triage' })` for the routing table. For a later Story
+  of an Epic, the first activity of its design.story, plan and build is a
+  complete impact analysis of what the Epic has already built (see those guides).
 - **Fix a bug / defect** → same front door: `insrc_triage` classifies it
   `bugfix` (magnitude `small` or `sized`) and routes to the `issue` stage — a
   defect gets tracked exactly like a feature, never patched off-ledger. Small →
@@ -305,6 +307,16 @@ anti-overreach rule so authoring does not spill onto sibling Stories. Loop:
 `phase:'start'` → `emit_plan` → `phase:'plan'` → `emit_step` (loop) →
 `emit_synthesize` → `phase:'synthesize'` → `done`. Present the artifact,
 present-ask-approve, then run `plan`.
+
+**Epic impact analysis (a later Story of an Epic).** When the Epic already has a
+built Story, the FIRST activity is a complete impact analysis of what it has
+built, before anything else in the run. The first step's prompt carries a
+bounded **Epic built-state digest** of the other Stories' approved BUILD, test
+and LLD records; read it against this Story, open the cited records for what it
+reduces, and emit the `epicImpact` analysis (`applies`, `storiesCovered`,
+`findings`, `sources`) in the same step. Synthesize carries it into the LLD and
+refuses a later Story's LLD without a real one. A first or standalone Story
+sees only a one-line "does not apply".
 Apply the front-door **Relevant design artifacts** rule: assess relevance
 independently, document relationship changes even when simple, and do not
 require an ERD for isolated class edits. Use structured companion definitions only when the visual materially helps.
@@ -318,6 +330,12 @@ breakdown the build follows). `readPlanUpstream` is scope-aware: a standalone
 LLD's plan skips the HLD/epic reads, so `plan` runs without an HLD. Loop mirrors
 the other workflows (`start` → `plan` → `step` loop → `synthesize` → `done`).
 Present-ask-approve the PLAN, then run `build`.
+
+**Epic impact analysis (a later Story of an Epic).** As in design.story, the
+FIRST activity is a complete impact analysis of what the Epic has already built:
+read the **Epic built-state digest** in the first step's prompt against the LLD
+handoff and emit the `epicImpact` analysis there; synthesize carries it into the
+PLAN and refuses a later Story's PLAN without a real one.
 <!-- insrc:guide:plan:end -->
 
 <!-- insrc:guide:build:start -->
@@ -350,6 +368,15 @@ After the build passes validation, report self-check evidence and limitations, D
 Apply the front-door **Relevant design artifacts** rule: assess relevance
 independently, document relationship changes even when simple, and do not
 require an ERD for isolated class edits. Builders keep affected artifacts aligned with the implementation.
+
+**Epic impact analysis (a later Story of an Epic).** The implement prompt starts
+with the same analysis: read the **Epic built-state digest** against the Story
+before you edit. The BUILD summary — the `summary` of your last validate call,
+repeated there — must open with a paragraph that starts with `Epic impact:` and
+names each Story the LLD's analysis covered. BUILD approval is refused (a
+`skipped[]` entry of kind `epic-impact-missing`) when a later Story's BUILD has
+no such paragraph; only an explicit override passes it. A first or standalone
+Story is not asked.
 <!-- insrc:guide:build:end -->
 
 <!-- insrc:guide:review:start -->
